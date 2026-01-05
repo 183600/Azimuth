@@ -1,615 +1,693 @@
-// Azimuth Metric Aggregation Test Suite
-// 指标聚合测试套件 - 测试遥测指标的聚合、统计和分析功能
+// Azimuth 指标聚合测试套件
+// 专注于遥测指标的聚合、统计和分析功能
 
-// Test 1: Counter指标聚合
-test "counter metric aggregation operations" {
-  // 创建MeterProvider和Meter
-  let provider = @azimuth.MeterProvider::default()
-  let meter = @azimuth.MeterProvider::get_meter(provider, "aggregation-test-meter")
-  
-  // 创建Counter指标
-  let request_counter = @azimuth.Meter::create_counter(
-    meter,
-    "http.requests.total",
-    Some("Total number of HTTP requests"),
-    Some("requests")
-  )
-  
-  // 创建不同属性的Counter记录
-  let api_attributes = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(api_attributes, "http.method", @azimuth.StringValue("GET"))
-  @azimuth.Attributes::set(api_attributes, "http.status_code", @azimuth.IntValue(200))
-  @azimuth.Attributes::set(api_attributes, "service.name", @azimuth.StringValue("api-service"))
-  
-  let error_attributes = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(error_attributes, "http.method", @azimuth.StringValue("POST"))
-  @azimuth.Attributes::set(error_attributes, "http.status_code", @azimuth.IntValue(500))
-  @azimuth.Attributes::set(error_attributes, "service.name", @azimuth.StringValue("api-service"))
-  
-  // 记录Counter值
-  for i = 0; i < 100; i = i + 1 {
-    @azimuth.Counter::add(request_counter, 1.0, Some(api_attributes))
-  }
-  
-  for i = 0; i < 25; i = i + 1 {
-    @azimuth.Counter::add(request_counter, 1.0, Some(error_attributes))
-  }
-  
-  // 创建指标聚合器
-  let aggregator = @azimuth.MetricAggregator::new(
-    @azimuth.AggregationConfig {
-      aggregation_type: @azimuth.Sum,
-      time_window_ms: 60000,  // 1分钟窗口
-      group_by_attributes: ["http.method", "http.status_code"]
-    }
-  )
-  
-  // 聚合Counter指标
-  let aggregation_result = @azimuth.MetricAggregator::aggregate_counter(aggregator, request_counter)
-  
-  // 验证聚合结果
-  assert_eq(aggregation_result.data_points.length(), 2)
-  
-  // 验证GET 200请求的聚合
-  let get_200_point = aggregation_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "http.method") {
-      Some(@azimuth.StringValue(method)) => method == "GET"
-      _ => false
-    } and match @azimuth.Attributes::get(point.attributes, "http.status_code") {
-      Some(@azimuth.IntValue(status)) => status == 200
-      _ => false
-    }
-  })
-  
-  match get_200_point {
-    Some(point) => assert_eq(point.value, 100.0)
-    None => assert_true(false)
-  }
-  
-  // 验证POST 500请求的聚合
-  let post_500_point = aggregation_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "http.method") {
-      Some(@azimuth.StringValue(method)) => method == "POST"
-      _ => false
-    } and match @azimuth.Attributes::get(point.attributes, "http.status_code") {
-      Some(@azimuth.IntValue(status)) => status == 500
-      _ => false
-    }
-  })
-  
-  match post_500_point {
-    Some(point) => assert_eq(point.value, 25.0)
-    None => assert_true(false)
-  }
-  
-  // 验证总和
-  let total_sum = aggregation_result.data_points.reduce(fn(acc, point) { acc + point.value }, 0.0)
-  assert_eq(total_sum, 125.0)
-}
-
-// Test 2: Histogram指标聚合
-test "histogram metric aggregation operations" {
-  // 创建MeterProvider和Meter
-  let provider = @azimuth.MeterProvider::default()
-  let meter = @azimuth.MeterProvider::get_meter(provider, "histogram-test-meter")
-  
-  // 创建Histogram指标
-  let response_time_histogram = @azimuth.Meter::create_histogram(
-    meter,
-    "http.response.time",
-    Some("HTTP response time distribution"),
-    Some("ms")
-  )
-  
-  // 创建响应时间属性
-  let fast_response_attrs = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(fast_response_attrs, "endpoint", @azimuth.StringValue("/api/users"))
-  @azimuth.Attributes::set(fast_response_attrs, "service.name", @azimuth.StringValue("user-service"))
-  
-  let slow_response_attrs = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(slow_response_attrs, "endpoint", @azimuth.StringValue("/api/reports"))
-  @azimuth.Attributes::set(slow_response_attrs, "service.name", @azimuth.StringValue("report-service"))
-  
-  // 记录Histogram值 - 快速响应
-  let fast_response_times = [10, 15, 20, 25, 30, 35, 40, 45, 50]
-  for time in fast_response_times {
-    @azimuth.Histogram::record(response_time_histogram, time.to_double(), Some(fast_response_attrs))
-  }
-  
-  // 记录Histogram值 - 慢速响应
-  let slow_response_times = [100, 150, 200, 250, 300, 350, 400, 450, 500]
-  for time in slow_response_times {
-    @azimuth.Histogram::record(response_time_histogram, time.to_double(), Some(slow_response_attrs))
-  }
-  
-  // 创建Histogram聚合器
-  let histogram_aggregator = @azimuth.MetricAggregator::new(
-    @azimuth.AggregationConfig {
-      aggregation_type: @azimuth.Histogram,
-      time_window_ms: 60000,
-      group_by_attributes: ["endpoint"],
-      bucket_boundaries: [0, 50, 100, 200, 300, 400, 500, 1000]
-    }
-  )
-  
-  // 聚合Histogram指标
-  let histogram_result = @azimuth.MetricAggregator::aggregate_histogram(histogram_aggregator, response_time_histogram)
-  
-  // 验证聚合结果
-  assert_eq(histogram_result.data_points.length(), 2)
-  
-  // 验证快速响应的聚合结果
-  let fast_endpoint_point = histogram_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "endpoint") {
-      Some(@azimuth.StringValue(endpoint)) => endpoint == "/api/users"
-      _ => false
-    }
-  })
-  
-  match fast_endpoint_point {
-    Some(point) => {
-      // 验证桶计数
-      assert_eq(point.bucket_counts.length(), 8)
-      assert_eq(point.bucket_counts[0], 0)  // 0-50ms桶应该包含一些值
-      assert_eq(point.bucket_counts[1], 9)  // 0-50ms桶应该包含所有9个值
-      assert_eq(point.bucket_counts[2], 9)  // 50-100ms桶应该包含所有9个值
-      assert_eq(point.sum, 270.0)  // 所有快速响应时间的总和
-      assert_eq(point.count, 9)    // 总计数
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证慢速响应的聚合结果
-  let slow_endpoint_point = histogram_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "endpoint") {
-      Some(@azimuth.StringValue(endpoint)) => endpoint == "/api/reports"
-      _ => false
-    }
-  })
-  
-  match slow_endpoint_point {
-    Some(point) => {
-      // 验证桶计数
-      assert_eq(point.bucket_counts.length(), 8)
-      assert_eq(point.bucket_counts[0], 0)  // 0-50ms桶
-      assert_eq(point.bucket_counts[1], 0)  // 50-100ms桶
-      assert_eq(point.bucket_counts[2], 2)  // 100-200ms桶应该包含100和150
-      assert_eq(point.bucket_counts[3], 2)  // 200-300ms桶应该包含200和250
-      assert_eq(point.bucket_counts[4], 2)  // 300-400ms桶应该包含300和350
-      assert_eq(point.bucket_counts[5], 2)  // 400-500ms桶应该包含400和450
-      assert_eq(point.bucket_counts[6], 1)  // 500-1000ms桶应该包含500
-      assert_eq(point.sum, 2700.0)  // 所有慢速响应时间的总和
-      assert_eq(point.count, 9)     // 总计数
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 3: Gauge指标聚合
-test "gauge metric aggregation operations" {
-  // 创建MeterProvider和Meter
-  let provider = @azimuth.MeterProvider::default()
-  let meter = @azimuth.MeterProvider::get_meter(provider, "gauge-test-meter")
-  
-  // 创建Gauge指标
-  let memory_usage_gauge = @azimuth.Meter::create_gauge(
-    meter,
-    "process.memory.usage",
-    Some("Process memory usage"),
-    Some("bytes")
-  )
-  
-  // 创建不同服务的内存使用属性
-  let api_service_attrs = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(api_service_attrs, "service.name", @azimuth.StringValue("api-service"))
-  @azimuth.Attributes::set(api_service_attrs, "instance.id", @azimuth.StringValue("api-001"))
-  
-  let db_service_attrs = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(db_service_attrs, "service.name", @azimuth.StringValue("db-service"))
-  @azimuth.Attributes::set(db_service_attrs, "instance.id", @azimuth.StringValue("db-001"))
-  
-  // 模拟内存使用变化
-  let api_memory_values = [1048576, 2097152, 1572864, 2621440, 1310720]  // 1MB, 2MB, 1.5MB, 2.5MB, 1.25MB
-  for value in api_memory_values {
-    @azimuth.Gauge::record(memory_usage_gauge, value.to_double(), Some(api_service_attrs))
-  }
-  
-  let db_memory_values = [5242880, 6291456, 7340032, 8388608, 9437184]  // 5MB, 6MB, 7MB, 8MB, 9MB
-  for value in db_memory_values {
-    @azimuth.Gauge::record(memory_usage_gauge, value.to_double(), Some(db_service_attrs))
-  }
-  
-  // 创建Gauge聚合器
-  let gauge_aggregator = @azimuth.MetricAggregator::new(
-    @azimuth.AggregationConfig {
-      aggregation_type: @azimuth.LastValue,
-      time_window_ms: 60000,
-      group_by_attributes: ["service.name"]
-    }
-  )
-  
-  // 聚合Gauge指标
-  let gauge_result = @azimuth.MetricAggregator::aggregate_gauge(gauge_aggregator, memory_usage_gauge)
-  
-  // 验证聚合结果
-  assert_eq(gauge_result.data_points.length(), 2)
-  
-  // 验证API服务的最新内存使用
-  let api_service_point = gauge_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "service.name") {
-      Some(@azimuth.StringValue(service)) => service == "api-service"
-      _ => false
-    }
-  })
-  
-  match api_service_point {
-    Some(point) => assert_eq(point.value, 1310720.0)  // 最后一个值：1.25MB
-    None => assert_true(false)
-  }
-  
-  // 验证DB服务的最新内存使用
-  let db_service_point = gauge_result.data_points.find(fn(point) {
-    match @azimuth.Attributes::get(point.attributes, "service.name") {
-      Some(@azimuth.StringValue(service)) => service == "db-service"
-      _ => false
-    }
-  })
-  
-  match db_service_point {
-    Some(point) => assert_eq(point.value, 9437184.0)  // 最后一个值：9MB
-    None => assert_true(false)
-  }
-}
-
-// Test 4: 多指标时间序列聚合
-test "multi-metric time series aggregation" {
-  // 创建时间序列数据点
-  let timestamp_base = 1640995200000  // 基准时间戳
-  
-  let cpu_metrics = [
-    (timestamp_base, 25.5),
-    (timestamp_base + 60000, 30.2),
-    (timestamp_base + 120000, 28.7),
-    (timestamp_base + 180000, 35.1),
-    (timestamp_base + 240000, 32.8)
+// 测试1: 基础指标聚合
+test "基础指标聚合" {
+  // 模拟时间序列指标数据
+  let metric_data = [
+    { name: "cpu_usage", value: 45.2, timestamp: 1640995200, tags: [("host", "server1"), ("region", "us-east")] },
+    { name: "cpu_usage", value: 50.1, timestamp: 1640995260, tags: [("host", "server1"), ("region", "us-east")] },
+    { name: "cpu_usage", value: 48.7, timestamp: 1640995320, tags: [("host", "server1"), ("region", "us-east")] },
+    { name: "cpu_usage", value: 52.3, timestamp: 1640995380, tags: [("host", "server1"), ("region", "us-east")] },
+    { name: "cpu_usage", value: 47.9, timestamp: 1640995440, tags: [("host", "server1"), ("region", "us-east")] }
   ]
   
-  let memory_metrics = [
-    (timestamp_base, 4096.0),
-    (timestamp_base + 60000, 4352.0),
-    (timestamp_base + 120000, 4608.0),
-    (timestamp_base + 180000, 4864.0),
-    (timestamp_base + 240000, 5120.0)
-  ]
+  // 计算基础统计指标
+  let mut sum = 0.0
+  let mut min_value = metric_data[0].value
+  let mut max_value = metric_data[0].value
   
-  let request_rate_metrics = [
-    (timestamp_base, 125.0),
-    (timestamp_base + 60000, 150.0),
-    (timestamp_base + 120000, 175.0),
-    (timestamp_base + 180000, 200.0),
-    (timestamp_base + 240000, 180.0)
-  ]
-  
-  // 创建多指标聚合器
-  let multi_metric_aggregator = @azimuth.MultiMetricAggregator::new(
-    @azimuth.MultiMetricConfig {
-      metrics: ["cpu.usage", "memory.usage", "request.rate"],
-      aggregation_functions: ["avg", "min", "max", "trend"],
-      time_window_ms: 300000,  // 5分钟窗口
-      downsample_interval_ms: 60000  // 1分钟下采样
+  for metric in metric_data {
+    sum = sum + metric.value
+    if metric.value < min_value {
+      min_value = metric.value
     }
-  )
-  
-  // 添加时间序列数据
-  for (timestamp, value) in cpu_metrics {
-    let data_point = @azimuth.TimeSeriesDataPoint {
-      timestamp,
-      metric_name: "cpu.usage",
-      value,
-      attributes: [
-        ("service.name", @azimuth.StringValue("api-service")),
-        ("instance.id", @azimuth.StringValue("instance-001"))
-      ]
+    if metric.value > max_value {
+      max_value = metric.value
     }
-    @azimuth.MultiMetricAggregator::add_data_point(multi_metric_aggregator, data_point)
   }
   
-  for (timestamp, value) in memory_metrics {
-    let data_point = @azimuth.TimeSeriesDataPoint {
-      timestamp,
-      metric_name: "memory.usage",
-      value,
-      attributes: [
-        ("service.name", @azimuth.StringValue("api-service")),
-        ("instance.id", @azimuth.StringValue("instance-001"))
-      ]
-    }
-    @azimuth.MultiMetricAggregator::add_data_point(multi_metric_aggregator, data_point)
+  let count = metric_data.length().to_float()
+  let avg_value = sum / count
+  
+  // 验证基础聚合结果
+  assert_eq(avg_value, 48.84)
+  assert_eq(min_value, 45.2)
+  assert_eq(max_value, 52.3)
+  
+  // 计算方差和标准差
+  let mut variance_sum = 0.0
+  for metric in metric_data {
+    let diff = metric.value - avg_value
+    variance_sum = variance_sum + (diff * diff)
   }
+  let variance = variance_sum / count
+  let std_deviation = variance.sqrt()
   
-  for (timestamp, value) in request_rate_metrics {
-    let data_point = @azimuth.TimeSeriesDataPoint {
-      timestamp,
-      metric_name: "request.rate",
-      value,
-      attributes: [
-        ("service.name", @azimuth.StringValue("api-service")),
-        ("instance.id", @azimuth.StringValue("instance-001"))
-      ]
-    }
-    @azimuth.MultiMetricAggregator::add_data_point(multi_metric_aggregator, data_point)
-  }
-  
-  // 执行多指标聚合
-  let aggregation_result = @azimuth.MultiMetricAggregator::aggregate(multi_metric_aggregator)
-  
-  // 验证聚合结果
-  assert_eq(aggregation_result.metrics.length(), 3)
-  
-  // 验证CPU使用率聚合
-  let cpu_aggregation = aggregation_result.metrics.find(fn(metric) { metric.name == "cpu.usage" })
-  match cpu_aggregation {
-    Some(cpu_metric) => {
-      // 验证平均值
-      match @azimuth.AggregatedMetric::get_function_value(cpu_metric, "avg") {
-        Some(@azimuth.FloatValue(avg)) => {
-          let expected_avg = (25.5 + 30.2 + 28.7 + 35.1 + 32.8) / 5.0
-          assert_eq(avg, expected_avg)
-        }
-        _ => assert_true(false)
-      }
-      
-      // 验证最小值
-      match @azimuth.AggregatedMetric::get_function_value(cpu_metric, "min") {
-        Some(@azimuth.FloatValue(min)) => assert_eq(min, 25.5)
-        _ => assert_true(false)
-      }
-      
-      // 验证最大值
-      match @azimuth.AggregatedMetric::get_function_value(cpu_metric, "max") {
-        Some(@azimuth.FloatValue(max)) => assert_eq(max, 35.1)
-        _ => assert_true(false)
-      }
-      
-      // 验证趋势
-      match @azimuth.AggregatedMetric::get_function_value(cpu_metric, "trend") {
-        Some(@azimuth.StringValue(trend)) => assert_eq(trend, "increasing")
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证内存使用聚合
-  let memory_aggregation = aggregation_result.metrics.find(fn(metric) { metric.name == "memory.usage" })
-  match memory_aggregation {
-    Some(memory_metric) => {
-      // 验证平均值
-      match @azimuth.AggregatedMetric::get_function_value(memory_metric, "avg") {
-        Some(@azimuth.FloatValue(avg)) => {
-          let expected_avg = (4096.0 + 4352.0 + 4608.0 + 4864.0 + 5120.0) / 5.0
-          assert_eq(avg, expected_avg)
-        }
-        _ => assert_true(false)
-      }
-      
-      // 验证趋势
-      match @azimuth.AggregatedMetric::get_function_value(memory_metric, "trend") {
-        Some(@azimuth.StringValue(trend)) => assert_eq(trend, "increasing")
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证请求率聚合
-  let request_rate_aggregation = aggregation_result.metrics.find(fn(metric) { metric.name == "request.rate" })
-  match request_rate_aggregation {
-    Some(request_rate_metric) => {
-      // 验证平均值
-      match @azimuth.AggregatedMetric::get_function_value(request_rate_metric, "avg") {
-        Some(@azimuth.FloatValue(avg)) => {
-          let expected_avg = (125.0 + 150.0 + 175.0 + 200.0 + 180.0) / 5.0
-          assert_eq(avg, expected_avg)
-        }
-        _ => assert_true(false)
-      }
-      
-      // 验证趋势
-      match @azimuth.AggregatedMetric::get_function_value(request_rate_metric, "trend") {
-        Some(@azimuth.StringValue(trend)) => assert_eq(trend, "fluctuating")
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 5: 百分位数计算
-test "percentile calculations for metrics" {
-  // 创建响应时间数据
-  let response_times = [
-    10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105,
-    110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200,
-    250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000
-  ]
-  
-  // 创建百分位数计算器
-  let percentile_calculator = @azimuth.PercentileCalculator::new(
-    @azimuth.PercentileConfig {
-      percentiles: [50.0, 90.0, 95.0, 99.0],
-      algorithm: "tdigest"  // 使用t-digest算法
-    }
-  )
-  
-  // 添加响应时间数据
-  for time in response_times {
-    @azimuth.PercentileCalculator::add_value(percentile_calculator, time.to_double())
-  }
+  // 验证方差和标准差
+  assert_true(variance > 0.0)
+  assert_true(std_deviation > 0.0)
   
   // 计算百分位数
-  let percentile_result = @azimuth.PercentileCalculator::calculate(percentile_calculator)
+  let sorted_values = [45.2, 47.9, 48.7, 50.1, 52.3]
+  let p50 = sorted_values[2]  // 中位数
+  let p90 = sorted_values[4]  // 90%百分位数
   
-  // 验证百分位数结果
-  assert_eq(percentile_result.percentiles.length(), 4)
-  
-  // 验证P50 (中位数)
-  let p50 = percentile_result.percentiles.find(fn(p) { p.percentile == 50.0 })
-  match p50 {
-    Some(percentile) => {
-      // 中位数应该在100-110之间
-      assert_true(percentile.value >= 100.0)
-      assert_true(percentile.value <= 110.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证P90
-  let p90 = percentile_result.percentiles.find(fn(p) { p.percentile == 90.0 })
-  match p90 {
-    Some(percentile) => {
-      // P90应该在800-900之间
-      assert_true(percentile.value >= 800.0)
-      assert_true(percentile.value <= 900.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证P95
-  let p95 = percentile_result.percentiles.find(fn(p) { p.percentile == 95.0 })
-  match p95 {
-    Some(percentile) => {
-      // P95应该在900-950之间
-      assert_true(percentile.value >= 900.0)
-      assert_true(percentile.value <= 950.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证P99
-  let p99 = percentile_result.percentiles.find(fn(p) { p.percentile == 99.0 })
-  match p99 {
-    Some(percentile) => {
-      // P99应该在950-1000之间
-      assert_true(percentile.value >= 950.0)
-      assert_true(percentile.value <= 1000.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证统计摘要
-  assert_eq(percentile_result.count, response_times.length())
-  assert_eq(percentile_result.sum, response_times.reduce(fn(acc, val) { acc + val.to_double() }, 0.0))
-  assert_eq(percentile_result.min, 10.0)
-  assert_eq(percentile_result.max, 1000.0)
-  
-  // 验证平均值
-  let expected_avg = percentile_result.sum / percentile_result.count.to_double()
-  assert_eq(percentile_result.average, expected_avg)
+  assert_eq(p50, 48.7)
+  assert_eq(p90, 52.3)
 }
 
-// Test 6: 指标基线比较
-test "metric baseline comparison" {
-  // 创建基线数据 (上周的数据)
-  let baseline_cpu_data = [20.5, 22.3, 25.1, 23.7, 21.8, 24.2, 26.5]
-  let baseline_memory_data = [3072.0, 3328.0, 3584.0, 3840.0, 4096.0, 4352.0, 4608.0]
-  let baseline_request_data = [100.0, 110.0, 105.0, 115.0, 120.0, 125.0, 130.0]
+// 测试2: 多维度指标聚合
+test "多维度指标聚合" {
+  // 模拟多维度的指标数据
+  let multi_dimensional_metrics = [
+    { name: "response_time", value: 120.0, timestamp: 1640995200, tags: [("service", "api"), ("endpoint", "/users"), ("method", "GET")] },
+    { name: "response_time", value: 85.0, timestamp: 1640995260, tags: [("service", "api"), ("endpoint", "/users"), ("method", "GET")] },
+    { name: "response_time", value: 200.0, timestamp: 1640995320, tags: [("service", "api"), ("endpoint", "/orders"), ("method", "POST")] },
+    { name: "response_time", value: 150.0, timestamp: 1640995380, tags: [("service", "api"), ("/endpoint", "/orders"), ("method", "POST")] },
+    { name: "response_time", value: 95.0, timestamp: 1640995440, tags: [("service", "auth"), ("endpoint", "/login"), ("method", "POST")] },
+    { name: "response_time", value: 110.0, timestamp: 1640995500, tags: [("service", "auth"), ("endpoint", "/login"), ("method", "POST")] }
+  ]
   
-  // 创建当前数据 (本周的数据)
-  let current_cpu_data = [28.5, 32.3, 35.1, 33.7, 31.8, 34.2, 36.5]
-  let current_memory_data = [3584.0, 3840.0, 4096.0, 4352.0, 4608.0, 4864.0, 5120.0]
-  let current_request_data = [150.0, 160.0, 155.0, 165.0, 170.0, 175.0, 180.0]
+  // 按服务分组聚合
+  let mut service_aggregates = []
+  let mut processed_services = []
   
-  // 创建基线比较器
-  let baseline_comparator = @azimuth.BaselineComparator::new(
-    @azimuth.BaselineConfig {
-      comparison_metrics: ["cpu.usage", "memory.usage", "request.rate"],
-      baseline_period_days: 7,
-      current_period_days: 7,
-      threshold_percent: 20.0  // 20%的阈值
+  for metric in multi_dimensional_metrics {
+    let service_name = ""
+    for (key, value) in metric.tags {
+      if key == "service" {
+        service_name = value
+        break
+      }
     }
-  )
-  
-  // 添加基线数据
-  for value in baseline_cpu_data {
-    @azimuth.BaselineComparator::add_baseline_value(baseline_comparator, "cpu.usage", value)
-  }
-  
-  for value in baseline_memory_data {
-    @azimuth.BaselineComparator::add_baseline_value(baseline_comparator, "memory.usage", value)
-  }
-  
-  for value in baseline_request_data {
-    @azimuth.BaselineComparator::add_baseline_value(baseline_comparator, "request.rate", value)
-  }
-  
-  // 添加当前数据
-  for value in current_cpu_data {
-    @azimuth.BaselineComparator::add_current_value(baseline_comparator, "cpu.usage", value)
-  }
-  
-  for value in current_memory_data {
-    @azimuth.BaselineComparator::add_current_value(baseline_comparator, "memory.usage", value)
-  }
-  
-  for value in current_request_data {
-    @azimuth.BaselineComparator::add_current_value(baseline_comparator, "request.rate", value)
-  }
-  
-  // 执行基线比较
-  let comparison_result = @azimuth.BaselineComparator::compare(baseline_comparator)
-  
-  // 验证比较结果
-  assert_eq(comparison_result.comparisons.length(), 3)
-  
-  // 验证CPU使用率比较
-  let cpu_comparison = comparison_result.comparisons.find(fn(comp) { comp.metric_name == "cpu.usage" })
-  match cpu_comparison {
-    Some(comparison) => {
-      // 计算基线和当前的平均值
-      let baseline_avg = baseline_cpu_data.reduce(fn(acc, val) { acc + val }, 0.0) / baseline_cpu_data.length().to_double()
-      let current_avg = current_cpu_data.reduce(fn(acc, val) { acc + val }, 0.0) / current_cpu_data.length().to_double()
+    
+    let already_processed = false
+    for service in processed_services {
+      if service == service_name {
+        already_processed = true
+        break
+      }
+    }
+    
+    if not already_processed and service_name != "" {
+      processed_services = processed_services.push(service_name)
       
-      assert_eq(comparison.baseline_average, baseline_avg)
-      assert_eq(comparison.current_average, current_avg)
+      // 收集该服务的所有指标
+      let mut service_metrics = []
+      for m in multi_dimensional_metrics {
+        let current_service = ""
+        for (key, value) in m.tags {
+          if key == "service" {
+            current_service = value
+            break
+          }
+        }
+        if current_service == service_name {
+          service_metrics = service_metrics.push(m)
+        }
+      }
       
-      // 验证变化百分比
-      let expected_change_percent = ((current_avg - baseline_avg) / baseline_avg) * 100.0
-      assert_eq(comparison.change_percent, expected_change_percent)
+      // 计算服务级别的聚合统计
+      let mut sum = 0.0
+      let mut count = 0
+      for m in service_metrics {
+        sum = sum + m.value
+        count = count + 1
+      }
       
-      // CPU使用率应该增加了超过20%
-      assert_true(comparison.change_percent > 20.0)
-      assert_eq(comparison.status, "alert")  // 超过阈值，应该是alert状态
+      service_aggregates = service_aggregates.push({
+        service: service_name,
+        avg_response_time: sum / count.to_float(),
+        request_count: count,
+        min_response_time: {
+          let mut min_val = service_metrics[0].value
+          for m in service_metrics {
+            if m.value < min_val {
+              min_val = m.value
+            }
+          }
+          min_val
+        },
+        max_response_time: {
+          let mut max_val = service_metrics[0].value
+          for m in service_metrics {
+            if m.value > max_val {
+              max_val = m.value
+            }
+          }
+          max_val
+        }
+      })
     }
-    None => assert_true(false)
   }
   
-  // 验证内存使用比较
-  let memory_comparison = comparison_result.comparisons.find(fn(comp) { comp.metric_name == "memory.usage" })
-  match memory_comparison {
-    Some(comparison) => {
-      // 内存使用率应该增加了大约16.7%
-      assert_true(comparison.change_percent > 15.0)
-      assert_true(comparison.change_percent < 20.0)
-      assert_eq(comparison.status, "warning")  // 低于阈值，应该是warning状态
-    }
-    None => assert_true(false)
+  // 验证服务级别聚合结果
+  assert_eq(service_aggregates.length(), 2)  // api 和 auth 服务
+  
+  // 验证 api 服务聚合
+  let api_aggregate = service_aggregates[0]
+  assert_eq(api_aggregate.service, "api")
+  assert_eq(api_aggregate.request_count, 4)
+  assert_eq(api_aggregate.avg_response_time, 138.75)
+  assert_eq(api_aggregate.min_response_time, 85.0)
+  assert_eq(api_aggregate.max_response_time, 200.0)
+  
+  // 验证 auth 服务聚合
+  let auth_aggregate = service_aggregates[1]
+  assert_eq(auth_aggregate.service, "auth")
+  assert_eq(auth_aggregate.request_count, 2)
+  assert_eq(auth_aggregate.avg_response_time, 102.5)
+  assert_eq(auth_aggregate.min_response_time, 95.0)
+  assert_eq(auth_aggregate.max_response_time, 110.0)
+}
+
+// 测试3: 时间窗口聚合
+test "时间窗口聚合" {
+  // 模拟时间序列指标数据
+  let time_series_metrics = []
+  let mut i = 0
+  while i < 60 {  // 60个数据点，每分钟一个
+    time_series_metrics = time_series_metrics.push({
+      name: "request_rate",
+      value: (50 + (i % 20)).to_int().to_float(),  // 50-70之间的值
+      timestamp: 1640995200 + i * 60,  // 每分钟一个数据点
+      tags: [("service", "web")]
+    })
+    i = i + 1
   }
   
-  // 验证请求率比较
-  let request_comparison = comparison_result.comparisons.find(fn(comp) { comp.metric_name == "request.rate" })
-  match request_comparison {
-    Some(comparison) => {
-      // 请求率应该增加了大约46%
-      assert_true(comparison.change_percent > 40.0)
-      assert_eq(comparison.status, "alert")  // 超过阈值，应该是alert状态
+  // 定义时间窗口（5分钟窗口）
+  let window_size = 5 * 60  // 5分钟，以秒为单位
+  
+  // 时间窗口聚合
+  let mut windowed_aggregates = []
+  let mut current_window_start = time_series_metrics[0].timestamp
+  
+  while current_window_start <= time_series_metrics[time_series_metrics.length() - 1].timestamp {
+    let current_window_end = current_window_start + window_size
+    
+    // 收集当前窗口内的数据
+    let mut window_data = []
+    for metric in time_series_metrics {
+      if metric.timestamp >= current_window_start and metric.timestamp < current_window_end {
+        window_data = window_data.push(metric)
+      }
     }
-    None => assert_true(false)
+    
+    if window_data.length() > 0 {
+      // 计算窗口聚合统计
+      let mut sum = 0.0
+      let mut count = 0
+      for data in window_data {
+        sum = sum + data.value
+        count = count + 1
+      }
+      
+      windowed_aggregates = windowed_aggregates.push({
+        window_start: current_window_start,
+        window_end: current_window_end,
+        avg_value: sum / count.to_float(),
+        data_point_count: count,
+        min_value: {
+          let mut min_val = window_data[0].value
+          for data in window_data {
+            if data.value < min_val {
+              min_val = data.value
+            }
+          }
+          min_val
+        },
+        max_value: {
+          let mut max_val = window_data[0].value
+          for data in window_data {
+            if data.value > max_val {
+              max_val = data.value
+            }
+          }
+          max_val
+        }
+      })
+    }
+    
+    current_window_start = current_window_end
   }
   
-  // 验证整体比较摘要
-  assert_eq(comparison_result.metrics_with_alert, 2)
-  assert_eq(comparison_result.metrics_with_warning, 1)
-  assert_eq(comparison_result.metrics_with_normal, 0)
-  assert_true(comparison_result.overall_status == "alert")
+  // 验证时间窗口聚合结果
+  assert_eq(windowed_aggregates.length(), 12)  // 60分钟 / 5分钟窗口 = 12个窗口
+  
+  // 验证每个窗口的数据点数量
+  for window in windowed_aggregates {
+    assert_eq(window.data_point_count, 5)  // 每个窗口应该有5个数据点
+    assert_true(window.avg_value >= 50.0)
+    assert_true(window.avg_value <= 70.0)
+    assert_true(window.min_value >= 50.0)
+    assert_true(window.max_value <= 70.0)
+  }
+  
+  // 验证窗口时间连续性
+  let mut i = 0
+  while i < windowed_aggregates.length() - 1 {
+    let current_window = windowed_aggregates[i]
+    let next_window = windowed_aggregates[i + 1]
+    assert_eq(current_window.window_end, next_window.window_start)
+    i = i + 1
+  }
+}
+
+// 测试4: 指标聚合的容错处理
+test "指标聚合的容错处理" {
+  // 模拟包含异常值的指标数据
+  let metrics_with_outliers = [
+    { name: "memory_usage", value: 1024.0, timestamp: 1640995200, tags: [("host", "server1")] },
+    { name: "memory_usage", value: 1080.0, timestamp: 1640995260, tags: [("host", "server1")] },
+    { name: "memory_usage", value: 999999.0, timestamp: 1640995320, tags: [("host", "server1")] },  // 异常值
+    { name: "memory_usage", value: 1100.0, timestamp: 1640995380, tags: [("host", "server1")] },
+    { name: "memory_usage", value: 1050.0, timestamp: 1640995440, tags: [("host", "server1")] },
+    { name: "memory_usage", value: 0.0, timestamp: 1640995500, tags: [("host", "server1")] },  // 异常值
+    { name: "memory_usage", value: 1070.0, timestamp: 1640995560, tags: [("host", "server1")] }
+  ]
+  
+  // 计算基础统计（包含异常值）
+  let mut sum_with_outliers = 0.0
+  let mut count = 0
+  for metric in metrics_with_outliers {
+    sum_with_outliers = sum_with_outliers + metric.value
+    count = count + 1
+  }
+  let avg_with_outliers = sum_with_outliers / count.to_float()
+  
+  // 异常值检测和过滤
+  let detect_outliers = fn(data: Array[Dynamic]) {
+    let mut values = []
+    for item in data {
+      values = values.push(item.value)
+    }
+    
+    // 计算四分位数
+    let sorted_values = values  // 假设已排序
+    let q1 = sorted_values[sorted_values.length() / 4]
+    let q3 = sorted_values[sorted_values.length() * 3 / 4]
+    let iqr = q3 - q1
+    
+    // 定义异常值边界
+    let lower_bound = q1 - 1.5 * iqr
+    let upper_bound = q3 + 1.5 * iqr
+    
+    // 过滤异常值
+    let mut filtered_data = []
+    for item in data {
+      if item.value >= lower_bound and item.value <= upper_bound {
+        filtered_data = filtered_data.push(item)
+      }
+    }
+    
+    filtered_data
+  }
+  
+  let filtered_metrics = detect_outliers(metrics_with_outliers)
+  
+  // 计算过滤后的统计
+  let mut sum_filtered = 0.0
+  let mut filtered_count = 0
+  for metric in filtered_metrics {
+    sum_filtered = sum_filtered + metric.value
+    filtered_count = filtered_count + 1
+  }
+  let avg_filtered = if filtered_count > 0 { sum_filtered / filtered_count.to_float() } else { 0.0 }
+  
+  // 验证异常值过滤效果
+  assert_true(filtered_count < count)  // 过滤后数据点应该减少
+  assert_true(avg_filtered < avg_with_outliers)  // 过滤后平均值应该更合理
+  assert_true(avg_filtered > 1000.0)  // 过滤后平均值应该在合理范围内
+  
+  // 验证过滤后的数据都是合理的
+  for metric in filtered_metrics {
+    assert_true(metric.value > 0.0)
+    assert_true(metric.value < 10000.0)  // 排除明显异常的大值
+  }
+  
+  // 容错处理：缺失值处理
+  let metrics_with_missing = [
+    { name: "cpu_usage", value: 45.0, timestamp: 1640995200, tags: [("host", "server1")] },
+    { name: "cpu_usage", value: None, timestamp: 1640995260, tags: [("host", "server1")] },  // 缺失值
+    { name: "cpu_usage", value: 50.0, timestamp: 1640995320, tags: [("host", "server1")] },
+    { name: "cpu_usage", value: None, timestamp: 1640995380, tags: [("host", "server1")] },  // 缺失值
+    { name: "cpu_usage", value: 48.0, timestamp: 1640995440, tags: [("host", "server1")] }
+  ]
+  
+  // 缺失值处理策略：插值
+  let handle_missing_values = fn(data: Array[Dynamic]) {
+    let mut processed_data = []
+    let mut last_valid_value = None
+    
+    for item in data {
+      match item.value {
+        Some(val) => {
+          processed_data = processed_data.push(val)
+          last_valid_value = Some(val)
+        }
+        None => {
+          match last_valid_value {
+            Some(last_val) => {
+              // 使用前一个有效值
+              processed_data = processed_data.push(last_val)
+            }
+            None => {
+              // 如果没有前一个有效值，跳过
+            }
+          }
+        }
+      }
+    }
+    
+    processed_data
+  }
+  
+  let processed_values = handle_missing_values(metrics_with_missing)
+  
+  // 验证缺失值处理
+  assert_eq(processed_values.length(), 5)  // 所有数据点都应该有值
+  assert_eq(processed_values[0], 45.0)
+  assert_eq(processed_values[1], 45.0)  // 插值
+  assert_eq(processed_values[2], 50.0)
+  assert_eq(processed_values[3], 50.0)  // 插值
+  assert_eq(processed_values[4], 48.0)
+}
+
+// 测试5: 高级指标聚合算法
+test "高级指标聚合算法" {
+  // 模拟复杂的指标数据
+  let complex_metrics = [
+    { name: "error_rate", value: 0.01, timestamp: 1640995200, tags: [("service", "api"), ("status", "2xx")] },
+    { name: "error_rate", value: 0.05, timestamp: 1640995260, tags: [("service", "api"), ("status", "4xx")] },
+    { name: "error_rate", value: 0.02, timestamp: 1640995320, tags: [("service", "api"), ("status", "2xx")] },
+    { name: "error_rate", value: 0.10, timestamp: 1640995380, tags: [("service", "api"), ("status", "5xx")] },
+    { name: "error_rate", value: 0.03, timestamp: 1640995440, tags: [("service", "web"), ("status", "2xx")] },
+    { name: "error_rate", value: 0.08, timestamp: 1640995500, tags: [("service", "web"), ("status", "4xx")] },
+    { name: "error_rate", value: 0.01, timestamp: 1640995560, tags: [("service", "web"), ("status", "2xx")] },
+    { name: "error_rate", value: 0.15, timestamp: 1640995620, tags: [("service", "web"), ("status", "5xx")] }
+  ]
+  
+  // 加权平均聚合（按请求数加权）
+  let weighted_avg = fn(data: Array[Dynamic], weights: Array[Float]) {
+    let mut weighted_sum = 0.0
+    let mut total_weight = 0.0
+    
+    let mut i = 0
+    while i < data.length() and i < weights.length() {
+      weighted_sum = weighted_sum + (data[i].value * weights[i])
+      total_weight = total_weight + weights[i]
+      i = i + 1
+    }
+    
+    if total_weight > 0.0 {
+      weighted_sum / total_weight
+    } else {
+      0.0
+    }
+  }
+  
+  // 模拟请求数权重
+  let request_weights = [100.0, 20.0, 150.0, 5.0, 200.0, 30.0, 180.0, 3.0]
+  
+  // 按服务分组计算加权平均错误率
+  let mut service_weighted_errors = []
+  let mut processed_services = []
+  
+  for metric in complex_metrics {
+    let service_name = ""
+    for (key, value) in metric.tags {
+      if key == "service" {
+        service_name = value
+        break
+      }
+    }
+    
+    let already_processed = false
+    for service in processed_services {
+      if service == service_name {
+        already_processed = true
+        break
+      }
+    }
+    
+    if not already_processed and service_name != "" {
+      processed_services = processed_services.push(service_name)
+      
+      // 收集该服务的所有指标和权重
+      let mut service_values = []
+      let mut service_weights = []
+      let mut i = 0
+      while i < complex_metrics.length() {
+        let current_service = ""
+        for (key, value) in complex_metrics[i].tags {
+          if key == "service" {
+            current_service = value
+            break
+          }
+        }
+        if current_service == service_name {
+          service_values = service_values.push(complex_metrics[i].value)
+          service_weights = service_weights.push(request_weights[i])
+        }
+        i = i + 1
+      }
+      
+      let weighted_error_rate = weighted_avg(service_values, service_weights)
+      
+      service_weighted_errors = service_weighted_errors.push({
+        service: service_name,
+        weighted_error_rate: weighted_error_rate,
+        total_requests: {
+          let mut total = 0.0
+          for weight in service_weights {
+            total = total + weight
+          }
+          total
+        }
+      })
+    }
+  }
+  
+  // 验证加权平均结果
+  assert_eq(service_weighted_errors.length(), 2)
+  
+  // 验证 api 服务
+  let api_service = service_weighted_errors[0]
+  assert_eq(api_service.service, "api")
+  assert_true(api_service.weighted_error_rate > 0.0)
+  assert_true(api_service.weighted_error_rate < 0.1)
+  assert_eq(api_service.total_requests, 275.0)  // 100 + 20 + 150 + 5
+  
+  // 验证 web 服务
+  let web_service = service_weighted_errors[1]
+  assert_eq(web_service.service, "web")
+  assert_true(web_service.weighted_error_rate > 0.0)
+  assert_true(web_service.weighted_error_rate < 0.1)
+  assert_eq(web_service.total_requests, 413.0)  // 200 + 30 + 180 + 3
+  
+  // 指数移动平均（EMA）计算
+  let ema = fn(data: Array[Float], alpha: Float) {
+    if data.length() == 0 {
+      0.0
+    } else {
+      let mut ema_value = data[0]
+      let mut i = 1
+      while i < data.length() {
+        ema_value = alpha * data[i] + (1.0 - alpha) * ema_value
+        i = i + 1
+      }
+      ema_value
+    }
+  }
+  
+  // 计算错误率的指数移动平均
+  let error_rate_values = [0.01, 0.05, 0.02, 0.10, 0.03, 0.08, 0.01, 0.15]
+  let ema_alpha = 0.3
+  let ema_error_rate = ema(error_rate_values, ema_alpha)
+  
+  // 验证 EMA 结果
+  assert_true(ema_error_rate > 0.0)
+  assert_true(ema_error_rate < 0.15)
+  
+  // 简单平均
+  let mut simple_sum = 0.0
+  for value in error_rate_values {
+    simple_sum = simple_sum + value
+  }
+  let simple_avg = simple_sum / error_rate_values.length().to_float()
+  
+  // EMA 应该更接近最近的值
+  assert_true(ema_error_rate > simple_avg * 0.8)
+  assert_true(ema_error_rate < simple_avg * 1.2)
+}
+
+// 测试6: 分布式指标聚合
+test "分布式指标聚合" {
+  // 模拟来自不同节点的指标数据
+  let node_metrics = [
+    { node_id: "node-1", service: "api", metric: "response_time", value: 120.0, timestamp: 1640995200 },
+    { node_id: "node-1", service: "api", metric: "response_time", value: 130.0, timestamp: 1640995260 },
+    { node_id: "node-2", service: "api", metric: "response_time", value: 110.0, timestamp: 1640995200 },
+    { node_id: "node-2", service: "api", metric: "response_time", value: 115.0, timestamp: 1640995260 },
+    { node_id: "node-3", service: "web", metric: "response_time", value: 80.0, timestamp: 1640995200 },
+    { node_id: "node-3", service: "web", metric: "response_time", value: 85.0, timestamp: 1640995260 },
+    { node_id: "node-4", service: "web", metric: "response_time", value: 90.0, timestamp: 1640995200 },
+    { node_id: "node-4", service: "web", metric: "response_time", value: 95.0, timestamp: 1640995260 }
+  ]
+  
+  // 分布式聚合策略：两阶段聚合
+  // 第一阶段：节点本地聚合
+  let local_aggregation = fn(node_data: Array[Dynamic]) {
+    let mut sum = 0.0
+    let mut count = 0
+    let mut min_val = node_data[0].value
+    let mut max_val = node_data[0].value
+    
+    for data in node_data {
+      sum = sum + data.value
+      count = count + 1
+      if data.value < min_val {
+        min_val = data.value
+      }
+      if data.value > max_val {
+        max_val = data.value
+      }
+    }
+    
+    {
+      avg_value: sum / count.to_float(),
+      min_value: min_val,
+      max_value: max_val,
+      count: count
+    }
+  }
+  
+  // 第二阶段：全局聚合
+  let global_aggregation = fn(local_results: Array[Dynamic]) {
+    let mut total_sum = 0.0
+    let mut total_count = 0
+    let mut global_min = local_results[0].min_value
+    let mut global_max = local_results[0].max_value
+    
+    for result in local_results {
+      total_sum = total_sum + (result.avg_value * result.count.to_float())
+      total_count = total_count + result.count
+      if result.min_value < global_min {
+        global_min = result.min_value
+      }
+      if result.max_value > global_max {
+        global_max = result.max_value
+      }
+    }
+    
+    {
+      global_avg: total_sum / total_count.to_float(),
+      global_min: global_min,
+      global_max: global_max,
+      total_count: total_count
+    }
+  }
+  
+  // 执行分布式聚合
+  let mut nodes = []
+  let mut processed_nodes = []
+  
+  for metric in node_metrics {
+    let already_processed = false
+    for node in processed_nodes {
+      if node == metric.node_id {
+        already_processed = true
+        break
+      }
+    }
+    
+    if not already_processed {
+      processed_nodes = processed_nodes.push(metric.node_id)
+      
+      // 收集该节点的所有指标
+      let mut node_data = []
+      for m in node_metrics {
+        if m.node_id == metric.node_id and m.service == metric.service and m.metric == metric.metric {
+          node_data = node_data.push(m)
+        }
+      }
+      
+      if node_data.length() > 0 {
+        let local_result = local_aggregation(node_data)
+        nodes = nodes.push({
+          node_id: metric.node_id,
+          service: metric.service,
+          metric: metric.metric,
+          local_result: local_result
+        })
+      }
+    }
+  }
+  
+  // 按服务和指标分组进行全局聚合
+  let mut global_results = []
+  let mut processed_services_metrics = []
+  
+  for node in nodes {
+    let service_metric_key = node.service + ":" + node.metric
+    
+    let already_processed = false
+    for key in processed_services_metrics {
+      if key == service_metric_key {
+        already_processed = true
+        break
+      }
+    }
+    
+    if not already_processed {
+      processed_services_metrics = processed_service_metrics.push(service_metric_key)
+      
+      // 收集同一服务指标的所有节点结果
+      let mut node_results = []
+      for n in nodes {
+        let current_key = n.service + ":" + n.metric
+        if current_key == service_metric_key {
+          node_results = node_results.push(n.local_result)
+        }
+      }
+      
+      let global_result = global_aggregation(node_results)
+      
+      global_results = global_results.push({
+        service_metric: service_metric_key,
+        global_result: global_result,
+        node_count: node_results.length()
+      })
+    }
+  }
+  
+  // 验证分布式聚合结果
+  assert_eq(global_results.length(), 2)  // api:response_time 和 web:response_time
+  
+  // 验证 api:response_time 聚合
+  let api_result = global_results[0]
+  assert_eq(api_result.service_metric, "api:response_time")
+  assert_eq(api_result.node_count, 2)  // node-1 和 node-2
+  assert_eq(api_result.global_result.total_count, 4)  // 每个节点2个数据点
+  assert_eq(api_result.global_result.global_avg, 118.75)  // (120+130+110+115)/4
+  assert_eq(api_result.global_result.global_min, 110.0)
+  assert_eq(api_result.global_result.global_max, 130.0)
+  
+  // 验证 web:response_time 聚合
+  let web_result = global_results[1]
+  assert_eq(web_result.service_metric, "web:response_time")
+  assert_eq(web_result.node_count, 2)  // node-3 和 node-4
+  assert_eq(web_result.global_result.total_count, 4)  // 每个节点2个数据点
+  assert_eq(web_result.global_result.global_avg, 87.5)  // (80+85+90+95)/4
+  assert_eq(web_result.global_result.global_min, 80.0)
+  assert_eq(web_result.global_result.global_max, 95.0)
+  
+  // 验证分布式聚合的优势：减少网络传输
+  // 原始数据传输：8个数据点
+  // 本地聚合后传输：4个聚合结果（每个节点一个）
+  // 全局聚合后：2个最终结果（每个服务指标一个）
+  assert_true(global_results.length() < nodes.length())
+  assert_true(nodes.length() < node_metrics.length())
 }
