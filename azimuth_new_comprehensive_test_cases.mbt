@@ -1,473 +1,603 @@
-// Azimuth Telemetry System - New Comprehensive Test Cases
-// This file contains new test cases for various telemetry system functionalities
+// Azimuth New Comprehensive Test Cases
+// 新的综合测试用例，涵盖各种功能场景
 
-// Test 1: Telemetry Data Aggregation
-test "telemetry data aggregation" {
-  let aggregator = TelemetryAggregator::new()
-  
-  // Test adding metrics
-  TelemetryAggregator::add_metric(aggregator, "cpu_usage", 75.5)
-  TelemetryAggregator::add_metric(aggregator, "memory_usage", 62.3)
-  TelemetryAggregator::add_metric(aggregator, "cpu_usage", 80.2)
-  
-  // Test getting aggregated metrics
-  let cpu_metrics = TelemetryAggregator::get_metrics(aggregator, "cpu_usage")
-  assert_eq(cpu_metrics.length(), 2)
-  assert_eq(cpu_metrics[0], 75.5)
-  assert_eq(cpu_metrics[1], 80.2)
-  
-  // Test calculating average
-  let cpu_avg = TelemetryAggregator::calculate_average(aggregator, "cpu_usage")
-  match cpu_avg {
-    Some(avg) => assert_eq(avg, 77.85)
-    None => assert_true(false)
+test "telemetry data validation and sanitization" {
+  // 测试遥测数据验证和清理
+  let raw_data = @azimuth.RawTelemetryData {
+    timestamp : -1L, // 无效时间戳
+    trace_id : "", // 空trace_id
+    span_id : "invalid", // 无效span_id
+    operation_name : "", // 空操作名
+    attributes : [
+      ("key.with.dots", @azimuth.StringValue("value1")), // 包含点的键
+      ("key with spaces", @azimuth.StringValue("value2")), // 包含空格的键
+      ("", @azimuth.StringValue("value3")), // 空键
+      ("valid.key", @azimuth.StringValue("")) // 空值
+    ]
   }
   
-  // Test non-existent metric
-  let non_existent = TelemetryAggregator::get_metrics(aggregator, "network_usage")
-  assert_eq(non_existent.length(), 0)
-}
-
-// Test 2: Distributed Tracing Consistency
-test "distributed tracing consistency" {
-  let trace_id = "1234567890abcdef1234567890abcdef"
-  let parent_span_id = "abcdef1234567890"
+  // 数据验证和清理
+  let validated_data = @azimuth.validate_and_sanitize(raw_data)
   
-  // Create parent span
-  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "")
-  let parent_span = Span::new("parent_operation", Server, parent_ctx)
+  // 验证清理后的数据
+  assert_true(validated_data.timestamp >= 0L)
+  assert_true(validated_data.trace_id.length() > 0)
+  assert_true(validated_data.span_id.length() > 0)
+  assert_true(validated_data.operation_name.length() > 0)
   
-  // Create child span
-  let child_span_id = "fedcba0987654321"
-  let child_ctx = SpanContext::new(trace_id, child_span_id, true, "")
-  let child_span = Span::new("child_operation", Client, child_ctx)
+  // 验证属性清理
+  let sanitized_attrs = validated_data.attributes
+  assert_true(sanitized_attrs.length() <= raw_data.attributes.length())
   
-  // Test trace ID consistency
-  assert_eq(SpanContext::trace_id(Span::span_context(parent_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(child_span)), trace_id)
-  
-  // Test span relationship
-  assert_not_eq(SpanContext::span_id(Span::span_context(parent_span)), 
-                SpanContext::span_id(Span::span_context(child_span)))
-  
-  // Test span hierarchy
-  Span::add_event(parent_span, "parent_event", Some([("event_type", StringValue("start"))]))
-  Span::add_event(child_span, "child_event", Some([("event_type", StringValue("process"))]))
-  
-  // End spans in correct order
-  Span::end(child_span)
-  Span::end(parent_span)
-}
-
-// Test 3: Performance Benchmark Tests
-test "performance benchmark tests" {
-  let start_time = Time::now()
-  
-  // Test span creation performance
-  let mut spans = []
-  for i in 0..1000 {
-    let span_ctx = SpanContext::new("trace_id", "span_id_" + i.to_string(), true, "")
-    let span = Span::new("performance_test_" + i.to_string(), Internal, span_ctx)
-    spans.push(span)
-  }
-  
-  let span_creation_time = Time::now()
-  let span_creation_duration = span_creation_time - start_time
-  
-  // Test metric collection performance
-  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "performance_meter")
-  let counter = Meter::create_counter(meter, "performance_counter", None, None)
-  
-  for i in 0..1000 {
-    Counter::add(counter, i.to_float())
-  }
-  
-  let metric_collection_time = Time::now()
-  let metric_collection_duration = metric_collection_time - span_creation_time
-  
-  // Test log emission performance
-  let logger = LoggerProvider::default() |> LoggerProvider::get_logger(_, "performance_logger")
-  
-  for i in 0..1000 {
-    let log_record = LogRecord::new(Info, "Performance log " + i.to_string())
-    Logger::emit(logger, log_record)
-  }
-  
-  let log_emission_time = Time::now()
-  let log_emission_duration = log_emission_time - metric_collection_time
-  
-  // Verify performance is within acceptable bounds
-  assert_true(span_creation_duration < 1000) // Less than 1 second
-  assert_true(metric_collection_duration < 500) // Less than 0.5 seconds
-  assert_true(log_emission_duration < 1000) // Less than 1 second
-  
-  // Clean up spans
-  for span in spans {
-    Span::end(span)
+  // 验证无效键被过滤或替换
+  for attr in sanitized_attrs {
+    assert_true(attr.0.length() > 0)
+    assert_false(attr.0.contains("."))
+    assert_false(attr.0.contains(" "))
   }
 }
 
-// Test 4: Error Handling and Recovery
-test "error handling and recovery" {
-  let error_handler = ErrorHandler::new()
-  
-  // Test error registration
-  ErrorHandler::register_error_type(error_handler, "network_timeout", "Network operation timed out")
-  ErrorHandler::register_error_type(error_handler, "invalid_data", "Received invalid data format")
-  
-  // Test error occurrence
-  ErrorHandler::report_error(error_handler, "network_timeout", Some(["url", "timeout_ms"]))
-  ErrorHandler::report_error(error_handler, "invalid_data", Some(["data_format", "expected_format"]))
-  
-  // Test error statistics
-  let network_timeout_count = ErrorHandler::get_error_count(error_handler, "network_timeout")
-  assert_eq(network_timeout_count, 1)
-  
-  let invalid_data_count = ErrorHandler::get_error_count(error_handler, "invalid_data")
-  assert_eq(invalid_data_count, 1)
-  
-  // Test error recovery strategies
-  let recovery_strategy = ErrorHandler::get_recovery_strategy(error_handler, "network_timeout")
-  match recovery_strategy {
-    Some(strategy) => assert_eq(strategy, "retry_with_backoff")
-    None => assert_true(false)
+test "adaptive sampling strategy with dynamic thresholds" {
+  // 测试具有动态阈值的自适应采样策略
+  let sampling_strategy = @azimuth.AdaptiveSamplingStrategy {
+    base_probability : 0.1,
+    max_probability : 0.5,
+    min_probability : 0.01,
+    error_rate_threshold : 0.05,
+    latency_threshold_ms : 1000L,
+    throughput_threshold : 10000,
+    adjustment_factor : 1.5,
+    evaluation_window_ms : 60000L
   }
   
-  // Test error threshold and circuit breaking
-  ErrorHandler::set_error_threshold(error_handler, "network_timeout", 5)
-  for i in 0..6 {
-    ErrorHandler::report_error(error_handler, "network_timeout", None)
+  // 模拟不同的系统状态
+  let normal_state = @azimuth.SystemMetrics {
+    error_rate : 0.02, // 低于阈值
+    avg_latency_ms : 500L, // 低于阈值
+    throughput : 5000 // 低于阈值
   }
   
-  let is_circuit_open = ErrorHandler::is_circuit_open(error_handler, "network_timeout")
-  assert_true(is_circuit_open)
+  let high_error_state = @azimuth.SystemMetrics {
+    error_rate : 0.1, // 高于阈值
+    avg_latency_ms : 500L,
+    throughput : 5000
+  }
+  
+  let high_latency_state = @azimuth.SystemMetrics {
+    error_rate : 0.02,
+    avg_latency_ms : 2000L, // 高于阈值
+    throughput : 5000
+  }
+  
+  // 计算不同状态下的采样概率
+  let normal_prob = @azimuth.calculate_sampling_probability(sampling_strategy, normal_state)
+  let high_error_prob = @azimuth.calculate_sampling_probability(sampling_strategy, high_error_state)
+  let high_latency_prob = @azimuth.calculate_sampling_probability(sampling_strategy, high_latency_state)
+  
+  // 验证采样概率调整
+  assert_true(normal_prob >= sampling_strategy.min_probability)
+  assert_true(normal_prob <= sampling_strategy.max_probability)
+  assert_true(high_error_prob > normal_prob) // 高错误率应增加采样
+  assert_true(high_latency_prob > normal_prob) // 高延迟应增加采样
 }
 
-// Test 5: Concurrent Safety Tests
-test "concurrent safety tests" {
-  let shared_resource = ConcurrentResource::new()
-  let mut results = []
-  
-  // Test concurrent span operations
-  let mut handles = []
-  for i in 0..10 {
-    let handle = ConcurrentTask::spawn(fn() {
-      let span_ctx = SpanContext::new("concurrent_trace", "span_" + i.to_string(), true, "")
-      let span = Span::new("concurrent_operation", Internal, span_ctx)
-      
-      // Add events concurrently
-      Span::add_event(span, "event_" + i.to_string(), None)
-      
-      // Simulate some work
-      Time::sleep(10)
-      
-      Span::end(span)
-      return i * 2
-    })
-    handles.push(handle)
-  }
-  
-  // Collect results
-  for handle in handles {
-    let result = ConcurrentTask::join(handle)
-    results.push(result)
-  }
-  
-  // Verify all operations completed successfully
-  assert_eq(results.length(), 10)
-  for i in 0..10 {
-    assert_eq(results[i], i * 2)
-  }
-  
-  // Test concurrent metric updates
-  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "concurrent_meter")
-  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
-  
-  let mut metric_handles = []
-  for i in 0..10 {
-    let handle = ConcurrentTask::spawn(fn() {
-      for j in 0..10 {
-        Counter::add(counter, 1.0)
+test "telemetry data compression with multiple algorithms" {
+  // 测试使用多种算法的遥测数据压缩
+  let telemetry_batch = @azimuth.TelemetryBatch {
+    batch_id : "batch-12345",
+    timestamp : 1640995200000L,
+    items : [
+      @azimuth.TelemetryItem {
+        trace_id : "trace1",
+        span_id : "span1",
+        operation_name : "http.get",
+        attributes : [
+          ("http.method", @azimuth.StringValue("GET")),
+          ("http.url", @azimuth.StringValue("/api/users")),
+          ("http.status_code", @azimuth.IntValue(200))
+        ]
+      },
+      @azimuth.TelemetryItem {
+        trace_id : "trace2",
+        span_id : "span2",
+        operation_name : "db.query",
+        attributes : [
+          ("db.type", @azimuth.StringValue("postgresql")),
+          ("db.statement", @azimuth.StringValue("SELECT * FROM users")),
+          ("db.duration_ms", @azimuth.IntValue(150))
+        ]
       }
-      return 10
-    })
-    metric_handles.push(handle)
+    ]
   }
   
-  // Wait for all metric operations to complete
-  for handle in metric_handles {
-    ConcurrentTask::join(handle)
-  }
+  // 测试不同的压缩算法
+  let gzip_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::Gzip)
+  let lz4_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::LZ4)
+  let zstd_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::Zstd)
+  
+  // 验证压缩结果
+  assert_true(gzip_compressed.compressed_size > 0)
+  assert_true(lz4_compressed.compressed_size > 0)
+  assert_true(zstd_compressed.compressed_size > 0)
+  
+  // 验证解压缩后数据一致性
+  let gzip_decompressed = @azimuth.decompress_batch(gzip_compressed, @azimuth.CompressionAlgorithm::Gzip)
+  let lz4_decompressed = @azimuth.decompress_batch(lz4_compressed, @azimuth.CompressionAlgorithm::LZ4)
+  let zstd_decompressed = @azimuth.decompress_batch(zstd_compressed, @azimuth.CompressionAlgorithm::Zstd)
+  
+  assert_eq(gzip_decompressed.batch_id, telemetry_batch.batch_id)
+  assert_eq(lz4_decompressed.batch_id, telemetry_batch.batch_id)
+  assert_eq(zstd_decompressed.batch_id, telemetry_batch.batch_id)
+  assert_eq(gzip_decompressed.items.length(), telemetry_batch.items.length())
+  assert_eq(lz4_decompressed.items.length(), telemetry_batch.items.length())
+  assert_eq(zstd_decompressed.items.length(), telemetry_batch.items.length())
 }
 
-// Test 6: Serialization and Deserialization
-test "serialization and deserialization" {
-  // Test span serialization
-  let span_ctx = SpanContext::new("trace_id", "span_id", true, "test_state")
-  let span = Span::new("test_span", Server, span_ctx)
-  Span::add_event(span, "test_event", Some([("key1", StringValue("value1"))]))
-  
-  let serialized_span = Serialization::serialize_span(span)
-  assert_true(serialized_span.length() > 0)
-  
-  let deserialized_span = Serialization::deserialize_span(serialized_span)
-  match deserialized_span {
-    Some(restored_span) => {
-      assert_eq(Span::name(restored_span), "test_span")
-      match Span::kind(restored_span) {
-        Server => assert_true(true)
-        _ => assert_true(false)
+test "metric aggregation with time window bucketing" {
+  // 测试时间窗口桶的指标聚合
+  let time_series_metrics = @azimuth.TimeSeriesMetrics {
+    metric_name : "response.time",
+    metric_type : @azimuth.MetricType::Histogram,
+    time_buckets : [
+      @azimuth.TimeBucket {
+        start_time : 1640995200000L, // 2022-01-01 00:00:00
+        end_time : 1640995260000L,   // 2022-01-01 00:01:00
+        values : [100.0, 150.0, 200.0, 120.0, 180.0],
+        count : 5,
+        sum : 750.0
+      },
+      @azimuth.TimeBucket {
+        start_time : 1640995260000L, // 2022-01-01 00:01:00
+        end_time : 1640995320000L,   // 2022-01-01 00:02:00
+        values : [90.0, 110.0, 130.0, 160.0, 140.0],
+        count : 5,
+        sum : 630.0
+      },
+      @azimuth.TimeBucket {
+        start_time : 1640995320000L, // 2022-01-01 00:02:00
+        end_time : 1640995380000L,   // 2022-01-01 00:03:00
+        values : [80.0, 95.0, 115.0, 125.0, 135.0],
+        count : 5,
+        sum : 550.0
       }
-    }
-    None => assert_true(false)
+    ]
   }
   
-  // Test metric serialization
-  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "serialization_meter")
-  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
+  // 计算聚合统计
+  let aggregated_stats = @azimuth.calculate_aggregated_stats(time_series_metrics)
   
-  let serialized_metrics = Serialization::serialize_metrics(histogram)
-  assert_true(serialized_metrics.length() > 0)
+  // 验证聚合结果
+  assert_eq(aggregated_stats.total_count, 15) // 3个桶，每个5个值
+  assert_eq(aggregated_stats.total_sum, 1930.0) // 750 + 630 + 550
+  assert_true(aggregated_stats.avg_value > 0.0)
+  assert_true(aggregated_stats.min_value > 0.0)
+  assert_true(aggregated_stats.max_value > 0.0)
+  assert_true(aggregated_stats.p50_value > 0.0)
+  assert_true(aggregated_stats.p95_value > 0.0)
+  assert_true(aggregated_stats.p99_value > 0.0)
   
-  let deserialized_metrics = Serialization::deserialize_metrics(serialized_metrics)
-  match deserialized_metrics {
-    Some(restored_metrics) => {
-      assert_eq(Instrument::name(restored_metrics), "test_histogram")
-      assert_eq(Instrument::description(restored_metrics), Some("Test histogram"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Test log record serialization
-  let log_record = LogRecord::new(Error, "Test error message")
-  let serialized_log = Serialization::serialize_log_record(log_record)
-  assert_true(serialized_log.length() > 0)
-  
-  let deserialized_log = Serialization::deserialize_log_record(serialized_log)
-  match deserialized_log {
-    Some(restored_log) => {
-      assert_eq(LogRecord::severity_number(restored_log), Error)
-      match LogRecord::body(restored_log) {
-        Some(body) => assert_eq(body, "Test error message")
-        None => assert_true(false)
+  // 验证百分位数计算
+  assert_true(aggregated_stats.p50_value <= aggregated_stats.p95_value)
+  assert_true(aggregated_stats.p95_value <= aggregated_stats.p99_value)
+  assert_true(aggregated_stats.p99_value <= aggregated_stats.max_value)
+}
+
+test "distributed tracing with service mesh integration" {
+  // 测试与服务网格集成的分布式追踪
+  let service_mesh_trace = @azimuth.ServiceMeshTrace {
+    trace_id : "mesh-trace-12345",
+    mesh_protocol : "istio",
+    ingress_gateway : @azimuth.GatewaySpan {
+      gateway_name : "istio-ingressgateway",
+      span_id : "ingress-span-123",
+      start_time : 1640995200000L,
+      end_time : Some(1640995200100L),
+      attributes : [
+        ("request.protocol", @azimuth.StringValue("http")),
+        ("request.host", @azimuth.StringValue("api.example.com")),
+        ("request.method", @azimuth.StringValue("POST")),
+        ("request.path", @azimuth.StringValue("/api/v1/orders")),
+        ("response.code", @azimuth.IntValue(201))
+      ]
+    },
+    service_spans : [
+      @azimuth.MeshServiceSpan {
+        service_name : "orders-service",
+        span_id : "orders-span-456",
+        parent_span_id : Some("ingress-span-123"),
+        start_time : 1640995200050L,
+        end_time : Some(1640995200200L),
+        attributes : [
+          ("service.version", @azimuth.StringValue("v1.2.3")),
+          ("service.namespace", @azimuth.StringValue("production")),
+          ("operation", @azimuth.StringValue("createOrder")),
+          ("db.query.count", @azimuth.IntValue(3))
+        ]
+      },
+      @azimuth.MeshServiceSpan {
+        service_name : "payment-service",
+        span_id : "payment-span-789",
+        parent_span_id : Some("orders-span-456"),
+        start_time : 1640995200100L,
+        end_time : Some(1640995200180L),
+        attributes : [
+          ("service.version", @azimuth.StringValue("v2.1.0")),
+          ("service.namespace", @azimuth.StringValue("production")),
+          ("operation", @azimuth.StringValue("processPayment")),
+          ("payment.gateway", @azimuth.StringValue("stripe"))
+        ]
       }
+    ],
+    egress_gateway : @azimuth.GatewaySpan {
+      gateway_name : "istio-egressgateway",
+      span_id : "egress-span-999",
+      start_time : 1640995200200L,
+      end_time : Some(1640995200250L),
+      attributes : [
+        ("external.service", @azimuth.StringValue("payment-gateway")),
+        ("external.endpoint", @azimuth.StringValue("https://api.stripe.com")),
+        ("request.method", @azimuth.StringValue("POST")),
+        ("response.code", @azimuth.IntValue(200))
+      ]
     }
+  }
+  
+  // 验证服务网格追踪结构
+  assert_eq(service_mesh_trace.trace_id, "mesh-trace-12345")
+  assert_eq(service_mesh_trace.mesh_protocol, "istio")
+  assert_eq(service_mesh_trace.service_spans.length(), 2)
+  
+  // 验证时间顺序
+  assert_true(service_mesh_trace.ingress_gateway.start_time <= service_mesh_trace.service_spans[0].start_time)
+  assert_true(service_mesh_trace.service_spans[0].start_time <= service_mesh_trace.service_spans[1].start_time)
+  assert_true(service_mesh_trace.service_spans[1].start_time <= service_mesh_trace.egress_gateway.start_time)
+  
+  // 验证父子关系
+  match service_mesh_trace.service_spans[0].parent_span_id {
+    Some(parent) => assert_eq(parent, service_mesh_trace.ingress_gateway.span_id)
+    None => assert_true(false)
+  }
+  
+  match service_mesh_trace.service_spans[1].parent_span_id {
+    Some(parent) => assert_eq(parent, service_mesh_trace.service_spans[0].span_id)
     None => assert_true(false)
   }
 }
 
-// Test 7: Internationalization Support
-test "internationalization support" {
-  let i18n_provider = I18nProvider::new()
-  
-  // Test different locales
-  I18nProvider::add_locale(i18n_provider, "en", "English")
-  I18nProvider::add_locale(i18n_provider, "zh", "中文")
-  I18nProvider::add_locale(i18n_provider, "es", "Español")
-  I18nProvider::add_locale(i18n_provider, "fr", "Français")
-  
-  // Test localized messages
-  I18nProvider::add_message(i18n_provider, "en", "operation_success", "Operation completed successfully")
-  I18nProvider::add_message(i18n_provider, "zh", "operation_success", "操作成功完成")
-  I18nProvider::add_message(i18n_provider, "es", "operation_success", "Operación completada con éxito")
-  I18nProvider::add_message(i18n_provider, "fr", "operation_success", "Opération terminée avec succès")
-  
-  // Test message retrieval
-  let en_message = I18nProvider::get_message(i18n_provider, "en", "operation_success")
-  match en_message {
-    Some(msg) => assert_eq(msg, "Operation completed successfully")
-    None => assert_true(false)
+test "telemetry data retention and archival policies" {
+  // 测试遥测数据保留和归档策略
+  let retention_policy = @azimuth.RetentionPolicy {
+    hot_storage_days : 7,
+    warm_storage_days : 30,
+    cold_storage_days : 365,
+    archival_after_days : 365,
+    delete_after_days : 2555, // 7年
+    compression_enabled : true,
+    encryption_enabled : true,
+    sampling_for_long_term : true,
+    long_term_sampling_rate : 0.01
   }
   
-  let zh_message = I18nProvider::get_message(i18n_provider, "zh", "operation_success")
-  match zh_message {
-    Some(msg) => assert_eq(msg, "操作成功完成")
-    None => assert_true(false)
+  // 模拟不同年龄的数据
+  let current_time = 1640995200000L // 2022-01-01 00:00:00
+  let hot_data = @azimuth.TelemetryData {
+    timestamp : current_time - (3 * 24 * 60 * 60 * 1000), // 3天前
+    trace_id : "hot-trace-123",
+    data_size_bytes : 1024,
+    storage_tier : @azimuth.StorageTier::Hot
   }
   
-  let es_message = I18nProvider::get_message(i18n_provider, "es", "operation_success")
-  match es_message {
-    Some(msg) => assert_eq(msg, "Operación completada con éxito")
-    None => assert_true(false)
+  let warm_data = @azimuth.TelemetryData {
+    timestamp : current_time - (15 * 24 * 60 * 60 * 1000), // 15天前
+    trace_id : "warm-trace-456",
+    data_size_bytes : 1024,
+    storage_tier : @azimuth.StorageTier::Warm
   }
   
-  let fr_message = I18nProvider::get_message(i18n_provider, "fr", "operation_success")
-  match fr_message {
-    Some(msg) => assert_eq(msg, "Opération terminée avec succès")
-    None => assert_true(false)
+  let cold_data = @azimuth.TelemetryData {
+    timestamp : current_time - (100 * 24 * 60 * 60 * 1000), // 100天前
+    trace_id : "cold-trace-789",
+    data_size_bytes : 1024,
+    storage_tier : @azimuth.StorageTier::Cold
   }
   
-  // Test fallback to default locale
-  let non_existent_message = I18nProvider::get_message(i18n_provider, "de", "operation_success")
-  match non_existent_message {
-    Some(msg) => assert_eq(msg, "Operation completed successfully") // Fallback to English
-    None => assert_true(false)
+  let archival_data = @azimuth.TelemetryData {
+    timestamp : current_time - (400 * 24 * 60 * 60 * 1000), // 400天前
+    trace_id : "archival-trace-999",
+    data_size_bytes : 1024,
+    storage_tier : @azimuth.StorageTier::Archival
   }
   
-  // Test localized error messages
-  I18nProvider::add_message(i18n_provider, "en", "network_error", "Network connection failed")
-  I18nProvider::add_message(i18n_provider, "zh", "network_error", "网络连接失败")
+  // 应用保留策略
+  let hot_policy = @azimuth.apply_retention_policy(retention_policy, hot_data, current_time)
+  let warm_policy = @azimuth.apply_retention_policy(retention_policy, warm_data, current_time)
+  let cold_policy = @azimuth.apply_retention_policy(retention_policy, cold_data, current_time)
+  let archival_policy = @azimuth.apply_retention_policy(retention_policy, archival_data, current_time)
   
-  let en_error = I18nProvider::get_message(i18n_provider, "en", "network_error")
-  match en_error {
-    Some(msg) => assert_eq(msg, "Network connection failed")
-    None => assert_true(false)
-  }
-  
-  let zh_error = I18nProvider::get_message(i18n_provider, "zh", "network_error")
-  match zh_error {
-    Some(msg) => assert_eq(msg, "网络连接失败")
-    None => assert_true(false)
-  }
-}
-
-// Test 8: Resource Management
-test "resource management" {
-  let resource_manager = ResourceManager::new()
-  
-  // Test resource registration
-  ResourceManager::register_resource(resource_manager, "database_connection", "active")
-  ResourceManager::register_resource(resource_manager, "memory_pool", "available")
-  ResourceManager::register_resource(resource_manager, "thread_pool", "active")
-  
-  // Test resource state tracking
-  let db_state = ResourceManager::get_resource_state(resource_manager, "database_connection")
-  match db_state {
-    Some(state) => assert_eq(state, "active")
-    None => assert_true(false)
-  }
-  
-  // Test resource allocation
-  let allocation_success = ResourceManager::allocate_resource(resource_manager, "memory_pool", 1024)
-  assert_true(allocation_success)
-  
-  let memory_usage = ResourceManager::get_resource_usage(resource_manager, "memory_pool")
-  match memory_usage {
-    Some(usage) => assert_eq(usage, 1024)
-    None => assert_true(false)
-  }
-  
-  // Test resource deallocation
-  let deallocation_success = ResourceManager::deallocate_resource(resource_manager, "memory_pool", 512)
-  assert_true(deallocation_success)
-  
-  let updated_memory_usage = ResourceManager::get_resource_usage(resource_manager, "memory_pool")
-  match updated_memory_usage {
-    Some(usage) => assert_eq(usage, 512)
-    None => assert_true(false)
-  }
-  
-  // Test resource limits
-  ResourceManager::set_resource_limit(resource_manager, "memory_pool", 2048)
-  let exceeded_limit = ResourceManager::allocate_resource(resource_manager, "memory_pool", 2048)
-  assert_false(exceeded_limit) // Should fail as it would exceed the limit
-  
-  // Test resource cleanup
-  ResourceManager::cleanup_resource(resource_manager, "database_connection")
-  let cleaned_up_state = ResourceManager::get_resource_state(resource_manager, "database_connection")
-  match cleaned_up_state {
-    Some(state) => assert_eq(state, "cleaned_up")
-    None => assert_true(false)
-  }
-}
-
-// Test 9: Advanced Data Processing Pipeline
-test "advanced data processing pipeline" {
-  let pipeline = DataPipeline::new()
-  
-  // Configure pipeline stages
-  DataPipeline::add_stage(pipeline, "data_validation", fn(data) {
-    // Validate data format
-    match data {
-      String(_) => true
-      _ => false
-    }
-  })
-  
-  DataPipeline::add_stage(pipeline, "data_transformation", fn(data) {
-    // Transform data
-    match data {
-      String(s) => String(s.uppercase())
-      _ => data
-    }
-  })
-  
-  DataPipeline::add_stage(pipeline, "data_enrichment", fn(data) {
-    // Enrich data with metadata
-    match data {
-      String(s) => Array([data, String("processed_at_" + Time::now().to_string())])
-      _ => data
-    }
-  })
-  
-  // Process data through pipeline
-  let input_data = String("test_data")
-  let result = DataPipeline::process(pipeline, input_data)
-  
-  match result {
-    Array(processed_data) => {
-      assert_eq(processed_data.length(), 2)
-      match processed_data[0] {
-        String(transformed) => assert_eq(transformed, "TEST_DATA")
-        _ => assert_true(false)
-      }
-    }
+  // 验证策略应用结果
+  match hot_policy.action {
+    @azimuth.RetentionAction::Keep => assert_true(true)
     _ => assert_true(false)
   }
   
-  // Test pipeline with invalid data
-  let invalid_data = 123
-  let invalid_result = DataPipeline::process(pipeline, invalid_data)
-  match invalid_result {
-    Error(_) => assert_true(true) // Should fail validation
+  match warm_policy.action {
+    @azimuth.RetentionAction::Keep => assert_true(true)
     _ => assert_true(false)
   }
   
-  // Test batch processing
-  let batch_data = [String("item1"), String("item2"), String("item3")]
-  let batch_results = DataPipeline::process_batch(pipeline, batch_data)
-  assert_eq(batch_results.length(), 3)
-  
-  for result in batch_results {
-    match result {
-      Array(_) => assert_true(true)
-      _ => assert_true(false)
-    }
+  match cold_policy.action {
+    @azimuth.RetentionAction::Keep => assert_true(true)
+    _ => assert_true(false)
   }
+  
+  match archival_policy.action {
+    @azimuth.RetentionAction::Archive => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证存储层分配
+  assert_eq(hot_policy.target_tier, Some(@azimuth.StorageTier::Hot))
+  assert_eq(warm_policy.target_tier, Some(@azimuth.StorageTier::Warm))
+  assert_eq(cold_policy.target_tier, Some(@azimuth.StorageTier::Cold))
+  assert_eq(archival_policy.target_tier, Some(@azimuth.StorageTier::Archival))
 }
 
-// Test 10: Cross-Platform Compatibility
-test "cross-platform compatibility" {
-  let platform_adapter = PlatformAdapter::new()
+test "telemetry dashboard visualization data preparation" {
+  // 测试遥测仪表板可视化数据准备
+  let dashboard_config = @azimuth.DashboardConfig {
+    dashboard_id : "main-operations",
+    title : "Main Operations Dashboard",
+    refresh_interval_seconds : 30,
+    time_range_hours : 24,
+    widgets : [
+      @azimuth.WidgetConfig {
+        widget_id : "request-rate",
+        widget_type : @azimuth.WidgetType::TimeSeriesChart,
+        title : "Request Rate",
+        metrics : ["http.requests.total"],
+        aggregation : @azimuth.AggregationType::Rate,
+        group_by : ["service.name", "http.method"]
+      },
+      @azimuth.WidgetConfig {
+        widget_id : "error-rate",
+        widget_type : @azimuth.WidgetType::GaugeChart,
+        title : "Error Rate",
+        metrics : ["http.errors.total"],
+        aggregation : @azimuth.AggregationType::Percentage,
+        group_by : ["service.name"]
+      },
+      @azimuth.WidgetConfig {
+        widget_id : "response-time",
+        widget_type : @azimuth.WidgetType::Heatmap,
+        title : "Response Time Distribution",
+        metrics : ["http.request.duration"],
+        aggregation : @azimuth.AggregationType::Percentile,
+        group_by : ["service.name", "endpoint"]
+      }
+    ]
+  }
   
-  // Test platform detection
-  let current_platform = PlatformAdapter::detect_platform(platform_adapter)
-  assert_true(current_platform == "linux" || current_platform == "windows" || current_platform == "macos")
+  // 模拟原始遥测数据
+  let raw_telemetry = @azimuth.RawTelemetryDataset {
+    timestamp : 1640995200000L,
+    data_points : [
+      @azimuth.DataPoint {
+        metric_name : "http.requests.total",
+        value : 1000.0,
+        attributes : [
+          ("service.name", @azimuth.StringValue("api-gateway")),
+          ("http.method", @azimuth.StringValue("GET")),
+          ("http.status_code", @azimuth.IntValue(200))
+        ]
+      },
+      @azimuth.DataPoint {
+        metric_name : "http.requests.total",
+        value : 500.0,
+        attributes : [
+          ("service.name", @azimuth.StringValue("api-gateway")),
+          ("http.method", @azimuth.StringValue("POST")),
+          ("http.status_code", @azimuth.IntValue(201))
+        ]
+      },
+      @azimuth.DataPoint {
+        metric_name : "http.errors.total",
+        value : 50.0,
+        attributes : [
+          ("service.name", @azimuth.StringValue("api-gateway")),
+          ("error.type", @azimuth.StringValue("timeout"))
+        ]
+      },
+      @azimuth.DataPoint {
+        metric_name : "http.request.duration",
+        value : 150.0,
+        attributes : [
+          ("service.name", @azimuth.StringValue("user-service")),
+          ("endpoint", @azimuth.StringValue("/api/users")),
+          ("percentile", @azimuth.StringValue("p95"))
+        ]
+      }
+    ]
+  }
   
-  // Test platform-specific operations
-  let file_path = PlatformAdapter::get_platform_specific_path(platform_adapter, "/tmp/test_file")
-  assert_true(file_path.length() > 0)
+  // 准备仪表板数据
+  let dashboard_data = @azimuth.prepare_dashboard_data(dashboard_config, raw_telemetry)
   
-  // Test platform-specific time formatting
-  let timestamp = Time::now()
-  let formatted_time = PlatformAdapter::format_time(platform_adapter, timestamp)
-  assert_true(formatted_time.length() > 0)
+  // 验证仪表板数据准备
+  assert_eq(dashboard_data.dashboard_id, dashboard_config.dashboard_id)
+  assert_eq(dashboard_data.widgets.length(), dashboard_config.widgets.length())
   
-  // Test platform-specific environment variables
-  let env_var = PlatformAdapter::get_platform_env_var(platform_adapter, "PATH")
-  assert_true(env_var.length() > 0)
+  // 验证请求数率图表数据
+  let request_rate_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "request-rate" })
+  assert_eq(request_rate_widget.length(), 1)
+  assert_eq(request_rate_widget[0].data_series.length(), 2) // GET和POST
   
-  // Test platform-specific network configuration
-  let network_config = PlatformAdapter::get_network_config(platform_adapter)
-  assert_true(network_config.length() > 0)
+  // 验证错误率仪表数据
+  let error_rate_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "error-rate" })
+  assert_eq(error_rate_widget.length(), 1)
+  assert_true(error_rate_widget[0].current_value > 0.0)
   
-  // Test platform-specific telemetry collection
-  let telemetry_data = PlatformAdapter::collect_platform_telemetry(platform_adapter)
-  assert_true(telemetry_data.length() > 0)
+  // 验证响应时间热力图数据
+  let response_time_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "response-time" })
+  assert_eq(response_time_widget.length(), 1)
+  assert_eq(response_time_widget[0].heatmap_data.length(), 1)
+}
+
+test "telemetry data export and import across formats" {
+  // 测试跨格式的遥测数据导出和导入
+  let telemetry_dataset = @azimuth.TelemetryDataset {
+    dataset_id : "export-test-123",
+    created_at : 1640995200000L,
+    traces : [
+      @azimuth.ExportableTrace {
+        trace_id : "trace-123",
+        spans : [
+          @azimuth.ExportableSpan {
+            span_id : "span-123",
+            parent_span_id : None,
+            operation_name : "http.get",
+            start_time : 1640995200000L,
+            end_time : Some(1640995200100L),
+            status : @azimuth.SpanStatus::Ok,
+            attributes : [
+              ("http.method", @azimuth.StringValue("GET")),
+              ("http.url", @azimuth.StringValue("/api/users")),
+              ("http.status_code", @azimuth.IntValue(200))
+            ]
+          }
+        ]
+      }
+    ],
+    metrics : [
+      @azimuth.ExportableMetric {
+        name : "http.requests.total",
+        value : 1000.0,
+        timestamp : 1640995200000L,
+        attributes : [
+          ("service.name", @azimuth.StringValue("api-gateway")),
+          ("http.method", @azimuth.StringValue("GET"))
+        ]
+      }
+    ],
+    logs : [
+      @azimuth.ExportableLog {
+        timestamp : 1640995200050L,
+        severity : @azimuth.LogSeverity::Info,
+        message : "Request processed successfully",
+        attributes : [
+          ("trace.id", @azimuth.StringValue("trace-123")),
+          ("span.id", @azimuth.StringValue("span-123"))
+        ]
+      }
+    ]
+  }
   
-  // Verify platform-specific data is properly formatted
-  let is_valid_format = PlatformAdapter::validate_platform_data(platform_adapter, telemetry_data)
-  assert_true(is_valid_format)
+  // 导出为不同格式
+  let json_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::JSON)
+  let protobuf_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::Protobuf)
+  let avro_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::Avro)
+  
+  // 验证导出结果
+  assert_true(json_export.data_size > 0)
+  assert_true(protobuf_export.data_size > 0)
+  assert_true(avro_export.data_size > 0)
+  
+  // 从不同格式导入
+  let json_imported = @azimuth.import_dataset(json_export, @azimuth.ExportFormat::JSON)
+  let protobuf_imported = @azimuth.import_dataset(protobuf_export, @azimuth.ExportFormat::Protobuf)
+  let avro_imported = @azimuth.import_dataset(avro_export, @azimuth.ExportFormat::Avro)
+  
+  // 验证导入数据完整性
+  assert_eq(json_imported.dataset_id, telemetry_dataset.dataset_id)
+  assert_eq(protobuf_imported.dataset_id, telemetry_dataset.dataset_id)
+  assert_eq(avro_imported.dataset_id, telemetry_dataset.dataset_id)
+  
+  assert_eq(json_imported.traces.length(), telemetry_dataset.traces.length())
+  assert_eq(protobuf_imported.traces.length(), telemetry_dataset.traces.length())
+  assert_eq(avro_imported.traces.length(), telemetry_dataset.traces.length())
+  
+  assert_eq(json_imported.metrics.length(), telemetry_dataset.metrics.length())
+  assert_eq(protobuf_imported.metrics.length(), telemetry_dataset.metrics.length())
+  assert_eq(avro_imported.metrics.length(), telemetry_dataset.metrics.length())
+  
+  assert_eq(json_imported.logs.length(), telemetry_dataset.logs.length())
+  assert_eq(protobuf_imported.logs.length(), telemetry_dataset.logs.length())
+  assert_eq(avro_imported.logs.length(), telemetry_dataset.logs.length())
+}
+
+test "telemetry anomaly detection and alerting" {
+  // 测试遥测异常检测和告警
+  let anomaly_detection_config = @azimuth.AnomalyDetectionConfig {
+    algorithms : [
+      @azimuth.AnomalyAlgorithm {
+        name : "statistical_outlier",
+        parameters : [
+          ("z_score_threshold", @azimuth.FloatValue(3.0)),
+          ("window_size", @azimuth.IntValue(100))
+        ]
+      },
+      @azimuth.AnomalyAlgorithm {
+        name : "seasonal_decomposition",
+        parameters : [
+          ("seasonality_period", @azimuth.IntValue(24)), // 24小时季节性
+          ("threshold", @azimuth.FloatValue(2.0))
+        ]
+      }
+    ],
+    alerting_rules : [
+      @azimuth.AlertingRule {
+        rule_name : "high_error_rate",
+        condition : "error_rate > 0.05",
+        severity : @azimuth.AlertSeverity::Critical,
+        cooldown_minutes : 15
+      },
+      @azimuth.AlertingRule {
+        rule_name : "high_latency",
+        condition : "p95_latency > 1000",
+        severity : @azimuth.AlertSeverity::Warning,
+        cooldown_minutes : 10
+      }
+    ]
+  }
+  
+  // 模拟时间序列数据，包含异常
+  let time_series_data = @azimuth.TimeSeriesData {
+    metric_name : "error_rate",
+    data_points : [
+      (1640995200000L, 0.01), // 正常
+      (1640995260000L, 0.02), // 正常
+      (1640995320000L, 0.015), // 正常
+      (1640995380000L, 0.08), // 异常 - 高错误率
+      (1640995440000L, 0.09), // 异常 - 持续高错误率
+      (1640995500000L, 0.07), // 异常 - 仍然高
+      (1640995560000L, 0.02) // 恢复正常
+    ]
+  }
+  
+  // 异常检测
+  let anomaly_results = @azimuth.detect_anomalies(anomaly_detection_config, time_series_data)
+  
+  // 验证异常检测结果
+  assert_true(anomaly_results.anomalies.length() > 0)
+  
+  // 验证异常时间点
+  let anomaly_timestamps = anomaly_results.anomalies.map(fn(a) { a.timestamp })
+  assert_true(anomaly_timestamps.includes(1640995380000L)) // 第一个异常点
+  assert_true(anomaly_timestamps.includes(1640995440000L)) // 第二个异常点
+  assert_true(anomaly_timestamps.includes(1640995500000L)) // 第三个异常点
+  
+  // 生成告警
+  let alerts = @azimuth.generate_alerts(anomaly_detection_config, anomaly_results)
+  
+  // 验证告警生成
+  assert_true(alerts.length() > 0)
+  
+  let critical_alerts = alerts.filter(fn(a) { a.severity == @azimuth.AlertSeverity::Critical })
+  assert_true(critical_alerts.length() > 0)
+  
+  // 验证告警内容
+  for alert in critical_alerts {
+    assert_eq(alert.rule_name, "high_error_rate")
+    assert_true(alert.message.contains("error_rate"))
+    assert_true(alert.triggered_at > 0L)
+  }
 }
