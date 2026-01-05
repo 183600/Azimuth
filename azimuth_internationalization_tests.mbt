@@ -1,1056 +1,1015 @@
-// Azimuth Internationalization Test Suite
-// 国际化和本地化测试套件 - 专注于多语言支持、地区格式化和文化适配
+// Azimuth Telemetry System - Internationalization Tests
+// This file contains comprehensive test cases for internationalization functionality
 
-// 测试1: 多语言资源管理
-test "多语言资源管理测试" {
-  // 创建国际化资源管理器
-  let i18n_manager = I18nResourceManager::new()
-  I18nResourceManager::set_default_locale(i18n_manager, "en-US")
-  I18nResourceManager::set_fallback_locale(i18n_manager, "en-US")
-  I18nResourceManager::set_resource_path(i18n_manager, "/resources/i18n")
+// Test 1: Basic Localization Tests
+test "basic localization operations" {
+  // Test localization manager
+  let i18n = I18nManager::new()
   
-  // 初始化资源管理器
-  let init_result = I18nResourceManager::initialize(i18n_manager)
-  assert_true(init_result.success)
+  // Load language resources
+  I18nManager::load_language(i18n, "en", {
+    "welcome.message": "Welcome to Azimuth Telemetry",
+    "service.status": "Service is {status}",
+    "error.not_found": "Resource not found",
+    "items.count": "{count, plural, one {# item} other {# items}}",
+    "user.greeting": "Hello, {name}!"
+  })
   
-  // 加载语言资源
-  let supported_locales = ["en-US", "zh-CN", "ja-JP", "fr-FR", "de-DE", "es-ES", "pt-BR", "ru-RU"]
+  I18nManager::load_language(i18n, "zh", {
+    "welcome.message": "欢迎使用 Azimuth 遥测系统",
+    "service.status": "服务状态：{status}",
+    "error.not_found": "未找到资源",
+    "items.count": "{count, plural, other {# 项}}",
+    "user.greeting": "你好，{name}！"
+  })
   
-  for locale in supported_locales {
-    let load_result = I18nResourceManager::load_locale(i18n_manager, locale)
-    assert_true(load_result.success)
-  }
+  I18nManager::load_language(i18n, "es", {
+    "welcome.message": "Bienvenido a Azimuth Telemetry",
+    "service.status": "El servicio está {status}",
+    "error.not_found": "Recurso no encontrado",
+    "items.count": "{count, plural, one {# elemento} other {# elementos}}",
+    "user.greeting": "¡Hola, {name}!"
+  })
   
-  // 验证已加载的语言
-  let loaded_locales = I18nResourceManager::get_loaded_locales(i18n_manager)
-  assert_true(loaded_locales.length() >= supported_locales.length())
+  // Set default language
+  I18nManager::set_default_language(i18n, "en")
   
-  for locale in supported_locales {
-    assert_true(loaded_locales.contains(locale))
-  }
+  // Test basic translation
+  let welcome_en = I18nManager::translate(i18n, "welcome.message")
+  assert_eq(welcome_en, "Welcome to Azimuth Telemetry")
   
-  // 测试资源键值获取
-  let test_keys = [
-    "telemetry.span.name",
-    "telemetry.span.status.ok",
-    "telemetry.span.status.error",
-    "telemetry.metric.cpu.usage",
-    "telemetry.error.connection.timeout",
-    "telemetry.service.azimuth.name",
-    "telemetry.dashboard.title",
-    "telemetry.config.sampling.rate"
-  ]
+  // Test language switching
+  I18nManager::set_language(i18n, "zh")
+  let welcome_zh = I18nManager::translate(i18n, "welcome.message")
+  assert_eq(welcome_zh, "欢迎使用 Azimuth 遥测系统")
   
-  // 测试英文资源
-  I18nResourceManager::set_current_locale(i18n_manager, "en-US")
+  I18nManager::set_language(i18n, "es")
+  let welcome_es = I18nManager::translate(i18n, "welcome.message")
+  assert_eq(welcome_es, "Bienvenido a Azimuth Telemetry")
   
-  for key in test_keys {
-    let get_result = I18nResourceManager::get_string(i18n_manager, key)
-    assert_true(get_result.success)
-    assert_true(get_result.value.length() > 0)
-  }
+  // Test parameter substitution
+  I18nManager::set_language(i18n, "en")
+  let status_en = I18nManager::translate(i18n, "service.status", {"status": "running"})
+  assert_eq(status_en, "Service is running")
   
-  // 测试中文资源
-  I18nResourceManager::set_current_locale(i18n_manager, "zh-CN")
+  I18nManager::set_language(i18n, "zh")
+  let status_zh = I18nManager::translate(i18n, "service.status", {"status": "运行中"})
+  assert_eq(status_zh, "服务状态：运行中")
   
-  let zh_results = []
-  for key in test_keys {
-    let get_result = I18nResourceManager::get_string(i18n_manager, key)
-    assert_true(get_result.success)
-    zh_results.push(get_result.value)
-  }
+  // Test pluralization
+  I18nManager::set_language(i18n, "en")
+  let items_one_en = I18nManager::translate(i18n, "items.count", {"count": 1})
+  assert_eq(items_one_en, "1 item")
   
-  // 验证中文资源包含中文字符
-  for value in zh_results {
-    assert_true(value.contains("遥测") || value.contains("跨度") || 
-                 value.contains("状态") || value.contains("服务") ||
-                 value.contains("配置") || value.contains("采样"))
-  }
+  let items_many_en = I18nManager::translate(i18n, "items.count", {"count": 5})
+  assert_eq(items_many_en, "5 items")
   
-  // 测试日文资源
-  I18nResourceManager::set_current_locale(i18n_manager, "ja-JP")
+  // Test fallback to default language
+  I18nManager::set_language(i18n, "fr")  // Language not loaded
+  let fallback_result = I18nManager::translate(i18n, "welcome.message")
+  assert_eq(fallback_result, "Welcome to Azimuth Telemetry")  // Should fall back to English
   
-  for key in test_keys {
-    let get_result = I18nResourceManager::get_string(i18n_manager, key)
-    assert_true(get_result.success)
-    assert_true(get_result.value.contains("テレメトリ") || 
-                 get_result.value.contains("スパン") ||
-                 get_result.value.contains("ステータス") ||
-                 get_result.value.contains("サービス"))
-  }
-  
-  // 测试参数化资源
-  I18nResourceManager::set_current_locale(i18n_manager, "en-US")
-  
-  let param_key = "telemetry.span.duration"
-  let params = [
-    ("span_name", "http.request"),
-    ("duration_ms", "250"),
-    ("unit", "ms")
-  ]
-  
-  let param_result = I18nResourceManager::get_formatted_string(i18n_manager, param_key, params)
-  assert_true(param_result.success)
-  assert_true(param_result.value.contains("http.request"))
-  assert_true(param_result.value.contains("250"))
-  
-  // 测试复数形式
-  I18nResourceManager::set_current_locale(i18n_manager, "en-US")
-  
-  let plural_key = "telemetry.spans.count"
-  let plural_params = [("count", "1")]
-  let singular_result = I18nResourceManager::get_plural_string(i18n_manager, plural_key, plural_params)
-  assert_true(singular_result.success)
-  assert_true(singular_result.value.contains("span"))
-  
-  let plural_params_plural = [("count", "5")]
-  let plural_result = I18nResourceManager::get_plural_string(i18n_manager, plural_key, plural_params_plural)
-  assert_true(plural_result.success)
-  assert_true(plural_result.value.contains("spans"))
-  
-  // 测试中文复数形式（中文没有复数变化）
-  I18nResourceManager::set_current_locale(i18n_manager, "zh-CN")
-  
-  let zh_singular_result = I18nResourceManager::get_plural_string(i18n_manager, plural_key, plural_params)
-  assert_true(zh_singular_result.success)
-  
-  let zh_plural_result = I18nResourceManager::get_plural_string(i18n_manager, plural_key, plural_params_plural)
-  assert_true(zh_plural_result.success)
-  
-  // 中文通常单复数形式相同
-  assert_eq(zh_singular_result.value, zh_plural_result.value)
-  
-  // 测试资源回退机制
-  I18nResourceManager::set_current_locale(i18n_manager, "unsupported-locale")
-  
-  // 应该回退到默认语言
-  let fallback_result = I18nResourceManager::get_string(i18n_manager, "telemetry.span.name")
-  assert_true(fallback_result.success)
-  
-  // 验证回退到默认语言
-  I18nResourceManager::set_current_locale(i18n_manager, "en-US")
-  let default_result = I18nResourceManager::get_string(i18n_manager, "telemetry.span.name")
-  assert_eq(fallback_result.value, default_result.value)
-  
-  // 测试资源热重载
-  let reload_result = I18nResourceManager::reload_locale(i18n_manager, "en-US")
-  assert_true(reload_result.success)
-  
-  // 验证重载后的资源仍然可用
-  let post_reload_result = I18nResourceManager::get_string(i18n_manager, "telemetry.span.name")
-  assert_true(post_reload_result.success)
-  
-  // 测试资源缓存
-  let cache_stats = I18nResourceManager::get_cache_stats(i18n_manager)
-  assert_true(cache_stats.total_entries > 0)
-  assert_true(cache_stats.hit_rate >= 0.0)
-  assert_true(cache_stats.hit_rate <= 1.0)
-  
-  // 清理资源
-  let shutdown_result = I18nResourceManager::shutdown(i18n_manager)
-  assert_true(shutdown_result.success)
+  // Test missing key
+  I18nManager::set_language(i18n, "en")
+  let missing_key = I18nManager::translate(i18n, "nonexistent.key")
+  assert_eq(missing_key, "nonexistent.key")  // Should return key itself
 }
 
-// 测试2: 日期和时间格式化
-test "日期和时间格式化测试" {
-  // 创建日期时间格式化器
-  let date_formatter = DateTimeFormatter::new()
+// Test 2: Number and Date Formatting Tests
+test "number and date formatting operations" {
+  // Test formatter manager
+  let formatter = FormatterManager::new()
   
-  // 测试不同地区的日期格式
-  let date_formats = [
-    ("en-US", "MM/dd/yyyy"),      // 美国格式: 01/04/2026
-    ("zh-CN", "yyyy年MM月dd日"),  // 中国格式: 2026年01月04日
-    ("ja-JP", "yyyy/MM/dd"),      // 日本格式: 2026/01/04
-    ("fr-FR", "dd/MM/yyyy"),      // 法国格式: 04/01/2026
-    ("de-DE", "dd.MM.yyyy"),      // 德国格式: 04.01.2026
-    ("es-ES", "dd/MM/yyyy"),      // 西班牙格式: 04/01/2026
-    ("ru-RU", "dd.MM.yyyy"),      // 俄语格式: 04.01.2026
-    ("pt-BR", "dd/MM/yyyy")       // 巴西格式: 04/01/2026
-  ]
+  // Test number formatting with different locales
+  FormatterManager::set_locale(formatter, "en-US")
+  let number_en = FormatterManager::format_number(formatter, 1234567.89)
+  assert_eq(number_en, "1,234,567.89")
   
-  let test_timestamp = 1640995200000 // 2022-01-01 00:00:00 UTC
+  FormatterManager::set_locale(formatter, "de-DE")
+  let number_de = FormatterManager::format_number(formatter, 1234567.89)
+  assert_eq(number_de, "1.234.567,89")
   
-  for (locale, expected_pattern) in date_formats {
-    DateTimeFormatter::set_locale(date_formatter, locale)
-    
-    let format_result = DateTimeFormatter::format_date(date_formatter, test_timestamp)
-    assert_true(format_result.success)
-    
-    let formatted_date = format_result.formatted_string
-    assert_true(formatted_date.length() > 0)
-    
-    // 验证格式符合预期
-    if locale == "en-US" {
-      assert_true(formatted_date.contains("01/04/2026"))
-    } else if locale == "zh-CN" {
-      assert_true(formatted_date.contains("2026年01月04日"))
-    } else if locale == "ja-JP" {
-      assert_true(formatted_date.contains("2026/01/04"))
-    }
-  }
+  FormatterManager::set_locale(formatter, "zh-CN")
+  let number_zh = FormatterManager::format_number(formatter, 1234567.89)
+  assert_eq(number_zh, "1,234,567.89")
   
-  // 测试时间格式
-  let time_formats = [
-    ("en-US", "h:mm:ss a"),        // 美国格式: 12:00:00 AM
-    ("zh-CN", "HH:mm:ss"),         // 中国格式: 00:00:00
-    ("ja-JP", "HH:mm:ss"),         // 日本格式: 00:00:00
-    ("fr-FR", "HH:mm:ss"),         // 法国格式: 00:00:00
-    ("de-DE", "HH:mm:ss"),         // 德国格式: 00:00:00
-    ("es-ES", "HH:mm:ss"),         // 西班牙格式: 00:00:00
-    ("ru-RU", "HH:mm:ss"),         // 俄语格式: 00:00:00
-    ("pt-BR", "HH:mm:ss")          // 巴西格式: 00:00:00
-  ]
+  // Test currency formatting
+  FormatterManager::set_locale(formatter, "en-US")
+  let currency_en = FormatterManager::format_currency(formatter, 1234.56, "USD")
+  assert_eq(currency_en, "$1,234.56")
   
-  for (locale, expected_pattern) in time_formats {
-    DateTimeFormatter::set_locale(date_formatter, locale)
-    
-    let format_result = DateTimeFormatter::format_time(date_formatter, test_timestamp)
-    assert_true(format_result.success)
-    
-    let formatted_time = format_result.formatted_string
-    assert_true(formatted_time.length() > 0)
-    
-    // 验证时间格式
-    if locale == "en-US" {
-      assert_true(formatted_time.contains("12:00:00 AM") || formatted_time.contains("00:00:00"))
-    } else if locale == "zh-CN" {
-      assert_true(formatted_time.contains("00:00:00"))
-    }
-  }
+  FormatterManager::set_locale(formatter, "de-DE")
+  let currency_de = FormatterManager::format_currency(formatter, 1234.56, "EUR")
+  assert_eq(currency_de, "1.234,56 €")
   
-  // 测试日期时间组合格式
-  DateTimeFormatter::set_locale(date_formatter, "en-US")
-  let datetime_result = DateTimeFormatter::format_datetime(date_formatter, test_timestamp)
-  assert_true(datetime_result.success)
-  assert_true(datetime_result.formatted_string.length() > 0)
+  FormatterManager::set_locale(formatter, "ja-JP")
+  let currency_ja = FormatterManager::format_currency(formatter, 1234.56, "JPY")
+  assert_eq(currency_ja, "￥1,235")  // Japanese Yen doesn't use decimal places
   
-  // 测试相对时间格式
-  let now_timestamp = 1640995200000
-  let past_timestamp = now_timestamp - 3600000 // 1小时前
+  // Test percentage formatting
+  FormatterManager::set_locale(formatter, "en-US")
+  let percent_en = FormatterManager::format_percent(formatter, 0.7543)
+  assert_eq(percent_en, "75%")
   
-  let relative_result = DateTimeFormatter::format_relative(date_formatter, past_timestamp, now_timestamp)
-  assert_true(relative_result.success)
-  assert_true(relative_result.formatted_string.contains("hour") || relative_result.formatted_string.contains("小时"))
+  FormatterManager::set_locale(formatter, "fr-FR")
+  let percent_fr = FormatterManager::format_percent(formatter, 0.7543)
+  assert_eq(percent_fr, "75 %")
   
-  // 测试时区处理
-  let timezones = [
-    ("UTC", 0),
-    ("America/New_York", -5),
-    ("Europe/London", 0),
-    ("Asia/Shanghai", 8),
-    ("Asia/Tokyo", 9),
-    ("America/Los_Angeles", -8)
-  ]
+  // Test date formatting
+  FormatterManager::set_locale(formatter, "en-US")
+  let date_en = FormatterManager::format_date(formatter, "2023-01-15T14:30:00Z", "full")
+  assert_eq(date_en, "Sunday, January 15, 2023")
   
-  for (timezone_name, offset) in timezones {
-    DateTimeFormatter::set_timezone(date_formatter, timezone_name)
-    
-    let timezone_result = DateTimeFormatter::format_datetime(date_formatter, test_timestamp)
-    assert_true(timezone_result.success)
-    
-    // 验证时区信息
-    let timezone_info = timezone_result.timezone_info
-    assert_eq(timezone_info.name, timezone_name)
-    assert_eq(timezone_info.offset, offset)
-  }
+  let time_en = FormatterManager::format_time(formatter, "2023-01-15T14:30:00Z", "short")
+  assert_eq(time_en, "2:30 PM")
   
-  // 测试本地化月份和星期名称
-  let month_names = [
-    ("en-US", ["January", "February", "March", "April", "May", "June", 
-               "July", "August", "September", "October", "November", "December"]),
-    ("zh-CN", ["一月", "二月", "三月", "四月", "五月", "六月", 
-               "七月", "八月", "九月", "十月", "十一月", "十二月"]),
-    ("ja-JP", ["1月", "2月", "3月", "4月", "5月", "6月", 
-               "7月", "8月", "9月", "10月", "11月", "12月"])
-  ]
+  let datetime_en = FormatterManager::format_datetime(formatter, "2023-01-15T14:30:00Z", "medium")
+  assert_eq(datetime_en, "Jan 15, 2023, 2:30:00 PM")
   
-  for (locale, expected_months) in month_names {
-    DateTimeFormatter::set_locale(date_formatter, locale)
-    
-    for i in 0..=11 {
-      let month_result = DateTimeFormatter::get_month_name(date_formatter, i)
-      assert_true(month_result.success)
-      assert_eq(month_result.month_name, expected_months[i])
-    }
-  }
+  FormatterManager::set_locale(formatter, "zh-CN")
+  let date_zh = FormatterManager::format_date(formatter, "2023-01-15T14:30:00Z", "full")
+  assert_eq(date_zh, "2023年1月15日星期日")
   
-  // 测试本地化星期名称
-  let day_names = [
-    ("en-US", ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]),
-    ("zh-CN", ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]),
-    ("ja-JP", ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"])
-  ]
+  let time_zh = FormatterManager::format_time(formatter, "2023-01-15T14:30:00Z", "short")
+  assert_eq(time_zh, "下午2:30")
   
-  for (locale, expected_days) in day_names {
-    DateTimeFormatter::set_locale(date_formatter, locale)
-    
-    for i in 0..=6 {
-      let day_result = DateTimeFormatter::get_day_name(date_formatter, i)
-      assert_true(day_result.success)
-      assert_eq(day_result.day_name, expected_days[i])
-    }
-  }
+  let datetime_zh = FormatterManager::format_datetime(formatter, "2023-01-15T14:30:00Z", "medium")
+  assert_eq(datetime_zh, "2023年1月15日 下午2:30:00")
   
-  // 测试日期解析
-  DateTimeFormatter::set_locale(date_formatter, "en-US")
+  FormatterManager::set_locale(formatter, "de-DE")
+  let date_de = FormatterManager::format_date(formatter, "2023-01-15T14:30:00Z", "full")
+  assert_eq(date_de, "Sonntag, 15. Januar 2023")
   
-  let parse_result = DateTimeFormatter::parse_date(date_formatter, "01/04/2026")
-  assert_true(parse_result.success)
-  assert_eq(parse_result.timestamp, test_timestamp)
+  let time_de = FormatterManager::format_time(formatter, "2023-01-15T14:30:00Z", "short")
+  assert_eq(time_de, "14:30")
   
-  // 测试日期时间解析
-  let datetime_parse_result = DateTimeFormatter::parse_datetime(date_formatter, "01/04/2026 12:00:00 AM")
-  assert_true(datetime_parse_result.success)
+  let datetime_de = FormatterManager::format_datetime(formatter, "2023-01-15T14:30:00Z", "medium")
+  assert_eq(datetime_de, "15.01.2023, 14:30:00")
   
-  // 验证自定义格式
-  DateTimeFormatter::set_custom_format(date_formatter, "yyyy-MM-dd'T'HH:mm:ss")
-  let custom_result = DateTimeFormatter::format_datetime(date_formatter, test_timestamp)
-  assert_true(custom_result.success)
-  assert_true(custom_result.formatted_string.contains("2022-01-01"))
+  // Test relative time formatting
+  FormatterManager::set_locale(formatter, "en-US")
+  let relative_now_en = FormatterManager::format_relative_time(formatter, 0, "second")
+  assert_eq(relative_now_en, "now")
+  
+  let relative_past_en = FormatterManager::format_relative_time(formatter, -60, "second")
+  assert_eq(relative_past_en, "1 minute ago")
+  
+  let relative_future_en = FormatterManager::format_relative_time(formatter, 3600, "second")
+  assert_eq(relative_future_en, "in 1 hour")
+  
+  FormatterManager::set_locale(formatter, "zh-CN")
+  let relative_past_zh = FormatterManager::format_relative_time(formatter, -60, "second")
+  assert_eq(relative_past_zh, "1分钟前")
+  
+  let relative_future_zh = FormatterManager::format_relative_time(formatter, 3600, "second")
+  assert_eq(relative_future_zh, "1小时后")
 }
 
-// 测试3: 数字和货币格式化
-test "数字和货币格式化测试" {
-  // 创建数字格式化器
-  let number_formatter = NumberFormatter::new()
+// Test 3: Text Direction and Script Tests
+test "text direction and script operations" {
+  // Test text direction manager
+  let direction_manager = TextDirectionManager::new()
   
-  // 测试不同地区的数字格式
-  let number_formats = [
-    ("en-US", "1,234,567.89"),    // 美国格式: 逗号分隔，点号小数点
-    ("zh-CN", "1,234,567.89"),    // 中国格式: 逗号分隔，点号小数点
-    ("de-DE", "1.234.567,89"),    // 德国格式: 点号分隔，逗号小数点
-    ("fr-FR", "1 234 567,89"),    // 法国格式: 空格分隔，逗号小数点
-    ("ja-JP", "1,234,567.89"),    // 日本格式: 逗号分隔，点号小数点
-    ("ru-RU", "1 234 567,89"),    // 俄语格式: 空格分隔，逗号小数点
-    ("es-ES", "1.234.567,89"),    // 西班牙格式: 点号分隔，逗号小数点
-    ("pt-BR", "1.234.567,89")     // 巴西格式: 点号分隔，逗号小数点
-  ]
+  // Test left-to-right languages
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "en"), "ltr")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "es"), "ltr")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "fr"), "ltr")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "de"), "ltr")
   
-  let test_number = 1234567.89
+  // Test right-to-left languages
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "ar"), "rtl")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "he"), "rtl")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "fa"), "rtl")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "ur"), "rtl")
   
-  for (locale, expected_format) in number_formats {
-    NumberFormatter::set_locale(number_formatter, locale)
-    
-    let format_result = NumberFormatter::format(number_formatter, test_number)
-    assert_true(format_result.success)
-    
-    let formatted_number = format_result.formatted_string
-    assert_true(formatted_number.length() > 0)
-    
-    // 验证格式符合预期
-    if locale == "en-US" || locale == "zh-CN" || locale == "ja-JP" {
-      assert_true(formatted_number.contains("1,234,567.89"))
-    } else if locale == "de-DE" || locale == "es-ES" || locale == "pt-BR" {
-      assert_true(formatted_number.contains("1.234.567,89"))
-    } else if locale == "fr-FR" || locale == "ru-RU" {
-      assert_true(formatted_number.contains("1 234 567,89"))
-    }
-  }
+  // Test top-to-bottom languages
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "zh"), "ttb")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "ja"), "ttb")
+  assert_eq(TextDirectionManager::get_direction(direction_manager, "ko"), "ttb")
   
-  // 测试百分比格式
-  NumberFormatter::set_locale(number_formatter, "en-US")
-  NumberFormatter::set_percent_style(number_formatter, true)
+  // Test text alignment
+  let ltr_text = "Hello World"
+  let rtl_text = "مرحبا بالعالم"
+  let ttb_text = "こんにちは世界"
   
-  let percent_result = NumberFormatter::format(number_formatter, 0.7543)
-  assert_true(percent_result.success)
-  assert_true(percent_result.formatted_string.contains("%"))
+  assert_eq(TextDirectionManager::get_alignment(direction_manager, ltr_text, "en"), "left")
+  assert_eq(TextDirectionManager::get_alignment(direction_manager, rtl_text, "ar"), "right")
+  assert_eq(TextDirectionManager::get_alignment(direction_manager, ttb_text, "ja"), "center")
   
-  // 测试科学计数法
-  NumberFormatter::set_scientific_style(number_formatter, true)
+  // Test script detection
+  let latin_text = "Hello World"
+  let arabic_text = "مرحبا بالعالم"
+  let chinese_text = "你好世界"
+  let mixed_text = "Hello مرحبا 你好"
   
-  let scientific_result = NumberFormatter::format(number_formatter, 1234567.89)
-  assert_true(scientific_result.success)
-  assert_true(scientific_result.formatted_string.contains("E"))
+  assert_eq(TextDirectionManager::detect_script(direction_manager, latin_text), "Latin")
+  assert_eq(TextDirectionManager::detect_script(direction_manager, arabic_text), "Arabic")
+  assert_eq(TextDirectionManager::detect_script(direction_manager, chinese_text), "Han")
+  assert_eq(TextDirectionManager::detect_script(direction_manager, mixed_text), "Mixed")
   
-  // 测试货币格式
-  let currency_formatter = CurrencyFormatter::new()
+  // Test text layout
+  let layout_manager = TextLayoutManager::new()
   
-  let currency_formats = [
-    ("en-US", "USD", "$1,234,567.89"),      // 美元
-    ("zh-CN", "CNY", "¥1,234,567.89"),      // 人民币
-    ("ja-JP", "JPY", "¥1,234,567"),          // 日元（无小数）
-    ("de-DE", "EUR", "1.234.567,89 €"),      // 欧元
-    ("fr-FR", "EUR", "1 234 567,89 €"),      // 欧元
-    ("ru-RU", "RUB", "1 234 567,89 ₽"),      // 卢布
-    ("es-ES", "EUR", "1.234.567,89 €"),      // 欧元
-    ("pt-BR", "BRL", "R$ 1.234.567,89")      // 巴西雷亚尔
-  ]
+  // Test LTR layout
+  let ltr_layout = TextLayoutManager::layout_text(layout_manager, "Hello World", "en")
+  assert_eq(ltr_layout.direction, "ltr")
+  assert_eq(ltr_layout.text, "Hello World")
   
-  for (locale, currency_code, expected_format) in currency_formats {
-    CurrencyFormatter::set_locale(currency_formatter, locale)
-    CurrencyFormatter::set_currency_code(currency_formatter, currency_code)
-    
-    let format_result = CurrencyFormatter::format(currency_formatter, test_number)
-    assert_true(format_result.success)
-    
-    let formatted_currency = format_result.formatted_string
-    assert_true(formatted_currency.length() > 0)
-    
-    // 验证货币符号
-    if currency_code == "USD" {
-      assert_true(formatted_currency.contains("$"))
-    } else if currency_code == "CNY" {
-      assert_true(formatted_currency.contains("¥"))
-    } else if currency_code == "JPY" {
-      assert_true(formatted_currency.contains("¥"))
-    } else if currency_code == "EUR" {
-      assert_true(formatted_currency.contains("€"))
-    } else if currency_code == "RUB" {
-      assert_true(formatted_currency.contains("₽"))
-    } else if currency_code == "BRL" {
-      assert_true(formatted_currency.contains("R$"))
-    }
-  }
+  // Test RTL layout
+  let rtl_layout = TextLayoutManager::layout_text(layout_manager, "مرحبا بالعالم", "ar")
+  assert_eq(rtl_layout.direction, "rtl")
+  assert_eq(rtl_layout.text, "مرحبا بالعالم")
   
-  // 测试单位格式化
-  let unit_formatter = UnitFormatter::new()
+  // Test mixed layout
+  let mixed_layout = TextLayoutManager::layout_text(layout_manager, "Hello مرحبا World", "en")
+  assert_eq(mixed_layout.direction, "ltr")  // Base language is English
+  assert_eq(mixed_layout.text, "Hello مرحبا World")
   
-  let unit_tests = [
-    ("en-US", "length", "meter", 1234.5, "1,234.5 m"),
-    ("zh-CN", "length", "meter", 1234.5, "1,234.5 米"),
-    ("ja-JP", "length", "meter", 1234.5, "1,234.5 メートル"),
-    ("en-US", "weight", "kilogram", 75.2, "75.2 kg"),
-    ("zh-CN", "weight", "kilogram", 75.2, "75.2 千克"),
-    ("ja-JP", "weight", "kilogram", 75.2, "75.2 キログラム"),
-    ("en-US", "temperature", "celsius", 25.5, "25.5°C"),
-    ("zh-CN", "temperature", "celsius", 25.5, "25.5°C"),
-    ("ja-JP", "temperature", "celsius", 25.5, "25.5°C")
-  ]
+  // Test bidirectional text handling
+  let bidi_manager = BidiTextManager::new()
   
-  for (locale, unit_type, unit_name, value, expected_format) in unit_tests {
-    UnitFormatter::set_locale(unit_formatter, locale)
-    
-    let format_result = UnitFormatter::format(unit_formatter, value, unit_type, unit_name)
-    assert_true(format_result.success)
-    
-    let formatted_unit = format_result.formatted_string
-    assert_true(formatted_unit.length() > 0)
-    
-    // 验证单位符号
-    if unit_type == "length" && unit_name == "meter" {
-      if locale == "en-US" {
-        assert_true(formatted_unit.contains("m"))
-      } else if locale == "zh-CN" {
-        assert_true(formatted_unit.contains("米"))
-      } else if locale == "ja-JP" {
-        assert_true(formatted_unit.contains("メートル"))
-      }
-    }
-  }
+  let bidi_text = "Hello مرحبا بالعالم World"
+  let bidi_processed = BidiTextManager::process(bidi_manager, bidi_text)
   
-  // 测试数字解析
-  NumberFormatter::set_locale(number_formatter, "en-US")
-  NumberFormatter::set_decimal_style(number_formatter, true)
-  
-  let parse_result = NumberFormatter::parse(number_formatter, "1,234,567.89")
-  assert_true(parse_result.success)
-  assert_true(parse_result.value - test_number < 0.001)
-  
-  // 测试大数字格式化
-  let large_number = 1234567890123456.78
-  
-  NumberFormatter::set_locale(number_formatter, "en-US")
-  let large_result = NumberFormatter::format_large(number_formatter, large_number)
-  assert_true(large_result.success)
-  
-  // 测试小数精度控制
-  NumberFormatter::set_decimal_places(number_formatter, 2)
-  
-  let precision_result = NumberFormatter::format(number_formatter, 3.14159265)
-  assert_true(precision_result.success)
-  assert_true(precision_result.formatted_string.contains("3.14"))
-  
-  // 测试数字分组
-  NumberFormatter::set_grouping_used(number_formatter, true)
-  NumberFormatter::set_grouping_size(number_formatter, 3)
-  
-  let grouping_result = NumberFormatter::format(number_formatter, 12345678)
-  assert_true(grouping_result.success)
-  assert_true(grouping_result.formatted_string.contains("12,345,678"))
+  // The Arabic part should be in correct order
+  assert_true(bidi_processed.contains("Hello"))
+  assert_true(bidi_processed.contains("مرحبا بالعالم"))
+  assert_true(bidi_processed.contains("World"))
 }
 
-// 测试4: 文本方向和书写系统
-test "文本方向和书写系统测试" {
-  // 创建文本方向处理器
-  let text_direction = TextDirectionHandler::new()
+// Test 4: Locale-Aware Collation and Sorting Tests
+test "locale-aware collation and sorting operations" {
+  // Test collation manager
+  let collation = CollationManager::new()
   
-  // 测试从左到右(LTR)文本
-  let ltr_text = "Azimuth Telemetry System"
-  let ltr_result = TextDirectionHandler::analyze_direction(text_direction, ltr_text)
-  assert_true(ltr_result.success)
-  assert_eq(ltr_result.direction, TextDirection::LTR)
-  assert_eq(ltr_result.base_direction, TextDirection::LTR)
+  // Test string comparison with different locales
+  let strings = ["apple", "banana", "cherry", "äpple", "banana", "cherry"]
   
-  // 测试从右到左(RTL)文本
-  let rtl_text = "نظام قياس الأداء عن بعد"
-  let rtl_result = TextDirectionHandler::analyze_direction(text_direction, rtl_text)
-  assert_true(rtl_result.success)
-  assert_eq(rtl_result.direction, TextDirection::RTL)
-  assert_eq(rtl_result.base_direction, TextDirection::RTL)
+  // English collation
+  CollationManager::set_locale(collation, "en")
+  let sorted_en = CollationManager::sort_strings(collation, strings)
+  assert_eq(sorted_en, ["äpple", "apple", "banana", "banana", "cherry", "cherry"])
   
-  // 测试混合方向文本
-  let mixed_text = "Azimuth نظام قياس الأداء"
-  let mixed_result = TextDirectionHandler::analyze_direction(text_direction, mixed_text)
-  assert_true(mixed_result.success)
-  assert_true(mixed_result.has_mixed_direction)
+  // German collation (ä sorts after a)
+  CollationManager::set_locale(collation, "de")
+  let sorted_de = CollationManager::sort_strings(collation, strings)
+  assert_eq(sorted_de, ["apple", "äpple", "banana", "banana", "cherry", "cherry"])
   
-  // 测试阿拉伯语本地化
-  let arabic_formatter = ArabicTextFormatter::new()
+  // Swedish collation (ä sorts after z)
+  CollationManager::set_locale(collation, "sv")
+  let sorted_sv = CollationManager::sort_strings(collation, strings)
+  assert_eq(sorted_sv, ["apple", "banana", "banana", "cherry", "cherry", "äpple"])
   
-  let arabic_numbers = [1, 2, 3, 10, 100, 1000]
-  let arabic_number_result = ArabicTextFormatter::format_numbers(arabic_formatter, arabic_numbers)
-  assert_true(arabic_number_result.success)
+  // Test Chinese collation
+  let chinese_strings = ["北京", "上海", "广州", "深圳"]
+  CollationManager::set_locale(collation, "zh-CN")
+  let sorted_zh = CollationManager::sort_strings(collation, chinese_strings)
+  assert_eq(sorted_zh, ["北京", "上海", "广州", "深圳"])
   
-  // 验证阿拉伯数字
-  let formatted_arabic = arabic_number_result.formatted_text
-  assert_true(formatted_arabic.contains("١") || formatted_arabic.contains("٢") || 
-               formatted_arabic.contains("٣") || formatted_arabic.contains("١٠"))
+  // Test Japanese collation
+  let japanese_strings = ["東京", "大阪", "京都", "札幌"]
+  CollationManager::set_locale(collation, "ja")
+  let sorted_ja = CollationManager::sort_strings(collation, japanese_strings)
+  assert_eq(sorted_ja, ["京都", "札幌", "大阪", "東京"])
   
-  // 测试希伯来语文本
-  let hebrew_text = "מערכת טלמטריה מרוחקת"
-  let hebrew_result = TextDirectionHandler::analyze_direction(text_direction, hebrew_text)
-  assert_true(hebrew_result.success)
-  assert_eq(hebrew_result.direction, TextDirection::RTL)
+  // Test case sensitivity
+  let mixed_case_strings = ["Apple", "banana", "Cherry", "apple"]
   
-  // 测试双向文本渲染
-  let bidi_renderer = BidiTextRenderer::new()
+  // Case insensitive (default)
+  CollationManager::set_locale(collation, "en")
+  CollationManager::set_case_sensitive(collation, false)
+  let sorted_case_insensitive = CollationManager::sort_strings(collation, mixed_case_strings)
+  assert_eq(sorted_case_insensitive, ["Apple", "apple", "banana", "Cherry"])
   
-  let bidi_text = "Hello مرحبا World"
-  let bidi_result = BidiTextRenderer::render(bidi_renderer, bidi_text, TextDirection::LTR)
-  assert_true(bidi_result.success)
+  // Case sensitive
+  CollationManager::set_case_sensitive(collation, true)
+  let sorted_case_sensitive = CollationManager::sort_strings(collation, mixed_case_strings)
+  assert_eq(sorted_case_sensitive, ["Apple", "Cherry", "apple", "banana"])
   
-  let rendered_text = bidi_result.rendered_text
-  assert_true(rendered_text.length() > 0)
+  // Test accent sensitivity
+  let accented_strings = ["café", "cafe", "càfé", "cafe"]
   
-  // 测试文本镜像（用于RTL布局）
-  let mirror_result = TextDirectionHandler::mirror_text(text_direction, ltr_text, TextDirection::RTL)
-  assert_true(mirror_result.success)
-  assert_true(mirror_result.mirrored_text.length() > 0)
+  // Accent insensitive
+  CollationManager::set_locale(collation, "fr")
+  CollationManager::set_accent_sensitive(collation, false)
+  let sorted_accent_insensitive = CollationManager::sort_strings(collation, accented_strings)
+  assert_eq(sorted_accent_insensitive, ["café", "cafe", "cafe", "càfé"])
   
-  // 测试垂直书写系统
-  let vertical_formatter = VerticalTextFormatter::new()
+  // Accent sensitive
+  CollationManager::set_accent_sensitive(collation, true)
+  let sorted_accent_sensitive = CollationManager::sort_strings(collation, accented_strings)
+  assert_eq(sorted_accent_sensitive, ["cafe", "cafe", "càfé", "café"])
   
-  let vertical_text = "縦書きテキスト" // 日文垂直文本
-  let vertical_result = VerticalTextFormatter::format(vertical_formatter, vertical_text, VerticalDirection::TopToBottom)
-  assert_true(vertical_result.success)
+  // Test numeric collation
+  let numeric_strings = ["file1.txt", "file10.txt", "file2.txt", "file20.txt"]
   
-  // 测试中日韩文本处理
-  let cjk_formatter = CJKTextFormatter::new()
+  // Lexicographic sort
+  CollationManager::set_numeric_collation(collation, false)
+  let sorted_lexicographic = CollationManager::sort_strings(collation, numeric_strings)
+  assert_eq(sorted_lexicographic, ["file1.txt", "file10.txt", "file2.txt", "file20.txt"])
   
-  let cjk_texts = [
-    ("zh-CN", "遥测系统性能监控"),
-    ("ja-JP", "テレメトリシステム性能監視"),
-    ("ko-KR", "원격 측정 시스템 성능 모니터링")
-  ]
-  
-  for (locale, text) in cjk_texts {
-    CJKTextFormatter::set_locale(cjk_formatter, locale)
-    
-    let format_result = CJKTextFormatter::format(cjk_formatter, text)
-    assert_true(format_result.success)
-    
-    let formatted_cjk = format_result.formatted_text
-    assert_true(formatted_cjk.length() > 0)
-    
-    // 验证文本属性
-    let text_properties = format_result.text_properties
-    assert_true(text_properties.is_cjk)
-    assert_true(text_properties.line_break_rule == LineBreakRule::CJK)
-  }
-  
-  // 测试文本对齐
-  let alignment_formatter = TextAlignmentFormatter::new()
-  
-  let alignment_tests = [
-    (TextDirection::LTR, TextAlignment::Left, "Left aligned LTR text"),
-    (TextDirection::LTR, TextAlignment::Right, "Right aligned LTR text"),
-    (TextDirection::LTR, TextAlignment::Center, "Center aligned LTR text"),
-    (TextDirection::RTL, TextAlignment::Left, "Left aligned RTL text"),
-    (TextDirection::RTL, TextAlignment::Right, "Right aligned RTL text"),
-    (TextDirection::RTL, TextAlignment::Center, "Center aligned RTL text")
-  ]
-  
-  for (direction, alignment, text) in alignment_tests {
-    let align_result = TextAlignmentFormatter::align(alignment_formatter, text, direction, alignment)
-    assert_true(align_result.success)
-    
-    let aligned_text = align_result.aligned_text
-    assert_true(aligned_text.length() > 0)
-  }
-  
-  // 测试文本换行
-  let line_breaker = LineBreaker::new()
-  
-  LineBreaker::set_locale(line_breaker, "zh-CN")
-  LineBreaker::set_max_width(line_breaker, 20)
-  
-  let long_cjk_text = "这是一个很长的中文文本需要正确地进行换行处理以确保可读性"
-  let break_result = LineBreaker::break_text(line_breaker, long_cjk_text)
-  assert_true(break_result.success)
-  
-  let broken_lines = break_result.lines
-  assert_true(broken_lines.length() > 1) // 应该被分成多行
-  
-  // 测试标点符号处理
-  let punctuation_handler = PunctuationHandler::new()
-  
-  let punctuation_tests = [
-    ("en-US", "Hello, world! How are you?"),
-    ("zh-CN", "你好，世界！你好吗？"),
-    ("ja-JP", "こんにちは、世界！元気ですか？"),
-    ("ar-SA", "مرحبا بالعالم! كيف حالك؟")
-  ]
-  
-  for (locale, text) in punctuation_tests {
-    PunctuationHandler::set_locale(punctuation_handler, locale)
-    
-    let punct_result = PunctuationHandler::process(punctuation_handler, text)
-    assert_true(punct_result.success)
-    
-    let processed_text = punct_result.processed_text
-    assert_true(processed_text.length() > 0)
-    
-    // 验证标点符号间距
-    if locale == "zh-CN" || locale == "ja-JP" {
-      // 中日文通常不需要标点符号后的空格
-      assert_true(!processed_text.contains("， ") || !processed_text.contains("！ "))
-    } else if locale == "en-US" {
-      // 英文通常需要标点符号后的空格
-      assert_true(processed_text.contains(", ") || processed_text.contains("! "))
-    }
-  }
+  // Numeric sort
+  CollationManager::set_numeric_collation(collation, true)
+  let sorted_numeric = CollationManager::sort_strings(collation, numeric_strings)
+  assert_eq(sorted_numeric, ["file1.txt", "file2.txt", "file10.txt", "file20.txt"])
 }
 
-// 测试5: 文化特定格式和约定
-test "文化特定格式和约定测试" {
-  // 创建文化格式化器
-  let cultural_formatter = CulturalFormatter::new()
+// Test 5: Time Zone and Calendar Tests
+test "time zone and calendar operations" {
+  // Test time zone manager
+  let timezone_manager = TimeZoneManager::new()
   
-  // 测试姓名格式
-  let name_formats = [
-    ("en-US", "John Doe", "First Last"),
-    ("zh-CN", "张三", "姓 名"),
-    ("ja-JP", "田中 太郎", "姓 名"),
-    ("ko-KR", "김철수", "姓 名"),
-    ("hu-HU", "Nagy János", "Last First"),
-    ("es-ES", "Juan García", "First Last")
-  ]
+  // Test time zone conversion
+  let utc_time = "2023-01-15T14:30:00Z"
   
-  for (locale, name, expected_format) in name_formats {
-    CulturalFormatter::set_locale(cultural_formatter, locale)
-    
-    let name_result = CulturalFormatter::format_name(cultural_formatter, name)
-    assert_true(name_result.success)
-    
-    let formatted_name = name_result.formatted_name
-    assert_true(formatted_name.length() > 0)
-    
-    let name_info = name_result.name_info
-    assert_eq(name_info.format_type, expected_format)
-  }
+  let ny_time = TimeZoneManager::convert(timezone_manager, utc_time, "UTC", "America/New_York")
+  assert_eq(ny_time, "2023-01-15T09:30:00-05:00")  // UTC-5 in January
   
-  // 测试地址格式
-  let address_formatter = AddressFormatter::new()
+  let tokyo_time = TimeZoneManager::convert(timezone_manager, utc_time, "UTC", "Asia/Tokyo")
+  assert_eq(tokyo_time, "2023-01-15T23:30:00+09:00")  // UTC+9
   
-  let address_data = {
-    "street": "123 Main St",
-    "city": "New York",
-    "state": "NY",
-    "postal_code": "10001",
-    "country": "United States"
-  }
+  let london_time = TimeZoneManager::convert(timezone_manager, utc_time, "UTC", "Europe/London")
+  assert_eq(london_time, "2023-01-15T14:30:00+00:00")  // UTC+0 in January
   
-  let address_formats = [
-    ("en-US", "123 Main St\nNew York, NY 10001\nUnited States"),
-    ("zh-CN", "美国\n纽约州纽约市\n主街123号\n邮编: 10001"),
-    ("ja-JP", "〒10001\nニューヨーク州ニューヨーク市\nメインストリート123番地\nアメリカ合衆国"),
-    ("de-DE", "123 Main St\n10001 New York, NY\nUnited States"),
-    ("fr-FR", "123 Main St\n10001 New York, NY\nUnited States")
-  ]
+  // Test daylight saving time
+  let summer_time = "2023-07-15T14:30:00Z"
   
-  for (locale, expected_pattern) in address_formats {
-    AddressFormatter::set_locale(address_formatter, locale)
-    
-    let format_result = AddressFormatter::format(address_formatter, address_data)
-    assert_true(format_result.success)
-    
-    let formatted_address = format_result.formatted_address
-    assert_true(formatted_address.length() > 0)
-    
-    // 验证地址格式符合地区习惯
-    if locale == "zh-CN" {
-      assert_true(formatted_address.contains("美国") && formatted_address.contains("邮编"))
-    } else if locale == "ja-JP" {
-      assert_true(formatted_address.contains("〒") && formatted_address.contains("番地"))
-    }
-  }
+  let ny_summer_time = TimeZoneManager::convert(timezone_manager, summer_time, "UTC", "America/New_York")
+  assert_eq(ny_summer_time, "2023-07-15T10:30:00-04:00")  // UTC-4 in July (DST)
   
-  // 测试电话号码格式
-  let phone_formatter = PhoneFormatter::new()
+  // Test time zone detection
+  TimeZoneManager::set_system_timezone(timezone_manager, "America/New_York")
+  let detected_timezone = TimeZoneManager::get_system_timezone(timezone_manager)
+  assert_eq(detected_timezone, "America/New_York")
   
-  let phone_number = "+12125551234"
+  // Test calendar manager
+  let calendar_manager = CalendarManager::new()
   
-  let phone_formats = [
-    ("en-US", "+1 (212) 555-1234"),
-    ("zh-CN", "+1 212-555-1234"),
-    ("ja-JP", "+1-212-555-1234"),
-    ("de-DE", "+1 212 5551234"),
-    ("fr-FR", "+1 212 55 12 34")
-  ]
+  // Test Gregorian calendar
+  CalendarManager::set_calendar(calendar_manager, "gregorian")
+  let gregorian_date = CalendarManager::create_date(calendar_manager, 2023, 1, 15)
+  assert_eq(gregorian_date.year, 2023)
+  assert_eq(gregorian_date.month, 1)
+  assert_eq(gregorian_date.day, 15)
   
-  for (locale, expected_format) in phone_formats {
-    PhoneFormatter::set_locale(phone_formatter, locale)
-    
-    let format_result = PhoneFormatter::format(phone_formatter, phone_number)
-    assert_true(format_result.success)
-    
-    let formatted_phone = format_result.formatted_phone
-    assert_true(formatted_phone.length() > 0)
-  }
+  // Test Islamic calendar
+  CalendarManager::set_calendar(calendar_manager, "islamic")
+  let islamic_date = CalendarManager::convert_to_calendar(calendar_manager, gregorian_date, "islamic")
   
-  // 测试度量衡系统
-  let measurement_formatter = MeasurementFormatter::new()
+  // Islamic calendar should have different year/month/day
+  assert_true(islamic_date.year != 2023)
+  assert_true(islamic_date.month >= 1 && islamic_date.month <= 12)
+  assert_true(islamic_date.day >= 1 && islamic_date.day <= 30)
   
-  let measurement_tests = [
-    ("en-US", MeasurementSystem::Imperial, "5.5 feet", "1.68 meters"),
-    ("zh-CN", MeasurementSystem::Metric, "1.68 米", "5.51 feet"),
-    ("ja-JP", MeasurementSystem::Metric, "1.68 メートル", "5.51 フィート"),
-    ("de-DE", MeasurementSystem::Metric, "1,68 Meter", "5,51 Fuß"),
-    ("fr-FR", MeasurementSystem::Metric, "1,68 mètre", "5,51 pied")
-  ]
+  // Test Hebrew calendar
+  CalendarManager::set_calendar(calendar_manager, "hebrew")
+  let hebrew_date = CalendarManager::convert_to_calendar(calendar_manager, gregorian_date, "hebrew")
   
-  let height_in_meters = 1.68
+  // Hebrew calendar should have different year/month/day
+  assert_true(hebrew_date.year != 2023)
+  assert_true(hebrew_date.month >= 1 && hebrew_date.month <= 13)
+  assert_true(hebrew_date.day >= 1 && hebrew_date.day <= 30)
   
-  for (locale, system, expected_metric, expected_imperial) in {
-    MeasurementFormatter::set_locale(measurement_formatter, locale)
-    MeasurementFormatter::set_system(measurement_formatter, system)
-    
-    let format_result = MeasurementFormatter::format_length(measurement_formatter, height_in_meters, "meter")
-    assert_true(format_result.success)
-    
-    let formatted_length = format_result.formatted_length
-    assert_true(formatted_length.length() > 0)
-    
-    if system == MeasurementSystem::Metric {
-      assert_true(formatted_length.contains("1.68") || formatted_length.contains("1,68"))
-    }
-  }
+  // Test Chinese calendar
+  CalendarManager::set_calendar(calendar_manager, "chinese")
+  let chinese_date = CalendarManager::convert_to_calendar(calendar_manager, gregorian_date, "chinese")
   
-  // 测试纸张尺寸
-  let paper_formatter = PaperSizeFormatter::new()
+  // Chinese calendar should have different year/month/day
+  assert_true(chinese_date.year != 2023)
+  assert_true(chinese_date.month >= 1 && chinese_date.month <= 12)
+  assert_true(chinese_date.day >= 1 && chinese_date.day <= 30)
   
-  let paper_sizes = [
-    ("en-US", "letter", "8.5 x 11 inches"),
-    ("en-US", "legal", "8.5 x 14 inches"),
-    ("zh-CN", "a4", "210 x 297 mm"),
-    ("ja-JP", "a4", "210 x 297 mm"),
-    ("de-DE", "a4", "210 x 297 mm"),
-    ("fr-FR", "a4", "210 x 297 mm")
-  ]
+  // Test week calculation
+  CalendarManager::set_calendar(calendar_manager, "gregorian")
+  CalendarManager::set_locale(calendar_manager, "en-US")
+  let week_info = CalendarManager::get_week_info(calendar_manager, gregorian_date)
   
-  for (locale, size_name, expected_format) in paper_sizes {
-    PaperSizeFormatter::set_locale(paper_formatter, locale)
-    
-    let format_result = PaperSizeFormatter::format(paper_formatter, size_name)
-    assert_true(format_result.success)
-    
-    let formatted_size = format_result.formatted_size
-    assert_true(formatted_size.length() > 0)
-  }
+  assert_eq(week_info.week_year, 2023)
+  assert_true(week_info.week_number >= 1 && week_info.week_number <= 53)
+  assert_true(week_info.day_of_week >= 0 && week_info.day_of_week <= 6)
   
-  // 测试颜色命名
-  let color_formatter = ColorFormatter::new()
+  // Test different week start days
+  CalendarManager::set_locale(calendar_manager, "en-US")  // Week starts on Sunday
+  let us_week_info = CalendarManager::get_week_info(calendar_manager, gregorian_date)
   
-  let color_tests = [
-    ("en-US", ["red", "blue", "green", "yellow", "black", "white"]),
-    ("zh-CN", ["红色", "蓝色", "绿色", "黄色", "黑色", "白色"]),
-    ("ja-JP", ["赤", "青", "緑", "黄", "黒", "白"]),
-    ("de-DE", ["rot", "blau", "grün", "gelb", "schwarz", "weiß"]),
-    ("fr-FR", ["rouge", "bleu", "vert", "jaune", "noir", "blanc"])
-  ]
+  CalendarManager::set_locale(calendar_manager, "de-DE")  // Week starts on Monday
+  let de_week_info = CalendarManager::get_week_info(calendar_manager, gregorian_date)
   
-  for (locale, expected_colors) in color_tests {
-    ColorFormatter::set_locale(color_formatter, locale)
-    
-    for (i, color_name) in expected_colors.enumerate() {
-      let format_result = ColorFormatter::format(color_formatter, color_name)
-      assert_true(format_result.success)
-      
-      let formatted_color = format_result.formatted_color
-      assert_true(formatted_color.length() > 0)
-      
-      if i < 3 { // 测试前3个颜色
-        let color_info = format_result.color_info
-        assert_true(color_info.name.length() > 0)
-      }
-    }
-  }
-  
-  // 测试首字母排序规则
-  let collation_formatter = CollationFormatter::new()
-  
-  let collation_tests = [
-    ("en-US", ["apple", "banana", "cherry", "date"], ["apple", "banana", "cherry", "date"]),
-    ("zh-CN", ["苹果", "香蕉", "樱桃", "枣"], ["枣", "苹果", "香蕉", "樱桃"]),
-    ("ja-JP", ["りんご", "ばなな", "さくらんぼ", "なつめ"], ["ばなな", "さくらんぼ", "なつめ", "りんご"])
-  ]
-  
-  for (locale, input_words, expected_order) in collation_tests {
-    CollationFormatter::set_locale(collation_formatter, locale)
-    
-    let sort_result = CollationFormatter::sort_words(collation_formatter, input_words)
-    assert_true(sort_result.success)
-    
-    let sorted_words = sort_result.sorted_words
-    assert_eq(sorted_words.length(), input_words.length())
-    
-    // 验证排序符合地区习惯
-    for i in 0..=expected_order.length() - 1 {
-      assert_eq(sorted_words[i], expected_order[i])
-    }
-  }
-  
-  // 测试姓名称谓
-  let title_formatter = TitleFormatter::new()
-  
-  let title_tests = [
-    ("en-US", "male", "Mr.", "female", "Ms.", "neutral", "Mx."),
-    ("zh-CN", "male", "先生", "female", "女士", "neutral", "君"),
-    ("ja-JP", "male", "様", "female", "様", "neutral", "様"),
-    ("de-DE", "male", "Herr", "female", "Frau", "neutral", "Mx."),
-    ("fr-FR", "male", "M.", "female", "Mme", "neutral", "M.")
-  ]
-  
-  for (locale, gender, male_title, female_title, neutral_gender, neutral_title) in title_tests {
-    TitleFormatter::set_locale(title_formatter, locale)
-    
-    let male_result = TitleFormatter::get_title(title_formatter, gender)
-    assert_true(male_result.success)
-    assert_eq(male_result.title, male_title)
-    
-    let female_result = TitleFormatter::get_title(title_formatter, "female")
-    assert_true(female_result.success)
-    assert_eq(female_result.title, female_title)
-    
-    let neutral_result = TitleFormatter::get_title(title_formatter, neutral_gender)
-    assert_true(neutral_result.success)
-    assert_eq(neutral_result.title, neutral_title)
-  }
+  // Week numbers might differ based on locale
+  assert_true(us_week_info.day_of_week != de_week_info.day_of_week)
 }
 
-// 测试6: 字符编码和转换
-test "字符编码和转换测试" {
-  // 创建字符编码转换器
-  let encoding_converter = EncodingConverter::new()
+// Test 6: Resource Bundle Management Tests
+test "resource bundle management operations" {
+  // Test resource bundle manager
+  let bundle_manager = ResourceBundleManager::new()
   
-  // 测试多字节字符编码
-  let unicode_texts = [
-    "中文测试文本",
-    "日本語テストテキスト",
-    "한국어 테스트 텍스트",
-    "العربية اختبار النص",
-    "עברית טקסט בדיקה",
-    "Тестовый текст на русском",
-    "Текст на беларускай мове",
-    "Ελληνικό κείμενο δοκιμής",
-    "Текст кирилице"
-  ]
+  // Create resource bundles for different languages
+  ResourceBundleManager::create_bundle(bundle_manager, "base", {
+    "app.name": "Azimuth Telemetry",
+    "app.version": "1.0.0",
+    "button.ok": "OK",
+    "button.cancel": "Cancel"
+  })
   
-  for text in unicode_texts {
-    // 转换为UTF-8字节
-    let utf8_result = EncodingConverter::to_utf8(encoding_converter, text)
-    assert_true(utf8_result.success)
-    
-    let utf8_bytes = utf8_result.bytes
-    assert_true(utf8_bytes.length() > 0)
-    
-    // 从UTF-8字节转换回文本
-    let from_utf8_result = EncodingConverter::from_utf8(encoding_converter, utf8_bytes)
-    assert_true(from_utf8_result.success)
-    assert_eq(from_utf8_result.text, text)
-    
-    // 转换为UTF-16
-    let utf16_result = EncodingConverter::to_utf16(encoding_converter, text)
-    assert_true(utf16_result.success)
-    
-    let utf16_bytes = utf16_result.bytes
-    assert_true(utf16_bytes.length() > 0)
-    
-    // 从UTF-16字节转换回文本
-    let from_utf16_result = EncodingConverter::from_utf16(encoding_converter, utf16_bytes)
-    assert_true(from_utf16_result.success)
-    assert_eq(from_utf16_result.text, text)
-  }
+  ResourceBundleManager::create_bundle(bundle_manager, "en", {
+    "welcome.title": "Welcome",
+    "welcome.message": "Welcome to Azimuth Telemetry",
+    "error.network": "Network error occurred"
+  })
   
-  // 测试字符集检测
-  let mixed_encoding_data = "Hello 世界 こんにちは Привет".to_bytes()
-  let detect_result = EncodingConverter::detect_encoding(encoding_converter, mixed_encoding_data)
-  assert_true(detect_result.success)
+  ResourceBundleManager::create_bundle(bundle_manager, "zh", {
+    "welcome.title": "欢迎",
+    "welcome.message": "欢迎使用 Azimuth 遥测系统",
+    "error.network": "发生网络错误"
+  })
   
-  let detected_encoding = detect_result.encoding
-  assert_true(detected_encoding == "UTF-8" || detected_encoding == "UTF-16")
+  ResourceBundleManager::create_bundle(bundle_manager, "es", {
+    "welcome.title": "Bienvenido",
+    "welcome.message": "Bienvenido a Azimuth Telemetry",
+    "error.network": "Ocurrió un error de red"
+  })
   
-  // 测试字符规范化
-  let normalizer = UnicodeNormalizer::new()
+  // Test bundle inheritance
+  ResourceBundleManager::set_inheritance(bundle_manager, "en", "base")
+  ResourceBundleManager::set_inheritance(bundle_manager, "zh", "base")
+  ResourceBundleManager::set_inheritance(bundle_manager, "es", "base")
   
-  let test_strings = [
-    ("café", "café"), // 带重音符和不带重音符的组合
-    ("你好", "你好"),       // 中文（无变化）
-    ("👍", "👍"),          // Emoji（无变化）
-    ("é", "é")        // 组合字符和预组合字符
-  ]
+  // Test resource resolution with inheritance
+  let en_bundle = ResourceBundleManager::get_bundle(bundle_manager, "en")
   
-  for (composed, decomposed) in test_strings {
-    // NFC规范化（规范形式C）
-    let nfc_result = UnicodeNormalizer::normalize(normalizer, composed, NormalizationForm::NFC)
-    assert_true(nfc_result.success)
-    
-    // NFD规范化（规范形式D）
-    let nfd_result = UnicodeNormalizer::normalize(normalizer, decomposed, NormalizationForm::NFD)
-    assert_true(nfd_result.success)
-    
-    // 验证规范化结果
-    let nfc_normalized = nfc_result.normalized_text
-    let nfd_normalized = nfd_result.normalized_text
-    
-    // NFC应该产生预组合字符，NFD应该产生分解字符
-    if composed.contains("é") {
-      assert_true(nfc_normalized.contains("é"))
+  // Should get from en bundle
+  assert_eq(ResourceBundleManager::get_string(en_bundle, "welcome.title"), "Welcome")
+  assert_eq(ResourceBundleManager::get_string(en_bundle, "welcome.message"), "Welcome to Azimuth Telemetry")
+  
+  // Should get from base bundle (inherited)
+  assert_eq(ResourceBundleManager::get_string(en_bundle, "app.name"), "Azimuth Telemetry")
+  assert_eq(ResourceBundleManager::get_string(en_bundle, "button.ok"), "OK")
+  
+  // Test Chinese bundle
+  let zh_bundle = ResourceBundleManager::get_bundle(bundle_manager, "zh")
+  
+  // Should get from zh bundle
+  assert_eq(ResourceBundleManager::get_string(zh_bundle, "welcome.title"), "欢迎")
+  assert_eq(ResourceBundleManager::get_string(zh_bundle, "welcome.message"), "欢迎使用 Azimuth 遥测系统")
+  
+  // Should get from base bundle (inherited)
+  assert_eq(ResourceBundleManager::get_string(zh_bundle, "app.name"), "Azimuth Telemetry")
+  assert_eq(ResourceBundleManager::get_string(zh_bundle, "button.cancel"), "Cancel")
+  
+  // Test bundle fallback chain
+  ResourceBundleManager::set_fallback_chain(bundle_manager, ["zh", "en", "base"])
+  
+  let fallback_bundle = ResourceBundleManager::get_bundle_with_fallback(bundle_manager, "zh")
+  
+  // Should get from zh bundle
+  assert_eq(ResourceBundleManager::get_string(fallback_bundle, "welcome.title"), "欢迎")
+  
+  // Should get from en bundle (fallback)
+  assert_eq(ResourceBundleManager::get_string(fallback_bundle, "error.network"), "发生网络错误")
+  
+  // Should get from base bundle (fallback)
+  assert_eq(ResourceBundleManager::get_string(fallback_bundle, "button.ok"), "OK")
+  
+  // Test bundle reloading
+  ResourceBundleManager::update_bundle(bundle_manager, "en", {
+    "welcome.title": "Welcome Updated",
+    "new.key": "New value"
+  })
+  
+  ResourceBundleManager::reload_bundle(bundle_manager, "en")
+  
+  let updated_bundle = ResourceBundleManager::get_bundle(bundle_manager, "en")
+  
+  // Should get updated value
+  assert_eq(ResourceBundleManager::get_string(updated_bundle, "welcome.title"), "Welcome Updated")
+  
+  // Should get new value
+  assert_eq(ResourceBundleManager::get_string(updated_bundle, "new.key"), "New value")
+  
+  // Should still get inherited values
+  assert_eq(ResourceBundleManager::get_string(updated_bundle, "app.name"), "Azimuth Telemetry")
+  
+  // Test bundle validation
+  let validation_result = ResourceBundleManager::validate_bundle(bundle_manager, "en", {
+    "welcome.title": {"required": true, "type": "string"},
+    "welcome.message": {"required": true, "type": "string"},
+    "app.version": {"required": true, "type": "string"},
+    "button.ok": {"required": true, "type": "string"},
+    "button.cancel": {"required": true, "type": "string"}
+  })
+  
+  assert_true(validation_result.is_valid)
+  
+  // Test missing required keys
+  let incomplete_bundle = ResourceBundleManager::create_bundle(bundle_manager, "incomplete", {
+    "welcome.title": "Incomplete"
+    // Missing welcome.message
+  })
+  
+  let incomplete_validation = ResourceBundleManager::validate_bundle(bundle_manager, "incomplete", {
+    "welcome.title": {"required": true, "type": "string"},
+    "welcome.message": {"required": true, "type": "string"}
+  })
+  
+  assert_false(incomplete_validation.is_valid)
+  assert_true(incomplete_validation.missing_keys.contains("welcome.message"))
+}
+
+// Test 7: Pluralization and Gender Rules Tests
+test "pluralization and gender rules operations" {
+  // Test pluralization manager
+  let plural_manager = PluralizationManager::new()
+  
+  // Define pluralization rules for different languages
+  PluralizationManager::set_rules(plural_manager, "en", {
+    "one": "n == 1",
+    "other": "true"
+  })
+  
+  PluralizationManager::set_rules(plural_manager, "zh", {
+    "other": "true"  // Chinese doesn't have plural forms
+  })
+  
+  PluralizationManager::set_rules(plural_manager, "ar", {
+    "zero": "n == 0",
+    "one": "n == 1",
+    "two": "n == 2",
+    "few": "n % 100 >= 3 && n % 100 <= 10",
+    "many": "n % 100 >= 11 && n % 100 <= 99",
+    "other": "true"
+  })
+  
+  // Test English pluralization
+  let en_one = PluralizationManager::get_plural_form(plural_manager, "en", 1)
+  assert_eq(en_one, "one")
+  
+  let en_other = PluralizationManager::get_plural_form(plural_manager, "en", 5)
+  assert_eq(en_other, "other")
+  
+  // Test Chinese pluralization
+  let zh_zero = PluralizationManager::get_plural_form(plural_manager, "zh", 0)
+  assert_eq(zh_zero, "other")
+  
+  let zh_one = PluralizationManager::get_plural_form(plural_manager, "zh", 1)
+  assert_eq(zh_one, "other")
+  
+  let zh_many = PluralizationManager::get_plural_form(plural_manager, "zh", 5)
+  assert_eq(zh_many, "other")
+  
+  // Test Arabic pluralization
+  let ar_zero = PluralizationManager::get_plural_form(plural_manager, "ar", 0)
+  assert_eq(ar_zero, "zero")
+  
+  let ar_one = PluralizationManager::get_plural_form(plural_manager, "ar", 1)
+  assert_eq(ar_one, "one")
+  
+  let ar_two = PluralizationManager::get_plural_form(plural_manager, "ar", 2)
+  assert_eq(ar_two, "two")
+  
+  let ar_few = PluralizationManager::get_plural_form(plural_manager, "ar", 5)
+  assert_eq(ar_few, "few")
+  
+  let ar_many = PluralizationManager::get_plural_form(plural_manager, "ar", 25)
+  assert_eq(ar_many, "many")
+  
+  let ar_other = PluralizationManager::get_plural_form(plural_manager, "ar", 150)
+  assert_eq(ar_other, "other")
+  
+  // Test gender rules
+  let gender_manager = GenderManager::new()
+  
+  // Define gender rules for different languages
+  GenderManager::set_rules(gender_manager, "en", {
+    "masculine": ["he", "his", "him"],
+    "feminine": ["she", "her", "hers"],
+    "neuter": ["it", "its"]
+  })
+  
+  GenderManager::set_rules(gender_manager, "es", {
+    "masculine": ["el", "un", "él"],
+    "feminine": ["la", "una", "ella"],
+    "neuter": ["lo"]
+  })
+  
+  GenderManager::set_rules(gender_manager, "de", {
+    "masculine": ["der", "ein", "er"],
+    "feminine": ["die", "eine", "sie"],
+    "neuter": ["das", "ein", "es"]
+  })
+  
+  // Test gender detection
+  let en_masculine = GenderManager::detect_gender(gender_manager, "en", "he")
+  assert_eq(en_masculine, "masculine")
+  
+  let en_feminine = GenderManager::detect_gender(gender_manager, "en", "she")
+  assert_eq(en_feminine, "feminine")
+  
+  let en_neuter = GenderManager::detect_gender(gender_manager, "en", "it")
+  assert_eq(en_neuter, "neuter")
+  
+  let es_masculine = GenderManager::detect_gender(gender_manager, "es", "el")
+  assert_eq(es_masculine, "masculine")
+  
+  let es_feminine = GenderManager::detect_gender(gender_manager, "es", "la")
+  assert_eq(es_feminine, "feminine")
+  
+  // Test gender-aware translations
+  let gender_i18n = GenderAwareI18n::new()
+  
+  // Load gender-aware translations
+  GenderAwareI18n::load_language(gender_i18n, "en", {
+    "user.greeting": {
+      "masculine": "He is online",
+      "feminine": "She is online",
+      "neuter": "It is online"
+    },
+    "user.action": {
+      "masculine": "He updated his profile",
+      "feminine": "She updated her profile",
+      "neuter": "It updated its profile"
     }
-    
-    if decomposed.contains("é") {
-      assert_true(nfd_normalized.contains("é"))
+  })
+  
+  // Test gender-aware translation
+  let masculine_greeting = GenderAwareI18n::translate(gender_i18n, "en", "user.greeting", "masculine")
+  assert_eq(masculine_greeting, "He is online")
+  
+  let feminine_greeting = GenderAwareI18n::translate(gender_i18n, "en", "user.greeting", "feminine")
+  assert_eq(feminine_greeting, "She is online")
+  
+  let neuter_greeting = GenderAwareI18n::translate(gender_i18n, "en", "user.greeting", "neuter")
+  assert_eq(neuter_greeting, "It is online")
+}
+
+// Test 8: Character Encoding and Conversion Tests
+test "character encoding and conversion operations" {
+  // Test encoding manager
+  let encoding_manager = EncodingManager::new()
+  
+  // Test UTF-8 encoding
+  let utf8_text = "Hello 世界 ¡Hola!"
+  let utf8_bytes = EncodingManager::encode(encoding_manager, utf8_text, "utf-8")
+  let decoded_utf8 = EncodingManager::decode(encoding_manager, utf8_bytes, "utf-8")
+  
+  assert_eq(decoded_utf8, utf8_text)
+  
+  // Test UTF-16 encoding
+  let utf16_bytes = EncodingManager::encode(encoding_manager, utf8_text, "utf-16")
+  let decoded_utf16 = EncodingManager::decode(encoding_manager, utf16_bytes, "utf-16")
+  
+  assert_eq(decoded_utf16, utf8_text)
+  
+  // Test ISO-8859-1 encoding
+  let latin1_text = "Hello ¡Hola!"  // Contains characters within ISO-8859-1
+  let latin1_bytes = EncodingManager::encode(encoding_manager, latin1_text, "iso-8859-1")
+  let decoded_latin1 = EncodingManager::decode(encoding_manager, latin1_bytes, "iso-8859-1")
+  
+  assert_eq(decoded_latin1, latin1_text)
+  
+  // Test encoding detection
+  let text_with_bom = "\uFEFFHello World"  // UTF-8 BOM
+  let detected_encoding = EncodingManager::detect_encoding(encoding_manager, text_with_bom)
+  assert_eq(detected_encoding, "utf-8")
+  
+  // Test character set conversion
+  let converter = CharacterConverter::new()
+  
+  // Test NFC normalization
+  let nfc_input = "e\u0301"  // e + combining acute accent
+  let nfc_output = CharacterConverter::normalize(converter, nfc_input, "nfc")
+  assert_eq(nfc_output, "é")  // Should be normalized to single character
+  
+  // Test NFD normalization
+  let nfd_input = "é"  // Single character
+  let nfd_output = CharacterConverter::normalize(converter, nfd_input, "nfd")
+  assert_eq(nfd_output, "e\u0301")  // Should be decomposed
+  
+  // Test case conversion with locale
+  let locale_case_converter = LocaleCaseConverter::new()
+  
+  // Test Turkish case conversion (special rules for i/I)
+  let turkish_text = "Istanbul"
+  let turkish_lower = LocaleCaseConverter::to_lower(locale_case_converter, turkish_text, "tr")
+  assert_eq(turkish_lower, "ıstanbul")  // Should use dotless i
+  
+  let turkish_upper = LocaleCaseConverter::to_upper(locale_case_converter, "ıstanbul", "tr")
+  assert_eq(turkish_upper, "ISTANBUL")  // Should use dotted I
+  
+  // Test German case conversion (ß to SS)
+  let german_text = "straße"
+  let german_upper = LocaleCaseConverter::to_upper(locale_case_converter, german_text, "de")
+  assert_eq(german_upper, "STRASSE")  // ß should become SS
+  
+  // Test Greek case conversion
+  let greek_text = "αθήνα"
+  let greek_upper = LocaleCaseConverter::to_upper(locale_case_converter, greek_text, "el")
+  assert_eq(greek_upper, "ΑΘΉΝΑ")
+  
+  // Test character width conversion
+  let width_converter = CharacterWidthConverter::new()
+  
+  // Test half-width to full-width conversion
+  let half_width_text = "ABC123"
+  let full_width_text = CharacterWidthConverter::to_full_width(width_converter, half_width_text)
+  assert_eq(full_width_text, "ＡＢＣ１２３")
+  
+  // Test full-width to half-width conversion
+  let back_to_half = CharacterWidthConverter::to_half_width(width_converter, full_width_text)
+  assert_eq(back_to_half, half_width_text)
+  
+  // Test bidirectional text conversion
+  let bidi_converter = BidiConverter::new()
+  
+  let mixed_text = "Hello مرحبا World"
+  let logical_to_visual = BidiConverter::logical_to_visual(bidi_converter, mixed_text)
+  let visual_to_logical = BidiConverter::visual_to_logical(bidi_converter, logical_to_visual)
+  
+  assert_eq(visual_to_logical, mixed_text)
+}
+
+// Test 9: Keyboard and Input Method Tests
+test "keyboard and input method operations" {
+  // Test keyboard layout manager
+  let keyboard_manager = KeyboardLayoutManager::new()
+  
+  // Test keyboard layout detection
+  KeyboardManager::set_system_layout(keyboard_manager, "US")
+  let detected_layout = KeyboardManager::get_system_layout(keyboard_manager)
+  assert_eq(detected_layout, "US")
+  
+  // Test keyboard layout mapping
+  let us_mapping = KeyboardManager::get_mapping(keyboard_manager, "US")
+  assert_eq(us_mapping.name, "US")
+  assert_eq(us_mapping.layout, "QWERTY")
+  
+  let german_mapping = KeyboardManager::get_mapping(keyboard_manager, "German")
+  assert_eq(german_mapping.name, "German")
+  assert_eq(german_mapping.layout, "QWERTZ")
+  
+  // Test key translation
+  let us_key = KeyboardManager::translate_key(keyboard_manager, "a", "US", "German")
+  assert_eq(us_key, "a")  // 'a' is the same in both layouts
+  
+  let german_key = KeyboardManager::translate_key(keyboard_manager, "y", "German", "US")
+  assert_eq(german_key, "z")  // 'y' and 'z' are swapped in German layout
+  
+  // Test input method manager
+  let ime_manager = InputMethodManager::new()
+  
+  // Register input methods
+  InputMethodManager::register_ime(ime_manager, {
+    "id": "pinyin",
+    "name": "Pinyin",
+    "language": "zh-CN",
+    "description": "Chinese Pinyin input method"
+  })
+  
+  InputMethodManager::register_ime(ime_manager, {
+    "id": "hiragana",
+    "name": "Hiragana",
+    "language": "ja",
+    "description": "Japanese Hiragana input method"
+  })
+  
+  InputMethodManager::register_ime(ime_manager, {
+    "id": "hangul",
+    "name": "Hangul",
+    "language": "ko",
+    "description": "Korean Hangul input method"
+  })
+  
+  // Test input method activation
+  InputMethodManager::activate_ime(ime_manager, "pinyin")
+  let active_ime = InputMethodManager::get_active_ime(ime_manager)
+  assert_eq(active_ime.id, "pinyin")
+  assert_eq(active_ime.language, "zh-CN")
+  
+  // Test input method conversion
+  let pinyin_input = "nihao"
+  let pinyin_output = InputMethodManager::convert(ime_manager, pinyin_input)
+  assert_eq(pinyin_output, "你好")  // Should convert Pinyin to Chinese characters
+  
+  let hiragana_input = "konnichiha"
+  InputMethodManager::activate_ime(ime_manager, "hiragana")
+  let hiragana_output = InputMethodManager::convert(ime_manager, hiragana_input)
+  assert_eq(hiragana_output, "こんにちは")  // Should convert Romaji to Hiragana
+  
+  let hangul_input = "annyeonghaseyo"
+  InputMethodManager::activate_ime(ime_manager, "hangul")
+  let hangul_output = InputMethodManager::convert(ime_manager, hangul_input)
+  assert_eq(hangul_output, "안녕하세요")  // Should convert Romaji to Hangul
+  
+  // Test input method candidates
+  InputMethodManager::activate_ime(ime_manager, "pinyin")
+  let candidates = InputMethodManager::get_candidates(ime_manager, "zhong")
+  
+  assert_true(candidates.length() > 0)
+  assert_true(candidates.any((candidate) => { candidate == "中" }))
+  assert_true(candidates.any((candidate) => { candidate == "重" }))
+  assert_true(candidates.any((candidate) => { candidate == "众" }))
+  
+  // Test input method prediction
+  let predictions = InputMethodManager::get_predictions(ime_manager, "ni hao")
+  
+  assert_true(predictions.length() > 0)
+  assert_true(predictions.any((prediction) => { prediction == "你好" }))
+  assert_true(predictions.any((prediction) => { prediction == "您好" }))
+  
+  // Test custom input method
+  let custom_ime = {
+    "id": "custom",
+    "name": "Custom IME",
+    "language": "en",
+    "description": "Custom input method for testing",
+    "converter": (input) => {
+      // Simple converter that adds prefix and suffix
+      return "[" + input + "]"
     }
   }
   
-  // 测试字符转义
-  let escape_handler = UnicodeEscapeHandler::new()
+  InputMethodManager::register_custom_ime(ime_manager, custom_ime)
+  InputMethodManager::activate_ime(ime_manager, "custom")
   
-  let escape_tests = [
-    ("Hello\nWorld", "Hello\\nWorld"),
-    ("Tab\tCharacter", "Tab\\tCharacter"),
-    ("Quote\"Character", "Quote\\\"Character"),
-    ("Backslash\\Character", "Backslash\\\\Character"),
-    ("Unicode中文", "Unicode\\u4E2D\\u6587")
-  ]
+  let custom_output = InputMethodManager::convert(ime_manager, "test")
+  assert_eq(custom_output, "[test]")
+}
+
+// Test 10: Accessibility and Localization Tests
+test "accessibility and localization operations" {
+  // Test accessibility manager
+  let accessibility_manager = AccessibilityManager::new()
   
-  for (original, expected_escaped) in escape_tests {
-    let escape_result = UnicodeEscapeHandler::escape(escape_handler, original)
-    assert_true(escape_result.success)
-    assert_eq(escape_result.escaped_text, expected_escaped)
-    
-    // 反向转义
-    let unescape_result = UnicodeEscapeHandler::unescape(escape_handler, expected_escaped)
-    assert_true(unescape_result.success)
-    assert_eq(unescape_result.unescaped_text, original)
-  }
+  // Test screen reader support
+  AccessibilityManager::enable_screen_reader(accessibility_manager, true)
+  assert_true(AccessibilityManager::is_screen_reader_enabled(accessibility_manager))
   
-  // 测试字符大小写转换
-  let case_converter = CaseConverter::new()
+  // Test high contrast mode
+  AccessibilityManager::set_high_contrast(accessibility_manager, true)
+  assert_true(AccessibilityManager::is_high_contrast(accessibility_manager))
   
-  let case_tests = [
-    ("en-US", "hello world", "HELLO WORLD", "Hello World"),
-    ("zh-CN", "hello world", "HELLO WORLD", "Hello World"), // 中文无大小写
-    ("tr-TR", "istanbul", "İSTANBUL", "İstanbul"), // 土耳其语特殊大小写
-    ("el-GR", "άλφα", "ΆΛΦΑ", "Άλφα") // 希腊语
-  ]
+  // Test font size adjustment
+  AccessibilityManager::set_font_size(accessibility_manager, "large")
+  assert_eq(AccessibilityManager::get_font_size(accessibility_manager), "large")
   
-  for (locale, lower, upper, title) in case_tests {
-    CaseConverter::set_locale(case_converter, locale)
-    
-    let lower_result = CaseConverter::to_upper(case_converter, lower)
-    assert_true(lower_result.success)
-    
-    let upper_result = CaseConverter::to_lower(case_converter, upper)
-    assert_true(upper_result.success)
-    
-    let title_result = CaseConverter::to_title(case_converter, title)
-    assert_true(title_result.success)
-  }
+  // Test localized accessibility messages
+  let a11n_i18n = AccessibilityI18n::new()
   
-  // 测试字符宽度（全角和半角）
-  let width_handler = CharacterWidthHandler::new()
+  // Load accessibility messages
+  AccessibilityI18n::load_language(a11n_i18n, "en", {
+    "screen_reader.welcome": "Welcome to Azimuth Telemetry",
+    "screen_reader.navigation": "Use arrow keys to navigate",
+    "high_contrast.enabled": "High contrast mode enabled",
+    "font_size.increased": "Font size increased to large"
+  })
   
-  let width_tests = [
-    ("ABC123", "ＡＢＣ１２３"), // 半角转全角
-    ("ＡＢＣ１２３", "ABC123"), // 全角转半角
-    ("hello", "ｈｅｌｌｏ"),   // 半角转全角
-    ("ｈｅｌｌｏ", "hello")    // 全角转半角
-  ]
+  AccessibilityI18n::load_language(a11n_i18n, "zh", {
+    "screen_reader.welcome": "欢迎使用 Azimuth 遥测系统",
+    "screen_reader.navigation": "使用方向键导航",
+    "high_contrast.enabled": "高对比度模式已启用",
+    "font_size.increased": "字体大小已增大到大号"
+  })
   
-  for (half_width, full_width) in width_tests {
-    let to_full_result = CharacterWidthHandler::to_full_width(width_handler, half_width)
-    assert_true(to_full_result.success)
-    assert_eq(to_full_result.converted_text, full_width)
-    
-    let to_half_result = CharacterWidthHandler::to_half_width(width_handler, full_width)
-    assert_true(to_half_result.success)
-    assert_eq(to_half_result.converted_text, half_width)
-  }
+  // Test localized accessibility messages
+  AccessibilityI18n::set_language(a11n_i18n, "en")
+  let welcome_en = AccessibilityI18n::get_message(a11n_i18n, "screen_reader.welcome")
+  assert_eq(welcome_en, "Welcome to Azimuth Telemetry")
   
-  // 测试字符显示宽度计算
-  let display_width_tests = [
-    ("ABC", 3),          // ASCII字符，宽度1
-    ("中文", 4),          // 中文字符，宽度2
-    ("👍", 2),            // Emoji，宽度2
-    ("A中文B👍C", 10)     // 混合字符
-  ]
+  AccessibilityI18n::set_language(a11n_i18n, "zh")
+  let welcome_zh = AccessibilityI18n::get_message(a11n_i18n, "screen_reader.welcome")
+  assert_eq(welcome_zh, "欢迎使用 Azimuth 遥测系统")
   
-  for (text, expected_width) in display_width_tests {
-    let width_result = CharacterWidthHandler::get_display_width(width_handler, text)
-    assert_true(width_result.success)
-    assert_eq(width_result.width, expected_width)
-  }
+  // Test RTL accessibility
+  let rtl_accessibility = RTLAccessibilityManager::new()
   
-  // 测试字符过滤
-  let character_filter = CharacterFilter::new()
+  // Test RTL layout adjustments
+  RTLAccessibilityManager::enable_rtl(rtl_accessibility, true)
+  assert_true(RTLAccessibilityManager::is_rtl_enabled(rtl_accessibility))
   
-  let filter_tests = [
-    ("letters", "Hello123World", "HelloWorld"),
-    ("digits", "Hello123World", "123"),
-    ("alphanumeric", "Hello-123-World!", "Hello123World"),
-    ("cjk", "Hello中文World", "中文"),
-    ("arabic", "HelloمرحباWorld", "مرحبا")
-  ]
+  // Test text alignment for accessibility
+  let en_text = "Welcome"
+  let ar_text = "مرحبا"
   
-  for (filter_type, input, expected_output) in filter_tests {
-    let filter_result = CharacterFilter::filter(character_filter, input, filter_type)
-    assert_true(filter_result.success)
-    assert_eq(filter_result.filtered_text, expected_output)
-  }
+  let en_alignment = RTLAccessibilityManager::get_accessible_alignment(rtl_accessibility, en_text, "en")
+  assert_eq(en_alignment, "left")
   
-  // 测试字符替换
-  let character_replacer = CharacterReplacer::new()
+  let ar_alignment = RTLAccessibilityManager::get_accessible_alignment(rtl_accessibility, ar_text, "ar")
+  assert_eq(ar_alignment, "right")
   
-  let replacement_rules = [
-    ("old", "new"),
-    ("123", "456"),
-    ("中文", "Chinese"),
-    ("テスト", "test")
-  ]
+  // Test color contrast for different languages
+  let contrast_manager = ColorContrastManager::new()
   
-  let input_text = "old 123 中文 テスト"
-  let expected_output = "new 456 Chinese test"
+  // Test contrast ratios
+  let black_on_white = ColorContrastManager::calculate_contrast(contrast_manager, "#000000", "#FFFFFF")
+  assert_true(black_on_white >= 21.0)  // Maximum contrast
   
-  for (old_text, new_text) in replacement_rules {
-    CharacterReplacer::add_rule(character_replacer, old_text, new_text)
-  }
+  let red_on_green = ColorContrastManager::calculate_contrast(contrast_manager, "#FF0000", "#00FF00")
+  assert_true(red_on_green < 3.0)  // Poor contrast
   
-  let replace_result = CharacterReplacer::replace(character_replacer, input_text)
-  assert_true(replace_result.success)
-  assert_eq(replace_result.replaced_text, expected_output)
+  // Test color combinations for different cultural contexts
+  let cultural_colors = CulturalColorManager::new()
   
-  // 测试字符统计
-  let character_stats = CharacterStats::new()
+  // Test color meanings in different cultures
+  let red_meaning_us = CulturalColorManager::get_meaning(cultural_colors, "red", "US")
+  assert_true(red_meaning_us.contains("danger"))
+  assert_true(red_meaning_us.contains("stop"))
   
-  let stats_input = "Hello你好World世界123!@#"
-  let stats_result = CharacterStats::analyze(character_stats, stats_input)
-  assert_true(stats_result.success)
+  let red_meaning_cn = CulturalColorManager::get_meaning(cultural_colors, "red", "CN")
+  assert_true(red_meaning_cn.contains("luck"))
+  assert_true(red_meaning_cn.contains("prosperity"))
   
-  let stats = stats_result.statistics
-  assert_true(stats.total_characters > 0)
-  assert_true(stats.ascii_characters > 0)
-  assert_true(stats.cjk_characters > 0)
-  assert_true(stats.digits > 0)
-  assert_true(stats.symbols > 0)
+  let red_meaning_in = CulturalColorManager::get_meaning(cultural_colors, "red", "IN")
+  assert_true(red_meaning_in.contains("purity"))
+  assert_true(red_meaning_in.contains("marriage"))
+  
+  // Test accessible color palettes for different cultures
+  let us_palette = CulturalColorManager::get_accessible_palette(cultural_colors, "US")
+  assert_true(us_palette.primary.length() > 0)
+  assert_true(us_palette.secondary.length() > 0)
+  assert_true(us_palette.accent.length() > 0)
+  
+  let cn_palette = CulturalColorManager::get_accessible_palette(cultural_colors, "CN")
+  assert_true(cn_palette.primary.length() > 0)
+  assert_true(cn_palette.secondary.length() > 0)
+  assert_true(cn_palette.accent.length() > 0)
+  
+  // Test localized icon and image handling
+  let icon_localization = IconLocalizationManager::new()
+  
+  // Register icons for different cultures
+  IconLocalizationManager::register_icon(icon_localization, "warning", {
+    "default": "⚠️",
+    "US": "⚠️",
+    "CN": "⚠️",
+    "JP": "⚠️"
+  })
+  
+  IconLocalizationManager::register_icon(icon_localization, "check", {
+    "default": "✅",
+    "US": "✅",
+    "CN": "✅",
+    "JP": "✅"
+  })
+  
+  IconLocalizationManager::register_icon(icon_localization, "error", {
+    "default": "❌",
+    "US": "❌",
+    "CN": "❌",
+    "JP": "❌"
+  })
+  
+  // Test icon retrieval
+  let warning_icon = IconLocalizationManager::get_icon(icon_localization, "warning", "US")
+  assert_eq(warning_icon, "⚠️")
+  
+  let check_icon = IconLocalizationManager::get_icon(icon_localization, "check", "CN")
+  assert_eq(check_icon, "✅")
+  
+  let error_icon = IconLocalizationManager::get_icon(icon_localization, "error", "JP")
+  assert_eq(error_icon, "❌")
+  
+  // Test icon fallback
+  let unknown_icon = IconLocalizationManager::get_icon(icon_localization, "unknown", "FR")
+  assert_eq(unknown_icon, "")  // Should return empty string for unknown icon
+  
+  // Test localized text alternatives for images
+  let image_localization = ImageLocalizationManager::new()
+  
+  // Register image alternatives
+  ImageLocalizationManager::register_image(image_localization, "logo", {
+    "default": {
+      "src": "/images/logo.png",
+      "alt": "Azimuth Logo"
+    },
+    "en": {
+      "src": "/images/logo-en.png",
+      "alt": "Azimuth Logo"
+    },
+    "zh": {
+      "src": "/images/logo-zh.png",
+      "alt": "Azimuth 遥测系统标志"
+    },
+    "ar": {
+      "src": "/images/logo-ar.png",
+      "alt": "شعار Azimuth للقياس عن بعد"
+    }
+  })
+  
+  // Test image retrieval
+  let en_image = ImageLocalizationManager::get_image(image_localization, "logo", "en")
+  assert_eq(en_image.src, "/images/logo-en.png")
+  assert_eq(en_image.alt, "Azimuth Logo")
+  
+  let zh_image = ImageLocalizationManager::get_image(image_localization, "logo", "zh")
+  assert_eq(zh_image.src, "/images/logo-zh.png")
+  assert_eq(zh_image.alt, "Azimuth 遥测系统标志")
+  
+  let ar_image = ImageLocalizationManager::get_image(image_localization, "logo", "ar")
+  assert_eq(ar_image.src, "/images/logo-ar.png")
+  assert_eq(ar_image.alt, "شعار Azimuth للقياس عن بعد")
+  
+  // Test image fallback
+  let unknown_locale_image = ImageLocalizationManager::get_image(image_localization, "logo", "fr")
+  assert_eq(unknown_locale_image.src, "/images/logo.png")  // Should fall back to default
+  assert_eq(unknown_locale_image.alt, "Azimuth Logo")
 }
