@@ -428,6 +428,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_security_privacy_tests.mbt": {
   },
+  "azimuth_security_privacy_quality_tests.mbt": {
+  },
   "azimuth_security_privacy_protection_tests.mbt": {
   },
   "azimuth_security_privacy_protection_high_quality_tests.mbt": {
