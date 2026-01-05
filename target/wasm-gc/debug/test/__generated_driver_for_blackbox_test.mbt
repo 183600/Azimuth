@@ -1248,6 +1248,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_internationalization_support_quality_tests.mbt": {
   },
+  "azimuth_internationalization_support_premium_tests.mbt": {
+  },
   "azimuth_internationalization_support_comprehensive_tests.mbt": {
   },
   "azimuth_internationalization_new_tests.mbt": {
