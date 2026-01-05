@@ -2,600 +2,479 @@
 // This file contains comprehensive test cases for memory management and resource cleanup
 
 // Test 1: Span Memory Management
-test "span memory management and cleanup" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.set_memory_limit(10000000) // 10MB limit
-  
-  // Create spans and track memory usage
+test "span memory management" {
+  let initial_memory = Memory::allocated()
   let span_count = 1000
-  let mut spans = []
-  let initial_memory = memory_manager.get_current_usage()
   
   // Create spans
+  let spans = []
   for i in 0..span_count {
-    let span = Span::new("memory_test_span_" + i.to_string(), Internal, SpanContext::new("trace_" + i.to_string(), "span_" + i.to_string(), true, ""))
+    let trace_id = "memory_test_trace_" + i.to_string()
+    let span_id = "memory_test_span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("memory_test_operation", Internal, span_ctx)
     
     // Add events and attributes to increase memory usage
-    for j in 0..10 {
-      let event_name = "event_" + j.to_string()
-      Span::add_event(span, event_name, Some([("event_attr", StringValue("event_value_" + j.to_string()))]))
-    }
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "iteration", IntValue(i))
+    Attributes::set(attrs, "data", StringValue("test_data_" + i.to_string()))
     
-    // Add attributes
-    for k in 0..5 {
-      let attr_key = "attr_" + k.to_string()
-      let attr_value = StringValue("attr_value_" + k.to_string())
-      Span::set_attribute(span, attr_key, attr_value)
-    }
-    
+    Span::add_event(span, "test_event", Some(attrs))
     spans.push(span)
   }
   
-  let peak_memory = memory_manager.get_current_usage()
-  let memory_increase = peak_memory - initial_memory
+  let after_create_memory = Memory::allocated()
+  let memory_per_span = (after_create_memory - initial_memory) / span_count
   
-  // Verify memory usage increased
-  assert_true(memory_increase > 0)
-  assert_true(memory_increase < memory_manager.get_memory_limit())
+  // Verify reasonable memory usage per span
+  assert_true(memory_per_span < 2000)  // Less than 2KB per span
   
   // End spans to trigger cleanup
   for span in spans {
     Span::end(span)
   }
   
-  // Force garbage collection
-  memory_manager.force_gc()
+  // Force garbage collection if available
+  Memory::gc()
   
-  let cleanup_memory = memory_manager.get_current_usage()
-  let memory_after_cleanup = cleanup_memory - initial_memory
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
   
-  // Verify memory was reclaimed
-  assert_true(memory_after_cleanup < memory_increase)
-  
-  // Check for memory leaks
-  let leak_report = memory_manager.detect_leaks()
-  assert_eq(leak_report.leaked_spans, 0)
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 70)  // At least 70% memory recovered
 }
 
-// Test 2: Metric Memory Management
-test "metric memory management and cleanup" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.set_memory_limit(5000000) // 5MB limit
+// Test 2: Attributes Memory Management
+test "attributes memory management" {
+  let initial_memory = Memory::allocated()
+  let attr_count = 500
   
-  // Create metrics and track memory usage
-  let metric_count = 500
-  let data_points_per_metric = 100
-  let mut metrics = []
-  let initial_memory = memory_manager.get_current_usage()
-  
-  // Create metrics
-  for i in 0..metric_count {
-    let metric = Metric::new_counter("memory_test_metric_" + i.to_string(), "Test metric " + i.to_string(), "count")
+  // Create attributes with various data types
+  let attrs = Attributes::new()
+  for i in 0..attr_count {
+    let string_key = "string_key_" + i.to_string()
+    let string_value = StringValue("string_value_" + i.to_string())
+    Attributes::set(attrs, string_key, string_value)
     
-    // Add data points
-    for j in 0..data_points_per_metric {
-      let value = (i * data_points_per_metric + j).to_float()
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "dp_index", IntValue(j))
-      Metric::add_data_point(metric, DataPoint::new(value, attrs))
-    }
+    let int_key = "int_key_" + i.to_string()
+    let int_value = IntValue(i)
+    Attributes::set(attrs, int_key, int_value)
     
-    metrics.push(metric)
+    let float_key = "float_key_" + i.to_string()
+    let float_value = FloatValue(i.to_float() + 0.5)
+    Attributes::set(attrs, float_key, float_value)
+    
+    let bool_key = "bool_key_" + i.to_string()
+    let bool_value = BoolValue(i % 2 == 0)
+    Attributes::set(attrs, bool_key, bool_value)
   }
   
-  let peak_memory = memory_manager.get_current_usage()
-  let memory_increase = peak_memory - initial_memory
+  let after_create_memory = Memory::allocated()
+  let memory_per_attr = (after_create_memory - initial_memory) / (attr_count * 4)
   
-  // Verify memory usage increased
-  assert_true(memory_increase > 0)
-  assert_true(memory_increase < memory_manager.get_memory_limit())
+  // Verify reasonable memory usage per attribute
+  assert_true(memory_per_attr < 100)  // Less than 100 bytes per attribute
   
-  // Clear metrics to trigger cleanup
-  for metric in metrics {
-    Metric::clear_data_points(metric)
-  }
+  // Clear attributes
+  Attributes::clear(attrs)
   
-  // Force garbage collection
-  memory_manager.force_gc()
+  // Force garbage collection if available
+  Memory::gc()
   
-  let cleanup_memory = memory_manager.get_current_usage()
-  let memory_after_cleanup = cleanup_memory - initial_memory
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
   
-  // Verify memory was reclaimed
-  assert_true(memory_after_cleanup < memory_increase)
-  
-  // Check for memory leaks
-  let leak_report = memory_manager.detect_leaks()
-  assert_eq(leak_report.leaked_metrics, 0)
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 60)  // At least 60% memory recovered
 }
 
-// Test 3: Log Record Memory Management
-test "log record memory management and cleanup" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.set_memory_limit(3000000) // 3MB limit
+// Test 3: Log Records Memory Management
+test "log records memory management" {
+  let initial_memory = Memory::allocated()
+  let log_count = 800
   
-  // Create log records and track memory usage
-  let log_count = 2000
-  let mut logs = []
-  let initial_memory = memory_manager.get_current_usage()
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "memory_test_logger")
   
   // Create log records
+  let log_records = []
   for i in 0..log_count {
-    let message = "This is a test log message number " + i.to_string() + " with some additional content to increase memory usage"
-    let log_record = LogRecord::new(Info, message)
-    
-    // Add attributes
-    for j in 0..5 {
-      let attr_key = "log_attr_" + j.to_string()
-      let attr_value = StringValue("log_value_" + i.to_string() + "_" + j.to_string())
-      LogRecord::set_attribute(log_record, attr_key, attr_value)
-    }
-    
-    logs.push(log_record)
-  }
-  
-  let peak_memory = memory_manager.get_current_usage()
-  let memory_increase = peak_memory - initial_memory
-  
-  // Verify memory usage increased
-  assert_true(memory_increase > 0)
-  assert_true(memory_increase < memory_manager.get_memory_limit())
-  
-  // Clear logs to trigger cleanup
-  logs = []
-  
-  // Force garbage collection
-  memory_manager.force_gc()
-  
-  let cleanup_memory = memory_manager.get_current_usage()
-  let memory_after_cleanup = cleanup_memory - initial_memory
-  
-  // Verify memory was reclaimed
-  assert_true(memory_after_cleanup < memory_increase)
-  
-  // Check for memory leaks
-  let leak_report = memory_manager.detect_leaks()
-  assert_eq(leak_report.leaked_logs, 0)
-}
-
-// Test 4: Attribute Memory Management
-test "attribute memory management and cleanup" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.set_memory_limit(2000000) // 2MB limit
-  
-  // Create attributes and track memory usage
-  let attribute_count = 1000
-  let mut attributes = []
-  let initial_memory = memory_manager.get_current_usage()
-  
-  // Create attributes
-  for i in 0..attribute_count {
     let attrs = Attributes::new()
+    Attributes::set(attrs, "iteration", IntValue(i))
+    Attributes::set(attrs, "message", StringValue("Log message " + i.to_string()))
     
-    // Add string attributes
+    let log_record = LogRecord::new_with_context(
+      Info,
+      Some("Memory test log message " + i.to_string()),
+      Some(attrs),
+      Some(Time::now()),
+      Some(Time::now()),
+      Some("trace_" + i.to_string()),
+      Some("span_" + i.to_string()),
+      Some(Context::root())
+    )
+    
+    log_records.push(log_record)
+  }
+  
+  let after_create_memory = Memory::allocated()
+  let memory_per_log = (after_create_memory - initial_memory) / log_count
+  
+  // Verify reasonable memory usage per log record
+  assert_true(memory_per_log < 500)  // Less than 500 bytes per log record
+  
+  // Clear references to log records
+  log_records.clear()
+  
+  // Force garbage collection if available
+  Memory::gc()
+  
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
+  
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 65)  // At least 65% memory recovered
+}
+
+// Test 4: Metrics Memory Management
+test "metrics memory management" {
+  let initial_memory = Memory::allocated()
+  
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "memory_test_meter")
+  
+  // Create multiple metric instruments
+  let instruments = []
+  for i in 0..100 {
+    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), Some("Test counter"), Some("count"))
+    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), Some("Test histogram"), Some("ms"))
+    let gauge = Meter::create_gauge(meter, "gauge_" + i.to_string(), Some("Test gauge"), Some("value"))
+    
+    instruments.push(counter)
+    instruments.push(histogram)
+    instruments.push(gauge)
+  }
+  
+  // Add measurements to instruments
+  for i in 0..100 {
+    let counter = instruments[i * 3]
+    let histogram = instruments[i * 3 + 1]
+    let gauge = instruments[i * 3 + 2]
+    
     for j in 0..10 {
-      let key = "string_attr_" + j.to_string()
-      let value = StringValue("string_value_" + i.to_string() + "_" + j.to_string())
-      Attributes::set(attrs, key, value)
+      Counter::add(counter, j.to_float())
+      Histogram::record(histogram, j.to_float())
     }
-    
-    // Add int attributes
-    for k in 0..10 {
-      let key = "int_attr_" + k.to_string()
-      let value = IntValue(i * 10 + k)
-      Attributes::set(attrs, key, value)
-    }
-    
-    // Add array attributes
-    let array_value = ArrayStringValue(["item1", "item2", "item3", "item4", "item5"])
-    Attributes::set(attrs, "array_attr", array_value)
-    
-    attributes.push(attrs)
   }
   
-  let peak_memory = memory_manager.get_current_usage()
-  let memory_increase = peak_memory - initial_memory
+  let after_create_memory = Memory::allocated()
+  let memory_per_instrument = (after_create_memory - initial_memory) / instruments.length()
   
-  // Verify memory usage increased
-  assert_true(memory_increase > 0)
-  assert_true(memory_increase < memory_manager.get_memory_limit())
+  // Verify reasonable memory usage per instrument
+  assert_true(memory_per_instrument < 1000)  // Less than 1KB per instrument
   
-  // Clear attributes to trigger cleanup
-  attributes = []
+  // Clear references to instruments
+  instruments.clear()
   
-  // Force garbage collection
-  memory_manager.force_gc()
+  // Force garbage collection if available
+  Memory::gc()
   
-  let cleanup_memory = memory_manager.get_current_usage()
-  let memory_after_cleanup = cleanup_memory - initial_memory
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
   
-  // Verify memory was reclaimed
-  assert_true(memory_after_cleanup < memory_increase)
-  
-  // Check for memory leaks
-  let leak_report = memory_manager.detect_leaks()
-  assert_eq(leak_report.leaked_attributes, 0)
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 60)  // At least 60% memory recovered
 }
 
-// Test 5: Circular Reference Detection and Cleanup
-test "circular reference detection and cleanup" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.enable_circular_reference_detection(true)
+// Test 5: Serialization Buffer Management
+test "serialization buffer management" {
+  let initial_memory = Memory::allocated()
+  let buffer_count = 50
   
-  // Create objects with circular references
-  let span1 = Span::new("span1", Internal, SpanContext::new("trace1", "span1", true, ""))
-  let span2 = Span::new("span2", Internal, SpanContext::new("trace2", "span2", true, ""))
-  
-  // Create circular references
-  Span::add_linked_span(span1, span2)
-  Span::add_linked_span(span2, span1)
-  
-  // Create attributes with circular references
-  let attrs1 = Attributes::new()
-  let attrs2 = Attributes::new()
-  
-  Attributes::set(attrs1, "linked_attrs", AttributeValue::Attributes(attrs2))
-  Attributes::set(attrs2, "linked_attrs", AttributeValue::Attributes(attrs1))
-  
-  // Add attributes to spans
-  Span::set_attributes(span1, attrs1)
-  Span::set_attributes(span2, attrs2)
-  
-  // Detect circular references
-  let circular_refs = memory_manager.detect_circular_references()
-  assert_true(circular_refs.length() > 0)
-  
-  // Break circular references
-  Span::remove_linked_span(span1, span2)
-  Span::remove_linked_span(span2, span1)
-  
-  Attributes::remove(attrs1, "linked_attrs")
-  Attributes::remove(attrs2, "linked_attrs")
-  
-  // Verify circular references are resolved
-  let resolved_circular_refs = memory_manager.detect_circular_references()
-  assert_eq(resolved_circular_refs.length(), 0)
-  
-  // Force garbage collection
-  memory_manager.force_gc()
-  
-  // Check for memory leaks
-  let leak_report = memory_manager.detect_leaks()
-  assert_eq(leak_report.leaked_spans, 0)
-}
-
-// Test 6: Memory Pool Management
-test "memory pool management" {
-  let memory_pool = MemoryPool::new()
-  
-  // Configure memory pools for different object types
-  memory_pool.create_pool("span", 100, 1000) // Min 100, Max 1000 spans
-  memory_pool.create_pool("metric", 200, 2000) // Min 200, Max 2000 metrics
-  memory_pool.create_pool("log", 500, 5000) // Min 500, Max 5000 logs
-  
-  // Test pool allocation
-  let mut spans = []
-  let mut metrics = []
-  let mut logs = []
-  
-  // Allocate spans
-  for i in 0..500 {
-    let span = memory_pool.allocate_from_pool("span")
-    match span {
-      Some(s) => {
-        Span::initialize(s, "pool_span_" + i.to_string(), Internal, SpanContext::new("trace", "span", true, ""))
-        spans.push(s)
-      }
-      None => assert_true(false) // Should be able to allocate
-    }
+  // Create spans for serialization
+  let spans = []
+  for i in 0..buffer_count {
+    let trace_id = "buffer_test_trace_" + i.to_string()
+    let span_id = "buffer_test_span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("buffer_test_operation", Internal, span_ctx)
+    
+    // Add events and attributes
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "iteration", IntValue(i))
+    Attributes::set(attrs, "data", StringValue("test_data_" + i.to_string()))
+    
+    Span::add_event(span, "test_event", Some(attrs))
+    spans.push(span)
   }
   
-  // Allocate metrics
-  for i in 0..1000 {
-    let metric = memory_pool.allocate_from_pool("metric")
-    match metric {
-      Some(m) => {
-        Metric::initialize(m, "pool_metric_" + i.to_string(), "Test metric", "count")
-        metrics.push(m)
-      }
-      None => assert_true(false) // Should be able to allocate
-    }
-  }
-  
-  // Allocate logs
-  for i in 0..2500 {
-    let log = memory_pool.allocate_from_pool("log")
-    match log {
-      Some(l) => {
-        LogRecord::initialize(l, Info, "Pool log message " + i.to_string())
-        logs.push(l)
-      }
-      None => assert_true(false) // Should be able to allocate
-    }
-  }
-  
-  // Verify pool statistics
-  let span_pool_stats = memory_pool.get_pool_stats("span")
-  assert_eq(span_pool_stats.allocated, 500)
-  assert_eq(span_pool_stats.available, 500)
-  
-  let metric_pool_stats = memory_pool.get_pool_stats("metric")
-  assert_eq(metric_pool_stats.allocated, 1000)
-  assert_eq(metric_pool_stats.available, 1000)
-  
-  let log_pool_stats = memory_pool.get_pool_stats("log")
-  assert_eq(log_pool_stats.allocated, 2500)
-  assert_eq(log_pool_stats.available, 2500)
-  
-  // Return objects to pools
+  // Serialize spans to create buffers
+  let buffers = []
   for span in spans {
-    memory_pool.return_to_pool("span", span)
+    let buffer = SpanSerializer::serialize_to_buffer(span)
+    buffers.push(buffer)
   }
   
-  for metric in metrics {
-    memory_pool.return_to_pool("metric", metric)
+  let after_serialize_memory = Memory::allocated()
+  let memory_per_buffer = (after_serialize_memory - initial_memory) / buffer_count
+  
+  // Verify reasonable memory usage per buffer
+  assert_true(memory_per_buffer < 5000)  // Less than 5KB per buffer
+  
+  // Deserialize from buffers
+  let deserialized_spans = []
+  for buffer in buffers {
+    let span = SpanSerializer::deserialize_from_buffer(buffer)
+    deserialized_spans.push(span)
   }
   
-  for log in logs {
-    memory_pool.return_to_pool("log", log)
+  let after_deserialize_memory = Memory::allocated()
+  
+  // Clear buffers and deserialized spans
+  buffers.clear()
+  deserialized_spans.clear()
+  
+  // End original spans
+  for span in spans {
+    Span::end(span)
   }
   
-  // Verify objects were returned to pools
-  let span_pool_stats_after = memory_pool.get_pool_stats("span")
-  assert_eq(span_pool_stats_after.allocated, 0)
-  assert_eq(span_pool_stats_after.available, 1000)
+  // Force garbage collection if available
+  Memory::gc()
   
-  let metric_pool_stats_after = memory_pool.get_pool_stats("metric")
-  assert_eq(metric_pool_stats_after.allocated, 0)
-  assert_eq(metric_pool_stats_after.available, 2000)
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_deserialize_memory - after_cleanup_memory
   
-  let log_pool_stats_after = memory_pool.get_pool_stats("log")
-  assert_eq(log_pool_stats_after.allocated, 0)
-  assert_eq(log_pool_stats_after.available, 5000)
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_deserialize_memory - initial_memory)
+  assert_true(recovery_percentage > 70)  // At least 70% memory recovered
 }
 
-// Test 7: Memory Pressure Handling
-test "memory pressure handling" {
-  let memory_manager = MemoryManager::new()
-  memory_manager.set_memory_limit(1000000) // 1MB limit
-  memory_manager.enable_pressure_handling(true)
+// Test 6: Context Memory Management
+test "context memory management" {
+  let initial_memory = Memory::allocated()
+  let context_count = 300
   
-  // Configure pressure thresholds
-  memory_manager.set_pressure_threshold(0.8) // 80% of limit
-  memory_manager.set_critical_threshold(0.95) // 95% of limit
-  
-  // Create objects to increase memory usage
-  let mut objects = []
-  let initial_memory = memory_manager.get_current_usage()
-  let memory_limit = memory_manager.get_memory_limit()
-  
-  // Keep adding objects until memory pressure is detected
-  let mut pressure_detected = false
-  let mut critical_detected = false
-  
-  while not pressure_detected {
-    let obj = LargeObject::new(10000) // 10KB per object
-    objects.push(obj)
+  // Create contexts with baggage
+  let contexts = []
+  for i in 0..context_count {
+    let baggage = Baggage::new()
+    let updated_baggage = Baggage::set_entry(baggage, "key1_" + i.to_string(), "value1_" + i.to_string())
+    let final_baggage = Baggage::set_entry(updated_baggage, "key2_" + i.to_string(), "value2_" + i.to_string())
     
-    let current_memory = memory_manager.get_current_usage()
-    let memory_ratio = current_memory.to_float() / memory_limit.to_float()
-    
-    if memory_ratio >= 0.95 {
-      critical_detected = true
-      pressure_detected = true
-    } else if memory_ratio >= 0.8 {
-      pressure_detected = true
-    }
-    
-    // Safety check to prevent infinite loop
-    if objects.length() > 200 {
-      break
-    }
+    let ctx = Context::with_baggage(Context::root(), final_baggage)
+    contexts.push(ctx)
   }
   
-  // Verify pressure was detected
-  assert_true(pressure_detected)
+  let after_create_memory = Memory::allocated()
+  let memory_per_context = (after_create_memory - initial_memory) / context_count
   
-  // Check pressure handling actions
-  if critical_detected {
-    // In critical state, aggressive cleanup should be triggered
-    let cleanup_actions = memory_manager.get_cleanup_actions()
-    assert_true(cleanup_actions.contains("aggressive_gc"))
-    assert_true(cleanup_actions.contains("pool_clear"))
-  } else {
-    // In pressure state, moderate cleanup should be triggered
-    let cleanup_actions = memory_manager.get_cleanup_actions()
-    assert_true(cleanup_actions.contains("gc"))
-    assert_true(cleanup_actions.contains("pool_shrink"))
-  }
+  // Verify reasonable memory usage per context
+  assert_true(memory_per_context < 800)  // Less than 800 bytes per context
   
-  // Release some objects to reduce pressure
-  let objects_to_release = objects.length() / 2
-  for i in 0..objects_to_release {
-    objects.pop()
-  }
+  // Clear references to contexts
+  contexts.clear()
   
-  // Force cleanup
-  memory_manager.handle_pressure()
+  // Force garbage collection if available
+  Memory::gc()
   
-  // Verify memory usage decreased
-  let final_memory = memory_manager.get_current_usage()
-  let memory_ratio = final_memory.to_float() / memory_limit.to_float()
-  assert_true(memory_ratio < 0.8)
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
+  
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 65)  // At least 65% memory recovered
 }
 
-// Test 8: Resource Lifecycle Management
-test "resource lifecycle management" {
-  let resource_manager = ResourceManager::new()
+// Test 7: Resource Memory Management
+test "resource memory management" {
+  let initial_memory = Memory::allocated()
+  let resource_count = 100
   
-  // Create resources with different lifecycles
-  let short_lived_resource = resource_manager.create_resource("short_lived", ResourceLifecycle::Short)
-  let medium_lived_resource = resource_manager.create_resource("medium_lived", ResourceLifecycle::Medium)
-  let long_lived_resource = resource_manager.create_resource("long_lived", ResourceLifecycle::Long)
-  
-  // Track resource creation
-  let creation_time = current_time_millis()
-  
-  // Use resources
-  resource_manager.use_resource(short_lived_resource)
-  resource_manager.use_resource(medium_lived_resource)
-  resource_manager.use_resource(long_lived_resource)
-  
-  // Simulate time passage for short-lived resource
-  simulate_time_passage(30000) // 30 seconds
-  
-  // Check if short-lived resource should be cleaned up
-  let current_time = current_time_millis()
-  let resource_age = current_time - creation_time
-  
-  if resource_age >= 30000 { // 30 seconds
-    resource_manager.cleanup_resource(short_lived_resource)
-    assert_false(resource_manager.is_resource_active(short_lived_resource))
+  // Create resources with attributes
+  let resources = []
+  for i in 0..resource_count {
+    let attrs = [
+      ("service.name", StringValue("service_" + i.to_string())),
+      ("service.version", StringValue("1.0." + i.to_string())),
+      ("service.instance.id", StringValue("instance_" + i.to_string())),
+      ("environment", StringValue("test")),
+      ("region", StringValue("us-west-2"))
+    ]
+    
+    let resource = Resource::with_attributes(Resource::new(), attrs)
+    resources.push(resource)
   }
   
-  // Simulate more time passage for medium-lived resource
-  simulate_time_passage(270000) // Additional 4.5 minutes (total 5 minutes)
+  let after_create_memory = Memory::allocated()
+  let memory_per_resource = (after_create_memory - initial_memory) / resource_count
   
-  // Check if medium-lived resource should be cleaned up
-  let current_time = current_time_millis()
-  let resource_age = current_time - creation_time
+  // Verify reasonable memory usage per resource
+  assert_true(memory_per_resource < 1000)  // Less than 1KB per resource
   
-  if resource_age >= 300000 { // 5 minutes
-    resource_manager.cleanup_resource(medium_lived_resource)
-    assert_false(resource_manager.is_resource_active(medium_lived_resource))
+  // Clear references to resources
+  resources.clear()
+  
+  // Force garbage collection if available
+  Memory::gc()
+  
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
+  
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 60)  // At least 60% memory recovered
+}
+
+// Test 8: Large Object Memory Management
+test "large object memory management" {
+  let initial_memory = Memory::allocated()
+  let large_object_count = 20
+  
+  // Create spans with large attribute values
+  let spans = []
+  for i in 0..large_object_count {
+    let trace_id = "large_object_trace_" + i.to_string()
+    let span_id = "large_object_span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("large_object_operation", Internal, span_ctx)
+    
+    // Add large string attribute (10KB each)
+    let large_string = "x".repeat(10240)  // 10KB string
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "large_data", StringValue(large_string))
+    
+    // Add multiple events with large data
+    for j in 0..5 {
+      Span::add_event(span, "large_event_" + j.to_string(), Some(attrs))
+    }
+    
+    spans.push(span)
   }
   
-  // Long-lived resource should still be active
-  assert_true(resource_manager.is_resource_active(long_lived_resource))
+  let after_create_memory = Memory::allocated()
+  let memory_per_large_object = (after_create_memory - initial_memory) / large_object_count
   
-  // Manually cleanup long-lived resource
-  resource_manager.cleanup_resource(long_lived_resource)
-  assert_false(resource_manager.is_resource_active(long_lived_resource))
+  // Verify reasonable memory usage per large object
+  assert_true(memory_per_large_object < 60000)  // Less than 60KB per large object
+  
+  // End spans to trigger cleanup
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Force garbage collection if available
+  Memory::gc()
+  
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = after_create_memory - after_cleanup_memory
+  
+  // Verify most memory is recovered
+  let recovery_percentage = (memory_recovered * 100) / (after_create_memory - initial_memory)
+  assert_true(recovery_percentage > 75)  // At least 75% memory recovered
 }
 
 // Test 9: Memory Leak Detection
 test "memory leak detection" {
-  let leak_detector = MemoryLeakDetector::new()
+  let initial_memory = Memory::allocated()
+  let iterations = 10
+  let objects_per_iteration = 100
   
-  // Enable leak detection
-  leak_detector.enable_detection(true)
-  leak_detector.set_detection_threshold(100) // Detect leaks of 100+ objects
-  
-  // Create objects that might leak
-  let mut potential_leaks = []
-  
-  // Create spans without proper cleanup
-  for i in 0..150 {
-    let span = Span::new("leak_test_span_" + i.to_string(), Internal, SpanContext::new("trace", "span", true, ""))
-    potential_leaks.push(span)
-    // Don't end spans to simulate leak
-  }
-  
-  // Create metrics without proper cleanup
-  for i in 0..120 {
-    let metric = Metric::new_counter("leak_test_metric_" + i.to_string(), "Test metric", "count")
-    potential_leaks.push(metric)
-    // Don't clear metrics to simulate leak
-  }
-  
-  // Create logs without proper cleanup
-  for i in 0..200 {
-    let log = LogRecord::new(Info, "Leak test log " + i.to_string())
-    potential_leaks.push(log)
-    // Don't clear logs to simulate leak
-  }
-  
-  // Run leak detection
-  let leak_report = leak_detector.detect_leaks()
-  
-  // Verify leaks are detected
-  assert_true(leak_report.has_leaks)
-  assert_eq(leak_report.leaked_spans, 150)
-  assert_eq(leak_report.leaked_metrics, 120)
-  assert_eq(leak_report.leaked_logs, 200)
-  
-  // Fix leaks by properly cleaning up objects
-  for obj in potential_leaks {
-    match obj {
-      Span(s) => Span::end(s),
-      Metric(m) => Metric::clear_data_points(m),
-      LogRecord(l) => LogRecord::cleanup(l),
-      _ => assert_true(false)
+  // Perform multiple iterations of creating and cleaning up objects
+  for iteration in 0..iterations {
+    // Create spans
+    let spans = []
+    for i in 0..objects_per_iteration {
+      let trace_id = "leak_test_trace_" + iteration.to_string() + "_" + i.to_string()
+      let span_id = "leak_test_span_" + iteration.to_string() + "_" + i.to_string()
+      let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+      let span = Span::new("leak_test_operation", Internal, span_ctx)
+      
+      // Add attributes and events
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "iteration", IntValue(iteration))
+      Attributes::set(attrs, "index", IntValue(i))
+      
+      Span::add_event(span, "leak_test_event", Some(attrs))
+      spans.push(span)
+    }
+    
+    // End spans
+    for span in spans {
+      Span::end(span)
+    }
+    
+    // Clear references
+    spans.clear()
+    
+    // Force garbage collection every few iterations
+    if iteration % 3 == 0 {
+      Memory::gc()
     }
   }
   
-  // Run leak detection again
-  let fixed_leak_report = leak_detector.detect_leaks()
+  // Final garbage collection
+  Memory::gc()
   
-  // Verify leaks are fixed
-  assert_false(fixed_leak_report.has_leaks)
-  assert_eq(fixed_leak_report.leaked_spans, 0)
-  assert_eq(fixed_leak_report.leaked_metrics, 0)
-  assert_eq(fixed_leak_report.leaked_logs, 0)
+  let final_memory = Memory::allocated()
+  let memory_increase = final_memory - initial_memory
+  
+  // Verify memory increase is minimal (indicating no significant leaks)
+  let memory_increase_per_object = memory_increase / (iterations * objects_per_iteration)
+  assert_true(memory_increase_per_object < 50)  // Less than 50 bytes per object
 }
 
-// Test 10: Memory Usage Optimization
-test "memory usage optimization" {
-  let memory_optimizer = MemoryOptimizer::new()
+// Test 10: Memory Pressure Handling
+test "memory pressure handling" {
+  let initial_memory = Memory::allocated()
+  let memory_limit = Memory::available() / 4  // Use 25% of available memory
+  let objects_created = 0
   
-  // Enable optimization strategies
-  memory_optimizer.enable_strategy(ObjectPooling)
-  memory_optimizer.enable_strategy(LazyLoading)
-  memory_optimizer.enable_strategy(Compression)
-  memory_optimizer.enable_strategy( Deduplication)
-  
-  // Create telemetry data with optimization
-  let telemetry_data = TelemetryData::new()
-  
-  // Add spans with similar attributes (for deduplication)
-  for i in 0..100 {
-    let span = Span::new("optimized_span_" + i.to_string(), Internal, SpanContext::new("trace", "span_" + i.to_string(), true, ""))
+  // Create objects until near memory limit
+  let spans = []
+  while Memory::allocated() - initial_memory < memory_limit && objects_created < 10000 {
+    let trace_id = "pressure_test_trace_" + objects_created.to_string()
+    let span_id = "pressure_test_span_" + objects_created.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("pressure_test_operation", Internal, span_ctx)
     
-    // Add common attributes (for deduplication)
-    Span::set_attribute(span, "service.name", StringValue("optimized_service"))
-    Span::set_attribute(span, "service.version", StringValue("1.0.0"))
-    Span::set_attribute(span, "environment", StringValue("production"))
+    // Add attributes
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "index", IntValue(objects_created))
+    Attributes::set(attrs, "data", StringValue("pressure_test_data_" + objects_created.to_string()))
     
-    // Add unique attributes
-    Span::set_attribute(span, "span.id", StringValue("span_" + i.to_string()))
+    Span::add_event(span, "pressure_test_event", Some(attrs))
+    spans.push(span)
     
-    telemetry_data.add_span(span)
+    objects_created = objects_created + 1
   }
   
-  // Optimize memory usage
-  let optimization_result = memory_optimizer.optimize(telemetry_data)
+  let peak_memory = Memory::allocated()
+  let memory_used = peak_memory - initial_memory
   
-  // Verify optimization was applied
-  assert_true(optimization_result.optimized)
-  assert_true(optimization_result.memory_reduction > 0)
+  // Verify we used significant memory but didn't exceed limit
+  assert_true(memory_used > memory_limit * 8 / 10)  // At least 80% of limit
+  assert_true(memory_used < memory_limit * 12 / 10)  // Less than 120% of limit
   
-  // Verify specific optimizations
-  assert_true(optimization_result.applied_strategies.contains(ObjectPooling))
-  assert_true(optimization_result.applied_strategies.contains(Deduplication))
-  
-  // Verify data integrity after optimization
-  let spans = telemetry_data.get_spans()
-  assert_eq(spans.length(), 100)
-  
+  // Test cleanup under memory pressure
   for span in spans {
-    let service_name = Span::get_attribute(span, "service.name")
-    match service_name {
-      Some(StringValue(name)) => assert_eq(name, "optimized_service")
-      _ => assert_true(false)
-    }
-    
-    let service_version = Span::get_attribute(span, "service.version")
-    match service_version {
-      Some(StringValue(version)) => assert_eq(version, "1.0.0")
-      _ => assert_true(false)
-    }
+    Span::end(span)
   }
   
-  // Check memory usage before and after optimization
-  let memory_before = optimization_result.memory_before
-  let memory_after = optimization_result.memory_after
-  let memory_reduction_percentage = (memory_before - memory_after).to_float() / memory_before.to_float() * 100.0
+  // Clear references
+  spans.clear()
   
-  // Verify significant memory reduction
-  assert_true(memory_reduction_percentage > 10.0) // At least 10% reduction
+  // Force garbage collection
+  Memory::gc()
+  
+  let after_cleanup_memory = Memory::allocated()
+  let memory_recovered = peak_memory - after_cleanup_memory
+  
+  // Verify most memory is recovered even under pressure
+  let recovery_percentage = (memory_recovered * 100) / memory_used
+  assert_true(recovery_percentage > 70)  // At least 70% memory recovered
 }
