@@ -486,6 +486,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_resource_utilization_optimization_tests.mbt": {
   },
+  "azimuth_resource_pool_cache_strategy_tests.mbt": {
+  },
   "azimuth_resource_optimization_tests.mbt": {
   },
   "azimuth_resource_optimization_telemetry_tests.mbt": {
