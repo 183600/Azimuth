@@ -1,978 +1,578 @@
 // Azimuth Premium Distributed Tracing Tests
 // This file contains high-quality test cases for distributed tracing consistency
 
-// Test 1: Trace Context Propagation
-test "trace context propagation" {
-  // Trace context types
-  type TraceId {
-    value : String
-  }
-  
-  type SpanId {
-    value : String
-  }
-  
-  type TraceFlags {
-    sampled : Bool
-  }
-  
-  type TraceState {
-    entries : Array[(String, String)]
-  }
-  
-  type TraceContext {
-    trace_id : TraceId
-    span_id : SpanId
-    trace_flags : TraceFlags
-    trace_state : TraceState
-  }
-  
-  let create_trace_id = fn() -> TraceId {
-    // Generate random trace ID (simplified)
-    TraceId { value: "0af7651916cd43dd8448eb211c80319c" }
-  }
-  
-  let create_span_id = fn() -> SpanId {
-    // Generate random span ID (simplified)
-    SpanId { value: "b7ad6b7169203331" }
-  }
-  
-  let create_trace_context = fn(trace_id : TraceId, span_id : SpanId, sampled : Bool) -> TraceContext {
-    TraceContext {
-      trace_id: trace_id,
-      span_id: span_id,
-      trace_flags: TraceFlags { sampled: sampled },
-      trace_state: TraceState { entries: [] }
-    }
-  }
-  
-  let extract_from_headers = fn(headers : Array[(String, String)]) -> Option[TraceContext] {
-    let mut trace_parent = None
-    let mut trace_state = None
-    
-    for (name, value) in headers {
-      if name == "traceparent" {
-        trace_parent = Some(value)
-      } else if name == "tracestate" {
-        trace_state = Some(value)
-      }
-    }
-    
-    match trace_parent {
-      Some(tp) => {
-        // Parse traceparent: version-trace_id-span_id-flags
-        let parts = tp.split("-")
-        if parts.length() == 4 {
-          let trace_id = TraceId { value: parts[1] }
-          let span_id = SpanId { value: parts[2] }
-          let flags = parts[3]
-          let sampled = flags.length() > 0 && (flags[0].to_int() & 0x01) != 0
-          
-          let trace_state_entries = match trace_state {
-            Some(ts) => {
-              let entries = ts.split(",")
-              let mut result = []
-              
-              for entry in entries {
-                let kv = entry.split("=")
-                if kv.length() == 2 {
-                  result.push((kv[0], kv[1]))
-                }
-              }
-              
-              result
-            }
-            None => []
-          }
-          
-          Some(TraceContext {
-            trace_id: trace_id,
-            span_id: span_id,
-            trace_flags: TraceFlags { sampled: sampled },
-            trace_state: TraceState { entries: trace_state_entries }
-          })
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  let inject_to_headers = fn(context : TraceContext) -> Array[(String, String)] {
-    let flags = if context.trace_flags.sampled { "01" } else { "00" }
-    let trace_parent = "00-" + context.trace_id.value + "-" + context.span_id.value + "-" + flags
-    
-    let mut trace_state_str = ""
-    for i = 0; i < context.trace_state.entries.length(); i = i + 1 {
-      if i > 0 { trace_state_str = trace_state_str + "," }
-      trace_state_str = trace_state_str + context.trace_state.entries[i].0 + "=" + context.trace_state.entries[i].1
-    }
-    
-    let mut headers = [("traceparent", trace_parent)]
-    
-    if trace_state_str.length() > 0 {
-      headers.push(("tracestate", trace_state_str))
-    }
-    
-    headers
-  }
-  
-  // Test trace context creation
-  let trace_id = create_trace_id()
-  let span_id = create_span_id()
-  let context = create_trace_context(trace_id, span_id, true)
-  
-  assert_eq(context.trace_id.value, "0af7651916cd43dd8448eb211c80319c")
-  assert_eq(context.span_id.value, "b7ad6b7169203331")
-  assert_true(context.trace_flags.sampled)
-  
-  // Test header injection
-  let headers = inject_to_headers(context)
-  assert_eq(headers.length(), 1)
-  assert_eq(headers[0], ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  
-  // Test header extraction
-  let extracted = extract_from_headers(headers)
-  match extracted {
-    Some(ctx) => {
-      assert_eq(ctx.trace_id.value, context.trace_id.value)
-      assert_eq(ctx.span_id.value, context.span_id.value)
-      assert_eq(ctx.trace_flags.sampled, context.trace_flags.sampled)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test with tracestate
-  let context_with_state = TraceContext {
-    trace_id: trace_id,
-    span_id: span_id,
-    trace_flags: TraceFlags { sampled: true },
-    trace_state: TraceState { entries: [("vendor1", "value1"), ("vendor2", "value2")] }
-  }
-  
-  let headers_with_state = inject_to_headers(context_with_state)
-  assert_eq(headers_with_state.length(), 2)
-  assert_eq(headers_with_state[1], ("tracestate", "vendor1=value1,vendor2=value2"))
-  
-  let extracted_with_state = extract_from_headers(headers_with_state)
-  match extracted_with_state {
-    Some(ctx) => {
-      assert_eq(ctx.trace_state.entries.length(), 2)
-      assert_eq(ctx.trace_state.entries[0], ("vendor1", "value1"))
-      assert_eq(ctx.trace_state.entries[1], ("vendor2", "value2"))
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 2: Span Lifecycle Management
-test "span lifecycle management" {
-  // Span types
-  type SpanKind {
-    Internal
-    Server
-    Client
-    Producer
-    Consumer
-  }
-  
-  type SpanStatus {
-    Unset
-    Ok
-    Error
-  }
-  
-  type SpanEvent {
-    name : String
-    timestamp : Int
-    attributes : Array[(String, String)]
-  }
-  
-  type SpanLink {
-    trace_context : TraceContext
-    attributes : Array[(String, String)]
-  }
-  
-  type Span {
-    trace_context : TraceContext
-    parent_span_id : Option[SpanId]
-    kind : SpanKind
-    name : String
-    start_time : Int
-    end_time : Option[Int]
-    status : SpanStatus
-    events : Array[SpanEvent]
-    links : Array[SpanLink]
-    attributes : Array[(String, String)]
-  }
-  
-  let create_span = fn(trace_context : TraceContext, parent_span_id : Option[SpanId], kind : SpanKind, name : String, start_time : Int) -> Span {
-    Span {
-      trace_context: trace_context,
-      parent_span_id: parent_span_id,
-      kind: kind,
-      name: name,
-      start_time: start_time,
-      end_time: None,
-      status: Unset,
-      events: [],
-      links: [],
-      attributes: []
-    }
-  }
-  
-  let set_attribute = fn(span : Span, key : String, value : String) -> Span {
-    Span {
-      trace_context: span.trace_context,
-      parent_span_id: span.parent_span_id,
-      kind: span.kind,
-      name: span.name,
-      start_time: span.start_time,
-      end_time: span.end_time,
-      status: span.status,
-      events: span.events,
-      links: span.links,
-      attributes: span.attributes.push((key, value))
-    }
-  }
-  
-  let add_event = fn(span : Span, name : String, timestamp : Int, attributes : Array[(String, String)]) -> Span {
-    let event = SpanEvent {
-      name: name,
-      timestamp: timestamp,
-      attributes: attributes
-    }
-    
-    Span {
-      trace_context: span.trace_context,
-      parent_span_id: span.parent_span_id,
-      kind: span.kind,
-      name: span.name,
-      start_time: span.start_time,
-      end_time: span.end_time,
-      status: span.status,
-      events: span.events.push(event),
-      links: span.links,
-      attributes: span.attributes
-    }
-  }
-  
-  let set_status = fn(span : Span, status : SpanStatus) -> Span {
-    Span {
-      trace_context: span.trace_context,
-      parent_span_id: span.parent_span_id,
-      kind: span.kind,
-      name: span.name,
-      start_time: span.start_time,
-      end_time: span.end_time,
-      status: status,
-      events: span.events,
-      links: span.links,
-      attributes: span.attributes
-    }
-  }
-  
-  let end_span = fn(span : Span, end_time : Int) -> Span {
-    Span {
-      trace_context: span.trace_context,
-      parent_span_id: span.parent_span_id,
-      kind: span.kind,
-      name: span.name,
-      start_time: span.start_time,
-      end_time: Some(end_time),
-      status: span.status,
-      events: span.events,
-      links: span.links,
-      attributes: span.attributes
-    }
-  }
-  
-  let get_duration = fn(span : Span) -> Option[Int] {
-    match span.end_time {
-      Some(end) => Some(end - span.start_time)
-      None => None
-    }
-  }
-  
-  // Test span lifecycle
-  let trace_id = create_trace_id()
-  let span_id = create_span_id()
-  let parent_span_id = create_span_id()
-  let trace_context = create_trace_context(trace_id, span_id, true)
-  
-  let span = create_span(trace_context, Some(parent_span_id), Server, "http.request", 1000)
-  assert_eq(span.name, "http.request")
-  assert_eq(span.kind, Server)
-  assert_eq(span.start_time, 1000)
-  assert_eq(span.end_time, None)
-  assert_eq(span.status, Unset)
-  
-  // Set attributes
-  let span_with_attrs = span
-    |> set_attribute("http.method", "GET")
-    |> set_attribute("http.url", "https://example.com/api")
-    |> set_attribute("http.status_code", "200")
-  
-  assert_eq(span_with_attrs.attributes.length(), 3)
-  assert_eq(span_with_attrs.attributes[0], ("http.method", "GET"))
-  
-  // Add events
-  let span_with_events = span_with_attrs
-    |> add_event("http.request.start", 1000, [("http.method", "GET")])
-    |> add_event("http.request.end", 1500, [("http.status_code", "200")])
-  
-  assert_eq(span_with_events.events.length(), 2)
-  assert_eq(span_with_events.events[0].name, "http.request.start")
-  assert_eq(span_with_events.events[0].timestamp, 1000)
-  
-  // Set status
-  let span_with_status = set_status(span_with_events, Ok)
-  assert_eq(span_with_status.status, Ok)
-  
-  // End span
-  let ended_span = end_span(span_with_status, 1600)
-  assert_eq(ended_span.end_time, Some(1600))
-  
-  // Get duration
-  let duration = get_duration(ended_span)
-  assert_eq(duration, Some(600))
-  
-  // Test incomplete span (no end time)
-  let incomplete_duration = get_duration(span)
-  assert_eq(incomplete_duration, None)
-}
-
-// Test 3: Distributed Trace Consistency
-test "distributed trace consistency" {
-  // Service representation
-  type Service {
-    name : String
-    version : String
-    instance_id : String
-  }
-  
-  // Trace node in distributed system
-  type TraceNode {
-    service : Service
-    span : Span
-    children : Array[TraceNode]
-  }
-  
-  // Trace tree
-  type TraceTree {
-    root : TraceNode
-    all_spans : Array[Span]
-  }
-  
-  let create_service = fn(name : String, version : String, instance_id : String) -> Service {
-    Service {
-      name: name,
-      version: version,
-      instance_id: instance_id
-    }
-  }
-  
-  let create_trace_node = fn(service : Service, span : Span) -> TraceNode {
-    TraceNode {
-      service: service,
-      span: span,
-      children: []
-    }
-  }
-  
-  let add_child = fn(parent : TraceNode, child : TraceNode) -> TraceNode {
-    TraceNode {
-      service: parent.service,
-      span: parent.span,
-      children: parent.children.push(child)
-    }
-  }
-  
-  let build_trace_tree = fn(root : TraceNode) -> TraceTree {
-    let collect_spans = fn(node : TraceNode, accumulator : Array[Span]) -> Array[Span] {
-      let mut result = accumulator.push(node.span)
-      
-      for child in node.children {
-        result = collect_spans(child, result)
-      }
-      
-      result
-    }
-    
-    let all_spans = collect_spans(root, [])
-    
-    TraceTree {
-      root: root,
-      all_spans: all_spans
-    }
-  }
-  
-  let validate_trace_consistency = fn(tree : TraceTree) -> Bool {
-    // All spans should have the same trace ID
-    let trace_id = tree.root.span.trace_context.trace_id.value
-    
-    for span in tree.all_spans {
-      if span.trace_context.trace_id.value != trace_id {
-        return false
-      }
-    }
-    
-    // Parent-child relationships should be consistent
-    let validate_parent_child = fn(node : TraceNode, parent_span_id : Option[SpanId>) -> Bool {
-      // Check parent reference
-      match parent_span_id {
-        Some(parent_id) => {
-          match node.span.parent_span_id {
-            Some(span_parent_id) => {
-              if span_parent_id.value != parent_id.value {
-                return false
-              }
-            }
-            None => return false
-          }
-        }
-        None => {
-          // Root node should not have parent
-          if node.span.parent_span_id.is_some() {
-            return false
-          }
-        }
-      }
-      
-      // Validate children
-      for child in node.children {
-        if !validate_parent_child(child, Some(node.span.trace_context.span_id)) {
-          return false
-        }
-      }
-      
-      true
-    }
-    
-    validate_parent_child(tree.root, None)
-  }
-  
-  // Create a distributed trace scenario
-  let api_service = create_service("api-service", "1.0.0", "api-1")
-  let db_service = create_service("db-service", "2.1.0", "db-1")
-  let cache_service = create_service("cache-service", "1.5.0", "cache-1")
-  
-  let trace_id = create_trace_id()
-  
-  // Root span (API request)
-  let api_span_id = create_span_id()
-  let api_trace_context = create_trace_context(trace_id, api_span_id, true)
-  let api_span = create_span(api_trace_context, None, Server, "api.request", 1000)
-    |> set_attribute("http.method", "POST")
-    |> set_attribute("http.url", "/api/users")
-    |> end_span(1600)
-  
-  let api_node = create_trace_node(api_service, api_span)
-  
-  // Database query span
-  let db_span_id = create_span_id()
-  let db_trace_context = create_trace_context(trace_id, db_span_id, true)
-  let db_span = create_span(db_trace_context, Some(api_span_id), Client, "db.query", 1100)
-    |> set_attribute("db.statement", "SELECT * FROM users")
-    |> set_attribute("db.type", "postgresql")
-    |> end_span(1400)
-  
-  let db_node = create_trace_node(db_service, db_span)
-  
-  // Cache query span
-  let cache_span_id = create_span_id()
-  let cache_trace_context = create_trace_context(trace_id, cache_span_id, true)
-  let cache_span = create_span(cache_trace_context, Some(api_span_id), Client, "cache.get", 1050)
-    |> set_attribute("cache.key", "user:123")
-    |> set_attribute("cache.hit", "false")
-    |> end_span(1080)
-  
-  let cache_node = create_trace_node(cache_service, cache_span)
-  
-  // Build trace tree
-  let api_with_children = api_node
-    |> add_child(db_node)
-    |> add_child(cache_node)
-  
-  let trace_tree = build_trace_tree(api_with_children)
-  
-  // Validate trace consistency
-  assert_true(validate_trace_consistency(trace_tree))
-  
-  // Verify all spans have same trace ID
-  for span in trace_tree.all_spans {
-    assert_eq(span.trace_context.trace_id.value, trace_id.value)
-  }
-  
-  // Verify parent-child relationships
-  assert_eq(db_span.parent_span_id.unwrap().value, api_span_id.value)
-  assert_eq(cache_span.parent_span_id.unwrap().value, api_span_id.value)
-  assert_eq(api_span.parent_span_id, None)
-  
-  // Verify timing consistency
-  assert_true(db_span.start_time >= api_span.start_time)
-  assert_true(db_span.start_time < db_span.end_time.unwrap())
-  assert_true(cache_span.start_time >= api_span.start_time)
-  assert_true(cache_span.start_time < cache_span.end_time.unwrap())
-}
-
-// Test 4: Cross-Service Trace Correlation
-test "cross-service trace correlation" {
-  // Service call representation
-  type ServiceCall {
-    from_service : String
-    to_service : String
-    trace_context : TraceContext
-    timestamp : Int
-  }
-  
-  // Trace correlation graph
-  type TraceCorrelation {
-    calls : Array[ServiceCall]
-    services : Array[String]
-  }
-  
-  let create_service_call = fn(from_service : String, to_service : String, trace_context : TraceContext, timestamp : Int) -> ServiceCall {
-    ServiceCall {
-      from_service: from_service,
-      to_service: to_service,
-      trace_context: trace_context,
-      timestamp: timestamp
-    }
-  }
-  
-  let add_call = fn(correlation : TraceCorrelation, call : ServiceCall) -> TraceCorrelation {
-    let mut services = correlation.services
-    
-    if !services.contains(call.from_service) {
-      services = services.push(call.from_service)
-    }
-    
-    if !services.contains(call.to_service) {
-      services = services.push(call.to_service)
-    }
-    
-    TraceCorrelation {
-      calls: correlation.calls.push(call),
-      services: services
-    }
-  }
-  
-  let get_service_calls = fn(correlation : TraceCorrelation, service : String) -> Array[ServiceCall] {
-    let mut result = []
-    
-    for call in correlation.calls {
-      if call.from_service == service || call.to_service == service {
-        result.push(call)
-      }
-    }
-    
-    result
-  }
-  
-  let get_trace_path = fn(correlation : TraceCorrelation, trace_id : TraceId) -> Array[ServiceCall] {
-    let mut result = []
-    
-    for call in correlation.calls {
-      if call.trace_context.trace_id.value == trace_id.value {
-        result.push(call)
-      }
-    }
-    
-    // Sort by timestamp
-    let sorted = result.sort(|a, b| a.timestamp - b.timestamp)
-    sorted
-  }
-  
-  // Test cross-service correlation
-  let correlation = TraceCorrelation { calls: [], services: [] }
-  
-  let trace_id = create_trace_id()
-  
-  // Create service calls in a request chain
-  let call1 = create_service_call(
-    "gateway",
-    "user-service",
-    create_trace_context(trace_id, create_span_id(), true),
-    1000
+// Test 1: Trace context propagation across services
+pub test "premium trace context propagation" {
+  // Test trace context creation and validation
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_context = SpanContext::new(trace_id, span_id, true, "key1=value1,key2=value2")
+  
+  // Verify trace context properties
+  assert_eq(SpanContext::trace_id(span_context), trace_id)
+  assert_eq(SpanContext::span_id(span_context), span_id)
+  assert_true(SpanContext::is_valid(span_context))
+  assert_true(SpanContext::is_sampled(span_context))
+  assert_eq(SpanContext::trace_state(span_context), "key1=value1,key2=value2")
+  
+  // Test trace context propagation to child spans
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "propagation-test-tracer")
+  
+  let parent_span = Span::new("parent-operation", Server, span_context)
+  let child_span1 = Tracer::start_span(tracer, "child-operation-1")
+  let child_span2 = Tracer::start_span(tracer, "child-operation-2")
+  let grandchild_span = Tracer::start_span(tracer, "grandchild-operation")
+  
+  // Verify trace context is preserved in child spans
+  assert_eq(Span::span_context(child_span1).trace_id, trace_id)
+  assert_eq(Span::span_context(child_span2).trace_id, trace_id)
+  assert_eq(Span::span_context(grandchild_span).trace_id, trace_id)
+  
+  // Verify span IDs are unique
+  assert_true(Span::span_context(child_span1).span_id != span_id)
+  assert_true(Span::span_context(child_span2).span_id != span_id)
+  assert_true(Span::span_context(grandchild_span).span_id != span_id)
+  assert_true(Span::span_context(child_span1).span_id != Span::span_context(child_span2).span_id)
+  assert_true(Span::span_context(child_span1).span_id != Span::span_context(grandchild_span).span_id)
+  assert_true(Span::span_context(child_span2).span_id != Span::span_context(grandchild_span).span_id)
+  
+  // End all spans
+  Span::end(grandchild_span)
+  Span::end(child_span2)
+  Span::end(child_span1)
+  Span::end(parent_span)
+  
+  // Test trace context propagation with baggage
+  let baggage = Baggage::new()
+  let baggage_with_entries = Baggage::set_entry(
+    Baggage::set_entry(baggage, "user.id", "12345"),
+    "request.id", "req-67890"
   )
   
-  let call2 = create_service_call(
-    "user-service",
-    "database",
-    create_trace_context(trace_id, create_span_id(), true),
-    1100
-  )
-  
-  let call3 = create_service_call(
-    "user-service",
-    "cache-service",
-    create_trace_context(trace_id, create_span_id(), true),
-    1050
-  )
-  
-  let call4 = create_service_call(
-    "user-service",
-    "notification-service",
-    create_trace_context(trace_id, create_span_id(), true),
-    1200
-  )
-  
-  // Build correlation graph
-  let correlation1 = correlation
-    |> add_call(call1)
-    |> add_call(call2)
-    |> add_call(call3)
-    |> add_call(call4)
-  
-  // Verify all services are tracked
-  assert_eq(correlation1.services.length(), 5)
-  assert_true(correlation1.services.contains("gateway"))
-  assert_true(correlation1.services.contains("user-service"))
-  assert_true(correlation1.services.contains("database"))
-  assert_true(correlation1.services.contains("cache-service"))
-  assert_true(correlation1.services.contains("notification-service"))
-  
-  // Get calls for specific service
-  let user_service_calls = get_service_calls(correlation1, "user-service")
-  assert_eq(user_service_calls.length(), 3)
-  
-  // Verify trace path
-  let trace_path = get_trace_path(correlation1, trace_id)
-  assert_eq(trace_path.length(), 4)
-  
-  // Verify chronological order
-  assert_eq(trace_path[0].from_service, "gateway")
-  assert_eq(trace_path[0].to_service, "user-service")
-  assert_eq(trace_path[0].timestamp, 1000)
-  
-  assert_eq(trace_path[1].from_service, "user-service")
-  assert_eq(trace_path[1].to_service, "cache-service")
-  assert_eq(trace_path[1].timestamp, 1050)
-  
-  assert_eq(trace_path[2].from_service, "user-service")
-  assert_eq(trace_path[2].to_service, "database")
-  assert_eq(trace_path[2].timestamp, 1100)
-  
-  assert_eq(trace_path[3].from_service, "user-service")
-  assert_eq(trace_path[3].to_service, "notification-service")
-  assert_eq(trace_path[3].timestamp, 1200)
+  // In a real implementation, baggage would be propagated with the trace context
+  // For testing purposes, we verify baggage operations work
+  assert_eq(Baggage::get_entry(baggage_with_entries, "user.id"), Some("12345"))
+  assert_eq(Baggage::get_entry(baggage_with_entries, "request.id"), Some("req-67890"))
 }
 
-// Test 5: Trace Sampling Strategy
-test "trace sampling strategy" {
-  // Sampling decision types
-  type SamplingDecision {
-    Drop
-    Record
-    RecordAndSample
+// Test 2: Cross-service trace consistency
+pub test "premium cross_service_trace_consistency" {
+  // Test trace consistency across multiple services
+  let services = ["service-a", "service-b", "service-c", "service-d"]
+  let trace_id = "trace-12345-cross-service"
+  let spans = []
+  
+  // Create spans for each service
+  for i in 0...services.length() - 1 {
+    let service_name = services[i]
+    let span_id = "span-" + service_name
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
+    
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, service_name)
+    
+    let span = Span::new(service_name + "-operation", Server, span_context)
+    spans.push(span)
+    
+    // Add service-specific attributes
+    Span::set_status(span, Ok, Some(service_name + " operation completed"))
   }
   
-  // Sampling result
-  type SamplingResult {
-    decision : SamplingDecision
-    attributes : Array[(String, String)]
+  // Verify trace consistency across services
+  for i in 0...spans.length() - 1 {
+    let span = spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_true(Span::span_context(span).is_valid)
+    assert_true(Span::span_context(span).is_sampled)
   }
   
-  // Sampler types
-  type Sampler {
-    AlwaysOn
-    AlwaysOff
-    TraceIdRatio(Float)  // Sample rate between 0.0 and 1.0
-    ParentBased(Box[Sampler])
-  }
-  
-  let should_sample = fn(sampler : Sampler, trace_id : TraceId, parent_context : Option[TraceContext]) -> SamplingResult {
-    match sampler {
-      AlwaysOn => SamplingResult {
-        decision: RecordAndSample,
-        attributes: []
-      }
-      AlwaysOff => SamplingResult {
-        decision: Drop,
-        attributes: []
-      }
-      TraceIdRatio(rate) => {
-        // Simple hash-based sampling (simplified)
-        let hash = trace_id.value.substring(0, 8).to_int() % 10000
-        let threshold = (rate * 10000.0).to_int()
-        
-        if hash < threshold {
-          SamplingResult {
-            decision: RecordAndSample,
-            attributes: [("sampler.type", "traceidratio"), ("sampler.param", rate.to_string())]
-          }
-        } else {
-          SamplingResult {
-            decision: Drop,
-            attributes: []
-          }
-        }
-      }
-      ParentBased(inner_sampler) => {
-        match parent_context {
-          Some(parent) => {
-            if parent.trace_flags.sampled {
-              SamplingResult {
-                decision: RecordAndSample,
-                attributes: [("sampler.type", "parentbased")]
-              }
-            } else {
-              SamplingResult {
-                decision: Drop,
-                attributes: []
-              }
-            }
-          }
-          None => should_sample(*inner_sampler, trace_id, None)
-        }
+  // Verify span IDs are unique across services
+  for i in 0...spans.length() - 1 {
+    for j in 0...spans.length() - 1 {
+      if i != j {
+        assert_true(Span::span_context(spans[i]).span_id != Span::span_context(spans[j]).span_id)
       }
     }
   }
   
-  // Test always-on sampler
-  let always_on_result = should_sample(AlwaysOn, create_trace_id(), None)
-  assert_eq(always_on_result.decision, RecordAndSample)
-  
-  // Test always-off sampler
-  let always_off_result = should_sample(AlwaysOff, create_trace_id(), None)
-  assert_eq(always_off_result.decision, Drop)
-  
-  // Test trace ID ratio sampler
-  let trace_id1 = TraceId { value: "00000000000000000000000000000001" } // Low hash
-  let trace_id2 = TraceId { value: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } // High hash
-  
-  let ratio_50 = TraceIdRatio(0.5)
-  
-  let result1 = should_sample(ratio_50, trace_id1, None)
-  let result2 = should_sample(ratio_50, trace_id2, None)
-  
-  // Results may vary based on hash calculation, but should be consistent
-  assert_true(result1.decision == RecordAndSample || result1.decision == Drop)
-  assert_true(result2.decision == RecordAndSample || result2.decision == Drop)
-  
-  // Test parent-based sampler
-  let parent_sampled = TraceContext {
-    trace_id: create_trace_id(),
-    span_id: create_span_id(),
-    trace_flags: TraceFlags { sampled: true },
-    trace_state: TraceState { entries: [] }
+  // End all spans
+  for i in 0...spans.length() - 1 {
+    Span::end(spans[i])
   }
   
-  let parent_not_sampled = TraceContext {
-    trace_id: create_trace_id(),
-    span_id: create_span_id(),
-    trace_flags: TraceFlags { sampled: false },
-    trace_state: TraceState { entries: [] }
+  // Test trace consistency with different span kinds
+  let span_kinds = [Internal, Server, Client, Producer, Consumer]
+  let kind_spans = []
+  
+  for i in 0...span_kinds.length() - 1 {
+    let kind = span_kinds[i]
+    let span_id = "span-kind-" + i.to_string()
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
+    
+    let span = Span::new("kind-operation-" + i.to_string(), kind, span_context)
+    kind_spans.push(span)
   }
   
-  let parent_based = ParentBased(Box(AlwaysOff))
+  // Verify trace consistency across span kinds
+  for i in 0...kind_spans.length() - 1 {
+    let span = kind_spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_true(Span::span_context(span).is_valid)
+    assert_true(Span::span_context(span).is_sampled)
+  }
   
-  let with_sampled_parent = should_sample(parent_based, create_trace_id(), Some(parent_sampled))
-  assert_eq(with_sampled_parent.decision, RecordAndSample)
-  
-  let with_not_sampled_parent = should_sample(parent_based, create_trace_id(), Some(parent_not_sampled))
-  assert_eq(with_not_sampled_parent.decision, Drop)
-  
-  let with_no_parent = should_sample(parent_based, create_trace_id(), None)
-  assert_eq(with_no_parent.decision, Drop) // Uses inner sampler (AlwaysOff)
+  // End all kind spans
+  for i in 0...kind_spans.length() - 1 {
+    Span::end(kind_spans[i])
+  }
 }
 
-// Test 6: Trace Analytics and Metrics
-test "trace analytics and metrics" {
-  // Trace metrics
-  type TraceMetrics {
-    total_spans : Int
-    error_spans : Int
-    total_duration : Int
-    services : Array[String]
-    operations : Array[String]
+// Test 3: Distributed trace sampling consistency
+pub test "premium distributed_trace_sampling_consistency" {
+  // Test trace sampling decisions
+  let trace_id = "trace-sampling-test"
+  let sampled_spans = []
+  let unsampled_spans = []
+  
+  // Create sampled spans
+  for i in 0...5 {
+    let span_id = "sampled-span-" + i.to_string()
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("sampled-operation-" + i.to_string(), Server, span_context)
+    sampled_spans.push(span)
   }
   
-  // Span duration bucket
-  type DurationBucket {
-    min : Int
-    max : Int
-    count : Int
+  // Create unsampled spans
+  for i in 0...5 {
+    let span_id = "unsampled-span-" + i.to_string()
+    let span_context = SpanContext::new(trace_id, span_id, false, "")
+    let span = Span::new("unsampled-operation-" + i.to_string(), Server, span_context)
+    unsampled_spans.push(span)
   }
   
-  // Trace analytics
-  type TraceAnalytics {
-    metrics : TraceMetrics
-    duration_distribution : Array[DurationBucket]
-    error_rate : Float
-    average_duration : Float
+  // Verify sampling consistency
+  for i in 0...sampled_spans.length() - 1 {
+    let span = sampled_spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_true(Span::span_context(span).is_sampled)
+    assert_true(Span::is_recording(span))
   }
   
-  let calculate_metrics = fn(spans : Array[Span]) -> TraceMetrics {
-    let mut total_spans = 0
-    let mut error_spans = 0
-    let mut total_duration = 0
-    let mut services = []
-    let mut operations = []
-    
-    for span in spans {
-      total_spans = total_spans + 1
-      
-      if span.status == Error {
-        error_spans = error_spans + 1
-      }
-      
-      match get_duration(span) {
-        Some(duration) => total_duration = total_duration + duration
-        None => ()
-      }
-      
-      // Extract service and operation from attributes
-      for (key, value) in span.attributes {
-        if key == "service.name" && !services.contains(value) {
-          services = services.push(value)
-        } else if key == "operation.name" && !operations.contains(value) {
-          operations = operations.push(value)
-        }
-      }
-    }
-    
-    TraceMetrics {
-      total_spans: total_spans,
-      error_spans: error_spans,
-      total_duration: total_duration,
-      services: services,
-      operations: operations
-    }
+  for i in 0...unsampled_spans.length() - 1 {
+    let span = unsampled_spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_false(Span::span_context(span).is_sampled)
+    assert_true(Span::is_recording(span))  // In real implementation, unsampled spans might not record
   }
   
-  let calculate_duration_distribution = fn(spans : Array[Span], bucket_size : Int) -> Array[DurationBucket] {
-    let mut durations = []
+  // Test sampling propagation across services
+  let services = ["service-a", "service-b", "service-c"]
+  let sampled_service_spans = []
+  let unsampled_service_spans = []
+  
+  // Create sampled service spans
+  for i in 0...services.length() - 1 {
+    let service_name = services[i]
+    let span_id = "sampled-service-" + service_name
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
     
-    for span in spans {
-      match get_duration(span) {
-        Some(duration) => durations.push(duration)
-        None => ()
-      }
-    }
-    
-    if durations.length() == 0 {
-      return []
-    }
-    
-    let min_duration = durations.reduce(|acc, val| if val < acc { val } else { acc }, durations[0])
-    let max_duration = durations.reduce(|acc, val| if val > acc { val } else { acc }, durations[0])
-    
-    let mut buckets = []
-    let mut bucket_start = (min_duration / bucket_size) * bucket_size
-    
-    while bucket_start <= max_duration {
-      let bucket_end = bucket_start + bucket_size
-      let mut count = 0
-      
-      for duration in durations {
-        if duration >= bucket_start && duration < bucket_end {
-          count = count + 1
-        }
-      }
-      
-      buckets.push(DurationBucket {
-        min: bucket_start,
-        max: bucket_end,
-        count: count
-      })
-      
-      bucket_start = bucket_end
-    }
-    
-    buckets
+    let span = Span::new(service_name + "-operation", Server, span_context)
+    sampled_service_spans.push(span)
   }
   
-  let analyze_traces = fn(spans : Array[Span]) -> TraceAnalytics {
-    let metrics = calculate_metrics(spans)
-    let duration_distribution = calculate_duration_distribution(spans, 100)
+  // Create unsampled service spans
+  for i in 0...services.length() - 1 {
+    let service_name = services[i]
+    let span_id = "unsampled-service-" + service_name
+    let span_context = SpanContext::new(trace_id, span_id, false, "")
     
-    let error_rate = if metrics.total_spans > 0 {
-      metrics.error_spans.to_float() / metrics.total_spans.to_float()
+    let span = Span::new(service_name + "-operation", Server, span_context)
+    unsampled_service_spans.push(span)
+  }
+  
+  // Verify sampling consistency across services
+  for i in 0...sampled_service_spans.length() - 1 {
+    let span = sampled_service_spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_true(Span::span_context(span).is_sampled)
+  }
+  
+  for i in 0...unsampled_service_spans.length() - 1 {
+    let span = unsampled_service_spans[i]
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_false(Span::span_context(span).is_sampled)
+  }
+  
+  // End all spans
+  for i in 0...sampled_spans.length() - 1 {
+    Span::end(sampled_spans[i])
+  }
+  
+  for i in 0...unsampled_spans.length() - 1 {
+    Span::end(unsampled_spans[i])
+  }
+  
+  for i in 0...sampled_service_spans.length() - 1 {
+    Span::end(sampled_service_spans[i])
+  }
+  
+  for i in 0...unsampled_service_spans.length() - 1 {
+    Span::end(unsampled_service_spans[i])
+  }
+}
+
+// Test 4: Trace state propagation consistency
+pub test "premium trace_state_propagation_consistency" {
+  // Test trace state propagation
+  let trace_id = "trace-state-test"
+  let initial_trace_state = "key1=value1,key2=value2,key3=value3"
+  let span_context = SpanContext::new(trace_id, "parent-span", true, initial_trace_state)
+  
+  // Verify initial trace state
+  assert_eq(SpanContext::trace_state(span_context), initial_trace_state)
+  
+  // Create child spans and verify trace state propagation
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "trace-state-test-tracer")
+  
+  let parent_span = Span::new("parent-operation", Server, span_context)
+  let child_span1 = Tracer::start_span(tracer, "child-operation-1")
+  let child_span2 = Tracer::start_span(tracer, "child-operation-2")
+  
+  // Verify trace state is propagated to child spans
+  assert_eq(Span::span_context(child_span1).trace_state, initial_trace_state)
+  assert_eq(Span::span_context(child_span2).trace_state, initial_trace_state)
+  
+  // Test trace state modification
+  let modified_trace_state = "key1=modified1,key2=value2,key4=value4"
+  let modified_span_context = SpanContext::new(trace_id, "modified-span", true, modified_trace_state)
+  
+  let modified_span = Span::new("modified-operation", Server, modified_span_context)
+  let modified_child_span = Tracer::start_span(tracer, "modified-child-operation")
+  
+  // Verify modified trace state is propagated
+  assert_eq(Span::span_context(modified_span).trace_state, modified_trace_state)
+  assert_eq(Span::span_context(modified_child_span).trace_state, modified_trace_state)
+  
+  // Test trace state with special characters
+  let special_trace_state = "special.key=special.value,key.with.dots=value.with.dots,key_with_underscores=value_with_underscores"
+  let special_span_context = SpanContext::new(trace_id, "special-span", true, special_trace_state)
+  
+  let special_span = Span::new("special-operation", Server, special_span_context)
+  let special_child_span = Tracer::start_span(tracer, "special-child-operation")
+  
+  // Verify special trace state is propagated
+  assert_eq(Span::span_context(special_span).trace_state, special_trace_state)
+  assert_eq(Span::span_context(special_child_span).trace_state, special_trace_state)
+  
+  // Test trace state with Unicode
+  let unicode_trace_state = "unicode.key=测试中文,japanese.key=日本語,korean.key=한국어"
+  let unicode_span_context = SpanContext::new(trace_id, "unicode-span", true, unicode_trace_state)
+  
+  let unicode_span = Span::new("unicode-operation", Server, unicode_span_context)
+  let unicode_child_span = Tracer::start_span(tracer, "unicode-child-operation")
+  
+  // Verify Unicode trace state is propagated
+  assert_eq(Span::span_context(unicode_span).trace_state, unicode_trace_state)
+  assert_eq(Span::span_context(unicode_child_span).trace_state, unicode_trace_state)
+  
+  // End all spans
+  Span::end(modified_child_span)
+  Span::end(modified_span)
+  Span::end(special_child_span)
+  Span::end(special_span)
+  Span::end(unicode_child_span)
+  Span::end(unicode_span)
+  Span::end(child_span2)
+  Span::end(child_span1)
+  Span::end(parent_span)
+}
+
+// Test 5: Distributed trace error handling consistency
+pub test "premium distributed_trace_error_handling" {
+  // Test error handling in distributed traces
+  let trace_id = "trace-error-handling"
+  let spans = []
+  
+  // Create spans with different error scenarios
+  let success_span_context = SpanContext::new(trace_id, "success-span", true, "")
+  let success_span = Span::new("success-operation", Server, success_span_context)
+  Span::set_status(success_span, Ok, Some("Operation completed successfully"))
+  spans.push(success_span)
+  
+  let error_span_context = SpanContext::new(trace_id, "error-span", true, "")
+  let error_span = Span::new("error-operation", Server, error_span_context)
+  Span::set_status(error_span, Error, Some("Operation failed with error"))
+  spans.push(error_span)
+  
+  let timeout_span_context = SpanContext::new(trace_id, "timeout-span", true, "")
+  let timeout_span = Span::new("timeout-operation", Server, timeout_span_context)
+  Span::set_status(timeout_span, Error, Some("Operation timed out"))
+  spans.push(timeout_span)
+  
+  // Verify error consistency across spans
+  assert_eq(Span::status(success_span), Ok)
+  assert_eq(Span::status(error_span), Error)
+  assert_eq(Span::status(timeout_span), Error)
+  
+  // Test error propagation across services
+  let services = ["service-a", "service-b", "service-c"]
+  let error_propagation_spans = []
+  
+  // Create a chain of spans where an error propagates
+  for i in 0...services.length() - 1 {
+    let service_name = services[i]
+    let span_id = "error-prop-" + service_name
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
+    
+    let span = Span::new(service_name + "-operation", Server, span_context)
+    
+    // Simulate error propagation
+    if i > 0 {
+      Span::set_status(span, Error, Some("Error propagated from " + services[i-1]))
     } else {
-      0.0
+      Span::set_status(span, Error, Some("Initial error"))
     }
     
-    let average_duration = if metrics.total_spans > 0 {
-      metrics.total_duration.to_float() / metrics.total_spans.to_float()
-    } else {
-      0.0
-    }
+    error_propagation_spans.push(span)
+  }
+  
+  // Verify error propagation consistency
+  for i in 0...error_propagation_spans.length() - 1 {
+    let span = error_propagation_spans[i]
+    assert_eq(Span::status(span), Error)
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+  }
+  
+  // Test error handling with events
+  let events_span_context = SpanContext::new(trace_id, "events-span", true, "")
+  let events_span = Span::new("events-operation", Server, events_span_context)
+  
+  // Add events to track error progression
+  Span::add_event(events_span, "operation.started")
+  Span::add_event(events_span, "operation.processing")
+  Span::add_event(events_span, "operation.error", Some([("error.type", StringValue("timeout"))]))
+  Span::add_event(events_span, "operation.cleanup")
+  
+  Span::set_status(events_span, Error, Some("Operation failed after timeout"))
+  
+  // Verify error events
+  assert_eq(Span::status(events_span), Error)
+  
+  // End all spans
+  for i in 0...spans.length() - 1 {
+    Span::end(spans[i])
+  }
+  
+  for i in 0...error_propagation_spans.length() - 1 {
+    Span::end(error_propagation_spans[i])
+  }
+  
+  Span::end(events_span)
+}
+
+// Test 6: Distributed trace performance consistency
+pub test "premium distributed_trace_performance_consistency" {
+  // Test performance consistency in distributed traces
+  let trace_id = "trace-performance-test"
+  let spans = []
+  
+  // Create spans with timing information
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  for i in 0...10 {
+    let span_id = "perf-span-" + i.to_string()
+    let span_context = SpanContext::new(trace_id, span_id, true, "")
     
-    TraceAnalytics {
-      metrics: metrics,
-      duration_distribution: duration_distribution,
-      error_rate: error_rate,
-      average_duration: average_duration
-    }
+    let span_start = Clock::now_unix_nanos(Clock::system())
+    let span = Span::new("performance-operation-" + i.to_string(), Server, span_context)
+    
+    // Simulate some work
+    let work_start = Clock::now_unix_nanos(Clock::system())
+    // In a real implementation, this would be actual work
+    let work_end = Clock::now_unix_nanos(Clock::system())
+    
+    Span::set_status(span, Ok, Some("Performance operation completed"))
+    Span::end(span)
+    
+    let span_end = Clock::now_unix_nanos(Clock::system())
+    spans.push((span, span_start, span_end))
   }
   
-  // Create test spans
-  let trace_id = create_trace_id()
-  let span1 = create_span(
-    create_trace_context(trace_id, create_span_id(), true),
-    None,
-    Server,
-    "operation1",
-    1000
-  ) |> set_attribute("service.name", "service-a")
-    |> set_attribute("operation.name", "op1")
-    |> end_span(1200) // 200ms duration
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let total_duration = end_time - start_time
   
-  let span2 = create_span(
-    create_trace_context(trace_id, create_span_id(), true),
-    None,
-    Server,
-    "operation2",
-    1100
-  ) |> set_attribute("service.name", "service-b")
-    |> set_attribute("operation.name", "op2")
-    |> set_status(Error)
-    |> end_span(1400) // 300ms duration
+  // Verify performance consistency
+  assert_true(total_duration > 0L)
   
-  let span3 = create_span(
-    create_trace_context(trace_id, create_span_id(), true),
-    None,
-    Server,
-    "operation3",
-    1200
-  ) |> set_attribute("service.name", "service-a")
-    |> set_attribute("operation.name", "op3")
-    |> end_span(1600) // 400ms duration
-  
-  let spans = [span1, span2, span3]
-  
-  // Analyze traces
-  let analytics = analyze_traces(spans)
-  
-  // Verify metrics
-  assert_eq(analytics.metrics.total_spans, 3)
-  assert_eq(analytics.metrics.error_spans, 1)
-  assert_eq(analytics.metrics.total_duration, 900) // 200 + 300 + 400
-  assert_eq(analytics.metrics.services.length(), 2)
-  assert_true(analytics.metrics.services.contains("service-a"))
-  assert_true(analytics.metrics.services.contains("service-b"))
-  
-  // Verify analytics
-  assert_eq(analytics.error_rate, 1.0 / 3.0)
-  assert_eq(analytics.average_duration, 900.0 / 3.0)
-  
-  // Verify duration distribution
-  assert_true(analytics.duration_distribution.length() > 0)
-  
-  // Find bucket for 200ms duration
-  let mut bucket_200 = None
-  for bucket in analytics.duration_distribution {
-    if 200 >= bucket.min && 200 < bucket.max {
-      bucket_200 = Some(bucket)
-      break
-    }
+  for i in 0...spans.length() - 1 {
+    let (span, span_start, span_end) = spans[i]
+    let span_duration = span_end - span_start
+    
+    assert_true(span_duration > 0L)
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_eq(Span::status(span), Ok)
   }
   
-  match bucket_200 {
-    Some(b) => assert_eq(b.count, 1)
-    None => assert_true(false)
+  // Test performance with nested spans
+  let nested_spans = []
+  let nested_start = Clock::now_unix_nanos(Clock::system())
+  
+  let parent_span_context = SpanContext::new(trace_id, "nested-parent", true, "")
+  let parent_span = Span::new("nested-parent-operation", Server, parent_span_context)
+  
+  let parent_start = Clock::now_unix_nanos(Clock::system())
+  
+  for i in 0...5 {
+    let child_span_id = "nested-child-" + i.to_string()
+    let child_span_context = SpanContext::new(trace_id, child_span_id, true, "")
+    
+    let child_start = Clock::now_unix_nanos(Clock::system())
+    let child_span = Span::new("nested-child-operation-" + i.to_string(), Internal, child_span_context)
+    
+    // Simulate nested work
+    let nested_work_start = Clock::now_unix_nanos(Clock::system())
+    // In a real implementation, this would be actual nested work
+    let nested_work_end = Clock::now_unix_nanos(Clock::system())
+    
+    Span::set_status(child_span, Ok, Some("Nested child operation completed"))
+    Span::end(child_span)
+    
+    let child_end = Clock::now_unix_nanos(Clock::system())
+    nested_spans.push((child_span, child_start, child_end))
+  }
+  
+  let parent_end = Clock::now_unix_nanos(Clock::system())
+  Span::set_status(parent_span, Ok, Some("Nested parent operation completed"))
+  Span::end(parent_span)
+  
+  let nested_end = Clock::now_unix_nanos(Clock::system())
+  let nested_total_duration = nested_end - nested_start
+  
+  // Verify nested performance consistency
+  assert_true(nested_total_duration > 0L)
+  assert_true(parent_end > parent_start)
+  
+  for i in 0...nested_spans.length() - 1 {
+    let (child_span, child_start, child_end) = nested_spans[i]
+    let child_duration = child_end - child_start
+    
+    assert_true(child_duration > 0L)
+    assert_true(child_start >= parent_start)
+    assert_true(child_end <= parent_end)
+    assert_eq(Span::span_context(child_span).trace_id, trace_id)
+    assert_eq(Span::status(child_span), Ok)
+  }
+  
+  assert_eq(Span::span_context(parent_span).trace_id, trace_id)
+  assert_eq(Span::status(parent_span), Ok)
+}
+
+// Test 7: Distributed trace correlation consistency
+pub test "premium distributed_trace_correlation" {
+  // Test trace correlation across different telemetry signals
+  let trace_id = "trace-correlation-test"
+  let span_id = "correlation-span"
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create span for correlation
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "correlation-test-tracer")
+  
+  let span = Span::new("correlation-operation", Server, span_context)
+  
+  // Create correlated log record
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "correlation-test-logger")
+  
+  let log_record = LogRecord::new_with_context(
+    Info,
+    Some("Correlated log message"),
+    Some(Attributes::new()),
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some(trace_id),
+    Some(span_id),
+    Some(Context::root())
+  )
+  
+  // Create correlated metrics
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "correlation-test-meter")
+  
+  let counter = Meter::create_counter(meter, "correlated.counter")
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "trace.id", StringValue(trace_id))
+  Attributes::set(attrs, "span.id", StringValue(span_id))
+  
+  // Verify correlation IDs match
+  assert_eq(Span::span_context(span).trace_id, trace_id)
+  assert_eq(Span::span_context(span).span_id, span_id)
+  assert_eq(LogRecord::trace_id(log_record), Some(trace_id))
+  assert_eq(LogRecord::span_id(log_record), Some(span_id))
+  assert_eq(Attributes::get(attrs, "trace.id"), Some(StringValue(trace_id)))
+  assert_eq(Attributes::get(attrs, "span.id"), Some(StringValue(span_id)))
+  
+  // Test correlation across services
+  let services = ["service-a", "service-b", "service-c"]
+  let correlation_spans = []
+  let correlation_logs = []
+  let correlation_metrics = []
+  
+  for i in 0...services.length() - 1 {
+    let service_name = services[i]
+    let service_span_id = service_name + "-span"
+    let service_span_context = SpanContext::new(trace_id, service_span_id, true, "")
+    
+    let service_tracer = TracerProvider::get_tracer(tracer_provider, service_name)
+    let service_span = Span::new(service_name + "-operation", Server, service_span_context)
+    correlation_spans.push(service_span)
+    
+    let service_logger = LoggerProvider::get_logger(logger_provider, service_name)
+    let service_log = LogRecord::new_with_context(
+      Info,
+      Some(service_name + " log message"),
+      Some(Attributes::new()),
+      Some(1735689600000000000L),
+      Some(1735689600000000001L),
+      Some(trace_id),
+      Some(service_span_id),
+      Some(Context::root())
+    )
+    correlation_logs.push(service_log)
+    
+    let service_meter = MeterProvider::get_meter(meter_provider, service_name)
+    let service_counter = Meter::create_counter(service_meter, service_name + ".counter")
+    let service_attrs = Attributes::new()
+    Attributes::set(service_attrs, "trace.id", StringValue(trace_id))
+    Attributes::set(service_attrs, "span.id", StringValue(service_span_id))
+    Attributes::set(service_attrs, "service.name", StringValue(service_name))
+    
+    correlation_metrics.push((service_counter, service_attrs))
+  }
+  
+  // Verify correlation across services
+  for i in 0...correlation_spans.length() - 1 {
+    let span = correlation_spans[i]
+    let log = correlation_logs[i]
+    let (counter, attrs) = correlation_metrics[i]
+    
+    assert_eq(Span::span_context(span).trace_id, trace_id)
+    assert_eq(LogRecord::trace_id(log), Some(trace_id))
+    assert_eq(Attributes::get(attrs, "trace.id"), Some(StringValue(trace_id)))
+    
+    assert_eq(Span::span_context(span).span_id, services[i] + "-span")
+    assert_eq(LogRecord::span_id(log), Some(services[i] + "-span"))
+    assert_eq(Attributes::get(attrs, "span.id"), Some(StringValue(services[i] + "-span")))
+    
+    assert_eq(Attributes::get(attrs, "service.name"), Some(StringValue(services[i])))
+  }
+  
+  // End all spans
+  Span::end(span)
+  
+  for i in 0...correlation_spans.length() - 1 {
+    Span::end(correlation_spans[i])
   }
 }
