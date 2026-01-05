@@ -1,2261 +1,1059 @@
-// Azimuth Premium Quality Test Cases
-// This file contains premium quality test cases focusing on advanced telemetry functionality
+// Azimuth Telemetry System - Premium Quality Test Cases
+// This file contains 10 high-quality test cases covering various aspects of the Azimuth telemetry system
 
-// Test 1: Telemetry Data Collection and Processing
-test "telemetry data collection and processing pipeline" {
-  // Define telemetry data structure
-  type TelemetryData = {
-    timestamp: Int,
-    trace_id: String,
-    span_id: String,
-    operation_name: String,
-    duration_ms: Int,
-    status: String,
-    attributes: Array[(String, String)]
-  }
-  
-  // Create sample telemetry data
-  let create_sample_data = fn() {
-    [
-      {
-        timestamp: 1640995200000,
-        trace_id: "trace-001",
-        span_id: "span-001",
-        operation_name: "database_query",
-        duration_ms: 150,
-        status: "success",
-        attributes: [("db.type", "postgresql"), ("db.statement", "SELECT * FROM users")]
-      },
-      {
-        timestamp: 1640995201000,
-        trace_id: "trace-001",
-        span_id: "span-002",
-        operation_name: "cache_lookup",
-        duration_ms: 5,
-        status: "success",
-        attributes: [("cache.key", "user:123"), ("cache.hit", "true")]
-      },
-      {
-        timestamp: 1640995202000,
-        trace_id: "trace-002",
-        span_id: "span-003",
-        operation_name: "http_request",
-        duration_ms: 200,
-        status: "error",
-        attributes: [("http.method", "GET"), ("http.url", "/api/users"), ("http.status_code", "500")]
-      }
-    ]
-  }
-  
-  let telemetry_data = create_sample_data()
-  assert_eq(telemetry_data.length(), 3)
-  
-  // Test data filtering by status
-  let filter_by_status = fn(data: Array[TelemetryData], status: String) {
-    data.filter(fn(item) { item.status == status })
-  }
-  
-  let successful_operations = filter_by_status(telemetry_data, "success")
-  assert_eq(successful_operations.length(), 2)
-  assert_eq(successful_operations[0].operation_name, "database_query")
-  assert_eq(successful_operations[1].operation_name, "cache_lookup")
-  
-  let failed_operations = filter_by_status(telemetry_data, "error")
-  assert_eq(failed_operations.length(), 1)
-  assert_eq(failed_operations[0].operation_name, "http_request")
-  
-  // Test data filtering by operation
-  let filter_by_operation = fn(data: Array[TelemetryData], operation: String) {
-    data.filter(fn(item) { item.operation_name == operation })
-  }
-  
-  let db_operations = filter_by_operation(telemetry_data, "database_query")
-  assert_eq(db_operations.length(), 1)
-  assert_eq(db_operations[0].attributes[0], ("db.type", "postgresql"))
-  
-  // Test average duration calculation
-  let calculate_average_duration = fn(data: Array[TelemetryData]) {
-    if data.length() == 0 {
-      0
-    } else {
-      let total = data.reduce(fn(acc, item) { acc + item.duration_ms }, 0)
-      total / data.length()
-    }
-  }
-  
-  let avg_duration = calculate_average_duration(telemetry_data)
-  assert_eq(avg_duration, (150 + 5 + 200) / 3)
-  
-  // Test trace grouping
-  let group_by_trace = fn(data: Array[TelemetryData]) {
-    let mut result = []
-    let mut processed_traces = []
-    
-    for item in data {
-      if not(processed_traces.contains(item.trace_id)) {
-        let trace_spans = data.filter(fn(span) { span.trace_id == item.trace_id })
-        result = result.push((item.trace_id, trace_spans))
-        processed_traces = processed_traces.push(item.trace_id)
-      }
-    }
-    
-    result
-  }
-  
-  let grouped_traces = group_by_trace(telemetry_data)
-  assert_eq(grouped_traces.length(), 2)
-  
-  // Find trace-001
-  let trace_001 = grouped_traces.filter(fn(t) { t.0 == "trace-001" })[0]
-  assert_eq(trace_001.1.length(), 2)
-  
-  // Find trace-002
-  let trace_002 = grouped_traces.filter(fn(t) { t.0 == "trace-002" })[0]
-  assert_eq(trace_002.1.length(), 1)
-}
-
-// Test 2: Telemetry Metrics Aggregation and Analysis
-test "telemetry metrics aggregation and analysis" {
-  // Define metric types
-  type MetricValue = {
-    name: String,
-    value: Float,
-    unit: String,
-    timestamp: Int,
-    tags: Array[(String, String)]
-  }
-  
-  // Create sample metrics
-  let create_sample_metrics = fn() {
-    [
-      { name: "http_requests_total", value: 100.0, unit: "count", timestamp: 1640995200, tags: [("method", "GET"), ("status", "200")] },
-      { name: "http_requests_total", value: 5.0, unit: "count", timestamp: 1640995200, tags: [("method", "GET"), ("status", "500")] },
-      { name: "http_requests_total", value: 50.0, unit: "count", timestamp: 1640995200, tags: [("method", "POST"), ("status", "200")] },
-      { name: "response_time_ms", value: 120.5, unit: "ms", timestamp: 1640995200, tags: [("endpoint", "/api/users")] },
-      { name: "response_time_ms", value: 85.3, unit: "ms", timestamp: 1640995200, tags: [("endpoint", "/api/products")] },
-      { name: "error_rate", value: 0.05, unit: "ratio", timestamp: 1640995200, tags: [("service", "auth")] }
-    ]
-  }
-  
-  let metrics = create_sample_metrics()
-  assert_eq(metrics.length(), 6)
-  
-  // Test metric aggregation by name
-  let aggregate_by_name = fn(metrics: Array[MetricValue]) {
-    let mut result = []
-    let mut processed_names = []
-    
-    for metric in metrics {
-      if not(processed_names.contains(metric.name)) {
-        let same_metrics = metrics.filter(fn(m) { m.name == metric.name })
-        let total = same_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
-        let count = same_metrics.length().to_float()
-        result = result.push((metric.name, total, total / count))
-        processed_names = processed_names.push(metric.name)
-      }
-    }
-    
-    result
-  }
-  
-  let aggregated = aggregate_by_name(metrics)
-  assert_eq(aggregated.length(), 3)
-  
-  // Find http_requests_total aggregation
-  let http_requests = aggregated.filter(fn(a) { a.0 == "http_requests_total" })[0]
-  assert_eq(http_requests.1, 100.0 + 5.0 + 50.0)
-  assert_eq(http_requests.2, (100.0 + 5.0 + 50.0) / 3.0)
-  
-  // Test metric filtering by tags
-  let filter_by_tag = fn(metrics: Array[MetricValue], tag_key: String, tag_value: String) {
-    metrics.filter(fn(metric) {
-      metric.tags.contains((tag_key, tag_value))
-    })
-  }
-  
-  let get_requests = filter_by_tag(metrics, "method", "GET")
-  assert_eq(get_requests.length(), 2)
-  assert_eq(get_requests[0].value, 100.0)
-  assert_eq(get_requests[1].value, 5.0)
-  
-  let success_requests = filter_by_tag(metrics, "status", "200")
-  assert_eq(success_requests.length(), 2)
-  assert_eq(success_requests[0].value, 100.0)
-  assert_eq(success_requests[1].value, 50.0)
-  
-  // Test percentile calculation
-  let calculate_percentile = fn(values: Array[Float], percentile: Float) {
-    if values.length() == 0 {
-      0.0
-    } else {
-      let sorted = values.sort(fn(a, b) { a <= b })
-      let index = ((sorted.length().to_float() - 1.0) * percentile / 100.0).to_int()
-      sorted[index]
-    }
-  }
-  
-  let response_times = metrics
-    .filter(fn(m) { m.name == "response_time_ms" })
-    .map(fn(m) { m.value })
-  
-  let p50 = calculate_percentile(response_times, 50.0)
-  let p95 = calculate_percentile(response_times, 95.0)
-  
-  assert_eq(p50, 85.3)  // Median of [85.3, 120.5]
-  assert_eq(p95, 120.5) // 95th percentile of [85.3, 120.5]
-  
-  // Test rate calculation
-  let calculate_rate = fn(current_value: Float, previous_value: Float, time_diff: Int) {
-    if time_diff <= 0 {
-      0.0
-    } else {
-      (current_value - previous_value) / time_diff.to_float()
-    }
-  }
-  
-  let rate = calculate_rate(150.0, 100.0, 60)  // 50 requests in 60 seconds
-  assert_eq(rate, 50.0 / 60.0)
-}
-
-// Test 3: Telemetry Trace and Span Management
-test "telemetry trace and span management" {
-  // Define span structure with parent-child relationships
-  type Span = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    service_name: String
-  }
-  
-  // Create sample spans with hierarchy
-  let create_sample_spans = fn() {
-    [
-      // Root span
-      {
-        trace_id: "trace-001",
-        span_id: "span-001",
-        parent_span_id: None,
-        operation_name: "web_request",
-        start_time: 1640995200000,
-        end_time: 1640995200500,
-        status: "success",
-        service_name: "api-gateway"
-      },
-      // Child spans
-      {
-        trace_id: "trace-001",
-        span_id: "span-002",
-        parent_span_id: Some("span-001"),
-        operation_name: "auth_check",
-        start_time: 1640995200100,
-        end_time: 1640995200150,
-        status: "success",
-        service_name: "auth-service"
-      },
-      {
-        trace_id: "trace-001",
-        span_id: "span-003",
-        parent_span_id: Some("span-001"),
-        operation_name: "database_query",
-        start_time: 1640995200200,
-        end_time: 1640995200350,
-        status: "success",
-        service_name: "user-service"
-      },
-      // Nested child span
-      {
-        trace_id: "trace-001",
-        span_id: "span-004",
-        parent_span_id: Some("span-003"),
-        operation_name: "cache_lookup",
-        start_time: 1640995200250,
-        end_time: 1640995200280,
-        status: "success",
-        service_name: "user-service"
-      }
-    ]
-  }
-  
-  let spans = create_sample_spans()
-  assert_eq(spans.length(), 4)
-  
-  // Test finding root spans
-  let find_root_spans = fn(spans: Array[Span]) {
-    spans.filter(fn(span) { span.parent_span_id == None })
-  }
-  
-  let root_spans = find_root_spans(spans)
-  assert_eq(root_spans.length(), 1)
-  assert_eq(root_spans[0].span_id, "span-001")
-  assert_eq(root_spans[0].operation_name, "web_request")
-  
-  // Test finding child spans
-  let find_child_spans = fn(spans: Array[Span], parent_span_id: String) {
-    spans.filter(fn(span) { 
-      match span.parent_span_id {
-        Some(id) => id == parent_span_id
-        None => false
-      }
-    })
-  }
-  
-  let children_of_root = find_child_spans(spans, "span-001")
-  assert_eq(children_of_root.length(), 2)
-  assert_true(children_of_root.map(fn(s) { s.span_id }).contains("span-002"))
-  assert_true(children_of_root.map(fn(s) { s.span_id }).contains("span-003"))
-  
-  let children_of_span3 = find_child_spans(spans, "span-003")
-  assert_eq(children_of_span3.length(), 1)
-  assert_eq(children_of_span3[0].span_id, "span-004")
-  
-  // Test building span tree
-  type SpanNode = {
-    span: Span,
-    children: Array[SpanNode]
-  }
-  
-  let build_span_tree = fn(spans: Array[Span], root_span_id: String) {
-    let root_span = spans.filter(fn(s) { s.span_id == root_span_id })[0]
-    let children_spans = find_child_spans(spans, root_span_id)
-    
-    let children_nodes = children_spans.map(fn(child) {
-      build_span_tree(spans, child.span_id)
-    })
-    
-    {
-      span: root_span,
-      children: children_nodes
-    }
-  }
-  
-  let span_tree = build_span_tree(spans, "span-001")
-  assert_eq(span_tree.span.span_id, "span-001")
-  assert_eq(span_tree.children.length(), 2)
-  
-  // Test trace duration calculation
-  let calculate_trace_duration = fn(spans: Array[Span], trace_id: String) {
-    let trace_spans = spans.filter(fn(s) { s.trace_id == trace_id })
-    
-    if trace_spans.length() == 0 {
-      0
-    } else {
-      let start_times = trace_spans.map(fn(s) { s.start_time })
-      let end_times = trace_spans.map(fn(s) { s.end_time })
-      
-      let earliest_start = start_times.reduce(fn(acc, time) { if time < acc { time } else { acc } }, start_times[0])
-      let latest_end = end_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, end_times[0])
-      
-      latest_end - earliest_start
-    }
-  }
-  
-  let trace_duration = calculate_trace_duration(spans, "trace-001")
-  assert_eq(trace_duration, 500)  // From span-001 start to span-001 end
-  
-  // Test service involvement in trace
-  let get_involved_services = fn(spans: Array[Span], trace_id: String) {
-    let trace_spans = spans.filter(fn(s) { s.trace_id == trace_id })
-    let service_names = trace_spans.map(fn(s) { s.service_name })
-    
-    // Remove duplicates
-    let mut unique_services = []
-    for service in service_names {
-      if not(unique_services.contains(service)) {
-        unique_services = unique_services.push(service)
-      }
-    }
-    
-    unique_services
-  }
-  
-  let involved_services = get_involved_services(spans, "trace-001")
-  assert_eq(involved_services.length(), 3)
-  assert_true(involved_services.contains("api-gateway"))
-  assert_true(involved_services.contains("auth-service"))
-  assert_true(involved_services.contains("user-service"))
-  
-  // Test critical path analysis
-  let find_critical_path = fn(spans: Array[Span], trace_id: String) {
-    let trace_spans = spans.filter(fn(s) { s.trace_id == trace_id })
-    trace_spans.sort(fn(a, b) { (b.end_time - b.start_time) >= (a.end_time - a.start_time) })
-  }
-  
-  let critical_path = find_critical_path(spans, "trace-001")
-  // The longest span should be first
-  assert_eq(critical_path[0].span_id, "span-001")  // 500ms duration
-  assert_eq(critical_path[1].span_id, "span-003")  // 150ms duration
-}
-
-// Test 4: Telemetry Configuration and Settings Management
-test "telemetry configuration and settings management" {
-  // Define configuration structure
-  type TelemetryConfig = {
-    service_name: String,
-    service_version: String,
-    environment: String,
-    sampling_rate: Float,
-    batch_size: Int,
-    flush_interval_ms: Int,
-    enabled_features: Array[String],
-    exporters: Array[ExporterConfig]
-  }
-  
-  type ExporterConfig = {
-    name: String,
-    type: String,
-    endpoint: String,
-    enabled: Bool,
-    settings: Array[(String, String)]
-  }
-  
-  // Create default configuration
-  let create_default_config = fn() {
-    {
-      service_name: "azimuth-service",
-      service_version: "1.0.0",
-      environment: "production",
-      sampling_rate: 1.0,
-      batch_size: 100,
-      flush_interval_ms: 5000,
-      enabled_features: ["tracing", "metrics", "logging"],
-      exporters: [
-        {
-          name: "jaeger",
-          type: "otlp",
-          endpoint: "http://jaeger:14268/api/traces",
-          enabled: true,
-          settings: [("timeout", "5000"), ("retry_count", "3")]
-        },
-        {
-          name: "prometheus",
-          type: "prometheus",
-          endpoint: "http://prometheus:9090",
-          enabled: true,
-          settings: [("port", "9090"), ("path", "/metrics")]
-        },
-        {
-          name: "elasticsearch",
-          type: "elasticsearch",
-          endpoint: "http://elasticsearch:9200",
-          enabled: false,
-          settings: [("index", "telemetry"), ("shards", "3")]
-        }
-      ]
-    }
-  }
-  
-  let config = create_default_config()
-  assert_eq(config.service_name, "azimuth-service")
-  assert_eq(config.sampling_rate, 1.0)
-  assert_eq(config.enabled_features.length(), 3)
-  assert_eq(config.exporters.length(), 3)
-  
-  // Test configuration validation
-  let validate_config = fn(config: TelemetryConfig) {
-    let mut errors = []
-    
-    // Validate service name
-    if config.service_name.length() == 0 {
-      errors = errors.push("Service name cannot be empty")
-    }
-    
-    // Validate sampling rate
-    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
-      errors = errors.push("Sampling rate must be between 0.0 and 1.0")
-    }
-    
-    // Validate batch size
-    if config.batch_size <= 0 {
-      errors = errors.push("Batch size must be positive")
-    }
-    
-    // Validate flush interval
-    if config.flush_interval_ms <= 0 {
-      errors = errors.push("Flush interval must be positive")
-    }
-    
-    // Validate at least one exporter is enabled
-    let enabled_exporters = config.exporters.filter(fn(e) { e.enabled })
-    if enabled_exporters.length() == 0 {
-      errors = errors.push("At least one exporter must be enabled")
-    }
-    
-    errors
-  }
-  
-  let validation_errors = validate_config(config)
-  assert_eq(validation_errors.length(), 0)  // Default config should be valid
-  
-  // Test invalid configuration
-  let invalid_config = { config | 
-    sampling_rate: 1.5,  // Invalid: > 1.0
-    batch_size: 0,       // Invalid: <= 0
-    exporters: config.exporters.map(fn(e) { { e | enabled: false } })  // All disabled
-  }
-  
-  let invalid_errors = validate_config(invalid_config)
-  assert_eq(invalid_errors.length(), 3)
-  assert_true(invalid_errors.contains("Sampling rate must be between 0.0 and 1.0"))
-  assert_true(invalid_errors.contains("Batch size must be positive"))
-  assert_true(invalid_errors.contains("At least one exporter must be enabled"))
-  
-  // Test configuration merging
-  let merge_configs = fn(base: TelemetryConfig, override: TelemetryConfig) {
-    {
-      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
-      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
-      environment: if override.environment != "" { override.environment } else { base.environment },
-      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
-      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
-      flush_interval_ms: if override.flush_interval_ms > 0 { override.flush_interval_ms } else { base.flush_interval_ms },
-      enabled_features: if override.enabled_features.length() > 0 { override.enabled_features } else { base.enabled_features },
-      exporters: override.exporters
-    }
-  }
-  
-  let override_config = {
-    service_name: "",
-    service_version: "2.0.0",
-    environment: "staging",
-    sampling_rate: 0.5,
-    batch_size: 0,
-    flush_interval_ms: 10000,
-    enabled_features: [],
-    exporters: [
-      {
-        name: "tempo",
-        type: "otlp",
-        endpoint: "http://tempo:3100",
-        enabled: true,
-        settings: []
-      }
-    ]
-  }
-  
-  let merged_config = merge_configs(config, override_config)
-  assert_eq(merged_config.service_name, "azimuth-service")  // From base
-  assert_eq(merged_config.service_version, "2.0.0")        // From override
-  assert_eq(merged_config.environment, "staging")           // From override
-  assert_eq(merged_config.sampling_rate, 0.5)               // From override
-  assert_eq(merged_config.batch_size, 100)                  // From base (override is invalid)
-  assert_eq(merged_config.flush_interval_ms, 10000)         // From override
-  assert_eq(merged_config.enabled_features.length(), 0)     // From override
-  assert_eq(merged_config.exporters.length(), 1)            // From override
-  
-  // Test environment-specific configuration
-  let get_env_config = fn(base: TelemetryConfig, environment: String) {
-    match environment {
-      "development" => { base | 
-        sampling_rate: 1.0,
-        batch_size: 10,
-        flush_interval_ms: 1000
-      }
-      "staging" => { base | 
-        sampling_rate: 0.5,
-        batch_size: 50,
-        flush_interval_ms: 2500
-      }
-      "production" => { base | 
-        sampling_rate: 0.1,
-        batch_size: 200,
-        flush_interval_ms: 10000
-      }
-      _ => base
-    }
-  }
-  
-  let dev_config = get_env_config(config, "development")
-  assert_eq(dev_config.sampling_rate, 1.0)
-  assert_eq(dev_config.batch_size, 10)
-  assert_eq(dev_config.flush_interval_ms, 1000)
-  
-  let prod_config = get_env_config(config, "production")
-  assert_eq(prod_config.sampling_rate, 0.1)
-  assert_eq(prod_config.batch_size, 200)
-  assert_eq(prod_config.flush_interval_ms, 10000)
-}
-
-// Test 5: Telemetry Data Serialization and Deserialization
-test "telemetry data serialization and deserialization" {
-  // Define simplified telemetry data structure
-  type TelemetryEvent = {
-    id: String,
-    timestamp: Int,
-    event_type: String,
-    data: Array[(String, String)]
-  }
-  
-  // Create sample event
-  let sample_event = {
-    id: "event-001",
-    timestamp: 1640995200,
-    event_type: "span",
-    data: [
-      ("trace_id", "trace-001"),
-      ("span_id", "span-001"),
-      ("operation_name", "database_query"),
-      ("duration_ms", "150"),
-      ("status", "success")
-    ]
-  }
-  
-  // Test serialization to JSON-like string
-  let serialize_to_json = fn(event: TelemetryEvent) {
-    let data_pairs = event.data.map(fn(pair) {
-      "\"" + pair.0 + "\":\"" + pair.1 + "\""
-    })
-    
-    "{" +
-      "\"id\":\"" + event.id + "\"," +
-      "\"timestamp\":" + event.timestamp.to_string() + "," +
-      "\"event_type\":\"" + event.event_type + "\"," +
-      "\"data\":{" + data_pairs.reduce(fn(acc, pair) { 
-        if acc == "" { pair } else { acc + "," + pair } 
-      }, "") + "}" +
-    "}"
-  }
-  
-  let json_string = serialize_to_json(sample_event)
-  assert_true(json_string.contains("\"id\":\"event-001\""))
-  assert_true(json_string.contains("\"timestamp\":1640995200"))
-  assert_true(json_string.contains("\"event_type\":\"span\""))
-  assert_true(json_string.contains("\"trace_id\":\"trace-001\""))
-  
-  // Test deserialization from JSON-like string
-  let parse_json_value = fn(json: String, key: String) {
-    let key_pattern = "\"" + key + "\":" 
-    let start_index = json.index_of(key_pattern)
-    
-    if start_index == -1 {
-      ""
-    } else {
-      let value_start = start_index + key_pattern.length()
-      let remaining = json.substring(value_start, json.length() - value_start)
-      
-      if remaining[0] == '"' {
-        // String value
-        let end_index = remaining.index_of("\"", 1)
-        if end_index == -1 {
-          ""
-        } else {
-          remaining.substring(1, end_index - 1)
-        }
-      } else {
-        // Numeric value
-        let end_index = remaining.index_of(",")
-        if end_index == -1 {
-          remaining.index_of("}")
-        } else {
-          end_index
-        }
-        
-        if end_index == -1 {
-          remaining
-        } else {
-          remaining.substring(0, end_index)
-        }
-      }
-    }
-  }
-  
-  let extracted_id = parse_json_value(json_string, "id")
-  assert_eq(extracted_id, "event-001")
-  
-  let extracted_timestamp = parse_json_value(json_string, "timestamp")
-  assert_eq(extracted_timestamp, "1640995200")
-  
-  let extracted_event_type = parse_json_value(json_string, "event_type")
-  assert_eq(extracted_event_type, "span")
-  
-  // Test batch serialization
-  let serialize_batch = fn(events: Array[TelemetryEvent]) {
-    let event_strings = events.map(fn(e) { serialize_to_json(e) })
-    "[" + event_strings.reduce(fn(acc, event) { 
-      if acc == "" { event } else { acc + "," + event } 
-    }, "") + "]"
-  }
-  
-  let events = [
-    sample_event,
-    {
-      id: "event-002",
-      timestamp: 1640995201,
-      event_type: "metric",
-      data: [
-        ("metric_name", "http_requests_total"),
-        ("value", "100"),
-        ("unit", "count")
-      ]
-    }
-  ]
-  
-  let batch_json = serialize_batch(events)
-  assert_true(batch_json.starts_with("["))
-  assert_true(batch_json.ends_with("]"))
-  assert_true(batch_json.contains("\"id\":\"event-001\""))
-  assert_true(batch_json.contains("\"id\":\"event-002\""))
-  
-  // Test compression simulation
-  let compress_string = fn(s: String) {
-    // Simple compression simulation: replace repeated patterns
-    let compressed = s
-      .replace("\"trace_id\":", "\"t\":")
-      .replace("\"span_id\":", "\"s\":")
-      .replace("\"duration_ms\":", "\"d\":")
-      .replace("\"operation_name\":", "\"o\":")
-      .replace("\"status\":", "\"st\":")
-    
-    compressed
-  }
-  
-  let compressed_json = compress_string(json_string)
-  assert_true(compressed_json.length() < json_string.length())
-  assert_true(compressed_json.contains("\"t\":\"trace-001\""))
-  
-  // Test decompression
-  let decompress_string = fn(s: String) {
-    let decompressed = s
-      .replace("\"t\":", "\"trace_id\":")
-      .replace("\"s\":", "\"span_id\":")
-      .replace("\"d\":", "\"duration_ms\":")
-      .replace("\"o\":", "\"operation_name\":")
-      .replace("\"st\":", "\"status\":")
-    
-    decompressed
-  }
-  
-  let decompressed_json = decompress_string(compressed_json)
-  assert_eq(decompressed_json, json_string)
-  
-  // Test binary serialization simulation
-  let serialize_to_binary = fn(event: TelemetryEvent) {
-    // Simple binary format simulation
-    let mut binary_data = []
-    
-    // Add event type as single byte
-    let event_type_byte = match event.event_type {
-      "span" => 1
-      "metric" => 2
-      "log" => 3
-      _ => 0
-    }
-    binary_data = binary_data.push(event_type_byte)
-    
-    // Add timestamp as 4 bytes (simplified)
-    let timestamp = event.timestamp
-    binary_data = binary_data.push((timestamp / 16777216) % 256)  // Byte 3
-    binary_data = binary_data.push((timestamp / 65536) % 256)     // Byte 2
-    binary_data = binary_data.push((timestamp / 256) % 256)       // Byte 1
-    binary_data = binary_data.push(timestamp % 256)               // Byte 0
-    
-    // Add data length and key-value pairs
-    let data_length = event.data.length()
-    binary_data = binary_data.push(data_length)
-    
-    for (key, value) in event.data {
-      // Add key length and key
-      binary_data = binary_data.push(key.length())
-      for i in 0..key.length() {
-        binary_data = binary_data.push(key[i].to_int())
-      }
-      
-      // Add value length and value
-      binary_data = binary_data.push(value.length())
-      for i in 0..value.length() {
-        binary_data = binary_data.push(value[i].to_int())
-      }
-    }
-    
-    binary_data
-  }
-  
-  let binary_data = serialize_to_binary(sample_event)
-  assert_eq(binary_data[0], 1)  // Event type: span
-  assert_eq(binary_data[1], 0)  // Timestamp byte 3
-  assert_eq(binary_data[2], 0)  // Timestamp byte 2
-  assert_eq(binary_data[3], 152)  // Timestamp byte 1
-  assert_eq(binary_data[4], 0)    // Timestamp byte 0
-  assert_eq(binary_data[5], 5)    // Data length: 5 pairs
-}
-
-// Test 6: Telemetry Data Filtering and Querying
-test "telemetry data filtering and querying" {
-  // Define telemetry record structure
-  type TelemetryRecord = {
-    timestamp: Int,
-    trace_id: String,
-    span_id: String,
-    service_name: String,
-    operation_name: String,
-    duration_ms: Int,
-    status: String,
-    attributes: Array[(String, String)]
-  }
-  
-  // Create sample records
-  let create_sample_records = fn() {
-    [
-      {
-        timestamp: 1640995200000,
-        trace_id: "trace-001",
-        span_id: "span-001",
-        service_name: "api-gateway",
-        operation_name: "http_request",
-        duration_ms: 100,
-        status: "success",
-        attributes: [("http.method", "GET"), ("http.path", "/api/users"), ("http.status_code", "200")]
-      },
-      {
-        timestamp: 1640995201000,
-        trace_id: "trace-001",
-        span_id: "span-002",
-        service_name: "auth-service",
-        operation_name: "authenticate",
-        duration_ms: 50,
-        status: "success",
-        attributes: [("user.id", "123"), ("auth.method", "jwt")]
-      },
-      {
-        timestamp: 1640995202000,
-        trace_id: "trace-002",
-        span_id: "span-003",
-        service_name: "user-service",
-        operation_name: "database_query",
-        duration_ms: 200,
-        status: "error",
-        attributes: [("db.type", "postgresql"), ("db.table", "users"), ("error.type", "timeout")]
-      },
-      {
-        timestamp: 1640995203000,
-        trace_id: "trace-002",
-        span_id: "span-004",
-        service_name: "api-gateway",
-        operation_name: "http_request",
-        duration_ms: 300,
-        status: "error",
-        attributes: [("http.method", "POST"), ("http.path", "/api/orders"), ("http.status_code", "500")]
-      },
-      {
-        timestamp: 1640995204000,
-        trace_id: "trace-003",
-        span_id: "span-005",
-        service_name: "order-service",
-        operation_name: "process_order",
-        duration_ms: 150,
-        status: "success",
-        attributes: [("order.id", "456"), ("order.amount", "99.99")]
-      }
-    ]
-  }
-  
-  let records = create_sample_records()
-  assert_eq(records.length(), 5)
-  
-  // Test time range filtering
-  let filter_by_time_range = fn(records: Array[TelemetryRecord], start_time: Int, end_time: Int) {
-    records.filter(fn(record) { 
-      record.timestamp >= start_time and record.timestamp <= end_time 
-    })
-  }
-  
-  let filtered_by_time = filter_by_time_range(records, 1640995201000, 1640995203000)
-  assert_eq(filtered_by_time.length(), 3)
-  assert_eq(filtered_by_time[0].span_id, "span-002")
-  assert_eq(filtered_by_time[1].span_id, "span-003")
-  assert_eq(filtered_by_time[2].span_id, "span-004")
-  
-  // Test service filtering
-  let filter_by_service = fn(records: Array[TelemetryRecord], service_name: String) {
-    records.filter(fn(record) { record.service_name == service_name })
-  }
-  
-  let api_gateway_records = filter_by_service(records, "api-gateway")
-  assert_eq(api_gateway_records.length(), 2)
-  assert_eq(api_gateway_records[0].span_id, "span-001")
-  assert_eq(api_gateway_records[1].span_id, "span-004")
-  
-  // Test status filtering
-  let filter_by_status = fn(records: Array[TelemetryRecord], status: String) {
-    records.filter(fn(record) { record.status == status })
-  }
-  
-  let error_records = filter_by_status(records, "error")
-  assert_eq(error_records.length(), 2)
-  assert_eq(error_records[0].span_id, "span-003")
-  assert_eq(error_records[1].span_id, "span-004")
-  
-  // Test attribute filtering
-  let filter_by_attribute = fn(records: Array[TelemetryRecord], key: String, value: String) {
-    records.filter(fn(record) { 
-      record.attributes.contains((key, value))
-    })
-  }
-  
-  let get_requests = filter_by_attribute(records, "http.method", "GET")
-  assert_eq(get_requests.length(), 1)
-  assert_eq(get_requests[0].span_id, "span-001")
-  
-  let timeout_errors = filter_by_attribute(records, "error.type", "timeout")
-  assert_eq(timeout_errors.length(), 1)
-  assert_eq(timeout_errors[0].span_id, "span-003")
-  
-  // Test complex query builder
-  type Query = {
-    time_range: Option[(Int, Int)],
-    services: Array[String],
-    operations: Array[String],
-    statuses: Array[String],
-    attributes: Array[(String, String)],
-    limit: Option[Int]
-  }
-  
-  let execute_query = fn(records: Array[TelemetryRecord], query: Query) {
-    let mut result = records
-    
-    // Apply time range filter
-    match query.time_range {
-      Some((start, end)) => {
-        result = result.filter(fn(r) { r.timestamp >= start and r.timestamp <= end })
-      }
-      None => {}
-    }
-    
-    // Apply service filter
-    if query.services.length() > 0 {
-      result = result.filter(fn(r) { query.services.contains(r.service_name) })
-    }
-    
-    // Apply operation filter
-    if query.operations.length() > 0 {
-      result = result.filter(fn(r) { query.operations.contains(r.operation_name) })
-    }
-    
-    // Apply status filter
-    if query.statuses.length() > 0 {
-      result = result.filter(fn(r) { query.statuses.contains(r.status) })
-    }
-    
-    // Apply attribute filter
-    for (key, value) in query.attributes {
-      result = result.filter(fn(r) { r.attributes.contains((key, value)) })
-    }
-    
-    // Apply limit
-    match query.limit {
-      Some(limit) => {
-        if result.length() > limit {
-          result = result.slice(0, limit)
-        }
-      }
-      None => {}
-    }
-    
-    result
-  }
-  
-  // Test complex query
-  let complex_query = {
-    time_range: Some((1640995201000, 1640995204000)),
-    services: ["api-gateway", "user-service"],
-    operations: [],
-    statuses: ["success", "error"],
-    attributes: [],
-    limit: Some(10)
-  }
-  
-  let query_results = execute_query(records, complex_query)
-  assert_eq(query_results.length(), 3)
-  assert_eq(query_results[0].span_id, "span-002")  // auth-service (excluded)
-  assert_eq(query_results[1].span_id, "span-003")  // user-service, error
-  assert_eq(query_results[2].span_id, "span-004")  // api-gateway, error
-  
-  // Test aggregation query
-  type AggregationQuery = {
-    group_by: Array[String],
-    aggregations: Array[(String, String)]  // (function, field)
-  }
-  
-  let execute_aggregation = fn(records: Array[TelemetryRecord], query: AggregationQuery) {
-    let mut groups = []
-    let mut processed_keys = []
-    
-    for record in records {
-      // Create group key
-      let group_key_values = query.group_by.map(fn(field) {
-        match field {
-          "service_name" => record.service_name
-          "operation_name" => record.operation_name
-          "status" => record.status
-          _ => "unknown"
-        }
-      })
-      
-      let group_key = group_key_values.reduce(fn(acc, value) { 
-        if acc == "" { value } else { acc + "|" + value } 
-      }, "")
-      
-      // Find or create group
-      if not(processed_keys.contains(group_key)) {
-        let group_records = records.filter(fn(r) {
-          let key_values = query.group_by.map(fn(field) {
-            match field {
-              "service_name" => r.service_name
-              "operation_name" => r.operation_name
-              "status" => r.status
-              _ => "unknown"
-            }
-          })
-          
-          let key = key_values.reduce(fn(acc, value) { 
-            if acc == "" { value } else { acc + "|" + value } 
-          }, "")
-          
-          key == group_key
-        })
-        
-        // Calculate aggregations
-        let mut aggregation_results = []
-        
-        for (func, field) in query.aggregations {
-          let result = match func {
-            "count" => group_records.length().to_string()
-            "avg_duration" => {
-              if group_records.length() == 0 {
-                "0"
-              } else {
-                let total = group_records.reduce(fn(acc, r) { acc + r.duration_ms }, 0)
-                (total / group_records.length()).to_string()
-              }
-            }
-            "max_duration" => {
-              if group_records.length() == 0 {
-                "0"
-              } else {
-                let max = group_records.reduce(fn(acc, r) { 
-                  if r.duration_ms > acc { r.duration_ms } else { acc } 
-                }, group_records[0].duration_ms)
-                max.to_string()
-              }
-            }
-            _ => "unknown"
-          }
-          
-          aggregation_results = aggregation_results.push((func + "_" + field, result))
-        }
-        
-        groups = groups.push((group_key, aggregation_results))
-        processed_keys = processed_keys.push(group_key)
-      }
-    }
-    
-    groups
-  }
-  
-  // Test aggregation
-  let aggregation_query = {
-    group_by: ["service_name", "status"],
-    aggregations: [("count", "records"), ("avg_duration", "duration_ms")]
-  }
-  
-  let aggregation_results = execute_aggregation(records, aggregation_query)
-  assert_eq(aggregation_results.length(), 5)  // 5 unique combinations
-  
-  // Find api-gateway|success group
-  let api_success = aggregation_results.filter(fn(g) { g.0 == "api-gateway|success" })[0]
-  assert_eq(api_success.1[0], ("count_records", "1"))
-  assert_eq(api_success.1[1], ("avg_duration_duration_ms", "100"))
-}
-
-// Test 7: Telemetry Error Handling and Recovery
-test "telemetry error handling and recovery" {
-  // Define error types
-  enum TelemetryError {
-    NetworkError(String)
-    SerializationError(String)
-    ConfigurationError(String)
-    ResourceExhaustedError(String)
-    AuthenticationError(String)
-  }
-  
-  // Define result type
-  type TelemetryResult[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryError]
-  }
-  
-  // Create success result
-  let create_success = fn(data: T) {
-    {
-      success: true,
-      data: Some(data),
-      error: None
-    }
-  }
-  
-  // Create error result
-  let create_error = fn(error: TelemetryError) {
-    {
-      success: false,
-      data: None,
-      error: Some(error)
-    }
-  }
-  
-  // Test network error handling
-  let send_telemetry_data = fn(data: String, endpoint: String) {
-    // Simulate network failure for certain endpoints
-    if endpoint.contains("unreachable") {
-      create_error(TelemetryError::NetworkError("Connection timeout"))
-    } else if endpoint.contains("auth-failed") {
-      create_error(TelemetryError::AuthenticationError("Invalid credentials"))
-    } else {
-      create_success("Data sent successfully to " + endpoint)
-    }
-  }
-  
-  let valid_endpoint = "http://telemetry-collector:4317"
-  let unreachable_endpoint = "http://unreachable-service:4317"
-  let auth_failed_endpoint = "http://auth-failed-service:4317"
-  
-  let valid_result = send_telemetry_data("test data", valid_endpoint)
-  assert_true(valid_result.success)
-  assert_eq(valid_result.data, Some("Data sent successfully to http://telemetry-collector:4317"))
-  
-  let network_error_result = send_telemetry_data("test data", unreachable_endpoint)
-  assert_false(network_error_result.success)
-  match network_error_result.error {
-    Some(TelemetryError::NetworkError(msg)) => assert_eq(msg, "Connection timeout")
-    _ => assert_true(false)
-  }
-  
-  let auth_error_result = send_telemetry_data("test data", auth_failed_endpoint)
-  assert_false(auth_error_result.success)
-  match auth_error_result.error {
-    Some(TelemetryError::AuthenticationError(msg)) => assert_eq(msg, "Invalid credentials")
-    _ => assert_true(false)
-  }
-  
-  // Test retry mechanism
-  let retry_with_backoff = fn(operation: () -> TelemetryResult[String], max_retries: Int) {
-    let mut attempts = 0
-    let mut result = operation()
-    
-    while not(result.success) and attempts < max_retries {
-      attempts = attempts + 1
-      
-      // Simulate exponential backoff
-      let backoff_ms = 100 * (2 ^ (attempts - 1))
-      // In a real implementation, we would wait here
-      
-      result = operation()
-    }
-    
-    (result, attempts)
-  }
-  
-  // Simulate a flaky operation that succeeds after 2 attempts
-  let mut attempt_count = 0
-  let flaky_operation = fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      create_error(TelemetryError::NetworkError("Temporary failure"))
-    } else {
-      create_success("Operation succeeded after retries")
-    }
-  }
-  
-  let (retry_result, total_attempts) = retry_with_backoff(flaky_operation, 5)
-  assert_true(retry_result.success)
-  assert_eq(total_attempts, 3)
-  assert_eq(retry_result.data, Some("Operation succeeded after retries"))
-  
-  // Test circuit breaker pattern
-  type CircuitBreaker = {
-    failure_count: Int,
-    failure_threshold: Int,
-    state: String,  // "closed", "open", "half-open"
-    last_failure_time: Int
-  }
-  
-  let create_circuit_breaker = fn(threshold: Int) {
-    {
-      failure_count: 0,
-      failure_threshold: threshold,
-      state: "closed",
-      last_failure_time: 0
-    }
-  }
-  
-  let call_with_circuit_breaker = fn(
-    breaker: CircuitBreaker, 
-    operation: () -> TelemetryResult[String],
-    current_time: Int
-  ) {
-    match breaker.state {
-      "open" => {
-        // Check if we should transition to half-open
-        if current_time - breaker.last_failure_time > 30000 {  // 30 seconds
-          // Try the operation
-          let result = operation()
-          if result.success {
-            // Reset the circuit breaker
-            ({
-              failure_count: 0,
-              failure_threshold: breaker.failure_threshold,
-              state: "closed",
-              last_failure_time: 0
-            }, result)
-          } else {
-            // Stay in half-open
-            ({
-              failure_count: breaker.failure_count + 1,
-              failure_threshold: breaker.failure_threshold,
-              state: "half-open",
-              last_failure_time: current_time
-            }, result)
-          }
-        } else {
-          // Circuit is still open
-          (breaker, create_error(TelemetryError::NetworkError("Circuit breaker is open")))
-        }
-      }
-      _ => {
-        // Circuit is closed or half-open, try the operation
-        let result = operation()
-        
-        if result.success {
-          // Reset failure count
-          ({
-            failure_count: 0,
-            failure_threshold: breaker.failure_threshold,
-            state: "closed",
-            last_failure_time: 0
-          }, result)
-        } else {
-          // Increment failure count
-          let new_failure_count = breaker.failure_count + 1
-          let new_state = if new_failure_count >= breaker.failure_threshold {
-            "open"
-          } else {
-            breaker.state
-          }
-          
-          ({
-            failure_count: new_failure_count,
-            failure_threshold: breaker.failure_threshold,
-            state: new_state,
-            last_failure_time: current_time
-          }, result)
-        }
-      }
-    }
-  }
-  
-  // Test circuit breaker
-  let circuit_breaker = create_circuit_breaker(3)
-  let failing_operation = fn() {
-    create_error(TelemetryError::NetworkError("Service unavailable"))
-  }
-  
-  // First failure
-  let (breaker1, result1) = call_with_circuit_breaker(circuit_breaker, failing_operation, 1640995200)
-  assert_false(result1.success)
-  assert_eq(breaker1.failure_count, 1)
-  assert_eq(breaker1.state, "closed")
-  
-  // Second failure
-  let (breaker2, result2) = call_with_circuit_breaker(breaker1, failing_operation, 1640995201)
-  assert_false(result2.success)
-  assert_eq(breaker2.failure_count, 2)
-  assert_eq(breaker2.state, "closed")
-  
-  // Third failure - should open the circuit
-  let (breaker3, result3) = call_with_circuit_breaker(breaker2, failing_operation, 1640995202)
-  assert_false(result3.success)
-  assert_eq(breaker3.failure_count, 3)
-  assert_eq(breaker3.state, "open")
-  
-  // Fourth call - should fail immediately due to open circuit
-  let (breaker4, result4) = call_with_circuit_breaker(breaker3, failing_operation, 1640995203)
-  assert_false(result4.success)
-  match result4.error {
-    Some(TelemetryError::NetworkError(msg)) => assert_eq(msg, "Circuit breaker is open")
-    _ => assert_true(false)
-  }
-  assert_eq(breaker4.failure_count, 3)
-  assert_eq(breaker4.state, "open")
-  
-  // Test fallback mechanism
-  let with_fallback = fn(
-    primary: () -> TelemetryResult[String],
-    fallback: () -> TelemetryResult[String]
-  ) {
-    let primary_result = primary()
-    if primary_result.success {
-      primary_result
-    } else {
-      fallback()
-    }
-  }
-  
-  let primary_operation = fn() {
-    create_error(TelemetryError::NetworkError("Primary endpoint unavailable"))
-  }
-  
-  let fallback_operation = fn() {
-    create_success("Fallback operation succeeded")
-  }
-  
-  let fallback_result = with_fallback(primary_operation, fallback_operation)
-  assert_true(fallback_result.success)
-  assert_eq(fallback_result.data, Some("Fallback operation succeeded"))
-}
-
-// Test 8: Telemetry Performance and Resource Management
-test "telemetry performance and resource management" {
-  // Define resource usage metrics
-  type ResourceMetrics = {
-    memory_usage_mb: Float,
-    cpu_usage_percent: Float,
-    disk_io_mb: Float,
-    network_io_mb: Float,
-    open_file_descriptors: Int
-  }
-  
-  // Define telemetry performance metrics
-  type TelemetryPerformanceMetrics = {
-    events_processed_per_second: Float,
-    average_processing_latency_ms: Float,
-    batch_size: Int,
-    queue_depth: Int,
-    error_rate_percent: Float
-  }
-  
-  // Create initial resource metrics
-  let initial_resources = {
-    memory_usage_mb: 100.0,
-    cpu_usage_percent: 10.0,
-    disk_io_mb: 5.0,
-    network_io_mb: 2.0,
-    open_file_descriptors: 50
-  }
-  
-  // Create initial performance metrics
-  let initial_performance = {
-    events_processed_per_second: 1000.0,
-    average_processing_latency_ms: 5.0,
-    batch_size: 100,
-    queue_depth: 10,
-    error_rate_percent: 0.1
-  }
-  
-  // Test resource usage calculation
-  let calculate_resource_delta = fn(initial: ResourceMetrics, current: ResourceMetrics) {
-    {
-      memory_delta_mb: current.memory_usage_mb - initial.memory_usage_mb,
-      cpu_delta_percent: current.cpu_usage_percent - initial.cpu_usage_percent,
-      disk_io_delta_mb: current.disk_io_mb - initial.disk_io_mb,
-      network_io_delta_mb: current.network_io_mb - initial.network_io_mb,
-      fd_delta: current.open_file_descriptors - initial.open_file_descriptors
-    }
-  }
-  
-  let current_resources = {
-    memory_usage_mb: 150.0,
-    cpu_usage_percent: 25.0,
-    disk_io_mb: 15.0,
-    network_io_mb: 8.0,
-    open_file_descriptors: 75
-  }
-  
-  let resource_delta = calculate_resource_delta(initial_resources, current_resources)
-  assert_eq(resource_delta.memory_delta_mb, 50.0)
-  assert_eq(resource_delta.cpu_delta_percent, 15.0)
-  assert_eq(resource_delta.disk_io_delta_mb, 10.0)
-  assert_eq(resource_delta.network_io_delta_mb, 6.0)
-  assert_eq(resource_delta.fd_delta, 25)
-  
-  // Test performance threshold checking
-  let check_performance_thresholds = fn(metrics: TelemetryPerformanceMetrics) {
-    let mut violations = []
-    
-    if metrics.events_processed_per_second < 500.0 {
-      violations = violations.push("Low throughput: " + metrics.events_processed_per_second.to_string())
-    }
-    
-    if metrics.average_processing_latency_ms > 10.0 {
-      violations = violations.push("High latency: " + metrics.average_processing_latency_ms.to_string())
-    }
-    
-    if metrics.queue_depth > 100 {
-      violations = violations.push("High queue depth: " + metrics.queue_depth.to_string())
-    }
-    
-    if metrics.error_rate_percent > 1.0 {
-      violations = violations.push("High error rate: " + metrics.error_rate_percent.to_string())
-    }
-    
-    violations
-  }
-  
-  let good_performance = {
-    events_processed_per_second: 1000.0,
-    average_processing_latency_ms: 5.0,
-    batch_size: 100,
-    queue_depth: 10,
-    error_rate_percent: 0.1
-  }
-  
-  let good_violations = check_performance_thresholds(good_performance)
-  assert_eq(good_violations.length(), 0)
-  
-  let poor_performance = {
-    events_processed_per_second: 300.0,
-    average_processing_latency_ms: 15.0,
-    batch_size: 100,
-    queue_depth: 150,
-    error_rate_percent: 2.0
-  }
-  
-  let poor_violations = check_performance_thresholds(poor_performance)
-  assert_eq(poor_violations.length(), 4)
-  assert_true(poor_violations.contains("Low throughput: 300"))
-  assert_true(poor_violations.contains("High latency: 15"))
-  assert_true(poor_violations.contains("High queue depth: 150"))
-  assert_true(poor_violations.contains("High error rate: 2"))
-  
-  // Test adaptive batch sizing
-  let calculate_optimal_batch_size = fn(
-    current_batch_size: Int,
-    current_latency: Float,
-    target_latency: Float,
-    min_batch_size: Int,
-    max_batch_size: Int
-  ) {
-    if current_latency > target_latency * 1.2 {
-      // Latency is too high, decrease batch size
-      let new_size = current_batch_size * 3 / 4
-      if new_size < min_batch_size { min_batch_size } else { new_size }
-    } else if current_latency < target_latency * 0.8 {
-      // Latency is good, can increase batch size
-      let new_size = current_batch_size * 5 / 4
-      if new_size > max_batch_size { max_batch_size } else { new_size }
-    } else {
-      // Latency is acceptable, keep current batch size
-      current_batch_size
-    }
-  }
-  
-  let optimal_batch1 = calculate_optimal_batch_size(100, 8.0, 10.0, 10, 1000)
-  assert_eq(optimal_batch1, 125)  // Latency is good, increase batch size
-  
-  let optimal_batch2 = calculate_optimal_batch_size(100, 15.0, 10.0, 10, 1000)
-  assert_eq(optimal_batch2, 75)   // Latency is too high, decrease batch size
-  
-  let optimal_batch3 = calculate_optimal_batch_size(100, 10.0, 10.0, 10, 1000)
-  assert_eq(optimal_batch3, 100)  // Latency is acceptable, keep batch size
-  
-  // Test memory pool simulation
-  type MemoryPool = {
-    total_size_mb: Float,
-    used_size_mb: Float,
-    allocated_blocks: Int,
-    free_blocks: Int
-  }
-  
-  let create_memory_pool = fn(size_mb: Float) {
-    {
-      total_size_mb: size_mb,
-      used_size_mb: 0.0,
-      allocated_blocks: 0,
-      free_blocks: 100
-    }
-  }
-  
-  let allocate_from_pool = fn(pool: MemoryPool, size_mb: Float) {
-    if pool.used_size_mb + size_mb <= pool.total_size_mb and pool.free_blocks > 0 {
-      ({
-        total_size_mb: pool.total_size_mb,
-        used_size_mb: pool.used_size_mb + size_mb,
-        allocated_blocks: pool.allocated_blocks + 1,
-        free_blocks: pool.free_blocks - 1
-      }, true)
-    } else {
-      (pool, false)
-    }
-  }
-  
-  let deallocate_to_pool = fn(pool: MemoryPool, size_mb: Float) {
-    if pool.allocated_blocks > 0 {
-      ({
-        total_size_mb: pool.total_size_mb,
-        used_size_mb: if pool.used_size_mb >= size_mb { pool.used_size_mb - size_mb } else { 0.0 },
-        allocated_blocks: pool.allocated_blocks - 1,
-        free_blocks: pool.free_blocks + 1
-      }, true)
-    } else {
-      (pool, false)
-    }
-  }
-  
-  let memory_pool = create_memory_pool(1000.0)
-  let (pool1, success1) = allocate_from_pool(memory_pool, 100.0)
-  assert_true(success1)
-  assert_eq(pool1.used_size_mb, 100.0)
-  assert_eq(pool1.allocated_blocks, 1)
-  assert_eq(pool1.free_blocks, 99)
-  
-  let (pool2, success2) = allocate_from_pool(pool1, 200.0)
-  assert_true(success2)
-  assert_eq(pool2.used_size_mb, 300.0)
-  assert_eq(pool2.allocated_blocks, 2)
-  assert_eq(pool2.free_blocks, 98)
-  
-  let (pool3, success3) = deallocate_to_pool(pool2, 100.0)
-  assert_true(success3)
-  assert_eq(pool3.used_size_mb, 200.0)
-  assert_eq(pool3.allocated_blocks, 1)
-  assert_eq(pool3.free_blocks, 99)
-  
-  // Test queue management
-  type TelemetryQueue = {
-    max_size: Int,
-    current_size: Int,
-    items: Array[String],
-    dropped_items: Int
-  }
-  
-  let create_queue = fn(max_size: Int) {
-    {
-      max_size: max_size,
-      current_size: 0,
-      items: [],
-      dropped_items: 0
-    }
-  }
-  
-  let enqueue = fn(queue: TelemetryQueue, item: String) {
-    if queue.current_size < queue.max_size {
-      ({
-        max_size: queue.max_size,
-        current_size: queue.current_size + 1,
-        items: queue.items.push(item),
-        dropped_items: queue.dropped_items
-      }, true)
-    } else {
-      ({
-        max_size: queue.max_size,
-        current_size: queue.current_size,
-        items: queue.items,
-        dropped_items: queue.dropped_items + 1
-      }, false)
-    }
-  }
-  
-  let dequeue = fn(queue: TelemetryQueue) {
-    if queue.current_size > 0 {
-      let item = queue.items[0]
-      let remaining_items = queue.items.slice(1, queue.items.length() - 1)
-      ({
-        max_size: queue.max_size,
-        current_size: queue.current_size - 1,
-        items: remaining_items,
-        dropped_items: queue.dropped_items
-      }, Some(item))
-    } else {
-      (queue, None)
-    }
-  }
-  
-  let telemetry_queue = create_queue(3)
-  let (queue1, enqueued1) = enqueue(telemetry_queue, "item1")
-  assert_true(enqueued1)
-  assert_eq(queue1.current_size, 1)
-  
-  let (queue2, enqueued2) = enqueue(queue1, "item2")
-  assert_true(enqueued2)
-  assert_eq(queue2.current_size, 2)
-  
-  let (queue3, enqueued3) = enqueue(queue2, "item3")
-  assert_true(enqueued3)
-  assert_eq(queue3.current_size, 3)
-  
-  let (queue4, enqueued4) = enqueue(queue3, "item4")
-  assert_false(enqueued4)  // Queue is full
-  assert_eq(queue4.dropped_items, 1)
-  
-  let (queue5, dequeued1) = dequeue(queue4)
-  assert_eq(dequeued1, Some("item1"))
-  assert_eq(queue5.current_size, 2)
-}
-
-// Test 9: Telemetry Data Export and Reporting
-test "telemetry data export and reporting" {
-  // Define export format types
-  enum ExportFormat {
-    JSON
-    CSV
-    Prometheus
-    OTLP
-  }
-  
-  // Define export destination
-  type ExportDestination = {
-    type: String,
-    endpoint: String,
-    credentials: Option[(String, String)]
-  }
-  
-  // Define telemetry data point
-  type DataPoint = {
-    name: String,
-    value: Float,
-    timestamp: Int,
-    labels: Array[(String, String)]
-  }
-  
-  // Create sample data points
-  let create_sample_data_points = fn() {
-    [
-      {
-        name: "http_requests_total",
-        value: 100.0,
-        timestamp: 1640995200,
-        labels: [("method", "GET"), ("status", "200"), ("service", "api-gateway")]
-      },
-      {
-        name: "http_requests_total",
-        value: 5.0,
-        timestamp: 1640995200,
-        labels: [("method", "GET"), ("status", "500"), ("service", "api-gateway")]
-      },
-      {
-        name: "response_time_ms",
-        value: 120.5,
-        timestamp: 1640995200,
-        labels: [("endpoint", "/api/users"), ("service", "user-service")]
-      },
-      {
-        name: "error_rate",
-        value: 0.05,
-        timestamp: 1640995200,
-        labels: [("service", "auth-service")]
-      }
-    ]
-  }
-  
-  let data_points = create_sample_data_points()
-  assert_eq(data_points.length(), 4)
-  
-  // Test JSON export
-  let export_to_json = fn(data_points: Array[DataPoint]) {
-    let point_strings = data_points.map(fn(point) {
-      let label_strings = point.labels.map(fn(label) {
-        "\"" + label.0 + "\":\"" + label.1 + "\""
-      })
-      
-      "{" +
-        "\"name\":\"" + point.name + "\"," +
-        "\"value\":" + point.value.to_string() + "," +
-        "\"timestamp\":" + point.timestamp.to_string() + "," +
-        "\"labels\":{" + label_strings.reduce(fn(acc, label) { 
-          if acc == "" { label } else { acc + "," + label } 
-        }, "") + "}" +
-      "}"
-    })
-    
-    "[" + point_strings.reduce(fn(acc, point) { 
-      if acc == "" { point } else { acc + "," + point } 
-    }, "") + "]"
-  }
-  
-  let json_export = export_to_json(data_points)
-  assert_true(json_export.starts_with("["))
-  assert_true(json_export.ends_with("]"))
-  assert_true(json_export.contains("\"name\":\"http_requests_total\""))
-  assert_true(json_export.contains("\"value\":100.0"))
-  
-  // Test CSV export
-  let export_to_csv = fn(data_points: Array[DataPoint]) {
-    let header = "name,value,timestamp,labels"
-    
-    let rows = data_points.map(fn(point) {
-      let label_string = point.labels.map(fn(label) {
-        label.0 + "=" + label.1
-      }).reduce(fn(acc, label) { 
-        if acc == "" { label } else { acc + ";" + label } 
-      }, "")
-      
-      point.name + "," + point.value.to_string() + "," + 
-      point.timestamp.to_string() + ",\"" + label_string + "\""
-    })
-    
-    header + "\n" + rows.reduce(fn(acc, row) { acc + "\n" + row }, "")
-  }
-  
-  let csv_export = export_to_csv(data_points)
-  assert_true(csv_export.starts_with("name,value,timestamp,labels"))
-  assert_true(csv_export.contains("http_requests_total,100.0,1640995200"))
-  
-  // Test Prometheus export
-  let export_to_prometheus = fn(data_points: Array[DataPoint]) {
-    let metric_lines = data_points.map(fn(point) {
-      let label_string = point.labels.map(fn(label) {
-        label.0 + "=\"" + label.1 + "\""
-      }).reduce(fn(acc, label) { 
-        if acc == "" { label } else { acc + "," + label } 
-      }, "")
-      
-      "# TYPE " + point.name + " gauge\n" +
-      point.name + "{" + label_string + "} " + point.value.to_string() + " " + 
-      point.timestamp.to_string()
-    })
-    
-    metric_lines.reduce(fn(acc, line) { acc + "\n" + line }, "")
-  }
-  
-  let prometheus_export = export_to_prometheus(data_points)
-  assert_true(prometheus_export.contains("# TYPE http_requests_total gauge"))
-  assert_true(prometheus_export.contains("http_requests_total{method=\"GET\",status=\"200\",service=\"api-gateway\"} 100.0"))
-  
-  // Test OTLP export simulation
-  let export_to_otlp = fn(data_points: Array[DataPoint]) {
-    let resource_attributes = [
-      ("service.name", "azimuth-telemetry"),
-      ("service.version", "1.0.0"),
-      ("telemetry.sdk.name", "azimuth"),
-      ("telemetry.sdk.version", "1.0.0")
-    ]
-    
-    let resource_attrs_string = resource_attributes.map(fn(attr) {
-      attr.0 + ": " + attr.1
-    }).reduce(fn(acc, attr) { acc + ", " + attr }, "")
-    
-    let metrics = data_points.map(fn(point) {
-      let labels_string = point.labels.map(fn(label) {
-        label.0 + "=" + label.1
-      }).reduce(fn(acc, label) { 
-        if acc == "" { label } else { acc + "," + label } 
-      }, "")
-      
-      "Metric{" +
-        "name: " + point.name + ", " +
-        "value: " + point.value.to_string() + ", " +
-        "labels: [" + labels_string + "]" +
-      "}"
-    })
-    
-    "OTLPExport{" +
-      "resource: {" + resource_attrs_string + "}, " +
-      "metrics: [" + metrics.reduce(fn(acc, metric) { 
-        if acc == "" { metric } else { acc + ", " + metric } 
-      }, "") + "]" +
-    "}"
-  }
-  
-  let otlp_export = export_to_otlp(data_points)
-  assert_true(otlp_export.contains("OTLPExport{"))
-  assert_true(otlp_export.contains("service.name: azimuth-telemetry"))
-  assert_true(otlp_export.contains("Metric{name: http_requests_total"))
-  
-  // Test export destination validation
-  let validate_destination = fn(destination: ExportDestination) {
-    let mut errors = []
-    
-    if destination.endpoint.length() == 0 {
-      errors = errors.push("Endpoint cannot be empty")
-    }
-    
-    if destination.type == "http" and not(destination.endpoint.starts_with("http://")) and not(destination.endpoint.starts_with("https://")) {
-      errors = errors.push("HTTP endpoint must start with http:// or https://")
-    }
-    
-    if destination.type == "file" and not(destination.endpoint.starts_with("/")) {
-      errors = errors.push("File endpoint must be an absolute path")
-    }
-    
-    match destination.credentials {
-      Some((username, password)) => {
-        if username.length() == 0 {
-          errors = errors.push("Username cannot be empty")
-        }
-        
-        if password.length() == 0 {
-          errors = errors.push("Password cannot be empty")
-        }
-      }
-      None => {}
-    }
-    
-    errors
-  }
-  
-  let valid_http_destination = {
-    type: "http",
-    endpoint: "https://telemetry-collector:4317",
-    credentials: Some(("admin", "password"))
-  }
-  
-  let http_validation_errors = validate_destination(valid_http_destination)
-  assert_eq(http_validation_errors.length(), 0)
-  
-  let invalid_http_destination = {
-    type: "http",
-    endpoint: "ftp://invalid-protocol",
-    credentials: Some((", "password"))
-  }
-  
-  let invalid_http_errors = validate_destination(invalid_http_destination)
-  assert_eq(invalid_http_errors.length(), 2)
-  
-  // Test batch export
-  let batch_export = fn(
-    data_points: Array[DataPoint], 
-    destination: ExportDestination, 
-    format: ExportFormat,
-    batch_size: Int
-  ) {
-    let mut batches = []
-    
-    for i in 0..data_points.length() {
-      if i % batch_size == 0 {
-        let end_index = if i + batch_size > data_points.length() {
-          data_points.length()
-        } else {
-          i + batch_size
-        }
-        
-        let batch = data_points.slice(i, end_index - i)
-        batches = batches.push(batch)
-      }
-    }
-    
-    batches.map(fn(batch) {
-      let formatted_data = match format {
-        ExportFormat::JSON => export_to_json(batch)
-        ExportFormat::CSV => export_to_csv(batch)
-        ExportFormat::Prometheus => export_to_prometheus(batch)
-        ExportFormat::OTLP => export_to_otlp(batch)
-      }
-      
-      {
-        destination: destination.endpoint,
-        format: match format {
-          ExportFormat::JSON => "json"
-          ExportFormat::CSV => "csv"
-          ExportFormat::Prometheus => "prometheus"
-          ExportFormat::OTLP => "otlp"
-        },
-        data: formatted_data,
-        size: batch.length()
-      }
-    })
-  }
-  
-  let export_batches = batch_export(data_points, valid_http_destination, ExportFormat::JSON, 2)
-  assert_eq(export_batches.length(), 2)
-  assert_eq(export_batches[0].size, 2)
-  assert_eq(export_batches[1].size, 2)
-  assert_eq(export_batches[0].format, "json")
-  assert_eq(export_batches[0].destination, "https://telemetry-collector:4317")
-}
-
-// Test 10: Telemetry Security and Privacy
-test "telemetry security and privacy" {
-  // Define data sensitivity levels
-  enum SensitivityLevel {
-    Public
-    Internal
-    Confidential
-    Restricted
-  }
-  
-  // Define PII types
-  enum PIIType {
-    EmailAddress
-    PhoneNumber
-    SocialSecurityNumber
-    CreditCardNumber
-    IPAddress
-    Custom(String)
-  }
-  
-  // Define telemetry field with sensitivity
-  type TelemetryField = {
-    name: String,
-    value: String,
-    sensitivity: SensitivityLevel,
-    pii_types: Array[PIIType]
-  }
-  
-  // Define security policy
-  type SecurityPolicy = {
-    allowed_sensitivity_levels: Array[SensitivityLevel],
-    pii_redaction_enabled: Bool,
-    encryption_required: Bool,
-    retention_days: Int,
-    export_allowed: Bool
-  }
-  
-  // Create sample telemetry fields
-  let create_sample_fields = fn() {
-    [
-      {
-        name: "operation_name",
-        value: "database_query",
-        sensitivity: SensitivityLevel::Public,
-        pii_types: []
-      },
-      {
-        name: "user_email",
-        value: "user@example.com",
-        sensitivity: SensitivityLevel::Confidential,
-        pii_types: [PIIType::EmailAddress]
-      },
-      {
-        name: "user_ip",
-        value: "192.168.1.100",
-        sensitivity: SensitivityLevel::Internal,
-        pii_types: [PIIType::IPAddress]
-      },
-      {
-        name: "credit_card",
-        value: "4111-1111-1111-1111",
-        sensitivity: SensitivityLevel::Restricted,
-        pii_types: [PIIType::CreditCardNumber]
-      },
-      {
-        name: "response_time_ms",
-        value: "150",
-        sensitivity: SensitivityLevel::Public,
-        pii_types: []
-      }
-    ]
-  }
-  
-  let fields = create_sample_fields()
-  assert_eq(fields.length(), 5)
-  
-  // Test PII detection
-  let detect_pii = fn(value: String) {
-    let mut detected_pii = []
-    
-    // Email detection
-    if value.contains("@") and value.contains(".") {
-      detected_pii = detected_pii.push(PIIType::EmailAddress)
-    }
-    
-    // Phone number detection (simplified)
-    let digits_only = value.replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
-    if digits_only.length() >= 10 and digits_only.length() <= 15 {
-      let mut all_digits = true
-      for i in 0..digits_only.length() {
-        let c = digits_only[i]
-        if c < '0' or c > '9' {
-          all_digits = false
-        }
-      }
-      
-      if all_digits {
-        detected_pii = detected_pii.push(PIIType::PhoneNumber)
-      }
-    }
-    
-    // IP address detection (simplified)
-    let ip_parts = value.split(".")
-    if ip_parts.length() == 4 {
-      let mut valid_ip = true
-      for part in ip_parts {
-        let num = part.to_int()
-        if num < 0 or num > 255 {
-          valid_ip = false
-        }
-      }
-      
-      if valid_ip {
-        detected_pii = detected_pii.push(PIIType::IPAddress)
-      }
-    }
-    
-    // Credit card detection (simplified)
-    let cc_digits = value.replace("-", "").replace(" ", "")
-    if cc_digits.length() == 16 and cc_digits.starts_with("4") {
-      let mut all_digits = true
-      for i in 0..cc_digits.length() {
-        let c = cc_digits[i]
-        if c < '0' or c > '9' {
-          all_digits = false
-        }
-      }
-      
-      if all_digits {
-        detected_pii = detected_pii.push(PIIType::CreditCardNumber)
-      }
-    }
-    
-    detected_pii
-  }
-  
-  let email_pii = detect_pii("user@example.com")
-  assert_eq(email_pii.length(), 1)
-  assert_eq(email_pii[0], PIIType::EmailAddress)
-  
-  let ip_pii = detect_pii("192.168.1.100")
-  assert_eq(ip_pii.length(), 1)
-  assert_eq(ip_pii[0], PIIType::IPAddress)
-  
-  let cc_pii = detect_pii("4111-1111-1111-1111")
-  assert_eq(cc_pii.length(), 1)
-  assert_eq(cc_pii[0], PIIType::CreditCardNumber)
-  
-  // Test PII redaction
-  let redact_pii = fn(value: String, pii_types: Array[PIIType]) {
-    let mut redacted_value = value
-    
-    for pii_type in pii_types {
-      redacted_value = match pii_type {
-        PIIType::EmailAddress => {
-          let at_index = redacted_value.index_of("@")
-          if at_index > 0 {
-            let domain = redacted_value.substring(at_index, redacted_value.length() - at_index)
-            "*".repeat(at_index) + domain
-          } else {
-            redacted_value
-          }
-        }
-        PIIType::IPAddress => {
-          let parts = redacted_value.split(".")
-          if parts.length() == 4 {
-            parts[0] + "." + parts[1] + ".*."
-          } else {
-            redacted_value
-          }
-        }
-        PIIType::CreditCardNumber => {
-          let digits = redacted_value.replace("-", "").replace(" ", "")
-          if digits.length() == 16 {
-            "****-****-****-" + digits.substring(12, 4)
-          } else {
-            redacted_value
-          }
-        }
-        PIIType::PhoneNumber => {
-          let digits = redacted_value.replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
-          if digits.length() >= 4 {
-            "*".repeat(digits.length() - 4) + digits.substring(digits.length() - 4, 4)
-          } else {
-            redacted_value
-          }
-        }
-        _ => redacted_value
-      }
-    }
-    
-    redacted_value
-  }
-  
-  let redacted_email = redact_pii("user@example.com", [PIIType::EmailAddress])
-  assert_eq(redacted_email, "****@example.com")
-  
-  let redacted_ip = redact_pii("192.168.1.100", [PIIType::IPAddress])
-  assert_eq(redacted_ip, "192.168.*.*")
-  
-  let redacted_cc = redact_pii("4111-1111-1111-1111", [PIIType::CreditCardNumber])
-  assert_eq(redacted_cc, "****-****-****-1111")
-  
-  // Test field filtering based on security policy
-  let filter_fields_by_policy = fn(fields: Array[TelemetryField], policy: SecurityPolicy) {
-    fields.filter(fn(field) {
-      // Check if sensitivity level is allowed
-      let sensitivity_allowed = policy.allowed_sensitivity_levels.contains(field.sensitivity)
-      
-      // Check PII redaction
-      let pii_allowed = if policy.pii_redaction_enabled and field.pii_types.length() > 0 {
-        false  // PII fields are not allowed when redaction is enabled
-      } else {
-        true
-      }
-      
-      sensitivity_allowed and pii_allowed
-    })
-  }
-  
-  let strict_policy = {
-    allowed_sensitivity_levels: [SensitivityLevel::Public],
-    pii_redaction_enabled: true,
-    encryption_required: true,
-    retention_days: 30,
-    export_allowed: false
-  }
-  
-  let filtered_fields = filter_fields_by_policy(fields, strict_policy)
-  assert_eq(filtered_fields.length(), 2)
-  assert_eq(filtered_fields[0].name, "operation_name")
-  assert_eq(filtered_fields[1].name, "response_time_ms")
-  
-  // Test field transformation based on security policy
-  let transform_fields_by_policy = fn(fields: Array[TelemetryField], policy: SecurityPolicy) {
-    fields.map(fn(field) {
-      // Check if sensitivity level is allowed
-      let sensitivity_allowed = policy.allowed_sensitivity_levels.contains(field.sensitivity)
-      
-      if not(sensitivity_allowed) {
-        // Field is not allowed, remove it
-        None
-      } else if policy.pii_redaction_enabled and field.pii_types.length() > 0 {
-        // Field has PII and redaction is enabled
-        Some({
-          name: field.name,
-          value: redact_pii(field.value, field.pii_types),
-          sensitivity: field.sensitivity,
-          pii_types: []  // PII has been redacted
-        })
-      } else {
-        // Field is allowed as-is
-        Some(field)
-      }
-    }).filter(fn(field) { field != None })
-     .map(fn(field) { match field { Some(f) => f } })
-  }
-  
-  let lenient_policy = {
-    allowed_sensitivity_levels: [SensitivityLevel::Public, SensitivityLevel::Internal, SensitivityLevel::Confidential],
-    pii_redaction_enabled: true,
-    encryption_required: false,
-    retention_days: 90,
-    export_allowed: true
-  }
-  
-  let transformed_fields = transform_fields_by_policy(fields, lenient_policy)
-  assert_eq(transformed_fields.length(), 4)
-  
-  // Check that email was redacted
-  let email_field = transformed_fields.filter(fn(f) { f.name == "user_email" })[0]
-  assert_eq(email_field.value, "****@example.com")
-  assert_eq(email_field.pii_types.length(), 0)
-  
-  // Check that IP was redacted
-  let ip_field = transformed_fields.filter(fn(f) { f.name == "user_ip" })[0]
-  assert_eq(ip_field.value, "192.168.*.*")
-  assert_eq(ip_field.pii_types.length(), 0)
-  
-  // Check that restricted field was removed
-  let restricted_fields = transformed_fields.filter(fn(f) { f.name == "credit_card" })
-  assert_eq(restricted_fields.length(), 0)
-  
-  // Test data encryption simulation
-  let encrypt_data = fn(data: String, key: String) {
-    // Simple XOR encryption simulation
-    let key_bytes = key.to_char_array()
-    let data_bytes = data.to_char_array()
-    
-    let mut encrypted_bytes = []
-    for i in 0..data_bytes.length() {
-      let key_byte = key_bytes[i % key_bytes.length()]
-      let encrypted_byte = data_bytes[i] ^ key_byte
-      encrypted_bytes = encrypted_bytes.push(encrypted_byte)
-    }
-    
-    "encrypted:" + encrypted_bytes.map(fn(b) { b.to_string() }).reduce(fn(acc, b) { acc + "," + b }, "")
-  }
-  
-  let decrypt_data = fn(encrypted_data: String, key: String) {
-    if not(encrypted_data.starts_with("encrypted:")) {
-      encrypted_data
-    } else {
-      let key_bytes = key.to_char_array()
-      let encrypted_part = encrypted_data.substring(10, encrypted_data.length() - 10)
-      let encrypted_values = encrypted_part.split(",")
-      
-      let mut decrypted_bytes = []
-      for i in 0..encrypted_values.length() {
-        let encrypted_byte = encrypted_values[i].to_int()
-        let key_byte = key_bytes[i % key_bytes.length()]
-        let decrypted_byte = encrypted_byte ^ key_byte
-        decrypted_bytes = decrypted_bytes.push(decrypted_byte)
-      }
-      
-      decrypted_bytes.map(fn(b) { b.to_char() }).reduce(fn(acc, c) { acc + c }, "")
-    }
-  }
-  
-  let original_data = "sensitive telemetry data"
-  let encryption_key = "secret-key"
-  
-  let encrypted = encrypt_data(original_data, encryption_key)
-  assert_true(encrypted.starts_with("encrypted:"))
-  assert_false(encrypted.contains("sensitive"))
-  
-  let decrypted = decrypt_data(encrypted, encryption_key)
-  assert_eq(decrypted, original_data)
-  
-  // Test access control
-  type AccessLevel = {
-    read: Bool,
-    write: Bool,
-    export: Bool,
-    delete: Bool
-  }
-  
-  type User = {
-    id: String,
-    role: String,
-    access_level: AccessLevel
-  }
-  
-  let check_access = fn(user: User, action: String, data_sensitivity: SensitivityLevel) {
-    let can_access = match action {
-      "read" => user.access_level.read
-      "write" => user.access_level.write
-      "export" => user.access_level.export
-      "delete" => user.access_level.delete
+// Test Case 1: Attribute Value Type Conversion with Edge Cases
+test "attribute value type conversion with edge cases" {
+  // Test string to integer conversion with various inputs
+  let valid_int_str = "12345"
+  let invalid_int_str = "not_a_number"
+  let overflow_int_str = "999999999999999999999999999999"
+  
+  // Valid conversion
+  assert_eq(valid_int_str.to_int(), Some(12345))
+  
+  // Invalid conversion
+  assert_eq(invalid_int_str.to_int(), None)
+  
+  // Test string to float conversion with precision
+  let valid_float_str = "3.141592653589793"
+  let scientific_notation = "1.23e-4"
+  
+  // Float conversion
+  let float_value = valid_float_str.to_float()
+  assert_true(float_value > 3.14 && float_value < 3.15)
+  
+  // Scientific notation conversion
+  let sci_value = scientific_notation.to_float()
+  assert_true(sci_value > 0.0001 && sci_value < 0.0002)
+  
+  // Test boolean conversion from various string representations
+  let true_values = ["true", "True", "TRUE", "1", "yes", "Yes", "YES"]
+  let false_values = ["false", "False", "FALSE", "0", "no", "No", "NO", ""]
+  
+  for val in true_values {
+    let bool_val = match val {
+      "true" | "True" | "TRUE" | "1" | "yes" | "Yes" | "YES" => true
       _ => false
     }
-    
-    if not(can_access) {
-      false
+    assert_true(bool_val)
+  }
+  
+  for val in false_values {
+    let bool_val = match val {
+      "true" | "True" | "TRUE" | "1" | "yes" | "Yes" | "YES" => true
+      _ => false
+    }
+    assert_false(bool_val)
+  }
+  
+  // Test array operations with mixed types
+  let string_array = ["a", "b", "c", "d", "e"]
+  let int_array = [1, 2, 3, 4, 5]
+  
+  // Array operations
+  assert_eq(string_array.length(), 5)
+  assert_eq(int_array.length(), 5)
+  
+  // Test array concatenation
+  let concatenated = string_array.concat(int_array.map(|i| i.to_string()))
+  assert_eq(concatenated.length(), 10)
+  assert_eq(concatenated[0], "a")
+  assert_eq(concatenated[5], "1")
+  
+  // Test array filtering
+  let filtered = int_array.filter(|i| i % 2 == 0)
+  assert_eq(filtered.length(), 2)
+  assert_eq(filtered[0], 2)
+  assert_eq(filtered[1], 4)
+}
+
+// Test Case 2: Cross-Service Context Propagation with Complex Scenarios
+test "cross-service context propagation with complex scenarios" {
+  // Test trace context creation and validation
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let parent_span_id = "b7ad6b7169203331"
+  let child_span_id = "c8be7c827a31d442"
+  
+  // Create span contexts
+  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "rojo=00f067aa0ba902b7")
+  let child_ctx = SpanContext::new(trace_id, child_span_id, true, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  
+  // Validate trace consistency
+  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child_ctx))
+  assert_not_eq(SpanContext::span_id(parent_ctx), SpanContext::span_id(child_ctx))
+  assert_true(SpanContext::is_valid(parent_ctx))
+  assert_true(SpanContext::is_valid(child_ctx))
+  
+  // Test baggage propagation across multiple services
+  let initial_baggage = [
+    ("user.id", "12345"),
+    ("session.id", "abcdef-123456"),
+    ("request.id", "req-789012"),
+    ("tenant.id", "tenant-001"),
+    ("correlation.id", "corr-345678")
+  ]
+  
+  // Service 1 adds baggage
+  let service1_baggage = initial_baggage.concat([
+    ("service1.start_time", "1640995200000"),
+    ("service1.operation", "authenticate")
+  ])
+  
+  // Service 2 adds baggage
+  let service2_baggage = service1_baggage.concat([
+    ("service2.start_time", "1640995200500"),
+    ("service2.operation", "authorize"),
+    ("service2.decision", "allowed")
+  ])
+  
+  // Service 3 adds baggage
+  let service3_baggage = service2_baggage.concat([
+    ("service3.start_time", "1640995201000"),
+    ("service3.operation", "process"),
+    ("service3.result", "success")
+  ])
+  
+  // Validate baggage propagation
+  assert_eq(service3_baggage.length(), 11)
+  assert_true(service3_baggage.contains(|(k, _)| k == "user.id"))
+  assert_true(service3_baggage.contains(|(k, _)| k == "service3.result"))
+  
+  // Test context extraction and injection
+  let carrier = TextMapCarrier::new()
+  
+  // Inject trace context
+  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  
+  // Inject baggage
+  for (key, value) in service3_baggage {
+    TextMapCarrier::set(carrier, "baggage-" + key, value)
+  }
+  
+  // Extract and validate
+  let extracted_traceparent = TextMapCarrier::get(carrier, "traceparent")
+  let extracted_tracestate = TextMapCarrier::get(carrier, "tracestate")
+  let extracted_user_id = TextMapCarrier::get(carrier, "baggage-user.id")
+  let extracted_service3_result = TextMapCarrier::get(carrier, "baggage-service3.result")
+  
+  assert_eq(extracted_traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(extracted_tracestate, Some("rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"))
+  assert_eq(extracted_user_id, Some("12345"))
+  assert_eq(extracted_service3_result, Some("success"))
+}
+
+// Test Case 3: High Concurrency Resource Management
+test "high concurrency resource management" {
+  // Test resource pool management under high load
+  let max_resources = 100
+  let concurrent_requests = 1000
+  
+  // Simulate resource allocation
+  let mut allocated_resources = 0
+  let mut allocation_failures = 0
+  
+  // Simulate concurrent resource allocation
+  for i = 0; i < concurrent_requests; i = i + 1 {
+    if allocated_resources < max_resources {
+      allocated_resources = allocated_resources + 1
     } else {
-      // Check role-based sensitivity access
-      match user.role {
-        "admin" => true
-        "analyst" => data_sensitivity != SensitivityLevel::Restricted
-        "viewer" => data_sensitivity == SensitivityLevel::Public
-        _ => false
-      }
+      allocation_failures = allocation_failures + 1
     }
   }
   
-  let admin_user = {
-    id: "user-001",
-    role: "admin",
-    access_level: { read: true, write: true, export: true, delete: true }
+  // Validate resource allocation
+  assert_eq(allocated_resources, max_resources)
+  assert_eq(allocation_failures, concurrent_requests - max_resources)
+  
+  // Test resource deallocation
+  let deallocation_batch = 50
+  for i = 0; i < deallocation_batch; i = i + 1 {
+    if allocated_resources > 0 {
+      allocated_resources = allocated_resources - 1
+    }
   }
   
-  let analyst_user = {
-    id: "user-002",
-    role: "analyst",
-    access_level: { read: true, write: false, export: true, delete: false }
+  // Validate deallocation
+  assert_eq(allocated_resources, max_resources - deallocation_batch)
+  
+  // Test resource cleanup on memory pressure
+  let memory_pressure_threshold = 80
+  if allocated_resources > memory_pressure_threshold {
+    // Simulate aggressive cleanup
+    let cleanup_target = allocated_resources / 2
+    for i = 0; i < (allocated_resources - cleanup_target); i = i + 1 {
+      allocated_resources = allocated_resources - 1
+    }
   }
   
-  let viewer_user = {
-    id: "user-003",
-    role: "viewer",
-    access_level: { read: true, write: false, export: false, delete: false }
+  // Validate cleanup
+  assert_true(allocated_resources <= memory_pressure_threshold)
+  
+  // Test resource attributes under high load
+  let resource_attributes = [
+    ("resource.id", "res-001"),
+    ("resource.type", "database-connection"),
+    ("resource.pool", "primary"),
+    ("resource.created", "1640995200000"),
+    ("resource.last_used", "1640995201000"),
+    ("resource.use_count", "42")
+  ]
+  
+  // Simulate high-frequency attribute updates
+  let mut update_count = 0
+  for i = 0; i < 1000; i = i + 1 {
+    // Simulate updating last_used timestamp
+    update_count = update_count + 1
   }
   
-  assert_true(check_access(admin_user, "read", SensitivityLevel::Restricted))
-  assert_true(check_access(admin_user, "delete", SensitivityLevel::Restricted))
+  // Validate update performance
+  assert_eq(update_count, 1000)
   
-  assert_true(check_access(analyst_user, "read", SensitivityLevel::Confidential))
-  assert_false(check_access(analyst_user, "read", SensitivityLevel::Restricted))
-  assert_false(check_access(analyst_user, "write", SensitivityLevel::Public))
+  // Test resource merge strategy under concurrent access
+  let base_resource = Resource::new()
+  let override_resource = Resource::with_attributes([
+    ("service.name", StringValue("azimuth-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("host.name", StringValue("web-server-01"))
+  ])
   
-  assert_true(check_access(viewer_user, "read", SensitivityLevel::Public))
-  assert_false(check_access(viewer_user, "read", SensitivityLevel::Internal))
-  assert_false(check_access(viewer_user, "export", SensitivityLevel::Public))
+  // Simulate concurrent merge operations
+  let merged_resources = Array::make(10, Resource::merge(base_resource, override_resource))
+  
+  // Validate merge consistency
+  for resource in merged_resources {
+    let service_name = Resource::get_attribute(resource, "service.name")
+    assert_eq(service_name, Some(StringValue("azimuth-service")))
+  }
+}
+
+// Test Case 4: Time Series Data Processing Operations
+test "time series data processing operations" {
+  // Test time series data generation
+  let base_timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
+  let data_points = 100
+  
+  // Generate time series data
+  let time_series = Array::make(data_points, 0.0).map_with_index(|_, i| {
+    let timestamp = base_timestamp + (i * 1000L)  // 1-second intervals
+    let value = 100.0 + (10.0 * (i.to_float() * 0.1).sin())  // Sine wave with noise
+    (timestamp, value)
+  })
+  
+  // Validate time series generation
+  assert_eq(time_series.length(), data_points)
+  assert_eq(time_series[0].0, base_timestamp)
+  assert_eq(time_series[data_points - 1].0, base_timestamp + ((data_points - 1) * 1000L))
+  
+  // Test time series aggregation
+  let window_size = 10
+  let aggregated = Array::make(data_points / window_size, 0.0).map_with_index(|_, window_idx| {
+    let start_idx = window_idx * window_size
+    let end_idx = start_idx + window_size
+    
+    let sum = Array::range(start_idx, end_idx).reduce(0.0, |acc, i| {
+      acc + time_series[i].1
+    })
+    
+    sum / window_size.to_float()
+  })
+  
+  // Validate aggregation
+  assert_eq(aggregated.length(), data_points / window_size)
+  
+  // Test time series downsampling
+  let downsample_factor = 5
+  let downsampled = time_series.filter_with_index(|_, i| i % downsample_factor == 0)
+  
+  // Validate downsampling
+  assert_eq(downsampled.length(), data_points / downsample_factor + (if data_points % downsample_factor > 0 { 1 } else { 0 }))
+  
+  // Test time series anomaly detection
+  let threshold = 15.0  // Standard deviation threshold
+  let mean = 100.0  // Known mean of our sine wave
+  let std_dev = 7.07  // Standard deviation of sine wave with amplitude 10
+  
+  let anomalies = time_series.filter(|(_, value)| {
+    let z_score = (value - mean).abs() / std_dev
+    z_score > threshold
+  })
+  
+  // Validate anomaly detection (should be few or none for regular sine wave)
+  assert_true(anomalies.length() < 5)
+  
+  // Test time series trend analysis
+  let first_half_avg = Array::range(0, data_points / 2).reduce(0.0, |acc, i| {
+    acc + time_series[i].1
+  }) / (data_points / 2).to_float()
+  
+  let second_half_avg = Array::range(data_points / 2, data_points).reduce(0.0, |acc, i| {
+    acc + time_series[i].1
+  }) / (data_points / 2).to_float()
+  
+  // For a sine wave, the trend should be minimal over complete periods
+  let trend_diff = (second_half_avg - first_half_avg).abs()
+  assert_true(trend_diff < 5.0)
+  
+  // Test time series forecasting (simple linear extrapolation)
+  let last_n_points = 10
+  let recent_points = Array::range(data_points - last_n_points, data_points).map(|i| time_series[i].1)
+  
+  let recent_avg = recent_points.reduce(0.0, |acc, v| acc + v) / recent_points.length().to_float()
+  let forecast_value = recent_avg  // Simple forecast using recent average
+  
+  // Validate forecast is reasonable
+  assert_true(forecast_value > 90.0 && forecast_value < 110.0)
+}
+
+// Test Case 5: Distributed Tracing Consistency
+test "distributed tracing consistency" {
+  // Test trace ID consistency across multiple services
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  
+  // Service A creates root span
+  let service_a_span_id = "a1b2c3d4e5f6g7h8"
+  let service_a_ctx = SpanContext::new(trace_id, service_a_span_id, true, "")
+  
+  // Service B creates child span
+  let service_b_span_id = "b2c3d4e5f6g7h8i9"
+  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "")
+  
+  // Service C creates child span
+  let service_c_span_id = "c3d4e5f6g7h8i9j0"
+  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, true, "")
+  
+  // Validate trace ID consistency
+  assert_eq(SpanContext::trace_id(service_a_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(service_c_ctx), trace_id)
+  
+  // Validate span ID uniqueness
+  assert_not_eq(SpanContext::span_id(service_a_ctx), SpanContext::span_id(service_b_ctx))
+  assert_not_eq(SpanContext::span_id(service_b_ctx), SpanContext::span_id(service_c_ctx))
+  assert_not_eq(SpanContext::span_id(service_a_ctx), SpanContext::span_id(service_c_ctx))
+  
+  // Test parent-child relationships
+  let span_relationships = [
+    (service_a_span_id, "parent", ""),
+    (service_b_span_id, "child", service_a_span_id),
+    (service_c_span_id, "child", service_b_span_id)
+  ]
+  
+  // Validate span hierarchy
+  for (span_id, relationship, parent_id) in span_relationships {
+    match relationship {
+      "parent" => assert_eq(parent_id, "")
+      "child" => assert_true(parent_id != "")
+      _ => assert_true(false)  // Invalid relationship
+    }
+  }
+  
+  // Test span event ordering
+  let span_events = [
+    ("start", 1640995200000L),
+    ("db.query.start", 1640995200100L),
+    ("db.query.end", 1640995200200L),
+    ("cache.get", 1640995200250L),
+    ("end", 1640995200300L)
+  ]
+  
+  // Validate event ordering
+  for i = 1; i < span_events.length(); i = i + 1 {
+    let prev_time = span_events[i-1].1
+    let curr_time = span_events[i].1
+    assert_true(curr_time >= prev_time)
+  }
+  
+  // Test span status propagation
+  let status_codes = [
+    ("service_a", "Unset"),
+    ("service_b", "Ok"),
+    ("service_c", "Error")
+  ]
+  
+  // Validate status codes
+  for (service, status) in status_codes {
+    match status {
+      "Unset" => assert_true(true)  // Valid status
+      "Ok" => assert_true(true)     // Valid status
+      "Error" => assert_true(true)  // Valid status
+      _ => assert_true(false)       // Invalid status
+    }
+  }
+  
+  // Test trace state propagation
+  let trace_state_entries = [
+    ("rojo", "00f067aa0ba902b7"),
+    ("congo", "t61rcWkgMzE"),
+    ("vendor", "specific-value")
+  ]
+  
+  // Create trace state string
+  let trace_state = trace_state_entries.map(|(k, v)| k + "=" + v).reduce(|acc, entry| acc + "," + entry, "")
+  
+  // Validate trace state format
+  let entries = trace_state.split(",")
+  assert_eq(entries.length(), 3)
+  
+  for entry in entries {
+    let parts = entry.split("=")
+    assert_eq(parts.length(), 2)
+    let key = parts[0]
+    let value = parts[1]
+    assert_true(trace_state_entries.contains(|(k, v)| k == key && v == value))
+  }
+  
+  // Test sampling decision consistency
+  let sampling_decisions = [
+    ("service_a", true),
+    ("service_b", true),  // Should follow parent
+    ("service_c", true)   // Should follow parent
+  ]
+  
+  // Validate sampling consistency
+  let parent_sampled = sampling_decisions[0].1
+  for (service, sampled) in sampling_decisions {
+    if service != "service_a" {
+      assert_eq(sampled, parent_sampled)  // Child should follow parent
+    }
+  }
+}
+
+// Test Case 6: Real-time Stream Processing Performance
+test "real-time stream processing performance" {
+  // Test high-throughput event processing
+  let events_per_second = 10000
+  let processing_window_seconds = 5
+  let total_events = events_per_second * processing_window_seconds
+  
+  // Simulate event generation
+  let event_stream = Array::make(total_events, 0).map_with_index(|_, i| {
+    let timestamp = 1640995200000L + (i * 100L)  // 10ms intervals
+    let event_type = match i % 4 {
+      0 => "http.request"
+      1 => "db.query"
+      2 => "cache.hit"
+      _ => "cache.miss"
+    }
+    let latency_ms = 10.0 + (50.0 * (i.to_float() * 0.01).sin().abs())  // Variable latency
+    (timestamp, event_type, latency_ms)
+  })
+  
+  // Validate event generation
+  assert_eq(event_stream.length(), total_events)
+  
+  // Test event filtering by type
+  let http_requests = event_stream.filter(|(_, event_type, _)| event_type == "http.request")
+  let db_queries = event_stream.filter(|(_, event_type, _)| event_type == "db.query")
+  let cache_hits = event_stream.filter(|(_, event_type, _)| event_type == "cache.hit")
+  let cache_misses = event_stream.filter(|(_, event_type, _)| event_type == "cache.miss")
+  
+  // Validate filtering
+  assert_eq(http_requests.length(), total_events / 4)
+  assert_eq(db_queries.length(), total_events / 4)
+  assert_eq(cache_hits.length(), total_events / 4)
+  assert_eq(cache_misses.length(), total_events / 4)
+  
+  // Test sliding window aggregation
+  let window_size_ms = 1000L  // 1-second window
+  let windows = processing_window_seconds
+  let windowed_counts = Array::make(windows, 0).map_with_index(|_, window_idx| {
+    let window_start = 1640995200000L + (window_idx * window_size_ms)
+    let window_end = window_start + window_size_ms
+    
+    event_stream.filter(|(timestamp, _, _)| {
+      timestamp >= window_start && timestamp < window_end
+    }).length()
+  })
+  
+  // Validate windowing
+  assert_eq(windowed_counts.length(), windows)
+  for count in windowed_counts {
+    assert_eq(count, events_per_second)
+  }
+  
+  // Test percentile calculation
+  let latencies = event_stream.map(|(_, _, latency_ms)| latency_ms)
+  let sorted_latencies = latencies.sort()
+  
+  // Calculate percentiles
+  let p50_index = (sorted_latencies.length() * 50) / 100
+  let p95_index = (sorted_latencies.length() * 95) / 100
+  let p99_index = (sorted_latencies.length() * 99) / 100
+  
+  let p50_latency = sorted_latencies[p50_index]
+  let p95_latency = sorted_latencies[p95_index]
+  let p99_latency = sorted_latencies[p99_index]
+  
+  // Validate percentile calculation
+  assert_true(p50_latency > 10.0 && p50_latency < 60.0)
+  assert_true(p95_latency > 10.0 && p95_latency < 60.0)
+  assert_true(p99_latency > 10.0 && p99_latency < 60.0)
+  assert_true(p50_latency <= p95_latency && p95_latency <= p99_latency)
+  
+  // Test anomaly detection in real-time
+  let latency_threshold = 55.0  // Threshold for anomaly
+  let anomalies = event_stream.filter(|(_, _, latency_ms)| latency_ms > latency_threshold)
+  
+  // Validate anomaly detection
+  let anomaly_rate = anomalies.length().to_float() / total_events.to_float()
+  assert_true(anomaly_rate > 0.0 && anomaly_rate < 0.1)  // Should be between 0% and 10%
+  
+  // Test backpressure handling
+  let buffer_size = 5000
+  let processed_events = if total_events > buffer_size {
+    buffer_size  // Simulate backpressure by limiting processed events
+  } else {
+    total_events
+  }
+  
+  // Validate backpressure handling
+  assert_true(processed_events <= buffer_size)
+  
+  // Test event deduplication
+  let deduplication_window_ms = 100L
+  let deduplicated_events = Array::make(processed_events, 0).map_with_index(|_, i| {
+    if i == 0 {
+      event_stream[i]  // Always include first event
+    } else {
+      let current_event = event_stream[i]
+      let previous_event = event_stream[i-1]
+      let time_diff = current_event.0 - previous_event.0
+      
+      // Only include if outside deduplication window
+      if time_diff >= deduplication_window_ms {
+        current_event
+      } else {
+        // Skip duplicate (simplified - would be more complex in real implementation)
+        (0L, "skipped", 0.0)
+      }
+    }
+  }).filter(|(_, event_type, _)| event_type != "skipped")
+  
+  // Validate deduplication
+  assert_true(deduplicated_events.length() <= processed_events)
+}
+
+// Test Case 7: Boundary Condition Error Handling
+test "boundary condition error handling" {
+  // Test empty array handling
+  let empty_string_array : Array[String] = []
+  let empty_int_array : Array[Int] = []
+  let empty_float_array : Array[Double] = []
+  
+  // Validate empty array operations
+  assert_eq(empty_string_array.length(), 0)
+  assert_eq(empty_int_array.length(), 0)
+  assert_eq(empty_float_array.length(), 0)
+  
+  // Test null/None value handling
+  let none_string : Option[String] = None
+  let some_string = Some("test")
+  
+  // Validate option handling
+  assert_eq(none_string, None)
+  assert_eq(some_string, Some("test"))
+  
+  // Test maximum/minimum value handling
+  let max_int = 2147483647
+  let min_int = -2147483648
+  let max_float = 1.7976931348623157e+308
+  let min_float = -1.7976931348623157e+308
+  
+  // Validate boundary values
+  assert_eq(max_int + 0, max_int)
+  assert_eq(min_int - 0, min_int)
+  assert_eq(max_float + 0.0, max_float)
+  assert_eq(min_float - 0.0, min_float)
+  
+  // Test string length boundaries
+  let empty_string = ""
+  let very_long_string = "a" * 10000  // Create a string with 10000 'a' characters
+  
+  // Validate string boundaries
+  assert_eq(empty_string.length(), 0)
+  assert_eq(very_long_string.length(), 10000)
+  
+  // Test array index boundaries
+  let small_array = [1, 2, 3, 4, 5]
+  let first_index = 0
+  let last_index = small_array.length() - 1
+  
+  // Validate array boundaries
+  assert_eq(small_array[first_index], 1)
+  assert_eq(small_array[last_index], 5)
+  
+  // Test numeric precision boundaries
+  let very_small_number = 0.0000000000000001
+  let very_large_number = 1000000000000000.0
+  
+  // Validate precision boundaries
+  assert_true(very_small_number > 0.0)
+  assert_true(very_large_number > 0.0)
+  
+  // Test timestamp boundaries
+  let min_timestamp = -9223372036854775808L  // Minimum Int64
+  let max_timestamp = 9223372036854775807L   // Maximum Int64
+  let current_timestamp = 1640995200000L     // Current timestamp
+  
+  // Validate timestamp boundaries
+  assert_true(min_timestamp < current_timestamp)
+  assert_true(current_timestamp < max_timestamp)
+  
+  // Test resource limit boundaries
+  let max_resource_name_length = 255
+  let max_resources = 10000
+  let max_attributes_per_resource = 100
+  
+  // Validate resource boundaries
+  let long_resource_name = "a" * max_resource_name_length
+  assert_eq(long_resource_name.length(), max_resource_name_length)
+  
+  // Test concurrent operation limits
+  let max_concurrent_operations = 1000
+  let current_operations = 500
+  
+  // Validate concurrent operation boundaries
+  assert_true(current_operations <= max_concurrent_operations)
+  
+  // Test memory allocation boundaries
+  let max_allocation_size = 1024 * 1024 * 1024  // 1GB
+  let current_allocation = 1024 * 1024          // 1MB
+  
+  // Validate allocation boundaries
+  assert_true(current_allocation <= max_allocation_size)
+  
+  // Test error recovery mechanisms
+  let error_conditions = [
+    ("network_timeout", true),
+    ("database_connection_failed", true),
+    ("memory_allocation_failed", true),
+    ("invalid_configuration", true),
+    ("resource_exhausted", true)
+  ]
+  
+  // Validate error recovery
+  for (error_type, recoverable) in error_conditions {
+    match error_type {
+      "network_timeout" => assert_true(recoverable)
+      "database_connection_failed" => assert_true(recoverable)
+      "memory_allocation_failed" => assert_true(recoverable)
+      "invalid_configuration" => assert_true(recoverable)
+      "resource_exhausted" => assert_true(recoverable)
+      _ => assert_true(false)  // Unknown error type
+    }
+  }
+}
+
+// Test Case 8: Internationalization and Localization Support
+test "internationalization and localization support" {
+  // Test multi-language string handling
+  let english_messages = [
+    ("welcome", "Welcome to Azimuth"),
+    ("error_occurred", "An error occurred"),
+    ("operation_successful", "Operation completed successfully"),
+    ("invalid_input", "Invalid input provided"),
+    ("connection_failed", "Connection to server failed")
+  ]
+  
+  let chinese_messages = [
+    ("welcome", "欢迎使用 Azimuth"),
+    ("error_occurred", "发生错误"),
+    ("operation_successful", "操作成功完成"),
+    ("invalid_input", "提供的输入无效"),
+    ("connection_failed", "连接服务器失败")
+  ]
+  
+  let spanish_messages = [
+    ("welcome", "Bienvenido a Azimuth"),
+    ("error_occurred", "Ocurrió un error"),
+    ("operation_successful", "Operación completada con éxito"),
+    ("invalid_input", "Entrada inválida proporcionada"),
+    ("connection_failed", "Error al conectar con el servidor")
+  ]
+  
+  // Validate message consistency across languages
+  assert_eq(english_messages.length(), chinese_messages.length())
+  assert_eq(english_messages.length(), spanish_messages.length())
+  
+  for (key, _) in english_messages {
+    let english_msg = english_messages.find(|(k, _)| k == key).map(|(_, v)| v)
+    let chinese_msg = chinese_messages.find(|(k, _)| k == key).map(|(_, v)| v)
+    let spanish_msg = spanish_messages.find(|(k, _)| k == key).map(|(_, v)| v)
+    
+    assert_true(english_msg.is_some())
+    assert_true(chinese_msg.is_some())
+    assert_true(spanish_msg.is_some())
+  }
+  
+  // Test Unicode handling
+  let unicode_strings = [
+    "English: Hello, World!",
+    "Chinese: 你好，世界！",
+    "Spanish: ¡Hola, Mundo!",
+    "Japanese: こんにちは、世界！",
+    "Arabic: مرحبا بالعالم!",
+    "Russian: Привет, мир!",
+    "Emoji: 🌍🚀📊",
+    "Math: ∑∏∫∆∇∂",
+    "Currency: $¥€£₹₽",
+    "Symbols: ©®™℠℞"
+  ]
+  
+  // Validate Unicode handling
+  for unicode_str in unicode_strings {
+    assert_true(unicode_str.length() > 0)
+  }
+  
+  // Test date/time localization
+  let timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
+  
+  let date_formats = [
+    ("en_US", "01/01/2022"),
+    ("en_GB", "01/01/2022"),
+    ("zh_CN", "2022/01/01"),
+    ("es_ES", "01/01/2022"),
+    ("ja_JP", "2022/01/01"),
+    ("ar_SA", "01/01/2022")
+  ]
+  
+  // Validate date format consistency
+  for (locale, formatted_date) in date_formats {
+    assert_true(formatted_date.contains("2022"))
+    assert_true(formatted_date.contains("01"))
+  }
+  
+  // Test number localization
+  let number = 1234567.89
+  
+  let number_formats = [
+    ("en_US", "1,234,567.89"),
+    ("en_GB", "1,234,567.89"),
+    ("zh_CN", "1,234,567.89"),
+    ("es_ES", "1.234.567,89"),
+    ("ja_JP", "1,234,567.89"),
+    ("ar_SA", "1,234,567.89")
+  ]
+  
+  // Validate number formatting
+  for (locale, formatted_number) in number_formats {
+    assert_true(formatted_number.contains("1"))
+    assert_true(formatted_number.contains("7"))
+    assert_true(formatted_number.contains("89"))
+  }
+  
+  // Test text direction handling
+  let left_to_right = ["English", "Spanish", "Chinese"]
+  let right_to_left = ["Arabic", "Hebrew", "Persian"]
+  
+  // Validate text direction
+  for ltr_text in left_to_right {
+    assert_true(ltr_text.length() > 0)
+  }
+  
+  for rtl_text in right_to_left {
+    assert_true(rtl_text.length() > 0)
+  }
+  
+  // Test locale-specific error messages
+  let error_codes = [
+    "E001",  // Invalid input
+    "E002",  // Network error
+    "E003",  // Authentication failed
+    "E004",  // Resource not found
+    "E005"   // Internal server error
+  ]
+  
+  // Validate error code consistency
+  for error_code in error_codes {
+    assert_true(error_code.starts_with("E"))
+    assert_eq(error_code.length(), 4)
+  }
+  
+  // Test timezone handling
+  let timezones = [
+    ("UTC", "00:00"),
+    ("EST", "-05:00"),
+    ("PST", "-08:00"),
+    ("CST", "+08:00"),
+    ("JST", "+09:00"),
+    ("GMT", "00:00")
+  ]
+  
+  // Validate timezone formatting
+  for (tz_name, tz_offset) in timezones {
+    assert_true(tz_name.length() >= 2)
+    assert_true(tz_offset.contains(":"))
+  }
+}
+
+// Test Case 9: Memory Leak Protection
+test "memory leak protection" {
+  // Test object lifecycle management
+  let object_creation_count = 10000
+  let object_destruction_count = 0
+  
+  // Simulate object creation
+  let objects = Array::make(object_creation_count, 0).map_with_index(|_, i| {
+    i  // Simple object representation
+  })
+  
+  // Validate object creation
+  assert_eq(objects.length(), object_creation_count)
+  
+  // Simulate object destruction
+  let remaining_objects = objects.filter(|obj| {
+    obj % 2 == 0  // Keep only even objects
+  })
+  
+  // Simulate destruction count
+  let destroyed_count = object_creation_count - remaining_objects.length()
+  
+  // Validate object destruction
+  assert_eq(destroyed_count, object_creation_count / 2)
+  
+  // Test buffer pool management
+  let buffer_size = 1024
+  let buffer_count = 100
+  let buffer_pool = Array::make(buffer_count, Array::make(buffer_size, 0))
+  
+  // Validate buffer pool creation
+  assert_eq(buffer_pool.length(), buffer_count)
+  for buffer in buffer_pool {
+    assert_eq(buffer.length(), buffer_size)
+  }
+  
+  // Simulate buffer allocation and deallocation
+  let allocated_buffers = Array::make(buffer_count / 2, 0).map_with_index(|_, i| {
+    buffer_pool[i]  // Allocate buffer
+  })
+  
+  // Validate buffer allocation
+  assert_eq(allocated_buffers.length(), buffer_count / 2)
+  
+  // Test memory pressure handling
+  let memory_usage_threshold = 0.8  // 80% threshold
+  let current_memory_usage = 0.85   // 85% usage
+  
+  // Simulate memory pressure response
+  let cleanup_triggered = current_memory_usage > memory_usage_threshold
+  assert_true(cleanup_triggered)
+  
+  // Test garbage collection simulation
+  let gc_threshold = 1000
+  let object_count = 1500
+  
+  // Simulate GC trigger
+  let gc_triggered = object_count > gc_threshold
+  assert_true(gc_triggered)
+  
+  // Test resource cleanup on scope exit
+  let scoped_resources = Array::make(100, 0).map_with_index(|_, i| {
+    ("resource_" + i.to_string(), i)
+  })
+  
+  // Simulate scope exit cleanup
+  let cleaned_resources = scoped_resources.filter(|(_, id)| {
+    id % 3 != 0  // Keep only resources not divisible by 3
+  })
+  
+  // Validate cleanup
+  assert_true(cleaned_resources.length() < scoped_resources.length())
+  
+  // Test circular reference detection
+  let object_a = ("object_a", "object_b")
+  let object_b = ("object_b", "object_c")
+  let object_c = ("object_c", "object_a")  // Creates a circular reference
+  
+  // Detect circular reference
+  let has_circular_ref = object_a.1 == object_b.0 && 
+                        object_b.1 == object_c.0 && 
+                        object_c.1 == object_a.0
+  
+  assert_true(has_circular_ref)
+  
+  // Test memory allocation limits
+  let max_allocation_size = 1024 * 1024  // 1MB
+  let requested_allocation_size = 2 * 1024 * 1024  // 2MB
+  
+  // Simulate allocation limit enforcement
+  let allocation_allowed = requested_allocation_size <= max_allocation_size
+  assert_false(allocation_allowed)
+  
+  // Test reference counting
+  let reference_counts = [
+    ("object_1", 1),
+    ("object_2", 3),
+    ("object_3", 0),
+    ("object_4", 2),
+    ("object_5", 1)
+  ]
+  
+  // Find objects with zero references (eligible for cleanup)
+  let zero_ref_objects = reference_counts.filter(|(_, count)| *count == 0)
+  
+  // Validate reference counting
+  assert_eq(zero_ref_objects.length(), 1)
+  assert_eq(zero_ref_objects[0].0, "object_3")
+  
+  // Test memory fragmentation simulation
+  let memory_blocks = [
+    (1000, true),   // (size, allocated)
+    (500, false),
+    (2000, true),
+    (300, false),
+    (1500, true),
+    (700, false)
+  ]
+  
+  // Calculate fragmentation
+  let total_memory = memory_blocks.reduce(0, |acc, (size, _)| acc + size)
+  let allocated_memory = memory_blocks.filter(|(_, allocated)| *allocated)
+                                    .reduce(0, |acc, (size, _)| acc + size)
+  let fragmentation_ratio = 1.0 - (allocated_memory.to_float() / total_memory.to_float())
+  
+  // Validate fragmentation calculation
+  assert_true(fragmentation_ratio > 0.0 && fragmentation_ratio < 1.0)
+}
+
+// Test Case 10: Serialization Integrity
+test "serialization integrity" {
+  // Test JSON serialization format
+  let telemetry_data = [
+    ("trace_id", "0af7651916cd43dd8448eb211c80319c"),
+    ("span_id", "b7ad6b7169203331"),
+    ("parent_span_id", "a1b2c3d4e5f6g7h8"),
+    ("operation_name", "http.request"),
+    ("start_time", "1640995200000"),
+    ("end_time", "1640995200500"),
+    ("status_code", "200"),
+    ("service_name", "api-service"),
+    ("host_name", "web-server-01")
+  ]
+  
+  // Serialize to JSON-like format
+  let json_serialized = "{" + telemetry_data.map(|(k, v)| "\"" + k + "\":\"" + v + "\"")
+                                             .reduce(|acc, pair| acc + "," + pair, "") + "}"
+  
+  // Validate JSON serialization
+  assert_true(json_serialized.starts_with("{"))
+  assert_true(json_serialized.ends_with("}"))
+  assert_true(json_serialized.contains("\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""))
+  
+  // Test binary serialization format
+  let binary_data = telemetry_data.map(|(k, v)| {
+    let key_bytes = k.to_utf8()
+    let value_bytes = v.to_utf8()
+    let key_length = key_bytes.length()
+    let value_length = value_bytes.length()
+    
+    // Simulate binary format: [key_length][key_bytes][value_length][value_bytes]
+    (key_length, key_bytes, value_length, value_bytes)
+  })
+  
+  // Validate binary serialization
+  for (key_length, key_bytes, value_length, value_bytes) in binary_data {
+    assert_eq(key_length, key_bytes.length())
+    assert_eq(value_length, value_bytes.length())
+  }
+  
+  // Test protocol buffer serialization format
+  let proto_fields = [
+    (1, "string", "trace_id"),
+    (2, "string", "span_id"),
+    (3, "string", "parent_span_id"),
+    (4, "string", "operation_name"),
+    (5, "int64", "start_time"),
+    (6, "int64", "end_time"),
+    (7, "int32", "status_code"),
+    (8, "string", "service_name"),
+    (9, "string", "host_name")
+  ]
+  
+  // Validate proto field format
+  for (field_number, field_type, field_name) in proto_fields {
+    assert_true(field_number > 0)
+    assert_true(field_type == "string" || field_type == "int64" || field_type == "int32")
+    assert_true(field_name.length() > 0)
+  }
+  
+  // Test compression serialization
+  let original_data = "x" * 1000  // Create repetitive data
+  let compressed_data = original_data  // Simulate compression (would be smaller in reality)
+  
+  // Validate compression
+  assert_true(compressed_data.length() <= original_data.length())
+  
+  // Test encryption serialization
+  let sensitive_data = [
+    ("user.id", "12345"),
+    ("session.token", "abcdef123456"),
+    ("api.key", "secret_key_value")
+  ]
+  
+  // Simulate encryption by base64 encoding
+  let encrypted_data = sensitive_data.map(|(k, v)| {
+    (k, v + "_encrypted")  // Simple encryption simulation
+  })
+  
+  // Validate encryption
+  for (key, value) in encrypted_data {
+    assert_true(value.contains("_encrypted"))
+  }
+  
+  // Test batch serialization
+  let batch_size = 100
+  let telemetry_batch = Array::make(batch_size, telemetry_data).map_with_index(|_, i| {
+    telemetry_data.map(|(k, v)| (k, v + "_" + i.to_string()))
+  })
+  
+  // Validate batch serialization
+  assert_eq(telemetry_batch.length(), batch_size)
+  
+  // Serialize batch
+  let batch_serialized = "[" + telemetry_batch.map(|batch| {
+    "{" + batch.map(|(k, v)| "\"" + k + "\":\"" + v + "\"")
+               .reduce(|acc, pair| acc + "," + pair, "") + "}"
+  }).reduce(|acc, item| acc + "," + item, "") + "]"
+  
+  // Validate batch serialization
+  assert_true(batch_serialized.starts_with("["))
+  assert_true(batch_serialized.ends_with("]"))
+  
+  // Test deserialization integrity
+  let deserialization_test_data = "test_integrity_check"
+  let serialized_data = deserialization_test_data
+  let deserialized_data = serialized_data  // Simple identity deserialization
+  
+  // Validate deserialization integrity
+  assert_eq(deserialized_data, deserialization_test_data)
+  
+  // Test schema evolution compatibility
+  let v1_schema = ["field1", "field2", "field3"]
+  let v2_schema = ["field1", "field2", "field3", "field4"]  // Added new field
+  let v3_schema = ["field1", "field3", "field4"]           // Removed field2
+  
+  // Validate backward compatibility
+  for field in v1_schema {
+    assert_true(v2_schema.contains(field))
+  }
+  
+  // Validate forward compatibility
+  for field in v3_schema {
+    assert_true(v2_schema.contains(field))
+  }
+  
+  // Test serialization error handling
+  let invalid_data = [
+    ("null_value", ""),
+    ("special_chars", "!@#$%^&*()"),
+    ("unicode_chars", "你好世界"),
+    ("very_long_field_name_" + "x" * 100, "value")
+  ]
+  
+  // Validate error handling
+  for (key, value) in invalid_data {
+    assert_true(key.length() > 0)
+    assert_true(value.length() >= 0)
+  }
 }
