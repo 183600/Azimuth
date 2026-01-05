@@ -1,1059 +1,2109 @@
-// Azimuth Telemetry System - Premium Quality Test Cases
-// This file contains 10 high-quality test cases covering various aspects of the Azimuth telemetry system
+// Azimuth Premium Quality Test Suite
+// This file contains 10 high-quality test cases for the Azimuth telemetry system
+// Each test focuses on critical aspects of distributed telemetry and observability
 
-// Test Case 1: Attribute Value Type Conversion with Edge Cases
-test "attribute value type conversion with edge cases" {
-  // Test string to integer conversion with various inputs
-  let valid_int_str = "12345"
-  let invalid_int_str = "not_a_number"
-  let overflow_int_str = "999999999999999999999999999999"
-  
-  // Valid conversion
-  assert_eq(valid_int_str.to_int(), Some(12345))
-  
-  // Invalid conversion
-  assert_eq(invalid_int_str.to_int(), None)
-  
-  // Test string to float conversion with precision
-  let valid_float_str = "3.141592653589793"
-  let scientific_notation = "1.23e-4"
-  
-  // Float conversion
-  let float_value = valid_float_str.to_float()
-  assert_true(float_value > 3.14 && float_value < 3.15)
-  
-  // Scientific notation conversion
-  let sci_value = scientific_notation.to_float()
-  assert_true(sci_value > 0.0001 && sci_value < 0.0002)
-  
-  // Test boolean conversion from various string representations
-  let true_values = ["true", "True", "TRUE", "1", "yes", "Yes", "YES"]
-  let false_values = ["false", "False", "FALSE", "0", "no", "No", "NO", ""]
-  
-  for val in true_values {
-    let bool_val = match val {
-      "true" | "True" | "TRUE" | "1" | "yes" | "Yes" | "YES" => true
-      _ => false
-    }
-    assert_true(bool_val)
+// Test 1: Distributed Tracing Consistency
+test "distributed tracing consistency across services" {
+  // Simulate distributed trace context
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    baggage: Array[(String, String)],
+    flags: Int
   }
   
-  for val in false_values {
-    let bool_val = match val {
-      "true" | "True" | "TRUE" | "1" | "yes" | "Yes" | "YES" => true
-      _ => false
-    }
-    assert_false(bool_val)
+  // Create root trace context
+  let root_context = {
+    trace_id: "trace-12345",
+    span_id: "span-abcde",
+    parent_span_id: None,
+    baggage: [("service.name", "api-gateway"), ("region", "us-west-2")],
+    flags: 1
   }
   
-  // Test array operations with mixed types
-  let string_array = ["a", "b", "c", "d", "e"]
-  let int_array = [1, 2, 3, 4, 5]
-  
-  // Array operations
-  assert_eq(string_array.length(), 5)
-  assert_eq(int_array.length(), 5)
-  
-  // Test array concatenation
-  let concatenated = string_array.concat(int_array.map(|i| i.to_string()))
-  assert_eq(concatenated.length(), 10)
-  assert_eq(concatenated[0], "a")
-  assert_eq(concatenated[5], "1")
-  
-  // Test array filtering
-  let filtered = int_array.filter(|i| i % 2 == 0)
-  assert_eq(filtered.length(), 2)
-  assert_eq(filtered[0], 2)
-  assert_eq(filtered[1], 4)
-}
-
-// Test Case 2: Cross-Service Context Propagation with Complex Scenarios
-test "cross-service context propagation with complex scenarios" {
-  // Test trace context creation and validation
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let parent_span_id = "b7ad6b7169203331"
-  let child_span_id = "c8be7c827a31d442"
-  
-  // Create span contexts
-  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "rojo=00f067aa0ba902b7")
-  let child_ctx = SpanContext::new(trace_id, child_span_id, true, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  
-  // Validate trace consistency
-  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child_ctx))
-  assert_not_eq(SpanContext::span_id(parent_ctx), SpanContext::span_id(child_ctx))
-  assert_true(SpanContext::is_valid(parent_ctx))
-  assert_true(SpanContext::is_valid(child_ctx))
-  
-  // Test baggage propagation across multiple services
-  let initial_baggage = [
-    ("user.id", "12345"),
-    ("session.id", "abcdef-123456"),
-    ("request.id", "req-789012"),
-    ("tenant.id", "tenant-001"),
-    ("correlation.id", "corr-345678")
-  ]
-  
-  // Service 1 adds baggage
-  let service1_baggage = initial_baggage.concat([
-    ("service1.start_time", "1640995200000"),
-    ("service1.operation", "authenticate")
-  ])
-  
-  // Service 2 adds baggage
-  let service2_baggage = service1_baggage.concat([
-    ("service2.start_time", "1640995200500"),
-    ("service2.operation", "authorize"),
-    ("service2.decision", "allowed")
-  ])
-  
-  // Service 3 adds baggage
-  let service3_baggage = service2_baggage.concat([
-    ("service3.start_time", "1640995201000"),
-    ("service3.operation", "process"),
-    ("service3.result", "success")
-  ])
-  
-  // Validate baggage propagation
-  assert_eq(service3_baggage.length(), 11)
-  assert_true(service3_baggage.contains(|(k, _)| k == "user.id"))
-  assert_true(service3_baggage.contains(|(k, _)| k == "service3.result"))
-  
-  // Test context extraction and injection
-  let carrier = TextMapCarrier::new()
-  
-  // Inject trace context
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  
-  // Inject baggage
-  for (key, value) in service3_baggage {
-    TextMapCarrier::set(carrier, "baggage-" + key, value)
-  }
-  
-  // Extract and validate
-  let extracted_traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let extracted_tracestate = TextMapCarrier::get(carrier, "tracestate")
-  let extracted_user_id = TextMapCarrier::get(carrier, "baggage-user.id")
-  let extracted_service3_result = TextMapCarrier::get(carrier, "baggage-service3.result")
-  
-  assert_eq(extracted_traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(extracted_tracestate, Some("rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"))
-  assert_eq(extracted_user_id, Some("12345"))
-  assert_eq(extracted_service3_result, Some("success"))
-}
-
-// Test Case 3: High Concurrency Resource Management
-test "high concurrency resource management" {
-  // Test resource pool management under high load
-  let max_resources = 100
-  let concurrent_requests = 1000
-  
-  // Simulate resource allocation
-  let mut allocated_resources = 0
-  let mut allocation_failures = 0
-  
-  // Simulate concurrent resource allocation
-  for i = 0; i < concurrent_requests; i = i + 1 {
-    if allocated_resources < max_resources {
-      allocated_resources = allocated_resources + 1
-    } else {
-      allocation_failures = allocation_failures + 1
+  // Simulate child span creation
+  let create_child_span = fn(parent: TraceContext, service_name: String) {
+    {
+      trace_id: parent.trace_id,
+      span_id: "span-" + service_name.length().to_string(),
+      parent_span_id: Some(parent.span_id),
+      baggage: parent.baggage.push(("service.name", service_name)),
+      flags: parent.flags
     }
   }
   
-  // Validate resource allocation
-  assert_eq(allocated_resources, max_resources)
-  assert_eq(allocation_failures, concurrent_requests - max_resources)
+  // Create service chain
+  let auth_service = create_child_span(root_context, "auth-service")
+  let user_service = create_child_span(auth_service, "user-service")
+  let payment_service = create_child_span(user_service, "payment-service")
   
-  // Test resource deallocation
-  let deallocation_batch = 50
-  for i = 0; i < deallocation_batch; i = i + 1 {
-    if allocated_resources > 0 {
-      allocated_resources = allocated_resources - 1
-    }
-  }
+  // Verify trace consistency
+  assert_eq(root_context.trace_id, auth_service.trace_id)
+  assert_eq(auth_service.trace_id, user_service.trace_id)
+  assert_eq(user_service.trace_id, payment_service.trace_id)
   
-  // Validate deallocation
-  assert_eq(allocated_resources, max_resources - deallocation_batch)
+  // Verify span hierarchy
+  assert_eq(auth_service.parent_span_id, Some(root_context.span_id))
+  assert_eq(user_service.parent_span_id, Some(auth_service.span_id))
+  assert_eq(payment_service.parent_span_id, Some(user_service.span_id))
   
-  // Test resource cleanup on memory pressure
-  let memory_pressure_threshold = 80
-  if allocated_resources > memory_pressure_threshold {
-    // Simulate aggressive cleanup
-    let cleanup_target = allocated_resources / 2
-    for i = 0; i < (allocated_resources - cleanup_target); i = i + 1 {
-      allocated_resources = allocated_resources - 1
-    }
-  }
-  
-  // Validate cleanup
-  assert_true(allocated_resources <= memory_pressure_threshold)
-  
-  // Test resource attributes under high load
-  let resource_attributes = [
-    ("resource.id", "res-001"),
-    ("resource.type", "database-connection"),
-    ("resource.pool", "primary"),
-    ("resource.created", "1640995200000"),
-    ("resource.last_used", "1640995201000"),
-    ("resource.use_count", "42")
-  ]
-  
-  // Simulate high-frequency attribute updates
-  let mut update_count = 0
-  for i = 0; i < 1000; i = i + 1 {
-    // Simulate updating last_used timestamp
-    update_count = update_count + 1
-  }
-  
-  // Validate update performance
-  assert_eq(update_count, 1000)
-  
-  // Test resource merge strategy under concurrent access
-  let base_resource = Resource::new()
-  let override_resource = Resource::with_attributes([
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("host.name", StringValue("web-server-01"))
-  ])
-  
-  // Simulate concurrent merge operations
-  let merged_resources = Array::make(10, Resource::merge(base_resource, override_resource))
-  
-  // Validate merge consistency
-  for resource in merged_resources {
-    let service_name = Resource::get_attribute(resource, "service.name")
-    assert_eq(service_name, Some(StringValue("azimuth-service")))
-  }
-}
-
-// Test Case 4: Time Series Data Processing Operations
-test "time series data processing operations" {
-  // Test time series data generation
-  let base_timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
-  let data_points = 100
-  
-  // Generate time series data
-  let time_series = Array::make(data_points, 0.0).map_with_index(|_, i| {
-    let timestamp = base_timestamp + (i * 1000L)  // 1-second intervals
-    let value = 100.0 + (10.0 * (i.to_float() * 0.1).sin())  // Sine wave with noise
-    (timestamp, value)
-  })
-  
-  // Validate time series generation
-  assert_eq(time_series.length(), data_points)
-  assert_eq(time_series[0].0, base_timestamp)
-  assert_eq(time_series[data_points - 1].0, base_timestamp + ((data_points - 1) * 1000L))
-  
-  // Test time series aggregation
-  let window_size = 10
-  let aggregated = Array::make(data_points / window_size, 0.0).map_with_index(|_, window_idx| {
-    let start_idx = window_idx * window_size
-    let end_idx = start_idx + window_size
-    
-    let sum = Array::range(start_idx, end_idx).reduce(0.0, |acc, i| {
-      acc + time_series[i].1
-    })
-    
-    sum / window_size.to_float()
-  })
-  
-  // Validate aggregation
-  assert_eq(aggregated.length(), data_points / window_size)
-  
-  // Test time series downsampling
-  let downsample_factor = 5
-  let downsampled = time_series.filter_with_index(|_, i| i % downsample_factor == 0)
-  
-  // Validate downsampling
-  assert_eq(downsampled.length(), data_points / downsample_factor + (if data_points % downsample_factor > 0 { 1 } else { 0 }))
-  
-  // Test time series anomaly detection
-  let threshold = 15.0  // Standard deviation threshold
-  let mean = 100.0  // Known mean of our sine wave
-  let std_dev = 7.07  // Standard deviation of sine wave with amplitude 10
-  
-  let anomalies = time_series.filter(|(_, value)| {
-    let z_score = (value - mean).abs() / std_dev
-    z_score > threshold
-  })
-  
-  // Validate anomaly detection (should be few or none for regular sine wave)
-  assert_true(anomalies.length() < 5)
-  
-  // Test time series trend analysis
-  let first_half_avg = Array::range(0, data_points / 2).reduce(0.0, |acc, i| {
-    acc + time_series[i].1
-  }) / (data_points / 2).to_float()
-  
-  let second_half_avg = Array::range(data_points / 2, data_points).reduce(0.0, |acc, i| {
-    acc + time_series[i].1
-  }) / (data_points / 2).to_float()
-  
-  // For a sine wave, the trend should be minimal over complete periods
-  let trend_diff = (second_half_avg - first_half_avg).abs()
-  assert_true(trend_diff < 5.0)
-  
-  // Test time series forecasting (simple linear extrapolation)
-  let last_n_points = 10
-  let recent_points = Array::range(data_points - last_n_points, data_points).map(|i| time_series[i].1)
-  
-  let recent_avg = recent_points.reduce(0.0, |acc, v| acc + v) / recent_points.length().to_float()
-  let forecast_value = recent_avg  // Simple forecast using recent average
-  
-  // Validate forecast is reasonable
-  assert_true(forecast_value > 90.0 && forecast_value < 110.0)
-}
-
-// Test Case 5: Distributed Tracing Consistency
-test "distributed tracing consistency" {
-  // Test trace ID consistency across multiple services
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  
-  // Service A creates root span
-  let service_a_span_id = "a1b2c3d4e5f6g7h8"
-  let service_a_ctx = SpanContext::new(trace_id, service_a_span_id, true, "")
-  
-  // Service B creates child span
-  let service_b_span_id = "b2c3d4e5f6g7h8i9"
-  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "")
-  
-  // Service C creates child span
-  let service_c_span_id = "c3d4e5f6g7h8i9j0"
-  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, true, "")
-  
-  // Validate trace ID consistency
-  assert_eq(SpanContext::trace_id(service_a_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_c_ctx), trace_id)
-  
-  // Validate span ID uniqueness
-  assert_not_eq(SpanContext::span_id(service_a_ctx), SpanContext::span_id(service_b_ctx))
-  assert_not_eq(SpanContext::span_id(service_b_ctx), SpanContext::span_id(service_c_ctx))
-  assert_not_eq(SpanContext::span_id(service_a_ctx), SpanContext::span_id(service_c_ctx))
-  
-  // Test parent-child relationships
-  let span_relationships = [
-    (service_a_span_id, "parent", ""),
-    (service_b_span_id, "child", service_a_span_id),
-    (service_c_span_id, "child", service_b_span_id)
-  ]
-  
-  // Validate span hierarchy
-  for (span_id, relationship, parent_id) in span_relationships {
-    match relationship {
-      "parent" => assert_eq(parent_id, "")
-      "child" => assert_true(parent_id != "")
-      _ => assert_true(false)  // Invalid relationship
-    }
-  }
-  
-  // Test span event ordering
-  let span_events = [
-    ("start", 1640995200000L),
-    ("db.query.start", 1640995200100L),
-    ("db.query.end", 1640995200200L),
-    ("cache.get", 1640995200250L),
-    ("end", 1640995200300L)
-  ]
-  
-  // Validate event ordering
-  for i = 1; i < span_events.length(); i = i + 1 {
-    let prev_time = span_events[i-1].1
-    let curr_time = span_events[i].1
-    assert_true(curr_time >= prev_time)
-  }
-  
-  // Test span status propagation
-  let status_codes = [
-    ("service_a", "Unset"),
-    ("service_b", "Ok"),
-    ("service_c", "Error")
-  ]
-  
-  // Validate status codes
-  for (service, status) in status_codes {
-    match status {
-      "Unset" => assert_true(true)  // Valid status
-      "Ok" => assert_true(true)     // Valid status
-      "Error" => assert_true(true)  // Valid status
-      _ => assert_true(false)       // Invalid status
-    }
-  }
-  
-  // Test trace state propagation
-  let trace_state_entries = [
-    ("rojo", "00f067aa0ba902b7"),
-    ("congo", "t61rcWkgMzE"),
-    ("vendor", "specific-value")
-  ]
-  
-  // Create trace state string
-  let trace_state = trace_state_entries.map(|(k, v)| k + "=" + v).reduce(|acc, entry| acc + "," + entry, "")
-  
-  // Validate trace state format
-  let entries = trace_state.split(",")
-  assert_eq(entries.length(), 3)
-  
-  for entry in entries {
-    let parts = entry.split("=")
-    assert_eq(parts.length(), 2)
-    let key = parts[0]
-    let value = parts[1]
-    assert_true(trace_state_entries.contains(|(k, v)| k == key && v == value))
-  }
-  
-  // Test sampling decision consistency
-  let sampling_decisions = [
-    ("service_a", true),
-    ("service_b", true),  // Should follow parent
-    ("service_c", true)   // Should follow parent
-  ]
-  
-  // Validate sampling consistency
-  let parent_sampled = sampling_decisions[0].1
-  for (service, sampled) in sampling_decisions {
-    if service != "service_a" {
-      assert_eq(sampled, parent_sampled)  // Child should follow parent
-    }
-  }
-}
-
-// Test Case 6: Real-time Stream Processing Performance
-test "real-time stream processing performance" {
-  // Test high-throughput event processing
-  let events_per_second = 10000
-  let processing_window_seconds = 5
-  let total_events = events_per_second * processing_window_seconds
-  
-  // Simulate event generation
-  let event_stream = Array::make(total_events, 0).map_with_index(|_, i| {
-    let timestamp = 1640995200000L + (i * 100L)  // 10ms intervals
-    let event_type = match i % 4 {
-      0 => "http.request"
-      1 => "db.query"
-      2 => "cache.hit"
-      _ => "cache.miss"
-    }
-    let latency_ms = 10.0 + (50.0 * (i.to_float() * 0.01).sin().abs())  // Variable latency
-    (timestamp, event_type, latency_ms)
-  })
-  
-  // Validate event generation
-  assert_eq(event_stream.length(), total_events)
-  
-  // Test event filtering by type
-  let http_requests = event_stream.filter(|(_, event_type, _)| event_type == "http.request")
-  let db_queries = event_stream.filter(|(_, event_type, _)| event_type == "db.query")
-  let cache_hits = event_stream.filter(|(_, event_type, _)| event_type == "cache.hit")
-  let cache_misses = event_stream.filter(|(_, event_type, _)| event_type == "cache.miss")
-  
-  // Validate filtering
-  assert_eq(http_requests.length(), total_events / 4)
-  assert_eq(db_queries.length(), total_events / 4)
-  assert_eq(cache_hits.length(), total_events / 4)
-  assert_eq(cache_misses.length(), total_events / 4)
-  
-  // Test sliding window aggregation
-  let window_size_ms = 1000L  // 1-second window
-  let windows = processing_window_seconds
-  let windowed_counts = Array::make(windows, 0).map_with_index(|_, window_idx| {
-    let window_start = 1640995200000L + (window_idx * window_size_ms)
-    let window_end = window_start + window_size_ms
-    
-    event_stream.filter(|(timestamp, _, _)| {
-      timestamp >= window_start && timestamp < window_end
-    }).length()
-  })
-  
-  // Validate windowing
-  assert_eq(windowed_counts.length(), windows)
-  for count in windowed_counts {
-    assert_eq(count, events_per_second)
-  }
-  
-  // Test percentile calculation
-  let latencies = event_stream.map(|(_, _, latency_ms)| latency_ms)
-  let sorted_latencies = latencies.sort()
-  
-  // Calculate percentiles
-  let p50_index = (sorted_latencies.length() * 50) / 100
-  let p95_index = (sorted_latencies.length() * 95) / 100
-  let p99_index = (sorted_latencies.length() * 99) / 100
-  
-  let p50_latency = sorted_latencies[p50_index]
-  let p95_latency = sorted_latencies[p95_index]
-  let p99_latency = sorted_latencies[p99_index]
-  
-  // Validate percentile calculation
-  assert_true(p50_latency > 10.0 && p50_latency < 60.0)
-  assert_true(p95_latency > 10.0 && p95_latency < 60.0)
-  assert_true(p99_latency > 10.0 && p99_latency < 60.0)
-  assert_true(p50_latency <= p95_latency && p95_latency <= p99_latency)
-  
-  // Test anomaly detection in real-time
-  let latency_threshold = 55.0  // Threshold for anomaly
-  let anomalies = event_stream.filter(|(_, _, latency_ms)| latency_ms > latency_threshold)
-  
-  // Validate anomaly detection
-  let anomaly_rate = anomalies.length().to_float() / total_events.to_float()
-  assert_true(anomaly_rate > 0.0 && anomaly_rate < 0.1)  // Should be between 0% and 10%
-  
-  // Test backpressure handling
-  let buffer_size = 5000
-  let processed_events = if total_events > buffer_size {
-    buffer_size  // Simulate backpressure by limiting processed events
-  } else {
-    total_events
-  }
-  
-  // Validate backpressure handling
-  assert_true(processed_events <= buffer_size)
-  
-  // Test event deduplication
-  let deduplication_window_ms = 100L
-  let deduplicated_events = Array::make(processed_events, 0).map_with_index(|_, i| {
-    if i == 0 {
-      event_stream[i]  // Always include first event
-    } else {
-      let current_event = event_stream[i]
-      let previous_event = event_stream[i-1]
-      let time_diff = current_event.0 - previous_event.0
-      
-      // Only include if outside deduplication window
-      if time_diff >= deduplication_window_ms {
-        current_event
-      } else {
-        // Skip duplicate (simplified - would be more complex in real implementation)
-        (0L, "skipped", 0.0)
+  // Verify baggage propagation
+  let get_baggage_value = fn(context: TraceContext, key: String) {
+    let mut found = None
+    for (k, v) in context.baggage {
+      if k == key {
+        found = Some(v)
       }
     }
-  }).filter(|(_, event_type, _)| event_type != "skipped")
+    found
+  }
   
-  // Validate deduplication
-  assert_true(deduplicated_events.length() <= processed_events)
+  assert_eq(get_baggage_value(root_context, "service.name"), Some("api-gateway"))
+  assert_eq(get_baggage_value(auth_service, "service.name"), Some("auth-service"))
+  assert_eq(get_baggage_value(payment_service, "region"), Some("us-west-2"))
+  
+  // Verify trace flags propagation
+  assert_eq(root_context.flags, auth_service.flags)
+  assert_eq(auth_service.flags, payment_service.flags)
 }
 
-// Test Case 7: Boundary Condition Error Handling
-test "boundary condition error handling" {
-  // Test empty array handling
-  let empty_string_array : Array[String] = []
-  let empty_int_array : Array[Int] = []
-  let empty_float_array : Array[Double] = []
+// Test 2: High-Concurrency Telemetry Data Processing
+test "high-concurrency telemetry data processing" {
+  // Simulate concurrent telemetry data processing
+  type TelemetryEvent = {
+    timestamp: Int,
+    event_type: String,
+    service_name: String,
+    trace_id: String,
+    span_id: String,
+    duration: Int,
+    attributes: Array[(String, String)],
+    status: String
+  }
   
-  // Validate empty array operations
-  assert_eq(empty_string_array.length(), 0)
-  assert_eq(empty_int_array.length(), 0)
-  assert_eq(empty_float_array.length(), 0)
+  // Create test events
+  let generate_events = fn(count: Int, service_prefix: String) {
+    let mut events = []
+    for i in 0..count {
+      let event = {
+        timestamp: 1640995200 + i,
+        event_type: "span",
+        service_name: service_prefix + i.to_string(),
+        trace_id: "trace-" + (i % 10).to_string(),
+        span_id: "span-" + i.to_string(),
+        duration: 100 + (i % 500),
+        attributes: [("operation", "query"), ("status", "success")],
+        status: "ok"
+      }
+      events = events.push(event)
+    }
+    events
+  }
   
-  // Test null/None value handling
-  let none_string : Option[String] = None
-  let some_string = Some("test")
+  // Generate concurrent events from multiple services
+  let service1_events = generate_events(100, "service-1-")
+  let service2_events = generate_events(100, "service-2-")
+  let service3_events = generate_events(100, "service-3-")
   
-  // Validate option handling
-  assert_eq(none_string, None)
-  assert_eq(some_string, Some("test"))
-  
-  // Test maximum/minimum value handling
-  let max_int = 2147483647
-  let min_int = -2147483648
-  let max_float = 1.7976931348623157e+308
-  let min_float = -1.7976931348623157e+308
-  
-  // Validate boundary values
-  assert_eq(max_int + 0, max_int)
-  assert_eq(min_int - 0, min_int)
-  assert_eq(max_float + 0.0, max_float)
-  assert_eq(min_float - 0.0, min_float)
-  
-  // Test string length boundaries
-  let empty_string = ""
-  let very_long_string = "a" * 10000  // Create a string with 10000 'a' characters
-  
-  // Validate string boundaries
-  assert_eq(empty_string.length(), 0)
-  assert_eq(very_long_string.length(), 10000)
-  
-  // Test array index boundaries
-  let small_array = [1, 2, 3, 4, 5]
-  let first_index = 0
-  let last_index = small_array.length() - 1
-  
-  // Validate array boundaries
-  assert_eq(small_array[first_index], 1)
-  assert_eq(small_array[last_index], 5)
-  
-  // Test numeric precision boundaries
-  let very_small_number = 0.0000000000000001
-  let very_large_number = 1000000000000000.0
-  
-  // Validate precision boundaries
-  assert_true(very_small_number > 0.0)
-  assert_true(very_large_number > 0.0)
-  
-  // Test timestamp boundaries
-  let min_timestamp = -9223372036854775808L  // Minimum Int64
-  let max_timestamp = 9223372036854775807L   // Maximum Int64
-  let current_timestamp = 1640995200000L     // Current timestamp
-  
-  // Validate timestamp boundaries
-  assert_true(min_timestamp < current_timestamp)
-  assert_true(current_timestamp < max_timestamp)
-  
-  // Test resource limit boundaries
-  let max_resource_name_length = 255
-  let max_resources = 10000
-  let max_attributes_per_resource = 100
-  
-  // Validate resource boundaries
-  let long_resource_name = "a" * max_resource_name_length
-  assert_eq(long_resource_name.length(), max_resource_name_length)
-  
-  // Test concurrent operation limits
-  let max_concurrent_operations = 1000
-  let current_operations = 500
-  
-  // Validate concurrent operation boundaries
-  assert_true(current_operations <= max_concurrent_operations)
-  
-  // Test memory allocation boundaries
-  let max_allocation_size = 1024 * 1024 * 1024  // 1GB
-  let current_allocation = 1024 * 1024          // 1MB
-  
-  // Validate allocation boundaries
-  assert_true(current_allocation <= max_allocation_size)
-  
-  // Test error recovery mechanisms
-  let error_conditions = [
-    ("network_timeout", true),
-    ("database_connection_failed", true),
-    ("memory_allocation_failed", true),
-    ("invalid_configuration", true),
-    ("resource_exhausted", true)
-  ]
-  
-  // Validate error recovery
-  for (error_type, recoverable) in error_conditions {
-    match error_type {
-      "network_timeout" => assert_true(recoverable)
-      "database_connection_failed" => assert_true(recoverable)
-      "memory_allocation_failed" => assert_true(recoverable)
-      "invalid_configuration" => assert_true(recoverable)
-      "resource_exhausted" => assert_true(recoverable)
-      _ => assert_true(false)  // Unknown error type
+  // Simulate concurrent processing
+  let process_events = fn(events: Array[TelemetryEvent]) {
+    let mut processed = []
+    let mut total_duration = 0
+    let mut success_count = 0
+    
+    for event in events {
+      total_duration = total_duration + event.duration
+      if event.status == "ok" {
+        success_count = success_count + 1
+      }
+      
+      let processed_event = {
+        event |
+        attributes: event.attributes.push(("processed", "true")),
+        duration: event.duration + 10 // Add processing overhead
+      }
+      processed = processed.push(processed_event)
+    }
+    
+    {
+      events: processed,
+      total_duration: total_duration,
+      success_count: success_count,
+      average_duration: total_duration / events.length()
     }
   }
+  
+  // Process events concurrently
+  let result1 = process_events(service1_events)
+  let result2 = process_events(service2_events)
+  let result3 = process_events(service3_events)
+  
+  // Verify processing results
+  assert_eq(result1.events.length(), 100)
+  assert_eq(result2.events.length(), 100)
+  assert_eq(result3.events.length(), 100)
+  
+  assert_eq(result1.success_count, 100)
+  assert_eq(result2.success_count, 100)
+  assert_eq(result3.success_count, 100)
+  
+  // Verify processing overhead
+  assert_eq(result1.events[0].duration, service1_events[0].duration + 10)
+  assert_eq(result2.events[99].duration, service2_events[99].duration + 10)
+  
+  // Verify aggregate metrics
+  let all_results = [result1, result2, result3]
+  let total_events = all_results.reduce(fn(acc, r) { acc + r.events.length() }, 0)
+  let total_success = all_results.reduce(fn(acc, r) { acc + r.success_count }, 0)
+  
+  assert_eq(total_events, 300)
+  assert_eq(total_success, 300)
+  
+  // Verify performance characteristics
+  assert_true(result1.average_duration >= 100)
+  assert_true(result2.average_duration >= 100)
+  assert_true(result3.average_duration >= 100)
 }
 
-// Test Case 8: Internationalization and Localization Support
-test "internationalization and localization support" {
-  // Test multi-language string handling
-  let english_messages = [
-    ("welcome", "Welcome to Azimuth"),
-    ("error_occurred", "An error occurred"),
-    ("operation_successful", "Operation completed successfully"),
-    ("invalid_input", "Invalid input provided"),
-    ("connection_failed", "Connection to server failed")
+// Test 3: Telemetry Data Serialization/Deserialization
+test "telemetry data serialization and deserialization" {
+  // Define telemetry data structure
+  type Metric = {
+    name: String,
+    value: Float,
+    unit: String,
+    timestamp: Int,
+    tags: Array[(String, String)],
+    metric_type: String
+  }
+  
+  // Create test metrics
+  let metrics = [
+    {
+      name: "http.requests.total",
+      value: 1250.0,
+      unit: "count",
+      timestamp: 1640995200,
+      tags: [("method", "GET"), ("/api/users", "endpoint")],
+      metric_type: "counter"
+    },
+    {
+      name: "http.response.duration",
+      value: 125.5,
+      unit: "ms",
+      timestamp: 1640995205,
+      tags: [("method", "POST"), ("/api/orders", "endpoint")],
+      metric_type: "histogram"
+    },
+    {
+      name: "database.connections.active",
+      value: 15.0,
+      unit: "connections",
+      timestamp: 1640995210,
+      tags: [("database", "postgres"), ("host", "db-primary")],
+      metric_type: "gauge"
+    }
   ]
   
-  let chinese_messages = [
-    ("welcome", "欢迎使用 Azimuth"),
-    ("error_occurred", "发生错误"),
-    ("operation_successful", "操作成功完成"),
-    ("invalid_input", "提供的输入无效"),
-    ("connection_failed", "连接服务器失败")
-  ]
-  
-  let spanish_messages = [
-    ("welcome", "Bienvenido a Azimuth"),
-    ("error_occurred", "Ocurrió un error"),
-    ("operation_successful", "Operación completada con éxito"),
-    ("invalid_input", "Entrada inválida proporcionada"),
-    ("connection_failed", "Error al conectar con el servidor")
-  ]
-  
-  // Validate message consistency across languages
-  assert_eq(english_messages.length(), chinese_messages.length())
-  assert_eq(english_messages.length(), spanish_messages.length())
-  
-  for (key, _) in english_messages {
-    let english_msg = english_messages.find(|(k, _)| k == key).map(|(_, v)| v)
-    let chinese_msg = chinese_messages.find(|(k, _)| k == key).map(|(_, v)| v)
-    let spanish_msg = spanish_messages.find(|(k, _)| k == key).map(|(_, v)| v)
+  // Simulate serialization to JSON-like string
+  let serialize_metric = fn(metric: Metric) {
+    let tags_str = metric.tags.map(fn(t) { 
+      "\"" + t.0 + "\":\"" + t.1 + "\""
+    }).join(",")
     
-    assert_true(english_msg.is_some())
-    assert_true(chinese_msg.is_some())
-    assert_true(spanish_msg.is_some())
+    "{" +
+      "\"name\":\"" + metric.name + "\"," +
+      "\"value\":" + metric.value.to_string() + "," +
+      "\"unit\":\"" + metric.unit + "\"," +
+      "\"timestamp\":" + metric.timestamp.to_string() + "," +
+      "\"tags\":{" + tags_str + "}," +
+      "\"type\":\"" + metric.metric_type + "\"" +
+    "}"
   }
   
-  // Test Unicode handling
-  let unicode_strings = [
-    "English: Hello, World!",
-    "Chinese: 你好，世界！",
-    "Spanish: ¡Hola, Mundo!",
-    "Japanese: こんにちは、世界！",
-    "Arabic: مرحبا بالعالم!",
-    "Russian: Привет, мир!",
-    "Emoji: 🌍🚀📊",
-    "Math: ∑∏∫∆∇∂",
-    "Currency: $¥€£₹₽",
-    "Symbols: ©®™℠℞"
-  ]
+  // Serialize metrics
+  let serialized = metrics.map(serialize_metric)
+  assert_eq(serialized.length(), 3)
   
-  // Validate Unicode handling
-  for unicode_str in unicode_strings {
-    assert_true(unicode_str.length() > 0)
+  // Verify serialization format
+  let first_serialized = serialized[0]
+  assert_true(first_serialized.contains("\"name\":\"http.requests.total\""))
+  assert_true(first_serialized.contains("\"value\":1250"))
+  assert_true(first_serialized.contains("\"unit\":\"count\""))
+  assert_true(first_serialized.contains("\"method\":\"GET\""))
+  
+  // Simulate deserialization
+  let parse_key_value = fn(s: String, key: String) {
+    let key_pattern = "\"" + key + "\":\""
+    let start_index = s.index_of(key_pattern)
+    if start_index >= 0 {
+      let value_start = start_index + key_pattern.length()
+      let end_index = s.index_of("\"", value_start)
+      if end_index > value_start {
+        Some(s.substring(value_start, end_index - value_start))
+      } else {
+        None
+      }
+    } else {
+      None
+    }
   }
   
-  // Test date/time localization
-  let timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
-  
-  let date_formats = [
-    ("en_US", "01/01/2022"),
-    ("en_GB", "01/01/2022"),
-    ("zh_CN", "2022/01/01"),
-    ("es_ES", "01/01/2022"),
-    ("ja_JP", "2022/01/01"),
-    ("ar_SA", "01/01/2022")
-  ]
-  
-  // Validate date format consistency
-  for (locale, formatted_date) in date_formats {
-    assert_true(formatted_date.contains("2022"))
-    assert_true(formatted_date.contains("01"))
+  let parse_numeric_value = fn(s: String) {
+    let value_pattern = "\"value\":"
+    let start_index = s.index_of(value_pattern)
+    if start_index >= 0 {
+      let value_start = start_index + value_pattern.length()
+      let mut end_index = value_start
+      while end_index < s.length() and (s[end_index] >= '0' and s[end_index] <= '9' or s[end_index] == '.') {
+        end_index = end_index + 1
+      }
+      let value_str = s.substring(value_start, end_index - value_start)
+      // Convert string to float (simplified)
+      if value_str.contains(".") {
+        let parts = value_str.split(".")
+        if parts.length() == 2 {
+          let int_part = parts[0].to_int()
+          let frac_part = parts[1].to_int()
+          Some((int_part as Float) + ((frac_part as Float) / 10.0))
+        } else {
+          None
+        }
+      } else {
+        Some(value_str.to_int() as Float)
+      }
+    } else {
+      None
+    }
   }
   
-  // Test number localization
-  let number = 1234567.89
+  // Deserialize and verify first metric
+  let first_deserialized_name = parse_key_value(first_serialized, "name")
+  let first_deserialized_unit = parse_key_value(first_serialized, "unit")
+  let first_deserialized_type = parse_key_value(first_serialized, "type")
+  let first_deserialized_value = parse_numeric_value(first_serialized)
   
-  let number_formats = [
-    ("en_US", "1,234,567.89"),
-    ("en_GB", "1,234,567.89"),
-    ("zh_CN", "1,234,567.89"),
-    ("es_ES", "1.234.567,89"),
-    ("ja_JP", "1,234,567.89"),
-    ("ar_SA", "1,234,567.89")
-  ]
+  assert_eq(first_deserialized_name, Some("http.requests.total"))
+  assert_eq(first_deserialized_unit, Some("count"))
+  assert_eq(first_deserialized_type, Some("counter"))
+  assert_eq(first_deserialized_value, Some(1250.0))
   
-  // Validate number formatting
-  for (locale, formatted_number) in number_formats {
-    assert_true(formatted_number.contains("1"))
-    assert_true(formatted_number.contains("7"))
-    assert_true(formatted_number.contains("89"))
-  }
-  
-  // Test text direction handling
-  let left_to_right = ["English", "Spanish", "Chinese"]
-  let right_to_left = ["Arabic", "Hebrew", "Persian"]
-  
-  // Validate text direction
-  for ltr_text in left_to_right {
-    assert_true(ltr_text.length() > 0)
-  }
-  
-  for rtl_text in right_to_left {
-    assert_true(rtl_text.length() > 0)
-  }
-  
-  // Test locale-specific error messages
-  let error_codes = [
-    "E001",  // Invalid input
-    "E002",  // Network error
-    "E003",  // Authentication failed
-    "E004",  // Resource not found
-    "E005"   // Internal server error
-  ]
-  
-  // Validate error code consistency
-  for error_code in error_codes {
-    assert_true(error_code.starts_with("E"))
-    assert_eq(error_code.length(), 4)
-  }
-  
-  // Test timezone handling
-  let timezones = [
-    ("UTC", "00:00"),
-    ("EST", "-05:00"),
-    ("PST", "-08:00"),
-    ("CST", "+08:00"),
-    ("JST", "+09:00"),
-    ("GMT", "00:00")
-  ]
-  
-  // Validate timezone formatting
-  for (tz_name, tz_offset) in timezones {
-    assert_true(tz_name.length() >= 2)
-    assert_true(tz_offset.contains(":"))
-  }
-}
-
-// Test Case 9: Memory Leak Protection
-test "memory leak protection" {
-  // Test object lifecycle management
-  let object_creation_count = 10000
-  let object_destruction_count = 0
-  
-  // Simulate object creation
-  let objects = Array::make(object_creation_count, 0).map_with_index(|_, i| {
-    i  // Simple object representation
-  })
-  
-  // Validate object creation
-  assert_eq(objects.length(), object_creation_count)
-  
-  // Simulate object destruction
-  let remaining_objects = objects.filter(|obj| {
-    obj % 2 == 0  // Keep only even objects
-  })
-  
-  // Simulate destruction count
-  let destroyed_count = object_creation_count - remaining_objects.length()
-  
-  // Validate object destruction
-  assert_eq(destroyed_count, object_creation_count / 2)
-  
-  // Test buffer pool management
-  let buffer_size = 1024
-  let buffer_count = 100
-  let buffer_pool = Array::make(buffer_count, Array::make(buffer_size, 0))
-  
-  // Validate buffer pool creation
-  assert_eq(buffer_pool.length(), buffer_count)
-  for buffer in buffer_pool {
-    assert_eq(buffer.length(), buffer_size)
-  }
-  
-  // Simulate buffer allocation and deallocation
-  let allocated_buffers = Array::make(buffer_count / 2, 0).map_with_index(|_, i| {
-    buffer_pool[i]  // Allocate buffer
-  })
-  
-  // Validate buffer allocation
-  assert_eq(allocated_buffers.length(), buffer_count / 2)
-  
-  // Test memory pressure handling
-  let memory_usage_threshold = 0.8  // 80% threshold
-  let current_memory_usage = 0.85   // 85% usage
-  
-  // Simulate memory pressure response
-  let cleanup_triggered = current_memory_usage > memory_usage_threshold
-  assert_true(cleanup_triggered)
-  
-  // Test garbage collection simulation
-  let gc_threshold = 1000
-  let object_count = 1500
-  
-  // Simulate GC trigger
-  let gc_triggered = object_count > gc_threshold
-  assert_true(gc_triggered)
-  
-  // Test resource cleanup on scope exit
-  let scoped_resources = Array::make(100, 0).map_with_index(|_, i| {
-    ("resource_" + i.to_string(), i)
-  })
-  
-  // Simulate scope exit cleanup
-  let cleaned_resources = scoped_resources.filter(|(_, id)| {
-    id % 3 != 0  // Keep only resources not divisible by 3
-  })
-  
-  // Validate cleanup
-  assert_true(cleaned_resources.length() < scoped_resources.length())
-  
-  // Test circular reference detection
-  let object_a = ("object_a", "object_b")
-  let object_b = ("object_b", "object_c")
-  let object_c = ("object_c", "object_a")  // Creates a circular reference
-  
-  // Detect circular reference
-  let has_circular_ref = object_a.1 == object_b.0 && 
-                        object_b.1 == object_c.0 && 
-                        object_c.1 == object_a.0
-  
-  assert_true(has_circular_ref)
-  
-  // Test memory allocation limits
-  let max_allocation_size = 1024 * 1024  // 1MB
-  let requested_allocation_size = 2 * 1024 * 1024  // 2MB
-  
-  // Simulate allocation limit enforcement
-  let allocation_allowed = requested_allocation_size <= max_allocation_size
-  assert_false(allocation_allowed)
-  
-  // Test reference counting
-  let reference_counts = [
-    ("object_1", 1),
-    ("object_2", 3),
-    ("object_3", 0),
-    ("object_4", 2),
-    ("object_5", 1)
-  ]
-  
-  // Find objects with zero references (eligible for cleanup)
-  let zero_ref_objects = reference_counts.filter(|(_, count)| *count == 0)
-  
-  // Validate reference counting
-  assert_eq(zero_ref_objects.length(), 1)
-  assert_eq(zero_ref_objects[0].0, "object_3")
-  
-  // Test memory fragmentation simulation
-  let memory_blocks = [
-    (1000, true),   // (size, allocated)
-    (500, false),
-    (2000, true),
-    (300, false),
-    (1500, true),
-    (700, false)
-  ]
-  
-  // Calculate fragmentation
-  let total_memory = memory_blocks.reduce(0, |acc, (size, _)| acc + size)
-  let allocated_memory = memory_blocks.filter(|(_, allocated)| *allocated)
-                                    .reduce(0, |acc, (size, _)| acc + size)
-  let fragmentation_ratio = 1.0 - (allocated_memory.to_float() / total_memory.to_float())
-  
-  // Validate fragmentation calculation
-  assert_true(fragmentation_ratio > 0.0 && fragmentation_ratio < 1.0)
-}
-
-// Test Case 10: Serialization Integrity
-test "serialization integrity" {
-  // Test JSON serialization format
-  let telemetry_data = [
-    ("trace_id", "0af7651916cd43dd8448eb211c80319c"),
-    ("span_id", "b7ad6b7169203331"),
-    ("parent_span_id", "a1b2c3d4e5f6g7h8"),
-    ("operation_name", "http.request"),
-    ("start_time", "1640995200000"),
-    ("end_time", "1640995200500"),
-    ("status_code", "200"),
-    ("service_name", "api-service"),
-    ("host_name", "web-server-01")
-  ]
-  
-  // Serialize to JSON-like format
-  let json_serialized = "{" + telemetry_data.map(|(k, v)| "\"" + k + "\":\"" + v + "\"")
-                                             .reduce(|acc, pair| acc + "," + pair, "") + "}"
-  
-  // Validate JSON serialization
-  assert_true(json_serialized.starts_with("{"))
-  assert_true(json_serialized.ends_with("}"))
-  assert_true(json_serialized.contains("\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""))
-  
-  // Test binary serialization format
-  let binary_data = telemetry_data.map(|(k, v)| {
-    let key_bytes = k.to_utf8()
-    let value_bytes = v.to_utf8()
-    let key_length = key_bytes.length()
-    let value_length = value_bytes.length()
+  // Test round-trip serialization/deserialization
+  let round_trip_test = fn(original: Metric) {
+    let serialized_data = serialize_metric(original)
+    let deserialized_name = parse_key_value(serialized_data, "name")
+    let deserialized_value = parse_numeric_value(serialized_data)
+    let deserialized_unit = parse_key_value(serialized_data, "unit")
+    let deserialized_type = parse_key_value(serialized_data, "type")
     
-    // Simulate binary format: [key_length][key_bytes][value_length][value_bytes]
-    (key_length, key_bytes, value_length, value_bytes)
-  })
-  
-  // Validate binary serialization
-  for (key_length, key_bytes, value_length, value_bytes) in binary_data {
-    assert_eq(key_length, key_bytes.length())
-    assert_eq(value_length, value_bytes.length())
+    deserialized_name == Some(original.name) and
+    deserialized_value == Some(original.value) and
+    deserialized_unit == Some(original.unit) and
+    deserialized_type == Some(original.metric_type)
   }
   
-  // Test protocol buffer serialization format
-  let proto_fields = [
-    (1, "string", "trace_id"),
-    (2, "string", "span_id"),
-    (3, "string", "parent_span_id"),
-    (4, "string", "operation_name"),
-    (5, "int64", "start_time"),
-    (6, "int64", "end_time"),
-    (7, "int32", "status_code"),
-    (8, "string", "service_name"),
-    (9, "string", "host_name")
-  ]
-  
-  // Validate proto field format
-  for (field_number, field_type, field_name) in proto_fields {
-    assert_true(field_number > 0)
-    assert_true(field_type == "string" || field_type == "int64" || field_type == "int32")
-    assert_true(field_name.length() > 0)
-  }
-  
-  // Test compression serialization
-  let original_data = "x" * 1000  // Create repetitive data
-  let compressed_data = original_data  // Simulate compression (would be smaller in reality)
-  
-  // Validate compression
-  assert_true(compressed_data.length() <= original_data.length())
-  
-  // Test encryption serialization
-  let sensitive_data = [
-    ("user.id", "12345"),
-    ("session.token", "abcdef123456"),
-    ("api.key", "secret_key_value")
-  ]
-  
-  // Simulate encryption by base64 encoding
-  let encrypted_data = sensitive_data.map(|(k, v)| {
-    (k, v + "_encrypted")  // Simple encryption simulation
-  })
-  
-  // Validate encryption
-  for (key, value) in encrypted_data {
-    assert_true(value.contains("_encrypted"))
-  }
+  assert_true(round_trip_test(metrics[0]))
+  assert_true(round_trip_test(metrics[1]))
+  assert_true(round_trip_test(metrics[2]))
   
   // Test batch serialization
-  let batch_size = 100
-  let telemetry_batch = Array::make(batch_size, telemetry_data).map_with_index(|_, i| {
-    telemetry_data.map(|(k, v)| (k, v + "_" + i.to_string()))
-  })
+  let serialize_batch = fn(batch: Array[Metric]) {
+    "[" + batch.map(serialize_metric).join(",") + "]"
+  }
   
-  // Validate batch serialization
-  assert_eq(telemetry_batch.length(), batch_size)
-  
-  // Serialize batch
-  let batch_serialized = "[" + telemetry_batch.map(|batch| {
-    "{" + batch.map(|(k, v)| "\"" + k + "\":\"" + v + "\"")
-               .reduce(|acc, pair| acc + "," + pair, "") + "}"
-  }).reduce(|acc, item| acc + "," + item, "") + "]"
-  
-  // Validate batch serialization
+  let batch_serialized = serialize_batch(metrics)
   assert_true(batch_serialized.starts_with("["))
   assert_true(batch_serialized.ends_with("]"))
-  
-  // Test deserialization integrity
-  let deserialization_test_data = "test_integrity_check"
-  let serialized_data = deserialization_test_data
-  let deserialized_data = serialized_data  // Simple identity deserialization
-  
-  // Validate deserialization integrity
-  assert_eq(deserialized_data, deserialization_test_data)
-  
-  // Test schema evolution compatibility
-  let v1_schema = ["field1", "field2", "field3"]
-  let v2_schema = ["field1", "field2", "field3", "field4"]  // Added new field
-  let v3_schema = ["field1", "field3", "field4"]           // Removed field2
-  
-  // Validate backward compatibility
-  for field in v1_schema {
-    assert_true(v2_schema.contains(field))
+  assert_eq(batch_serialized.split("\"name\":").length() - 1, 3) // 3 metrics
+}
+
+// Test 4: Cross-Service Context Propagation
+test "cross-service context propagation with baggage" {
+  // Define context propagation structures
+  type PropagationHeader = {
+    trace_id: String,
+    parent_span_id: String,
+    sampled: Bool,
+    baggage: Array[(String, String)]
   }
   
-  // Validate forward compatibility
-  for field in v3_schema {
-    assert_true(v2_schema.contains(field))
+  // Simulate HTTP header extraction
+  let extract_from_headers = fn(headers: Array[(String, String)]) {
+    let mut trace_id = None
+    let mut parent_span_id = None
+    let mut sampled = None
+    let mut baggage = []
+    
+    for (key, value) in headers {
+      match key {
+        "x-trace-id" => trace_id = Some(value)
+        "x-parent-span-id" => parent_span_id = Some(value)
+        "x-sampled" => sampled = Some(value == "1")
+        "x-baggage" => {
+          let pairs = value.split(",")
+          for pair in pairs {
+            let kv = pair.split("=")
+            if kv.length() == 2 {
+              baggage = baggage.push((kv[0], kv[1]))
+            }
+          }
+        }
+        _ => () // Ignore other headers
+      }
+    }
+    
+    match (trace_id, parent_span_id, sampled) {
+      (Some(t), Some(p), Some(s)) => Some({
+        trace_id: t,
+        parent_span_id: p,
+        sampled: s,
+        baggage: baggage
+      })
+      _ => None
+    }
   }
   
-  // Test serialization error handling
-  let invalid_data = [
-    ("null_value", ""),
-    ("special_chars", "!@#$%^&*()"),
-    ("unicode_chars", "你好世界"),
-    ("very_long_field_name_" + "x" * 100, "value")
+  // Simulate HTTP header injection
+  let inject_to_headers = fn(context: PropagationHeader, base_headers: Array[(String, String)]) {
+    let baggage_str = context.baggage.map(fn(pair) { pair.0 + "=" + pair.1 }).join(",")
+    
+    let new_headers = [
+      ("x-trace-id", context.trace_id),
+      ("x-parent-span-id", context.parent_span_id),
+      ("x-sampled", if context.sampled { "1" } else { "0" }),
+      ("x-baggage", baggage_str)
+    ]
+    
+    base_headers + new_headers
+  }
+  
+  // Test context propagation across service boundaries
+  let incoming_headers = [
+    ("host", "api.example.com"),
+    ("authorization", "Bearer token123"),
+    ("x-trace-id", "trace-abc123"),
+    ("x-parent-span-id", "span-def456"),
+    ("x-sampled", "1"),
+    ("x-baggage", "user.id=12345,request.id=req-789,region=us-west-2"),
+    ("content-type", "application/json")
   ]
   
-  // Validate error handling
-  for (key, value) in invalid_data {
-    assert_true(key.length() > 0)
-    assert_true(value.length() >= 0)
+  // Extract context from incoming headers
+  let extracted_context = extract_from_headers(incoming_headers)
+  assert_true(extracted_context.is_some())
+  
+  let context = match extracted_context {
+    Some(c) => c
+    None => { trace_id: "", parent_span_id: "", sampled: false, baggage: [] }
   }
+  
+  // Verify extracted context
+  assert_eq(context.trace_id, "trace-abc123")
+  assert_eq(context.parent_span_id, "span-def456")
+  assert_true(context.sampled)
+  assert_eq(context.baggage.length(), 3)
+  assert_true(context.baggage.contains(("user.id", "12345")))
+  assert_true(context.baggage.contains(("request.id", "req-789")))
+  assert_true(context.baggage.contains(("region", "us-west-2")))
+  
+  // Simulate service processing and adding baggage
+  let updated_baggage = context.baggage.push(("service.name", "auth-service"))
+  let updated_context = { context | baggage: updated_baggage }
+  
+  // Create outgoing headers
+  let base_outgoing_headers = [
+    ("host", "user-service.example.com"),
+    ("content-type", "application/json")
+  ]
+  
+  let outgoing_headers = inject_to_headers(updated_context, base_outgoing_headers)
+  
+  // Verify outgoing headers
+  assert_eq(outgoing_headers.length(), 6) // 2 base + 4 injected
+  
+  let find_header = fn(headers: Array[(String, String)], key: String) {
+    let mut found = None
+    for (k, v) in headers {
+      if k == key {
+        found = Some(v)
+      }
+    }
+    found
+  }
+  
+  assert_eq(find_header(outgoing_headers, "x-trace-id"), Some("trace-abc123"))
+  assert_eq(find_header(outgoing_headers, "x-parent-span-id"), Some("span-def456"))
+  assert_eq(find_header(outgoing_headers, "x-sampled"), Some("1"))
+  
+  let outgoing_baggage = find_header(outgoing_headers, "x-baggage")
+  assert_true(outgoing_baggage.is_some())
+  
+  let baggage_value = match outgoing_baggage {
+    Some(b) => b
+    None => ""
+  }
+  
+  assert_true(baggage_value.contains("user.id=12345"))
+  assert_true(baggage_value.contains("request.id=req-789"))
+  assert_true(baggage_value.contains("region=us-west-2"))
+  assert_true(baggage_value.contains("service.name=auth-service"))
+  
+  // Test multi-hop propagation
+  let second_service_context = extract_from_headers(outgoing_headers)
+  assert_true(second_service_context.is_some())
+  
+  let second_context = match second_service_context {
+    Some(c) => c
+    None => { trace_id: "", parent_span_id: "", sampled: false, baggage: [] }
+  }
+  
+  // Verify trace consistency across hops
+  assert_eq(second_context.trace_id, context.trace_id)
+  assert_eq(second_context.parent_span_id, context.parent_span_id)
+  assert_eq(second_context.sampled, context.sampled)
+  assert_eq(second_context.baggage.length(), 4)
+}
+
+// Test 5: Telemetry Resource Management
+test "telemetry resource management and cleanup" {
+  // Define resource management structures
+  type TelemetryResource = {
+    resource_id: String,
+    resource_type: String,
+    created_at: Int,
+    last_accessed: Int,
+    access_count: Int,
+    size_bytes: Int,
+    attributes: Array[(String, String)]
+  }
+  
+  type ResourcePool = {
+    max_resources: Int,
+    max_memory_bytes: Int,
+    current_memory_bytes: Int,
+    resources: Array[TelemetryResource],
+    cleanup_threshold_seconds: Int
+  }
+  
+  // Create resource pool
+  let create_pool = fn(max_resources: Int, max_memory_mb: Int) {
+    {
+      max_resources: max_resources,
+      max_memory_bytes: max_memory_mb * 1024 * 1024,
+      current_memory_bytes: 0,
+      resources: [],
+      cleanup_threshold_seconds: 300 // 5 minutes
+    }
+  }
+  
+  // Create telemetry resource
+  let create_resource = fn(resource_id: String, resource_type: String, size_kb: Int) {
+    let now = 1640995200 // Current timestamp
+    {
+      resource_id: resource_id,
+      resource_type: resource_type,
+      created_at: now,
+      last_accessed: now,
+      access_count: 0,
+      size_bytes: size_kb * 1024,
+      attributes: [("env", "production")]
+    }
+  }
+  
+  // Add resource to pool
+  let add_resource = fn(pool: ResourcePool, resource: TelemetryResource) {
+    if pool.resources.length() < pool.max_resources and 
+       pool.current_memory_bytes + resource.size_bytes <= pool.max_memory_bytes {
+      {
+        pool |
+        resources: pool.resources.push(resource),
+        current_memory_bytes: pool.current_memory_bytes + resource.size_bytes
+      }
+    } else {
+      pool // Resource not added due to limits
+    }
+  }
+  
+  // Access resource (updates last_accessed and count)
+  let access_resource = fn(pool: ResourcePool, resource_id: String) {
+    let mut updated_resources = []
+    let mut found = false
+    
+    for resource in pool.resources {
+      if resource.resource_id == resource_id {
+        found = true
+        let now = 1640995200
+        let updated = {
+          resource |
+          last_accessed: now,
+          access_count: resource.access_count + 1
+        }
+        updated_resources = updated_resources.push(updated)
+      } else {
+        updated_resources = updated_resources.push(resource)
+      }
+    }
+    
+    if found {
+      { pool | resources: updated_resources }
+    } else {
+      pool
+    }
+  }
+  
+  // Cleanup old resources
+  let cleanup_resources = fn(pool: ResourcePool, current_time: Int) {
+    let threshold = current_time - pool.cleanup_threshold_seconds
+    let mut cleaned_resources = []
+    let mut freed_memory = 0
+    
+    for resource in pool.resources {
+      if resource.last_accessed > threshold {
+        cleaned_resources = cleaned_resources.push(resource)
+      } else {
+        freed_memory = freed_memory + resource.size_bytes
+      }
+    }
+    
+    {
+      pool |
+      resources: cleaned_resources,
+      current_memory_bytes: pool.current_memory_bytes - freed_memory
+    }
+  }
+  
+  // Initialize resource pool
+  let pool = create_pool(10, 100) // 10 resources, 100MB max
+  assert_eq(pool.max_resources, 10)
+  assert_eq(pool.max_memory_bytes, 104857600) // 100MB in bytes
+  assert_eq(pool.current_memory_bytes, 0)
+  assert_eq(pool.resources.length(), 0)
+  
+  // Add resources to pool
+  let resource1 = create_resource("span-1", "span", 1024) // 1MB
+  let resource2 = create_resource("metric-1", "metric", 2048) // 2MB
+  let resource3 = create_resource("log-1", "log", 512) // 512KB
+  
+  let pool_with_resources = add_resource(add_resource(add_resource(pool, resource1), resource2), resource3)
+  
+  assert_eq(pool_with_resources.resources.length(), 3)
+  assert_eq(pool_with_resources.current_memory_bytes, (1024 + 2048 + 512) * 1024)
+  
+  // Access resources
+  let pool_after_access = access_resource(pool_with_resources, "span-1")
+  let pool_after_access2 = access_resource(pool_after_access, "metric-1")
+  
+  // Verify access counts
+  let find_resource = fn(resources: Array[TelemetryResource], id: String) {
+    let mut found = None
+    for resource in resources {
+      if resource.resource_id == id {
+        found = Some(resource)
+      }
+    }
+    found
+  }
+  
+  let span_resource = find_resource(pool_after_access2.resources, "span-1")
+  let metric_resource = find_resource(pool_after_access2.resources, "metric-1")
+  let log_resource = find_resource(pool_after_access2.resources, "log-1")
+  
+  match span_resource {
+    Some(r) => assert_eq(r.access_count, 1)
+    None => assert_true(false)
+  }
+  
+  match metric_resource {
+    Some(r) => assert_eq(r.access_count, 1)
+    None => assert_true(false)
+  }
+  
+  match log_resource {
+    Some(r) => assert_eq(r.access_count, 0)
+    None => assert_true(false)
+  }
+  
+  // Test resource limits
+  let large_resource = create_resource("large-span", "span", 50000) // 50MB
+  let pool_with_large = add_resource(pool_after_access2, large_resource)
+  
+  // Should be added if within limits
+  assert_eq(pool_with_large.resources.length(), 4)
+  
+  // Test cleanup
+  let old_timestamp = 1640995200 - 400 // 400 seconds ago (older than threshold)
+  let old_resource = {
+    resource1 |
+    last_accessed: old_timestamp,
+    resource_id: "old-span"
+  }
+  
+  let pool_with_old = add_resource(pool_with_large, old_resource)
+  assert_eq(pool_with_old.resources.length(), 5)
+  
+  // Cleanup old resources
+  let current_time = 1640995200
+  let cleaned_pool = cleanup_resources(pool_with_old, current_time)
+  
+  // Old resource should be removed
+  assert_eq(cleaned_pool.resources.length(), 4)
+  assert_false(cleaned_pool.resources.any(fn(r) { r.resource_id == "old-span" }))
+  
+  // Memory should be freed
+  assert_true(cleaned_pool.current_memory_bytes < pool_with_old.current_memory_bytes)
+  
+  // Test resource exhaustion
+  let exhaust_pool = fn(pool: ResourcePool, count: Int, size_kb: Int) {
+    let mut result = pool
+    for i in 0..count {
+      let resource = create_resource("exhaust-" + i.to_string(), "span", size_kb)
+      result = add_resource(result, resource)
+    }
+    result
+  }
+  
+  let exhausted_pool = exhaust_pool(cleaned_pool, 20, 1024) // Try to add 20 more 1MB resources
+  
+  // Should not exceed max resources
+  assert_true(exhausted_pool.resources.length() <= exhausted_pool.max_resources)
+}
+
+// Test 6: Error Boundary and Recovery
+test "error boundary and recovery mechanisms" {
+  // Define error handling structures
+  enum TelemetryError {
+    InvalidTraceId(String)
+    SerializationFailed(String)
+    NetworkTimeout(Int)
+    ResourceExhausted(String)
+    CircuitBreakerOpen(String)
+  }
+  
+  type ErrorContext = {
+    error: TelemetryError,
+    timestamp: Int,
+    retry_count: Int,
+    context: String
+  }
+  
+  type RetryConfig = {
+    max_retries: Int,
+    base_delay_ms: Int,
+    max_delay_ms: Int,
+    backoff_multiplier: Float
+  }
+  
+  // Define retry logic with exponential backoff
+  let retry_with_backoff = fn(
+    operation: () -> Result[String, TelemetryError], 
+    config: RetryConfig,
+    context: String
+  ) -> Result[String, ErrorContext] {
+    let mut attempt = 0
+    let mut last_error = None
+    
+    while attempt < config.max_retries {
+      attempt = attempt + 1
+      let result = operation()
+      
+      match result {
+        Ok(value) => return Ok(value)
+        Err(error) => {
+          last_error = Some({
+            error: error,
+            timestamp: 1640995200 + attempt,
+            retry_count: attempt,
+            context: context
+          })
+          
+          if attempt < config.max_retries {
+            // Calculate delay with exponential backoff
+            let delay = (config.base_delay_ms as Float) * 
+                       (config.backoff_multiplier.pow((attempt - 1) as Float))
+            let capped_delay = if delay > (config.max_delay_ms as Float) {
+              config.max_delay_ms
+            } else {
+              delay as Int
+            }
+            
+            // In real implementation, would wait here
+            // For test, we just continue
+          }
+        }
+      }
+    }
+    
+    match last_error {
+      Some(error_context) => Err(error_context)
+      None => Err({
+        error: TelemetryError::NetworkTimeout(0),
+        timestamp: 1640995200,
+        retry_count: 0,
+        context: "Unknown error"
+      })
+    }
+  }
+  
+  // Define circuit breaker pattern
+  type CircuitBreaker = {
+    failure_threshold: Int,
+    reset_timeout_ms: Int,
+    failure_count: Int,
+    last_failure_time: Option[Int],
+    state: String // "closed", "open", "half-open"
+  }
+  
+  let create_circuit_breaker = fn(failure_threshold: Int, reset_timeout_ms: Int) {
+    {
+      failure_threshold: failure_threshold,
+      reset_timeout_ms: reset_timeout_ms,
+      failure_count: 0,
+      last_failure_time: None,
+      state: "closed"
+    }
+  }
+  
+  let call_with_circuit_breaker = fn(
+    breaker: CircuitBreaker,
+    operation: () -> Result[String, TelemetryError],
+    current_time: Int
+  ) -> (Result[String, TelemetryError], CircuitBreaker) {
+    match breaker.state {
+      "open" => {
+        // Check if we should try to reset
+        match breaker.last_failure_time {
+          Some(last_failure) => {
+            if current_time - last_failure > breaker.reset_timeout_ms {
+              // Try to reset to half-open
+              let half_open_breaker = { breaker | state: "half-open" }
+              let result = operation()
+              
+              match result {
+                Ok(value) => {
+                  // Success, close the circuit
+                  let closed_breaker = {
+                    half_open_breaker |
+                    state: "closed",
+                    failure_count: 0,
+                    last_failure_time: None
+                  }
+                  (Ok(value), closed_breaker)
+                }
+                Err(error) => {
+                  // Failure, open again
+                  let reopened_breaker = {
+                    half_open_breaker |
+                    state: "open",
+                    failure_count: half_open_breaker.failure_count + 1,
+                    last_failure_time: Some(current_time)
+                  }
+                  (Err(error), reopened_breaker)
+                }
+              }
+            } else {
+              // Still in open state
+              (Err(TelemetryError::CircuitBreakerOpen("Circuit is open")), breaker)
+            }
+          }
+          None => (Err(TelemetryError::CircuitBreakerOpen("Circuit is open")), breaker)
+        }
+      }
+      "closed" | "half-open" => {
+        let result = operation()
+        match result {
+          Ok(value) => {
+            // Success, reset failure count if closed, close if half-open
+            let updated_breaker = if breaker.state == "half-open" {
+              {
+                breaker |
+                state: "closed",
+                failure_count: 0,
+                last_failure_time: None
+              }
+            } else {
+              { breaker | failure_count: 0 }
+            }
+            (Ok(value), updated_breaker)
+          }
+          Err(error) => {
+            // Failure, increment count and potentially open
+            let new_failure_count = breaker.failure_count + 1
+            let should_open = new_failure_count >= breaker.failure_threshold
+            
+            let updated_breaker = {
+              breaker |
+              failure_count: new_failure_count,
+              last_failure_time: Some(current_time),
+              state: if should_open { "open" } else { breaker.state }
+            }
+            
+            (Err(error), updated_breaker)
+          }
+        }
+      }
+      _ => (Err(TelemetryError::CircuitBreakerOpen("Unknown circuit state")), breaker)
+    }
+  }
+  
+  // Test retry mechanism
+  let retry_config = {
+    max_retries: 3,
+    base_delay_ms: 100,
+    max_delay_ms: 1000,
+    backoff_multiplier: 2.0
+  }
+  
+  let mut attempt_count = 0
+  let failing_operation = fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err(TelemetryError::NetworkTimeout(5000))
+    } else {
+      Ok("success")
+    }
+  }
+  
+  let retry_result = retry_with_backoff(failing_operation, retry_config, "test operation")
+  assert_true(retry_result.is_ok())
+  
+  // Reset for next test
+  attempt_count = 0
+  
+  let always_failing_operation = fn() {
+    attempt_count = attempt_count + 1
+    Err(TelemetryError::NetworkTimeout(5000))
+  }
+  
+  let retry_failure = retry_with_backoff(always_failing_operation, retry_config, "failing operation")
+  assert_true(retry_failure.is_err())
+  
+  match retry_failure {
+    Err(error_context) => {
+      assert_eq(error_context.retry_count, 3)
+      assert_eq(error_context.context, "failing operation")
+    }
+    Ok(_) => assert_true(false)
+  }
+  
+  // Test circuit breaker
+  let circuit_breaker = create_circuit_breaker(3, 5000) // 3 failures, 5s timeout
+  
+  // Initial state should be closed
+  assert_eq(circuit_breaker.state, "closed")
+  assert_eq(circuit_breaker.failure_count, 0)
+  
+  // Simulate successful operation
+  let success_operation = fn() { Ok("success") }
+  let (result1, breaker1) = call_with_circuit_breaker(circuit_breaker, success_operation, 1640995200)
+  assert_true(result1.is_ok())
+  assert_eq(breaker1.state, "closed")
+  assert_eq(breaker1.failure_count, 0)
+  
+  // Simulate failing operations
+  let fail_operation = fn() { Err(TelemetryError::NetworkTimeout(1000)) }
+  
+  let (result2, breaker2) = call_with_circuit_breaker(breaker1, fail_operation, 1640995200)
+  assert_true(result2.is_err())
+  assert_eq(breaker2.state, "closed")
+  assert_eq(breaker2.failure_count, 1)
+  
+  let (result3, breaker3) = call_with_circuit_breaker(breaker2, fail_operation, 1640995200)
+  assert_true(result3.is_err())
+  assert_eq(breaker3.state, "closed")
+  assert_eq(breaker3.failure_count, 2)
+  
+  // This should open the circuit
+  let (result4, breaker4) = call_with_circuit_breaker(breaker3, fail_operation, 1640995200)
+  assert_true(result4.is_err())
+  assert_eq(breaker4.state, "open")
+  assert_eq(breaker4.failure_count, 3)
+  
+  // Further calls should fail immediately
+  let (result5, breaker5) = call_with_circuit_breaker(breaker4, success_operation, 1640995200)
+  assert_true(result5.is_err())
+  assert_eq(breaker5.state, "open")
+  
+  // Test circuit reset after timeout
+  let future_time = 1640995200 + 6000 // 6 seconds later
+  let (result6, breaker6) = call_with_circuit_breaker(breaker5, success_operation, future_time)
+  assert_true(result6.is_ok())
+  assert_eq(breaker6.state, "closed")
+  assert_eq(breaker6.failure_count, 0)
+}
+
+// Test 7: Performance Benchmarking
+test "performance benchmarking and metrics" {
+  // Define performance measurement structures
+  type PerformanceMetric = {
+    operation_name: String,
+    execution_time_ms: Int,
+    memory_used_bytes: Int,
+    cpu_cycles: Int,
+    timestamp: Int
+  }
+  
+  type BenchmarkResult = {
+    operation_name: String,
+    sample_count: Int,
+    min_time_ms: Int,
+    max_time_ms: Int,
+    avg_time_ms: Float,
+    p95_time_ms: Int,
+    p99_time_ms: Int,
+    total_memory_bytes: Int,
+    throughput_ops_per_sec: Float
+  }
+  
+  // Simulate performance measurement
+  let measure_operation = fn(operation_name: String, operation: () -> Unit, iterations: Int) {
+    let mut metrics = []
+    
+    for i in 0..iterations {
+      let start_time = 1640995200000 // High resolution timestamp in ms
+      let start_memory = 1024 * 1024 // 1MB baseline
+      let start_cycles = 1000 // CPU cycles baseline
+      
+      // Execute operation
+      operation()
+      
+      let end_time = start_time + 50 + (i % 100) // Simulate variable execution time
+      let end_memory = start_memory + 1024 * (i % 10) // Simulate memory usage
+      let end_cycles = start_cycles + 100 + (i % 50) // Simulate CPU usage
+      
+      let metric = {
+        operation_name: operation_name,
+        execution_time_ms: (end_time - start_time) as Int,
+        memory_used_bytes: (end_memory - start_memory) as Int,
+        cpu_cycles: (end_cycles - start_cycles) as Int,
+        timestamp: end_time as Int
+      }
+      
+      metrics = metrics.push(metric)
+    }
+    
+    metrics
+  }
+  
+  // Calculate benchmark statistics
+  let calculate_benchmark = fn(metrics: Array[PerformanceMetric]) -> BenchmarkResult {
+    if metrics.length() == 0 {
+      return {
+        operation_name: "",
+        sample_count: 0,
+        min_time_ms: 0,
+        max_time_ms: 0,
+        avg_time_ms: 0.0,
+        p95_time_ms: 0,
+        p99_time_ms: 0,
+        total_memory_bytes: 0,
+        throughput_ops_per_sec: 0.0
+      }
+    }
+    
+    let operation_name = metrics[0].operation_name
+    let sample_count = metrics.length()
+    
+    // Sort by execution time for percentile calculations
+    let sorted_times = metrics.map(fn(m) { m.execution_time_ms }).sort()
+    
+    let min_time_ms = sorted_times[0]
+    let max_time_ms = sorted_times[sample_count - 1]
+    
+    // Calculate average
+    let total_time = sorted_times.reduce(fn(acc, time) { acc + time }, 0)
+    let avg_time_ms = (total_time as Float) / (sample_count as Float)
+    
+    // Calculate percentiles
+    let p95_index = ((sample_count as Float) * 0.95) as Int
+    let p99_index = ((sample_count as Float) * 0.99) as Int
+    
+    let p95_time_ms = sorted_times[p95_index]
+    let p99_time_ms = sorted_times[p99_index]
+    
+    // Calculate total memory
+    let total_memory_bytes = metrics.reduce(fn(acc, m) { acc + m.memory_used_bytes }, 0)
+    
+    // Calculate throughput (operations per second)
+    let total_duration_ms = sorted_times[sample_count - 1] - sorted_times[0]
+    let throughput_ops_per_sec = if total_duration_ms > 0 {
+      (sample_count as Float) / ((total_duration_ms as Float) / 1000.0)
+    } else {
+      0.0
+    }
+    
+    {
+      operation_name: operation_name,
+      sample_count: sample_count,
+      min_time_ms: min_time_ms,
+      max_time_ms: max_time_ms,
+      avg_time_ms: avg_time_ms,
+      p95_time_ms: p95_time_ms,
+      p99_time_ms: p99_time_ms,
+      total_memory_bytes: total_memory_bytes,
+      throughput_ops_per_sec: throughput_ops_per_sec
+    }
+  }
+  
+  // Define test operations
+  let telemetry_serialize_operation = fn() {
+    // Simulate telemetry serialization work
+    let mut data = []
+    for i in 0..100 {
+      data = data.push("metric-" + i.to_string())
+    }
+    // Simulate processing
+    let serialized = data.join(",")
+    // Force some work
+    let length = serialized.length()
+    length
+  }
+  
+  let telemetry_compress_operation = fn() {
+    // Simulate compression work
+    let data = "lorem ipsum dolor sit amet consectetur adipiscing elit ".repeat(10)
+    // Simulate compression
+    let compressed = data.split(" ").join("")
+    compressed.length()
+  }
+  
+  let telemetry_aggregate_operation = fn() {
+    // Simulate aggregation work
+    let mut sum = 0
+    for i in 0..500 {
+      sum = sum + i
+    }
+    sum / 500
+  }
+  
+  // Benchmark operations
+  let serialize_metrics = measure_operation("serialize", telemetry_serialize_operation, 1000)
+  let compress_metrics = measure_operation("compress", telemetry_compress_operation, 1000)
+  let aggregate_metrics = measure_operation("aggregate", telemetry_aggregate_operation, 1000)
+  
+  // Calculate benchmark results
+  let serialize_benchmark = calculate_benchmark(serialize_metrics)
+  let compress_benchmark = calculate_benchmark(compress_metrics)
+  let aggregate_benchmark = calculate_benchmark(aggregate_metrics)
+  
+  // Verify benchmark results
+  assert_eq(serialize_benchmark.operation_name, "serialize")
+  assert_eq(serialize_benchmark.sample_count, 1000)
+  assert_true(serialize_benchmark.min_time_ms >= 50)
+  assert_true(serialize_benchmark.max_time_ms <= 149) // 50 + 99
+  assert_true(serialize_benchmark.avg_time_ms >= 50.0)
+  assert_true(serialize_benchmark.avg_time_ms <= 149.0)
+  
+  assert_eq(compress_benchmark.operation_name, "compress")
+  assert_eq(compress_benchmark.sample_count, 1000)
+  assert_true(compress_benchmark.throughput_ops_per_sec > 0.0)
+  
+  assert_eq(aggregate_benchmark.operation_name, "aggregate")
+  assert_eq(aggregate_benchmark.sample_count, 1000)
+  assert_true(aggregate_benchmark.total_memory_bytes > 0)
+  
+  // Compare performance between operations
+  assert_true(serialize_benchmark.avg_time_ms != compress_benchmark.avg_time_ms)
+  assert_true(compress_benchmark.avg_time_ms != aggregate_benchmark.avg_time_ms)
+  
+  // Test percentile calculations
+  assert_true(serialize_benchmark.p95_time_ms >= serialize_benchmark.min_time_ms)
+  assert_true(serialize_benchmark.p95_time_ms <= serialize_benchmark.max_time_ms)
+  assert_true(serialize_benchmark.p99_time_ms >= serialize_benchmark.p95_time_ms)
+  assert_true(serialize_benchmark.p99_time_ms <= serialize_benchmark.max_time_ms)
+  
+  // Test performance regression detection
+  let detect_regression = fn(current: BenchmarkResult, baseline: BenchmarkResult, threshold_percent: Float) {
+    let regression_ratio = (current.avg_time_ms - baseline.avg_time_ms) / baseline.avg_time_ms
+    regression_ratio > (threshold_percent / 100.0)
+  }
+  
+  // Create baseline for comparison
+  let serialize_baseline = {
+    serialize_benchmark |
+    avg_time_ms: serialize_benchmark.avg_time_ms * 0.8 // 20% better baseline
+  }
+  
+  // Should detect regression
+  assert_true(detect_regression(serialize_benchmark, serialize_baseline, 15.0))
+  
+  // Should not detect regression if within threshold
+  assert_false(detect_regression(serialize_benchmark, serialize_baseline, 30.0))
+  
+  // Test performance optimization validation
+  let validate_optimization = fn(before: BenchmarkResult, after: BenchmarkResult) {
+    let improvement_ratio = (before.avg_time_ms - after.avg_time_ms) / before.avg_time_ms
+    let memory_improvement = (before.total_memory_bytes - after.total_memory_bytes) as Float / 
+                            (before.total_memory_bytes as Float)
+    
+    {
+      time_improvement_percent: improvement_ratio * 100.0,
+      memory_improvement_percent: memory_improvement * 100.0,
+      throughput_improvement: (after.throughput_ops_per_sec - before.throughput_ops_per_sec) / 
+                             before.throughput_ops_per_sec
+    }
+  }
+  
+  // Simulate optimized version
+  let optimized_serialize = {
+    serialize_benchmark |
+    avg_time_ms: serialize_benchmark.avg_time_ms * 0.7, // 30% faster
+    total_memory_bytes: serialize_benchmark.total_memory_bytes * 80 / 100, // 20% less memory
+    throughput_ops_per_sec: serialize_benchmark.throughput_ops_per_sec * 1.3 // 30% more throughput
+  }
+  
+  let optimization_result = validate_optimization(serialize_benchmark, optimized_serialize)
+  
+  assert_true(optimization_result.time_improvement_percent > 20.0)
+  assert_true(optimization_result.memory_improvement_percent > 10.0)
+  assert_true(optimization_result.throughput_improvement > 0.2)
+}
+
+// Test 8: Security and Privacy
+test "security and privacy in telemetry data" {
+  // Define security structures
+  enum DataClassification {
+    Public
+    Internal
+    Confidential
+    Restricted
+  }
+  
+  type TelemetryData = {
+    data: String,
+    classification: DataClassification,
+    pii_fields: Array[String],
+    encryption_required: Bool,
+    retention_days: Int
+  }
+  
+  type SecurityPolicy = {
+    allow_pii_collection: Bool,
+    encryption_at_rest: Bool,
+    encryption_in_transit: Bool,
+    data_masking: Bool,
+    anonymization_required: Bool,
+    audit_logging: Bool
+  }
+  
+  // Define data masking and anonymization functions
+  let mask_pii_data = fn(data: String, pii_fields: Array[String]) {
+    let mut masked_data = data
+    
+    for field in pii_fields {
+      // Simple masking - replace with asterisks
+      let pattern = field + "="
+      let start_index = masked_data.index_of(pattern)
+      
+      if start_index >= 0 {
+        let value_start = start_index + pattern.length()
+        let end_index = masked_data.index_of(",", value_start)
+        let value_end = if end_index > value_start {
+          end_index
+        } else {
+          masked_data.length()
+        }
+        
+        let value_length = value_end - value_start
+        let masked_value = "*".repeat(value_length)
+        
+        masked_data = masked_data.substring(0, value_start) + 
+                     masked_value + 
+                     masked_data.substring(value_end, masked_data.length() - value_end)
+      }
+    }
+    
+    masked_data
+  }
+  
+  let anonymize_data = fn(data: String) {
+    // Replace user IDs with random hashes
+    let mut anonymized = data
+    
+    // Simple anonymization - replace user IDs with hashes
+    let user_id_pattern = "user_id="
+    let start_index = anonymized.index_of(user_id_pattern)
+    
+    if start_index >= 0 {
+      let value_start = start_index + user_id_pattern.length()
+      let end_index = anonymized.index_of(",", value_start)
+      let value_end = if end_index > value_start {
+        end_index
+      } else {
+        anonymized.length()
+      }
+      
+      let user_id = anonymized.substring(value_start, value_end - value_start)
+      let hash = user_id.length() * 31 + 17 // Simple hash
+      let anonymized_id = "user_" + hash.to_string()
+      
+      anonymized = anonymized.substring(0, value_start) + 
+                  anonymized_id + 
+                  anonymized.substring(value_end, anonymized.length() - value_end)
+    }
+    
+    anonymized
+  }
+  
+  let encrypt_data = fn(data: String) {
+    // Simple encryption simulation
+    let mut encrypted = ""
+    for i in 0..data.length() {
+      let char = data[i]
+      let offset = (i % 10) + 1
+      let encrypted_char = if char >= 'a' and char <= 'z' {
+        ((char.to_int() - 'a'.to_int() + offset) % 26 + 'a'.to_int()).to_char()
+      } else if char >= 'A' and char <= 'Z' {
+        ((char.to_int() - 'A'.to_int() + offset) % 26 + 'A'.to_int()).to_char()
+      } else {
+        char
+      }
+      encrypted = encrypted + encrypted_char
+    }
+    "encrypted:" + encrypted
+  }
+  
+  let decrypt_data = fn(encrypted_data: String) {
+    // Simple decryption simulation
+    if not(encrypted_data.starts_with("encrypted:")) {
+      encrypted_data
+    } else {
+      let encrypted = encrypted_data.substring(10, encrypted_data.length() - 10)
+      let mut decrypted = ""
+      
+      for i in 0..encrypted.length() {
+        let char = encrypted[i]
+        let offset = (i % 10) + 1
+        let decrypted_char = if char >= 'a' and char <= 'z' {
+          let char_code = char.to_int() - 'a'.to_int() - offset
+          ((char_code % 26 + 26) % 26 + 'a'.to_int()).to_char()
+        } else if char >= 'A' and char <= 'Z' {
+          let char_code = char.to_int() - 'A'.to_int() - offset
+          ((char_code % 26 + 26) % 26 + 'A'.to_int()).to_char()
+        } else {
+          char
+        }
+        decrypted = decrypted + decrypted_char
+      }
+      
+      decrypted
+    }
+  }
+  
+  // Create test data
+  let sensitive_data = {
+    data: "user_id=12345,email=user@example.com,action=login,ip_address=192.168.1.1",
+    classification: DataClassification::Confidential,
+    pii_fields: ["user_id", "email", "ip_address"],
+    encryption_required: true,
+    retention_days: 30
+  }
+  
+  let public_data = {
+    data: "service=api,endpoint=/health,status=ok,response_time=50",
+    classification: DataClassification::Public,
+    pii_fields: [],
+    encryption_required: false,
+    retention_days: 90
+  }
+  
+  // Create security policy
+  let security_policy = {
+    allow_pii_collection: true,
+    encryption_at_rest: true,
+    encryption_in_transit: true,
+    data_masking: true,
+    anonymization_required: true,
+    audit_logging: true
+  }
+  
+  // Test data masking
+  let masked_sensitive_data = mask_pii_data(sensitive_data.data, sensitive_data.pii_fields)
+  assert_eq(masked_sensitive_data, "user_id=*****,email=****************,action=login,ip_address=************")
+  
+  // Test data anonymization
+  let anonymized_data = anonymize_data(sensitive_data.data)
+  assert_true(anonymized_data.contains("user_"))
+  assert_false(anonymized_data.contains("user_id=12345"))
+  
+  // Test encryption/decryption
+  let encrypted_data = encrypt_data(sensitive_data.data)
+  assert_true(encrypted_data.starts_with("encrypted:"))
+  assert_false(encrypted_data.contains("user_id=12345"))
+  
+  let decrypted_data = decrypt_data(encrypted_data)
+  assert_eq(decrypted_data, sensitive_data.data)
+  
+  // Test security policy enforcement
+  let enforce_policy = fn(data: TelemetryData, policy: SecurityPolicy) {
+    let mut processed_data = data.data
+    
+    // Apply data masking if required
+    if policy.data_masking and data.pii_fields.length() > 0 {
+      processed_data = mask_pii_data(processed_data, data.pii_fields)
+    }
+    
+    // Apply anonymization if required
+    if policy.anonymization_required {
+      processed_data = anonymize_data(processed_data)
+    }
+    
+    // Apply encryption if required
+    if data.encryption_required and policy.encryption_at_rest {
+      processed_data = encrypt_data(processed_data)
+    }
+    
+    // Check if PII collection is allowed
+    let pii_violation = if not(policy.allow_pii_collection) and data.pii_fields.length() > 0 {
+      true
+    } else {
+      false
+    }
+    
+    {
+      processed_data: processed_data,
+      pii_violation: pii_violation,
+      encryption_applied: data.encryption_required and policy.encryption_at_rest,
+      masking_applied: policy.data_masking and data.pii_fields.length() > 0,
+      anonymization_applied: policy.anonymization_required
+    }
+  }
+  
+  // Test policy enforcement on sensitive data
+  let sensitive_result = enforce_policy(sensitive_data, security_policy)
+  assert_true(sensitive_result.masking_applied)
+  assert_true(sensitive_result.anonymization_applied)
+  assert_true(sensitive_result.encryption_applied)
+  assert_false(sensitive_result.pii_violation)
+  assert_true(sensitive_result.processed_data.starts_with("encrypted:"))
+  
+  // Test policy enforcement on public data
+  let public_result = enforce_policy(public_data, security_policy)
+  assert_false(public_result.masking_applied)
+  assert_true(public_result.anonymization_applied)
+  assert_false(public_result.encryption_applied)
+  assert_false(public_result.pii_violation)
+  
+  // Test restrictive policy
+  let restrictive_policy = {
+    security_policy |
+    allow_pii_collection: false,
+    data_masking: true,
+    anonymization_required: true
+  }
+  
+  let restrictive_result = enforce_policy(sensitive_data, restrictive_policy)
+  assert_true(restrictive_result.pii_violation)
+  
+  // Test data retention policy
+  let check_retention = fn(data: TelemetryData, current_time: Int, creation_time: Int) {
+    let age_days = (current_time - creation_time) / 86400
+    age_days <= data.retention_days
+  }
+  
+  let current_time = 1640995200 // Current timestamp
+  let creation_time = 1640995200 - 31 * 86400 // 31 days ago
+  
+  // Should be expired (older than retention period)
+  assert_false(check_retention(sensitive_data, current_time, creation_time))
+  
+  let recent_creation_time = 1640995200 - 15 * 86400 // 15 days ago
+  // Should not be expired (within retention period)
+  assert_true(check_retention(sensitive_data, current_time, recent_creation_time))
+  
+  // Test access control
+  enum UserRole {
+    Viewer
+    Analyst
+    Admin
+    Security
+  }
+  
+  type AccessRequest = {
+    user_role: UserRole,
+    data_classification: DataClassification,
+    requested_operation: String
+  }
+  
+  let check_access = fn(request: AccessRequest) {
+    match (request.user_role, request.data_classification) {
+      (UserRole::Viewer, DataClassification::Public) => true
+      (UserRole::Viewer, _) => false
+      (UserRole::Analyst, DataClassification::Public) => true
+      (UserRole::Analyst, DataClassification::Internal) => true
+      (UserRole::Analyst, _) => false
+      (UserRole::Admin, DataClassification::Restricted) => false
+      (UserRole::Admin, _) => true
+      (UserRole::Security, _) => true
+    }
+  }
+  
+  // Test access control
+  let viewer_request = {
+    user_role: UserRole::Viewer,
+    data_classification: DataClassification::Public,
+    requested_operation: "read"
+  }
+  assert_true(check_access(viewer_request))
+  
+  let viewer_sensitive_request = {
+    viewer_request |
+    data_classification: DataClassification::Confidential
+  }
+  assert_false(check_access(viewer_sensitive_request))
+  
+  let analyst_request = {
+    user_role: UserRole::Analyst,
+    data_classification: DataClassification::Internal,
+    requested_operation: "read"
+  }
+  assert_true(check_access(analyst_request))
+  
+  let security_request = {
+    user_role: UserRole::Security,
+    data_classification: DataClassification::Restricted,
+    requested_operation: "read"
+  }
+  assert_true(check_access(security_request))
+}
+
+// Test 9: Internationalization Support
+test "internationalization and localization support" {
+  // Define localization structures
+  type Locale = {
+    language: String,
+    region: String,
+    encoding: String,
+    timezone: String,
+    number_format: String,
+    date_format: String,
+    currency: String
+  }
+  
+  type LocalizedString = {
+    key: String,
+    translations: Array[(String, String)] // (locale, translation)
+  }
+  
+  type LocalizedError = {
+    error_code: String,
+    message_template: String,
+    parameters: Array[String],
+    translations: Array[(String, String)] // (locale, translation)
+  }
+  
+  // Create common locales
+  let en_us_locale = {
+    language: "en",
+    region: "US",
+    encoding: "UTF-8",
+    timezone: "America/New_York",
+    number_format: "1,234.56",
+    date_format: "MM/DD/YYYY",
+    currency: "USD"
+  }
+  
+  let fr_fr_locale = {
+    language: "fr",
+    region: "FR",
+    encoding: "UTF-8",
+    timezone: "Europe/Paris",
+    number_format: "1 234,56",
+    date_format: "DD/MM/YYYY",
+    currency: "EUR"
+  }
+  
+  let de_de_locale = {
+    language: "de",
+    region: "DE",
+    encoding: "UTF-8",
+    timezone: "Europe/Berlin",
+    number_format: "1.234,56",
+    date_format: "DD.MM.YYYY",
+    currency: "EUR"
+  }
+  
+  let ja_jp_locale = {
+    language: "ja",
+    region: "JP",
+    encoding: "UTF-8",
+    timezone: "Asia/Tokyo",
+    number_format: "1,234.56",
+    date_format: "YYYY/MM/DD",
+    currency: "JPY"
+  }
+  
+  let zh_cn_locale = {
+    language: "zh",
+    region: "CN",
+    encoding: "UTF-8",
+    timezone: "Asia/Shanghai",
+    number_format: "1,234.56",
+    date_format: "YYYY-MM-DD",
+    currency: "CNY"
+  }
+  
+  // Define localization functions
+  let get_locale_string = fn(locale: Locale) {
+    locale.language + "-" + locale.region
+  }
+  
+  let get_translation = fn(localized_string: LocalizedString, locale_str: String) {
+    let mut found = None
+    for (loc, translation) in localized_string.translations {
+      if loc == locale_str {
+        found = Some(translation)
+      }
+    }
+    
+    match found {
+      Some(translation) => translation
+      None => {
+        // Fallback to English
+        match localized_string.translations.find(fn(t) { t.0 == "en-US" }) {
+          Some((_, translation)) => translation
+          None => localized_string.key // Fallback to key
+        }
+      }
+    }
+  }
+  
+  let format_number = fn(number: Float, locale: Locale) {
+    let number_str = number.to_string()
+    let parts = number_str.split(".")
+    let integer_part = parts[0]
+    let decimal_part = if parts.length() > 1 { parts[1] } else { "0" }
+    
+    // Format integer part with thousands separator
+    let mut formatted_integer = ""
+    let mut digit_count = 0
+    
+    for i in integer_part.length() - 1 ..= 0 {
+      let char = integer_part[i]
+      formatted_integer = char + formatted_integer
+      digit_count = digit_count + 1
+      
+      if digit_count == 3 and i > 0 {
+        match locale.language {
+          "fr" | "de" => {
+            if locale.language == "fr" {
+              formatted_integer = " " + formatted_integer
+            } else {
+              formatted_integer = "." + formatted_integer
+            }
+          }
+          _ => formatted_integer = "," + formatted_integer
+        }
+        digit_count = 0
+      }
+    }
+    
+    // Add decimal part
+    let decimal_separator = match locale.language {
+      "fr" | "de" => ","
+      _ => "."
+    }
+    
+    formatted_integer + decimal_separator + decimal_part
+  }
+  
+  let format_date = fn(timestamp: Int, locale: Locale) {
+    // Simplified date formatting
+    let date = timestamp / 86400 // Days since epoch
+    let year = 2022 // Simplified
+    let month = ((date % 12) + 1)
+    let day = ((date % 28) + 1)
+    
+    let month_str = if month < 10 { "0" + month.to_string() } else { month.to_string() }
+    let day_str = if day < 10 { "0" + day.to_string() } else { day.to_string() }
+    
+    match locale.date_format {
+      "MM/DD/YYYY" => month_str + "/" + day_str + "/" + year.to_string()
+      "DD/MM/YYYY" => day_str + "/" + month_str + "/" + year.to_string()
+      "DD.MM.YYYY" => day_str + "." + month_str + "." + year.to_string()
+      "YYYY/MM/DD" => year.to_string() + "/" + month_str + "/" + day_str
+      "YYYY-MM-DD" => year.to_string() + "-" + month_str + "-" + day_str
+      _ => year.to_string() + "-" + month_str + "-" + day_str // Default
+    }
+  }
+  
+  // Create localized strings
+  let telemetry_messages = [
+    {
+      key: "telemetry.started",
+      translations: [
+        ("en-US", "Telemetry collection started"),
+        ("fr-FR", "Collecte de télémétrie démarrée"),
+        ("de-DE", "Telemetriesammlung gestartet"),
+        ("ja-JP", "テレメトリ収集が開始されました"),
+        ("zh-CN", "遥测收集已启动")
+      ]
+    },
+    {
+      key: "telemetry.error",
+      translations: [
+        ("en-US", "Telemetry error occurred"),
+        ("fr-FR", "Erreur de télémétrie survenue"),
+        ("de-DE", "Telemetriefehler aufgetreten"),
+        ("ja-JP", "テレメトリエラーが発生しました"),
+        ("zh-CN", "发生遥测错误")
+      ]
+    },
+    {
+      key: "telemetry.metric.collected",
+      translations: [
+        ("en-US", "Collected {count} metrics"),
+        ("fr-FR", "{count} métriques collectées"),
+        ("de-DE", "{count} Metriken gesammelt"),
+        ("ja-JP", "{count}個のメトリックを収集しました"),
+        ("zh-CN", "收集了{count}个指标")
+      ]
+    }
+  ]
+  
+  // Test locale string generation
+  assert_eq(get_locale_string(en_us_locale), "en-US")
+  assert_eq(get_locale_string(fr_fr_locale), "fr-FR")
+  assert_eq(get_locale_string(de_de_locale), "de-DE")
+  assert_eq(get_locale_string(ja_jp_locale), "ja-JP")
+  assert_eq(get_locale_string(zh_cn_locale), "zh-CN")
+  
+  // Test translation retrieval
+  let started_message = telemetry_messages[0]
+  assert_eq(get_translation(started_message, "en-US"), "Telemetry collection started")
+  assert_eq(get_translation(started_message, "fr-FR"), "Collecte de télémétrie démarrée")
+  assert_eq(get_translation(started_message, "de-DE"), "Telemetriesammlung gestartet")
+  assert_eq(get_translation(started_message, "ja-JP"), "テレメトリ収集が開始されました")
+  assert_eq(get_translation(started_message, "zh-CN"), "遥测收集已启动")
+  
+  // Test fallback to English
+  assert_eq(get_translation(started_message, "es-ES"), "Telemetry collection started")
+  
+  // Test parameter substitution
+  let format_message = fn(template: String, parameters: Array[String]) {
+    let mut result = template
+    for i in 0..parameters.length() {
+      let placeholder = "{" + i.to_string() + "}"
+      result = result.replace(placeholder, parameters[i])
+    }
+    result
+  }
+  
+  let metric_message = telemetry_messages[2]
+  let formatted_en = format_message(
+    get_translation(metric_message, "en-US"),
+    ["42"]
+  )
+  assert_eq(formatted_en, "Collected 42 metrics")
+  
+  let formatted_fr = format_message(
+    get_translation(metric_message, "fr-FR"),
+    ["42"]
+  )
+  assert_eq(formatted_fr, "42 métriques collectées")
+  
+  // Test number formatting
+  let test_number = 1234.56
+  assert_eq(format_number(test_number, en_us_locale), "1,234.56")
+  assert_eq(format_number(test_number, fr_fr_locale), "1 234,56")
+  assert_eq(format_number(test_number, de_de_locale), "1.234,56")
+  
+  // Test date formatting
+  let test_timestamp = 1640995200 // January 1, 2022
+  assert_eq(format_date(test_timestamp, en_us_locale), "01/01/2022")
+  assert_eq(format_date(test_timestamp, fr_fr_locale), "01/01/2022")
+  assert_eq(format_date(test_timestamp, de_de_locale), "01.01.2022")
+  assert_eq(format_date(test_timestamp, ja_jp_locale), "2022/01/01")
+  assert_eq(format_date(test_timestamp, zh_cn_locale), "2022-01-01")
+  
+  // Test localized error messages
+  let localized_errors = [
+    {
+      error_code: "TELEMETRY_001",
+      message_template: "Connection to {service} failed after {timeout} seconds",
+      parameters: ["api-service", "30"],
+      translations: [
+        ("en-US", "Connection to {service} failed after {timeout} seconds"),
+        ("fr-FR", "La connexion à {service} a échoué après {timeout} secondes"),
+        ("de-DE", "Verbindung zu {service} nach {timeout} Sekunden fehlgeschlagen"),
+        ("ja-JP", "{service}への接続が{timeout}秒後に失敗しました"),
+        ("zh-CN", "连接到{service}在{timeout}秒后失败")
+      ]
+    }
+  ]
+  
+  let error = localized_errors[0]
+  let localized_error_en = format_message(
+    get_translation(error, "en-US"),
+    error.parameters
+  )
+  assert_eq(localized_error_en, "Connection to api-service failed after 30 seconds")
+  
+  let localized_error_fr = format_message(
+    get_translation(error, "fr-FR"),
+    error.parameters
+  )
+  assert_eq(localized_error_fr, "La connexion à api-service a échoué après 30 secondes")
+  
+  // Test right-to-left language support (simplified)
+  let rtl_locale = {
+    language: "ar",
+    region: "SA",
+    encoding: "UTF-8",
+    timezone: "Asia/Riyadh",
+    number_format: "1,234.56",
+    date_format: "DD/MM/YYYY",
+    currency: "SAR"
+  }
+  
+  let is_rtl_language = fn(locale: Locale) {
+    match locale.language {
+      "ar" | "he" | "fa" => true
+      _ => false
+    }
+  }
+  
+  assert_false(is_rtl_language(en_us_locale))
+  assert_false(is_rtl_language(fr_fr_locale))
+  assert_true(is_rtl_language(rtl_locale))
+  
+  // Test text direction handling
+  let format_for_direction = fn(text: String, locale: Locale) {
+    if is_rtl_language(locale) {
+      // In a real implementation, would add RTL markers
+      "\u202B" + text + "\u202C"
+    } else {
+      text
+    }
+  }
+  
+  let ltr_text = "Hello World"
+  let rtl_text = "مرحبا بالعالم"
+  
+  assert_eq(format_for_direction(ltr_text, en_us_locale), "Hello World")
+  assert_eq(format_for_direction(rtl_text, rtl_locale), "\u202Bمرحبا بالعالم\u202C")
+}
+
+// Test 10: Real-time Stream Processing
+test "real-time stream processing of telemetry data" {
+  // Define stream processing structures
+  type StreamEvent = {
+    event_id: String,
+    timestamp: Int,
+    event_type: String,
+    source: String,
+    data: Array[(String, String)],
+    processed: Bool
+  }
+  
+  type StreamProcessor = {
+    processor_id: String,
+    buffer_size: Int,
+    processing_window_ms: Int,
+    events_processed: Int,
+    last_processed_time: Int
+  }
+  
+  type ProcessingResult = {
+    events_processed: Int,
+    errors: Array[String],
+    throughput_events_per_sec: Float,
+    processing_time_ms: Int
+  }
+  
+  // Define stream operations
+  let create_event = fn(event_id: String, event_type: String, source: String) {
+    {
+      event_id: event_id,
+      timestamp: 1640995200,
+      event_type: event_type,
+      source: source,
+      data: [("value", "42"), ("status", "ok")],
+      processed: false
+    }
+  }
+  
+  let create_processor = fn(processor_id: String, buffer_size: Int, window_ms: Int) {
+    {
+      processor_id: processor_id,
+      buffer_size: buffer_size,
+      processing_window_ms: window_ms,
+      events_processed: 0,
+      last_processed_time: 0
+    }
+  }
+  
+  // Simulate event filtering
+  let filter_events = fn(events: Array[StreamEvent], filter_criteria: (String, String)) {
+    let (key, value) = filter_criteria
+    events.filter(fn(event) {
+      event.data.any(fn(data_item) { 
+        data_item.0 == key and data_item.1 == value
+      })
+    })
+  }
+  
+  // Simulate event transformation
+  let transform_events = fn(events: Array[StreamEvent], transformer: (String, String) -> (String, String)) {
+    events.map(fn(event) {
+      let transformed_data = event.data.map(transformer)
+      {
+        event |
+        data: transformed_data,
+        processed: true
+      }
+    })
+  }
+  
+  // Simulate event aggregation
+  let aggregate_events = fn(events: Array[StreamEvent], aggregation_key: String) {
+    let mut groups = []
+    
+    for event in events {
+      let key_value = match event.data.find(fn(item) { item.0 == aggregation_key }) {
+        Some((_, value)) => value
+        None => "unknown"
+      }
+      
+      let mut found_group = false
+      let mut updated_groups = []
+      
+      for group in groups {
+        let (group_key, count, sum) = group
+        if group_key == key_value {
+          updated_groups = updated_groups.push((group_key, count + 1, sum + 1))
+          found_group = true
+        } else {
+          updated_groups = updated_groups.push(group)
+        }
+      }
+      
+      if not(found_group) {
+        updated_groups = updated_groups.push((key_value, 1, 1))
+      }
+      
+      groups = updated_groups
+    }
+    
+    groups
+  }
+  
+  // Simulate windowed processing
+  let process_window = fn(
+    processor: StreamProcessor,
+    events: Array[StreamEvent],
+    window_start: Int,
+    window_end: Int
+  ) -> ProcessingResult {
+    let start_time = 1640995200000 // High resolution timestamp
+    let window_events = events.filter(fn(event) {
+      event.timestamp >= window_start and event.timestamp < window_end
+    })
+    
+    let mut processed_count = 0
+    let mut errors = []
+    
+    // Process each event in the window
+    for event in window_events {
+      if not(event.processed) {
+        // Simulate processing work
+        processed_count = processed_count + 1
+        
+        // Simulate occasional errors
+        if processed_count % 50 == 0 {
+          errors = errors.push("Processing error for event: " + event.event_id)
+        }
+      }
+    }
+    
+    let end_time = start_time + 100 // 100ms processing time
+    let processing_time = end_time - start_time
+    
+    let throughput = if processing_time > 0 {
+      (processed_count as Float) / ((processing_time as Float) / 1000.0)
+    } else {
+      0.0
+    }
+    
+    {
+      events_processed: processed_count,
+      errors: errors,
+      throughput_events_per_sec: throughput,
+      processing_time_ms: processing_time
+    }
+  }
+  
+  // Create test events
+  let mut events = []
+  for i in 0..1000 {
+    let event_type = if i % 3 == 0 { "metric" } else if i % 3 == 1 { "trace" } else { "log" }
+    let source = "service-" + ((i % 5) + 1).to_string()
+    let event = create_event("event-" + i.to_string(), event_type, source)
+    events = events.push(event)
+  }
+  
+  // Create stream processor
+  let processor = create_processor("processor-1", 10000, 5000) // 10K buffer, 5s window
+  
+  // Test event filtering
+  let metric_events = filter_events(events, ("status", "ok"))
+  assert_eq(metric_events.length(), 1000) // All events have status=ok
+  
+  let service1_events = events.filter(fn(event) { event.source == "service-1" })
+  assert_eq(service1_events.length(), 200) // 1/5 of events from service-1
+  
+  // Test event transformation
+  let add_timestamp_transformer = fn(data_item: (String, String)) {
+    let (key, value) = data_item
+    if key == "value" {
+      (key, value + "@" + "1640995200")
+    } else {
+      (key, value)
+    }
+  }
+  
+  let transformed_events = transform_events(service1_events, add_timestamp_transformer)
+  assert_true(transformed_events.length() > 0)
+  assert_true(transformed_events[0].processed)
+  
+  // Verify transformation
+  let first_transformed = transformed_events[0]
+  let transformed_value = match first_transformed.data.find(fn(item) { item.0 == "value" }) {
+    Some((_, value)) => value
+    None => ""
+  }
+  assert_true(transformed_value.contains("@1640995200"))
+  
+  // Test event aggregation
+  let aggregated_by_source = aggregate_events(events, "status")
+  assert_eq(aggregated_by_source.length(), 1) // All events have status=ok
+  
+  let (status, count, sum) = aggregated_by_source[0]
+  assert_eq(status, "ok")
+  assert_eq(count, 1000)
+  assert_eq(sum, 1000)
+  
+  // Test windowed processing
+  let window_start = 1640995200
+  let window_end = window_start + 5000 // 5 second window
+  
+  let processing_result = process_window(processor, events, window_start, window_end)
+  
+  assert_eq(processing_result.events_processed, 1000)
+  assert_true(processing_result.throughput_events_per_sec > 0.0)
+  assert_eq(processing_result.processing_time_ms, 100)
+  
+  // Check for expected errors (every 50th event)
+  assert_eq(processing_result.errors.length(), 20) // 1000 / 50 = 20 errors
+  
+  // Test multi-stage processing pipeline
+  let process_pipeline = fn(input_events: Array[StreamEvent]) {
+    // Stage 1: Filter by event type
+    let filtered_events = input_events.filter(fn(event) {
+      event.event_type == "metric" or event.event_type == "trace"
+    })
+    
+    // Stage 2: Transform events
+    let enriched_events = filtered_events.map(fn(event) {
+      let enriched_data = event.data.push(("processed_by", "pipeline"))
+      {
+        event |
+        data: enriched_data,
+        processed: true
+      }
+    })
+    
+    // Stage 3: Aggregate by source
+    let source_aggregation = aggregate_events(enriched_events, "processed_by")
+    
+    // Stage 4: Filter out processed events
+    let unprocessed_events = input_events.filter(fn(event) { not(event.processed) })
+    
+    {
+      filtered_count: filtered_events.length(),
+      enriched_count: enriched_events.length(),
+      aggregation_result: source_aggregation,
+      remaining_unprocessed: unprocessed_events.length()
+    }
+  }
+  
+  let pipeline_result = process_pipeline(events)
+  
+  // Verify pipeline results
+  assert_eq(pipeline_result.filtered_count, 667) // 2/3 of events (metric + trace)
+  assert_eq(pipeline_result.enriched_count, 667)
+  assert_eq(pipeline_result.aggregation_result.length(), 1)
+  assert_eq(pipeline_result.remaining_unprocessed, 333) // 1/3 of events (logs)
+  
+  // Verify aggregation result
+  let (processed_by, count, sum) = pipeline_result.aggregation_result[0]
+  assert_eq(processed_by, "pipeline")
+  assert_eq(count, 667)
+  assert_eq(sum, 667)
+  
+  // Test backpressure handling
+  let simulate_backpressure = fn(
+    processor: StreamProcessor,
+    events: Array[StreamEvent],
+    max_events_per_window: Int
+  ) {
+    let window_start = 1640995200
+    let window_end = window_start + processor.processing_window_ms
+    
+    let window_events = events.filter(fn(event) {
+      event.timestamp >= window_start and event.timestamp < window_end
+    })
+    
+    // Apply backpressure by limiting events processed
+    let limited_events = if window_events.length() > max_events_per_window {
+      window_events.slice(0, max_events_per_window)
+    } else {
+      window_events
+    }
+    
+    let processed_count = limited_events.length()
+    let dropped_count = window_events.length() - processed_count
+    
+    {
+      processed_count: processed_count,
+      dropped_count: dropped_count,
+      backpressure_applied: window_events.length() > max_events_per_window
+    }
+  }
+  
+  let backpressure_result = simulate_backpressure(processor, events, 500)
+  
+  assert_eq(backpressure_result.processed_count, 500)
+  assert_eq(backpressure_result.dropped_count, 500)
+  assert_true(backpressure_result.backpressure_applied)
+  
+  // Test stream ordering and sequencing
+  let reorder_events = fn(events: Array[StreamEvent]) {
+    // Simulate out-of-order events by shuffling timestamps
+    events.map(fn(event) {
+      let jitter = (event.event_id.to_int() % 100) - 50 // -50 to +50
+      {
+        event |
+        timestamp: event.timestamp + jitter
+      }
+    })
+  }
+  
+  let out_of_order_events = reorder_events(events.slice(0, 100))
+  
+  // Verify events are out of order
+  let is_ordered = fn(events: Array[StreamEvent]) {
+    for i in 1..events.length() {
+      if events[i].timestamp < events[i-1].timestamp {
+        return false
+      }
+    }
+    true
+  }
+  
+  assert_false(is_ordered(out_of_order_events))
+  
+  // Sort events back into order
+  let sorted_events = out_of_order_events.sort_by(fn(event) { event.timestamp })
+  assert_true(is_ordered(sorted_events))
 }
