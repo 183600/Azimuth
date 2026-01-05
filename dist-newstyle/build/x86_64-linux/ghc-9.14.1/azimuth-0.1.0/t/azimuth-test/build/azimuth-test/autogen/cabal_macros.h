@@ -40,6 +40,16 @@
   (major1) == 4 && (major2) <  22 || \
   (major1) == 4 && (major2) == 22 && (minor) <= 0)
 #endif /* MIN_VERSION_base */
+/* package containers-0.8 */
+#ifndef VERSION_containers
+#define VERSION_containers "0.8"
+#endif /* VERSION_containers */
+#ifndef MIN_VERSION_containers
+#define MIN_VERSION_containers(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  8 || \
+  (major1) == 0 && (major2) == 8 && (minor) <= 0)
+#endif /* MIN_VERSION_containers */
 /* package hspec-2.11.16 */
 #ifndef VERSION_hspec
 #define VERSION_hspec "2.11.16"
@@ -60,6 +70,16 @@
   (major1) == 1 && (major2) <  3 || \
   (major1) == 1 && (major2) == 3 && (minor) <= 1)
 #endif /* MIN_VERSION_random */
+/* package stm-2.5.3.1 */
+#ifndef VERSION_stm
+#define VERSION_stm "2.5.3.1"
+#endif /* VERSION_stm */
+#ifndef MIN_VERSION_stm
+#define MIN_VERSION_stm(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  5 || \
+  (major1) == 2 && (major2) == 5 && (minor) <= 3)
+#endif /* MIN_VERSION_stm */
 /* package text-2.1.3 */
 #ifndef VERSION_text
 #define VERSION_text "2.1.3"
@@ -70,6 +90,16 @@
   (major1) == 2 && (major2) <  1 || \
   (major1) == 2 && (major2) == 1 && (minor) <= 3)
 #endif /* MIN_VERSION_text */
+/* package time-1.15 */
+#ifndef VERSION_time
+#define VERSION_time "1.15"
+#endif /* VERSION_time */
+#ifndef MIN_VERSION_time
+#define MIN_VERSION_time(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  15 || \
+  (major1) == 1 && (major2) == 15 && (minor) <= 0)
+#endif /* MIN_VERSION_time */
 
 /* tool gcc-13 */
 #ifndef TOOL_VERSION_gcc

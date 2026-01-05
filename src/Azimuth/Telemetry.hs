@@ -9,7 +9,10 @@ module Azimuth.Telemetry
     , -- * Metrics
       Metric(..)
     , createMetric
+    , createMetricWithInitialValue
     , recordMetric
+    , metricValue
+    , unsafeMetricValue
     , -- * Tracing
       Span(..)
     , createSpan
@@ -105,19 +108,44 @@ generateSpanId = do
 -- | Metric data type
 data Metric = Metric
     { metricName :: Text
-    , metricValue :: Double
+    , metricValueRef :: MVar Double
     , metricUnit :: Text
-    } deriving (Show, Eq)
+    } 
+
+-- | Get the current value of a metric
+metricValue :: Metric -> IO Double
+metricValue metric = readMVar (metricValueRef metric)
+
+-- | Show instance for Metric (for debugging)
+instance Show Metric where
+    show metric = show (metricName metric) ++ "=" ++ "<value>" ++ " " ++ show (metricUnit metric)
+
+-- | Eq instance for Metric (compares by name and unit)
+instance Eq Metric where
+    m1 == m2 = metricName m1 == metricName m2 && metricUnit m1 == metricUnit m2
 
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
-createMetric name unit = return $ Metric name 0.0 unit
+createMetric name unit = do
+    valueRef <- newMVar 0.0
+    return $ Metric name valueRef unit
+
+-- | Create a new metric with initial value (for testing)
+createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
+createMetricWithInitialValue name unit initialValue = do
+    valueRef <- newMVar initialValue
+    return $ Metric name valueRef unit
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()
 recordMetric metric value = do
     putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value
-    -- Implementation would go here
+    swapMVar (metricValueRef metric) value
+    return ()
+
+-- | Unsafe get metric value (for testing only)
+unsafeMetricValue :: Metric -> Double
+unsafeMetricValue metric = unsafePerformIO (readMVar (metricValueRef metric))
 
 -- | Span data type for tracing
 data Span = Span

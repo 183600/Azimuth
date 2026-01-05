@@ -50,10 +50,13 @@ test-suite azimuth-test
   build-depends:
       base >=4.7 && <5
     , azimuth
+    , containers
     , hspec >=2.0
     , QuickCheck >=2.14
     , random
+    , stm
     , text
+    , time
   build-tool-depends:
       hspec-discover:hspec-discover
 

@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BlockArguments #-}
 
 import Test.Hspec
 import Test.QuickCheck
 import Control.Monad (replicateM_)
 import qualified Data.Text as Text
 import Data.Text (pack, unpack)
+import System.IO.Unsafe (unsafePerformIO)
 
 import Azimuth.Telemetry
 import AdditionalSpec (spec)
@@ -59,7 +61,8 @@ main = hspec $ do
         it "should create a metric with initial value 0" $ do
           metric <- createMetric "test-metric" "count"
           metricName metric `shouldBe` "test-metric"
-          metricValue metric `shouldBe` 0.0
+          value <- metricValue metric
+          value `shouldBe` 0.0
           metricUnit metric `shouldBe` "count"
         
         it "should create metrics with different units" $ do
@@ -89,12 +92,13 @@ main = hspec $ do
       describe "QuickCheck properties" $ do
         it "should handle any metric value" $ property $
           \(_value :: Double) -> 
-            let metric = Metric "test-name" 0.0 "test-unit"
-            in metricValue metric == 0.0
+            let metric = unsafePerformIO $ createMetricWithInitialValue "test-name" "test-unit" 0.0
+                value = unsafePerformIO $ metricValue metric
+            in value == 0.0
         
         it "should preserve metric name and unit with strings" $ property $
           \(name :: String) (unit :: String) ->
-            let metric = Metric (pack name) 0.0 (pack unit)
+            let metric = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 0.0
             in unpack (metricName metric) == name && unpack (metricUnit metric) == unit
 
     -- Tracing 测试
@@ -236,12 +240,13 @@ main = hspec $ do
                enableLogging config == True
 
       describe "Metric properties" $ do
-        it "should preserve metric properties after recording" $ property $
+        it "should preserve metric fields after creation" $ property $
           \(name :: String) (unit :: String) (value :: Double) ->
-            let metric = Metric (pack name) 0.0 (pack unit)
+            let metric = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 0.0
+                actualValue = unsafePerformIO $ metricValue metric
             in unpack (metricName metric) == name &&
                unpack (metricUnit metric) == unit &&
-               metricValue metric == 0.0
+               actualValue == 0.0
         
         it "should handle special values in metrics" $ do
           let positiveInfinity = 1/0 :: Double
@@ -251,11 +256,13 @@ main = hspec $ do
         
         it "should maintain metric identity" $ property $
           \(name :: String) (unit :: String) ->
-            let metric1 = Metric (pack name) 0.0 (pack unit)
-                metric2 = Metric (pack name) 42.0 (pack unit)
+            let metric1 = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 0.0
+                metric2 = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 42.0
+                value1 = unsafePerformIO $ metricValue metric1
+                value2 = unsafePerformIO $ metricValue metric2
             in metricName metric1 == metricName metric2 &&
                metricUnit metric1 == metricUnit metric2 &&
-               metricValue metric1 /= metricValue metric2
+               value1 /= value2
 
       describe "Span properties" $ do
         it "should preserve span properties" $ property $

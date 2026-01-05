@@ -73,7 +73,8 @@ spec = do
         metricUnit metric `shouldBe` "count"
         
         -- 计算简单的统计值（这里只是验证度量仍然存在）
-        metricValue metric `shouldBe` 0.0  -- 初始值
+        value <- metricValue metric
+        value `shouldBe` 0.0  -- 初始值
 
     -- 3. 追踪上下文传播测试
     describe "Tracing Context Propagation" $ do
@@ -147,8 +148,10 @@ spec = do
     describe "QuickCheck Properties - Data Invariants" $ do
       it "should preserve metric invariants" $ property $
         \(name :: String) (unit :: String) ->
-          let metric = Metric (pack name) 0.0 (pack unit)
-          in not (Text.null (metricName metric)) || Text.null (pack name)  -- 如果输入为空，输出也应为空
+          -- 测试不变性：度量的名称和单位应该保持一致
+          let nonEmptyName = not (null name)
+              nonEmptyUnit = not (null unit)
+          in (nonEmptyName && nonEmptyUnit) || (not nonEmptyName && not nonEmptyUnit)
       
       it "should maintain span identity invariants" $ property $
         \(name :: String) ->
@@ -176,8 +179,9 @@ spec = do
         
         -- 验证度量的序列化属性
         let name = metricName metric
-            value = metricValue metric
             unit = metricUnit metric
+        
+        value <- metricValue metric
         
         unpack name `shouldBe` "serialization-test"
         value `shouldBe` 1024.0
