@@ -1926,6 +1926,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_cold_start_hot_recovery_tests.mbt": {
   },
+  "azimuth_cloud_native_telemetry_tests.mbt": {
+  },
   "azimuth_cloud_native_integration_tests.mbt": {
   },
   "azimuth_clock_random_functionality_tests.mbt": {
