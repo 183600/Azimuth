@@ -162,8 +162,8 @@ recordMetric metric value = do
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 100th operation to reduce output in high-frequency scenarios
-        when (count `mod` 100 == 0) $
+        -- Only log every 10000th operation to reduce output in high-frequency scenarios
+        when (count `mod` 10000 == 0) $
             putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value ++ " (count: " ++ show count ++ ")"
     modifyMVar_ (metricValueRef metric) (\currentValue -> return (currentValue + value))
     return ()
@@ -202,13 +202,13 @@ finishSpan span = do
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 100th operation to reduce output in high-frequency scenarios
-        when (count `mod` 100 == 0) $
+        -- Only log every 10000th operation to reduce output in high-frequency scenarios
+        when (count `mod` 10000 == 0) $
             putStrLn $ "Finishing span: " ++ show (spanName span) ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here
 
 -- | Log levels
-data LogLevel = Debug | Info | Warn | Error deriving (Show, Eq)
+data LogLevel = Debug | Info | Warn | Error deriving (Show, Eq, Ord, Enum)
 
 -- | Logger data type
 data Logger = Logger
@@ -226,7 +226,7 @@ logMessage logger level message = do
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 100th operation to reduce output in high-frequency scenarios
-        when (count `mod` 100 == 0) $
+        -- Only log every 10000th operation to reduce output in high-frequency scenarios
+        when (count `mod` 10000 == 0) $
             putStrLn $ "[" ++ show (loggerLevel logger) ++ "] " ++ show (loggerName logger) ++ ": " ++ show message ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here
