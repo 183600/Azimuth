@@ -1098,6 +1098,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_network_telemetry_advanced_tests.mbt": {
   },
+  "azimuth_network_security_new_tests.mbt": {
+  },
   "azimuth_network_reliability_tests.mbt": {
   },
   "azimuth_network_protocol_tests.mbt": {
