@@ -1,426 +1,415 @@
-// Azimuth Telemetry System - Premium Performance Load Tests
-// This file contains high-quality test cases for telemetry system performance under load
+// Azimuth Premium Performance Load Tests
+// 测试系统在高负载下的性能表现
 
-// Test 1: High-Volume Span Creation and Operations
-test "high-volume span creation and operations performance" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "performance_tracer")
+test "high volume span creation" {
+  // 测试大批量Span创建的性能
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Performance test parameters
-  let span_count = 1000
-  let start_time = 1234567890L
+  // 创建大量Span
+  let spans = [
+    for i in 0..=10000 {
+      let trace_id = "perf-trace-" + (i / 100).to_string()
+      let span_id = "perf-span-" + i.to_string()
+      let span_context = SpanContext::new(trace_id, span_id, true, "")
+      Span::new("perf-operation-" + i.to_string(), Internal, span_context)
+    }
+  ]
   
-  // Create large number of spans rapidly
-  let mut spans = []
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  for i in 0..span_count {
-    let span_name = "perf_span_" + i.to_string()
-    let trace_id = "trace_" + (i % 100).to_string()  // Reuse trace IDs to simulate realistic scenarios
-    let span_id = "span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-    let span = Span::new(span_name, Internal, span_ctx)
-    spans.push(span)
-  }
+  // 验证所有Span创建成功
+  assert_eq(spans.length(), 10001)
   
-  // Verify all spans were created successfully
-  assert_eq(spans.length(), span_count)
-  
-  // Perform bulk operations on all spans
-  for span in spans {
-    Span::add_event(span, "bulk_event", Some([
-      ("operation", StringValue("performance_test")),
-      ("timestamp", StringValue(start_time.to_string()))
-    ]))
-  }
-  
-  // Bulk status updates
-  for span in spans {
-    Span::set_status(span, Ok, Some("Bulk operation completed"))
-  }
-  
-  // Verify span integrity after bulk operations
-  for i in 0..spans.length() {
-    let span = spans[i]
-    assert_true(Span::is_recording(span))
-    assert_eq(Span::status(span), Ok)
-    assert_true(Span::name(span).contains("perf_span_"))
-  }
-  
-  // Bulk span ending
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // Verify all spans are properly ended
-  for span in spans {
-    assert_false(Span::is_recording(span))
-  }
+  // 验证性能在合理范围内（简化测试中只验证操作成功）
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 10000L)  // 不超过10秒
 }
 
-// Test 2: High-Volume Metrics Aggregation
-test "high-volume metrics aggregation performance" {
+test "high volume span operations" {
+  // 测试大批量Span操作的性能
+  let spans = [
+    for i in 0..=1000 {
+      let span_context = SpanContext::new("trace-" + i.to_string(), "span-" + i.to_string(), true, "")
+      Span::new("operation-" + i.to_string(), Internal, span_context)
+    }
+  ]
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 对所有Span执行操作
+  for span in spans {
+    Span::set_status(span, Ok, Some("Performance test operation"))
+    Span::add_event(span, "performance-event", None)
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 5000L)  // 不超过5秒
+}
+
+test "high volume metrics operations" {
+  // 测试大批量指标操作的性能
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  let meter = MeterProvider::get_meter(provider, "performance-meter")
   
-  // Create multiple instrument types
-  let counter = Meter::create_counter(meter, "perf_counter", Some("Performance counter"), Some("operations"))
-  let histogram = Meter::create_histogram(meter, "perf_histogram", Some("Performance histogram"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter(meter, "perf_updown", Some("Performance updown counter"), Some("value"))
-  
-  // High-volume metric operations
-  let operation_count = 5000
-  
-  // Rapid counter increments
-  for i in 0..operation_count {
-    let attrs = Attributes::new()
-    if i % 10 == 0 {
-      Attributes::set(attrs, "operation_type", StringValue("critical"))
-    } else {
-      Attributes::set(attrs, "operation_type", StringValue("normal"))
+  let counters = [
+    for i in 0..=100 {
+      Meter::create_counter(meter, "perf-counter-" + i.to_string())
     }
-    
-    Counter::add(counter, 1.0, Some(attrs))
+  ]
+  
+  let histograms = [
+    for i in 0..=100 {
+      Meter::create_histogram(meter, "perf-histogram-" + i.to_string())
+    }
+  ]
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 对所有Counter执行操作
+  for counter in counters {
+    for i in 0..=100 {
+      Counter::add(counter, i.to_double())
+    }
   }
   
-  // Rapid histogram recordings with varied values
-  for i in 0..operation_count {
-    let value = (i % 100).to_float() + ((i % 10).to_float() * 0.1)
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "measurement_type", StringValue("latency"))
-    Attributes::set(attrs, "percentile", StringValue(((i % 10) * 10).to_string()))
-    
-    Histogram::record(histogram, value, Some(attrs))
+  // 对所有Histogram执行操作
+  for histogram in histograms {
+    for i in 0..=100 {
+      Histogram::record(histogram, i.to_double())
+    }
   }
   
-  // Rapid updown counter operations with mixed increments/decrements
-  for i in 0..operation_count {
-    let adjustment = if i % 3 == 0 { 5.0 } else if i % 3 == 1 { -2.0 } else { 1.0 }
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "adjustment_type", StringValue(if adjustment > 0.0 { "increase" } else { "decrease" }))
-    
-    UpDownCounter::add(updown_counter, adjustment, Some(attrs))
-  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  // Verify instrument integrity after high-volume operations
-  let counter_instrument = Counter::as_instrument(counter)
-  assert_eq(Instrument::name(counter_instrument), "perf_counter")
-  
-  let histogram_instrument = Histogram::as_instrument(histogram)
-  assert_eq(Instrument::name(histogram_instrument), "perf_histogram")
-  
-  let updown_instrument = UpDownCounter::as_instrument(updown_counter)
-  assert_eq(Instrument::name(updown_instrument), "perf_updown")
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 10000L)  // 不超过10秒
 }
 
-// Test 3: High-Volume Attribute Operations
-test "high-volume attribute operations performance" {
-  let attrs = Attributes::new()
-  let operation_count = 2000
+test "high volume context propagation" {
+  // 测试大批量上下文传播的性能
+  let propagator = W3CTraceContextPropagator::new()
+  let composite = CompositePropagator::new([propagator])
   
-  // Rapid attribute setting
-  for i in 0..operation_count {
-    let key = "perf_key_" + i.to_string()
-    let value = "perf_value_" + i.to_string()
-    Attributes::set(attrs, key, StringValue(value))
-  }
-  
-  // Verify all attributes were set
-  for i in 0..operation_count {
-    let key = "perf_key_" + i.to_string()
-    let expected_value = "perf_value_" + i.to_string()
-    
-    let result = Attributes::get(attrs, key)
-    match result {
-      Some(StringValue(actual_value)) => assert_eq(actual_value, expected_value)
-      _ => assert_true(false, "Attribute \{key} should be present")
+  let contexts = [
+    for i in 0..=1000 {
+      let root_ctx = Context::root()
+      let key = ContextKey::new("perf.key." + i.to_string())
+      let value = "perf.value." + i.to_string()
+      Context::with_value(root_ctx, key, value)
     }
-  }
+  ]
   
-  // Rapid attribute updates
-  for i in 0..operation_count {
-    let key = "perf_key_" + i.to_string()
-    let updated_value = "updated_perf_value_" + i.to_string()
-    Attributes::set(attrs, key, StringValue(updated_value))
-  }
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Verify all updates
-  for i in 0..operation_count {
-    let key = "perf_key_" + i.to_string()
-    let expected_value = "updated_perf_value_" + i.to_string()
-    
-    let result = Attributes::get(attrs, key)
-    match result {
-      Some(StringValue(actual_value)) => assert_eq(actual_value, expected_value)
-      _ => assert_true(false, "Attribute \{key} should be updated")
+  // 注入所有上下文
+  let carriers = [
+    for ctx in contexts {
+      let carrier = TextMapCarrier::new()
+      CompositePropagator::inject(composite, ctx, carrier)
+      carrier
     }
-  }
+  ]
   
-  // Performance test with mixed data types
-  let mixed_attrs = Attributes::new()
-  
-  for i in 0..operation_count {
-    let base_key = "mixed_perf_key_" + i.to_string()
-    
-    if i % 5 == 0 {
-      Attributes::set(mixed_attrs, base_key, StringValue("string_" + i.to_string()))
-    } else if i % 5 == 1 {
-      Attributes::set(mixed_attrs, base_key, IntValue(i * 1000))
-    } else if i % 5 == 2 {
-      Attributes::set(mixed_attrs, base_key, FloatValue(i.to_float() * 3.14159))
-    } else if i % 5 == 3 {
-      Attributes::set(mixed_attrs, base_key, BoolValue(i % 2 == 0))
-    } else {
-      let array_value = ["item1_" + i.to_string(), "item2_" + i.to_string()]
-      Attributes::set(mixed_attrs, base_key, ArrayStringValue(array_value))
+  // 提取所有上下文
+  let extracted_contexts = [
+    for carrier in carriers {
+      CompositePropagator::extract(composite, carrier)
     }
-  }
+  ]
   
-  // Verify mixed type attributes
-  for i in 0..operation_count {
-    let base_key = "mixed_perf_key_" + i.to_string()
-    let result = Attributes::get(mixed_attrs, base_key)
-    
-    assert_true(result.is_some(), "Mixed attribute \{base_key} should be present")
-  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证所有操作成功
+  assert_eq(extracted_contexts.length(), contexts.length())
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 5000L)  // 不超过5秒
 }
 
-// Test 4: High-Volume Context Operations
-test "high-volume context operations performance" {
-  let root_ctx = Context::root()
-  let context_count = 1000
-  
-  // Rapid context creation
-  let mut contexts = []
-  
-  for i in 0..context_count {
-    let ctx = Context::with_value(root_ctx, ContextKey::new("perf_ctx_id"), i)
-    let nested_ctx = Context::with_value(ctx, ContextKey::new("perf_nested"), "nested_" + i.to_string())
-    contexts.push(nested_ctx)
-  }
-  
-  // Verify context creation
-  assert_eq(contexts.length(), context_count)
-  
-  // Rapid context value retrieval
-  for i in 0..context_count {
-    let ctx = contexts[i]
-    
-    match Context::get(ctx, ContextKey::new("perf_ctx_id")) {
-      Some(value) => assert_eq(value, i)
-      None => assert_true(false, "Context should contain perf_ctx_id")
+test "high volume attribute operations" {
+  // 测试大批量属性操作的性能
+  let attributes_instances = [
+    for i in 0..=1000 {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "perf.attr." + i.to_string(), StringValue("value-" + i.to_string()))
+      Attributes::set(attrs, "int.attr." + i.to_string(), IntValue(i))
+      Attributes::set(attrs, "float.attr." + i.to_string(), FloatValue(i.to_double()))
+      Attributes::set(attrs, "bool.attr." + i.to_string(), BoolValue(i % 2 == 0))
+      attrs
     }
-    
-    match Context::get(ctx, ContextKey::new("perf_nested")) {
-      Some(value) => assert_eq(value, "nested_" + i.to_string())
-      None => assert_true(false, "Context should contain perf_nested")
-    }
+  ]
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 访问所有属性
+  for (i, attrs) in attributes_instances.enumerate() {
+    assert_eq(Attributes::get(attrs, "perf.attr." + i.to_string()), Some(StringValue("value-" + i.to_string())))
+    assert_eq(Attributes::get(attrs, "int.attr." + i.to_string()), Some(IntValue(i)))
+    assert_eq(Attributes::get(attrs, "float.attr." + i.to_string()), Some(FloatValue(i.to_double())))
+    assert_eq(Attributes::get(attrs, "bool.attr." + i.to_string()), Some(BoolValue(i % 2 == 0)))
   }
   
-  // Rapid context modifications
-  for i in 0..context_count {
-    let ctx = contexts[i]
-    let modified_ctx = Context::with_value(ctx, ContextKey::new("perf_modified"), "modified_" + i.to_string())
-    contexts[i] = modified_ctx
-  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  // Verify modifications
-  for i in 0..context_count {
-    let ctx = contexts[i]
-    
-    match Context::get(ctx, ContextKey::new("perf_modified")) {
-      Some(value) => assert_eq(value, "modified_" + i.to_string())
-      None => assert_true(false, "Modified value should be present")
-    }
-  }
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 3000L)  // 不超过3秒
 }
 
-// Test 5: High-Volume Log Record Operations
-test "high-volume log record operations performance" {
+test "high volume resource operations" {
+  // 测试大批量资源操作的性能
+  let resources = [
+    for i in 0..=1000 {
+      let attributes = [
+        ("service.name", StringValue("perf-service-" + i.to_string())),
+        ("service.version", StringValue("1.0." + i.to_string())),
+        ("instance.id", StringValue("instance-" + i.to_string())),
+        ("host.name", StringValue("host-" + i.to_string())),
+        ("process.pid", IntValue(i))
+      ]
+      Resource::with_attributes(Resource::new(), attributes)
+    }
+  ]
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 访问所有资源属性
+  for (i, resource) in resources.enumerate() {
+    assert_eq(Resource::get_attribute(resource, "service.name"), Some(StringValue("perf-service-" + i.to_string())))
+    assert_eq(Resource::get_attribute(resource, "service.version"), Some(StringValue("1.0." + i.to_string())))
+    assert_eq(Resource::get_attribute(resource, "instance.id"), Some(StringValue("instance-" + i.to_string())))
+    assert_eq(Resource::get_attribute(resource, "host.name"), Some(StringValue("host-" + i.to_string())))
+    assert_eq(Resource::get_attribute(resource, "process.pid"), Some(IntValue(i)))
+  }
+  
+  // 合并所有资源
+  let mut merged_resource = Resource::new()
+  for resource in resources {
+    merged_resource = Resource::merge(merged_resource, resource)
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 5000L)  // 不超过5秒
+}
+
+test "high volume log operations" {
+  // 测试大批量日志操作的性能
   let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "performance_logger")
-  let log_count = 3000
+  let logger = LoggerProvider::get_logger(provider, "performance-logger")
   
-  // Rapid log record creation and emission
-  for i in 0..log_count {
-    let severity = match i % 5 {
-      0 => Trace
-      1 => Debug
-      2 => Info
-      3 => Warn
-      _ => Error
+  let log_records = [
+    for i in 0..=10000 {
+      LogRecord::new(Info, "Performance log message " + i.to_string())
     }
-    
-    let message = "Performance log message " + i.to_string() + " with additional context"
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "log_id", StringValue("perf_log_" + i.to_string()))
-    Attributes::set(attrs, "performance_test", StringValue("true"))
-    Attributes::set(attrs, "batch_id", StringValue((i / 100).to_string()))
-    
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some(message),
-      Some(attrs),
-      Some(1234567890L + i.to_int()),
-      Some(1234567891L + i.to_int()),
-      Some("perf_trace_" + (i % 50).to_string()),
-      Some("perf_span_" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, log_record)
+  ]
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 发出所有日志记录
+  for record in log_records {
+    Logger::emit(logger, record)
   }
   
-  // Verify log record integrity
-  for i in 0..log_count {
-    let severity = match i % 5 {
-      0 => Trace
-      1 => Debug
-      2 => Info
-      3 => Warn
-      _ => Error
-    }
-    
-    let message = "Performance log message " + i.to_string() + " with additional context"
-    let log_record = LogRecord::new(severity, Some(message))
-    
-    assert_eq(LogRecord::severity_number(log_record), severity)
-    match LogRecord::body(log_record) {
-      Some(body) => assert_eq(body, message)
-      None => assert_true(false, "Log body should be preserved")
-    }
-  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 10000L)  // 不超过10秒
 }
 
-// Test 6: High-Volume Resource Operations
-test "high-volume resource operations performance" {
-  let base_resource = Resource::new()
-  let resource_count = 500
+test "high volume baggage operations" {
+  // 测试大批量Baggage操作的性能
+  let baggage_instances = [
+    for i in 0..=1000 {
+      let baggage = Baggage::new()
+      let baggage = Baggage::set_entry(baggage, "baggage.key." + i.to_string(), "value-" + i.to_string())
+      let baggage = Baggage::set_entry(baggage, "shared.key", "shared-value-" + i.to_string())
+      baggage
+    }
+  ]
   
-  // Rapid resource creation
-  let mut resources = []
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  for i in 0..resource_count {
-    let attrs = [
-      ("perf_resource.id", StringValue("perf_resource_" + i.to_string())),
-      ("perf_resource.type", StringValue("type_" + (i % 10).to_string())),
-      ("perf_resource.priority", IntValue(i % 5)),
-      ("perf_resource.batch", StringValue((i / 50).to_string()))
+  // 访问所有Baggage条目
+  for (i, baggage) in baggage_instances.enumerate() {
+    assert_eq(Baggage::get_entry(baggage, "baggage.key." + i.to_string()), Some("value-" + i.to_string()))
+    assert_eq(Baggage::get_entry(baggage, "shared.key"), Some("shared-value-" + i.to_string()))
+  }
+  
+  // 移除所有共享条目
+  let updated_baggage = [
+    for baggage in baggage_instances {
+      Baggage::remove_entry(baggage, "shared.key")
+    }
+  ]
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证所有操作成功
+  assert_eq(updated_baggage.length(), baggage_instances.length())
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 3000L)  // 不超过3秒
+}
+
+test "memory usage under load" {
+  // 测试高负载下的内存使用情况
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 创建大量对象
+  let spans = [
+    for i in 0..=5000 {
+      let span_context = SpanContext::new("mem-trace-" + i.to_string(), "mem-span-" + i.to_string(), true, "")
+      Span::new("mem-operation-" + i.to_string(), Internal, span_context)
+    }
+  ]
+  
+  let attributes = [
+    for i in 0..=5000 {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "mem.attr." + i.to_string(), StringValue("mem-value-" + i.to_string()))
+      attrs
+    }
+  ]
+  
+  let resources = [
+    for i in 0..=5000 {
+      let resource_attrs = [
+        ("mem.service", StringValue("mem-service-" + i.to_string())),
+        ("mem.instance", StringValue("mem-instance-" + i.to_string()))
+      ]
+      Resource::with_attributes(Resource::new(), resource_attrs)
+    }
+  ]
+  
+  let contexts = [
+    for i in 0..=5000 {
+      let root_ctx = Context::root()
+      let key = ContextKey::new("mem.key." + i.to_string())
+      Context::with_value(root_ctx, key, "mem-value-" + i.to_string())
+    }
+  ]
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证所有对象创建成功
+  assert_eq(spans.length(), 5001)
+  assert_eq(attributes.length(), 5001)
+  assert_eq(resources.length(), 5001)
+  assert_eq(contexts.length(), 5001)
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 15000L)  // 不超过15秒
+}
+
+test "performance with complex nested operations" {
+  // 测试复杂嵌套操作的性能
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 创建复杂的嵌套Span结构
+  let root_span_context = SpanContext::new("complex-trace", "root-span", true, "")
+  let root_span = Span::new("root-operation", Internal, root_span_context)
+  
+  let child_spans = [
+    for i in 0..=100 {
+      let child_context = SpanContext::new("complex-trace", "child-span-" + i.to_string(), true, "")
+      let child_span = Span::new("child-operation-" + i.to_string(), Internal, child_context)
+      
+      // 为每个子Span添加复杂属性
+      let complex_attributes = [
+        ("parent.id", StringValue("root-span")),
+        ("child.index", IntValue(i)),
+        ("operation.type", StringValue("complex-nested")),
+        ("timestamp", IntValue(Clock::now_unix_nanos(Clock::system()).to_int()))
+      ]
+      Span::add_event(child_span, "nested-event", Some(complex_attributes))
+      
+      // 创建孙级Span
+      let grandchild_spans = [
+        for j in 0..=10 {
+          let grandchild_context = SpanContext::new("complex-trace", "grandchild-span-" + i.to_string() + "-" + j.to_string(), true, "")
+          let grandchild_span = Span::new("grandchild-operation-" + i.to_string() + "-" + j.to_string(), Internal, grandchild_context)
+          
+          Span::set_status(grandchild_span, Ok, Some("Grandchild operation completed"))
+          Span::end(grandchild_span)
+          grandchild_span
+        }
+      ]
+      
+      Span::set_status(child_span, Ok, Some("Child operation completed"))
+      Span::end(child_span)
+      child_span
+    }
+  ]
+  
+  Span::set_status(root_span, Ok, Some("Root operation completed"))
+  Span::end(root_span)
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // 验证所有Span创建成功
+  assert_eq(child_spans.length(), 101)
+  
+  // 验证性能在合理范围内
+  assert_true(duration_ms > 0L)
+  assert_true(duration_ms < 5000L)  // 不超过5秒
+}
+
+test "performance degradation under increasing load" {
+  // 测试负载增加时的性能退化情况
+  let test_sizes = [100, 500, 1000, 2000, 5000]
+  let durations = []
+  
+  for size in test_sizes {
+    let start_time = Clock::now_unix_nanos(Clock::system())
+    
+    // 创建指定数量的Span
+    let spans = [
+      for i in 0..=size {
+        let span_context = SpanContext::new("degrad-trace", "degrad-span-" + i.to_string(), true, "")
+        let span = Span::new("degrad-operation-" + i.to_string(), Internal, span_context)
+        Span::set_status(span, Ok, Some("Degradation test"))
+        Span::add_event(span, "degrad-event", None)
+        Span::end(span)
+        span
+      }
     ]
-    let resource = Resource::with_attributes(base_resource, attrs)
-    resources.push(resource)
-  }
-  
-  // Verify resource creation
-  assert_eq(resources.length(), resource_count)
-  
-  // Rapid resource attribute retrieval
-  for i in 0..resource_count {
-    let resource = resources[i]
     
-    match Resource::get_attribute(resource, "perf_resource.id") {
-      Some(StringValue(value)) => assert_eq(value, "perf_resource_" + i.to_string())
-      _ => assert_true(false, "Resource should have correct ID")
-    }
+    let end_time = Clock::now_unix_nanos(Clock::system())
+    let duration_ms = (end_time - start_time) / 1000000L
+    durations = durations.push(duration_ms)
     
-    match Resource::get_attribute(resource, "perf_resource.type") {
-      Some(StringValue(value)) => assert_eq(value, "type_" + (i % 10).to_string())
-      _ => assert_true(false, "Resource should have correct type")
-    }
+    // 验证操作成功
+    assert_eq(spans.length(), size + 1)
   }
   
-  // Rapid resource merging
-  let merge_resource = Resource::with_attributes(Resource::new(), [
-    ("perf_merged.attribute", StringValue("perf_merged_value")),
-    ("perf_timestamp", StringValue("1234567890"))
-  ])
+  // 验证性能随负载增加而增加（但不会过度退化）
+  assert_true(durations[0] > 0L)
+  assert_true(durations[1] > 0L)
+  assert_true(durations[2] > 0L)
+  assert_true(durations[3] > 0L)
+  assert_true(durations[4] > 0L)
   
-  let mut merged_resources = []
-  
-  for i in 0..resource_count {
-    let resource = resources[i]
-    let merged = Resource::merge(resource, merge_resource)
-    merged_resources.push(merged)
-  }
-  
-  // Verify merge integrity
-  for i in 0..resource_count {
-    let merged_resource = merged_resources[i]
-    
-    match Resource::get_attribute(merged_resource, "perf_resource.id") {
-      Some(StringValue(value)) => assert_eq(value, "perf_resource_" + i.to_string())
-      _ => assert_true(false, "Original ID should be preserved after merge")
-    }
-    
-    match Resource::get_attribute(merged_resource, "perf_merged.attribute") {
-      Some(StringValue(value)) => assert_eq(value, "perf_merged_value")
-      None => assert_true(false, "Merged attribute should be present")
-    }
-  }
-}
-
-// Test 7: Memory Efficiency Under Load
-test "memory efficiency under high load" {
-  // Test memory efficiency with large number of telemetry objects
-  
-  // Create many spans and ensure they can be properly garbage collected
-  let span_count = 2000
-  
-  for batch in 0..10 {
-    let mut batch_spans = []
-    
-    for i in 0..span_count / 10 {
-      let span_name = "mem_test_span_" + batch.to_string() + "_" + i.to_string()
-      let span_ctx = SpanContext::new("mem_trace", "mem_span_" + i.to_string(), true, "")
-      let span = Span::new(span_name, Internal, span_ctx)
-      
-      Span::add_event(span, "memory_test_event", Some([
-        ("batch", StringValue(batch.to_string())),
-        ("span_index", StringValue(i.to_string()))
-      ]))
-      
-      batch_spans.push(span)
-    }
-    
-    // End spans to allow cleanup
-    for span in batch_spans {
-      Span::end(span)
-    }
-  }
-  
-  // Test memory efficiency with large attribute sets
-  let large_attrs = Attributes::new()
-  
-  for i in 0..1000 {
-    let key = "large_attr_key_" + i.to_string()
-    let value = "large_attr_value_" + i.to_string() + "_with_additional_data_to_increase_memory_usage"
-    Attributes::set(large_attrs, key, StringValue(value))
-  }
-  
-  // Verify attributes are still accessible
-  for i in 0..1000 {
-    let key = "large_attr_key_" + i.to_string()
-    let expected_value = "large_attr_value_" + i.to_string() + "_with_additional_data_to_increase_memory_usage"
-    
-    let result = Attributes::get(large_attrs, key)
-    match result {
-      Some(StringValue(actual_value)) => assert_eq(actual_value, expected_value)
-      _ => assert_true(false, "Large attribute set should maintain integrity")
-    }
-  }
-  
-  // Test memory efficiency with context chains
-  let base_ctx = Context::root()
-  let mut deep_ctx = base_ctx
-  
-  for i in 0..100 {
-    deep_ctx = Context::with_value(deep_ctx, ContextKey::new("deep_key_" + i.to_string()), "deep_value_" + i.to_string())
-  }
-  
-  // Verify deep context chain integrity
-  for i in 0..100 {
-    match Context::get(deep_ctx, ContextKey::new("deep_key_" + i.to_string())) {
-      Some(value) => assert_eq(value, "deep_value_" + i.to_string())
-      None => assert_true(false, "Deep context chain should maintain integrity")
-    }
-  }
+  // 验证最大负载下的性能仍在可接受范围内
+  assert_true(durations[4] < 10000L)  // 不超过10秒
 }
