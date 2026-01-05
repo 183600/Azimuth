@@ -1,715 +1,386 @@
-// Azimuth 新综合测试用例
-// 包含多种MoonBit语言特性和Azimuth遥测系统功能的测试
+// Azimuth Telemetry System - New Comprehensive Test Suite
+// This file contains comprehensive test cases for various telemetry system features
 
-// 测试1: 基础数据类型和操作
-test "基础数据类型和操作测试" {
-  // 测试整数操作
-  let int_val = 42
-  assert_eq(int_val + 8, 50)
-  assert_eq(int_val * 2, 84)
-  assert_eq(int_val / 2, 21)
-  assert_eq(int_val % 5, 2)
+// Test 1: Data Compression and Decompression
+test "data compression and decompression" {
+  let original_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
   
-  // 测试浮点数操作
-  let float_val = 3.14159
-  assert_eq(float_val + 1.0, 4.14159)
-  assert_eq(float_val * 2.0, 6.28318)
-  assert_true(float_val > 3.0)
-  assert_true(float_val < 4.0)
+  // Test compression
+  let compressed_data = Compression::compress(original_data)
+  assert_true(compressed_data.length() < original_data.length())
   
-  // 测试字符串操作
-  let str = "azimuth-telemetry"
-  assert_eq(str.length(), 17)
-  assert_eq(str.to_uppercase(), "AZIMUTH-TELEMETRY")
-  assert_eq(str.to_lowercase(), "azimuth-telemetry")
-  assert_true(str.contains("telemetry"))
-  assert_eq(str.substring(0, 7), "azimuth")
+  // Test decompression
+  let decompressed_data = Compression::decompress(compressed_data)
+  assert_eq(original_data, decompressed_data)
   
-  // 测试布尔操作
-  assert_true(true && true)
-  assert_false(true && false)
-  assert_true(true || false)
-  assert_false(!true)
-  
-  // 测试数组操作
-  let numbers = [1, 2, 3, 4, 5]
-  let doubled = numbers.map(fn(x) { x * 2 })
-  let evens = numbers.filter(fn(x) { x % 2 == 0 })
-  let sum = numbers.reduce(fn(acc, x) { acc + x }, 0)
-  
-  assert_eq(doubled, [2, 4, 6, 8, 10])
-  assert_eq(evens, [2, 4])
-  assert_eq(sum, 15)
+  // Test with empty data
+  let empty_data = ""
+  let compressed_empty = Compression::compress(empty_data)
+  let decompressed_empty = Compression::decompress(compressed_empty)
+  assert_eq(empty_data, decompressed_empty)
 }
 
-// 测试2: 遥测数据处理
-test "遥测数据处理测试" {
-  // 定义遥测数据结构
-  type TelemetryData = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    attributes: Array<(String, String)>
-  }
+// Test 2: Network Communication with Telemetry
+test "network communication with telemetry" {
+  let client = NetworkClient::new()
+  let telemetry_context = TelemetryContext::new("test_operation")
   
-  // 创建测试数据
-  let telemetry_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: Some("span-11111"),
-    operation_name: "database_query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    status: "ok",
-    attributes: [
-      ("service.name", "payment-service"),
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM orders")
-    ]
-  }
+  // Test connection establishment
+  let connection = NetworkClient::connect(client, "https://api.example.com")
+  assert_true(NetworkClient::is_connected(connection))
   
-  // 测试数据访问
-  assert_eq(telemetry_data.trace_id, "trace-12345")
-  assert_eq(telemetry_data.span_id, "span-67890")
-  assert_eq(telemetry_data.operation_name, "database_query")
-  assert_eq(telemetry_data.status, "ok")
+  // Test request with telemetry
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("X-Trace-ID", TelemetryContext::trace_id(telemetry_context))
+  ]
+  let request = NetworkRequest::new("POST", "/api/v1/data", headers, Some("{\"test\": \"data\"}"))
+  let response = NetworkClient::send(connection, request)
   
-  // 测试Option类型处理
-  match telemetry_data.parent_span_id {
-    Some(parent_id) => assert_eq(parent_id, "span-11111")
-    None => assert_true(false)
-  }
+  // Verify telemetry was recorded
+  assert_eq(NetworkResponse::status_code(response), 200)
+  assert_true(TelemetryContext::has_span(telemetry_context, "network_request"))
   
-  // 计算持续时间
-  let duration = telemetry_data.end_time - telemetry_data.start_time
-  assert_eq(duration, 50)
-  
-  // 测试属性查找
-  let find_attribute = fn(attributes: Array<(String, String)>, key: String) {
-    let mut found = None
-    for (k, v) in attributes {
-      if k == key {
-        found = Some(v)
-      }
-    }
-    found
-  }
-  
-  let service_name = find_attribute(telemetry_data.attributes, "service.name")
-  assert_eq(service_name, Some("payment-service"))
-  
-  let db_type = find_attribute(telemetry_data.attributes, "db.type")
-  assert_eq(db_type, Some("postgresql"))
-  
-  let missing_attr = find_attribute(telemetry_data.attributes, "missing.key")
-  assert_eq(missing_attr, None)
+  // Test connection cleanup
+  NetworkClient::disconnect(connection)
+  assert_false(NetworkClient::is_connected(connection))
 }
 
-// 测试3: 错误处理和恢复
-test "错误处理和恢复测试" {
-  // 定义错误类型
-  enum TelemetryError {
-    InvalidTraceId(String)
-    NetworkTimeout(Int)
-    SerializationError(String)
-    ConfigurationError(String)
-  }
+// Test 3: Advanced Error Handling with Recovery
+test "advanced error handling with recovery" {
+  let error_handler = ErrorHandler::new()
+  let retry_policy = RetryPolicy::exponential_backoff(3, 1000) // 3 retries, 1s initial delay
   
-  // 定义结果类型
-  type Result[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryError]
-  }
-  
-  // 创建成功结果
-  let create_success = fn(data: T) {
-    {
-      success: true,
-      data: Some(data),
-      error: None
-    }
-  }
-  
-  // 创建错误结果
-  let create_error = fn(error: TelemetryError) {
-    {
-      success: false,
-      data: None,
-      error: Some(error)
-    }
-  }
-  
-  // 验证trace ID
-  let validate_trace_id = fn(trace_id: String) {
-    if trace_id.length() >= 5 && trace_id.starts_with("trace-") {
-      create_success(trace_id)
-    } else {
-      create_error(TelemetryError::InvalidTraceId(trace_id))
-    }
-  }
-  
-  // 测试有效trace ID
-  let valid_trace = validate_trace_id("trace-12345")
-  assert_true(valid_trace.success)
-  assert_eq(valid_trace.data, Some("trace-12345"))
-  assert_eq(valid_trace.error, None)
-  
-  // 测试无效trace ID
-  let invalid_trace = validate_trace_id("bad")
-  assert_false(invalid_trace.success)
-  assert_eq(invalid_trace.data, None)
-  
-  match invalid_trace.error {
-    Some(TelemetryError::InvalidTraceId(id)) => assert_eq(id, "bad")
-    _ => assert_true(false)
-  }
-  
-  // 测试错误恢复
-  let with_fallback = fn(primary: String, fallback: String) {
-    let primary_result = validate_trace_id(primary)
-    match primary_result.success {
-      true => primary_result
-      false => validate_trace_id(fallback)
-    }
-  }
-  
-  let fallback_result = with_fallback("bad", "trace-fallback")
-  assert_true(fallback_result.success)
-  assert_eq(fallback_result.data, Some("trace-fallback"))
-}
-
-// 测试4: 并发安全操作
-test "并发安全操作测试" {
-  // 模拟并发计数器
-  type Counter = {
-    mut value: Int,
-    mut lock: Bool
-  }
-  
-  // 创建计数器
-  let counter = { mut value: 0, mut lock: false }
-  
-  // 模拟锁获取
-  let acquire_lock = fn(counter: Counter) {
-    if not(counter.lock) {
-      counter.lock = true
-      true
-    } else {
-      false
-    }
-  }
-  
-  // 模拟锁释放
-  let release_lock = fn(counter: Counter) {
-    counter.lock = false
-  }
-  
-  // 安全增加计数器
-  let safe_increment = fn(counter: Counter) {
-    if acquire_lock(counter) {
-      counter.value = counter.value + 1
-      release_lock(counter)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // 测试基本操作
-  assert_true(safe_increment(counter))
-  assert_eq(counter.value, 1)
-  
-  assert_true(safe_increment(counter))
-  assert_eq(counter.value, 2)
-  
-  // 模拟并发场景
-  let concurrent_increment = fn(counter: Counter, times: Int) {
-    let mut success_count = 0
-    for i in 0..times {
-      if safe_increment(counter) {
-        success_count = success_count + 1
-      }
-    }
-    success_count
-  }
-  
-  // 在单线程环境中，所有 increment 应该成功
-  let result = concurrent_increment(counter, 5)
-  assert_eq(result, 5)
-  assert_eq(counter.value, 7)
-  
-  // 测试资源池模式
-  type ResourcePool = {
-    resources: Array[String],
-    mut used_resources: Array[String]
-  }
-  
-  let create_pool = fn(resources: Array[String>) {
-    {
-      resources,
-      used_resources: []
-    }
-  }
-  
-  // 获取资源
-  let acquire_resource = fn(pool: ResourcePool) {
-    for resource in pool.resources {
-      if not(pool.used_resources.contains(resource)) {
-        pool.used_resources = pool.used_resources.push(resource)
-        return Some(resource)
-      }
-    }
-    None
-  }
-  
-  // 释放资源
-  let release_resource = fn(pool: ResourcePool, resource: String) {
-    let index = pool.used_resources.index_of(resource)
-    match index {
-      Some(i) => {
-        pool.used_resources = pool.used_resources.remove_at(i)
-        true
-      }
-      None => false
-    }
-  }
-  
-  // 测试资源池
-  let pool = create_pool(["conn-1", "conn-2", "conn-3"])
-  
-  let resource1 = acquire_resource(pool)
-  assert_eq(resource1, Some("conn-1"))
-  assert_eq(pool.used_resources.length(), 1)
-  
-  let resource2 = acquire_resource(pool)
-  assert_eq(resource2, Some("conn-2"))
-  assert_eq(pool.used_resources.length(), 2)
-  
-  // 释放资源
-  assert_true(release_resource(pool, "conn-1"))
-  assert_eq(pool.used_resources.length(), 1)
-  
-  // 可以重新获取已释放的资源
-  let resource1_again = acquire_resource(pool)
-  assert_eq(resource1_again, Some("conn-1"))
-}
-
-// 测试5: 性能优化测试
-test "性能优化测试" {
-  // 测试记忆化模式
-  let memoize = fn(f: (Int) -> Int) {
-    let cache = []
-    fn(x: Int) {
-      // 查找缓存
-      for (cached_x, cached_result) in cache {
-        if cached_x == x {
-          return cached_result
-        }
-      }
-      
-      // 计算结果
-      let result = f(x)
-      // 存入缓存
-      // 在实际实现中，这里会更新缓存
-      result
-    }
-  }
-  
-  // 计算平方函数
-  let square = memoize(fn(x) { x * x })
-  
-  // 测试记忆化
-  assert_eq(square(5), 25)
-  assert_eq(square(10), 100)
-  assert_eq(square(5), 25)  // 应该从缓存获取
-  
-  // 测试批处理
-  let batch_process = fn(items: Array[String], processor: (String) -> String, batch_size: Int) {
-    let mut results = []
-    let mut batch = []
-    
-    for item in items {
-      batch = batch.push(item)
-      
-      if batch.length() == batch_size {
-        // 处理当前批次
-        let processed_batch = batch.map(processor)
-        results = results + processed_batch
-        batch = []
-      }
-    }
-    
-    // 处理剩余项目
-    if batch.length() > 0 {
-      let processed_batch = batch.map(processor)
-      results = results + processed_batch
-    }
-    
-    results
-  }
-  
-  let items = ["item1", "item2", "item3", "item4", "item5", "item6", "item7"]
-  let processor = fn(item) { "processed-" + item }
-  let batch_results = batch_process(items, processor, 3)
-  
-  assert_eq(batch_results, [
-    "processed-item1", "processed-item2", "processed-item3",
-    "processed-item4", "processed-item5", "processed-item6",
-    "processed-item7"
-  ])
-  
-  // 测试延迟计算
-  type Lazy[T] = {
-    computed: Bool,
-    value: Option[T],
-    computation: () -> T
-  }
-  
-  let create_lazy = fn(computation: () -> T) {
-    {
-      computed: false,
-      value: None,
-      computation
-    }
-  }
-  
-  let get_lazy_value = fn(lazy: Lazy[T]) {
-    if lazy.computed {
-      match lazy.value {
-        Some(v) => v
-        None => lazy.computation()
-      }
-    } else {
-      lazy.computation()
-    }
-  }
-  
-  let expensive_computation = create_lazy(fn() {
-    // 模拟昂贵计算
-    42 * 42
+  // Test successful operation
+  let result = ErrorHandler::execute_with_retry(error_handler, retry_policy, fn() {
+    return "success"
   })
-  
-  let result = get_lazy_value(expensive_computation)
-  assert_eq(result, 1764)
-}
-
-// 测试6: 配置管理测试
-test "配置管理测试" {
-  // 定义配置类型
-  type Config = {
-    service_name: String,
-    service_version: String,
-    environment: String,
-    telemetry_enabled: Bool,
-    sampling_rate: Float,
-    batch_size: Int,
-    export_endpoint: String
+  match result {
+    Ok(value) => assert_eq(value, "success")
+    Err(_) => assert_true(false)
   }
   
-  // 默认配置
-  let default_config = {
-    service_name: "unknown-service",
-    service_version: "1.0.0",
-    environment: "development",
-    telemetry_enabled: true,
-    sampling_rate: 1.0,
-    batch_size: 100,
-    export_endpoint: "http://localhost:4317"
-  }
-  
-  // 配置验证
-  let validate_config = fn(config: Config) {
-    let errors = []
-    
-    if config.service_name == "" {
-      errors = errors.push("service_name cannot be empty")
-    }
-    
-    if config.sampling_rate < 0.0 || config.sampling_rate > 1.0 {
-      errors = errors.push("sampling_rate must be between 0.0 and 1.0")
-    }
-    
-    if config.batch_size <= 0 {
-      errors = errors.push("batch_size must be positive")
-    }
-    
-    errors
-  }
-  
-  // 测试默认配置
-  let default_errors = validate_config(default_config)
-  assert_eq(default_errors.length(), 0)
-  
-  // 测试无效配置
-  let invalid_config = {
-    service_name: "",
-    service_version: "1.0.0",
-    environment: "production",
-    telemetry_enabled: true,
-    sampling_rate: 1.5,  // 无效值
-    batch_size: -1,      // 无效值
-    export_endpoint: "http://localhost:4317"
-  }
-  
-  let invalid_errors = validate_config(invalid_config)
-  assert_eq(invalid_errors.length(), 3)
-  assert_true(invalid_errors.contains("service_name cannot be empty"))
-  assert_true(invalid_errors.contains("sampling_rate must be between 0.0 and 1.0"))
-  assert_true(invalid_errors.contains("batch_size must be positive"))
-  
-  // 配置合并
-  let merge_configs = fn(base: Config, override: Config) {
-    {
-      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
-      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
-      environment: if override.environment != "" { override.environment } else { base.environment },
-      telemetry_enabled: override.telemetry_enabled,
-      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
-      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
-      export_endpoint: if override.export_endpoint != "" { override.export_endpoint } else { base.export_endpoint }
-    }
-  }
-  
-  // 测试配置合并
-  let partial_override = {
-    service_name: "payment-service",
-    service_version: "",  // 使用默认值
-    environment: "production",
-    telemetry_enabled: false,
-    sampling_rate: 0.5,
-    batch_size: 0,  // 使用默认值
-    export_endpoint: ""  // 使用默认值
-  }
-  
-  let merged_config = merge_configs(default_config, partial_override)
-  assert_eq(merged_config.service_name, "payment-service")
-  assert_eq(merged_config.service_version, "1.0.0")  // 保持默认值
-  assert_eq(merged_config.environment, "production")
-  assert_eq(merged_config.telemetry_enabled, false)
-  assert_eq(merged_config.sampling_rate, 0.5)
-  assert_eq(merged_config.batch_size, 100)  // 保持默认值
-  assert_eq(merged_config.export_endpoint, "http://localhost:4317")  // 保持默认值
-  
-  // 验证合并后的配置
-  let merged_errors = validate_config(merged_config)
-  assert_eq(merged_errors.length(), 0)
-}
-
-// 测试7: 数据序列化测试
-test "数据序列化测试" {
-  // 定义遥测数据类型
-  type Span = {
-    trace_id: String,
-    span_id: String,
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String
-  }
-  
-  // 简化的JSON序列化
-  let serialize_to_json = fn(span: Span) {
-    "{" +
-    "\"trace_id\":\"" + span.trace_id + "\"," +
-    "\"span_id\":\"" + span.span_id + "\"," +
-    "\"operation_name\":\"" + span.operation_name + "\"," +
-    "\"start_time\":" + span.start_time.to_string() + "," +
-    "\"end_time\":" + span.end_time.to_string() + "," +
-    "\"status\":\"" + span.status + "\"" +
-    "}"
-  }
-  
-  // 简化的JSON反序列化
-  let deserialize_from_json = fn(json: String) {
-    // 在实际实现中，这里会有完整的JSON解析
-    // 这里只是模拟
-    if json.contains("trace_id") && json.contains("span_id") {
-      Some({
-        trace_id: "trace-123",
-        span_id: "span-456",
-        operation_name: "test_operation",
-        start_time: 1640995200,
-        end_time: 1640995250,
-        status: "ok"
-      })
+  // Test operation that fails then succeeds
+  let mut attempt_count = 0
+  let retry_result = ErrorHandler::execute_with_retry(error_handler, retry_policy, fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      return Error("temporary_failure")
     } else {
-      None
+      return "success_after_retry"
+    }
+  })
+  match retry_result {
+    Ok(value) => assert_eq(value, "success_after_retry")
+    Err(_) => assert_true(false)
+  }
+  assert_eq(attempt_count, 3)
+  
+  // Test operation that always fails
+  let always_fail_result = ErrorHandler::execute_with_retry(error_handler, retry_policy, fn() {
+    return Error("permanent_failure")
+  })
+  match always_fail_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(error, "permanent_failure")
+  }
+}
+
+// Test 4: Resource Management with Pooling
+test "resource management with pooling" {
+  let resource_pool = ResourcePool::new(5) // Maximum 5 resources
+  let mut created_resources = []
+  
+  // Test resource acquisition
+  for i in 0..=4 {
+    let resource = ResourcePool::acquire(resource_pool)
+    match resource {
+      Some(r) => {
+        created_resources = created_resources + [r]
+        assert_true(Resource::is_valid(r))
+      }
+      None => assert_true(false)
     }
   }
   
-  // 创建测试数据
-  let span = {
-    trace_id: "trace-123",
-    span_id: "span-456",
-    operation_name: "database_query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    status: "ok"
+  // Test pool exhaustion
+  let exhausted_resource = ResourcePool::acquire(resource_pool)
+  match exhausted_resource {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // 测试序列化
-  let json = serialize_to_json(span)
-  assert_true(json.contains("\"trace_id\":\"trace-123\""))
-  assert_true(json.contains("\"span_id\":\"span-456\""))
-  assert_true(json.contains("\"operation_name\":\"database_query\""))
-  assert_true(json.contains("\"status\":\"ok\""))
+  // Test resource release
+  let released_resource = created_resources[0]
+  ResourcePool::release(resource_pool, released_resource)
   
-  // 测试反序列化
-  let deserialized = deserialize_from_json(json)
-  assert_true(deserialized.is_some())
-  
-  match deserialized {
-    Some(parsed_span) => {
-      assert_eq(parsed_span.trace_id, "trace-123")
-      assert_eq(parsed_span.span_id, "span-456")
-      assert_eq(parsed_span.status, "ok")
-    }
+  // Test resource acquisition after release
+  let new_resource = ResourcePool::acquire(resource_pool)
+  match new_resource {
+    Some(r) => assert_true(Resource::is_valid(r))
     None => assert_true(false)
   }
   
-  // 测试无效JSON
-  let invalid_json = "{ invalid json }"
-  let invalid_result = deserialize_from_json(invalid_json)
-  assert_eq(invalid_result, None)
-  
-  // 测试CSV序列化
-  let serialize_to_csv = fn(spans: Array[Span>) {
-    let header = "trace_id,span_id,operation_name,start_time,end_time,status"
-    let mut rows = [header]
-    
-    for span in spans {
-      let row = span.trace_id + "," + 
-                span.span_id + "," + 
-                span.operation_name + "," + 
-                span.start_time.to_string() + "," + 
-                span.end_time.to_string() + "," + 
-                span.status
-      rows = rows.push(row)
-    }
-    
-    rows.join("\n")
+  // Test cleanup
+  for resource in created_resources {
+    ResourcePool::release(resource_pool, resource)
   }
+}
+
+// Test 5: Time Series Data Processing
+test "time series data processing" {
+  let time_series_processor = TimeSeriesProcessor::new()
   
-  // 测试CSV序列化
-  let spans = [
-    span,
-    {
-      trace_id: "trace-789",
-      span_id: "span-012",
-      operation_name: "api_call",
-      start_time: 1640995300,
-      end_time: 1640995350,
-      status: "error"
-    }
+  // Create sample time series data
+  let data_points = [
+    TimeSeriesDataPoint::new(1000L, 10.5),
+    TimeSeriesDataPoint::new(2000L, 15.3),
+    TimeSeriesDataPoint::new(3000L, 12.7),
+    TimeSeriesDataPoint::new(4000L, 18.9),
+    TimeSeriesDataPoint::new(5000L, 14.2)
   ]
   
-  let csv = serialize_to_csv(spans)
-  assert_true(csv.contains("trace_id,span_id,operation_name,start_time,end_time,status"))
-  assert_true(csv.contains("trace-123,span-456,database_query,1640995200,1640995250,ok"))
-  assert_true(csv.contains("trace-789,span-012,api_call,1640995300,1640995350,error"))
+  // Test aggregation
+  let aggregated = TimeSeriesProcessor::aggregate(time_series_processor, data_points, 2000L, "average")
+  assert_eq(aggregated.length(), 2)
+  assert_eq(aggregated[0].value, 12.9) // Average of first 3 points
+  assert_eq(aggregated[1].value, 16.55) // Average of last 2 points
+  
+  // Test downsampling
+  let downsampled = TimeSeriesProcessor::downsample(time_series_processor, data_points, 3000L)
+  assert_eq(downsampled.length(), 2)
+  assert_eq(downsampled[0].timestamp, 1000L)
+  assert_eq(downsampled[1].timestamp, 4000L)
+  
+  // Test anomaly detection
+  let anomalies = TimeSeriesProcessor::detect_anomalies(time_series_processor, data_points, 2.0)
+  assert_eq(anomalies.length(), 1) // 18.9 is an anomaly (> 2 std dev)
+  assert_eq(anomalies[0].timestamp, 4000L)
 }
 
-// 测试8: 跨平台兼容性测试
-test "跨平台兼容性测试" {
-  // 模拟不同平台的路径处理
-  let normalize_path = fn(path: String, platform: String) {
-    match platform {
-      "windows" => path.replace("/", "\\"),
-      "linux" => path.replace("\\", "/"),
-      "macos" => path.replace("\\", "/"),
-      _ => path
-    }
+// Test 6: Context Propagation Across Services
+test "context propagation across services" {
+  let original_context = Context::with_value(
+    Context::root(),
+    ContextKey::new("user_id"),
+    "user123"
+  )
+  let trace_context = TraceContext::new("trace123", "span456", true)
+  let enriched_context = Context::with_value(
+    original_context,
+    ContextKey::new("trace_context"),
+    trace_context
+  )
+  
+  // Test context extraction
+  let user_id = Context::get(enriched_context, ContextKey::new("user_id"))
+  match user_id {
+    Some(id) => assert_eq(id, "user123")
+    None => assert_true(false)
   }
   
-  // 测试路径规范化
-  let path = "logs/telemetry/data.json"
-  
-  let windows_path = normalize_path(path, "windows")
-  assert_eq(windows_path, "logs\\telemetry\\data.json")
-  
-  let linux_path = normalize_path(path, "linux")
-  assert_eq(linux_path, "logs/telemetry/data.json")
-  
-  let macos_path = normalize_path(path, "macos")
-  assert_eq(macos_path, "logs/telemetry/data.json")
-  
-  // 模拟平台特定的配置
-  let get_platform_config = fn(platform: String) {
-    match platform {
-      "windows" => {
-        log_directory: "C:\\ProgramData\\Azimuth\\Logs",
-        config_directory: "C:\\ProgramData\\Azimuth\\Config",
-        temp_directory: "C:\\Temp\\Azimuth"
-      }
-      "linux" => {
-        log_directory: "/var/log/azimuth",
-        config_directory: "/etc/azimuth",
-        temp_directory: "/tmp/azimuth"
-      }
-      "macos" => {
-        log_directory: "/Library/Logs/Azimuth",
-        config_directory: "/Library/Application Support/Azimuth",
-        temp_directory: "/tmp/azimuth"
-      }
-      _ => {
-        log_directory: "./logs",
-        config_directory: "./config",
-        temp_directory: "./temp"
+  let extracted_trace = Context::get(enriched_context, ContextKey::new("trace_context"))
+  match extracted_trace {
+    Some(ctx) => {
+      match ctx {
+        TraceContext(trace_id, span_id, sampled) => {
+          assert_eq(trace_id, "trace123")
+          assert_eq(span_id, "span456")
+          assert_true(sampled)
+        }
+        _ => assert_true(false)
       }
     }
+    None => assert_true(false)
   }
   
-  // 测试平台配置
-  let windows_config = get_platform_config("windows")
-  assert_eq(windows_config.log_directory, "C:\\ProgramData\\Azimuth\\Logs")
-  assert_eq(windows_config.config_directory, "C:\\ProgramData\\Azimuth\\Config")
+  // Test context serialization
+  let serialized = ContextSerializer::serialize(enriched_context)
+  let deserialized = ContextSerializer::deserialize(serialized)
   
-  let linux_config = get_platform_config("linux")
-  assert_eq(linux_config.log_directory, "/var/log/azimuth")
-  assert_eq(linux_config.config_directory, "/etc/azimuth")
-  
-  let macos_config = get_platform_config("macos")
-  assert_eq(macos_config.log_directory, "/Library/Logs/Azimuth")
-  assert_eq(macos_config.config_directory, "/Library/Application Support/Azimuth")
-  
-  // 测试平台检测
-  let detect_platform = fn() {
-    // 在实际实现中，这里会检测实际运行平台
-    // 这里只是模拟
-    "linux"
+  let deserialized_user_id = Context::get(deserialized, ContextKey::new("user_id"))
+  match deserialized_user_id {
+    Some(id) => assert_eq(id, "user123")
+    None => assert_true(false)
   }
+}
+
+// Test 7: Metrics Collection with Dynamic Dimensions
+test "metrics collection with dynamic dimensions" {
+  let metrics_collector = MetricsCollector::new()
   
-  let current_platform = detect_platform()
-  let current_config = get_platform_config(current_platform)
+  // Test counter with dynamic dimensions
+  let counter = MetricsCollector::create_counter(metrics_collector, "requests_total")
+  MetricsCollector::increment(counter, [
+    ("method", "GET"),
+    ("status", "200"),
+    ("service", "api")
+  ])
+  MetricsCollector::increment(counter, [
+    ("method", "POST"),
+    ("status", "201"),
+    ("service", "api")
+  ])
   
-  // 根据检测到的平台获取相应配置
-  match current_platform {
-    "windows" => assert_eq(current_config.log_directory, "C:\\ProgramData\\Azimuth\\Logs")
-    "linux" => assert_eq(current_config.log_directory, "/var/log/azimuth")
-    "macos" => assert_eq(current_config.log_directory, "/Library/Logs/Azimuth")
-    _ => assert_eq(current_config.log_directory, "./logs")
-  }
+  // Test histogram with dynamic dimensions
+  let histogram = MetricsCollector::create_histogram(metrics_collector, "response_duration_ms")
+  MetricsCollector::record(histogram, 150.5, [
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ])
+  MetricsCollector::record(histogram, 89.2, [
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ])
   
-  // 测试平台特定的文件权限
-  let get_file_permissions = fn(platform: String, file_type: String) {
-    match (platform, file_type) {
-      ("linux", "config") => "644",
-      ("linux", "executable") => "755",
-      ("windows", _) => "NTFS",
-      ("macos", "config") => "644",
-      ("macos", "executable") => "755",
-      _ => "default"
+  // Test gauge with dynamic dimensions
+  let gauge = MetricsCollector::create_gauge(metrics_collector, "active_connections")
+  MetricsCollector::set(gauge, 42, [
+    ("server", "web-01"),
+    ("environment", "production")
+  ])
+  
+  // Test metrics retrieval
+  let all_metrics = MetricsCollector::get_all(metrics_collector)
+  assert_true(all_metrics.length() >= 3)
+  
+  // Test dimensional queries
+  let api_metrics = MetricsCollector::filter_by_dimension(metrics_collector, "service", "api")
+  assert_eq(api_metrics.length(), 2)
+}
+
+// Test 8: Configuration Management with Validation
+test "configuration management with validation" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Define configuration schema
+  let schema = ConfigSchema::new()
+  ConfigSchema::add_string_field(schema, "service.name", true, None) // Required
+  ConfigSchema::add_int_field(schema, "service.port", true, Some(8080)) // Required with default
+  ConfigSchema::add_bool_field(schema, "debug.enabled", false, Some(false)) // Optional with default
+  ConfigSchema::add_string_field(schema, "database.url", true, None) // Required
+  
+  // Test valid configuration
+  let valid_config = [
+    ("service.name", "azimuth-api"),
+    ("service.port", "9090"),
+    ("debug.enabled", "true"),
+    ("database.url", "postgresql://localhost:5432/azimuth")
+  ]
+  
+  let validated_config = ConfigurationManager::validate_and_load(config_manager, schema, valid_config)
+  match validated_config {
+    Ok(config) => {
+      assert_eq(ConfigurationManager::get_string(config, "service.name"), "azimuth-api")
+      assert_eq(ConfigurationManager::get_int(config, "service.port"), 9090)
+      assert_true(ConfigurationManager::get_bool(config, "debug.enabled"))
+      assert_eq(ConfigurationManager::get_string(config, "database.url"), "postgresql://localhost:5432/azimuth")
     }
+    Err(_) => assert_true(false)
   }
   
-  // 测试文件权限
-  assert_eq(get_file_permissions("linux", "config"), "644")
-  assert_eq(get_file_permissions("linux", "executable"), "755")
-  assert_eq(get_file_permissions("windows", "config"), "NTFS")
-  assert_eq(get_file_permissions("macos", "executable"), "755")
+  // Test invalid configuration (missing required field)
+  let invalid_config = [
+    ("service.name", "azimuth-api"),
+    ("debug.enabled", "true")
+    // Missing service.port and database.url
+  ]
+  
+  let invalid_result = ConfigurationManager::validate_and_load(config_manager, schema, invalid_config)
+  match invalid_result {
+    Ok(_) => assert_true(false)
+    Err(errors) => assert_true(errors.length() >= 2)
+  }
+}
+
+// Test 9: Log Correlation and Aggregation
+test "log correlation and aggregation" {
+  let log_processor = LogProcessor::new()
+  let trace_id = "trace123"
+  let span_id = "span456"
+  
+  // Create correlated log entries
+  let log_entries = [
+    LogEntry::new(Info, "Starting operation", Some(trace_id), Some(span_id)),
+    LogEntry::new(Debug, "Processing data", Some(trace_id), Some(span_id)),
+    LogEntry::new(Warning, "Slow operation detected", Some(trace_id), Some(span_id)),
+    LogEntry::new(Info, "Operation completed", Some(trace_id), Some(span_id))
+  ]
+  
+  // Test log correlation
+  let correlated_logs = LogProcessor::correlate_by_trace(log_processor, trace_id)
+  assert_eq(correlated_logs.length(), 4)
+  
+  for log in correlated_logs {
+    assert_eq(LogEntry::trace_id(log), Some(trace_id))
+    assert_eq(LogEntry::span_id(log), Some(span_id))
+  }
+  
+  // Test log aggregation by severity
+  let aggregated_by_severity = LogProcessor::aggregate_by_severity(log_processor, log_entries)
+  assert_eq(aggregated_by_severity.get(Info), Some(2))
+  assert_eq(aggregated_by_severity.get(Debug), Some(1))
+  assert_eq(aggregated_by_severity.get(Warning), Some(1))
+  
+  // Test log pattern matching
+  let pattern_logs = LogProcessor::match_pattern(log_processor, log_entries, "operation")
+  assert_eq(pattern_logs.length(), 2) // "Starting operation" and "Operation completed"
+}
+
+// Test 10: Performance Benchmarking with Telemetry
+test "performance benchmarking with telemetry" {
+  let benchmark = PerformanceBenchmark::new()
+  let telemetry_recorder = TelemetryRecorder::new()
+  
+  // Define benchmark scenarios
+  let scenarios = [
+    BenchmarkScenario::new("memory_allocation", fn() {
+      let mut data = []
+      for i in 0..=1000 {
+        data = data + [i]
+      }
+      return data.length()
+    }),
+    BenchmarkScenario::new("string_processing", fn() {
+      let result = ""
+      for i in 0..=100 {
+        result = result + "test"
+      }
+      return result.length()
+    }),
+    BenchmarkScenario::new("mathematical_operations", fn() {
+      let mut result = 0.0
+      for i in 0..=10000 {
+        result = result + (i.to_float() * 1.5).sqrt()
+      }
+      return result
+    })
+  ]
+  
+  // Execute benchmarks with telemetry
+  let benchmark_results = []
+  for scenario in scenarios {
+    let result = PerformanceBenchmark::execute_with_telemetry(benchmark, scenario, telemetry_recorder)
+    benchmark_results = benchmark_results + [result]
+    
+    // Verify telemetry was recorded
+    assert_true(TelemetryRecorder::has_metric(telemetry_recorder, BenchmarkScenario::name(scenario)))
+    assert_true(TelemetryRecorder::has_span(telemetry_recorder, BenchmarkScenario::name(scenario)))
+  }
+  
+  // Test performance analysis
+  let analysis = PerformanceBenchmark::analyze_results(benchmark_results)
+  assert_true(analysis.length() == 3)
+  
+  // Test baseline comparison
+  let baseline = [
+    ("memory_allocation", 1000), // 1000 microseconds
+    ("string_processing", 500),
+    ("mathematical_operations", 2000)
+  ]
+  
+  let comparison = PerformanceBenchmark::compare_with_baseline(benchmark_results, baseline)
+  for (scenario_name, result) in comparison {
+    assert_true(result.within_threshold(0.2)) // Within 20% of baseline
+  }
 }
