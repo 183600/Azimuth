@@ -1,398 +1,602 @@
-// Azimuth 遥测系统数据质量验证测试
-// 专注于遥测数据的质量检查和验证机制
+// Azimuth 遥测数据质量验证测试
+// 专注于遥测数据的质量保证和验证机制
 
 // 测试1: 遥测数据完整性验证
 test "遥测数据完整性验证" {
-  // 模拟不同完整程度的遥测数据
-  let telemetry_data = [
-    { id: 1, timestamp: 1640995200, metric: "cpu", value: 45.0, source: "server1", status: "complete" },
-    { id: 2, timestamp: 1640995260, metric: "memory", value: 1024.0, source: "server1", status: "complete" },
-    { id: 3, timestamp: 1640995320, metric: "cpu", value: Some(50.0), source: "server2", status: "partial" },
-    { id: 4, timestamp: 1640995380, metric: "", value: 2048.0, source: "server3", status: "incomplete" },
-    { id: 5, timestamp: 1640995440, metric: "disk", value: 100.0, source: "", status: "incomplete" }
+  // 创建数据质量验证器
+  let quality_validator = DataQualityValidator::new()
+  
+  // 配置验证规则
+  QualityValidator::add_rule(quality_validator, "timestamp_range", {
+    min_timestamp: 1640995200,
+    max_timestamp: 1735689599,
+    required: true
+  })
+  
+  QualityValidator::add_rule(quality_validator, "required_fields", {
+    fields: ["trace_id", "span_id", "service_name", "operation_name"],
+    required: true
+  })
+  
+  QualityValidator::add_rule(quality_validator, "value_ranges", {
+    rules: [
+      { field: "duration", min: 0, max: 3600000 },  // 最大1小时
+      { field: "status_code", min: 100, max: 599 }
+    ]
+  })
+  
+  // 创建测试数据集
+  let valid_data = [
+    {
+      timestamp: 1640995200,
+      trace_id: "trace-12345",
+      span_id: "span-67890",
+      service_name: "api.service",
+      operation_name: "process_request",
+      duration: 150,
+      status_code: 200
+    },
+    {
+      timestamp: 1640995300,
+      trace_id: "trace-12346",
+      span_id: "span-67891",
+      service_name: "db.service",
+      operation_name: "query_data",
+      duration: 50,
+      status_code: 200
+    }
   ]
   
-  // 数据完整性检查函数
-  let check_completeness = fn(data) {
-    let mut score = 0
-    let mut max_score = 0
-    
-    // 检查必要字段
-    if data.id > 0 { score = score + 1 }
-    max_score = max_score + 1
-    
-    if data.timestamp > 0 { score = score + 1 }
-    max_score = max_score + 1
-    
-    if data.metric != "" { score = score + 1 }
-    max_score = max_score + 1
-    
-    if data.value >= 0.0 { score = score + 1 }
-    max_score = max_score + 1
-    
-    if data.source != "" { score = score + 1 }
-    max_score = max_score + 1
-    
-    // 计算完整性百分比
-    (score.to_float() / max_score.to_float()) * 100.0
-  }
+  let invalid_data = [
+    {
+      timestamp: 1640995200,
+      trace_id: "",  // 缺少必需字段
+      span_id: "span-67892",
+      service_name: "cache.service",
+      operation_name: "get_value",
+      duration: -10,  // 无效值
+      status_code: 200
+    },
+    {
+      timestamp: 1000000000,  // 超出范围
+      trace_id: "trace-12347",
+      span_id: "span-67893",
+      service_name: "queue.service",
+      operation_name: "publish_message",
+      duration: 5000,  // 超出范围
+      status_code: 999  // 超出范围
+    }
+  ]
   
-  // 验证数据完整性
-  let mut completeness_scores = []
-  for data in telemetry_data {
-    completeness_scores = completeness_scores.push({
-      id: data.id,
-      completeness: check_completeness(data)
-    })
-  }
+  // 验证有效数据
+  let valid_results = QualityValidator::validate_batch(quality_validator, valid_data)
   
-  // 验证完整性分数
-  assert_eq(completeness_scores.length(), 5)
-  assert_eq(completeness_scores[0].completeness, 100.0) // 完整数据
-  assert_eq(completeness_scores[1].completeness, 100.0) // 完整数据
-  assert_true(completeness_scores[2].completeness >= 80.0) // 部分数据
-  assert_true(completeness_scores[3].completeness >= 60.0) // 不完整数据
-  assert_true(completeness_scores[4].completeness >= 60.0) // 不完整数据
+  // 验证无效数据
+  let invalid_results = QualityValidator::validate_batch(quality_validator, invalid_data)
   
-  // 计算整体数据质量
-  let mut total_completeness = 0.0
-  for score in completeness_scores {
-    total_completeness = total_completeness + score.completeness
-  }
-  let avg_completeness = total_completeness / completeness_scores.length().to_float()
+  // 验证结果
+  assert_eq(valid_results.passed_count, 2)
+  assert_eq(valid_results.failed_count, 0)
+  assert_eq(valid_results.total_count, 2)
+  assert_eq(valid_results.quality_score, 100.0)
   
-  assert_true(avg_completeness >= 70.0)
+  assert_eq(invalid_results.passed_count, 0)
+  assert_eq(invalid_results.failed_count, 2)
+  assert_eq(invalid_results.total_count, 2)
+  assert_eq(invalid_results.quality_score, 0.0)
+  
+  // 验证具体错误
+  let first_invalid_errors = invalid_results.items[0].errors
+  assert_true(first_invalid_errors.length() >= 2)
+  assert_true(first_invalid_errors.any(fn(e) { e.field == "trace_id" and e.error_type == "missing_field" }))
+  assert_true(first_invalid_errors.any(fn(e) { e.field == "duration" and e.error_type == "value_out_of_range" }))
+  
+  let second_invalid_errors = invalid_results.items[1].errors
+  assert_true(second_invalid_errors.length() >= 3)
+  assert_true(second_invalid_errors.any(fn(e) { e.field == "timestamp" and e.error_type == "value_out_of_range" }))
+  assert_true(second_invalid_errors.any(fn(e) { e.field == "duration" and e.error_type == "value_out_of_range" }))
+  assert_true(second_invalid_errors.any(fn(e) { e.field == "status_code" and e.error_type == "value_out_of_range" }))
 }
 
-// 测试2: 遥测数据一致性验证
-test "遥测数据一致性验证" {
-  // 模拟可能不一致的遥测数据
-  let telemetry_data = [
-    { service: "auth-service", version: "1.0.0", metric: "cpu", value: 45.0, unit: "percent" },
-    { service: "auth-service", version: "1.0.0", metric: "memory", value: 1024.0, unit: "MB" },
-    { service: "auth-service", version: "2.0.0", metric: "cpu", value: 50.0, unit: "percent" }, // 版本不一致
-    { service: "db-service", version: "1.0.0", metric: "cpu", value: 30.0, unit: "percent" },
-    { service: "db-service", version: "1.0.0", metric: "disk", value: 2048.0, unit: "GB" },
-    { service: "db-service", version: "1.0.0", metric: "cpu", value: 35.0, unit: "%" } // 单位不一致
+// 测试2: 遥测数据一致性检查
+test "遥测数据一致性检查" {
+  // 创建一致性检查器
+  let consistency_checker = ConsistencyChecker::new()
+  
+  // 配置一致性规则
+  ConsistencyChecker::add_rule(consistency_checker, "trace_hierarchy", {
+    require_parent_child: true,
+    allow_orphan_spans: false,
+    validate_timing: true
+  })
+  
+  ConsistencyChecker::add_rule(consistency_checker, "service_naming", {
+    pattern: "^[a-z]+\\.[a-z]+$",
+    case_sensitive: false
+  })
+  
+  ConsistencyChecker::add_rule(consistency_checker, "status_code_consistency", {
+    error_statuses: ["error", "timeout", "cancelled"],
+    error_status_codes: [400, 401, 403, 404, 500, 502, 503, 504]
+  })
+  
+  // 创建一致的测试数据
+  let consistent_trace = [
+    {
+      trace_id: "trace-consistent-1",
+      span_id: "span-root",
+      parent_span_id: "",
+      service_name: "api.gateway",
+      operation_name: "handle_request",
+      status: "ok",
+      status_code: 200,
+      start_time: 1640995200000,
+      end_time: 1640995200150
+    },
+    {
+      trace_id: "trace-consistent-1",
+      span_id: "span-child-1",
+      parent_span_id: "span-root",
+      service_name: "auth.service",
+      operation_name: "authenticate",
+      status: "ok",
+      status_code: 200,
+      start_time: 1640995200020,
+      end_time: 1640995200080
+    },
+    {
+      trace_id: "trace-consistent-1",
+      span_id: "span-child-2",
+      parent_span_id: "span-root",
+      service_name: "data.service",
+      operation_name: "fetch_data",
+      status: "ok",
+      status_code: 200,
+      start_time: 1640995200090,
+      end_time: 1640995200140
+    }
   ]
   
-  // 服务版本一致性检查
-  let mut service_versions = {}
-  for data in telemetry_data {
-    let current_version = service_versions[data.service]
-    if current_version == None {
-      service_versions[data.service] = Some(data.version)
-    } else {
-      match current_version {
-        Some(v) => {
-          if v != data.version {
-            // 记录版本不一致
-            assert_true(data.service == "auth-service" && data.version == "2.0.0")
-          }
-        }
-        None => ()
-      }
+  // 创建不一致的测试数据
+  let inconsistent_trace = [
+    {
+      trace_id: "trace-inconsistent-1",
+      span_id: "span-orphan",
+      parent_span_id: "non-existent-parent",  // 不存在的父span
+      service_name: "InvalidServiceName",     // 不符合命名规范
+      operation_name: "process",
+      status: "error",
+      status_code: 200,  // 状态不一致
+      start_time: 1640995200200,
+      end_time: 1640995200100  // 结束时间早于开始时间
+    },
+    {
+      trace_id: "trace-inconsistent-1",
+      span_id: "span-root-2",
+      parent_span_id: "",
+      service_name: "queue.service",
+      operation_name: "publish",
+      status: "timeout",
+      status_code: 200,  // 状态不一致
+      start_time: 1640995200300,
+      end_time: 1640995200350
     }
-  }
+  ]
   
-  // 指标单位一致性检查
-  let mut metric_units = {}
-  for data in telemetry_data {
-    let current_unit = metric_units[data.metric]
-    if current_unit == None {
-      metric_units[data.metric] = Some(data.unit)
-    } else {
-      match current_unit {
-        Some(u) => {
-          if u != data.unit {
-            // 记录单位不一致
-            assert_true(data.metric == "cpu" && (data.unit == "%" || data.unit == "percent"))
-          }
-        }
-        None => ()
-      }
-    }
-  }
+  // 检查一致性
+  let consistent_results = ConsistencyChecker::check_trace_consistency(consistency_checker, consistent_trace)
+  let inconsistent_results = ConsistencyChecker::check_trace_consistency(consistency_checker, inconsistent_trace)
   
-  // 验证一致性检查结果
-  assert_eq(service_versions["auth-service"], Some("1.0.0"))
-  assert_eq(service_versions["db-service"], Some("1.0.0"))
-  assert_eq(metric_units["cpu"], Some("percent"))
-  assert_eq(metric_units["memory"], Some("MB"))
-  assert_eq(metric_units["disk"], Some("GB"))
+  // 验证结果
+  assert_true(consistent_results.is_consistent)
+  assert_eq(consistent_results.violations.length(), 0)
+  assert_eq(consistent_results.consistency_score, 100.0)
+  
+  assert_false(inconsistent_results.is_consistent)
+  assert_true(inconsistent_results.violations.length() > 0)
+  assert_true(inconsistent_results.consistency_score < 100.0)
+  
+  // 验证具体违规
+  let violations = inconsistent_results.violations
+  assert_true(violations.any(fn(v) { v.type == "missing_parent" }))
+  assert_true(violations.any(fn(v) { v.type == "invalid_service_name" }))
+  assert_true(violations.any(fn(v) { v.type == "status_mismatch" }))
+  assert_true(violations.any(fn(v) { v.type == "invalid_timing" }))
 }
 
 // 测试3: 遥测数据时效性验证
 test "遥测数据时效性验证" {
-  // 模拟不同时间戳的遥测数据
-  let current_time = 1640995440
-  let telemetry_data = [
-    { id: 1, timestamp: 1640995200, metric: "cpu", value: 45.0 }, // 4分钟前
-    { id: 2, timestamp: 1640995300, metric: "memory", value: 1024.0 }, // 2分钟前
-    { id: 3, timestamp: 1640995400, metric: "disk", value: 2048.0 }, // 40秒前
-    { id: 4, timestamp: 1640995430, metric: "network", value: 100.0 }, // 10秒前
-    { id: 5, timestamp: 1640995440, metric: "cpu", value: 50.0 }, // 当前时间
-    { id: 6, timestamp: 1640995500, metric: "memory", value: 1100.0 } // 未来时间（异常）
+  // 创建时效性验证器
+  let timeliness_validator = TimelinessValidator::new()
+  
+  // 配置时效性规则
+  TimelinessValidator::set_rules(timeliness_validator, {
+    max_data_age: 300,        // 最大数据年龄5分钟
+    expected_delay: 30,       // 预期延迟30秒
+    batch_window: 60,         // 批处理窗口1分钟
+    real_time_threshold: 10   // 实时数据阈值10秒
+  })
+  
+  // 获取当前时间
+  let current_time = 1640995800  // 模拟当前时间
+  
+  // 创建不同时效性的测试数据
+  let realtime_data = [
+    { timestamp: current_time - 5, data_id: "realtime-1" },    // 5秒前
+    { timestamp: current_time - 8, data_id: "realtime-2" },    // 8秒前
+    { timestamp: current_time - 10, data_id: "realtime-3" }    // 10秒前
   ]
   
-  // 时效性检查函数
-  let check_freshness = fn(timestamp, current_time) {
-    let age = current_time - timestamp
-    if age < 0 {
-      "future" // 未来时间
-    } else if age <= 60 {
-      "fresh" // 1分钟内
-    } else if age <= 300 {
-      "recent" // 5分钟内
-    } else {
-      "stale" // 超过5分钟
-    }
-  }
+  let recent_data = [
+    { timestamp: current_time - 60, data_id: "recent-1" },     // 1分钟前
+    { timestamp: current_time - 120, data_id: "recent-2" },    // 2分钟前
+    { timestamp: current_time - 240, data_id: "recent-3" }     // 4分钟前
+  ]
   
-  // 验证数据时效性
-  let mut freshness_results = []
-  for data in telemetry_data {
-    freshness_results = freshness_results.push({
-      id: data.id,
-      metric: data.metric,
-      freshness: check_freshness(data.timestamp, current_time)
+  let stale_data = [
+    { timestamp: current_time - 360, data_id: "stale-1" },     // 6分钟前
+    { timestamp: current_time - 600, data_id: "stale-2" },     // 10分钟前
+    { timestamp: current_time - 1800, data_id: "stale-3" }     // 30分钟前
+  ]
+  
+  // 验证实时数据
+  let realtime_results = TimelinessValidator::validate_batch(timeliness_validator, realtime_data, current_time)
+  
+  // 验证近期数据
+  let recent_results = TimelinessValidator::validate_batch(timeliness_validator, recent_data, current_time)
+  
+  // 验证过期数据
+  let stale_results = TimelinessValidator::validate_batch(timeliness_validator, stale_data, current_time)
+  
+  // 验证结果
+  assert_true(realtime_results.avg_delay <= 10)  // 平均延迟不超过10秒
+  assert_eq(realtime_results.fresh_items, 3)     // 所有数据都是新鲜的
+  assert_eq(realtime_results.stale_items, 0)     // 没有过期数据
+  assert_eq(realtime_results.timeliness_score, 100.0)
+  
+  assert_true(recent_results.avg_delay <= 120)   // 平均延迟不超过2分钟
+  assert_eq(recent_results.fresh_items, 3)       // 所有数据都是新鲜的
+  assert_eq(recent_results.stale_items, 0)       // 没有过期数据
+  assert_true(recent_results.timeliness_score >= 80.0)
+  
+  assert_true(stale_results.avg_delay > 300)      // 平均延迟超过5分钟
+  assert_eq(stale_results.fresh_items, 0)         // 没有新鲜数据
+  assert_eq(stale_results.stale_items, 3)         // 所有数据都过期
+  assert_true(stale_results.timeliness_score < 50.0)
+  
+  // 测试时效性趋势分析
+  let trend_data = []
+  for i in 0..=24 {
+    trend_data = trend_data.push({
+      timestamp: current_time - i * 60,  // 每分钟一个数据点
+      data_id: "trend-" + i.to_string()
     })
   }
   
-  // 验证时效性分类
-  let mut fresh_count = 0
-  let mut recent_count = 0
-  let mut stale_count = 0
-  let mut future_count = 0
+  let trend_analysis = TimelinessValidator::analyze_timeliness_trend(timeliness_validator, trend_data, current_time)
   
-  for result in freshness_results {
-    match result.freshness {
-      "fresh" => fresh_count = fresh_count + 1
-      "recent" => recent_count = recent_count + 1
-      "stale" => stale_count = stale_count + 1
-      "future" => future_count = future_count + 1
-      _ => ()
-    }
-  }
-  
-  assert_eq(fresh_count, 3) // 10秒、40秒、当前时间
-  assert_eq(recent_count, 2) // 2分钟、4分钟前
-  assert_eq(stale_count, 0)
-  assert_eq(future_count, 1) // 未来时间
-  
-  // 计算数据新鲜度百分比
-  let total_count = freshness_results.length()
-  let fresh_percentage = (fresh_count.to_float() / total_count.to_float()) * 100.0
-  
-  assert_true(fresh_percentage >= 50.0)
+  // 验证趋势分析
+  assert_true(trend_analysis.data_points > 0)
+  assert_true(trend_analysis.oldest_data_age > 0)
+  assert_true(trend_analysis.newest_data_age >= 0)
+  assert_true(trend_analysis.timeliness_trend == "improving" or 
+              trend_analysis.timeliness_trend == "stable" or 
+              trend_analysis.timeliness_trend == "degrading")
 }
 
 // 测试4: 遥测数据准确性验证
 test "遥测数据准确性验证" {
-  // 模拟可能包含异常值的遥测数据
-  let telemetry_data = [
-    { metric: "cpu", value: 45.0, min: 0.0, max: 100.0, expected_range: "0-100" },
-    { metric: "memory", value: 1024.0, min: 0.0, max: 8192.0, expected_range: "0-8192MB" },
-    { metric: "disk", value: 2048.0, min: 0.0, max: 10240.0, expected_range: "0-10GB" },
-    { metric: "cpu", value: 150.0, min: 0.0, max: 100.0, expected_range: "0-100" }, // 异常值
-    { metric: "network", value: -10.0, min: 0.0, max: 1000.0, expected_range: "0-1000Mbps" }, // 负值异常
-    { metric: "temperature", value: 85.0, min: 20.0, max: 90.0, expected_range: "20-90°C" }
+  // 创建准确性验证器
+  let accuracy_validator = AccuracyValidator::new()
+  
+  // 配置准确性规则
+  AccuracyValidator::add_rule(accuracy_validator, "metric_precision", {
+    max_decimal_places: 3,
+    allow_scientific_notation: false
+  })
+  
+  AccuracyValidator::add_rule(accuracy_validator, "duration_plausibility", {
+    min_operation_duration: 1,      // 最小操作持续时间1ms
+    max_operation_duration: 3600000, // 最大操作持续时间1小时
+    check_parent_child_timing: true
+  })
+  
+  AccuracyValidator::add_rule(accuracy_validator, "resource_usage_plausibility", {
+    max_cpu_usage: 100.0,
+    max_memory_usage: 1073741824,  // 1GB
+    max_disk_io_rate: 1073741824   // 1GB/s
+  })
+  
+  // 创建准确的测试数据
+  let accurate_data = [
+    {
+      metric_name: "response_time",
+      value: 125.456,
+      unit: "ms",
+      precision: 3
+    },
+    {
+      metric_name: "cpu_usage",
+      value: 75.5,
+      unit: "percent",
+      precision: 1
+    },
+    {
+      metric_name: "memory_usage",
+      value: 536870912,
+      unit: "bytes",
+      precision: 0
+    }
   ]
   
-  // 准确性检查函数
-  let check_accuracy = fn(value, min, max) {
-    if value < min || value > max {
-      false // 超出预期范围
-    } else {
-      true // 在预期范围内
+  // 创建不准确的测试数据
+  let inaccurate_data = [
+    {
+      metric_name: "response_time",
+      value: 125.456789,  // 超过精度限制
+      unit: "ms",
+      precision: 6
+    },
+    {
+      metric_name: "cpu_usage",
+      value: 150.0,       // 超出合理范围
+      unit: "percent",
+      precision: 1
+    },
+    {
+      metric_name: "operation_duration",
+      value: -50,         // 负值不合理
+      unit: "ms",
+      precision: 0
+    },
+    {
+      metric_name: "memory_usage",
+      value: 2147483648,  // 超出合理范围
+      unit: "bytes",
+      precision: 0
     }
-  }
+  ]
   
-  // 验证数据准确性
-  let mut accuracy_results = []
-  for data in telemetry_data {
-    accuracy_results = accuracy_results.push({
-      metric: data.metric,
-      value: data.value,
-      is_accurate: check_accuracy(data.value, data.min, data.max),
-      expected_range: data.expected_range
-    })
-  }
+  // 验证准确数据
+  let accurate_results = AccuracyValidator::validate_metrics(accuracy_validator, accurate_data)
   
-  // 验证准确性检查结果
-  let mut accurate_count = 0
-  let mut inaccurate_count = 0
+  // 验证不准确数据
+  let inaccurate_results = AccuracyValidator::validate_metrics(accuracy_validator, inaccurate_data)
   
-  for result in accuracy_results {
-    if result.is_accurate {
-      accurate_count = accurate_count + 1
-    } else {
-      inaccurate_count = inaccurate_count + 1
+  // 验证结果
+  assert_eq(accurate_results.accurate_count, 3)
+  assert_eq(accurate_results.inaccurate_count, 0)
+  assert_eq(accurate_results.accuracy_score, 100.0)
+  
+  assert_eq(inaccurate_results.accurate_count, 0)
+  assert_eq(inaccurate_results.inaccurate_count, 4)
+  assert_true(inaccurate_results.accuracy_score < 50.0)
+  
+  // 验证具体错误
+  let errors = inaccurate_results.errors
+  assert_true(errors.any(fn(e) { e.type == "precision_exceeded" }))
+  assert_true(errors.any(fn(e) { e.type == "value_out_of_range" }))
+  assert_true(errors.any(fn(e) { e.type == "negative_value" }))
+  
+  // 测试父子span时间准确性
+  let span_timing_data = [
+    {
+      span_id: "parent",
+      parent_span_id: "",
+      start_time: 1640995200000,
+      end_time: 1640995200200,  // 200ms
+      operation_name: "parent_operation"
+    },
+    {
+      span_id: "child1",
+      parent_span_id: "parent",
+      start_time: 1640995200010,
+      end_time: 1640995200060,  // 50ms
+      operation_name: "child_operation_1"
+    },
+    {
+      span_id: "child2",
+      parent_span_id: "parent",
+      start_time: 1640995200070,
+      end_time: 1640995200150,  // 80ms
+      operation_name: "child_operation_2"
     }
-  }
+  ]
   
-  assert_eq(accurate_count, 4)
-  assert_eq(inaccurate_count, 2)
+  let timing_validation = AccuracyValidator::validate_span_timing(accuracy_validator, span_timing_data)
   
-  // 验证具体的异常值
-  assert_false(accuracy_results[3].is_accurate) // CPU 150% 超出范围
-  assert_false(accuracy_results[4].is_accurate) // 网络 -10 负值异常
+  // 验证时间准确性
+  assert_true(timing_validation.is_accurate)
+  assert_eq(timing_validation.violations.length(), 0)
   
-  // 计算数据准确性百分比
-  let total_count = accuracy_results.length()
-  let accuracy_percentage = (accurate_count.to_float() / total_count.to_float()) * 100.0
+  // 测试不准确的时间数据
+  let invalid_timing_data = [
+    {
+      span_id: "parent_invalid",
+      parent_span_id: "",
+      start_time: 1640995200200,
+      end_time: 1640995200000,  // 结束时间早于开始时间
+      operation_name: "invalid_parent"
+    },
+    {
+      span_id: "child_invalid",
+      parent_span_id: "parent_invalid",
+      start_time: 1640995200100,
+      end_time: 1640995200300,  // 子span超出父span时间范围
+      operation_name: "invalid_child"
+    }
+  ]
   
-  assert_true(accuracy_percentage >= 60.0)
+  let invalid_timing_validation = AccuracyValidator::validate_span_timing(accuracy_validator, invalid_timing_data)
+  
+  // 验证无效时间数据
+  assert_false(invalid_timing_validation.is_accurate)
+  assert_true(invalid_timing_validation.violations.length() > 0)
+  assert_true(invalid_timing_validation.violations.any(fn(v) { v.type == "invalid_time_range" }))
+  assert_true(invalid_timing_validation.violations.any(fn(v) { v.type == "child_exceeds_parent" }))
 }
 
-// 测试5: 遥测数据唯一性验证
-test "遥测数据唯一性验证" {
-  // 模拟可能包含重复的遥测数据
-  let telemetry_data = [
-    { id: 1, timestamp: 1640995200, service: "auth", metric: "cpu", value: 45.0 },
-    { id: 2, timestamp: 1640995260, service: "auth", metric: "memory", value: 1024.0 },
-    { id: 3, timestamp: 1640995320, service: "db", metric: "cpu", value: 30.0 },
-    { id: 1, timestamp: 1640995200, service: "auth", metric: "cpu", value: 45.0 }, // 重复ID
-    { id: 4, timestamp: 1640995380, service: "cache", metric: "memory", value: 512.0 },
-    { id: 5, timestamp: 1640995440, service: "db", metric: "disk", value: 2048.0 },
-    { id: 2, timestamp: 1640995260, service: "auth", metric: "memory", value: 1024.0 } // 重复ID
+// 测试5: 遥测数据重复检测
+test "遥测数据重复检测" {
+  // 创建重复检测器
+  let duplicate_detector = DuplicateDetector::new()
+  
+  // 配置检测规则
+  DuplicateDetector::set_strategy(duplicate_detector, "exact_match", {
+    fields: ["trace_id", "span_id", "timestamp"],
+    time_tolerance: 0
+  })
+  
+  DuplicateDetector::set_strategy(duplicate_detector, "fuzzy_match", {
+    fields: ["trace_id", "span_id"],
+    time_tolerance: 1000,  // 1秒容差
+    similarity_threshold: 0.9
+  })
+  
+  // 创建测试数据集
+  let unique_data = [
+    {
+      trace_id: "trace-unique-1",
+      span_id: "span-unique-1",
+      timestamp: 1640995200000,
+      service_name: "service.a",
+      operation_name: "operation.a"
+    },
+    {
+      trace_id: "trace-unique-2",
+      span_id: "span-unique-2",
+      timestamp: 1640995200100,
+      service_name: "service.b",
+      operation_name: "operation.b"
+    },
+    {
+      trace_id: "trace-unique-3",
+      span_id: "span-unique-3",
+      timestamp: 1640995200200,
+      service_name: "service.c",
+      operation_name: "operation.c"
+    }
   ]
   
-  // 唯一性检查函数
-  let check_uniqueness = fn(data_list) {
-    let mut seen_ids = {}
-    let mut duplicates = []
-    
-    for data in data_list {
-      if seen_ids[data.id] == true {
-        duplicates = duplicates.push(data.id)
-      } else {
-        seen_ids[data.id] = true
-      }
+  // 创建包含重复数据的测试集
+  let data_with_duplicates = [
+    {
+      trace_id: "trace-dup-1",
+      span_id: "span-dup-1",
+      timestamp: 1640995200000,
+      service_name: "service.a",
+      operation_name: "operation.a"
+    },
+    {
+      trace_id: "trace-dup-1",
+      span_id: "span-dup-1",
+      timestamp: 1640995200000,  // 完全重复
+      service_name: "service.a",
+      operation_name: "operation.a"
+    },
+    {
+      trace_id: "trace-dup-2",
+      span_id: "span-dup-2",
+      timestamp: 1640995200100,
+      service_name: "service.b",
+      operation_name: "operation.b"
+    },
+    {
+      trace_id: "trace-dup-2",
+      span_id: "span-dup-2",
+      timestamp: 1640995200105,  // 时间略有差异
+      service_name: "service.b",
+      operation_name: "operation.b"
+    },
+    {
+      trace_id: "trace-dup-3",
+      span_id: "span-dup-3",
+      timestamp: 1640995200200,
+      service_name: "service.c",
+      operation_name: "operation.c"
     }
-    
-    duplicates
-  }
+  ]
   
-  // 验证数据唯一性
-  let duplicate_ids = check_uniqueness(telemetry_data)
+  // 检测唯一数据
+  let unique_results = DuplicateDetector::detect_duplicates(duplicate_detector, unique_data, "exact_match")
   
-  // 验证重复ID检测结果
-  assert_eq(duplicate_ids.length(), 2)
-  assert_true(duplicate_ids.contains(1))
-  assert_true(duplicate_ids.contains(2))
+  // 检测重复数据
+  let duplicate_results = DuplicateDetector::detect_duplicates(duplicate_detector, data_with_duplicates, "exact_match")
   
-  // 去重处理
-  let mut unique_data = []
-  let mut seen_ids = {}
+  // 验证唯一数据结果
+  assert_eq(unique_results.total_items, 3)
+  assert_eq(unique_results.unique_items, 3)
+  assert_eq(unique_results.duplicate_items, 0)
+  assert_eq(unique_results.duplicate_groups.length(), 0)
+  assert_eq(unique_results.duplicate_rate, 0.0)
   
-  for data in telemetry_data {
-    if seen_ids[data.id] != true {
-      unique_data = unique_data.push(data)
-      seen_ids[data.id] = true
-    }
-  }
+  // 验证重复数据结果
+  assert_eq(duplicate_results.total_items, 5)
+  assert_eq(duplicate_results.unique_items, 3)
+  assert_eq(duplicate_results.duplicate_items, 2)
+  assert_eq(duplicate_results.duplicate_groups.length(), 1)
+  assert_eq(duplicate_results.duplicate_rate, 0.4)  // 2/5 = 0.4
+  
+  // 验证重复组
+  let duplicate_group = duplicate_results.duplicate_groups[0]
+  assert_eq(duplicate_group.key, "trace-dup-1:span-dup-1:1640995200000")
+  assert_eq(duplicate_group.items.length(), 2)
+  assert_eq(duplicate_group.duplicate_count, 1)
+  
+  // 使用模糊匹配检测
+  let fuzzy_results = DuplicateDetector::detect_duplicates(duplicate_detector, data_with_duplicates, "fuzzy_match")
+  
+  // 验证模糊匹配结果
+  assert_eq(fuzzy_results.total_items, 5)
+  assert_eq(fuzzy_results.unique_items, 2)  // 更少的唯一项，因为时间容差
+  assert_eq(fuzzy_results.duplicate_items, 3)
+  assert_eq(fuzzy_results.duplicate_groups.length(), 2)
+  assert_eq(fuzzy_results.duplicate_rate, 0.6)  // 3/5 = 0.6
+  
+  // 测试重复数据处理策略
+  let deduplication_strategy = DeduplicationStrategy::new()
+  
+  // 配置策略
+  DeduplicationStrategy::set_rule(deduplication_strategy, "keep_first", {
+    priority: 1,
+    conditions: []
+  })
+  
+  DeduplicationStrategy::set_rule(deduplication_strategy, "keep_last", {
+    priority: 2,
+    conditions: [{ field: "timestamp", operator: ">", value: 1640995200000 }]
+  })
+  
+  DeduplicationStrategy::set_rule(deduplication_strategy, "merge", {
+    priority: 3,
+    conditions: [{ field: "service_name", operator: "=", value: "service.b" }],
+    merge_fields: ["attributes", "metrics"]
+  })
+  
+  // 应用去重策略
+  let deduplicated_data = DeduplicationStrategy::apply(deduplication_strategy, data_with_duplicates, duplicate_results)
   
   // 验证去重结果
-  assert_eq(unique_data.length(), 5) // 原始7条数据，去除2条重复
-  assert_eq(unique_data[0].id, 1)
-  assert_eq(unique_data[1].id, 2)
-  assert_eq(unique_data[2].id, 3)
-  assert_eq(unique_data[3].id, 4)
-  assert_eq(unique_data[4].id, 5)
+  assert_eq(deduplicated_data.length(), 3)  // 原始5项减去2个重复项
   
-  // 计算数据重复率
-  let original_count = telemetry_data.length()
-  let unique_count = unique_data.length()
-  let duplicate_rate = ((original_count - unique_count).to_float() / original_count.to_float()) * 100.0
+  // 验证保留的数据
+  let kept_item = deduplicated_data.find(fn(item) { 
+    item.trace_id == "trace-dup-1" and item.span_id == "span-dup-1" 
+  })
+  assert_true(kept_item != None)
   
-  assert_eq(duplicate_rate, 28.57142857142857) // 约28.57%的数据是重复的
-}
-
-// 测试6: 遥测数据格式验证
-test "遥测数据格式验证" {
-  // 模拟不同格式质量的遥测数据
-  let telemetry_data = [
-    { metric: "cpu_usage", value: "45.5", format: "numeric", is_valid: true },
-    { metric: "memory_usage", value: "1024MB", format: "string", is_valid: true },
-    { metric: "disk_usage", value: "2.5GB", format: "string", is_valid: true },
-    { metric: "network_status", value: "up", format: "enum", is_valid: true },
-    { metric: "error_count", value: "", format: "numeric", is_valid: false }, // 空值
-    { metric: "response_time", value: "abc", format: "numeric", is_valid: false }, // 非数字
-    { metric: "service_status", value: "unknown", format: "enum", is_valid: false } // 无效枚举值
-  ]
+  // 测试重复数据报告
+  let duplicate_report = DuplicateDetector::generate_report(duplicate_detector, duplicate_results)
   
-  // 格式验证函数
-  let validate_format = fn(value, format) {
-    match format {
-      "numeric" => {
-        // 检查是否为有效数字
-        if value == "" {
-          false
-        } else {
-          // 简化的数字验证
-          let mut is_numeric = true
-          let mut i = 0
-          while i < value.length() {
-            let char = value[i]
-            if not ((char >= '0' and char <= '9') or char == '.') {
-              is_numeric = false
-              break
-            }
-            i = i + 1
-          }
-          is_numeric
-        }
-      }
-      "string" => {
-        value != ""
-      }
-      "enum" => {
-        // 检查是否为有效枚举值
-        value == "up" or value == "down" or value == "pending"
-      }
-      _ => false
-    }
-  }
+  // 验证报告内容
+  assert_true(duplicate_report.summary.total_items > 0)
+  assert_true(duplicate_report.summary.duplicate_rate > 0.0)
+  assert_true(duplicate_report.summary.duplicate_groups > 0)
+  assert_true(duplicate_report.recommendations.length() > 0)
   
-  // 验证数据格式
-  let mut format_validation_results = []
-  for data in telemetry_data {
-    let is_valid_format = validate_format(data.value, data.format)
-    format_validation_results = format_validation_results.push({
-      metric: data.metric,
-      value: data.value,
-      format: data.format,
-      is_valid_format: is_valid_format,
-      expected_valid: data.is_valid
-    })
-  }
-  
-  // 验证格式检查结果
-  let mut valid_format_count = 0
-  let mut invalid_format_count = 0
-  
-  for result in format_validation_results {
-    if result.is_valid_format == result.expected_valid {
-      if result.is_valid_format {
-        valid_format_count = valid_format_count + 1
-      } else {
-        invalid_format_count = invalid_format_count + 1
-      }
-    }
-  }
-  
-  assert_eq(valid_format_count, 4) // 4个有效格式
-  assert_eq(invalid_format_count, 3) // 3个无效格式
-  
-  // 验证具体的格式问题
-  assert_false(format_validation_results[4].is_valid_format) // 空值
-  assert_false(format_validation_results[5].is_valid_format) // 非数字字符串
-  assert_false(format_validation_results[6].is_valid_format) // 无效枚举值
-  
-  // 计算格式符合率
-  let total_count = format_validation_results.length()
-  let format_compliance_rate = (valid_format_count.to_float() / total_count.to_float()) * 100.0
-  
-  assert_true(format_compliance_rate >= 50.0)
+  // 验证建议内容
+  let recommendations = duplicate_report.recommendations
+  assert_true(recommendations.any(fn(r) { r.type == "data_quality_improvement" }))
+  assert_true(recommendations.any(fn(r) { r.type == "deduplication_strategy" }))
+  assert_true(recommendations.any(fn(r) { r.type == "source_system_check" }))
 }
