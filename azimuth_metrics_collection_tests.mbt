@@ -1,698 +1,822 @@
 // Azimuth Metrics Collection Test Suite
-// This file contains comprehensive test cases for metrics collection and aggregation
+// This file contains test cases for metrics collection and aggregation
 
-// Test 1: Counter Metrics Collection
-test "counter metrics collection and aggregation" {
-  // Define counter metric structure
-  type CounterMetric = {
+// Test 1: Counter Metrics
+test "counter metrics increment and aggregation" {
+  // Define counter structure
+  type Counter = {
     name: String,
     value: Int,
-    labels: Array<(String, String)>,
-    timestamp: Int
+    labels: Array[(String, String)]
   }
   
-  // Create counter metrics
-  let counter_metrics = [
-    { name: "http_requests_total", value: 1, labels: [("method", "GET"), ("status", "200")], timestamp: 1640995200 },
-    { name: "http_requests_total", value: 1, labels: [("method", "GET"), ("status", "200")], timestamp: 1640995210 },
-    { name: "http_requests_total", value: 1, labels: [("method", "POST"), ("status", "201")], timestamp: 1640995220 },
-    { name: "http_requests_total", value: 1, labels: [("method", "GET"), ("status", "404")], timestamp: 1640995230 },
-    { name: "http_requests_total", value: 1, labels: [("method", "POST"), ("status", "400")], timestamp: 1640995240 }
-  ]
-  
-  // Aggregate counters by labels
-  let aggregate_by_labels = fn(metrics: Array[CounterMetric]) {
-    let groups = Map::empty()
-    
-    for metric in metrics {
-      let label_key = metric.labels.map(fn(l) { l.0 + "=" + l.1 }).join(",")
-      
-      let existing = match Map::get(groups, label_key) {
-        Some(value) => value
-        None => 0
-      }
-      
-      let _ = Map::insert(groups, label_key, existing + metric.value)
-    }
-    
-    groups
+  // Create counter
+  let request_counter = {
+    name: "http_requests_total",
+    value: 0,
+    labels: [("method", "GET"), ("status", "200")]
   }
   
-  let aggregated_counters = aggregate_by_labels(counter_metrics)
-  
-  // Verify aggregation results
-  assert_eq(match Map::get(aggregated_counters, "method=GET,status=200") { Some(v) => v | None => 0 }, 2)
-  assert_eq(match Map::get(aggregated_counters, "method=POST,status=201") { Some(v) => v | None => 0 }, 1)
-  assert_eq(match Map::get(aggregated_counters, "method=GET,status=404") { Some(v) => v | None => 0 }, 1)
-  assert_eq(match Map::get(aggregated_counters, "method=POST,status=400") { Some(v) => v | None => 0 }, 1)
-  
-  // Calculate total requests
-  let total_requests = counter_metrics.reduce(0, fn(acc, m) { acc + m.value })
-  assert_eq(total_requests, 5)
-  
-  // Calculate requests by method
-  let get_requests = counter_metrics.filter(fn(m) { 
-    m.labels.any(fn(l) { l.0 == "method" && l.1 == "GET" })
-  }).reduce(0, fn(acc, m) { acc + m.value })
-  assert_eq(get_requests, 3)
-  
-  let post_requests = counter_metrics.filter(fn(m) { 
-    m.labels.any(fn(l) { l.0 == "method" && l.1 == "POST" })
-  }).reduce(0, fn(acc, m) { acc + m.value })
-  assert_eq(post_requests, 2)
-}
-
-// Test 2: Gauge Metrics Collection
-test "gauge metrics collection and temporal analysis" {
-  // Define gauge metric structure
-  type GaugeMetric = {
-    name: String,
-    value: Float,
-    labels: Array<(String, String)>,
-    timestamp: Int
+  // Increment counter function
+  let increment_counter = fn(counter: Counter, amount: Int) {
+    { counter | value: counter.value + amount }
   }
   
-  // Create gauge metrics representing memory usage over time
-  let memory_gauges = [
-    { name: "memory_usage_bytes", value: 1024.0 * 1024.0 * 100.0, labels: [("instance", "server-1")], timestamp: 1640995200 },
-    { name: "memory_usage_bytes", value: 1024.0 * 1024.0 * 120.0, labels: [("instance", "server-1")], timestamp: 1640995210 },
-    { name: "memory_usage_bytes", value: 1024.0 * 1024.0 * 95.0, labels: [("instance", "server-1")], timestamp: 1640995220 },
-    { name: "memory_usage_bytes", value: 1024.0 * 1024.0 * 110.0, labels: [("instance", "server-1")], timestamp: 1640995230 },
-    { name: "memory_usage_bytes", value: 1024.0 * 1024.0 * 105.0, labels: [("instance", "server-1")], timestamp: 1640995240 }
-  ]
+  // Test counter increment
+  let counter1 = increment_counter(request_counter, 1)
+  assert_eq(counter1.value, 1)
   
-  // Extract values for analysis
-  let memory_values = memory_gauges.map(fn(g) { g.value })
-  assert_eq(memory_values.length(), 5)
+  let counter2 = increment_counter(counter1, 5)
+  assert_eq(counter2.value, 6)
   
-  // Calculate statistics
-  let min_memory = memory_values.reduce(memory_values[0], fn(acc, v) { if v < acc { v } else { acc } })
-  let max_memory = memory_values.reduce(memory_values[0], fn(acc, v) { if v > acc { v } else { acc } })
-  let avg_memory = memory_values.reduce(0.0, fn(acc, v) { acc + v }) / (memory_values.length() as Float)
-  
-  assert_eq(min_memory, 1024.0 * 1024.0 * 95.0)
-  assert_eq(max_memory, 1024.0 * 1024.0 * 120.0)
-  assert_eq(avg_memory, 1024.0 * 1024.0 * 106.0)
-  
-  // Calculate rate of change
-  let calculate_rate_of_change = fn(values: Array[Float], timestamps: Array[Int]) {
-    if values.length() < 2 || timestamps.length() < 2 {
-      return []
-    }
-    
-    let mut rates = []
-    for i in 1..values.length() {
-      let value_change = values[i] - values[i-1]
-      let time_change = (timestamps[i] - timestamps[i-1]) as Float
-      let rate = value_change / time_change
-      rates = rates.push(rate)
-    }
-    rates
+  // Test counter with different labels
+  let error_counter = {
+    name: "http_requests_total",
+    value: 0,
+    labels: [("method", "POST"), ("status", "500")]
   }
   
-  let timestamps = memory_gauges.map(fn(g) { g.timestamp })
-  let memory_rates = calculate_rate_of_change(memory_values, timestamps)
+  let error_counter1 = increment_counter(error_counter, 1)
+  assert_eq(error_counter1.value, 1)
+  assert_eq(error_counter1.labels[0], ("method", "POST"))
+  assert_eq(error_counter1.labels[1], ("status", "500"))
   
-  assert_eq(memory_rates.length(), 4)
-  
-  // Test threshold detection
-  let memory_threshold = 1024.0 * 1024.0 * 115.0  // 115MB
-  let threshold_violations = memory_gauges.filter(fn(g) { g.value > memory_threshold })
-  assert_eq(threshold_violations.length(), 1)
-  assert_eq(threshold_violations[0].value, 1024.0 * 1024.0 * 120.0)
-}
-
-// Test 3: Histogram Metrics Collection
-test "histogram metrics collection and percentile calculation" {
-  // Define histogram metric structure
-  type HistogramMetric = {
-    name: String,
-    buckets: Array[(Float, Int)>,  // (upper_bound, count)
-    count: Int,
-    sum: Float,
-    labels: Array<(String, String)>,
-    timestamp: Int
-  }
-  
-  // Create histogram for request duration
-  let request_duration_histogram = {
-    name: "http_request_duration_seconds",
-    buckets: [
-      (0.1, 10),   // 10 requests <= 0.1s
-      (0.5, 25),   // 25 requests <= 0.5s
-      (1.0, 40),   // 40 requests <= 1.0s
-      (2.5, 48),   // 48 requests <= 2.5s
-      (5.0, 50),   // 50 requests <= 5.0s
-      (10.0, 50)   // 50 requests <= 10.0s
-    ],
-    count: 50,
-    sum: 37.5,
-    labels: [("endpoint", "/api/orders")],
-    timestamp: 1640995200
-  }
-  
-  // Calculate bucket counts
-  let calculate_bucket_counts = fn(histogram: HistogramMetric) {
-    let mut previous_count = 0
-    let bucket_counts = histogram.buckets.map(fn(bucket) {
-      let (upper_bound, cumulative_count) = bucket
-      let bucket_count = cumulative_count - previous_count
-      previous_count = cumulative_count
-      (upper_bound, bucket_count)
-    })
-    bucket_counts
-  }
-  
-  let bucket_counts = calculate_bucket_counts(request_duration_histogram)
-  assert_eq(bucket_counts, [(0.1, 10), (0.5, 15), (1.0, 15), (2.5, 8), (5.0, 2), (10.0, 0)])
-  
-  // Calculate approximate percentiles
-  let calculate_percentile = fn(histogram: HistogramMetric, percentile: Float) {
-    let target_count = ((histogram.count as Float) * percentile / 100.0) as Int
-    
-    for bucket in histogram.buckets {
-      let (_, cumulative_count) = bucket
-      if cumulative_count >= target_count {
-        return bucket.0
-      }
-    }
-    
-    histogram.buckets[histogram.buckets.length() - 1].0
-  }
-  
-  let p50 = calculate_percentile(request_duration_histogram, 50.0)
-  let p90 = calculate_percentile(request_duration_histogram, 90.0)
-  let p95 = calculate_percentile(request_duration_histogram, 95.0)
-  let p99 = calculate_percentile(request_duration_histogram, 99.0)
-  
-  assert_eq(p50, 0.5)   // 50th percentile falls in 0.5s bucket
-  assert_eq(p90, 2.5)   // 90th percentile falls in 2.5s bucket
-  assert_eq(p95, 5.0)   // 95th percentile falls in 5.0s bucket
-  assert_eq(p99, 5.0)   // 99th percentile falls in 5.0s bucket
-  
-  // Calculate average request duration
-  let avg_duration = request_duration_histogram.sum / (request_duration.count as Float)
-  assert_eq(avg_duration, 0.75)  // 37.5 / 50
-}
-
-// Test 4: Summary Metrics Collection
-test "summary metrics collection with quantiles" {
-  // Define summary metric structure
-  type SummaryMetric = {
-    name: String,
-    quantiles: Array[(Float, Float)>,  // (quantile, value)
-    count: Int,
-    sum: Float,
-    labels: Array<(String, String)>,
-    timestamp: Int
-  }
-  
-  // Create summary for response sizes
-  let response_size_summary = {
-    name: "http_response_size_bytes",
-    quantiles: [
-      (0.5, 1024.0),    // 50th percentile: 1KB
-      (0.9, 5120.0),    // 90th percentile: 5KB
-      (0.95, 10240.0),  // 95th percentile: 10KB
-      (0.99, 51200.0)   // 99th percentile: 50KB
-    ],
-    count: 1000,
-    sum: 2048000.0,  // Total 2MB
-    labels: [("endpoint", "/api/data")],
-    timestamp: 1640995200
-  }
-  
-  // Test quantile access
-  let get_quantile_value = fn(summary: SummaryMetric, quantile: Float) {
-    match summary.quantiles.find(fn(q) { q.0 == quantile }) {
-      Some((_, value)) => Some(value)
-      None => None
-    }
-  }
-  
-  assert_eq(get_quantile_value(response_size_summary, 0.5), Some(1024.0))
-  assert_eq(get_quantile_value(response_size_summary, 0.9), Some(5120.0))
-  assert_eq(get_quantile_value(response_size_summary, 0.95), Some(10240.0))
-  assert_eq(get_quantile_value(response_size_summary, 0.99), Some(51200.0))
-  assert_eq(get_quantile_value(response_size_summary, 0.75), None)  // Not defined
-  
-  // Calculate average response size
-  let avg_response_size = response_size_summary.sum / (response_size_summary.count as Float)
-  assert_eq(avg_response_size, 2048.0)  // 2MB / 1000 = 2KB
-  
-  // Test quantile interpolation
-  let interpolate_quantile = fn(summary: SummaryMetric, target_quantile: Float) {
-    if summary.quantiles.length() < 2 {
-      return None
-    }
-    
-    let sorted_quantiles = summary.quantiles.sort(fn(a, b) {
-      if a.0 < b.0 { -1 } else if a.0 > b.0 { 1 } else { 0 }
-    })
-    
-    for i in 0..(sorted_quantiles.length() - 1) {
-      let (q1, v1) = sorted_quantiles[i]
-      let (q2, v2) = sorted_quantiles[i + 1]
-      
-      if target_quantile >= q1 && target_quantile <= q2 {
-        let ratio = (target_quantile - q1) / (q2 - q1)
-        let interpolated_value = v1 + ratio * (v2 - v1)
-        return Some(interpolated_value)
-      }
-    }
-    
-    None
-  }
-  
-  let interpolated_75th = interpolate_quantile(response_size_summary, 0.75)
-  assert_eq(interpolated_75th, Some(3072.0))  // Interpolated between 1024.0 and 5120.0
-}
-
-// Test 5: Multi-dimensional Metrics Aggregation
-test "multi-dimensional metrics aggregation and rollups" {
-  // Define multi-dimensional metric
-  type MultiDimMetric = {
-    name: String,
-    value: Float,
-    dimensions: Array<(String, String)>,
-    timestamp: Int
-  }
-  
-  // Create metrics with multiple dimensions
-  let multi_dim_metrics = [
-    { name: "cpu_usage_percent", value: 45.2, dimensions: [("host", "server-1"), ("region", "us-west"), ("env", "prod")], timestamp: 1640995200 },
-    { name: "cpu_usage_percent", value: 38.7, dimensions: [("host", "server-2"), ("region", "us-west"), ("env", "prod")], timestamp: 1640995200 },
-    { name: "cpu_usage_percent", value: 72.1, dimensions: [("host", "server-3"), ("region", "us-east"), ("env", "prod")], timestamp: 1640995200 },
-    { name: "cpu_usage_percent", value: 25.4, dimensions: [("host", "server-1"), ("region", "us-west"), ("env", "dev")], timestamp: 1640995200 },
-    { name: "cpu_usage_percent", value: 31.9, dimensions: [("host", "server-2"), ("region", "us-west"), ("env", "dev")], timestamp: 1640995200 },
-    { name: "cpu_usage_percent", value: 68.3, dimensions: [("host", "server-4"), ("region", "eu-west"), ("env", "prod")], timestamp: 1640995200 }
-  ]
-  
-  // Aggregate by specific dimensions
-  let aggregate_by_dimensions = fn(metrics: Array[MultiDimMetric], group_by: Array<String>) {
-    let groups = Map::empty()
-    
-    for metric in metrics {
-      let dimension_values = group_by.map(fn(dim) {
-        match metric.dimensions.find(fn(d) { d.0 == dim }) {
-          Some((_, value)) => value
-          None => "unknown"
-        }
+  // Test counter aggregation
+  let aggregate_counters = fn(counters: Array[Counter]) {
+    let mut result = []
+    for counter in counters {
+      let existing = result.find_index(fn(c) { 
+        c.name == counter.name && c.labels == counter.labels 
       })
-      let group_key = dimension_values.join("|")
       
-      let existing = match Map::get(groups, group_key) {
-        Some(values) => values
-        None => []
+      match existing {
+        Some(index) => {
+          result[index] = { result[index] | value: result[index].value + counter.value }
+        }
+        None => {
+          result = result.push(counter)
+        }
       }
-      
-      let _ = Map::insert(groups, group_key, existing.push(metric.value))
     }
-    
-    groups
+    result
   }
   
-  // Aggregate by region
-  let region_groups = aggregate_by_dimensions(multi_dim_metrics, ["region"])
+  let counters = [counter1, counter2, error_counter1]
+  let aggregated = aggregate_counters(counters)
+  assert_eq(aggregated.length(), 2)
   
-  // Calculate averages for each region
-  let calculate_average = fn(values: Array[Float>) {
-    if values.length() == 0 {
+  let success_counter = aggregated.find(fn(c) { c.labels.contains(("status", "200")) })
+  match success_counter {
+    Some(counter) => assert_eq(counter.value, 7)  // 1 + 6
+    None => assert_true(false)
+  }
+  
+  let error_counter_result = aggregated.find(fn(c) { c.labels.contains(("status", "500")) })
+  match error_counter_result {
+    Some(counter) => assert_eq(counter.value, 1)
+    None => assert_true(false)
+  }
+}
+
+// Test 2: Gauge Metrics
+test "gauge metrics with set and increment operations" {
+  // Define gauge structure
+  type Gauge = {
+    name: String,
+    value: Float,
+    labels: Array[(String, String)]
+  }
+  
+  // Create gauge
+  let memory_gauge = {
+    name: "memory_usage_bytes",
+    value: 0.0,
+    labels: [("instance", "server-1"), ("region", "us-west")]
+  }
+  
+  // Set gauge value
+  let set_gauge = fn(gauge: Gauge, new_value: Float) {
+    { gauge | value: new_value }
+  }
+  
+  // Increment gauge value
+  let increment_gauge = fn(gauge: Gauge, amount: Float) {
+    { gauge | value: gauge.value + amount }
+  }
+  
+  // Decrement gauge value
+  let decrement_gauge = fn(gauge: Gauge, amount: Float) {
+    { gauge | value: gauge.value - amount }
+  }
+  
+  // Test gauge operations
+  let gauge1 = set_gauge(memory_gauge, 1024.0)
+  assert_eq(gauge1.value, 1024.0)
+  
+  let gauge2 = increment_gauge(gauge1, 256.0)
+  assert_eq(gauge2.value, 1280.0)
+  
+  let gauge3 = decrement_gauge(gauge2, 128.0)
+  assert_eq(gauge3.value, 1152.0)
+  
+  // Test multiple gauges
+  let cpu_gauge = {
+    name: "cpu_usage_percent",
+    value: 0.0,
+    labels: [("instance", "server-1"), ("region", "us-west")]
+  }
+  
+  let cpu_gauge1 = set_gauge(cpu_gauge, 75.5)
+  assert_eq(cpu_gauge1.value, 75.5)
+  
+  // Test gauge aggregation (average)
+  let average_gauges = fn(gauges: Array[Gauge]) {
+    if gauges.length() == 0 {
       0.0
     } else {
-      values.reduce(0.0, fn(acc, v) { acc + v }) / (values.length() as Float)
+      let sum = gauges.reduce(fn(acc, gauge) { acc + gauge.value }, 0.0)
+      sum / (gauges.length() as Float)
     }
   }
   
-  let us_west_values = match Map::get(region_groups, "us-west") { Some(v) => v | None => [] }
-  let us_east_values = match Map::get(region_groups, "us-east") { Some(v) => v | None => [] }
-  let eu_west_values = match Map::get(region_groups, "eu-west") { Some(v) => v | None => [] }
+  let gauges = [gauge3, cpu_gauge1]
+  let average = average_gauges(gauges)
+  assert_eq(average.round(), 613.8)  // (1152.0 + 75.5) / 2
   
-  assert_eq(us_west_values.length(), 4)
-  assert_eq(us_east_values.length(), 1)
-  assert_eq(eu_west_values.length(), 1)
-  
-  assert_eq(calculate_average(us_west_values).round(), 35.3)  // (45.2 + 38.7 + 25.4 + 31.9) / 4
-  assert_eq(calculate_average(us_east_values), 72.1)
-  assert_eq(calculate_average(eu_west_values), 68.3)
-  
-  // Aggregate by region and environment
-  let region_env_groups = aggregate_by_dimensions(multi_dim_metrics, ["region", "env"])
-  
-  let prod_us_west = match Map::get(region_env_groups, "us-west|prod") { Some(v) => v | None => [] }
-  let dev_us_west = match Map::get(region_env_groups, "us-west|dev") { Some(v) => v | None => [] }
-  let prod_us_east = match Map::get(region_env_groups, "us-east|prod") { Some(v) => v | None => [] }
-  let prod_eu_west = match Map::get(region_env_groups, "eu-west|prod") { Some(v) => v | None => [] }
-  
-  assert_eq(prod_us_west.length(), 2)  // server-1, server-2
-  assert_eq(dev_us_west.length(), 2)   // server-1, server-2
-  assert_eq(prod_us_east.length(), 1)  // server-3
-  assert_eq(prod_eu_west.length(), 1)  // server-4
-  
-  assert_eq(calculate_average(prod_us_west).round(), 42.0)  // (45.2 + 38.7) / 2
-  assert_eq(calculate_average(dev_us_west).round(), 29.0)   // (25.4 + 31.9) / 2
-  assert_eq(calculate_average(prod_us_east), 72.1)
-  assert_eq(calculate_average(prod_eu_west), 68.3)
-}
-
-// Test 6: Time Series Metrics Analysis
-test "time series metrics analysis and trend detection" {
-  // Define time series metric
-  type TimeSeriesMetric = {
-    name: String,
-    values: Array[(Int, Float)>,  // (timestamp, value)
-    labels: Array<(String, String)>
-  }
-  
-  // Create time series for error rate over time
-  let error_rate_time_series = {
-    name: "error_rate_percent",
-    values: [
-      (1640995200, 1.2),  // 00:00:00
-      (1640995260, 1.5),  // 00:01:00
-      (1640995320, 1.8),  // 00:02:00
-      (1640995380, 2.1),  // 00:03:00
-      (1640995440, 1.9),  // 00:04:00
-      (1640995500, 1.6),  // 00:05:00
-      (1640995560, 1.4),  // 00:06:00
-      (1640995620, 1.3),  // 00:07:00
-      (1640995680, 1.1),  // 00:08:00
-      (1640995740, 1.0)   // 00:09:00
-    ],
-    labels: [("service", "api-gateway")]
-  }
-  
-  // Extract timestamps and values
-  let timestamps = error_rate_time_series.values.map(fn(p) { p.0 })
-  let error_rates = error_rate_time_series.values.map(fn(p) { p.1 })
-  
-  assert_eq(timestamps.length(), 10)
-  assert_eq(error_rates.length(), 10)
-  
-  // Calculate moving average
-  let calculate_moving_average = fn(values: Array[Float>, window_size: Int) {
-    if window_size <= 0 || values.length() < window_size {
-      return []
-    }
-    
-    let mut moving_averages = []
-    for i in (window_size - 1)..values.length() {
-      let mut sum = 0.0
-      for j in (i - window_size + 1)..=i {
-        sum = sum + values[j]
-      }
-      let avg = sum / (window_size as Float)
-      moving_averages = moving_averages.push(avg)
-    }
-    moving_averages
-  }
-  
-  let moving_averages_3 = calculate_moving_average(error_rates, 3)
-  assert_eq(moving_averages_3.length(), 8)
-  assert_eq(moving_averages_3[0].round(), 1.5)  // (1.2 + 1.5 + 1.8) / 3
-  assert_eq(moving_averages_3[7].round(), 1.1)  // (1.1 + 1.0) / 3
-  
-  // Detect trend
-  let detect_trend = fn(values: Array[Float>) {
-    if values.length() < 2 {
-      return "insufficient_data"
-    }
-    
-    let first_half = values.slice(0, values.length() / 2)
-    let second_half = values.slice(values.length() / 2, values.length())
-    
-    let first_avg = first_half.reduce(0.0, fn(acc, v) { acc + v }) / (first_half.length() as Float)
-    let second_avg = second_half.reduce(0.0, fn(acc, v) { acc + v }) / (second_half.length() as Float)
-    
-    let difference = second_avg - first_avg
-    let threshold = 0.1  // 10% change threshold
-    
-    if difference > threshold {
-      "increasing"
-    } else if difference < -threshold {
-      "decreasing"
+  // Test gauge rate calculation
+  let calculate_gauge_rate = fn(current: Gauge, previous: Gauge, time_interval: Float) {
+    if time_interval > 0.0 {
+      (current.value - previous.value) / time_interval
     } else {
-      "stable"
+      0.0
     }
   }
   
-  let overall_trend = detect_trend(error_rates)
-  assert_eq(overall_trend, "stable")  // Error rate is relatively stable
-  
-  // Detect anomalies
-  let detect_anomalies = fn(values: Array[Float], threshold: Float) {
-    let mean = values.reduce(0.0, fn(acc, v) { acc + v }) / (values.length() as Float)
-    let variance = values.reduce(0.0, fn(acc, v) { acc + (v - mean) * (v - mean) }) / (values.length() as Float)
-    let std_dev = variance.sqrt()
-    
-    values.filter(fn(v) { (v - mean).abs() > threshold * std_dev })
-  }
-  
-  let anomalies = detect_anomalies(error_rates, 2.0)  // 2 standard deviations
-  assert_eq(anomalies.length(), 2)  // 2.1 and possibly 1.0 depending on calculation
+  let previous_memory = { memory_gauge | value: 800.0 }
+  let memory_rate = calculate_gauge_rate(gauge3, previous_memory, 60.0)
+  assert_eq(memory_rate.round(), 5.87)  // (1152.0 - 800.0) / 60
 }
 
-// Test 7: Metrics Sampling and Rate Limiting
-test "metrics sampling and rate limiting strategies" {
-  // Define sampling strategy
-  enum SamplingStrategy {
-    FixedRate(Int)  // Sample every Nth metric
-    TimeWindow(Int)  // Sample at most N metrics per time window
-    Random(Float)   // Random sampling with probability
-    Adaptive(Float)  // Adaptive sampling based on metric volume
+// Test 3: Histogram Metrics
+test "histogram metrics with buckets and statistics" {
+  // Define histogram bucket
+  type HistogramBucket = {
+    upper_bound: Float,
+    cumulative_count: Int
   }
   
-  // Create test metrics
-  let test_metrics = [
-    { name: "metric_1", value: 1.0, timestamp: 1640995200 },
-    { name: "metric_2", value: 2.0, timestamp: 1640995210 },
-    { name: "metric_3", value: 3.0, timestamp: 1640995220 },
-    { name: "metric_4", value: 4.0, timestamp: 1640995230 },
-    { name: "metric_5", value: 5.0, timestamp: 1640995240 },
-    { name: "metric_6", value: 6.0, timestamp: 1640995250 },
-    { name: "metric_7", value: 7.0, timestamp: 1640995260 },
-    { name: "metric_8", value: 8.0, timestamp: 1640995270 },
-    { name: "metric_9", value: 9.0, timestamp: 1640995280 },
-    { name: "metric_10", value: 10.0, timestamp: 1640995290 }
+  // Define histogram
+  type Histogram = {
+    name: String,
+    buckets: Array[HistogramBucket],
+    count: Int,
+    sum: Float,
+    labels: Array[(String, String)]
+  }
+  
+  // Create histogram with default buckets
+  let create_histogram = fn(name: String, buckets: Array[Float], labels: Array[(String, String)]) {
+    let histogram_buckets = buckets.map(fn(upper_bound) {
+      { upper_bound, cumulative_count: 0 }
+    })
+    
+    {
+      name,
+      buckets: histogram_buckets,
+      count: 0,
+      sum: 0.0,
+      labels
+    }
+  }
+  
+  // Observe value in histogram
+  let observe_histogram = fn(histogram: Histogram, value: Float) {
+    let updated_buckets = histogram.buckets.map(fn(bucket) {
+      if value <= bucket.upper_bound {
+        { bucket | cumulative_count: bucket.cumulative_count + 1 }
+      } else {
+        bucket
+      }
+    })
+    
+    {
+      name: histogram.name,
+      buckets: updated_buckets,
+      count: histogram.count + 1,
+      sum: histogram.sum + value,
+      labels: histogram.labels
+    }
+  }
+  
+  // Create request duration histogram
+  let default_buckets = [0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+  let request_histogram = create_histogram(
+    "http_request_duration_seconds",
+    default_buckets,
+    [("method", "GET"), ("/api/users", "path")]
+  )
+  
+  // Test histogram observation
+  let histogram1 = observe_histogram(request_histogram, 0.05)  // <= 0.1
+  let histogram2 = observe_histogram(histogram1, 0.3)         // <= 0.5
+  let histogram3 = observe_histogram(histogram2, 1.2)        // <= 2.5
+  let histogram4 = observe_histogram(histogram3, 0.8)        // <= 1.0
+  let histogram5 = observe_histogram(histogram4, 3.5)        // <= 5.0
+  
+  assert_eq(histogram5.count, 5)
+  assert_eq(histogram5.sum.round(), 5.85)  // 0.05 + 0.3 + 1.2 + 0.8 + 3.5
+  
+  // Test bucket counts
+  let bucket_01 = histogram5.buckets.find(fn(b) { b.upper_bound == 0.1 })
+  match bucket_01 {
+    Some(bucket) => assert_eq(bucket.cumulative_count, 1)  // Only 0.05
+    None => assert_true(false)
+  }
+  
+  let bucket_05 = histogram5.buckets.find(fn(b) { b.upper_bound == 0.5 })
+  match bucket_05 {
+    Some(bucket) => assert_eq(bucket.cumulative_count, 2)  // 0.05, 0.3
+    None => assert_true(false)
+  }
+  
+  let bucket_10 = histogram5.buckets.find(fn(b) { b.upper_bound == 1.0 })
+  match bucket_10 {
+    Some(bucket) => assert_eq(bucket.cumulative_count, 4)  // 0.05, 0.3, 0.8, 1.2
+    None => assert_true(false)
+  }
+  
+  let bucket_50 = histogram5.buckets.find(fn(b) { b.upper_bound == 5.0 })
+  match bucket_50 {
+    Some(bucket) => assert_eq(bucket.cumulative_count, 5)  // All values
+    None => assert_true(false)
+  }
+  
+  // Calculate histogram statistics
+  let calculate_histogram_stats = fn(histogram: Histogram) {
+    if histogram.count == 0 {
+      { mean: 0.0, rate: 0.0 }
+    } else {
+      let mean = histogram.sum / (histogram.count as Float)
+      let rate = histogram.count as Float / 60.0  // Assuming 1 minute window
+      { mean, rate }
+    }
+  }
+  
+  let stats = calculate_histogram_stats(histogram5)
+  assert_eq(stats.mean.round(), 1.17)  // 5.85 / 5
+  assert_eq(stats.rate.round(), 0.08)  // 5 / 60
+  
+  // Calculate percentiles from histogram
+  let calculate_percentile = fn(histogram: Histogram, percentile: Float) {
+    if histogram.count == 0 {
+      0.0
+    } else {
+      let target_count = ((histogram.count as Float) * percentile / 100.0) as Int
+      
+      let find_bucket = fn(buckets: Array[HistogramBucket]) {
+        let mut result = 0.0
+        for bucket in buckets {
+          if bucket.cumulative_count >= target_count {
+            result = bucket.upper_bound
+            break
+          }
+        }
+        result
+      }
+      
+      find_bucket(histogram.buckets)
+    }
+  }
+  
+  let p50 = calculate_percentile(histogram5, 50.0)
+  let p95 = calculate_percentile(histogram5, 95.0)
+  
+  assert_eq(p50, 1.0)  // 50th percentile falls in 1.0 bucket
+  assert_eq(p95, 5.0)  // 95th percentile falls in 5.0 bucket
+}
+
+// Test 4: Summary Metrics
+test "summary metrics with quantiles and sliding windows" {
+  // Define quantile
+  type Quantile = {
+    quantile: Float,
+    value: Float
+  }
+  
+  // Define summary
+  type Summary = {
+    name: String,
+    quantiles: Array[Quantile],
+    count: Int,
+    sum: Float,
+    labels: Array[(String, String)]
+  }
+  
+  // Create summary
+  let create_summary = fn(name: String, quantiles: Array[Float], labels: Array[(String, String)]) {
+    let summary_quantiles = quantiles.map(fn(q) {
+      { quantile: q, value: 0.0 }
+    })
+    
+    {
+      name,
+      quantiles: summary_quantiles,
+      count: 0,
+      sum: 0.0,
+      labels
+    }
+  }
+  
+  // Observe value in summary
+  let observe_summary = fn(summary: Summary, value: Float) {
+    // In a real implementation, this would use a sliding window and reservoir sampling
+    // For simplicity, we'll just update count and sum
+    {
+      name: summary.name,
+      quantiles: summary.quantiles,
+      count: summary.count + 1,
+      sum: summary.sum + value,
+      labels: summary.labels
+    }
+  }
+  
+  // Update quantiles (simplified implementation)
+  let update_quantiles = fn(summary: Summary, values: Array[Float]) {
+    if values.length() == 0 {
+      summary
+    } else {
+      let sorted_values = values.sort(fn(a, b) {
+        if a < b { -1 } else if a > b { 1 } else { 0 }
+      })
+      
+      let updated_quantiles = summary.quantiles.map(fn(quantile) {
+        let index = ((sorted_values.length() as Float) * quantile.quantile) as Int
+        let clamped_index = if index >= sorted_values.length() {
+          sorted_values.length() - 1
+        } else {
+          index
+        }
+        
+        { quantile | value: sorted_values[clamped_index] }
+      })
+      
+      { summary | quantiles: updated_quantiles }
+    }
+  }
+  
+  // Create response size summary
+  let quantiles = [0.5, 0.9, 0.95, 0.99]
+  let response_summary = create_summary(
+    "http_response_size_bytes",
+    quantiles,
+    [("method", "GET"), ("/api/data", "path")]
+  )
+  
+  // Simulate observing values
+  let observed_values = [1024.0, 2048.0, 512.0, 4096.0, 1536.0, 3072.0, 2560.0]
+  let final_summary = observed_values.reduce(fn(acc, value) {
+    observe_summary(acc, value)
+  }, response_summary)
+  
+  assert_eq(final_summary.count, 7)
+  assert_eq(final_summary.sum, 14802.0)
+  
+  // Update quantiles based on observed values
+  let updated_summary = update_quantiles(final_summary, observed_values)
+  
+  // Test quantile values
+  let p50 = updated_summary.quantiles.find(fn(q) { q.quantile == 0.5 })
+  match p50 {
+    Some(quantile) => assert_eq(quantile.value, 2048.0)  // Median of sorted values
+    None => assert_true(false)
+  }
+  
+  let p90 = updated_summary.quantiles.find(fn(q) { q.quantile == 0.9 })
+  match p90 {
+    Some(quantile) => assert_eq(quantile.value, 4096.0)  // 90th percentile
+    None => assert_true(false)
+  }
+  
+  let p95 = updated_summary.quantiles.find(fn(q) { q.quantile == 0.95 })
+  match p95 {
+    Some(quantile) => assert_eq(quantile.value, 4096.0)  // 95th percentile
+    None => assert_true(false)
+  }
+  
+  let p99 = updated_summary.quantiles.find(fn(q) { q.quantile == 0.99 })
+  match p99 {
+    Some(quantile) => assert_eq(quantile.value, 4096.0)  // 99th percentile
+    None => assert_true(false)
+  }
+  
+  // Test summary statistics
+  let calculate_summary_stats = fn(summary: Summary) {
+    if summary.count == 0 {
+      { mean: 0.0, rate: 0.0 }
+    } else {
+      let mean = summary.sum / (summary.count as Float)
+      let rate = summary.count as Float / 300.0  // Assuming 5 minute window
+      { mean, rate }
+    }
+  }
+  
+  let stats = calculate_summary_stats(updated_summary)
+  assert_eq(stats.mean.round(), 2114.57)  // 14802.0 / 7
+  assert_eq(stats.rate.round(), 0.02)     // 7 / 300
+}
+
+// Test 5: Metric Registry and Collection
+test "metric registry and collection operations" {
+  // Define metric types
+  enum MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
+  }
+  
+  // Define metric entry
+  type MetricEntry = {
+    name: String,
+    metric_type: MetricType,
+    labels: Array[(String, String)],
+    data: String  // Serialized metric data
+  }
+  
+  // Define metric registry
+  type MetricRegistry = {
+    metrics: Array[MetricEntry]
+  }
+  
+  // Create registry
+  let create_registry = fn() {
+    { metrics: [] }
+  }
+  
+  // Register metric
+  let register_metric = fn(registry: MetricRegistry, entry: MetricEntry) {
+    let existing = registry.metrics.find_index(fn(m) { 
+      m.name == entry.name && m.labels == entry.labels 
+    })
+    
+    match existing {
+      Some(index) => {
+        let updated_metrics = registry.metrics.slice(0, index) + 
+                           [entry] + 
+                           registry.metrics.slice(index + 1, registry.metrics.length())
+        { registry | metrics: updated_metrics }
+      }
+      None => {
+        { registry | metrics: registry.metrics.push(entry) }
+      }
+    }
+  }
+  
+  // Get metric by name and labels
+  let get_metric = fn(registry: MetricRegistry, name: String, labels: Array[(String, String)]) {
+    registry.metrics.find(fn(m) { m.name == name && m.labels == labels })
+  }
+  
+  // Get all metrics by name
+  let get_metrics_by_name = fn(registry: MetricRegistry, name: String) {
+    registry.metrics.filter(fn(m) { m.name == name })
+  }
+  
+  // Create registry and register metrics
+  let registry = create_registry()
+  
+  let counter_entry = {
+    name: "requests_total",
+    metric_type: MetricType::Counter,
+    labels: [("method", "GET")],
+    data: "42"
+  }
+  
+  let gauge_entry = {
+    name: "memory_usage",
+    metric_type: MetricType::Gauge,
+    labels: [("instance", "server-1")],
+    data: "1024.5"
+  }
+  
+  let registry1 = register_metric(registry, counter_entry)
+  let registry2 = register_metric(registry1, gauge_entry)
+  
+  assert_eq(registry2.metrics.length(), 2)
+  
+  // Test metric retrieval
+  let retrieved_counter = get_metric(registry2, "requests_total", [("method", "GET")])
+  match retrieved_counter {
+    Some(metric) => {
+      assert_eq(metric.name, "requests_total")
+      assert_eq(metric.data, "42")
+    }
+    None => assert_true(false)
+  }
+  
+  let non_existent = get_metric(registry2, "non_existent", [])
+  assert_eq(non_existent, None)
+  
+  // Test filtering by name
+  let request_metrics = get_metrics_by_name(registry2, "requests_total")
+  assert_eq(request_metrics.length(), 1)
+  
+  // Register another metric with same name but different labels
+  let another_counter = {
+    name: "requests_total",
+    metric_type: MetricType::Counter,
+    labels: [("method", "POST")],
+    data: "15"
+  }
+  
+  let registry3 = register_metric(registry2, another_counter)
+  
+  let all_request_metrics = get_metrics_by_name(registry3, "requests_total")
+  assert_eq(all_request_metrics.length(), 2)
+  
+  // Test metric collection and serialization
+  let collect_metrics = fn(registry: MetricRegistry, metric_type: MetricType) {
+    registry.metrics.filter(fn(m) { m.metric_type == metric_type })
+  }
+  
+  let counters = collect_metrics(registry3, MetricType::Counter)
+  assert_eq(counters.length(), 2)
+  
+  let gauges = collect_metrics(registry3, MetricType::Gauge)
+  assert_eq(gauges.length(), 1)
+  
+  let histograms = collect_metrics(registry3, MetricType::Histogram)
+  assert_eq(histograms.length(), 0)
+}
+
+// Test 6: Metric Labels and Dimensionality
+test "metric labels and dimensionality management" {
+  // Define label constraint
+  type LabelConstraint = {
+    name: String,
+    allowed_values: Array[String],
+    required: Bool
+  }
+  
+  // Define metric specification
+  type MetricSpec = {
+    name: String,
+    metric_type: String,
+    label_constraints: Array[LabelConstraint]
+  }
+  
+  // Validate labels against constraints
+  let validate_labels = fn(labels: Array[(String, String)], constraints: Array[LabelConstraint]) {
+    let mut errors = []
+    
+    // Check required labels
+    for constraint in constraints {
+      if constraint.required {
+        let has_label = labels.any(fn(label) { label.0 == constraint.name })
+        if not(has_label) {
+          errors = errors.push("Required label missing: " + constraint.name)
+        }
+      }
+    }
+    
+    // Check allowed values
+    for label in labels {
+      let constraint = constraints.find(fn(c) { c.name == label.0 })
+      match constraint {
+        Some(c) => {
+          if c.allowed_values.length() > 0 && not(c.allowed_values.contains(label.1)) {
+            errors = errors.push("Invalid value for label " + c.name + ": " + label.1)
+          }
+        }
+        None => {}
+      }
+    }
+    
+    errors
+  }
+  
+  // Create metric specification
+  let request_metric_spec = {
+    name: "http_requests_total",
+    metric_type: "counter",
+    label_constraints: [
+      { name: "method", allowed_values: ["GET", "POST", "PUT", "DELETE"], required: true },
+      { name: "status", allowed_values: ["200", "400", "404", "500"], required: true },
+      { name: "service", allowed_values: [], required: false }  // Empty allowed_values means any value
+    ]
+  }
+  
+  // Test valid labels
+  let valid_labels = [
+    ("method", "GET"),
+    ("status", "200"),
+    ("service", "api-gateway")
   ]
   
-  // Apply fixed rate sampling (every 3rd metric)
-  let apply_fixed_rate_sampling = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>, rate: Int) {
-    let mut sampled = []
-    for i in 0..metrics.length() {
-      if i % rate == 0 {
-        sampled = sampled.push(metrics[i])
+  let valid_errors = validate_labels(valid_labels, request_metric_spec.label_constraints)
+  assert_eq(valid_errors.length(), 0)
+  
+  // Test missing required label
+  let missing_required = [
+    ("method", "GET"),
+    ("service", "api-gateway")
+  ]
+  
+  let missing_errors = validate_labels(missing_required, request_metric_spec.label_constraints)
+  assert_eq(missing_errors.length(), 1)
+  assert_true(missing_errors[0].contains("Required label missing: status"))
+  
+  // Test invalid value
+  let invalid_value = [
+    ("method", "PATCH"),  // Not in allowed values
+    ("status", "200"),
+    ("service", "api-gateway")
+  ]
+  
+  let value_errors = validate_labels(invalid_value, request_metric_spec.label_constraints)
+  assert_eq(value_errors.length(), 1)
+  assert_true(value_errors[0].contains("Invalid value for label method"))
+  
+  // Test label cardinality calculation
+  let calculate_cardinality = fn(spec: MetricSpec, existing_label_sets: Array<Array[(String, String)]>) {
+    // Calculate theoretical maximum cardinality
+    let max_cardinality = spec.label_constraints.reduce(fn(acc, constraint) {
+      if constraint.allowed_values.length() > 0 {
+        acc * constraint.allowed_values.length()
+      } else {
+        acc * 10  // Assume up to 10 different values for unconstrained labels
       }
-    }
-    sampled
-  }
-  
-  let fixed_rate_sampled = apply_fixed_rate_sampling(test_metrics, 3)
-  assert_eq(fixed_rate_sampled.length(), 4)  // metrics 1, 4, 7, 10
-  assert_eq(fixed_rate_sampled[0].name, "metric_1")
-  assert_eq(fixed_rate_sampled[1].name, "metric_4")
-  assert_eq(fixed_rate_sampled[2].name, "metric_7")
-  assert_eq(fixed_rate_sampled[3].name, "metric_10")
-  
-  // Apply time window sampling (max 3 per 60-second window)
-  let apply_time_window_sampling = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>, max_per_window: Int, window_size: Int) {
-    let mut sampled = []
-    let mut window_count = 0
-    let mut window_start = if metrics.length() > 0 { metrics[0].timestamp } else { 0 }
+    }, 1)
     
-    for metric in metrics {
-      if metric.timestamp - window_start >= window_size {
-        window_count = 0
-        window_start = metric.timestamp
-      }
-      
-      if window_count < max_per_window {
-        sampled = sampled.push(metric)
-        window_count = window_count + 1
-      }
-    }
+    // Calculate current cardinality
+    let current_cardinality = existing_label_sets.length()
     
-    sampled
-  }
-  
-  let time_window_sampled = apply_time_window_sampling(test_metrics, 3, 60)  // 60-second window
-  assert_eq(time_window_sampled.length(), 10)  // All metrics fit within the rate limit
-  
-  // Apply random sampling
-  let apply_random_sampling = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>, probability: Float) {
-    let mut sampled = []
-    for metric in metrics {
-      // Simple pseudo-random based on metric name length
-      let pseudo_random = (metric.name.length() as Float) / 10.0
-      if pseudo_random <= probability {
-        sampled = sampled.push(metric)
+    {
+      max_cardinality,
+      current_cardinality,
+      utilization_percent: if max_cardinality > 0 {
+        (current_cardinality as Float / max_cardinality as Float) * 100.0
+      } else {
+        0.0
       }
     }
-    sampled
   }
   
-  let random_sampled = apply_random_sampling(test_metrics, 0.5)  // 50% probability
-  assert_eq(random_sampled.length(), 5)  // metrics with name length <= 5
+  let existing_labels = [
+    [("method", "GET"), ("status", "200"), ("service", "api")],
+    [("method", "GET"), ("status", "400"), ("service", "api")],
+    [("method", "POST"), ("status", "200"), ("service", "web")]
+  ]
   
-  // Apply adaptive sampling based on metric value
-  let apply_adaptive_sampling = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>, threshold: Float) {
-    let mut sampled = []
-    for metric in metrics {
-      // Sample metrics with values above threshold more frequently
-      let sampling_rate = if metric.value > threshold { 0.8 } else { 0.3 }
-      let pseudo_random = (metric.name.length() as Float) / 10.0
-      
-      if pseudo_random <= sampling_rate {
-        sampled = sampled.push(metric)
-      }
-    }
-    sampled
-  }
+  let cardinality = calculate_cardinality(request_metric_spec, existing_labels)
+  assert_eq(cardinality.max_cardinality, 16)  // 4 methods * 4 statuses * 1 (service is optional)
+  assert_eq(cardinality.current_cardinality, 3)
+  assert_eq(cardinality.utilization_percent.round(), 18.75)  // 3 / 16 * 100
   
-  let adaptive_sampled = apply_adaptive_sampling(test_metrics, 5.0)
-  assert_true(adaptive_sampled.length() > 0)
-  
-  // Verify high-value metrics are sampled more frequently
-  let high_value_metrics = adaptive_sampled.filter(fn(m) { m.value > 5.0 })
-  let low_value_metrics = adaptive_sampled.filter(fn(m) { m.value <= 5.0 })
-  
-  assert_true(high_value_metrics.length() >= low_value_metrics.length())
-}
-
-// Test 8: Metrics Downsampling and Retention
-test "metrics downsampling and retention policies" {
-  // Define retention policy
-  type RetentionPolicy = {
-    raw_resolution: Int,    // Keep raw data for this many seconds
-    downsample_1m: Int,     // Keep 1-minute downsampled data for this many seconds
-    downsample_5m: Int,     // Keep 5-minute downsampled data for this many seconds
-    downsample_1h: Int,     // Keep 1-hour downsampled data for this many seconds
-  }
-  
-  // Create retention policy
-  let policy = {
-    raw_resolution: 3600,   // 1 hour
-    downsample_1m: 86400,   // 1 day
-    downsample_5m: 604800,  // 1 week
-    downsample_1h: 2592000  // 1 month
-  }
-  
-  // Create high-resolution metrics
-  let high_res_metrics = []
-  for i in 0..60 {
-    high_res_metrics = high_res_metrics.push({
-      name: "cpu_usage",
-      value: 50.0 + (i as Float) * 0.5,
-      timestamp: 1640995200 + i * 10  // Every 10 seconds
+  // Test label normalization
+  let normalize_labels = fn(labels: Array[(String, String)]) {
+    // Convert label names to lowercase and remove spaces
+    labels.map(fn(label) {
+      let normalized_name = label.0.to_lowercase().replace(" ", "_")
+      let normalized_value = label.1.to_lowercase().replace(" ", "_")
+      (normalized_name, normalized_value)
     })
   }
   
-  assert_eq(high_res_metrics.length(), 60)
+  let unnormalized_labels = [
+    ("HTTP Method", "GET"),
+    ("Status Code", "200"),
+    ("Service Name", "API Gateway")
+  ]
   
-  // Downsample to 1-minute resolution
-  let downsample_to_1m = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>) {
-    let mut downsampled = []
-    let mut window_start = if metrics.length() > 0 { metrics[0].timestamp } else { 0 }
-    let mut window_values = []
+  let normalized = normalize_labels(unnormalized_labels)
+  assert_eq(normalized[0], ("http_method", "get"))
+  assert_eq(normalized[1], ("status_code", "200"))
+  assert_eq(normalized[2], ("service_name", "api_gateway"))
+}
+
+// Test 7: Metric Export and Formatting
+test "metric export and formatting operations" {
+  // Define metric export format
+  enum ExportFormat {
+    Prometheus
+    JSON
+    InfluxDB
+    OpenTelemetry
+  }
+  
+  // Export metric to Prometheus format
+  let export_prometheus = fn(name: String, value: String, labels: Array[(String, String)], metric_type: String) {
+    let label_str = if labels.length() > 0 {
+      "{" + labels.map(fn(l) { l.0 + "=\"" + l.1 + "\"" }).join(",") + "}"
+    } else {
+      ""
+    }
     
-    for metric in metrics {
-      if metric.timestamp - window_start >= 60 {
-        // Process current window
-        if window_values.length() > 0 {
-          let avg = window_values.reduce(0.0, fn(acc, v) { acc + v }) / (window_values.length() as Float)
-          downsampled = downsampled.push({
-            name: metrics[0].name,
-            value: avg,
-            timestamp: window_start
-          })
-        }
-        
-        // Start new window
-        window_start = metric.timestamp
-        window_values = [metric.value]
-      } else {
-        window_values = window_values.push(metric.value)
+    name + label_str + " " + value + "\n" +
+    "# TYPE " + name + " " + metric_type + "\n"
+  }
+  
+  // Export metric to JSON format
+  let export_json = fn(name: String, value: String, labels: Array[(String, String)], metric_type: String) {
+    let labels_obj = labels.map(fn(l) { "\"" + l.0 + "\": \"" + l.1 + "\"" }).join(",")
+    
+    "{\n" +
+    "  \"name\": \"" + name + "\",\n" +
+    "  \"type\": \"" + metric_type + "\",\n" +
+    "  \"value\": " + value + ",\n" +
+    "  \"labels\": {" + labels_obj + "}\n" +
+    "}\n"
+  }
+  
+  // Export metric to InfluxDB format
+  let export_influxdb = fn(name: String, value: String, labels: Array[(String, String)], timestamp: Int) {
+    let tags = labels.map(fn(l) { l.0 + "=" + l.1 }).join(",")
+    let measurement = if tags.length() > 0 {
+      name + "," + tags
+    } else {
+      name
+    }
+    
+    measurement + " value=" + value + " " + timestamp.to_string()
+  }
+  
+  // Create test metric
+  let metric_name = "http_request_duration_seconds"
+  let metric_value = "0.245"
+  let metric_labels = [
+    ("method", "GET"),
+    ("status", "200"),
+    ("service", "api-gateway")
+  ]
+  let metric_type = "histogram"
+  let timestamp = 1640995200
+  
+  // Test Prometheus export
+  let prometheus_export = export_prometheus(metric_name, metric_value, metric_labels, metric_type)
+  assert_true(prometheus_export.contains(metric_name))
+  assert_true(prometheus_export.contains(metric_value))
+  assert_true(prometheus_export.contains("method=\"GET\""))
+  assert_true(prometheus_export.contains("# TYPE"))
+  
+  // Test JSON export
+  let json_export = export_json(metric_name, metric_value, metric_labels, metric_type)
+  assert_true(json_export.contains("\"name\": \"" + metric_name + "\""))
+  assert_true(json_export.contains("\"type\": \"" + metric_type + "\""))
+  assert_true(json_export.contains("\"value\": " + metric_value))
+  assert_true(json_export.contains("\"method\": \"GET\""))
+  
+  // Test InfluxDB export
+  let influxdb_export = export_influxdb(metric_name, metric_value, metric_labels, timestamp)
+  assert_true(influxdb_export.contains(metric_name))
+  assert_true(influxdb_export.contains("method=GET"))
+  assert_true(influxdb_export.contains("value=" + metric_value))
+  assert_true(influxdb_export.contains(timestamp.to_string()))
+  
+  // Test batch export
+  let batch_export = fn(metrics: Array[(String, String, Array[(String, String)], String)], format: ExportFormat) {
+    match format {
+      ExportFormat::Prometheus => {
+        metrics.map(fn(m) {
+          export_prometheus(m.0, m.1, m.2, m.3)
+        }).join("")
+      }
+      ExportFormat::JSON => {
+        "[" + metrics.map(fn(m) {
+          export_json(m.0, m.1, m.2, m.3)
+        }).join(",") + "]"
+      }
+      ExportFormat::InfluxDB => {
+        metrics.map(fn(m) {
+          export_influxdb(m.0, m.1, m.2, timestamp)
+        }).join("\n")
+      }
+      ExportFormat::OpenTelemetry => {
+        // Simplified OTLP export
+        metrics.map(fn(m) {
+          "OTLP: " + m.0 + "=" + m.1
+        }).join("\n")
       }
     }
-    
-    // Process last window
-    if window_values.length() > 0 {
-      let avg = window_values.reduce(0.0, fn(acc, v) { acc + v }) / (window_values.length() as Float)
-      downsampled = downsampled.push({
-        name: metrics[0].name,
-        value: avg,
-        timestamp: window_start
-      })
-    }
-    
-    downsampled
   }
   
-  let downsampled_1m = downsample_to_1m(high_res_metrics)
-  assert_eq(downsampled_1m.length(), 10)  // 60 points / 6 points per minute
+  let metrics_batch = [
+    (metric_name, metric_value, metric_labels, metric_type),
+    ("http_requests_total", "1024", [("method", "GET")], "counter"),
+    ("memory_usage_bytes", "1073741824", [("instance", "server-1")], "gauge")
+  ]
   
-  // Downsample to 5-minute resolution
-  let downsample_to_5m = fn(metrics: Array<{name: String, value: Float, timestamp: Int}>) {
-    let mut downsampled = []
-    let mut window_start = if metrics.length() > 0 { metrics[0].timestamp } else { 0 }
-    let mut window_values = []
-    
-    for metric in metrics {
-      if metric.timestamp - window_start >= 300 {
-        // Process current window
-        if window_values.length() > 0 {
-          let avg = window_values.reduce(0.0, fn(acc, v) { acc + v }) / (window_values.length() as Float)
-          downsampled = downsampled.push({
-            name: metrics[0].name,
-            value: avg,
-            timestamp: window_start
-          })
-        }
-        
-        // Start new window
-        window_start = metric.timestamp
-        window_values = [metric.value]
-      } else {
-        window_values = window_values.push(metric.value)
-      }
-    }
-    
-    // Process last window
-    if window_values.length() > 0 {
-      let avg = window_values.reduce(0.0, fn(acc, v) { acc + v }) / (window_values.length() as Float)
-      downsampled = downsampled.push({
-        name: metrics[0].name,
-        value: avg,
-        timestamp: window_start
-      })
-    }
-    
-    downsampled
-  }
+  let prometheus_batch = batch_export(metrics_batch, ExportFormat::Prometheus)
+  assert_true(prometheus_batch.contains(metric_name))
+  assert_true(prometheus_batch.contains("http_requests_total"))
+  assert_true(prometheus_batch.contains("memory_usage_bytes"))
   
-  let downsampled_5m = downsample_to_5m(high_res_metrics)
-  assert_eq(downsampled_5m.length(), 2)  // 60 points / 30 points per 5 minutes
+  let json_batch = batch_export(metrics_batch, ExportFormat::JSON)
+  assert_true(json_batch.startsWith("["))
+  assert_true(json_batch.endsWith("]"))
   
-  // Test retention policy application
-  let apply_retention_policy = fn(current_time: Int, metrics: Array<{name: String, value: Float, timestamp: Int}>, policy: RetentionPolicy) {
-    let raw_metrics = metrics.filter(fn(m) { current_time - m.timestamp <= policy.raw_resolution })
-    let _1m_metrics = downsample_to_1m(metrics).filter(fn(m) { current_time - m.timestamp <= policy.downsample_1m })
-    let _5m_metrics = downsample_to_5m(metrics).filter(fn(m) { current_time - m.timestamp <= policy.downsample_5m })
-    
-    { raw_metrics, downsampled_1m: _1m_metrics, downsampled_5m: _5m_metrics }
-  }
-  
-  let current_time = 1640995200 + 60 * 60  // 1 hour after first metric
-  let retained_metrics = apply_retention_policy(current_time, high_res_metrics, policy)
-  
-  assert_eq(retained_metrics.raw_metrics.length(), 0)  // All raw metrics expired
-  assert_eq(retained_metrics.downsampled_1m.length(), 10)  // All 1-minute metrics retained
-  assert_eq(retained_metrics.downsampled_5m.length(), 2)   // All 5-minute metrics retained
-  
-  // Verify downsampling accuracy
-  assert_eq(downsampled_1m[0].value.round(), 50.0 + 0.5 * 2.5)  // Average of first 6 points
-  assert_eq(downsampled_1m[9].value.round(), 50.0 + 0.5 * 57.5) // Average of last 6 points
-  
-  assert_eq(downsampled_5m[0].value.round(), 50.0 + 0.5 * 14.5)  // Average of first 30 points
-  assert_eq(downsampled_5m[1].value.round(), 50.0 + 0.5 * 44.5)  // Average of last 30 points
+  let influxdb_batch = batch_export(metrics_batch, ExportFormat::InfluxDB)
+  assert_true(influxdb_batch.contains("value=0.245"))
+  assert_true(influxdb_batch.contains("value=1024"))
+  assert_true(influxdb_batch.contains("value=1073741824"))
 }
