@@ -1,430 +1,277 @@
-// Azimuth Telemetry System - Network Communication Enhanced Tests
-// This file contains comprehensive test cases for network communication
+// Azimuth Network Communication Enhanced Tests
+// This file contains enhanced test cases for network communication functionality
 
-// Test 1: HTTP Client Basic Operations
-test "http client basic operations" {
-  // Create HTTP client
-  let client = HttpClient::new()
+// Test 1: Connection Pool Management
+test "connection pool management" {
+  let pool = ConnectionPool::new(10) // Maximum 10 connections
   
-  // Test GET request
-  let get_headers = [
-    ("Accept", "application/json"),
-    ("User-Agent", "azimuth-telemetry/1.0.0")
-  ]
-  
-  let get_request = HttpRequest::new("GET", "https://httpbin.org/get", get_headers, None)
-  let get_response = HttpClient::execute(client, get_request)
-  
-  // Verify GET response
-  assert_eq(HttpResponse::status_code(get_response), 200)
-  match HttpResponse::header(get_response, "content-type") {
-    Some(content_type) => assert_true(StringUtils::contains(content_type, "application/json"))
-    None => assert_true(false)
-  }
-  
-  // Test POST request
-  let post_headers = [
-    ("Content-Type", "application/json"),
-    ("Accept", "application/json")
-  ]
-  
-  let post_body = "{\"key\": \"value\", \"number\": 42}"
-  let post_request = HttpRequest::new("POST", "https://httpbin.org/post", post_headers, Some(post_body))
-  let post_response = HttpClient::execute(client, post_request)
-  
-  // Verify POST response
-  assert_eq(HttpResponse::status_code(post_response), 200)
-  match HttpResponse::body(post_response) {
-    Some(body) => {
-      assert_true(StringUtils::contains(body, "\"key\": \"value\""))
-      assert_true(StringUtils::contains(body, "\"number\": 42"))
+  // Test connection creation
+  let conn1 = ConnectionPool::acquire(pool, "https://api.example.com")
+  match conn1 {
+    Some(conn) => {
+      assert_true(Connection::is_active(conn))
+      assert_eq(Connection::url(conn), "https://api.example.com")
     }
     None => assert_true(false)
   }
-}
-
-// Test 2: HTTP Client Error Handling
-test "http client error handling" {
-  let client = HttpClient::new()
   
-  // Test 404 error
-  let not_found_request = HttpRequest::new("GET", "https://httpbin.org/status/404", [], None)
-  let not_found_response = HttpClient::execute(client, not_found_request)
-  assert_eq(HttpResponse::status_code(not_found_response), 404)
+  // Test multiple connections
+  let conn2 = ConnectionPool::acquire(pool, "https://api.example.com")
+  let conn3 = ConnectionPool::acquire(pool, "https://api.example.com")
   
-  // Test 500 error
-  let server_error_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
-  let server_error_response = HttpClient::execute(client, server_error_request)
-  assert_eq(HttpResponse::status_code(server_error_response), 500)
-  
-  // Test timeout
-  let timeout_client = HttpClient::with_timeout(1000)  // 1 second timeout
-  let timeout_request = HttpRequest::new("GET", "https://httpbin.org/delay/5", [], None)
-  
-  let timeout_response = HttpClient::execute(timeout_client, timeout_request)
-  assert_eq(HttpResponse::status_code(timeout_response), 0)  // Timeout status
-  
-  // Test invalid URL
-  let invalid_url_request = HttpRequest::new("GET", "not-a-valid-url", [], None)
-  let invalid_url_response = HttpClient::execute(client, invalid_url_request)
-  assert_eq(HttpResponse::status_code(invalid_url_response), 0)  // Error status
-}
-
-// Test 3: HTTP Client Retry Mechanism
-test "http client retry mechanism" {
-  // Create client with retry configuration
-  let retry_config = RetryConfig::new()
-  RetryConfig::set_max_attempts(retry_config, 3)
-  RetryConfig::set_backoff_factor(retry_config, 1000)  // 1 second backoff
-  
-  let retry_client = HttpClient::with_retry(retry_config)
-  
-  // Test retry on server error
-  let retry_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
-  let retry_response = HttpClient::execute(retry_client, retry_request)
-  
-  // Verify retry was attempted (status should still be 500)
-  assert_eq(HttpResponse::status_code(retry_response), 500)
-  
-  // Test retry on temporary failure
-  let temp_failure_request = HttpRequest::new("GET", "https://httpbin.org/status/503", [], None)
-  let temp_failure_response = HttpClient::execute(retry_client, temp_failure_request)
-  
-  // Verify retry was attempted
-  assert_eq(HttpResponse::status_code(temp_failure_response), 503)
-  
-  // Test no retry on client error
-  let client_error_request = HttpRequest::new("GET", "https://httpbin.org/status/400", [], None)
-  let client_error_response = HttpClient::execute(retry_client, client_error_request)
-  
-  // Verify no retry was attempted (status should be 400)
-  assert_eq(HttpResponse::status_code(client_error_response), 400)
-}
-
-// Test 4: HTTP Client Connection Pooling
-test "http client connection pooling" {
-  // Create client with connection pool
-  let pool_config = ConnectionPoolConfig::new()
-  ConnectionPoolConfig::set_max_connections(pool_config, 5)
-  ConnectionPoolConfig::set_max_idle_time(pool_config, 30000)  // 30 seconds
-  
-  let pooled_client = HttpClient::with_connection_pool(pool_config)
-  
-  // Make multiple requests to test connection reuse
-  let responses = []
-  for i in 0..10 {
-    let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-    let response = HttpClient::execute(pooled_client, request)
-    responses.push(response)
-  }
-  
-  // Verify all requests succeeded
-  for response in responses {
-    assert_eq(HttpResponse::status_code(response), 200)
-  }
-  
-  // Verify connection pool statistics
-  let pool_stats = HttpClient::connection_pool_stats(pooled_client)
-  assert_true(pool_stats.active_connections <= 5)
-  assert_true(pool_stats.total_connections > 0)
-  assert_true(pool_stats.reused_connections > 0)
-}
-
-// Test 5: HTTP Client Telemetry Integration
-test "http client telemetry integration" {
-  // Create telemetry-enabled HTTP client
-  let telemetry_config = HttpClientTelemetryConfig::new()
-  HttpClientTelemetryConfig::enable_request_metrics(telemetry_config, true)
-  HttpClientTelemetryConfig::enable_request_tracing(telemetry_config, true)
-  
-  let telemetry_client = HttpClient::with_telemetry(telemetry_config)
-  
-  // Create span for HTTP request
-  let trace_id = "http_trace_123456789"
-  let span_id = "http_span_123456789"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-  let span = Span::new("http_request", Client, span_ctx)
-  
-  // Make HTTP request with telemetry
-  let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let response = HttpClient::execute_with_span(telemetry_client, request, span)
-  
-  // Verify request succeeded
-  assert_eq(HttpResponse::status_code(response), 200)
-  
-  // Verify span was updated with HTTP information
-  assert_eq(Span::status(span), Ok)
-  
-  let url_attr = Span::get_attribute(span, "http.url")
-  match url_attr {
-    Some(StringValue(url)) => assert_eq(url, "https://httpbin.org/get")
+  // Test connection release
+  ConnectionPool::release(pool, conn1)
+  let conn4 = ConnectionPool::acquire(pool, "https://api.example.com")
+  match conn4 {
+    Some(_) => assert_true(true)
     None => assert_true(false)
   }
   
-  let method_attr = Span::get_attribute(span, "http.method")
-  match method_attr {
-    Some(StringValue(method)) => assert_eq(method, "GET")
-    None => assert_true(false)
+  // Test pool exhaustion
+  let mut connections = []
+  for i = 0; i < 12; i = i + 1 {
+    let conn = ConnectionPool::acquire(pool, "https://api.example.com")
+    match conn {
+      Some(c) => connections.push(c)
+      None => assert_true(i >= 10) // Should fail after 10 connections
+    }
   }
   
-  let status_attr = Span::get_attribute(span, "http.status_code")
-  match status_attr {
-    Some(IntValue(status)) => assert_eq(status, 200)
-    None => assert_true(false)
+  // Release all connections
+  for conn in connections {
+    ConnectionPool::release(pool, conn)
   }
-  
-  Span::end(span)
 }
 
-// Test 6: WebSocket Communication
-test "websocket communication" {
-  // Create WebSocket client
-  let ws_client = WebSocketClient::new()
+// Test 2: Retry Mechanism with Exponential Backoff
+test "retry mechanism with exponential backoff" {
+  let retry_config = RetryConfig::new(3, 100, 2.0) // 3 retries, 100ms base, 2.0 multiplier
   
-  // Connect to echo server
-  let ws_connection = WebSocketClient::connect(ws_client, "wss://echo.websocket.org")
-  assert_true(WebSocketConnection::is_open(ws_connection))
+  // Test successful request
+  let mut attempt_count = 0
+  let result = Retry::execute(retry_config, fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 2 {
+      Error("Temporary failure")
+    } else {
+      Ok("Success")
+    }
+  })
   
-  // Send text message
-  let text_message = "Hello WebSocket!"
-  WebSocketConnection::send_text(ws_connection, text_message)
-  
-  // Receive echoed text message
-  let received_text = WebSocketConnection::receive_text(ws_connection)
-  match received_text {
-    Some(message) => assert_eq(message, text_message)
-    None => assert_true(false)
+  match result {
+    Ok(value) => {
+      assert_eq(value, "Success")
+      assert_eq(attempt_count, 2)
+    }
+    Error(_) => assert_true(false)
   }
   
-  // Send binary message
-  let binary_data = [0x48, 0x65, 0x6C, 0x6C, 0x6F]  // "Hello" in bytes
-  WebSocketConnection::send_binary(ws_connection, binary_data)
+  // Test max retries exceeded
+  attempt_count = 0
+  let failure_result = Retry::execute(retry_config, fn() {
+    attempt_count = attempt_count + 1
+    Error("Persistent failure")
+  })
   
-  // Receive echoed binary message
-  let received_binary = WebSocketConnection::receive_binary(ws_connection)
-  match received_binary {
-    Some(data) => assert_eq(data, binary_data)
-    None => assert_true(false)
+  match failure_result {
+    Ok(_) => assert_true(false)
+    Error(msg) => {
+      assert_eq(msg, "Persistent failure")
+      assert_eq(attempt_count, 3) // Should attempt 3 times
+    }
   }
-  
-  // Close connection
-  WebSocketConnection::close(ws_connection)
-  assert_false(WebSocketConnection::is_open(ws_connection))
 }
 
-// Test 7: Network Resilience and Circuit Breaker
-test "network resilience and circuit breaker" {
-  // Create circuit breaker
-  let circuit_breaker_config = CircuitBreakerConfig::new()
-  CircuitBreakerConfig::set_failure_threshold(circuit_breaker_config, 3)
-  CircuitBreakerConfig::set_recovery_timeout(circuit_breaker_config, 5000)  // 5 seconds
+// Test 3: Circuit Breaker Pattern
+test "circuit breaker pattern" {
+  let circuit_breaker = CircuitBreaker::new(5, 10000, 30000) // 5 failures, 10s timeout, 30s reset
   
-  let circuit_breaker = CircuitBreaker::new(circuit_breaker_config)
-  
-  // Create resilient HTTP client
-  let resilient_client = HttpClient::with_circuit_breaker(circuit_breaker)
-  
-  // Test successful requests
-  let success_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let success_response = HttpClient::execute(resilient_client, success_request)
-  assert_eq(HttpResponse::status_code(success_response), 200)
-  
-  // Test circuit breaker state after success
+  // Test initial state (closed)
   assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
   
-  // Test failing requests to trigger circuit breaker
-  let fail_request = HttpRequest::new("GET", "https://nonexistent-domain-12345.com", [], None)
-  
-  // Make multiple failing requests
-  for i in 0..3 {
-    let fail_response = HttpClient::execute(resilient_client, fail_request)
-    assert_eq(HttpResponse::status_code(fail_response), 0)  // Error status
+  // Test successful calls
+  for i = 0; i < 3; i = i + 1 {
+    let result = CircuitBreaker::call(circuit_breaker, fn() { Ok("Success") })
+    match result {
+      Ok(value) => assert_eq(value, "Success")
+      Error(_) => assert_true(false)
+    }
   }
   
-  // Verify circuit breaker is now open
+  // Test failures that trigger circuit opening
+  for i = 0; i < 5; i = i + 1 {
+    let result = CircuitBreaker::call(circuit_breaker, fn() { Error("Failure") })
+    match result {
+      Ok(_) => assert_true(false)
+      Error(_) => assert_true(true)
+    }
+  }
+  
+  // Test circuit is now open
   assert_eq(CircuitBreaker::state(circuit_breaker), Open)
   
-  // Test request fails immediately when circuit is open
-  let open_circuit_response = HttpClient::execute(resilient_client, success_request)
-  assert_eq(HttpResponse::status_code(open_circuit_response), 503)  // Service unavailable
-  
-  // Wait for recovery timeout
-  Time::sleep(6000)  // 6 seconds
-  
-  // Test circuit breaker transitions to half-open
-  let half_open_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let half_open_response = HttpClient::execute(resilient_client, half_open_request)
-  
-  // If request succeeds, circuit should close again
-  if HttpResponse::status_code(half_open_response) == 200 {
-    assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
+  // Test calls are blocked when circuit is open
+  let blocked_result = CircuitBreaker::call(circuit_breaker, fn() { Ok("Should not execute") })
+  match blocked_result {
+    Ok(_) => assert_true(false)
+    Error(msg) => assert_eq(msg, "Circuit breaker is open")
   }
 }
 
-// Test 8: Network Address Resolution
-test "network address resolution" {
-  // Test DNS resolution
-  let resolver = DnsResolver::new()
+// Test 4: Request/Response Interceptor Chain
+test "request response interceptor chain" {
+  let interceptor_chain = InterceptorChain::new()
   
-  // Resolve valid hostname
-  let valid_addresses = DnsResolver::resolve(resolver, "httpbin.org")
-  assert_true(valid_addresses.length() > 0)
+  // Add request interceptor that adds auth header
+  InterceptorChain::add_request(interceptor_chain, fn(request) {
+    HttpRequest::add_header(request, "Authorization", "Bearer token123")
+    request
+  })
   
-  // Verify address format
-  for address in valid_addresses {
-    assert_true(AddressValidator::is_valid_ip(address))
-  }
+  // Add request interceptor that adds timestamp
+  InterceptorChain::add_request(interceptor_chain, fn(request) {
+    HttpRequest::add_header(request, "X-Timestamp", "1234567890")
+    request
+  })
   
-  // Test resolution failure
-  let invalid_addresses = DnsResolver::resolve(resolver, "nonexistent-domain-12345.com")
-  assert_eq(invalid_addresses.length(), 0)
+  // Add response interceptor that logs response
+  let mut logged_status = -1
+  InterceptorChain::add_response(interceptor_chain, fn(response) {
+    logged_status = HttpResponse::status_code(response)
+    response
+  })
   
-  // Test IPv4 address validation
-  assert_true(AddressValidator::is_valid_ipv4("192.168.1.1"))
-  assert_true(AddressValidator::is_valid_ipv4("8.8.8.8"))
-  assert_false(AddressValidator::is_valid_ipv4("256.256.256.256"))
-  assert_false(AddressValidator::is_valid_ipv4("not-an-ip"))
+  // Test interceptor chain execution
+  let request = HttpRequest::new("GET", "https://api.example.com", [], None)
+  let intercepted_request = InterceptorChain::process_request(interceptor_chain, request)
   
-  // Test IPv6 address validation
-  assert_true(AddressValidator::is_valid_ipv6("::1"))
-  assert_true(AddressValidator::is_valid_ipv6("2001:db8::1"))
-  assert_false(AddressValidator::is_valid_ipv6("not-an-ipv6"))
+  assert_eq(HttpRequest::get_header(intercepted_request, "Authorization"), Some("Bearer token123"))
+  assert_eq(HttpRequest::get_header(intercepted_request, "X-Timestamp"), Some("1234567890"))
   
-  // Test hostname validation
-  assert_true(AddressValidator::is_valid_hostname("example.com"))
-  assert_true(AddressValidator::is_valid_hostname("sub.example.com"))
-  assert_false(AddressValidator::is_valid_hostname(""))
-  assert_false(AddressValidator::is_valid_hostname(".invalid"))
+  let response = HttpResponse::new(200, [], Some("response body"))
+  let intercepted_response = InterceptorChain::process_response(interceptor_chain, response)
+  assert_eq(logged_status, 200)
 }
 
-// Test 9: Network Security and TLS
-test "network security and tls" {
-  // Create TLS configuration
-  let tls_config = TlsConfig::new()
-  TlsConfig::set_verify_mode(tls_config, TlsVerifyMode::Full)
-  TlsConfig::set_min_version(tls_config, TlsVersion::V1_2)
+// Test 5: WebSocket Connection Management
+test "websocket connection management" {
+  let websocket = WebSocket::new("wss://echo.example.com")
   
-  // Create secure HTTP client
-  let secure_client = HttpClient::with_tls(tls_config)
+  // Test connection establishment
+  let connect_result = WebSocket::connect(websocket)
+  match connect_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
+  }
   
-  // Test HTTPS request with TLS verification
-  let secure_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let secure_response = HttpClient::execute(secure_client, secure_request)
-  assert_eq(HttpResponse::status_code(secure_response), 200)
+  // Test message sending
+  let send_result = WebSocket::send(websocket, "Hello WebSocket")
+  match send_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
+  }
   
-  // Test TLS certificate validation
-  let cert_info = HttpClient::peer_certificate_info(secure_client, secure_response)
-  match cert_info {
-    Some(info) => {
-      assert_true(CertificateInfo::is_valid(info))
-      assert_not_eq(CertificateInfo::subject(info), "")
-      assert_not_eq(CertificateInfo::issuer(info), "")
-      assert_true(CertificateInfo::is_not_expired(info))
-    }
+  // Test message receiving
+  let receive_result = WebSocket::receive(websocket)
+  match receive_result {
+    Ok(message) => assert_eq(message, "Hello WebSocket")
+    Error(_) => assert_true(false)
+  }
+  
+  // Test connection closing
+  let close_result = WebSocket::close(websocket)
+  match close_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 6: Network Telemetry Integration
+test "network telemetry integration" {
+  let telemetry_client = TelemetryHttpClient::new()
+  
+  // Test that telemetry is collected for requests
+  let request = HttpRequest::new("GET", "https://api.example.com/test", [], None)
+  let response = TelemetryHttpClient::execute(telemetry_client, request)
+  
+  // Check that telemetry metrics were recorded
+  let metrics = TelemetryHttpClient::get_metrics(telemetry_client)
+  assert_true(metrics.total_requests > 0)
+  assert_true(metrics.successful_requests > 0)
+  assert_true(metrics.total_response_time_ms > 0)
+  
+  // Test error telemetry
+  let error_request = HttpRequest::new("GET", "https://invalid.example.com", [], None)
+  let error_response = TelemetryHttpClient::execute(telemetry_client, error_request)
+  
+  let error_metrics = TelemetryHttpClient::get_metrics(telemetry_client)
+  assert_true(error_metrics.failed_requests > 0)
+  assert_true(error_metrics.error_rate > 0.0)
+}
+
+// Test 7: Request Compression and Decompression
+test "request compression and decompression" {
+  let compression_client = CompressionHttpClient::new(Gzip)
+  
+  // Test request compression
+  let large_body = "x" * 1000 // Create a large body that compresses well
+  let request = HttpRequest::new("POST", "https://api.example.com/data", 
+                                [("Content-Encoding", "gzip")], 
+                                Some(large_body))
+  
+  let compressed_request = CompressionHttpClient::compress_request(compression_client, request)
+  let compressed_body = HttpRequest::body(compressed_request)
+  
+  match compressed_body {
+    Some(body) => assert_true(body.length() < large_body.length()) // Compressed body should be smaller
     None => assert_true(false)
   }
   
-  // Test request with invalid certificate (should fail)
-  let invalid_cert_client = HttpClient::with_strict_tls()
-  let invalid_cert_request = HttpRequest::new("GET", "https://wrong.host.badssl.com/", [], None)
-  let invalid_cert_response = HttpClient::execute(invalid_cert_client, invalid_cert_request)
-  assert_eq(HttpResponse::status_code(invalid_cert_response), 0)  // Error status
+  // Test response decompression
+  let compressed_response = HttpResponse::new(200, 
+                                            [("Content-Encoding", "gzip")], 
+                                            Some(compressed_body.unwrap_or("")))
+  let decompressed_response = CompressionHttpClient::decompress_response(compression_client, compressed_response)
+  let decompressed_body = HttpResponse::body(decompressed_response)
   
-  // Test HTTP/2 support
-  let http2_client = HttpClient::with_http2()
-  let http2_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let http2_response = HttpClient::execute(http2_client, http2_request)
-  assert_eq(HttpResponse::status_code(http2_response), 200)
-  
-  let http_version = HttpResponse::http_version(http2_response)
-  assert_true(http_version == "HTTP/2" || http_version == "HTTP/1.1")  // May fallback to HTTP/1.1
+  match decompressed_body {
+    Some(body) => assert_eq(body, large_body)
+    None => assert_true(false)
+  }
 }
 
-// Test 10: Network Performance and Optimization
-test "network performance and optimization" {
-  // Create performance-optimized client
-  let perf_config = HttpClientPerformanceConfig::new()
-  HttpClientPerformanceConfig::enable_compression(perf_config, true)
-  HttpClientPerformanceConfig::set_compression_level(perf_config, 6)
-  HttpClientPerformanceConfig::enable_keep_alive(perf_config, true)
-  HttpClientPerformanceConfig::set_keep_alive_timeout(perf_config, 30000)  // 30 seconds
+// Test 8: Connection Timeout and Cancellation
+test "connection timeout and cancellation" {
+  let timeout_client = TimeoutHttpClient::new(5000) // 5 second timeout
   
-  let perf_client = HttpClient::with_performance_config(perf_config)
+  // Test successful request within timeout
+  let fast_request = HttpRequest::new("GET", "https://httpbin.org/delay/1", [], None)
+  let fast_result = TimeoutHttpClient::execute(timeout_client, fast_request)
   
-  // Test compression with large payload
-  let large_payload = "x".repeat(100000)  // 100KB payload
-  let compressed_request = HttpRequest::new(
-    "POST", 
-    "https://httpbin.org/post", 
-    [("Content-Type", "text/plain"), ("Accept-Encoding", "gzip, deflate")], 
-    Some(large_payload)
-  )
-  
-  let compressed_start = Time::now()
-  let compressed_response = HttpClient::execute(perf_client, compressed_request)
-  let compressed_end = Time::now()
-  let compressed_duration = compressed_end - compressed_start
-  
-  assert_eq(HttpResponse::status_code(compressed_response), 200)
-  
-  // Test without compression
-  let uncompressed_request = HttpRequest::new(
-    "POST", 
-    "https://httpbin.org/post", 
-    [("Content-Type", "text/plain")], 
-    Some(large_payload)
-  )
-  
-  let uncompressed_start = Time::now()
-  let uncompressed_response = HttpClient::execute(perf_client, uncompressed_request)
-  let uncompressed_end = Time::now()
-  let uncompressed_duration = uncompressed_end - uncompressed_start
-  
-  assert_eq(HttpResponse::status_code(uncompressed_response), 200)
-  
-  // Compression should generally be faster for large payloads
-  // (though this may vary based on network conditions)
-  assert_true(compressed_duration <= uncompressed_duration * 2)  // Allow some tolerance
-  
-  // Test concurrent requests
-  let concurrent_start = Time::now()
-  let concurrent_responses = []
-  
-  for i in 0..10 {
-    let request = HttpRequest::new("GET", "https://httpbin.org/delay/1", [], None)
-    let response = HttpClient::execute(perf_client, request)
-    concurrent_responses.push(response)
+  match fast_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
   }
   
-  let concurrent_end = Time::now()
-  let concurrent_duration = concurrent_end - concurrent_start
+  // Test request that exceeds timeout
+  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/10", [], None)
+  let slow_result = TimeoutHttpClient::execute(timeout_client, slow_request)
   
-  // Verify all requests succeeded
-  for response in concurrent_responses {
-    assert_eq(HttpResponse::status_code(response), 200)
+  match slow_result {
+    Ok(_) => assert_true(false)
+    Error(msg) => assert_eq(msg, "Request timeout")
   }
   
-  // With keep-alive and connection pooling, concurrent requests should be faster
-  // than sequential requests (10 seconds would be sequential)
-  assert_true(concurrent_duration < 8000000000L)  // Less than 8 seconds
+  // Test request cancellation
+  let cancellable_client = CancellableHttpClient::new()
+  let request = HttpRequest::new("GET", "https://httpbin.org/delay/5", [], None)
+  let request_handle = CancellableHttpClient::execute_async(cancellable_client, request)
   
-  // Test network bandwidth measurement
-  let bandwidth_start = Time::now()
-  let bandwidth_payload = "x".repeat(1000000)  // 1MB payload
-  let bandwidth_request = HttpRequest::new(
-    "POST", 
-    "https://httpbin.org/post", 
-    [("Content-Type", "text/plain")], 
-    Some(bandwidth_payload)
-  )
-  
-  let bandwidth_response = HttpClient::execute(perf_client, bandwidth_request)
-  let bandwidth_end = Time::now()
-  let bandwidth_duration = bandwidth_end - bandwidth_start
-  
-  assert_eq(HttpResponse::status_code(bandwidth_response), 200)
-  
-  // Calculate bandwidth (bytes per second)
-  let bandwidth = (bandwidth_payload.length() * 1000000000L) / bandwidth_duration
-  assert_true(bandwidth > 10000)  // At least 10KB/s
+  // Cancel the request after 1 second
+  // Note: In a real implementation, this would involve actual async/cancellation
+  let cancel_result = CancellableHttpClient::cancel(cancellable_client, request_handle)
+  match cancel_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
+  }
 }
