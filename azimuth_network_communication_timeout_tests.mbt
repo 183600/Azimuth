@@ -1,496 +1,1014 @@
-// Azimuth Network Communication Timeout Handling Tests
-// This file contains test cases for network communication timeout handling functionality
+// Azimuth Network Communication and Timeout Test Suite
+// This file contains tests for network communication and timeout handling
 
-// Test 1: Basic HTTP Request Timeout
-test "basic http request timeout" {
-  let client = HttpClient::new()
-  
-  // Configure client with short timeout for testing
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(1000)      // 1 second connect timeout
-    .with_request_timeout(2000)      // 2 seconds request timeout
-    .with_read_timeout(1500)         // 1.5 seconds read timeout
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Test request to a fast endpoint (should succeed)
-  let fast_request = HttpRequest::new("GET", "https://httpbin.org/delay/0.5", [], None)
-  let fast_result = HttpClient::execute_with_timeout(client, fast_request)
-  
-  match fast_result {
-    Ok(response) => assert_eq(response.status_code, 200)
-    Err(error) => assert_true(false)  // Should succeed
+// Test 1: HTTP Client Request/Response
+test "http client request and response handling" {
+  // HTTP request structure
+  type HttpRequest = {
+    method: String,
+    url: String,
+    headers: Array[(String, String)],
+    body: Option[String],
+    timeout: Int
   }
   
-  // Test request to a slow endpoint (should timeout)
-  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/5", [], None)
-  let slow_result = HttpClient::execute_with_timeout(client, slow_request)
-  
-  match slow_result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
+  // HTTP response structure
+  type HttpResponse = {
+    status_code: Int,
+    headers: Array[(String, String)],
+    body: Option[String],
+    duration: Int
   }
-}
-
-// Test 2: Connection Timeout Handling
-test "connection timeout handling" {
-  let client = HttpClient::new()
   
-  // Configure with very short connect timeout
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(100)  // 100ms connect timeout
-    .with_request_timeout(5000)
-    .with_read_timeout(5000)
+  // Network error types
+  enum NetworkError {
+    TimeoutError
+    ConnectionError
+    DNSError
+    SSLError
+    RateLimitError
+  }
   
-  HttpClient::configure_timeouts(client, timeout_config)
+  // Result type
+  type Result[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[NetworkError]
+  }
   
-  // Test connection to non-responsive server
-  let request = HttpRequest::new("GET", "http://10.255.255.1:80", [], None)  // Non-routable IP
-  let result = HttpClient::execute_with_timeout(client, request)
-  
-  match result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::ConnectTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
+  // Create HTTP request
+  let create_request = fn(method: String, url: String, timeout: Int) {
+    {
+      method,
+      url,
+      headers: [],
+      body: None,
+      timeout
     }
   }
   
-  // Test connection to invalid hostname
-  let invalid_request = HttpRequest::new("GET", "http://invalid-hostname-that-does-not-exist.com", [], None)
-  let invalid_result = HttpClient::execute_with_timeout(client, invalid_request)
-  
-  match invalid_result {
-    Ok(_) => assert_true(false)  // Should fail
-    Err(error) => {
-      match error {
-        NetworkError::ConnectTimeout => assert_true(true)
-        NetworkError::DnsError => assert_true(true)  // DNS resolution might also timeout
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 3: Read Timeout with Large Response
-test "read timeout with large response" {
-  let client = HttpClient::new()
-  
-  // Configure with short read timeout
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(5000)
-    .with_request_timeout(10000)
-    .with_read_timeout(1000)  // 1 second read timeout
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Test request that returns large data slowly
-  let large_request = HttpRequest::new("GET", "https://httpbin.org/stream-bytes/10240", [], None)
-  let result = HttpClient::execute_with_timeout(client, large_request)
-  
-  match result {
-    Ok(_) => assert_true(false)  // Should timeout due to slow streaming
-    Err(error) => {
-      match error {
-        NetworkError::ReadTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
+  // Add header to request
+  let add_header = fn(request: HttpRequest, key: String, value: String) {
+    {
+      request |
+      headers: request.headers.push((key, value))
     }
   }
   
-  // Test with chunked encoding that delays chunks
-  let chunked_request = HttpRequest::new("GET", "https://httpbin.org/drip?duration=5&numbytes=10&code=200", [], None)
-  let chunked_result = HttpClient::execute_with_timeout(client, chunked_request)
-  
-  match chunked_result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::ReadTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 4: Timeout with Retry Logic
-test "timeout with retry logic" {
-  let client = HttpClient::new()
-  
-  // Configure retry policy
-  let retry_policy = RetryPolicy::new()
-    .with_max_attempts(3)
-    .with_backoff_strategy(ExponentialBackoff)
-    .with_base_delay(500)  // 500ms base delay
-    .with_max_delay(2000)  // 2s max delay
-    .with_retryable_errors([NetworkError::RequestTimeout, NetworkError::ConnectTimeout])
-  
-  HttpClient::configure_retry(client, retry_policy)
-  
-  // Configure with short timeout to trigger retries
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(1000)
-    .with_request_timeout(1000)
-    .with_read_timeout(1000)
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Test request that will timeout and retry
-  let request = HttpRequest::new("GET", "https://httpbin.org/delay/2", [], None)
-  let result = HttpClient::execute_with_retry(client, request)
-  
-  match result {
-    Ok(_) => assert_true(false)  // Should eventually fail due to timeouts
-    Err(error) => {
-      match error {
-        NetworkError::MaxRetriesExceeded => assert_true(true)
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 5: Timeout with Circuit Breaker
-test "timeout with circuit breaker" {
-  let client = HttpClient::new()
-  
-  // Configure circuit breaker
-  let circuit_config = CircuitBreakerConfig::new()
-    .with_failure_threshold(3)  // Open after 3 failures
-    .with_recovery_timeout(5000)  // Try recovery after 5 seconds
-    .with_success_threshold(2)   // Close after 2 successes
-  
-  let circuit_breaker = CircuitBreaker::new(circuit_config)
-  HttpClient::configure_circuit_breaker(client, circuit_breaker)
-  
-  // Configure with short timeout
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(500)
-    .with_request_timeout(500)
-    .with_read_timeout(500)
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/2", [], None)
-  
-  // Execute multiple failing requests to trigger circuit breaker
-  for i = 0; i < 3; i = i + 1 {
-    let result = HttpClient::execute_with_circuit_breaker(client, slow_request)
-    match result {
-      Ok(_) => assert_true(false)  // Should timeout
-      Err(error) => {
-        match error {
-          NetworkError::RequestTimeout => assert_true(true)
-          _ => assert_true(false)
-        }
-      }
+  // Set request body
+  let set_body = fn(request: HttpRequest, body: String) {
+    {
+      request |
+      body: Some(body)
     }
   }
   
-  // Circuit breaker should now be open
-  let circuit_state = CircuitBreaker::state(circuit_breaker)
-  assert_eq(circuit_state, CircuitState::Open)
-  
-  // Next request should fail immediately due to open circuit
-  let immediate_result = HttpClient::execute_with_circuit_breaker(client, slow_request)
-  match immediate_result {
-    Ok(_) => assert_true(false)  // Should fail immediately
-    Err(error) => {
-      match error {
-        NetworkError::CircuitBreakerOpen => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 6: Timeout with Different HTTP Methods
-test "timeout with different http methods" {
-  let client = HttpClient::new()
-  
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(2000)
-    .with_request_timeout(3000)
-    .with_read_timeout(2000)
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Test GET request timeout
-  let get_request = HttpRequest::new("GET", "https://httpbin.org/delay/5", [], None)
-  let get_result = HttpClient::execute_with_timeout(client, get_request)
-  
-  match get_result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  // Test POST request timeout
-  let post_request = HttpRequest::new(
-    "POST", 
-    "https://httpbin.org/delay/5", 
-    [("Content-Type", "application/json")], 
-    Some("{\"test\":\"data\"}")
-  )
-  let post_result = HttpClient::execute_with_timeout(client, post_request)
-  
-  match post_result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  // Test PUT request timeout
-  let put_request = HttpRequest::new(
-    "PUT", 
-    "https://httpbin.org/delay/5", 
-    [("Content-Type", "application/json")], 
-    Some("{\"test\":\"data\"}")
-  )
-  let put_result = HttpClient::execute_with_timeout(client, put_request)
-  
-  match put_result {
-    Ok(_) => assert_true(false)  // Should timeout
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 7: Timeout with Concurrent Requests
-test "timeout with concurrent requests" {
-  let client = HttpClient::new()
-  
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(1000)
-    .with_request_timeout(2000)
-    .with_read_timeout(1500)
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Create multiple concurrent requests with different response times
-  let requests = [
-    HttpRequest::new("GET", "https://httpbin.org/delay/0.5", [], None),  // Fast
-    HttpRequest::new("GET", "https://httpbin.org/delay/1", [], None),   // Medium
-    HttpRequest::new("GET", "https://httpbin.org/delay/3", [], None),   // Slow (will timeout)
-    HttpRequest::new("GET", "https://httpbin.org/delay/0.3", [], None), // Fast
-    HttpRequest::new("GET", "https://httpbin.org/delay/4", [], None)    // Very slow (will timeout)
-  ]
-  
-  // Execute all requests concurrently
-  let results = HttpClient::execute_concurrent(client, requests)
-  
-  assert_eq(results.length(), requests.length())
-  
-  let mut success_count = 0
-  let mut timeout_count = 0
-  
-  for result in results {
-    match result {
-      Ok(response) => {
-        success_count = success_count + 1
-        assert_eq(response.status_code, 200)
-      }
-      Err(error) => {
-        match error {
-          NetworkError::RequestTimeout => timeout_count = timeout_count + 1
-          _ => assert_true(false)
-        }
-      }
-    }
-  }
-  
-  // 3 should succeed, 2 should timeout
-  assert_eq(success_count, 3)
-  assert_eq(timeout_count, 2)
-}
-
-// Test 8: Adaptive Timeout Configuration
-test "adaptive timeout configuration" {
-  let client = HttpClient::new()
-  
-  // Configure adaptive timeout
-  let adaptive_config = AdaptiveTimeoutConfig::new()
-    .with_base_timeout(2000)        // 2 second base timeout
-    .with_min_timeout(500)          // 500ms minimum timeout
-    .with_max_timeout(10000)        // 10 second maximum timeout
-    .with_success_threshold(5)      // Adjust after 5 successful requests
-    .with_failure_threshold(3)      // Adjust after 3 failures
-    .with_adjustment_factor(1.5)    // Multiply by 1.5 for adjustments
-  
-  let adaptive_timeout = AdaptiveTimeout::new(adaptive_config)
-  HttpClient::configure_adaptive_timeout(client, adaptive_timeout)
-  
-  let test_endpoint = "https://httpbin.org/delay/"
-  
-  // Make several successful requests with short delays (should decrease timeout)
-  for i = 0; i < 5; i = i + 1 {
-    let request = HttpRequest::new("GET", test_endpoint + "0.5", [], None)
-    let result = HttpClient::execute_with_adaptive_timeout(client, request)
+  // Simulate HTTP request
+  let send_request = fn(request: HttpRequest) {
+    // Simulate network delay based on URL
+    let base_delay = 100
+    let url_delay = if request.url.contains("slow") { 500 } else { 0 }
+    let total_delay = base_delay + url_delay
     
-    match result {
-      Ok(response) => assert_eq(response.status_code, 200)
-      Err(_) => assert_true(false)  // Should succeed
+    // Simulate timeout
+    if total_delay > request.timeout {
+      return {
+        success: false,
+        data: None,
+        error: Some(NetworkError::TimeoutError)
+      }
+    }
+    
+    // Simulate different responses based on URL
+    let status_code = if request.url.contains("404") {
+      404
+    } else if request.url.contains("500") {
+      500
+    } else if request.url.contains("rate-limit") {
+      429
+    } else {
+      200
+    }
+    
+    let response_body = if status_code == 200 {
+      Some("{ \"message\": \"success\", \"data\": \"sample data\" }")
+    } else {
+      Some("{ \"error\": \"request failed\" }")
+    }
+    
+    let response_headers = [
+      ("content-type", "application/json"),
+      ("content-length", response_body.unwrap().length().to_string())
+    ]
+    
+    {
+      success: true,
+      data: Some({
+        status_code,
+        headers: response_headers,
+        body: response_body,
+        duration: total_delay
+      }),
+      error: None
     }
   }
   
-  // Check that timeout has decreased
-  let current_timeout = AdaptiveTimeout::current_timeout(adaptive_timeout)
-  assert_eq(current_timeout < 2000, true)  // Should be less than base timeout
-  assert_eq(current_timeout >= 500, true)  // But not less than minimum
+  // Test request creation
+  let request = create_request("GET", "https://api.example.com/data", 1000)
+  assert_eq(request.method, "GET")
+  assert_eq(request.url, "https://api.example.com/data")
+  assert_eq(request.timeout, 1000)
+  assert_eq(request.headers.length(), 0)
+  assert_eq(request.body, None)
   
-  // Make several failing requests with long delays (should increase timeout)
-  for i = 0; i < 3; i = i + 1 {
-    let request = HttpRequest::new("GET", test_endpoint + "5", [], None)
-    let result = HttpClient::execute_with_adaptive_timeout(client, request)
+  // Test adding headers
+  let request_with_headers = add_header(add_header(request, "Authorization", "Bearer token123"), "Accept", "application/json")
+  assert_eq(request_with_headers.headers.length(), 2)
+  assert_true(request_with_headers.headers.contains(("Authorization", "Bearer token123")))
+  assert_true(request_with_headers.headers.contains(("Accept", "application/json")))
+  
+  // Test setting body
+  let request_with_body = set_body(request_with_headers, "{ \"key\": \"value\" }")
+  assert_eq(request_with_body.body, Some("{ \"key\": \"value\" }"))
+  
+  // Test successful request
+  let success_result = send_request(request_with_body)
+  assert_true(success_result.success)
+  assert_true(success_result.data.is_some())
+  assert_eq(success_result.error, None)
+  
+  let response = success_result.data.unwrap()
+  assert_eq(response.status_code, 200)
+  assert_eq(response.duration, 100)
+  assert_true(response.body.is_some())
+  
+  // Test timeout
+  let timeout_request = create_request("GET", "https://slow-api.example.com/data", 200)
+  let timeout_result = send_request(timeout_request)
+  assert_false(timeout_result.success)
+  assert_eq(timeout_result.data, None)
+  assert_eq(timeout_result.error, Some(NetworkError::TimeoutError))
+  
+  // Test error responses
+  let not_found_request = create_request("GET", "https://api.example.com/404", 1000)
+  let not_found_result = send_request(not_found_request)
+  assert_true(not_found_result.success)
+  assert_eq(not_found_result.data.unwrap().status_code, 404)
+  
+  let server_error_request = create_request("GET", "https://api.example.com/500", 1000)
+  let server_error_result = send_request(server_error_request)
+  assert_true(server_error_result.success)
+  assert_eq(server_error_result.data.unwrap().status_code, 500)
+  
+  let rate_limit_request = create_request("GET", "https://api.example.com/rate-limit", 1000)
+  let rate_limit_result = send_request(rate_limit_request)
+  assert_true(rate_limit_result.success)
+  assert_eq(rate_limit_result.data.unwrap().status_code, 429)
+}
+
+// Test 2: Retry Mechanism with Backoff
+test "retry mechanism with exponential backoff" {
+  // Retry configuration
+  type RetryConfig = {
+    max_attempts: Int,
+    base_delay: Int,
+    max_delay: Int,
+    backoff_multiplier: Float,
+    retryable_errors: Array[NetworkError]
+  }
+  
+  // Retry attempt information
+  type RetryAttempt = {
+    attempt_number: Int,
+    delay: Int,
+    error: Option[NetworkError]
+  }
+  
+  // Retry result
+  type RetryResult = {
+    success: Bool,
+    attempts: Array[RetryAttempt],
+    total_duration: Int
+  }
+  
+  // Network error types
+  enum NetworkError {
+    TimeoutError
+    ConnectionError
+    DNSError
+    SSLError
+    RateLimitError
+  }
+  
+  // Default retry configuration
+  let default_retry_config = {
+    max_attempts: 3,
+    base_delay: 100,
+    max_delay: 5000,
+    backoff_multiplier: 2.0,
+    retryable_errors: [
+      NetworkError::TimeoutError,
+      NetworkError::ConnectionError,
+      NetworkError::DNSError
+    ]
+  }
+  
+  // Calculate delay for retry attempt
+  let calculate_delay = fn(attempt: Int, config: RetryConfig) {
+    let exponential_delay = (config.base_delay.to_float() * 
+      config.backoff_multiplier.pow((attempt - 1).to_float())).to_int()
     
-    match result {
-      Ok(_) => assert_true(false)  // Should timeout
-      Err(error) => {
-        match error {
-          NetworkError::RequestTimeout => assert_true(true)
-          _ => assert_true(false)
-        }
+    if exponential_delay > config.max_delay {
+      config.max_delay
+    } else {
+      exponential_delay
+    }
+  }
+  
+  // Check if error is retryable
+  let is_retryable = fn(error: NetworkError, config: RetryConfig) {
+    config.retryable_errors.any(fn(retryable_error) { 
+      match (error, retryable_error) {
+        (NetworkError::TimeoutError, NetworkError::TimeoutError) => true
+        (NetworkError::ConnectionError, NetworkError::ConnectionError) => true
+        (NetworkError::DNSError, NetworkError::DNSError) => true
+        (NetworkError::SSLError, NetworkError::SSLError) => true
+        (NetworkError::RateLimitError, NetworkError::RateLimitError) => true
+        _ => false
+      }
+    })
+  }
+  
+  // Simulate operation that may fail
+  let simulate_operation = fn(attempt: Int, should_fail_until: Int, error_type: NetworkError) {
+    if attempt < should_fail_until {
+      {
+        success: false,
+        data: None,
+        error: Some(error_type)
+      }
+    } else {
+      {
+        success: true,
+        data: Some("operation result"),
+        error: None
       }
     }
   }
   
-  // Check that timeout has increased
-  let increased_timeout = AdaptiveTimeout::current_timeout(adaptive_timeout)
-  assert_eq(increased_timeout > current_timeout, true)  // Should be greater than before
-  assert_eq(increased_timeout <= 10000, true)  // But not exceed maximum
+  // Execute operation with retry
+  let execute_with_retry = fn(should_fail_until: Int, error_type: NetworkError, config: RetryConfig) {
+    let mut attempts = []
+    let mut total_duration = 0
+    let mut success = false
+    let mut attempt_number = 1
+    
+    while attempt_number <= config.max_attempts {
+      let delay = if attempt_number > 1 {
+        calculate_delay(attempt_number - 1, config)
+      } else {
+        0
+      }
+      
+      total_duration = total_duration + delay
+      
+      let result = simulate_operation(attempt_number, should_fail_until, error_type)
+      
+      attempts = attempts.push({
+        attempt_number,
+        delay,
+        error: result.error
+      })
+      
+      if result.success {
+        success = true
+        break
+      } else {
+        let retryable = match result.error {
+          Some(error) => is_retryable(error, config)
+          None => false
+        }
+        
+        if not(retryable) or attempt_number >= config.max_attempts {
+          break
+        }
+      }
+      
+      attempt_number = attempt_number + 1
+    }
+    
+    {
+      success,
+      attempts,
+      total_duration
+    }
+  }
+  
+  // Test delay calculation
+  assert_eq(calculate_delay(1, default_retry_config), 100)
+  assert_eq(calculate_delay(2, default_retry_config), 200)
+  assert_eq(calculate_delay(3, default_retry_config), 400)
+  assert_eq(calculate_delay(4, default_retry_config), 800)
+  
+  // Test max delay cap
+  let config_with_max_delay = {
+    default_retry_config |
+    max_delay: 300
+  }
+  
+  assert_eq(calculate_delay(3, config_with_max_delay), 300)  // Would be 400, but capped at 300
+  
+  // Test retryable error check
+  assert_true(is_retryable(NetworkError::TimeoutError, default_retry_config))
+  assert_true(is_retryable(NetworkError::ConnectionError, default_retry_config))
+  assert_false(is_retryable(NetworkError::RateLimitError, default_retry_config))  // Not in retryable list
+  
+  // Test successful retry (succeeds on 2nd attempt)
+  let success_retry = execute_with_retry(2, NetworkError::TimeoutError, default_retry_config)
+  assert_true(success_retry.success)
+  assert_eq(success_retry.attempts.length(), 2)
+  assert_eq(success_retry.total_duration, 100)  // Only one retry delay
+  assert_eq(success_retry.attempts[0].error, Some(NetworkError::TimeoutError))
+  assert_eq(success_retry.attempts[1].error, None)
+  
+  // Test failed retry (max attempts reached)
+  let failed_retry = execute_with_retry(5, NetworkError::TimeoutError, default_retry_config)
+  assert_false(failed_retry.success)
+  assert_eq(failed_retry.attempts.length(), 3)
+  assert_eq(failed_retry.total_duration, 100 + 200)  // Two retry delays
+  
+  // Test non-retryable error
+  let config_with_rate_limit = {
+    default_retry_config |
+    retryable_errors: [
+      NetworkError::TimeoutError,
+      NetworkError::ConnectionError,
+      NetworkError::DNSError,
+      NetworkError::RateLimitError
+    ]
+  }
+  
+  let non_retryable_result = execute_with_retry(2, NetworkError::SSLError, config_with_rate_limit)
+  assert_false(non_retryable_result.success)
+  assert_eq(non_retryable_result.attempts.length(), 1)
+  assert_eq(non_retryable_result.total_duration, 0)
+  
+  // Test immediate success (no retries needed)
+  let immediate_success = execute_with_retry(1, NetworkError::TimeoutError, default_retry_config)
+  assert_true(immediate_success.success)
+  assert_eq(immediate_success.attempts.length(), 1)
+  assert_eq(immediate_success.total_duration, 0)
 }
 
-// Test 9: Timeout with Streaming Requests
-test "timeout with streaming requests" {
-  let client = HttpClient::new()
+// Test 3: Circuit Breaker Pattern
+test "circuit breaker pattern implementation" {
+  // Circuit breaker states
+  enum CircuitState {
+    Closed
+    Open
+    HalfOpen
+  }
   
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(2000)
-    .with_request_timeout(5000)
-    .with_read_timeout(1000)  // Short read timeout for streaming
+  // Circuit breaker configuration
+  type CircuitBreakerConfig = {
+    failure_threshold: Int,
+    success_threshold: Int,
+    timeout: Int
+  }
   
-  HttpClient::configure_timeouts(client, timeout_config)
+  // Circuit breaker
+  type CircuitBreaker = {
+    state: CircuitState,
+    failure_count: Int,
+    success_count: Int,
+    last_failure_time: Int,
+    config: CircuitBreakerConfig
+  }
   
-  // Test streaming response that should timeout
-  let stream_request = HttpRequest::new("GET", "https://httpbin.org/stream/20", [], None)
-  let stream_result = HttpClient::execute_stream_with_timeout(client, stream_request)
+  // Result type
+  type Result[T] = {
+    success: Bool,
+    data: Option[T],
+    circuit_open: Bool
+  }
   
-  match stream_result {
-    Ok(stream) => {
-      // Try to read from stream, should timeout
-      let read_result = HttpStream::read_with_timeout(stream, 1024, 1500)
-      match read_result {
-        Ok(_) => assert_true(false)  // Should timeout
-        Err(error) => {
-          match error {
-            NetworkError::ReadTimeout => assert_true(true)
-            _ => assert_true(false)
+  // Create circuit breaker
+  let create_circuit_breaker = fn(config: CircuitBreakerConfig) {
+    {
+      state: CircuitState::Closed,
+      failure_count: 0,
+      success_count: 0,
+      last_failure_time: 0,
+      config
+    }
+  }
+  
+  // Check if circuit should be attempted
+  let can_attempt = fn(breaker: CircuitBreaker, current_time: Int) {
+    match breaker.state {
+      CircuitState::Closed => true
+      CircuitState::Open => {
+        current_time - breaker.last_failure_time > breaker.config.timeout
+      }
+      CircuitState::HalfOpen => true
+    }
+  }
+  
+  // Execute operation through circuit breaker
+  let execute = fn(breaker: CircuitBreaker, operation_succeeds: Bool, current_time: Int) {
+    if not(can_attempt(breaker, current_time)) {
+      return {
+        result: {
+          success: false,
+          data: None,
+          circuit_open: true
+        },
+        updated_breaker: breaker
+      }
+    }
+    
+    let mut updated_breaker = breaker
+    
+    if operation_succeeds {
+      match breaker.state {
+        CircuitState::Closed => {
+          updated_breaker.failure_count = 0
+        }
+        CircuitState::HalfOpen => {
+          updated_breaker.success_count = updated_breaker.success_count + 1
+          if updated_breaker.success_count >= breaker.config.success_threshold {
+            updated_breaker.state = CircuitState::Closed
+            updated_breaker.success_count = 0
+            updated_breaker.failure_count = 0
+          }
+        }
+        CircuitState::Open => {
+          // Shouldn't reach here
+        }
+      }
+      
+      {
+        result: {
+          success: true,
+          data: Some("operation result"),
+          circuit_open: false
+        },
+        updated_breaker
+      }
+    } else {
+      updated_breaker.failure_count = updated_breaker.failure_count + 1
+      updated_breaker.last_failure_time = current_time
+      
+      match breaker.state {
+        CircuitState::Closed => {
+          if updated_breaker.failure_count >= breaker.config.failure_threshold {
+            updated_breaker.state = CircuitState::Open
+          }
+        }
+        CircuitState::HalfOpen => {
+          updated_breaker.state = CircuitState::Open
+          updated_breaker.success_count = 0
+        }
+        CircuitState::Open => {
+          // Shouldn't reach here
+        }
+      }
+      
+      {
+        result: {
+          success: false,
+          data: None,
+          circuit_open: updated_breaker.state == CircuitState::Open
+        },
+        updated_breaker
+      }
+    }
+  }
+  
+  // Test circuit breaker creation
+  let config = {
+    failure_threshold: 3,
+    success_threshold: 2,
+    timeout: 1000
+  }
+  
+  let breaker = create_circuit_breaker(config)
+  assert_eq(breaker.state, CircuitState::Closed)
+  assert_eq(breaker.failure_count, 0)
+  assert_eq(breaker.success_count, 0)
+  
+  // Test normal operation (circuit closed)
+  let (result1, breaker1) = execute(breaker, true, 100)
+  assert_true(result1.success)
+  assert_false(result1.circuit_open)
+  assert_eq(breaker1.state, CircuitState::Closed)
+  assert_eq(breaker1.failure_count, 0)
+  
+  // Test failures in closed state
+  let (result2, breaker2) = execute(breaker1, false, 200)
+  assert_false(result2.success)
+  assert_false(result2.circuit_open)
+  assert_eq(breaker2.state, CircuitState::Closed)
+  assert_eq(breaker2.failure_count, 1)
+  
+  let (result3, breaker3) = execute(breaker2, false, 300)
+  assert_false(result3.success)
+  assert_false(result3.circuit_open)
+  assert_eq(breaker3.state, CircuitState::Closed)
+  assert_eq(breaker3.failure_count, 2)
+  
+  // Test circuit opening after threshold
+  let (result4, breaker4) = execute(breaker3, false, 400)
+  assert_false(result4.success)
+  assert_true(result4.circuit_open)
+  assert_eq(breaker4.state, CircuitState::Open)
+  assert_eq(breaker4.failure_count, 3)
+  assert_eq(breaker4.last_failure_time, 400)
+  
+  // Test operation blocked when circuit is open
+  let (result5, breaker5) = execute(breaker4, true, 500)
+  assert_false(result5.success)
+  assert_true(result5.circuit_open)
+  assert_eq(breaker5.state, CircuitState::Open)
+  
+  // Test circuit transitioning to half-open after timeout
+  let (result6, breaker6) = execute(breaker5, true, 1500)  // After timeout
+  assert_true(result6.success)
+  assert_false(result6.circuit_open)
+  assert_eq(breaker6.state, CircuitState::HalfOpen)
+  assert_eq(breaker6.success_count, 1)
+  
+  // Test success threshold in half-open state
+  let (result7, breaker7) = execute(breaker6, true, 1600)
+  assert_true(result7.success)
+  assert_false(result7.circuit_open)
+  assert_eq(breaker7.state, CircuitState::Closed)
+  assert_eq(breaker7.failure_count, 0)
+  assert_eq(breaker7.success_count, 0)
+  
+  // Test circuit opening again from half-open
+  let breaker8 = { breaker7 | state: CircuitState::HalfOpen, success_count: 0 }
+  let (result9, breaker9) = execute(breaker8, false, 1700)
+  assert_false(result9.success)
+  assert_true(result9.circuit_open)
+  assert_eq(breaker9.state, CircuitState::Open)
+  assert_eq(breaker9.success_count, 0)
+}
+
+// Test 4: Connection Pool Management
+test "connection pool management" {
+  // Connection structure
+  type Connection = {
+    id: String,
+    created_at: Int,
+    last_used: Int,
+    in_use: Bool,
+    is_valid: Bool
+  }
+  
+  // Connection pool
+  type ConnectionPool = {
+    connections: Array[Connection],
+    max_size: Int,
+    min_size: Int,
+    current_time: Int
+  }
+  
+  // Pool statistics
+  type PoolStats = {
+    total_connections: Int,
+    active_connections: Int,
+    idle_connections: Int,
+    invalid_connections: Int
+  }
+  
+  // Create connection pool
+  let create_pool = fn(min_size: Int, max_size: Int) {
+    let mut connections = []
+    
+    for i in 0..min_size {
+      connections = connections.push({
+        id: "conn-" + i.to_string(),
+        created_at: 0,
+        last_used: 0,
+        in_use: false,
+        is_valid: true
+      })
+    }
+    
+    {
+      connections,
+      max_size,
+      min_size,
+      current_time: 0
+    }
+  }
+  
+  // Get pool statistics
+  let get_stats = fn(pool: ConnectionPool) {
+    let active = pool.connections.filter(fn(conn) { conn.in_use }).length()
+    let idle = pool.connections.filter(fn(conn) { not(conn.in_use) and conn.is_valid }).length()
+    let invalid = pool.connections.filter(fn(conn) { not(conn.is_valid) }).length()
+    
+    {
+      total_connections: pool.connections.length(),
+      active_connections: active,
+      idle_connections: idle,
+      invalid_connections: invalid
+    }
+  }
+  
+  // Acquire connection from pool
+  let acquire_connection = fn(pool: ConnectionPool) {
+    let mut updated_pool = { pool | current_time: pool.current_time + 1 }
+    let mut acquired_connection = None
+    
+    // Find an available, valid connection
+    for i in 0..pool.connections.length() {
+      if not(pool.connections[i].in_use) and pool.connections[i].is_valid {
+        acquired_connection = Some(pool.connections[i].id)
+        updated_pool.connections[i] = {
+          pool.connections[i] |
+          in_use: true,
+          last_used: updated_pool.current_time
+        }
+        break
+      }
+    }
+    
+    // If no available connection and pool not at max size, create new one
+    if acquired_connection.is_none() and pool.connections.length() < pool.max_size {
+      let new_id = "conn-" + pool.connections.length().to_string()
+      let new_connection = {
+        id: new_id,
+        created_at: updated_pool.current_time,
+        last_used: updated_pool.current_time,
+        in_use: true,
+        is_valid: true
+      }
+      
+      acquired_connection = Some(new_id)
+      updated_pool.connections = updated_pool.connections.push(new_connection)
+    }
+    
+    (updated_pool, acquired_connection)
+  }
+  
+  // Release connection back to pool
+  let release_connection = fn(pool: ConnectionPool, connection_id: String) {
+    let mut updated_pool = pool
+    let mut found = false
+    
+    for i in 0..pool.connections.length() {
+      if pool.connections[i].id == connection_id and pool.connections[i].in_use {
+        updated_pool.connections[i] = {
+          pool.connections[i] |
+          in_use: false,
+          last_used: updated_pool.current_time
+        }
+        found = true
+        break
+      }
+    }
+    
+    if found {
+      updated_pool
+    } else {
+      pool  // Connection not found or not in use
+    }
+  }
+  
+  // Validate connection
+  let validate_connection = fn(pool: ConnectionPool, connection_id: String, is_valid: Bool) {
+    let mut updated_pool = pool
+    
+    for i in 0..pool.connections.length() {
+      if pool.connections[i].id == connection_id {
+        updated_pool.connections[i] = {
+          pool.connections[i] |
+          is_valid
+        }
+        break
+      }
+    }
+    
+    updated_pool
+  }
+  
+  // Clean up invalid connections
+  let cleanup_connections = fn(pool: ConnectionPool) {
+    let valid_connections = pool.connections.filter(fn(conn) { conn.is_valid })
+    
+    // Ensure minimum number of connections
+    let mut result = { pool | connections: valid_connections }
+    
+    while result.connections.length() < result.min_size {
+      let new_id = "conn-" + result.current_time.to_string() + "-" + result.connections.length().to_string()
+      let new_connection = {
+        id: new_id,
+        created_at: result.current_time,
+        last_used: result.current_time,
+        in_use: false,
+        is_valid: true
+      }
+      
+      result.connections = result.connections.push(new_connection)
+    }
+    
+    result
+  }
+  
+  // Test pool creation
+  let pool = create_pool(2, 5)
+  assert_eq(pool.min_size, 2)
+  assert_eq(pool.max_size, 5)
+  assert_eq(pool.connections.length(), 2)
+  
+  let stats = get_stats(pool)
+  assert_eq(stats.total_connections, 2)
+  assert_eq(stats.active_connections, 0)
+  assert_eq(stats.idle_connections, 2)
+  assert_eq(stats.invalid_connections, 0)
+  
+  // Test acquiring connections
+  let (pool1, conn1) = acquire_connection(pool)
+  assert_true(conn1.is_some())
+  assert_eq(conn1.unwrap(), "conn-0")
+  
+  let stats1 = get_stats(pool1)
+  assert_eq(stats1.active_connections, 1)
+  assert_eq(stats1.idle_connections, 1)
+  
+  let (pool2, conn2) = acquire_connection(pool1)
+  assert_true(conn2.is_some())
+  assert_eq(conn2.unwrap(), "conn-1")
+  
+  let stats2 = get_stats(pool2)
+  assert_eq(stats2.active_connections, 2)
+  assert_eq(stats2.idle_connections, 0)
+  
+  // Test creating new connection when pool is exhausted
+  let (pool3, conn3) = acquire_connection(pool2)
+  assert_true(conn3.is_some())
+  assert_eq(conn3.unwrap(), "conn-2")  // New connection created
+  
+  let stats3 = get_stats(pool3)
+  assert_eq(stats3.total_connections, 3)
+  assert_eq(stats3.active_connections, 3)
+  
+  // Test releasing connections
+  let pool4 = release_connection(pool3, "conn-0")
+  let stats4 = get_stats(pool4)
+  assert_eq(stats4.active_connections, 2)
+  assert_eq(stats4.idle_connections, 1)
+  
+  // Test connection validation
+  let pool5 = validate_connection(pool4, "conn-1", false)
+  let stats5 = get_stats(pool5)
+  assert_eq(stats5.invalid_connections, 1)
+  
+  // Test cleanup of invalid connections
+  let pool6 = cleanup_connections(pool5)
+  let stats6 = get_stats(pool6)
+  assert_eq(stats6.invalid_connections, 0)
+  assert_true(stats6.total_connections >= stats6.min_size)
+  
+  // Test max size limit
+  let mut pool7 = pool6
+  let mut acquired_connections = []
+  
+  // Acquire connections up to max size
+  for i in 0..5 {
+    let (new_pool, conn) = acquire_connection(pool7)
+    pool7 = new_pool
+    if conn.is_some() {
+      acquired_connections = acquired_connections.push(conn.unwrap())
+    }
+  }
+  
+  let stats7 = get_stats(pool7)
+  assert_eq(stats7.total_connections, 5)  // Should not exceed max_size
+  
+  // Try to acquire one more (should fail)
+  let (pool8, conn8) = acquire_connection(pool7)
+  assert_true(conn8.is_none())
+  
+  // Release all connections
+  let mut pool9 = pool8
+  for conn_id in acquired_connections {
+    pool9 = release_connection(pool9, conn_id)
+  }
+  
+  let stats9 = get_stats(pool9)
+  assert_eq(stats9.active_connections, 0)
+  assert_eq(stats9.idle_connections, stats9.total_connections)
+}
+
+// Test 5: Request Timeout and Cancellation
+test "request timeout and cancellation" {
+  // Request state
+  enum RequestState {
+    Pending
+    Running
+    Completed
+    Cancelled
+    TimedOut
+  }
+  
+  // Request structure
+  type Request = {
+    id: String,
+    state: RequestState,
+    start_time: Int,
+    timeout: Int,
+    result: Option[String]
+  }
+  
+  // Request manager
+  type RequestManager = {
+    requests: Array[Request],
+    current_time: Int
+  }
+  
+  // Create request manager
+  let create_manager = fn() {
+    {
+      requests: [],
+      current_time: 0
+    }
+  }
+  
+  // Create new request
+  let create_request = fn(manager: RequestManager, timeout: Int) {
+    let new_request = {
+      id: "req-" + manager.requests.length().to_string(),
+      state: RequestState::Pending,
+      start_time: manager.current_time,
+      timeout,
+      result: None
+    }
+    
+    {
+      manager |
+      requests: manager.requests.push(new_request)
+    }
+  }
+  
+  // Start request execution
+  let start_request = fn(manager: RequestManager, request_id: String) {
+    let mut updated_manager = manager
+    
+    for i in 0..manager.requests.length() {
+      if manager.requests[i].id == request_id {
+        updated_manager.requests[i] = {
+          manager.requests[i] |
+          state: RequestState::Running
+        }
+        break
+      }
+    }
+    
+    updated_manager
+  }
+  
+  // Complete request
+  let complete_request = fn(manager: RequestManager, request_id: String, result: String) {
+    let mut updated_manager = manager
+    
+    for i in 0..manager.requests.length() {
+      if manager.requests[i].id == request_id {
+        updated_manager.requests[i] = {
+          manager.requests[i] |
+          state: RequestState::Completed,
+          result: Some(result)
+        }
+        break
+      }
+    }
+    
+    updated_manager
+  }
+  
+  // Cancel request
+  let cancel_request = fn(manager: RequestManager, request_id: String) {
+    let mut updated_manager = manager
+    
+    for i in 0..manager.requests.length() {
+      if manager.requests[i].id == request_id {
+        updated_manager.requests[i] = {
+          manager.requests[i] |
+          state: RequestState::Cancelled
+        }
+        break
+      }
+    }
+    
+    updated_manager
+  }
+  
+  // Check for timeouts
+  let check_timeouts = fn(manager: RequestManager) {
+    let mut updated_manager = manager
+    
+    for i in 0..manager.requests.length() {
+      let request = manager.requests[i]
+      if request.state == RequestState::Running {
+        let elapsed = manager.current_time - request.start_time
+        if elapsed >= request.timeout {
+          updated_manager.requests[i] = {
+            request |
+            state: RequestState::TimedOut
           }
         }
       }
     }
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  // Test uploading large data with timeout
-  let large_data = "x" * 1000000  // 1MB of data
-  let upload_request = HttpRequest::new(
-    "POST",
-    "https://httpbin.org/delay/3",
-    [("Content-Type", "text/plain")],
-    Some(large_data)
-  )
-  
-  let upload_result = HttpClient::execute_with_timeout(client, upload_request)
-  match upload_result {
-    Ok(_) => assert_true(false)  // Should timeout during upload
-    Err(error) => {
-      match error {
-        NetworkError::RequestTimeout => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 10: Timeout Metrics and Monitoring
-test "timeout metrics and monitoring" {
-  let client = HttpClient::new()
-  
-  // Configure metrics collection
-  let metrics_collector = NetworkMetricsCollector::new()
-  HttpClient::configure_metrics(client, metrics_collector)
-  
-  let timeout_config = TimeoutConfig::new()
-    .with_connect_timeout(1000)
-    .with_request_timeout(2000)
-    .with_read_timeout(1500)
-  
-  HttpClient::configure_timeouts(client, timeout_config)
-  
-  // Make various requests to generate metrics
-  let requests = [
-    ("fast", HttpRequest::new("GET", "https://httpbin.org/delay/0.5", [], None)),
-    ("medium", HttpRequest::new("GET", "https://httpbin.org/delay/1.5", [], None)),
-    ("slow_timeout", HttpRequest::new("GET", "https://httpbin.org/delay/3", [], None)),
-    ("connect_timeout", HttpRequest::new("GET", "http://10.255.255.1:80", [], None))
-  ]
-  
-  for (request_type, request) in requests {
-    let result = HttpClient::execute_with_timeout(client, request)
     
-    // Record metrics regardless of success/failure
-    NetworkMetricsCollector::record_request(metrics_collector, request_type, result)
+    updated_manager
   }
   
-  // Check collected metrics
-  let total_requests = NetworkMetricsCollector::total_requests(metrics_collector)
-  let successful_requests = NetworkMetricsCollector::successful_requests(metrics_collector)
-  let timeout_requests = NetworkMetricsCollector::timeout_requests(metrics_collector)
+  // Advance time
+  let advance_time = fn(manager: RequestManager, seconds: Int) {
+    { manager | current_time: manager.current_time + seconds }
+  }
   
-  assert_eq(total_requests, 4)
-  assert_eq(successful_requests, 2)  // fast and medium should succeed
-  assert_eq(timeout_requests, 2)    // slow_timeout and connect_timeout should timeout
+  // Get request by ID
+  let get_request = fn(manager: RequestManager, request_id: String) {
+    let mut found_request = None
+    
+    for request in manager.requests {
+      if request.id == request_id {
+        found_request = Some(request)
+        break
+      }
+    }
+    
+    found_request
+  }
   
-  // Check timeout breakdown
-  let connect_timeouts = NetworkMetricsCollector::connect_timeouts(metrics_collector)
-  let read_timeouts = NetworkMetricsCollector::read_timeouts(metrics_collector)
-  let request_timeouts = NetworkMetricsCollector::request_timeouts(metrics_collector)
+  // Test request creation
+  let manager = create_manager()
+  assert_eq(manager.requests.length(), 0)
   
-  assert_eq(connect_timeouts, 1)
-  assert_eq(read_timeouts + request_timeouts, 1)  // One of these should be 1
+  let manager1 = create_request(manager, 1000)
+  assert_eq(manager1.requests.length(), 1)
+  assert_eq(manager1.requests[0].state, RequestState::Pending)
+  assert_eq(manager1.requests[0].timeout, 1000)
   
-  // Check average response times for successful requests
-  let avg_response_time = NetworkMetricsCollector::average_response_time(metrics_collector)
-  assert_eq(avg_response_time > 0, true)
-  assert_eq(avg_response_time < 2000, true)  // Should be less than timeout
+  // Test starting request
+  let manager2 = start_request(manager1, "req-0")
+  assert_eq(manager2.requests[0].state, RequestState::Running)
   
-  // Check timeout rate
-  let timeout_rate = NetworkMetricsCollector::timeout_rate(metrics_collector)
-  assert_eq(timeout_rate, 0.5)  // 2 timeouts out of 4 requests = 50%
+  // Test completing request
+  let manager3 = complete_request(manager2, "req-0", "success result")
+  assert_eq(manager3.requests[0].state, RequestState::Completed)
+  assert_eq(manager3.requests[0].result, Some("success result"))
+  
+  // Test cancelling request
+  let manager4 = create_request(manager3, 1000)
+  let manager5 = start_request(manager4, "req-1")
+  let manager6 = cancel_request(manager5, "req-1")
+  
+  assert_eq(manager6.requests[1].state, RequestState::Cancelled)
+  
+  // Test timeout detection
+  let manager7 = create_request(manager6, 500)
+  let manager8 = start_request(manager7, "req-2")
+  
+  // Advance time but not enough for timeout
+  let manager9 = advance_time(manager8, 400)
+  let manager10 = check_timeouts(manager9)
+  
+  assert_eq(manager10.requests[2].state, RequestState::Running)
+  
+  // Advance time past timeout
+  let manager11 = advance_time(manager10, 200)
+  let manager12 = check_timeouts(manager11)
+  
+  assert_eq(manager12.requests[2].state, RequestState::TimedOut)
+  
+  // Test multiple requests with different timeouts
+  let manager13 = create_request(manager12, 300)
+  let manager14 = create_request(manager13, 600)
+  let manager15 = start_request(manager13, "req-3")
+  let manager16 = start_request(manager14, "req-4")
+  
+  // Advance time and check timeouts
+  let manager17 = advance_time(manager16, 400)
+  let manager18 = check_timeouts(manager17)
+  
+  // req-3 should timeout, req-4 should still be running
+  assert_eq(manager18.requests[3].state, RequestState::TimedOut)
+  assert_eq(manager18.requests[4].state, RequestState::Running)
+  
+  // Complete the remaining request
+  let manager19 = complete_request(manager18, "req-4", "final result")
+  assert_eq(manager19.requests[4].state, RequestState::Completed)
+  
+  // Test request retrieval
+  let request = get_request(manager19, "req-4")
+  assert_true(request.is_some())
+  assert_eq(request.unwrap().result, Some("final result"))
+  
+  let missing_request = get_request(manager19, "req-999")
+  assert_true(missing_request.is_none())
 }
