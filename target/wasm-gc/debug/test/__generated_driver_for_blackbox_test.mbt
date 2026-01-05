@@ -1148,6 +1148,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_incremental_backup_recovery_tests.mbt": {
   },
+  "azimuth_i18n_globalization_comprehensive_tests.mbt": {
+  },
   "azimuth_http_client_telemetry_tests.mbt": {
   },
   "azimuth_http_client_request_response_tests.mbt": {

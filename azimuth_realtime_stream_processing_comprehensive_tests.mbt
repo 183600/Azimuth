@@ -1,1271 +1,706 @@
-// Azimuth Realtime Stream Processing Comprehensive Tests
-// This file contains comprehensive realtime stream processing tests
+// Azimuth Telemetry System - Comprehensive Real-time Stream Processing Tests
+// This file contains comprehensive test cases for real-time stream processing
 
-// Test 1: Stream Data Processing Pipeline
-test "stream data processing pipeline for telemetry data" {
-  // Define stream event
-  type StreamEvent = {
-    event_id: String,
-    timestamp: Int,
-    event_type: String,
-    data: String,
-    metadata: Array<(String, String)>
+// Test 1: Stream Creation and Basic Processing
+test "stream creation and basic processing" {
+  // Test stream creation and basic processing
+  let stream_processor = StreamProcessor::new()
+  
+  // Create a stream
+  let stream = StreamProcessor::create_stream(stream_processor, "test-stream")
+  assert_true(Stream::is_active(stream))
+  
+  // Test stream configuration
+  let stream_config = StreamConfig::new()
+    .with_buffer_size(1000)
+    .with_batch_size(100)
+    .with_processing_interval(50) // 50ms
+  
+  Stream::configure(stream, stream_config)
+  
+  // Verify configuration
+  let config = Stream::get_configuration(stream)
+  assert_eq(config.buffer_size, 1000)
+  assert_eq(config.batch_size, 100)
+  assert_eq(config.processing_interval, 50)
+  
+  // Test basic stream processing
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  for value in test_data {
+    Stream::push_data(stream, value)
   }
   
-  // Define stream processor
-  type StreamProcessor = {
-    processor_id: String,
-    input_buffer: Array<StreamEvent>,
-    output_buffer: Array<StreamEvent>,
-    processing_rules: Array<ProcessingRule>,
-    events_processed: Int,
-    events_dropped: Int,
-    processing_time_ms: Int
+  // Process data with simple transformation
+  let processed_data = StreamProcessor::process_with_function(stream_processor, stream, |x| x * 2)
+  
+  assert_eq(processed_data.length(), 10)
+  for i = 0; i < processed_data.length(); i = i + 1 {
+    assert_eq(processed_data[i], test_data[i] * 2)
+  }
+}
+
+// Test 2: Windowed Stream Processing
+test "windowed stream processing" {
+  // Test windowed stream processing
+  let stream_processor = StreamProcessor::new()
+  let stream = StreamProcessor::create_stream(stream_processor, "windowed-stream")
+  
+  // Configure windowed processing
+  let window_config = WindowConfig::new()
+    .with_window_size(5)
+    .with_slide_interval(2)
+    .with_window_type(WindowType::Tumbling)
+  
+  Stream::configure_windowing(stream, window_config)
+  
+  // Generate test data
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  
+  for value in test_data {
+    Stream::push_data(stream, value)
   }
   
-  // Define processing rule
-  type ProcessingRule = {
-    rule_id: String,
-    condition: String,
-    action: String,
-    priority: Int
+  // Process with windowed aggregation
+  let windowed_results = StreamProcessor::process_windows(stream_processor, stream, |window| {
+    window.reduce(|acc, val| acc + val, 0)
+  })
+  
+  // Verify windowed results
+  assert_eq(windowed_results.length(), 2) // [1,2,3,4,5] and [6,7,8,9,10]
+  assert_eq(windowed_results[0], 15) // Sum of first window
+  assert_eq(windowed_results[1], 40) // Sum of second window
+  
+  // Test sliding window
+  let sliding_window_config = WindowConfig::new()
+    .with_window_size(3)
+    .with_slide_interval(1)
+    .with_window_type(WindowType::Sliding)
+  
+  Stream::configure_windowing(stream, sliding_window_config)
+  
+  let sliding_results = StreamProcessor::process_windows(stream_processor, stream, |window| {
+    window.reduce(|acc, val| acc + val, 0)
+  })
+  
+  // Verify sliding window results
+  assert_eq(sliding_results.length(), 10) // 12 - 3 + 1 windows
+  assert_eq(sliding_results[0], 6)   // 1+2+3
+  assert_eq(sliding_results[1], 9)   // 2+3+4
+  assert_eq(sliding_results[2], 12)  // 3+4+5
+}
+
+// Test 3: Stream Filtering and Transformation
+test "stream filtering and transformation" {
+  // Test stream filtering and transformation
+  let stream_processor = StreamProcessor::new()
+  let stream = StreamProcessor::create_stream(stream_processor, "filter-transform-stream")
+  
+  // Generate mixed test data
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  
+  for value in test_data {
+    Stream::push_data(stream, value)
   }
   
-  // Create stream processor
-  let create_stream_processor = fn(processor_id: String, rules: Array<ProcessingRule>) {
-    {
-      processor_id: processor_id,
-      input_buffer: [],
-      output_buffer: [],
-      processing_rules: rules,
-      events_processed: 0,
-      events_dropped: 0,
-      processing_time_ms: 0
-    }
-  }
+  // Test filtering - only even numbers
+  let filtered_stream = StreamProcessor::filter(stream_processor, stream, |x| x % 2 == 0)
+  let filtered_data = StreamProcessor::collect(filtered_stream)
   
-  // Add event to input buffer
-  let add_event = fn(processor: StreamProcessor, event: StreamEvent) {
-    {
-      processor_id: processor.processor_id,
-      input_buffer: processor.input_buffer.push(event),
-      output_buffer: processor.output_buffer,
-      processing_rules: processor.processing_rules,
-      events_processed: processor.events_processed,
-      events_dropped: processor.events_dropped,
-      processing_time_ms: processor.processing_time_ms
-    }
-  }
+  assert_eq(filtered_data, [2, 4, 6, 8, 10, 12, 14])
   
-  // Process events
-  let process_events = fn(processor: StreamProcessor) {
-    let mut output_events = []
-    let mut processed_count = 0
-    let mut dropped_count = 0
-    let mut processing_time = 0
-    
-    for event in processor.input_buffer {
-      let mut event_processed = false
-      let mut should_drop = false
-      
-      # Apply processing rules in priority order
-      let sorted_rules = processor.processing_rules.sort_by(fn(r1, r2) { 
-        r1.priority <= r2.priority 
-      })
-      
-      for rule in sorted_rules {
-        # Simulate rule evaluation
-        let rule_matches = match rule.condition {
-          "event_type=telemetry" => event.event_type == "telemetry"
-          "event_type=metric" => event.event_type == "metric"
-          "event_type=log" => event.event_type == "log"
-          "data_contains=error" => event.data.contains("error")
-          "timestamp_recent" => event.timestamp > 1640995000
-          _ => false
-        }
-        
-        if rule_matches {
-          # Apply rule action
-          match rule.action {
-            "forward" => {
-              output_events = output_events.push(event)
-              event_processed = true
-              processing_time = processing_time + 5
-            }
-            "transform" => {
-              let transformed_event = {
-                event_id: event.event_id,
-                timestamp: event.timestamp,
-                event_type: event.event_type,
-                data: "transformed:" + event.data,
-                metadata: event.metadata.push(("processed", "true"))
-              }
-              output_events = output_events.push(transformed_event)
-              event_processed = true
-              processing_time = processing_time + 10
-            }
-            "filter" => {
-              should_drop = true
-              processing_time = processing_time + 3
-            }
-            "enrich" => {
-              let enriched_event = {
-                event_id: event.event_id,
-                timestamp: event.timestamp,
-                event_type: event.event_type,
-                data: event.data,
-                metadata: event.metadata.push(("enriched", "true"), ("enrichment_time", "1640995300"))
-              }
-              output_events = output_events.push(enriched_event)
-              event_processed = true
-              processing_time = processing_time + 8
-            }
-            _ => {}
-          }
-          break  # Stop after first matching rule
-        }
+  // Test transformation - square each number
+  let transformed_stream = StreamProcessor::map(stream_processor, stream, |x| x * x)
+  let transformed_data = StreamProcessor::collect(transformed_stream)
+  
+  assert_eq(transformed_data, [1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196, 225])
+  
+  // Test flat map - expand each number to its range
+  let flat_mapped_stream = StreamProcessor::flat_map(stream_processor, stream, |x| {
+    let mut result = []
+    for i = 1; i <= x; i = i + 1 {
+      if i <= 3 { // Limit to avoid huge results
+        result.push(i)
       }
-      
-      if event_processed {
-        processed_count = processed_count + 1
-      } else if should_drop {
-        dropped_count = dropped_count + 1
+    }
+    result
+  })
+  
+  let flat_mapped_data = StreamProcessor::collect(flat_mapped_stream)
+  assert_eq(flat_mapped_data.length(), 45) // 15 numbers * 3 each
+  
+  // Test chained operations
+  let chained_stream = StreamProcessor::filter(stream_processor, stream, |x| x % 2 == 0)
+    .map(|x| x * 2)
+    .filter(|x| x > 10)
+  
+  let chained_data = StreamProcessor::collect(chained_stream)
+  assert_eq(chained_data, [12, 16, 20, 24, 28])
+}
+
+// Test 4: Stream Aggregation and Reduction
+test "stream aggregation and reduction" {
+  // Test stream aggregation and reduction
+  let stream_processor = StreamProcessor::new()
+  let stream = StreamProcessor::create_stream(stream_processor, "aggregation-stream")
+  
+  // Generate test data
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  for value in test_data {
+    Stream::push_data(stream, value)
+  }
+  
+  // Test sum reduction
+  let sum = StreamProcessor::reduce(stream_processor, stream, |acc, val| acc + val, 0)
+  assert_eq(sum, 55)
+  
+  // Test product reduction
+  let product = StreamProcessor::reduce(stream_processor, stream, |acc, val| acc * val, 1)
+  assert_eq(product, 3628800) // 10!
+  
+  // Test max reduction
+  let max_val = StreamProcessor::reduce(stream_processor, stream, |acc, val| {
+    if val > acc { val } else { acc }
+  }, 0)
+  assert_eq(max_val, 10)
+  
+  // Test min reduction
+  let min_val = StreamProcessor::reduce(stream_processor, stream, |acc, val| {
+    if val < acc { val } else { acc }
+  }, 100)
+  assert_eq(min_val, 1)
+  
+  // Test average calculation
+  let count = StreamProcessor::count(stream_processor, stream)
+  let sum_for_avg = StreamProcessor::reduce(stream_processor, stream, |acc, val| acc + val, 0)
+  let average = sum_for_avg / count
+  assert_eq(average, 5.5)
+  
+  // Test group by operation
+  let category_stream = StreamProcessor::create_stream(stream_processor, "category-stream")
+  let category_data = [
+    ("A", 1), ("B", 2), ("A", 3), ("B", 4), ("A", 5), ("C", 6), ("B", 7), ("C", 8)
+  ]
+  
+  for (category, value) in category_data {
+    Stream::push_data(category_stream, (category, value))
+  }
+  
+  let grouped_data = StreamProcessor::group_by(stream_processor, category_stream, |(category, _)| category)
+  
+  assert_eq(grouped_data.get("A"), Some([1, 3, 5]))
+  assert_eq(grouped_data.get("B"), Some([2, 4, 7]))
+  assert_eq(grouped_data.get("C"), Some([6, 8]))
+}
+
+// Test 5: Stream Joins and Merges
+test "stream joins and merges" {
+  // Test stream joins and merges
+  let stream_processor = StreamProcessor::new()
+  
+  // Create two streams for joining
+  let stream1 = StreamProcessor::create_stream(stream_processor, "stream1")
+  let stream2 = StreamProcessor::create_stream(stream_processor, "stream2")
+  
+  // Add data to streams
+  let data1 = [("A", 1), ("B", 2), ("C", 3), ("D", 4)]
+  let data2 = [("A", 10), ("B", 20), ("C", 30), ("E", 50)]
+  
+  for (key, value) in data1 {
+    Stream::push_data(stream1, (key, value))
+  }
+  
+  for (key, value) in data2 {
+    Stream::push_data(stream2, (key, value))
+  }
+  
+  // Test inner join
+  let inner_joined = StreamProcessor::inner_join(
+    stream_processor,
+    stream1,
+    stream2,
+    |(key1, _)| key1,
+    |(key2, _)| key2,
+    |(key1, val1), (key2, val2)| (key1, val1, val2)
+  )
+  
+  let inner_joined_data = StreamProcessor::collect(inner_joined)
+  assert_eq(inner_joined_data.length(), 3) // A, B, C
+  assert_true(inner_joined_data.contains(("A", 1, 10)))
+  assert_true(inner_joined_data.contains(("B", 2, 20)))
+  assert_true(inner_joined_data.contains(("C", 3, 30)))
+  
+  // Test left join
+  let left_joined = StreamProcessor::left_join(
+    stream_processor,
+    stream1,
+    stream2,
+    |(key1, _)| key1,
+    |(key2, _)| key2,
+    |(key1, val1), opt_val2| (key1, val1, opt_val2)
+  )
+  
+  let left_joined_data = StreamProcessor::collect(left_joined)
+  assert_eq(left_joined_data.length(), 4) // A, B, C, D
+  assert_true(left_joined_data.contains(("A", 1, Some(10))))
+  assert_true(left_joined_data.contains(("B", 2, Some(20))))
+  assert_true(left_joined_data.contains(("C", 3, Some(30))))
+  assert_true(left_joined_data.contains(("D", 4, None))) // D has no match in stream2
+  
+  // Test stream merge
+  let stream3 = StreamProcessor::create_stream(stream_processor, "stream3")
+  let stream4 = StreamProcessor::create_stream(stream_processor, "stream4")
+  
+  let data3 = [1, 3, 5]
+  let data4 = [2, 4, 6]
+  
+  for value in data3 {
+    Stream::push_data(stream3, value)
+  }
+  
+  for value in data4 {
+    Stream::push_data(stream4, value)
+  }
+  
+  let merged_stream = StreamProcessor::merge(stream_processor, [stream3, stream4])
+  let merged_data = StreamProcessor::collect(merged_stream)
+  
+  assert_eq(merged_data.length(), 6)
+  assert_true(merged_data.contains(1))
+  assert_true(merged_data.contains(2))
+  assert_true(merged_data.contains(3))
+  assert_true(merged_data.contains(4))
+  assert_true(merged_data.contains(5))
+  assert_true(merged_data.contains(6))
+}
+
+// Test 6: Time-based Stream Processing
+test "time-based stream processing" {
+  // Test time-based stream processing
+  let stream_processor = StreamProcessor::new()
+  let time_stream = StreamProcessor::create_stream(stream_processor, "time-stream")
+  
+  // Configure time-based processing
+  let time_config = TimeConfig::new()
+    .with_time_window(1000) // 1 second window
+    .with_watermark(100)    // 100ms watermark
+    .with_late_data_timeout(500) // 500ms timeout for late data
+  
+  Stream::configure_time_processing(time_stream, time_config)
+  
+  // Generate time-stamped data
+  let base_time = Clock::now()
+  let time_stamped_data = [
+    (base_time, 10),
+    (base_time + 100, 20),
+    (base_time + 200, 30),
+    (base_time + 300, 40),
+    (base_time + 400, 50),
+    (base_time + 500, 60),
+    (base_time + 600, 70),
+    (base_time + 700, 80),
+    (base_time + 800, 90),
+    (base_time + 900, 100)
+  ]
+  
+  for (timestamp, value) in time_stamped_data {
+    Stream::push_time_stamped_data(time_stream, value, timestamp)
+  }
+  
+  // Process time windows
+  let time_windows = StreamProcessor::process_time_windows(stream_processor, time_stream, |window| {
+    let values = window.map(|(_, value)| value)
+    let sum = values.reduce(|acc, val| acc + val, 0)
+    let count = values.length()
+    let avg = sum / count
+    (sum, count, avg)
+  })
+  
+  // Verify time window results
+  assert_eq(time_windows.length(), 1) // All data fits in one 1-second window
+  let (sum, count, avg) = time_windows[0]
+  assert_eq(sum, 550)
+  assert_eq(count, 10)
+  assert_eq(avg, 55)
+  
+  // Test late data handling
+  let late_timestamp = base_time + 1500 // Later than the window
+  Stream::push_time_stamped_data(time_stream, 200, late_timestamp)
+  
+  let late_data_handled = StreamProcessor::handle_late_data(stream_processor, time_stream)
+  assert_true(late_data_handled)
+  
+  // Test session windows
+  let session_stream = StreamProcessor::create_stream(stream_processor, "session-stream")
+  let session_config = SessionConfig::new()
+    .with_session_timeout(500) // 500ms timeout
+    .with_max_session_duration(5000) // 5 seconds max
+  
+  Stream::configure_session_processing(session_stream, session_config)
+  
+  // Generate session data
+  let session_data = [
+    (base_time, "user1", "login"),
+    (base_time + 100, "user1", "view_page"),
+    (base_time + 200, "user1", "click_button"),
+    (base_time + 800, "user1", "logout"), // New session (gap > 500ms)
+    (base_time + 900, "user1", "login"),   // Continuation of new session
+    (base_time + 1000, "user2", "login")   // Different user
+  ]
+  
+  for (timestamp, user_id, event) in session_data {
+    Stream::push_session_data(session_stream, user_id, event, timestamp)
+  }
+  
+  let sessions = StreamProcessor::process_sessions(stream_processor, session_stream, |session| {
+    (session.user_id, session.events.length(), session.duration)
+  })
+  
+  // Verify session results
+  assert_eq(sessions.length(), 3) // user1 session 1, user1 session 2, user2 session
+  assert_true(sessions.contains(("user1", 3, 200)))  // user1 session 1: 3 events, 200ms
+  assert_true(sessions.contains(("user1", 2, 100)))  // user1 session 2: 2 events, 100ms
+  assert_true(sessions.contains(("user2", 1, 0)))    // user2 session: 1 event, 0ms
+}
+
+// Test 7: Stream State Management
+test "stream state management" {
+  // Test stream state management
+  let stream_processor = StreamProcessor::new()
+  let stateful_stream = StreamProcessor::create_stream(stream_processor, "stateful-stream")
+  
+  // Configure state management
+  let state_config = StateConfig::new()
+    .with_state_backend(StateBackend::Memory)
+    .with_checkpoint_interval(1000) // Checkpoint every 1 second
+    .with_state_ttl(60000)          // State TTL 1 minute
+  
+  Stream::configure_state_management(stateful_stream, state_config)
+  
+  // Generate test data
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  for value in test_data {
+    Stream::push_data(stateful_stream, value)
+  }
+  
+  // Process with stateful operation - running sum
+  let running_sums = StreamProcessor::process_with_state(
+    stream_processor,
+    stateful_stream,
+    0, // Initial state
+    |state, value| {
+      let new_state = state + value
+      (new_state, new_state) // Return new state and output
+    }
+  )
+  
+  // Verify running sums
+  assert_eq(running_sums, [1, 3, 6, 10, 15, 21, 28, 36, 45, 55])
+  
+  // Test state recovery
+  let checkpoint = StreamProcessor::create_checkpoint(stream_processor, stateful_stream)
+  assert_true(checkpoint.is_some())
+  
+  // Create new stream and restore from checkpoint
+  let restored_stream = StreamProcessor::create_stream(stream_processor, "restored-stream")
+  Stream::configure_state_management(restored_stream, state_config)
+  
+  let restore_result = StreamProcessor::restore_from_checkpoint(stream_processor, restored_stream, checkpoint.unwrap())
+  assert_true(restore_result)
+  
+  // Continue processing with restored state
+  Stream::push_data(restored_stream, 11)
+  Stream::push_data(restored_stream, 12)
+  
+  let continued_sums = StreamProcessor::process_with_state(
+    stream_processor,
+    restored_stream,
+    55, // Restored state
+    |state, value| {
+      let new_state = state + value
+      (new_state, new_state)
+    }
+  )
+  
+  assert_eq(continued_sums, [66, 78])
+  
+  // Test state expiration
+  let ttl_stream = StreamProcessor::create_stream(stream_processor, "ttl-stream")
+  let ttl_config = StateConfig::new()
+    .with_state_ttl(100) // 100ms TTL
+  
+  Stream::configure_state_management(ttl_stream, ttl_config)
+  
+  Stream::push_data(ttl_stream, "key1")
+  Stream::push_data(ttl_stream, "key2")
+  
+  // Wait for TTL to expire
+  Thread::sleep(150)
+  
+  Stream::push_data(ttl_stream, "key3")
+  
+  let expired_state = StreamProcessor::get_expired_keys(stream_processor, ttl_stream)
+  assert_true(expired_state.contains("key1"))
+  assert_true(expired_state.contains("key2"))
+  assert_false(expired_state.contains("key3"))
+}
+
+// Test 8: Stream Backpressure and Flow Control
+test "stream backpressure and flow control" {
+  // Test stream backpressure and flow control
+  let stream_processor = StreamProcessor::new()
+  let backpressure_stream = StreamProcessor::create_stream(stream_processor, "backpressure-stream")
+  
+  // Configure backpressure
+  let backpressure_config = BackpressureConfig::new()
+    .with_max_buffer_size(1000)
+    .with_high_watermark(800)
+    .with_low_watermark(200)
+    .with_strategy(BackpressureStrategy::DropOldest)
+  
+  Stream::configure_backpressure(backpressure_stream, backpressure_config)
+  
+  // Generate high-volume data
+  let high_volume_data = []
+  for i = 0; i < 2000; i = i + 1 {
+    high_volume_data.push(i)
+  }
+  
+  // Push data rapidly to trigger backpressure
+  let mut dropped_count = 0
+  for value in high_volume_data {
+    let push_result = Stream::push_data_with_backpressure(backpressure_stream, value)
+    if !push_result {
+      dropped_count = dropped_count + 1
+    }
+  }
+  
+  // Verify backpressure was applied
+  assert_true(dropped_count > 0)
+  
+  // Test adaptive backpressure
+  let adaptive_stream = StreamProcessor::create_stream(stream_processor, "adaptive-stream")
+  let adaptive_config = BackpressureConfig::new()
+    .with_strategy(BackpressureStrategy::Adaptive)
+  
+  Stream::configure_backpressure(adaptive_stream, adaptive_config)
+  
+  // Measure processing rate
+  let start_time = Clock::now()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    Stream::push_data(adaptive_stream, i)
+  }
+  
+  let end_time = Clock::now()
+  let duration_ms = end_time - start_time
+  
+  // Verify adaptive backpressure maintains reasonable processing rate
+  assert_true(duration_ms < 5000, "Adaptive backpressure should maintain reasonable processing rate")
+  
+  // Test flow control with rate limiting
+  let rate_limited_stream = StreamProcessor::create_stream(stream_processor, "rate-limited-stream")
+  let rate_limit_config = RateLimitConfig::new()
+    .with_rate_limit(100) // 100 items per second
+    .with_burst_capacity(200) // Allow bursts of 200
+  
+  Stream::configure_rate_limiting(rate_limited_stream, rate_limit_config)
+  
+  let rate_limited_start = Clock::now()
+  
+  for i = 0; i < 150; i = i + 1 {
+    Stream::push_data_with_rate_limit(rate_limited_stream, i)
+  }
+  
+  let rate_limited_end = Clock::now()
+  let rate_limited_duration = rate_limited_end - rate_limited_start
+  
+  // Verify rate limiting
+  assert_true(rate_limited_duration >= 1000, "Rate limiting should slow down processing")
+  assert_true(rate_limited_duration < 2000, "But not too much")
+}
+
+// Test 9: Stream Error Handling and Recovery
+test "stream error handling and recovery" {
+  // Test stream error handling and recovery
+  let stream_processor = StreamProcessor::new()
+  let error_stream = StreamProcessor::create_stream(stream_processor, "error-stream")
+  
+  // Configure error handling
+  let error_config = ErrorHandlingConfig::new()
+    .with_max_retries(3)
+    .with_retry_delay(100) // 100ms
+    .with_dead_letter_queue(true)
+    .with_error_strategy(ErrorStrategy::RetryThenDLQ)
+  
+  Stream::configure_error_handling(error_stream, error_config)
+  
+  // Generate data with potential errors
+  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  for value in test_data {
+    Stream::push_data(error_stream, value)
+  }
+  
+  // Process with error-prone function
+  let processed_data = StreamProcessor::process_with_error_handling(
+    stream_processor,
+    error_stream,
+    |value| {
+      if value == 5 {
+        Error("Simulated error for value 5")
+      } else if value == 8 {
+        Error("Simulated error for value 8")
       } else {
-        # Default action: forward
-        output_events = output_events.push(event)
-        processed_count = processed_count + 1
-        processing_time = processing_time + 2
+        Ok(value * 2)
       }
     }
-    
-    {
-      processor_id: processor.processor_id,
-      input_buffer: [],  # Clear input buffer
-      output_buffer: output_events,
-      processing_rules: processor.processing_rules,
-      events_processed: processor.events_processed + processed_count,
-      events_dropped: processor.events_dropped + dropped_count,
-      processing_time_ms: processor.processing_time_ms + processing_time
-    }
+  )
+  
+  // Verify successful processing
+  assert_true(processed_data.successful_results.contains(2))  // 1 * 2
+  assert_true(processed_data.successful_results.contains(4))  // 2 * 2
+  assert_true(processed_data.successful_results.contains(6))  // 3 * 2
+  assert_true(processed_data.successful_results.contains(8))  // 4 * 2
+  assert_true(processed_data.successful_results.contains(12)) // 6 * 2
+  assert_true(processed_data.successful_results.contains(14)) // 7 * 2
+  assert_true(processed_data.successful_results.contains(18)) // 9 * 2
+  assert_true(processed_data.successful_results.contains(20)) // 10 * 2
+  
+  // Verify error handling
+  assert_eq(processed_data.failed_results.length(), 2) // 5 and 8 failed
+  assert_true(processed_data.failed_results.contains((5, "Simulated error for value 5")))
+  assert_true(processed_data.failed_results.contains((8, "Simulated error for value 8")))
+  
+  // Check dead letter queue
+  let dlq_items = StreamProcessor::get_dlq_items(stream_processor, error_stream)
+  assert_eq(dlq_items.length(), 2)
+  
+  // Test error recovery
+  let recovery_stream = StreamProcessor::create_stream(stream_processor, "recovery-stream")
+  Stream::configure_error_handling(recovery_stream, error_config)
+  
+  for value in test_data {
+    Stream::push_data(recovery_stream, value)
   }
   
-  // Test stream processing
-  let rules = [
-    {
-      rule_id: "rule-1",
-      condition: "event_type=telemetry",
-      action: "enrich",
-      priority: 1
-    },
-    {
-      rule_id: "rule-2",
-      condition: "data_contains=error",
-      action: "transform",
-      priority: 2
-    },
-    {
-      rule_id: "rule-3",
-      condition: "event_type=metric",
-      action: "forward",
-      priority: 3
-    },
-    {
-      rule_id: "rule-4",
-      condition: "timestamp_recent",
-      action: "forward",
-      priority: 4
-    }
-  ]
-  
-  let processor = create_stream_processor("telemetry-processor", rules)
-  
-  # Add events
-  let event1 = {
-    event_id: "event-1",
-    timestamp: 1640995200,
-    event_type: "telemetry",
-    data: "trace-data-123",
-    metadata: [("source", "service-a")]
-  }
-  
-  let event2 = {
-    event_id: "event-2",
-    timestamp: 1640995210,
-    event_type: "metric",
-    data: "response_time:150ms",
-    metadata: [("source", "service-b")]
-  }
-  
-  let event3 = {
-    event_id: "event-3",
-    timestamp: 1640995220,
-    event_type: "log",
-    data: "error:connection_failed",
-    metadata: [("source", "service-c")]
-  }
-  
-  let event4 = {
-    event_id: "event-4",
-    timestamp: 1640994900,  # Old timestamp
-    event_type: "telemetry",
-    data: "trace-data-456",
-    metadata: [("source", "service-d")]
-  }
-  
-  let processor1 = add_event(processor, event1)
-  let processor2 = add_event(processor1, event2)
-  let processor3 = add_event(processor2, event3)
-  let processor4 = add_event(processor3, event4)
-  
-  # Process events
-  let processed_processor = process_events(processor4)
-  
-  # Verify processing results
-  assert_eq(processed_processor.events_processed, 4)
-  assert_eq(processed_processor.events_dropped, 0)
-  assert_eq(processed_processor.output_buffer.length(), 4)
-  assert_true(processed_processor.processing_time_ms > 0)
-  
-  # Verify specific transformations
-  let output_event1 = processed_processor.output_buffer.filter(fn(e) { e.event_id == "event-1" })[0]
-  assert_eq(output_event1.event_type, "telemetry")
-  assert_eq(output_event1.data, "trace-data-123")  # Original data preserved
-  assert_true(output_event1.metadata.contains(("enriched", "true")))
-  
-  let output_event2 = processed_processor.output_buffer.filter(fn(e) { e.event_id == "event-2" })[0]
-  assert_eq(output_event2.event_type, "metric")
-  assert_eq(output_event2.data, "response_time:150ms")  # Original data preserved
-  
-  let output_event3 = processed_processor.output_buffer.filter(fn(e) { e.event_id == "event-3" })[0]
-  assert_eq(output_event3.event_type, "log")
-  assert_eq(output_event3.data, "transformed:error:connection_failed")  # Transformed due to error content
-  
-  let output_event4 = processed_processor.output_buffer.filter(fn(e) { e.event_id == "event-4" })[0]
-  assert_eq(output_event4.event_type, "telemetry")
-  assert_eq(output_event4.data, "trace-data-456")  # Original data preserved (no enrichment due to old timestamp)
-}
-
-// Test 2: Windowed Stream Aggregation
-test "windowed stream aggregation for telemetry metrics" {
-  // Define time window
-  type TimeWindow = {
-    window_id: String,
-    start_time: Int,
-    end_time: Int,
-    events: Array<StreamEvent>,
-    aggregated_metrics: Array<AggregatedMetric>
-  }
-  
-  // Define aggregated metric
-  type AggregatedMetric = {
-    metric_name: String,
-    value: Float,
-    count: Int,
-    min: Float,
-    max: Float,
-    avg: Float,
-    window_id: String
-  }
-  
-  // Define stream event (reuse from previous test)
-  type StreamEvent = {
-    event_id: String,
-    timestamp: Int,
-    event_type: String,
-    data: String,
-    metadata: Array<(String, String)>
-  }
-  
-  // Define window manager
-  type WindowManager = {
-    window_size_seconds: Int,
-    windows: Array<TimeWindow>,
-    current_window_start: Int,
-    events_processed: Int
-  }
-  
-  // Create window manager
-  let create_window_manager = fn(window_size_seconds: Int) {
-    {
-      window_size_seconds: window_size_seconds,
-      windows: [],
-      current_window_start: 1640995200,
-      events_processed: 0
-    }
-  }
-  
-  // Add event to window
-  let add_event_to_window = fn(manager: WindowManager, event: StreamEvent) {
-    let mut updated_windows = manager.windows
-    let current_time = event.timestamp
-    
-    # Check if we need to create a new window
-    let window_start = (current_time / manager.window_size_seconds) * manager.window_size_seconds
-    let window_end = window_start + manager.window_size_seconds
-    
-    # Find or create window
-    let mut target_window = None
-    for i in 0..updated_windows.length() {
-      if updated_windows[i].start_time == window_start {
-        target_window = Some(updated_windows[i])
-        break
-      }
-    }
-    
-    match target_window {
-      Some(window) => {
-        # Add event to existing window
-        let updated_events = window.events.push(event)
-        let updated_window = {
-          window_id: window.window_id,
-          start_time: window.start_time,
-          end_time: window.end_time,
-          events: updated_events,
-          aggregated_metrics: window.aggregated_metrics
-        }
-        
-        for i in 0..updated_windows.length() {
-          if updated_windows[i].window_id == window.window_id {
-            updated_windows[i] = updated_window
-            break
-          }
-        }
-      }
-      None => {
-        # Create new window
-        let new_window = {
-          window_id: "window-" + window_start.to_string(),
-          start_time: window_start,
-          end_time: window_end,
-          events: [event],
-          aggregated_metrics: []
-        }
-        updated_windows = updated_windows.push(new_window)
-      }
-    }
-    
-    {
-      window_size_seconds: manager.window_size_seconds,
-      windows: updated_windows,
-      current_window_start: manager.current_window_start,
-      events_processed: manager.events_processed + 1
-    }
-  }
-  
-  // Aggregate metrics in window
-  let aggregate_window_metrics = fn(window: TimeWindow) {
-    let mut metric_aggregates = {}
-    
-    # Collect numeric values from events
-    for event in window.events {
-      if event.event_type == "metric" {
-        # Parse metric data (format: "metric_name:value")
-        let parts = event.data.split(":")
-        if parts.length() == 2 {
-          let metric_name = parts[0]
-          let metric_value = parts[1].to_float()
-          
-          let current = metric_aggregates.get_or(metric_name, {
-            values: [],
-            count: 0
-          })
-          
-          metric_aggregates[metric_name] = {
-            values: current.values.push(metric_value),
-            count: current.count + 1
-          }
-        }
-      }
-    }
-    
-    # Calculate aggregated metrics
-    let mut aggregated_metrics = []
-    for (metric_name, aggregate) in metric_aggregates {
-      let values = aggregate.values
-      let count = aggregate.count
-      
-      if count > 0 {
-        let sum = values.reduce(fn(acc, val) { acc + val }, 0.0)
-        let min = values.reduce(fn(min, val) { if val < min { val } else { min }, values[0])
-        let max = values.reduce(fn(max, val) { if val > max { val } else { max }, values[0])
-        let avg = sum / count.to_float()
-        
-        aggregated_metrics = aggregated_metrics.push({
-          metric_name: metric_name,
-          value: avg,
-          count: count,
-          min: min,
-          max: max,
-          avg: avg,
-          window_id: window.window_id
-        })
-      }
-    }
-    
-    {
-      window_id: window.window_id,
-      start_time: window.start_time,
-      end_time: window.end_time,
-      events: window.events,
-      aggregated_metrics: aggregated_metrics
-    }
-  }
-  
-  # Aggregate all windows
-  let aggregate_all_windows = fn(manager: WindowManager) {
-    let mut updated_windows = []
-    
-    for window in manager.windows {
-      let aggregated_window = aggregate_window_metrics(window)
-      updated_windows = updated_windows.push(aggregated_window)
-    }
-    
-    {
-      window_size_seconds: manager.window_size_seconds,
-      windows: updated_windows,
-      current_window_start: manager.current_window_start,
-      events_processed: manager.events_processed
-    }
-  }
-  
-  # Test windowed aggregation
-  let manager = create_window_manager(60)  # 60-second windows
-  
-  # Add events across different time windows
-  let events = [
-    {
-      event_id: "event-1",
-      timestamp: 1640995200,  # Window 1 (1640995200-1640995260)
-      event_type: "metric",
-      data: "response_time:100",
-      metadata: [("service", "api")]
-    },
-    {
-      event_id: "event-2",
-      timestamp: 1640995210,  # Window 1
-      event_type: "metric",
-      data: "response_time:150",
-      metadata: [("service", "api")]
-    },
-    {
-      event_id: "event-3",
-      timestamp: 1640995220,  # Window 1
-      event_type: "metric",
-      data: "throughput:1000",
-      metadata: [("service", "api")]
-    },
-    {
-      event_id: "event-4",
-      timestamp: 1640995270,  # Window 2 (1640995260-1640995320)
-      event_type: "metric",
-      data: "response_time:120",
-      metadata: [("service", "api")]
-    },
-    {
-      event_id: "event-5",
-      timestamp: 1640995280,  # Window 2
-      event_type: "metric",
-      data: "response_time:80",
-      metadata: [("service", "api")]
-    },
-    {
-      event_id: "event-6",
-      timestamp: 1640995290,  # Window 2
-      event_type: "metric",
-      data: "throughput:1200",
-      metadata: [("service", "api")]
-    }
-  ]
-  
-  # Add events to manager
-  let mut manager_with_events = manager
-  for event in events {
-    manager_with_events = add_event_to_window(manager_with_events, event)
-  }
-  
-  # Verify windows created
-  assert_eq(manager_with_events.windows.length(), 2)
-  assert_eq(manager_with_events.events_processed, 6)
-  
-  # Aggregate metrics
-  let aggregated_manager = aggregate_all_windows(manager_with_events)
-  
-  # Verify aggregated metrics
-  let window1 = aggregated_manager.windows.filter(fn(w) { w.start_time == 1640995200 })[0]
-  let window2 = aggregated_manager.windows.filter(fn(w) { w.start_time == 1640995260 })[0]
-  
-  # Window 1 metrics
-  assert_eq(window1.events.length(), 3)
-  assert_eq(window1.aggregated_metrics.length(), 2)
-  
-  let window1_response_time = window1.aggregated_metrics.filter(fn(m) { m.metric_name == "response_time" })[0]
-  assert_eq(window1_response_time.count, 2)
-  assert_eq(window1_response_time.min, 100.0)
-  assert_eq(window1_response_time.max, 150.0)
-  assert_eq(window1_response_time.avg, 125.0)
-  
-  let window1_throughput = window1.aggregated_metrics.filter(fn(m) { m.metric_name == "throughput" })[0]
-  assert_eq(window1_throughput.count, 1)
-  assert_eq(window1_throughput.min, 1000.0)
-  assert_eq(window1_throughput.max, 1000.0)
-  assert_eq(window1_throughput.avg, 1000.0)
-  
-  # Window 2 metrics
-  assert_eq(window2.events.length(), 3)
-  assert_eq(window2.aggregated_metrics.length(), 2)
-  
-  let window2_response_time = window2.aggregated_metrics.filter(fn(m) { m.metric_name == "response_time" })[0]
-  assert_eq(window2_response_time.count, 2)
-  assert_eq(window2_response_time.min, 80.0)
-  assert_eq(window2_response_time.max, 120.0)
-  assert_eq(window2_response_time.avg, 100.0)
-  
-  let window2_throughput = window2.aggregated_metrics.filter(fn(m) { m.metric_name == "throughput" })[0]
-  assert_eq(window2_throughput.count, 1)
-  assert_eq(window2_throughput.min, 1200.0)
-  assert_eq(window2_throughput.max, 1200.0)
-  assert_eq(window2_throughput.avg, 1200.0)
-}
-
-// Test 3: Stream Backpressure Handling
-test "stream backpressure handling and flow control" {
-  // Define backpressure manager
-  type BackpressureManager = {
-    buffer_capacity: Int,
-    current_buffer_size: Int,
-    drop_policy: String,  # "drop_oldest", "drop_newest", "block"
-    events_dropped: Int,
-    events_processed: Int,
-    backpressure_active: Bool
-  }
-  
-  // Define stream event (reuse from previous test)
-  type StreamEvent = {
-    event_id: String,
-    timestamp: Int,
-    event_type: String,
-    data: String,
-    metadata: Array<(String, String)>
-  }
-  
-  // Create backpressure manager
-  let create_backpressure_manager = fn(buffer_capacity: Int, drop_policy: String) {
-    {
-      buffer_capacity: buffer_capacity,
-      current_buffer_size: 0,
-      drop_policy: drop_policy,
-      events_dropped: 0,
-      events_processed: 0,
-      backpressure_active: false
-    }
-  }
-  
-  # Handle incoming event with backpressure
-  let handle_event_with_backpressure = fn(manager: BackpressureManager, event: StreamEvent) {
-    let buffer_full = manager.current_buffer_size >= manager.buffer_capacity
-    let should_drop = if buffer_full {
-      match manager.drop_policy {
-        "drop_oldest" => true
-        "drop_newest" => true
-        "block" => false
-        _ => false
-      }
-    } else {
-      false
-    }
-    
-    if should_drop {
-      # Drop event
-      {
-        buffer_capacity: manager.buffer_capacity,
-        current_buffer_size: manager.current_buffer_size,
-        drop_policy: manager.drop_policy,
-        events_dropped: manager.events_dropped + 1,
-        events_processed: manager.events_processed,
-        backpressure_active: true
-      }
-    } else {
-      # Accept event
-      let new_buffer_size = if buffer_full && manager.drop_policy == "block" {
-        manager.current_buffer_size  # No change if blocking
+  // Process with recovery function
+  let recovered_data = StreamProcessor::process_with_recovery(
+    stream_processor,
+    recovery_stream,
+    |value| {
+      if value == 5 {
+        Error("Simulated error for value 5")
       } else {
-        manager.current_buffer_size + 1
+        Ok(value * 2)
       }
-      
-      {
-        buffer_capacity: manager.buffer_capacity,
-        current_buffer_size: new_buffer_size,
-        drop_policy: manager.drop_policy,
-        events_dropped: manager.events_dropped,
-        events_processed: manager.events_processed + 1,
-        backpressure_active: buffer_full
+    },
+    |value, error| {
+      // Recovery function: use default value for failed items
+      if value == 5 {
+        Ok(999) // Default value for failed item
+      } else {
+        Error(error)
       }
     }
-  }
+  )
   
-  # Process events (simulate processing to free buffer space)
-  let process_events = fn(manager: BackpressureManager, processed_count: Int) {
-    let new_buffer_size = if manager.current_buffer_size >= processed_count {
-      manager.current_buffer_size - processed_count
-    } else {
-      0
-    }
-    
-    {
-      buffer_capacity: manager.buffer_capacity,
-      current_buffer_size: new_buffer_size,
-      drop_policy: manager.drop_policy,
-      events_dropped: manager.events_dropped,
-      events_processed: manager.events_processed + processed_count,
-      backpressure_active: new_buffer_size >= manager.buffer_capacity
-    }
-  }
-  
-  # Test backpressure with drop_oldest policy
-  let drop_oldest_manager = create_backpressure_manager(3, "drop_oldest")
-  
-  # Add events
-  let event1 = { event_id: "event-1", timestamp: 1640995200, event_type: "telemetry", data: "data-1", metadata: [] }
-  let event2 = { event_id: "event-2", timestamp: 1640995210, event_type: "telemetry", data: "data-2", metadata: [] }
-  let event3 = { event_id: "event-3", timestamp: 1640995220, event_type: "telemetry", data: "data-3", metadata: [] }
-  let event4 = { event_id: "event-4", timestamp: 1640995230, event_type: "telemetry", data: "data-4", metadata: [] }
-  
-  let manager1 = handle_event_with_backpressure(drop_oldest_manager, event1)
-  let manager2 = handle_event_with_backpressure(manager1, event2)
-  let manager3 = handle_event_with_backpressure(manager2, event3)
-  
-  # Buffer should be full now
-  assert_eq(manager3.current_buffer_size, 3)
-  assert_false(manager3.backpressure_active)
-  assert_eq(manager3.events_dropped, 0)
-  assert_eq(manager3.events_processed, 3)
-  
-  # Add event when buffer is full (should drop)
-  let manager4 = handle_event_with_backpressure(manager3, event4)
-  assert_eq(manager4.current_buffer_size, 3)  # Still full
-  assert_true(manager4.backpressure_active)
-  assert_eq(manager4.events_dropped, 1)
-  assert_eq(manager4.events_processed, 3)  # No new event processed
-  
-  # Process some events to free buffer space
-  let manager5 = process_events(manager4, 2)
-  assert_eq(manager5.current_buffer_size, 1)
-  assert_false(manager5.backpressure_active)
-  assert_eq(manager5.events_processed, 5)  # 3 initial + 2 processed
-  
-  # Test backpressure with drop_newest policy
-  let drop_newest_manager = create_backpressure_manager(3, "drop_newest")
-  
-  let manager6 = handle_event_with_backpressure(drop_newest_manager, event1)
-  let manager7 = handle_event_with_backpressure(manager6, event2)
-  let manager8 = handle_event_with_backpressure(manager7, event3)
-  let manager9 = handle_event_with_backpressure(manager8, event4)
-  
-  assert_eq(manager9.current_buffer_size, 3)  # Still full
-  assert_true(manager9.backpressure_active)
-  assert_eq(manager9.events_dropped, 1)
-  assert_eq(manager9.events_processed, 3)  # No new event processed
-  
-  # Test backpressure with block policy
-  let block_manager = create_backpressure_manager(3, "block")
-  
-  let manager10 = handle_event_with_backpressure(block_manager, event1)
-  let manager11 = handle_event_with_backpressure(manager10, event2)
-  let manager12 = handle_event_with_backpressure(manager11, event3)
-  
-  # Buffer should be full now
-  assert_eq(manager12.current_buffer_size, 3)
-  assert_false(manager12.backpressure_active)
-  assert_eq(manager12.events_dropped, 0)
-  assert_eq(manager12.events_processed, 3)
-  
-  # Add event when buffer is full (should block, not drop)
-  let manager13 = handle_event_with_backpressure(manager12, event4)
-  assert_eq(manager13.current_buffer_size, 3)  # Still full (blocking)
-  assert_true(manager13.backpressure_active)
-  assert_eq(manager13.events_dropped, 0)  # No drops
-  assert_eq(manager13.events_processed, 4)  # Event processed but blocked
-  
-  # Test backpressure metrics
-  let get_backpressure_metrics = fn(manager: BackpressureManager) {
-    let buffer_utilization = if manager.buffer_capacity > 0 {
-      (manager.current_buffer_size.to_float() / manager.buffer_capacity.to_float()) * 100.0
-    } else {
-      0.0
-    }
-    
-    let drop_rate = if manager.events_processed + manager.events_dropped > 0 {
-      (manager.events_dropped.to_float() / (manager.events_processed + manager.events_dropped).to_float()) * 100.0
-    } else {
-      0.0
-    }
-    
-    {
-      buffer_capacity: manager.buffer_capacity,
-      current_buffer_size: manager.current_buffer_size,
-      buffer_utilization_percent: buffer_utilization,
-      events_processed: manager.events_processed,
-      events_dropped: manager.events_dropped,
-      drop_rate_percent: drop_rate,
-      backpressure_active: manager.backpressure_active
-    }
-  }
-  
-  let metrics = get_backpressure_metrics(manager9)
-  assert_eq(metrics.buffer_capacity, 3)
-  assert_eq(metrics.current_buffer_size, 3)
-  assert_eq(metrics.buffer_utilization_percent, 100.0)
-  assert_eq(metrics.events_processed, 3)
-  assert_eq(metrics.events_dropped, 1)
-  assert_eq(metrics.drop_rate_percent, 25.0)  # 1 drop out of 4 total events
-  assert_true(metrics.backpressure_active)
+  // Verify recovery
+  assert_true(recovered_data.contains(999)) // Recovered value for 5
+  assert_eq(recovered_data.length(), 10) // All items processed
 }
 
-// Test 4: Stream Join Operations
-test "stream join operations for correlating telemetry data" {
-  // Define stream event (reuse from previous test)
-  type StreamEvent = {
-    event_id: String,
-    timestamp: Int,
-    event_type: String,
-    data: String,
-    metadata: Array<(String, String)>
-  }
+// Test 10: Stream Performance and Scalability
+test "stream performance and scalability" {
+  // Test stream performance and scalability
+  let stream_processor = StreamProcessor::new()
   
-  // Define join operation
-  type StreamJoin = {
-    join_id: String,
-    left_stream: Array<StreamEvent>,
-    right_stream: Array<StreamEvent>,
-    join_condition: String,
-    join_window_seconds: Int,
-    joined_events: Array<JoinedEvent>
-  }
+  // Test with different data volumes
+  let data_volumes = [1000, 5000, 10000, 50000]
   
-  // Define joined event
-  type JoinedEvent = {
-    join_id: String,
-    left_event: StreamEvent,
-    right_event: StreamEvent,
-    join_timestamp: Int
-  }
-  
-  // Create stream join
-  let create_stream_join = fn(join_id: String, join_condition: String, join_window_seconds: Int) {
-    {
-      join_id: join_id,
-      left_stream: [],
-      right_stream: [],
-      join_condition: join_condition,
-      join_window_seconds: join_window_seconds,
-      joined_events: []
-    }
-  }
-  
-  # Add event to left stream
-  let add_left_event = fn(join_op: StreamJoin, event: StreamEvent) {
-    {
-      join_id: join_op.join_id,
-      left_stream: join_op.left_stream.push(event),
-      right_stream: join_op.right_stream,
-      join_condition: join_op.join_condition,
-      join_window_seconds: join_op.join_window_seconds,
-      joined_events: join_op.joined_events
-    }
-  }
-  
-  # Add event to right stream
-  let add_right_event = fn(join_op: StreamJoin, event: StreamEvent) {
-    {
-      join_id: join_op.join_id,
-      left_stream: join_op.left_stream,
-      right_stream: join_op.right_stream.push(event),
-      join_condition: join_op.join_condition,
-      join_window_seconds: join_op.join_window_seconds,
-      joined_events: join_op.joined_events
-    }
-  }
-  
-  # Perform join operation
-  let perform_join = fn(join_op: StreamJoin) {
-    let mut joined_events = []
+  for volume in data_volumes {
+    let performance_stream = StreamProcessor::create_stream(stream_processor, "performance-stream-" + volume.to_string())
     
-    for left_event in join_op.left_stream {
-      for right_event in join_op.right_stream {
-        # Check join condition
-        let condition_met = match join_op.join_condition {
-          "trace_id_match" => {
-            # Extract trace_id from metadata
-            let left_trace_id = left_event.metadata.filter(fn(m) { m[0] == "trace_id" })
-            let right_trace_id = right_event.metadata.filter(fn(m) { m[0] == "trace_id" })
-            
-            left_trace_id.length() > 0 && right_trace_id.length() > 0 &&
-            left_trace_id[0][1] == right_trace_id[0][1]
-          }
-          "service_match" => {
-            # Extract service from metadata
-            let left_service = left_event.metadata.filter(fn(m) { m[0] == "service" })
-            let right_service = right_event.metadata.filter(fn(m) { m[0] == "service" })
-            
-            left_service.length() > 0 && right_service.length() > 0 &&
-            left_service[0][1] == right_service[0][1]
-          }
-          "time_window" => {
-            # Check if events are within time window
-            let time_diff = left_event.timestamp - right_event.timestamp
-            time_diff >= 0 && time_diff <= join_op.join_window_seconds
-          }
-          _ => false
-        }
-        
-        if condition_met {
-          joined_events = joined_events.push({
-            join_id: join_op.join_id,
-            left_event: left_event,
-            right_event: right_event,
-            join_timestamp: 1640995300
-          })
-        }
-      }
+    // Configure for performance
+    let perf_config = StreamConfig::new()
+      .with_buffer_size(volume / 10)
+      .with_batch_size(volume / 100)
+      .with_processing_interval(10) // 10ms
+    
+    Stream::configure(performance_stream, perf_config)
+    
+    // Generate test data
+    let start_time = Clock::now()
+    
+    for i = 0; i < volume; i = i + 1 {
+      Stream::push_data(performance_stream, i)
     }
     
-    {
-      join_id: join_op.join_id,
-      left_stream: join_op.left_stream,
-      right_stream: join_op.right_stream,
-      join_condition: join_op.join_condition,
-      join_window_seconds: join_op.join_window_seconds,
-      joined_events: joined_events
-    }
+    // Process with simple operation
+    let processed_stream = StreamProcessor::map(stream_processor, performance_stream, |x| x * 2)
+    let processed_data = StreamProcessor::collect(processed_stream)
+    
+    let end_time = Clock::now()
+    let duration_ms = end_time - start_time
+    
+    // Verify performance
+    assert_eq(processed_data.length(), volume)
+    assert_true(duration_ms < 5000, "Processing " + volume.to_string() + " items should take less than 5 seconds")
+    
+    // Calculate throughput
+    let throughput = volume * 1000 / duration_ms
+    assert_true(throughput > 1000, "Throughput should be at least 1000 items per second")
   }
   
-  # Test stream join
-  let join_op = create_stream_join("trace-join", "trace_id_match", 30)  # 30-second window
+  // Test parallel processing
+  let parallel_stream = StreamProcessor::create_stream(stream_processor, "parallel-stream")
+  let parallel_config = ParallelConfig::new()
+    .with_parallelism(4)
+    .with_partitioning_strategy(PartitioningStrategy::RoundRobin)
   
-  # Add left stream events (spans)
-  let left_events = [
-    {
-      event_id: "span-1",
-      timestamp: 1640995200,
-      event_type: "span",
-      data: "http_request",
-      metadata: [
-        ("trace_id", "trace-123"),
-        ("service", "api-gateway"),
-        ("operation", "process_request")
-      ]
-    },
-    {
-      event_id: "span-2",
-      timestamp: 1640995210,
-      event_type: "span",
-      data: "database_query",
-      metadata: [
-        ("trace_id", "trace-456"),
-        ("service", "user-service"),
-        ("operation", "get_user")
-      ]
-    },
-    {
-      event_id: "span-3",
-      timestamp: 1640995220,
-      event_type: "span",
-      data: "cache_lookup",
-      metadata: [
-        ("trace_id", "trace-123"),
-        ("service", "cache-service"),
-        ("operation", "get_cache")
-      ]
-    }
-  ]
+  Stream::configure_parallel_processing(parallel_stream, parallel_config)
   
-  # Add right stream events (logs)
-  let right_events = [
-    {
-      event_id: "log-1",
-      timestamp: 1640995205,
-      event_type: "log",
-      data: "Request received",
-      metadata: [
-        ("trace_id", "trace-123"),
-        ("service", "api-gateway"),
-        ("level", "info")
-      ]
-    },
-    {
-      event_id: "log-2",
-      timestamp: 1640995215,
-      event_type: "log",
-      data: "User query executed",
-      metadata: [
-        ("trace_id", "trace-456"),
-        ("service", "user-service"),
-        ("level", "info")
-      ]
-    },
-    {
-      event_id: "log-3",
-      timestamp: 1640995225,
-      event_type: "log",
-      data: "Cache hit",
-      metadata: [
-        ("trace_id", "trace-789"),
-        ("service", "cache-service"),
-        ("level", "info")
-      ]
-    }
-  ]
-  
-  # Add events to join operation
-  let mut join_with_left = join_op
-  for event in left_events {
-    join_with_left = add_left_event(join_with_left, event)
+  // Generate data for parallel processing
+  for i = 0; i < 10000; i = i + 1 {
+    Stream::push_data(parallel_stream, i)
   }
   
-  let mut join_with_both = join_with_left
-  for event in right_events {
-    join_with_both = add_right_event(join_with_both, event)
+  // Process in parallel
+  let parallel_start = Clock::now()
+  
+  let parallel_processed = StreamProcessor::process_parallel(
+    stream_processor,
+    parallel_stream,
+    |data| data.map(|x| x * 3)
+  )
+  
+  let parallel_end = Clock::now()
+  let parallel_duration = parallel_end - parallel_start
+  
+  // Verify parallel processing
+  assert_eq(parallel_processed.length(), 10000)
+  
+  // Test with single-threaded for comparison
+  let single_stream = StreamProcessor::create_stream(stream_processor, "single-stream")
+  
+  for i = 0; i < 10000; i = i + 1 {
+    Stream::push_data(single_stream, i)
   }
   
-  # Perform join
-  let joined_result = perform_join(join_with_both)
+  let single_start = Clock::now()
   
-  # Verify join results
-  assert_eq(joined_result.left_stream.length(), 3)
-  assert_eq(joined_result.right_stream.length(), 3)
-  assert_eq(joined_result.joined_events.length(), 2)  # span-1 with log-1, span-2 with log-2
+  let single_processed = StreamProcessor::map(stream_processor, single_stream, |x| x * 3)
+  let single_data = StreamProcessor::collect(single_processed)
   
-  # Verify specific joins
-  let join1 = joined_result.joined_events.filter(fn(j) { j.left_event.event_id == "span-1" })[0]
-  assert_eq(join1.right_event.event_id, "log-1")
-  assert_eq(join1.left_event.metadata.filter(fn(m) { m[0] == "trace_id" })[0][1], "trace-123")
-  assert_eq(join1.right_event.metadata.filter(fn(m) { m[0] == "trace_id" })[0][1], "trace-123")
+  let single_end = Clock::now()
+  let single_duration = single_end - single_start
   
-  let join2 = joined_result.joined_events.filter(fn(j) { j.left_event.event_id == "span-2" })[0]
-  assert_eq(join2.right_event.event_id, "log-2")
-  assert_eq(join2.left_event.metadata.filter(fn(m) { m[0] == "trace_id" })[0][1], "trace-456")
-  assert_eq(join2.right_event.metadata.filter(fn(m) { m[0] == "trace_id" })[0][1], "trace-456")
+  // Verify parallel processing is faster
+  assert_true(parallel_duration < single_duration, "Parallel processing should be faster than single-threaded")
   
-  # span-3 should not join with log-3 (different trace_id)
-  let span3_joins = joined_result.joined_events.filter(fn(j) { j.left_event.event_id == "span-3" })
-  assert_eq(span3_joins.length(), 0)
-  
-  # Test time window join
-  let time_join = create_stream_join("time-join", "time_window", 15)  # 15-second window
-  
-  # Add events with specific timestamps
-  let time_left_events = [
-    {
-      event_id: "time-span-1",
-      timestamp: 1640995200,
-      event_type: "span",
-      data: "operation_start",
-      metadata: [("trace_id", "trace-time-1")]
-    },
-    {
-      event_id: "time-span-2",
-      timestamp: 1640995250,
-      event_type: "span",
-      data: "operation_start",
-      metadata: [("trace_id", "trace-time-2")]
-    }
-  ]
-  
-  let time_right_events = [
-    {
-      event_id: "time-log-1",
-      timestamp: 1640995210,
-      event_type: "log",
-      data: "operation_progress",
-      metadata: [("trace_id", "trace-time-1")]
-    },
-    {
-      event_id: "time-log-2",
-      timestamp: 1640995270,
-      event_type: "log",
-      data: "operation_progress",
-      metadata: [("trace_id", "trace-time-2")]
-    }
-  ]
-  
-  # Add events to time join
-  let mut time_join_with_left = time_join
-  for event in time_left_events {
-    time_join_with_left = add_left_event(time_join_with_left, event)
-  }
-  
-  let mut time_join_with_both = time_join_with_left
-  for event in time_right_events {
-    time_join_with_both = add_right_event(time_join_with_both, event)
-  }
-  
-  # Perform time join
-  let time_joined_result = perform_join(time_join_with_both)
-  
-  # Verify time join results
-  assert_eq(time_joined_result.joined_events.length(), 2)  # Both pairs should join (within 15-second window)
-  
-  # Verify specific time joins
-  let time_join1 = time_joined_result.joined_events.filter(fn(j) { j.left_event.event_id == "time-span-1" })[0]
-  assert_eq(time_join1.right_event.event_id, "time-log-1")
-  assert_eq(time_join1.right_event.timestamp - time_join1.left_event.timestamp, 10)  # 10 seconds difference
-  
-  let time_join2 = time_joined_result.joined_events.filter(fn(j) { j.left_event.event_id == "time-span-2" })[0]
-  assert_eq(time_join2.right_event.event_id, "time-log-2")
-  assert_eq(time_join2.right_event.timestamp - time_join2.left_event.timestamp, 20)  # 20 seconds difference
-}
-
-// Test 5: Stream State Management
-test "stream state management and persistence" {
-  // Define stream state
-  type StreamState = {
-    state_id: String,
-    key_value_store: Array<(String, String)>,
-    counters: Array<(String, Int)>,
-    last_updated: Int,
-    version: Int
-  }
-  
-  // Define state manager
-  type StateManager = {
-    states: Array<StreamState>,
-    checkpoint_interval_seconds: Int,
-    last_checkpoint_time: Int,
-    checkpoints_created: Int
-  }
-  
-  // Create state manager
-  let create_state_manager = fn(checkpoint_interval: Int) {
-    {
-      states: [],
-      checkpoint_interval_seconds: checkpoint_interval,
-      last_checkpoint_time: 0,
-      checkpoints_created: 0
-    }
-  }
-  
-  # Get or create state
-  let get_or_create_state = fn(manager: StateManager, state_id: String) {
-    let existing_state = manager.states.filter(fn(s) { s.state_id == state_id })
-    
-    match existing_state {
-      [state] => state
-      _ => {
-        {
-          state_id: state_id,
-          key_value_store: [],
-          counters: [],
-          last_updated: 1640995200,
-          version: 1
-        }
-      }
-    }
-  }
-  
-  # Update state
-  let update_state = fn(manager: StateManager, state_id: String, key: String, value: String) {
-    let state = get_or_create_state(manager, state_id)
-    
-    # Update key-value store
-    let mut updated_kv = state.key_value_store
-    let mut found = false
-    
-    for i in 0..updated_kv.length() {
-      if updated_kv[i][0] == key {
-        updated_kv[i] = (key, value)
-        found = true
-        break
-      }
-    }
-    
-    if not(found) {
-      updated_kv = updated_kv.push((key, value))
-    }
-    
-    let updated_state = {
-      state_id: state.state_id,
-      key_value_store: updated_kv,
-      counters: state.counters,
-      last_updated: 1640995300,
-      version: state.version + 1
-    }
-    
-    # Update manager
-    let mut updated_states = manager.states
-    for i in 0..updated_states.length() {
-      if updated_states[i].state_id == state_id {
-        updated_states[i] = updated_state
-        break
-      }
-    }
-    
-    # Add new state if not found
-    if not(found) {
-      updated_states = updated_states.push(updated_state)
-    }
-    
-    {
-      states: updated_states,
-      checkpoint_interval_seconds: manager.checkpoint_interval_seconds,
-      last_checkpoint_time: manager.last_checkpoint_time,
-      checkpoints_created: manager.checkpoints_created
-    }
-  }
-  
-  # Increment counter
-  let increment_counter = fn(manager: StateManager, state_id: String, counter: String, increment: Int) {
-    let state = get_or_create_state(manager, state_id)
-    
-    # Update counters
-    let mut updated_counters = state.counters
-    let mut found = false
-    
-    for i in 0..updated_counters.length() {
-      if updated_counters[i][0] == counter {
-        let current_value = updated_counters[i][1]
-        updated_counters[i] = (counter, current_value + increment)
-        found = true
-        break
-      }
-    }
-    
-    if not(found) {
-      updated_counters = updated_counters.push((counter, increment))
-    }
-    
-    let updated_state = {
-      state_id: state.state_id,
-      key_value_store: state.key_value_store,
-      counters: updated_counters,
-      last_updated: 1640995300,
-      version: state.version + 1
-    }
-    
-    # Update manager
-    let mut updated_states = manager.states
-    for i in 0..updated_states.length() {
-      if updated_states[i].state_id == state_id {
-        updated_states[i] = updated_state
-        break
-      }
-    }
-    
-    # Add new state if not found
-    if not(found) {
-      updated_states = updated_states.push(updated_state)
-    }
-    
-    {
-      states: updated_states,
-      checkpoint_interval_seconds: manager.checkpoint_interval_seconds,
-      last_checkpoint_time: manager.last_checkpoint_time,
-      checkpoints_created: manager.checkpoints_created
-    }
-  }
-  
-  # Create checkpoint
-  let create_checkpoint = fn(manager: StateManager, current_time: Int) {
-    let time_since_last_checkpoint = current_time - manager.last_checkpoint_time
-    
-    if time_since_last_checkpoint >= manager.checkpoint_interval_seconds {
-      # Create checkpoint (in real implementation, would persist to disk)
-      {
-        states: manager.states,
-        checkpoint_interval_seconds: manager.checkpoint_interval_seconds,
-        last_checkpoint_time: current_time,
-        checkpoints_created: manager.checkpoints_created + 1
-      }
-    } else {
-      manager
-    }
-  }
-  
-  # Test state management
-  let manager = create_state_manager(60)  # Checkpoint every 60 seconds
-  
-  # Update state
-  let manager1 = update_state(manager, "service-1", "last_request_id", "req-123")
-  let manager2 = update_state(manager1, "service-1", "last_request_time", "1640995200")
-  let manager3 = update_state(manager2, "service-2", "last_request_id", "req-456")
-  
-  # Increment counters
-  let manager4 = increment_counter(manager3, "service-1", "request_count", 1)
-  let manager5 = increment_counter(manager4, "service-1", "request_count", 1)
-  let manager6 = increment_counter(manager5, "service-2", "request_count", 1)
-  
-  # Verify states
-  assert_eq(manager6.states.length(), 2)
-  
-  let service1_state = manager6.states.filter(fn(s) { s.state_id == "service-1" })[0]
-  assert_eq(service1_state.key_value_store.length(), 2)
-  assert_eq(service1_state.counters.length(), 1)
-  assert_eq(service1_state.version, 4)  # 2 updates + 2 counter increments
-  
-  let service2_state = manager6.states.filter(fn(s) { s.state_id == "service-2" })[0]
-  assert_eq(service2_state.key_value_store.length(), 1)
-  assert_eq(service2_state.counters.length(), 1)
-  assert_eq(service2_state.version, 2)  # 1 update + 1 counter increment
-  
-  # Verify specific values
-  let service1_last_request = service1_state.key_value_store.filter(fn(kv) { kv[0] == "last_request_id" })[0]
-  assert_eq(service1_last_request[1], "req-123")
-  
-  let service1_request_count = service1_state.counters.filter(fn(c) { c[0] == "request_count" })[0]
-  assert_eq(service1_request_count[1], 2)
-  
-  # Test checkpoint creation
-  let manager7 = create_checkpoint(manager6, 1640995260)  # 60 seconds after last checkpoint
-  assert_eq(manager7.checkpoints_created, 1)
-  assert_eq(manager7.last_checkpoint_time, 1640995260)
-  
-  # Test checkpoint not created if interval not passed
-  let manager8 = create_checkpoint(manager7, 1640995290)  # Only 30 seconds after last checkpoint
-  assert_eq(manager8.checkpoints_created, 1)  # No new checkpoint
-  assert_eq(manager8.last_checkpoint_time, 1640995260)
-  
-  # Test state recovery (simulation)
-  let recover_from_checkpoint = fn(checkpoint_time: Int) {
-    # In real implementation, would load from disk
-    {
-      states: [
-        {
-          state_id: "service-1",
-          key_value_store: [
-            ("last_request_id", "req-123"),
-            ("last_request_time", "1640995200")
-          ],
-          counters: [
-            ("request_count", 2)
-          ],
-          last_updated: 1640995300,
-          version: 4
-        },
-        {
-          state_id: "service-2",
-          key_value_store: [
-            ("last_request_id", "req-456")
-          ],
-          counters: [
-            ("request_count", 1)
-          ],
-          last_updated: 1640995300,
-          version: 2
-        }
-      ],
-      checkpoint_interval_seconds: 60,
-      last_checkpoint_time: checkpoint_time,
-      checkpoints_created: 1
-    }
-  }
-  
-  let recovered_manager = recover_from_checkpoint(1640995260)
-  assert_eq(recovered_manager.states.length(), 2)
-  assert_eq(recovered_manager.checkpoints_created, 1)
-  assert_eq(recovered_manager.last_checkpoint_time, 1640995260)
-  
-  # Verify recovered state
-  let recovered_service1 = recovered_manager.states.filter(fn(s) { s.state_id == "service-1" })[0]
-  assert_eq(recovered_service1.version, 4)
-  assert_eq(recovered_service1.key_value_store.length(), 2)
-  assert_eq(recovered_service1.counters.length(), 1)
+  // Calculate speedup
+  let speedup = single_duration / parallel_duration
+  assert_true(speedup > 1.5, "Parallel processing should provide at least 1.5x speedup")
 }
