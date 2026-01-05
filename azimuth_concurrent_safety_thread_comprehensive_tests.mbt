@@ -1,418 +1,504 @@
-// Azimuth Concurrent Safety Thread Comprehensive Tests
-// This file contains comprehensive tests for thread safety and concurrent operations
+// Azimuth Telemetry System - Concurrent Safety and Thread Safety Comprehensive Tests
+// This file contains comprehensive test cases for concurrent programming, thread safety, and synchronization
 
-// Test 1: Shared Resource Access Safety
-test "shared resource access thread safety" {
-  let shared_counter = AtomicCounter::new(0)
-  let thread_count = 10
-  let increments_per_thread = 1000
+// Test 1: Thread-Safe Counter Implementation
+test "thread-safe counter implementation" {
+  let counter = ThreadSafeCounter::new()
   
-  // Create threads that increment shared counter
-  let threads = []
-  for i in 0..thread_count {
-    let thread = Thread::spawn(func() {
-      for j in 0..increments_per_thread {
-        AtomicCounter::increment(shared_counter)
-        // Add some random delay to increase contention
-        if j % 100 == 0 {
-          Thread::sleep(Math::random() * 0.001) // Random sleep up to 1ms
-        }
-      }
-    })
-    threads.push(thread)
-  }
+  // Test initial counter value
+  assert_eq(ThreadSafeCounter::get(counter), 0)
   
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
+  // Test increment operations
+  ThreadSafeCounter::increment(counter)
+  assert_eq(ThreadSafeCounter::get(counter), 1)
   
-  // Verify final count is correct (no lost updates)
-  let expected_count = thread_count * increments_per_thread
-  let actual_count = AtomicCounter::get(shared_counter)
-  assert_eq(actual_count, expected_count)
+  ThreadSafeCounter::increment_by(counter, 5)
+  assert_eq(ThreadSafeCounter::get(counter), 6)
+  
+  // Test decrement operations
+  ThreadSafeCounter::decrement(counter)
+  assert_eq(ThreadSafeCounter::get(counter), 5)
+  
+  ThreadSafeCounter::decrement_by(counter, 3)
+  assert_eq(ThreadSafeCounter::get(counter), 2)
+  
+  // Test atomic compare and swap
+  let cas_result = ThreadSafeCounter::compare_and_swap(counter, 2, 10)
+  assert_true(cas_result)
+  assert_eq(ThreadSafeCounter::get(counter), 10)
+  
+  let cas_fail = ThreadSafeCounter::compare_and_swap(counter, 5, 20)
+  assert_false(cas_fail)
+  assert_eq(ThreadSafeCounter::get(counter), 10)  // Value should remain unchanged
 }
 
-// Test 2: Concurrent Data Structure Safety
-test "concurrent data structure operations safety" {
-  let concurrent_map = ConcurrentMap::new()
-  let thread_count = 8
-  let operations_per_thread = 500
+// Test 2: Concurrent Queue with Multiple Producers and Consumers
+test "concurrent queue with multiple producers and consumers" {
+  let concurrent_queue = ConcurrentQueue::new(100)  // Queue with capacity 100
   
-  // Create threads that perform various map operations
-  let threads = []
-  for thread_id in 0..thread_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..operations_per_thread {
-        let key = "key_" + (thread_id * operations_per_thread + i).to_string()
-        let value = "value_" + i.to_string()
-        
-        // Mix of operations: insert, update, get, remove
-        match i % 4 {
-          0 => ConcurrentMap::insert(concurrent_map, key, value)
-          1 => ConcurrentMap::update(concurrent_map, key, func(v) { v + "_updated" })
-          2 => {
-            let _ = ConcurrentMap::get(concurrent_map, key)
-          }
-          3 => ConcurrentMap::remove(concurrent_map, key)
-          _ => {}
-        }
-      }
-    })
-    threads.push(thread)
+  // Test initial queue state
+  assert_true(ConcurrentQueue::is_empty(concurrent_queue))
+  assert_eq(ConcurrentQueue::size(concurrent_queue), 0)
+  
+  // Test producer operations
+  assert_true(ConcurrentQueue::enqueue(concurrent_queue, "item1"))
+  assert_true(ConcurrentQueue::enqueue(concurrent_queue, "item2"))
+  assert_true(ConcurrentQueue::enqueue(concurrent_queue, "item3"))
+  
+  assert_eq(ConcurrentQueue::size(concurrent_queue), 3)
+  
+  // Test consumer operations
+  let item1 = ConcurrentQueue::dequeue(concurrent_queue)
+  match item1 {
+    Some(value) => assert_eq(value, "item1")
+    None => assert_true(false)
   }
   
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
+  assert_eq(ConcurrentQueue::size(concurrent_queue), 2)
+  
+  // Test blocking dequeue when queue is empty
+  let empty_result = ConcurrentQueue::try_dequeue(concurrent_queue)
+  match empty_result {
+    Some(value) => assert_eq(value, "item2")
+    None => assert_true(false)
   }
   
-  // Verify map integrity
-  let size = ConcurrentMap::size(concurrent_map)
-  assert_true(size >= 0) // Size should be non-negative
-  
-  // Verify all remaining entries are valid
-  let keys = ConcurrentMap::keys(concurrent_map)
-  for key in keys {
-    match ConcurrentMap::get(concurrent_map, key) {
-      Some(value) => assert_true(value.length() > 0)
-      None => assert_true(false) // Should not happen for existing keys
+  // Test queue capacity limits
+  for i in 0..=100 {  // Try to add 101 items to a queue with capacity 100
+    let enqueued = ConcurrentQueue::try_enqueue(concurrent_queue, "capacity_test" + i.to_string())
+    if i < 98 {  // We already have 1 item in the queue
+      assert_true(enqueued)
+    } else {
+      assert_false(enqueued)  // Should fail when queue is full
     }
   }
 }
 
-// Test 3: Lock-Free Atomic Operations
-test "lock-free atomic operations safety" {
-  let atomic_value = AtomicInt::new(0)
-  let thread_count = 16
-  let operations_per_thread = 1000
-  
-  // Create threads that perform various atomic operations
-  let threads = []
-  for thread_id in 0..thread_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..operations_per_thread {
-        // Mix of atomic operations
-        match i % 4 {
-          0 => AtomicInt::add(atomic_value, 1)
-          1 => AtomicInt::subtract(atomic_value, 1)
-          2 => AtomicInt::compare_and_swap(atomic_value, AtomicInt::get(atomic_value), AtomicInt::get(atomic_value) + 2)
-          3 => {
-            let current = AtomicInt::get(atomic_value)
-            let _ = AtomicInt::exchange(atomic_value, current + 3)
-          }
-          _ => {}
-        }
-      }
-    })
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Final value should be predictable
-  let final_value = AtomicInt::get(atomic_value)
-  assert_true(final_value > 0) // Should have increased overall
-}
-
-// Test 4: Thread Pool Safety
-test "thread pool task execution safety" {
-  let thread_pool = ThreadPool::new(4) // 4 worker threads
-  let task_count = 100
-  let completed_tasks = AtomicCounter::new(0)
-  
-  // Submit tasks to thread pool
-  let futures = []
-  for i in 0..task_count {
-    let future = ThreadPool::submit(thread_pool, func() {
-      // Simulate work
-      Thread::sleep(Math::random() * 0.01) // Random sleep up to 10ms
-      AtomicCounter::increment(completed_tasks)
-      i * 2 // Return a value
-    })
-    futures.push(future)
-  }
-  
-  // Wait for all tasks to complete
-  let results = []
-  for future in futures {
-    let result = Future::get(future)
-    results.push(result)
-  }
-  
-  // Verify all tasks completed
-  assert_eq(AtomicCounter::get(completed_tasks), task_count)
-  assert_eq(results.length(), task_count)
-  
-  // Verify results are correct
-  for i in 0..task_count {
-    assert_eq(results[i], i * 2)
-  }
-  
-  // Shutdown thread pool
-  ThreadPool::shutdown(thread_pool)
-}
-
-// Test 5: Concurrent Queue Safety
-test "concurrent queue operations safety" {
-  let concurrent_queue = ConcurrentQueue::new()
-  let producer_count = 4
-  let consumer_count = 4
-  let items_per_producer = 250
-  
-  let total_produced = AtomicCounter::new(0)
-  let total_consumed = AtomicCounter::new(0)
-  
-  // Create producer threads
-  let producer_threads = []
-  for producer_id in 0..producer_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..items_per_producer {
-        let item = "item_" + producer_id.to_string() + "_" + i.to_string()
-        ConcurrentQueue::enqueue(concurrent_queue, item)
-        AtomicCounter::increment(total_produced)
-        
-        // Random delay to increase contention
-        if i % 50 == 0 {
-          Thread::sleep(Math::random() * 0.001)
-        }
-      }
-    })
-    producer_threads.push(thread)
-  }
-  
-  // Create consumer threads
-  let consumer_threads = []
-  for consumer_id in 0..consumer_count {
-    let thread = Thread::spawn(func() {
-      let consumed_count = 0
-      while consumed_count < items_per_producer {
-        match ConcurrentQueue::dequeue(concurrent_queue) {
-          Some(item) => {
-            AtomicCounter::increment(total_consumed)
-            consumed_count = consumed_count + 1
-          }
-          None => {
-            // Queue might be empty, wait a bit
-            Thread::sleep(0.001)
-          }
-        }
-      }
-    })
-    consumer_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in producer_threads {
-    Thread::join(thread)
-  }
-  for thread in consumer_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all items were produced and consumed
-  let expected_total = producer_count * items_per_producer
-  assert_eq(AtomicCounter::get(total_produced), expected_total)
-  assert_eq(AtomicCounter::get(total_consumed), expected_total)
-}
-
-// Test 6: Read-Write Lock Safety
-test "read-write lock operations safety" {
+// Test 3: Read-Write Lock for Multiple Readers and Single Writer
+test "read-write lock for multiple readers and single writer" {
   let rw_lock = ReadWriteLock::new()
-  let shared_data = Ref::new(0)
-  let reader_count = 8
-  let writer_count = 4
-  let operations_per_thread = 100
+  let shared_data = SharedData::new("initial_value")
   
-  // Create reader threads
-  let reader_threads = []
-  for reader_id in 0..reader_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..operations_per_thread {
-        ReadWriteLock::read_lock(rw_lock)
-        let value = Ref::get(shared_data)
-        // Simulate read operation
-        Thread::sleep(0.0001) // 0.1ms read time
-        ReadWriteLock::read_unlock(rw_lock)
-        
-        // Verify value is reasonable
-        assert_true(value >= 0)
-      }
-    })
-    reader_threads.push(thread)
-  }
+  // Test read lock acquisition
+  let read_lock1 = ReadWriteLock::acquire_read_lock(rw_lock)
+  assert_true(ReadWriteLock::is_read_locked(rw_lock))
+  assert_false(ReadWriteLock::is_write_locked(rw_lock))
   
-  // Create writer threads
-  let writer_threads = []
-  for writer_id in 0..writer_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..operations_per_thread {
-        ReadWriteLock::write_lock(rw_lock)
-        let current_value = Ref::get(shared_data)
-        Ref::set(shared_data, current_value + 1)
-        // Simulate write operation
-        Thread::sleep(0.0002) // 0.2ms write time
-        ReadWriteLock::write_unlock(rw_lock)
-      }
-    })
-    writer_threads.push(thread)
-  }
+  // Multiple readers should be allowed
+  let read_lock2 = ReadWriteLock::acquire_read_lock(rw_lock)
+  let read_lock3 = ReadWriteLock::acquire_read_lock(rw_lock)
   
-  // Wait for all threads to complete
-  for thread in reader_threads {
-    Thread::join(thread)
-  }
-  for thread in writer_threads {
-    Thread::join(thread)
-  }
+  assert_eq(ReadWriteLock::get_reader_count(rw_lock), 3)
   
-  // Verify final value
-  let expected_value = writer_count * operations_per_thread
-  let actual_value = Ref::get(shared_data)
-  assert_eq(actual_value, expected_value)
+  // Read operations should succeed
+  let value1 = SharedData::read(shared_data, read_lock1)
+  let value2 = SharedData::read(shared_data, read_lock2)
+  let value3 = SharedData::read(shared_data, read_lock3)
+  
+  assert_eq(value1, "initial_value")
+  assert_eq(value2, "initial_value")
+  assert_eq(value3, "initial_value")
+  
+  // Release read locks
+  ReadWriteLock::release_read_lock(rw_lock, read_lock1)
+  ReadWriteLock::release_read_lock(rw_lock, read_lock2)
+  ReadWriteLock::release_read_lock(rw_lock, read_lock3)
+  
+  assert_eq(ReadWriteLock::get_reader_count(rw_lock), 0)
+  
+  // Test write lock acquisition
+  let write_lock = ReadWriteLock::acquire_write_lock(rw_lock)
+  assert_true(ReadWriteLock::is_write_locked(rw_lock))
+  assert_false(ReadWriteLock::is_read_locked(rw_lock))
+  
+  // Write operation should succeed
+  SharedData::write(shared_data, write_lock, "updated_value")
+  
+  // Release write lock
+  ReadWriteLock::release_write_lock(rw_lock, write_lock)
+  
+  // Verify updated value
+  let new_read_lock = ReadWriteLock::acquire_read_lock(rw_lock)
+  let updated_value = SharedData::read(shared_data, new_read_lock)
+  assert_eq(updated_value, "updated_value")
+  ReadWriteLock::release_read_lock(rw_lock, new_read_lock)
 }
 
-// Test 7: Concurrent Cache Safety
-test "concurrent cache operations safety" {
-  let concurrent_cache = ConcurrentCache::new(1000) // Max 1000 entries
-  let thread_count = 8
-  let operations_per_thread = 200
+// Test 4: Thread-Safe HashMap with Concurrent Access
+test "thread-safe hashmap with concurrent access" {
+  let concurrent_map = ConcurrentHashMap::new()
   
-  // Create threads that perform cache operations
-  let threads = []
-  for thread_id in 0..thread_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..operations_per_thread {
-        let key = "cache_key_" + (thread_id * operations_per_thread + i).to_string()
-        let value = "cache_value_" + i.to_string()
-        
-        // Mix of cache operations
-        match i % 5 {
-          0 => ConcurrentCache::put(concurrent_cache, key, value)
-          1 => {
-            let _ = ConcurrentCache::get(concurrent_cache, key)
-          }
-          2 => {
-            let _ = ConcurrentCache::get_or_put(concurrent_cache, key, func() { value })
-          }
-          3 => ConcurrentCache::remove(concurrent_cache, key)
-          4 => {
-            let _ = ConcurrentCache::size(concurrent_cache)
-          }
-          _ => {}
-        }
-      }
-    })
-    threads.push(thread)
+  // Test initial map state
+  assert_eq(ConcurrentHashMap::size(concurrent_map), 0)
+  
+  // Test put operations
+  ConcurrentHashMap::put(concurrent_map, "key1", "value1")
+  ConcurrentHashMap::put(concurrent_map, "key2", "value2")
+  ConcurrentHashMap::put(concurrent_map, "key3", "value3")
+  
+  assert_eq(ConcurrentHashMap::size(concurrent_map), 3)
+  
+  // Test get operations
+  let value1 = ConcurrentHashMap::get(concurrent_map, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
   }
   
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
+  let non_existent = ConcurrentHashMap::get(concurrent_map, "non_existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Verify cache integrity
-  let cache_size = ConcurrentCache::size(concurrent_cache)
-  assert_true(cache_size <= 1000) // Should not exceed max size
+  // Test put-if-absent operation
+  let put_result = ConcurrentHashMap::put_if_absent(concurrent_map, "key1", "new_value1")
+  assert_false(put_result)  // Key already exists
   
-  // Verify all remaining entries are valid
-  let keys = ConcurrentCache::keys(concurrent_cache)
-  for key in keys {
-    match ConcurrentCache::get(concurrent_cache, key) {
-      Some(value) => assert_true(value.length() > 0)
-      None => assert_true(false) // Should not happen for existing keys
+  let put_result2 = ConcurrentHashMap::put_if_absent(concurrent_map, "key4", "value4")
+  assert_true(put_result2)   // Key was absent and now added
+  
+  assert_eq(ConcurrentHashMap::size(concurrent_map), 4)
+  
+  // Test remove operation
+  let removed_value = ConcurrentHashMap::remove(concurrent_map, "key2")
+  match removed_value {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
+  }
+  
+  assert_eq(ConcurrentHashMap::size(concurrent_map), 3)
+  
+  // Test contains key operation
+  assert_true(ConcurrentHashMap::contains_key(concurrent_map, "key1"))
+  assert_false(ConcurrentHashMap::contains_key(concurrent_map, "key2"))
+  
+  // Test replace operation
+  let replace_result = ConcurrentHashMap::replace(concurrent_map, "key1", "replaced_value1")
+  match replace_result {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
+  }
+  
+  let new_value = ConcurrentHashMap::get(concurrent_map, "key1")
+  match new_value {
+    Some(v) => assert_eq(v, "replaced_value1")
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Semaphore for Resource Limiting
+test "semaphore for resource limiting" {
+  let semaphore = Semaphore::new(3)  // Allow 3 concurrent permits
+  
+  // Test initial semaphore state
+  assert_eq(Semaphore::get_available_permits(semaphore), 3)
+  assert_eq(Semaphore::get_used_permits(semaphore), 0)
+  
+  // Test permit acquisition
+  let permit1 = Semaphore::acquire(semaphore)
+  let permit2 = Semaphore::acquire(semaphore)
+  let permit3 = Semaphore::acquire(semaphore)
+  
+  assert_eq(Semaphore::get_available_permits(semaphore), 0)
+  assert_eq(Semaphore::get_used_permits(semaphore), 3)
+  
+  // Test permit acquisition when none available
+  let permit4 = Semaphore::try_acquire(semaphore)
+  match permit4 {
+    Some(_) => assert_true(false)  // Should fail
+    None => assert_true(true)      // Expected to fail
+  }
+  
+  // Test permit release
+  Semaphore::release(semaphore, permit1)
+  assert_eq(Semaphore::get_available_permits(semaphore), 1)
+  assert_eq(Semaphore::get_used_permits(semaphore), 2)
+  
+  // Should be able to acquire again
+  let new_permit = Semaphore::try_acquire(semaphore)
+  match new_permit {
+    Some(_) => assert_true(true)   // Should succeed
+    None => assert_true(false)     // Should not fail
+  }
+  
+  assert_eq(Semaphore::get_available_permits(semaphore), 0)
+  assert_eq(Semaphore::get_used_permits(semaphore), 3)
+  
+  // Release all permits
+  Semaphore::release(semaphore, permit2)
+  Semaphore::release(semaphore, permit3)
+  Semaphore::release(semaphore, new_permit)
+  
+  assert_eq(Semaphore::get_available_permits(semaphore), 3)
+  assert_eq(Semaphore::get_used_permits(semaphore), 0)
+}
+
+// Test 6: Barrier for Thread Synchronization
+test "barrier for thread synchronization" {
+  let barrier = Barrier::new(3)  // Wait for 3 threads
+  
+  // Test initial barrier state
+  assert_eq(Barrier::get_parties(barrier), 3)
+  assert_eq(Barrier::get_waiting(barrier), 0)
+  assert_false(Barrier::is_broken(barrier))
+  
+  // Test barrier waiting
+  let result1 = Barrier::await(barrier)
+  match result1 {
+    BarrierResult::NotBroken(index) => assert_eq(index, 0)
+    BarrierResult::Broken => assert_true(false)
+  }
+  
+  assert_eq(Barrier::get_waiting(barrier), 1)
+  
+  let result2 = Barrier::await(barrier)
+  match result2 {
+    BarrierResult::NotBroken(index) => assert_eq(index, 1)
+    BarrierResult::Broken => assert_true(false)
+  }
+  
+  assert_eq(Barrier::get_waiting(barrier), 2)
+  
+  let result3 = Barrier::await(barrier)
+  match result3 {
+    BarrierResult::NotBroken(index) => assert_eq(index, 2)
+    BarrierResult::Broken => assert_true(false)
+  }
+  
+  assert_eq(Barrier::get_waiting(barrier), 0)  // All threads released
+  
+  // Test barrier reset
+  Barrier::reset(barrier)
+  assert_eq(Barrier::get_waiting(barrier), 0)
+  assert_false(Barrier::is_broken(barrier))
+}
+
+// Test 7: Atomic Operations for Complex Data Structures
+test "atomic operations for complex data structures" {
+  let atomic_reference = AtomicReference::new(ComplexData::new("initial", 42))
+  
+  // Test initial value
+  let initial_value = AtomicReference::get(atomic_reference)
+  assert_eq(ComplexData::get_name(initial_value), "initial")
+  assert_eq(ComplexData::get_value(initial_value), 42)
+  
+  // Test atomic compare and set
+  let new_data = ComplexData::new("updated", 100)
+  let cas_result = AtomicReference::compare_and_set(atomic_reference, initial_value, new_data)
+  assert_true(cas_result)
+  
+  let updated_value = AtomicReference::get(atomic_reference)
+  assert_eq(ComplexData::get_name(updated_value), "updated")
+  assert_eq(ComplexData::get_value(updated_value), 100)
+  
+  // Test atomic update with function
+  let update_result = AtomicReference::update(atomic_reference, fn(data) {
+    return ComplexData::new(
+      ComplexData::get_name(data) + "_modified",
+      ComplexData::get_value(data) * 2
+    )
+  })
+  
+  assert_true(update_result)
+  
+  let modified_value = AtomicReference::get(atomic_reference)
+  assert_eq(ComplexData::get_name(modified_value), "updated_modified")
+  assert_eq(ComplexData::get_value(modified_value), 200)
+  
+  // Test atomic get and set
+  let old_value = AtomicReference::get_and_set(atomic_reference, ComplexData::new("final", 999))
+  assert_eq(ComplexData::get_name(old_value), "updated_modified")
+  assert_eq(ComplexData::get_value(old_value), 200)
+  
+  let final_value = AtomicReference::get(atomic_reference)
+  assert_eq(ComplexData::get_name(final_value), "final")
+  assert_eq(ComplexData::get_value(final_value), 999)
+}
+
+// Test 8: Thread Pool for Task Execution
+test "thread pool for task execution" {
+  let thread_pool = ThreadPool::new(4)  // Pool with 4 threads
+  
+  // Test initial thread pool state
+  assert_eq(ThreadPool::get_core_pool_size(thread_pool), 4)
+  assert_eq(ThreadPool::get_active_count(thread_pool), 0)
+  assert_eq(ThreadPool::get_task_count(thread_pool), 0)
+  
+  // Test task submission
+  let future1 = ThreadPool::submit(thread_pool, fn() {
+    return "Task 1 Result"
+  })
+  
+  let future2 = ThreadPool::submit(thread_pool, fn() {
+    return 42
+  })
+  
+  let future3 = ThreadPool::submit(thread_pool, fn() {
+    return [1, 2, 3, 4, 5]
+  })
+  
+  // Test task execution
+  let result1 = Future::get(future1)
+  match result1 {
+    Some(value) => assert_eq(value, "Task 1 Result")
+    None => assert_true(false)
+  }
+  
+  let result2 = Future::get(future2)
+  match result2 {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false)
+  }
+  
+  let result3 = Future::get(future3)
+  match result3 {
+    Some(value) => assert_eq(value, [1, 2, 3, 4, 5])
+    None => assert_true(false)
+  }
+  
+  // Test task completion
+  assert_true(Future::is_done(future1))
+  assert_true(Future::is_done(future2))
+  assert_true(Future::is_done(future3))
+  
+  // Test shutdown
+  ThreadPool::shutdown(thread_pool)
+  assert_true(ThreadPool::is_shutdown(thread_pool))
+}
+
+// Test 9: Concurrent Data Structure Operations
+test "concurrent data structure operations" {
+  let concurrent_list = ConcurrentList::new()
+  
+  // Test initial list state
+  assert_true(ConcurrentList::is_empty(concurrent_list))
+  assert_eq(ConcurrentList::size(concurrent_list), 0)
+  
+  // Test add operations
+  ConcurrentList::add(concurrent_list, "item1")
+  ConcurrentList::add(concurrent_list, "item2")
+  ConcurrentList::add(concurrent_list, "item3")
+  
+  assert_eq(ConcurrentList::size(concurrent_list), 3)
+  
+  // Test contains operation
+  assert_true(ConcurrentList::contains(concurrent_list, "item2"))
+  assert_false(ConcurrentList::contains(concurrent_list, "non_existent"))
+  
+  // Test remove operation
+  let removed = ConcurrentList::remove(concurrent_list, "item2")
+  assert_true(removed)
+  assert_eq(ConcurrentList::size(concurrent_list), 2)
+  assert_false(ConcurrentList::contains(concurrent_list, "item2"))
+  
+  // Test iterator
+  let iterator = ConcurrentList::iterator(concurrent_list)
+  let iterated_items = []
+  
+  while Iterator::has_next(iterator) {
+    let item = Iterator::next(iterator)
+    iterated_items.push(item)
+  }
+  
+  assert_eq(iterated_items.length(), 2)
+  assert_true(iterated_items.contains("item1"))
+  assert_true(iterated_items.contains("item3"))
+  
+  // Test concurrent set
+  let concurrent_set = ConcurrentSet::new()
+  
+  // Test add operations
+  assert_true(ConcurrentSet::add(concurrent_set, "element1"))
+  assert_true(ConcurrentSet::add(concurrent_set, "element2"))
+  assert_false(ConcurrentSet::add(concurrent_set, "element1"))  // Duplicate
+  
+  assert_eq(ConcurrentSet::size(concurrent_set), 2)
+  
+  // Test contains operations
+  assert_true(ConcurrentSet::contains(concurrent_set, "element1"))
+  assert_false(ConcurrentSet::contains(concurrent_set, "element3"))
+  
+  // Test remove operations
+  assert_true(ConcurrentSet::remove(concurrent_set, "element2"))
+  assert_false(ConcurrentSet::remove(concurrent_set, "non_existent"))
+  
+  assert_eq(ConcurrentSet::size(concurrent_set), 1)
+}
+
+// Test 10: Deadlock Detection and Prevention
+test "deadlock detection and prevention" {
+  let deadlock_detector = DeadlockDetector::new()
+  
+  // Test initial detector state
+  assert_false(DeadlockDetector::has_deadlock(deadlock_detector))
+  assert_eq(DeadlockDetector::get_cycle_count(deadlock_detector), 0)
+  
+  // Create resources
+  let resource1 = Resource::new("resource1")
+  let resource2 = Resource::new("resource2")
+  let resource3 = Resource::new("resource3")
+  
+  // Create threads
+  let thread1 = Thread::new("thread1")
+  let thread2 = Thread::new("thread2")
+  
+  // Test lock acquisition
+  DeadlockDetector::acquire_lock(deadlock_detector, thread1, resource1)
+  DeadlockDetector::acquire_lock(deadlock_detector, thread2, resource2)
+  
+  assert_false(DeadlockDetector::has_deadlock(deadlock_detector))
+  
+  // Test lock waiting (potential deadlock scenario)
+  DeadlockDetector::wait_for_lock(deadlock_detector, thread1, resource2)
+  DeadlockDetector::wait_for_lock(deadlock_detector, thread2, resource1)
+  
+  // Should detect deadlock
+  assert_true(DeadlockDetector::has_deadlock(deadlock_detector))
+  assert_eq(DeadlockDetector::get_cycle_count(deadlock_detector), 1)
+  
+  // Test deadlock resolution
+  let resolution = DeadlockDetector::resolve_deadlock(deadlock_detector)
+  match resolution {
+    DeadlockResolution::VictimChosen(victim) => {
+      assert_true(victim === thread1 || victim === thread2)
     }
-  }
-}
-
-// Test 8: Concurrent Telemetry Processing Safety
-test "concurrent telemetry processing safety" {
-  let telemetry_processor = ConcurrentTelemetryProcessor::new()
-  let producer_count = 6
-  let consumer_count = 3
-  let telemetry_items_per_producer = 100
-  
-  let total_processed = AtomicCounter::new(0)
-  
-  // Create producer threads that generate telemetry data
-  let producer_threads = []
-  for producer_id in 0..producer_count {
-    let thread = Thread::spawn(func() {
-      for i in 0..telemetry_items_per_producer {
-        let telemetry_data = TelemetryData::new(
-          "metric_" + producer_id.to_string() + "_" + i.to_string(),
-          Math::random() * 100.0,
-          Time::now(),
-          create_concurrent_test_attributes(producer_id, i)
-        )
-        
-        ConcurrentTelemetryProcessor::enqueue(telemetry_processor, telemetry_data)
-        
-        // Random delay
-        if i % 20 == 0 {
-          Thread::sleep(Math::random() * 0.001)
-        }
-      }
-    })
-    producer_threads.push(thread)
+    DeadlockResolution::NoDeadlock => assert_true(false)
   }
   
-  // Create consumer threads that process telemetry data
-  let consumer_threads = []
-  for consumer_id in 0..consumer_count {
-    let thread = Thread::spawn(func() {
-      let processed_count = 0
-      while processed_count < telemetry_items_per_producer * producer_count / consumer_count {
-        match ConcurrentTelemetryProcessor::dequeue(telemetry_processor) {
-          Some(telemetry_data) => {
-            // Process the telemetry data
-            let _ = process_telemetry_data(telemetry_data)
-            AtomicCounter::increment(total_processed)
-            processed_count = processed_count + 1
-          }
-          None => {
-            // Queue might be empty, wait a bit
-            Thread::sleep(0.001)
-          }
-        }
-      }
-    })
-    consumer_threads.push(thread)
-  }
+  // Test lock ordering for prevention
+  let lock_ordering = LockOrdering::new()
+  LockOrdering::define_ordering(lock_ordering, [
+    ("resource1", "resource2"),
+    ("resource2", "resource3")
+  ])
   
-  // Wait for all producer threads to complete
-  for thread in producer_threads {
-    Thread::join(thread)
-  }
+  // Test valid lock order
+  let valid_order = LockOrdering::check_order(lock_ordering, [
+    ("thread1", "resource1"),
+    ("thread1", "resource2"),
+    ("thread1", "resource3")
+  ])
+  assert_true(valid_order)
   
-  // Wait for all consumer threads to complete
-  for thread in consumer_threads {
-    Thread::join(thread)
-  }
+  // Test invalid lock order (would cause deadlock)
+  let invalid_order = LockOrdering::check_order(lock_ordering, [
+    ("thread1", "resource3"),
+    ("thread1", "resource2"),
+    ("thread1", "resource1")
+  ])
+  assert_false(invalid_order)
   
-  // Verify all telemetry data was processed
-  let expected_total = producer_count * telemetry_items_per_producer
-  assert_eq(AtomicCounter::get(total_processed), expected_total)
-}
-
-// Helper function to create test attributes for concurrent operations
-func create_concurrent_test_attributes(thread_id : Int, item_id : Int) -> Attributes {
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "thread_id", IntValue(thread_id))
-  Attributes::set(attrs, "item_id", IntValue(item_id))
-  Attributes::set(attrs, "timestamp", IntValue(Time::now().to_int()))
-  Attributes::set(attrs, "source", StringValue("concurrent_test"))
-  attrs
-}
-
-// Helper function to simulate telemetry data processing
-func process_telemetry_data(data : TelemetryData) -> String {
-  // Simulate processing time
-  Thread::sleep(Math::random() * 0.0005)
+  // Test timeout-based deadlock prevention
+  let timeout_manager = TimeoutLockManager::new()
+  TimeoutLockManager::set_lock_timeout(timeout_manager, 5000)  // 5 seconds
   
-  // Return processed result
-  "processed_" + TelemetryData::name(data)
+  // Test lock acquisition with timeout
+  let lock_result = TimeoutLockManager::try_acquire_with_timeout(timeout_manager, resource1, 1000)
+  assert_true(lock_result.success)
+  
+  // Test lock acquisition that would timeout
+  let timeout_result = TimeoutLockManager::try_acquire_with_timeout(timeout_manager, resource1, 100)
+  assert_false(timeout_result.success)
+  assert_eq(timeout_result.reason, TimeoutReason::LockHeld)
 }

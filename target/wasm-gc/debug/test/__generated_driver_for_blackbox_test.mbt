@@ -570,6 +570,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_realtime_stream_telemetry_tests.mbt": {
   },
+  "azimuth_realtime_stream_processing_tests.mbt": {
+  },
   "azimuth_realtime_stream_processing_quality_tests.mbt": {
   },
   "azimuth_realtime_stream_processing_performance_tests.mbt": {
@@ -842,6 +844,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_performance_resource_management_tests.mbt": {
   },
+  "azimuth_performance_optimization_tests.mbt": {
+  },
   "azimuth_performance_optimization_resource_tests.mbt": {
   },
   "azimuth_performance_optimization_resource_management_tests.mbt": {
@@ -1083,6 +1087,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_moonbit_advanced_features_tests.mbt": {
   },
   "azimuth_ml_integration_advanced_tests.mbt": {
+  },
+  "azimuth_ml_anomaly_detection_tests.mbt": {
   },
   "azimuth_metrics_tests.mbt": {
   },
@@ -1580,6 +1586,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_encryption_decryption_tests.mbt": {
   },
+  "azimuth_edge_iot_telemetry_tests.mbt": {
+  },
   "azimuth_edge_iot_telemetry_enhanced_tests.mbt": {
   },
   "azimuth_edge_iot_telemetry_comprehensive_tests.mbt": {
@@ -1619,6 +1627,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_diverse_comprehensive_tests.mbt": {
   },
   "azimuth_distributed_transaction_tracing_tests.mbt": {
+  },
+  "azimuth_distributed_tracing_tests.mbt": {
   },
   "azimuth_distributed_tracing_propagation_tests.mbt": {
   },
@@ -2181,6 +2191,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_advanced_string_processing_tests.mbt": {
   },
   "azimuth_advanced_serialization_tests.mbt": {
+  },
+  "azimuth_advanced_security_tests.mbt": {
   },
   "azimuth_advanced_resource_merge_strategy_tests.mbt": {
   },
