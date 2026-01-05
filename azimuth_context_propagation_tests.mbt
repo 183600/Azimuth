@@ -1,239 +1,343 @@
-// Azimuth Telemetry System - Context Propagation Test Suite
-// This file contains test cases for context propagation functionality
+// Azimuth Telemetry System - Distributed Context Propagation Tests
+// This file contains test cases for distributed tracing context propagation
 
-// Test 1: Context Basic Operations
-test "context basic operations" {
-  // Create root context
-  let root_ctx = Context::root()
-  assert_eq(root_ctx.data, None)
-  
-  // Create context key
-  let key = ContextKey::new("test.key")
-  assert_eq(key.key, "test.key")
-  
-  // Set value in context
-  let ctx_with_value = Context::with_value(root_ctx, key, "test_value")
-  
-  // Get value from context
-  let retrieved_value = Context::get(ctx_with_value, key)
-  assert_eq(retrieved_value, Some("test_value"))
-  
-  // Test getting non-existent value
-  let missing_key = ContextKey::new("missing.key")
-  let missing_value = Context::get(ctx_with_value, missing_key)
-  assert_eq(missing_value, None)
-}
-
-// Test 2: Context Chain Operations
-test "context chain operations" {
-  // Create root context
-  let root_ctx = Context::root()
-  
-  // Add first value
-  let key1 = ContextKey::new("first.key")
-  let ctx1 = Context::with_value(root_ctx, key1, "first_value")
-  
-  // Add second value
-  let key2 = ContextKey::new("second.key")
-  let ctx2 = Context::with_value(ctx1, key2, "second_value")
-  
-  // Add third value
-  let key3 = ContextKey::new("third.key")
-  let ctx3 = Context::with_value(ctx2, key3, "third_value")
-  
-  // Verify all values are accessible
-  let value1 = Context::get(ctx3, key1)
-  let value2 = Context::get(ctx3, key2)
-  let value3 = Context::get(ctx3, key3)
-  
-  assert_eq(value1, Some("first_value"))
-  assert_eq(value2, Some("second_value"))
-  assert_eq(value3, Some("third_value"))
-}
-
-// Test 3: Baggage Basic Operations
-test "baggage basic operations" {
-  // Create empty baggage
-  let baggage = Baggage::new()
-  assert_eq(baggage.entries.length(), 0)
-  
-  // Set baggage entry
-  let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "12345")
-  
-  // Get baggage entry
-  let user_id = Baggage::get_entry(baggage_with_entry, "user.id")
-  assert_eq(user_id, Some("12345"))
-  
-  // Get non-existent entry
-  let missing_entry = Baggage::get_entry(baggage_with_entry, "missing.key")
-  assert_eq(missing_entry, None)
-  
-  // Remove baggage entry
-  let baggage_without_entry = Baggage::remove_entry(baggage_with_entry, "user.id")
-  let removed_entry = Baggage::get_entry(baggage_without_entry, "user.id")
-  assert_eq(removed_entry, None)
-}
-
-// Test 4: Baggage Multiple Entries
-test "baggage multiple entries" {
-  // Create baggage with multiple entries
-  let baggage = Baggage::new()
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "12345")
-  let baggage2 = Baggage::set_entry(baggage1, "session.id", "abcdef")
-  let baggage3 = Baggage::set_entry(baggage2, "request.id", "req-789")
-  
-  // Verify all entries exist
-  let user_id = Baggage::get_entry(baggage3, "user.id")
-  let session_id = Baggage::get_entry(baggage3, "session.id")
-  let request_id = Baggage::get_entry(baggage3, "request.id")
-  
-  assert_eq(user_id, Some("12345"))
-  assert_eq(session_id, Some("abcdef"))
-  assert_eq(request_id, Some("req-789"))
-  
-  // Remove one entry and verify others still exist
-  let baggage_without_user = Baggage::remove_entry(baggage3, "user.id")
-  let removed_user_id = Baggage::get_entry(baggage_without_user, "user.id")
-  let remaining_session_id = Baggage::get_entry(baggage_without_user, "session.id")
-  let remaining_request_id = Baggage::get_entry(baggage_without_user, "request.id")
-  
-  assert_eq(removed_user_id, None)
-  assert_eq(remaining_session_id, Some("abcdef"))
-  assert_eq(remaining_request_id, Some("req-789"))
-}
-
-// Test 5: Span Context Operations
-test "span context operations" {
-  // Create span context
+// Test 1: Basic Context Propagation
+test "basic context propagation" {
+  // Create a root span context
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
-  let sampled = true
-  let trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  let root_ctx = SpanContext::new(trace_id, span_id, true, "")
   
-  let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
   
-  // Verify span context properties
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
-  assert_eq(SpanContext::is_sampled(span_ctx), sampled)
-  assert_true(SpanContext::is_valid(span_ctx))
-  
-  // Test invalid span context
-  let invalid_trace_id = ""
-  let invalid_span_id = ""
-  let invalid_span_ctx = SpanContext::new(invalid_trace_id, invalid_span_id, sampled, trace_state)
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
-}
-
-// Test 6: Text Map Carrier Operations
-test "text map carrier operations" {
-  // Create text map carrier
+  // Inject context into carrier
   let carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, root_ctx, carrier)
   
-  // Set headers
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  TextMapCarrier::set(carrier, "baggage", "user.id=12345,session.id=abcdef")
+  // Extract context from carrier
+  let extracted_ctx = Propagator::extract(propagator, carrier)
   
-  // Get headers
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let tracestate = TextMapCarrier::get(carrier, "tracestate")
-  let baggage = TextMapCarrier::get(carrier, "baggage")
-  let missing_header = TextMapCarrier::get(carrier, "missing.header")
-  
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(tracestate, None) // Simplified implementation returns None for non-traceparent
-  assert_eq(baggage, None) // Simplified implementation returns None for non-traceparent
-  assert_eq(missing_header, None)
+  // Verify extracted context matches original
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
 }
 
-// Test 7: W3C Trace Context Propagator
-test "w3c trace context propagator" {
-  // Create propagator
-  let propagator = W3CTraceContextPropagator::new()
+// Test 2: HTTP Headers Context Propagation
+test "http headers context propagation" {
+  // Create a span context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "test_state")
   
-  // Create context with span context
-  let root_ctx = Context::root()
+  // Create HTTP headers carrier
+  let headers = HttpHeaders::new()
+  
+  // Inject context into HTTP headers
+  let propagator = TraceContextPropagator::new()
+  Propagator::inject(propagator, span_ctx, headers)
+  
+  // Verify traceparent header is present
+  let traceparent = HttpHeaders::get(headers, "traceparent")
+  match traceparent {
+    Some(value) => {
+      assert_true(value.contains("00"))
+      assert_true(value.contains(trace_id))
+      assert_true(value.contains(span_id))
+      assert_true(value.contains("01")) // sampled flag
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify tracestate header is present
+  let tracestate = HttpHeaders::get(headers, "tracestate")
+  match tracestate {
+    Some(value) => assert_eq(value, "test_state")
+    None => assert_true(false)
+  }
+  
+  // Extract context from HTTP headers
+  let extracted_ctx = Propagator::extract(propagator, headers)
+  
+  // Verify extracted context matches original
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
+}
+
+// Test 3: Baggage Propagation
+test "baggage propagation" {
+  // Create a context with baggage
+  let baggage = Baggage::new()
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let final_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-67890")
+  
+  let context = Context::with_value(Context::root(), ContextKey::new("baggage"), final_baggage)
+  
+  // Create a baggage propagator
+  let baggage_propagator = BaggagePropagator::new()
+  
+  // Inject baggage into carrier
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(baggage_propagator, context, carrier)
+  
+  // Extract baggage from carrier
+  let extracted_context = Propagator::extract(baggage_propagator, carrier)
+  
+  // Verify baggage entries are preserved
+  let extracted_baggage = Context::get(extracted_context, ContextKey::new("baggage"))
+  match extracted_baggage {
+    Some(b) => {
+      let user_id = Baggage::get_entry(b, "user.id")
+      let request_id = Baggage::get_entry(b, "request.id")
+      
+      match (user_id, request_id) {
+        (Some(uid), Some(rid)) => {
+          assert_eq(uid, "12345")
+          assert_eq(rid, "req-67890")
+        }
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 4: Composite Propagation
+test "composite propagation" {
+  // Create a span context with baggage
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "test_state")
+  
+  let baggage = Baggage::new()
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  
+  // Create a context with both span context and baggage
+  let context = Context::with_value(
+    Context::with_value(Context::root(), ContextKey::new("baggage"), updated_baggage),
+    ContextKey::new("span_context"),
+    span_ctx
+  )
+  
+  // Create a composite propagator
+  let trace_propagator = TraceContextPropagator::new()
+  let baggage_propagator = BaggagePropagator::new()
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(composite_propagator, context, carrier)
+  
+  // Extract context from carrier
+  let extracted_context = Propagator::extract(composite_propagator, carrier)
+  
+  // Verify span context is preserved
+  let extracted_span_ctx = Context::get(extracted_context, ContextKey::new("span_context"))
+  match extracted_span_ctx {
+    Some(ctx) => {
+      assert_eq(SpanContext::trace_id(ctx), trace_id)
+      assert_eq(SpanContext::span_id(ctx), span_id)
+      assert_true(SpanContext::is_sampled(ctx))
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify baggage is preserved
+  let extracted_baggage = Context::get(extracted_context, ContextKey::new("baggage"))
+  match extracted_baggage {
+    Some(b) => {
+      let user_id = Baggage::get_entry(b, "user.id")
+      match user_id {
+        Some(uid) => assert_eq(uid, "12345")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Cross-Service Context Propagation
+test "cross-service context propagation" {
+  // Service A creates a span
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_a_id = "b7ad6b7169203331"
+  let span_a_ctx = SpanContext::new(trace_id, span_a_id, true, "")
+  
+  // Service A injects context into HTTP headers
+  let headers_a = HttpHeaders::new()
+  let propagator = TraceContextPropagator::new()
+  Propagator::inject(propagator, span_a_ctx, headers_a)
+  
+  // Service B extracts context from HTTP headers
+  let extracted_ctx_b = Propagator::extract(propagator, headers_a)
+  
+  // Service B creates a child span
+  let span_b_id = "c7ad6b7169203331"
+  let span_b_ctx = SpanContext::new(trace_id, span_b_id, true, "")
+  span_b_ctx.parent_span_id = Some(span_a_id)
+  
+  // Service B injects context into new headers for Service C
+  let headers_b = HttpHeaders::new()
+  Propagator::inject(propagator, span_b_ctx, headers_b)
+  
+  // Service C extracts context from headers
+  let extracted_ctx_c = Propagator::extract(propagator, headers_b)
+  
+  // Verify trace context is preserved across services
+  assert_eq(SpanContext::trace_id(extracted_ctx_c), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx_c), span_b_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx_c))
+}
+
+// Test 6: Context Propagation with Sampling Decision
+test "context propagation with sampling decision" {
+  // Create a non-sampled span context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let non_sampled_ctx = SpanContext::new(trace_id, span_id, false, "")
+  
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
+  
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, non_sampled_ctx, carrier)
+  
+  // Extract context from carrier
+  let extracted_ctx = Propagator::extract(propagator, carrier)
+  
+  // Verify sampling decision is preserved
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
+  assert_false(SpanContext::is_sampled(extracted_ctx))
+}
+
+// Test 7: Context Propagation with Custom Fields
+test "context propagation with custom fields" {
+  // Create a span context with custom state
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let trace_state = "vendor1=value1,vendor2=value2"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, trace_state)
+  
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
+  
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, span_ctx, carrier)
+  
+  // Extract context from carrier
+  let extracted_ctx = Propagator::extract(propagator, carrier)
+  
+  // Verify trace state is preserved
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
+  assert_eq(SpanContext::trace_state(extracted_ctx), trace_state)
+}
+
+// Test 8: Context Propagation with Corrupted Data
+test "context propagation with corrupted data" {
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
+  
+  // Test with corrupted traceparent
+  let corrupted_carrier = TextMapCarrier::new()
+  TextMapCarrier::set(corrupted_carrier, "traceparent", "invalid-format")
+  
+  // Extract should handle corrupted data gracefully
+  let extracted_ctx = Propagator::extract(propagator, corrupted_carrier)
+  
+  // Should return an invalid context
+  assert_false(SpanContext::is_valid(extracted_ctx))
+  
+  // Test with missing traceparent
+  let empty_carrier = TextMapCarrier::new()
+  
+  // Extract should handle missing data gracefully
+  let empty_ctx = Propagator::extract(propagator, empty_carrier)
+  
+  // Should return an invalid context
+  assert_false(SpanContext::is_valid(empty_ctx))
+}
+
+// Test 9: Context Propagation with Multiple Formats
+test "context propagation with multiple formats" {
+  // Create a span context
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
   let span_ctx = SpanContext::new(trace_id, span_id, true, "")
   
-  // Create carrier
-  let carrier = TextMapCarrier::new()
+  // Test with text map carrier
+  let text_carrier = TextMapCarrier::new()
+  let text_propagator = TraceContextPropagator::new()
+  Propagator::inject(text_propagator, span_ctx, text_carrier)
+  let extracted_from_text = Propagator::extract(text_propagator, text_carrier)
   
-  // Inject context into carrier
-  // Note: This is a simplified test since we can't directly access the propagator's inject method
-  // In a real implementation, this would inject the trace context into the carrier
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  assert_eq(SpanContext::trace_id(extracted_from_text), trace_id)
+  assert_eq(SpanContext::span_id(extracted_from_text), span_id)
   
-  // Verify injected traceparent
-  let injected_traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(injected_traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  // Test with HTTP headers carrier
+  let http_carrier = HttpHeaders::new()
+  Propagator::inject(text_propagator, span_ctx, http_carrier)
+  let extracted_from_http = Propagator::extract(text_propagator, http_carrier)
+  
+  assert_eq(SpanContext::trace_id(extracted_from_http), trace_id)
+  assert_eq(SpanContext::span_id(extracted_from_http), span_id)
+  
+  // Test with binary carrier
+  let binary_carrier = BinaryCarrier::new()
+  let binary_propagator = BinaryTraceContextPropagator::new()
+  Propagator::inject(binary_propagator, span_ctx, binary_carrier)
+  let extracted_from_binary = Propagator::extract(binary_propagator, binary_carrier)
+  
+  assert_eq(SpanContext::trace_id(extracted_from_binary), trace_id)
+  assert_eq(SpanContext::span_id(extracted_from_binary), span_id)
 }
 
-// Test 8: Composite Propagator Operations
-test "composite propagator operations" {
-  // Create individual propagators
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
+// Test 10: Context Propagation with Remote Parent
+test "context propagation with remote parent" {
+  // Create a remote parent span context
+  let remote_trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let remote_span_id = "b7ad6b7169203331"
+  let remote_ctx = SpanContext::new(remote_trace_id, remote_span_id, true, "")
+  remote_ctx.is_remote = true
   
-  // Create composite propagator
-  let composite_propagator = CompositePropagator::new([trace_propagator])
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
   
-  // Create context
-  let ctx = Context::root()
-  let key = ContextKey::new("test.key")
-  let ctx_with_value = Context::with_value(ctx, key, "test_value")
-  
-  // Create carrier
+  // Inject remote context into carrier
   let carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, remote_ctx, carrier)
   
-  // Inject context
-  CompositePropagator::inject(composite_propagator, ctx_with_value, carrier)
+  // Extract context from carrier
+  let extracted_ctx = Propagator::extract(propagator, carrier)
   
-  // Verify injection
-  let injected_traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(injected_traceparent, Some("00-test-trace-id-test-span-id-01"))
+  // Verify remote flag is preserved
+  assert_eq(SpanContext::trace_id(extracted_ctx), remote_trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), remote_span_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
+  assert_true(SpanContext::is_remote(extracted_ctx))
   
-  // Extract context
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_eq(extracted_value, Some("true"))
-}
-
-// Test 9: Cross Service Context Propagation
-test "cross service context propagation" {
-  // Service A: Create initial context
-  let service_a_ctx = Context::root()
-  let trace_id_key = ContextKey::new("trace.id")
-  let service_a_ctx_with_trace = Context::with_value(service_a_ctx, trace_id_key, "trace-123")
+  // Create a local child span
+  let local_span_id = "c7ad6b7169203331"
+  let local_ctx = SpanContext::new(remote_trace_id, local_span_id, true, "")
+  local_ctx.parent_span_id = Some(remote_span_id)
+  local_ctx.is_remote = false
   
-  // Service A: Add baggage
-  let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-456")
+  // Inject local context into carrier
+  let local_carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, local_ctx, local_carrier)
   
-  // Service A: Create carrier for downstream call
-  let carrier = TextMapCarrier::new()
-  TextMapCarrier::set(carrier, "traceparent", "00-trace-123-span-456-01")
-  TextMapCarrier::set(carrier, "baggage", "user.id=user-456")
+  // Extract local context from carrier
+  let extracted_local_ctx = Propagator::extract(propagator, local_carrier)
   
-  // Service B: Extract context from carrier
-  let service_b_ctx = Context::root()
-  let extracted_traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let extracted_baggage = TextMapCarrier::get(carrier, "baggage")
-  
-  assert_eq(extracted_traceparent, Some("00-trace-123-span-456-01"))
-  assert_eq(extracted_baggage, None) // Simplified implementation
-  
-  // Service B: Add its own context
-  let service_b_ctx_with_span = Context::with_value(service_b_ctx, ContextKey::new("span.id"), "span-789")
-  
-  // Service B: Create carrier for further downstream call
-  let downstream_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(downstream_carrier, "traceparent", "00-trace-123-span-789-01")
-  
-  // Verify trace ID is preserved across services
-  let downstream_traceparent = TextMapCarrier::get(downstream_carrier, "traceparent")
-  assert_eq(downstream_traceparent, Some("00-trace-123-span-789-01"))
-  assert_true(downstream_traceparent.unwrap().contains("trace-123"))
+  // Verify local context
+  assert_eq(SpanContext::trace_id(extracted_local_ctx), remote_trace_id)
+  assert_eq(SpanContext::span_id(extracted_local_ctx), local_span_id)
+  assert_true(SpanContext::is_sampled(extracted_local_ctx))
+  assert_false(SpanContext::is_remote(extracted_local_ctx))
 }
