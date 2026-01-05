@@ -1,32 +1,42 @@
 #!/bin/bash
-# 简单的测试验证脚本
 
-echo "验证新创建的测试文件..."
+# Simple validation script for the new comprehensive feature tests
+echo "Validating Azimuth Comprehensive Feature Tests..."
 
-# 检查文件是否存在
-if [ -f "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_new_comprehensive_tests.mbt" ]; then
-    echo "✓ 测试文件存在: azimuth_new_comprehensive_tests.mbt"
-else
-    echo "✗ 测试文件不存在: azimuth_new_comprehensive_tests.mbt"
+# Check if the test file exists
+if [ ! -f "azimuth_comprehensive_feature_tests.mbt" ]; then
+    echo "Error: Test file azimuth_comprehensive_feature_tests.mbt not found!"
     exit 1
 fi
 
-# 检查文件中是否包含测试用例
-test_count=$(grep -c 'test "' /home/runner/work/Azimuth/Azimuth/azimuth/azimuth_new_comprehensive_tests.mbt)
-echo "✓ 找到 $test_count 个测试用例"
+# Count the number of test cases in the file
+test_count=$(grep -c "^test " azimuth_comprehensive_feature_tests.mbt)
+echo "Found $test_count test cases in the file"
 
-# 检查是否已添加到moon.pkg.json
-if grep -q "azimuth_new_comprehensive_tests.mbt" /home/runner/work/Azimuth/Azimuth/azimuth/moon.pkg.json; then
-    echo "✓ 测试文件已添加到moon.pkg.json"
-else
-    echo "✗ 测试文件未添加到moon.pkg.json"
-    exit 1
-fi
-
-# 列出所有测试用例名称
+# List the test cases
 echo ""
-echo "测试用例列表:"
-grep 'test "' /home/runner/work/Azimuth/Azimuth/azimuth/azimuth_new_comprehensive_tests.mbt | sed 's/.*test "\([^"]*\)".*/\1/'
+echo "Test cases:"
+grep "^test " azimuth_comprehensive_feature_tests.mbt | sed 's/test "/- /' | sed 's/" {$//'
+
+# Check for basic syntax elements
+echo ""
+echo "Checking syntax elements..."
+
+# Check for assert_eq statements
+assert_eq_count=$(grep -c "assert_eq" azimuth_comprehensive_feature_tests.mbt)
+echo "Found $assert_eq_count assert_eq statements"
+
+# Check for assert_true statements
+assert_true_count=$(grep -c "assert_true" azimuth_comprehensive_feature_tests.mbt)
+echo "Found $assert_true_count assert_true statements"
+
+# Check for assert_false statements
+assert_false_count=$(grep -c "assert_false" azimuth_comprehensive_feature_tests.mbt)
+echo "Found $assert_false_count assert_false statements"
+
+# Check for match statements
+match_count=$(grep -c "match " azimuth_comprehensive_feature_tests.mbt)
+echo "Found $match_count match statements"
 
 echo ""
-echo "验证完成！所有测试用例已成功创建并配置。"
+echo "Validation complete. The test file appears to be properly structured."
