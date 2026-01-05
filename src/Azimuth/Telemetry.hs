@@ -26,7 +26,7 @@ module Azimuth.Telemetry
     , logMessage
     ) where
 
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, null)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.IORef
 import System.Random (randomIO)
@@ -36,6 +36,7 @@ import Control.Concurrent.MVar
 import Control.Concurrent (myThreadId, ThreadId)
 import Data.Hashable (hash)
 import Control.Monad (when)
+import qualified Data.Map as Map
 import Prelude hiding (id)
 
 -- | Global trace context storage
@@ -57,6 +58,11 @@ globalConfig = unsafePerformIO (newIORef defaultConfig)
 {-# NOINLINE logCounter #-}
 logCounter :: IORef Int
 logCounter = unsafePerformIO (newIORef 0)
+
+-- | Global metric registry for sharing values by name
+{-# NOINLINE metricRegistry #-}
+metricRegistry :: MVar (Map.Map (Text, Text) (MVar Double))
+metricRegistry = unsafePerformIO (newMVar Map.empty)
 
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
@@ -104,6 +110,8 @@ shutdownTelemetry = do
     modifyMVar_ traceContext (\_ -> return Nothing)
     -- Reset span counter
     writeIORef spanCounter 0
+    -- Clear metric registry
+    modifyMVar_ metricRegistry (\_ -> return Map.empty)
 
 -- | Generate a random hex string
 generateRandomHex :: Int -> IO Text
@@ -146,15 +154,36 @@ instance Eq Metric where
 
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
-createMetric name unit = do
-    valueRef <- newMVar 0.0
-    return $ Metric name valueRef unit
+createMetric name unit 
+    | Data.Text.null name = error "Metric name cannot be empty"
+    | otherwise = do
+        -- Check if a metric with this name and unit already exists
+        modifyMVar metricRegistry $ \registry -> do
+            case Map.lookup (name, unit) registry of
+                Just existingValueRef -> do
+                    -- Reuse existing value reference
+                    return (registry, Metric name existingValueRef unit)
+                Nothing -> do
+                    -- Create new value reference and add to registry
+                    newValueRef <- newMVar 0.0
+                    let newRegistry = Map.insert (name, unit) newValueRef registry
+                    return (newRegistry, Metric name newValueRef unit)
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
-    valueRef <- newMVar initialValue
-    return $ Metric name valueRef unit
+    -- Check if a metric with this name and unit already exists
+    modifyMVar metricRegistry $ \registry -> do
+        case Map.lookup (name, unit) registry of
+            Just existingValueRef -> do
+                -- Set the existing value to the initial value
+                swapMVar existingValueRef initialValue
+                return (registry, Metric name existingValueRef unit)
+            Nothing -> do
+                -- Create new value reference with initial value and add to registry
+                newValueRef <- newMVar initialValue
+                let newRegistry = Map.insert (name, unit) newValueRef registry
+                return (newRegistry, Metric name newValueRef unit)
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()

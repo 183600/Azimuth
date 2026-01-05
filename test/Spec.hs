@@ -4,6 +4,7 @@
 
 import Test.Hspec
 import Test.QuickCheck
+import Control.Exception (try, SomeException)
 import Control.Monad (replicateM_)
 import qualified Data.Text as Text
 import Data.Text (pack, unpack)
@@ -201,8 +202,10 @@ main = hspec $ do
     -- 边界条件测试
     describe "Boundary Conditions" $ do
       it "should handle empty metric names" $ do
-        metric <- createMetric "" "count"
-        metricName metric `shouldBe` ""
+        result <- try $ createMetric "" "count"
+        case result of
+          Left (_ :: SomeException) -> pure () -- Expected to fail
+          Right _ -> expectationFailure "Should have failed with empty metric name"
       
       it "should handle empty span names" $ do
         span <- createSpan ""
