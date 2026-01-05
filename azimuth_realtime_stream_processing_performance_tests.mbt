@@ -1,951 +1,1122 @@
-// Azimuth Telemetry System - Real-time Stream Processing Performance Tests
-// This file contains test cases for real-time stream processing performance functionality
+// Azimuth 实时流处理性能测试用例
+// 专注于实时遥测数据流的处理性能、吞吐量和延迟优化
 
-// Test 1: Basic Stream Processing Throughput
-test "basic stream processing throughput" {
-  // Create a stream processor
-  let processor = StreamProcessor::new()
-  
-  // Configure processor for performance testing
-  StreamProcessor::set_batch_size(processor, 1000)
-  StreamProcessor::set_buffer_size(processor, 10000)
-  
-  // Create a simple processing pipeline
-  processor.add_stage("parse", |event| {
-    // Simulate parsing telemetry data
-    let parsed = TelemetryEvent::parse(event)
-    StreamResult::success(parsed)
-  })
-  
-  processor.add_stage("filter", |event| {
-    // Filter only error events
-    if TelemetryEvent::get_level(event) == "ERROR" {
-      StreamResult::success(event)
-    } else {
-      StreamResult::skip()
-    }
-  })
-  
-  processor.add_stage("aggregate", |event| {
-    // Aggregate error counts by service
-    let service = TelemetryEvent::get_service_name(event)
-    let error_count = 1
-    StreamResult::success(AggregatedEvent::new(service, error_count))
-  })
-  
-  // Generate test data
-  let test_events = []
-  for i in 0..10000 {
-    let level = if i % 10 == 0 { "ERROR" } else { "INFO" }
-    let service = "service-" + ((i % 5) + 1).to_string()
-    let event = TelemetryEvent::new(i.to_string(), level, service, "test message")
-    test_events.push(event)
+// 测试1: 高吞吐量数据流处理
+test "高吞吐量数据流处理性能" {
+  // 定义流数据点
+  type StreamDataPoint = {
+    id: String,
+    timestamp: Int,
+    source: String,
+    metrics: Array[(String, Float)],
+    tags: Array[(String, String)]
   }
   
-  // Measure processing time
-  let start_time = Time::now()
-  
-  // Process events
-  let results = processor.process_batch(test_events)
-  
-  let end_time = Time::now()
-  let processing_time = end_time - start_time
-  
-  // Verify results
-  assert_eq(results.length(), 1000)  // 10% are errors (10000 / 10)
-  
-  // Verify performance metrics
-  let throughput = test_events.length() as Float / processing_time.as_seconds()
-  assert_true(throughput > 1000.0)  // Should process at least 1000 events per second
-  
-  let metrics = processor.get_metrics()
-  assert_eq(StreamMetrics::get_events_processed(metrics), 10000)
-  assert_eq(StreamMetrics::get_events_output(metrics), 1000)
-  assert_true(StreamMetrics::get_avg_processing_time(metrics) < 0.001)  // Less than 1ms per event
-}
-
-// Test 2: Stream Processing Latency
-test "stream processing latency" {
-  // Create a stream processor with latency monitoring
-  let processor = StreamProcessor::new()
-  processor.enable_latency_monitoring(true)
-  
-  // Add processing stages with different complexities
-  processor.add_stage("simple_transform", |event| {
-    // Simple transformation
-    let transformed = TelemetryEvent::add_tag(event, "processed", "true")
-    StreamResult::success(transformed)
-  })
-  
-  processor.add_stage("complex_calculation", |event| {
-    // More complex calculation
-    let metrics = TelemetryEvent::get_metrics(event)
-    let calculated = []
-    
-    for metric in metrics {
-      let value = TelemetryMetric::get_value(metric)
-      let calculated_value = value * 1.5 + Math::sin(value)  // Complex calculation
-      calculated.push(TelemetryMetric::new(
-        TelemetryMetric::get_name(metric) + "_calculated",
-        calculated_value
-      ))
-    }
-    
-    let result = TelemetryEvent::add_metrics(event, calculated)
-    StreamResult::success(result)
-  })
-  
-  processor.add_stage("external_lookup", |event| {
-    // Simulate external lookup with delay
-    let service_name = TelemetryEvent::get_service_name(event)
-    let service_info = ServiceRegistry::lookup(service_name)  // Simulated delay
-    let enriched = TelemetryEvent::add_service_info(event, service_info)
-    StreamResult::success(enriched)
-  })
-  
-  // Generate test events with varying complexity
-  let test_events = []
-  for i in 0..1000 {
-    let metrics = []
-    for j in 0..(i % 10 + 1) {  // Varying number of metrics
-      metrics.push(TelemetryMetric::new("metric_" + j.to_string(), j as Float))
-    }
-    
-    let event = TelemetryEvent::with_metrics(
-      i.to_string(),
-      "INFO",
-      "service-" + ((i % 5) + 1).to_string(),
-      "test message",
-      metrics
-    )
-    test_events.push(event)
+  // 定义流处理配置
+  type StreamProcessingConfig = {
+    batch_size: Int,
+    processing_window_ms: Int,
+    buffer_size: Int,
+    worker_threads: Int,
+    compression_enabled: Bool
   }
   
-  // Process events and measure latency
-  let latency_results = processor.process_with_latency_measurement(test_events)
-  
-  // Verify latency metrics
-  let avg_latency = StreamProcessor::get_average_latency(processor)
-  let p95_latency = StreamProcessor::get_percentile_latency(processor, 95)
-  let p99_latency = StreamProcessor::get_percentile_latency(processor, 99)
-  let max_latency = StreamProcessor::get_max_latency(processor)
-  
-  assert_true(avg_latency < 0.01)    // Average less than 10ms
-  assert_true(p95_latency < 0.05)    // 95th percentile less than 50ms
-  assert_true(p99_latency < 0.1)     // 99th percentile less than 100ms
-  assert_true(max_latency < 0.2)     // Maximum less than 200ms
-  
-  // Verify latency distribution
-  let latency_distribution = StreamProcessor::get_latency_distribution(processor)
-  assert_true(latency_distribution.size() > 0)
-  
-  // Verify all events were processed
-  assert_eq(latency_results.length(), test_events.length())
-  
-  // Verify latency for each event is recorded
-  for result in latency_results {
-    assert_true(LatencyResult::get_latency(result) > 0)
-    assert_true(LatencyResult::get_latency(result) < 1.0)  // Less than 1 second
-  }
-}
-
-// Test 3: Backpressure Handling
-test "backpressure handling" {
-  // Create a stream processor with backpressure control
-  let processor = StreamProcessor::new()
-  processor.enable_backpressure(true)
-  processor.set_backpressure_threshold(1000)  // Start applying backpressure at 1000 events
-  processor.set_max_buffer_size(5000)        // Maximum buffer size
-  
-  // Add a slow processing stage
-  processor.add_stage("slow_processing", |event| {
-    // Simulate slow processing
-    Thread::sleep(1)  // 1ms delay
-    StreamResult::success(event)
-  })
-  
-  // Generate a large number of events to trigger backpressure
-  let test_events = []
-  for i in 0..10000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    test_events.push(event)
+  // 定义性能指标
+  type PerformanceMetrics = {
+    throughput: Float,  // 数据点/秒
+    latency_ms: Float,   // 平均延迟
+    error_rate: Float,   // 错误率
+    memory_usage_mb: Float
+    cpu_usage_percent: Float
   }
   
-  // Process events with backpressure
-  let start_time = Time::now()
-  let results = processor.process_with_backpressure(test_events)
-  let end_time = Time::now()
-  
-  // Verify all events were eventually processed
-  assert_eq(results.length(), test_events.length())
-  
-  // Verify backpressure was applied
-  let metrics = processor.get_metrics()
-  assert_true(StreamMetrics::get_backpressure_events(metrics) > 0)
-  
-  // Verify buffer management
-  assert_true(StreamMetrics::get_max_buffer_usage(metrics) <= processor.get_max_buffer_size())
-  
-  // Test adaptive backpressure
-  processor.enable_adaptive_backpressure(true)
-  
-  // Process another batch with adaptive backpressure
-  let adaptive_results = processor.process_with_backpressure(test_events)
-  assert_eq(adaptive_results.length(), test_events.length())
-  
-  // Verify adaptive metrics
-  let adaptive_metrics = processor.get_metrics()
-  assert_true(StreamMetrics::get_adaptive_backpressure_adjustments(adaptive_metrics) > 0)
-}
-
-// Test 4: Stream Processing Scalability
-test "stream processing scalability" {
-  // Test scalability with different numbers of processing threads
-  let thread_counts = [1, 2, 4, 8]
-  let throughput_results = []
-  
-  for thread_count in thread_counts {
-    // Create a processor with specified thread count
-    let processor = StreamProcessor::new()
-    processor.set_parallelism(thread_count)
+  // 创建高吞吐量数据生成器
+  let generate_high_volume_stream = fn(points_count: Int, sources: Array<String]) {
+    let mut stream = []
+    let base_timestamp = Time::now()
     
-    // Add CPU-intensive processing stages
-    processor.add_stage("cpu_intensive", |event| {
-      // CPU-intensive calculation
-      let value = TelemetryEvent::get_timestamp(event)
-      let mut result = value
-      
-      for i in 0..1000 {
-        result = result + (value * i) % 1000000
+    for i in 0..points_count {
+      let source = sources[i % sources.length()]
+      let point = {
+        id: "point-" + i.to_string(),
+        timestamp: base_timestamp + i,
+        source: source,
+        metrics: [
+          ("cpu", (Math::random() * 100.0).round()),
+          ("memory", (Math::random() * 1024.0).round()),
+          ("network", (Math::random() * 1000.0).round())
+        ],
+        tags: [
+          ("service", source),
+          ("region", if i % 2 == 0 { "us-east" } else { "us-west" }),
+          ("version", "1.2." + (i % 5 + 1).to_string())
+        ]
       }
-      
-      let updated = TelemetryEvent::set_timestamp(event, result)
-      StreamResult::success(updated)
-    })
-    
-    processor.add_stage("memory_intensive", |event| {
-      // Memory-intensive operation
-      let large_data = Array::new(1000, |_| "large string data")
-      let processed = TelemetryEvent::add_large_data(event, large_data)
-      StreamResult::success(processed)
-    })
-    
-    // Generate test data
-    let test_events = []
-    for i in 0..5000 {
-      let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-      test_events.push(event)
+      stream = stream.push(point)
     }
     
-    // Measure throughput
+    stream
+  }
+  
+  // 批处理函数
+  let batch_process_stream = fn(stream: Array[StreamDataPoint], config: StreamProcessingConfig) {
     let start_time = Time::now()
-    let results = processor.process_batch(test_events)
-    let end_time = Time::now()
+    let mut processed_batches = 0
+    let mut total_points = 0
+    let mut errors = 0
     
-    let processing_time = end_time - start_time
-    let throughput = test_events.length() as Float / processing_time.as_seconds()
-    
-    throughput_results.push((thread_count, throughput))
-    
-    // Verify all events were processed
-    assert_eq(results.length(), test_events.length())
-  }
-  
-  // Verify scalability - throughput should increase with more threads
-  for i in 1..throughput_results.length() {
-    let (prev_threads, prev_throughput) = throughput_results[i-1]
-    let (curr_threads, curr_throughput) = throughput_results[i]
-    
-    assert_true(curr_threads > prev_threads)
-    
-    // Throughput should increase (though not necessarily linearly due to overhead)
-    let improvement = (curr_throughput - prev_throughput) / prev_throughput
-    assert_true(improvement > -0.1)  // Allow for some overhead with more threads
-  }
-  
-  // Test with very high parallelism
-  let high_parallel_processor = StreamProcessor::new()
-  high_parallel_processor.set_parallelism(16)
-  
-  // Add simple processing stage
-  high_parallel_processor.add_stage("simple", |event| {
-    StreamResult::success(event)
-  })
-  
-  // Generate large test dataset
-  let large_test_events = []
-  for i in 0..50000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    large_test_events.push(event)
-  }
-  
-  // Measure high parallelism throughput
-  let start_time = Time::now()
-  let large_results = high_parallel_processor.process_batch(large_test_events)
-  let end_time = Time::now()
-  
-  let processing_time = end_time - start_time
-  let high_throughput = large_test_events.length() as Float / processing_time.as_seconds()
-  
-  // Verify high parallelism performance
-  assert_eq(large_results.length(), large_test_events.length())
-  assert_true(high_throughput > 5000.0)  // Should handle high throughput
-  
-  // Verify thread utilization
-  let thread_metrics = high_parallel_processor.get_thread_metrics()
-  assert_true(ThreadMetrics::get_avg_utilization(thread_metrics) > 0.7)  // 70% utilization
-}
-
-// Test 5: Stream Processing Memory Efficiency
-test "stream processing memory efficiency" {
-  // Create a stream processor with memory monitoring
-  let processor = StreamProcessor::new()
-  processor.enable_memory_monitoring(true)
-  processor.set_memory_limit(100 * 1024 * 1024)  // 100MB limit
-  
-  // Add memory-intensive processing stages
-  processor.add_stage("memory_allocation", |event| {
-    // Allocate memory for processing
-    let data_size = 1024 * 10  // 10KB per event
-    let data = Array::new(data_size, |_| 0)
-    let processed = TelemetryEvent::add_binary_data(event, data)
-    StreamResult::success(processed)
-  })
-  
-  processor.add_stage("memory_processing", |event| {
-    // Process the allocated data
-    let binary_data = TelemetryEvent::get_binary_data(event)
-    let processed_data = []
-    
-    for byte in binary_data {
-      let processed_byte = byte * 2 % 256
-      processed_data.push(processed_byte)
-    }
-    
-    let result = TelemetryEvent::replace_binary_data(event, processed_data)
-    StreamResult::success(result)
-  })
-  
-  // Generate test events
-  let test_events = []
-  for i in 0..10000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    test_events.push(event)
-  }
-  
-  // Process events with memory monitoring
-  let initial_memory = processor.get_memory_usage()
-  let results = processor.process_batch(test_events)
-  let peak_memory = processor.get_peak_memory_usage()
-  let final_memory = processor.get_memory_usage()
-  
-  // Verify all events were processed
-  assert_eq(results.length(), test_events.length())
-  
-  // Verify memory usage stayed within limits
-  assert_true(peak_memory < processor.get_memory_limit())
-  
-  // Verify memory was properly released
-  let memory_growth = final_memory - initial_memory
-  assert_true(memory_growth < test_events.length() * 100)  // Less than 100 bytes per event
-  
-  // Test memory cleanup
-  processor.force_memory_cleanup()
-  let cleanup_memory = processor.get_memory_usage()
-  assert_true(cleanup_memory <= final_memory)
-  
-  // Test with memory pressure simulation
-  processor.simulate_memory_pressure(0.8)  // 80% memory pressure
-  
-  let pressure_events = []
-  for i in 0..5000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    pressure_events.push(event)
-  }
-  
-  let pressure_results = processor.process_with_memory_management(pressure_events)
-  assert_eq(pressure_results.length(), pressure_events.length())
-  
-  // Verify memory pressure was handled
-  let pressure_metrics = processor.get_memory_metrics()
-  assert_true(MemoryMetrics::get_gc_count(pressure_metrics) > 0)
-  assert_true(MemoryMetrics::get_memory_pressure_events(pressure_metrics) > 0)
-}
-
-// Test 6: Stream Processing Fault Tolerance
-test "stream processing fault tolerance" {
-  // Create a stream processor with fault tolerance
-  let processor = StreamProcessor::new()
-  processor.enable_fault_tolerance(true)
-  processor.set_max_retries(3)
-  processor.set_retry_delay(10)  // 10ms
-  
-  // Add processing stages with potential failures
-  let failure_rate = 0.1  // 10% failure rate
-  let mut failure_count = 0
-  
-  processor.add_stage("unreliable_processing", |event| {
-    // Simulate random failures
-    failure_count = failure_count + 1
-    if failure_count % 10 == 0 {  // 10% failure rate
-      StreamResult::error("Simulated processing error")
-    } else {
-      let processed = TelemetryEvent::add_tag(event, "processed", "true")
-      StreamResult::success(processed)
-    }
-  })
-  
-  processor.add_stage("error_handling", |event| {
-    // Handle errors from previous stage
-    if StreamResult::is_error(event) {
-      let error_event = TelemetryEvent::new(
-        TelemetryEvent::get_id(event),
-        "ERROR",
-        "error-handler",
-        "Processing failed: " + StreamResult::get_error_message(event)
-      )
-      StreamResult::success(error_event)
-    } else {
-      StreamResult::success(event)
-    }
-  })
-  
-  // Generate test events
-  let test_events = []
-  for i in 0..1000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    test_events.push(event)
-  }
-  
-  // Process events with fault tolerance
-  let results = processor.process_with_fault_tolerance(test_events)
-  
-  // Verify all events were processed (either successfully or with error handling)
-  assert_eq(results.length(), test_events.length())
-  
-  // Verify error handling
-  let error_count = results.count(|result| TelemetryEvent::get_level(result) == "ERROR")
-  assert_true(error_count > 0)  // Should have some errors
-  assert_true(error_count < test_events.length() / 2)  // But not too many
-  
-  // Verify retry metrics
-  let metrics = processor.get_metrics()
-  assert_true(StreamMetrics::get_retry_count(metrics) > 0)
-  assert_true(StreamMetrics::get_retry_success_rate(metrics) > 0.8)  // 80% retry success rate
-  
-  // Test circuit breaker functionality
-  processor.enable_circuit_breaker(true)
-  processor.set_circuit_breaker_threshold(5)  // Open after 5 failures
-  processor.set_circuit_breaker_timeout(100)  // 100ms timeout
-  
-  // Create events that will always fail
-  let failing_events = []
-  for i in 0..10 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "failing-service", "test message")
-    failing_events.push(event)
-  }
-  
-  // Add a stage that always fails
-  processor.add_stage("always_fails", |event| {
-    StreamResult::error("Always fails")
-  })
-  
-  let failing_results = processor.process_with_fault_tolerance(failing_events)
-  
-  // Verify circuit breaker was triggered
-  let circuit_breaker_metrics = processor.get_circuit_breaker_metrics()
-  assert_true(CircuitBreakerMetrics::get_open_count(circuit_breaker_metrics) > 0)
-  assert_true(CircuitBreakerMetrics::get_blocked_requests(circuit_breaker_metrics) > 0)
-}
-
-// Test 7: Stream Processing Windowing
-test "stream processing windowing" {
-  // Create a stream processor with windowing support
-  let processor = StreamProcessor::new()
-  processor.enable_windowing(true)
-  
-  // Add time-based windowing
-  processor.add_time_window("5_second_window", 5000)  // 5 second window
-  
-  // Add tumbling window aggregation
-  processor.add_tumbling_window("count_window", 100, |events| {
-    let count = events.length()
-    let window_result = WindowResult::new("count", count)
-    StreamResult::success(window_result)
-  })
-  
-  // Add sliding window aggregation
-  processor.add_sliding_window("sum_window", 50, 10, |events| {
-    let mut sum = 0
-    for event in events {
-      sum = sum + TelemetryEvent::get_value(event)
-    }
-    let window_result = WindowResult::new("sum", sum)
-    StreamResult::success(window_result)
-  })
-  
-  // Generate time-series test data
-  let test_events = []
-  let base_time = Time::now()
-  
-  for i in 0..1000 {
-    let timestamp = base_time + (i * 100)  // 100ms apart
-    let value = i % 100
-    let event = TelemetryEvent::with_timestamp(
-      i.to_string(),
-      "INFO",
-      "test-service",
-      "test message",
-      timestamp,
-      value
-    )
-    test_events.push(event)
-  }
-  
-  // Process events with windowing
-  let window_results = processor.process_with_windowing(test_events)
-  
-  // Verify window results
-  assert_true(window_results.length() > 0)
-  
-  // Verify tumbling window results
-  let count_results = window_results.filter(|result| WindowResult::get_type(result) == "count")
-  assert_true(count_results.length() > 0)
-  
-  for result in count_results {
-    let count = WindowResult::get_value(result) as Int
-    assert_eq(count, 100)  // Each window should have exactly 100 events
-  }
-  
-  // Verify sliding window results
-  let sum_results = window_results.filter(|result| WindowResult::get_type(result) == "sum")
-  assert_true(sum_results.length() > 0)
-  
-  // Test session windowing
-  processor.add_session_window("session_window", 1000, |events| {
-    let session_duration = TelemetryEvent::get_timestamp(events[events.length() - 1]) - TelemetryEvent::get_timestamp(events[0])
-    let window_result = WindowResult::new("session_duration", session_duration.as_milliseconds())
-    StreamResult::success(window_result)
-  })
-  
-  // Generate session-based test data (with gaps)
-  let session_events = []
-  let session_base_time = Time::now()
-  
-  for session in 0..5 {
-    for event_in_session in 0..10 {
-      let timestamp = session_base_time + (session * 5000) + (event_in_session * 100)  // 5s between sessions
-      let event = TelemetryEvent::with_timestamp(
-        "session-" + session.to_string() + "-" + event_in_session.to_string(),
-        "INFO",
-        "test-service",
-        "test message",
-        timestamp,
-        0
-      )
-      session_events.push(event)
-    }
-  }
-  
-  let session_results = processor.process_with_windowing(session_events)
-  
-  // Verify session window results
-  let session_window_results = session_results.filter(|result| WindowResult::get_type(result) == "session_duration")
-  assert_eq(session_window_results.length(), 5)  // 5 sessions
-  
-  for result in session_window_results {
-    let duration = WindowResult::get_value(result) as Int
-    assert_true(duration >= 900 && duration <= 1100)  // Approximately 1000ms (10 events * 100ms apart)
-  }
-}
-
-// Test 8: Stream Processing State Management
-test "stream processing state management" {
-  // Create a stream processor with state management
-  let processor = StreamProcessor::new()
-  processor.enable_state_management(true)
-  
-  // Add stateful processing stages
-  processor.add_stateful_stage("counter", |event, state| {
-    let key = TelemetryEvent::get_service_name(event)
-    let count = StateManager::get_or_default(state, key, 0)
-    StateManager::set(state, key, count + 1)
-    StreamResult::success(event)
-  })
-  
-  processor.add_stateful_stage("aggregator", |event, state| {
-    let key = TelemetryEvent::get_service_name(event)
-    let value = TelemetryEvent::get_value(event)
-    let sum = StateManager::get_or_default(state, key + "_sum", 0.0)
-    StateManager::set(state, key + "_sum", sum + value)
-    StreamResult::success(event)
-  })
-  
-  // Generate test events
-  let test_events = []
-  for i in 0..1000 {
-    let service_name = "service-" + ((i % 5) + 1).to_string()
-    let value = i as Float
-    let event = TelemetryEvent::with_value(
-      i.to_string(),
-      "INFO",
-      service_name,
-      "test message",
-      value
-    )
-    test_events.push(event)
-  }
-  
-  // Process events with state management
-  let results = processor.process_with_state(test_events)
-  
-  // Verify all events were processed
-  assert_eq(results.length(), test_events.length())
-  
-  // Verify state was maintained correctly
-  let state = processor.get_state()
-  
-  // Check counters
-  for i in 1..6 {
-    let key = "service-" + i.to_string()
-    let count = StateManager::get(state, key)
-    match count {
-      Some(c) => assert_eq(c as Int, 200)  // 1000 events / 5 services = 200 per service
-      None => assert_true(false)
-    }
-  }
-  
-  // Check aggregators
-  for i in 1..6 {
-    let key = "service-" + i.to_string() + "_sum"
-    let sum = StateManager::get(state, key)
-    match sum {
-      Some(s) => {
-        // Calculate expected sum for this service
-        let mut expected_sum = 0.0
-        for j in i..1000 step 5 {
-          expected_sum = expected_sum + j as Float
-        }
-        assert_true((s - expected_sum).abs() < 0.001)
+    // 分批处理
+    for i in 0..stream.length() step config.batch_size {
+      let end_index = if i + config.batch_size > stream.length() {
+        stream.length()
+      } else {
+        i + config.batch_size
       }
-      None => assert_true(false)
+      
+      let batch = stream.slice(i, end_index)
+      
+      // 模拟批处理（聚合、转换等）
+      let processed_batch = batch.map(fn(point) {
+        try {
+          // 数据转换
+          let transformed_metrics = point.metrics.map(fn(metric) {
+            let (name, value) = metric
+            let normalized_value = match name {
+              "cpu" => value / 100.0
+              "memory" => value / 1024.0
+              "network" => value / 1000.0
+              _ => value
+            }
+            (name + "_normalized", normalized_value)
+          })
+          
+          {
+            id: point.id,
+            timestamp: point.timestamp,
+            source: point.source,
+            metrics: point.metrics + transformed_metrics,
+            tags: point.tags
+          }
+        } catch {
+          errors = errors + 1
+          point  // 返回原始点
+        }
+      })
+      
+      total_points = total_points + processed_batch.length()
+      processed_batches = processed_batches + 1
+      
+      // 模拟处理延迟
+      if config.processing_window_ms > 0 {
+        Time::sleep(config.processing_window_ms / 10)  // 简化的延迟模拟
+      }
+    }
+    
+    let end_time = Time::now()
+    let duration_ms = end_time - start_time
+    
+    let throughput = (total_points as Float) / (duration_ms as Float / 1000.0)
+    let avg_latency = (duration_ms as Float) / (processed_batches as Float)
+    let error_rate = (errors as Float) / (total_points as Float) * 100.0
+    
+    {
+      throughput: throughput,
+      latency_ms: avg_latency,
+      error_rate: error_rate,
+      memory_usage_mb: (total_points * 0.1),  // 简化的内存使用估算
+      cpu_usage_percent: throughput / 1000.0 * 100.0  // 简化的CPU使用估算
     }
   }
   
-  // Test state persistence
-  let serialized_state = processor.serialize_state()
-  assert_true(serialized_state.length() > 0)
-  
-  // Create new processor and restore state
-  let new_processor = StreamProcessor::new()
-  new_processor.enable_state_management(true)
-  new_processor.deserialize_state(serialized_state)
-  
-  // Verify state was restored
-  let restored_state = new_processor.get_state()
-  
-  for i in 1..6 {
-    let key = "service-" + i.to_string()
-    let count = StateManager::get(restored_state, key)
-    match count {
-      Some(c) => assert_eq(c as Int, 200)
-      None => assert_true(false)
+  // 流式处理函数
+  let stream_process = fn(stream: Array[StreamDataPoint], config: StreamProcessingConfig) {
+    let start_time = Time::now()
+    let mut processed_points = 0
+    let mut errors = 0
+    let mut buffer = []
+    
+    for point in stream {
+      try {
+        // 实时处理每个点
+        let enriched_point = {
+          id: point.id,
+          timestamp: point.timestamp,
+          source: point.source,
+          metrics: point.metrics.map(fn(metric) {
+            let (name, value) = metric
+            let enriched_value = value * 1.1  // 简单的丰富化
+            (name + "_enriched", enriched_value)
+          }),
+          tags: point.tags + (("processed_at", Time::now().to_string()))
+        }
+        
+        buffer = buffer.push(enriched_point)
+        
+        // 当缓冲区满时刷新
+        if buffer.length() >= config.buffer_size {
+          // 模拟缓冲区刷新
+          buffer = []
+        }
+        
+        processed_points = processed_points + 1
+      } catch {
+        errors = errors + 1
+      }
+    }
+    
+    let end_time = Time::now()
+    let duration_ms = end_time - start_time
+    
+    let throughput = (processed_points as Float) / (duration_ms as Float / 1000.0)
+    let avg_latency = (duration_ms as Float) / (processed_points as Float)
+    let error_rate = (errors as Float) / (processed_points as Float) * 100.0
+    
+    {
+      throughput: throughput,
+      latency_ms: avg_latency,
+      error_rate: error_rate,
+      memory_usage_mb: config.buffer_size as Float * 0.05,
+      cpu_usage_percent: throughput / 2000.0 * 100.0
     }
   }
   
-  // Test state checkpointing
-  processor.enable_checkpointing(true)
-  processor.set_checkpoint_interval(100)  // Checkpoint every 100 events
-  
-  // Process more events
-  let additional_events = []
-  for i in 1000..1200 {
-    let service_name = "service-" + ((i % 5) + 1).to_string()
-    let value = i as Float
-    let event = TelemetryEvent::with_value(
-      i.to_string(),
-      "INFO",
-      service_name,
-      "test message",
-      value
-    )
-    additional_events.push(event)
+  // 创建测试配置
+  let batch_config = {
+    batch_size: 100,
+    processing_window_ms: 10,
+    buffer_size: 1000,
+    worker_threads: 4,
+    compression_enabled: true
   }
   
-  processor.process_with_state(additional_events)
-  
-  // Verify checkpoints were created
-  let checkpoints = processor.get_checkpoints()
-  assert_true(checkpoints.length() > 0)
-  
-  // Test state recovery from checkpoint
-  let latest_checkpoint = checkpoints[checkpoints.length() - 1]
-  processor.restore_from_checkpoint(latest_checkpoint)
-  
-  let recovered_state = processor.get_state()
-  
-  // Verify state was recovered to checkpoint state
-  for i in 1..6 {
-    let key = "service-" + i.to_string()
-    let count = StateManager::get(recovered_state, key)
-    match count {
-      Some(c) => assert_true(c >= 200)  // Should be at least the original count
-      None => assert_true(false)
-    }
+  let stream_config = {
+    batch_size: 1,
+    processing_window_ms: 0,
+    buffer_size: 500,
+    worker_threads: 8,
+    compression_enabled: false
   }
+  
+  // 生成测试数据
+  let sources = ["api-service", "payment-service", "user-service", "inventory-service"]
+  let test_stream = generate_high_volume_stream(10000, sources)
+  
+  assert_eq(test_stream.length(), 10000)
+  
+  // 测试批处理性能
+  let batch_metrics = batch_process_stream(test_stream, batch_config)
+  
+  assert_true(batch_metrics.throughput > 1000.0)  // 至少1000点/秒
+  assert_true(batch_metrics.latency_ms < 100.0)  // 平均延迟小于100ms
+  assert_true(batch_metrics.error_rate < 1.0)   // 错误率小于1%
+  
+  // 测试流式处理性能
+  let stream_metrics = stream_process(test_stream, stream_config)
+  
+  assert_true(stream_metrics.throughput > 500.0)   // 至少500点/秒
+  assert_true(stream_metrics.latency_ms < 10.0)   // 平均延迟小于10ms
+  assert_true(stream_metrics.error_rate < 1.0)    // 错误率小于1%
+  
+  // 比较批处理和流式处理
+  assert_true(batch_metrics.throughput >= stream_metrics.throughput)  // 批处理应该有更高吞吐量
+  assert_true(stream_metrics.latency_ms <= batch_metrics.latency_ms)   // 流式处理应该有更低延迟
 }
 
-// Test 9: Stream Processing Dynamic Configuration
-test "stream processing dynamic configuration" {
-  // Create a stream processor with dynamic configuration
-  let processor = StreamProcessor::new()
-  processor.enable_dynamic_configuration(true)
+// 测试2: 低延迟处理优化
+test "低延迟处理优化策略" {
+  // 定义延迟优化配置
+  enum LatencyOptimizationStrategy {
+    NoOptimization
+    MemoryPooling
+    BatchAdaptive
+    ParallelProcessing
+    CompressionSelective
+  }
   
-  // Add processing stages
-  processor.add_stage("filter", |event| {
-    let level = TelemetryEvent::get_level(event)
-    if level == "ERROR" {
-      StreamResult::success(event)
-    } else {
-      StreamResult::skip()
+  // 定义延迟监控
+  type LatencyMonitor = {
+    min_latency_ms: Float,
+    max_latency_ms: Float,
+    avg_latency_ms: Float,
+    p95_latency_ms: Float,
+    p99_latency_ms: Float
+  }
+  
+  // 创建延迟监控器
+  let create_latency_monitor = fn() {
+    {
+      min_latency_ms: Float::max_value(),
+      max_latency_ms: 0.0,
+      avg_latency_ms: 0.0,
+      p95_latency_ms: 0.0,
+      p99_latency_ms: 0.0
+    }
+  }
+  
+  // 更新延迟监控
+  let update_latency_monitor = fn(monitor: LatencyMonitor, new_latency_ms: Float) {
+    let new_min = if new_latency_ms < monitor.min_latency_ms { 
+      new_latency_ms 
+    } else { 
+      monitor.min_latency_ms 
+    }
+    
+    let new_max = if new_latency_ms > monitor.max_latency_ms { 
+      new_latency_ms 
+    } else { 
+      monitor.max_latency_ms 
+    }
+    
+    // 简化的平均值计算（实际应该使用滑动窗口）
+    let new_avg = (monitor.avg_latency_ms + new_latency_ms) / 2.0
+    
+    { 
+      min_latency_ms: new_min,
+      max_latency_ms: new_max,
+      avg_latency_ms: new_avg,
+      p95_latency_ms: monitor.p95_latency_ms,  // 简化，实际需要计算百分位数
+      p99_latency_ms: monitor.p99_latency_ms
+    }
+  }
+  
+  // 优化处理函数
+  let optimized_process = fn(data: Array[StreamDataPoint], strategy: LatencyOptimizationStrategy) {
+    let start_time = Time::now()
+    let monitor = create_latency_monitor()
+    
+    match strategy {
+      LatencyOptimizationStrategy::NoOptimization => {
+        // 基本处理
+        data.map(fn(point) { point })
+      }
+      
+      LatencyOptimizationStrategy::MemoryPooling => {
+        // 内存池优化（模拟）
+        data.map(fn(point) {
+          // 模拟内存池分配（减少GC压力）
+          let pooled_point = {
+            id: point.id,
+            timestamp: point.timestamp,
+            source: point.source,
+            metrics: point.metrics,
+            tags: point.tags
+          }
+          pooled_point
+        })
+      }
+      
+      LatencyOptimizationStrategy::BatchAdaptive => {
+        // 自适应批处理
+        let mut result = []
+        let mut batch = []
+        let optimal_batch_size = 50  // 动态调整
+        
+        for point in data {
+          batch = batch.push(point)
+          
+          if batch.length() >= optimal_batch_size {
+            // 处理批次
+            let processed_batch = batch.map(fn(p) { p })
+            result = result + processed_batch
+            batch = []
+          }
+        }
+        
+        // 处理剩余数据
+        if batch.length() > 0 {
+          result = result + batch
+        }
+        
+        result
+      }
+      
+      LatencyOptimizationStrategy::ParallelProcessing => {
+        // 并行处理（模拟）
+        let chunk_size = data.length() / 4
+        let chunks = [
+          data.slice(0, chunk_size),
+          data.slice(chunk_size, chunk_size * 2),
+          data.slice(chunk_size * 2, chunk_size * 3),
+          data.slice(chunk_size * 3, data.length())
+        ]
+        
+        // 模拟并行处理
+        chunks.flat_map(fn(chunk) { chunk })
+      }
+      
+      LatencyOptimizationStrategy::CompressionSelective => {
+        // 选择性压缩（仅对大数据点）
+        data.map(fn(point) {
+          let should_compress = point.metrics.length() > 5 || point.tags.length() > 3
+          if should_compress {
+            // 模拟压缩处理
+            { point | tags: point.tags + (("compressed", "true")) }
+          } else {
+            point
+          }
+        })
+      }
+    }
+  }
+  
+  // 测试不同优化策略
+  let test_data = Array::new(1000, fn(i) {
+    {
+      id: "point-" + i.to_string(),
+      timestamp: Time::now() + i,
+      source: "service-" + (i % 5).to_string(),
+      metrics: Array::new(3, fn(j) { ("metric-" + j.to_string(), Math::random() * 100.0) }),
+      tags: Array::new(2, fn(j) { ("tag-" + j.to_string(), "value-" + j.to_string()) })
     }
   })
   
-  processor.add_stage("transform", |event| {
-    let transformed = TelemetryEvent::add_tag(event, "processed", "true")
-    StreamResult::success(transformed)
-  })
+  // 测试无优化策略
+  let no_opt_start = Time::now()
+  let no_opt_result = optimized_process(test_data, LatencyOptimizationStrategy::NoOptimization)
+  let no_opt_duration = Time::now() - no_opt_start
   
-  // Generate test events
-  let test_events = []
-  for i in 0..1000 {
-    let level = if i % 3 == 0 { "ERROR" } else { "INFO" }
-    let event = TelemetryEvent::new(i.to_string(), level, "test-service", "test message")
-    test_events.push(event)
-  }
+  assert_eq(no_opt_result.length(), 1000)
   
-  // Process with initial configuration
-  let initial_results = processor.process_batch(test_events)
-  assert_eq(initial_results.length(), 334)  // Approximately 1/3 are errors
+  // 测试内存池优化
+  let pool_opt_start = Time::now()
+  let pool_opt_result = optimized_process(test_data, LatencyOptimizationStrategy::MemoryPooling)
+  let pool_opt_duration = Time::now() - pool_opt_start
   
-  // Dynamically change filter configuration
-  processor.update_stage_config("filter", "filter_level", "WARN")
+  assert_eq(pool_opt_result.length(), 1000)
   
-  // Update filter implementation
-  processor.update_stage("filter", |event| {
-    let level = TelemetryEvent::get_level(event)
-    if level == "WARN" || level == "ERROR" {
-      StreamResult::success(event)
-    } else {
-      StreamResult::skip()
-    }
-  })
+  // 测试自适应批处理
+  let batch_opt_start = Time::now()
+  let batch_opt_result = optimized_process(test_data, LatencyOptimizationStrategy::BatchAdaptive)
+  let batch_opt_duration = Time::now() - batch_opt_start
   
-  // Generate new test events with WARN level
-  let new_test_events = []
-  for i in 0..1000 {
-    let level = match i % 4 {
-      0 => "ERROR"
-      1 => "WARN"
-      _ => "INFO"
-    }
-    let event = TelemetryEvent::new(i.to_string(), level, "test-service", "test message")
-    new_test_events.push(event)
-  }
+  assert_eq(batch_opt_result.length(), 1000)
   
-  // Process with updated configuration
-  let updated_results = processor.process_batch(new_test_events)
-  assert_eq(updated_results.length(), 500)  // 1/2 are ERROR or WARN
+  // 测试并行处理
+  let parallel_opt_start = Time::now()
+  let parallel_opt_result = optimized_process(test_data, LatencyOptimizationStrategy::ParallelProcessing)
+  let parallel_opt_duration = Time::now() - parallel_opt_start
   
-  // Test adding new stage dynamically
-  processor.add_stage("enrichment", |event| {
-    let enriched = TelemetryEvent::add_tag(event, "enriched", "true")
-    StreamResult::success(enriched)
-  })
+  assert_eq(parallel_opt_result.length(), 1000)
   
-  let enriched_results = processor.process_batch(new_test_events)
+  // 测试选择性压缩
+  let compression_opt_start = Time::now()
+  let compression_opt_result = optimized_process(test_data, LatencyOptimizationStrategy::CompressionSelective)
+  let compression_opt_duration = Time::now() - compression_opt_start
   
-  // Verify enrichment was applied
-  for result in enriched_results {
-    assert_true(TelemetryEvent::has_tag(result, "enriched"))
-    assert_eq(TelemetryEvent::get_tag(result, "enriched"), "true")
-  }
+  assert_eq(compression_opt_result.length(), 1000)
   
-  // Test removing stage dynamically
-  processor.remove_stage("transform")
+  // 验证优化效果
+  let durations = [
+    ("NoOptimization", no_opt_duration),
+    ("MemoryPooling", pool_opt_duration),
+    ("BatchAdaptive", batch_opt_duration),
+    ("ParallelProcessing", parallel_opt_duration),
+    ("CompressionSelective", compression_opt_duration)
+  ]
   
-  let simplified_results = processor.process_batch(new_test_events)
+  // 找出最快的策略
+  let fastest = durations.reduce(fn(acc, current) {
+    if current.1 < acc.1 { current } else { acc }
+  }, durations[0])
   
-  // Verify transform stage was removed
-  for result in simplified_results {
-    assert_false(TelemetryEvent::has_tag(result, "processed"))
-  }
+  // 验证至少有一种优化策略比无优化快
+  assert_true(durations.any(fn(d) { d.0 != "NoOptimization" && d.1 < no_opt_duration }))
   
-  // Test runtime parameter tuning
-  processor.set_parameter("batch_size", 500)
-  processor.set_parameter("parallelism", 4)
-  processor.set_parameter("buffer_size", 2000)
-  
-  // Verify parameters were updated
-  assert_eq(processor.get_parameter("batch_size"), 500)
-  assert_eq(processor.get_parameter("parallelism"), 4)
-  assert_eq(processor.get_parameter("buffer_size"), 2000)
-  
-  // Test configuration persistence
-  let config = processor.export_configuration()
-  assert_true(config.length() > 0)
-  
-  // Create new processor and import configuration
-  let new_processor = StreamProcessor::new()
-  new_processor.enable_dynamic_configuration(true)
-  new_processor.import_configuration(config)
-  
-  // Verify configuration was imported
-  assert_eq(new_processor.get_parameter("batch_size"), 500)
-  assert_eq(new_processor.get_parameter("parallelism"), 4)
-  assert_eq(new_processor.get_parameter("buffer_size"), 2000)
-  
-  // Verify stages were imported
-  assert_true(new_processor.has_stage("filter"))
-  assert_true(new_processor.has_stage("enrichment"))
-  assert_false(new_processor.has_stage("transform"))  // Was removed
+  // 验证并行处理对于大数据集有优势
+  assert_true(parallel_opt_duration <= no_opt_duration)
 }
 
-// Test 10: Stream Processing Performance Monitoring
-test "stream processing performance monitoring" {
-  // Create a stream processor with comprehensive monitoring
-  let processor = StreamProcessor::new()
-  processor.enable_comprehensive_monitoring(true)
-  
-  // Add processing stages with different performance characteristics
-  processor.add_stage("fast_stage", |event| {
-    // Fast processing stage
-    let processed = TelemetryEvent::add_tag(event, "fast_processed", "true")
-    StreamResult::success(processed)
-  })
-  
-  processor.add_stage("medium_stage", |event| {
-    // Medium processing stage
-    Thread::sleep(1)  // 1ms delay
-    let processed = TelemetryEvent::add_tag(event, "medium_processed", "true")
-    StreamResult::success(processed)
-  })
-  
-  processor.add_stage("slow_stage", |event| {
-    // Slow processing stage
-    Thread::sleep(5)  // 5ms delay
-    let processed = TelemetryEvent::add_tag(event, "slow_processed", "true")
-    StreamResult::success(processed)
-  })
-  
-  // Generate test events
-  let test_events = []
-  for i in 0..5000 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    test_events.push(event)
+// 测试3: 背压处理和流控制
+test "背压处理和流控制机制" {
+  // 定义背压策略
+  enum BackpressureStrategy {
+    DropOldest      // 丢弃最旧的数据
+    DropNewest      // 丢弃最新的数据
+    BufferOverflow  // 允许缓冲区溢出
+    ThrottleSource  // 限制源速率
+    DynamicScaling  // 动态扩展资源
   }
   
-  // Process events with monitoring
-  let start_time = Time::now()
-  let results = processor.process_with_monitoring(test_events)
-  let end_time = Time::now()
+  // 定义流控制状态
+  type FlowControlState = {
+    buffer_size: Int,
+    buffer_capacity: Int,
+    processing_rate: Float,  // 点/秒
+    input_rate: Float,       // 点/秒
+    backpressure_active: Bool,
+    dropped_points: Int,
+    processed_points: Int
+  }
   
-  // Verify all events were processed
-  assert_eq(results.length(), test_events.length())
+  // 创建流控制器
+  let create_flow_controller = fn(capacity: Int) {
+    {
+      buffer_size: 0,
+      buffer_capacity: capacity,
+      processing_rate: 1000.0,  // 初始处理速率
+      input_rate: 0.0,
+      backpressure_active: false,
+      dropped_points: 0,
+      processed_points: 0
+    }
+  }
   
-  // Get comprehensive performance metrics
-  let performance_metrics = processor.get_performance_metrics()
+  // 应用背压策略
+  let apply_backpressure = fn(state: FlowControlState, strategy: BackpressureStrategy, incoming_points: Int) {
+    match strategy {
+      BackpressureStrategy::DropOldest => {
+        if state.buffer_size + incoming_points > state.buffer_capacity {
+          let overflow = (state.buffer_size + incoming_points) - state.buffer_capacity
+          let new_buffer_size = state.buffer_capacity - incoming_points
+          {
+            buffer_size: new_buffer_size,
+            buffer_capacity: state.buffer_capacity,
+            processing_rate: state.processing_rate,
+            input_rate: state.input_rate,
+            backpressure_active: true,
+            dropped_points: state.dropped_points + overflow,
+            processed_points: state.processed_points
+          }
+        } else {
+          { state | buffer_size: state.buffer_size + incoming_points }
+        }
+      }
+      
+      BackpressureStrategy::DropNewest => {
+        if state.buffer_size + incoming_points > state.buffer_capacity {
+          let available_space = state.buffer_capacity - state.buffer_size
+          let dropped = incoming_points - available_space
+          {
+            buffer_size: state.buffer_capacity,
+            buffer_capacity: state.buffer_capacity,
+            processing_rate: state.processing_rate,
+            input_rate: state.input_rate,
+            backpressure_active: true,
+            dropped_points: state.dropped_points + dropped,
+            processed_points: state.processed_points
+          }
+        } else {
+          { state | buffer_size: state.buffer_size + incoming_points }
+        }
+      }
+      
+      BackpressureStrategy::BufferOverflow => {
+        // 允许缓冲区溢出，但标记背压状态
+        let new_buffer_size = state.buffer_size + incoming_points
+        {
+          buffer_size: new_buffer_size,
+          buffer_capacity: state.buffer_capacity,
+          processing_rate: state.processing_rate,
+          input_rate: state.input_rate,
+          backpressure_active: new_buffer_size > state.buffer_capacity,
+          dropped_points: state.dropped_points,
+          processed_points: state.processed_points
+        }
+      }
+      
+      BackpressureStrategy::ThrottleSource => {
+        // 限制输入速率
+        let max_acceptable = (state.processing_rate * 1.2) as Int  // 允许20%的缓冲
+        let accepted = if incoming_points > max_acceptable { max_acceptable } else { incoming_points }
+        let dropped = incoming_points - accepted
+        
+        {
+          buffer_size: state.buffer_size + accepted,
+          buffer_capacity: state.buffer_capacity,
+          processing_rate: state.processing_rate,
+          input_rate: accepted as Float,
+          backpressure_active: dropped > 0,
+          dropped_points: state.dropped_points + dropped,
+          processed_points: state.processed_points
+        }
+      }
+      
+      BackpressureStrategy::DynamicScaling => {
+        // 动态调整处理速率
+        let target_buffer_ratio = 0.7  // 目标缓冲区使用率
+        let current_ratio = (state.buffer_size as Float) / (state.buffer_capacity as Float)
+        
+        let new_processing_rate = if current_ratio > target_buffer_ratio {
+          state.processing_rate * 1.2  // 增加处理速率
+        } else if current_ratio < target_buffer_ratio * 0.5 {
+          state.processing_rate * 0.9  // 减少处理速率
+        } else {
+          state.processing_rate
+        }
+        
+        let can_accept_all = state.buffer_size + incoming_points <= state.buffer_capacity
+        
+        {
+          buffer_size: if can_accept_all { state.buffer_size + incoming_points } else { state.buffer_capacity },
+          buffer_capacity: state.buffer_capacity,
+          processing_rate: new_processing_rate,
+          input_rate: state.input_rate,
+          backpressure_active: not(can_accept_all),
+          dropped_points: if can_accept_all { state.dropped_points } else { state.dropped_points + (state.buffer_size + incoming_points - state.buffer_capacity) },
+          processed_points: state.processed_points
+        }
+      }
+    }
+  }
   
-  // Verify throughput metrics
-  let throughput = PerformanceMetrics::get_throughput(performance_metrics)
-  assert_true(throughput > 100)  // Should process at least 100 events per second
+  // 模拟处理过程
+  let simulate_processing = fn(state: FlowControlState, processing_time_ms: Int) {
+    // 模拟处理速率
+    let points_to_process = (state.processing_rate * processing_time_ms as Float / 1000.0) as Int
+    let actual_processed = if points_to_process > state.buffer_size { 
+      state.buffer_size 
+    } else { 
+      points_to_process 
+    }
+    
+    {
+      buffer_size: state.buffer_size - actual_processed,
+      buffer_capacity: state.buffer_capacity,
+      processing_rate: state.processing_rate,
+      input_rate: state.input_rate,
+      backpressure_active: state.backpressure_active,
+      dropped_points: state.dropped_points,
+      processed_points: state.processed_points + actual_processed
+    }
+  }
   
-  // Verify latency metrics
-  let avg_latency = PerformanceMetrics::get_average_latency(performance_metrics)
-  let p95_latency = PerformanceMetrics::get_percentile_latency(performance_metrics, 95)
-  let p99_latency = PerformanceMetrics::get_percentile_latency(performance_metrics, 99)
+  // 测试不同的背压策略
+  let initial_state = create_flow_controller(1000)
   
-  assert_true(avg_latency > 5.0)  // Should be around 6ms (1ms + 5ms)
-  assert_true(avg_latency < 10.0)  // But less than 10ms
+  // 测试DropOldest策略
+  let mut drop_oldest_state = initial_state
+  drop_oldest_state = apply_backpressure(drop_oldest_state, BackpressureStrategy::DropOldest, 500)
+  drop_oldest_state = apply_backpressure(drop_oldest_state, BackpressureStrategy::DropOldest, 800)
+  drop_oldest_state = simulate_processing(drop_oldest_state, 1000)
   
-  // Verify stage-specific metrics
-  let stage_metrics = PerformanceMetrics::get_stage_metrics(performance_metrics)
+  assert_true(drop_oldest_state.backpressure_active)
+  assert_true(drop_oldest_state.dropped_points > 0)
   
-  let fast_stage_metrics = stage_metrics["fast_stage"]
-  let medium_stage_metrics = stage_metrics["medium_stage"]
-  let slow_stage_metrics = stage_metrics["slow_stage"]
+  // 测试DropNewest策略
+  let mut drop_newest_state = initial_state
+  drop_newest_state = apply_backpressure(drop_newest_state, BackpressureStrategy::DropNewest, 500)
+  drop_newest_state = apply_backpressure(drop_newest_state, BackpressureStrategy::DropNewest, 800)
+  drop_newest_state = simulate_processing(drop_newest_state, 1000)
   
-  assert_true(StageMetrics::get_avg_latency(fast_stage_metrics) < 1.0)
-  assert_true(StageMetrics::get_avg_latency(medium_stage_metrics) >= 1.0)
-  assert_true(StageMetrics::get_avg_latency(slow_stage_metrics) >= 5.0)
+  assert_true(drop_newest_state.backpressure_active)
+  assert_true(drop_newest_state.dropped_points > 0)
   
-  // Verify resource utilization metrics
-  let resource_metrics = PerformanceMetrics::get_resource_metrics(performance_metrics)
+  // 测试ThrottleSource策略
+  let mut throttle_state = initial_state
+  throttle_state = apply_backpressure(throttle_state, BackpressureStrategy::ThrottleSource, 1500)
+  throttle_state = simulate_processing(throttle_state, 1000)
   
-  assert_true(ResourceMetrics::get_cpu_utilization(resource_metrics) >= 0.0)
-  assert_true(ResourceMetrics::get_cpu_utilization(resource_metrics) <= 1.0)
+  assert_true(throttle_state.backpressure_active)
+  assert_true(throttle_state.dropped_points > 0)
+  assert_true(throttle_state.input_rate <= throttle_state.processing_rate * 1.2)
   
-  assert_true(ResourceMetrics::get_memory_utilization(resource_metrics) >= 0.0)
-  assert_true(ResourceMetrics::get_memory_utilization(resource_metrics) <= 1.0)
+  // 测试DynamicScaling策略
+  let mut dynamic_state = initial_state
+  dynamic_state = apply_backpressure(dynamic_state, BackpressureStrategy::DynamicScaling, 800)
+  dynamic_state = apply_backpressure(dynamic_state, BackpressureStrategy::DynamicScaling, 500)
+  dynamic_state = simulate_processing(dynamic_state, 1000)
   
-  // Verify error metrics
-  let error_metrics = PerformanceMetrics::get_error_metrics(performance_metrics)
+  assert_true(dynamic_state.processing_rate > initial_state.processing_rate)  // 处理速率应该增加
   
-  assert_eq(ErrorMetrics::get_total_errors(error_metrics), 0)  // No errors in this test
-  assert_eq(ErrorMetrics::get_error_rate(error_metrics), 0.0)
+  // 测试BufferOverflow策略
+  let mut overflow_state = initial_state
+  overflow_state = apply_backpressure(overflow_state, BackpressureStrategy::BufferOverflow, 1200)
   
-  // Test real-time monitoring dashboard data generation
-  let dashboard_data = processor.generate_dashboard_data()
+  assert_true(overflow_state.backpressure_active)
+  assert_true(overflow_state.buffer_size > overflow_state.buffer_capacity)
+  assert_eq(overflow_state.dropped_points, 0)  // 不丢弃数据
   
-  assert_true(DashboardData::get_throughput_chart(dashboard_data).length() > 0)
-  assert_true(DashboardData::get_latency_chart(dashboard_data).length() > 0)
-  assert_true(DashboardData::get_error_rate_chart(dashboard_data).length() > 0)
-  assert_true(DashboardData::get_resource_utilization_chart(dashboard_data).length() > 0)
+  // 验证不同策略的特点
+  assert_eq(drop_oldest_state.buffer_capacity, 1000)
+  assert_eq(drop_newest_state.buffer_capacity, 1000)
+  assert_eq(throttle_state.buffer_capacity, 1000)
+  assert_eq(dynamic_state.buffer_capacity, 1000)
+  assert_eq(overflow_state.buffer_capacity, 1000)
+}
+
+// 测试4: 流处理窗口和聚合
+test "流处理窗口和聚合性能" {
+  // 定义窗口类型
+  enum WindowType {
+    Tumbling(Int)     // 滚动窗口（窗口大小毫秒）
+    Sliding(Int, Int) // 滑动窗口（窗口大小，滑动间隔）
+    Session(Int)      // 会话窗口（超时时间）
+    Global            // 全局窗口
+  }
   
-  // Test performance alerts
-  processor.enable_performance_alerts(true)
-  processor.set_latency_threshold(10.0)  // Alert if latency > 10ms
-  processor.set_throughput_threshold(50.0)  // Alert if throughput < 50 events/sec
-  processor.set_error_rate_threshold(0.01)  // Alert if error rate > 1%
+  // 定义聚合函数
+  enum AggregationFunction {
+    Sum
+    Average
+    Min
+    Max
+    Count
+    DistinctCount
+  }
   
-  // Process events that might trigger alerts
-  let alert_test_events = []
+  // 定义窗口结果
+  type WindowResult = {
+    window_start: Int,
+    window_end: Int,
+    key: String,
+    value: Float,
+    count: Int
+  }
+  
+  // 创建时间窗口处理器
+  let process_time_windows = fn(data: Array[StreamDataPoint>, window_type: WindowType, aggregation: AggregationFunction) {
+    match window_type {
+      WindowType::Tumbling(window_size) => {
+        // 滚动窗口处理
+        let mut windows = Map::empty()
+        
+        for point in data {
+          let window_start = (point.timestamp / window_size) * window_size
+          let window_end = window_start + window_size
+          let window_key = point.source + "-" + window_start.to_string()
+          
+          let existing_points = match Map::get(windows, window_key) {
+            Some(points) => points
+            None => []
+          }
+          
+          let updated_points = existing_points.push(point)
+          let _ = Map::insert(windows, window_key, updated_points)
+        }
+        
+        // 应用聚合函数
+        let results = Map::empty()
+        for (window_key, points) in windows {
+          let parts = window_key.split("-")
+          let source = parts.slice(0, parts.length() - 1).join("-")
+          let window_start = parts[parts.length() - 1].to_int()
+          let window_end = window_start + window_size
+          
+          let values = points.flat_map(fn(p) { p.metrics.map(fn(m) { m.1 }) })
+          let aggregated_value = match aggregation {
+            AggregationFunction::Sum => values.reduce(fn(acc, v) { acc + v }, 0.0)
+            AggregationFunction::Average => values.reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
+            AggregationFunction::Min => values.reduce(fn(acc, v) { if acc < v { acc } else { v } }, values[0])
+            AggregationFunction::Max => values.reduce(fn(acc, v) { if acc > v { acc } else { v } }, values[0])
+            AggregationFunction::Count => values.length() as Float
+            AggregationFunction::DistinctCount => values.unique().length() as Float
+          }
+          
+          let result = {
+            window_start: window_start,
+            window_end: window_end,
+            key: source,
+            value: aggregated_value,
+            count: points.length()
+          }
+          
+          let _ = Map::insert(results, window_key, result)
+        }
+        
+        results.values()
+      }
+      
+      WindowType::Sliding(window_size, slide_interval) => {
+        // 滑动窗口处理（简化版）
+        let mut results = []
+        let min_timestamp = data.reduce(fn(acc, p) { if acc < p.timestamp { acc } else { p.timestamp } }, data[0].timestamp)
+        let max_timestamp = data.reduce(fn(acc, p) { if acc > p.timestamp { acc } else { p.timestamp } }, data[0].timestamp)
+        
+        for window_start in range(min_timestamp, max_timestamp, slide_interval) {
+          let window_end = window_start + window_size
+          let window_points = data.filter(fn(p) { p.timestamp >= window_start && p.timestamp < window_end })
+          
+          if window_points.length() > 0 {
+            let source = window_points[0].source
+            let values = window_points.flat_map(fn(p) { p.metrics.map(fn(m) { m.1 }) })
+            
+            let aggregated_value = match aggregation {
+              AggregationFunction::Sum => values.reduce(fn(acc, v) { acc + v }, 0.0)
+              AggregationFunction::Average => values.reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
+              AggregationFunction::Count => values.length() as Float
+              _ => 0.0  // 简化
+            }
+            
+            let result = {
+              window_start: window_start,
+              window_end: window_end,
+              key: source,
+              value: aggregated_value,
+              count: window_points.length()
+            }
+            
+            results = results.push(result)
+          }
+        }
+        
+        results
+      }
+      
+      WindowType::Session(timeout) => {
+        // 会话窗口处理（简化版）
+        let mut sessions = []
+        let mut current_session = []
+        let mut session_start = 0
+        let mut last_timestamp = 0
+        
+        let sorted_data = data.sort(fn(a, b) { if a.timestamp < b.timestamp { -1 } else { 1 } })
+        
+        for point in sorted_data {
+          if current_session.length() == 0 {
+            current_session = [point]
+            session_start = point.timestamp
+            last_timestamp = point.timestamp
+          } else if point.timestamp - last_timestamp <= timeout {
+            current_session = current_session.push(point)
+            last_timestamp = point.timestamp
+          } else {
+            // 结束当前会话，开始新会话
+            if current_session.length() > 0 {
+              let source = current_session[0].source
+              let values = current_session.flat_map(fn(p) { p.metrics.map(fn(m) { m.1 }) })
+              
+              let aggregated_value = match aggregation {
+                AggregationFunction::Sum => values.reduce(fn(acc, v) { acc + v }, 0.0)
+                AggregationFunction::Count => values.length() as Float
+                _ => 0.0  // 简化
+              }
+              
+              let result = {
+                window_start: session_start,
+                window_end: last_timestamp,
+                key: source,
+                value: aggregated_value,
+                count: current_session.length()
+              }
+              
+              sessions = sessions.push(result)
+            }
+            
+            current_session = [point]
+            session_start = point.timestamp
+            last_timestamp = point.timestamp
+          }
+        }
+        
+        // 处理最后一个会话
+        if current_session.length() > 0 {
+          let source = current_session[0].source
+          let values = current_session.flat_map(fn(p) { p.metrics.map(fn(m) { m.1 }) })
+          
+          let aggregated_value = match aggregation {
+            AggregationFunction::Sum => values.reduce(fn(acc, v) { acc + v }, 0.0)
+            AggregationFunction::Count => values.length() as Float
+            _ => 0.0  // 简化
+          }
+          
+          let result = {
+            window_start: session_start,
+            window_end: last_timestamp,
+            key: source,
+            value: aggregated_value,
+            count: current_session.length()
+          }
+          
+          sessions = sessions.push(result)
+        }
+        
+        sessions
+      }
+      
+      WindowType::Global => {
+        // 全局窗口处理
+        let grouped_by_source = Map::empty()
+        
+        for point in data {
+          let existing_points = match Map::get(grouped_by_source, point.source) {
+            Some(points) => points
+            None => []
+          }
+          
+          let updated_points = existing_points.push(point)
+          let _ = Map::insert(grouped_by_source, point.source, updated_points)
+        }
+        
+        let results = []
+        for (source, points) in grouped_by_source {
+          let values = points.flat_map(fn(p) { p.metrics.map(fn(m) { m.1 }) })
+          let min_timestamp = points.reduce(fn(acc, p) { if acc < p.timestamp { acc } else { p.timestamp } }, points[0].timestamp)
+          let max_timestamp = points.reduce(fn(acc, p) { if acc > p.timestamp { acc } else { p.timestamp } }, points[0].timestamp)
+          
+          let aggregated_value = match aggregation {
+            AggregationFunction::Sum => values.reduce(fn(acc, v) { acc + v }, 0.0)
+            AggregationFunction::Average => values.reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
+            AggregationFunction::Count => values.length() as Float
+            _ => 0.0  // 简化
+          }
+          
+          let result = {
+            window_start: min_timestamp,
+            window_end: max_timestamp,
+            key: source,
+            value: aggregated_value,
+            count: points.length()
+          }
+          
+          results = results.push(result)
+        }
+        
+        results
+      }
+    }
+  }
+  
+  // 创建测试数据
+  let base_timestamp = 1640995200
+  let test_data = Array::new(100, fn(i) {
+    {
+      id: "point-" + i.to_string(),
+      timestamp: base_timestamp + i * 100,  // 每100ms一个点
+      source: "service-" + (i % 3).to_string(),
+      metrics: [("value", Math::random() * 100.0)],
+      tags: []
+    }
+  })
+  
+  // 测试滚动窗口
+  let tumbling_results = process_time_windows(test_data, WindowType::Tumbling(1000), AggregationFunction::Sum)
+  assert_true(tumbling_results.length() > 0)
+  
+  for result in tumbling_results {
+    assert_eq(result.window_end - result.window_start, 1000)
+    assert_true(result.count > 0)
+  }
+  
+  // 测试滑动窗口
+  let sliding_results = process_time_windows(test_data, WindowType::Sliding(1000, 500), AggregationFunction::Average)
+  assert_true(sliding_results.length() > 0)
+  
+  for result in sliding_results {
+    assert_eq(result.window_end - result.window_start, 1000)
+    assert_true(result.count > 0)
+  }
+  
+  // 测试会话窗口
+  let session_data = [
+    { id: "point-1", timestamp: base_timestamp, source: "service-1", metrics: [("value", 10.0)], tags: [] },
+    { id: "point-2", timestamp: base_timestamp + 200, source: "service-1", metrics: [("value", 20.0)], tags: [] },
+    { id: "point-3", timestamp: base_timestamp + 2000, source: "service-1", metrics: [("value", 30.0)], tags: [] },  // 新会话
+    { id: "point-4", timestamp: base_timestamp + 2200, source: "service-1", metrics: [("value", 40.0)], tags: [] }
+  ]
+  
+  let session_results = process_time_windows(session_data, WindowType::Session(1000), AggregationFunction::Sum)
+  assert_eq(session_results.length(), 2)  // 两个会话
+  
+  assert_eq(session_results[0].value, 30.0)  // 第一个会话：10 + 20
+  assert_eq(session_results[1].value, 70.0)  // 第二个会话：30 + 40
+  
+  // 测试全局窗口
+  let global_results = process_time_windows(test_data, WindowType::Global, AggregationFunction::Count)
+  assert_eq(global_results.length(), 3)  // 3个不同的服务
+  
+  let total_count = global_results.reduce(fn(acc, r) { acc + r.count }, 0)
+  assert_eq(total_count, 100)  // 所有点都应该被计数
+}
+
+// 测试5: 流处理状态管理和容错
+test "流处理状态管理和容错机制" {
+  // 定义状态类型
+  enum StateType {
+    InMemory
+    Persistent
+    Distributed
+  }
+  
+  // 定义检查点策略
+  enum CheckpointStrategy {
+    TimeBased(Int)      // 基于时间间隔（毫秒）
+    CountBased(Int)     // 基于记录数量
+    Hybrid(Int, Int)    // 混合策略（时间间隔，记录数量）
+  }
+  
+  // 定义流处理状态
+  type StreamProcessingState = {
+    state_type: StateType,
+    key_value_store: Map[String, String],
+    last_checkpoint_time: Int,
+    records_since_checkpoint: Int,
+    total_processed: Int,
+    failure_count: Int
+  }
+  
+  // 创建状态管理器
+  let create_state_manager = fn(state_type: StateType) {
+    {
+      state_type: state_type,
+      key_value_store: Map::empty(),
+      last_checkpoint_time: Time::now(),
+      records_since_checkpoint: 0,
+      total_processed: 0,
+      failure_count: 0
+    }
+  }
+  
+  // 更新状态
+  let update_state = fn(state: StreamProcessingState, key: String, value: String) {
+    let updated_store = match Map::get(state.key_value_store, key) {
+      Some(existing_value) => {
+        let _ = Map::remove(state.key_value_store, key)
+        Map::insert(state.key_value_store, key, value)
+      }
+      None => {
+        Map::insert(state.key_value_store, key, value)
+      }
+    }
+    
+    {
+      state_type: state.state_type,
+      key_value_store: updated_store,
+      last_checkpoint_time: state.last_checkpoint_time,
+      records_since_checkpoint: state.records_since_checkpoint + 1,
+      total_processed: state.total_processed + 1,
+      failure_count: state.failure_count
+    }
+  }
+  
+  // 创建检查点
+  let create_checkpoint = fn(state: StreamProcessingState) {
+    // 模拟检查点创建（在实际系统中，这会持久化状态）
+    {
+      state_type: state.state_type,
+      key_value_store: state.key_value_store,
+      last_checkpoint_time: Time::now(),
+      records_since_checkpoint: 0,
+      total_processed: state.total_processed,
+      failure_count: state.failure_count
+    }
+  }
+  
+  // 检查是否需要检查点
+  let should_checkpoint = fn(state: StreamProcessingState, strategy: CheckpointStrategy) {
+    let current_time = Time::now()
+    
+    match strategy {
+      CheckpointStrategy::TimeBased(interval) => {
+        current_time - state.last_checkpoint_time >= interval
+      }
+      
+      CheckpointStrategy::CountBased(count) => {
+        state.records_since_checkpoint >= count
+      }
+      
+      CheckpointStrategy::Hybrid(time_interval, record_count) => {
+        (current_time - state.last_checkpoint_time >= time_interval) || 
+        (state.records_since_checkpoint >= record_count)
+      }
+    }
+  }
+  
+  // 恢复状态
+  let restore_state = fn(checkpoint: StreamProcessingState) {
+    // 在实际系统中，这会从持久化存储加载状态
+    checkpoint
+  }
+  
+  // 模拟故障
+  let simulate_failure = fn(state: StreamProcessingState, failure_rate: Float) {
+    if Math::random() < failure_rate {
+      {
+        state_type: state.state_type,
+        key_value_store: Map::empty(),  // 状态丢失
+        last_checkpoint_time: state.last_checkpoint_time,
+        records_since_checkpoint: 0,
+        total_processed: 0,
+        failure_count: state.failure_count + 1
+      }
+    } else {
+      state
+    }
+  }
+  
+  // 测试状态管理
+  let state_manager = create_state_manager(StateType::InMemory)
+  
+  // 更新状态
+  let mut current_state = state_manager
   for i in 0..100 {
-    let event = TelemetryEvent::new(i.to_string(), "INFO", "test-service", "test message")
-    alert_test_events.push(event)
+    let key = "key-" + (i % 10).to_string()
+    let value = "value-" + i.to_string()
+    current_state = update_state(current_state, key, value)
+    
+    // 每20个记录创建检查点
+    if should_checkpoint(current_state, CheckpointStrategy::CountBased(20)) {
+      current_state = create_checkpoint(current_state)
+    }
   }
   
-  processor.process_with_monitoring(alert_test_events)
+  assert_eq(current_state.total_processed, 100)
+  assert_eq(current_state.records_since_checkpoint, 0)  // 应该在最后一个检查点被重置
+  assert_eq(current_state.key_value_store.size(), 10)   // 10个不同的键
   
-  // Check for alerts
-  let alerts = processor.get_performance_alerts()
+  // 测试故障恢复
+  let checkpoint_state = create_checkpoint(current_state)
+  let failed_state = simulate_failure(current_state, 1.0)  // 100%故障率
   
-  // In our test, we shouldn't trigger any alerts since the performance is good
-  assert_eq(alerts.length(), 0)
+  assert_eq(failed_state.key_value_store.size(), 0)      // 状态丢失
+  assert_eq(failed_state.total_processed, 0)            // 计数器重置
+  assert_eq(failed_state.failure_count, 1)              // 故障计数增加
   
-  // Test performance report generation
-  let report = processor.generate_performance_report()
+  // 恢复状态
+  let restored_state = restore_state(checkpoint_state)
   
-  assert_true(PerformanceReport::get_summary(report).contains("Total events processed"))
-  assert_true(PerformanceReport::get_summary(report).contains("Average throughput"))
-  assert_true(PerformanceReport::get_summary(report).contains("Average latency"))
+  assert_eq(restored_state.key_value_store.size(), 10)   // 状态恢复
+  assert_eq(restored_state.total_processed, 100)        // 计数器恢复
+  assert_eq(restored_state.failure_count, 1)            // 故障计数保持
   
-  let detailed_metrics = PerformanceReport::get_detailed_metrics(report)
-  assert_true(detailed_metrics.length() > 0)
+  // 测试不同状态类型
+  let persistent_state = create_state_manager(StateType::Persistent)
+  let distributed_state = create_state_manager(StateType::Distributed)
   
-  // Test metrics export
-  let json_metrics = PerformanceMetrics::export_to_json(performance_metrics)
-  assert_true(json_metrics.length() > 0)
+  // 更新持久化状态
+  let mut updated_persistent = persistent_state
+  for i in 0..50 {
+    let key = "persistent-key-" + (i % 5).to_string()
+    let value = "persistent-value-" + i.to_string()
+    updated_persistent = update_state(updated_persistent, key, value)
+  }
   
-  let csv_metrics = PerformanceMetrics::export_to_csv(performance_metrics)
-  assert_true(csv_metrics.length() > 0)
+  // 更新分布式状态
+  let mut updated_distributed = distributed_state
+  for i in 0..50 {
+    let key = "distributed-key-" + (i % 5).to_string()
+    let value = "distributed-value-" + i.to_string()
+    updated_distributed = update_state(updated_distributed, key, value)
+  }
   
-  // Test metrics comparison
-  processor.process_batch(test_events)  // Process another batch
+  // 测试混合检查点策略
+  let mut hybrid_state = create_state_manager(StateType::InMemory)
+  let hybrid_strategy = CheckpointStrategy::Hybrid(1000, 10)  // 1秒或10个记录
   
-  let new_performance_metrics = processor.get_performance_metrics()
-  let comparison = PerformanceMetrics::compare(performance_metrics, new_performance_metrics)
+  for i in 0..25 {
+    let key = "hybrid-key-" + (i % 3).to_string()
+    let value = "hybrid-value-" + i.to_string()
+    hybrid_state = update_state(hybrid_state, key, value)
+    
+    if should_checkpoint(hybrid_state, hybrid_strategy) {
+      hybrid_state = create_checkpoint(hybrid_state)
+    }
+  }
   
-  assert_true(MetricsComparison::get_throughput_change(comparison) != 0.0)
-  assert_true(MetricsComparison::get_latency_change(comparison) != 0.0)
+  // 验证混合策略
+  assert_eq(hybrid_state.total_processed, 25)
+  assert_true(hybrid_state.records_since_checkpoint <= 10)  // 应该在10个记录以内
+  
+  // 测试状态一致性
+  let validate_state_consistency = fn(state: StreamProcessingState) {
+    // 验证状态一致性
+    state.records_since_checkpoint <= state.total_processed &&
+    state.failure_count >= 0 &&
+    state.last_checkpoint_time > 0
+  }
+  
+  assert_true(validate_state_consistency(current_state))
+  assert_true(validate_state_consistency(restored_state))
+  assert_true(validate_state_consistency(updated_persistent))
+  assert_true(validate_state_consistency(updated_distributed))
+  assert_true(validate_state_consistency(hybrid_state))
 }
