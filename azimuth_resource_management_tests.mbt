@@ -1,696 +1,946 @@
 // Azimuth Telemetry System - Resource Management Tests
 // This file contains comprehensive test cases for resource management functionality
 
-// Test 1: Basic Resource Allocation and Deallocation
-test "basic resource allocation and deallocation" {
-  let resource_manager = ResourceManager::new()
+// Test 1: Memory Management Tests
+test "memory management operations" {
+  // Test memory allocation and deallocation
+  let memory_manager = MemoryManager::new()
   
-  // Test memory resource allocation
-  let memory_resource = ResourceManager::allocate_memory(resource_manager, 1024) // 1KB
-  assert_true(Resource::is_valid(memory_resource))
-  assert_eq(Resource::size(memory_resource), 1024)
+  // Allocate memory blocks
+  let block1 = MemoryManager::allocate(memory_manager, 1024)  // 1KB
+  let block2 = MemoryManager::allocate(memory_manager, 2048)  // 2KB
+  let block3 = MemoryManager::allocate(memory_manager, 4096)  // 4KB
   
-  // Test file handle allocation
-  let file_resource = ResourceManager::allocate_file_handle(resource_manager, "/tmp/test.txt")
-  assert_true(Resource::is_valid(file_resource))
-  assert_eq(Resource::path(file_resource), "/tmp/test.txt")
+  assert_eq(MemoryManager::get_block_size(memory_manager, block1), 1024)
+  assert_eq(MemoryManager::get_block_size(memory_manager, block2), 2048)
+  assert_eq(MemoryManager::get_block_size(memory_manager, block3), 4096)
   
-  // Test network socket allocation
-  let socket_resource = ResourceManager::allocate_socket(resource_manager, "tcp", "localhost", 8080)
-  assert_true(Resource::is_valid(socket_resource))
-  assert_eq(Resource::protocol(socket_resource), "tcp")
+  // Check total allocated memory
+  assert_eq(MemoryManager::get_allocated_memory(memory_manager), 7168)  // 1024 + 2048 + 4096
   
-  // Test resource deallocation
-  ResourceManager::deallocate(resource_manager, memory_resource)
-  assert_false(Resource::is_valid(memory_resource))
+  // Deallocate memory blocks
+  MemoryManager::deallocate(memory_manager, block2)
+  assert_eq(MemoryManager::get_allocated_memory(memory_manager), 5120)  // 1024 + 4096
   
-  ResourceManager::deallocate(resource_manager, file_resource)
-  assert_false(Resource::is_valid(file_resource))
+  MemoryManager::deallocate(memory_manager, block1)
+  MemoryManager::deallocate(memory_manager, block3)
+  assert_eq(MemoryManager::get_allocated_memory(memory_manager), 0)
   
-  ResourceManager::deallocate(resource_manager, socket_resource)
-  assert_false(Resource::is_valid(socket_resource))
+  // Test memory pool
+  let memory_pool = MemoryPool::new(1024 * 1024)  // 1MB pool
+  
+  // Allocate from pool
+  let pool_block1 = MemoryPool::allocate(memory_pool, 1024)
+  let pool_block2 = MemoryPool::allocate(memory_pool, 2048)
+  let pool_block3 = MemoryPool::allocate(memory_pool, 4096)
+  
+  assert_eq(MemoryPool::get_used_memory(memory_pool), 7168)
+  
+  // Return blocks to pool
+  MemoryPool::deallocate(memory_pool, pool_block1)
+  MemoryPool::deallocate(memory_pool, pool_block2)
+  MemoryPool::deallocate(memory_pool, pool_block3)
+  
+  assert_eq(MemoryPool::get_used_memory(memory_pool), 0)
+  
+  // Test garbage collection
+  let gc_manager = GCManager::new()
+  
+  // Create objects that will be garbage collected
+  let objects = []
+  for i in 0..100 {
+    let obj = GCObject::new("object_" + i.to_string())
+    ArrayUtil::push(objects, obj)
+  }
+  
+  assert_eq(GCManager::get_object_count(gc_manager), 100)
+  
+  // Clear references to objects
+  objects = []
+  
+  // Run garbage collection
+  GCManager::collect(gc_manager)
+  
+  assert_eq(GCManager::get_object_count(gc_manager), 0)
+  
+  // Test memory leak detection
+  let leak_detector = LeakDetector::new()
+  
+  // Simulate memory leak
+  LeakDetector::start_tracking(leak_detector)
+  
+  let leaked_objects = []
+  for i in 0..50 {
+    let obj = LeakObject::new("leaked_" + i.to_string())
+    ArrayUtil::push(leaked_objects, obj)
+  }
+  
+  // Clear references but don't deallocate
+  leaked_objects = []
+  
+  // Detect leaks
+  let leaks = LeakDetector::detect_leaks(leak_detector)
+  assert_eq(leaks.length(), 50)
+  
+  // Clean up
+  LeakDetector::cleanup_leaks(leak_detector)
+  LeakDetector::stop_tracking(leak_detector)
 }
 
-// Test 2: Resource Pool Management
-test "resource pool management" {
-  let pool_manager = ResourcePoolManager::new()
+// Test 2: File Handle Management Tests
+test "file handle management operations" {
+  // Test file handle allocation and deallocation
+  let file_manager = FileManager::new()
   
-  // Create memory pool
-  let memory_pool = ResourcePoolManager::create_memory_pool(pool_manager, 10240, 10) // 10KB max, 10 resources max
+  // Open file handles
+  let file1 = FileManager::open(file_manager, "/tmp/test1.txt")
+  let file2 = FileManager::open(file_manager, "/tmp/test2.txt")
+  let file3 = FileManager::open(file_manager, "/tmp/test3.txt")
   
-  // Test pool checkout
-  let memory1 = ResourcePool::checkout(memory_pool)
-  assert_true(Resource::is_valid(memory1))
-  assert_eq(ResourcePool::available_count(memory_pool), 9)
-  assert_eq(ResourcePool::checked_out_count(memory_pool), 1)
+  assert_eq(FileManager::get_open_handle_count(file_manager), 3)
   
-  let memory2 = ResourcePool::checkout(memory_pool)
-  assert_true(Resource::is_valid(memory2))
-  assert_eq(ResourcePool::available_count(memory_pool), 8)
-  assert_eq(ResourcePool::checked_out_count(memory_pool), 2)
+  // Write to files
+  FileManager::write(file_manager, file1, "Content for file 1")
+  FileManager::write(file_manager, file2, "Content for file 2")
+  FileManager::write(file_manager, file3, "Content for file 3")
   
-  // Test pool checkin
-  ResourcePool::checkin(memory_pool, memory1)
-  assert_eq(ResourcePool::available_count(memory_pool), 9)
-  assert_eq(ResourcePool::checked_out_count(memory_pool), 1)
+  // Read from files
+  let content1 = FileManager::read(file_manager, file1)
+  let content2 = FileManager::read(file_manager, file2)
+  let content3 = FileManager::read(file_manager, file3)
   
-  // Test pool exhaustion
-  let resources = []
+  assert_eq(content1, "Content for file 1")
+  assert_eq(content2, "Content for file 2")
+  assert_eq(content3, "Content for file 3")
   
-  for i in 0..=10 {
-    let resource = ResourcePool::checkout(memory_pool)
-    match resource {
-      Some(r) => resources.push(r)
-      None => {
-        // Should fail on the 11th attempt
-        assert_eq(i, 9)
+  // Close file handles
+  FileManager::close(file_manager, file1)
+  FileManager::close(file_manager, file2)
+  FileManager::close(file_manager, file3)
+  
+  assert_eq(FileManager::get_open_handle_count(file_manager), 0)
+  
+  // Test automatic file handle cleanup
+  let auto_file_manager = AutoFileManager::new()
+  
+  // Open files with automatic cleanup
+  let auto_file1 = AutoFileManager::open(auto_file_manager, "/tmp/auto1.txt")
+  let auto_file2 = AutoFileManager::open(auto_file_manager, "/tmp/auto2.txt")
+  
+  assert_eq(AutoFileManager::get_open_handle_count(auto_file_manager), 2)
+  
+  // Simulate going out of scope
+  AutoFileManager::cleanup_all(auto_file_manager)
+  
+  assert_eq(AutoFileManager::get_open_handle_count(auto_file_manager), 0)
+  
+  // Test file handle pooling
+  let file_pool = FilePool::new(10)  // Pool of 10 handles
+  
+  // Acquire handles from pool
+  let pooled_file1 = FilePool::acquire(file_pool, "/tmp/pooled1.txt")
+  let pooled_file2 = FilePool::acquire(file_pool, "/tmp/pooled2.txt")
+  
+  assert_eq(FilePool::get_available_handles(file_pool), 8)
+  
+  // Return handles to pool
+  FilePool::release(file_pool, pooled_file1)
+  FilePool::release(file_pool, pooled_file2)
+  
+  assert_eq(FilePool::get_available_handles(file_pool), 10)
+  
+  // Test file handle leak detection
+  let handle_leak_detector = HandleLeakDetector::new()
+  
+  HandleLeakDetector::start_tracking(handle_leak_detector)
+  
+  // Simulate handle leak
+  let leaked_handle = FileManager::open(file_manager, "/tmp/leaked.txt")
+  
+  // Don't close handle
+  let leaks = HandleLeakDetector::detect_leaks(handle_leak_detector)
+  assert_eq(leaks.length(), 1)
+  
+  // Clean up
+  FileManager::close(file_manager, leaked_handle)
+  HandleLeakDetector::cleanup_leaks(handle_leak_detector)
+  HandleLeakDetector::stop_tracking(handle_leak_detector)
+}
+
+// Test 3: Database Connection Management Tests
+test "database connection management operations" {
+  // Test connection pool
+  let connection_pool = ConnectionPool::new("test_db_url", 5)  // Max 5 connections
+  
+  // Acquire connections
+  let conn1 = ConnectionPool::acquire(connection_pool)
+  let conn2 = ConnectionPool::acquire(connection_pool)
+  let conn3 = ConnectionPool::acquire(connection_pool)
+  
+  assert_eq(ConnectionPool::get_active_connections(connection_pool), 3)
+  assert_eq(ConnectionPool::get_available_connections(connection_pool), 2)
+  
+  // Use connections
+  let result1 = DatabaseUtil::execute_query(conn1, "SELECT 1")
+  let result2 = DatabaseUtil::execute_query(conn2, "SELECT 2")
+  let result3 = DatabaseUtil::execute_query(conn3, "SELECT 3")
+  
+  assert_eq(result1[0]["value"], "1")
+  assert_eq(result2[0]["value"], "2")
+  assert_eq(result3[0]["value"], "3")
+  
+  // Release connections
+  ConnectionPool::release(connection_pool, conn1)
+  ConnectionPool::release(connection_pool, conn2)
+  ConnectionPool::release(connection_pool, conn3)
+  
+  assert_eq(ConnectionPool::get_active_connections(connection_pool), 0)
+  assert_eq(ConnectionPool::get_available_connections(connection_pool), 5)
+  
+  // Test connection timeout
+  let timeout_pool = ConnectionPool::new("test_db_url", 2)  // Max 2 connections
+  
+  // Acquire all connections
+  let timeout_conn1 = ConnectionPool::acquire(timeout_pool)
+  let timeout_conn2 = ConnectionPool::acquire(timeout_pool)
+  
+  // Try to acquire with timeout
+  let start_time = TimeUtil::current_time_millis()
+  let timeout_result = ConnectionPool::try_acquire_for(timeout_pool, 100)  // 100ms timeout
+  let elapsed = TimeUtil::current_time_millis() - start_time
+  
+  assert_false(timeout_result.success)
+  assert_true(elapsed >= 90 && elapsed <= 200)
+  
+  // Release one connection and try again
+  ConnectionPool::release(timeout_pool, timeout_conn1)
+  
+  let retry_result = ConnectionPool::try_acquire_for(timeout_pool, 100)
+  assert_true(retry_result.success)
+  
+  ConnectionPool::release(timeout_pool, timeout_conn2)
+  ConnectionPool::release(timeout_pool, retry_result.connection)
+  
+  // Test connection health checking
+  let health_pool = ConnectionPool::new("test_db_url", 3)
+  
+  // Acquire connection
+  let health_conn = ConnectionPool::acquire(health_pool)
+  
+  // Simulate connection failure
+  DatabaseUtil::simulate_failure(health_conn)
+  
+  // Return unhealthy connection
+  ConnectionPool::release(health_pool, health_conn)
+  
+  // Health check should detect and replace unhealthy connection
+  ConnectionPool::health_check(health_pool)
+  
+  assert_eq(ConnectionPool::get_active_connections(health_pool), 0)
+  assert_eq(ConnectionPool::get_available_connections(health_pool), 3)
+  
+  // Test connection validation
+  let validation_pool = ConnectionPool::new("test_db_url", 2)
+  
+  let validation_conn = ConnectionPool::acquire(validation_pool)
+  
+  // Validate connection
+  let is_valid = ConnectionPool::validate_connection(validation_pool, validation_conn)
+  assert_true(is_valid)
+  
+  // Simulate connection loss
+  DatabaseUtil::simulate_failure(validation_conn)
+  
+  // Validate again
+  let is_invalid = ConnectionPool::validate_connection(validation_pool, validation_conn)
+  assert_false(is_invalid)
+  
+  ConnectionPool::release(validation_pool, validation_conn)
+}
+
+// Test 4: Thread Resource Management Tests
+test "thread resource management operations" {
+  // Test thread pool management
+  let thread_pool = ThreadPool::new(4)  // 4 threads in pool
+  
+  assert_eq(ThreadPool::get_active_threads(thread_pool), 0)
+  assert_eq(ThreadPool::get_available_threads(thread_pool), 4)
+  
+  // Submit tasks
+  let futures = []
+  for i in 0..10 {
+    let future = ThreadPool::submit(thread_pool, () -> {
+      TimeUtil::sleep(100)  // Simulate work
+      return "Task_" + i.to_string() + "_completed"
+    })
+    ArrayUtil::push(futures, future)
+  }
+  
+  assert_eq(ThreadPool::get_active_threads(thread_pool), 4)
+  assert_eq(ThreadPool::get_available_threads(thread_pool), 0)
+  
+  // Wait for tasks to complete
+  let results = []
+  for future in futures {
+    let result = Future::get(future)
+    ArrayUtil::push(results, result)
+  }
+  
+  assert_eq(results.length(), 10)
+  assert_eq(ThreadPool::get_active_threads(thread_pool), 0)
+  assert_eq(ThreadPool::get_available_threads(thread_pool), 4)
+  
+  // Test thread lifecycle management
+  let thread_manager = ThreadManager::new()
+  
+  // Create managed thread
+  let managed_thread = ThreadManager::create(thread_manager, () -> {
+    TimeUtil::sleep(200)
+    return "Managed thread result"
+  })
+  
+  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 1)
+  
+  // Wait for thread to complete
+  let managed_result = ThreadManager::join(thread_manager, managed_thread)
+  assert_eq(managed_result, "Managed thread result")
+  
+  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 0)
+  
+  // Test thread resource cleanup
+  let cleanup_manager = ThreadCleanupManager::new()
+  
+  // Create threads
+  let cleanup_threads = []
+  for i in 0..5 {
+    let thread = ThreadCleanupManager::create(cleanup_manager, () -> {
+      TimeUtil::sleep(100)
+      return "Cleanup thread " + i.to_string()
+    })
+    ArrayUtil::push(cleanup_threads, thread)
+  }
+  
+  assert_eq(ThreadCleanupManager::get_active_thread_count(cleanup_manager), 5)
+  
+  // Force cleanup all threads
+  ThreadCleanupManager::cleanup_all(cleanup_manager)
+  
+  assert_eq(ThreadCleanupManager::get_active_thread_count(cleanup_manager), 0)
+  
+  // Test thread resource limits
+  let limited_pool = ThreadPool::new(2)  // Max 2 threads
+  
+  // Submit more tasks than threads
+  let limited_futures = []
+  for i in 0..10 {
+    let future = ThreadPool::submit(limited_pool, () -> {
+      TimeUtil::sleep(50)
+      return "Limited task " + i.to_string()
+    })
+    ArrayUtil::push(limited_futures, future)
+  }
+  
+  // Should still complete all tasks, but with queueing
+  let limited_results = []
+  for future in limited_futures {
+    let result = Future::get(future)
+    ArrayUtil::push(limited_results, result)
+  }
+  
+  assert_eq(limited_results.length(), 10)
+}
+
+// Test 5: Network Socket Management Tests
+test "network socket management operations" {
+  // Test socket pool
+  let socket_pool = SocketPool::new(5)  // Max 5 sockets
+  
+  // Acquire sockets
+  let socket1 = SocketPool::acquire(socket_pool, "tcp", "example.com", 80)
+  let socket2 = SocketPool::acquire(socket_pool, "tcp", "example.com", 443)
+  let socket3 = SocketPool::acquire(socket_pool, "udp", "example.com", 53)
+  
+  assert_eq(SocketPool::get_active_sockets(socket_pool), 3)
+  assert_eq(SocketPool::get_available_sockets(socket_pool), 2)
+  
+  // Use sockets
+  SocketPool::send(socket_pool, socket1, "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+  let response1 = SocketPool::receive(socket_pool)
+  
+  SocketPool::send(socket_pool, socket2, "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+  let response2 = SocketPool::receive(socket_pool)
+  
+  SocketPool::send(socket_pool, socket3, "DNS query")
+  let response3 = SocketPool::receive(socket_pool)
+  
+  assert_true(response1.contains("HTTP"))
+  assert_true(response2.contains("HTTP"))
+  assert_true(response3.length() > 0)
+  
+  // Release sockets
+  SocketPool::release(socket_pool, socket1)
+  SocketPool::release(socket_pool, socket2)
+  SocketPool::release(socket_pool, socket3)
+  
+  assert_eq(SocketPool::get_active_sockets(socket_pool), 0)
+  assert_eq(SocketPool::get_available_sockets(socket_pool), 5)
+  
+  // Test socket timeout
+  let timeout_socket = SocketPool::acquire_with_timeout(socket_pool, "tcp", "slow.example.com", 80, 1000)  // 1s timeout
+  
+  match timeout_socket {
+    Some(socket) => {
+      SocketPool::release(socket_pool, socket)
+    }
+    None => {
+      // Timeout occurred
+    }
+  }
+  
+  // Test socket health checking
+  let health_socket = SocketPool::acquire(socket_pool, "tcp", "example.com", 80)
+  
+  // Simulate socket failure
+  SocketPool::simulate_failure(socket_pool, health_socket)
+  
+  // Health check should detect failure
+  let is_healthy = SocketPool::health_check(socket_pool, health_socket)
+  assert_false(is_healthy)
+  
+  // Release unhealthy socket (should be discarded)
+  SocketPool::release(socket_pool, health_socket)
+  
+  assert_eq(SocketPool::get_active_sockets(socket_pool), 0)
+  assert_eq(SocketPool::get_available_sockets(socket_pool), 5)
+  
+  // Test automatic socket cleanup
+  let auto_socket_manager = AutoSocketManager::new()
+  
+  // Create sockets with automatic cleanup
+  let auto_socket1 = AutoSocketManager::create(auto_socket_manager, "tcp", "example.com", 80)
+  let auto_socket2 = AutoSocketManager::create(auto_socket_manager, "tcp", "example.com", 443)
+  
+  assert_eq(AutoSocketManager::get_active_socket_count(auto_socket_manager), 2)
+  
+  // Simulate going out of scope
+  AutoSocketManager::cleanup_all(auto_socket_manager)
+  
+  assert_eq(AutoSocketManager::get_active_socket_count(auto_socket_manager), 0)
+}
+
+// Test 6: CPU Resource Management Tests
+test "cpu resource management operations" {
+  // Test CPU quota management
+  let cpu_manager = CPUManager::new()
+  
+  // Set CPU quota for process
+  CPUManager::set_quota(cpu_manager, 50.0)  // 50% CPU
+  
+  assert_eq(CPUManager::get_quota(cpu_manager), 50.0)
+  
+  // Check current usage
+  let initial_usage = CPUManager::get_usage(cpu_manager)
+  assert_true(initial_usage >= 0.0 && initial_usage <= 100.0)
+  
+  // Simulate CPU intensive work
+  let cpu_intensive_thread = ThreadUtil::spawn(() -> {
+    let start_time = TimeUtil::current_time_millis()
+    while TimeUtil::current_time_millis() - start_time < 1000 {
+      // CPU intensive work
+      let mut result = 0
+      for i in 0..1000000 {
+        result = result + i
       }
     }
+    return result
+  })
+  
+  ThreadUtil::join(cpu_intensive_thread)
+  
+  // Check usage after work
+  let final_usage = CPUManager::get_usage(cpu_manager)
+  
+  // Usage should be higher than initial
+  assert_true(final_usage > initial_usage)
+  
+  // Test CPU affinity
+  let affinity_manager = CPUAffinityManager::new()
+  
+  // Get available CPUs
+  let available_cpus = CPUAffinityManager::get_available_cpus(affinity_manager)
+  assert_true(available_cpus.length() > 0)
+  
+  // Set affinity for current thread
+  if available_cpus.length() >= 2 {
+    let target_cpus = [available_cpus[0], available_cpus[1]]
+    CPUAffinityManager::set_affinity(affinity_manager, target_cpus)
+    
+    let current_affinity = CPUAffinityManager::get_affinity(affinity_manager)
+    assert_eq(current_affinity.length(), 2)
+    assert_true(current_affinity.contains(available_cpus[0]))
+    assert_true(current_affinity.contains(available_cpus[1]))
   }
   
-  assert_eq(resources.length(), 10)
-  assert_eq(ResourcePool::available_count(memory_pool), 0)
-  assert_eq(ResourcePool::checked_out_count(memory_pool), 10)
+  // Test CPU throttling
+  let throttle_manager = CPUThrottleManager::new()
   
-  // Check in all resources
-  for resource in resources {
-    ResourcePool::checkin(memory_pool, Some(resource))
-  }
+  // Set throttling limits
+  CPUThrottleManager::set_limits(throttle_manager, {
+    "max_usage": 80.0,  // Max 80% CPU
+    "check_interval": 1000,  // Check every 1 second
+    "throttle_duration": 500  // Throttle for 500ms if over limit
+  })
   
-  assert_eq(ResourcePool::available_count(memory_pool), 10)
-  assert_eq(ResourcePool::checked_out_count(memory_pool), 0)
+  // Simulate high CPU usage
+  let high_cpu_thread = ThreadUtil::spawn(() -> {
+    CPUThrottleManager::start_monitoring(throttle_manager)
+    
+    let start_time = TimeUtil::current_time_millis()
+    while TimeUtil::current_time_millis() - start_time < 2000 {
+      // High CPU work
+      let mut result = 0
+      for i in 0..2000000 {
+        result = result + i
+      }
+    }
+    
+    CPUThrottleManager::stop_monitoring(throttle_manager)
+    return result
+  })
+  
+  ThreadUtil::join(high_cpu_thread)
+  
+  // Check if throttling was applied
+  let throttle_stats = CPUThrottleManager::get_stats(throttle_manager)
+  assert_true(throttle_stats.throttle_count > 0)
+  assert_true(throttle_stats.total_throttle_time > 0)
 }
 
-// Test 3: Resource Leak Detection
-test "resource leak detection" {
-  let leak_detector = ResourceLeakDetector::new()
+// Test 7: Disk Space Management Tests
+test "disk space management operations" {
+  // Test disk space monitoring
+  let disk_manager = DiskManager::new("/tmp")
   
-  // Enable leak detection
-  LeakDetector::enable(leak_detector)
+  // Get disk space info
+  let disk_info = DiskManager::get_space_info(disk_manager)
   
-  // Allocate resources without deallocating them
-  let resource1 = LeakDetector::track_allocation(leak_detector, "memory", 1024)
-  let resource2 = LeakDetector::track_allocation(leak_detector, "file", "/tmp/leak_test.txt")
-  let resource3 = LeakDetector::track_allocation(leak_detector, "socket", "tcp://localhost:8080")
+  assert_true(disk_info.total_space > 0)
+  assert_true(disk_info.free_space > 0)
+  assert_true(disk_info.used_space > 0)
+  assert_true(disk_info.free_space <= disk_info.total_space)
+  assert_true(disk_info.used_space <= disk_info.total_space)
+  assert_eq(disk_info.free_space + disk_info.used_space, disk_info.total_space)
   
-  // Check for leaks
-  let leaks = LeakDetector::detect_leaks(leak_detector)
-  assert_eq(leaks.length(), 3)
+  // Test disk usage tracking
+  let usage_tracker = DiskUsageTracker::new("/tmp")
   
-  let memory_leak = leaks.find(|l| Leak::resource_type(l) == "memory")
-  match memory_leak {
-    Some(leak) => {
-      assert_eq(Leak::resource_id(leak), Resource::id(resource1))
-      assert_eq(Leak::size(leak), 1024)
-    }
-    None => assert_true(false)
+  // Create test files
+  DiskUsageTracker::create_file(usage_tracker, "test1.txt", 1024)  // 1KB
+  DiskUsageTracker::create_file(usage_tracker, "test2.txt", 2048)  // 2KB
+  DiskUsageTracker::create_file(usage_tracker, "test3.txt", 4096)  // 4KB
+  
+  // Track usage
+  DiskUsageTracker::track_usage(usage_tracker)
+  
+  let usage_info = DiskUsageTracker::get_usage_info(usage_tracker)
+  assert_eq(usage_info.tracked_files, 3)
+  assert_eq(usage_info.tracked_size, 7168)  // 1024 + 2048 + 4096
+  
+  // Delete files and update tracking
+  DiskUsageTracker::delete_file(usage_tracker, "test2.txt")
+  DiskUsageTracker::update_tracking(usage_tracker)
+  
+  let updated_usage = DiskUsageTracker::get_usage_info(usage_tracker)
+  assert_eq(updated_usage.tracked_files, 2)
+  assert_eq(updated_usage.tracked_size, 5120)  // 1024 + 4096
+  
+  // Clean up
+  DiskUsageTracker::delete_file(usage_tracker, "test1.txt")
+  DiskUsageTracker::delete_file(usage_tracker, "test3.txt")
+  DiskUsageTracker::update_tracking(usage_tracker)
+  
+  // Test disk space cleanup
+  let cleanup_manager = DiskCleanupManager::new("/tmp")
+  
+  // Create files for cleanup
+  DiskCleanupManager::create_temp_file(cleanup_manager, "temp1.txt", 1024)
+  DiskCleanupManager::create_temp_file(cleanup_manager, "temp2.txt", 2048)
+  DiskCleanupManager::create_old_file(cleanup_manager, "old.txt", 4096, 7)  // 7 days old
+  
+  // Configure cleanup rules
+  DiskCleanupManager::add_rule(cleanup_manager, {
+    "name": "temp_files",
+    "pattern": "temp*.txt",
+    "max_age": 0,  // Delete immediately
+    "min_size": 0
+  })
+  
+  DiskCleanupManager::add_rule(cleanup_manager, {
+    "name": "old_files",
+    "pattern": "*.txt",
+    "max_age": 5,  // 5 days
+    "min_size": 0
+  })
+  
+  // Run cleanup
+  let cleanup_result = DiskCleanupManager::cleanup(cleanup_manager)
+  
+  assert_true(cleanup_result.deleted_files >= 2)  // temp1.txt and temp2.txt
+  assert_true(cleanup_result.freed_space >= 3072)  // At least 1KB + 2KB
+  
+  // Test disk space alerts
+  let alert_manager = DiskAlertManager::new("/tmp")
+  
+  // Configure alerts
+  DiskAlertManager::set_threshold(alert_manager, "warning", 80.0)  // 80% usage
+  DiskAlertManager::set_threshold(alert_manager, "critical", 90.0)  // 90% usage
+  
+  // Check current usage
+  let current_usage = DiskAlertManager::get_usage_percentage(alert_manager)
+  
+  // Should not trigger alerts unless usage is high
+  if current_usage < 80.0 {
+    assert_false(DiskAlertManager::has_alerts(alert_manager))
   }
   
-  // Deallocate some resources
-  LeakDetector::track_deallocation(leak_detector, resource2)
+  // Simulate high disk usage
+  DiskAlertManager::simulate_usage(alert_manager, 85.0)
+  assert_true(DiskAlertManager::has_alerts(alert_manager))
   
-  // Check for remaining leaks
-  let remaining_leaks = LeakDetector::detect_leaks(leak_detector)
-  assert_eq(remaining_leaks.length(), 2)
+  let alerts = DiskAlertManager::get_alerts(alert_manager)
+  assert_true(alerts.any((alert) => alert.level == "warning"))
   
-  // Generate leak report
-  let leak_report = LeakDetector::generate_report(leak_detector)
-  match leak_report {
-    LeakReport(total_leaks, total_size, leak_details) => {
-      assert_eq(total_leaks, 2)
-      assert_eq(total_size, 1024)
-      assert_eq(leak_details.length(), 2)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Clean up remaining resources
-  LeakDetector::track_deallocation(leak_detector, resource1)
-  LeakDetector::track_deallocation(leak_detector, resource3)
-  
-  // Verify no more leaks
-  let final_leaks = LeakDetector::detect_leaks(leak_detector)
-  assert_eq(final_leaks.length(), 0)
+  DiskAlertManager::simulate_usage(alert_manager, 95.0)
+  let critical_alerts = DiskAlertManager::get_alerts(alert_manager)
+  assert_true(critical_alerts.any((alert) => alert.level == "critical"));
 }
 
-// Test 4: Resource Usage Monitoring
-test "resource usage monitoring" {
-  let monitor = ResourceMonitor::new()
+// Test 8: Resource Pool Management Tests
+test "resource pool management operations" {
+  // Test generic resource pool
+  let resource_pool = ResourcePool::new(() -> { TestResource::new() }, 5)  // Max 5 resources
+  
+  // Acquire resources
+  let resource1 = ResourcePool::acquire(resource_pool)
+  let resource2 = ResourcePool::acquire(resource_pool)
+  let resource3 = ResourcePool::acquire(resource_pool)
+  
+  assert_eq(ResourcePool::get_active_resources(resource_pool), 3)
+  assert_eq(ResourcePool::get_available_resources(resource_pool), 2)
+  
+  // Use resources
+  let result1 = TestResource::process(resource1, "input1")
+  let result2 = TestResource::process(resource2, "input2")
+  let result3 = TestResource::process(resource3, "input3")
+  
+  assert_eq(result1, "processed_input1")
+  assert_eq(result2, "processed_input2")
+  assert_eq(result3, "processed_input3")
+  
+  // Release resources
+  ResourcePool::release(resource_pool, resource1)
+  ResourcePool::release(resource_pool, resource2)
+  ResourcePool::release(resource_pool, resource3)
+  
+  assert_eq(ResourcePool::get_active_resources(resource_pool), 0)
+  assert_eq(ResourcePool::get_available_resources(resource_pool), 5)
+  
+  // Test resource pool with factory
+  let factory_pool = FactoryResourcePool::new(
+    () -> { ExpensiveResource::new() },
+    (resource) -> { ExpensiveResource::reset(resource) },
+    3
+  )
+  
+  // Acquire and release resources multiple times
+  for i in 0..10 {
+    let resource = FactoryResourcePool::acquire(factory_pool)
+    ExpensiveResource::use(resource)
+    FactoryResourcePool::release(factory_pool, resource)
+  }
+  
+  // Should reuse resources
+  assert_eq(FactoryResourcePool::get_creation_count(factory_pool), 3)
+  assert_eq(FactoryResourcePool::get_reset_count(factory_pool), 10)
+  
+  // Test resource pool with validation
+  let validating_pool = ValidatingResourcePool::new(
+    () -> { ValidatableResource::new() },
+    (resource) -> { ValidatableResource::is_valid(resource) },
+    (resource) -> { ValidatableResource::repair(resource) },
+    4
+  )
+  
+  // Acquire resource
+  let valid_resource = ValidatingResourcePool::acquire(validating_pool)
+  
+  // Simulate resource becoming invalid
+  ValidatableResource::invalidate(valid_resource)
+  
+  // Return invalid resource
+  ValidatingResourcePool::release(validating_pool, valid_resource)
+  
+  // Next acquire should repair or replace resource
+  let repaired_resource = ValidatingResourcePool::acquire(validating_pool)
+  assert_true(ValidatableResource::is_valid(repaired_resource))
+  
+  ValidatingResourcePool::release(validating_pool, repaired_resource)
+  
+  // Test resource pool with timeout
+  let timeout_pool = TimeoutResourcePool::new(
+    () -> { SlowResource::new() },
+    2,  // Max 2 resources
+    100  // 100ms timeout
+  )
+  
+  // Acquire all resources
+  let timeout_resource1 = TimeoutResourcePool::acquire(timeout_pool)
+  let timeout_resource2 = TimeoutResourcePool::acquire(timeout_pool)
+  
+  // Try to acquire with timeout (should fail)
+  let start_time = TimeUtil::current_time_millis()
+  let timeout_result = TimeoutResourcePool::try_acquire_for(timeout_pool, 50)
+  let elapsed = TimeUtil::current_time_millis() - start_time
+  
+  assert_false(timeout_result.success)
+  assert_true(elapsed >= 40 && elapsed <= 100)
+  
+  // Release one resource and try again
+  TimeoutResourcePool::release(timeout_pool, timeout_resource1)
+  
+  let retry_result = TimeoutResourcePool::try_acquire_for(timeout_pool, 50)
+  assert_true(retry_result.success)
+  
+  TimeoutResourcePool::release(timeout_pool, timeout_resource2)
+  TimeoutResourcePool::release(timeout_pool, retry_result.resource)
+}
+
+// Test 9: Resource Quota Management Tests
+test "resource quota management operations" {
+  // Test resource quota manager
+  let quota_manager = QuotaManager::new()
+  
+  // Set quotas for different resources
+  QuotaManager::set_quota(quota_manager, "memory", 1024 * 1024 * 1024)  // 1GB
+  QuotaManager::set_quota(quota_manager, "cpu", 80.0)  // 80% CPU
+  QuotaManager::set_quota(quota_manager, "disk", 10 * 1024 * 1024 * 1024)  // 10GB
+  QuotaManager::set_quota(quota_manager, "connections", 100)  // 100 connections
+  
+  // Check quotas
+  assert_eq(QuotaManager::get_quota(quota_manager, "memory"), 1024 * 1024 * 1024)
+  assert_eq(QuotaManager::get_quota(quota_manager, "cpu"), 80.0)
+  assert_eq(QuotaManager::get_quota(quota_manager, "disk"), 10 * 1024 * 1024 * 1024)
+  assert_eq(QuotaManager::get_quota(quota_manager, "connections"), 100)
+  
+  // Test quota usage tracking
+  QuotaManager::track_usage(quota_manager, "memory", 512 * 1024 * 1024)  // Use 512MB
+  QuotaManager::track_usage(quota_manager, "cpu", 40.0)  // Use 40% CPU
+  QuotaManager::track_usage(quota_manager, "disk", 5 * 1024 * 1024 * 1024)  // Use 5GB
+  QuotaManager::track_usage(quota_manager, "connections", 50)  // Use 50 connections
+  
+  // Check usage
+  assert_eq(QuotaManager::get_usage(quota_manager, "memory"), 512 * 1024 * 1024)
+  assert_eq(QuotaManager::get_usage(quota_manager, "cpu"), 40.0)
+  assert_eq(QuotaManager::get_usage(quota_manager, "disk"), 5 * 1024 * 1024 * 1024)
+  assert_eq(QuotaManager::get_usage(quota_manager, "connections"), 50)
+  
+  // Check remaining quota
+  assert_eq(QuotaManager::get_remaining(quota_manager, "memory"), 512 * 1024 * 1024)
+  assert_eq(QuotaManager::get_remaining(quota_manager, "cpu"), 40.0)
+  assert_eq(QuotaManager::get_remaining(quota_manager, "disk"), 5 * 1024 * 1024 * 1024)
+  assert_eq(QuotaManager::get_remaining(quota_manager, "connections"), 50)
+  
+  // Test quota limits
+  assert_true(QuotaManager::check_quota(quota_manager, "memory", 512 * 1024 * 1024))  // Within limit
+  assert_false(QuotaManager::check_quota(quota_manager, "memory", 1024 * 1024 * 1024))  // Exceeds limit
+  
+  assert_true(QuotaManager::check_quota(quota_manager, "cpu", 40.0))  // Within limit
+  assert_false(QuotaManager::check_quota(quota_manager, "cpu", 50.0))  // Exceeds limit
+  
+  // Test quota reservation
+  let memory_reservation = QuotaManager::reserve(quota_manager, "memory", 256 * 1024 * 1024)
+  assert_true(memory_reservation.success)
+  
+  // Usage should include reservation
+  assert_eq(QuotaManager::get_usage(quota_manager, "memory"), 768 * 1024 * 1024)  // 512MB + 256MB
+  
+  // Release reservation
+  QuotaManager::release_reservation(quota_manager, memory_reservation)
+  
+  assert_eq(QuotaManager::get_usage(quota_manager, "memory"), 512 * 1024 * 1024)  // Back to 512MB
+  
+  // Test quota alerts
+  QuotaManager::set_alert_threshold(quota_manager, "memory", 80.0)  // Alert at 80% usage
+  QuotaManager::set_alert_threshold(quota_manager, "cpu", 75.0)  // Alert at 75% usage
+  
+  // Use more resources to trigger alerts
+  QuotaManager::track_usage(quota_manager, "memory", 512 * 1024 * 1024)  // Total 1GB (100%)
+  QuotaManager::track_usage(quota_manager, "cpu", 30.0)  // Total 70% CPU
+  
+  // Check for alerts
+  let memory_alerts = QuotaManager::get_alerts(quota_manager, "memory")
+  assert_eq(memory_alerts.length(), 1)
+  assert_eq(memory_alerts[0].threshold, 80.0)
+  assert_eq(memory_alerts[0].current_usage, 100.0)
+  
+  let cpu_alerts = QuotaManager::get_alerts(quota_manager, "cpu")
+  assert_eq(cpu_alerts.length(), 0)  // 70% is below 75% threshold
+  
+  // Use more CPU to trigger alert
+  QuotaManager::track_usage(quota_manager, "cpu", 10.0)  // Total 80% CPU
+  
+  let cpu_alerts_after = QuotaManager::get_alerts(quota_manager, "cpu")
+  assert_eq(cpu_alerts_after.length(), 1)
+  assert_eq(cpu_alerts_after[0].threshold, 75.0)
+  assert_eq(cpu_alerts_after[0].current_usage, 80.0)
+}
+
+// Test 10: Resource Monitoring and Reporting Tests
+test "resource monitoring and reporting operations" {
+  // Test resource monitor
+  let resource_monitor = ResourceMonitor::new()
   
   // Start monitoring
-  ResourceMonitor::start(monitor)
+  ResourceMonitor::start(resource_monitor)
   
-  // Allocate and use resources
-  let resources = []
-  
-  for i in 0..=100 {
-    let resource = ResourceMonitor::allocate_tracked(monitor, "memory", 1024 * (i + 1))
-    resources.push(resource)
-  }
-  
-  // Get resource usage statistics
-  let usage_stats = ResourceMonitor::get_usage_statistics(monitor)
-  
-  match usage_stats {
-    UsageStats(total_memory, total_files, total_sockets, peak_memory, peak_files, peak_sockets) => {
-      assert_eq(total_memory, 1024 * 5050) // Sum of 1KB to 101KB
-      assert_eq(total_files, 0)
-      assert_eq(total_sockets, 0)
-      assert_eq(peak_memory, 1024 * 101) // Largest allocation
-      assert_eq(peak_files, 0)
-      assert_eq(peak_sockets, 0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Get resource type breakdown
-  let memory_stats = ResourceMonitor::get_type_statistics(monitor, "memory")
-  match memory_stats {
-    ResourceTypeStats(count, total_size, average_size, min_size, max_size) => {
-      assert_eq(count, 101)
-      assert_eq(total_size, 1024 * 5050)
-      assert_eq(average_size, 1024 * 5050 / 101)
-      assert_eq(min_size, 1024)
-      assert_eq(max_size, 1024 * 101)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Deallocate some resources
-  for i in 0..=50 {
-    ResourceMonitor::deallocate_tracked(monitor, resources[i])
-  }
-  
-  // Get updated statistics
-  let updated_stats = ResourceMonitor::get_usage_statistics(monitor)
-  
-  match updated_stats {
-    UsageStats(total_memory, _, _, _, _, _) => {
-      assert_eq(total_memory, 1024 * (5050 - (51 * 52) / 2)) // Subtract first 51 allocations
-    }
-    _ => assert_true(false)
-  }
-  
-  // Stop monitoring
-  let monitoring_report = ResourceMonitor::stop(monitor)
-  
-  match monitoring_report {
-    MonitoringReport(duration, total_allocations, total_deallocations, peak_usage) => {
-      assert_true(duration > 0L)
-      assert_eq(total_allocations, 101)
-      assert_eq(total_deallocations, 51)
-      assert_true(peak_usage > 0)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 5: Resource Quota Management
-test "resource quota management" {
-  let quota_manager = ResourceQuotaManager::new()
-  
-  // Set resource quotas
-  QuotaManager::set_memory_quota(quota_manager, 10485760) // 10MB
-  QuotaManager::set_file_quota(quota_manager, 100) // 100 files
-  QuotaManager::set_socket_quota(quota_manager, 50) // 50 sockets
-  
-  // Test quota enforcement
-  assert_true(QuotaManager::can_allocate_memory(quota_manager, 5242880)) // 5MB
-  assert_true(QuotaManager::can_allocate_memory(quota_manager, 5242880)) // Another 5MB
-  assert_false(QuotaManager::can_allocate_memory(quota_manager, 1048576)) // 1MB more would exceed quota
-  
-  // Test quota tracking
-  QuotaManager::allocate_memory(quota_manager, 5242880) // 5MB
-  assert_eq(QuotaManager::get_memory_usage(quota_manager), 5242880)
-  
-  QuotaManager::allocate_memory(quota_manager, 5242880) // Another 5MB
-  assert_eq(QuotaManager::get_memory_usage(quota_manager), 10485760) // At quota limit
-  
-  // Test quota exceeded handling
-  let allocation_result = QuotaManager::try_allocate_memory(quota_manager, 1048576) // 1MB
-  match allocation_result {
-    QuotaExceeded(current_usage, quota_limit) => {
-      assert_eq(current_usage, 10485760)
-      assert_eq(quota_limit, 10485760)
-    }
-    AllocationSuccess(_) => assert_true(false)
-  }
-  
-  // Test quota release
-  QuotaManager::release_memory(quota_manager, 5242880) // Release 5MB
-  assert_eq(QuotaManager::get_memory_usage(quota_manager), 5242880)
-  
-  // Now allocation should succeed
-  let allocation_result2 = QuotaManager::try_allocate_memory(quota_manager, 1048576) // 1MB
-  match allocation_result2 {
-    AllocationSuccess(resource) => assert_true(Resource::is_valid(resource))
-    QuotaExceeded(_, _) => assert_true(false)
-  }
-  
-  // Test quota reporting
-  let quota_report = QuotaManager::generate_quota_report(quota_manager)
-  
-  match quota_report {
-    QuotaReport(memory_usage, memory_quota, file_usage, file_quota, socket_usage, socket_quota) => {
-      assert_eq(memory_usage, 6291456) // 5MB + 1MB
-      assert_eq(memory_quota, 10485760) // 10MB
-      assert_eq(file_usage, 0)
-      assert_eq(file_quota, 100)
-      assert_eq(socket_usage, 0)
-      assert_eq(socket_quota, 50)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: Resource Cleanup Automation
-test "resource cleanup automation" {
-  let cleanup_manager = ResourceCleanupManager::new()
-  
-  // Register cleanup strategies
-  let memory_cleanup = MemoryCleanupStrategy::new()
-  let file_cleanup = FileCleanupStrategy::new()
-  let socket_cleanup = SocketCleanupStrategy::new()
-  
-  CleanupManager::register_strategy(cleanup_manager, "memory", memory_cleanup)
-  CleanupManager::register_strategy(cleanup_manager, "file", file_cleanup)
-  CleanupManager::register_strategy(cleanup_manager, "socket", socket_cleanup)
-  
-  // Set cleanup policies
-  CleanupManager::set_policy(cleanup_manager, "memory", CleanupPolicy::new(
-    10485760, // 10MB threshold
-    0.8,      // 80% usage threshold
-    300       // 5 minute timeout
-  ))
-  
-  CleanupManager::set_policy(cleanup_manager, "file", CleanupPolicy::new(
-    50,       // 50 files threshold
-    0.9,      // 90% usage threshold
-    600       // 10 minute timeout
-  ))
-  
-  // Allocate resources
-  let resources = []
-  
-  for i in 0..=100 {
-    let resource = CleanupManager::allocate_tracked(cleanup_manager, "memory", 102400) // 100KB each
-    resources.push(resource)
-  }
-  
-  // Check if cleanup is triggered
-  let cleanup_needed = CleanupManager::is_cleanup_needed(cleanup_manager, "memory")
-  assert_true(cleanup_needed) // 100 * 100KB = 10MB, which should trigger cleanup
-  
-  // Perform cleanup
-  let cleanup_result = CleanupManager::perform_cleanup(cleanup_manager, "memory")
-  
-  match cleanup_result {
-    CleanupSuccess(resources_cleaned, memory_freed) => {
-      assert_true(resources_cleaned > 0)
-      assert_true(memory_freed > 0)
-    }
-    CleanupNotNeeded => assert_true(false)
-    CleanupFailed(error) => assert_true(false)
-  }
-  
-  // Test automatic cleanup scheduling
-  CleanupManager::schedule_automatic_cleanup(cleanup_manager, "memory", 60000) // Every minute
-  CleanupManager::schedule_automatic_cleanup(cleanup_manager, "file", 300000) // Every 5 minutes
-  
-  // Get scheduled cleanups
-  let scheduled_cleanups = CleanupManager::get_scheduled_cleanups(cleanup_manager)
-  assert_eq(scheduled_cleanups.length(), 2)
-  
-  // Test cleanup history
-  let cleanup_history = CleanupManager::get_cleanup_history(cleanup_manager)
-  assert_true(cleanup_history.length() > 0)
-  
-  let last_cleanup = cleanup_history[0]
-  match last_cleanup {
-    CleanupEvent(resource_type, timestamp, resources_cleaned, memory_freed) => {
-      assert_eq(resource_type, "memory")
-      assert_true(timestamp > 0L)
-      assert_true(resources_cleaned > 0)
-      assert_true(memory_freed > 0)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 7: Resource Priority Management
-test "resource priority management" {
-  let priority_manager = ResourcePriorityManager::new()
-  
-  // Define resource priorities
-  PriorityManager::set_priority_level(priority_manager, "critical", 1)
-  PriorityManager::set_priority_level(priority_manager, "high", 2)
-  PriorityManager::set_priority_level(priority_manager, "medium", 3)
-  PriorityManager::set_priority_level(priority_manager, "low", 4)
-  
-  // Allocate resources with different priorities
-  let critical_resource = PriorityManager::allocate_with_priority(priority_manager, "memory", 1024, "critical")
-  let high_resource = PriorityManager::allocate_with_priority(priority_manager, "memory", 1024, "high")
-  let medium_resource = PriorityManager::allocate_with_priority(priority_manager, "memory", 1024, "medium")
-  let low_resource = PriorityManager::allocate_with_priority(priority_manager, "memory", 1024, "low")
-  
-  assert_true(Resource::is_valid(critical_resource))
-  assert_true(Resource::is_valid(high_resource))
-  assert_true(Resource::is_valid(medium_resource))
-  assert_true(Resource::is_valid(low_resource))
-  
-  // Test resource preemption under pressure
-  PriorityManager::simulate_memory_pressure(priority_manager, 2048) // Only 2KB available
-  
-  // Low priority resource should be preempted first
-  let preemption_result = PriorityManager::preempt_for_allocation(priority_manager, 1024)
-  match preemption_result {
-    PreemptionSuccess(preempted_resources, freed_memory) => {
-      assert_true(preempted_resources.length() > 0)
-      assert_true(freed_memory >= 1024)
-      
-      // Check that low priority resources were preempted first
-      let preempted_priorities = preempted_resources.map(|r| Resource::priority(r))
-      assert_true(preempted_priorities.contains(4)) // Low priority
-    }
-    PreemptionNotNeeded => assert_true(false)
-    PreemptionFailed(error) => assert_true(false)
-  }
-  
-  // Test priority queue for resource allocation
-  let allocation_requests = [
-    ResourceRequest::new("memory", 512, "low"),
-    ResourceRequest::new("memory", 512, "critical"),
-    ResourceRequest::new("memory", 512, "medium"),
-    ResourceRequest::new("memory", 512, "high")
-  ]
-  
-  let allocation_order = PriorityManager::get_allocation_order(priority_manager, allocation_requests)
-  
-  // Critical should be first, then high, then medium, then low
-  assert_eq(allocation_order[0].priority, "critical")
-  assert_eq(allocation_order[1].priority, "high")
-  assert_eq(allocation_order[2].priority, "medium")
-  assert_eq(allocation_order[3].priority, "low")
-  
-  // Test priority-based resource limits
-  PriorityManager::set_priority_limits(priority_manager, "memory", [
-    ("critical", 5120),   // 5KB for critical
-    ("high", 3072),       // 3KB for high
-    ("medium", 2048),     // 2KB for medium
-    ("low", 1024)         // 1KB for low
-  ])
-  
-  // Try to exceed priority limits
-  let critical_resources = []
-  for i in 0..=6 {
-    let resource = PriorityManager::allocate_with_priority(priority_manager, "memory", 1024, "critical")
-    match resource {
-      Some(r) => critical_resources.push(r)
-      None => {
-        // Should fail on the 6th attempt (5KB limit)
-        assert_eq(i, 5)
+  // Simulate resource usage
+  let monitor_thread = ThreadUtil::spawn(() -> {
+    TimeUtil::sleep(1000)
+    
+    // Use some memory
+    let large_array = ArrayUtil::with_capacity(1024 * 1024)  // 1MB array
+    
+    // Use CPU
+    let start_time = TimeUtil::current_time_millis()
+    while TimeUtil::current_time_millis() - start_time < 1000 {
+      let mut result = 0
+      for i in 0..1000000 {
+        result = result + i
       }
     }
-  }
-  
-  assert_eq(critical_resources.length(), 5)
-}
-
-// Test 8: Resource Dependency Management
-test "resource dependency management" {
-  let dependency_manager = ResourceDependencyManager::new()
-  
-  // Create resources with dependencies
-  let database_connection = DependencyManager::allocate_resource(dependency_manager, "database_connection")
-  let transaction = DependencyManager::allocate_resource(dependency_manager, "transaction")
-  let query_result = DependencyManager::allocate_resource(dependency_manager, "query_result")
-  
-  // Set up dependencies
-  DependencyManager::add_dependency(dependency_manager, transaction, database_connection)
-  DependencyManager::add_dependency(dependency_manager, query_result, transaction)
-  
-  // Test dependency graph
-  let graph = DependencyManager::get_dependency_graph(dependency_manager)
-  
-  let transaction_deps = DependencyGraph::get_dependencies(graph, transaction)
-  assert_eq(transaction_deps.length(), 1)
-  assert_eq(transaction_deps[0], database_connection)
-  
-  let query_result_deps = DependencyGraph::get_dependencies(graph, query_result)
-  assert_eq(query_result_deps.length(), 1)
-  assert_eq(query_result_deps[0], transaction)
-  
-  let database_connection_deps = DependencyGraph::get_dependencies(graph, database_connection)
-  assert_eq(database_connection_deps.length(), 0)
-  
-  // Test dependency resolution order
-  let resolution_order = DependencyManager::get_resolution_order(dependency_manager)
-  assert_eq(resolution_order[0], database_connection)
-  assert_eq(resolution_order[1], transaction)
-  assert_eq(resolution_order[2], query_result)
-  
-  // Test circular dependency detection
-  let circular_resource1 = DependencyManager::allocate_resource(dependency_manager, "circular1")
-  let circular_resource2 = DependencyManager::allocate_resource(dependency_manager, "circular2")
-  
-  DependencyManager::add_dependency(dependency_manager, circular_resource1, circular_resource2)
-  DependencyManager::add_dependency(dependency_manager, circular_resource2, circular_resource1)
-  
-  let circular_deps = DependencyManager::detect_circular_dependencies(dependency_manager)
-  assert_eq(circular_deps.length(), 1)
-  assert_eq(circular_deps[0].length(), 2)
-  
-  // Test cascade deallocation
-  DependencyManager::deallocate_with_dependents(dependency_manager, database_connection)
-  
-  // All dependent resources should be deallocated
-  assert_false(Resource::is_valid(transaction))
-  assert_false(Resource::is_valid(query_result))
-  assert_false(Resource::is_valid(database_connection))
-  
-  // Test safe deallocation (won't deallocate if dependents exist)
-  let safe_resource = DependencyManager::allocate_resource(dependency_manager, "safe_resource")
-  let dependent_resource = DependencyManager::allocate_resource(dependency_manager, "dependent_resource")
-  
-  DependencyManager::add_dependency(dependency_manager, dependent_resource, safe_resource)
-  
-  let deallocation_result = DependencyManager::try_deallocate_safe(dependency_manager, safe_resource)
-  match deallocation_result {
-    DeallocationBlocked(dependents) => {
-      assert_eq(dependents.length(), 1)
-      assert_eq(dependents[0], dependent_resource)
-    }
-    DeallocationSuccess => assert_true(false)
-  }
-  
-  // Deallocate dependent first
-  DependencyManager::deallocate_with_dependents(dependency_manager, dependent_resource)
-  
-  // Now safe deallocation should work
-  let deallocation_result2 = DependencyManager::try_deallocate_safe(dependency_manager, safe_resource)
-  match deallocation_result2 {
-    DeallocationSuccess => assert_true(true)
-    DeallocationBlocked(_) => assert_true(false)
-  }
-}
-
-// Test 9: Resource Sharing and Isolation
-test "resource sharing and isolation" {
-  let sharing_manager = ResourceSharingManager::new()
-  
-  // Create shared resource
-  let shared_resource = SharingManager::create_shared_resource(sharing_manager, "shared_cache", 1048576) // 1MB cache
-  
-  // Test resource sharing
-  let accessor1 = SharingManager::get_accessor(sharing_manager, shared_resource, "reader1")
-  let accessor2 = SharingManager::get_accessor(sharing_manager, shared_resource, "reader2")
-  
-  assert_true(ResourceAccessor::is_valid(accessor1))
-  assert_true(ResourceAccessor::is_valid(accessor2))
-  
-  // Test concurrent access
-  let access_result1 = ResourceAccessor::access(accessor1, || {
-    // Simulate read access
-    "data_from_cache"
+    
+    // Use disk
+    let temp_file = FileUtil::create_temp("/tmp/monitor_test")
+    FileUtil::write(temp_file, "x".repeat(1024 * 10))  // 10KB
+    FileUtil::delete(temp_file)
   })
   
-  match access_result1 {
-    AccessSuccess(data) => assert_eq(data, "data_from_cache")
-    AccessDenied(reason) => assert_true(false)
-  }
+  ThreadUtil::join(monitor_thread)
   
-  let access_result2 = ResourceAccessor::access(accessor2, || {
-    // Simulate read access
-    "data_from_cache"
+  // Stop monitoring
+  ResourceMonitor::stop(resource_monitor)
+  
+  // Get monitoring results
+  let monitoring_results = ResourceMonitor::get_results(resource_monitor)
+  
+  assert_true(monitoring_results.duration > 0)
+  assert_true(monitoring_results.memory_usage.peak > 0)
+  assert_true(monitoring_results.cpu_usage.average > 0)
+  assert_true(monitoring_results.disk_usage.bytes_written > 0)
+  
+  // Test resource reporter
+  let resource_reporter = ResourceReporter::new()
+  
+  // Configure report
+  ResourceReporter::configure(resource_reporter, {
+    "include_memory": true,
+    "include_cpu": true,
+    "include_disk": true,
+    "include_network": true,
+    "format": "json",
+    "output_file": "/tmp/resource_report.json"
   })
   
-  match access_result2 {
-    AccessSuccess(data) => assert_eq(data, "data_from_cache")
-    AccessDenied(reason) => assert_true(false)
-  }
+  // Generate report
+  let report = ResourceReporter::generate(resource_reporter)
   
-  // Test exclusive access
-  let exclusive_accessor = SharingManager::get_exclusive_accessor(sharing_manager, shared_resource, "writer1")
+  assert_true(report.contains("memory"))
+  assert_true(report.contains("cpu"))
+  assert_true(report.contains("disk"))
   
-  let exclusive_result = ResourceAccessor::access_exclusive(exclusive_accessor, || {
-    // Simulate write access
-    "write_successful"
+  // Test resource alerts
+  let alert_manager = ResourceAlertManager::new()
+  
+  // Configure alerts
+  ResourceAlertManager::add_alert(alert_manager, {
+    "name": "high_memory",
+    "resource": "memory",
+    "condition": "usage > 80%",
+    "severity": "warning",
+    "action": "log"
   })
   
-  match exclusive_result {
-    AccessSuccess(data) => assert_eq(data, "write_successful")
-    AccessDenied(reason) => assert_true(false)
+  ResourceAlertManager::add_alert(alert_manager, {
+    "name": "critical_cpu",
+    "resource": "cpu",
+    "condition": "usage > 90%",
+    "severity": "critical",
+    "action": "notify"
+  })
+  
+  // Simulate high resource usage
+  ResourceAlertManager::report_usage(alert_manager, "memory", 85.0)
+  ResourceAlertManager::report_usage(alert_manager, "cpu", 95.0)
+  
+  // Check alerts
+  let alerts = ResourceAlertManager::get_active_alerts(alert_manager)
+  assert_eq(alerts.length(), 2)
+  
+  let memory_alert = ArrayUtil::find(alerts, (alert) => { alert.name == "high_memory" })
+  assert_eq(memory_alert.severity, "warning")
+  
+  let cpu_alert = ArrayUtil::find(alerts, (alert) => { alert.name == "critical_cpu" })
+  assert_eq(cpu_alert.severity, "critical")
+  
+  // Test resource trends
+  let trend_analyzer = ResourceTrendAnalyzer::new()
+  
+  // Add historical data
+  let now = TimeUtil::current_time_millis()
+  for i in 0..24 {
+    let timestamp = now - (23 - i) * 3600 * 1000  // Last 24 hours
+    let memory_usage = 50.0 + (i % 10) * 5.0  // Varying memory usage
+    let cpu_usage = 30.0 + (i % 8) * 7.5  // Varying CPU usage
+    
+    ResourceTrendAnalyzer::add_data_point(trend_analyzer, timestamp, {
+      "memory": memory_usage,
+      "cpu": cpu_usage
+    })
   }
   
-  // Test access control
-  let read_only_accessor = SharingManager::get_readonly_accessor(sharing_manager, shared_resource, "reader3")
+  // Analyze trends
+  let memory_trend = ResourceTrendAnalyzer::analyze_trend(trend_analyzer, "memory")
+  let cpu_trend = ResourceTrendAnalyzer::analyze_trend(trend_analyzer, "cpu")
   
-  let write_attempt = ResourceAccessor::try_write(read_only_accessor, "new_data")
-  match write_attempt {
-    AccessDenied(reason) => assert_true(true)
-    AccessSuccess(_) => assert_true(false)
-  }
+  assert_true(memory_trend.slope != 0.0)  // Should have some trend
+  assert_true(cpu_trend.slope != 0.0)  // Should have some trend
   
-  // Test resource isolation
-  let isolated_context = SharingManager::create_isolated_context(sharing_manager)
-  let isolated_resource = SharingManager::allocate_in_context(isolated_context, "isolated_memory", 1024)
+  // Test resource predictions
+  let prediction = ResourceTrendAnalyzer::predict(trend_analyzer, "memory", 3600 * 1000)  // 1 hour ahead
   
-  assert_true(Resource::is_valid(isolated_resource))
+  assert_true(prediction.predicted_value > 0)
+  assert_true(prediction.confidence > 0.0 && prediction.confidence <= 1.0)
   
-  // Try to access isolated resource from outside context
-  let external_access = SharingManager::try_access_from_outside(sharing_manager, isolated_resource)
-  match external_access {
-    AccessDenied(reason) => assert_true(true)
-    AccessSuccess(_) => assert_true(false)
-  }
-  
-  // Test access statistics
-  let access_stats = SharingManager::get_access_statistics(sharing_manager, shared_resource)
-  
-  match access_stats {
-    AccessStats(total_accesses, concurrent_accessors, access_frequency, last_access_time) => {
-      assert_eq(total_accesses, 3) // accessor1, accessor2, exclusive_accessor
-      assert_eq(concurrent_accessors, 3)
-      assert_true(access_frequency > 0.0)
-      assert_true(last_access_time > 0L)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 10: Resource Performance Optimization
-test "resource performance optimization" {
+  // Test resource optimization suggestions
   let optimizer = ResourceOptimizer::new()
   
-  // Create performance profile
-  let profile = ResourcePerformanceProfile::new()
-  
-  // Add resource usage patterns
-  profile.add_pattern("database_connection", {
-    allocation_time: 100,      // 100ms
-    deallocation_time: 50,     // 50ms
-    access_frequency: 1000,    // 1000 accesses per second
-    peak_concurrent: 10,       // 10 concurrent connections
-    average_lifetime: 300000   // 5 minutes average lifetime
-  })
-  
-  profile.add_pattern("file_handle", {
-    allocation_time: 10,       // 10ms
-    deallocation_time: 5,      // 5ms
-    access_frequency: 100,     // 100 accesses per second
-    peak_concurrent: 50,       // 50 concurrent handles
-    average_lifetime: 60000    // 1 minute average lifetime
-  })
-  
-  // Analyze performance bottlenecks
-  let bottlenecks = Optimizer::analyze_bottlenecks(optimizer, profile)
-  
-  assert_true(bottlenecks.length() > 0)
-  
-  let db_bottleneck = bottlenecks.find(|b| Bottleneck::resource_type(b) == "database_connection")
-  match db_bottleneck {
-    Some(bottleneck) => {
-      assert_eq(Bottleneck::type(bottleneck), AllocationTime)
-      assert_true(Bottleneck::impact(bottleneck) > 0.0)
-    }
-    None => assert_true(false)
+  // Analyze current usage
+  let current_usage = {
+    "memory": 75.0,
+    "cpu": 60.0,
+    "disk": 40.0,
+    "network": 30.0
   }
   
-  // Generate optimization recommendations
-  let recommendations = Optimizer::generate_recommendations(optimizer, profile)
+  let suggestions = ResourceOptimizer::get_suggestions(optimizer, current_usage)
   
-  assert_true(recommendations.length() > 0)
+  assert_eq(suggestions.length(), 4)
   
-  let db_recommendation = recommendations.find(|r| Recommendation::resource_type(r) == "database_connection")
-  match db_recommendation {
-    Some(recommendation) => {
-      assert_eq(Recommendation::type(recommendation), Pooling)
-      assert_true(Recommendation::expected_improvement(recommendation) > 0.0)
-    }
-    None => assert_true(false)
-  }
+  let memory_suggestion = ArrayUtil::find(suggestions, (s) -> { s.resource == "memory" })
+  assert_eq(memory_suggestion.resource, "memory")
+  assert_true(memory_suggestion.suggestion.length() > 0)
   
-  // Apply optimizations
-  let optimization_result = Optimizer::apply_optimizations(optimizer, recommendations)
-  
-  match optimization_result {
-    OptimizationSuccess(optimizations_applied, performance_improvement) => {
-      assert_true(optimizations_applied.length() > 0)
-      assert_true(performance_improvement > 0.0)
-    }
-    OptimizationFailed(error) => assert_true(false)
-  }
-  
-  // Test optimization effectiveness
-  let optimized_profile = Optimizer::measure_performance(optimizer, profile)
-  
-  let db_optimized = optimized_profile.get_pattern("database_connection")
-  match db_optimized {
-    Some(pattern) => {
-      assert_true(pattern.allocation_time < 100) // Should be improved
-      assert_true(pattern.deallocation_time < 50) // Should be improved
-    }
-    None => assert_true(false)
-  }
-  
-  // Test resource caching optimization
-  let cache_optimizer = ResourceCacheOptimizer::new()
-  
-  CacheOptimizer::enable_caching(cache_optimizer, "database_connection", 10) // Cache 10 connections
-  
-  // Simulate repeated allocations and deallocations
-  let start_time = Time::now()
-  
-  for i in 0..=100 {
-    let connection = CacheOptimizer::get_cached(cache_optimizer, "database_connection")
-    CacheOptimizer::return_cached(cache_optimizer, connection)
-  }
-  
-  let cached_time = Time::now() - start_time
-  
-  // Compare with non-cached performance
-  let start_time2 = Time::now()
-  
-  for i in 0..=100 {
-    let connection = ResourceOptimizer::allocate_direct(optimizer, "database_connection")
-    ResourceOptimizer::deallocate_direct(optimizer, connection)
-  }
-  
-  let direct_time = Time::now() - start_time2
-  
-  // Caching should be faster
-  assert_true(cached_time < direct_time)
-  
-  // Get cache statistics
-  let cache_stats = CacheOptimizer::get_cache_statistics(cache_optimizer, "database_connection")
-  
-  match cache_stats {
-    CacheStats(hits, misses, hit_ratio, cache_size) => {
-      assert_true(hits > 0)
-      assert_eq(misses, 1) // First allocation is a miss
-      assert_true(hit_ratio > 0.9) // High hit ratio
-      assert_eq(cache_size, 10)
-    }
-    _ => assert_true(false)
-  }
+  let cpu_suggestion = ArrayUtil::find(suggestions, (s) => { s.resource == "cpu" })
+  assert_eq(cpu_suggestion.resource, "cpu")
+  assert_true(cpu_suggestion.suggestion.length() > 0)
 }
