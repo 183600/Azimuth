@@ -2566,6 +2566,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f746573745f63617365732e6d6274_8, ["advanced http client telemetry integration"]),
     9: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f746573745f63617365732e6d6274_9, ["comprehensive telemetry system integration"]),
   },
+  "azimuth_premium_quality_moonbit_tests.mbt": {
+    0: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_0, ["distributed trace context propagation with enhanced baggage handling"]),
+    1: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_1, ["advanced metric aggregation with sliding time windows"]),
+    2: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_2, ["span event correlation and causality analysis"]),
+    3: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_3, ["adaptive sampling strategy with machine learning-inspired decision making"]),
+    4: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_4, ["telemetry data compression and transmission optimization"]),
+    5: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_5, ["distributed system health monitoring and anomaly detection"]),
+    6: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_6, ["telemetry data privacy and sensitive information handling"]),
+    7: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_7, ["telemetry data retention with tiered storage optimization"]),
+  },
   "azimuth_premium_quality_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f656e68616e6365645f74657374732e6d6274_0, ["遥测数据完整性和一致性验证"]),
     1: (__test_617a696d7574685f7072656d69756d5f7175616c6974795f656e68616e6365645f74657374732e6d6274_1, ["高并发遥测数据收集性能测试"]),

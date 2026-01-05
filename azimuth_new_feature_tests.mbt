@@ -1,719 +1,448 @@
 // Azimuth Telemetry System - New Feature Tests
-// This file contains new test cases for various telemetry features and scenarios
+// This file contains new test cases for enhanced telemetry functionality
 
-// Test 1: Basic Data Types Operations
-test "basic data types operations" {
-  // Test string attribute value operations
-  let string_attr = StringValue("azimuth_test")
-  match string_attr {
-    StringValue(v) => {
-      assert_eq(v, "azimuth_test")
-      assert_eq(v.length(), 13)
-      assert_true(v.contains("azimuth"))
-    }
-    _ => assert_true(false)
+// Test 1: Advanced Span Operations with Parent-Child Relationships
+test "advanced span operations with parent-child relationships" {
+  let parent_ctx = SpanContext::new("parent_trace_id", "parent_span_id", true, "")
+  let parent_span = Span::new("parent_span", Server, parent_ctx)
+  
+  // Create child span with parent context
+  let child_span = Span::new("child_span", Client, SpanContext::new("parent_trace_id", "child_span_id", true, ""))
+  Span::set_parent(child_span, parent_span)
+  
+  // Test parent-child relationship
+  let parent_context = Span::parent_context(child_span)
+  match parent_context {
+    Some(ctx) => assert_eq(SpanContext::span_id(ctx), "parent_span_id")
+    None => assert_true(false)
   }
   
-  // Test numeric attribute value operations
-  let int_attr = IntValue(2024)
-  match int_attr {
-    IntValue(v) => {
-      assert_eq(v, 2024)
-      assert_true(v > 2000)
-      assert_eq(v % 2, 0)
-    }
-    _ => assert_true(false)
-  }
+  // Test span hierarchy
+  assert_true(Span::is_parent_of(parent_span, child_span))
+  assert_false(Span::is_parent_of(child_span, parent_span))
   
-  // Test float attribute value operations
-  let float_attr = FloatValue(3.14159)
-  match float_attr {
-    FloatValue(v) => {
-      assert_true(v > 3.0)
-      assert_true(v < 4.0)
-      assert_true(v * 1000.0 > 3141.0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test boolean attribute value operations
-  let bool_attr = BoolValue(true)
-  match bool_attr {
-    BoolValue(v) => {
-      assert_true(v)
-      assert_true(v && true)
-      assert_false(v && false)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test array attribute value operations
-  let array_attr = ArrayStringValue(["azimuth", "telemetry", "test"])
-  match array_attr {
-    ArrayStringValue(v) => {
-      assert_eq(v.length(), 3)
-      assert_eq(v[0], "azimuth")
-      assert_eq(v[1], "telemetry")
-      assert_eq(v[2], "test")
-      assert_true(v.contains("telemetry"))
-    }
-    _ => assert_true(false)
-  }
+  Span::end(child_span)
+  Span::end(parent_span)
 }
 
-// Test 2: Error Handling and Boundary Conditions
-test "error handling and boundary conditions" {
-  // Test empty string handling
-  let empty_string = StringValue("")
-  match empty_string {
-    StringValue(v) => {
-      assert_eq(v.length(), 0)
-      assert_true(v.is_empty())
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test zero value handling
-  let zero_int = IntValue(0)
-  match zero_int {
-    IntValue(v) => {
-      assert_eq(v, 0)
-      assert_eq(v + 1, 1)
-      assert_eq(v * 5, 0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test negative value handling
-  let negative_int = IntValue(-42)
-  match negative_int {
-    IntValue(v) => {
-      assert_eq(v, -42)
-      assert_true(v < 0)
-      assert_eq(v + 42, 0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test maximum value handling
-  let max_int = IntValue(2147483647) // Max 32-bit signed int
-  match max_int {
-    IntValue(v) => {
-      assert_eq(v, 2147483647)
-      assert_true(v > 0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test minimum value handling
-  let min_int = IntValue(-2147483648) // Min 32-bit signed int
-  match min_int {
-    IntValue(v) => {
-      assert_eq(v, -2147483648)
-      assert_true(v < 0)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test empty array handling
-  let empty_array = ArrayIntValue([])
-  match empty_array {
-    ArrayIntValue(v) => {
-      assert_eq(v.length(), 0)
-      assert_true(v.is_empty())
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 3: Performance Benchmark Tests
-test "performance benchmark tests" {
-  // Test attribute creation performance
-  let start_time = Clock::now()
-  
-  let mut attrs = []
-  for i in 0..=100 {
-    attrs = attrs + [("attr." + i.to_string(), StringValue("value_" + i.to_string()))]
-  }
-  
-  let end_time = Clock::now()
-  let duration = end_time - start_time
-  
-  // Verify attribute creation completed within reasonable time
-  assert_true(duration < 1000) // Less than 1 second
-  assert_eq(attrs.length(), 101)
-  
-  // Test attribute lookup performance
-  let test_attrs = Attributes::new()
-  for i in 0..=50 {
-    Attributes::set(test_attrs, "perf.key." + i.to_string(), IntValue(i))
-  }
-  
-  let lookup_start = Clock::now()
-  for i in 0..=50 {
-    let result = Attributes::get(test_attrs, "perf.key." + i.to_string())
-    match result {
-      Some(IntValue(v)) => assert_eq(v, i)
-      _ => assert_true(false)
-    }
-  }
-  let lookup_end = Clock::now()
-  let lookup_duration = lookup_end - lookup_start
-  
-  // Verify attribute lookup completed within reasonable time
-  assert_true(lookup_duration < 500) // Less than 0.5 seconds
-  
-  // Test span creation performance
-  let span_start = Clock::now()
-  
-  let mut spans = []
-  for i in 0..=20 {
-    let ctx = SpanContext::new("trace_" + i.to_string(), "span_" + i.to_string(), true, "")
-    let span = Span::new("perf_span_" + i.to_string(), Internal, ctx)
-    spans = spans + [span]
-  }
-  
-  let span_end = Clock::now()
-  let span_duration = span_end - span_start
-  
-  // Verify span creation completed within reasonable time
-  assert_true(span_duration < 1000) // Less than 1 second
-  assert_eq(spans.length(), 21)
-  
-  // Clean up spans
-  for span in spans {
-    Span::end(span)
-  }
-}
-
-// Test 4: Concurrent Safety Tests
-test "concurrent safety tests" {
-  // Test concurrent attribute access
-  let shared_attrs = Attributes::new()
-  
-  // Initialize shared attributes
-  Attributes::set(shared_attrs, "shared.counter", IntValue(0))
-  Attributes::set(shared_attrs, "shared.flag", BoolValue(false))
-  
-  // Simulate concurrent access pattern
-  let mut operations = []
-  
-  // Create multiple attribute operations
-  for i in 0..=10 {
-    let op = {
-      "operation": "update",
-      "key": "concurrent.attr." + i.to_string(),
-      "value": StringValue("concurrent_value_" + i.to_string())
-    }
-    operations = operations + [op]
-  }
-  
-  // Execute operations
-  for op in operations {
-    match op["operation"] {
-      "update" => {
-        Attributes::set(shared_attrs, op["key"], StringValue(op["value"]))
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  // Verify all operations completed successfully
-  for i in 0..=10 {
-    let key = "concurrent.attr." + i.to_string()
-    let result = Attributes::get(shared_attrs, key)
-    match result {
-      Some(StringValue(v)) => {
-        let expected = "concurrent_value_" + i.to_string()
-        assert_eq(v, expected)
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  // Test concurrent span operations
-  let trace_id = "concurrent_trace_test"
-  let mut spans = []
-  
-  // Create multiple spans with same trace
-  for i in 0..=5 {
-    let span_id = "concurrent_span_" + i.to_string()
-    let ctx = SpanContext::new(trace_id, span_id, true, "")
-    let span = Span::new("concurrent_test_span_" + i.to_string(), Internal, ctx)
-    spans = spans + [span]
-  }
-  
-  // Verify all spans have same trace ID
-  for span in spans {
-    let ctx = Span::span_context(span)
-    assert_eq(SpanContext::trace_id(ctx), trace_id)
-  }
-  
-  // End all spans
-  for span in spans {
-    Span::end(span)
-  }
-}
-
-// Test 5: Data Serialization and Deserialization Tests
-test "data serialization and deserialization tests" {
-  // Test attribute serialization
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "string.key", StringValue("test_value"))
-  Attributes::set(attrs, "int.key", IntValue(42))
-  Attributes::set(attrs, "float.key", FloatValue(3.14))
-  Attributes::set(attrs, "bool.key", BoolValue(true))
-  Attributes::set(attrs, "array.key", ArrayStringValue(["a", "b", "c"]))
-  
-  // Serialize attributes
-  let serialized = Attributes::serialize(attrs)
-  assert_true(serialized.length() > 0)
-  
-  // Deserialize attributes
-  let deserialized = Attributes::deserialize(serialized)
-  
-  // Verify deserialized attributes match original
-  let string_result = Attributes::get(deserialized, "string.key")
-  match string_result {
-    Some(StringValue(v)) => assert_eq(v, "test_value")
-    _ => assert_true(false)
-  }
-  
-  let int_result = Attributes::get(deserialized, "int.key")
-  match int_result {
-    Some(IntValue(v)) => assert_eq(v, 42)
-    _ => assert_true(false)
-  }
-  
-  let float_result = Attributes::get(deserialized, "float.key")
-  match float_result {
-    Some(FloatValue(v)) => assert_true(abs(v - 3.14) < 0.001)
-    _ => assert_true(false)
-  }
-  
-  let bool_result = Attributes::get(deserialized, "bool.key")
-  match bool_result {
-    Some(BoolValue(v)) => assert_true(v)
-    _ => assert_true(false)
-  }
-  
-  let array_result = Attributes::get(deserialized, "array.key")
-  match array_result {
-    Some(ArrayStringValue(v)) => {
-      assert_eq(v.length(), 3)
-      assert_eq(v[0], "a")
-      assert_eq(v[1], "b")
-      assert_eq(v[2], "c")
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test span context serialization
-  let span_ctx = SpanContext::new("trace_123", "span_456", true, "test_state")
-  let serialized_ctx = SpanContext::serialize(span_ctx)
-  let deserialized_ctx = SpanContext::deserialize(serialized_ctx)
-  
-  // Verify deserialized context matches original
-  assert_eq(SpanContext::trace_id(deserialized_ctx), "trace_123")
-  assert_eq(SpanContext::span_id(deserialized_ctx), "span_456")
-  assert_true(SpanContext::is_sampled(deserialized_ctx))
-}
-
-// Test 6: Time Series Data Processing Tests
-test "time series data processing tests" {
-  // Create time series data
-  let mut data_points = []
-  
-  // Generate time series data points
-  for i in 0..=10 {
-    let timestamp = 1640995200L + (i * 60L) // 1-minute intervals
-    let value = 100.0 + (i.to_float() * 5.5) // Increasing values
-    let point = {
-      "timestamp": timestamp,
-      "value": value,
-      "tags": [
-        ("metric.name", "test.metric"),
-        ("host", "test-host"),
-        ("region", "us-west")
-      ]
-    }
-    data_points = data_points + [point]
-  }
-  
-  // Verify time series data generation
-  assert_eq(data_points.length(), 11)
-  assert_eq(data_points[0]["timestamp"], 1640995200L)
-  assert_eq(data_points[10]["timestamp"], 1640995200L + 600L)
-  
-  // Test time series aggregation
-  let mut sum = 0.0
-  let mut count = 0
-  
-  for point in data_points {
-    match point["value"] {
-      FloatValue(v) => {
-        sum = sum + v
-        count = count + 1
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  let average = sum / count.to_float()
-  assert_true(average > 100.0)
-  assert_true(average < 200.0)
-  
-  // Test time series filtering
-  let mut filtered_points = []
-  
-  for point in data_points {
-    match point["value"] {
-      FloatValue(v) => {
-        if v > 120.0 {
-          filtered_points = filtered_points + [point]
-        }
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  // Verify filtering results
-  assert_true(filtered_points.length() > 0)
-  assert_true(filtered_points.length() < data_points.length())
-  
-  // Test time series windowing
-  let window_size = 5
-  let mut windows = []
-  
-  for i in 0..=(data_points.length() - window_size) {
-    let mut window = []
-    for j in 0..=(window_size - 1) {
-      window = window + [data_points[i + j]]
-    }
-    windows = windows + [window]
-  }
-  
-  // Verify windowing results
-  assert_eq(windows.length(), data_points.length() - window_size + 1)
-  assert_eq(windows[0].length(), window_size)
-  assert_eq(windows[windows.length() - 1].length(), window_size)
-}
-
-// Test 7: Resource Management and Cleanup Tests
-test "resource management and cleanup tests" {
-  // Test span lifecycle management
-  let mut spans = []
-  
-  // Create multiple spans
-  for i in 0..=10 {
-    let ctx = SpanContext::new("resource_test_trace", "resource_span_" + i.to_string(), true, "")
-    let span = Span::new("resource_test_span_" + i.to_string(), Internal, ctx)
-    spans = spans + [span]
-  }
-  
-  // Verify all spans are recording
-  for span in spans {
-    assert_true(Span::is_recording(span))
-  }
-  
-  // End all spans
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // Verify all spans are no longer recording
-  for span in spans {
-    assert_false(Span::is_recording(span))
-  }
-  
-  // Test meter resource management
+// Test 2: Metric Aggregation and Statistics
+test "metric aggregation and statistics" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "resource_test_meter")
+  let meter = MeterProvider::get_meter(provider, "aggregation_meter")
   
-  // Create multiple instruments
-  let counter = Meter::create_counter(meter, "resource_test_counter", Some("Test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "resource_test_histogram", Some("Test histogram"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter(meter, "resource_test_updown", Some("Test updown counter"), Some("value"))
-  let gauge = Meter::create_gauge(meter, "resource_test_gauge", Some("Test gauge"), Some("value"))
+  // Create counter for aggregation testing
+  let counter = Meter::create_counter(meter, "request_count", Some("Total requests"), Some("count"))
   
-  // Use instruments
+  // Add multiple values
   Counter::add(counter, 1.0)
-  Histogram::record(histogram, 100.0)
-  UpDownCounter::add(updown_counter, 10.0)
+  Counter::add(counter, 2.0)
+  Counter::add(counter, 3.0)
+  Counter::add(counter, 4.0)
+  Counter::add(counter, 5.0)
   
-  // Test logger resource management
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "resource_test_logger")
+  // Test aggregation
+  let aggregation = Counter::get_aggregation(counter)
+  assert_eq(Aggregation::sum(aggregation), 15.0)
+  assert_eq(Aggregation::count(aggregation), 5)
+  assert_eq(Aggregation::average(aggregation), 3.0)
   
-  // Create multiple log records
-  for i in 0..=5 {
-    let log_record = LogRecord::new(Info, "Resource test log message " + i.to_string())
-    Logger::emit(logger, log_record)
+  // Create histogram for percentile testing
+  let histogram = Meter::create_histogram(meter, "response_time", Some("Response times"), Some("ms"))
+  
+  // Record multiple values
+  Histogram::record(histogram, 10.0)
+  Histogram::record(histogram, 20.0)
+  Histogram::record(histogram, 30.0)
+  Histogram::record(histogram, 40.0)
+  Histogram::record(histogram, 50.0)
+  
+  // Test percentiles
+  let percentile_data = Histogram::get_percentiles(histogram)
+  assert_eq(Percentile::value(percentile_data, 50.0), 30.0)  // 50th percentile
+  assert_eq(Percentile::value(percentile_data, 95.0), 50.0)  // 95th percentile
+}
+
+// Test 3: Correlation Context Propagation
+test "correlation context propagation" {
+  // Create correlation context with multiple values
+  let correlation_ctx = CorrelationContext::new()
+  let enriched_ctx = CorrelationContext::set_value(correlation_ctx, "user_id", "user123")
+  let enriched_ctx2 = CorrelationContext::set_value(enriched_ctx, "session_id", "session456")
+  let enriched_ctx3 = CorrelationContext::set_value(enriched_ctx2, "request_id", "request789")
+  
+  // Test value retrieval
+  let user_id = CorrelationContext::get_value(enriched_ctx3, "user_id")
+  match user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
   }
   
-  // Test context resource management
-  let root_ctx = Context::root()
-  let mut contexts = []
-  
-  // Create multiple context layers
-  for i in 0..=5 {
-    let key = ContextKey::new("resource_test_key_" + i.to_string())
-    let ctx = Context::with_value(root_ctx, key, "resource_test_value_" + i.to_string())
-    contexts = contexts + [ctx]
+  let session_id = CorrelationContext::get_value(enriched_ctx3, "session_id")
+  match session_id {
+    Some(value) => assert_eq(value, "session456")
+    None => assert_true(false)
   }
   
-  // Verify all contexts contain their values
-  for i in 0..=5 {
-    let key = ContextKey::new("resource_test_key_" + i.to_string())
-    let ctx = contexts[i]
-    match Context::get(ctx, key) {
-      Some(value) => assert_eq(value, "resource_test_value_" + i.to_string())
-      None => assert_true(false)
+  let request_id = CorrelationContext::get_value(enriched_ctx3, "request_id")
+  match request_id {
+    Some(value) => assert_eq(value, "request789")
+    None => assert_true(false)
+  }
+  
+  // Test non-existent key
+  let non_existent = CorrelationContext::get_value(enriched_ctx3, "non_existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test context serialization and deserialization
+  let serialized = CorrelationContext::serialize(enriched_ctx3)
+  let deserialized = CorrelationContext::deserialize(serialized)
+  
+  let deserialized_user_id = CorrelationContext::get_value(deserialized, "user_id")
+  match deserialized_user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
+}
+
+// Test 4: Sampling Strategy with Dynamic Configuration
+test "sampling strategy with dynamic configuration" {
+  // Create sampling configuration
+  let config = SamplingConfig::new()
+  let updated_config = SamplingConfig::set_probability(config, 0.5)  // 50% sampling
+  let final_config = SamplingConfig::set_sample_rate(updated_config, 10)  // 1 in 10
+  
+  // Create sampler with configuration
+  let sampler = Sampler::with_config(final_config)
+  
+  // Test sampling decision
+  let trace_id = "test_trace_id_12345"
+  let span_name = "test_span"
+  
+  // Run multiple sampling decisions to test probability
+  let mut sampled_count = 0
+  for i in 0..=100 {
+    let decision = Sampler::should_sample(sampler, trace_id, span_name)
+    if decision {
+      sampled_count = sampled_count + 1
     }
   }
+  
+  // Should be approximately 50% (allowing for some variance)
+  assert_true(sampled_count >= 40 && sampled_count <= 60)
+  
+  // Test deterministic sampling
+  let deterministic_sampler = Sampler::deterministic()
+  let decision1 = Sampler::should_sample(deterministic_sampler, trace_id, span_name)
+  let decision2 = Sampler::should_sample(deterministic_sampler, trace_id, span_name)
+  
+  // Deterministic sampler should return the same decision for the same inputs
+  assert_eq(decision1, decision2)
 }
 
-// Test 8: Configuration Management and Dynamic Updates Tests
-test "configuration management and dynamic updates tests" {
-  // Create initial configuration
-  let config = TelemetryConfig::new()
+// Test 5: Batch Processing for Telemetry Data
+test "batch processing for telemetry data" {
+  // Create batch processor
+  let batch_config = BatchConfig::new()
+  let configured_batch = BatchConfig::with_max_size(batch_config, 100)
+  let final_batch_config = BatchConfig::with_timeout(configured_batch, 5000)  // 5 seconds
   
-  // Set initial configuration values
-  TelemetryConfig::set_service_name(config, "config_test_service")
-  TelemetryConfig::set_service_version(config, "1.0.0")
-  TelemetryConfig::set_sampling_ratio(config, 0.1)
-  TelemetryConfig::set_exporter_endpoint(config, "https://otel-collector.example.com:4317")
-  TelemetryConfig::set_batch_size(config, 512)
+  let processor = BatchProcessor::new(final_batch_config)
   
-  // Verify initial configuration
-  assert_eq(TelemetryConfig::get_service_name(config), "config_test_service")
-  assert_eq(TelemetryConfig::get_service_version(config), "1.0.0")
-  assert_eq(TelemetryConfig::get_sampling_ratio(config), 0.1)
-  assert_eq(TelemetryConfig::get_exporter_endpoint(config), "https://otel-collector.example.com:4317")
-  assert_eq(TelemetryConfig::get_batch_size(config), 512)
+  // Create multiple spans for batching
+  let spans = [
+    Span::new("span1", Internal, SpanContext::new("trace1", "span1", true, "")),
+    Span::new("span2", Internal, SpanContext::new("trace1", "span2", true, "")),
+    Span::new("span3", Internal, SpanContext::new("trace2", "span3", true, "")),
+    Span::new("span4", Internal, SpanContext::new("trace2", "span4", true, "")),
+    Span::new("span5", Internal, SpanContext::new("trace3", "span5", true, ""))
+  ]
   
-  // Test dynamic configuration updates
-  TelemetryConfig::set_service_version(config, "1.1.0")
-  TelemetryConfig::set_sampling_ratio(config, 0.05)
-  TelemetryConfig::set_exporter_endpoint(config, "https://otel-collector-backup.example.com:4317")
-  TelemetryConfig::set_batch_size(config, 1024)
+  // Add spans to batch processor
+  for span in spans {
+    BatchProcessor::add_span(processor, span)
+  }
   
-  // Verify updated configuration
-  assert_eq(TelemetryConfig::get_service_name(config), "config_test_service") // Unchanged
-  assert_eq(TelemetryConfig::get_service_version(config), "1.1.0") // Updated
-  assert_eq(TelemetryConfig::get_sampling_ratio(config), 0.05) // Updated
-  assert_eq(TelemetryConfig::get_exporter_endpoint(config), "https://otel-collector-backup.example.com:4317") // Updated
-  assert_eq(TelemetryConfig::get_batch_size(config), 1024) // Updated
+  // Test batch size
+  assert_eq(BatchProcessor::size(processor), 5)
   
-  // Test configuration validation
-  assert_true(TelemetryConfig::is_valid(config))
+  // Test batch flushing
+  let flushed_spans = BatchProcessor::flush(processor)
+  assert_eq(flushed_spans.length(), 5)
   
-  // Test invalid configuration
-  let invalid_config = TelemetryConfig::new()
-  TelemetryConfig::set_sampling_ratio(invalid_config, -0.1) // Invalid negative sampling ratio
-  assert_false(TelemetryConfig::is_valid(invalid_config))
+  // Batch should be empty after flush
+  assert_eq(BatchProcessor::size(processor), 0)
   
-  // Test configuration reset
-  TelemetryConfig::reset(invalid_config)
-  assert_true(TelemetryConfig::is_valid(invalid_config))
+  // Test automatic flush on max size
+  let small_batch_config = BatchConfig::with_max_size(BatchConfig::new(), 3)
+  let small_processor = BatchProcessor::new(small_batch_config)
   
-  // Test configuration export and import
-  let exported_config = TelemetryConfig::export(config)
-  let imported_config = TelemetryConfig::import(exported_config)
+  BatchProcessor::add_span(small_processor, Span::new("span1", Internal, SpanContext::new("trace1", "span1", true, "")))
+  assert_eq(BatchProcessor::size(small_processor), 1)
   
-  assert_eq(TelemetryConfig::get_service_name(imported_config), "config_test_service")
-  assert_eq(TelemetryConfig::get_service_version(imported_config), "1.1.0")
-  assert_eq(TelemetryConfig::get_sampling_ratio(imported_config), 0.05)
+  BatchProcessor::add_span(small_processor, Span::new("span2", Internal, SpanContext::new("trace1", "span2", true, "")))
+  assert_eq(BatchProcessor::size(small_processor), 2)
+  
+  BatchProcessor::add_span(small_processor, Span::new("span3", Internal, SpanContext::new("trace1", "span3", true, "")))
+  // Should automatically flush when reaching max size
+  assert_eq(BatchProcessor::size(small_processor), 0)
 }
 
-// Test 9: Cross-Service Communication Tests
-test "cross-service communication tests" {
-  // Create service A context
-  let service_a_trace_id = "cross_service_trace_123"
-  let service_a_span_id = "service_a_span_456"
-  let service_a_ctx = SpanContext::new(service_a_trace_id, service_a_span_id, true, "service_a_state")
-  let service_a_span = Span::new("service_a_operation", Server, service_a_ctx)
+// Test 6: Telemetry Data Compression
+test "telemetry data compression" {
+  // Create telemetry data for compression testing
+  let telemetry_data = TelemetryData::new()
   
-  // Add service A specific attributes
-  Span::set_attribute(service_a_span, "service.name", StringValue("service_a"))
-  Span::set_attribute(service_a_span, "service.version", StringValue("1.5.0"))
-  Span::set_attribute(service_a_span, "operation.type", StringValue("process_request"))
+  // Add spans with large attributes
+  let span1 = Span::new("large_span1", Internal, SpanContext::new("trace1", "span1", true, ""))
+  Span::add_event(span1, "large_event", Some([
+    ("large_attribute1", StringValue("large_value1_with_lots_of_repeated_text_to_compress")),
+    ("large_attribute2", StringValue("large_value2_with_lots_of_repeated_text_to_compress")),
+    ("large_attribute3", StringValue("large_value3_with_lots_of_repeated_text_to_compress"))
+  ]))
   
-  // Create service B context with propagated trace
-  let service_b_span_id = "service_b_span_789"
-  let service_b_ctx = SpanContext::new(service_a_trace_id, service_b_span_id, true, "service_b_state")
-  let service_b_span = Span::new("service_b_operation", Client, service_b_ctx)
+  let span2 = Span::new("large_span2", Internal, SpanContext::new("trace1", "span2", true, ""))
+  Span::add_event(span2, "large_event", Some([
+    ("large_attribute1", StringValue("large_value1_with_lots_of_repeated_text_to_compress")),
+    ("large_attribute2", StringValue("large_value2_with_lots_of_repeated_text_to_compress")),
+    ("large_attribute3", StringValue("large_value3_with_lots_of_repeated_text_to_compress"))
+  ]))
   
-  // Add service B specific attributes
-  Span::set_attribute(service_b_span, "service.name", StringValue("service_b"))
-  Span::set_attribute(service_b_span, "service.version", StringValue("2.3.0"))
-  Span::set_attribute(service_b_span, "operation.type", StringValue("query_database"))
+  TelemetryData::add_span(telemetry_data, span1)
+  TelemetryData::add_span(telemetry_data, span2)
   
-  // Verify trace context propagation
-  assert_eq(SpanContext::trace_id(Span::span_context(service_a_span)), 
-             SpanContext::trace_id(Span::span_context(service_b_span)))
-  assert_not_eq(SpanContext::span_id(Span::span_context(service_a_span)), 
-                SpanContext::span_id(Span::span_context(service_b_span)))
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  let original_size = serialized_data.length()
   
-  // Create service C context with propagated trace
-  let service_c_span_id = "service_c_span_012"
-  let service_c_ctx = SpanContext::new(service_a_trace_id, service_c_span_id, true, "service_c_state")
-  let service_c_span = Span::new("service_c_operation", Internal, service_c_ctx)
+  // Compress serialized data
+  let compressed_data = Compression::compress(serialized_data)
+  let compressed_size = compressed_data.length()
   
-  // Add service C specific attributes
-  Span::set_attribute(service_c_span, "service.name", StringValue("service_c"))
-  Span::set_attribute(service_c_span, "service.version", StringValue("3.1.0"))
-  Span::set_attribute(service_c_span, "operation.type", StringValue("generate_response"))
+  // Verify compression reduces size
+  assert_true(compressed_size < original_size)
   
-  // Verify all services share the same trace
-  assert_eq(SpanContext::trace_id(Span::span_context(service_a_span)), service_a_trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service_b_span)), service_a_trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service_c_span)), service_a_trace_id)
+  // Decompress and verify data integrity
+  let decompressed_data = Compression::decompress(compressed_data)
+  assert_eq(decompressed_data.length(), original_size)
+  assert_eq(decompressed_data, serialized_data)
   
-  // Test baggage propagation
-  let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session456")
-  let baggage_with_request = Baggage::set_entry(baggage_with_session, "request.id", "request789")
-  
-  // Simulate baggage propagation to service B
-  let service_b_user_id = Baggage::get_entry(baggage_with_request, "user.id")
-  let service_b_session_id = Baggage::get_entry(baggage_with_request, "session.id")
-  
-  // Service B adds its own baggage entry
-  let service_b_baggage = Baggage::set_entry(baggage_with_request, "service.b.operation.id", "op123")
-  
-  // Simulate baggage propagation to service C
-  let service_c_user_id = Baggage::get_entry(service_b_baggage, "user.id")
-  let service_c_operation_id = Baggage::get_entry(service_b_baggage, "service.b.operation.id")
-  
-  // End spans in correct order (reverse of creation)
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
+  // Deserialize decompressed data
+  let restored_telemetry_data = TelemetryData::deserialize(decompressed_data)
+  assert_eq(TelemetryData::span_count(restored_telemetry_data), 2)
 }
 
-// Test 10: Comprehensive Integration Tests
-test "comprehensive integration tests" {
-  // Initialize telemetry provider
-  let config = TelemetryConfig::new()
-  TelemetryConfig::set_service_name(config, "integration_test_service")
-  TelemetryConfig::set_service_version(config, "1.0.0")
-  TelemetryConfig::set_sampling_ratio(config, 1.0) // 100% sampling for test
+// Test 7: Distributed Trace Context Propagation
+test "distributed trace context propagation" {
+  // Create trace context for distributed systems
+  let trace_context = TraceContext::new()
+  let enriched_context = TraceContext::with_trace_id(trace_context, "distributed_trace_123")
+  let enriched_context2 = TraceContext::with_span_id(enriched_context, "distributed_span_456")
+  let final_context = TraceContext::with_baggage(enriched_context2, [("service_name", "auth_service"), ("version", "1.2.3")])
   
-  let provider = TelemetryProvider::from_config(config)
+  // Test trace context extraction
+  let trace_id = TraceContext::trace_id(final_context)
+  match trace_id {
+    Some(id) => assert_eq(id, "distributed_trace_123")
+    None => assert_true(false)
+  }
   
-  // Get tracer, meter, and logger
-  let tracer = TelemetryProvider::get_tracer(provider, "integration_test_tracer")
-  let meter = TelemetryProvider::get_meter(provider, "integration_test_meter")
-  let logger = TelemetryProvider::get_logger(provider, "integration_test_logger")
+  let span_id = TraceContext::span_id(final_context)
+  match span_id {
+    Some(id) => assert_eq(id, "distributed_span_456")
+    None => assert_true(false)
+  }
   
-  // Create root span
-  let root_span = Tracer::start_span(tracer, "integration_test_workflow")
+  // Test baggage extraction
+  let service_name = TraceContext::get_baggage_value(final_context, "service_name")
+  match service_name {
+    Some(value) => assert_eq(value, "auth_service")
+    None => assert_true(false)
+  }
   
-  // Add workflow attributes
-  Span::set_attribute(root_span, "workflow.name", StringValue("integration_test"))
-  Span::set_attribute(root_span, "workflow.id", StringValue("workflow_123"))
-  Span::set_attribute(root_span, "test.environment", StringValue("integration"))
+  let version = TraceContext::get_baggage_value(final_context, "version")
+  match version {
+    Some(value) => assert_eq(value, "1.2.3")
+    None => assert_true(false)
+  }
   
-  // Create metrics
-  let workflow_counter = Meter::create_counter(meter, "workflow.executions", Some("Workflow execution count"), Some("executions"))
-  let workflow_duration = Meter::create_histogram(meter, "workflow.duration", Some("Workflow execution duration"), Some("ms"))
-  let active_workflows = Meter::create_updown_counter(meter, "active_workflows", Some("Active workflows"), Some("workflows"))
+  // Test context injection into headers
+  let headers = TraceContext::inject_into_headers(final_context)
+  let trace_header = Headers::get(headers, "traceparent")
+  match trace_header {
+    Some(header) => assert_true(header.contains("distributed_trace_123"))
+    None => assert_true(false)
+  }
   
-  // Record workflow start
-  Counter::add(workflow_counter, 1.0)
-  UpDownCounter::add(active_workflows, 1.0)
+  let baggage_header = Headers::get(headers, "baggage")
+  match baggage_header {
+    Some(header) => {
+      assert_true(header.contains("service_name=auth_service"))
+      assert_true(header.contains("version=1.2.3"))
+    }
+    None => assert_true(false)
+  }
   
-  // Step 1: Initialization
-  let init_span = Tracer::start_span(tracer, "initialization")
-  Span::set_attribute(init_span, "init.type", StringValue("service_initialization"))
+  // Test context extraction from headers
+  let extracted_context = TraceContext::extract_from_headers(headers)
+  let extracted_trace_id = TraceContext::trace_id(extracted_context)
+  match extracted_trace_id {
+    Some(id) => assert_eq(id, "distributed_trace_123")
+    None => assert_true(false)
+  }
+}
+
+// Test 8: Telemetry Data Filtering and Transformation
+test "telemetry data filtering and transformation" {
+  // Create telemetry data with various attributes
+  let telemetry_data = TelemetryData::new()
   
-  // Log initialization
-  let init_log = LogRecord::new(Info, "Initializing integration test workflow")
-  LogRecord::add_attribute(init_log, "workflow.id", StringValue("workflow_123"))
-  LogRecord::add_attribute(init_log, "step", StringValue("initialization"))
-  Logger::emit(logger, init_log)
+  let span1 = Span::new("critical_span", Internal, SpanContext::new("trace1", "span1", true, ""))
+  Span::add_event(span1, "critical_event", Some([
+    ("severity", StringValue("critical")),
+    ("component", StringValue("auth")),
+    ("user_id", StringValue("user123"))
+  ]))
   
-  // Simulate initialization work
-  Span::add_event(init_span, "Configuration loaded", Some(Attributes::new()))
-  Span::add_event(init_span, "Resources allocated", Some(Attributes::new()))
+  let span2 = Span::new("normal_span", Internal, SpanContext::new("trace2", "span2", true, ""))
+  Span::add_event(span2, "normal_event", Some([
+    ("severity", StringValue("info")),
+    ("component", StringValue("ui")),
+    ("user_id", StringValue("user456"))
+  ]))
   
-  Span::end(init_span)
+  let span3 = Span::new("debug_span", Internal, SpanContext::new("trace3", "span3", true, ""))
+  Span::add_event(span3, "debug_event", Some([
+    ("severity", StringValue("debug")),
+    ("component", StringValue("logging")),
+    ("user_id", StringValue("user789"))
+  ]))
   
-  // Step 2: Data Processing
-  let processing_span = Tracer::start_span(tracer, "data_processing")
-  Span::set_attribute(processing_span, "processing.type", StringValue("batch_processing"))
-  Span::set_attribute(processing_span, "batch.size", IntValue(100))
+  TelemetryData::add_span(telemetry_data, span1)
+  TelemetryData::add_span(telemetry_data, span2)
+  TelemetryData::add_span(telemetry_data, span3)
   
-  // Log processing
-  let processing_log = LogRecord::new(Info, "Starting data processing")
-  LogRecord::add_attribute(processing_log, "workflow.id", StringValue("workflow_123"))
-  LogRecord::add_attribute(processing_log, "step", StringValue("data_processing"))
-  LogRecord::add_attribute(processing_log, "batch.size", IntValue(100))
-  Logger::emit(logger, processing_log)
+  // Create filter for critical severity
+  let critical_filter = Filter::attribute_equals("severity", "critical")
+  let filtered_data = Filter::apply(telemetry_data, critical_filter)
   
-  // Record processing metrics
-  let processing_counter = Meter::create_counter(meter, "processing.operations", Some("Processing operation count"), Some("operations"))
-  Counter::add(processing_counter, 100.0)
+  // Should only contain span1
+  assert_eq(TelemetryData::span_count(filtered_data), 1)
+  let filtered_span = TelemetryData::get_span(filtered_data, 0)
+  assert_eq(Span::name(filtered_span), "critical_span")
   
-  // Simulate processing work
-  Span::add_event(processing_span, "Data validation completed", Some(Attributes::new()))
-  Span::add_event(processing_span, "Transformation applied", Some(Attributes::new()))
-  Span::add_event(processing_span, "Processing completed", Some(Attributes::new()))
+  // Create transformer for PII redaction
+  let pii_transformer = Transformer::redact_attributes(["user_id"])
+  let transformed_data = Transformer::apply(telemetry_data, pii_transformer)
   
-  Span::end(processing_span)
+  // Verify PII is redacted
+  let transformed_span1 = TelemetryData::get_span(transformed_data, 0)
+  let events = Span::events(transformed_span1)
+  let event1 = events[0]
+  let attributes = Event::attributes(event1)
   
-  // Step 3: External Service Integration
-  let external_span = Tracer::start_span(tracer, "external_service_integration")
-  Span::set_attribute(external_span, "external.service", StringValue("api_service"))
-  Span::set_attribute(external_span, "external.operation", StringValue("fetch_data"))
+  let user_id_attr = Attributes::get(attributes, "user_id")
+  match user_id_attr {
+    Some(StringValue(value)) => assert_eq(value, "[REDACTED]")
+    _ => assert_true(false)
+  }
   
-  // Log external service call
-  let external_log = LogRecord::new(Info, "Calling external service")
-  LogRecord::add_attribute(external_log, "workflow.id", StringValue("workflow_123"))
-  LogRecord::add_attribute(external_log, "step", StringValue("external_service"))
-  LogRecord::add_attribute(external_log, "external.service", StringValue("api_service"))
-  Logger::emit(logger, external_log)
+  // Verify other attributes are not redacted
+  let severity_attr = Attributes::get(attributes, "severity")
+  match severity_attr {
+    Some(StringValue(value)) => assert_eq(value, "critical")
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Telemetry Data Retention and Expiration
+test "telemetry data retention and expiration" {
+  // Create retention policy
+  let retention_policy = RetentionPolicy::new()
+  let configured_policy = RetentionPolicy::with_max_age(retention_policy, 3600)  // 1 hour
+  let final_policy = RetentionPolicy::with_max_span_count(configured_policy, 1000)
   
-  // Simulate external service call
-  Span::add_event(external_span, "Request sent", Some(Attributes::new()))
-  Span::add_event(external_span, "Response received", Some(Attributes::new()))
+  // Create retention manager
+  let retention_manager = RetentionManager::new(final_policy)
   
-  Span::end(external_span)
+  // Create telemetry data with timestamps
+  let telemetry_data = TelemetryData::new()
   
-  // Step 4: Finalization
-  let finalization_span = Tracer::start_span(tracer, "finalization")
-  Span::set_attribute(finalization_span, "finalization.type", StringValue("cleanup"))
+  // Add old spans (beyond retention period)
+  let old_timestamp = Time::now() - 7200  // 2 hours ago
+  let old_span = Span::new("old_span", Internal, SpanContext::new("trace1", "span1", true, ""))
+  Span::set_timestamp(old_span, old_timestamp)
+  TelemetryData::add_span(telemetry_data, old_span)
   
-  // Log finalization
-  let finalization_log = LogRecord::new(Info, "Finalizing workflow")
-  LogRecord::add_attribute(finalization_log, "workflow.id", StringValue("workflow_123"))
-  LogRecord::add_attribute(finalization_log, "step", StringValue("finalization"))
-  Logger::emit(logger, finalization_log)
+  // Add recent spans (within retention period)
+  let recent_timestamp = Time::now() - 1800  // 30 minutes ago
+  let recent_span = Span::new("recent_span", Internal, SpanContext::new("trace2", "span2", true, ""))
+  Span::set_timestamp(recent_span, recent_timestamp)
+  TelemetryData::add_span(telemetry_data, recent_span)
   
-  // Simulate finalization work
-  Span::add_event(finalization_span, "Resources cleaned up", Some(Attributes::new()))
-  Span::add_event(finalization_span, "Results persisted", Some(Attributes::new()))
+  // Apply retention policy
+  let retained_data = RetentionManager::apply_policy(retention_manager, telemetry_data)
   
-  Span::end(finalization_span)
+  // Should only contain recent spans
+  assert_eq(TelemetryData::span_count(retained_data), 1)
+  let retained_span = TelemetryData::get_span(retained_data, 0)
+  assert_eq(Span::name(retained_span), "recent_span")
   
-  // Complete workflow
-  Span::set_status(root_span, Ok, Some("Integration test workflow completed successfully"))
+  // Test span count limit
+  let large_telemetry_data = TelemetryData::new()
+  for i in 0..=1500 {
+    let span = Span::new("span_" + i.to_string(), Internal, SpanContext::new("trace" + i.to_string(), "span" + i.to_string(), true, ""))
+    TelemetryData::add_span(large_telemetry_data, span)
+  }
   
-  // Record workflow completion metrics
-  UpDownCounter::add(active_workflows, -1.0)
-  Histogram::record(workflow_duration, 850.0)
+  let count_limited_data = RetentionManager::apply_policy(retention_manager, large_telemetry_data)
+  assert_eq(TelemetryData::span_count(count_limited_data), 1000)
+}
+
+// Test 10: Telemetry Data Export and Import
+test "telemetry data export and import" {
+  // Create telemetry data for export testing
+  let telemetry_data = TelemetryData::new()
   
-  // Log workflow completion
-  let completion_log = LogRecord::new(Info, "Integration test workflow completed successfully")
-  LogRecord::add_attribute(completion_log, "workflow.id", StringValue("workflow_123"))
-  LogRecord::add_attribute(completion_log, "duration.ms", FloatValue(850.0))
-  LogRecord::add_attribute(completion_log, "steps.completed", IntValue(4))
-  Logger::emit(logger, completion_log)
+  let span1 = Span::new("export_span1", Internal, SpanContext::new("trace1", "span1", true, ""))
+  Span::add_event(span1, "export_event1", Some([("export_attr", StringValue("export_value1"))]))
   
-  Span::end(root_span)
+  let span2 = Span::new("export_span2", Internal, SpanContext::new("trace2", "span2", true, ""))
+  Span::add_event(span2, "export_event2", Some([("export_attr", StringValue("export_value2"))]))
   
-  // Verify workflow execution
-  assert_true(true) // If we reach here, all steps completed successfully
+  TelemetryData::add_span(telemetry_data, span1)
+  TelemetryData::add_span(telemetry_data, span2)
+  
+  // Export to JSON format
+  let json_export = Exporter::to_json(telemetry_data)
+  assert_true(json_export.contains("export_span1"))
+  assert_true(json_export.contains("export_span2"))
+  assert_true(json_export.contains("export_event1"))
+  assert_true(json_export.contains("export_event2"))
+  assert_true(json_export.contains("export_value1"))
+  assert_true(json_export.contains("export_value2"))
+  
+  // Export to Protocol Buffers format
+  let protobuf_export = Exporter::to_protobuf(telemetry_data)
+  assert_true(protobuf_export.length() > 0)
+  
+  // Import from JSON
+  let imported_data = Importer::from_json(json_export)
+  assert_eq(TelemetryData::span_count(imported_data), 2)
+  
+  let imported_span1 = TelemetryData::get_span(imported_data, 0)
+  assert_eq(Span::name(imported_span1), "export_span1")
+  
+  let imported_span2 = TelemetryData::get_span(imported_data, 1)
+  assert_eq(Span::name(imported_span2), "export_span2")
+  
+  // Import from Protocol Buffers
+  let imported_protobuf_data = Importer::from_protobuf(protobuf_export)
+  assert_eq(TelemetryData::span_count(imported_protobuf_data), 2)
+  
+  // Verify data integrity after round-trip
+  let reexported_json = Exporter::to_json(imported_data)
+  assert_eq(json_export, reexported_json)
 }
