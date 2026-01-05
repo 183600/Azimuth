@@ -232,5 +232,6 @@
         "../azimuth_new_comprehensive_test_cases.mbt",
         "azimuth_comprehensive_new_tests.mbt",
         "../azimuth_compression_network_tests.mbt",
-        "../azimuth_ai_ml_integration_tests.mbt"]  }
+        "../azimuth_ai_ml_integration_tests.mbt",
+        "azimuth_enhanced_feature_tests.mbt"]  }
 }
