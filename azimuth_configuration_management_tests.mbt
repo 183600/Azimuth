@@ -1,939 +1,1026 @@
-// Azimuth Configuration Management Tests
-// This file contains test cases for configuration management functionality
+// 阿兹米克配置管理测试用例
+// 专注于遥测系统的配置加载、动态更新和环境适配功能
 
-// Test 1: Basic Configuration Loading and Validation
-test "basic configuration loading and validation" {
-  // Define configuration value types
-  type ConfigValue = {
-    key: String,
-    value: String,
-    value_type: String,  // "string", "int", "float", "bool", "array"
-    required: Bool,
-    default_value: Option[String],
-    description: String
-  }
+// 测试1: 基本配置加载和解析
+test "基本配置加载和解析测试" {
+  let config_manager = ConfigurationManager::new()
   
-  type ConfigSchema = {
-    name: String,
-    version: String,
-    values: Array[ConfigValue]
-  }
-  
-  type Configuration = {
-    schema: ConfigSchema,
-    loaded_values: Array[(String, String)]
-  }
-  
-  // Create configuration schema
-  let create_schema = fn(name: String, version: String) {
-    {
-      name: name,
-      version: version,
-      values: []
-    }
-  }
-  
-  // Add configuration value to schema
-  let add_config_value = fn(schema: ConfigSchema, key: String, value_type: String, required: Bool, default_value: Option[String], description: String) {
-    let config_value = {
-      key: key,
-      value: "",
-      value_type: value_type,
-      required: required,
-      default_value: default_value,
-      description: description
-    }
-    
-    { schema | values: schema.values.push(config_value) }
-  }
-  
-  // Validate configuration value
-  let validate_config_value = fn(value: String, value_type: String) {
-    match value_type {
-      "string" => value.length() > 0
-      "int" => {
-        let mut i = 0
-        let mut valid = true
-        
-        if value.length() == 0 {
-          valid = false
-        } else {
-          if value[0] == '-' {
-            if value.length() == 1 {
-              valid = false
-            } else {
-              i = 1
-            }
-          }
-          
-          while i < value.length() and valid {
-            let c = value[i]
-            if c < '0' or c > '9' {
-              valid = false
-            }
-            i = i + 1
-          }
-        }
-        
-        valid
+  // 创建配置内容
+  let config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"version\": \"1.0.0\",
+        \"port\": 8080
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 5000,
+        \"retention_days\": 30
+      },
+      \"logging\": {
+        \"level\": \"info\",
+        \"format\": \"json\",
+        \"output\": \"stdout\"
       }
-      "float" => {
-        let mut i = 0
-        let mut valid = true
-        let mut dot_seen = false
-        
-        if value.length() == 0 {
-          valid = false
-        } else {
-          if value[0] == '-' {
-            if value.length() == 1 {
-              valid = false
-            } else {
-              i = 1
-            }
-          }
-          
-          while i < value.length() and valid {
-            let c = value[i]
-            if c == '.' {
-              if dot_seen {
-                valid = false
-              } else {
-                dot_seen = true
-              }
-            } else if c < '0' or c > '9' {
-              valid = false
-            }
-            i = i + 1
-          }
-        }
-        
-        valid
+    }
+  }"
+  
+  // 加载配置
+  let config = ConfigurationManager::load_from_string(config_manager, config_content)
+  
+  // 验证配置加载
+  assert_true(ConfigurationManager::is_valid(config))
+  
+  // 获取配置值
+  let service_name = ConfigurationManager::get_string(config, "telemetry.service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "azimuth-service")
+    None => assert_true(false)
+  }
+  
+  let service_version = ConfigurationManager::get_string(config, "telemetry.service.version")
+  match service_version {
+    Some(version) => assert_eq(version, "1.0.0")
+    None => assert_true(false)
+  }
+  
+  let service_port = ConfigurationManager::get_int(config, "telemetry.service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let metrics_enabled = ConfigurationManager::get_bool(config, "telemetry.metrics.enabled")
+  match metrics_enabled {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
+  
+  let metrics_interval = ConfigurationManager::get_int(config, "telemetry.metrics.interval")
+  match metrics_interval {
+    Some(interval) => assert_eq(interval, 5000)
+    None => assert_true(false)
+  }
+  
+  // 测试不存在的配置键
+  let non_existent = ConfigurationManager::get_string(config, "telemetry.nonexistent.key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// 测试2: 多环境配置管理
+test "多环境配置管理测试" {
+  let config_manager = ConfigurationManager::new()
+  
+  // 创建不同环境的配置
+  let dev_config_content = "{
+    \"environment\": \"development\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service-dev\",
+        \"port\": 3000
+      },
+      \"logging\": {
+        \"level\": \"debug\",
+        \"output\": \"console\"
+      },
+      \"database\": {
+        \"host\": \"localhost\",
+        \"port\": 5432,
+        \"name\": \"azimuth_dev\"
       }
-      "bool" => value == "true" or value == "false"
-      "array" => value.length() > 2 and value[0] == '[' and value[value.length() - 1] == ']'
+    }
+  }"
+  
+  let prod_config_content = "{
+    \"environment\": \"production\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service-prod\",
+        \"port\": 8080
+      },
+      \"logging\": {
+        \"level\": \"info\",
+        \"output\": \"file\"
+      },
+      \"database\": {
+        \"host\": \"prod-db.example.com\",
+        \"port\": 5432,
+        \"name\": \"azimuth_prod\"
+      }
+    }
+  }"
+  
+  // 加载不同环境配置
+  let dev_config = ConfigurationManager::load_from_string(config_manager, dev_config_content)
+  let prod_config = ConfigurationManager::load_from_string(config_manager, prod_config_content)
+  
+  // 注册环境配置
+  ConfigurationManager::register_environment_config(config_manager, "development", dev_config)
+  ConfigurationManager::register_environment_config(config_manager, "production", prod_config)
+  
+  // 设置当前环境
+  ConfigurationManager::set_current_environment(config_manager, "development")
+  
+  // 获取当前环境配置
+  let current_config = ConfigurationManager::get_current_config(config_manager)
+  
+  // 验证开发环境配置
+  let env_name = ConfigurationManager::get_string(current_config, "environment")
+  match env_name {
+    Some(name) => assert_eq(name, "development")
+    None => assert_true(false)
+  }
+  
+  let service_name = ConfigurationManager::get_string(current_config, "telemetry.service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "azimuth-service-dev")
+    None => assert_true(false)
+  }
+  
+  let log_level = ConfigurationManager::get_string(current_config, "telemetry.logging.level")
+  match log_level {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+  
+  // 切换到生产环境
+  ConfigurationManager::set_current_environment(config_manager, "production")
+  let prod_current_config = ConfigurationManager::get_current_config(config_manager)
+  
+  // 验证生产环境配置
+  let prod_service_name = ConfigurationManager::get_string(prod_current_config, "telemetry.service.name")
+  match prod_service_name {
+    Some(name) => assert_eq(name, "azimuth-service-prod")
+    None => assert_true(false)
+  }
+  
+  let prod_log_level = ConfigurationManager::get_string(prod_current_config, "telemetry.logging.level")
+  match prod_log_level {
+    Some(level) => assert_eq(level, "info")
+    None => assert_true(false)
+  }
+  
+  // 测试配置合并
+  let base_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\"
+      },
+      \"metrics\": {
+        \"enabled\": true
+      }
+    }
+  }"
+  
+  let env_override_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"port\": 8080
+      },
+      \"metrics\": {
+        \"interval\": 5000
+      }
+    }
+  }"
+  
+  let base_config = ConfigurationManager::load_from_string(config_manager, base_config_content)
+  let env_override = ConfigurationManager::load_from_string(config_manager, env_override_content)
+  
+  let merged_config = ConfigurationManager::merge_configs(config_manager, base_config, env_override)
+  
+  // 验证合并结果
+  let merged_name = ConfigurationManager::get_string(merged_config, "telemetry.service.name")
+  match merged_name {
+    Some(name) => assert_eq(name, "azimuth-service") // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let merged_port = ConfigurationManager::get_int(merged_config, "telemetry.service.port")
+  match merged_port {
+    Some(port) => assert_eq(port, 8080) // 来自覆盖配置
+    None => assert_true(false)
+  }
+  
+  let merged_enabled = ConfigurationManager::get_bool(merged_config, "telemetry.metrics.enabled")
+  match merged_enabled {
+    Some(enabled) => assert_true(enabled) // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let merged_interval = ConfigurationManager::get_int(merged_config, "telemetry.metrics.interval")
+  match merged_interval {
+    Some(interval) => assert_eq(interval, 5000) // 来自覆盖配置
+    None => assert_true(false)
+  }
+}
+
+// 测试3: 动态配置更新
+test "动态配置更新测试" {
+  let config_manager = ConfigurationManager::new()
+  let dynamic_config = DynamicConfiguration::new()
+  
+  // 初始化配置
+  let initial_config_content = "{
+    \"telemetry\": {
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 5000
+      },
+      \"logging\": {
+        \"level\": \"info\"
+      }
+    }
+  }"
+  
+  let initial_config = ConfigurationManager::load_from_string(config_manager, initial_config_content)
+  DynamicConfiguration::set_config(dynamic_config, initial_config)
+  
+  // 注册配置变更监听器
+  let metrics_listener = ConfigChangeListener::new("metrics.listener")
+  ConfigChangeListener::on_change(metrics_listener, fn(key, old_value, new_value) {
+    if key == "telemetry.metrics.interval" {
+      // 处理指标间隔变更
+      assert_true(new_value.to_int() > 0)
+    }
+  })
+  
+  let logging_listener = ConfigChangeListener::new("logging.listener")
+  ConfigChangeListener::on_change(logging_listener, fn(key, old_value, new_value) {
+    if key == "telemetry.logging.level" {
+      // 处理日志级别变更
+      assert_true(new_value.is_one_of(["debug", "info", "warn", "error"]))
+    }
+  })
+  
+  DynamicConfiguration::add_listener(dynamic_config, metrics_listener)
+  DynamicConfiguration::add_listener(dynamic_config, logging_listener)
+  
+  // 验证初始配置
+  let initial_interval = DynamicConfiguration::get_int(dynamic_config, "telemetry.metrics.interval")
+  match initial_interval {
+    Some(interval) => assert_eq(interval, 5000)
+    None => assert_true(false)
+  }
+  
+  // 动态更新配置
+  let updated_config_content = "{
+    \"telemetry\": {
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 10000
+      },
+      \"logging\": {
+        \"level\": \"debug\"
+      }
+    }
+  }"
+  
+  let updated_config = ConfigurationManager::load_from_string(config_manager, updated_config_content)
+  DynamicConfiguration::update_config(dynamic_config, updated_config)
+  
+  // 验证配置已更新
+  let updated_interval = DynamicConfiguration::get_int(dynamic_config, "telemetry.metrics.interval")
+  match updated_interval {
+    Some(interval) => assert_eq(interval, 10000)
+    None => assert_true(false)
+  }
+  
+  let updated_log_level = DynamicConfiguration::get_string(dynamic_config, "telemetry.logging.level")
+  match updated_log_level {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+  
+  // 测试部分配置更新
+  DynamicConfiguration::update_value(dynamic_config, "telemetry.metrics.interval", 3000)
+  
+  let partially_updated_interval = DynamicConfiguration::get_int(dynamic_config, "telemetry.metrics.interval")
+  match partially_updated_interval {
+    Some(interval) => assert_eq(interval, 3000)
+    None => assert_true(false)
+  }
+  
+  // 验证其他配置未受影响
+  let unchanged_log_level = DynamicConfiguration::get_string(dynamic_config, "telemetry.logging.level")
+  match unchanged_log_level {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+  
+  // 测试配置回滚
+  DynamicConfiguration::create_checkpoint(dynamic_config, "before.major.change")
+  
+  DynamicConfiguration::update_value(dynamic_config, "telemetry.metrics.interval", 15000)
+  DynamicConfiguration::update_value(dynamic_config, "telemetry.logging.level", "error")
+  
+  // 验证变更
+  let changed_interval = DynamicConfiguration::get_int(dynamic_config, "telemetry.metrics.interval")
+  match changed_interval {
+    Some(interval) => assert_eq(interval, 15000)
+    None => assert_true(false)
+  }
+  
+  // 回滚到检查点
+  DynamicConfiguration::rollback_to_checkpoint(dynamic_config, "before.major.change")
+  
+  // 验证回滚结果
+  let rolled_back_interval = DynamicConfiguration::get_int(dynamic_config, "telemetry.metrics.interval")
+  match rolled_back_interval {
+    Some(interval) => assert_eq(interval, 3000)
+    None => assert_true(false)
+  }
+  
+  let rolled_back_log_level = DynamicConfiguration::get_string(dynamic_config, "telemetry.logging.level")
+  match rolled_back_log_level {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+}
+
+// 测试4: 配置验证和约束
+test "配置验证和约束测试" {
+  let config_validator = ConfigurationValidator::new()
+  
+  // 添加验证规则
+  ConfigValidator::add_rule(config_validator, ValidationRule::required("telemetry.service.name"))
+  ConfigValidator::add_rule(config_validator, ValidationRule::min_value("telemetry.service.port", 1))
+  ConfigValidator::add_rule(config_validator, ValidationRule::max_value("telemetry.service.port", 65535))
+  ConfigValidator::add_rule(config_validator, ValidationRule::one_of("telemetry.logging.level", ["debug", "info", "warn", "error"]))
+  ConfigValidator::add_rule(config_validator, ValidationRule::min_value("telemetry.metrics.interval", 1000))
+  ConfigValidator::add_rule(config_validator, ValidationRule::max_value("telemetry.metrics.retention_days", 365))
+  
+  // 测试有效配置
+  let valid_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 8080
+      },
+      \"logging\": {
+        \"level\": \"info\"
+      },
+      \"metrics\": {
+        \"interval\": 5000,
+        \"retention_days\": 30
+      }
+    }
+  }"
+  
+  let valid_config = ConfigurationManager::load_from_string(config_validator, valid_config_content)
+  let validation_result = ConfigValidator::validate(config_validator, valid_config)
+  
+  assert_true(ValidationResult::is_valid(validation_result))
+  assert_eq(ValidationResult::error_count(validation_result), 0)
+  
+  // 测试无效配置
+  let invalid_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"port\": 70000
+      },
+      \"logging\": {
+        \"level\": \"invalid_level\"
+      },
+      \"metrics\": {
+        \"interval\": 500,
+        \"retention_days\": 400
+      }
+    }
+  }"
+  
+  let invalid_config = ConfigurationManager::load_from_string(config_validator, invalid_config_content)
+  let invalid_validation_result = ConfigValidator::validate(config_validator, invalid_config)
+  
+  assert_false(ValidationResult::is_valid(invalid_validation_result))
+  assert_true(ValidationResult::error_count(invalid_validation_result) >= 4)
+  
+  // 验证具体错误
+  let errors = ValidationResult::get_errors(invalid_validation_result)
+  assert_true(errors.any(fn(error) {
+    ValidationError::field(error) == "telemetry.service.name" && ValidationError::type(error) == "required"
+  }))
+  assert_true(errors.any(fn(error) {
+    ValidationError::field(error) == "telemetry.service.port" && ValidationError::type(error) == "max_value"
+  }))
+  assert_true(errors.any(fn(error) {
+    ValidationError::field(error) == "telemetry.logging.level" && ValidationError::type(error) == "one_of"
+  }))
+  assert_true(errors.any(fn(error) {
+    ValidationError::field(error) == "telemetry.metrics.interval" && ValidationError::type(error) == "min_value"
+  }))
+  
+  // 测试自定义验证规则
+  let custom_rule = ValidationRule::custom("telemetry.service.name", fn(value) {
+    match value {
+      StringValue(name) => name.starts_with("azimuth-")
       _ => false
     }
-  }
+  }, "Service name must start with 'azimuth-'")
   
-  // Load configuration
-  let load_configuration = fn(schema: ConfigSchema, values: Array[(String, String)]) {
-    let mut loaded = []
-    let mut errors = []
-    
-    for config_value in schema.values {
-      let value_pair = values.find_fn(v) { v.0 == config_value.key }
-      
-      match value_pair {
-        Some(pair) => {
-          if validate_config_value(pair.1, config_value.value_type) {
-            loaded = loaded.push(pair)
-          } else {
-            errors = errors.push("Invalid value for " + config_value.key + ": " + pair.1)
-          }
-        }
-        None => {
-          if config_value.required {
-            match config_value.default_value {
-              Some(default) => {
-                if validate_config_value(default, config_value.value_type) {
-                  loaded = loaded.push((config_value.key, default))
-                } else {
-                  errors = errors.push("Invalid default value for " + config_value.key)
-                }
-              }
-              None => {
-                errors = errors.push("Required value missing for " + config_value.key)
-              }
-            }
-          } else {
-            match config_value.default_value {
-              Some(default) => {
-                if validate_config_value(default, config_value.value_type) {
-                  loaded = loaded.push((config_value.key, default))
-                }
-              }
-              None => {}  // Optional value with no default, skip
-            }
-          }
-        }
+  ConfigValidator::add_rule(config_validator, custom_rule)
+  
+  let invalid_name_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"invalid-service\",
+        \"port\": 8080
       }
     }
-    
-    {
-      schema: schema,
-      loaded_values: loaded,
-      errors: errors
+  }"
+  
+  let invalid_name_config = ConfigurationManager::load_from_string(config_validator, invalid_name_config_content)
+  let invalid_name_result = ConfigValidator::validate(config_validator, invalid_name_config)
+  
+  assert_false(ValidationResult::is_valid(invalid_name_result))
+  
+  let custom_errors = ValidationResult::get_errors(invalid_name_result)
+  assert_true(custom_errors.any(fn(error) {
+    ValidationError::field(error) == "telemetry.service.name" && ValidationError::message(error) == "Service name must start with 'azimuth-'"
+  }))
+}
+
+// 测试5: 配置模板和继承
+test "配置模板和继承测试" {
+  let template_manager = ConfigurationTemplateManager::new()
+  
+  // 创建基础模板
+  let base_template_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"{{service_name}}\",
+        \"version\": \"{{service_version}}\",
+        \"port\": {{service_port}}
+      },
+      \"logging\": {
+        \"level\": \"{{log_level}}\",
+        \"format\": \"json\"
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 5000
+      }
     }
-  }
+  }"
   
-  // Create test schema
-  let schema = create_schema("telemetry_config", "1.0.0")
-  let schema_with_values = add_config_value(
-    add_config_value(
-      add_config_value(
-        add_config_value(
-          add_config_value(schema, "service_name", "string", true, None, "Name of the service"),
-          "port", "int", true, Some("8080"), "Port number for the service"
-        ),
-        "enable_metrics", "bool", false, Some("true"), "Enable metrics collection"
-      ),
-      "sampling_rate", "float", false, Some("0.1"), "Sampling rate for metrics"
-    ),
-    "tags", "array", false, Some("[\"production\"]"), "Tags for the service"
-  )
+  // 注册模板
+  TemplateManager::register_template(template_manager, "base", base_template_content)
   
-  // Test loading configuration with all required values
-  let config_values = [
-    ("service_name", "payment-service"),
-    ("port", "9090"),
-    ("enable_metrics", "false"),
-    ("sampling_rate", "0.25"),
-    ("tags", "[\"production\", \"payment\"]")
+  // 创建服务特定模板
+  let web_service_template_content = "{
+    \"extends\": \"base\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"{{service_name}}-web\",
+        \"port\": 3000
+      },
+      \"logging\": {
+        \"level\": \"debug\"
+      },
+      \"web\": {
+        \"static_files\": \"./public\",
+        \"session_timeout\": 3600
+      }
+    }
+  }"
+  
+  TemplateManager::register_template(template_manager, "web-service", web_service_template_content)
+  
+  // 创建API服务模板
+  let api_service_template_content = "{
+    \"extends\": \"base\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"{{service_name}}-api\",
+        \"port\": 8080
+      },
+      \"api\": {
+        \"rate_limit\": 1000,
+        \"timeout\": 30000
+      }
+    }
+  }"
+  
+  TemplateManager::register_template(template_manager, "api-service", api_service_template_content)
+  
+  // 渲染Web服务配置
+  let web_variables = [
+    ("service_name", "azimuth"),
+    ("service_version", "1.0.0"),
+    ("service_port", 3000),
+    ("log_level", "debug")
   ]
   
-  let config = load_configuration(schema_with_values.values, config_values)
-  assert_eq(config.errors.length(), 0)
-  assert_eq(config.loaded_values.length(), 5)
+  let web_config = TemplateManager::render(template_manager, "web-service", web_variables)
   
-  // Check loaded values
-  let service_name = config.loaded_values.find_fn(v) { v.0 == "service_name" }
-  match service_name {
-    Some(pair) => assert_eq(pair.1, "payment-service")
+  // 验证Web服务配置
+  let web_service_name = ConfigurationManager::get_string(web_config, "telemetry.service.name")
+  match web_service_name {
+    Some(name) => assert_eq(name, "azimuth-web")
     None => assert_true(false)
   }
   
-  let port = config.loaded_values.find_fn(v) { v.0 == "port" }
-  match port {
-    Some(pair) => assert_eq(pair.1, "9090")
+  let web_service_port = ConfigurationManager::get_int(web_config, "telemetry.service.port")
+  match web_service_port {
+    Some(port) => assert_eq(port, 3000)
     None => assert_true(false)
   }
   
-  // Test loading configuration with missing required value
-  let incomplete_values = [
-    ("port", "9090"),
-    ("enable_metrics", "true")
-  ]
-  
-  let incomplete_config = load_configuration(schema_with_values.values, incomplete_values)
-  assert_true(incomplete_config.errors.length() > 0)
-  assert_true(incomplete_config.errors.some_fn(e) { e.contains("service_name") })
-  
-  // Test loading configuration with invalid value
-  let invalid_values = [
-    ("service_name", "payment-service"),
-    ("port", "invalid_port"),  // Invalid integer
-    ("enable_metrics", "maybe")  // Invalid boolean
-  ]
-  
-  let invalid_config = load_configuration(schema_with_values.values, invalid_values)
-  assert_true(invalid_config.errors.length() > 0)
-  assert_true(invalid_config.errors.some_fn(e) { e.contains("port") })
-  assert_true(invalid_config.errors.some_fn(e) { e.contains("enable_metrics") })
-  
-  // Test loading configuration with defaults
-  let default_values = [
-    ("service_name", "auth-service")
-  ]
-  
-  let default_config = load_configuration(schema_with_values.values, default_values)
-  assert_eq(default_config.errors.length(), 0)
-  
-  // Check that defaults were used
-  let default_port = default_config.loaded_values.find_fn(v) { v.0 == "port" }
-  match default_port {
-    Some(pair) => assert_eq(pair.1, "8080")  // Default value
+  let web_log_level = ConfigurationManager::get_string(web_config, "telemetry.logging.level")
+  match web_log_level {
+    Some(level) => assert_eq(level, "debug")
     None => assert_true(false)
   }
   
-  let default_enable_metrics = default_config.loaded_values.find_fn(v) { v.0 == "enable_metrics" }
-  match default_enable_metrics {
-    Some(pair) => assert_eq(pair.1, "true")  // Default value
+  let web_static_files = ConfigurationManager::get_string(web_config, "telemetry.web.static_files")
+  match web_static_files {
+    Some(path) => assert_eq(path, "./public")
+    None => assert_true(false)
+  }
+  
+  // 渲染API服务配置
+  let api_variables = [
+    ("service_name", "azimuth"),
+    ("service_version", "1.0.0"),
+    ("service_port", 8080),
+    ("log_level", "info")
+  ]
+  
+  let api_config = TemplateManager::render(template_manager, "api-service", api_variables)
+  
+  // 验证API服务配置
+  let api_service_name = ConfigurationManager::get_string(api_config, "telemetry.service.name")
+  match api_service_name {
+    Some(name) => assert_eq(name, "azimuth-api")
+    None => assert_true(false)
+  }
+  
+  let api_rate_limit = ConfigurationManager::get_int(api_config, "telemetry.api.rate_limit")
+  match api_rate_limit {
+    Some(limit) => assert_eq(limit, 1000)
+    None => assert_true(false)
+  }
+  
+  // 测试模板继承链
+  let template_hierarchy = TemplateManager::get_inheritance_chain(template_manager, "web-service")
+  assert_eq(template_hierarchy[0], "web-service")
+  assert_eq(template_hierarchy[1], "base")
+  
+  // 测试模板变量验证
+  let invalid_variables = [
+    ("service_name", "azimuth"),
+    ("service_version", "1.0.0")
+    // 缺少service_port和log_level
+  ]
+  
+  let invalid_config = TemplateManager::render(template_manager, "web-service", invalid_variables)
+  
+  // 验证缺少变量的处理
+  let missing_port = ConfigurationManager::get_string(invalid_config, "telemetry.service.port")
+  match missing_port {
+    Some(port) => assert_eq(port, "{{service_port}}") // 未被替换
     None => assert_true(false)
   }
 }
 
-// Test 2: Configuration Hierarchy and Inheritance
-test "configuration hierarchy and inheritance" {
-  type ConfigLayer = {
-    name: String,
-    priority: Int,
-    values: Array[(String, String)]
-  }
+// 测试6: 配置安全性和加密
+test "配置安全性和加密测试" {
+  let secure_config_manager = SecureConfigurationManager::new()
   
-  type HierarchicalConfig = {
-    layers: Array[ConfigLayer],
-    merged_values: Array[(String, String)]
-  }
+  // 创建加密密钥
+  let encryption_key = SecureConfigurationManager::generate_encryption_key(secure_config_manager)
   
-  // Create config layer
-  let create_layer = fn(name: String, priority: Int) {
-    {
-      name: name,
-      priority: priority,
-      values: []
-    }
-  }
-  
-  // Add value to layer
-  let add_value = fn(layer: ConfigLayer, key: String, value: String) {
-    { layer | values: layer.values.push((key, value)) }
-  }
-  
-  // Merge layers by priority
-  let merge_layers = fn(layers: Array[ConfigLayer]) {
-    // Sort layers by priority (higher priority first)
-    let sorted_layers = {
-      let mut sorted = layers
-      let mut i = 0
-      while i < sorted.length() {
-        let mut j = i + 1
-        while j < sorted.length() {
-          if sorted[j].priority > sorted[i].priority {
-            let temp = sorted[i]
-            sorted[i] = sorted[j]
-            sorted[j] = temp
-          }
-          j = j + 1
-        }
-        i = i + 1
-      }
-      sorted
-    }
-    
-    // Merge values, higher priority layers override lower ones
-    let mut merged = []
-    let mut processed_keys = []
-    
-    for layer in sorted_layers {
-      for (key, value) in layer.values {
-        if not(processed_keys.contains(key)) {
-          processed_keys = processed_keys.push(key)
-          merged = merged.push((key, value))
-        }
+  // 创建包含敏感信息的配置
+  let sensitive_config_content = "{
+    \"telemetry\": {
+      \"database\": {
+        \"host\": \"localhost\",
+        \"port\": 5432,
+        \"username\": \"admin\",
+        \"password\": \"secret_password\",
+        \"ssl_cert\": \"-----BEGIN CERTIFICATE-----\\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\\n-----END CERTIFICATE-----\"
+      },
+      \"api_keys\": {
+        \"external_service\": \"sk-1234567890abcdef\",
+        \"internal_service\": \"internal_key_123\"
+      },
+      \"public_info\": {
+        \"service_name\": \"azimuth-service\",
+        \"version\": \"1.0.0\"
       }
     }
-    
-    merged
-  }
+  }"
   
-  // Create hierarchical config
-  let create_hierarchical_config = fn(layers: Array[ConfigLayer]) {
-    {
-      layers: layers,
-      merged_values: merge_layers(layers)
+  // 配置加密规则
+  SecureConfigurationManager::add_encryption_rule(secure_config_manager, "telemetry.database.password")
+  SecureConfigurationManager::add_encryption_rule(secure_config_manager, "telemetry.database.ssl_cert")
+  SecureConfigurationManager::add_encryption_rule(secure_config_manager, "telemetry.api_keys.*")
+  
+  // 加载并加密配置
+  let secure_config = SecureConfigurationManager::load_and_encrypt(secure_config_manager, sensitive_config_content, encryption_key)
+  
+  // 验证敏感字段已加密
+  let encrypted_password = ConfigurationManager::get_string(secure_config, "telemetry.database.password")
+  match encrypted_password {
+    Some(password) => {
+      assert_neq(password, "secret_password")
+      assert_true(password.starts_with("encrypted:"))
     }
-  }
-  
-  // Get value from hierarchical config
-  let get_value = fn(config: HierarchicalConfig, key: String) {
-    config.merged_values.find_fn(v) { v.0 == key }
-  }
-  
-  // Create layers with different priorities
-  let base_layer = create_layer("base", 1)
-  let base_with_values = add_value(
-    add_value(
-      add_value(base_layer, "service_name", "telemetry-service"),
-      "port", "8080"
-    ),
-    "log_level", "info"
-  )
-  
-  let env_layer = create_layer("environment", 2)
-  let env_with_values = add_value(
-    add_value(env_layer, "port", "9090"),  // Override base port
-    "environment", "production"
-  )
-  
-  let local_layer = create_layer("local", 3)
-  let local_with_values = add_value(
-    add_value(
-      add_value(local_layer, "service_name", "local-telemetry"),  // Override base service name
-      "debug_mode", "true"
-    ),
-    "log_level", "debug"  // Override base log level
-  )
-  
-  // Create hierarchical config
-  let layers = [base_with_values, env_with_values, local_with_values]
-  let config = create_hierarchical_config(layers)
-  
-  // Test merged values
-  assert_eq(config.merged_values.length(), 5)
-  
-  // Check overrides
-  let service_name = get_value(config, "service_name")
-  match service_name {
-    Some(pair) => assert_eq(pair.1, "local-telemetry")  // From local layer (highest priority)
     None => assert_true(false)
   }
   
-  let port = get_value(config, "port")
-  match port {
-    Some(pair) => assert_eq(pair.1, "9090")  // From env layer
+  let encrypted_cert = ConfigurationManager::get_string(secure_config, "telemetry.database.ssl_cert")
+  match encrypted_cert {
+    Some(cert) => {
+      assert_neq(cert, "-----BEGIN CERTIFICATE-----")
+      assert_true(cert.starts_with("encrypted:"))
+    }
     None => assert_true(false)
   }
   
-  let log_level = get_value(config, "log_level")
-  match log_level {
-    Some(pair) => assert_eq(pair.1, "debug")  // From local layer
+  let encrypted_api_key = ConfigurationManager::get_string(secure_config, "telemetry.api_keys.external_service")
+  match encrypted_api_key {
+    Some(key) => {
+      assert_neq(key, "sk-1234567890abcdef")
+      assert_true(key.starts_with("encrypted:"))
+    }
     None => assert_true(false)
   }
   
-  let environment = get_value(config, "environment")
-  match environment {
-    Some(pair) => assert_eq(pair.1, "production")  // From env layer
+  // 验证非敏感字段未加密
+  let public_service_name = ConfigurationManager::get_string(secure_config, "telemetry.public_info.service_name")
+  match public_service_name {
+    Some(name) => assert_eq(name, "azimuth-service")
     None => assert_true(false)
   }
   
-  let debug_mode = get_value(config, "debug_mode")
-  match debug_mode {
-    Some(pair) => assert_eq(pair.1, "true")  // From local layer
+  // 解密配置
+  let decrypted_config = SecureConfigurationManager::decrypt(secure_config_manager, secure_config, encryption_key)
+  
+  // 验证解密结果
+  let decrypted_password = ConfigurationManager::get_string(decrypted_config, "telemetry.database.password")
+  match decrypted_password {
+    Some(password) => assert_eq(password, "secret_password")
     None => assert_true(false)
   }
   
-  // Test layer priority changes
-  let new_env_layer = create_layer("environment", 4)  // Higher priority than local
-  let new_env_with_values = add_value(new_env_layer, "service_name", "prod-telemetry")
+  let decrypted_cert = ConfigurationManager::get_string(decrypted_config, "telemetry.database.ssl_cert")
+  match decrypted_cert {
+    Some(cert) => assert_eq(cert, "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END CERTIFICATE-----")
+    None => assert_true(false)
+  }
   
-  let new_layers = [base_with_values, env_with_values, local_with_values, new_env_with_values]
-  let new_config = create_hierarchical_config(new_layers)
+  // 测试配置访问控制
+  let access_control = ConfigurationAccessControl::new()
   
-  let new_service_name = get_value(new_config, "service_name")
-  match new_service_name {
-    Some(pair) => assert_eq(pair.1, "prod-telemetry")  // From new env layer (highest priority)
+  // 定义权限
+  AccessControl::add_permission(access_control, "admin", ["telemetry.*"])
+  AccessControl::add_permission(access_control, "developer", ["telemetry.public_info.*", "telemetry.database.host", "telemetry.database.port"])
+  AccessControl::add_permission(access_control, "readonly", ["telemetry.public_info.*"])
+  
+  // 测试不同权限级别的访问
+  let admin_access = AccessControl::can_access(access_control, "admin", "telemetry.database.password")
+  assert_true(admin_access)
+  
+  let developer_access = AccessControl::can_access(access_control, "developer", "telemetry.database.password")
+  assert_false(developer_access)
+  
+  let developer_public_access = AccessControl::can_access(access_control, "developer", "telemetry.public_info.service_name")
+  assert_true(developer_public_access)
+  
+  let readonly_access = AccessControl::can_access(access_control, "readonly", "telemetry.database.host")
+  assert_false(readonly_access)
+  
+  // 应用访问控制到配置
+  let filtered_config_for_developer = AccessControl::filter_config(access_control, decrypted_config, "developer")
+  
+  // 验证过滤结果
+  let filtered_password = ConfigurationManager::get_string(filtered_config_for_developer, "telemetry.database.password")
+  match filtered_password {
+    Some(_) => assert_true(false) // 开发者不应该能访问密码
+    None => assert_true(true)
+  }
+  
+  let filtered_host = ConfigurationManager::get_string(filtered_config_for_developer, "telemetry.database.host")
+  match filtered_host {
+    Some(host) => assert_eq(host, "localhost")
     None => assert_true(false)
   }
 }
 
-// Test 3: Dynamic Configuration Updates
-test "dynamic configuration updates" {
-  type ConfigChange = {
-    key: String,
-    old_value: Option[String],
-    new_value: String,
-    timestamp: Int
-  }
+// 测试7: 配置版本控制和历史
+test "配置版本控制和历史测试" {
+  let version_control = ConfigurationVersionControl::new()
   
-  type DynamicConfig = {
-    values: Array[(String, String)],
-    change_history: Array[ConfigChange],
-    subscribers: Array[(String, (String, String) -> Unit)]
-  }
-  
-  // Create dynamic config
-  let create_dynamic_config = fn() {
-    {
-      values: [],
-      change_history: [],
-      subscribers: []
-    }
-  }
-  
-  // Get value from dynamic config
-  let get_dynamic_value = fn(config: DynamicConfig, key: String) {
-    config.values.find_fn(v) { v.0 == key }
-  }
-  
-  // Set value in dynamic config
-  let set_dynamic_value = fn(config: DynamicConfig, key: String, value: String) {
-    let existing = get_dynamic_value(config, key)
-    let old_value = match existing {
-      Some(pair) => Some(pair.1)
-      None => None
-    }
-    
-    // Update or add value
-    let mut updated = []
-    let mut found = false
-    
-    for (k, v) in config.values {
-      if k == key {
-        updated = updated.push((key, value))
-        found = true
-      } else {
-        updated = updated.push((k, v))
+  // 创建初始配置
+  let v1_config_content = "{
+    \"version\": \"1.0.0\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 8080
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 5000
       }
     }
-    
-    if not(found) {
-      updated = updated.push((key, value))
-    }
-    
-    // Record change
-    let change = {
-      key: key,
-      old_value: old_value,
-      new_value: value,
-      timestamp: 1640995200  // Fixed timestamp for testing
-    }
-    
-    let updated_config = {
-      values: updated,
-      change_history: config.change_history.push(change),
-      subscribers: config.subscribers
-    }
-    
-    // Notify subscribers
-    for (subscriber_key, callback) in updated_config.subscribers {
-      callback(key, value)
-    }
-    
-    updated_config
-  }
+  }"
   
-  // Subscribe to configuration changes
-  let subscribe = fn(config: DynamicConfig, subscriber_key: String, callback: (String, String) -> Unit) {
-    { config | subscribers: config.subscribers.push((subscriber_key, callback)) }
-  }
+  // 提交初始版本
+  let v1_config = ConfigurationManager::load_from_string(version_control, v1_config_content)
+  let v1_commit = ConfigurationVersionControl::commit(version_control, v1_config, "Initial configuration")
   
-  // Unsubscribe from configuration changes
-  let unsubscribe = fn(config: DynamicConfig, subscriber_key: String) {
-    let mut updated = []
-    for (key, callback) in config.subscribers {
-      if key != subscriber_key {
-        updated = updated.push((key, callback))
+  // 验证提交信息
+  assert_eq(CommitInfo::version(v1_commit), "1.0.0")
+  assert_eq(CommitInfo::message(v1_commit), "Initial configuration")
+  assert_true(CommitInfo::timestamp(v1_commit) > 0)
+  
+  // 创建更新配置
+  let v2_config_content = "{
+    \"version\": \"1.1.0\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 8080,
+        \"health_check\": \"/health\"
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 3000
+      },
+      \"logging\": {
+        \"level\": \"debug\"
       }
     }
-    { config | subscribers: updated }
-  }
+  }"
   
-  // Get change history for a key
-  let get_change_history = fn(config: DynamicConfig, key: String) {
-    config.change_history.filter_fn(c) { c.key == key }
-  }
+  // 提交更新版本
+  let v2_config = ConfigurationManager::load_from_string(version_control, v2_config_content)
+  let v2_commit = ConfigurationVersionControl::commit(version_control, v2_config, "Add health check and logging")
   
-  // Test dynamic configuration
-  let config = create_dynamic_config()
+  // 验证版本历史
+  let history = ConfigurationVersionControl::get_history(version_control)
+  assert_eq(history.length(), 2)
+  assert_eq(CommitInfo::version(history[0]), "1.1.0")
+  assert_eq(CommitInfo::version(history[1]), "1.0.0")
   
-  // Initial state
-  assert_eq(config.values.length(), 0)
-  assert_eq(config.change_history.length(), 0)
-  assert_eq(config.subscribers.length(), 0)
+  // 检出版本差异
+  let diff = ConfigurationVersionControl::diff(version_control, "1.0.0", "1.1.0")
   
-  // Set initial values
-  let config1 = set_dynamic_value(config, "service_name", "telemetry-service")
-  assert_eq(config1.values.length(), 1)
-  assert_eq(config1.change_history.length(), 1)
+  // 验证差异
+  assert_true(DiffInfo::has_changes(diff))
+  assert_true(DiffInfo::has_additions(diff))
+  assert_false(DiffInfo::has_deletions(diff)) // 没有删除字段
   
-  let service_name = get_dynamic_value(config1, "service_name")
-  match service_name {
-    Some(pair) => assert_eq(pair.1, "telemetry-service")
+  let additions = DiffInfo::get_additions(diff)
+  assert_true(additions.any(fn(change) {
+    Change::path(change) == "telemetry.service.health_check"
+  }))
+  assert_true(additions.any(fn(change) {
+    Change::path(change) == "telemetry.logging.level"
+  }))
+  
+  let modifications = DiffInfo::get_modifications(diff)
+  assert_true(modifications.any(fn(change) {
+    Change::path(change) == "telemetry.metrics.interval" && 
+    Change::old_value(change) == "5000" && 
+    Change::new_value(change) == "3000"
+  }))
+  
+  // 检出特定版本
+  let v1_checkout = ConfigurationVersionControl::checkout(version_control, "1.0.0")
+  let v1_interval = ConfigurationManager::get_int(v1_checkout, "telemetry.metrics.interval")
+  match v1_interval {
+    Some(interval) => assert_eq(interval, 5000)
     None => assert_true(false)
   }
   
-  let change = config1.change_history[0]
-  assert_eq(change.key, "service_name")
-  assert_eq(change.old_value, None)
-  assert_eq(change.new_value, "telemetry-service")
+  let v1_health_check = ConfigurationManager::get_string(v1_checkout, "telemetry.service.health_check")
+  match v1_health_check {
+    Some(_) => assert_true(false) // v1不应该有health_check
+    None => assert_true(true)
+  }
   
-  // Update existing value
-  let config2 = set_dynamic_value(config1, "service_name", "updated-service")
-  assert_eq(config2.values.length(), 1)
-  assert_eq(config2.change_history.length(), 2)
+  // 创建分支
+  ConfigurationVersionControl::create_branch(version_control, "feature/new-metrics")
+  ConfigurationVersionControl::switch_branch(version_control, "feature/new-metrics")
   
-  let updated_service_name = get_dynamic_value(config2, "service_name")
-  match updated_service_name {
-    Some(pair) => assert_eq(pair.1, "updated-service")
+  // 在分支上提交
+  let branch_config_content = "{
+    \"version\": \"1.1.0-feature\",
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 8080,
+        \"health_check\": \"/health\"
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 3000,
+        \"new_feature\": true
+      },
+      \"logging\": {
+        \"level\": \"debug\"
+      }
+    }
+  }"
+  
+  let branch_config = ConfigurationManager::load_from_string(version_control, branch_config_content)
+  ConfigurationVersionControl::commit(version_control, branch_config, "Add new metrics feature")
+  
+  // 验证分支历史
+  let branch_history = ConfigurationVersionControl::get_history(version_control)
+  assert_eq(branch_history.length(), 1) // 分支上只有一次提交
+  
+  // 合并分支
+  ConfigurationVersionControl::switch_branch(version_control, "main")
+  let merge_result = ConfigurationVersionControl::merge(version_control, "feature/new-metrics")
+  
+  // 验证合并结果
+  assert_true(MergeResult::is_successful(merge_result))
+  
+  let merged_config = ConfigurationVersionControl::get_current_config(version_control)
+  let new_feature = ConfigurationManager::get_bool(merged_config, "telemetry.metrics.new_feature")
+  match new_feature {
+    Some(feature) => assert_true(feature)
     None => assert_true(false)
   }
   
-  let update_change = config2.change_history[1]
-  assert_eq(update_change.key, "service_name")
-  assert_eq(update_change.old_value, Some("telemetry-service"))
-  assert_eq(update_change.new_value, "updated-service")
+  // 测试标签
+  ConfigurationVersionControl::create_tag(version_control, "v1.1.0", "1.1.0")
   
-  // Add another value
-  let config3 = set_dynamic_value(config2, "port", "8080")
-  assert_eq(config3.values.length(), 2)
-  assert_eq(config3.change_history.length(), 3)
-  
-  // Test subscription
-  let mut notifications = []
-  
-  let callback = fn(key: String, value: String) {
-    notifications = notifications.push((key, value))
+  let tagged_config = ConfigurationVersionControl::checkout_tag(version_control, "v1.1.0")
+  let tagged_version = ConfigurationManager::get_string(tagged_config, "version")
+  match tagged_version {
+    Some(version) => assert_eq(version, "1.1.0")
+    None => assert_true(false)
   }
-  
-  let config4 = subscribe(config3, "test_subscriber", callback)
-  assert_eq(config4.subscribers.length(), 1)
-  
-  // Trigger notification
-  let config5 = set_dynamic_value(config4, "port", "9090")
-  assert_eq(notifications.length(), 1)
-  assert_eq(notifications[0], ("port", "9090"))
-  
-  // Test unsubscribe
-  let config6 = unsubscribe(config5, "test_subscriber")
-  assert_eq(config6.subscribers.length(), 0)
-  
-  // No more notifications
-  let config7 = set_dynamic_value(config6, "port", "10000")
-  assert_eq(notifications.length(), 1)  // Still 1, no new notification
-  
-  // Test change history
-  let port_history = get_change_history(config7, "port")
-  assert_eq(port_history.length(), 3)
-  
-  assert_eq(port_history[0].new_value, "8080")
-  assert_eq(port_history[1].new_value, "9090")
-  assert_eq(port_history[2].new_value, "10000")
 }
 
-// Test 4: Configuration Environment-Specific Loading
-test "configuration environment-specific loading" {
-  type EnvironmentConfig = {
-    environment: String,
-    values: Array[(String, String)]
-  }
+// 测试8: 配置热重载和监控
+test "配置热重载和监控测试" {
+  let hot_reload_manager = HotReloadManager::new()
+  let config_monitor = ConfigurationMonitor::new()
   
-  type MultiEnvConfig = {
-    default_values: Array[(String, String)],
-    environment_configs: Array[EnvironmentConfig]
-  }
-  
-  // Create multi-environment config
-  let create_multi_env_config = fn(default_values: Array[(String, String)]) {
-    {
-      default_values: default_values,
-      environment_configs: []
+  // 创建初始配置文件
+  let config_file_path = "/tmp/azimuth_config.json"
+  let initial_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 8080
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 5000
+      }
     }
-  }
+  }"
   
-  // Add environment config
-  let add_environment_config = fn(config: MultiEnvConfig, environment: String, values: Array[(String, String)]) {
-    let env_config = {
-      environment: environment,
-      values: values
-    }
-    { config | environment_configs: config.environment_configs.push(env_config) }
-  }
+  // 写入配置文件
+  FileUtil::write_file(config_file_path, initial_config_content)
   
-  // Load configuration for specific environment
-  let load_for_environment = fn(config: MultiEnvConfig, environment: String) {
-    let env_config = config.environment_configs.find_fn(c) { c.environment == environment }
+  // 加载初始配置
+  let initial_config = ConfigurationManager::load_from_file(hot_reload_manager, config_file_path)
+  HotReloadManager::set_config(hot_reload_manager, initial_config)
+  
+  // 配置文件监控
+  ConfigMonitor::watch_file(config_monitor, config_file_path)
+  
+  // 注册重载监听器
+  let reload_listener = ReloadListener::new()
+  ReloadListener::on_reload(reload_listener, fn(old_config, new_config) {
+    // 验证配置变更
+    let old_port = ConfigurationManager::get_int(old_config, "telemetry.service.port")
+    let new_port = ConfigurationManager::get_int(new_config, "telemetry.service.port")
     
-    match env_config {
-      Some(env) => {
-        // Start with default values
-        let mut merged = config.default_values
-        let mut processed_keys = config.default_values.map_fn(v) { v.0 }
-        
-        // Override with environment-specific values
-        for (key, value) in env.values {
-          if not(processed_keys.contains(key)) {
-            merged = merged.push((key, value))
-            processed_keys = processed_keys.push(key)
-          } else {
-            // Replace existing value
-            let mut updated = []
-            for (k, v) in merged {
-              if k == key {
-                updated = updated.push((key, value))
-              } else {
-                updated = updated.push((k, v))
-              }
-            }
-            merged = updated
-          }
+    match (old_port, new_port) {
+      (Some(old), Some(new)) => {
+        if old != new {
+          // 处理端口变更
+          assert_true(new > 0 && new < 65536)
         }
-        
-        merged
       }
-      None => config.default_values
+      _ => assert_true(false)
     }
-  }
+  })
   
-  // Create default configuration
-  let default_values = [
-    ("service_name", "telemetry-service"),
-    ("port", "8080"),
-    ("log_level", "info"),
-    ("enable_metrics", "true"),
-    ("sampling_rate", "0.1")
-  ]
+  HotReloadManager::add_reload_listener(hot_reload_manager, reload_listener)
   
-  let config = create_multi_env_config(default_values)
-  
-  // Add environment-specific configurations
-  let dev_config = [
-    ("port", "3000"),
-    ("log_level", "debug"),
-    ("enable_metrics", "false")
-  ]
-  
-  let staging_config = [
-    ("port", "8080"),
-    ("log_level", "info"),
-    ("sampling_rate", "0.5")
-  ]
-  
-  let prod_config = [
-    ("port", "80"),
-    ("log_level", "warn"),
-    ("sampling_rate", "0.01"),
-    ("enable_metrics", "true")
-  ]
-  
-  let config_with_envs = add_environment_config(
-    add_environment_config(
-      add_environment_config(config, "development", dev_config),
-      "staging", staging_config
-    ),
-    "production", prod_config
-  )
-  
-  // Test loading for different environments
-  let dev_loaded = load_for_environment(config_with_envs, "development")
-  assert_eq(dev_loaded.length(), 5)
-  
-  // Check development overrides
-  let dev_port = dev_loaded.find_fn(v) { v.0 == "port" }
-  match dev_port {
-    Some(pair) => assert_eq(pair.1, "3000")
+  // 验证初始配置
+  let initial_port = HotReloadManager::get_int(hot_reload_manager, "telemetry.service.port")
+  match initial_port {
+    Some(port) => assert_eq(port, 8080)
     None => assert_true(false)
   }
   
-  let dev_log_level = dev_loaded.find_fn(v) { v.0 == "log_level" }
-  match dev_log_level {
-    Some(pair) => assert_eq(pair.1, "debug")
-    None => assert_true(false)
-  }
-  
-  let dev_service_name = dev_loaded.find_fn(v) { v.0 == "service_name" }
-  match dev_service_name {
-    Some(pair) => assert_eq(pair.1, "telemetry-service")  // From default
-    None => assert_true(false)
-  }
-  
-  // Test staging environment
-  let staging_loaded = load_for_environment(config_with_envs, "staging")
-  
-  let staging_port = staging_loaded.find_fn(v) { v.0 == "port" }
-  match staging_port {
-    Some(pair) => assert_eq(pair.1, "8080")
-    None => assert_true(false)
-  }
-  
-  let staging_sampling_rate = staging_loaded.find_fn(v) { v.0 == "sampling_rate" }
-  match staging_sampling_rate {
-    Some(pair) => assert_eq(pair.1, "0.5")
-    None => assert_true(false)
-  }
-  
-  let staging_enable_metrics = staging_loaded.find_fn(v) { v.0 == "enable_metrics" }
-  match staging_enable_metrics {
-    Some(pair) => assert_eq(pair.1, "true")  // From default
-    None => assert_true(false)
-  }
-  
-  // Test production environment
-  let prod_loaded = load_for_environment(config_with_envs, "production")
-  
-  let prod_port = prod_loaded.find_fn(v) { v.0 == "port" }
-  match prod_port {
-    Some(pair) => assert_eq(pair.1, "80")
-    None => assert_true(false)
-  }
-  
-  let prod_log_level = prod_loaded.find_fn(v) { v.0 == "log_level" }
-  match prod_log_level {
-    Some(pair) => assert_eq(pair.1, "warn")
-    None => assert_true(false)
-  }
-  
-  // Test unknown environment (should use defaults)
-  let unknown_loaded = load_for_environment(config_with_envs, "unknown")
-  assert_eq(unknown_loaded.length(), 5)
-  assert_eq(unknown_loaded, default_values)
-}
-
-// Test 5: Configuration Validation and Constraints
-test "configuration validation and constraints" {
-  type ValidationRule = {
-    name: String,
-    validate: String -> Bool,
-    error_message: String
-  }
-  
-  type ConfigConstraint = {
-    key: String,
-    rules: Array[ValidationRule]
-  }
-  
-  type ValidatedConfig = {
-    values: Array[(String, String)],
-    constraints: Array[ConfigConstraint],
-    validation_errors: Array[String]
-  }
-  
-  // Create validation rule
-  let create_rule = fn(name: String, validate_fn: String -> Bool, error_message: String) {
-    {
-      name: name,
-      validate: validate_fn,
-      error_message: error_message
-    }
-  }
-  
-  // Create constraint
-  let create_constraint = fn(key: String, rules: Array[ValidationRule]) {
-    {
-      key: key,
-      rules: rules
-    }
-  }
-  
-  // Create validated config
-  let create_validated_config = fn(values: Array[(String, String)], constraints: Array[ConfigConstraint]) {
-    let mut errors = []
-    
-    for (key, value) in values {
-      let constraint = constraints.find_fn(c) { c.key == key }
-      
-      match constraint {
-        Some(cons) => {
-          for rule in cons.rules {
-            if not(rule.validate(value)) {
-              errors = errors.push(key + ": " + rule.error_message)
-            }
-          }
-        }
-        None => {}  // No constraints for this key
+  // 更新配置文件
+  let updated_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 9090
+      },
+      \"metrics\": {
+        \"enabled\": true,
+        \"interval\": 3000
+      },
+      \"logging\": {
+        \"level\": \"debug\"
       }
     }
-    
-    {
-      values: values,
-      constraints: constraints,
-      validation_errors: errors
-    }
+  }"
+  
+  FileUtil::write_file(config_file_path, updated_config_content)
+  
+  // 触发热重载
+  let reload_result = HotReloadManager::reload(hot_reload_manager)
+  
+  // 验证重载结果
+  assert_true(ReloadResult::is_successful(reload_result))
+  
+  let updated_port = HotReloadManager::get_int(hot_reload_manager, "telemetry.service.port")
+  match updated_port {
+    Some(port) => assert_eq(port, 9090)
+    None => assert_true(false)
   }
   
-  // Common validation functions
-  let non_empty = fn(value: String) { value.length() > 0 }
-  let port_range = fn(value: String) {
-    if value.length() == 0 {
-      false
-    } else {
-      let mut i = 0
-      let mut valid = true
-      
-      while i < value.length() and valid {
-        let c = value[i]
-        if c < '0' or c > '9' {
-          valid = false
-        }
-        i = i + 1
-      }
-      
-      if valid {
-        let port = value.to_int()
-        port >= 1 and port <= 65535
-      } else {
-        false
-      }
-    }
+  let updated_interval = HotReloadManager::get_int(hot_reload_manager, "telemetry.metrics.interval")
+  match updated_interval {
+    Some(interval) => assert_eq(interval, 3000)
+    None => assert_true(false)
   }
   
-  let sampling_rate_range = fn(value: String) {
-    if value.length() == 0 {
-      false
-    } else {
-      let mut i = 0
-      let mut valid = true
-      let mut dot_seen = false
-      
-      while i < value.length() and valid {
-        let c = value[i]
-        if c == '.' {
-          if dot_seen {
-            valid = false
-          } else {
-            dot_seen = true
-          }
-        } else if c < '0' or c > '9' {
-          valid = false
-        }
-        i = i + 1
-      }
-      
-      if valid {
-        let rate = value.to_float()
-        rate >= 0.0 and rate <= 1.0
-      } else {
-        false
+  let added_log_level = HotReloadManager::get_string(hot_reload_manager, "telemetry.logging.level")
+  match added_log_level {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+  
+  // 测试配置验证重载
+  ConfigMonitor::set_validation_enabled(config_monitor, true)
+  ConfigMonitor::add_validation_rule(config_monitor, ValidationRule::min_value("telemetry.service.port", 1000))
+  
+  // 尝试加载无效配置
+  let invalid_config_content = "{
+    \"telemetry\": {
+      \"service\": {
+        \"name\": \"azimuth-service\",
+        \"port\": 999
       }
     }
+  }"
+  
+  FileUtil::write_file(config_file_path, invalid_config_content)
+  
+  let invalid_reload_result = HotReloadManager::reload(hot_reload_manager)
+  
+  // 验证无效配置被拒绝
+  assert_false(ReloadResult::is_successful(invalid_reload_result))
+  assert_true(ReloadResult::has_validation_errors(invalid_reload_result))
+  
+  // 验证配置未变更
+  let unchanged_port = HotReloadManager::get_int(hot_reload_manager, "telemetry.service.port")
+  match unchanged_port {
+    Some(port) => assert_eq(port, 9090) // 应该保持之前的值
+    None => assert_true(false)
   }
   
-  let url_format = fn(value: String) {
-    value.starts_with("http://") or value.starts_with("https://")
+  // 测试配置变更通知
+  let notification_service = ConfigurationNotificationService::new()
+  
+  NotificationService::subscribe(notification_service, "config.changed", fn(event) {
+    // 处理配置变更通知
+    assert_true(NotificationEvent::type(event) == "config.changed")
+    assert_true(NotificationEvent::has_changes(event))
+  })
+  
+  // 模拟配置变更事件
+  let change_event = NotificationEvent::config_changed("telemetry.service.port", 9090, 8080)
+  NotificationService::publish(notification_service, change_event)
+  
+  // 测试配置备份和恢复
+  let backup_result = HotReloadManager::backup_config(hot_reload_manager, "/tmp/config_backup.json")
+  assert_true(BackupResult::is_successful(backup_result))
+  
+  // 恢复配置
+  let restore_result = HotReloadManager::restore_config(hot_reload_manager, "/tmp/config_backup.json")
+  assert_true(RestoreResult::is_successful(restore_result))
+  
+  // 验证恢复后的配置
+  let restored_port = HotReloadManager::get_int(hot_reload_manager, "telemetry.service.port")
+  match restored_port {
+    Some(port) => assert_eq(port, 9090)
+    None => assert_true(false)
   }
   
-  // Create validation rules
-  let non_empty_rule = create_rule("non_empty", non_empty, "Value cannot be empty")
-  let port_rule = create_rule("port_range", port_range, "Port must be between 1 and 65535")
-  let sampling_rate_rule = create_rule("sampling_rate_range", sampling_rate_range, "Sampling rate must be between 0.0 and 1.0")
-  let url_rule = create_rule("url_format", url_format, "URL must start with http:// or https://")
-  
-  // Create constraints
-  let service_name_constraint = create_constraint("service_name", [non_empty_rule])
-  let port_constraint = create_constraint("port", [port_rule])
-  let sampling_rate_constraint = create_constraint("sampling_rate", [sampling_rate_rule])
-  let endpoint_constraint = create_constraint("endpoint", [non_empty_rule, url_rule])
-  
-  let constraints = [
-    service_name_constraint,
-    port_constraint,
-    sampling_rate_constraint,
-    endpoint_constraint
-  ]
-  
-  // Test valid configuration
-  let valid_values = [
-    ("service_name", "telemetry-service"),
-    ("port", "8080"),
-    ("sampling_rate", "0.1"),
-    ("endpoint", "https://api.example.com")
-  ]
-  
-  let valid_config = create_validated_config(valid_values, constraints)
-  assert_eq(valid_config.validation_errors.length(), 0)
-  
-  // Test invalid configuration
-  let invalid_values = [
-    ("service_name", ""),  // Empty
-    ("port", "70000"),  // Out of range
-    ("sampling_rate", "1.5"),  // Out of range
-    ("endpoint", "invalid-url")  // Invalid format
-  ]
-  
-  let invalid_config = create_validated_config(invalid_values, constraints)
-  assert_eq(invalid_config.validation_errors.length(), 4)
-  assert_true(invalid_config.validation_errors.some_fn(e) { e.contains("service_name") and e.contains("cannot be empty") })
-  assert_true(invalid_config.validation_errors.some_fn(e) { e.contains("port") and e.contains("between 1 and 65535") })
-  assert_true(invalid_config.validation_errors.some_fn(e) { e.contains("sampling_rate") and e.contains("between 0.0 and 1.0") })
-  assert_true(invalid_config.validation_errors.some_fn(e) { e.contains("endpoint") and e.contains("http:// or https://") })
-  
-  // Test partial invalid configuration
-  let partial_values = [
-    ("service_name", "valid-service"),
-    ("port", "invalid-port"),  // Invalid
-    ("sampling_rate", "0.5")  // Valid
-  ]
-  
-  let partial_config = create_validated_config(partial_values, constraints)
-  assert_eq(partial_config.validation_errors.length(), 1)
-  assert_true(partial_config.validation_errors.some_fn(e) { e.contains("port") })
-  
-  // Test configuration with unknown keys (no validation errors)
-  let unknown_values = [
-    ("unknown_key1", "value1"),
-    ("unknown_key2", "value2")
-  ]
-  
-  let unknown_config = create_validated_config(unknown_values, constraints)
-  assert_eq(unknown_config.validation_errors.length(), 0)
+  // 测试配置监控指标
+  let monitoring_metrics = ConfigMonitor::get_metrics(config_monitor)
+  assert_eq(MonitoringMetrics::reload_count(monitoring_metrics), 3)
+  assert_eq(MonitoringMetrics::validation_failure_count(monitoring_metrics), 1)
+  assert_true(MonitoringMetrics::last_reload_time(monitoring_metrics) > 0)
 }
