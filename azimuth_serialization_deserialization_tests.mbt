@@ -1,875 +1,579 @@
-// Azimuth Serialization Deserialization Tests
-// This file contains test cases for serialization and deserialization functionality
+// Azimuth Serialization and Deserialization Tests
+// 序列化和反序列化测试用例 - 测试系统的序列化和反序列化功能，包括各种数据格式和复杂结构的处理
 
-// Test 1: Basic Serialization and Deserialization
-test "basic serialization and deserialization" {
-  let serializer = JsonSerializer::new()
+// Test 1: JSON序列化和反序列化
+test "json serialization and deserialization" {
+  let json_serializer = JsonSerializer::new()
   
-  // Test primitive types
-  let int_value = 42
-  let serialized_int = serializer.serialize(int_value)
-  let deserialized_int = serializer.deserialize_int(serialized_int)
-  assert_eq(deserialized_int, int_value)
+  // 测试基本数据类型序列化
+  let string_value = StringValue("test_string")
+  let serialized_string = JsonSerializer::serialize(json_serializer, string_value)
+  assert_eq(serialized_string, "\"test_string\"")
   
-  let float_value = 3.14159
-  let serialized_float = serializer.serialize(float_value)
-  let deserialized_float = serializer.deserialize_float(serialized_float)
-  assert_eq(deserialized_float, float_value)
+  let int_value = IntValue(42)
+  let serialized_int = JsonSerializer::serialize(json_serializer, int_value)
+  assert_eq(serialized_int, "42")
   
-  let string_value = "test_string"
-  let serialized_string = serializer.serialize(string_value)
-  let deserialized_string = serializer.deserialize_string(serialized_string)
-  assert_eq(deserialized_string, string_value)
+  let float_value = FloatValue(3.14)
+  let serialized_float = JsonSerializer::serialize(json_serializer, float_value)
+  assert_eq(serialized_float, "3.14")
   
-  let bool_value = true
-  let serialized_bool = serializer.serialize(bool_value)
-  let deserialized_bool = serializer.deserialize_bool(serialized_bool)
-  assert_eq(deserialized_bool, bool_value)
+  let bool_value = BoolValue(true)
+  let serialized_bool = JsonSerializer::serialize(json_serializer, bool_value)
+  assert_eq(serialized_bool, "true")
   
-  // Test array serialization
-  let array_value = [1, 2, 3, 4, 5]
-  let serialized_array = serializer.serialize(array_value)
-  let deserialized_array = serializer.deserialize_int_array(serialized_array)
-  assert_eq(deserialized_array, array_value)
+  // 测试复合数据类型序列化
+  let attributes = Attributes::new()
+  Attributes::set(attributes, "name", StringValue("test_object"))
+  Attributes::set(attributes, "age", IntValue(25))
+  Attributes::set(attributes, "active", BoolValue(true))
+  Attributes::set(attributes, "score", FloatValue(95.5))
   
-  // Test object serialization
-  let test_object = {
-    "name": "test_object",
-    "value": 123,
-    "active": true,
-    "tags": ["tag1", "tag2", "tag3"]
-  }
+  let serialized_attributes = JsonSerializer::serialize(json_serializer, attributes)
+  assert_true(serialized_attributes.contains("\"name\":\"test_object\""))
+  assert_true(serialized_attributes.contains("\"age\":25"))
+  assert_true(serialized_attributes.contains("\"active\":true"))
+  assert_true(serialized_attributes.contains("\"score\":95.5"))
   
-  let serialized_object = serializer.serialize_object(test_object)
-  let deserialized_object = serializer.deserialize_object(serialized_object)
-  
-  assert_eq(deserialized_object.get("name"), Some("test_object"))
-  assert_eq(deserialized_object.get("value"), Some(123))
-  assert_eq(deserialized_object.get("active"), Some(true))
-  assert_eq(deserialized_object.get("tags"), Some(["tag1", "tag2", "tag3"]))
-}
-
-// Test 2: Binary Serialization Formats
-test "binary serialization formats" {
-  // Test MessagePack serialization
-  let msgpack_serializer = MessagePackSerializer::new()
-  
-  let complex_data = {
-    "user_id": 12345,
-    "username": "test_user",
-    "preferences": {
-      "theme": "dark",
-      "notifications": true
-    },
-    "scores": [95, 87, 92, 88],
-    "metadata": null
-  }
-  
-  let msgpack_data = msgpack_serializer.serialize(complex_data)
-  
-  // Verify it's binary data
-  assert_eq(msgpack_data.length() > 0, true)
-  
-  // Deserialize and verify
-  let deserialized_data = msgpack_serializer.deserialize(msgpack_data)
-  assert_eq(deserialized_data.get("user_id"), Some(12345))
-  assert_eq(deserialized_data.get("username"), Some("test_user"))
-  
-  let preferences = deserialized_data.get("preferences")
-  match preferences {
-    Some(pref_obj) => {
-      assert_eq(pref_obj.get("theme"), Some("dark"))
-      assert_eq(pref_obj.get("notifications"), Some(true))
-    }
+  // 测试反序列化
+  let deserialized_string = JsonSerializer::deserialize_string(json_serializer, serialized_string)
+  match deserialized_string {
+    StringValue(v) => assert_eq(v, "test_string")
     _ => assert_true(false)
   }
   
-  // Test Protocol Buffers serialization
-  let proto_serializer = ProtobufSerializer::new()
-  
-  // Define a test message
-  let test_message = {
-    "id": 1001,
-    "name": "test_message",
-    "timestamp": 1640995200000L,
-    "data": "binary_data_here"
+  let deserialized_int = JsonSerializer::deserialize_int(json_serializer, serialized_int)
+  match deserialized_int {
+    IntValue(v) => assert_eq(v, 42)
+    _ => assert_true(false)
   }
   
-  let proto_data = proto_serializer.serialize(test_message)
+  let deserialized_float = JsonSerializer::deserialize_float(json_serializer, serialized_float)
+  match deserialized_float {
+    FloatValue(v) => assert_eq(v, 3.14)
+    _ => assert_true(false)
+  }
   
-  // Protocol Buffers should produce compact binary data
-  assert_eq(proto_data.length() < msgpack_data.length(), true)
+  let deserialized_bool = JsonSerializer::deserialize_bool(json_serializer, serialized_bool)
+  match deserialized_bool {
+    BoolValue(v) => assert_true(v)
+    _ => assert_true(false)
+  }
   
-  let deserialized_proto = proto_serializer.deserialize(proto_data)
-  assert_eq(deserialized_proto.get("id"), Some(1001))
-  assert_eq(deserialized_proto.get("name"), Some("test_message"))
-  
-  // Test CBOR serialization
-  let cbor_serializer = CborSerializer::new()
-  
-  let cbor_data = cbor_serializer.serialize(complex_data)
-  let deserialized_cbor = cbor_serializer.deserialize(cbor_data)
-  
-  assert_eq(deserialized_cbor.get("user_id"), Some(12345))
-  assert_eq(deserialized_cbor.get("username"), Some("test_user"))
-  
-  // Compare sizes of different formats
-  let json_size = JsonSerializer::new().serialize(complex_data).length()
-  let msgpack_size = msgpack_data.length()
-  let proto_size = proto_data.length()
-  let cbor_size = cbor_data.length()
-  
-  // Binary formats should be smaller than JSON
-  assert_eq(msgpack_size < json_size, true)
-  assert_eq(proto_size < json_size, true)
-  assert_eq(cbor_size < json_size, true)
+  let deserialized_attributes = JsonSerializer::deserialize_attributes(json_serializer, serialized_attributes)
+  match deserialized_attributes {
+    attrs => {
+      let name_value = Attributes::get(attrs, "name")
+      match name_value {
+        Some(StringValue(v)) => assert_eq(v, "test_object")
+        _ => assert_true(false)
+      }
+      
+      let age_value = Attributes::get(attrs, "age")
+      match age_value {
+        Some(IntValue(v)) => assert_eq(v, 25)
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
 }
 
-// Test 3: Custom Serialization and Deserialization
-test "custom serialization and deserialization" {
-  // Define custom serializable type
-  type User = {
-    id: Int,
-    name: String,
-    email: String,
-    created_at: Int64
+// Test 2: 跨度上下文序列化和反序列化
+test "span context serialization and deserialization" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "test_state")
+  
+  // 序列化跨度上下文
+  let serializer = SpanContextSerializer::new()
+  let serialized_ctx = SpanContextSerializer::serialize(serializer, span_ctx)
+  
+  // 验证序列化结果
+  assert_true(serialized_ctx.contains(trace_id))
+  assert_true(serialized_ctx.contains(span_id))
+  assert_true(serialized_ctx.contains("true"))
+  assert_true(serialized_ctx.contains("test_state"))
+  
+  // 反序列化跨度上下文
+  let deserializer = SpanContextDeserializer::new()
+  let deserialized_ctx = SpanContextDeserializer::deserialize(deserializer, serialized_ctx)
+  
+  // 验证反序列化结果
+  assert_true(SpanContext::is_valid(deserialized_ctx))
+  assert_eq(SpanContext::trace_id(deserialized_ctx), trace_id)
+  assert_eq(SpanContext::span_id(deserialized_ctx), span_id)
+  assert_true(SpanContext::is_sampled(deserialized_ctx))
+  
+  // 测试无效上下文反序列化
+  let invalid_serialized_ctx = "invalid_context_data"
+  let invalid_deserialized_ctx = SpanContextDeserializer::deserialize(deserializer, invalid_serialized_ctx)
+  assert_false(SpanContext::is_valid(invalid_deserialized_ctx))
+  
+  // 测试部分缺失字段的上下文反序列化
+  let partial_serialized_ctx = "{\"trace_id\":\"" + trace_id + "\"}"
+  let partial_deserialized_ctx = SpanContextDeserializer::deserialize(deserializer, partial_serialized_ctx)
+  assert_false(SpanContext::is_valid(partial_deserialized_ctx))
+}
+
+// Test 3: 跨度数据序列化和反序列化
+test "span data serialization and deserialization" {
+  let trace_id = "trace_12345"
+  let span_id = "span_67890"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("test_span", Internal, span_ctx)
+  
+  // 添加跨度和事件
+  Span::add_event(span, "event1", Some([("key1", StringValue("value1"))]))
+  Span::add_event(span, "event2", Some([("key2", IntValue(42))]))
+  Span::set_status(span, Ok, Some("Operation completed"))
+  
+  // 序列化跨度数据
+  let serializer = SpanSerializer::new()
+  let serialized_span = SpanSerializer::serialize(serializer, span)
+  
+  // 验证序列化结果
+  assert_true(serialized_span.contains("\"name\":\"test_span\""))
+  assert_true(serialized_span.contains("\"kind\":\"Internal\""))
+  assert_true(serialized_span.contains("\"trace_id\":\"trace_12345\""))
+  assert_true(serialized_span.contains("\"span_id\":\"span_67890\""))
+  assert_true(serialized_span.contains("\"status\":\"Ok\""))
+  assert_true(serialized_span.contains("\"event1\""))
+  assert_true(serialized_span.contains("\"event2\""))
+  
+  // 反序列化跨度数据
+  let deserializer = SpanDeserializer::new()
+  let deserialized_span = SpanDeserializer::deserialize(deserializer, serialized_span)
+  
+  // 验证反序列化结果
+  assert_eq(Span::name(deserialized_span), "test_span")
+  match Span::kind(deserialized_span) {
+    Internal => assert_true(true)
+    _ => assert_true(false)
   }
+  assert_eq(Span::status(deserialized_span), Ok)
   
-  let user = User {
-    id: 123,
-    name: "John Doe",
-    email: "john@example.com",
-    created_at: 1640995200000L
+  let deserialized_ctx = Span::span_context(deserialized_span)
+  assert_eq(SpanContext::trace_id(deserialized_ctx), trace_id)
+  assert_eq(SpanContext::span_id(deserialized_ctx), span_id)
+  
+  // 测试复杂嵌套结构的序列化
+  let complex_attrs = Attributes::new()
+  Attributes::set(complex_attrs, "nested_object", StringValue("{\"key\":\"value\",\"number\":123}"))
+  Attributes::set(complex_attrs, "array_value", ArrayStringValue(["item1", "item2", "item3"]))
+  
+  let complex_span = Span::new("complex_span", Server, span_ctx)
+  Span::add_event(complex_span, "complex_event", Some(complex_attrs))
+  
+  let serialized_complex_span = SpanSerializer::serialize(serializer, complex_span)
+  let deserialized_complex_span = SpanDeserializer::deserialize(deserializer, serialized_complex_span)
+  
+  assert_eq(Span::name(deserialized_complex_span), "complex_span")
+  match Span::kind(deserialized_complex_span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
   }
+}
+
+// Test 4: 指标数据序列化和反序列化
+test "metrics data serialization and deserialization" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "serialization_test")
   
-  // Implement custom serializer
-  let user_serializer = CustomSerializer::new()
+  // 创建各种类型的指标
+  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
+  Counter::add(counter, 100.0)
   
-  user_serializer.add_serializer("User", fn(user) {
-    return {
-      "id": user.id,
-      "name": user.name,
-      "email": user.email,
-      "created_at": user.created_at
-    }
-  })
+  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
+  Histogram::record(histogram, 50.0)
+  Histogram::record(histogram, 100.0)
+  Histogram::record(histogram, 150.0)
   
-  user_serializer.add_deserializer("User", fn(data) {
-    match (data.get("id"), data.get("name"), data.get("email"), data.get("created_at")) {
-      (Some(id), Some(name), Some(email), Some(created_at)) => {
-        return User {
-          id: id,
-          name: name,
-          email: email,
-          created_at: created_at
+  let gauge = Meter::create_gauge(meter, "test_gauge", Some("Test gauge"), Some("value"))
+  Gauge::record(gauge, 75.0)
+  
+  // 序列化指标数据
+  let metrics_serializer = MetricsSerializer::new()
+  let serialized_metrics = MetricsSerializer::serialize_all(metrics_serializer, [counter, histogram, gauge])
+  
+  // 验证序列化结果
+  assert_true(serialized_metrics.contains("\"name\":\"test_counter\""))
+  assert_true(serialized_metrics.contains("\"name\":\"test_histogram\""))
+  assert_true(serialized_metrics.contains("\"name\":\"test_gauge\""))
+  assert_true(serialized_metrics.contains("\"unit\":\"count\""))
+  assert_true(serialized_metrics.contains("\"unit\":\"ms\""))
+  assert_true(serialized_metrics.contains("\"unit\":\"value\""))
+  
+  // 反序列化指标数据
+  let metrics_deserializer = MetricsDeserializer::new()
+  let deserialized_metrics = MetricsDeserializer::deserialize_all(metrics_deserializer, serialized_metrics)
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_metrics.length(), 3)
+  
+  for metric in deserialized_metrics {
+    match Instrument::name(metric) {
+      "test_counter" => {
+        match Instrument::as_counter(metric) {
+          Some(counter_metric) => {
+            let value = Counter::get_value(counter_metric)
+            assert_eq(value, 100.0)
+          }
+          None => assert_true(false)
         }
       }
-      _ => raise SerializationError::new("Invalid User data")
-    }
-  })
-  
-  // Serialize and deserialize
-  let serialized_user = user_serializer.serialize_custom("User", user)
-  let deserialized_user = user_serializer.deserialize_custom("User", serialized_user)
-  
-  assert_eq(deserialized_user.id, user.id)
-  assert_eq(deserialized_user.name, user.name)
-  assert_eq(deserialized_user.email, user.email)
-  assert_eq(deserialized_user.created_at, user.created_at)
-  
-  // Test versioning support
-  let versioned_serializer = VersionedSerializer::new()
-  
-  versioned_serializer.add_version("User", 1, fn(user) {
-    return {
-      "id": user.id,
-      "name": user.name,
-      "email": user.email,
-      "created_at": user.created_at,
-      "version": 1
-    }
-  })
-  
-  versioned_serializer.add_version("User", 2, fn(user) {
-    return {
-      "id": user.id,
-      "name": user.name,
-      "email": user.email,
-      "created_at": user.created_at,
-      "updated_at": Clock::now(),
-      "version": 2
-    }
-  })
-  
-  // Serialize with version 2
-  let v2_data = versioned_serializer.serialize_versioned("User", 2, user)
-  
-  // Deserialize with version compatibility
-  let deserialized_v2 = versioned_serializer.deserialize_compatible("User", v2_data)
-  assert_eq(deserialized_v2.get("version"), Some(2))
-  
-  // Test field transformation during serialization
-  let transforming_serializer = TransformingSerializer::new()
-  
-  transforming_serializer.add_transform("User", "email", fn(email) {
-    // Encrypt email during serialization
-    return encrypt_string(email)
-  })
-  
-  transforming_serializer.add_reverse_transform("User", "email", fn(encrypted_email) {
-    // Decrypt email during deserialization
-    return decrypt_string(encrypted_email)
-  })
-  
-  let transformed_data = transforming_serializer.serialize_with_transforms("User", user)
-  let restored_user = transforming_serializer.deserialize_with_transforms("User", transformed_data)
-  
-  assert_eq(restored_user.email, user.email)  // Should be the same after decryption
-}
-
-// Test 4: Serialization Performance and Optimization
-test "serialization performance and optimization" {
-  let performance_tester = SerializationPerformanceTester::new()
-  
-  // Create large test data
-  let large_data = []
-  for i = 0; i < 10000; i = i + 1 {
-    large_data.push({
-      "id": i,
-      "name": "item_" + i.to_string(),
-      "value": i * 2.5,
-      "active": i % 2 == 0,
-      "tags": ["tag" + (i % 10).to_string(), "category" + (i % 5).to_string()]
-    })
-  }
-  
-  // Test JSON serialization performance
-  let json_serializer = JsonSerializer::new()
-  let json_time = performance_tester.measure_serialization(json_serializer, large_data)
-  
-  // Test MessagePack serialization performance
-  let msgpack_serializer = MessagePackSerializer::new()
-  let msgpack_time = performance_tester.measure_serialization(msgpack_serializer, large_data)
-  
-  // Test Protocol Buffers serialization performance
-  let proto_serializer = ProtobufSerializer::new()
-  let proto_time = performance_tester.measure_serialization(proto_serializer, large_data)
-  
-  // Binary formats should be faster than JSON
-  assert_eq(msgpack_time < json_time, true)
-  assert_eq(proto_time < json_time, true)
-  
-  // Test streaming serialization for large data
-  let stream_serializer = StreamSerializer::new()
-  
-  let stream_start_time = Clock::now()
-  let stream = stream_serializer.start_stream()
-  
-  // Process data in chunks
-  for i = 0; i < large_data.length(); i = i + 100 {
-    let chunk = large_data.slice(i, i + 100)
-    stream_serializer.write_chunk(stream, chunk)
-  }
-  
-  let stream_data = stream_serializer.finish_stream(stream)
-  let stream_end_time = Clock::now()
-  let stream_time = stream_end_time - stream_start_time
-  
-  // Streaming should be memory efficient for large data
-  assert_eq(stream_time < json_time * 2, true)  // Should be competitive
-  
-  // Test serialization with compression
-  let compressed_serializer = CompressedSerializer::new(json_serializer, CompressionAlgorithm::Gzip)
-  
-  let compressed_time = performance_tester.measure_serialization(compressed_serializer, large_data)
-  let compressed_data = compressed_serializer.serialize(large_data)
-  let uncompressed_data = json_serializer.serialize(large_data)
-  
-  // Compressed data should be smaller
-  assert_eq(compressed_data.length() < uncompressed_data.length(), true)
-  
-  // Test deserialization performance
-  let json_deserialize_time = performance_tester.measure_deserialization(json_serializer, uncompressed_data)
-  let msgpack_deserialize_time = performance_tester.measure_deserialization(msgpack_serializer, msgpack_serializer.serialize(large_data))
-  
-  // Binary formats should deserialize faster
-  assert_eq(msgpack_deserialize_time < json_deserialize_time, true)
-}
-
-// Test 5: Serialization Error Handling and Validation
-test "serialization error handling and validation" {
-  let validator = SerializationValidator::new()
-  
-  // Add validation rules
-  validator.add_rule("user.email", ValidationRule::email())
-  validator.add_rule("user.age", ValidationRule::range(0, 150))
-  validator.add_rule("user.name", ValidationRule::min_length(2))
-  
-  let validating_serializer = ValidatingSerializer::new(JsonSerializer::new(), validator)
-  
-  // Test valid data
-  let valid_user = {
-    "email": "user@example.com",
-    "age": 25,
-    "name": "John Doe"
-  }
-  
-  let valid_result = validating_serializer.serialize(valid_user)
-  assert_eq(valid_result.is_ok(), true)
-  
-  // Test invalid data
-  let invalid_user = {
-    "email": "invalid-email",
-    "age": 200,
-    "name": "A"
-  }
-  
-  let invalid_result = validating_serializer.serialize(invalid_user)
-  assert_eq(invalid_result.is_err(), true)
-  
-  match invalid_result {
-    Err(error) => {
-      assert_eq(error.errors.length(), 3)  // All three fields should have errors
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test partial serialization with error collection
-  let partial_serializer = PartialSerializer::new()
-  
-  let partial_result = partial_serializer.serialize_with_errors(invalid_user)
-  assert_eq(partial_result.successful_fields.length(), 0)
-  assert_eq(partial_result.errors.length(), 3)
-  
-  // Test circular reference detection
-  let circular_detector = CircularReferenceDetector::new()
-  
-  let obj1 = {}
-  let obj2 = {}
-  obj1["reference"] = obj2
-  obj2["reference"] = obj1  // Circular reference
-  
-  let circular_serializer = CircularSafeSerializer::new(JsonSerializer::new(), circular_detector)
-  
-  let circular_result = circular_serializer.serialize(obj1)
-  assert_eq(circular_result.is_err(), true)
-  
-  match circular_result {
-    Err(error) => {
-      assert_eq(error.type, SerializationError::CircularReference)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test schema validation
-  let schema = {
-    "type": "object",
-    "properties": {
-      "name": {"type": "string"},
-      "age": {"type": "number", "minimum": 0},
-      "email": {"type": "string", "format": "email"}
-    },
-    "required": ["name", "age"]
-  }
-  
-  let schema_validator = SchemaValidator::new(schema)
-  let schema_serializer = SchemaValidatingSerializer::new(JsonSerializer::new(), schema_validator)
-  
-  let valid_schema_data = {
-    "name": "Jane Doe",
-    "age": 30,
-    "email": "jane@example.com"
-  }
-  
-  let schema_valid_result = schema_serializer.serialize(valid_schema_data)
-  assert_eq(schema_valid_result.is_ok(), true)
-  
-  let invalid_schema_data = {
-    "name": "Jane Doe",
-    "age": -5,  // Invalid age
-    "email": "not-an-email"
-  }
-  
-  let schema_invalid_result = schema_serializer.serialize(invalid_schema_data)
-  assert_eq(schema_invalid_result.is_err(), true)
-}
-
-// Test 6: Cross-Platform Serialization
-test "cross platform serialization" {
-  // Test endianness handling
-  let endianness_converter = EndiannessConverter::new()
-  
-  let test_number = 0x12345678
-  let little_endian_bytes = endianness_converter.to_little_endian(test_number)
-  let big_endian_bytes = endianness_converter.to_big_endian(test_number)
-  
-  // Bytes should be different
-  assert_eq(little_endian_bytes[0] != big_endian_bytes[0], true)
-  
-  // Convert back should get original
-  let from_little = endianness_converter.from_little_endian(little_endian_bytes)
-  let from_big = endianness_converter.from_big_endian(big_endian_bytes)
-  
-  assert_eq(from_little, test_number)
-  assert_eq(from_big, test_number)
-  
-  // Test platform-independent serialization
-  let portable_serializer = PortableSerializer::new()
-  
-  let portable_data = {
-    "timestamp": 1640995200000L,
-    "value": 3.14159,
-    "flag": true,
-    "data": [1, 2, 3, 4, 5]
-  }
-  
-  let portable_bytes = portable_serializer.serialize(portable_data)
-  
-  // Simulate different platform deserialization
-  let restored_data = portable_serializer.deserialize(portable_bytes)
-  
-  assert_eq(restored_data.get("timestamp"), Some(1640995200000L))
-  assert_eq(restored_data.get("value"), Some(3.14159))
-  assert_eq(restored_data.get("flag"), Some(true))
-  assert_eq(restored_data.get("data"), Some([1, 2, 3, 4, 5]))
-  
-  // Test language-agnostic serialization format
-  let language_agnostic = LanguageAgnosticSerializer::new()
-  
-  let complex_object = {
-    "nested": {
-      "array": [1.1, 2.2, 3.3],
-      "boolean": false
-    },
-    "string": "unicode_test_中文字符",
-    "null_value": null,
-    "number": 42
-  }
-  
-  let agnostic_data = language_agnostic.serialize(complex_object)
-  
-  // Should be deserializable in any language with the same spec
-  let agnostic_restored = language_agnostic.deserialize(agnostic_data)
-  
-  let nested = agnostic_restored.get("nested")
-  match nested {
-    Some(nested_obj) => {
-      assert_eq(nested_obj.get("array"), Some([1.1, 2.2, 3.3]))
-      assert_eq(nested_obj.get("boolean"), Some(false))
-    }
-    _ => assert_true(false)
-  }
-  
-  assert_eq(agnostic_restored.get("string"), Some("unicode_test_中文字符"))
-  assert_eq(agnostic_restored.get("null_value"), None)
-  assert_eq(agnostic_restored.get("number"), Some(42))
-}
-
-// Test 7: Serialization Security and Encryption
-test "serialization security and encryption" {
-  // Test encrypted serialization
-  let encryption_key = EncryptionKey::generate()
-  let encrypted_serializer = EncryptedSerializer::new(JsonSerializer::new(), encryption_key)
-  
-  let sensitive_data = {
-    "username": "admin",
-    "password": "secret_password",
-    "api_key": "sk-1234567890abcdef",
-    "credit_card": "4111-1111-1111-1111"
-  }
-  
-  let encrypted_data = encrypted_serializer.serialize(sensitive_data)
-  
-  // Encrypted data should not be readable as plain text
-  assert_eq(encrypted_data.contains("admin"), false)
-  assert_eq(encrypted_data.contains("secret_password"), false)
-  
-  // Decrypt and verify
-  let decrypted_data = encrypted_serializer.deserialize(encrypted_data)
-  
-  assert_eq(decrypted_data.get("username"), Some("admin"))
-  assert_eq(decrypted_data.get("password"), Some("secret_password"))
-  
-  // Test with wrong key (should fail)
-  let wrong_key = EncryptionKey::generate()
-  let wrong_serializer = EncryptedSerializer::new(JsonSerializer::new(), wrong_key)
-  
-  let decrypt_result = wrong_serializer.deserialize(encrypted_data)
-  assert_eq(decrypt_result.is_err(), true)
-  
-  // Test data masking during serialization
-  let masking_rules = [
-    ("password", MaskingRule::replace_with("*****")),
-    ("credit_card", MaskingRule::keep_last(4)),
-    ("api_key", MaskingRule::pattern("sk-****"))
-  ]
-  
-  let masking_serializer = MaskingSerializer::new(JsonSerializer::new(), masking_rules)
-  
-  let masked_data = masking_serializer.serialize(sensitive_data)
-  let masked_deserialized = JsonSerializer::new().deserialize(masked_data)
-  
-  assert_eq(masked_deserialized.get("password"), Some("*****"))
-  assert_eq(masked_deserialized.get("credit_card"), Some("****-1111"))
-  assert_eq(masked_deserialized.get("api_key"), Some("sk-****"))
-  assert_eq(masked_deserialized.get("username"), Some("admin"))  // Not masked
-  
-  // Test serialization with digital signature
-  let signing_key = SigningKey::generate()
-  let signed_serializer = SignedSerializer::new(JsonSerializer::new(), signing_key)
-  
-  let signed_data = signed_serializer.serialize(sensitive_data)
-  
-  // Verify signature
-  let verification_result = signed_serializer.verify(signed_data)
-  assert_eq(verification_result, true)
-  
-  // Tamper with data and verify signature fails
-  let tampered_data = signed_data.replace("admin", "hacker")
-  let tampered_result = signed_serializer.verify(tampered_data)
-  assert_eq(tampered_result, false)
-  
-  // Test secure serialization with audit log
-  let audit_logger = SerializationAuditLogger::new()
-  let secure_serializer = SecureSerializer::new(encrypted_serializer, audit_logger)
-  
-  let audit_data = {"operation": "transfer", "amount": 10000}
-  let audit_result = secure_serializer.serialize(audit_data)
-  
-  // Check audit log
-  let audit_entries = audit_logger.get_entries()
-  assert_eq(audit_entries.length(), 1)
-  assert_eq(audit_entries[0].operation, "serialize")
-  assert_eq(audit_entries[0].data_type, "object")
-  assert_eq(audit_entries[0].timestamp > 0, true)
-}
-
-// Test 8: Serialization Caching and Memoization
-test "serialization caching and memoization" {
-  let cache_serializer = CachedSerializer::new(JsonSerializer::new())
-  
-  // Test data that will be serialized multiple times
-  let repeatable_data = {
-    "id": 12345,
-    "name": "repeatable_object",
-    "config": {
-      "setting1": true,
-      "setting2": false,
-      "setting3": 42
-    }
-  }
-  
-  // First serialization
-  let start_time1 = Clock::now()
-  let result1 = cache_serializer.serialize(repeatable_data)
-  let end_time1 = Clock::now()
-  let time1 = end_time1 - start_time1
-  
-  // Second serialization (should be cached)
-  let start_time2 = Clock::now()
-  let result2 = cache_serializer.serialize(repeatable_data)
-  let end_time2 = Clock::now()
-  let time2 = end_time2 - start_time2
-  
-  // Results should be identical
-  assert_eq(result1, result2)
-  
-  // Second serialization should be faster
-  assert_eq(time2 < time1, true)
-  
-  // Check cache statistics
-  let cache_stats = cache_serializer.get_cache_statistics()
-  assert_eq(cache_stats.hits, 1)
-  assert_eq(cache_stats.misses, 1)
-  assert_eq(cache_stats.size, 1)
-  
-  // Test memoization for deserialization
-  let memoized_deserializer = MemoizedDeserializer::new(JsonSerializer::new())
-  
-  // Deserialize same data multiple times
-  let start_time3 = Clock::now()
-  let deserialized1 = memoized_deserializer.deserialize(result1)
-  let end_time3 = Clock::now()
-  let time3 = end_time3 - start_time3
-  
-  let start_time4 = Clock::now()
-  let deserialized2 = memoized_deserializer.deserialize(result1)
-  let end_time4 = Clock::now()
-  let time4 = end_time4 - start_time4
-  
-  // Second deserialization should be faster
-  assert_eq(time4 < time3, true)
-  
-  // Results should be identical
-  assert_eq(deserialized1.get("id"), deserialized2.get("id"))
-  
-  // Test cache eviction
-  cache_serializer.set_cache_limit(1)  // Limit to 1 cached item
-  
-  let different_data = {"id": 67890, "name": "different_object"}
-  cache_serializer.serialize(different_data)
-  
-  // Original item should be evicted
-  let cache_stats_after = cache_serializer.get_cache_statistics()
-  assert_eq(cache_stats_after.size, 1)
-  assert_eq(cache_stats_after.evictions, 1)
-  
-  // Test intelligent caching based on object size and frequency
-  let intelligent_cache = IntelligentCache::new()
-  intelligent_cache.configure(
-    max_size: 1024 * 1024,  // 1MB
-    max_items: 100,
-    min_frequency: 2  // Cache items used at least twice
-  )
-  
-  let intelligent_serializer = IntelligentCachedSerializer::new(
-    JsonSerializer::new(),
-    intelligent_cache
-  )
-  
-  // Use small object frequently
-  let small_object = {"small": "data"}
-  for i = 0; i < 5; i = i + 1 {
-    intelligent_serializer.serialize(small_object)
-  }
-  
-  // Use large object infrequently
-  let large_object = {"large": "x" * 10000}  // 10KB
-  intelligent_serializer.serialize(large_object)
-  
-  let intelligent_stats = intelligent_serializer.get_cache_statistics()
-  
-  // Small object should be cached (used frequently)
-  assert_eq(intelligent_stats.has_cached(small_object), true)
-  
-  // Large object might not be cached (too large and only used once)
-  // This depends on the intelligent cache implementation
-}
-
-// Test 9: Serialization Streaming and Batch Processing
-test "serialization streaming and batch processing" {
-  // Test streaming serialization for large datasets
-  let stream_serializer = StreamSerializer::new()
-  
-  let large_dataset = []
-  for i = 0; i < 100000; i = i + 1 {
-    large_dataset.push({
-      "id": i,
-      "value": i * 1.5,
-      "active": i % 2 == 0,
-      "category": "cat_" + (i % 10).to_string()
-    })
-  }
-  
-  // Stream serialize in chunks
-  let stream = stream_serializer.start_stream()
-  
-  let chunk_size = 1000
-  for i = 0; i < large_dataset.length(); i = i + chunk_size {
-    let end = if i + chunk_size > large_dataset.length() { large_dataset.length() } else { i + chunk_size }
-    let chunk = large_dataset.slice(i, end)
-    stream_serializer.write_chunk(stream, chunk)
-  }
-  
-  let streamed_data = stream_serializer.finish_stream(stream)
-  
-  // Verify stream contains all data
-  let stream_deserializer = StreamDeserializer::new()
-  let deserialization_stream = stream_deserializer.start_stream(streamed_data)
-  
-  let mut total_items = 0
-  while !stream_deserializer.is_end(deserialization_stream) {
-    let chunk = stream_deserializer.read_chunk(deserialization_stream, 1000)
-    total_items = total_items + chunk.length()
-  }
-  
-  assert_eq(total_items, 100000)
-  
-  // Test batch serialization
-  let batch_serializer = BatchSerializer::new(JsonSerializer::new())
-  
-  let batch_data = [
-    {"type": "user", "id": 1, "name": "Alice"},
-    {"type": "user", "id": 2, "name": "Bob"},
-    {"type": "product", "id": 101, "name": "Widget"},
-    {"type": "product", "id": 102, "name": "Gadget"},
-    {"type": "order", "id": 1001, "user_id": 1, "product_id": 101}
-  ]
-  
-  let batched_data = batch_serializer.serialize_batch(batch_data)
-  
-  // Should contain metadata about the batch
-  assert_eq(batched_data.contains("batch_metadata"), true)
-  assert_eq(batched_data.contains("items"), true)
-  
-  // Test parallel batch processing
-  let parallel_processor = ParallelBatchProcessor::new(4)  // 4 worker threads
-  
-  let processing_function = fn(item) {
-    // Simulate some processing
-    let processed = item
-    processed["processed_at"] = Clock::now()
-    return processed
-  }
-  
-  let processed_batch = parallel_processor.process_batch(batch_data, processing_function)
-  
-  assert_eq(processed_batch.length(), batch_data.length())
-  
-  // Verify all items were processed
-  for item in processed_batch {
-    assert_eq(item.contains("processed_at"), true)
-  }
-  
-  // Test incremental serialization
-  let incremental_serializer = IncrementalSerializer::new()
-  
-  let base_data = {"version": 1, "data": [1, 2, 3]}
-  let increment1 = {"increment": [4, 5]}
-  let increment2 = {"increment": [6, 7, 8]}
-  
-  let base_serialized = incremental_serializer.serialize_base(base_data)
-  let inc1_serialized = incremental_serializer.serialize_increment(increment1)
-  let inc2_serialized = incremental_serializer.serialize_increment(increment2)
-  
-  // Apply increments to reconstruct full data
-  let reconstructed = incremental_serializer.apply_increments(
-    base_serialized,
-    [inc1_serialized, inc2_serialized]
-  )
-  
-  let final_data = JsonSerializer::new().deserialize(reconstructed)
-  assert_eq(final_data.get("data"), Some([1, 2, 3, 4, 5, 6, 7, 8]))
-}
-
-// Test 10: Serialization Format Conversion and Migration
-test "serialization format conversion and migration" {
-  // Test format conversion
-  let format_converter = FormatConverter::new()
-  
-  let test_data = {
-    "users": [
-      {"id": 1, "name": "Alice", "email": "alice@example.com"},
-      {"id": 2, "name": "Bob", "email": "bob@example.com"}
-    ],
-    "created_at": 1640995200000L,
-    "active": true
-  }
-  
-  // JSON to MessagePack
-  let json_serializer = JsonSerializer::new()
-  let msgpack_serializer = MessagePackSerializer::new()
-  
-  let json_data = json_serializer.serialize(test_data)
-  let msgpack_data = format_converter.convert(json_data, "json", "msgpack")
-  
-  // Verify conversion worked
-  let converted_back = msgpack_serializer.deserialize(msgpack_data)
-  assert_eq(converted_back.get("active"), Some(true))
-  
-  let users = converted_back.get("users")
-  match users {
-    Some(user_array) => {
-      assert_eq(user_array.length(), 2)
-      assert_eq(user_array[0].get("name"), Some("Alice"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test schema migration
-  let schema_migrator = SchemaMigrator::new()
-  
-  // Define version 1 schema
-  let v1_schema = {
-    "version": 1,
-    "fields": [
-      {"name": "id", "type": "int"},
-      {"name": "full_name", "type": "string"},
-      {"name": "age", "type": "int"}
-    ]
-  }
-  
-  // Define version 2 schema (split full_name into first_name and last_name)
-  let v2_schema = {
-    "version": 2,
-    "fields": [
-      {"name": "id", "type": "int"},
-      {"name": "first_name", "type": "string"},
-      {"name": "last_name", "type": "string"},
-      {"name": "age", "type": "int"},
-      {"name": "email", "type": "string", "default": ""}
-    ]
-  }
-  
-  schema_migrator.add_schema("user", v1_schema)
-  schema_migrator.add_schema("user", v2_schema)
-  
-  // Add migration from v1 to v2
-  schema_migrator.add_migration("user", 1, 2, fn(data) {
-    let full_name = data.get("full_name")
-    match full_name {
-      Some(name) => {
-        let parts = name.split(" ")
-        data["first_name"] = parts[0]
-        data["last_name"] = if parts.length() > 1 { parts[1] } else { "" }
+      "test_histogram" => {
+        match Instrument::as_histogram(metric) {
+          Some(histogram_metric) => {
+            let count = Histogram::get_count(histogram_metric)
+            let sum = Histogram::get_sum(histogram_metric)
+            assert_eq(count, 3)
+            assert_eq(sum, 300.0)
+          }
+          None => assert_true(false)
+        }
       }
-      None => {}
+      "test_gauge" => {
+        match Instrument::as_gauge(metric) {
+          Some(gauge_metric) => {
+            let value = Gauge::get_value(gauge_metric)
+            assert_eq(value, 75.0)
+          }
+          None => assert_true(false)
+        }
+      }
+      _ => assert_true(false)
     }
-    
-    // Add default email if not present
-    if !data.contains("email") {
-      data["email"] = ""
-    }
-    
-    return data
-  })
-  
-  // Create v1 data
-  let v1_data = {
-    "id": 1,
-    "full_name": "John Doe",
-    "age": 30,
-    "schema_version": 1
   }
   
-  // Migrate to v2
-  let v2_data = schema_migrator.migrate("user", v1_data, 2)
+  // 测试带属性的指标序列化
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "service", StringValue("test_service"))
+  Attributes::set(attrs, "version", StringValue("1.0.0"))
   
-  assert_eq(v2_data.get("first_name"), Some("John"))
-  assert_eq(v2_data.get("last_name"), Some("Doe"))
-  assert_eq(v2_data.get("age"), Some(30))
-  assert_eq(v2_data.get("email"), Some(""))
-  assert_eq(v2_data.get("schema_version"), Some(2))
+  Counter::add(counter, 50.0, Some(attrs))
+  let serialized_metrics_with_attrs = MetricsSerializer::serialize_all(metrics_serializer, [counter])
   
-  // Test automatic migration based on version
-  let auto_migrator = AutoMigrator::new(schema_migrator)
+  assert_true(serialized_metrics_with_attrs.contains("\"service\":\"test_service\""))
+  assert_true(serialized_metrics_with_attrs.contains("\"version\":\"1.0.0\""))
+}
+
+// Test 5: 日志记录序列化和反序列化
+test "log record serialization and deserialization" {
+  // 创建日志记录
+  let log_record = LogRecord::new(Info, "Test log message")
+  LogRecord::add_attribute(log_record, "service_name", StringValue("test_service"))
+  LogRecord::add_attribute(log_record, "request_id", StringValue("req_12345"))
+  LogRecord::add_attribute(log_record, "user_id", IntValue(67890))
+  LogRecord::set_timestamp(log_record, 1609459200000L)
   
-  let migrated_data = auto_migrator.migrate_to_latest("user", v1_data)
-  assert_eq(migrated_data.get("schema_version"), Some(2))
+  // 序列化日志记录
+  let log_serializer = LogRecordSerializer::new()
+  let serialized_log = LogRecordSerializer::serialize(log_serializer, log_record)
   
-  // Test backward compatibility
-  let backward_compatible_serializer = BackwardCompatibleSerializer::new(
-    msgpack_serializer,
-    schema_migrator
-  )
+  // 验证序列化结果
+  assert_true(serialized_log.contains("\"severity_number\":\"Info\""))
+  assert_true(serialized_log.contains("\"body\":\"Test log message\""))
+  assert_true(serialized_log.contains("\"service_name\":\"test_service\""))
+  assert_true(serialized_log.contains("\"request_id\":\"req_12345\""))
+  assert_true(serialized_log.contains("\"user_id\":67890"))
+  assert_true(serialized_log.contains("\"timestamp\":1609459200000"))
   
-  // Serialize with latest schema
-  let latest_data = {
-    "id": 2,
-    "first_name": "Jane",
-    "last_name": "Smith",
-    "age": 25,
-    "email": "jane@example.com",
-    "schema_version": 2
+  // 反序列化日志记录
+  let log_deserializer = LogRecordDeserializer::new()
+  let deserialized_log = LogRecordDeserializer::deserialize(log_deserializer, serialized_log)
+  
+  // 验证反序列化结果
+  assert_eq(LogRecord::severity_number(deserialized_log), Info)
+  match LogRecord::body(deserialized_log) {
+    Some(body) => assert_eq(body, "Test log message")
+    None => assert_true(false)
   }
   
-  let serialized_latest = backward_compatible_serializer.serialize("user", latest_data)
+  let service_name = LogRecord::get_attribute(deserialized_log, "service_name")
+  match service_name {
+    Some(StringValue(v)) => assert_eq(v, "test_service")
+    _ => assert_true(false)
+  }
   
-  // Deserialize with backward compatibility (should work for older clients)
-  let v1_compatible = backward_compatible_serializer.deserialize_compatible("user", serialized_latest, 1)
+  let request_id = LogRecord::get_attribute(deserialized_log, "request_id")
+  match request_id {
+    Some(StringValue(v)) => assert_eq(v, "req_12345")
+    _ => assert_true(false)
+  }
   
-  // Should have v1-compatible format
-  assert_eq(v1_compatible.get("full_name"), Some("Jane Smith"))
-  assert_eq(v1_compatible.get("age"), Some(25))
-  assert_eq(v1_compatible.contains("first_name"), false)  // v1 fields only
+  let user_id = LogRecord::get_attribute(deserialized_log, "user_id")
+  match user_id {
+    Some(IntValue(v)) => assert_eq(v, 67890)
+    _ => assert_true(false)
+  }
+  
+  assert_eq(LogRecord::get_timestamp(deserialized_log), 1609459200000L)
+  
+  // 测试批量日志序列化
+  let log_records = [
+    LogRecord::new(Debug, "Debug message"),
+    LogRecord::new(Warn, "Warning message"),
+    LogRecord::new(Error, "Error message")
+  ]
+  
+  for record in log_records {
+    LogRecord::set_timestamp(record, Time::now())
+  }
+  
+  let serialized_batch = LogRecordSerializer::serialize_batch(log_serializer, log_records)
+  let deserialized_batch = LogRecordDeserializer::deserialize_batch(log_deserializer, serialized_batch)
+  
+  assert_eq(deserialized_batch.length(), 3)
+  assert_eq(LogRecord::severity_number(deserialized_batch[0]), Debug)
+  assert_eq(LogRecord::severity_number(deserialized_batch[1]), Warn)
+  assert_eq(LogRecord::severity_number(deserialized_batch[2]), Error)
+}
+
+// Test 6: 资源数据序列化和反序列化
+test "resource data serialization and deserialization" {
+  // 创建资源
+  let resource = Resource::new()
+  
+  // 添加资源属性
+  let resource_attrs = [
+    ("service.name", StringValue("test_service")),
+    ("service.version", StringValue("1.2.3")),
+    ("service.instance.id", StringValue("instance-abc123")),
+    ("host.name", StringValue("test-host")),
+    ("host.arch", StringValue("x86_64")),
+    ("os.type", StringValue("linux")),
+    ("deployment.environment", StringValue("production"))
+  ]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, resource_attrs)
+  
+  // 序列化资源数据
+  let resource_serializer = ResourceSerializer::new()
+  let serialized_resource = ResourceSerializer::serialize(resource_serializer, resource_with_attrs)
+  
+  // 验证序列化结果
+  assert_true(serialized_resource.contains("\"service.name\":\"test_service\""))
+  assert_true(serialized_resource.contains("\"service.version\":\"1.2.3\""))
+  assert_true(serialized_resource.contains("\"service.instance.id\":\"instance-abc123\""))
+  assert_true(serialized_resource.contains("\"host.name\":\"test-host\""))
+  assert_true(serialized_resource.contains("\"host.arch\":\"x86_64\""))
+  assert_true(serialized_resource.contains("\"os.type\":\"linux\""))
+  assert_true(serialized_resource.contains("\"deployment.environment\":\"production\""))
+  
+  // 反序列化资源数据
+  let resource_deserializer = ResourceDeserializer::new()
+  let deserialized_resource = ResourceDeserializer::deserialize(resource_deserializer, serialized_resource)
+  
+  // 验证反序列化结果
+  let service_name = Resource::get_attribute(deserialized_resource, "service.name")
+  match service_name {
+    Some(StringValue(v)) => assert_eq(v, "test_service")
+    _ => assert_true(false)
+  }
+  
+  let service_version = Resource::get_attribute(deserialized_resource, "service.version")
+  match service_version {
+    Some(StringValue(v)) => assert_eq(v, "1.2.3")
+    _ => assert_true(false)
+  }
+  
+  let service_instance_id = Resource::get_attribute(deserialized_resource, "service.instance.id")
+  match service_instance_id {
+    Some(StringValue(v)) => assert_eq(v, "instance-abc123")
+    _ => assert_true(false)
+  }
+  
+  let host_name = Resource::get_attribute(deserialized_resource, "host.name")
+  match host_name {
+    Some(StringValue(v)) => assert_eq(v, "test-host")
+    _ => assert_true(false)
+  }
+  
+  let host_arch = Resource::get_attribute(deserialized_resource, "host.arch")
+  match host_arch {
+    Some(StringValue(v)) => assert_eq(v, "x86_64")
+    _ => assert_true(false)
+  }
+  
+  let os_type = Resource::get_attribute(deserialized_resource, "os.type")
+  match os_type {
+    Some(StringValue(v)) => assert_eq(v, "linux")
+    _ => assert_true(false)
+  }
+  
+  let deployment_env = Resource::get_attribute(deserialized_resource, "deployment.environment")
+  match deployment_env {
+    Some(StringValue(v)) => assert_eq(v, "production")
+    _ => assert_true(false)
+  }
+  
+  // 测试资源合并序列化
+  let override_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.0.0")),
+    ("new.attribute", StringValue("new_value"))
+  ])
+  
+  let merged_resource = Resource::merge(resource_with_attrs, override_resource)
+  let serialized_merged = ResourceSerializer::serialize(resource_serializer, merged_resource)
+  
+  assert_true(serialized_merged.contains("\"service.version\":\"2.0.0\"")) // 被覆盖
+  assert_true(serialized_merged.contains("\"new.attribute\":\"new_value\"")) // 新增
+}
+
+// Test 7: 二进制序列化和反序列化
+test "binary serialization and deserialization" {
+  let binary_serializer = BinarySerializer::new()
+  let binary_deserializer = BinaryDeserializer::new()
+  
+  // 测试基本数据类型的二进制序列化
+  let string_value = StringValue("binary_test")
+  let binary_string = BinarySerializer::serialize_string(binary_serializer, string_value)
+  let deserialized_string = BinaryDeserializer::deserialize_string(binary_deserializer, binary_string)
+  assert_eq(deserialized_string, string_value)
+  
+  let int_value = IntValue(12345)
+  let binary_int = BinarySerializer::serialize_int(binary_serializer, int_value)
+  let deserialized_int = BinaryDeserializer::deserialize_int(binary_deserializer, binary_int)
+  assert_eq(deserialized_int, int_value)
+  
+  let float_value = FloatValue(3.14159)
+  let binary_float = BinarySerializer::serialize_float(binary_serializer, float_value)
+  let deserialized_float = BinaryDeserializer::deserialize_float(binary_deserializer, binary_float)
+  assert_eq(deserialized_float, float_value)
+  
+  let bool_value = BoolValue(true)
+  let binary_bool = BinarySerializer::serialize_bool(binary_serializer, bool_value)
+  let deserialized_bool = BinaryDeserializer::deserialize_bool(binary_deserializer, binary_bool)
+  assert_eq(deserialized_bool, bool_value)
+  
+  // 测试数组的二进制序列化
+  let string_array = ArrayStringValue(["item1", "item2", "item3"])
+  let binary_string_array = BinarySerializer::serialize_string_array(binary_serializer, string_array)
+  let deserialized_string_array = BinaryDeserializer::deserialize_string_array(binary_deserializer, binary_string_array)
+  assert_eq(deserialized_string_array.length(), string_array.length())
+  for i in 0..=string_array.length() - 1 {
+    assert_eq(deserialized_string_array[i], string_array[i])
+  }
+  
+  let int_array = ArrayIntValue([1, 2, 3, 4, 5])
+  let binary_int_array = BinarySerializer::serialize_int_array(binary_serializer, int_array)
+  let deserialized_int_array = BinaryDeserializer::deserialize_int_array(binary_deserializer, binary_int_array)
+  assert_eq(deserialized_int_array.length(), int_array.length())
+  for i in 0..=int_array.length() - 1 {
+    assert_eq(deserialized_int_array[i], int_array[i])
+  }
+  
+  // 测试复杂对象的二进制序列化
+  let trace_id = "trace_binary_test"
+  let span_id = "span_binary_test"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("binary_test_span", Client, span_ctx)
+  
+  Span::add_event(span, "binary_event", Some([
+    ("binary_key", StringValue("binary_value")),
+    ("binary_number", IntValue(42))
+  ]))
+  
+  let binary_span = BinarySerializer::serialize_span(binary_serializer, span)
+  let deserialized_span = BinaryDeserializer::deserialize_span(binary_deserializer, binary_span)
+  
+  assert_eq(Span::name(deserialized_span), "binary_test_span")
+  match Span::kind(deserialized_span) {
+    Client => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let deserialized_ctx = Span::span_context(deserialized_span)
+  assert_eq(SpanContext::trace_id(deserialized_ctx), trace_id)
+  assert_eq(SpanContext::span_id(deserialized_ctx), span_id)
+  
+  // 验证二进制序列化的大小效率
+  let json_serializer = JsonSerializer::new()
+  let json_span = JsonSerializer::serialize(json_serializer, span)
+  
+  assert_true(binary_span.length() < json_span.length()) // 二进制应该更紧凑
+}
+
+// Test 8: 压缩序列化和反序列化
+test "compressed serialization and deserialization" {
+  let compressed_serializer = CompressedSerializer::new(CompressionAlgorithm::Gzip)
+  let compressed_deserializer = CompressedDeserializer::new()
+  
+  // 创建大量数据
+  let large_attrs = Attributes::new()
+  for i in 1..=1000 {
+    Attributes::set(large_attrs, "key_" + i.to_string(), StringValue("value_" + i.to_string()))
+  }
+  
+  let trace_id = "trace_compressed_test"
+  let span_id = "span_compressed_test"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("compressed_test_span", Server, span_ctx)
+  
+  Span::add_event(span, "large_event", Some(large_attrs))
+  
+  // 普通序列化
+  let normal_serializer = JsonSerializer::new()
+  let normal_serialized = JsonSerializer::serialize(normal_serializer, span)
+  
+  // 压缩序列化
+  let compressed_serialized = CompressedSerializer::serialize(compressed_serializer, span)
+  
+  // 验证压缩效果
+  assert_true(compressed_serialized.length() < normal_serialized.length())
+  let compression_ratio = compressed_serialized.length().to_float() / normal_serialized.length().to_float()
+  assert_true(compression_ratio < 0.8) // 至少20%的压缩率
+  
+  // 解压缩和反序列化
+  let decompressed_span = CompressedDeserializer::deserialize(compressed_deserializer, compressed_serialized)
+  
+  // 验证解压缩后的数据完整性
+  assert_eq(Span::name(decompressed_span), "compressed_test_span")
+  match Span::kind(decompressed_span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let decompressed_ctx = Span::span_context(decompressed_span)
+  assert_eq(SpanContext::trace_id(decompressed_ctx), trace_id)
+  assert_eq(SpanContext::span_id(decompressed_ctx), span_id)
+  
+  // 验证大量属性的正确性
+  let events = Span::get_events(decompressed_span)
+  assert_eq(events.length(), 1)
+  
+  let event_attrs = events[0].attributes
+  for i in 1..=1000 {
+    let key = "key_" + i.to_string()
+    let value = Attributes::get(event_attrs, key)
+    match value {
+      Some(StringValue(v)) => assert_eq(v, "value_" + i.to_string())
+      _ => assert_true(false)
+    }
+  }
+  
+  // 测试不同压缩算法
+  let lz4_serializer = CompressedSerializer::new(CompressionAlgorithm::LZ4)
+  let lz4_serialized = CompressedSerializer::serialize(lz4_serializer, span)
+  
+  let deflate_serializer = CompressedSerializer::new(CompressionAlgorithm::Deflate)
+  let deflate_serialized = CompressedSerializer::serialize(deflate_serializer, span)
+  
+  // 比较不同算法的压缩效果
+  assert_true(lz4_serialized.length() < normal_serialized.length())
+  assert_true(deflate_serialized.length() < normal_serialized.length())
+  
+  // 验证不同算法的解压缩结果
+  let lz4_deserialized = CompressedDeserializer::deserialize(compressed_deserializer, lz4_serialized)
+  let deflate_deserialized = CompressedDeserializer::deserialize(compressed_deserializer, deflate_serialized)
+  
+  assert_eq(Span::name(lz4_deserialized), "compressed_test_span")
+  assert_eq(Span::name(deflate_deserialized), "compressed_test_span")
+  
+  // 测试压缩性能统计
+  let compression_stats = CompressedSerializer::get_statistics(compressed_serializer)
+  assert_true(compression_stats.total_compressions > 0)
+  assert_true(compression_stats.average_compression_ratio > 0.0)
+  assert_true(compression_stats.average_compression_ratio < 1.0)
 }
