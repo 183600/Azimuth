@@ -9437,6 +9437,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f637573746f6d5f6d65747269635f6167677265676174696f6e5f74657374732e6d6274_6, ["时间序列聚合"]),
     7: (__test_617a696d7574685f637573746f6d5f6d65747269635f6167677265676174696f6e5f74657374732e6d6274_7, ["动态聚合配置"]),
   },
+  "azimuth_custom_instrumentation_tests.mbt": {
+    0: (__test_617a696d7574685f637573746f6d5f696e737472756d656e746174696f6e5f74657374732e6d6274_0, ["custom span creation and lifecycle management"]),
+    1: (__test_617a696d7574685f637573746f6d5f696e737472756d656e746174696f6e5f74657374732e6d6274_1, ["custom metrics creation and recording"]),
+    2: (__test_617a696d7574685f637573746f6d5f696e737472756d656e746174696f6e5f74657374732e6d6274_2, ["custom logging and structured event creation"]),
+    3: (__test_617a696d7574685f637573746f6d5f696e737472756d656e746174696f6e5f74657374732e6d6274_3, ["custom baggage and context propagation mechanisms"]),
+    4: (__test_617a696d7574685f637573746f6d5f696e737472756d656e746174696f6e5f74657374732e6d6274_4, ["custom resource and attribute management for telemetry"]),
+  },
   "azimuth_custom_dashboard_visualization_tests.mbt": {
     0: (__test_617a696d7574685f637573746f6d5f64617368626f6172645f76697375616c697a6174696f6e5f74657374732e6d6274_0, ["实时仪表盘数据流"]),
     1: (__test_617a696d7574685f637573746f6d5f64617368626f6172645f76697375616c697a6174696f6e5f74657374732e6d6274_1, ["仪表盘组件渲染"]),
