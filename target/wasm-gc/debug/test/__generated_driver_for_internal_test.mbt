@@ -8960,6 +8960,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74657374732e6d6274_8, ["cross-platform interoperability"]),
     9: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74657374732e6d6274_9, ["platform-specific performance testing"]),
   },
+  "azimuth_cross_platform_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74656c656d657472795f74657374732e6d6274_0, ["platform-specific telemetry configuration"]),
+    1: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74656c656d657472795f74657374732e6d6274_1, ["cross-platform telemetry data serialization"]),
+    2: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74656c656d657472795f74657374732e6d6274_2, ["cross-platform network transport"]),
+    3: (__test_617a696d7574685f63726f73735f706c6174666f726d5f74656c656d657472795f74657374732e6d6274_3, ["cross-platform time and timestamp handling"]),
+  },
   "azimuth_cross_platform_integration_tests.mbt": {
     0: (__test_617a696d7574685f63726f73735f706c6174666f726d5f696e746567726174696f6e5f74657374732e6d6274_0, ["webassembly compatibility"]),
     1: (__test_617a696d7574685f63726f73735f706c6174666f726d5f696e746567726174696f6e5f74657374732e6d6274_1, ["javascript interoperability"]),
