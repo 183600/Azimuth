@@ -181,5 +181,6 @@
           "azimuth_enhanced_serialization_tests.mbt",
           "azimuth_enhanced_resource_management_tests.mbt",
           "azimuth_enhanced_internationalization_tests.mbt",
-        "../azimuth_new_feature_tests.mbt"]  }
+        "../azimuth_new_feature_tests.mbt",
+        "azimuth_concurrent_operations_tests.mbt"]  }
 }
