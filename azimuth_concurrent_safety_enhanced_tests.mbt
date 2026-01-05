@@ -1,888 +1,567 @@
-// Enhanced Concurrent Safety Tests for Azimuth Telemetry System
-// This file contains comprehensive test cases for concurrent safety and thread safety
+// Azimuth Telemetry System - Concurrent Safety Enhanced Tests
+// This file contains comprehensive test cases for concurrent safety functionality
 
-// Test 1: Thread-Safe Counter Operations
-test "thread-safe counter operations" {
-  let counter = AtomicCounter::new(0)
+// Test 1: Thread-Safe Attributes Operations
+test "thread-safe attributes operations" {
+  let attrs = ThreadSafeAttributes::new()
   
-  // Test atomic increment
-  let result1 = AtomicCounter::increment(counter)
-  assert_eq(result1, 1)
-  
-  let result2 = AtomicCounter::increment(counter)
-  assert_eq(result2, 2)
-  
-  // Test atomic decrement
-  let result3 = AtomicCounter::decrement(counter)
-  assert_eq(result3, 1)
-  
-  // Test atomic add
-  let result4 = AtomicCounter::add(counter, 5)
-  assert_eq(result4, 6)
-  
-  // Test atomic get
-  let current = AtomicCounter::get(counter)
-  assert_eq(current, 6)
-  
-  // Test atomic set
-  AtomicCounter::set(counter, 10)
-  let new_current = AtomicCounter::get(counter)
-  assert_eq(new_current, 10)
-  
-  // Test compare and swap
-  let cas_result = AtomicCounter::compare_and_swap(counter, 10, 20)
-  assert_true(cas_result)
-  let cas_current = AtomicCounter::get(counter)
-  assert_eq(cas_current, 20)
-  
-  // Test failed compare and swap
-  let cas_failed = AtomicCounter::compare_and_swap(counter, 10, 30)
-  assert_false(cas_failed)
-  let cas_failed_current = AtomicCounter::get(counter)
-  assert_eq(cas_failed_current, 20)
-}
-
-// Test 2: Thread-Safe Map Operations
-test "thread-safe map operations" {
-  let map = ConcurrentMap::new()
-  
-  // Test concurrent put operations
-  ConcurrentMap::put(map, "key1", "value1")
-  ConcurrentMap::put(map, "key2", "value2")
-  ConcurrentMap::put(map, "key3", "value3")
-  
-  // Test concurrent get operations
-  let value1 = ConcurrentMap::get(map, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
+  // Test concurrent attribute setting
+  let mut handles = []
+  for i in 0..=10 {
+    let handle = Thread::spawn(func() {
+      let key = "key." + i.to_string()
+      let value = StringValue("value." + i.to_string())
+      ThreadSafeAttributes::set(attrs, key, value)
+    })
+    handles.push(handle)
   }
   
-  // Test concurrent remove operations
-  let removed_value = ConcurrentMap::remove(map, "key2")
-  match removed_value {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
   }
   
-  // Test get after remove
-  let removed_check = ConcurrentMap::get(map, "key2")
-  match removed_check {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Verify all attributes were set correctly
+  for i in 0..=10 {
+    let key = "key." + i.to_string()
+    let result = ThreadSafeAttributes::get(attrs, key)
+    match result {
+      Some(StringValue(v)) => assert_eq(v, "value." + i.to_string())
+      _ => assert_true(false)
+    }
   }
   
-  // Test concurrent size operations
-  let size = ConcurrentMap::size(map)
-  assert_eq(size, 2)
-  
-  // Test concurrent contains key operations
-  assert_true(ConcurrentMap::contains_key(map, "key1"))
-  assert_false(ConcurrentMap::contains_key(map, "key2"))
-  
-  // Test concurrent put if absent
-  let put_absent_result = ConcurrentMap::put_if_absent(map, "key1", "new_value1")
-  match put_absent_result {
-    Some(v) => assert_eq(v, "value1") // Should return existing value
-    None => assert_true(false)
+  // Test concurrent attribute reading
+  let mut read_handles = []
+  for i in 0..=20 {
+    let handle = Thread::spawn(func() {
+      let key = "key." + (i % 11).to_string()
+      ThreadSafeAttributes::get(attrs, key)
+    })
+    read_handles.push(handle)
   }
   
-  let put_absent_new = ConcurrentMap::put_if_absent(map, "key4", "value4")
-  match put_absent_new {
-    Some(_) => assert_true(false) // Should not return existing value
-    None => assert_true(true)
-  }
-  
-  let new_value4 = ConcurrentMap::get(map, "key4")
-  match new_value4 {
-    Some(v) => assert_eq(v, "value4")
-    None => assert_true(false)
+  // Wait for all read threads to complete
+  for handle in read_handles {
+    let result = Thread::join(handle)
+    match result {
+      Some(StringValue(_)) => assert_true(true)
+      None => assert_true(false)
+    }
   }
 }
 
-// Test 3: Thread-Safe Queue Operations
+// Test 2: Thread-Safe Span Operations
+test "thread-safe span operations" {
+  let span_manager = ThreadSafeSpanManager::new()
+  
+  // Test concurrent span creation
+  let mut handles = []
+  for i in 0..=5 {
+    let handle = Thread::spawn(func() {
+      let span_name = "span_" + i.to_string()
+      let span_ctx = SpanContext::new("trace_" + i.to_string(), "span_" + i.to_string(), true, "")
+      let span = Span::new(span_name, Internal, span_ctx)
+      ThreadSafeSpanManager::add_span(span_manager, span)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify all spans were added
+  let spans = ThreadSafeSpanManager::get_all_spans(span_manager)
+  assert_eq(spans.length(), 6)
+  
+  // Test concurrent span operations
+  let mut operation_handles = []
+  for span in spans {
+    let handle = Thread::spawn(func() {
+      Span::add_event(span, "concurrent_event", Some([("thread_id", StringValue(Thread::current_id().to_string()))]))
+      Span::set_status(span, Ok, Some("Operation completed"))
+    })
+    operation_handles.push(handle)
+  }
+  
+  // Wait for all operations to complete
+  for handle in operation_handles {
+    Thread::join(handle)
+  }
+  
+  // Verify operations completed successfully
+  for span in spans {
+    assert_eq(Span::status(span), Ok)
+  }
+}
+
+// Test 3: Thread-Safe Metrics Operations
+test "thread-safe metrics operations" {
+  let metrics_manager = ThreadSafeMetricsManager::new()
+  
+  // Test concurrent counter operations
+  let counter = ThreadSafeMetricsManager::create_counter(metrics_manager, "concurrent_counter", Some("Test counter"), Some("count"))
+  
+  let mut handles = []
+  for i in 0..=100 {
+    let handle = Thread::spawn(func() {
+      Counter::add(counter, 1.0)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify counter value
+  let value = Counter::get_value(counter)
+  assert_eq(value, 101.0)
+  
+  // Test concurrent histogram operations
+  let histogram = ThreadSafeMetricsManager::create_histogram(metrics_manager, "concurrent_histogram", Some("Test histogram"), Some("ms"))
+  
+  let mut histogram_handles = []
+  for i in 0..=50 {
+    let handle = Thread::spawn(func() {
+      let value = (i % 10 + 1) * 10.0
+      Histogram::record(histogram, value)
+    })
+    histogram_handles.push(handle)
+  }
+  
+  // Wait for all histogram operations to complete
+  for handle in histogram_handles {
+    Thread::join(handle)
+  }
+  
+  // Verify histogram data
+  let histogram_data = Histogram::get_data(histogram)
+  assert_eq(histogram_data.count, 51)
+}
+
+// Test 4: Thread-Safe Log Operations
+test "thread-safe log operations" {
+  let log_manager = ThreadSafeLogManager::new()
+  let logger = ThreadSafeLogManager::get_logger(log_manager, "concurrent_logger")
+  
+  // Test concurrent log operations
+  let mut handles = []
+  for i in 0..=50 {
+    let handle = Thread::spawn(func() {
+      let log_record = LogRecord::new(Info, "Log message " + i.to_string())
+      Logger::emit(logger, log_record)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all log operations to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify all log records were emitted
+  let log_count = Logger::get_log_count(logger)
+  assert_eq(log_count, 51)
+  
+  // Test concurrent log filtering
+  let mut filter_handles = []
+  for i in 0..=10 {
+    let handle = Thread::spawn(func() {
+      let filter = LogFilter::new(Info, Error)
+      Logger::get_filtered_logs(logger, filter)
+    })
+    filter_handles.push(handle)
+  }
+  
+  // Wait for all filter operations to complete
+  for handle in filter_handles {
+    let filtered_logs = Thread::join(handle)
+    assert_eq(filtered_logs.length(), 51)
+  }
+}
+
+// Test 5: Thread-Safe Resource Operations
+test "thread-safe resource operations" {
+  let resource_manager = ThreadSafeResourceManager::new()
+  
+  // Test concurrent resource creation
+  let mut handles = []
+  for i in 0..=5 {
+    let handle = Thread::spawn(func() {
+      let attrs = [
+        ("service.name", StringValue("service_" + i.to_string())),
+        ("service.version", StringValue("1.0." + i.to_string())),
+        ("service.instance.id", StringValue("instance-" + i.to_string()))
+      ]
+      let resource = Resource::with_attributes(Resource::new(), attrs)
+      ThreadSafeResourceManager::add_resource(resource_manager, "resource_" + i.to_string(), resource)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify all resources were added
+  let resources = ThreadSafeResourceManager::get_all_resources(resource_manager)
+  assert_eq(resources.length(), 6)
+  
+  // Test concurrent resource merging
+  let base_resource = Resource::with_attributes(Resource::new(), [
+    ("environment", StringValue("production")),
+    ("region", StringValue("us-west-2"))
+  ])
+  
+  let mut merge_handles = []
+  for resource in resources {
+    let handle = Thread::spawn(func() {
+      ThreadSafeResourceManager::merge_with_base(resource_manager, resource, base_resource)
+    })
+    merge_handles.push(handle)
+  }
+  
+  // Wait for all merge operations to complete
+  for handle in merge_handles {
+    Thread::join(handle)
+  }
+}
+  
+// Test 6: Thread-Safe Context Propagation
+test "thread-safe context propagation" {
+  let context_manager = ThreadSafeContextManager::new()
+  
+  // Create initial context
+  let key = ContextKey::new("trace_id")
+  let initial_ctx = Context::with_value(Context::root(), key, "initial_trace_id")
+  
+  // Test concurrent context propagation
+  let mut handles = []
+  for i in 0..=10 {
+    let handle = Thread::spawn(func() {
+      // Propagate context to new thread
+      let propagated_ctx = ThreadSafeContextManager::propagate_context(context_manager, initial_ctx)
+      
+      // Add thread-specific data
+      let thread_key = ContextKey::new("thread_id")
+      let updated_ctx = Context::with_value(propagated_ctx, thread_key, i.to_string())
+      
+      // Store updated context
+      ThreadSafeContextManager::store_context(context_manager, "thread_" + i.to_string(), updated_ctx)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify context propagation
+  for i in 0..=10 {
+    let ctx = ThreadSafeContextManager::get_context(context_manager, "thread_" + i.to_string())
+    match ctx {
+      Some(context) => {
+        // Verify original context is preserved
+        match Context::get(context, key) {
+          Some(trace_id) => assert_eq(trace_id, "initial_trace_id")
+          None => assert_true(false)
+        }
+        
+        // Verify thread-specific data
+        let thread_key = ContextKey::new("thread_id")
+        match Context::get(context, thread_key) {
+          Some(thread_id) => assert_eq(thread_id, i.to_string())
+          None => assert_true(false)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 7: Thread-Safe Baggage Operations
+test "thread-safe baggage operations" {
+  let baggage_manager = ThreadSafeBaggageManager::new()
+  
+  // Test concurrent baggage operations
+  let mut handles = []
+  for i in 0..=10 {
+    let handle = Thread::spawn(func() {
+      let baggage = Baggage::new()
+      let updated_baggage = Baggage::set_entry(baggage, "key_" + i.to_string(), "value_" + i.to_string())
+      ThreadSafeBaggageManager::store_baggage(baggage_manager, "baggage_" + i.to_string(), updated_baggage)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify all baggage entries
+  for i in 0..=10 {
+    let baggage = ThreadSafeBaggageManager::get_baggage(baggage_manager, "baggage_" + i.to_string())
+    match baggage {
+      Some(b) => {
+        let value = Baggage::get_entry(b, "key_" + i.to_string())
+        match value {
+          Some(v) => assert_eq(v, "value_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // Test concurrent baggage merging
+  let base_baggage = Baggage::new()
+  let base_updated = Baggage::set_entry(base_baggage, "base_key", "base_value")
+  
+  let mut merge_handles = []
+  for i in 0..=5 {
+    let handle = Thread::spawn(func() {
+      let baggage = ThreadSafeBaggageManager::get_baggage(baggage_manager, "baggage_" + i.to_string())
+      match baggage {
+        Some(b) => {
+          let merged = Baggage::merge(base_updated, b)
+          ThreadSafeBaggageManager::store_baggage(baggage_manager, "merged_" + i.to_string(), merged)
+        }
+        None => assert_true(false)
+      }
+    })
+    merge_handles.push(handle)
+  }
+  
+  // Wait for all merge operations to complete
+  for handle in merge_handles {
+    Thread::join(handle)
+  }
+  
+  // Verify merged baggage
+  for i in 0..=5 {
+    let merged_baggage = ThreadSafeBaggageManager::get_baggage(baggage_manager, "merged_" + i.to_string())
+    match merged_baggage {
+      Some(b) => {
+        // Verify base entry
+        let base_value = Baggage::get_entry(b, "base_key")
+        match base_value {
+          Some(v) => assert_eq(v, "base_value")
+          None => assert_true(false)
+        }
+        
+        // Verify original entry
+        let original_value = Baggage::get_entry(b, "key_" + i.to_string())
+        match original_value {
+          Some(v) => assert_eq(v, "value_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 8: Thread-Safe Cache Operations
+test "thread-safe cache operations" {
+  let cache = ThreadSafeCache::new(100) // Max 100 entries
+  
+  // Test concurrent cache writes
+  let mut handles = []
+  for i in 0..=50 {
+    let handle = Thread::spawn(func() {
+      let key = "key_" + i.to_string()
+      let value = "value_" + i.to_string()
+      ThreadSafeCache::put(cache, key, value)
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all writes to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Verify all entries were added
+  for i in 0..=50 {
+    let key = "key_" + i.to_string()
+    let value = ThreadSafeCache::get(cache, key)
+    match value {
+      Some(v) => assert_eq(v, "value_" + i.to_string())
+      None => assert_true(false)
+    }
+  }
+  
+  // Test concurrent cache reads
+  let mut read_handles = []
+  for i in 0..=100 {
+    let handle = Thread::spawn(func() {
+      let key = "key_" + (i % 51).to_string()
+      ThreadSafeCache::get(cache, key)
+    })
+    read_handles.push(handle)
+  }
+  
+  // Wait for all reads to complete
+  for handle in read_handles {
+    let result = Thread::join(handle)
+    match result {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
+  }
+  
+  // Test cache size limits
+  for i in 100..=200 {
+    let key = "key_" + i.to_string()
+    let value = "value_" + i.to_string()
+    ThreadSafeCache::put(cache, key, value)
+  }
+  
+  // Verify cache respects size limits
+  let cache_size = ThreadSafeCache::size(cache)
+  assert_true(cache_size <= 100)
+}
+
+// Test 9: Thread-Safe Queue Operations
 test "thread-safe queue operations" {
-  let queue = ConcurrentQueue::new()
+  let queue = ThreadSafeQueue::new()
   
-  // Test concurrent enqueue operations
-  ConcurrentQueue::enqueue(queue, "item1")
-  ConcurrentQueue::enqueue(queue, "item2")
-  ConcurrentQueue::enqueue(queue, "item3")
-  
-  // Test concurrent size operations
-  let size = ConcurrentQueue::size(queue)
-  assert_eq(size, 3)
-  
-  // Test concurrent dequeue operations
-  let dequeued1 = ConcurrentQueue::dequeue(queue)
-  match dequeued1 {
-    Some(item) => assert_eq(item, "item1")
-    None => assert_true(false)
+  // Test concurrent queue operations
+  let mut producer_handles = []
+  for i in 0..=5 {
+    let handle = Thread::spawn(func() {
+      for j in 0..=10 {
+        let item = "item_" + i.to_string() + "_" + j.to_string()
+        ThreadSafeQueue::enqueue(queue, item)
+      }
+    })
+    producer_handles.push(handle)
   }
   
-  let dequeued2 = ConcurrentQueue::dequeue(queue)
-  match dequeued2 {
-    Some(item) => assert_eq(item, "item2")
-    None => assert_true(false)
+  let mut consumer_handles = []
+  for i in 0..=3 {
+    let handle = Thread::spawn(func() {
+      let mut items = []
+      for j in 0..=15 {
+        let item = ThreadSafeQueue::dequeue(queue)
+        match item {
+          Some(value) => items.push(value)
+          None => break
+        }
+      }
+      items
+    })
+    consumer_handles.push(handle)
   }
   
-  // Test size after dequeue
-  let new_size = ConcurrentQueue::size(queue)
-  assert_eq(new_size, 1)
-  
-  // Test peek operations
-  let peeked = ConcurrentQueue::peek(queue)
-  match peeked {
-    Some(item) => assert_eq(item, "item3")
-    None => assert_true(false)
+  // Wait for all producers to complete
+  for handle in producer_handles {
+    Thread::join(handle)
   }
   
-  // Test empty operations
-  let is_empty = ConcurrentQueue::is_empty(queue)
-  assert_false(is_empty)
-  
-  // Test dequeue remaining items
-  let dequeued3 = ConcurrentQueue::dequeue(queue)
-  match dequeued3 {
-    Some(item) => assert_eq(item, "item3")
-    None => assert_true(false)
-  }
-  
-  // Test empty after dequeue all
-  let is_empty_now = ConcurrentQueue::is_empty(queue)
-  assert_true(is_empty_now)
-  
-  // Test dequeue from empty queue
-  let empty_dequeue = ConcurrentQueue::dequeue(queue)
-  match empty_dequeue {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 4: Thread-Safe Set Operations
-test "thread-safe set operations" {
-  let set = ConcurrentSet::new()
-  
-  // Test concurrent add operations
-  assert_true(ConcurrentSet::add(set, "item1"))
-  assert_true(ConcurrentSet::add(set, "item2"))
-  assert_true(ConcurrentSet::add(set, "item3"))
-  
-  // Test adding duplicate
-  assert_false(ConcurrentSet::add(set, "item1"))
-  
-  // Test concurrent contains operations
-  assert_true(ConcurrentSet::contains(set, "item1"))
-  assert_true(ConcurrentSet::contains(set, "item2"))
-  assert_true(ConcurrentSet::contains(set, "item3"))
-  assert_false(ConcurrentSet::contains(set, "item4"))
-  
-  // Test concurrent size operations
-  let size = ConcurrentSet::size(set)
-  assert_eq(size, 3)
-  
-  // Test concurrent remove operations
-  assert_true(ConcurrentSet::remove(set, "item2"))
-  assert_false(ConcurrentSet::remove(set, "item4")) // Non-existent item
-  
-  // Test contains after remove
-  assert_true(ConcurrentSet::contains(set, "item1"))
-  assert_false(ConcurrentSet::contains(set, "item2"))
-  assert_true(ConcurrentSet::contains(set, "item3"))
-  
-  // Test size after remove
-  let new_size = ConcurrentSet::size(set)
-  assert_eq(new_size, 2)
-  
-  // Test concurrent clear operations
-  ConcurrentSet::clear(set)
-  let cleared_size = ConcurrentSet::size(set)
-  assert_eq(cleared_size, 0)
-  
-  // Test contains after clear
-  assert_false(ConcurrentSet::contains(set, "item1"))
-  assert_false(ConcurrentSet::contains(set, "item3"))
-}
-
-// Test 5: Thread-Safe Atomic Reference Operations
-test "thread-safe atomic reference operations" {
-  let initial_value = "initial"
-  let atomic_ref = AtomicReference::new(initial_value)
-  
-  // Test get operations
-  let current = AtomicReference::get(atomic_ref)
-  assert_eq(current, "initial")
-  
-  // Test set operations
-  AtomicReference::set(atomic_ref, "updated")
-  let updated = AtomicReference::get(atomic_ref)
-  assert_eq(updated, "updated")
-  
-  // Test compare and set operations
-  let cas_result = AtomicReference::compare_and_set(atomic_ref, "updated", "new_value")
-  assert_true(cas_result)
-  
-  let cas_current = AtomicReference::get(atomic_ref)
-  assert_eq(cas_current, "new_value")
-  
-  // Test failed compare and set
-  let cas_failed = AtomicReference::compare_and_set(atomic_ref, "updated", "failed_value")
-  assert_false(cas_failed)
-  
-  let cas_failed_current = AtomicReference::get(atomic_ref)
-  assert_eq(cas_failed_current, "new_value")
-  
-  // Test get and set operations
-  let old_value = AtomicReference::get_and_set(atomic_ref, "final_value")
-  assert_eq(old_value, "new_value")
-  
-  let final_value = AtomicReference::get(atomic_ref)
-  assert_eq(final_value, "final_value")
-}
-
-// Test 6: Thread-Safe Lock Operations
-test "thread-safe lock operations" {
-  let lock = ReentrantLock::new()
-  
-  // Test lock and unlock operations
-  ReentrantLock::lock(lock)
-  // Critical section
-  ReentrantLock::unlock(lock)
-  
-  // Test try lock operations
-  let try_lock_result = ReentrantLock::try_lock(lock)
-  assert_true(try_lock_result)
-  
-  // Unlock after try lock
-  ReentrantLock::unlock(lock)
-  
-  // Test reentrant locking
-  ReentrantLock::lock(lock)
-  let reentrant_result = ReentrantLock::try_lock(lock)
-  assert_true(reentrant_result) // Should succeed for reentrant lock
-  
-  // Unlock multiple times for reentrant lock
-  ReentrantLock::unlock(lock)
-  ReentrantLock::unlock(lock)
-  
-  // Test read-write lock operations
-  let rw_lock = ReadWriteLock::new()
-  
-  // Test read lock
-  ReadWriteLock::read_lock(rw_lock)
-  // Read critical section
-  ReadWriteLock::read_unlock(rw_lock)
-  
-  // Test write lock
-  ReadWriteLock::write_lock(rw_lock)
-  // Write critical section
-  ReadWriteLock::write_unlock(rw_lock)
-  
-  // Test try read lock
-  let try_read_result = ReadWriteLock::try_read_lock(rw_lock)
-  assert_true(try_read_result)
-  ReadWriteLock::read_unlock(rw_lock)
-  
-  // Test try write lock
-  let try_write_result = ReadWriteLock::try_write_lock(rw_lock)
-  assert_true(try_write_result)
-  ReadWriteLock::write_unlock(rw_lock)
-}
-
-// Test 7: Thread-Safe Semaphore Operations
-test "thread-safe semaphore operations" {
-  let semaphore = Semaphore::new(3) // 3 permits
-  
-  // Test acquire operations
-  assert_true(Semaphore::acquire(semaphore))
-  assert_true(Semaphore::acquire(semaphore))
-  assert_true(Semaphore::acquire(semaphore))
-  
-  // Test acquire when no permits available
-  assert_false(Semaphore::try_acquire(semaphore))
-  
-  // Test release operations
-  Semaphore::release(semaphore)
-  
-  // Test acquire after release
-  assert_true(Semaphore::try_acquire(semaphore))
-  
-  // Test available permits
-  let available = Semaphore::available_permits(semaphore)
-  assert_eq(available, 1)
-  
-  // Test drain permits
-  let drained = Semaphore::drain_permits(semaphore)
-  assert_eq(drained, 1)
-  
-  // Test no permits available after drain
-  let no_permits = Semaphore::available_permits(semaphore)
-  assert_eq(no_permits, 0)
-  
-  // Test release multiple permits
-  Semaphore::release(semaphore)
-  Semaphore::release(semaphore)
-  Semaphore::release(semaphore)
-  
-  let multiple_permits = Semaphore::available_permits(semaphore)
-  assert_eq(multiple_permits, 3)
-}
-
-// Test 8: Thread-Safe Condition Variable Operations
-test "thread-safe condition variable operations" {
-  let lock = Mutex::new()
-  let condition = ConditionVariable::new()
-  let shared_data = AtomicCounter::new(0)
-  
-  // Test wait and signal operations
-  Mutex::lock(lock)
-  
-  // Wait for condition (simplified for testing)
-  let current_value = AtomicCounter::get(shared_data)
-  if current_value == 0 {
-    // In real scenario, this would wait
-    // ConditionVariable::wait(condition, lock)
-  }
-  
-  // Modify shared data
-  AtomicCounter::set(shared_data, 1)
-  
-  // Signal waiting threads
-  ConditionVariable::signal(condition)
-  
-  Mutex::unlock(lock)
-  
-  // Test broadcast signal
-  Mutex::lock(lock)
-  ConditionVariable::broadcast(condition)
-  Mutex::unlock(lock)
-  
-  // Verify final state
-  let final_value = AtomicCounter::get(shared_data)
-  assert_eq(final_value, 1)
-}
-
-// Test 9: Thread-Safe Future Operations
-test "thread-safe future operations" {
-  let future = Future::new()
-  
-  // Test initial state
-  assert_false(Future::is_completed(future))
-  assert_false(Future::is_cancelled(future))
-  
-  // Test set value
-  let set_result = Future::set_value(future, "test_value")
-  assert_true(set_result)
-  
-  // Test completed state
-  assert_true(Future::is_completed(future))
-  
-  // Test get value
-  let value = Future::get_value(future)
-  match value {
-    Some(v) => assert_eq(v, "test_value")
-    None => assert_true(false)
-  }
-  
-  // Test setting value after completion
-  let second_set = Future::set_value(future, "new_value")
-  assert_false(second_set)
-  
-  // Test cancel operation
-  let cancelable_future = Future::new()
-  let cancel_result = Future::cancel(cancelable_future)
-  assert_true(cancel_result)
-  
-  assert_true(Future::is_cancelled(cancelable_future))
-  
-  // Test get cancelled future value
-  let cancelled_value = Future::get_value(cancelable_future)
-  match cancelled_value {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 10: Thread-Safe Barrier Operations
-test "thread-safe barrier operations" {
-  let barrier = CyclicBarrier::new(3) // 3 parties
-  
-  // Test initial state
-  assert_eq(Barrier::get_parties(barrier), 3)
-  assert_eq(Barrier::get_number_waiting(barrier), 0)
-  
-  // Test await operations (simplified for testing)
-  // In real scenario, this would block until all parties arrive
-  let await_result1 = Barrier::await(barrier)
-  assert_eq(await_result1, 1) // First party
-  
-  let await_result2 = Barrier::await(barrier)
-  assert_eq(await_result2, 2) // Second party
-  
-  let await_result3 = Barrier::await(barrier)
-  assert_eq(await_result3, 0) // Third party, barrier resets
-  
-  // Test reset operation
-  Barrier::reset(barrier)
-  assert_eq(Barrier::get_number_waiting(barrier), 0)
-  
-  // Test is broken
-  assert_false(Barrier::is_broken(barrier))
-}
-
-// Helper classes and functions for concurrent safety tests
-// Note: These are simplified implementations for testing purposes
-
-class AtomicCounter {
-  value : Int
-  
-  new(value : Int) {
-    { value: value }
-  }
-  
-  static new(initial : Int) -> AtomicCounter {
-    AtomicCounter(initial)
-  }
-  
-  static increment(counter : AtomicCounter) -> Int {
-    counter.value = counter.value + 1
-    counter.value
-  }
-  
-  static decrement(counter : AtomicCounter) -> Int {
-    counter.value = counter.value - 1
-    counter.value
-  }
-  
-  static add(counter : AtomicCounter, delta : Int) -> Int {
-    counter.value = counter.value + delta
-    counter.value
-  }
-  
-  static get(counter : AtomicCounter) -> Int {
-    counter.value
-  }
-  
-  static set(counter : AtomicCounter, new_value : Int) -> Unit {
-    counter.value = new_value
-  }
-  
-  static compare_and_swap(counter : AtomicCounter, expected : Int, new_value : Int) -> Bool {
-    if counter.value == expected {
-      counter.value = new_value
-      true
-    } else {
-      false
-    }
-  }
-}
-
-class ConcurrentMap[K, V] {
-  data : Map[K, V]
-  
-  new() {
-    { data: Map::new() }
-  }
-  
-  static new[K, V]() -> ConcurrentMap[K, V] {
-    ConcurrentMap({ data: Map::new() })
-  }
-  
-  static put[K, V](map : ConcurrentMap[K, V], key : K, value : V) -> Unit {
-    map.data.insert(key, value)
-  }
-  
-  static get[K, V](map : ConcurrentMap[K, V], key : K) -> Option[V] {
-    map.data.get(key)
-  }
-  
-  static remove[K, V](map : ConcurrentMap[K, V], key : K) -> Option[V] {
-    map.data.remove(key)
-  }
-  
-  static size[K, V](map : ConcurrentMap[K, V]) -> Int {
-    map.data.size()
-  }
-  
-  static contains_key[K, V](map : ConcurrentMap[K, V], key : K) -> Bool {
-    map.data.contains_key(key)
-  }
-  
-  static put_if_absent[K, V](map : ConcurrentMap[K, V], key : K, value : V) -> Option[V] {
-    if not map.data.contains_key(key) {
-      map.data.insert(key, value)
-      None
-    } else {
-      map.data.get(key)
-    }
-  }
-}
-
-class ConcurrentQueue[T] {
-  data : Array[T]
-  
-  new() {
-    { data: [] }
-  }
-  
-  static new[T]() -> ConcurrentQueue[T] {
-    ConcurrentQueue({ data: [] })
-  }
-  
-  static enqueue[T](queue : ConcurrentQueue[T], item : T) -> Unit {
-    queue.data.push(item)
-  }
-  
-  static dequeue[T](queue : ConcurrentQueue[T]) -> Option[T] {
-    if queue.data.length() > 0 {
-      Some(queue.data.shift())
-    } else {
-      None
+  // Wait for all consumers to complete
+  let mut all_items = []
+  for handle in consumer_handles {
+    let items = Thread::join(handle)
+    for item in items {
+      all_items.push(item)
     }
   }
   
-  static size[T](queue : ConcurrentQueue[T]) -> Int {
-    queue.data.length()
-  }
-  
-  static peek[T](queue : ConcurrentQueue[T]) -> Option[T] {
-    if queue.data.length() > 0 {
-      Some(queue.data[0])
-    } else {
-      None
-    }
-  }
-  
-  static is_empty[T](queue : ConcurrentQueue[T]) -> Bool {
-    queue.data.length() == 0
-  }
+  // Verify items were processed
+  assert_eq(all_items.length(), 60) // 6 producers * 10 items each
 }
 
-class ConcurrentSet[T] {
-  data : Set[T]
+// Test 10: Thread-Safe Lock-Free Operations
+test "thread-safe lock-free operations" {
+  let counter = LockFreeCounter::new(0)
   
-  new() {
-    { data: Set::new() }
+  // Test concurrent counter increments
+  let mut handles = []
+  for i in 0..=100 {
+    let handle = Thread::spawn(func() {
+      LockFreeCounter::increment(counter)
+    })
+    handles.push(handle)
   }
   
-  static new[T]() -> ConcurrentSet[T] {
-    ConcurrentSet({ data: Set::new() })
+  // Wait for all increments to complete
+  for handle in handles {
+    Thread::join(handle)
   }
   
-  static add[T](set : ConcurrentSet[T], item : T) -> Bool {
-    if set.data.contains(item) {
-      false
-    } else {
-      set.data.add(item)
-      true
+  // Verify counter value
+  let value = LockFreeCounter::get_value(counter)
+  assert_eq(value, 101)
+  
+  // Test concurrent counter adds
+  let mut add_handles = []
+  for i in 0..=50 {
+    let handle = Thread::spawn(func() {
+      LockFreeCounter::add(counter, i)
+    })
+    add_handles.push(handle)
+  }
+  
+  // Wait for all adds to complete
+  for handle in add_handles {
+    Thread::join(handle)
+  }
+  
+  // Verify final counter value
+  let final_value = LockFreeCounter::get_value(counter)
+  assert_eq(final_value, 1821) // 101 + sum(0..50)
+  
+  // Test lock-free stack operations
+  let stack = LockFreeStack::new()
+  
+  // Test concurrent push operations
+  let mut push_handles = []
+  for i in 0..=50 {
+    let handle = Thread::spawn(func() {
+      LockFreeStack::push(stack, i)
+    })
+    push_handles.push(handle)
+  }
+  
+  // Wait for all pushes to complete
+  for handle in push_handles {
+    Thread::join(handle)
+  }
+  
+  // Test concurrent pop operations
+  let mut pop_handles = []
+  for i in 0..=25 {
+    let handle = Thread::spawn(func() {
+      let mut items = []
+      for j in 0..=2 {
+        let item = LockFreeStack::pop(stack)
+        match item {
+          Some(value) => items.push(value)
+          None => break
+        }
+      }
+      items
+    })
+    pop_handles.push(handle)
+  }
+  
+  // Wait for all pops to complete
+  let mut popped_items = []
+  for handle in pop_handles {
+    let items = Thread::join(handle)
+    for item in items {
+      popped_items.push(item)
     }
   }
   
-  static contains[T](set : ConcurrentSet[T], item : T) -> Bool {
-    set.data.contains(item)
-  }
-  
-  static remove[T](set : ConcurrentSet[T], item : T) -> Bool {
-    set.data.remove(item)
-  }
-  
-  static size[T](set : ConcurrentSet[T]) -> Int {
-    set.data.size()
-  }
-  
-  static clear[T](set : ConcurrentSet[T]) -> Unit {
-    set.data.clear()
-  }
-}
-
-class AtomicReference[T] {
-  value : T
-  
-  new(value : T) {
-    { value: value }
-  }
-  
-  static new[T](initial : T) -> AtomicReference[T] {
-    AtomicReference(initial)
-  }
-  
-  static get[T](ref : AtomicReference[T]) -> T {
-    ref.value
-  }
-  
-  static set[T](ref : AtomicReference[T], new_value : T) -> Unit {
-    ref.value = new_value
-  }
-  
-  static compare_and_set[T](ref : AtomicReference[T], expected : T, new_value : T) -> Bool {
-    if ref.value == expected {
-      ref.value = new_value
-      true
-    } else {
-      false
-    }
-  }
-  
-  static get_and_set[T](ref : AtomicReference[T], new_value : T) -> T {
-    let old_value = ref.value
-    ref.value = new_value
-    old_value
-  }
-}
-
-class ReentrantLock {
-  locked : Bool
-  lock_count : Int
-  
-  new() {
-    { locked: false, lock_count: 0 }
-  }
-  
-  static new() -> ReentrantLock {
-    ReentrantLock({ locked: false, lock_count: 0 })
-  }
-  
-  static lock(lock : ReentrantLock) -> Unit {
-    lock.locked = true
-    lock.lock_count = lock.lock_count + 1
-  }
-  
-  static unlock(lock : ReentrantLock) -> Unit {
-    lock.lock_count = lock.lock_count - 1
-    if lock.lock_count == 0 {
-      lock.locked = false
-    }
-  }
-  
-  static try_lock(lock : ReentrantLock) -> Bool {
-    if not lock.locked {
-      lock.locked = true
-      lock.lock_count = lock.lock_count + 1
-      true
-    } else {
-      true // Simplified: always succeed for reentrant lock
-    }
-  }
-}
-
-class ReadWriteLock {
-  read_locked : Bool
-  write_locked : Bool
-  
-  new() {
-    { read_locked: false, write_locked: false }
-  }
-  
-  static new() -> ReadWriteLock {
-    ReadWriteLock({ read_locked: false, write_locked: false })
-  }
-  
-  static read_lock(lock : ReadWriteLock) -> Unit {
-    lock.read_locked = true
-  }
-  
-  static read_unlock(lock : ReadWriteLock) -> Unit {
-    lock.read_locked = false
-  }
-  
-  static write_lock(lock : ReadWriteLock) -> Unit {
-    lock.write_locked = true
-  }
-  
-  static write_unlock(lock : ReadWriteLock) -> Unit {
-    lock.write_locked = false
-  }
-  
-  static try_read_lock(lock : ReadWriteLock) -> Bool {
-    if not lock.write_locked {
-      lock.read_locked = true
-      true
-    } else {
-      false
-    }
-  }
-  
-  static try_write_lock(lock : ReadWriteLock) -> Bool {
-    if not lock.read_locked && not lock.write_locked {
-      lock.write_locked = true
-      true
-    } else {
-      false
-    }
-  }
-}
-
-class Semaphore {
-  permits : Int
-  
-  new(permits : Int) {
-    { permits: permits }
-  }
-  
-  static new(permits : Int) -> Semaphore {
-    Semaphore({ permits: permits })
-  }
-  
-  static acquire(semaphore : Semaphore) -> Bool {
-    if semaphore.permits > 0 {
-      semaphore.permits = semaphore.permits - 1
-      true
-    } else {
-      false
-    }
-  }
-  
-  static try_acquire(semaphore : Semaphore) -> Bool {
-    Semaphore.acquire(semaphore)
-  }
-  
-  static release(semaphore : Semaphore) -> Unit {
-    semaphore.permits = semaphore.permits + 1
-  }
-  
-  static available_permits(semaphore : Semaphore) -> Int {
-    semaphore.permits
-  }
-  
-  static drain_permits(semaphore : Semaphore) -> Int {
-    let available = semaphore.permits
-    semaphore.permits = 0
-    available
-  }
-}
-
-class ConditionVariable {
-  waiting : Int
-  
-  new() {
-    { waiting: 0 }
-  }
-  
-  static new() -> ConditionVariable {
-    ConditionVariable({ waiting: 0 })
-  }
-  
-  static wait(condition : ConditionVariable, lock : ReentrantLock) -> Unit {
-    condition.waiting = condition.waiting + 1
-    // Simplified: would actually wait and release lock
-  }
-  
-  static signal(condition : ConditionVariable) -> Unit {
-    if condition.waiting > 0 {
-      condition.waiting = condition.waiting - 1
-      // Simplified: would actually signal one waiting thread
-    }
-  }
-  
-  static broadcast(condition : ConditionVariable) -> Unit {
-    // Simplified: would actually signal all waiting threads
-    condition.waiting = 0
-  }
-}
-
-class Mutex {
-  locked : Bool
-  
-  new() {
-    { locked: false }
-  }
-  
-  static new() -> Mutex {
-    Mutex({ locked: false })
-  }
-  
-  static lock(mutex : Mutex) -> Unit {
-    mutex.locked = true
-  }
-  
-  static unlock(mutex : Mutex) -> Unit {
-    mutex.locked = false
-  }
-}
-
-class Future[T] {
-  value : Option[T]
-  completed : Bool
-  cancelled : Bool
-  
-  new() {
-    { value: None, completed: false, cancelled: false }
-  }
-  
-  static new[T]() -> Future[T] {
-    Future({ value: None, completed: false, cancelled: false })
-  }
-  
-  static set_value[T](future : Future[T], value : T) -> Bool {
-    if not future.completed && not future.cancelled {
-      future.value = Some(value)
-      future.completed = true
-      true
-    } else {
-      false
-    }
-  }
-  
-  static get_value[T](future : Future[T]) -> Option[T] {
-    future.value
-  }
-  
-  static is_completed[T](future : Future[T]) -> Bool {
-    future.completed
-  }
-  
-  static is_cancelled[T](future : Future[T]) -> Bool {
-    future.cancelled
-  }
-  
-  static cancel[T](future : Future[T]) -> Bool {
-    if not future.completed && not future.cancelled {
-      future.cancelled = true
-      true
-    } else {
-      false
-    }
-  }
-}
-
-class CyclicBarrier {
-  parties : Int
-  waiting : Int
-  broken : Bool
-  
-  new(parties : Int) {
-    { parties: parties, waiting: 0, broken: false }
-  }
-  
-  static new(parties : Int) -> CyclicBarrier {
-    CyclicBarrier({ parties: parties, waiting: 0, broken: false })
-  }
-  
-  static await(barrier : CyclicBarrier) -> Int {
-    barrier.waiting = barrier.waiting + 1
-    if barrier.waiting >= barrier.parties {
-      barrier.waiting = 0
-      0 // Reset
-    } else {
-      barrier.waiting
-    }
-  }
-  
-  static get_parties(barrier : CyclicBarrier) -> Int {
-    barrier.parties
-  }
-  
-  static get_number_waiting(barrier : CyclicBarrier) -> Int {
-    barrier.waiting
-  }
-  
-  static reset(barrier : CyclicBarrier) -> Unit {
-    barrier.waiting = 0
-    barrier.broken = false
-  }
-  
-  static is_broken(barrier : CyclicBarrier) -> Bool {
-    barrier.broken
-  }
+  // Verify items were popped
+  assert_eq(popped_items.length(), 78) // 26 consumers * 3 items each, but some may get None
 }
