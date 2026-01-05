@@ -7978,12 +7978,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_data_serialization_tests.mbt": {
     0: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_0, ["json serialization and deserialization"]),
-    1: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_1, ["protocol buffers serialization and deserialization"]),
-    2: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_2, ["messagepack serialization and deserialization"]),
-    3: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_3, ["xml serialization and deserialization"]),
-    4: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_4, ["custom binary serialization and deserialization"]),
-    5: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_5, ["serialization format comparison and performance"]),
-    6: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_6, ["serialization error handling and recovery"]),
+    1: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_1, ["binary serialization"]),
+    2: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_2, ["protocol buffer serialization"]),
+    3: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_3, ["custom serialization format"]),
+    4: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f74657374732e6d6274_4, ["compression and serialization"]),
   },
   "azimuth_data_serialization_integrity_tests.mbt": {
     0: (__test_617a696d7574685f646174615f73657269616c697a6174696f6e5f696e746567726974795f74657374732e6d6274_0, ["遥测数据JSON序列化测试"]),
