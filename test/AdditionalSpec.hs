@@ -43,7 +43,7 @@ spec = do
         mapM_ (\config -> do
           initTelemetry config `shouldReturn` ()
           shutdownTelemetry
-        ) validConfigs
+          ) validConfigs
 
     -- 2. 度量聚合和统计功能测试
     describe "Metric Aggregation and Statistics" $ do
@@ -257,7 +257,7 @@ spec = do
             Right _ -> do
               shutdownTelemetry
               return True
-        ) configs
+          ) configs
         
         -- 至少应该有一个配置成功
         or results `shouldBe` True
@@ -273,7 +273,7 @@ spec = do
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> return True
-        ) values
+          ) values
         
         -- 至少应该有一些值成功记录
         or results `shouldBe` True
@@ -295,7 +295,7 @@ spec = do
             
             logger <- createLogger "concurrent-error-logger" Info
             logMessage logger Info "concurrent error test"
-        ) [1..numThreads]
+          ) [1..numThreads]
         
         -- 等待所有线程完成
         threadDelay 1000000  -- 1秒
