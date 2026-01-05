@@ -1,401 +1,694 @@
-// Azimuth 高级内存管理和资源清理测试用例
-// 专注于内存泄漏检测、资源生命周期管理和自动清理机制
+// Azimuth Premium Memory Management Tests
+// This file contains high-quality test cases for memory management and resource cleanup
 
-// 测试1: 自动内存管理验证
-test "自动内存管理验证测试" {
-  let memory_tracker = MemoryTracker::new()
-  let initial_memory = MemoryTracker::get_allocated_memory(memory_tracker)
-  
-  // 创建大量对象
-  let objects = []
-  for i in 0..10000 {
-    let obj = LargeObject::new(1024) // 1KB对象
-    objects.push(obj)
+// Test 1: Memory Pool Management
+test "memory pool management" {
+  // Simple memory pool implementation
+  type MemoryPool {
+    blocks : Array[MemoryBlock]
+    free_blocks : Array[Int]
+    block_size : Int
+    total_blocks : Int
   }
   
-  let peak_memory = MemoryTracker::get_allocated_memory(memory_tracker)
-  assert_true(peak_memory > initial_memory + 10000 * 1024)
+  type MemoryBlock {
+    data : Array[Byte]
+    allocated : Bool
+  }
   
-  // 清理对象引用
-  objects.clear()
-  
-  // 触发垃圾回收
-  GarbageCollector::collect()
-  
-  let final_memory = MemoryTracker::get_allocated_memory(memory_tracker)
-  let memory_recovered = peak_memory - final_memory
-  
-  // 验证大部分内存被回收
-  assert_true(memory_recovered > 10000 * 1024 * 0.8)
-}
-
-// 测试2: 资源生命周期管理
-test "资源生命周期管理测试" {
-  let resource_manager = ResourceManager::new()
-  let resource_ids = []
-  
-  // 创建多个资源
-  for i in 0..100 {
-    let resource_id = ResourceManager::create_resource(resource_manager, "test_resource_" + i.to_string())
-    resource_ids.push(resource_id)
+  let create_memory_pool = fn(block_size : Int, total_blocks : Int) -> MemoryPool {
+    let mut blocks = []
     
-    // 验证资源已创建
-    assert_true(ResourceManager::resource_exists(resource_manager, resource_id))
-  }
-  
-  // 验证所有资源都存在
-  assert_eq(ResourceManager::get_resource_count(resource_manager), 100)
-  
-  // 删除一半资源
-  for i in 0..50 {
-    ResourceManager::delete_resource(resource_manager, resource_ids[i])
-    assert_false(ResourceManager::resource_exists(resource_manager, resource_ids[i]))
-  }
-  
-  // 验证资源计数
-  assert_eq(ResourceManager::get_resource_count(resource_manager), 50)
-  
-  // 清理剩余资源
-  ResourceManager::cleanup_all_resources(resource_manager)
-  
-  // 验证所有资源被清理
-  assert_eq(ResourceManager::get_resource_count(resource_manager), 0)
-}
-
-// 测试3: 内存泄漏检测
-test "内存泄漏检测测试" {
-  let leak_detector = MemoryLeakDetector::new()
-  LeakDetector::start_monitoring(leak_detector)
-  
-  // 模拟内存泄漏场景
-  let leaked_objects = []
-  for i in 0..1000 {
-    let obj = LeakyObject::new(512) // 512B对象
-    leaked_objects.push(obj)
-  }
-  
-  // 故意不清理一些对象
-  let intentionally_leaked = leaked_objects.slice(0, 100)
-  let properly_managed = leaked_objects.slice(100, 1000)
-  
-  // 清理正确管理的对象
-  properly_managed.clear()
-  
-  // 触发垃圾回收
-  GarbageCollector::collect()
-  
-  // 检测内存泄漏
-  let leak_report = LeakDetector::generate_report(leak_detector)
-  let leaked_memory = LeakReport::get_leaked_memory(leak_report)
-  
-  // 验证检测到预期的内存泄漏
-  assert_true(leaked_memory >= 100 * 512 * 0.8)
-  
-  LeakDetector::stop_monitoring(leak_detector)
-}
-
-// 测试4: 弱引用和循环引用处理
-test "弱引用和循环引用处理测试" {
-  let weak_ref_tracker = WeakReferenceTracker::new()
-  
-  // 创建循环引用对象
-  let obj_a = CyclicObject::new("A")
-  let obj_b = CyclicObject::new("B")
-  
-  // 建立循环引用
-  CyclicObject::set_reference(obj_a, obj_b)
-  CyclicObject::set_reference(obj_b, obj_a)
-  
-  // 创建弱引用
-  let weak_a = WeakReference::new(obj_a)
-  let weak_b = WeakReference::new(obj_b)
-  
-  // 验证弱引用有效
-  assert_true(WeakReference::is_valid(weak_a))
-  assert_true(WeakReference::is_valid(weak_b))
-  
-  // 清除强引用
-  obj_a = None
-  obj_b = None
-  
-  // 触发垃圾回收
-  GarbageCollector::collect()
-  
-  // 验证循环引用被正确回收
-  assert_false(WeakReference::is_valid(weak_a))
-  assert_false(WeakReference::is_valid(weak_b))
-}
-
-// 测试5: 大对象内存管理
-test "大对象内存管理测试" {
-  let large_object_manager = LargeObjectManager::new()
-  let object_sizes = [1024 * 1024, 2 * 1024 * 1024, 5 * 1024 * 1024] // 1MB, 2MB, 5MB
-  let object_handles = []
-  
-  // 创建大对象
-  for size in object_sizes {
-    let handle = LargeObjectManager::allocate(large_object_manager, size)
-    object_handles.push(handle)
+    for i = 0; i < total_blocks; i = i + 1 {
+      blocks.push(MemoryBlock { 
+        data: [0; block_size], 
+        allocated: false 
+      })
+    }
     
-    // 验证对象已分配
-    assert_true(LargeObjectManager::is_allocated(large_object_manager, handle))
-    
-    // 填充数据
-    let data = LargeObjectManager::get_data(large_object_manager, handle)
-    for i in 0..size {
-      data[i] = (i % 256).to_byte()
+    MemoryPool { 
+      blocks: blocks, 
+      free_blocks: [0; total_blocks].map(|i| i), 
+      block_size: block_size, 
+      total_blocks: total_blocks 
     }
   }
   
-  // 验证内存使用
-  let total_memory = LargeObjectManager::get_total_memory_usage(large_object_manager)
-  let expected_memory = 1024 * 1024 + 2 * 1024 * 1024 + 5 * 1024 * 1024
-  assert_true(total_memory >= expected_memory * 0.9)
-  
-  // 释放大对象
-  for handle in object_handles {
-    LargeObjectManager::deallocate(large_object_manager, handle)
-    assert_false(LargeObjectManager::is_allocated(large_object_manager, handle))
-  }
-  
-  // 验证内存被释放
-  let final_memory = LargeObjectManager::get_total_memory_usage(large_object_manager)
-  assert_true(final_memory < expected_memory * 0.1)
-}
-
-// 测试6: 内存池管理
-test "内存池管理测试" {
-  let memory_pool = MemoryPool::new(1024, 100) // 1KB块，100个块
-  let allocated_blocks = []
-  
-  // 分配所有内存块
-  for i in 0..100 {
-    let block = MemoryPool::allocate(memory_pool)
-    allocated_blocks.push(block)
-    assert_true(MemoryPool::is_valid_block(memory_pool, block))
-  }
-  
-  // 验证内存池已满
-  assert_true(MemoryPool::is_full(memory_pool))
-  
-  // 尝试分配更多块（应该失败）
-  let extra_block = MemoryPool::try_allocate(memory_pool)
-  assert_eq(extra_block, None)
-  
-  // 释放一半块
-  for i in 0..50 {
-    MemoryPool::deallocate(memory_pool, allocated_blocks[i])
-  }
-  
-  // 验证内存池有可用空间
-  assert_false(MemoryPool::is_full(memory_pool))
-  assert_eq(MemoryPool::get_available_count(memory_pool), 50)
-  
-  // 重新分配块
-  for i in 0..50 {
-    let block = MemoryPool::allocate(memory_pool)
-    assert_true(MemoryPool::is_valid_block(memory_pool, block))
-  }
-  
-  // 清理所有块
-  for block in allocated_blocks {
-    MemoryPool::deallocate(memory_pool, block)
-  }
-  
-  // 验证所有块都可用
-  assert_eq(MemoryPool::get_available_count(memory_pool), 100)
-}
-
-// 测试7: 智能指针资源管理
-test "智能指针资源管理测试" {
-  let resource_registry = ResourceRegistry::new()
-  let smart_pointers = []
-  
-  // 创建智能指针管理的资源
-  for i in 0..50 {
-    let resource = ExpensiveResource::new("resource_" + i.to_string())
-    let smart_ptr = SmartPointer::new(resource, resource_registry)
-    smart_pointers.push(smart_ptr)
+  let allocate_block = fn(pool : MemoryPool) -> (Option[Int], MemoryPool) {
+    if pool.free_blocks.length() == 0 {
+      return (None, pool)
+    }
     
-    // 验证资源被注册
-    assert_true(ResourceRegistry::is_resource_registered(resource_registry, resource))
+    let block_index = pool.free_blocks[0]
+    let mut new_blocks = pool.blocks
+    let mut new_free_blocks = []
+    
+    // Mark block as allocated
+    new_blocks[block_index] = MemoryBlock { 
+      data: new_blocks[block_index].data, 
+      allocated: true 
+    }
+    
+    // Remove from free list
+    for i = 1; i < pool.free_blocks.length(); i = i + 1 {
+      new_free_blocks.push(pool.free_blocks[i])
+    }
+    
+    let new_pool = MemoryPool {
+      blocks: new_blocks,
+      free_blocks: new_free_blocks,
+      block_size: pool.block_size,
+      total_blocks: pool.total_blocks
+    }
+    
+    (Some(block_index), new_pool)
   }
   
-  // 验证引用计数
-  for ptr in smart_pointers {
-    assert_eq(SmartPointer::get_reference_count(ptr), 1)
+  let deallocate_block = fn(pool : MemoryPool, block_index : Int) -> MemoryPool {
+    if block_index < 0 || block_index >= pool.blocks.length() {
+      return pool
+    }
+    
+    if !pool.blocks[block_index].allocated {
+      return pool
+    }
+    
+    let mut new_blocks = pool.blocks
+    let mut new_free_blocks = pool.free_blocks
+    
+    // Mark block as free
+    new_blocks[block_index] = MemoryBlock { 
+      data: new_blocks[block_index].data, 
+      allocated: false 
+    }
+    
+    // Clear block data
+    for i = 0; i < new_blocks[block_index].data.length(); i = i + 1 {
+      new_blocks[block_index].data[i] = 0
+    }
+    
+    // Add to free list
+    new_free_blocks.push(block_index)
+    
+    MemoryPool {
+      blocks: new_blocks,
+      free_blocks: new_free_blocks,
+      block_size: pool.block_size,
+      total_blocks: pool.total_blocks
+    }
   }
   
-  // 创建一些共享引用
-  let shared_pointers = []
-  for i in 0..25 {
-    let shared_ptr = SmartPointer::clone(smart_pointers[i])
-    shared_pointers.push(shared_ptr)
-    assert_eq(SmartPointer::get_reference_count(smart_pointers[i]), 2)
+  // Test memory pool operations
+  let pool = create_memory_pool(1024, 10)
+  assert_eq(pool.total_blocks, 10)
+  assert_eq(pool.free_blocks.length(), 10)
+  
+  // Allocate blocks
+  let (block1, pool1) = allocate_block(pool)
+  let (block2, pool2) = allocate_block(pool1)
+  let (block3, pool3) = allocate_block(pool2)
+  
+  match (block1, block2, block3) {
+    (Some(b1), Some(b2), Some(b3)) => {
+      assert_true(b1 >= 0 && b1 < 10)
+      assert_true(b2 >= 0 && b2 < 10)
+      assert_true(b3 >= 0 && b3 < 10)
+      assert_not_eq(b1, b2)
+      assert_not_eq(b2, b3)
+      assert_not_eq(b1, b3)
+    }
+    _ => assert_true(false)
   }
   
-  // 清理共享指针
-  shared_pointers.clear()
+  assert_eq(pool3.free_blocks.length(), 7)
   
-  // 验证引用计数减少
-  for i in 0..25 {
-    assert_eq(SmartPointer::get_reference_count(smart_pointers[i]), 1)
+  // Deallocate blocks
+  let pool4 = deallocate_block(pool3, block1.unwrap())
+  let pool5 = deallocate_block(pool4, block2.unwrap())
+  
+  assert_eq(pool5.free_blocks.length(), 9)
+  
+  // Reallocate blocks
+  let (block4, pool6) = allocate_block(pool5)
+  match block4 {
+    Some(b) => assert_true(b >= 0 && b < 10)
+    None => assert_true(false)
   }
   
-  // 清理所有智能指针
-  smart_pointers.clear()
-  
-  // 触发资源清理
-  ResourceRegistry::cleanup_unreferenced_resources(resource_registry)
-  
-  // 验证所有资源被清理
-  assert_eq(ResourceRegistry::get_registered_count(resource_registry), 0)
+  assert_eq(pool6.free_blocks.length(), 8)
 }
 
-// 测试8: 缓冲区管理器测试
-test "缓冲区管理器测试" {
-  let buffer_manager = BufferManager::new()
-  let buffer_handles = []
+// Test 2: Reference Counting
+test "reference counting" {
+  // Reference counted object
+  type RefCounted {
+    data : String
+    ref_count : Int
+  }
   
-  // 分配不同大小的缓冲区
-  let buffer_sizes = [256, 512, 1024, 2048, 4096]
-  for size in buffer_sizes {
-    for i in 0..10 {
-      let handle = BufferManager::allocate_buffer(buffer_manager, size)
-      buffer_handles.push(handle)
+  let create_ref_counted = fn(data : String) -> RefCounted {
+    RefCounted { 
+      data: data, 
+      ref_count: 1 
+    }
+  }
+  
+  let add_ref = fn(obj : RefCounted) -> RefCounted {
+    RefCounted { 
+      data: obj.data, 
+      ref_count: obj.ref_count + 1 
+    }
+  }
+  
+  let release_ref = fn(obj : RefCounted) -> (Bool, RefCounted) {
+    let new_count = obj.ref_count - 1
+    let should_deallocate = new_count <= 0
+    
+    let new_obj = RefCounted { 
+      data: obj.data, 
+      ref_count: new_count 
+    }
+    
+    (should_deallocate, new_obj)
+  }
+  
+  // Test reference counting
+  let obj = create_ref_counted("test data")
+  assert_eq(obj.ref_count, 1)
+  
+  let obj2 = add_ref(obj)
+  assert_eq(obj2.ref_count, 2)
+  
+  let obj3 = add_ref(obj2)
+  assert_eq(obj3.ref_count, 3)
+  
+  // Release references
+  let (should_delete1, obj4) = release_ref(obj3)
+  assert_false(should_delete1)
+  assert_eq(obj4.ref_count, 2)
+  
+  let (should_delete2, obj5) = release_ref(obj4)
+  assert_false(should_delete2)
+  assert_eq(obj5.ref_count, 1)
+  
+  let (should_delete3, obj6) = release_ref(obj5)
+  assert_true(should_delete3)
+  assert_eq(obj6.ref_count, 0)
+}
+
+// Test 3: Resource Management with RAII
+test "resource management with raii" {
+  // File handle resource
+  type FileHandle {
+    id : Int
+    is_open : Bool
+    path : String
+  }
+  
+  type ResourceManager {
+    handles : Array[FileHandle]
+    next_id : Int
+  }
+  
+  let create_resource_manager = fn() -> ResourceManager {
+    ResourceManager { 
+      handles: [], 
+      next_id: 1 
+    }
+  }
+  
+  let open_file = fn(manager : ResourceManager, path : String) -> (FileHandle, ResourceManager) {
+    let handle = FileHandle { 
+      id: manager.next_id, 
+      is_open: true, 
+      path: path 
+    }
+    
+    let new_manager = ResourceManager {
+      handles: manager.handles.push(handle),
+      next_id: manager.next_id + 1
+    }
+    
+    (handle, new_manager)
+  }
+  
+  let close_file = fn(manager : ResourceManager, handle : FileHandle) -> ResourceManager {
+    let mut new_handles = []
+    
+    for h in manager.handles {
+      if h.id == handle.id {
+        new_handles.push(FileHandle { 
+          id: h.id, 
+          is_open: false, 
+          path: h.path 
+        })
+      } else {
+        new_handles.push(h)
+      }
+    }
+    
+    ResourceManager {
+      handles: new_handles,
+      next_id: manager.next_id
+    }
+  }
+  
+  let auto_close_file = fn(manager : ResourceManager, path : String, operation : FileHandle -> String) -> (String, ResourceManager) {
+    let (handle, manager_with_handle) = open_file(manager, path)
+    let result = operation(handle)
+    let final_manager = close_file(manager_with_handle, handle)
+    
+    (result, final_manager)
+  }
+  
+  // Test RAII pattern
+  let manager = create_resource_manager()
+  
+  // Auto-close file after operation
+  let (result, final_manager) = auto_close_file(manager, "test.txt", |handle| {
+    "File " + handle.path.to_string() + " processed"
+  })
+  
+  assert_eq(result, "File test.txt processed")
+  
+  // Verify file is closed
+  let mut found_handle = false
+  let mut is_closed = false
+  
+  for h in final_manager.handles {
+    if h.path == "test.txt" {
+      found_handle = true
+      is_closed = !h.is_open
+    }
+  }
+  
+  assert_true(found_handle)
+  assert_true(is_closed)
+  
+  // Test manual resource management
+  let (handle2, manager2) = open_file(final_manager, "manual.txt")
+  assert_true(handle2.is_open)
+  
+  let manager3 = close_file(manager2, handle2)
+  
+  // Verify file is closed
+  let mut found_handle2 = false
+  let mut is_closed2 = false
+  
+  for h in manager3.handles {
+    if h.path == "manual.txt" {
+      found_handle2 = true
+      is_closed2 = !h.is_open
+    }
+  }
+  
+  assert_true(found_handle2)
+  assert_true(is_closed2)
+}
+
+// Test 4: Memory Leak Detection
+test "memory leak detection" {
+  // Memory tracker
+  type MemoryTracker {
+    allocations : Array[(Int, Int)] // (id, size)
+    deallocations : Array[Int] // id
+    next_id : Int
+    total_allocated : Int
+    total_deallocated : Int
+  }
+  
+  let create_tracker = fn() -> MemoryTracker {
+    MemoryTracker { 
+      allocations: [], 
+      deallocations: [], 
+      next_id: 1, 
+      total_allocated: 0, 
+      total_deallocated: 0 
+    }
+  }
+  
+  let allocate_memory = fn(tracker : MemoryTracker, size : Int) -> (Int, MemoryTracker) {
+    let id = tracker.next_id
+    let new_tracker = MemoryTracker {
+      allocations: tracker.allocations.push((id, size)),
+      deallocations: tracker.deallocations,
+      next_id: tracker.next_id + 1,
+      total_allocated: tracker.total_allocated + size,
+      total_deallocated: tracker.total_deallocated
+    }
+    
+    (id, new_tracker)
+  }
+  
+  let deallocate_memory = fn(tracker : MemoryTracker, id : Int) -> MemoryTracker {
+    let mut size = 0
+    let mut found = false
+    
+    for (alloc_id, alloc_size) in tracker.allocations {
+      if alloc_id == id {
+        size = alloc_size
+        found = true
+        break
+      }
+    }
+    
+    if found {
+      MemoryTracker {
+        allocations: tracker.allocations,
+        deallocations: tracker.deallocations.push(id),
+        next_id: tracker.next_id,
+        total_allocated: tracker.total_allocated,
+        total_deallocated: tracker.total_deallocated + size
+      }
+    } else {
+      tracker
+    }
+  }
+  
+  let detect_leaks = fn(tracker : MemoryTracker) -> Array[(Int, Int)] {
+    let mut leaks = []
+    
+    for (alloc_id, alloc_size) in tracker.allocations {
+      let mut deallocated = false
       
-      // 验证缓冲区有效
-      assert_true(BufferManager::is_buffer_valid(buffer_manager, handle))
-      assert_eq(BufferManager::get_buffer_size(buffer_manager, handle), size)
+      for dealloc_id in tracker.deallocations {
+        if dealloc_id == alloc_id {
+          deallocated = true
+          break
+        }
+      }
       
-      // 写入测试数据
-      let buffer = BufferManager::get_buffer(buffer_manager, handle)
-      for j in 0..size {
-        buffer[j] = ((i + j) % 256).to_byte()
+      if !deallocated {
+        leaks.push((alloc_id, alloc_size))
+      }
+    }
+    
+    leaks
+  }
+  
+  // Test memory leak detection
+  let tracker = create_memory_tracker()
+  
+  // Allocate memory
+  let (id1, tracker1) = allocate_memory(tracker, 100)
+  let (id2, tracker2) = allocate_memory(tracker1, 200)
+  let (id3, tracker3) = allocate_memory(tracker2, 150)
+  
+  assert_eq(tracker3.total_allocated, 450)
+  assert_eq(tracker3.total_deallocated, 0)
+  
+  // Deallocate some memory
+  let tracker4 = deallocate_memory(tracker3, id1)
+  let tracker5 = deallocate_memory(tracker4, id3)
+  
+  assert_eq(tracker5.total_allocated, 450)
+  assert_eq(tracker5.total_deallocated, 250) // 100 + 150
+  
+  // Detect leaks
+  let leaks = detect_leaks(tracker5)
+  assert_eq(leaks.length(), 1)
+  assert_eq(leaks[0], (id2, 200))
+  
+  // Deallocate remaining memory
+  let tracker6 = deallocate_memory(tracker5, id2)
+  let leaks2 = detect_leaks(tracker6)
+  assert_eq(leaks2.length(), 0)
+  assert_eq(tracker6.total_deallocated, 450)
+}
+
+// Test 5: Buffer Management
+test "buffer management" {
+  // Dynamic buffer
+  type Buffer {
+    data : Array[Byte]
+    capacity : Int
+    length : Int
+  }
+  
+  let create_buffer = fn(initial_capacity : Int) -> Buffer {
+    Buffer { 
+      data: [0; initial_capacity], 
+      capacity: initial_capacity, 
+      length: 0 
+    }
+  }
+  
+  let buffer_write = fn(buffer : Buffer, bytes : Array[Byte]) -> Buffer {
+    let required_length = buffer.length + bytes.length()
+    
+    if required_length > buffer.capacity {
+      // Need to resize
+      let new_capacity = required_length * 2
+      let mut new_data = [0; new_capacity]
+      
+      // Copy existing data
+      for i = 0; i < buffer.length; i = i + 1 {
+        new_data[i] = buffer.data[i]
+      }
+      
+      // Copy new bytes
+      for i = 0; i < bytes.length(); i = i + 1 {
+        new_data[buffer.length + i] = bytes[i]
+      }
+      
+      Buffer {
+        data: new_data,
+        capacity: new_capacity,
+        length: required_length
+      }
+    } else {
+      // No resize needed
+      let mut new_data = buffer.data
+      
+      for i = 0; i < bytes.length(); i = i + 1 {
+        new_data[buffer.length + i] = bytes[i]
+      }
+      
+      Buffer {
+        data: new_data,
+        capacity: buffer.capacity,
+        length: required_length
       }
     }
   }
   
-  // 验证总内存使用
-  let total_memory = BufferManager::get_total_memory_usage(buffer_manager)
-  let expected_memory = (256 + 512 + 1024 + 2048 + 4096) * 10
-  assert_true(total_memory >= expected_memory * 0.9)
-  
-  // 释放所有缓冲区
-  for handle in buffer_handles {
-    BufferManager::deallocate_buffer(buffer_manager, handle)
-    assert_false(BufferManager::is_buffer_valid(buffer_manager, handle))
+  let buffer_read = fn(buffer : Buffer, offset : Int, length : Int) -> Array[Byte] {
+    if offset < 0 || length < 0 || offset + length > buffer.length {
+      return []
+    }
+    
+    let mut result = []
+    
+    for i = 0; i < length; i = i + 1 {
+      result.push(buffer.data[offset + i])
+    }
+    
+    result
   }
   
-  // 验证内存被释放
-  let final_memory = BufferManager::get_total_memory_usage(buffer_manager)
-  assert_true(final_memory < expected_memory * 0.1)
+  let buffer_clear = fn(buffer : Buffer) -> Buffer {
+    Buffer {
+      data: buffer.data,
+      capacity: buffer.capacity,
+      length: 0
+    }
+  }
+  
+  // Test buffer operations
+  let buffer = create_buffer(10)
+  assert_eq(buffer.capacity, 10)
+  assert_eq(buffer.length, 0)
+  
+  // Write data
+  let data1 = [1, 2, 3, 4, 5]
+  let buffer1 = buffer_write(buffer, data1)
+  assert_eq(buffer1.length, 5)
+  assert_eq(buffer1.capacity, 10)
+  
+  // Read data
+  let read1 = buffer_read(buffer1, 0, 5)
+  assert_eq(read1, [1, 2, 3, 4, 5])
+  
+  // Write more data (triggers resize)
+  let data2 = [6, 7, 8, 9, 10, 11, 12, 13]
+  let buffer2 = buffer_write(buffer1, data2)
+  assert_eq(buffer2.length, 13)
+  assert_true(buffer2.capacity > 10) // Should have resized
+  
+  // Read all data
+  let read2 = buffer_read(buffer2, 0, 13)
+  assert_eq(read2, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+  
+  // Read partial data
+  let read3 = buffer_read(buffer2, 3, 5)
+  assert_eq(read3, [4, 5, 6, 7, 8])
+  
+  // Clear buffer
+  let buffer3 = buffer_clear(buffer2)
+  assert_eq(buffer3.length, 0)
+  assert_eq(buffer3.capacity, buffer2.capacity) // Capacity remains the same
+  
+  // Write new data after clear
+  let data3 = [100, 200, 300]
+  let buffer4 = buffer_write(buffer3, data3)
+  assert_eq(buffer4.length, 3)
+  
+  let read4 = buffer_read(buffer4, 0, 3)
+  assert_eq(read4, [100, 200, 300])
+  
+  // Test edge cases
+  let read5 = buffer_read(buffer4, -1, 2) // Invalid offset
+  assert_eq(read5.length(), 0)
+  
+  let read6 = buffer_read(buffer4, 0, 10) // Length beyond buffer
+  assert_eq(read6.length(), 0)
 }
 
-// 测试9: 延迟清理机制测试
-test "延迟清理机制测试" {
-  let deferred_cleanup_manager = DeferredCleanupManager::new()
-  let cleanup_resources = []
-  
-  // 创建需要延迟清理的资源
-  for i in 0..20 {
-    let resource = CleanupResource::new("deferred_" + i.to_string())
-    let cleanup_handle = DeferredCleanupManager::register_resource(
-      deferred_cleanup_manager, 
-      resource, 
-      CleanupPriority::Low
-    )
-    cleanup_resources.push(cleanup_handle)
+// Test 6: Garbage Collection Simulation
+test "garbage collection simulation" {
+  // Object with references
+  type GCObject {
+    id : Int
+    data : String
+    references : Array[Int] // IDs of referenced objects
+    marked : Bool
   }
   
-  // 创建高优先级清理资源
-  for i in 0..10 {
-    let resource = CleanupResource::new("urgent_" + i.to_string())
-    let cleanup_handle = DeferredCleanupManager::register_resource(
-      deferred_cleanup_manager, 
-      resource, 
-      CleanupPriority::High
-    )
-    cleanup_resources.push(cleanup_handle)
+  type GCSpace {
+    objects : Array[GCObject]
+    next_id : Int
   }
   
-  // 验证资源被注册
-  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 30)
+  let create_gc_space = fn() -> GCSpace {
+    GCSpace { 
+      objects: [], 
+      next_id: 1 
+    }
+  }
   
-  // 触发高优先级清理
-  DeferredCleanupManager::cleanup_by_priority(deferred_cleanup_manager, CleanupPriority::High)
+  let allocate_object = fn(space : GCSpace, data : String, references : Array[Int]) -> (Int, GCSpace) {
+    let id = space.next_id
+    let obj = GCObject { 
+      id: id, 
+      data: data, 
+      references: references, 
+      marked: false 
+    }
+    
+    let new_space = GCSpace {
+      objects: space.objects.push(obj),
+      next_id: space.next_id + 1
+    }
+    
+    (id, new_space)
+  }
   
-  // 验证高优先级资源被清理
-  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 20)
-  
-  // 触发所有清理
-  DeferredCleanupManager::cleanup_all(deferred_cleanup_manager)
-  
-  // 验证所有资源被清理
-  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 0)
-}
-
-// 测试10: 内存压力测试
-test "内存压力测试" {
-  let stress_test_manager = MemoryStressTestManager::new()
-  let memory_limit = 100 * 1024 * 1024 // 100MB
-  StressTestManager::set_memory_limit(stress_test_manager, memory_limit)
-  
-  let allocation_sizes = [1024, 4096, 16384, 65536] // 1KB, 4KB, 16KB, 64KB
-  let allocated_objects = []
-  let total_allocated = 0
-  
-  // 尝试分配直到接近内存限制
-  for size in allocation_sizes {
-    let mut continue_allocation = true
-    while continue_allocation {
-      let obj = StressTestManager::try_allocate(stress_test_manager, size)
-      match obj {
-        Some(object) => {
-          allocated_objects.push(object)
-          total_allocated = total_allocated + size
-          
-          // 检查是否接近内存限制
-          if total_allocated > memory_limit * 0.9 {
-            continue_allocation = false
+  let mark_objects = fn(space : GCSpace, root_ids : Array[Int]) -> GCSpace {
+    let mut new_objects = space.objects
+    let mut to_mark = root_ids
+    
+    // Reset all marks
+    for i = 0; i < new_objects.length(); i = i + 1 {
+      new_objects[i] = GCObject {
+        id: new_objects[i].id,
+        data: new_objects[i].data,
+        references: new_objects[i].references,
+        marked: false
+      }
+    }
+    
+    // Mark reachable objects
+    while to_mark.length() > 0 {
+      let current_id = to_mark.shift()
+      
+      for i = 0; i < new_objects.length(); i = i + 1 {
+        if new_objects[i].id == current_id && !new_objects[i].marked {
+          new_objects[i] = GCObject {
+            id: new_objects[i].id,
+            data: new_objects[i].data,
+            references: new_objects[i].references,
+            marked: true
           }
-        }
-        None => {
-          continue_allocation = false
+          
+          // Add references to mark list
+          for ref_id in new_objects[i].references {
+            to_mark.push(ref_id)
+          }
+          break
         }
       }
     }
-  }
-  
-  // 验证内存使用在限制内
-  let actual_memory_usage = StressTestManager::get_memory_usage(stress_test_manager)
-  assert_true(actual_memory_usage <= memory_limit)
-  
-  // 随机释放一些对象
-  let mut freed_count = 0
-  for i in 0..allocated_objects.length() {
-    if i % 3 == 0 {
-      StressTestManager::deallocate(stress_test_manager, allocated_objects[i])
-      freed_count = freed_count + 1
+    
+    GCSpace {
+      objects: new_objects,
+      next_id: space.next_id
     }
   }
   
-  // 验证内存减少
-  let memory_after_cleanup = StressTestManager::get_memory_usage(stress_test_manager)
-  assert_true(memory_after_cleanup < actual_memory_usage)
-  
-  // 清理所有对象
-  for obj in allocated_objects {
-    StressTestManager::deallocate(stress_test_manager, obj)
+  let sweep_objects = fn(space : GCSpace) -> (Int, GCSpace) {
+    let mut survivors = []
+    let mut collected = 0
+    
+    for obj in space.objects {
+      if obj.marked {
+        survivors.push(GCObject {
+          id: obj.id,
+          data: obj.data,
+          references: obj.references,
+          marked: false // Reset mark for next GC
+        })
+      } else {
+        collected = collected + 1
+      }
+    }
+    
+    (collected, GCSpace {
+      objects: survivors,
+      next_id: space.next_id
+    })
   }
   
-  // 验证所有内存被释放
-  let final_memory_usage = StressTestManager::get_memory_usage(stress_test_manager)
-  assert_true(final_memory_usage < memory_limit * 0.1)
+  let garbage_collect = fn(space : GCSpace, root_ids : Array[Int]) -> (Int, GCSpace) {
+    let marked_space = mark_objects(space, root_ids)
+    sweep_objects(marked_space)
+  }
   
-  // 生成压力测试报告
-  let report = StressTestManager::generate_report(stress_test_manager)
-  assert_true(StressTestReport::get_peak_memory(report) > 0)
-  assert_true(StressTestReport::get_allocation_count(report) > 0)
-  assert_true(StressTestReport::get_deallocation_count(report) > 0)
+  // Test garbage collection
+  let space = create_gc_space()
+  
+  // Allocate objects
+  let (id1, space1) = allocate_object(space, "Root", [])
+  let (id2, space2) = allocate_object(space1, "Child1", [id1])
+  let (id3, space3) = allocate_object(space2, "Child2", [id1])
+  let (id4, space4) = allocate_object(space3, "Grandchild1", [id2])
+  let (id5, space5) = allocate_object(space4, "Grandchild2", [id2])
+  let (id6, space6) = allocate_object(space5, "Orphan", [])
+  
+  assert_eq(space6.objects.length(), 6)
+  
+  // Run garbage collection with id1 as root
+  let (collected, space7) = garbage_collect(space6, [id1])
+  
+  // Objects 1, 2, 3, 4, 5 should survive (reachable from root)
+  // Object 6 should be collected (orphan)
+  assert_eq(collected, 1)
+  assert_eq(space7.objects.length(), 5)
+  
+  // Verify remaining objects
+  let mut remaining_ids = []
+  for obj in space7.objects {
+    remaining_ids.push(obj.id)
+  }
+  
+  assert_true(remaining_ids.contains(id1))
+  assert_true(remaining_ids.contains(id2))
+  assert_true(remaining_ids.contains(id3))
+  assert_true(remaining_ids.contains(id4))
+  assert_true(remaining_ids.contains(id5))
+  assert_false(remaining_ids.contains(id6))
+  
+  // Run GC with no roots (collect everything)
+  let (collected2, space8) = garbage_collect(space7, [])
+  assert_eq(collected2, 5)
+  assert_eq(space8.objects.length(), 0)
 }

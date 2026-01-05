@@ -684,6 +684,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_data_structures_tests.mbt": {
   },
+  "azimuth_premium_data_structure_tests.mbt": {
+  },
   "azimuth_premium_data_serialization_tests.mbt": {
   },
   "azimuth_premium_data_quality_validation_tests.mbt": {

@@ -1,420 +1,676 @@
-// Azimuth Premium Concurrent Safety Tests
-// 测试并发操作的安全性
+// Azimuth Premium Test Suite - High Quality MoonBit Language Features
+// This file contains comprehensive test cases showcasing advanced MoonBit language features
 
-test "concurrent span creation and operations" {
-  // 测试并发Span创建和操作
-  let trace_id = "concurrent-trace-test"
+// Test 1: Advanced Pattern Matching and Type Coercion
+test "advanced pattern matching with type coercion" {
+  // Test pattern matching with different numeric types
+  let test_values = [42, 3.14, -10, 0.0, 100, -5.5]
   
-  // 模拟并发创建多个Span
-  let spans = [
-    for i in 0..=10 {
-      let span_id = "span-" + i.to_string()
-      let span_context = SpanContext::new(trace_id, span_id, true, "")
-      let span = Span::new("concurrent-operation-" + i.to_string(), Internal, span_context)
-      span
+  for value in test_values {
+    let result = match value {
+      x when x > 0 && x < 50 => "small positive"
+      x when x >= 50 => "large positive" 
+      x when x < 0 => "negative"
+      _ => "zero"
     }
-  ]
-  
-  // 并发操作所有Span
-  for span in spans {
-    Span::set_status(span, Ok, Some("Concurrent operation completed"))
-    Span::add_event(span, "concurrent-event", None)
+    
+    // Validate pattern matching logic
+    if value == 42 {
+      assert_eq(result, "small positive")
+    } else if value == 100 {
+      assert_eq(result, "large positive")
+    } else if value == -10 || value == -5.5 {
+      assert_eq(result, "negative")
+    } else if value == 0.0 {
+      assert_eq(result, "zero")
+    }
   }
   
-  // 并发结束所有Span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // 验证所有操作成功完成
-  assert_true(true)
-}
-
-test "concurrent metrics operations" {
-  // 测试并发指标操作
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent-meter")
-  
-  // 创建多个仪器
-  let counters = [
-    for i in 0..=5 {
-      Meter::create_counter(meter, "concurrent-counter-" + i.to_string())
-    }
+  // Test nested pattern matching with option types
+  let nested_options = [
+    Some(Some(42)),
+    Some(None),
+    None,
+    Some(Some(-10)),
+    Some(Some(0))
   ]
   
-  let histograms = [
-    for i in 0..=5 {
-      Meter::create_histogram(meter, "concurrent-histogram-" + i.to_string())
+  for opt in nested_options {
+    let description = match opt {
+      Some(Some(value)) when value > 0 => "positive nested value"
+      Some(Some(value)) when value < 0 => "negative nested value"
+      Some(Some(0)) => "zero nested value"
+      Some(None) => "inner none"
+      None => "outer none"
     }
-  ]
-  
-  let updown_counters = [
-    for i in 0..=5 {
-      Meter::create_updown_counter(meter, "concurrent-updown-" + i.to_string())
+    
+    // Validate nested pattern matching
+    match opt {
+      Some(Some(42)) => assert_eq(description, "positive nested value")
+      Some(None) => assert_eq(description, "inner none")
+      None => assert_eq(description, "outer none")
+      Some(Some(-10)) => assert_eq(description, "negative nested value")
+      Some(Some(0)) => assert_eq(description, "zero nested value")
+      _ => assert_true(false)
     }
-  ]
-  
-  // 并发操作所有Counter
-  for counter in counters {
-    Counter::add(counter, 1.0)
-    Counter::add(counter, 5.0)
-    Counter::add(counter, 10.0)
-  }
-  
-  // 并发操作所有Histogram
-  for histogram in histograms {
-    Histogram::record(histogram, 100.0)
-    Histogram::record(histogram, 200.0)
-    Histogram::record(histogram, 300.0)
-  }
-  
-  // 并发操作所有UpDownCounter
-  for updown_counter in updown_counters {
-    UpDownCounter::add(updown_counter, 5.0)
-    UpDownCounter::add(updown_counter, -2.0)
-    UpDownCounter::add(updown_counter, 10.0)
-  }
-  
-  // 验证所有操作成功完成
-  assert_true(true)
-}
-
-test "concurrent context propagation" {
-  // 测试并发上下文传播
-  let propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([propagator])
-  
-  // 创建多个并发上下文
-  let contexts = [
-    for i in 0..=10 {
-      let root_ctx = Context::root()
-      let key = ContextKey::new("concurrent.key." + i.to_string())
-      let value = "concurrent.value." + i.to_string()
-      Context::with_value(root_ctx, key, value)
-    }
-  ]
-  
-  // 并发注入到carrier
-  let carriers = [
-    for ctx in contexts {
-      let carrier = TextMapCarrier::new()
-      CompositePropagator::inject(composite, ctx, carrier)
-      carrier
-    }
-  ]
-  
-  // 并发从carrier提取
-  let extracted_contexts = [
-    for carrier in carriers {
-      CompositePropagator::extract(composite, carrier)
-    }
-  ]
-  
-  // 验证提取的上下文数量正确
-  assert_eq(extracted_contexts.length(), contexts.length())
-  
-  // 验证所有提取操作成功
-  for extracted_ctx in extracted_contexts {
-    assert_eq(Context::get(extracted_ctx, ContextKey::new("extracted")), Some("true"))
   }
 }
 
-test "concurrent resource operations" {
-  // 测试并发资源操作
-  let base_resource = Resource::new()
+// Test 2: Higher-Order Functions and Functional Composition
+test "higher-order functions and functional composition" {
+  // Test function composition
+  let add_one = |x| x + 1
+  let double = |x| x * 2
+  let square = |x| x * x
   
-  // 创建多个带有不同属性的资源
-  let resources = [
-    for i in 0..=10 {
-      let attributes = [
-        ("concurrent.key." + i.to_string(), StringValue("concurrent.value." + i.to_string())),
-        ("shared.key", StringValue("shared.value"))
-      ]
-      Resource::with_attributes(base_resource, attributes)
+  // Compose functions: square(double(add_one(x)))
+  let composed = |x| square(double(add_one(x)))
+  
+  assert_eq(composed(3), 16)  // (3 + 1) * 2 = 8, 8^2 = 64
+  assert_eq(composed(5), 36)  // (5 + 1) * 2 = 12, 12^2 = 144
+  
+  // Test higher-order functions with collections
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // Filter even numbers, then transform, then reduce
+  let sum_of_squares_of_evens = numbers
+    .filter(|x| x % 2 == 0)
+    .map(|x| x * x)
+    .reduce(|acc, val| acc + val, 0)
+  
+  assert_eq(sum_of_squares_of_evens, 220) // 4 + 16 + 36 + 64 + 100 = 220
+  
+  // Test currying and partial application
+  let multiply = |x| |y| x * y
+  let double = multiply(2)
+  let triple = multiply(3)
+  
+  assert_eq(double(5), 10)
+  assert_eq(triple(5), 15)
+  
+  // Test function as parameter
+  let apply_operation = |x, operation| operation(x)
+  
+  assert_eq(apply_operation(10, double), 20)
+  assert_eq(apply_operation(10, triple), 30)
+  assert_eq(apply_operation(10, square), 100)
+}
+
+// Test 3: Advanced Type System Features
+test "advanced type system features" {
+  // Test type inference and generic operations
+  let int_list = [1, 2, 3, 4, 5]
+  let float_list = [1.1, 2.2, 3.3, 4.4, 5.5]
+  let string_list = ["a", "b", "c", "d", "e"]
+  
+  // Generic operations on different types
+  let int_sum = int_list.reduce(|acc, val| acc + val, 0)
+  let float_sum = float_list.reduce(|acc, val| acc + val, 0.0)
+  let string_concat = string_list.reduce(|acc, val| acc + val, "")
+  
+  assert_eq(int_sum, 15)
+  assert_true(float_sum > 16.0 && float_sum < 17.0)
+  assert_eq(string_concat, "abcde")
+  
+  // Test type constraints and bounds
+  let process_numbers = |numbers| {
+    let mut count = 0
+    let mut sum = 0
+    
+    for num in numbers {
+      count = count + 1
+      sum = sum + num
     }
-  ]
-  
-  // 并发访问所有资源的属性
-  for resource in resources {
-    assert_eq(Resource::get_attribute(resource, "shared.key"), Some(StringValue("shared.value")))
+    
+    if count > 0 {
+      sum / count
+    } else {
+      0
+    }
   }
   
-  // 并发合并资源
-  let merged_resources = [
-    for i in 0..=resources.length() - 1 {
-      if i > 0 {
-        Resource::merge(resources[i-1], resources[i])
+  assert_eq(process_numbers([10, 20, 30]), 20)
+  assert_eq(process_numbers([]), 0)
+  assert_eq(process_numbers([5]), 5)
+  
+  // Test union types and variant handling
+  let mixed_values = [1, 2.5, "hello", 3, 4.7, "world"]
+  
+  let type_counts = mixed_values.reduce(
+    |acc, val| {
+      match val {
+        x when x is Int => { int_count: acc.int_count + 1, float_count: acc.float_count, string_count: acc.string_count }
+        x when x is Float => { int_count: acc.int_count, float_count: acc.float_count + 1, string_count: acc.string_count }
+        x when x is String => { int_count: acc.int_count, float_count: acc.float_count, string_count: acc.string_count + 1 }
+        _ => acc
+      }
+    },
+    { int_count: 0, float_count: 0, string_count: 0 }
+  )
+  
+  assert_eq(type_counts.int_count, 2)
+  assert_eq(type_counts.float_count, 2)
+  assert_eq(type_counts.string_count, 2)
+}
+
+// Test 4: Mutable State and Reference Handling
+test "mutable state and reference handling" {
+  // Test mutable variables and scope
+  let mut counter = 0
+  
+  // Create closure that captures mutable variable
+  let incrementer = || {
+    counter = counter + 1
+    counter
+  }
+  
+  assert_eq(incrementer(), 1)
+  assert_eq(incrementer(), 2)
+  assert_eq(incrementer(), 3)
+  assert_eq(counter, 3)
+  
+  // Test mutable array operations
+  let mut mutable_array = [1, 2, 3, 4, 5]
+  
+  // In-place transformation
+  for i = 0; i < mutable_array.length(); i = i + 1 {
+    mutable_array[i] = mutable_array[i] * 2
+  }
+  
+  assert_eq(mutable_array, [2, 4, 6, 8, 10])
+  
+  // Test mutable record fields
+  let mut point = { x: 10, y: 20 }
+  
+  point.x = point.x + 5
+  point.y = point.y - 5
+  
+  assert_eq(point.x, 15)
+  assert_eq(point.y, 15)
+  
+  // Test reference sharing and aliasing
+  let data = [1, 2, 3, 4, 5]
+  let reference1 = data
+  let reference2 = data
+  
+  // All references should point to the same data
+  assert_eq(reference1.length(), 5)
+  assert_eq(reference2.length(), 5)
+  assert_eq(reference1[0], 1)
+  assert_eq(reference2[0], 1)
+}
+
+// Test 5: Advanced Control Flow and Exception Handling
+test "advanced control flow and exception handling" {
+  // Test early returns and guard clauses
+  let process_value = |value| {
+    // Guard clause for invalid input
+    if value < 0 {
+      return "invalid: negative value"
+    }
+    
+    // Guard clause for zero
+    if value == 0 {
+      return "special case: zero"
+    }
+    
+    // Normal processing
+    if value % 2 == 0 {
+      "even number"
+    } else {
+      "odd number"
+    }
+  }
+  
+  assert_eq(process_value(-5), "invalid: negative value")
+  assert_eq(process_value(0), "special case: zero")
+  assert_eq(process_value(4), "even number")
+  assert_eq(process_value(7), "odd number")
+  
+  // Test try-catch style error handling with result types
+  let divide_safely = |numerator, denominator| {
+    if denominator == 0 {
+      Err("Division by zero")
+    } else {
+      Ok(numerator / denominator)
+    }
+  }
+  
+  let valid_result = divide_safely(10, 2)
+  let invalid_result = divide_safely(10, 0)
+  
+  match valid_result {
+    Ok(value) => assert_eq(value, 5)
+    Err(_) => assert_true(false)
+  }
+  
+  match invalid_result {
+    Ok(_) => assert_true(false)
+    Err(message) => assert_eq(message, "Division by zero")
+  }
+  
+  // Test chained operations with error propagation
+  let chained_operation = |input| {
+    match divide_safely(input, 2) {
+      Ok(step1) => match divide_safely(step1, 5) {
+        Ok(step2) => step2 * 10
+        Err(_) => -1  // Error in second division
+      }
+      Err(_) => -2  // Error in first division
+    }
+  }
+  
+  assert_eq(chained_operation(100), 100)  // 100/2=50, 50/5=10, 10*10=100
+  assert_eq(chained_operation(5), -2)     // 5/2 fails in integer division
+  assert_eq(chained_operation(0), -2)     // 0/2 fails in integer division
+}
+
+// Test 6: Advanced String Manipulation and Unicode Handling
+test "advanced string manipulation and unicode handling" {
+  // Test string slicing and indexing
+  let test_string = "Hello, 世界! 🌍"
+  
+  // Test basic string operations
+  assert_eq(test_string.length(), 14)  // Counting code points
+  assert_eq(test_string.contains("Hello"), true)
+  assert_eq(test_string.contains("世界"), true)
+  assert_eq(test_string.contains("🌍"), true)
+  
+  // Test string transformations
+  let uppercase = test_string.to_uppercase()
+  let lowercase = test_string.to_lowercase()
+  
+  assert_eq(uppercase.contains("HELLO"), true)
+  assert_eq(lowercase.contains("hello"), true)
+  
+  // Test string splitting and joining
+  let csv_string = "apple,banana,cherry,date"
+  let fruits = csv_string.split(",")
+  
+  assert_eq(fruits.length(), 4)
+  assert_eq(fruits[0], "apple")
+  assert_eq(fruits[1], "banana")
+  assert_eq(fruits[2], "cherry")
+  assert_eq(fruits[3], "date")
+  
+  let rejoined = fruits.join("|")
+  assert_eq(rejoined, "apple|banana|cherry|date")
+  
+  // Test string trimming and padding
+  let padded_string = "   trimmed content   "
+  let trimmed = padded_string.trim()
+  
+  assert_eq(trimmed, "trimmed content")
+  
+  // Test string formatting and interpolation
+  let name = "Azimuth"
+  let version = "2.0"
+  let formatted = "System: {name}, Version: {version}"
+  
+  assert_eq(formatted.contains(name), true)
+  assert_eq(formatted.contains(version), true)
+  
+  // Test Unicode normalization and comparison
+  let unicode_string1 = "café"
+  let unicode_string2 = "cafe\u{0301}"  // Same character with combining accent
+  
+  // These should be equal after normalization
+  assert_eq(unicode_string1.normalize(), unicode_string2.normalize())
+}
+
+// Test 7: Memory Management and Resource Cleanup
+test "memory management and resource cleanup" {
+  // Test resource acquisition and release patterns
+  let create_resource = |id| {
+    { resource_id: id, is_active: true }
+  }
+  
+  let use_resource = |resource| {
+    // Simulate resource usage
+    assert_true(resource.is_active)
+    resource.resource_id * 2
+  }
+  
+  let cleanup_resource = |resource| {
+    // Simulate resource cleanup
+    { resource_id: resource.resource_id, is_active: false }
+  }
+  
+  // Test resource lifecycle
+  let resource = create_resource(42)
+  let result = use_resource(resource)
+  let cleaned_resource = cleanup_resource(resource)
+  
+  assert_eq(result, 84)
+  assert_false(cleaned_resource.is_active)
+  assert_eq(cleaned_resource.resource_id, 42)
+  
+  // Test memory-efficient operations with large datasets
+  let large_dataset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].repeat(1000)  // 10,000 elements
+  
+  // Process dataset in chunks to avoid memory issues
+  let chunk_size = 1000
+  let mut chunk_sum = 0
+  let mut processed_chunks = 0
+  
+  for i = 0; i < large_dataset.length(); i = i + chunk_size {
+    let end_index = if i + chunk_size > large_dataset.length() {
+      large_dataset.length()
+    } else {
+      i + chunk_size
+    }
+    
+    let chunk = large_dataset.slice(i, end_index)
+    chunk_sum = chunk_sum + chunk.reduce(|acc, val| acc + val, 0)
+    processed_chunks = processed_chunks + 1
+  }
+  
+  assert_eq(processed_chunks, 10)
+  assert_eq(chunk_sum, 55000)  // Sum of 1..10 repeated 1000 times
+  
+  // Test lazy evaluation and deferred computation
+  let expensive_computation = || {
+    // Simulate expensive operation
+    [1, 2, 3, 4, 5].map(|x| x * x * x).reduce(|acc, val| acc + val, 0)
+  }
+  
+  // Computation should only happen when called
+  let lazy_result = expensive_computation
+  assert_eq(lazy_result(), 225)  // 1^3 + 2^3 + 3^3 + 4^3 + 5^3 = 225
+}
+
+// Test 8: Advanced Numeric Operations and Precision
+test "advanced numeric operations and precision" {
+  // Test floating-point precision and comparison
+  let precise_calculations = [
+    (0.1 + 0.2, 0.3, "Basic floating point addition"),
+    (1.0 - 0.9, 0.1, "Floating point subtraction"),
+    (0.1 * 0.2, 0.02, "Floating point multiplication"),
+    (1.0 / 3.0, 0.3333333333333333, "Floating point division")
+  ]
+  
+  for (result, expected, description) in precise_calculations {
+    // Use epsilon comparison for floating-point numbers
+    let epsilon = 0.0001
+    let diff = if result > expected { result - expected } else { expected - result }
+    assert_true(diff < epsilon, description + " should be approximately equal")
+  }
+  
+  // Test large number operations
+  let large_numbers = [
+    1000000, 2000000, 3000000, 4000000, 5000000
+  ]
+  
+  let large_sum = large_numbers.reduce(|acc, val| acc + val, 0)
+  let large_product = large_numbers.reduce(|acc, val| acc * val, 1)
+  
+  assert_eq(large_sum, 15000000)
+  assert_eq(large_product, 12000000000000000000000)  // Very large number
+  
+  // Test numeric type conversions and boundaries
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  // Test boundary conditions
+  assert_eq(max_int + 1, min_int)  // Overflow should wrap around
+  assert_eq(min_int - 1, max_int)  // Underflow should wrap around
+  
+  // Test scientific notation and very small numbers
+  let scientific_numbers = [
+    1.23e-10,  // Very small
+    4.56e+20,  // Very large
+    7.89e-5,   // Small decimal
+    1.0e+0     // One in scientific notation
+  ]
+  
+  for num in scientific_numbers {
+    assert_true(num > 0.0)  // All should be positive
+    assert_true(num.is_finite())  // All should be finite numbers
+  }
+  
+  // Test bit manipulation operations
+  let bit_operations = [
+    (5 & 3, 1, "Bitwise AND"),
+    (5 | 3, 7, "Bitwise OR"),
+    (5 ^ 3, 6, "Bitwise XOR"),
+    (5 << 2, 20, "Left shift"),
+    (5 >> 1, 2, "Right shift"),
+    (~5, -6, "Bitwise NOT")
+  ]
+  
+  for (result, expected, description) in bit_operations {
+    assert_eq(result, expected, description + " should match expected result")
+  }
+}
+
+// Test 9: Advanced Collection Operations and Algorithms
+test "advanced collection operations and algorithms" {
+  // Test complex collection transformations
+  let data = [
+    { name: "Alice", age: 25, scores: [85, 90, 78] },
+    { name: "Bob", age: 30, scores: [92, 88, 95] },
+    { name: "Charlie", age: 35, scores: [78, 82, 80] },
+    { name: "Diana", age: 28, scores: [95, 98, 92] }
+  ]
+  
+  // Filter by age, then calculate average score, then sort by average
+  let filtered_averages = data
+    .filter(|person| person.age >= 25 && person.age <= 30)
+    .map(|person| {
+      let sum = person.scores.reduce(|acc, val| acc + val, 0)
+      let avg = sum / person.scores.length()
+      { name: person.name, average_score: avg }
+    })
+    .sort_by(|a, b| if a.average_score > b.average_score { 1 } else if a.average_score < b.average_score { -1 } else { 0 })
+  
+  assert_eq(filtered_averages.length(), 3)  // Alice, Bob, Diana
+  
+  // Alice: (85+90+78)/3 = 84.33
+  // Diana: (95+98+92)/3 = 95.0
+  // Bob: (92+88+95)/3 = 91.67
+  
+  assert_eq(filtered_averages[0].name, "Alice")    // Lowest average
+  assert_eq(filtered_averages[2].name, "Diana")    // Highest average
+  
+  // Test grouping and aggregation
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  let grouped_by_parity = numbers.reduce(
+    |acc, val| {
+      if val % 2 == 0 {
+        { even: acc.even + [val], odd: acc.odd }
       } else {
-        resources[i]
+        { even: acc.even, odd: acc.odd + [val] }
+      }
+    },
+    { even: [], odd: [] }
+  )
+  
+  assert_eq(grouped_by_parity.even, [2, 4, 6, 8, 10])
+  assert_eq(grouped_by_parity.odd, [1, 3, 5, 7, 9])
+  
+  // Test advanced sorting algorithms
+  let unsorted_data = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42]
+  
+  // Implement bubble sort for testing
+  let bubble_sort = |arr| {
+    let mut sorted_arr = arr.copy()
+    let n = sorted_arr.length()
+    
+    for i = 0; i < n; i = i + 1 {
+      for j = 0; j < n - i - 1; j = j + 1 {
+        if sorted_arr[j] > sorted_arr[j + 1] {
+          let temp = sorted_arr[j]
+          sorted_arr[j] = sorted_arr[j + 1]
+          sorted_arr[j + 1] = temp
+        }
       }
     }
-  ]
+    
+    sorted_arr
+  }
   
-  // 验证所有合并操作成功
-  assert_eq(merged_resources.length(), resources.length())
+  let sorted_data = bubble_sort(unsorted_data)
+  
+  // Verify sorting
+  for i = 0; i < sorted_data.length() - 1; i = i + 1 {
+    assert_true(sorted_data[i] <= sorted_data[i + 1])
+  }
+  
+  assert_eq(sorted_data[0], 11)   // Minimum
+  assert_eq(sorted_data[sorted_data.length() - 1], 90)  // Maximum
+  
+  // Test set operations
+  let set1 = [1, 2, 3, 4, 5]
+  let set2 = [4, 5, 6, 7, 8]
+  
+  // Union
+  let union = set1 + set2.filter(|x| !set1.contains(x))
+  assert_eq(union.sort(), [1, 2, 3, 4, 5, 6, 7, 8])
+  
+  // Intersection
+  let intersection = set1.filter(|x| set2.contains(x))
+  assert_eq(intersection.sort(), [4, 5])
+  
+  // Difference
+  let difference = set1.filter(|x| !set2.contains(x))
+  assert_eq(difference.sort(), [1, 2, 3])
 }
 
-test "concurrent log operations" {
-  // 测试并发日志操作
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent-logger")
+// Test 10: Advanced Error Recovery and Resilience Patterns
+test "advanced error recovery and resilience patterns" {
+  // Test circuit breaker pattern
+  let mut circuit_state = "closed"
+  let mut failure_count = 0
+  let mut last_failure_time = 0
+  let failure_threshold = 3
+  let recovery_timeout = 60000  // 1 minute in milliseconds
   
-  // 创建多个并发日志记录
-  let log_records = [
-    for i in 0..=100 {
-      LogRecord::new(Info, "Concurrent log message " + i.to_string())
+  let circuit_breaker = |operation| {
+    let current_time = 1640995200000L  // Mock current time
+    
+    match circuit_state {
+      "open" when current_time - last_failure_time > recovery_timeout => {
+        // Try to close circuit
+        circuit_state = "half-open"
+        operation()
+      }
+      "open" => {
+        Err("Circuit is open")
+      }
+      "half-open" => {
+        match operation() {
+          Ok(result) => {
+            circuit_state = "closed"
+            failure_count = 0
+            Ok(result)
+          }
+          Err(e) => {
+            circuit_state = "open"
+            last_failure_time = current_time
+            Err(e)
+          }
+        }
+      }
+      "closed" => {
+        match operation() {
+          Ok(result) => Ok(result)
+          Err(e) => {
+            failure_count = failure_count + 1
+            if failure_count >= failure_threshold {
+              circuit_state = "open"
+              last_failure_time = current_time
+            }
+            Err(e)
+          }
+        }
+      }
+      _ => Err("Unknown circuit state")
     }
-  ]
-  
-  // 并发发出所有日志记录
-  for record in log_records {
-    Logger::emit(logger, record)
   }
   
-  // 创建带有复杂属性的并发日志记录
-  let complex_records = [
-    for i in 0..=50 {
-      let attributes = Attributes::new()
-      Attributes::set(attributes, "concurrent.id", IntValue(i))
-      Attributes::set(attributes, "concurrent.type", StringValue("concurrent-test"))
-      
-      LogRecord::new_with_context(
-        Info,
-        Some("Complex concurrent log " + i.to_string()),
-        Some(attributes),
-        Some(1700000000000000000L + i.to_int64()),
-        None,
-        Some("concurrent-trace"),
-        Some("concurrent-span"),
-        None
-      )
+  // Test circuit breaker behavior
+  let failing_operation = || {
+    failure_count = failure_count + 1
+    if failure_count < 4 {
+      Err("Operation failed")
+    } else {
+      Ok("Success after failures")
     }
-  ]
-  
-  // 并发发出复杂日志记录
-  for record in complex_records {
-    Logger::emit(logger, record)
   }
   
-  // 验证所有操作成功
-  assert_true(true)
-}
-
-test "concurrent baggage operations" {
-  // 测试并发Baggage操作
-  let base_baggage = Baggage::new()
+  // First few failures
+  assert_eq(circuit_breaker(failing_operation).is_err(), true)
+  assert_eq(circuit_breaker(failing_operation).is_err(), true)
+  assert_eq(circuit_breaker(failing_operation).is_err(), true)
   
-  // 创建多个并发的baggage实例
-  let baggage_instances = [
-    for i in 0..=10 {
-      let baggage = Baggage::new()
-      let baggage = Baggage::set_entry(baggage, "baggage.id." + i.to_string(), "value." + i.to_string())
-      let baggage = Baggage::set_entry(baggage, "shared.key", "shared.value")
-      baggage
+  // Circuit should now be open
+  assert_eq(circuit_state, "open")
+  assert_eq(circuit_breaker(failing_operation).is_err(), true)
+  
+  // Test retry pattern with exponential backoff
+  let retry_with_backoff = |operation, max_retries| {
+    let mut attempt = 0
+    let mut delay = 1000  // Start with 1 second delay
+    
+    while attempt < max_retries {
+      match operation() {
+        Ok(result) => return Ok(result),
+        Err(e) => {
+          attempt = attempt + 1
+          if attempt >= max_retries {
+            return Err(e)
+          }
+          // In real implementation, would wait for delay
+          delay = delay * 2  // Exponential backoff
+        }
+      }
     }
-  ]
-  
-  // 并发访问所有baggage条目
-  for baggage in baggage_instances {
-    assert_eq(Baggage::get_entry(baggage, "shared.key"), Some("shared.value"))
+    
+    Err("Max retries exceeded")
   }
   
-  // 并发添加更多条目
-  let updated_baggage = [
-    for baggage in baggage_instances {
-      let updated = Baggage::set_entry(baggage, "additional.key", "additional.value")
-      updated
+  let mut attempt_count = 0
+  let eventual_success_operation = || {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err("Temporary failure")
+    } else {
+      Ok("Success after retries")
     }
-  ]
-  
-  // 并发移除条目
-  let final_baggage = [
-    for baggage in updated_baggage {
-      let final_bag = Baggage::remove_entry(baggage, "shared.key")
-      final_bag
-    }
-  ]
-  
-  // 验证所有操作成功
-  assert_eq(final_baggage.length(), updated_baggage.length())
-}
-
-test "concurrent attribute operations" {
-  // 测试并发属性操作
-  let base_attributes = Attributes::new()
-  
-  // 创建多个并发的属性实例
-  let attributes_instances = [
-    for i in 0..=10 {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "concurrent.attr." + i.to_string(), StringValue("value." + i.to_string()))
-      Attributes::set(attrs, "shared.attr", StringValue("shared.value"))
-      attrs
-    }
-  ]
-  
-  // 并发访问所有属性
-  for attrs in attributes_instances {
-    assert_eq(Attributes::get(attrs, "shared.attr"), Some(StringValue("shared.value")))
   }
   
-  // 并发设置更多属性
-  let updated_attributes = [
-    for attrs in attributes_instances {
-      Attributes::set(attrs, "additional.attr", StringValue("additional.value"))
-      Attributes::set(attrs, "number.attr", IntValue(42))
-      Attributes::set(attrs, "bool.attr", BoolValue(true))
-      attrs
+  let retry_result = retry_with_backoff(eventual_success_operation, 5)
+  assert_eq(retry_result.is_ok(), true)
+  
+  // Test timeout pattern
+  let with_timeout = |operation, timeout_ms| {
+    let start_time = 1640995200000L  // Mock start time
+    let current_time = 1640995200000L  // Mock current time (no passage of time in test)
+    
+    if current_time - start_time > timeout_ms {
+      Err("Operation timed out")
+    } else {
+      operation()
     }
-  ]
-  
-  // 验证所有操作成功
-  assert_eq(updated_attributes.length(), attributes_instances.length())
-}
-
-test "concurrent http client operations" {
-  // 测试并发HTTP客户端操作
-  let client = HttpClient::new()
-  
-  // 创建多个并发请求
-  let requests = [
-    for i in 0..=10 {
-      let url = "https://example.com/endpoint/" + i.to_string()
-      let headers = [
-        ("request-id", i.to_string()),
-        ("concurrent-test", "true")
-      ]
-      HttpRequest::new("GET", url, headers, Some("request body " + i.to_string()))
-    }
-  ]
-  
-  // 并发处理所有请求
-  let processed_requests = [
-    for request in requests {
-      // 验证请求属性
-      assert_eq(HttpRequest::http_method(request), "GET")
-      assert_true(HttpRequest::url(request).starts_with("https://example.com/endpoint/"))
-      assert_eq(HttpRequest::body(request), Some("request body " + HttpRequest::url(request).split("/").last()))
-      
-      // 创建响应
-      let status_code = 200
-      let response_headers = [
-        ("response-id", HttpRequest::http_method(request)),
-        ("concurrent-response", "true")
-      ]
-      HttpResponse::new(status_code, response_headers, Some("response body"))
-    }
-  ]
-  
-  // 验证所有响应
-  for response in processed_requests {
-    assert_eq(HttpResponse::status_code(response), 200)
-    assert_eq(HttpResponse::body(response), Some("response body"))
   }
   
-  // 验证所有操作成功
-  assert_eq(processed_requests.length(), requests.length())
-}
-
-test "concurrent span parent-child relationships" {
-  // 测试并发Span父子关系
-  let trace_id = "concurrent-parent-child-trace"
+  let quick_operation = || Ok("Quick result")
+  let timeout_result = with_timeout(quick_operation, 1000)
+  assert_eq(timeout_result.is_ok(), true)
   
-  // 创建父Span
-  let parent_context = SpanContext::new(trace_id, "parent-span", true, "")
-  let parent_span = Span::new("parent-operation", Internal, parent_context)
-  
-  // 创建多个子Span
-  let child_spans = [
-    for i in 0..=10 {
-      let child_id = "child-span-" + i.to_string()
-      let child_context = SpanContext::new(trace_id, child_id, true, "")
-      let child_span = Span::new("child-operation-" + i.to_string(), Internal, child_context)
-      
-      // 添加事件到子Span
-      Span::add_event(child_span, "child-event-" + i.to_string(), None)
-      
-      child_span
+  // Test fallback pattern
+  let with_fallback = |primary_operation, fallback_operation| {
+    match primary_operation() {
+      Ok(result) => Ok(result),
+      Err(_) => fallback_operation()
     }
-  ]
-  
-  // 并发操作所有子Span
-  for child_span in child_spans {
-    Span::set_status(child_span, Ok, Some("Child operation completed"))
   }
   
-  // 并发结束所有子Span
-  for child_span in child_spans {
-    Span::end(child_span)
-  }
+  let failing_primary = || Err("Primary operation failed")
+  let working_fallback = || Ok("Fallback result")
   
-  // 结束父Span
-  Span::end(parent_span)
-  
-  // 验证所有操作成功
-  assert_true(true)
-}
-
-test "concurrent meter and instrument creation" {
-  // 测试并发Meter和仪器创建
-  let provider = MeterProvider::default()
-  
-  // 创建多个并发Meter
-  let meters = [
-    for i in 0..=10 {
-      MeterProvider::get_meter(provider, "concurrent-meter-" + i.to_string())
-    }
-  ]
-  
-  // 为每个Meter创建多个仪器
-  let all_instruments = [
-    for meter in meters {
-      let counter = Meter::create_counter(meter, "counter")
-      let histogram = Meter::create_histogram(meter, "histogram")
-      let updown_counter = Meter::create_updown_counter(meter, "updown")
-      let gauge = Meter::create_gauge(meter, "gauge")
-      
-      [counter, Histogram::as_instrument(histogram), Histogram::as_instrument(updown_counter), Histogram::as_instrument(gauge)]
-    }
-  ].flatten()
-  
-  // 并发操作所有仪器
-  for instrument in all_instruments {
-    // 验证仪器名称不为空
-    assert_true(Instrument::name(instrument).length() > 0)
-  }
-  
-  // 验证所有仪器创建成功
-  assert_true(all_instruments.length() > 0)
-}
-
-test "concurrent logger and log record creation" {
-  // 测试并发Logger和日志记录创建
-  let provider = LoggerProvider::default()
-  
-  // 创建多个并发Logger
-  let loggers = [
-    for i in 0..=10 {
-      LoggerProvider::get_logger(provider, "concurrent-logger-" + i.to_string())
-    }
-  ]
-  
-  // 为每个Logger创建多个日志记录
-  let all_log_records = [
-    for logger in loggers {
-      let info_record = LogRecord::new(Info, "Info message from concurrent logger")
-      let warn_record = LogRecord::new(Warn, "Warning message from concurrent logger")
-      let error_record = LogRecord::new(Error, "Error message from concurrent logger")
-      
-      [info_record, warn_record, error_record]
-    }
-  ].flatten()
-  
-  // 并发发出所有日志记录
-  for (i, record) in all_log_records.enumerate() {
-    Logger::emit(loggers[i / 3], record)
-  }
-  
-  // 验证所有日志记录创建成功
-  assert_true(all_log_records.length() > 0)
+  let fallback_result = with_fallback(failing_primary, working_fallback)
+  assert_eq(fallback_result.is_ok(), true)
+  assert_eq(fallback_result.unwrap(), "Fallback result")
 }

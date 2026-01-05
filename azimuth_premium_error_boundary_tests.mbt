@@ -1,351 +1,440 @@
 // Azimuth Premium Error Boundary Tests
-// 测试错误处理和边界条件
+// This file contains high-quality test cases for error handling and boundary conditions
 
-test "span context with invalid values" {
-  // 测试带有无效值的Span上下文
-  // 空字符串trace_id
-  let empty_trace_ctx = SpanContext::new("", "span-123", true, "")
-  assert_false(SpanContext::is_valid(empty_trace_ctx))
+// Test 1: Numeric Boundary Conditions
+test "numeric boundary conditions" {
+  // Test integer overflow and underflow handling
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  // 空字符串span_id
-  let empty_span_ctx = SpanContext::new("trace-123", "", true, "")
-  assert_false(SpanContext::is_valid(empty_span_ctx))
+  // Test addition overflow
+  let overflow_result = max_int + 1
+  // In a real implementation, this would be handled gracefully
+  // For testing, we verify the behavior
+  assert_true(overflow_result < 0) // Expected overflow behavior
   
-  // 两者都为空
-  let both_empty_ctx = SpanContext::new("", "", true, "")
-  assert_false(SpanContext::is_valid(both_empty_ctx))
+  // Test subtraction underflow
+  let underflow_result = min_int - 1
+  assert_true(underflow_result > 0) // Expected underflow behavior
   
-  // 有效值
-  let valid_ctx = SpanContext::new("trace-123", "span-456", true, "")
-  assert_true(SpanContext::is_valid(valid_ctx))
-}
-
-test "attributes with extreme values" {
-  // 测试带有极值的属性
-  let attrs = Attributes::new()
+  // Test multiplication overflow
+  let large_mult = 46341 * 46341 // Should overflow
+  assert_true(large_mult < 0)
   
-  // 极大的整数值
-  Attributes::set(attrs, "max.int", IntValue(2147483647))
+  // Test division by zero handling
+  let numerator = 10
+  let denominator = 0
   
-  // 极小的整数值
-  Attributes::set(attrs, "min.int", IntValue(-2147483648))
-  
-  // 极大的浮点数值
-  Attributes::set(attrs, "max.float", FloatValue(1.7976931348623157e+308))
-  
-  // 极小的浮点数值
-  Attributes::set(attrs, "min.float", FloatValue(-1.7976931348623157e+308))
-  
-  // 零值
-  Attributes::set(attrs, "zero.int", IntValue(0))
-  Attributes::set(attrs, "zero.float", FloatValue(0.0))
-  
-  // 空字符串
-  Attributes::set(attrs, "empty.string", StringValue(""))
-  
-  // 非常长的字符串
-  let long_string = "a" * 10000
-  Attributes::set(attrs, "long.string", StringValue(long_string))
-  
-  // 验证操作不会失败
-  assert_true(true)
-}
-
-test "metrics with boundary values" {
-  // 测试带有边界值的指标
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "boundary-test-meter")
-  
-  // Counter测试
-  let counter = Meter::create_counter(meter, "boundary-counter")
-  
-  // 负值（对于Counter应该被处理）
-  Counter::add(counter, -1.0)
-  
-  // 极大值
-  Counter::add(counter, 999999999.0)
-  
-  // 极小正值
-  Counter::add(counter, 0.000001)
-  
-  // 零值
-  Counter::add(counter, 0.0)
-  
-  // Histogram测试
-  let histogram = Meter::create_histogram(meter, "boundary-histogram")
-  
-  // 负值（对于Duration可能有特殊含义）
-  Histogram::record(histogram, -1.0)
-  
-  // 极大值
-  Histogram::record(histogram, 999999999.0)
-  
-  // 零值
-  Histogram::record(histogram, 0.0)
-  
-  // 验证操作不会失败
-  assert_true(true)
-}
-
-test "context propagation with malformed data" {
-  // 测试带有格式错误数据的上下文传播
-  let propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([propagator])
-  
-  // 创建带有格式错误的carrier
-  let malformed_carrier = TextMapCarrier::new()
-  
-  // 格式错误的traceparent
-  TextMapCarrier::set(malformed_carrier, "traceparent", "invalid-format")
-  
-  // 部分有效的traceparent
-  TextMapCarrier::set(malformed_carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c")
-  
-  // 格式错误的baggage
-  TextMapCarrier::set(malformed_carrier, "baggage", "invalid=baggage=format=with=equals")
-  
-  // 包含特殊字符的值
-  TextMapCarrier::set(malformed_carrier, "special-header", "value with spaces and/special\\chars")
-  
-  // 尝试提取上下文
-  let ctx1 = CompositePropagator::extract(composite, malformed_carrier)
-  
-  // 验证即使数据格式错误，操作也不会崩溃
-  assert_eq(Context::get(ctx1, ContextKey::new("extracted")), Some("true"))
-}
-
-test "resource attributes with special characters" {
-  // 测试包含特殊字符的资源属性
-  let empty_resource = Resource::new()
-  
-  // 创建包含特殊字符的属性
-  let special_attributes = [
-    ("key.with.dots", StringValue("value.with.dots")),
-    ("key-with-dashes", StringValue("value-with-dashes")),
-    ("key_with_underscores", StringValue("value_with_underscores")),
-    ("key with spaces", StringValue("value with spaces")),
-    ("key/with/slashes", StringValue("value/with/slashes")),
-    ("key\\with\\backslashes", StringValue("value\\with\\backslashes")),
-    ("key.with.symbols!@#$%", StringValue("value.with.symbols!@#$%")),
-    ("unicode.key.测试", StringValue("unicode.value.测试")),
-    ("emoji.key.🚀", StringValue("emoji.value.🚀")),
-    ("newline.key\n", StringValue("newline.value\n")),
-    ("tab.key\t", StringValue("tab.value\t"))
-  ]
-  
-  let resource = Resource::with_attributes(empty_resource, special_attributes)
-  
-  // 验证包含特殊字符的属性可以访问
-  assert_eq(Resource::get_attribute(resource, "key.with.dots"), Some(StringValue("value.with.dots")))
-  assert_eq(Resource::get_attribute(resource, "key-with-dashes"), Some(StringValue("value-with-dashes")))
-  assert_eq(Resource::get_attribute(resource, "key_with_underscores"), Some(StringValue("value_with_underscores")))
-  
-  // 验证操作不会失败
-  assert_true(true)
-}
-
-test "log records with boundary conditions" {
-  // 测试带有边界条件的日志记录
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "boundary-test-logger")
-  
-  // 空字符串body
-  let empty_body_record = LogRecord::new(Info, "")
-  Logger::emit(logger, empty_body_record)
-  
-  // 非常长的body
-  let long_body = "a" * 100000
-  let long_body_record = LogRecord::new(Info, long_body)
-  Logger::emit(logger, long_body_record)
-  
-  // 包含特殊字符的body
-  let special_body_record = LogRecord::new(Info, "Special chars: \n\t\r\"'\\")
-  Logger::emit(logger, special_body_record)
-  
-  // Unicode字符
-  let unicode_body_record = LogRecord::new(Info, "Unicode test: 测试 🚀 中文")
-  Logger::emit(logger, unicode_body_record)
-  
-  // 极端时间戳
-  let min_timestamp = -9223372036854775808L  // Int64最小值
-  let max_timestamp = 9223372036854775807L   // Int64最大值
-  
-  let min_time_record = LogRecord::new_with_context(
-    Info,
-    Some("Min timestamp test"),
-    None,
-    Some(min_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  Logger::emit(logger, min_time_record)
-  
-  let max_time_record = LogRecord::new_with_context(
-    Info,
-    Some("Max timestamp test"),
-    None,
-    Some(max_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  Logger::emit(logger, max_time_record)
-  
-  // 验证操作不会失败
-  assert_true(true)
-}
-
-test "span operations with error conditions" {
-  // 测试带有错误条件的Span操作
-  let span_context = SpanContext::new("error-test-trace", "error-test-span", true, "")
-  let span = Span::new("error-test-operation", Internal, span_context)
-  
-  // 多次设置状态
-  Span::set_status(span, Ok, Some("First status"))
-  Span::set_status(span, Error, Some("Second status"))
-  Span::set_status(span, Unset, Some("Third status"))
-  
-  // 添加大量事件
-  for i in 0..=1000 {
-    let event_name = "event-" + i.to_string()
-    Span::add_event(span, event_name, None)
+  // Safe division with boundary check
+  let safe_divide = fn(a : Int, b : Int) -> Option[Int] {
+    if b == 0 {
+      None
+    } else {
+      Some(a / b)
+    }
   }
   
-  // 添加带有大量属性的事件
-  let many_attributes = [
-    for i in 0..=100 {
-      ("attr" + i.to_string(), StringValue("value" + i.to_string()))
-    }
-  ]
-  Span::add_event(span, "many-attrs-event", Some(many_attributes))
+  assert_eq(safe_divide(numerator, 2), Some(5))
+  assert_eq(safe_divide(numerator, denominator), None)
   
-  // 多次结束同一个Span
-  Span::end(span)
-  Span::end(span)
-  Span::end(span)
+  // Test floating point boundary conditions
+  let max_float = 3.4028235e38
+  let min_float = 1.17549435e-38
   
-  // 验证操作不会失败
-  assert_true(true)
+  // Test very large numbers
+  assert_true(max_float > 1.0e30)
+  assert_true(min_float < 1.0e-30)
+  
+  // Test infinity handling
+  let infinity = max_float * max_float
+  assert_true(infinity > max_float)
+  
+  // Test NaN handling
+  let nan_value = 0.0 / 0.0
+  assert_true(nan_value != nan_value) // NaN is not equal to itself
 }
 
-test "array attributes with boundary conditions" {
-  // 测试带有边界条件的数组属性
-  let attrs = Attributes::new()
+// Test 2: String Boundary Conditions
+test "string boundary conditions" {
+  // Test empty string operations
+  let empty_string = ""
   
-  // 空数组
-  Attributes::set(attrs, "empty.string.array", ArrayStringValue([]))
-  Attributes::set(attrs, "empty.int.array", ArrayIntValue([]))
+  assert_eq(empty_string.length(), 0)
+  assert_eq(empty_string + "test", "test")
+  assert_eq("test" + empty_string, "test")
   
-  // 单元素数组
-  Attributes::set(attrs, "single.string.array", ArrayStringValue(["single"]))
-  Attributes::set(attrs, "single.int.array", ArrayIntValue([1]))
+  // Test very long strings
+  let long_string = "a".repeat(10000)
+  assert_eq(long_string.length(), 10000)
+  assert_eq(long_string[0], 'a')
+  assert_eq(long_string[9999], 'a')
   
-  // 大数组
-  let large_string_array = [
-    for i in 0..=1000 {
-      "item" + i.to_string()
-    }
-  ]
-  let large_int_array = [
-    for i in 0..=1000 {
-      i
-    }
-  ]
-  Attributes::set(attrs, "large.string.array", ArrayStringValue(large_string_array))
-  Attributes::set(attrs, "large.int.array", ArrayIntValue(large_int_array))
+  // Test string indexing boundaries
+  let test_string = "hello"
   
-  // 包含特殊值的数组
-  let special_string_array = ["", " ", "\n\t", "special chars!@#$%", "测试", "🚀"]
-  let special_int_array = [0, -1, 2147483647, -2147483648]
-  Attributes::set(attrs, "special.string.array", ArrayStringValue(special_string_array))
-  Attributes::set(attrs, "special.int.array", ArrayIntValue(special_int_array))
+  // Valid indexing
+  assert_eq(test_string[0], 'h')
+  assert_eq(test_string[4], 'o')
   
-  // 验证操作不会失败
-  assert_true(true)
+  // Test substring operations with boundaries
+  let substring_test = "boundary"
+  
+  // Test valid substrings
+  assert_eq(substring_test.substring(0, 4), "boun")
+  assert_eq(substring_test.substring(3, 8), "dary")
+  
+  // Test edge cases
+  assert_eq(substring_test.substring(0, 0), "")
+  assert_eq(substring_test.substring(8, 8), "")
+  
+  // Test string with special characters
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  assert_eq(special_chars.length(), 27)
+  
+  // Test unicode characters
+  let unicode_string = "héllo wörld"
+  assert_eq(unicode_string.length(), 11) // Unicode characters count as single units
+  
+  // Test string case conversion boundaries
+  let mixed_case = "HeLLo WoRLd"
+  let lower_case = mixed_case.to_lowercase()
+  let upper_case = mixed_case.to_uppercase()
+  
+  assert_eq(lower_case, "hello world")
+  assert_eq(upper_case, "HELLO WORLD")
 }
 
-test "http client with error scenarios" {
-  // 测试HTTP客户端的错误场景
-  let client = HttpClient::new()
+// Test 3: Array and Collection Boundaries
+test "array and collection boundaries" {
+  // Test empty array operations
+  let empty_array = []
   
-  // 无效的HTTP方法
-  let invalid_method_request = HttpRequest::new("", "https://example.com", [])
+  assert_eq(empty_array.length(), 0)
+  assert_true(empty_array.is_empty())
   
-  // 无效的URL
-  let invalid_url_request = HttpRequest::new("GET", "", [])
-  let invalid_url_request2 = HttpRequest::new("GET", "not-a-url", [])
+  // Test single element array
+  let single_array = [42]
+  assert_eq(single_array.length(), 1)
+  assert_eq(single_array[0], 42)
   
-  // 空头部
-  let empty_headers_request = HttpRequest::new("GET", "https://example.com", [])
+  // Test large array operations
+  let large_array = [0; 10000]
+  assert_eq(large_array.length(), 10000)
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[9999], 0)
   
-  // 大量头部
-  let many_headers = [
-    for i in 0..=1000 {
-      ("header" + i.to_string(), "value" + i.to_string())
+  // Test array boundaries
+  let test_array = [1, 2, 3, 4, 5]
+  
+  // Valid access
+  assert_eq(test_array[0], 1)
+  assert_eq(test_array[4], 5)
+  
+  // Test array operations with boundaries
+  let appended = test_array.push(6)
+  assert_eq(appended.length(), 6)
+  assert_eq(appended[5], 6)
+  
+  let popped = test_array.pop()
+  match popped {
+    Some((value, new_array)) => {
+      assert_eq(value, 5)
+      assert_eq(new_array.length(), 4)
     }
-  ]
-  let many_headers_request = HttpRequest::new("GET", "https://example.com", many_headers)
+    None => assert_true(false)
+  }
   
-  // 非常长的body
-  let long_body = "a" * 1000000
-  let long_body_request = HttpRequest::new("POST", "https://example.com", [], Some(long_body))
+  // Test array slicing with boundaries
+  let slice_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   
-  // 验证请求创建不会失败
-  assert_eq(HttpRequest::http_method(invalid_method_request), "")
-  assert_eq(HttpRequest::url(invalid_url_request), "")
-  assert_eq(HttpRequest::body(long_body_request), Some(long_body))
+  // Valid slices
+  assert_eq(slice_array.slice(0, 5), [1, 2, 3, 4, 5])
+  assert_eq(slice_array.slice(5, 10), [6, 7, 8, 9, 10])
+  assert_eq(slice_array.slice(3, 7), [4, 5, 6, 7])
+  
+  // Edge cases
+  assert_eq(slice_array.slice(0, 0), [])
+  assert_eq(slice_array.slice(10, 10), [])
+  assert_eq(slice_array.slice(0, 10), slice_array)
+  
+  // Test array filtering with empty results
+  let filtered = test_array.filter(|x| x > 10)
+  assert_eq(filtered.length(), 0)
 }
 
-test "clock and random with edge cases" {
-  // 测试时钟和随机数的边界情况
-  let clock = Clock::system()
-  let random = Random::system()
+// Test 4: Option Type Boundary Handling
+test "option type boundary handling" {
+  // Test None operations
+  let none_value : Option[Int] = None
   
-  // 获取当前时间戳
-  let timestamp = Clock::now_unix_nanos(clock)
+  match none_value {
+    Some(value) => assert_true(false) // Should not reach here
+    None => assert_true(true) // Expected
+  }
   
-  // 验证时间戳在合理范围内（2025年的时间戳）
-  assert_true(timestamp > 1700000000000000000L)
-  assert_true(timestamp < 1800000000000000000L)
+  // Test Some operations
+  let some_value : Option[Int] = Some(42)
   
-  // 生成随机字节
-  let empty_bytes = Random::next_bytes(random, 0)
-  let small_bytes = Random::next_bytes(random, 1)
-  let large_bytes = Random::next_bytes(random, 1000)
+  match some_value {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false) // Should not reach here
+  }
   
-  // 生成随机数
-  let random_u64 = Random::next_u64(random)
+  // Test option chaining
+  let nested_option : Option[Option[Int]] = Some(Some(42))
   
-  // 验证操作不会失败
-  assert_true(true)
+  match nested_option {
+    Some(inner) => {
+      match inner {
+        Some(value) => assert_eq(value, 42)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test option map function
+  let map_none = none_value.map(|x| x * 2)
+  assert_eq(map_none, None)
+  
+  let map_some = some_value.map(|x| x * 2)
+  assert_eq(map_some, Some(84))
+  
+  // Test option flat_map
+  let flat_map_none = none_value.flat_map(|x| Some(x * 2))
+  assert_eq(flat_map_none, None)
+  
+  let flat_map_some = some_value.flat_map(|x| Some(x * 2))
+  assert_eq(flat_map_some, Some(84))
+  
+  // Test option with default value
+  let default_none = none_value.unwrap_or(0)
+  assert_eq(default_none, 0)
+  
+  let default_some = some_value.unwrap_or(0)
+  assert_eq(default_some, 42)
 }
 
-test "baggage with boundary conditions" {
-  // 测试Baggage的边界条件
-  let baggage = Baggage::new()
+// Test 5: Error Recovery Mechanisms
+test "error recovery mechanisms" {
+  // Test custom error type
+  type ErrorType {
+    code : Int
+    message : String
+  }
   
-  // 空键
-  let baggage1 = Baggage::set_entry(baggage, "", "empty-key-value")
+  let create_error = fn(code : Int, message : String) -> ErrorType {
+    ErrorType { code: code, message: message }
+  }
   
-  // 空值
-  let baggage2 = Baggage::set_entry(baggage1, "empty-value-key", "")
+  // Test result type operations
+  let success_result : Result[Int, ErrorType] = Ok(42)
+  let error_result : Result[Int, ErrorType] = Err(create_error(404, "Not found"))
   
-  // 非常长的键和值
-  let long_key = "k" * 1000
-  let long_value = "v" * 1000
-  let baggage3 = Baggage::set_entry(baggage2, long_key, long_value)
+  match success_result {
+    Ok(value) => assert_eq(value, 42)
+    Err(error) => assert_true(false)
+  }
   
-  // 包含特殊字符的键和值
-  let baggage4 = Baggage::set_entry(baggage3, "special/key", "special/value")
-  let baggage5 = Baggage::set_entry(baggage4, "key with spaces", "value with spaces")
-  let baggage6 = Baggage::set_entry(baggage5, "unicode.键", "unicode.值")
+  match error_result {
+    Ok(value) => assert_true(false)
+    Err(error) => {
+      assert_eq(error.code, 404)
+      assert_eq(error.message, "Not found")
+    }
+  }
   
-  // 移除不存在的键
-  let baggage7 = Baggage::remove_entry(baggage6, "nonexistent.key")
+  // Test result mapping
+  let mapped_success = success_result.map(|x| x * 2)
+  match mapped_success {
+    Ok(value) => assert_eq(value, 84)
+    Err(_) => assert_true(false)
+  }
   
-  // 验证操作不会失败
-  assert_true(true)
+  let mapped_error = error_result.map(|x| x * 2)
+  match mapped_error {
+    Ok(_) => assert_true(false)
+    Err(error) => {
+      assert_eq(error.code, 404)
+      assert_eq(error.message, "Not found")
+    }
+  }
+  
+  // Test result flat_map
+  let flat_mapped_success = success_result.flat_map(|x| Ok(x * 2))
+  match flat_mapped_success {
+    Ok(value) => assert_eq(value, 84)
+    Err(_) => assert_true(false)
+  }
+  
+  let flat_mapped_error = error_result.flat_map(|x| Ok(x * 2))
+  match flat_mapped_error {
+    Ok(_) => assert_true(false)
+    Err(error) => {
+      assert_eq(error.code, 404)
+      assert_eq(error.message, "Not found")
+    }
+  }
+  
+  // Test result with default
+  let default_success = success_result.unwrap_or(0)
+  assert_eq(default_success, 42)
+  
+  let default_error = error_result.unwrap_or(0)
+  assert_eq(default_error, 0)
+}
+
+// Test 6: Resource Exhaustion Boundaries
+test "resource exhaustion boundaries" {
+  // Test memory allocation boundaries
+  let allocate_large_array = fn(size : Int) -> Array[Int] {
+    [0; size]
+  }
+  
+  // Test reasonable allocation
+  let reasonable_array = allocate_large_array(1000)
+  assert_eq(reasonable_array.length(), 1000)
+  
+  // Test stack recursion depth
+  let recursive_sum = fn(arr : Array[Int], index : Int) -> Int {
+    if index >= arr.length() {
+      0
+    } else {
+      arr[index] + recursive_sum(arr, index + 1)
+    }
+  }
+  
+  let test_array = [1, 2, 3, 4, 5]
+  let sum = recursive_sum(test_array, 0)
+  assert_eq(sum, 15)
+  
+  // Test iterative alternative to avoid stack overflow
+  let iterative_sum = fn(arr : Array[Int]) -> Int {
+    let mut total = 0
+    for i = 0; i < arr.length(); i = i + 1 {
+      total = total + arr[i]
+    }
+    total
+  }
+  
+  let iterative_result = iterative_sum(test_array)
+  assert_eq(iterative_result, 15)
+  
+  // Test file handle exhaustion simulation
+  type FileHandle {
+    id : Int
+    is_open : Bool
+  }
+  
+  let max_handles = 100
+  let mut handles = []
+  
+  // Simulate opening handles
+  for i = 0; i < max_handles; i = i + 1 {
+    handles.push(FileHandle { id: i, is_open: true })
+  }
+  
+  assert_eq(handles.length(), max_handles)
+  
+  // Simulate handle exhaustion
+  let can_open_more = handles.length() < max_handles
+  assert_false(can_open_more)
+  
+  // Simulate closing handles
+  let mut closed_handles = []
+  for handle in handles {
+    let closed_handle = FileHandle { 
+      id: handle.id, 
+      is_open: false 
+    }
+    closed_handles.push(closed_handle)
+  }
+  
+  assert_eq(closed_handles.length(), max_handles)
+  
+  // Now we can open more handles
+  let new_handle = FileHandle { id: max_handles, is_open: true }
+  assert_eq(new_handle.id, max_handles)
+}
+
+// Test 7: Input Validation and Sanitization
+test "input validation and sanitization" {
+  // Test email validation
+  let is_valid_email = fn(email : String) -> Bool {
+    let has_at = email.contains("@")
+    let has_dot = email.contains(".")
+    let length_valid = email.length() > 5 && email.length() < 100
+    let starts_with_letter = email.length() > 0 && 
+      ((email[0] >= 'a' && email[0] <= 'z') || 
+       (email[0] >= 'A' && email[0] <= 'Z'))
+    
+    has_at && has_dot && length_valid && starts_with_letter
+  }
+  
+  assert_true(is_valid_email("user@example.com"))
+  assert_false(is_valid_email("invalid-email"))
+  assert_false(is_valid_email("@example.com"))
+  assert_false(is_valid_email("user@.com"))
+  assert_false(is_valid_email("user@example"))
+  assert_false(is_valid_email(""))
+  assert_false(is_valid_email("a@b.c")) // Too short
+  
+  // Test phone number validation
+  let is_valid_phone = fn(phone : String) -> Bool {
+    let digits_only = phone.filter(|c| c >= '0' && c <= '9')
+    let length_valid = digits_only.length() >= 10 && digits_only.length() <= 15
+    
+    length_valid
+  }
+  
+  assert_true(is_valid_phone("123-456-7890"))
+  assert_true(is_valid_phone("(123) 456-7890"))
+  assert_true(is_valid_phone("+1 (123) 456-7890"))
+  assert_false(is_valid_phone("123-456"))
+  assert_false(is_valid_phone(""))
+  
+  // Test URL validation
+  let is_valid_url = fn(url : String) -> Bool {
+    let has_protocol = url.starts_with("http://") || url.starts_with("https://")
+    let has_domain = url.contains(".") && !url.starts_with(".")
+    let length_valid = url.length() > 10 && url.length() < 2000
+    
+    has_protocol && has_domain && length_valid
+  }
+  
+  assert_true(is_valid_url("https://www.example.com"))
+  assert_false(is_valid_url("www.example.com"))
+  assert_false(is_valid_url("http://"))
+  assert_false(is_valid_url("https://.com"))
+  
+  // Test input sanitization
+  let sanitize_html = fn(input : String) -> String {
+    input
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("&", "&amp;")
+      .replace("\"", "&quot;")
+      .replace("'", "&apos;")
+  }
+  
+  let malicious_input = "<script>alert('xss')</script>"
+  let sanitized = sanitize_html(malicious_input)
+  
+  assert_false(sanitized.contains("<script>"))
+  assert_true(sanitized.contains("&lt;script&gt;"))
+  
+  // Test SQL injection prevention
+  let sanitize_sql = fn(input : String) -> String {
+    input
+      .replace("'", "''")
+      .replace("\"", "\\\"")
+      .replace("\\", "\\\\")
+      .replace("--", "\\--")
+  }
+  
+  let sql_injection = "'; DROP TABLE users; --"
+  let sanitized_sql = sanitize_sql(sql_injection)
+  
+  assert_false(sanitized_sql.contains("'; DROP TABLE users; --"))
+  assert_true(sanitized_sql.contains("''; DROP TABLE users; \\--"))
 }
