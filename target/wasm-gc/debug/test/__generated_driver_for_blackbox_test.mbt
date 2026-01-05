@@ -1182,6 +1182,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_memory_management_resource_cleanup_tests.mbt": {
   },
+  "azimuth_memory_management_resource_cleanup_premium_tests.mbt": {
+  },
   "azimuth_memory_management_resource_cleanup_comprehensive_tests.mbt": {
   },
   "azimuth_memory_management_optimization_tests.mbt": {
