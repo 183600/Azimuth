@@ -1460,6 +1460,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_gauge_detailed_comprehensive_tests.mbt": {
   },
+  "azimuth_game_theory_tests.mbt": {
+  },
   "azimuth_fundamental_telemetry_types_tests.mbt": {
   },
   "azimuth_fundamental_telemetry_tests.mbt": {

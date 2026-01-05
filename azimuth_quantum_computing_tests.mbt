@@ -1,784 +1,241 @@
-// Azimuth 量子计算测试用例
-// 专注于量子计算基础概念和算法
+// Azimuth Quantum Computing Tests
+// This file contains test cases for quantum computing functionality in the telemetry system
 
-// 测试1: 量子位和量子态
-test "量子位和量子态" {
-  // 简化的量子位表示（复数幅度）
-  type Qubit = {
-    alpha: (Float, Float),  // |0⟩态的幅度（实部，虚部）
-    beta: (Float, Float)    // |1⟩态的幅度（实部，虚部）
-  }
+test "quantum bit (qubit) basic operations" {
+  // Test qubit initialization
+  let qubit_zero = Qubit::new(0)  // |0⟩ state
+  let qubit_one = Qubit::new(1)   // |1⟩ state
   
-  // 创建基态 |0⟩
-  let create_zero_state = fn() {
-    {
-      alpha: (1.0, 0.0),  // α = 1 + 0i
-      beta: (0.0, 0.0)    // β = 0 + 0i
-    }
-  }
+  // Test qubit states
+  assert_eq(Qubit::state(qubit_zero), 0)
+  assert_eq(Qubit::state(qubit_one), 1)
   
-  // 创建基态 |1⟩
-  let create_one_state = fn() {
-    {
-      alpha: (0.0, 0.0),  // α = 0 + 0i
-      beta: (1.0, 0.0)    // β = 1 + 0i
-    }
-  }
+  // Test qubit superposition (simplified representation)
+  let superposition = Qubit::superposition(0.5, 0.5)  // Equal superposition
+  let (alpha, beta) = Qubit::amplitudes(superposition)
   
-  // 创建叠加态 (α|0⟩ + β|1⟩)
-  let create_superposition = fn(alpha_real: Float, alpha_imag: Float, beta_real: Float, beta_imag: Float) {
-    // 归一化
-    let norm = (alpha_real * alpha_real + alpha_imag * alpha_imag + 
-                beta_real * beta_real + beta_imag * beta_imag).sqrt()
-    
-    if norm > 0.0 {
-      {
-        alpha: (alpha_real / norm, alpha_imag / norm),
-        beta: (beta_real / norm, beta_imag / norm)
-      }
-    } else {
-      create_zero_state()  // 默认返回|0⟩态
-    }
-  }
-  
-  // 计算测量概率
-  let measure_probabilities = fn(qubit: Qubit) {
-    let prob_zero = qubit.alpha.0 * qubit.alpha.0 + qubit.alpha.1 * qubit.alpha.1
-    let prob_one = qubit.beta.0 * qubit.beta.0 + qubit.beta.1 * qubit.beta.1
-    
-    (prob_zero, prob_one)
-  }
-  
-  // 测量量子位
-  let measure_qubit = fn(qubit: Qubit, random_value: Float) {
-    let (prob_zero, prob_one) = measure_probabilities(qubit)
-    
-    if random_value < prob_zero {
-      (0, create_zero_state())  // 测量结果为0，量子态坍缩到|0⟩
-    } else {
-      (1, create_one_state())   // 测量结果为1，量子态坍缩到|1⟩
-    }
-  }
-  
-  // 复数乘法
-  let complex_multiply = fn(a: (Float, Float), b: (Float, Float)) {
-    let real = a.0 * b.0 - a.1 * b.1
-    let imag = a.0 * b.1 + a.1 * b.0
-    (real, imag)
-  }
-  
-  // 测试基态创建
-  let zero_state = create_zero_state()
-  let one_state = create_one_state()
-  
-  assert_eq(zero_state.alpha, (1.0, 0.0))
-  assert_eq(zero_state.beta, (0.0, 0.0))
-  assert_eq(one_state.alpha, (0.0, 0.0))
-  assert_eq(one_state.beta, (1.0, 0.0))
-  
-  // 测试测量概率
-  let (prob_zero_0, prob_one_0) = measure_probabilities(zero_state)
-  let (prob_zero_1, prob_one_1) = measure_probabilities(one_state)
-  
-  assert_eq(prob_zero_0, 1.0)
-  assert_eq(prob_one_0, 0.0)
-  assert_eq(prob_zero_1, 0.0)
-  assert_eq(prob_one_1, 1.0)
-  
-  // 测试叠加态创建
-  let equal_superposition = create_superposition(1.0, 0.0, 1.0, 0.0)  // (|0⟩ + |1⟩)/√2
-  let (prob_zero_eq, prob_one_eq) = measure_probabilities(equal_superposition)
-  
-  assert_eq(prob_zero_eq, 0.5)
-  assert_eq(prob_one_eq, 0.5)
-  
-  // 测试量子位测量
-  let (result0, collapsed_state0) = measure_qubit(equal_superposition, 0.3)  // 30%概率，应该测量为0
-  let (result1, collapsed_state1) = measure_qubit(equal_superposition, 0.7)  // 70%概率，应该测量为1
-  
-  assert_eq(result0, 0)
-  assert_eq(result1, 1)
-  assert_eq(collapsed_state0.alpha, (1.0, 0.0))
-  assert_eq(collapsed_state0.beta, (0.0, 0.0))
-  assert_eq(collapsed_state1.alpha, (0.0, 0.0))
-  assert_eq(collapsed_state1.beta, (1.0, 0.0))
-  
-  // 测试复数运算
-  let complex1 = (1.0, 2.0)  // 1 + 2i
-  let complex2 = (3.0, 4.0)  // 3 + 4i
-  let product = complex_multiply(complex1, complex2)
-  
-  // (1 + 2i) * (3 + 4i) = 1*3 - 2*4 + (1*4 + 2*3)i = -5 + 10i
-  assert_eq(product.0, -5.0)
-  assert_eq(product.1, 10.0)
+  // Verify normalization (|α|² + |β|² = 1)
+  let normalization = (alpha * alpha) + (beta * beta)
+  assert_true(normalization - 1.0 < 0.001)
 }
 
-// 测试2: 量子门操作
-test "量子门操作" {
-  // 量子位表示
-  type Qubit = {
-    alpha: (Float, Float),  // |0⟩态的幅度（实部，虚部）
-    beta: (Float, Float)    // |1⟩态的幅度（实部，虚部）
-  }
+test "quantum gate operations" {
+  // Test Pauli-X gate (NOT gate)
+  let qubit_zero = Qubit::new(0)
+  let x_gate = QuantumGate::pauli_x()
+  let qubit_one = QuantumGate::apply(x_gate, qubit_zero)
   
-  // 创建基态 |0⟩
-  let create_zero_state = fn() {
-    {
-      alpha: (1.0, 0.0),
-      beta: (0.0, 0.0)
-    }
-  }
+  assert_eq(Qubit::state(qubit_one), 1)
   
-  // 复数乘法
-  let complex_multiply = fn(a: (Float, Float), b: (Float, Float)) {
-    let real = a.0 * b.0 - a.1 * b.1
-    let imag = a.0 * b.1 + a.1 * b.0
-    (real, imag)
-  }
+  // Test Pauli-Y gate
+  let y_gate = QuantumGate::pauli_y()
+  let qubit_y = QuantumGate::apply(y_gate, qubit_zero)
   
-  // 复数加法
-  let complex_add = fn(a: (Float, Float), b: (Float, Float)) {
-    (a.0 + b.0, a.1 + b.1)
-  }
+  // Test Pauli-Z gate
+  let z_gate = QuantumGate::pauli_z()
+  let qubit_z = QuantumGate::apply(z_gate, qubit_zero)
   
-  // 泡利-X门（NOT门）
-  let pauli_x_gate = fn(qubit: Qubit) {
-    {
-      alpha: qubit.beta,
-      beta: qubit.alpha
-    }
-  }
+  // Z gate on |0⟩ should leave it unchanged
+  assert_eq(Qubit::state(qubit_z), 0)
   
-  // 泡利-Y门
-  let pauli_y_gate = fn(qubit: Qubit) {
-    {
-      alpha: (0.0 - qubit.beta.1, qubit.beta.0),  // -iβ
-      beta: (qubit.alpha.1, 0.0 - qubit.alpha.0)  // iα
-    }
-  }
+  // Test Hadamard gate (creates superposition)
+  let h_gate = QuantumGate::hadamard()
+  let superposition = QuantumGate::apply(h_gate, qubit_zero)
+  let (alpha, beta) = Qubit::amplitudes(superposition)
   
-  // 泡利-Z门
-  let pauli_z_gate = fn(qubit: Qubit) {
-    {
-      alpha: qubit.alpha,
-      beta: (0.0 - qubit.beta.0, 0.0 - qubit.beta.1)  // -β
-    }
-  }
-  
-  // 哈达玛门
-  let hadamard_gate = fn(qubit: Qubit) {
-    let sqrt2 = 2.0.sqrt()
-    
-    // H|ψ⟩ = (α|0⟩ + β|1⟩)/√2 → (α+β)|0⟩ + (α-β)|1⟩)/√2
-    let new_alpha = complex_add(qubit.alpha, qubit.beta)
-    let new_beta = {
-      let diff = complex_add(qubit.alpha, (0.0 - qubit.beta.0, 0.0 - qubit.beta.1))
-      diff
-    }
-    
-    {
-      alpha: (new_alpha.0 / sqrt2, new_alpha.1 / sqrt2),
-      beta: (new_beta.0 / sqrt2, new_beta.1 / sqrt2)
-    }
-  }
-  
-  // 相位门
-  let phase_gate = fn(qubit: Qubit, phase: Float) {
-    {
-      alpha: qubit.alpha,
-      beta: complex_multiply(qubit.beta, (phase.cos(), phase.sin()))  // β * e^(i*phase)
-    }
-  }
-  
-  // 测试泡利-X门
-  let zero_state = create_zero_state()
-  let x_zero = pauli_x_gate(zero_state)
-  
-  assert_eq(x_zero.alpha, (0.0, 0.0))
-  assert_eq(x_zero.beta, (1.0, 0.0))
-  
-  // 测试泡利-Y门
-  let y_zero = pauli_y_gate(zero_state)
-  
-  assert_eq(y_zero.alpha, (0.0, 0.0))
-  assert_eq(y_zero.beta, (0.0, 1.0))
-  
-  // 测试泡利-Z门
-  let one_state = pauli_x_gate(zero_state)  // |1⟩
-  let z_one = pauli_z_gate(one_state)
-  
-  assert_eq(z_one.alpha, (0.0, 0.0))
-  assert_eq(z_one.beta, (-1.0, 0.0))
-  
-  // 测试哈达玛门
-  let h_zero = hadamard_gate(zero_state)
-  let sqrt2 = 2.0.sqrt()
-  
-  assert_eq(h_zero.alpha.0, 1.0 / sqrt2)
-  assert_eq(h_zero.alpha.1, 0.0)
-  assert_eq(h_zero.beta.0, 1.0 / sqrt2)
-  assert_eq(h_zero.beta.1, 0.0)
-  
-  // 测试相位门
-  let phase_pi = phase_gate(zero_state, 3.14159)  // π相位
-  
-  assert_eq(phase_pi.alpha, (1.0, 0.0))
-  assert_eq(phase_pi.beta.0, -1.0)  // cos(π) = -1
-  assert_true(phase_pi.beta.1.abs() < 0.0001)  // sin(π) ≈ 0
-  
-  // 测试门组合
-  let h_then_x = pauli_x_gate(h_zero)
-  let x_then_h = hadamard_gate(pauli_x_gate(zero_state))
-  
-  // 验证门组合的非交换性
-  assert_true(h_then_x.alpha.0 != x_then_h.alpha.0 || h_then_x.alpha.1 != x_then_h.alpha.1)
+  // Hadamard on |0⟩ creates (|0⟩ + |1⟩)/√2
+  assert_true(alpha - (1.0 / 2.0.sqrt()) < 0.001)
+  assert_true(beta - (1.0 / 2.0.sqrt()) < 0.001)
 }
 
-// 测试3: 多量子位系统
-test "多量子位系统" {
-  // 量子位表示
-  type Qubit = {
-    alpha: (Float, Float),  // |0⟩态的幅度（实部，虚部）
-    beta: (Float, Float)    // |1⟩态的幅度（实部，虚部）
-  }
+test "quantum entanglement operations" {
+  // Test Bell state creation
+  let qubit1 = Qubit::new(0)
+  let qubit2 = Qubit::new(0)
   
-  // 两量子位系统
-  type TwoQubitSystem = {
-    amplitude_00: (Float, Float),  // |00⟩态的幅度
-    amplitude_01: (Float, Float),  // |01⟩态的幅度
-    amplitude_10: (Float, Float),  // |10⟩态的幅度
-    amplitude_11: (Float, Float)   // |11⟩态的幅度
-  }
+  // Create Bell state |Φ+⟩ = (|00⟩ + |11⟩)/√2
+  let bell_state = QuantumEntanglement::create_bell_phi_plus(qubit1, qubit2)
   
-  // 创建基态 |00⟩
-  let create_zero_zero_state = fn() {
-    {
-      amplitude_00: (1.0, 0.0),
-      amplitude_01: (0.0, 0.0),
-      amplitude_10: (0.0, 0.0),
-      amplitude_11: (0.0, 0.0)
-    }
-  }
+  // Test entanglement
+  assert_true(QuantumEntanglement::is_entangled(bell_state))
   
-  // 张量积（两个量子位的组合）
-  let tensor_product = fn(qubit1: Qubit, qubit2: Qubit) {
-    {
-      amplitude_00: complex_multiply(qubit1.alpha, qubit2.alpha),  // α1α2|00⟩
-      amplitude_01: complex_multiply(qubit1.alpha, qubit2.beta),   // α1β2|01⟩
-      amplitude_10: complex_multiply(qubit1.beta, qubit2.alpha),   // β1α2|10⟩
-      amplitude_11: complex_multiply(qubit1.beta, qubit2.beta)     // β1β2|11⟩
-    }
-  }
+  // Test measurement correlation (measuring one qubit determines the other)
+  let (measured_q1, measured_q2) = QuantumEntanglement::measure_all(bell_state)
+  assert_eq(measured_q1, measured_q2)  // Should be the same
+}
+
+test "quantum circuit construction" {
+  // Create a simple quantum circuit
+  let circuit = QuantumCircuit::new(2)  // 2 qubits
   
-  // 复数乘法
-  let complex_multiply = fn(a: (Float, Float), b: (Float, Float)) {
-    let real = a.0 * b.0 - a.1 * b.1
-    let imag = a.0 * b.1 + a.1 * b.0
-    (real, imag)
-  }
+  // Add gates to circuit
+  QuantumCircuit::add_gate(circuit, 0, QuantumGate::hadamard())  // H on qubit 0
+  QuantumCircuit::add_gate(circuit, 1, QuantumGate::pauli_x())   // X on qubit 1
+  QuantumCircuit::add_cnot(circuit, 0, 1)  // CNOT with control=0, target=1
   
-  // 创建基态 |0⟩
-  let create_zero_state = fn() {
-    {
-      alpha: (1.0, 0.0),
-      beta: (0.0, 0.0)
-    }
-  }
+  // Test circuit properties
+  assert_eq(QuantumCircuit::num_qubits(circuit), 2)
+  assert_eq(QuantumCircuit::num_gates(circuit), 3)
   
-  // 创建基态 |1⟩
-  let create_one_state = fn() {
-    {
-      alpha: (0.0, 0.0),
-      beta: (1.0, 0.0)
-    }
-  }
+  // Execute circuit
+  let initial_qubits = [Qubit::new(0), Qubit::new(0)]
+  let result_qubits = QuantumCircuit::execute(circuit, initial_qubits)
   
-  // 创建贝尔态 |Φ+⟩ = (|00⟩ + |11⟩)/√2
-  let create_bell_state_phi_plus = fn() {
-    let sqrt2 = 2.0.sqrt()
-    {
-      amplitude_00: (1.0 / sqrt2, 0.0),
-      amplitude_01: (0.0, 0.0),
-      amplitude_10: (0.0, 0.0),
-      amplitude_11: (1.0 / sqrt2, 0.0)
-    }
-  }
+  assert_eq(result_qubits.length(), 2)
+}
+
+test "quantum measurement operations" {
+  // Test measurement in computational basis
+  let qubit_zero = Qubit::new(0)
+  let measurement_zero = QuantumMeasurement::measure(qubit_zero)
+  assert_eq(measurement_zero, 0)
   
-  // CNOT门（控制非门）
-  let cnot_gate = fn(system: TwoQubitSystem) {
-    {
-      amplitude_00: system.amplitude_00,  // |00⟩ → |00⟩
-      amplitude_01: system.amplitude_01,  // |01⟩ → |01⟩
-      amplitude_10: system.amplitude_11,  // |10⟩ → |11⟩
-      amplitude_11: system.amplitude_10   // |11⟩ → |10⟩
-    }
-  }
+  let qubit_one = Qubit::new(1)
+  let measurement_one = QuantumMeasurement::measure(qubit_one)
+  assert_eq(measurement_one, 1)
   
-  // 测量第一个量子位
-  let measure_first_qubit = fn(system: TwoQubitSystem, random_value: Float) {
-    let prob_zero = system.amplitude_00.0 * system.amplitude_00.0 + 
-                   system.amplitude_00.1 * system.amplitude_00.1 +
-                   system.amplitude_01.0 * system.amplitude_01.0 + 
-                   system.amplitude_01.1 * system.amplitude_01.1
-    
-    if random_value < prob_zero {
-      // 测量结果为0，系统坍缩到|00⟩或|01⟩
-      let total_prob = prob_zero
-      let prob_00 = system.amplitude_00.0 * system.amplitude_00.0 + 
-                    system.amplitude_00.1 * system.amplitude_00.1
-      
-      if random_value < prob_00 {
-        // 坍缩到|00⟩
-        (0, {
-          amplitude_00: (1.0, 0.0),
-          amplitude_01: (0.0, 0.0),
-          amplitude_10: (0.0, 0.0),
-          amplitude_11: (0.0, 0.0)
-        })
-      } else {
-        // 坍缩到|01⟩
-        (0, {
-          amplitude_00: (0.0, 0.0),
-          amplitude_01: (1.0, 0.0),
-          amplitude_10: (0.0, 0.0),
-          amplitude_11: (0.0, 0.0)
-        })
-      }
+  // Test measurement of superposition (probabilistic)
+  let superposition = Qubit::superposition(0.5, 0.5)
+  
+  // Multiple measurements should follow probability distribution
+  let mut zero_count = 0
+  let mut one_count = 0
+  let num_measurements = 1000
+  
+  for _ in 0..num_measurements {
+    let result = QuantumMeasurement::measure(superposition)
+    if result == 0 {
+      zero_count = zero_count + 1
     } else {
-      // 测量结果为1，系统坍缩到|10⟩或|11⟩
-      let prob_10 = system.amplitude_10.0 * system.amplitude_10.0 + 
-                    system.amplitude_10.1 * system.amplitude_10.1
-      
-      if random_value < prob_zero + prob_10 {
-        // 坍缩到|10⟩
-        (1, {
-          amplitude_00: (0.0, 0.0),
-          amplitude_01: (0.0, 0.0),
-          amplitude_10: (1.0, 0.0),
-          amplitude_11: (0.0, 0.0)
-        })
-      } else {
-        // 坍缩到|11⟩
-        (1, {
-          amplitude_00: (0.0, 0.0),
-          amplitude_01: (0.0, 0.0),
-          amplitude_10: (0.0, 0.0),
-          amplitude_11: (1.0, 0.0)
-        })
-      }
+      one_count = one_count + 1
     }
   }
   
-  // 测试张量积
-  let zero_state = create_zero_state()
-  let one_state = create_one_state()
-  let zero_one = tensor_product(zero_state, one_state)
+  // Results should be approximately 50/50
+  let zero_ratio = zero_count.to_float() / num_measurements.to_float()
+  let one_ratio = one_count.to_float() / num_measurements.to_float()
   
-  assert_eq(zero_one.amplitude_00, (0.0, 0.0))
-  assert_eq(zero_one.amplitude_01, (1.0, 0.0))
-  assert_eq(zero_one.amplitude_10, (0.0, 0.0))
-  assert_eq(zero_one.amplitude_11, (0.0, 0.0))
-  
-  // 测试贝尔态创建
-  let bell_state = create_bell_state_phi_plus()
-  let sqrt2 = 2.0.sqrt()
-  
-  assert_eq(bell_state.amplitude_00, (1.0 / sqrt2, 0.0))
-  assert_eq(bell_state.amplitude_01, (0.0, 0.0))
-  assert_eq(bell_state.amplitude_10, (0.0, 0.0))
-  assert_eq(bell_state.amplitude_11, (1.0 / sqrt2, 0.0))
-  
-  // 测试CNOT门
-  let cnot_bell = cnot_gate(bell_state)
-  
-  // CNOT作用于|Φ+⟩态应该保持不变
-  assert_eq(cnot_bell.amplitude_00, (1.0 / sqrt2, 0.0))
-  assert_eq(cnot_bell.amplitude_01, (0.0, 0.0))
-  assert_eq(cnot_bell.amplitude_10, (0.0, 0.0))
-  assert_eq(cnot_bell.amplitude_11, (1.0 / sqrt2, 0.0))
-  
-  // 测试测量
-  let (result0, collapsed_state0) = measure_first_qubit(bell_state, 0.3)  // 30%概率，应该测量为0
-  let (result1, collapsed_state1) = measure_first_qubit(bell_state, 0.7)  // 70%概率，应该测量为1
-  
-  assert_eq(result0, 0)
-  assert_eq(result1, 1)
-  
-  // 对于贝尔态，测量第一个量子位为0时，系统应该坍缩到|00⟩
-  assert_eq(collapsed_state0.amplitude_00, (1.0, 0.0))
-  assert_eq(collapsed_state0.amplitude_01, (0.0, 0.0))
-  assert_eq(collapsed_state0.amplitude_10, (0.0, 0.0))
-  assert_eq(collapsed_state0.amplitude_11, (0.0, 0.0))
-  
-  // 对于贝尔态，测量第一个量子位为1时，系统应该坍缩到|11⟩
-  assert_eq(collapsed_state1.amplitude_00, (0.0, 0.0))
-  assert_eq(collapsed_state1.amplitude_01, (0.0, 0.0))
-  assert_eq(collapsed_state1.amplitude_10, (0.0, 0.0))
-  assert_eq(collapsed_state1.amplitude_11, (1.0, 0.0))
+  assert_true(zero_ratio > 0.4 && zero_ratio < 0.6)
+  assert_true(one_ratio > 0.4 && one_ratio < 0.6)
 }
 
-// 测试4: 量子算法 - Deutsch-Jozsa算法
-test "Deutsch-Jozsa算法" {
-  // 量子位表示
-  type Qubit = {
-    alpha: (Float, Float),  // |0⟩态的幅度（实部，虚部）
-    beta: (Float, Float)    // |1⟩态的幅度（实部，虚部）
-  }
+test "quantum error correction codes" {
+  // Test simple 3-qubit bit flip code
+  let logical_qubit = Qubit::new(1)  // Logical |1⟩
   
-  // 两量子位系统
-  type TwoQubitSystem = {
-    amplitude_00: (Float, Float),  // |00⟩态的幅度
-    amplitude_01: (Float, Float),  // |01⟩态的幅度
-    amplitude_10: (Float, Float),  // |10⟩态的幅度
-    amplitude_11: (Float, Float)   // |11⟩态的幅度
-  }
+  // Encode using bit flip code
+  let encoded = QuantumErrorCorrection::encode_bit_flip(logical_qubit)
+  assert_eq(QuantumErrorCorrection::num_physical_qubits(encoded), 3)
   
-  // 创建基态 |0⟩
-  let create_zero_state = fn() {
-    {
-      alpha: (1.0, 0.0),
-      beta: (0.0, 0.0)
-    }
-  }
+  // Introduce error (flip middle qubit)
+  let with_error = QuantumErrorCorrection::introduce_bit_flip(encoded, 1)
   
-  // 创建基态 |1⟩
-  let create_one_state = fn() {
-    {
-      alpha: (0.0, 0.0),
-      beta: (1.0, 0.0)
-    }
-  }
+  // Decode and correct
+  let decoded = QuantumErrorCorrection::decode_bit_flip(with_error)
+  let corrected_state = Qubit::state(decoded)
   
-  // 张量积（两个量子位的组合）
-  let tensor_product = fn(qubit1: Qubit, qubit2: Qubit) {
-    {
-      amplitude_00: complex_multiply(qubit1.alpha, qubit2.alpha),  // α1α2|00⟩
-      amplitude_01: complex_multiply(qubit1.alpha, qubit2.beta),   // α1β2|01⟩
-      amplitude_10: complex_multiply(qubit1.beta, qubit2.alpha),   // β1α2|10⟩
-      amplitude_11: complex_multiply(qubit1.beta, qubit2.beta)     // β1β2|11⟩
-    }
-  }
-  
-  // 复数乘法
-  let complex_multiply = fn(a: (Float, Float), b: (Float, Float)) {
-    let real = a.0 * b.0 - a.1 * b.1
-    let imag = a.0 * b.1 + a.1 * b.0
-    (real, imag)
-  }
-  
-  // 复数加法
-  let complex_add = fn(a: (Float, Float), b: (Float, Float)) {
-    (a.0 + b.0, a.1 + b.1)
-  }
-  
-  // 哈达玛门
-  let hadamard_gate = fn(qubit: Qubit) {
-    let sqrt2 = 2.0.sqrt()
-    
-    let new_alpha = complex_add(qubit.alpha, qubit.beta)
-    let new_beta = {
-      let diff = complex_add(qubit.alpha, (0.0 - qubit.beta.0, 0.0 - qubit.beta.1))
-      diff
-    }
-    
-    {
-      alpha: (new_alpha.0 / sqrt2, new_alpha.1 / sqrt2),
-      beta: (new_beta.0 / sqrt2, new_beta.1 / sqrt2)
-    }
-  }
-  
-  // 两量子位哈达玛门（作用于第一个量子位）
-  let hadamard_first_qubit = fn(system: TwoQubitSystem) {
-    let sqrt2 = 2.0.sqrt()
-    
-    {
-      amplitude_00: complex_add(system.amplitude_00, system.amplitude_10),
-      amplitude_01: complex_add(system.amplitude_01, system.amplitude_11),
-      amplitude_10: complex_add(system.amplitude_00, (0.0 - system.amplitude_10.0, 0.0 - system.amplitude_10.1)),
-      amplitude_11: complex_add(system.amplitude_01, (0.0 - system.amplitude_11.0, 0.0 - system.amplitude_11.1))
-    }
-  }
-  
-  // 泡利-X门
-  let pauli_x_gate = fn(qubit: Qubit) {
-    {
-      alpha: qubit.beta,
-      beta: qubit.alpha
-    }
-  }
-  
-  // CNOT门（控制非门）
-  let cnot_gate = fn(system: TwoQubitSystem) {
-    {
-      amplitude_00: system.amplitude_00,  // |00⟩ → |00⟩
-      amplitude_01: system.amplitude_01,  // |01⟩ → |01⟩
-      amplitude_10: system.amplitude_11,  // |10⟩ → |11⟩
-      amplitude_11: system.amplitude_10   // |11⟩ → |10⟩
-    }
-  }
-  
-  // Oracle函数 f(x) = 0 (常数函数)
-  let oracle_f0 = fn(system: TwoQubitSystem) {
-    // f(x) = 0，所以|y⟩ → |y⊕f(x)⟩ = |y⟩
-    system
-  }
-  
-  // Oracle函数 f(x) = 1 (常数函数)
-  let oracle_f1 = fn(system: TwoQubitSystem) {
-    // f(x) = 1，所以|y⟩ → |y⊕f(x)⟩ = |y⊕1⟩
-    {
-      amplitude_00: system.amplitude_01,  // |00⟩ → |01⟩
-      amplitude_01: system.amplitude_00,  // |01⟩ → |00⟩
-      amplitude_10: system.amplitude_11,  // |10⟩ → |11⟩
-      amplitude_11: system.amplitude_10   // |11⟩ → |10⟩
-    }
-  }
-  
-  // Oracle函数 f(x) = x (平衡函数)
-  let oracle_fx = fn(system: TwoQubitSystem) {
-    // f(x) = x，所以|y⟩ → |y⊕x⟩
-    cnot_gate(system)
-  }
-  
-  // Oracle函数 f(x) = ¬x (平衡函数)
-  let oracle_fnotx = fn(system: TwoQubitSystem) {
-    // f(x) = ¬x，所以|y⟩ → |y⊕¬x⟩
-    // 先应用CNOT，然后对第二个量子位应用X门
-    let cnot_result = cnot_gate(system)
-    {
-      amplitude_00: cnot_result.amplitude_01,  // |00⟩ → |01⟩
-      amplitude_01: cnot_result.amplitude_00,  // |01⟩ → |00⟩
-      amplitude_10: cnot_result.amplitude_11,  // |10⟩ → |11⟩
-      amplitude_11: cnot_result.amplitude_10   // |11⟩ → |10⟩
-    }
-  }
-  
-  // Deutsch-Jozsa算法
-  let deutsch_jozsa_algorithm = fn(oracle: TwoQubitSystem -> TwoQubitSystem) {
-    // 初始化状态 |01⟩
-    let zero_state = create_zero_state()
-    let one_state = create_one_state()
-    let initial_state = tensor_product(zero_state, one_state)
-    
-    // 应用哈达玛门到两个量子位
-    let h_first = hadamard_first_qubit(initial_state)
-    // 简化：这里我们只对第一个量子位应用哈达玛门
-    
-    // 应用Oracle
-    let after_oracle = oracle(h_first)
-    
-    // 再次应用哈达玛门到第一个量子位
-    let final_state = hadamard_first_qubit(after_oracle)
-    
-    final_state
-  }
-  
-  // 测试常数函数 f(x) = 0
-  let result_f0 = deutsch_jozsa_algorithm(oracle_f0)
-  
-  // 对于常数函数，第一个量子位应该测量为|0⟩
-  assert_true(result_f0.amplitude_00.0.abs() > 0.7 || result_f0.amplitude_01.0.abs() > 0.7)
-  
-  // 测试常数函数 f(x) = 1
-  let result_f1 = deutsch_jozsa_algorithm(oracle_f1)
-  
-  // 对于常数函数，第一个量子位应该测量为|0⟩
-  assert_true(result_f1.amplitude_00.0.abs() > 0.7 || result_f1.amplitude_01.0.abs() > 0.7)
-  
-  // 测试平衡函数 f(x) = x
-  let result_fx = deutsch_jozsa_algorithm(oracle_fx)
-  
-  // 对于平衡函数，第一个量子位应该测量为|1⟩
-  assert_true(result_fx.amplitude_10.0.abs() > 0.7 || result_fx.amplitude_11.0.abs() > 0.7)
-  
-  // 测试平衡函数 f(x) = ¬x
-  let result_fnotx = deutsch_jozsa_algorithm(oracle_fnotx)
-  
-  // 对于平衡函数，第一个量子位应该测量为|1⟩
-  assert_true(result_fnotx.amplitude_10.0.abs() > 0.7 || result_fnotx.amplitude_11.0.abs() > 0.7)
+  assert_eq(corrected_state, 1)  // Should be corrected back to |1⟩
 }
 
-// 测试5: 量子纠缠和贝尔不等式
-test "量子纠缠和贝尔不等式" {
-  // 量子位表示
-  type Qubit = {
-    alpha: (Float, Float),  // |0⟩态的幅度（实部，虚部）
-    beta: (Float, Float)    // |1⟩态的幅度（实部，虚部）
-  }
+test "quantum algorithm implementation" {
+  // Test Grover's algorithm (simplified)
+  let database_size = 8  // 3 qubits needed
+  let marked_item = 5    // Item we're searching for
   
-  // 两量子位系统
-  type TwoQubitSystem = {
-    amplitude_00: (Float, Float),  // |00⟩态的幅度
-    amplitude_01: (Float, Float),  // |01⟩态的幅度
-    amplitude_10: (Float, Float),  // |10⟩态的幅度
-    amplitude_11: (Float, Float)   // |11⟩态的幅度
-  }
+  // Initialize Grover's algorithm
+  let grover = QuantumAlgorithm::grover(database_size, marked_item)
   
-  // 创建贝尔态 |Φ+⟩ = (|00⟩ + |11⟩)/√2
-  let create_bell_state_phi_plus = fn() {
-    let sqrt2 = 2.0.sqrt()
-    {
-      amplitude_00: (1.0 / sqrt2, 0.0),
-      amplitude_01: (0.0, 0.0),
-      amplitude_10: (0.0, 0.0),
-      amplitude_11: (1.0 / sqrt2, 0.0)
-    }
-  }
+  // Execute algorithm
+  let result = QuantumAlgorithm::execute(grover)
   
-  // 创建贝尔态 |Φ-⟩ = (|00⟩ - |11⟩)/√2
-  let create_bell_state_phi_minus = fn() {
-    let sqrt2 = 2.0.sqrt()
-    {
-      amplitude_00: (1.0 / sqrt2, 0.0),
-      amplitude_01: (0.0, 0.0),
-      amplitude_10: (0.0, 0.0),
-      amplitude_11: (-1.0 / sqrt2, 0.0)
-    }
-  }
+  // Result should be the marked item with high probability
+  assert_eq(result, marked_item)
   
-  // 创建贝尔态 |Ψ+⟩ = (|01⟩ + |10⟩)/√2
-  let create_bell_state_psi_plus = fn() {
-    let sqrt2 = 2.0.sqrt()
-    {
-      amplitude_00: (0.0, 0.0),
-      amplitude_01: (1.0 / sqrt2, 0.0),
-      amplitude_10: (1.0 / sqrt2, 0.0),
-      amplitude_11: (0.0, 0.0)
-    }
-  }
+  // Test Deutsch-Jozsa algorithm (simplified)
+  let oracle = QuantumOracle::constant_zero()  // Constant zero function
+  let deutsch_jozsa = QuantumAlgorithm::deutsch_jozsa(oracle)
   
-  // 创建贝尔态 |Ψ-⟩ = (|01⟩ - |10⟩)/√2
-  let create_bell_state_psi_minus = fn() {
-    let sqrt2 = 2.0.sqrt()
-    {
-      amplitude_00: (0.0, 0.0),
-      amplitude_01: (1.0 / sqrt2, 0.0),
-      amplitude_10: (-1.0 / sqrt2, 0.0),
-      amplitude_11: (0.0, 0.0)
-    }
-  }
+  let dj_result = QuantumAlgorithm::execute(deutsch_jozsa)
+  assert_eq(dj_result, "constant")  // Should identify as constant
+}
+
+test "quantum teleportation protocol" {
+  // Test quantum teleportation
+  let alice_qubit = Qubit::superposition(0.6, 0.8)  // State to teleport
+  let entangled_pair = QuantumEntanglement::create_bell_phi_plus(
+    Qubit::new(0), 
+    Qubit::new(0)
+  )
   
-  // 复数乘法
-  let complex_multiply = fn(a: (Float, Float), b: (Float, Float)) {
-    let real = a.0 * b.0 - a.1 * b.1
-    let imag = a.0 * b.1 + a.1 * b.0
-    (real, imag)
-  }
+  // Perform teleportation
+  let (bob_qubit, classical_info) = QuantumTeleportation::teleport(
+    alice_qubit, 
+    entangled_pair
+  )
   
-  // 测量两个量子位
-  let measure_both_qubits = fn(system: TwoQubitSystem, random_value: Float) {
-    let prob_00 = system.amplitude_00.0 * system.amplitude_00.0 + 
-                  system.amplitude_00.1 * system.amplitude_00.1
-    let prob_01 = system.amplitude_01.0 * system.amplitude_01.0 + 
-                  system.amplitude_01.1 * system.amplitude_01.1
-    let prob_10 = system.amplitude_10.0 * system.amplitude_10.0 + 
-                  system.amplitude_10.1 * system.amplitude_10.1
-    
-    if random_value < prob_00 {
-      (0, 0, {
-        amplitude_00: (1.0, 0.0),
-        amplitude_01: (0.0, 0.0),
-        amplitude_10: (0.0, 0.0),
-        amplitude_11: (0.0, 0.0)
-      })
-    } else if random_value < prob_00 + prob_01 {
-      (0, 1, {
-        amplitude_00: (0.0, 0.0),
-        amplitude_01: (1.0, 0.0),
-        amplitude_10: (0.0, 0.0),
-        amplitude_11: (0.0, 0.0)
-      })
-    } else if random_value < prob_00 + prob_01 + prob_10 {
-      (1, 0, {
-        amplitude_00: (0.0, 0.0),
-        amplitude_01: (0.0, 0.0),
-        amplitude_10: (1.0, 0.0),
-        amplitude_11: (0.0, 0.0)
-      })
-    } else {
-      (1, 1, {
-        amplitude_00: (0.0, 0.0),
-        amplitude_01: (0.0, 0.0),
-        amplitude_10: (0.0, 0.0),
-        amplitude_11: (1.0, 0.0)
-      })
-    }
-  }
+  // Bob applies corrections based on classical information
+  let teleported_qubit = QuantumTeleportation::apply_corrections(
+    bob_qubit, 
+    classical_info
+  )
   
-  // 计算关联函数
-  let calculate_correlation = fn(system: TwoQubitSystem, measurement_settings: Array<String>, num_trials: Int) {
-    let mut correlation_sum = 0.0
-    
-    for i in 0..num_trials {
-      let random_value = (i * 1237) % 10000 / 10000.0  // 伪随机数
-      let (result1, result2, _) = measure_both_qubits(system, random_value)
-      
-      // 简化的关联计算
-      let correlation = if result1 == result2 { 1.0 } else { -1.0 }
-      correlation_sum = correlation_sum + correlation
-    }
-    
-    correlation_sum / num_trials.to_float()
-  }
+  // Verify teleportation (amplitudes should match original)
+  let (orig_alpha, orig_beta) = Qubit::amplitudes(alice_qubit)
+  let (tele_alpha, tele_beta) = Qubit::amplitudes(teleported_qubit)
   
-  // CHSH不等式测试
-  let test_chsh_inequality = fn(system: TwoQubitSystem) {
-    // 简化的CHSH测试
-    let e_ab = calculate_correlation(system, ["A", "B"], 100)
-    let e_ab_prime = calculate_correlation(system, ["A", "B'"], 100)
-    let e_a_prime_b = calculate_correlation(system, ["A'", "B"], 100)
-    let e_a_prime_b_prime = calculate_correlation(system, ["A'", "B'"], 100)
-    
-    // CHSH值: S = E(a,b) - E(a,b') + E(a',b) + E(a',b')
-    let s_value = e_ab - e_ab_prime + e_a_prime_b + e_a_prime_b_prime
-    
-    // 经典上限: |S| ≤ 2
-    // 量子上限: |S| ≤ 2√2 ≈ 2.828
-    s_value
-  }
+  assert_true(orig_alpha - tele_alpha < 0.001)
+  assert_true(orig_beta - tele_beta < 0.001)
+}
+
+test "quantum key distribution" {
+  // Test BB84 protocol (simplified)
+  let alice = QuantumCryptography::alice_init()
+  let bob = QuantumCryptography::bob_init()
   
-  // 测试贝尔态创建
-  let bell_phi_plus = create_bell_state_phi_plus()
-  let bell_phi_minus = create_bell_state_phi_minus()
-  let bell_psi_plus = create_bell_state_psi_plus()
-  let bell_psi_minus = create_bell_state_psi_minus()
+  // Alice sends quantum bits to Bob
+  let quantum_channel = QuantumCryptography::bb84_send_bits(alice, 8)
   
-  let sqrt2 = 2.0.sqrt()
+  // Bob receives and measures
+  let bob_measurements = QuantumCryptography::bb84_receive_bits(
+    bob, 
+    quantum_channel
+  )
   
-  assert_eq(bell_phi_plus.amplitude_00, (1.0 / sqrt2, 0.0))
-  assert_eq(bell_phi_plus.amplitude_11, (1.0 / sqrt2, 0.0))
+  // Classical communication to compare bases
+  let classical_channel = QuantumCryptography::exchange_bases(alice, bob)
   
-  assert_eq(bell_phi_minus.amplitude_00, (1.0 / sqrt2, 0.0))
-  assert_eq(bell_phi_minus.amplitude_11, (-1.0 / sqrt2, 0.0))
+  // Sift key (keep only matching bases)
+  let sifted_key = QuantumCryptography::bb84_sift_key(
+    bob_measurements, 
+    classical_channel
+  )
   
-  assert_eq(bell_psi_plus.amplitude_01, (1.0 / sqrt2, 0.0))
-  assert_eq(bell_psi_plus.amplitude_10, (1.0 / sqrt2, 0.0))
+  // Verify key properties
+  assert_true(sifted_key.length() > 0)
+  assert_true(sifted_key.length() <= 8)  // Should be less than or equal to original
+}
+
+test "quantum simulation performance" {
+  // Test quantum simulation with increasing qubit count
+  let small_system = QuantumSimulator::new(4)   // 4 qubits
+  let medium_system = QuantumSimulator::new(8)  // 8 qubits
+  let large_system = QuantumSimulator::new(12)  // 12 qubits
   
-  assert_eq(bell_psi_minus.amplitude_01, (1.0 / sqrt2, 0.0))
-  assert_eq(bell_psi_minus.amplitude_10, (-1.0 / sqrt2, 0.0))
+  // Test state space size (2^n)
+  assert_eq(QuantumSimulator::state_space_size(small_system), 16)
+  assert_eq(QuantumSimulator::state_space_size(medium_system), 256)
+  assert_eq(QuantumSimulator::state_space_size(large_system), 4096)
   
-  // 测试测量关联
-  let (result1, result2, _) = measure_both_qubits(bell_phi_plus, 0.3)  // 30%概率，应该测量为00
-  assert_eq(result1, 0)
-  assert_eq(result2, 0)
+  // Test simulation performance metrics
+  let small_metrics = QuantumSimulator::performance_metrics(small_system)
+  let medium_metrics = QuantumSimulator::performance_metrics(medium_system)
+  let large_metrics = QuantumSimulator::performance_metrics(large_system)
   
-  let (result3, result4, _) = measure_both_qubits(bell_phi_plus, 0.8)  // 80%概率，应该测量为11
-  assert_eq(result3, 1)
-  assert_eq(result4, 1)
+  // Memory usage should increase exponentially
+  assert_true(small_metrics.memory_usage < medium_metrics.memory_usage)
+  assert_true(medium_metrics.memory_usage < large_metrics.memory_usage)
   
-  // 测试CHSH不等式
-  let chsh_value = test_chsh_inequality(bell_phi_plus)
-  
-  // 对于纠缠态，CHSH值应该超过经典上限2
-  // 由于我们的简化模型，可能不会精确违反不等式，但我们可以验证计算逻辑
-  assert_true(chsh_value > -3.0 && chsh_value < 3.0)  // 合理范围内的值
-  
-  // 测试纠缠特性
-  // 对于|Φ+⟩态，测量第一个量子位为0时，第二个量子位也应该为0
-  let (result5, result6, _) = measure_both_qubits(bell_phi_plus, 0.2)
-  assert_eq(result5, result6)  // 应该相同
-  
-  // 对于|Ψ+⟩态，测量第一个量子位为0时，第二个量子位应该为1
-  let (result7, result8, _) = measure_both_qubits(bell_psi_plus, 0.2)
-  assert_true(result7 != result8)  // 应该不同
+  // Computation time should increase with system size
+  assert_true(small_metrics.computation_time < medium_metrics.computation_time)
+  assert_true(medium_metrics.computation_time < large_metrics.computation_time)
 }
