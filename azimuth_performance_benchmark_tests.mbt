@@ -1,1135 +1,1642 @@
-// 阿兹米克性能基准测试用例
-// 专注于遥测系统的性能测量、基准测试和性能优化验证功能
+// Azimuth 性能基准测试用例
+// 专注于系统性能测量、基准测试和性能优化验证
 
-// 测试1: 基本性能指标测量
-test "基本性能指标测量测试" {
-  let performance_profiler = PerformanceProfiler::new()
-  
-  // 测试函数执行时间
-  let test_function = fn() {
-    // 模拟一些计算工作
-    let mut result = 0
-    for i in 1..=1000 {
-      result = result + i * i
-    }
-    result
-  }
-  
-  // 测量函数执行时间
-  let execution_time = PerformanceProfiler::measure_function_time(performance_profiler, test_function)
-  
-  // 验证执行时间测量
-  assert_true(execution_time > 0)
-  assert_true(execution_time < 100000000) // 应该在100ms内完成
-  
-  // 测试多次执行的平均时间
-  let avg_time = PerformanceProfiler::measure_average_time(performance_profiler, test_function, 10)
-  
-  // 验证平均时间
-  assert_true(avg_time > 0)
-  assert_true(avg_time <= execution_time) // 平均时间应该小于或等于单次执行时间
-  
-  // 测试内存使用
-  let memory_before = PerformanceProfiler::get_memory_usage(performance_profiler)
-  
-  // 创建大量对象
-  let large_array = []
-  for i in 1..=10000 {
-    large_array = large_array.push("item-" + i.to_string())
-  }
-  
-  let memory_after = PerformanceProfiler::get_memory_usage(performance_profiler)
-  
-  // 验证内存使用增加
-  assert_true(memory_after > memory_before)
-  
-  // 测试CPU使用率
-  let cpu_usage = PerformanceProfiler::measure_cpu_usage(performance_profiler, fn() {
-    // CPU密集型任务
-    let mut result = 1.0
-    for i in 1..=100000 {
-      result = result * 1.000001
-    }
-    result
-  }, 1000) // 测量1秒
-  
-  // 验证CPU使用率
-  assert_true(cpu_usage >= 0.0)
-  assert_true(cpu_usage <= 1.0)
-  
-  // 测试吞吐量
-  let throughput_test = fn() {
-    // 模拟处理请求
-    let mut result = 0
-    for i in 1..=100 {
-      result = result + i
-    }
-    result
-  }
-  
-  let duration_ms = 1000 // 1秒
-  let throughput = PerformanceProfiler::measure_throughput(performance_profiler, throughput_test, duration_ms)
-  
-  // 验证吞吐量
-  assert_true(throughput > 0)
-  
-  // 测试延迟分布
-  let latencies = []
-  for i in 1..=100 {
-    let latency = PerformanceProfiler::measure_function_time(performance_profiler, test_function)
-    latencies = latencies.push(latency)
-  }
-  
-  let latency_stats = PerformanceProfiler::calculate_latency_stats(performance_profiler, latencies)
-  
-  // 验证延迟统计
-  assert_true(LatencyStats::min(latency_stats) > 0)
-  assert_true(LatencyStats::max(latency_stats) >= LatencyStats::min(latency_stats))
-  assert_true(LatencyStats::avg(latency_stats) >= LatencyStats::min(latency_stats))
-  assert_true(LatencyStats::avg(latency_stats) <= LatencyStats::max(latency_stats))
-  assert_true(LatencyStats::p95(latency_stats) <= LatencyStats::max(latency_stats))
-  assert_true(LatencyStats::p99(latency_stats) <= LatencyStats::max(latency_stats))
-}
-
-// 测试2: 遥测数据生成性能
-test "遥测数据生成性能测试" {
-  let telemetry_benchmark = TelemetryBenchmark::new()
-  
-  // 测试单个遥测数据生成性能
-  let single_data_generation = fn() {
-    let telemetry_data = TelemetryData::new()
-    TelemetryData::add_metric(telemetry_data, "cpu_usage", Random::float_between(0.0, 100.0))
-    TelemetryData::add_metric(telemetry_data, "memory_usage", Random::float_between(0.0, 100.0))
-    TelemetryData::add_metric(telemetry_data, "disk_usage", Random::float_between(0.0, 100.0))
-    TelemetryData::add_metric(telemetry_data, "network_throughput", Random::float_between(0.0, 1000.0))
-    
-    TelemetryData::add_attribute(telemetry_data, "service_name", Random::choice(["web-service", "api-service", "db-service"]))
-    TelemetryData::add_attribute(telemetry_data, "instance_id", "instance-" + Random::int_between(1, 10).to_string())
-    TelemetryData::add_attribute(telemetry_data, "environment", Random::choice(["dev", "staging", "prod"]))
-    TelemetryData::add_attribute(telemetry_data, "region", Random::choice(["us-east-1", "us-west-2", "eu-west-1"]))
-    
-    telemetry_data
-  }
-  
-  // 测量单个数据生成时间
-  let single_generation_time = TelemetryBenchmark::measure_generation_time(telemetry_benchmark, single_data_generation)
-  
-  // 验证单个生成性能
-  assert_true(single_generation_time < 100000) // 应该在0.1ms内完成
-  
-  // 测试批量数据生成性能
-  let batch_size = 1000
-  let batch_generation_start = Timestamp::now()
-  
-  let telemetry_batch = []
-  for i in 1..=batch_size {
-    telemetry_batch = telemetry_batch.push(single_data_generation())
-  }
-  
-  let batch_generation_end = Timestamp::now()
-  let batch_generation_time = batch_generation_end - batch_generation_start
-  
-  // 验证批量生成性能
-  assert_true(batch_generation_time < 100000000) // 应该在100ms内完成1000个数据生成
-  
-  let avg_batch_time = batch_generation_time.to_float() / batch_size.to_float()
-  assert_true(avg_batch_time < single_generation_time.to_float() * 2) // 批量应该比单个更高效
-  
-  // 测试复杂遥测数据生成性能
-  let complex_data_generation = fn() {
-    let complex_telemetry = TelemetryData::new()
-    
-    // 生成大量指标
-    for i in 1..=50 {
-      TelemetryData::add_metric(complex_telemetry, "metric_" + i.to_string(), Random::float_between(0.0, 1000.0))
-    }
-    
-    // 生成大量属性
-    for i in 1..=20 {
-      TelemetryData::add_attribute(complex_telemetry, "attr_" + i.to_string(), "value_" + i.to_string())
-    }
-    
-    // 生成嵌套结构
-    let nested_data = NestedData::new()
-    NestedData::add_field(nested_data, "field1", "value1")
-    NestedData::add_field(nested_data, "field2", Random::int_between(1, 100))
-    NestedData::add_field(nested_data, "field3", Random::bool())
-    
-    TelemetryData::add_nested_data(complex_telemetry, "nested", nested_data)
-    
-    complex_telemetry
-  }
-  
-  // 测量复杂数据生成时间
-  let complex_generation_time = TelemetryBenchmark::measure_generation_time(telemetry_benchmark, complex_data_generation)
-  
-  // 验证复杂数据生成性能
-  assert_true(complex_generation_time < 1000000) // 应该在1ms内完成
-  
-  // 测试时间序列数据生成性能
-  let time_series_generation = fn() {
-    let time_series = TimeSeriesData::new("cpu_usage")
-    
-    let base_time = Timestamp::now()
-    for i in 1..=100 {
-      TimeSeriesData::add_point(time_series, TimeSeriesPoint::new(
-        base_time + (i * 60000), // 每分钟一个数据点
-        Random::float_between(20.0, 80.0)
-      ))
-    }
-    
-    time_series
-  }
-  
-  // 测量时间序列数据生成时间
-  let time_series_generation_time = TelemetryBenchmark::measure_generation_time(telemetry_benchmark, time_series_generation)
-  
-  // 验证时间序列生成性能
-  assert_true(time_series_generation_time < 5000000) // 应该在5ms内完成
-  
-  // 生成性能报告
-  let performance_report = TelemetryBenchmark::generate_report(telemetry_benchmark, [
-    ("single_generation", single_generation_time),
-    ("batch_generation", batch_generation_time.to_float() / batch_size.to_float()),
-    ("complex_generation", complex_generation_time),
-    ("time_series_generation", time_series_generation_time)
-  ])
-  
-  // 验证性能报告
-  assert_true(PerformanceReport::contains_metrics(performance_report))
-  assert_true(PerformanceReport::contains_comparisons(performance_report))
-}
-
-// 测试3: 序列化和反序列化性能
-test "序列化和反序列化性能测试" {
-  let serialization_benchmark = SerializationBenchmark::new()
-  
-  // 创建测试数据
-  let test_telemetry_data = TelemetryData::new()
-  TelemetryData::add_metric(test_telemetry_data, "cpu_usage", 75.5)
-  TelemetryData::add_metric(test_telemetry_data, "memory_usage", 62.3)
-  TelemetryData::add_metric(test_telemetry_data, "disk_usage", 45.8)
-  TelemetryData::add_attribute(test_telemetry_data, "service_name", "web-service")
-  TelemetryData::add_attribute(test_telemetry_data, "instance_id", "instance-12345")
-  TelemetryData::add_attribute(test_telemetry_data, "environment", "production")
-  
-  // 测试JSON序列化性能
-  let json_serialization_time = SerializationBenchmark::measure_serialization_time(
-    serialization_benchmark,
-    test_telemetry_data,
-    "json"
-  )
-  
-  // 验证JSON序列化性能
-  assert_true(json_serialization_time < 1000000) // 应该在1ms内完成
-  
-  // 测试JSON反序列化性能
-  let json_data = JsonSerializer::serialize(test_telemetry_data)
-  let json_deserialization_time = SerializationBenchmark::measure_deserialization_time(
-    serialization_benchmark,
-    json_data,
-    "json"
-  )
-  
-  // 验证JSON反序列化性能
-  assert_true(json_deserialization_time < 2000000) // 反序列化可能比序列化慢
-  
-  // 测试二进制序列化性能
-  let binary_serialization_time = SerializationBenchmark::measure_serialization_time(
-    serialization_benchmark,
-    test_telemetry_data,
-    "binary"
-  )
-  
-  // 验证二进制序列化性能
-  assert_true(binary_serialization_time < json_serialization_time) // 二进制应该比JSON快
-  
-  // 测试二进制反序列化性能
-  let binary_data = BinarySerializer::serialize(test_telemetry_data)
-  let binary_deserialization_time = SerializationBenchmark::measure_deserialization_time(
-    serialization_benchmark,
-    binary_data,
-    "binary"
-  )
-  
-  // 验证二进制反序列化性能
-  assert_true(binary_deserialization_time < json_deserialization_time)
-  
-  // 测试批量序列化性能
-  let batch_size = 1000
-  let telemetry_batch = []
-  
-  for i in 1..=batch_size {
-    let batch_data = TelemetryData::new()
-    TelemetryData::add_metric(batch_data, "cpu_usage", Random::float_between(0.0, 100.0))
-    TelemetryData::add_metric(batch_data, "memory_usage", Random::float_between(0.0, 100.0))
-    TelemetryData::add_attribute(batch_data, "service_name", "service-" + (i % 10).to_string())
-    
-    telemetry_batch = telemetry_batch.push(batch_data)
-  }
-  
-  // 测量批量序列化时间
-  let batch_serialization_start = Timestamp::now()
-  
-  let json_batch = []
-  for data in telemetry_batch {
-    json_batch = json_batch.push(JsonSerializer::serialize(data))
-  }
-  
-  let batch_serialization_end = Timestamp::now()
-  let batch_serialization_time = batch_serialization_end - batch_serialization_start
-  
-  // 验证批量序列化性能
-  assert_true(batch_serialization_time < 100000000) // 应该在100ms内完成1000个数据序列化
-  
-  let avg_batch_serialization_time = batch_serialization_time.to_float() / batch_size.to_float()
-  assert_true(avg_batch_serialization_time < json_serialization_time.to_float() * 2) // 批量应该比单个更高效
-  
-  // 比较序列化格式大小
-  let json_size = json_data.length()
-  let binary_size = binary_data.length()
-  
-  // 验证二进制格式更紧凑
-  assert_true(binary_size < json_size)
-  
-  let compression_ratio = binary_size.to_float() / json_size.to_float()
-  assert_true(compression_ratio < 0.8) // 二进制应该至少小20%
-  
-  // 生成序列化性能报告
-  let serialization_report = SerializationBenchmark::generate_report(serialization_benchmark, [
-    ("json_serialization", json_serialization_time),
-    ("json_deserialization", json_deserialization_time),
-    ("binary_serialization", binary_serialization_time),
-    ("binary_deserialization", binary_deserialization_time),
-    ("batch_serialization", avg_batch_serialization_time)
-  ])
-  
-  // 验证序列化报告
-  assert_true(SerializationReport::contains_format_comparison(serialization_report))
-  assert_true(SerializationReport::contains_size_analysis(serialization_report))
-}
-
-// 测试4: 缓存性能基准测试
-test "缓存性能基准测试测试" {
-  let cache_benchmark = CacheBenchmark::new()
-  
-  // 创建不同类型的缓存
-  let memory_cache = MemoryCache::new(10000) // 10K容量
-  let lru_cache = LRUCache::new(10000)
-  let ttl_cache = TTLCache::new(10000, 60000) // 60秒TTL
-  
-  // 准备测试数据
-  let test_data = []
-  for i in 1..=10000 {
-    test_data = test_data.push(("key-" + i.to_string(), "value-" + i.to_string()))
-  }
-  
-  // 测试内存缓存写入性能
-  let memory_write_start = Timestamp::now()
-  
-  for (key, value) in test_data {
-    MemoryCache::put(memory_cache, key, value)
-  }
-  
-  let memory_write_end = Timestamp::now()
-  let memory_write_time = memory_write_end - memory_write_start
-  
-  // 验证内存缓存写入性能
-  assert_true(memory_write_time < 100000000) // 应该在100ms内完成10000次写入
-  
-  // 测试内存缓存读取性能
-  let memory_read_start = Timestamp::now()
-  
-  for (key, _) in test_data {
-    MemoryCache::get(memory_cache, key)
-  }
-  
-  let memory_read_end = Timestamp::now()
-  let memory_read_time = memory_read_end - memory_read_start
-  
-  // 验证内存缓存读取性能
-  assert_true(memory_read_time < memory_write_time) // 读取应该比写入快
-  
-  // 测试LRU缓存写入性能
-  let lru_write_start = Timestamp::now()
-  
-  for (key, value) in test_data {
-    LRUCache::put(lru_cache, key, value)
-  }
-  
-  let lru_write_end = Timestamp::now()
-  let lru_write_time = lru_write_end - lru_write_start
-  
-  // 验证LRU缓存写入性能
-  assert_true(lru_write_time < 200000000) // LRU可能比简单内存缓存慢
-  
-  // 测试LRU缓存读取性能
-  let lru_read_start = Timestamp::now()
-  
-  for (key, _) in test_data {
-    LRUCache::get(lru_cache, key)
-  }
-  
-  let lru_read_end = Timestamp::now()
-  let lru_read_time = lru_read_end - lru_read_start
-  
-  // 验证LRU缓存读取性能
-  assert_true(lru_read_time < lru_write_time)
-  
-  // 测试TTL缓存写入性能
-  let ttl_write_start = Timestamp::now()
-  
-  for (key, value) in test_data {
-    TTLCache::put(ttl_cache, key, value)
-  }
-  
-  let ttl_write_end = Timestamp::now()
-  let ttl_write_time = ttl_write_end - ttl_write_start
-  
-  // 验证TTL缓存写入性能
-  assert_true(ttl_write_time < 200000000)
-  
-  // 测试TTL缓存读取性能
-  let ttl_read_start = Timestamp::now()
-  
-  for (key, _) in test_data {
-    TTLCache::get(ttl_cache, key)
-  }
-  
-  let ttl_read_end = Timestamp::now()
-  let ttl_read_time = ttl_read_end - ttl_read_start
-  
-  // 验证TTL缓存读取性能
-  assert_true(ttl_read_time < ttl_write_time)
-  
-  // 测试缓存命中率
-  let hit_rate_test_data = []
-  
-  // 80%的访问是重复的（符合80-20法则）
-  for i in 1..=8000 {
-    hit_rate_test_data = hit_rate_test_data.push("key-" + (i % 2000).to_string()) // 2000个热键
-  }
-  
-  for i in 1..=2000 {
-    hit_rate_test_data = hit_rate_test_data.push("key-" + (8000 + i).to_string()) // 2000个冷键
-  }
-  
-  // 测试内存缓存命中率
-  let memory_hit_count = 0
-  let memory_hit_start = Timestamp::now()
-  
-  for key in hit_rate_test_data {
-    let result = MemoryCache::get(memory_cache, key)
-    if result.is_some() {
-      memory_hit_count = memory_hit_count + 1
-    }
-  }
-  
-  let memory_hit_end = Timestamp::now()
-  let memory_hit_time = memory_hit_end - memory_hit_start
-  
-  let memory_hit_rate = memory_hit_count.to_float() / hit_rate_test_data.length().to_float()
-  
-  // 验证内存缓存命中率
-  assert_true(memory_hit_rate > 0.7) // 应该有70%以上的命中率
-  
-  // 测试并发访问性能
-  let concurrent_readers = 10
-  let reads_per_reader = 1000
-  
-  let concurrent_start = Timestamp::now()
-  
-  // 在实际环境中，这里会创建多个线程并行读取
-  for reader in 1..=concurrent_readers {
-    for read in 1..=reads_per_reader {
-      let key_index = ((reader - 1) * reads_per_reader + read - 1) % test_data.length()
-      let (key, _) = test_data[key_index]
-      MemoryCache::get(memory_cache, key)
-    }
-  }
-  
-  let concurrent_end = Timestamp::now()
-  let concurrent_time = concurrent_end - concurrent_start
-  
-  // 验证并发访问性能
-  let total_reads = concurrent_readers * reads_per_reader
-  let avg_concurrent_read_time = concurrent_time.to_float() / total_reads.to_float()
-  
-  assert_true(avg_concurrent_read_time < memory_read_time.to_float() * 2) // 并发访问可能稍微慢一点
-  
-  // 生成缓存性能报告
-  let cache_report = CacheBenchmark::generate_report(cache_benchmark, [
-    ("memory_write", memory_write_time.to_float() / test_data.length().to_float()),
-    ("memory_read", memory_read_time.to_float() / test_data.length().to_float()),
-    ("lru_write", lru_write_time.to_float() / test_data.length().to_float()),
-    ("lru_read", lru_read_time.to_float() / test_data.length().to_float()),
-    ("ttl_write", ttl_write_time.to_float() / test_data.length().to_float()),
-    ("ttl_read", ttl_read_time.to_float() / test_data.length().to_float()),
-    ("hit_rate", memory_hit_rate),
-    ("concurrent_read", avg_concurrent_read_time)
-  ])
-  
-  // 验证缓存报告
-  assert_true(CacheReport::contains_performance_comparison(cache_report))
-  assert_true(CacheReport::contains_hit_rate_analysis(cache_report))
-}
-
-// 测试5: 网络传输性能测试
-test "网络传输性能测试测试" {
-  let network_benchmark = NetworkBenchmark::new()
-  
-  // 创建不同大小的测试数据
-  let small_data = "x".repeat(1024) // 1KB
-  let medium_data = "x".repeat(1024 * 100) // 100KB
-  let large_data = "x".repeat(1024 * 1024) // 1MB
-  
-  // 测试小数据传输性能
-  let small_transfer_time = NetworkBenchmark::measure_transfer_time(
-    network_benchmark,
-    small_data,
-    "localhost",
-    8080
-  )
-  
-  // 验证小数据传输性能
-  assert_true(small_transfer_time < 10000000) // 应该在10ms内完成
-  
-  // 测试中等数据传输性能
-  let medium_transfer_time = NetworkBenchmark::measure_transfer_time(
-    network_benchmark,
-    medium_data,
-    "localhost",
-    8080
-  )
-  
-  // 验证中等数据传输性能
-  assert_true(medium_transfer_time < 100000000) // 应该在100ms内完成
-  
-  // 测试大数据传输性能
-  let large_transfer_time = NetworkBenchmark::measure_transfer_time(
-    network_benchmark,
-    large_data,
-    "localhost",
-    8080
-  )
-  
-  // 验证大数据传输性能
-  assert_true(large_transfer_time < 1000000000) // 应该在1秒内完成
-  
-  // 计算传输吞吐量
-  let small_throughput = small_data.length().to_float() / (small_transfer_time.to_float() / 1000000000.0) // bytes/second
-  let medium_throughput = medium_data.length().to_float() / (medium_transfer_time.to_float() / 1000000000.0)
-  let large_throughput = large_data.length().to_float() / (large_transfer_time.to_float() / 1000000000.0)
-  
-  // 验证吞吐量
-  assert_true(small_throughput > 1024 * 100) // 至少100KB/s
-  assert_true(medium_throughput > 1024 * 1000) // 至少1MB/s
-  assert_true(large_throughput > 1024 * 10000) // 至少10MB/s
-  
-  // 测试并发连接性能
-  let concurrent_connections = 10
-  let data_per_connection = "x".repeat(1024 * 10) // 10KB per connection
-  
-  let concurrent_start = Timestamp::now()
-  
-  // 在实际环境中，这里会创建多个并发连接
-  for conn in 1..=concurrent_connections {
-    NetworkBenchmark::measure_transfer_time(
-      network_benchmark,
-      data_per_connection,
-      "localhost",
-      8080
-    )
-  }
-  
-  let concurrent_end = Timestamp::now()
-  let concurrent_time = concurrent_end - concurrent_start
-  
-  // 验证并发连接性能
-  let total_concurrent_data = concurrent_connections * data_per_connection.length()
-  let concurrent_throughput = total_concurrent_data.to_float() / (concurrent_time.to_float() / 1000000000.0)
-  
-  assert_true(concurrent_throughput > 1024 * 5000) // 至少5MB/s
-  
-  // 测试压缩传输性能
-  let compressible_data = "x".repeat(1000) + "y".repeat(1000) + "z".repeat(1000) // 可压缩数据
-  
-  let uncompressed_transfer_time = NetworkBenchmark::measure_transfer_time(
-    network_benchmark,
-    compressible_data,
-    "localhost",
-    8080
-  )
-  
-  let compressed_data = CompressionUtil::compress(compressible_data)
-  let compressed_transfer_time = NetworkBenchmark::measure_transfer_time(
-    network_benchmark,
-    compressed_data,
-    "localhost",
-    8080
-  )
-  
-  // 验证压缩传输性能
-  let compression_ratio = compressed_data.length().to_float() / compressible_data.length().to_float()
-  assert_true(compression_ratio < 0.8) // 压缩后应该至少小20%
-  
-  // 考虑压缩时间，压缩传输可能不一定更快
-  let compression_time = CompressionUtil::measure_compression_time(compressible_data)
-  let total_compressed_time = compression_time + compressed_transfer_time
-  
-  // 在网络条件差的情况下，压缩传输应该更快
-  // 这里我们只验证压缩确实减少了数据量
-  assert_true(compressed_data.length() < compressible_data.length())
-  
-  // 测试不同协议的性能
-  let protocols = ["http", "https", "grpc"]
-  let protocol_times = []
-  
-  for protocol in protocols {
-    let protocol_time = NetworkBenchmark::measure_transfer_time(
-      network_benchmark,
-      small_data,
-      "localhost",
-      8080,
-      protocol
-    )
-    
-    protocol_times = protocol_times.push((protocol, protocol_time))
-  }
-  
-  // 验证协议性能差异
-  let http_time = protocol_times.find(fn(p) { p[0] == "http" })
-  let https_time = protocol_times.find(fn(p) { p[0] == "https" })
-  let grpc_time = protocol_times.find(fn(p) { p[0] == "grpc" })
-  
-  match (http_time, https_time, grpc_time) {
-    (Some((_, ht)), Some((_, hst)), Some((_, gt))) => {
-      // HTTPS可能比HTTP慢（TLS开销）
-      // gRPC可能比HTTP快（二进制协议）
-      assert_true(hst >= ht)
-      assert_true(gt <= ht)
-    }
-    _ => assert_true(false)
-  }
-  
-  // 生成网络性能报告
-  let network_report = NetworkBenchmark::generate_report(network_benchmark, [
-    ("small_transfer", small_transfer_time),
-    ("medium_transfer", medium_transfer_time),
-    ("large_transfer", large_transfer_time),
-    ("small_throughput", small_throughput),
-    ("medium_throughput", medium_throughput),
-    ("large_throughput", large_throughput),
-    ("concurrent_throughput", concurrent_throughput),
-    ("compression_ratio", compression_ratio)
-  ])
-  
-  // 验证网络报告
-  assert_true(NetworkReport::contains_throughput_analysis(network_report))
-  assert_true(NetworkReport::contains_protocol_comparison(network_report))
-}
-
-// 测试6: 数据库操作性能测试
-test "数据库操作性能测试测试" {
-  let database_benchmark = DatabaseBenchmark::new()
-  
-  // 创建测试数据库连接
-  let db_connection = DatabaseBenchmark::create_connection(database_benchmark, "localhost", 5432, "test_db")
-  
-  // 准备测试表
-  DatabaseBenchmark::create_test_table(db_connection, "telemetry_metrics")
-  
-  // 测试插入性能
-  let insert_batch_size = 1000
-  let insert_start = Timestamp::now()
-  
-  for i in 1..=insert_batch_size {
-    let metric_data = [
-      ("metric_name", "cpu_usage"),
-      ("metric_value", Random::float_between(0.0, 100.0).to_string()),
-      ("service_name", "service-" + (i % 10).to_string()),
-      ("timestamp", Timestamp::now().to_string())
-    ]
-    
-    DatabaseBenchmark::insert(db_connection, "telemetry_metrics", metric_data)
-  }
-  
-  let insert_end = Timestamp::now()
-  let insert_time = insert_end - insert_start
-  
-  // 验证插入性能
-  assert_true(insert_time < 1000000000) // 应该在1秒内完成1000次插入
-  
-  let avg_insert_time = insert_time.to_float() / insert_batch_size.to_float()
-  assert_true(avg_insert_time < 1000000) // 平均每次插入应该在1ms内
-  
-  // 测试批量插入性能
-  let batch_insert_data = []
-  
-  for i in 1..=insert_batch_size {
-    let metric_data = [
-      ("metric_name", "memory_usage"),
-      ("metric_value", Random::float_between(0.0, 100.0).to_string()),
-      ("service_name", "service-" + (i % 10).to_string()),
-      ("timestamp", Timestamp::now().to_string())
-    ]
-    
-    batch_insert_data = batch_insert_data.push(metric_data)
-  }
-  
-  let batch_insert_start = Timestamp::now()
-  
-  DatabaseBenchmark::batch_insert(db_connection, "telemetry_metrics", batch_insert_data)
-  
-  let batch_insert_end = Timestamp::now()
-  let batch_insert_time = batch_insert_end - batch_insert_start
-  
-  // 验证批量插入性能
-  assert_true(batch_insert_time < insert_time) // 批量插入应该比单个插入快
-  assert_true(batch_insert_time < 500000000) // 应该在0.5秒内完成
-  
-  // 测试查询性能
-  let query_start = Timestamp::now()
-  
-  let query_results = DatabaseBenchmark::query(db_connection, "SELECT * FROM telemetry_metrics WHERE metric_name = 'cpu_usage'")
-  
-  let query_end = Timestamp::now()
-  let query_time = query_end - query_start
-  
-  // 验证查询性能
-  assert_true(query_time < 100000000) // 应该在100ms内完成
-  assert_true(query_results.length() == insert_batch_size)
-  
-  // 测试索引查询性能
-  DatabaseBenchmark::create_index(db_connection, "telemetry_metrics", "metric_name")
-  
-  let indexed_query_start = Timestamp::now()
-  
-  let indexed_query_results = DatabaseBenchmark::query(db_connection, "SELECT * FROM telemetry_metrics WHERE metric_name = 'memory_usage'")
-  
-  let indexed_query_end = Timestamp::now()
-  let indexed_query_time = indexed_query_end - indexed_query_start
-  
-  // 验证索引查询性能
-  assert_true(indexed_query_time < query_time) // 索引查询应该更快
-  assert_true(indexed_query_results.length() == insert_batch_size)
-  
-  // 测试聚合查询性能
-  let aggregation_start = Timestamp::now()
-  
-  let aggregation_results = DatabaseBenchmark::query(db_connection, "
-    SELECT service_name, AVG(metric_value) as avg_value, COUNT(*) as count 
-    FROM telemetry_metrics 
-    GROUP BY service_name
-  ")
-  
-  let aggregation_end = Timestamp::now()
-  let aggregation_time = aggregation_end - aggregation_start
-  
-  // 验证聚合查询性能
-  assert_true(aggregation_time < 50000000) // 应该在50ms内完成
-  assert_true(aggregation_results.length() == 10) // 10个不同的服务
-  
-  // 测试更新性能
-  let update_start = Timestamp::now()
-  
-  for i in 1..=100 {
-    let update_data = [
-      ("metric_value", Random::float_between(0.0, 100.0).to_string())
-    ]
-    
-    DatabaseBenchmark::update(db_connection, "telemetry_metrics", update_data, "id = " + i.to_string())
-  }
-  
-  let update_end = Timestamp::now()
-  let update_time = update_end - update_start
-  
-  // 验证更新性能
-  assert_true(update_time < 500000000) // 应该在0.5秒内完成100次更新
-  
-  // 测试删除性能
-  let delete_start = Timestamp::now()
-  
-  DatabaseBenchmark::delete(db_connection, "telemetry_metrics", "metric_name = 'cpu_usage'")
-  
-  let delete_end = Timestamp::now()
-  let delete_time = delete_end - delete_start
-  
-  // 验证删除性能
-  assert_true(delete_time < 100000000) // 应该在100ms内完成
-  
-  // 验证删除结果
-  let delete_verification = DatabaseBenchmark::query(db_connection, "SELECT COUNT(*) as count FROM telemetry_metrics WHERE metric_name = 'cpu_usage'")
-  assert_eq(delete_verification[0]["count"], "0")
-  
-  // 测试连接池性能
-  let connection_pool = DatabaseBenchmark::create_connection_pool(database_benchmark, 10)
-  
-  let pool_query_start = Timestamp::now()
-  
-  // 在实际环境中，这里会从连接池获取连接并执行查询
-  for i in 1..=100 {
-    let pool_connection = ConnectionPool::get_connection(connection_pool)
-    DatabaseBenchmark::query(pool_connection, "SELECT COUNT(*) FROM telemetry_metrics")
-    ConnectionPool::release_connection(connection_pool, pool_connection)
-  }
-  
-  let pool_query_end = Timestamp::now()
-  let pool_query_time = pool_query_end - pool_query_start
-  
-  // 验证连接池性能
-  assert_true(pool_query_time < 500000000) // 应该在0.5秒内完成100次查询
-  
-  // 生成数据库性能报告
-  let database_report = DatabaseBenchmark::generate_report(database_benchmark, [
-    ("single_insert", avg_insert_time),
-    ("batch_insert", batch_insert_time.to_float() / insert_batch_size.to_float()),
-    ("query", query_time.to_float() / query_results.length().to_float()),
-    ("indexed_query", indexed_query_time.to_float() / indexed_query_results.length().to_float()),
-    ("aggregation", aggregation_time.to_float() / aggregation_results.length().to_float()),
-    ("update", update_time.to_float() / 100.0),
-    ("delete", delete_time.to_float() / insert_batch_size.to_float()),
-    ("pool_query", pool_query_time.to_float() / 100.0)
-  ])
-  
-  // 验证数据库报告
-  assert_true(DatabaseReport::contains_operation_comparison(database_report))
-  assert_true(DatabaseReport::contains_optimization_recommendations(database_report))
-}
-
-// 测试7: 内存和资源使用性能测试
-test "内存和资源使用性能测试测试" {
-  let resource_benchmark = ResourceBenchmark::new()
-  
-  // 测试内存分配性能
-  let allocation_start = Timestamp::now()
-  let initial_memory = ResourceBenchmark::get_memory_usage(resource_benchmark)
-  
-  let allocated_objects = []
-  for i in 1..=10000 {
-    let large_object = "x".repeat(1024) // 1KB对象
-    allocated_objects = allocated_objects.push(large_object)
-  }
-  
-  let allocation_end = Timestamp::now()
-  let allocation_time = allocation_end - allocation_start
-  let allocated_memory = ResourceBenchmark::get_memory_usage(resource_benchmark)
-  
-  // 验证内存分配性能
-  assert_true(allocation_time < 100000000) // 应该在100ms内完成10000次分配
-  assert_true(allocated_memory > initial_memory) // 内存使用应该增加
-  
-  let memory_per_object = (allocated_memory - initial_memory).to_float() / 10000.0
-  assert_true(memory_per_object >= 1024.0) // 每个对象至少1KB
-  
-  // 测试内存释放性能
-  let deallocation_start = Timestamp::now()
-  
-  // 清空对象数组，触发垃圾回收
-  allocated_objects = []
-  ResourceBenchmark::force_gc(resource_benchmark)
-  
-  let deallocation_end = Timestamp::now()
-  let deallocation_time = deallocation_end - deallocation_start
-  let deallocated_memory = ResourceBenchmark::get_memory_usage(resource_benchmark)
-  
-  // 验证内存释放性能
-  assert_true(deallocation_time < 100000000) // 应该在100ms内完成释放
-  assert_true(deallocated_memory < allocated_memory) // 内存使用应该减少
-  
-  // 测试文件I/O性能
-  let test_data = "x".repeat(1024 * 1024) // 1MB数据
-  
-  // 测试文件写入性能
-  let write_start = Timestamp::now()
-  
-  let file_path = "/tmp/telemetry_test.dat"
-  ResourceBenchmark::write_file(file_path, test_data)
-  
-  let write_end = Timestamp::now()
-  let write_time = write_end - write_start
-  
-  // 验证文件写入性能
-  assert_true(write_time < 100000000) // 应该在100ms内完成1MB写入
-  
-  let write_throughput = test_data.length().to_float() / (write_time.to_float() / 1000000000.0)
-  assert_true(write_throughput > 1024 * 1024 * 10) // 至少10MB/s
-  
-  // 测试文件读取性能
-  let read_start = Timestamp::now()
-  
-  let read_data = ResourceBenchmark::read_file(file_path)
-  
-  let read_end = Timestamp::now()
-  let read_time = read_end - read_start
-  
-  // 验证文件读取性能
-  assert_true(read_time < write_time) // 读取通常比写入快
-  assert_eq(read_data.length(), test_data.length())
-  
-  let read_throughput = read_data.length().to_float() / (read_time.to_float() / 1000000000.0)
-  assert_true(read_throughput > 1024 * 1024 * 20) // 至少20MB/s
-  
-  // 测试并发文件I/O性能
-  let concurrent_files = []
-  let concurrent_io_start = Timestamp::now()
-  
-  // 创建多个并发文件操作
-  for i in 1..=10 {
-    let concurrent_file_path = "/tmp/telemetry_test_" + i.to_string() + ".dat"
-    let concurrent_data = "x".repeat(1024 * 100) // 100KB数据
-    
-    ResourceBenchmark::write_file(concurrent_file_path, concurrent_data)
-    let read_concurrent_data = ResourceBenchmark::read_file(concurrent_file_path)
-    
-    concurrent_files = concurrent_files.push((concurrent_file_path, read_concurrent_data.length()))
-  }
-  
-  let concurrent_io_end = Timestamp::now()
-  let concurrent_io_time = concurrent_io_end - concurrent_io_start
-  
-  // 验证并发文件I/O性能
-  assert_true(concurrent_io_time < 500000000) // 应该在0.5秒内完成10个并发文件操作
-  
-  // 清理测试文件
-  for (file_path, _) in concurrent_files {
-    ResourceBenchmark::delete_file(file_path)
-  }
-  ResourceBenchmark::delete_file(file_path)
-  
-  // 测试CPU密集型操作性能
-  let cpu_intensive_start = Timestamp::now()
-  
-  let mut result = 0.0
-  for i in 1..=1000000 {
-    result = result + (i.to_float() / 1000000.0).sin()
-  }
-  
-  let cpu_intensive_end = Timestamp::now()
-  let cpu_intensive_time = cpu_intensive_end - cpu_intensive_start
-  
-  // 验证CPU密集型操作性能
-  assert_true(cpu_intensive_time < 1000000000) // 应该在1秒内完成100万次sin计算
-  assert_true(result > 0.0) // 确保计算完成
-  
-  // 测试线程创建和销毁性能
-  let thread_start = Timestamp::now()
-  
-  let threads = []
-  for i in 1..=100 {
-    // 在实际环境中，这里会创建线程
-    let thread_data = "thread-" + i.to_string()
-    threads = threads.push(thread_data)
-  }
-  
-  // 模拟线程工作
-  for thread in threads {
-    // 模拟线程处理
-    let mut local_result = 0
-    for i in 1..=1000 {
-      local_result = local_result + i
-    }
-  }
-  
-  let thread_end = Timestamp::now()
-  let thread_time = thread_end - thread_start
-  
-  // 验证线程操作性能
-  assert_true(thread_time < 500000000) // 应该在0.5秒内完成100个线程的创建和工作
-  
-  // 生成资源使用性能报告
-  let resource_report = ResourceBenchmark::generate_report(resource_benchmark, [
-    ("memory_allocation", allocation_time.to_float() / 10000.0),
-    ("memory_deallocation", deallocation_time.to_float() / 10000.0),
-    ("file_write", write_throughput),
-    ("file_read", read_throughput),
-    ("concurrent_io", (1024 * 100 * 10).to_float() / (concurrent_io_time.to_float() / 1000000000.0)),
-    ("cpu_intensive", 1000000.0 / (cpu_intensive_time.to_float() / 1000000000.0)),
-    ("thread_operations", 100.0 / (thread_time.to_float() / 1000000000.0))
-  ])
-  
-  // 验证资源报告
-  assert_true(ResourceReport::contains_resource_utilization(resource_report))
-  assert_true(ResourceReport::contains_optimization_suggestions(resource_report))
-}
-
-// 测试8: 综合性能基准测试
-test "综合性能基准测试测试" {
-  let comprehensive_benchmark = ComprehensiveBenchmark::new()
-  
-  // 创建综合测试场景
-  let test_scenarios = [
-    ("light_load", 100, 10),    // 100个操作，10个并发
-    ("medium_load", 1000, 50),  // 1000个操作，50个并发
-    ("heavy_load", 10000, 100), // 10000个操作，100个并发
-    ("stress_test", 100000, 500) // 100000个操作，500个并发
-  ]
-  
-  let benchmark_results = []
-  
-  for (scenario_name, operation_count, concurrency) in test_scenarios {
-    // 执行基准测试
-    let scenario_start = Timestamp::now()
-    
-    // 模拟综合操作：数据生成、序列化、缓存、传输等
-    let operations_per_thread = operation_count / concurrency
-    
-    for thread in 1..=concurrency {
-      for op in 1..=operations_per_thread {
-        // 生成遥测数据
-        let telemetry_data = TelemetryData::new()
-        TelemetryData::add_metric(telemetry_data, "cpu_usage", Random::float_between(0.0, 100.0))
-        TelemetryData::add_metric(telemetry_data, "memory_usage", Random::float_between(0.0, 100.0))
-        TelemetryData::add_attribute(telemetry_data, "service_name", "service-" + (thread % 10).to_string())
-        TelemetryData::add_attribute(telemetry_data, "instance_id", "instance-" + (thread + op).to_string())
-        
-        // 序列化数据
-        let serialized_data = JsonSerializer::serialize(telemetry_data)
-        
-        // 缓存数据
-        let cache_key = "cache-" + (thread + op).to_string()
-        MemoryCache::put(ComprehensiveBenchmark::get_cache(comprehensive_benchmark), cache_key, serialized_data)
-        
-        // 从缓存读取
-        MemoryCache::get(ComprehensiveBenchmark::get_cache(comprehensive_benchmark), cache_key)
-        
-        // 反序列化数据
-        let _ = JsonSerializer::deserialize(serialized_data)
+// 测试1: CPU密集型操作基准测试
+test "CPU密集型操作基准测试" {
+  // 创建性能基准测试管理器
+  let benchmark_manager = BenchmarkManager::new()
+  
+  // 定义计算密集型基准测试
+  let cpu_benchmark = Benchmark::new("cpu_intensive_operations", {
+    warmup_iterations: 10,
+    measurement_iterations: 100,
+    setup: fn() {
+      # 准备测试数据
+      {
+        numbers: Array::range(1, 10000),
+        matrix: generate_random_matrix(100, 100),
+        text: generate_random_text(10000)
       }
+    },
+    teardown: fn(data) {
+      # 清理资源
+      # 在这个简单示例中不需要特殊清理
+    }
+  })
+  
+  // 添加基准测试用例
+  Benchmark::add_case(cpu_benchmark, "array_sort", fn(data) {
+    let numbers = data.numbers.clone()
+    numbers.sort(fn(a, b) { a - b })
+    numbers[numbers.length() - 1]  # 返回最大值
+  })
+  
+  Benchmark::add_case(cpu_benchmark, "matrix_multiplication", fn(data) {
+    let matrix_a = data.matrix.clone()
+    let matrix_b = data.matrix.clone()
+    matrix_multiply(matrix_a, matrix_b)
+  })
+  
+  Benchmark::add_case(cpu_benchmark, "string_processing", fn(data) {
+    let text = data.text.clone()
+    let words = text.split(" ")
+    let word_counts = {}
+    
+    for word in words {
+      let count = word_counts.get(word, 0)
+      word_counts[word] = count + 1
     }
     
-    let scenario_end = Timestamp::now()
-    let scenario_duration = scenario_end - scenario_start
+    word_counts.keys().length()
+  })
+  
+  Benchmark::add_case(cpu_benchmark, "prime_calculation", fn(data) {
+    let mut primes = []
+    let limit = 10000
     
-    // 计算性能指标
-    let total_operations = operation_count
-    let operations_per_second = total_operations.to_float() / (scenario_duration.to_float() / 1000000000.0)
-    let avg_operation_time = scenario_duration.to_float() / total_operations.to_float()
-    
-    // 获取资源使用情况
-    let memory_usage = ComprehensiveBenchmark::get_memory_usage(comprehensive_benchmark)
-    let cpu_usage = ComprehensiveBenchmark::get_cpu_usage(comprehensive_benchmark)
-    
-    // 记录基准测试结果
-    let result = BenchmarkResult::new(
-      scenario_name,
-      total_operations,
-      concurrency,
-      scenario_duration,
-      operations_per_second,
-      avg_operation_time,
-      memory_usage,
-      cpu_usage
-    )
-    
-    benchmark_results = benchmark_results.push(result)
-  }
-  
-  // 验证基准测试结果
-  for result in benchmark_results {
-    assert_true(BenchmarkResult::operations_per_second(result) > 0)
-    assert_true(BenchmarkResult::avg_operation_time(result) > 0)
-    assert_true(BenchmarkResult::memory_usage(result) > 0)
-    assert_true(BenchmarkResult::cpu_usage(result) >= 0.0)
-    assert_true(BenchmarkResult::cpu_usage(result) <= 1.0)
-  }
-  
-  // 验证性能随负载变化的趋势
-  let light_result = benchmark_results.find(fn(r) { BenchmarkResult::scenario_name(r) == "light_load" })
-  let heavy_result = benchmark_results.find(fn(r) { BenchmarkResult::scenario_name(r) == "heavy_load" })
-  
-  match (light_result, heavy_result) {
-    (Some(light), Some(heavy)) => {
-      // 重负载下平均操作时间可能更长
-      assert_true(BenchmarkResult::avg_operation_time(heavy) >= BenchmarkResult::avg_operation_time(light))
-      
-      // 重负载下总吞吐量可能更高，但单个操作吞吐量可能更低
-      assert_true(BenchmarkResult::operations_per_second(heavy) > BenchmarkResult::operations_per_second(light))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试性能回归检测
-  let baseline_results = [
-    ("light_load", 10000.0),    // 基准：10000 ops/s
-    ("medium_load", 8000.0),   // 基准：8000 ops/s
-    ("heavy_load", 5000.0),    // 基准：5000 ops/s
-    ("stress_test", 2000.0)    // 基准：2000 ops/s
-  ]
-  
-  let regression_threshold = 0.1 // 10%的性能下降阈值
-  
-  let regression_detected = []
-  
-  for result in benchmark_results {
-    let scenario_name = BenchmarkResult::scenario_name(result)
-    let current_ops_per_sec = BenchmarkResult::operations_per_second(result)
-    
-    match baseline_results.find(fn(b) { b[0] == scenario_name }) {
-      Some((_, baseline_ops_per_sec)) => {
-        let performance_ratio = current_ops_per_sec / baseline_ops_per_sec
-        
-        if performance_ratio < (1.0 - regression_threshold) {
-          regression_detected = regression_detected.push(scenario_name)
+    for num in 2..=limit {
+      let is_prime = true
+      for i in 2..=num / 2 {
+        if num % i == 0 {
+          is_prime = false
+          break
         }
       }
-      None => assert_true(false)
+      
+      if is_prime {
+        primes = primes.push(num)
+      }
+    }
+    
+    primes.length()
+  })
+  
+  // 运行基准测试
+  let benchmark_results = BenchmarkManager::run(benchmark_manager, cpu_benchmark)
+  
+  // 验证基准测试结果
+  assert_true(benchmark_results.total_cases == 4)
+  
+  // 检查每个测试用例的结果
+  let sort_results = benchmark_results.get_case_results("array_sort")
+  assert_true(sort_results.iterations == 100)
+  assert_true(sort_results.avg_time > 0)
+  assert_true(sort_results.min_time > 0)
+  assert_true(sort_results.max_time >= sort_results.min_time)
+  assert_true(sort_results.p95_time >= sort_results.avg_time)
+  assert_true(sort_results.p99_time >= sort_results.p95_time)
+  
+  let matrix_results = benchmark_results.get_case_results("matrix_multiplication")
+  assert_true(matrix_results.avg_time > sort_results.avg_time)  # 矩阵乘法应该比排序慢
+  
+  let string_results = benchmark_results.get_case_results("string_processing")
+  assert_true(string_results.avg_time > 0)
+  
+  let prime_results = benchmark_results.get_case_results("prime_calculation")
+  assert_true(prime_results.avg_time > 0)
+  
+  // 比较不同测试用例的性能
+  let performance_comparison = BenchmarkManager::compare_cases(benchmark_results, [
+    "array_sort", "matrix_multiplication", "string_processing", "prime_calculation"
+  ])
+  
+  assert_true(performance_comparison.fastest_case != "")
+  assert_true(performance_comparison.slowest_case != "")
+  assert_true(performance_comparison.performance_ratio > 1.0)
+  
+  // 生成性能报告
+  let performance_report = BenchmarkManager::generate_report(benchmark_results, {
+    format: "json",
+    include_detailed_stats: true,
+    include_percentiles: [50, 90, 95, 99],
+    include_comparison: true
+  })
+  
+  assert_true(performance_report.contains("array_sort"))
+  assert_true(performance_report.contains("matrix_multiplication"))
+  assert_true(performance_report.contains("avg_time"))
+  assert_true(performance_report.contains("p95_time"))
+  assert_true(performance_report.contains("p99_time"))
+}
+
+// 测试2: 内存密集型操作基准测试
+test "内存密集型操作基准测试" {
+  // 创建内存基准测试管理器
+  let memory_benchmark_manager = MemoryBenchmarkManager::new()
+  
+  // 定义内存密集型基准测试
+  let memory_benchmark = MemoryBenchmark::new("memory_intensive_operations", {
+    warmup_iterations: 5,
+    measurement_iterations: 20,
+    memory_tracking: true,
+    gc_before_each: true
+  })
+  
+  // 添加内存基准测试用例
+  MemoryBenchmark::add_case(memory_benchmark, "large_array_allocation", fn() {
+    let large_arrays = []
+    
+    for i in 0..=100 {
+      let large_array = Array::with_capacity(10000)
+      for j in 0..=10000 {
+        large_array = large_array.push(i * j)
+      }
+      large_arrays = large_arrays.push(large_array)
+    }
+    
+    large_arrays.length()
+  })
+  
+  MemoryBenchmark::add_case(memory_benchmark, "hash_table_operations", fn() {
+    let large_map = {}
+    
+    for i in 0..=50000 {
+      large_map["key_" + i.to_string()] = "value_" + i.to_string()
+    }
+    
+    let mut sum = 0
+    for i in 0..=50000 {
+      let value = large_map["key_" + i.to_string()]
+      sum = sum + value.length()
+    }
+    
+    sum
+  })
+  
+  MemoryBenchmark::add_case(memory_benchmark, "string_concatenation", fn() {
+    let mut result = ""
+    
+    for i in 0..=10000 {
+      result = result + "chunk_" + i.to_string() + "_"
+    }
+    
+    result.length()
+  })
+  
+  MemoryBenchmark::add_case(memory_benchmark, "object_creation", fn() {
+    let objects = []
+    
+    for i in 0..=10000 {
+      let obj = {
+        id: i,
+        name: "object_" + i.to_string(),
+        data: Array::with_capacity(100).fill(i),
+        metadata: {
+          created: Time::now(),
+          tags: ["tag1", "tag2", "tag3"],
+          active: true
+        }
+      }
+      objects = objects.push(obj)
+    }
+    
+    objects.length()
+  })
+  
+  // 运行内存基准测试
+  let memory_benchmark_results = MemoryBenchmarkManager::run(memory_benchmark_manager, memory_benchmark)
+  
+  // 验证内存基准测试结果
+  assert_true(memory_benchmark_results.total_cases == 4)
+  
+  // 检查内存使用情况
+  let array_allocation_results = memory_benchmark_results.get_case_results("large_array_allocation")
+  assert_true(array_allocation_results.avg_memory_usage > 0)
+  assert_true(array_allocation_results.peak_memory_usage >= array_allocation_results.avg_memory_usage)
+  assert_true(array_allocation_results.memory_growth > 0)
+  
+  let hash_table_results = memory_benchmark_results.get_case_results("hash_table_operations")
+  assert_true(hash_table_results.avg_memory_usage > 0)
+  assert_true(hash_table_results.peak_memory_usage >= hash_table_results.avg_memory_usage)
+  
+  let string_concat_results = memory_benchmark_results.get_case_results("string_concatenation")
+  assert_true(string_concat_results.avg_memory_usage > 0)
+  
+  let object_creation_results = memory_benchmark_results.get_case_results("object_creation")
+  assert_true(object_creation_results.avg_memory_usage > 0)
+  
+  // 分析内存效率
+  let memory_efficiency = MemoryBenchmarkManager::analyze_efficiency(memory_benchmark_results)
+  
+  assert_true(memory_efficiency.most_efficient_case != "")
+  assert_true(memory_efficiency.least_efficient_case != "")
+  assert_true(memory_efficiency.efficiency_ratio > 1.0)
+  
+  // 测试内存泄漏检测
+  let memory_leak_test = MemoryBenchmark::new("memory_leak_detection", {
+    warmup_iterations: 0,
+    measurement_iterations: 10,
+    memory_tracking: true,
+    gc_before_each: true,
+    gc_after_each: true
+  })
+  
+  MemoryBenchmark::add_case(memory_leak_test, "potential_leak", fn() {
+    # 模拟可能导致内存泄漏的操作
+    let growing_list = []
+    
+    for i in 0..=1000 {
+      growing_list = growing_list.push(Array::with_capacity(100).fill(i))
+    }
+    
+    # 故意不清理引用，模拟内存泄漏
+    growing_list.length()
+  })
+  
+  let leak_test_results = MemoryBenchmarkManager::run(memory_benchmark_manager, memory_leak_test)
+  let leak_analysis = MemoryBenchmarkManager::detect_leaks(leak_test_results)
+  
+  assert_true(leak_analysis.potential_leaks_detected)
+  assert_true(leak_analysis.memory_growth_rate > 0)
+  
+  // 生成内存使用报告
+  let memory_report = MemoryBenchmarkManager::generate_memory_report(memory_benchmark_results, {
+    include_memory_graphs: true,
+    include_efficiency_analysis: true,
+    include_leak_detection: true
+  })
+  
+  assert_true(memory_report.contains("memory_usage"))
+  assert_true(memory_report.contains("peak_memory"))
+  assert_true(memory_report.contains("efficiency"))
+}
+
+// 测试3: I/O密集型操作基准测试
+test "I/O密集型操作基准测试" {
+  // 创建I/O基准测试管理器
+  let io_benchmark_manager = IOBenchmarkManager::new()
+  
+  // 准备测试文件
+  let test_file_path = "/tmp/io_benchmark_test.txt"
+  let large_test_file_path = "/tmp/large_io_benchmark_test.txt"
+  
+  # 创建测试文件
+  File::write(test_file_path, generate_random_text(1000))
+  File::write(large_test_file_path, generate_random_text(100000))  # 100KB文件
+  
+  // 定义I/O密集型基准测试
+  let io_benchmark = IOBenchmark::new("io_intensive_operations", {
+    warmup_iterations: 5,
+    measurement_iterations: 50,
+    file_cleanup: true
+  })
+  
+  // 添加文件读取基准测试
+  IOBenchmark::add_case(io_benchmark, "sequential_file_read", fn() {
+    let mut content = ""
+    let file = File::open(test_file_path)
+    
+    while not(file.eof()) {
+      content = content + file.read_line()
+    }
+    
+    file.close()
+    content.length()
+  })
+  
+  // 添加文件写入基准测试
+  IOBenchmark::add_case(io_benchmark, "sequential_file_write", fn() {
+    let temp_file = "/tmp/temp_write_test_" + Time::now().to_string() + ".txt"
+    let content = generate_random_text(5000)
+    
+    File::write(temp_file, content)
+    
+    let read_back = File::read(temp_file)
+    File::delete(temp_file)
+    
+    read_back.length()
+  })
+  
+  // 添加大文件读取基准测试
+  IOBenchmark::add_case(io_benchmark, "large_file_read", fn() {
+    let content = File::read(large_test_file_path)
+    content.length()
+  })
+  
+  // 添加文件复制基准测试
+  IOBenchmark::add_case(io_benchmark, "file_copy", fn() {
+    let source_file = large_test_file_path
+    let dest_file = "/tmp/copied_file_" + Time::now().to_string() + ".txt"
+    
+    File::copy(source_file, dest_file)
+    
+    let original_size = File::size(source_file)
+    let copied_size = File::size(dest_file)
+    
+    File::delete(dest_file)
+    
+    assert_eq(original_size, copied_size)
+    copied_size
+  })
+  
+  // 运行I/O基准测试
+  let io_benchmark_results = IOBenchmarkManager::run(io_benchmark_manager, io_benchmark)
+  
+  // 验证I/O基准测试结果
+  assert_true(io_benchmark_results.total_cases == 4)
+  
+  // 检查I/O性能指标
+  let read_results = io_benchmark_results.get_case_results("sequential_file_read")
+  assert_true(read_results.avg_time > 0)
+  assert_true(read_results.throughput > 0)  # 字符/秒
+  
+  let write_results = io_benchmark_results.get_case_results("sequential_file_write")
+  assert_true(write_results.avg_time > 0)
+  assert_true(write_results.throughput > 0)  # 字符/秒
+  
+  let large_file_results = io_benchmark_results.get_case_results("large_file_read")
+  assert_true(large_file_results.avg_time > read_results.avg_time)  # 大文件读取应该更慢
+  assert_true(large_file_results.throughput > 0)
+  
+  let copy_results = io_benchmark_results.get_case_results("file_copy")
+  assert_true(copy_results.avg_time > 0)
+  assert_true(copy_results.throughput > 0)  # 字符/秒
+  
+  // 比较读写性能
+  let read_vs_write = IOBenchmarkManager::compare_operations(io_benchmark_results, "sequential_file_read", "sequential_file_write")
+  assert_true(read_vs_write.performance_ratio > 0)
+  
+  // 测试并发I/O操作
+  let concurrent_io_benchmark = IOBenchmark::new("concurrent_io_operations", {
+    warmup_iterations: 2,
+    measurement_iterations: 10,
+    concurrent_operations: true,
+    max_concurrency: 4
+  })
+  
+  IOBenchmark::add_case(concurrent_io_benchmark, "concurrent_file_reads", fn() {
+    let file_paths = []
+    
+    # 创建多个测试文件
+    for i in 0..=10 {
+      let path = "/tmp/concurrent_test_" + i.to_string() + ".txt"
+      File::write(path, generate_random_text(1000))
+      file_paths = file_paths.push(path)
+    }
+    
+    # 并发读取文件
+    let results = []
+    for path in file_paths {
+      let content = File::read(path)
+      results = results.push(content.length())
+    }
+    
+    # 清理文件
+    for path in file_paths {
+      File::delete(path)
+    }
+    
+    results.reduce(fn(acc, len) { acc + len }, 0)
+  })
+  
+  let concurrent_results = IOBenchmarkManager::run(io_benchmark_manager, concurrent_io_benchmark)
+  let concurrent_read_results = concurrent_results.get_case_results("concurrent_file_reads")
+  
+  # 并发操作应该比串行操作更快（在理想情况下）
+  # 注意：这个断言可能因系统而异，所以使用更宽松的条件
+  assert_true(concurrent_read_results.avg_time > 0)
+  
+  # 清理测试文件
+  File::delete(test_file_path)
+  File::delete(large_test_file_path)
+  
+  // 生成I/O性能报告
+  let io_report = IOBenchmarkManager::generate_io_report(io_benchmark_results, {
+    include_throughput_analysis: true,
+    include_concurrency_analysis: true,
+    include_file_size_impact: true
+  })
+  
+  assert_true(io_report.contains("throughput"))
+  assert_true(io_report.contains("sequential_file_read"))
+  assert_true(io_report.contains("sequential_file_write"))
+}
+
+// 测试4: 网络操作基准测试
+test "网络操作基准测试" {
+  // 创建网络基准测试管理器
+  let network_benchmark_manager = NetworkBenchmarkManager::new()
+  
+  // 定义网络基准测试
+  let network_benchmark = NetworkBenchmark::new("network_operations", {
+    warmup_iterations: 3,
+    measurement_iterations: 20,
+    timeout: 10000  # 10秒超时
+  })
+  
+  // 添加HTTP请求基准测试
+  NetworkBenchmark::add_case(network_benchmark, "http_get_request", fn() {
+    let response = HttpClient::get("https://httpbin.org/get")
+    response.status_code
+  })
+  
+  NetworkBenchmark::add_case(network_benchmark, "http_post_request", fn() {
+    let data = "{\"test\": \"data\", \"timestamp\": " + Time::now().to_string() + "}"
+    let response = HttpClient::post("https://httpbin.org/post", data)
+    response.status_code
+  })
+  
+  // 添加DNS解析基准测试
+  NetworkBenchmark::add_case(network_benchmark, "dns_resolution", fn() {
+    let ip_address = DNS::resolve("google.com")
+    ip_address.length()
+  })
+  
+  // 添加TCP连接基准测试
+  NetworkBenchmark::add_case(network_benchmark, "tcp_connection", fn() {
+    let connection = TCP::connect("httpbin.org", 80)
+    let connected = connection.is_connected()
+    connection.close()
+    connected
+  })
+  
+  // 运行网络基准测试
+  let network_benchmark_results = NetworkBenchmarkManager::run(network_benchmark_manager, network_benchmark)
+  
+  // 验证网络基准测试结果
+  assert_true(network_benchmark_results.total_cases == 4)
+  
+  // 检查网络性能指标
+  let http_get_results = network_benchmark_results.get_case_results("http_get_request")
+  assert_true(http_get_results.avg_time > 0)
+  assert_true(http_get_results.success_rate > 0.8)  # 至少80%成功率
+  
+  let http_post_results = network_benchmark_results.get_case_results("http_post_request")
+  assert_true(http_post_results.avg_time > 0)
+  assert_true(http_post_results.success_rate > 0.8)
+  
+  let dns_results = network_benchmark_results.get_case_results("dns_resolution")
+  assert_true(dns_results.avg_time > 0)
+  assert_true(dns_results.success_rate > 0.8)
+  
+  let tcp_results = network_benchmark_results.get_case_results("tcp_connection")
+  assert_true(tcp_results.avg_time > 0)
+  assert_true(tcp_results.success_rate > 0.8)
+  
+  // 比较HTTP GET和POST性能
+  let get_vs_post = NetworkBenchmarkManager::compare_operations(network_benchmark_results, "http_get_request", "http_post_request")
+  assert_true(get_vs_post.performance_ratio > 0)
+  
+  // 测试并发网络请求
+  let concurrent_network_benchmark = NetworkBenchmark::new("concurrent_network_operations", {
+    warmup_iterations: 1,
+    measurement_iterations: 5,
+    concurrent_operations: true,
+    max_concurrency: 10
+  })
+  
+  NetworkBenchmark::add_case(concurrent_network_benchmark, "concurrent_http_requests", fn() {
+    let urls = [
+      "https://httpbin.org/get",
+      "https://httpbin.org/delay/1",
+      "https://httpbin.org/uuid",
+      "https://httpbin.org/ip",
+      "https://httpbin.org/user-agent"
+    ]
+    
+    let results = []
+    for url in urls {
+      let response = HttpClient::get(url)
+      results = results.push(response.status_code)
+    }
+    
+    results.reduce(fn(acc, code) { acc + code }, 0)
+  })
+  
+  let concurrent_network_results = NetworkBenchmarkManager::run(network_benchmark_manager, concurrent_network_benchmark)
+  let concurrent_http_results = concurrent_network_results.get_case_results("concurrent_http_requests")
+  
+  assert_true(concurrent_http_results.avg_time > 0)
+  assert_true(concurrent_http_results.success_rate > 0.5)  # 并发操作可能有更多失败
+  
+  // 测试网络延迟和带宽
+  let latency_bandwidth_test = NetworkBenchmark::new("latency_bandwidth_test", {
+    warmup_iterations: 1,
+    measurement_iterations: 5
+  })
+  
+  NetworkBenchmark::add_case(latency_bandwidth_test, "ping_test", fn() {
+    let ping_result = Network::ping("google.com", 4)
+    ping_result.avg_latency_ms
+  })
+  
+  NetworkBenchmark::add_case(latency_bandwidth_test, "bandwidth_test", fn() {
+    let test_data = generate_random_text(10000)  # 10KB数据
+    let start_time = Time::now()
+    
+    let response = HttpClient::post("https://httpbin.org/post", test_data)
+    
+    let end_time = Time::now()
+    let duration = end_time - start_time
+    
+    # 计算带宽（字节/秒）
+    if duration > 0 {
+      test_data.length().to_float() / (duration.to_float() / 1000.0)
+    } else {
+      0.0
+    }
+  })
+  
+  let latency_bandwidth_results = NetworkBenchmarkManager::run(network_benchmark_manager, latency_bandwidth_test)
+  
+  let ping_results = latency_bandwidth_results.get_case_results("ping_test")
+  assert_true(ping_results.avg_value > 0)  # 平均延迟应该大于0
+  
+  let bandwidth_results = latency_bandwidth_results.get_case_results("bandwidth_test")
+  assert_true(bandwidth_results.avg_value > 0)  # 带宽应该大于0
+  
+  // 生成网络性能报告
+  let network_report = NetworkBenchmarkManager::generate_network_report(network_benchmark_results, {
+    include_latency_analysis: true,
+    include_bandwidth_analysis: true,
+    include_success_rate: true,
+    include_concurrency_impact: true
+  })
+  
+  assert_true(network_report.contains("http_get_request"))
+  assert_true(network_report.contains("success_rate"))
+  assert_true(network_report.contains("latency"))
+}
+
+// 测试5: 并发性能基准测试
+test "并发性能基准测试" {
+  // 创建并发基准测试管理器
+  let concurrency_benchmark_manager = ConcurrencyBenchmarkManager::new()
+  
+  // 定义并发基准测试
+  let concurrency_benchmark = ConcurrencyBenchmark::new("concurrency_performance", {
+    warmup_iterations: 2,
+    measurement_iterations: 10,
+    thread_counts: [1, 2, 4, 8, 16]
+  })
+  
+  // 添加并发计数器基准测试
+  ConcurrencyBenchmark::add_case(concurrency_benchmark, "concurrent_counter", fn(thread_count) {
+    let counter = AtomicInt::new(0)
+    let iterations_per_thread = 10000
+    
+    let threads = []
+    for i in 0..=thread_count {
+      let thread = Thread::spawn(fn() {
+        for j in 0..=iterations_per_thread {
+          AtomicInt::increment(counter)
+        }
+      })
+      threads = threads.push(thread)
+    }
+    
+    for thread in threads {
+      Thread::join(thread)
+    }
+    
+    AtomicInt::get(counter)
+  })
+  
+  // 添加并发队列基准测试
+  ConcurrencyBenchmark::add_case(concurrency_benchmark, "concurrent_queue", fn(thread_count) {
+    let queue = ConcurrentQueue::new()
+    let items_per_thread = 1000
+    
+    # 生产者线程
+    let producer_threads = []
+    for i in 0..=thread_count / 2 {
+      let thread = Thread::spawn(fn() {
+        let thread_id = i
+        for j in 0..=items_per_thread {
+          ConcurrentQueue::enqueue(queue, "item_" + thread_id.to_string() + "_" + j.to_string())
+        }
+      })
+      producer_threads = producer_threads.push(thread)
+    }
+    
+    # 消费者线程
+    let consumer_threads = []
+    for i in 0..=thread_count / 2 {
+      let thread = Thread::spawn(fn() {
+        let mut consumed = 0
+        while consumed < items_per_thread {
+          match ConcurrentQueue::try_dequeue(queue) {
+            Some(item) => consumed = consumed + 1,
+            None => Thread::sleep(1)
+          }
+        }
+        consumed
+      })
+      consumer_threads = consumer_threads.push(thread)
+    }
+    
+    # 等待所有线程完成
+    for thread in producer_threads {
+      Thread::join(thread)
+    }
+    for thread in consumer_threads {
+      Thread::join(thread)
+    }
+    
+    ConcurrentQueue::size(queue)
+  })
+  
+  // 运行并发基准测试
+  let concurrency_results = ConcurrencyBenchmarkManager::run(concurrency_benchmark_manager, concurrency_benchmark)
+  
+  // 验证并发基准测试结果
+  assert_true(concurrency_results.total_cases == 2)
+  
+  // 分析并发性能
+  let counter_results = concurrency_results.get_case_results("concurrent_counter")
+  assert_true(counter_results.thread_performance.length() > 0)
+  
+  # 检查不同线程数的性能
+  let thread_1_perf = counter_results.get_thread_performance(1)
+  let thread_2_perf = counter_results.get_thread_performance(2)
+  let thread_4_perf = counter_results.get_thread_performance(4)
+  
+  assert_true(thread_1_perf.avg_time > 0)
+  assert_true(thread_2_perf.avg_time > 0)
+  assert_true(thread_4_perf.avg_time > 0)
+  
+  # 计算并发效率
+  let scalability = ConcurrencyBenchmarkManager::analyze_scalability(counter_results)
+  assert_true(scalability.efficiency_2_threads > 0)
+  assert_true(scalability.efficiency_4_threads > 0)
+  assert_true(scalability.efficiency_8_threads > 0)
+  
+  # 测试锁竞争
+  let lock_contention_benchmark = ConcurrencyBenchmark::new("lock_contention", {
+    warmup_iterations: 2,
+    measurement_iterations: 5,
+    thread_counts: [2, 4, 8, 16]
+  })
+  
+  ConcurrencyBenchmark::add_case(lock_contention_benchmark, "mutex_contention", fn(thread_count) {
+    let mutex = Mutex::new()
+    let shared_data = { value: 0 }
+    let iterations_per_thread = 1000
+    
+    let threads = []
+    for i in 0..=thread_count {
+      let thread = Thread::spawn(fn() {
+        for j in 0..=iterations_per_thread {
+          Mutex::lock(mutex)
+          shared_data.value = shared_data.value + 1
+          # 模拟一些临界区工作
+          Thread::sleep(1)
+          Mutex::unlock(mutex)
+        }
+      })
+      threads = threads.push(thread)
+    }
+    
+    for thread in threads {
+      Thread::join(thread)
+    }
+    
+    shared_data.value
+  })
+  
+  let contention_results = ConcurrencyBenchmarkManager::run(concurrency_benchmark_manager, lock_contention_benchmark)
+  let mutex_results = contention_results.get_case_results("mutex_contention")
+  
+  # 分析锁竞争
+  let contention_analysis = ConcurrencyBenchmarkManager::analyze_contention(mutex_results)
+  assert_true(contention_analysis.contention_factor >= 1.0)  # 竞争因子应该>=1
+  
+  # 测试无锁数据结构
+  let lock_free_benchmark = ConcurrencyBenchmark::new("lock_free_structures", {
+    warmup_iterations: 2,
+    measurement_iterations: 5,
+    thread_counts: [2, 4, 8, 16]
+  })
+  
+  ConcurrencyBenchmark::add_case(lock_free_benchmark, "lock_free_counter", fn(thread_count) {
+    let counter = LockFreeCounter::new(0)
+    let iterations_per_thread = 1000
+    
+    let threads = []
+    for i in 0..=thread_count {
+      let thread = Thread::spawn(fn() {
+        for j in 0..=iterations_per_thread {
+          LockFreeCounter::increment(counter)
+        }
+      })
+      threads = threads.push(thread)
+    }
+    
+    for thread in threads {
+      Thread::join(thread)
+    }
+    
+    LockFreeCounter::get(counter)
+  })
+  
+  let lock_free_results = ConcurrencyBenchmarkManager::run(concurrency_benchmark_manager, lock_free_benchmark)
+  let lock_free_counter_results = lock_free_results.get_case_results("lock_free_counter")
+  
+  # 比较有锁和无锁性能
+  let lock_vs_lockfree = ConcurrencyBenchmarkManager::compare_structures(
+    mutex_results, 
+    lock_free_counter_results
+  )
+  
+  assert_true(lock_vs_lockfree.performance_ratio > 0)
+  
+  # 生成并发性能报告
+  let concurrency_report = ConcurrencyBenchmarkManager::generate_concurrency_report(concurrency_results, {
+    include_scalability_analysis: true,
+    include_contention_analysis: true,
+    include_lock_comparison: true,
+    include_thread_scaling: true
+  })
+  
+  assert_true(concurrency_report.contains("concurrent_counter"))
+  assert_true(concurrency_report.contains("scalability"))
+  assert_true(concurrency_report.contains("thread_performance"))
+}
+
+// 测试6: 数据结构性能基准测试
+test "数据结构性能基准测试" {
+  // 创建数据结构基准测试管理器
+  let ds_benchmark_manager = DataStructureBenchmarkManager::new()
+  
+  // 定义数据结构基准测试
+  let ds_benchmark = DataStructureBenchmark::new("data_structures", {
+    warmup_iterations: 5,
+    measurement_iterations: 100,
+    data_sizes: [100, 1000, 10000]
+  })
+  
+  // 添加数组操作基准测试
+  DataStructureBenchmark::add_case(ds_benchmark, "array_operations", fn(data_size) {
+    # 数组插入
+    let mut array = []
+    let insert_start = Time::now()
+    for i in 0..=data_size {
+      array = array.push(i)
+    }
+    let insert_time = Time::now() - insert_start
+    
+    # 数组查找
+    let search_start = Time::now()
+    for i in 0..=data_size {
+      let index = array.find_index(fn(x) { x == i % data_size })
+    }
+    let search_time = Time::now() - search_start
+    
+    # 数组删除
+    let delete_start = Time::now()
+    for i in 0..=data_size / 10 {
+      if array.length() > 0 {
+        array = array.slice(1)  # 删除第一个元素
+      }
+    }
+    let delete_time = Time::now() - delete_start
+    
+    {
+      insert_time: insert_time,
+      search_time: search_time,
+      delete_time: delete_time,
+      final_size: array.length()
+    }
+  })
+  
+  // 添加哈希表操作基准测试
+  DataStructureBenchmark::add_case(ds_benchmark, "hash_table_operations", fn(data_size) {
+    # 哈希表插入
+    let mut hash_table = {}
+    let insert_start = Time::now()
+    for i in 0..=data_size {
+      hash_table["key_" + i.to_string()] = "value_" + i.to_string()
+    }
+    let insert_time = Time::now() - insert_start
+    
+    # 哈希表查找
+    let search_start = Time::now()
+    for i in 0..=data_size {
+      let value = hash_table["key_" + (i % data_size).to_string()]
+    }
+    let search_time = Time::now() - search_start
+    
+    # 哈希表删除
+    let delete_start = Time::now()
+    for i in 0..=data_size / 10 {
+      hash_table.remove("key_" + i.to_string())
+    }
+    let delete_time = Time::now() - delete_start
+    
+    {
+      insert_time: insert_time,
+      search_time: search_time,
+      delete_time: delete_time,
+      final_size: hash_table.keys().length()
+    }
+  })
+  
+  // 添加链表操作基准测试
+  DataStructureBenchmark::add_case(ds_benchmark, "linked_list_operations", fn(data_size) {
+    # 链表插入
+    let mut list = LinkedList::new()
+    let insert_start = Time::now()
+    for i in 0..=data_size {
+      LinkedList::append(list, i)
+    }
+    let insert_time = Time::now() - insert_start
+    
+    # 链表查找
+    let search_start = Time::now()
+    for i in 0..=data_size {
+      LinkedList::find(list, i % data_size)
+    }
+    let search_time = Time::now() - search_start
+    
+    # 链表删除
+    let delete_start = Time::now()
+    for i in 0..=data_size / 10 {
+      if not(LinkedList::is_empty(list)) {
+        LinkedList::remove_head(list)
+      }
+    }
+    let delete_time = Time::now() - delete_start
+    
+    {
+      insert_time: insert_time,
+      search_time: search_time,
+      delete_time: delete_time,
+      final_size: LinkedList::size(list)
+    }
+  })
+  
+  // 运行数据结构基准测试
+  let ds_benchmark_results = DataStructureBenchmarkManager::run(ds_benchmark_manager, ds_benchmark)
+  
+  // 验证数据结构基准测试结果
+  assert_true(ds_benchmark_results.total_cases == 3)
+  
+  // 分析不同数据结构的性能
+  let array_results = ds_benchmark_results.get_case_results("array_operations")
+  let hash_table_results = ds_benchmark_results.get_case_results("hash_table_operations")
+  let linked_list_results = ds_benchmark_results.get_case_results("linked_list_operations")
+  
+  # 比较插入性能
+  let insert_comparison = DataStructureBenchmarkManager::compare_operation(
+    ds_benchmark_results, 
+    "insert", 
+    ["array_operations", "hash_table_operations", "linked_list_operations"]
+  )
+  assert_true(insert_comparison.fastest_structure != "")
+  assert_true(insert_comparison.slowest_structure != "")
+  
+  # 比较查找性能
+  let search_comparison = DataStructureBenchmarkManager::compare_operation(
+    ds_benchmark_results, 
+    "search", 
+    ["array_operations", "hash_table_operations", "linked_list_operations"]
+  )
+  assert_true(search_comparison.fastest_structure != "")
+  assert_true(search_comparison.slowest_structure != "")
+  
+  # 哈希表查找应该比数组和链表快
+  assert_true(search_comparison.fastest_structure == "hash_table_operations")
+  
+  # 比较删除性能
+  let delete_comparison = DataStructureBenchmarkManager::compare_operation(
+    ds_benchmark_results, 
+    "delete", 
+    ["array_operations", "hash_table_operations", "linked_list_operations"]
+  )
+  assert_true(delete_comparison.fastest_structure != "")
+  assert_true(delete_comparison.slowest_structure != "")
+  
+  # 分析数据大小对性能的影响
+  let scalability_analysis = DataStructureBenchmarkManager::analyze_scalability(ds_benchmark_results)
+  assert_true(scalability_analysis.array_scalability_factor > 1.0)
+  assert_true(scalability_analysis.hash_table_scalability_factor > 1.0)
+  assert_true(scalability_analysis.linked_list_scalability_factor > 1.0)
+  
+  # 测试树结构操作
+  let tree_benchmark = DataStructureBenchmark::new("tree_structures", {
+    warmup_iterations: 3,
+    measurement_iterations: 50,
+    data_sizes: [100, 1000, 5000]
+  })
+  
+  DataStructureBenchmark::add_case(tree_benchmark, "binary_search_tree", fn(data_size) {
+    # 创建二叉搜索树
+    let tree = BinarySearchTree::new()
+    
+    # 插入操作
+    let insert_start = Time::now()
+    for i in 0..=data_size {
+      BinarySearchTree::insert(tree, i)
+    }
+    let insert_time = Time::now() - insert_start
+    
+    # 查找操作
+    let search_start = Time::now()
+    for i in 0..=data_size {
+      BinarySearchTree::search(tree, i % data_size)
+    }
+    let search_time = Time::now() - search_start
+    
+    # 删除操作
+    let delete_start = Time::now()
+    for i in 0..=data_size / 10 {
+      BinarySearchTree::remove(tree, i)
+    }
+    let delete_time = Time::now() - delete_start
+    
+    {
+      insert_time: insert_time,
+      search_time: search_time,
+      delete_time: delete_time,
+      final_size: BinarySearchTree::size(tree)
+    }
+  })
+  
+  let tree_results = DataStructureBenchmarkManager::run(ds_benchmark_manager, tree_benchmark)
+  let bst_results = tree_results.get_case_results("binary_search_tree")
+  
+  # 比较树和哈希表的性能
+  let tree_vs_hash = DataStructureBenchmarkManager::compare_structures(
+    hash_table_results, 
+    bst_results, 
+    "search"
+  )
+  assert_true(tree_vs_hash.performance_ratio > 0)
+  
+  # 生成数据结构性能报告
+  let ds_report = DataStructureBenchmarkManager::generate_ds_report(ds_benchmark_results, {
+    include_operation_comparison: true,
+    include_scalability_analysis: true,
+    include_memory_usage: true,
+    include_best_practices: true
+  })
+  
+  assert_true(ds_report.contains("array_operations"))
+  assert_true(ds_report.contains("hash_table_operations"))
+  assert_true(ds_report.contains("linked_list_operations"))
+  assert_true(ds_report.contains("insert"))
+  assert_true(ds_report.contains("search"))
+  assert_true(ds_report.contains("delete"))
+}
+
+// 测试7: 算法复杂度基准测试
+test "算法复杂度基准测试" {
+  // 创建算法复杂度基准测试管理器
+  let algorithm_benchmark_manager = AlgorithmBenchmarkManager::new()
+  
+  // 定义算法复杂度基准测试
+  let algorithm_benchmark = AlgorithmBenchmark::new("algorithm_complexity", {
+    warmup_iterations: 3,
+    measurement_iterations: 20,
+    input_sizes: [100, 500, 1000, 2000, 5000]
+  })
+  
+  // 添加排序算法基准测试
+  AlgorithmBenchmark::add_case(algorithm_benchmark, "bubble_sort", fn(input_size) {
+    let data = generate_random_array(input_size)
+    let start_time = Time::now()
+    
+    # 冒泡排序实现
+    let n = data.length()
+    for i in 0..=n-1 {
+      for j in 0..=n-i-2 {
+        if data[j] > data[j+1] {
+          let temp = data[j]
+          data[j] = data[j+1]
+          data[j+1] = temp
+        }
+      }
+    }
+    
+    let end_time = Time::now()
+    let execution_time = end_time - start_time
+    
+    # 验证排序结果
+    let is_sorted = true
+    for i in 0..=n-2 {
+      if data[i] > data[i+1] {
+        is_sorted = false
+        break
+      }
+    }
+    
+    {
+      execution_time: execution_time,
+      is_sorted: is_sorted,
+      input_size: input_size
+    }
+  })
+  
+  AlgorithmBenchmark::add_case(algorithm_benchmark, "quick_sort", fn(input_size) {
+    let data = generate_random_array(input_size)
+    let start_time = Time::now()
+    
+    # 快速排序实现
+    quick_sort_recursive(data, 0, data.length() - 1)
+    
+    let end_time = Time::now()
+    let execution_time = end_time - start_time
+    
+    # 验证排序结果
+    let is_sorted = true
+    for i in 0..=data.length() - 2 {
+      if data[i] > data[i+1] {
+        is_sorted = false
+        break
+      }
+    }
+    
+    {
+      execution_time: execution_time,
+      is_sorted: is_sorted,
+      input_size: input_size
+    }
+  })
+  
+  // 添加搜索算法基准测试
+  AlgorithmBenchmark::add_case(algorithm_benchmark, "linear_search", fn(input_size) {
+    let data = generate_sorted_array(input_size)
+    let search_values = generate_random_values(input_size / 10, 0, input_size - 1)
+    
+    let start_time = Time::now()
+    let found_count = 0
+    
+    for value in search_values {
+      let found = false
+      for item in data {
+        if item == value {
+          found = true
+          found_count = found_count + 1
+          break
+        }
+      }
+    }
+    
+    let end_time = Time::now()
+    let execution_time = end_time - start_time
+    
+    {
+      execution_time: execution_time,
+      found_count: found_count,
+      search_count: search_values.length(),
+      input_size: input_size
+    }
+  })
+  
+  AlgorithmBenchmark::add_case(algorithm_benchmark, "binary_search", fn(input_size) {
+    let data = generate_sorted_array(input_size)
+    let search_values = generate_random_values(input_size / 10, 0, input_size - 1)
+    
+    let start_time = Time::now()
+    let found_count = 0
+    
+    for value in search_values {
+      let left = 0
+      let right = data.length() - 1
+      let found = false
+      
+      while left <= right {
+        let mid = (left + right) / 2
+        if data[mid] == value {
+          found = true
+          found_count = found_count + 1
+          break
+        } else if data[mid] < value {
+          left = mid + 1
+        } else {
+          right = mid - 1
+        }
+      }
+    }
+    
+    let end_time = Time::now()
+    let execution_time = end_time - start_time
+    
+    {
+      execution_time: execution_time,
+      found_count: found_count,
+      search_count: search_values.length(),
+      input_size: input_size
+    }
+  })
+  
+  // 运行算法基准测试
+  let algorithm_results = AlgorithmBenchmarkManager::run(algorithm_benchmark_manager, algorithm_benchmark)
+  
+  // 验证算法基准测试结果
+  assert_true(algorithm_results.total_cases == 4)
+  
+  // 分析排序算法性能
+  let bubble_sort_results = algorithm_results.get_case_results("bubble_sort")
+  let quick_sort_results = algorithm_results.get_case_results("quick_sort")
+  
+  # 快速排序应该比冒泡排序快
+  let sort_comparison = AlgorithmBenchmarkManager::compare_algorithms(
+    bubble_sort_results, 
+    quick_sort_results
+  )
+  assert_true(sort_comparison.performance_ratio > 1.0)  # 快速排序应该更快
+  
+  # 分析时间复杂度
+  let bubble_sort_complexity = AlgorithmBenchmarkManager::analyze_complexity(bubble_sort_results)
+  let quick_sort_complexity = AlgorithmBenchmarkManager::analyze_complexity(quick_sort_results)
+  
+  # 冒泡排序的时间复杂度应该接近O(n²)
+  assert_true(bubble_sort_complexity.estimated_complexity == "O(n^2)" or 
+              bubble_sort_complexity.estimated_complexity == "Between O(n^1.5) and O(n^2.5)")
+  
+  # 快速排序的时间复杂度应该接近O(n log n)
+  assert_true(quick_sort_complexity.estimated_complexity == "O(n log n)" or 
+              quick_sort_complexity.estimated_complexity == "Between O(n) and O(n^2)")
+  
+  # 分析搜索算法性能
+  let linear_search_results = algorithm_results.get_case_results("linear_search")
+  let binary_search_results = algorithm_results.get_case_results("binary_search")
+  
+  # 二分查找应该比线性查找快
+  let search_comparison = AlgorithmBenchmarkManager::compare_algorithms(
+    linear_search_results, 
+    binary_search_results
+  )
+  assert_true(search_comparison.performance_ratio > 1.0)  # 二分查找应该更快
+  
+  # 分析搜索算法时间复杂度
+  let linear_search_complexity = AlgorithmBenchmarkManager::analyze_complexity(linear_search_results)
+  let binary_search_complexity = AlgorithmBenchmarkManager::analyze_complexity(binary_search_results)
+  
+  # 线性查找的时间复杂度应该接近O(n)
+  assert_true(linear_search_complexity.estimated_complexity == "O(n)" or 
+              linear_search_complexity.estimated_complexity == "Between O(n^0.5) and O(n^1.5)")
+  
+  # 二分查找的时间复杂度应该接近O(log n)
+  assert_true(binary_search_complexity.estimated_complexity == "O(log n)" or 
+              binary_search_complexity.estimated_complexity == "Between O(1) and O(n)")
+  
+  # 测试图算法
+  let graph_benchmark = AlgorithmBenchmark::new("graph_algorithms", {
+    warmup_iterations: 2,
+    measurement_iterations: 10,
+    input_sizes: [10, 50, 100, 200]
+  })
+  
+  AlgorithmBenchmark::add_case(graph_benchmark, "dijkstra_shortest_path", fn(input_size) {
+    let graph = generate_random_graph(input_size, 0.3)  # 30%边密度
+    let start_node = 0
+    let end_node = input_size - 1
+    
+    let start_time = Time::now()
+    let shortest_path = dijkstra_shortest_path(graph, start_node, end_node)
+    let end_time = Time::now()
+    
+    {
+      execution_time: end_time - start_time,
+      path_length: shortest_path.length(),
+      input_size: input_size
+    }
+  })
+  
+  let graph_results = AlgorithmBenchmarkManager::run(algorithm_benchmark_manager, graph_benchmark)
+  let dijkstra_results = graph_results.get_case_results("dijkstra_shortest_path")
+  
+  # 分析图算法复杂度
+  let dijkstra_complexity = AlgorithmBenchmarkManager::analyze_complexity(dijkstra_results)
+  assert_true(dijkstra_complexity.estimated_complexity.length() > 0)
+  
+  # 生成算法复杂度报告
+  let algorithm_report = AlgorithmBenchmarkManager::generate_algorithm_report(algorithm_results, {
+    include_complexity_analysis: true,
+    include_performance_comparison: true,
+    include_scalability_analysis: true,
+    include_best_case_worst_case: true
+  })
+  
+  assert_true(algorithm_report.contains("bubble_sort"))
+  assert_true(algorithm_report.contains("quick_sort"))
+  assert_true(algorithm_report.contains("linear_search"))
+  assert_true(algorithm_report.contains("binary_search"))
+  assert_true(algorithm_report.contains("complexity"))
+}
+
+// 测试8: 系统资源基准测试
+test "系统资源基准测试" {
+  // 创建系统资源基准测试管理器
+  let system_benchmark_manager = SystemBenchmarkManager::new()
+  
+  // 定义系统资源基准测试
+  let system_benchmark = SystemBenchmark::new("system_resources", {
+    warmup_iterations: 2,
+    measurement_iterations: 10,
+    resource_monitoring: true,
+    cleanup_after_each: true
+  })
+  
+  // 添加CPU使用率基准测试
+  SystemBenchmark::add_case(system_benchmark, "cpu_intensive_task", fn() {
+    let start_time = Time::now()
+    let duration = 5000  # 5秒
+    
+    # CPU密集型任务
+    let mut counter = 0
+    while Time::now() - start_time < duration {
+      counter = counter + 1
+      # 执行一些计算
+      let result = Math::sqrt(counter * 1.0)
+    }
+    
+    {
+      execution_time: Time::now() - start_time,
+      iterations: counter
+    }
+  })
+  
+  // 添加内存使用基准测试
+  SystemBenchmark::add_case(system_benchmark, "memory_intensive_task", fn() {
+    let start_time = Time::now()
+    let duration = 3000  # 3秒
+    
+    # 内存密集型任务
+    let allocations = []
+    let mut total_allocated = 0
+    
+    while Time::now() - start_time < duration {
+      let allocation = Array::with_capacity(1000).fill(Math::random())
+      allocations = allocations.push(allocation)
+      total_allocated = total_allocated + 1000
+      
+      # 限制内存使用，避免系统内存耗尽
+      if total_allocated > 100000 {
+        break
+      }
+    }
+    
+    {
+      execution_time: Time::now() - start_time,
+      allocations_count: allocations.length(),
+      total_allocated: total_allocated
+    }
+  })
+  
+  // 添加I/O密集型基准测试
+  SystemBenchmark::add_case(system_benchmark, "io_intensive_task", fn() {
+    let start_time = Time::now()
+    let duration = 2000  # 2秒
+    
+    # I/O密集型任务
+    let temp_files = []
+    let mut bytes_written = 0
+    
+    while Time::now() - start_time < duration {
+      let temp_file = "/tmp/benchmark_" + Time::now().to_string() + ".txt"
+      let data = generate_random_text(1000)
+      
+      File::write(temp_file, data)
+      temp_files = temp_files.push(temp_file)
+      bytes_written = bytes_written + data.length()
+      
+      # 限制文件数量，避免文件系统耗尽
+      if temp_files.length() > 50 {
+        break
+      }
+    }
+    
+    # 清理临时文件
+    for file in temp_files {
+      File::delete(file)
+    }
+    
+    {
+      execution_time: Time::now() - start_time,
+      files_created: temp_files.length(),
+      bytes_written: bytes_written
+    }
+  })
+  
+  // 添加网络I/O基准测试
+  SystemBenchmark::add_case(system_benchmark, "network_intensive_task", fn() {
+    let start_time = Time::now()
+    let duration = 3000  # 3秒
+    
+    # 网络I/O密集型任务
+    let requests_made = 0
+    let successful_requests = 0
+    
+    while Time::now() - start_time < duration {
+      let response = HttpClient::get("https://httpbin.org/get")
+      requests_made = requests_made + 1
+      
+      if response.status_code == 200 {
+        successful_requests = successful_requests + 1
+      }
+      
+      # 限制请求数量，避免过于频繁的网络请求
+      if requests_made > 20 {
+        break
+      }
+    }
+    
+    {
+      execution_time: Time::now() - start_time,
+      requests_made: requests_made,
+      successful_requests: successful_requests
+    }
+  })
+  
+  // 运行系统资源基准测试
+  let system_results = SystemBenchmarkManager::run(system_benchmark_manager, system_benchmark)
+  
+  // 验证系统资源基准测试结果
+  assert_true(system_results.total_cases == 4)
+  
+  // 分析CPU使用情况
+  let cpu_results = system_results.get_case_results("cpu_intensive_task")
+  assert_true(cpu_results.avg_cpu_usage > 50)  # CPU密集型任务应该使用大量CPU
+  assert_true(cpu_results.peak_cpu_usage >= cpu_results.avg_cpu_usage)
+  
+  // 分析内存使用情况
+  let memory_results = system_results.get_case_results("memory_intensive_task")
+  assert_true(memory_results.avg_memory_usage > 0)
+  assert_true(memory_results.peak_memory_usage >= memory_results.avg_memory_usage)
+  assert_true(memory_results.memory_growth > 0)
+  
+  // 分析I/O使用情况
+  let io_results = system_results.get_case_results("io_intensive_task")
+  assert_true(io_results.avg_disk_io > 0)
+  assert_true(io_results.peak_disk_io >= io_results.avg_disk_io)
+  
+  // 分析网络使用情况
+  let network_results = system_results.get_case_results("network_intensive_task")
+  assert_true(network_results.avg_network_io > 0)
+  assert_true(network_results.peak_network_io >= network_results.avg_network_io)
+  
+  # 测试系统资源限制
+  let resource_limit_benchmark = SystemBenchmark::new("resource_limits", {
+    warmup_iterations: 1,
+    measurement_iterations: 5,
+    resource_limits: {
+      max_cpu_usage: 80.0,    # 最大CPU使用率80%
+      max_memory_mb: 100,     # 最大内存使用100MB
+      max_disk_io_mb: 10      # 最大磁盘I/O 10MB
+    }
+  })
+  
+  SystemBenchmark::add_case(resource_limit_benchmark, "limited_task", fn() {
+    # 在资源限制下执行任务
+    let start_time = Time::now()
+    let duration = 2000  # 2秒
+    
+    let mut iterations = 0
+    while Time::now() - start_time < duration {
+      # 执行一些计算和内存分配
+      let data = Array::with_capacity(100).fill(iterations)
+      iterations = iterations + 1
+      
+      # 检查资源使用情况
+      let current_memory = SystemMonitor::get_memory_usage()
+      if current_memory > 100 * 1024 * 1024 {  # 100MB
+        break
+      }
+    }
+    
+    iterations
+  })
+  
+  let limit_results = SystemBenchmarkManager::run(system_benchmark_manager, resource_limit_benchmark)
+  let limited_task_results = limit_results.get_case_results("limited_task")
+  
+  # 验证资源限制是否生效
+  assert_true(limited_task_results.peak_memory_usage <= 100 * 1024 * 1024)  # 不应超过100MB
+  
+  # 测试系统负载影响
+  let load_impact_benchmark = SystemBenchmark::new("load_impact", {
+    warmup_iterations: 1,
+    measurement_iterations: 3,
+    background_load: true,
+    load_levels: [0.2, 0.5, 0.8]  # 20%, 50%, 80%系统负载
+  })
+  
+  SystemBenchmark::add_case(load_impact_benchmark, "task_under_load", fn(load_level) {
+    # 在不同系统负载下执行任务
+    let start_time = Time::now()
+    
+    # 执行标准任务
+    let mut result = 0
+    for i in 0..=10000 {
+      result = result + Math::sqrt(i * 1.0)
+    }
+    
+    let execution_time = Time::now() - start_time
+    
+    {
+      execution_time: execution_time,
+      result: result,
+      load_level: load_level
+    }
+  })
+  
+  let load_impact_results = SystemBenchmarkManager::run(system_benchmark_manager, load_impact_benchmark)
+  let load_impact_task_results = load_impact_results.get_case_results("task_under_load")
+  
+  # 分析系统负载对性能的影响
+  let load_impact_analysis = SystemBenchmarkManager::analyze_load_impact(load_impact_task_results)
+  assert_true(load_impact_analysis.performance_degradation >= 0)  # 性能应该下降或保持不变
+  
+  # 生成系统资源报告
+  let system_report = SystemBenchmarkManager::generate_system_report(system_results, {
+    include_cpu_analysis: true,
+    include_memory_analysis: true,
+    include_io_analysis: true,
+    include_network_analysis: true,
+    include_resource_limits: true,
+    include_load_impact: true
+  })
+  
+  assert_true(system_report.contains("cpu_intensive_task"))
+  assert_true(system_report.contains("memory_intensive_task"))
+  assert_true(system_report.contains("io_intensive_task"))
+  assert_true(system_report.contains("network_intensive_task"))
+  assert_true(system_report.contains("cpu_usage"))
+  assert_true(system_report.contains("memory_usage"))
+}
+
+// 辅助函数
+
+// 生成随机矩阵
+fn generate_random_matrix(rows, columns) {
+  let matrix = []
+  for i in 0..=rows {
+    let row = []
+    for j in 0..=columns {
+      row = row.push(Math::random() * 100)
+    }
+    matrix = matrix.push(row)
+  }
+  matrix
+}
+
+// 矩阵乘法
+fn matrix_multiply(a, b) {
+  let rows_a = a.length()
+  let cols_a = a[0].length()
+  let cols_b = b[0].length()
+  
+  let result = []
+  for i in 0..=rows_a {
+    let row = []
+    for j in 0..=cols_b {
+      let mut sum = 0
+      for k in 0..=cols_a {
+        sum = sum + a[i][k] * b[k][j]
+      }
+      row = row.push(sum)
+    }
+    result = result.push(row)
+  }
+  result
+}
+
+// 生成随机文本
+fn generate_random_text(length) {
+  let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+  let mut text = ""
+  
+  for i in 0..=length {
+    let index = Math::random_int(0, chars.length())
+    text = text + chars[index]
+  }
+  
+  text
+}
+
+// 生成随机数组
+fn generate_random_array(size) {
+  let array = []
+  for i in 0..=size {
+    array = array.push(Math::random_int(0, size * 10))
+  }
+  array
+}
+
+// 生成已排序数组
+fn generate_sorted_array(size) {
+  let array = []
+  for i in 0..=size {
+    array = array.push(i)
+  }
+  array
+}
+
+// 生成随机值
+fn generate_random_values(count, min, max) {
+  let values = []
+  for i in 0..=count {
+    values = values.push(Math::random_int(min, max))
+  }
+  values
+}
+
+// 快速排序实现
+fn quick_sort_recursive(array, low, high) {
+  if low < high {
+    let pivot_index = partition(array, low, high)
+    quick_sort_recursive(array, low, pivot_index - 1)
+    quick_sort_recursive(array, pivot_index + 1, high)
+  }
+}
+
+// 快速排序分区函数
+fn partition(array, low, high) {
+  let pivot = array[high]
+  let i = low - 1
+  
+  for j in low..=high - 1 {
+    if array[j] <= pivot {
+      i = i + 1
+      # 交换array[i]和array[j]
+      let temp = array[i]
+      array[i] = array[j]
+      array[j] = temp
     }
   }
   
-  // 验证性能回归检测结果
-  // 在实际环境中，这里可能会检测到性能回归
-  // 但在测试环境中，我们只验证检测机制工作正常
+  # 交换array[i+1]和array[high]
+  let temp = array[i + 1]
+  array[i + 1] = array[high]
+  array[high] = temp
   
-  // 生成性能基准报告
-  let benchmark_report = ComprehensiveBenchmark::generate_report(comprehensive_benchmark, benchmark_results)
+  return i + 1
+}
+
+// 生成随机图
+fn generate_random_graph(node_count, edge_density) {
+  let graph = {}
   
-  // 验证基准报告
-  assert_true(BenchmarkReport::contains_performance_summary(benchmark_report))
-  assert_true(BenchmarkReport::contains_load_comparison(benchmark_report))
-  assert_true(BenchmarkReport::contains_resource_analysis(benchmark_report))
-  assert_true(BenchmarkReport::contains_regression_analysis(benchmark_report))
-  
-  // 验证性能优化建议
-  let optimization_suggestions = BenchmarkReport::get_optimization_suggestions(benchmark_report)
-  assert_true(optimization_suggestions.length() > 0)
-  
-  // 测试性能监控集成
-  let performance_monitor = PerformanceMonitor::new()
-  
-  // 配置性能监控
-  PerformanceMonitor::enable_monitoring(performance_monitor, true)
-  PerformanceMonitor::set_alert_threshold(performance_monitor, "avg_operation_time", 100000) // 100ms
-  PerformanceMonitor::set_alert_threshold(performance_monitor, "cpu_usage", 0.8) // 80%
-  PerformanceMonitor::set_alert_threshold(performance_monitor, "memory_usage", 1024 * 1024 * 1024) // 1GB
-  
-  // 执行监控测试
-  let monitor_start = Timestamp::now()
-  
-  // 模拟一些操作
-  for i in 1..=1000 {
-    let telemetry_data = TelemetryData::new()
-    TelemetryData::add_metric(telemetry_data, "cpu_usage", Random::float_between(0.0, 100.0))
-    
-    let serialized_data = JsonSerializer::serialize(telemetry_data)
-    let _ = JsonSerializer::deserialize(serialized_data)
+  # 初始化图
+  for i in 0..=node_count {
+    graph[i] = []
   }
   
-  let monitor_end = Timestamp::now()
-  let monitor_duration = monitor_end - monitor_start
+  # 添加边
+  for i in 0..=node_count {
+    for j in 0..=node_count {
+      if i != j and Math::random() < edge_density {
+        graph[i] = graph[i].push(j)
+      }
+    }
+  }
   
-  // 获取监控指标
-  let monitor_metrics = PerformanceMonitor::get_metrics(performance_monitor)
+  graph
+}
+
+// Dijkstra最短路径算法
+fn dijkstra_shortest_path(graph, start_node, end_node) {
+  let distances = {}
+  let previous = {}
+  let unvisited = Set::new()
   
-  // 验证监控指标
-  assert_true(MonitorMetrics::operation_count(monitor_metrics) == 1000)
-  assert_true(MonitorMetrics::total_duration(monitor_metrics) == monitor_duration)
-  assert_true(MonitorMetrics::avg_operation_time(monitor_metrics) > 0)
+  # 初始化距离
+  for node in graph.keys() {
+    distances[node] = if node == start_node { 0 } else { Float::infinity }
+    previous[node] = None
+    unvisited.add(node)
+  }
   
-  // 检查性能警报
-  let performance_alerts = PerformanceMonitor::get_alerts(performance_monitor)
+  while not(unvisited.is_empty()) {
+    # 找到未访问节点中距离最小的
+    let current = null
+    let min_distance = Float::infinity
+    
+    for node in unvisited {
+      if distances[node] < min_distance {
+        min_distance = distances[node]
+        current = node
+      }
+    }
+    
+    if current == None or current == end_node {
+      break
+    }
+    
+    unvisited.remove(current)
+    
+    # 更新邻居的距离
+    for neighbor in graph[current] {
+      let alt = distances[current] + 1  # 假设每条边权重为1
+      
+      if alt < distances[neighbor] {
+        distances[neighbor] = alt
+        previous[neighbor] = current
+      }
+    }
+  }
   
-  // 验证警报系统
-  // 在实际环境中，如果性能超过阈值，这里会生成警报
-  assert_true(PerformanceAlerts::is_working(performance_alerts))
+  # 构建路径
+  let path = []
+  let current = end_node
+  
+  while current != None {
+    path = path.unshift(current)
+    current = previous[current]
+  }
+  
+  path
 }
