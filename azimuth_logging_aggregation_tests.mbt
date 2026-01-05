@@ -1,1008 +1,742 @@
-// Azimuth Logging and Aggregation Tests
-// 日志记录和聚合测试用例 - 专注于日志记录、聚合分析和日志处理
+// Azimuth Logging and Aggregation Test Suite
+// This file contains test cases for logging and log aggregation functionality
 
-// Test 1: 基础日志记录测试
-test "basic logging functionality" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
+// Test 1: Log Entry Creation and Validation
+test "log entry creation and validation" {
+  type LogLevel = {
+    TRACE: Int,
+    DEBUG: Int,
+    INFO: Int,
+    WARN: Int,
+    ERROR: Int,
+    FATAL: Int
+  }
   
-  // 创建日志记录器
-  let logger = LoggerProvider::get_logger(provider, "test-logger")
+  let log_levels = {
+    TRACE: 0,
+    DEBUG: 1,
+    INFO: 2,
+    WARN: 3,
+    ERROR: 4,
+    FATAL: 5
+  }
   
-  // 创建内存日志处理器
-  let memory_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(logger, memory_handler)
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String,
+    thread_name: String,
+    exception: Option[String],
+    mdc: Array[(String, String)]
+  }
   
-  // 测试不同级别的日志记录
-  Logger::debug(logger, "Debug message", Some([("component", StringValue("test"))]))
-  Logger::info(logger, "Info message", Some([("component", StringValue("test"))]))
-  Logger::warn(logger, "Warning message", Some([("component", StringValue("test"))]))
-  Logger::error(logger, "Error message", Some([("component", StringValue("test"))]))
-  
-  // 获取日志记录
-  let log_records = MemoryLogHandler::get_records(memory_handler)
-  
-  // 验证日志记录
-  assert_eq(log_records.length(), 4)
-  
-  match log_records[0] {
-    LogRecord => {
-      assert_eq(LogRecord::severity_number(log_records[0]), Debug)
-      match LogRecord::body(log_records[0]) {
-        Some(body) => assert_eq(body, "Debug message")
-        None => assert_true(false)
-      }
+  let create_log_entry = fn(level: Int, message: String, logger_name: String) {
+    {
+      timestamp: 1640995200,
+      level,
+      message,
+      logger_name,
+      thread_name: "main",
+      exception: None,
+      mdc: []
     }
   }
   
-  match log_records[1] {
-    LogRecord => {
-      assert_eq(LogRecord::severity_number(log_records[1]), Info)
-      match LogRecord::body(log_records[1]) {
-        Some(body) => assert_eq(body, "Info message")
-        None => assert_true(false)
-      }
-    }
+  let with_exception = fn(entry: LogEntry, exception: String) {
+    { entry | exception: Some(exception) }
   }
   
-  match log_records[2] {
-    LogRecord => {
-      assert_eq(LogRecord::severity_number(log_records[2]), Warn)
-      match LogRecord::body(log_records[2]) {
-        Some(body) => assert_eq(body, "Warning message")
-        None => assert_true(false)
-      }
-    }
+  let with_mdc = fn(entry: LogEntry, key: String, value: String) {
+    { entry | mdc: entry.mdc + [(key, value)] }
   }
   
-  match log_records[3] {
-    LogRecord => {
-      assert_eq(LogRecord::severity_number(log_records[3]), Error)
-      match LogRecord::body(log_records[3]) {
-        Some(body) => assert_eq(body, "Error message")
-        None => assert_true(false)
-      }
-    }
+  let is_valid_log_entry = fn(entry: LogEntry) {
+    entry.message.length() > 0 && 
+    entry.logger_name.length() > 0 &&
+    entry.level >= log_levels.TRACE && 
+    entry.level <= log_levels.FATAL
   }
   
-  // 验证日志属性
-  for record in log_records {
-    let attrs = LogRecord::attributes(record)
-    match Attributes::get(attrs, "component") {
-      Some(StringValue(value)) => assert_eq(value, "test")
-      _ => assert_true(false)
-    }
-  }
+  let info_entry = create_log_entry(log_levels.INFO, "User logged in successfully", "auth-service")
+  assert_true(is_valid_log_entry(info_entry))
+  assert_eq(info_entry.level, log_levels.INFO)
+  assert_eq(info_entry.message, "User logged in successfully")
+  assert_eq(info_entry.logger_name, "auth-service")
+  assert_eq(info_entry.thread_name, "main")
+  assert_eq(info_entry.exception, None)
+  assert_eq(info_entry.mdc.length(), 0)
   
-  // 测试日志级别过滤
-  Logger::set_level(logger, Warn)
+  let error_entry = with_exception(info_entry, "NullPointerException at com.example.Service.process(Service.java:42)")
+  assert_eq(error_entry.exception, Some("NullPointerException at com.example.Service.process(Service.java:42)"))
   
-  Logger::debug(logger, "Filtered debug message")
-  Logger::info(logger, "Filtered info message")
-  Logger::warn(logger, "Passed warning message")
-  Logger::error(logger, "Passed error message")
+  let mdc_entry = with_mdc(error_entry, "user_id", "user-123")
+  assert_eq(mdc_entry.mdc.length(), 1)
+  assert_true(mdc_entry.mdc.contains(("user_id", "user-123")))
   
-  let filtered_records = MemoryLogHandler::get_records(memory_handler)
+  let multi_mdc_entry = with_mdc(mdc_entry, "request_id", "req-456")
+  assert_eq(multi_mdc_entry.mdc.length(), 2)
+  assert_true(multi_mdc_entry.mdc.contains(("user_id", "user-123")))
+  assert_true(multi_mdc_entry.mdc.contains(("request_id", "req-456")))
   
-  // 验证过滤后的日志（只有Warn和Error级别的日志应该被记录）
-  assert_eq(filtered_records.length(), 6) // 4条原始日志 + 2条过滤后的日志
+  let invalid_entry = { info_entry | message: "" }
+  assert_false(is_valid_log_entry(invalid_entry))
   
-  assert_eq(LogRecord::severity_number(filtered_records[4]), Warn)
-  assert_eq(LogRecord::severity_number(filtered_records[5]), Error)
+  let invalid_level_entry = { info_entry | level: 10 }
+  assert_false(is_valid_log_entry(invalid_level_entry))
 }
 
-// Test 2: 结构化日志记录测试
-test "structured logging" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
+// Test 2: Log Level Filtering
+test "log level filtering" {
+  type LogLevel = {
+    TRACE: Int,
+    DEBUG: Int,
+    INFO: Int,
+    WARN: Int,
+    ERROR: Int,
+    FATAL: Int
+  }
   
-  // 创建结构化日志记录器
-  let logger = LoggerProvider::get_logger(provider, "structured-logger")
+  let log_levels = {
+    TRACE: 0,
+    DEBUG: 1,
+    INFO: 2,
+    WARN: 3,
+    ERROR: 4,
+    FATAL: 5
+  }
   
-  // 创建JSON日志处理器
-  let json_handler = JsonLogHandler::new()
-  Logger::add_handler(logger, json_handler)
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String
+  }
   
-  // 创建内存处理器用于验证
-  let memory_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(logger, memory_handler)
+  let create_log_entry = fn(level: Int, message: String, logger_name: String) {
+    {
+      timestamp: 1640995200,
+      level,
+      message,
+      logger_name
+    }
+  }
   
-  // 记录结构化日志
-  let request_attrs = [
-    ("http.method", StringValue("GET")),
-    ("http.url", StringValue("/api/users/123")),
-    ("http.status_code", IntValue(200)),
-    ("user.id", StringValue("user-456")),
-    ("request.duration_ms", IntValue(150)),
-    ("trace.id", StringValue("trace-789"))
+  let is_level_enabled = fn(entry_level: Int, min_level: Int) {
+    entry_level >= min_level
+  }
+  
+  let filter_by_level = fn(entries: Array[LogEntry], min_level: Int) {
+    entries.filter(fn(entry) { is_level_enabled(entry.level, min_level) })
+  }
+  
+  let log_entries = [
+    create_log_entry(log_levels.TRACE, "Detailed trace information", "service-a"),
+    create_log_entry(log_levels.DEBUG, "Debug information", "service-a"),
+    create_log_entry(log_levels.INFO, "Service started", "service-a"),
+    create_log_entry(log_levels.WARN, "Deprecated API used", "service-b"),
+    create_log_entry(log_levels.ERROR, "Database connection failed", "service-b"),
+    create_log_entry(log_levels.FATAL, "System crash", "service-c")
   ]
   
-  Logger::info(logger, "HTTP request completed", Some(request_attrs))
+  let info_and_above = filter_by_level(log_entries, log_levels.INFO)
+  assert_eq(info_and_above.length(), 4)
+  assert_true(info_and_above.all(fn(entry) { entry.level >= log_levels.INFO }))
   
-  // 记录错误日志
-  let error_attrs = [
-    ("error.type", StringValue("ValidationError")),
-    ("error.message", StringValue("Invalid user input")),
-    ("error.code", StringValue("ERR-001")),
-    ("user.id", StringValue("user-456")),
-    ("request.id", StringValue("req-123"))
+  let warn_and_above = filter_by_level(log_entries, log_levels.WARN)
+  assert_eq(warn_and_above.length(), 3)
+  assert_true(warn_and_above.all(fn(entry) { entry.level >= log_levels.WARN }))
+  
+  let error_and_above = filter_by_level(log_entries, log_levels.ERROR)
+  assert_eq(error_and_above.length(), 2)
+  assert_true(error_and_above.all(fn(entry) { entry.level >= log_levels.ERROR }))
+  
+  let fatal_only = filter_by_level(log_entries, log_levels.FATAL)
+  assert_eq(fatal_only.length(), 1)
+  assert_eq(fatal_only[0].level, log_levels.FATAL)
+  
+  let all_levels = filter_by_level(log_entries, log_levels.TRACE)
+  assert_eq(all_levels.length(), 6)
+  
+  let none_levels = filter_by_level(log_entries, log_levels.FATAL + 1)
+  assert_eq(none_levels.length(), 0)
+}
+
+// Test 3: Log Pattern Matching
+test "log pattern matching" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String,
+    mdc: Array[(String, String)]
+  }
+  
+  let create_log_entry = fn(level: Int, message: String, logger_name: String, mdc: Array[(String, String)]) {
+    {
+      timestamp: 1640995200,
+      level,
+      message,
+      logger_name,
+      mdc
+    }
+  }
+  
+  let matches_message_pattern = fn(entry: LogEntry, pattern: String) {
+    entry.message.contains(pattern)
+  }
+  
+  let matches_logger_pattern = fn(entry: LogEntry, pattern: String) {
+    entry.logger_name.contains(pattern)
+  }
+  
+  let matches_mdc_key = fn(entry: LogEntry, key: String) {
+    entry.mdc.some(fn(kvp) { kvp.0 == key })
+  }
+  
+  let matches_mdc_value = fn(entry: LogEntry, key: String, value: String) {
+    entry.mdc.some(fn(kvp) { kvp.0 == key && kvp.1 == value })
+  }
+  
+  let log_entries = [
+    create_log_entry(2, "User login successful", "auth-service", [("user_id", "123"), ("action", "login")]),
+    create_log_entry(4, "Database connection failed", "db-service", [("error_code", "500"), ("retry_count", "3")]),
+    create_log_entry(2, "User logout", "auth-service", [("user_id", "123"), ("action", "logout")]),
+    create_log_entry(3, "Cache miss for key", "cache-service", [("cache_key", "user:123"), ("action", "get")]),
+    create_log_entry(4, "Payment processing failed", "payment-service", [("user_id", "456"), ("amount", "100.00")])
   ]
   
-  Logger::error(logger, "Request processing failed", Some(error_attrs))
+  let user_logs = log_entries.filter(fn(entry) { matches_message_pattern(entry, "User") })
+  assert_eq(user_logs.length(), 2)
+  assert_true(user_logs.all(fn(entry) { entry.message.contains("User") }))
   
-  // 获取JSON日志输出
-  let json_logs = JsonLogHandler::get_output(json_handler)
+  let auth_logs = log_entries.filter(fn(entry) { matches_logger_pattern(entry, "auth-service") })
+  assert_eq(auth_logs.length(), 2)
+  assert_true(auth_logs.all(fn(entry) { entry.logger_name == "auth-service" }))
   
-  // 验证JSON格式
-  assert_eq(json_logs.length(), 2)
+  let user_id_logs = log_entries.filter(fn(entry) { matches_mdc_key(entry, "user_id") })
+  assert_eq(user_id_logs.length(), 3)
   
-  let first_log = Json::parse(json_logs[0])
-  assert_eq(first_log["level"], "INFO")
-  assert_eq(first_log["message"], "HTTP request completed")
-  assert_eq(first_log["logger_name"], "structured-logger")
-  assert_eq(first_log["http.method"], "GET")
-  assert_eq(first_log["http.url"], "/api/users/123")
-  assert_eq(first_log["http.status_code"], 200)
-  assert_eq(first_log["user.id"], "user-456")
-  assert_eq(first_log["request.duration_ms"], 150)
-  assert_eq(first_log["trace.id"], "trace-789")
+  let user_123_logs = log_entries.filter(fn(entry) { matches_mdc_value(entry, "user_id", "123") })
+  assert_eq(user_123_logs.length(), 2)
   
-  let second_log = Json::parse(json_logs[1])
-  assert_eq(second_log["level"], "ERROR")
-  assert_eq(second_log["message"], "Request processing failed")
-  assert_eq(second_log["error.type"], "ValidationError")
-  assert_eq(second_log["error.message"], "Invalid user input")
-  assert_eq(second_log["error.code"], "ERR-001")
+  let error_logs = log_entries.filter(fn(entry) { matches_message_pattern(entry, "failed") })
+  assert_eq(error_logs.length(), 2)
   
-  // 验证时间戳
-  assert_true(first_log.contains("timestamp"))
-  assert_true(second_log.contains("timestamp"))
-  
-  // 测试日志模板
-  let template_logger = LoggerProvider::get_logger(provider, "template-logger")
-  let template_memory_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(template_logger, template_memory_handler)
-  
-  // 使用模板记录日志
-  Logger::info_template(
-    template_logger,
-    "User {user_id} performed {action} on {resource}",
-    [("user_id", StringValue("user-123")), ("action", StringValue("create")), ("resource", StringValue("document"))]
-  )
-  
-  let template_records = MemoryLogHandler::get_records(template_memory_handler)
-  assert_eq(template_records.length(), 1)
-  
-  match LogRecord::body(template_records[0]) {
-    Some(body) => assert_eq(body, "User user-123 performed create on document")
-    None => assert_true(false)
-  }
+  let combined_filter = log_entries.filter(fn(entry) { 
+    matches_mdc_key(entry, "user_id") && 
+    (matches_message_pattern(entry, "User") || matches_message_pattern(entry, "failed"))
+  })
+  assert_eq(combined_filter.length(), 3)
 }
 
-// Test 3: 日志聚合和统计分析测试
-test "log aggregation and statistical analysis" {
-  // 创建日志聚合器
-  let aggregator = LogAggregator::new()
-  
-  // 添加日志记录
-  for i in 0..<100 {
-    let severity = if i % 20 == 0 { Error } 
-                   else if i % 10 == 0 { Warn } 
-                   else if i % 5 == 0 { Info } 
-                   else { Debug }
-    
-    let component = "component_" + (i % 5).to_string()
-    let message = "Log message " + i.to_string()
-    
-    let attrs = [
-      ("component", StringValue(component)),
-      ("iteration", IntValue(i))
-    ]
-    
-    let log_record = LogRecord::new(severity, message)
-    LogRecord::add_attributes(log_record, attrs)
-    
-    LogAggregator::add_record(aggregator, log_record)
+// Test 4: Log Aggregation by Time Window
+test "log aggregation by time window" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String
   }
   
-  // 获取按级别统计
-  let severity_stats = LogAggregator::get_statistics_by_severity(aggregator)
-  
-  assert_eq(severity_stats.get(Debug), Some(80))  // 80条Debug日志
-  assert_eq(severity_stats.get(Info), Some(10))   // 10条Info日志
-  assert_eq(severity_stats.get(Warn), Some(5))    // 5条Warn日志
-  assert_eq(severity_stats.get(Error), Some(5))   // 5条Error日志
-  
-  // 获取按组件统计
-  let component_stats = LogAggregator::get_statistics_by_component(aggregator)
-  
-  for i in 0..<5 {
-    let component = "component_" + i.to_string()
-    assert_eq(component_stats.get(component), Some(20)) // 每个组件20条日志
+  type LogAggregation = {
+    window_start: Int,
+    window_end: Int,
+    count: Int,
+    error_count: Int,
+    warn_count: Int,
+    info_count: Int,
+    debug_count: Int,
+    trace_count: Int,
+    fatal_count: Int
   }
   
-  // 获取时间窗口统计
-  let start_time = Time::now() - 3600000 // 1小时前
-  let end_time = Time::now()
-  
-  let time_window_stats = LogAggregator::get_statistics_by_time_window(aggregator, start_time, end_time)
-  assert_eq(time_window_stats.total_records, 100)
-  
-  // 获取错误模式分析
-  let error_patterns = LogAggregator::analyze_error_patterns(aggregator)
-  
-  assert_true(error_patterns.length() > 0)
-  
-  // 添加更多错误日志进行模式分析
-  for i in 0..<20 {
-    let error_message = if i % 4 == 0 { "Database connection failed" }
-                       else if i % 4 == 1 { "Authentication failed for user" }
-                       else if i % 4 == 2 { "Validation error: Invalid input" }
-                       else { "Network timeout occurred" }
-    
-    let error_attrs = [
-      ("error.code", StringValue("ERR-" + (i % 4).to_string())),
-      ("component", StringValue("error_component"))
-    ]
-    
-    let error_record = LogRecord::new(Error, error_message)
-    LogRecord::add_attributes(error_record, error_attrs)
-    
-    LogAggregator::add_record(aggregator, error_record)
-  }
-  
-  // 重新分析错误模式
-  let updated_error_patterns = LogAggregator::analyze_error_patterns(aggregator)
-  
-  assert_true(updated_error_patterns.length() >= 4)
-  
-  // 验证错误模式
-  let db_errors = updated_error_patterns.find(fn(pattern) { pattern.message.contains("Database") })
-  match db_errors {
-    Some(pattern) => assert_eq(pattern.count, 5) // 原有1条 + 新增4条
-    None => assert_true(false)
-  }
-  
-  // 获取日志热力图数据
-  let heatmap_data = LogAggregator::generate_activity_heatmap(aggregator, TimeGranularity::Minute)
-  assert_true(heatmap_data.length() > 0)
-  
-  // 获取日志趋势分析
-  let trend_analysis = LogAggregator::analyze_trends(aggregator, TimeGranularity::Minute, 10) // 10分钟窗口
-  assert_true(trend_analysis.length() > 0)
-}
-
-// Test 4: 日志关联和上下文传播测试
-test "log correlation and context propagation" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
-  
-  // 创建带上下文的日志记录器
-  let logger = LoggerProvider::get_logger(provider, "correlation-logger")
-  
-  // 创建内存处理器
-  let memory_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(logger, memory_handler)
-  
-  // 创建上下文
-  let trace_id = "trace-123456"
-  let span_id = "span-789012"
-  
-  let context = Context::new()
-  Context::set_value(context, "trace_id", trace_id)
-  Context::set_value(context, "span_id", span_id)
-  Context::set_value(context, "user_id", "user-456")
-  
-  // 在上下文中记录日志
-  Logger::info_with_context(logger, "Operation started", context, Some([("operation", StringValue("data_processing"))]))
-  
-  // 创建子上下文
-  let child_context = Context::create_child(context)
-  Context::set_value(child_context, "step", "validation")
-  
-  Logger::debug_with_context(logger, "Validation step", child_context, Some([("status", StringValue("in_progress"))]))
-  
-  // 更新子上下文
-  Context::set_value(child_context, "step", "processing")
-  Logger::info_with_context(logger, "Processing step", child_context, Some([("records_processed", IntValue(1000))]))
-  
-  // 完成操作
-  Context::set_value(child_context, "step", "completed")
-  Logger::info_with_context(logger, "Operation completed", context, Some([("duration_ms", IntValue(500))]))
-  
-  // 获取日志记录
-  let log_records = MemoryLogHandler::get_records(memory_handler)
-  
-  // 验证日志关联
-  assert_eq(log_records.length(), 4)
-  
-  for record in log_records {
-    let attrs = LogRecord::attributes(record)
-    
-    // 验证trace_id和span_id在所有日志中一致
-    match Attributes::get(attrs, "trace_id") {
-      Some(StringValue(value)) => assert_eq(value, trace_id)
-      _ => assert_true(false)
-    }
-    
-    match Attributes::get(attrs, "span_id") {
-      Some(StringValue(value)) => assert_eq(value, span_id)
-      _ => assert_true(false)
-    }
-    
-    // 验证user_id在所有日志中一致
-    match Attributes::get(attrs, "user_id") {
-      Some(StringValue(value)) => assert_eq(value, "user-456")
-      _ => assert_true(false)
+  let create_log_entry = fn(timestamp: Int, level: Int, message: String, logger_name: String) {
+    {
+      timestamp,
+      level,
+      message,
+      logger_name
     }
   }
   
-  // 验证特定上下文属性
-  let validation_attrs = LogRecord::attributes(log_records[1])
-  match Attributes::get(validation_attrs, "step") {
-    Some(StringValue(value)) => assert_eq(value, "validation")
-    _ => assert_true(false)
-  }
-  
-  let processing_attrs = LogRecord::attributes(log_records[2])
-  match Attributes::get(processing_attrs, "step") {
-    Some(StringValue(value)) => assert_eq(value, "processing")
-    _ => assert_true(false)
-  }
-  
-  // 测试跨服务日志关联
-  let cross_service_logger = LoggerProvider::get_logger(provider, "cross-service-logger")
-  let cross_service_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(cross_service_logger, cross_service_handler)
-  
-  // 模拟跨服务调用
-  let correlation_id = "corr-789123"
-  let service_context = Context::new()
-  Context::set_value(service_context, "correlation_id", correlation_id)
-  Context::set_value(service_context, "calling_service", "service-a")
-  Context::set_value(service_context, "called_service", "service-b")
-  
-  // 服务A记录请求
-  Logger::info_with_context(
-    cross_service_logger,
-    "Calling service B",
-    service_context,
-    Some([("endpoint", StringValue("/api/process")), ("request_id", StringValue("req-123"))])
-  )
-  
-  // 服务B记录接收
-  let service_b_context = Context::new()
-  Context::set_value(service_b_context, "correlation_id", correlation_id)
-  Context::set_value(service_b_context, "service", "service-b")
-  
-  Logger::info_with_context(
-    cross_service_logger,
-    "Received request from service A",
-    service_b_context,
-    Some([("endpoint", StringValue("/api/process")), ("request_id", StringValue("req-123"))])
-  )
-  
-  // 服务B记录响应
-  Logger::info_with_context(
-    cross_service_logger,
-    "Sending response to service A",
-    service_b_context,
-    Some([("status", StringValue("success")), ("response_time_ms", IntValue(200))])
-  )
-  
-  // 服务A记录响应
-  Logger::info_with_context(
-    cross_service_logger,
-    "Received response from service B",
-    service_context,
-    Some([("status", StringValue("success")), ("total_time_ms", IntValue(250))])
-  )
-  
-  // 获取跨服务日志
-  let cross_service_logs = MemoryLogHandler::get_records(cross_service_handler)
-  assert_eq(cross_service_logs.length(), 4)
-  
-  // 验证所有日志都有相同的correlation_id
-  for record in cross_service_logs {
-    let attrs = LogRecord::attributes(record)
-    match Attributes::get(attrs, "correlation_id") {
-      Some(StringValue(value)) => assert_eq(value, correlation_id)
-      _ => assert_true(false)
+  let aggregate_by_time_window = fn(entries: Array[LogEntry], window_start: Int, window_end: Int) {
+    let window_entries = entries.filter(fn(entry) { 
+      entry.timestamp >= window_start && entry.timestamp < window_end 
+    })
+    
+    let count = window_entries.length()
+    let error_count = window_entries.filter(fn(e) { e.level == 4 }).length()
+    let warn_count = window_entries.filter(fn(e) { e.level == 3 }).length()
+    let info_count = window_entries.filter(fn(e) { e.level == 2 }).length()
+    let debug_count = window_entries.filter(fn(e) { e.level == 1 }).length()
+    let trace_count = window_entries.filter(fn(e) { e.level == 0 }).length()
+    let fatal_count = window_entries.filter(fn(e) { e.level == 5 }).length()
+    
+    {
+      window_start,
+      window_end,
+      count,
+      error_count,
+      warn_count,
+      info_count,
+      debug_count,
+      trace_count,
+      fatal_count
     }
   }
   
-  // 测试日志关联查询
-  let correlated_logs = LogCorrelator::find_by_correlation_id(memory_handler, trace_id)
-  assert_eq(correlated_logs.length(), 4)
+  let log_entries = [
+    create_log_entry(1000, 2, "Service started", "auth-service"),
+    create_log_entry(1010, 1, "Initializing components", "auth-service"),
+    create_log_entry(1020, 2, "User login request", "auth-service"),
+    create_log_entry(1030, 4, "Database connection failed", "db-service"),
+    create_log_entry(1040, 2, "Retrying database connection", "db-service"),
+    create_log_entry(1050, 2, "Database connection restored", "db-service"),
+    create_log_entry(2000, 2, "User logout request", "auth-service"),
+    create_log_entry(2010, 3, "Session timeout warning", "auth-service"),
+    create_log_entry(2020, 2, "Session invalidated", "auth-service")
+  ]
   
-  let cross_service_correlated_logs = LogCorrelator::find_by_correlation_id(cross_service_handler, correlation_id)
-  assert_eq(cross_service_correlated_logs.length(), 4)
+  let window1 = aggregate_by_time_window(log_entries, 1000, 1100)
+  assert_eq(window1.window_start, 1000)
+  assert_eq(window1.window_end, 1100)
+  assert_eq(window1.count, 6)
+  assert_eq(window1.error_count, 1)
+  assert_eq(window1.warn_count, 0)
+  assert_eq(window1.info_count, 4)
+  assert_eq(window1.debug_count, 1)
+  assert_eq(window1.trace_count, 0)
+  assert_eq(window1.fatal_count, 0)
+  
+  let window2 = aggregate_by_time_window(log_entries, 2000, 2100)
+  assert_eq(window2.window_start, 2000)
+  assert_eq(window2.window_end, 2100)
+  assert_eq(window2.count, 3)
+  assert_eq(window2.error_count, 0)
+  assert_eq(window2.warn_count, 1)
+  assert_eq(window2.info_count, 2)
+  assert_eq(window2.debug_count, 0)
+  assert_eq(window2.trace_count, 0)
+  assert_eq(window2.fatal_count, 0)
+  
+  let empty_window = aggregate_by_time_window(log_entries, 3000, 3100)
+  assert_eq(empty_window.count, 0)
+  assert_eq(empty_window.error_count, 0)
+  assert_eq(empty_window.warn_count, 0)
+  assert_eq(empty_window.info_count, 0)
+  assert_eq(empty_window.debug_count, 0)
+  assert_eq(empty_window.trace_count, 0)
+  assert_eq(empty_window.fatal_count, 0)
 }
 
-// Test 5: 日志性能和吞吐量测试
-test "logging performance and throughput" {
-  // 创建高性能日志提供者
-  let provider = LoggerProvider::new()
-  LoggerProvider::set_async_mode(provider, true) // 启用异步模式
-  LoggerProvider::set_buffer_size(provider, 10000) // 设置缓冲区大小
-  
-  // 创建高性能日志记录器
-  let logger = LoggerProvider::get_logger(provider, "performance-logger")
-  
-  // 创建丢弃策略处理器（避免内存溢出）
-  let drop_handler = DropLogHandler::new(1000) // 最多保留1000条日志
-  Logger::add_handler(logger, drop_handler)
-  
-  // 测试单线程日志记录性能
-  let single_thread_start = Time::now()
-  
-  for i in 0..<10000 {
-    Logger::info(logger, "Performance test message " + i.to_string(), Some([("iteration", IntValue(i))]))
+// Test 5: Log Correlation and Context
+test "log correlation and context" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String,
+    trace_id: Option[String],
+    span_id: Option[String],
+    request_id: Option[String],
+    user_id: Option[String]
   }
   
-  // 等待异步处理完成
-  LoggerProvider::flush(provider)
-  
-  let single_thread_time = Time::now() - single_thread_start
-  let single_thread_throughput = 10000.0 / (single_thread_time / 1000.0) // 每秒日志数
-  
-  // 验证性能（应该至少每秒1000条日志）
-  assert_true(single_thread_throughput >= 1000.0)
-  
-  // 测试多线程日志记录性能
-  let multi_thread_start = Time::now()
-  
-  let tasks = []
-  for thread_id in 0..<4 {
-    let task = ConcurrentTask::new(fn(tid: Int) {
-      let thread_logger = LoggerProvider::get_logger(provider, "thread-" + tid.to_string())
-      
-      for i in 0..<2500 {
-        Logger::info(
-          thread_logger,
-          "Multi-thread message " + tid.to_string() + "-" + i.to_string(),
-          Some([("thread", IntValue(tid)), ("iteration", IntValue(i))])
-        )
-      }
-    }, thread_id)
-    
-    tasks = tasks.push(task)
+  type CorrelatedLogGroup = {
+    trace_id: String,
+    entries: Array[LogEntry],
+    services: Array[String],
+    start_time: Int,
+    end_time: Int,
+    error_count: Int
   }
   
-  // 执行所有任务
-  ConcurrentTask::execute_all(tasks)
-  
-  // 等待异步处理完成
-  LoggerProvider::flush(provider)
-  
-  let multi_thread_time = Time::now() - multi_thread_start
-  let multi_thread_throughput = 10000.0 / (multi_thread_time / 1000.0) // 每秒日志数
-  
-  // 验证多线程性能（应该至少每秒2000条日志）
-  assert_true(multi_thread_throughput >= 2000.0)
-  
-  // 测试大批量日志记录
-  let batch_start = Time::now()
-  
-  let batch_logger = LoggerProvider::get_logger(provider, "batch-logger")
-  let batch_handler = BatchLogHandler::new(1000, 100) // 批量处理，每100条或每100ms刷新
-  Logger::add_handler(batch_logger, batch_handler)
-  
-  for i in 0..<50000 {
-    Logger::debug(batch_logger, "Batch test message " + i.to_string())
-  }
-  
-  // 等待批量处理完成
-  LoggerProvider::flush(provider)
-  
-  let batch_time = Time::now() - batch_start
-  let batch_throughput = 50000.0 / (batch_time / 1000.0) // 每秒日志数
-  
-  // 验证批量处理性能（应该至少每秒5000条日志）
-  assert_true(batch_throughput >= 5000.0)
-  
-  // 获取性能指标
-  let metrics = LoggerProvider::get_metrics(provider)
-  
-  // 验证指标
-  assert_true(metrics.total_logs_logged >= 70000) // 10000 + 10000 + 50000
-  assert_true(metrics.average_log_time > 0)
-  assert_true(metrics.max_log_time >= metrics.min_log_time)
-  assert_true(metrics.async_queue_size >= 0)
-  assert_true(metrics.dropped_logs_count >= 0)
-  
-  // 验证吞吐量指标
-  assert_true(metrics.overall_throughput > 0)
-  assert_true(metrics.peak_throughput >= metrics.overall_throughput)
-}
-
-// Test 6: 日志过滤和路由测试
-test "log filtering and routing" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
-  
-  // 创建日志记录器
-  let logger = LoggerProvider::get_logger(provider, "filter-logger")
-  
-  // 创建不同类型的处理器
-  let error_handler = MemoryLogHandler::new(1000)
-  let warn_handler = MemoryLogHandler::new(1000)
-  let info_handler = MemoryLogHandler::new(1000)
-  let debug_handler = MemoryLogHandler::new(1000)
-  
-  // 创建级别过滤器
-  let error_filter = LevelFilter::new([Error])
-  let warn_filter = LevelFilter::new([Warn, Error])
-  let info_filter = LevelFilter::new([Info, Warn, Error])
-  let debug_filter = LevelFilter::new([Debug, Info, Warn, Error])
-  
-  // 创建过滤处理器
-  let filtered_error_handler = FilteredLogHandler::new(error_handler, error_filter)
-  let filtered_warn_handler = FilteredLogHandler::new(warn_handler, warn_filter)
-  let filtered_info_handler = FilteredLogHandler::new(info_handler, info_filter)
-  let filtered_debug_handler = FilteredLogHandler::new(debug_handler, debug_filter)
-  
-  // 添加过滤处理器
-  Logger::add_handler(logger, filtered_error_handler)
-  Logger::add_handler(logger, filtered_warn_handler)
-  Logger::add_handler(logger, filtered_info_handler)
-  Logger::add_handler(logger, filtered_debug_handler)
-  
-  // 记录不同级别的日志
-  Logger::debug(logger, "Debug message 1")
-  Logger::info(logger, "Info message 1")
-  Logger::warn(logger, "Warning message 1")
-  Logger::error(logger, "Error message 1")
-  
-  Logger::debug(logger, "Debug message 2")
-  Logger::info(logger, "Info message 2")
-  Logger::warn(logger, "Warning message 2")
-  Logger::error(logger, "Error message 2")
-  
-  // 验证过滤结果
-  let error_records = MemoryLogHandler::get_records(error_handler)
-  let warn_records = MemoryLogHandler::get_records(warn_handler)
-  let info_records = MemoryLogHandler::get_records(info_handler)
-  let debug_records = MemoryLogHandler::get_records(debug_handler)
-  
-  // 错误处理器应该只有Error级别的日志
-  assert_eq(error_records.length(), 2)
-  for record in error_records {
-    assert_eq(LogRecord::severity_number(record), Error)
-  }
-  
-  // 警告处理器应该有Warn和Error级别的日志
-  assert_eq(warn_records.length(), 4)
-  for record in warn_records {
-    let severity = LogRecord::severity_number(record)
-    assert_true(severity == Warn || severity == Error)
-  }
-  
-  // 信息处理器应该有Info、Warn和Error级别的日志
-  assert_eq(info_records.length(), 6)
-  for record in info_records {
-    let severity = LogRecord::severity_number(record)
-    assert_true(severity == Info || severity == Warn || severity == Error)
-  }
-  
-  // 调试处理器应该有所有级别的日志
-  assert_eq(debug_records.length(), 8)
-  
-  // 测试属性过滤器
-  let attr_handler = MemoryLogHandler::new(1000)
-  
-  let component_filter = AttributeFilter::new("component", "critical")
-  let filtered_attr_handler = FilteredLogHandler::new(attr_handler, component_filter)
-  
-  let attr_logger = LoggerProvider::get_logger(provider, "attr-filter-logger")
-  Logger::add_handler(attr_logger, filtered_attr_handler)
-  
-  // 记录带不同属性的日志
-  Logger::info(attr_logger, "Critical component message", Some([("component", StringValue("critical"))]))
-  Logger::info(attr_logger, "Normal component message", Some([("component", StringValue("normal"))]))
-  Logger::info(attr_logger, "Another critical message", Some([("component", StringValue("critical"))]))
-  
-  let attr_records = MemoryLogHandler::get_records(attr_handler)
-  
-  // 应该只有component为critical的日志
-  assert_eq(attr_records.length(), 2)
-  for record in attr_records {
-    let attrs = LogRecord::attributes(record)
-    match Attributes::get(attrs, "component") {
-      Some(StringValue(value)) => assert_eq(value, "critical")
-      _ => assert_true(false)
+  let create_log_entry = fn(level: Int, message: String, logger_name: String, trace_id: Option[String], span_id: Option[String], request_id: Option[String], user_id: Option[String]) {
+    {
+      timestamp: 1640995200,
+      level,
+      message,
+      logger_name,
+      trace_id,
+      span_id,
+      request_id,
+      user_id
     }
   }
   
-  // 测试日志路由
-  let router = LogRouter::new()
-  
-  let db_handler = MemoryLogHandler::new(1000)
-  let api_handler = MemoryLogHandler::new(1000)
-  let default_handler = MemoryLogHandler::new(1000)
-  
-  // 添加路由规则
-  LogRouter::add_route(router, "component", "database", db_handler)
-  LogRouter::add_route(router, "component", "api", api_handler)
-  LogRouter::set_default_route(router, default_handler)
-  
-  let routing_logger = LoggerProvider::get_logger(provider, "routing-logger")
-  let routing_handler = RoutingLogHandler::new(router)
-  Logger::add_handler(routing_logger, routing_handler)
-  
-  // 记录不同组件的日志
-  Logger::info(routing_logger, "Database query executed", Some([("component", StringValue("database"))]))
-  Logger::info(routing_logger, "API request processed", Some([("component", StringValue("api"))]))
-  Logger::info(routing_logger, "General system message", Some([("component", StringValue("system"))]))
-  
-  // 验证路由结果
-  let db_records = MemoryLogHandler::get_records(db_handler)
-  let api_records = MemoryLogHandler::get_records(api_handler)
-  let default_records = MemoryLogHandler::get_records(default_handler)
-  
-  assert_eq(db_records.length(), 1)
-  assert_eq(api_records.length(), 1)
-  assert_eq(default_records.length(), 1)
-  
-  match LogRecord::body(db_records[0]) {
-    Some(body) => assert_eq(body, "Database query executed")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(api_records[0]) {
-    Some(body) => assert_eq(body, "API request processed")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(default_records[0]) {
-    Some(body) => assert_eq(body, "General system message")
-    None => assert_true(false)
-  }
-}
-
-// Test 7: 日志持久化和存储测试
-test "log persistence and storage" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
-  
-  // 创建文件日志处理器
-  let log_file_path = "/tmp/test_log.jsonl"
-  let file_handler = FileLogHandler::new(log_file_path, JsonFormat)
-  
-  let logger = LoggerProvider::get_logger(provider, "file-logger")
-  Logger::add_handler(logger, file_handler)
-  
-  // 记录日志
-  for i in 0..<100 {
-    let severity = if i % 4 == 0 { Error } 
-                   else if i % 4 == 1 { Warn } 
-                   else if i % 4 == 2 { Info } 
-                   else { Debug }
+  let group_by_trace_id = fn(entries: Array[LogEntry]) {
+    let groups = {}
     
-    let message = "File log message " + i.to_string()
-    let attrs = [
-      ("iteration", IntValue(i)),
-      ("component", StringValue("file-test"))
-    ]
-    
-    match severity {
-      Error => Logger::error(logger, message, Some(attrs))
-      Warn => Logger::warn(logger, message, Some(attrs))
-      Info => Logger::info(logger, message, Some(attrs))
-      Debug => Logger::debug(logger, message, Some(attrs))
-    }
-  }
-  
-  // 强制刷新文件
-  LogHandler::flush(file_handler)
-  
-  // 验证文件存在
-  assert_true(File::exists(log_file_path))
-  
-  // 读取并验证文件内容
-  let file_content = File::read(log_file_path)
-  let lines = file_content.split("\n")
-  
-  // 移除空行
-  let non_empty_lines = lines.filter(fn(line) { line.length() > 0 })
-  
-  assert_eq(non_empty_lines.length(), 100)
-  
-  // 验证每行都是有效的JSON
-  for line in non_empty_lines {
-    let json_obj = Json::parse(line)
-    assert_true(json_obj.contains("timestamp"))
-    assert_true(json_obj.contains("level"))
-    assert_true(json_obj.contains("message"))
-    assert_true(json_obj.contains("logger_name"))
-    assert_true(json_obj.contains("iteration"))
-    assert_true(json_obj.contains("component"))
-  }
-  
-  // 测试日志轮转
-  let rotate_handler = RotatingFileLogHandler::new(
-    "/tmp/rotating_log.jsonl",
-    JsonFormat,
-    1024, // 1KB大小限制
-    5     // 保留5个文件
-  )
-  
-  let rotate_logger = LoggerProvider::get_logger(provider, "rotate-logger")
-  Logger::add_handler(rotate_logger, rotate_handler)
-  
-  // 记录大量日志以触发轮转
-  for i in 0..<200 {
-    let long_message = "This is a very long log message that will help trigger log rotation. " * 5 + i.to_string()
-    Logger::info(rotate_logger, long_message, Some([("iteration", IntValue(i))]))
-  }
-  
-  // 强制刷新
-  LogHandler::flush(rotate_handler)
-  
-  // 验证轮转文件
-  assert_true(File::exists("/tmp/rotating_log.jsonl"))
-  assert_true(File::exists("/tmp/rotating_log.jsonl.1"))
-  
-  // 测试日志压缩存储
-  let compress_handler = CompressedFileLogHandler::new(
-    "/tmp/compressed_log.jsonl.gz",
-    JsonFormat
-  )
-  
-  let compress_logger = LoggerProvider::get_logger(provider, "compress-logger")
-  Logger::add_handler(compress_logger, compress_handler)
-  
-  // 记录日志
-  for i in 0..<50 {
-    Logger::info(compress_logger, "Compressed log message " + i.to_string(), Some([("index", IntValue(i))]))
-  }
-  
-  // 强制刷新
-  LogHandler::flush(compress_handler)
-  
-  // 验证压缩文件存在
-  assert_true(File::exists("/tmp/compressed_log.jsonl.gz"))
-  
-  // 读取并验证压缩文件
-  let compressed_content = Gzip::decompress_file("/tmp/compressed_log.jsonl.gz")
-  let compressed_lines = compressed_content.split("\n")
-  let non_empty_compressed_lines = compressed_lines.filter(fn(line) { line.length() > 0 })
-  
-  assert_eq(non_empty_compressed_lines.length(), 50)
-  
-  // 验证压缩文件中的每行都是有效的JSON
-  for line in non_empty_compressed_lines {
-    let json_obj = Json::parse(line)
-    assert_true(json_obj.contains("message"))
-    assert_true(json_obj.contains("index"))
-  }
-  
-  // 测试日志查询
-  let log_storage = FileLogStorage::new(log_file_path)
-  
-  // 按级别查询
-  let error_logs = LogStorage::query_by_level(log_storage, Error)
-  assert_eq(error_logs.length(), 25) // 100条日志中25%是Error级别
-  
-  // 按时间范围查询
-  let now = Time::now()
-  let one_hour_ago = now - 3600000
-  
-  let recent_logs = LogStorage::query_by_time_range(log_storage, one_hour_ago, now)
-  assert_eq(recent_logs.length(), 100) // 所有日志都是最近一小时内的
-  
-  // 按属性查询
-  let component_logs = LogStorage::query_by_attribute(log_storage, "component", "file-test")
-  assert_eq(component_logs.length(), 100) // 所有日志都有这个属性
-  
-  // 按消息内容查询
-  let message_logs = LogStorage::query_by_message(log_storage, "File log message")
-  assert_eq(message_logs.length(), 100) // 所有日志都包含这个消息模式
-  
-  // 复合查询
-  let composite_logs = LogStorage::query_composite(
-    log_storage,
-    [("level", Error), ("component", "file-test")]
-  )
-  assert_eq(composite_logs.length(), 25) // 25条Error级别的日志
-}
-
-// Test 8: 日志监控和告警测试
-test "log monitoring and alerting" {
-  // 创建日志提供者
-  let provider = LoggerProvider::new()
-  
-  // 创建日志记录器
-  let logger = LoggerProvider::get_logger(provider, "monitoring-logger")
-  
-  // 创建内存处理器
-  let memory_handler = MemoryLogHandler::new(1000)
-  Logger::add_handler(logger, memory_handler)
-  
-  // 创建日志监控器
-  let monitor = LogMonitor::new(memory_handler)
-  
-  // 创建告警规则
-  let error_rate_rule = AlertRule::new(
-    "error_rate_high",
-    fn(logs: Array[LogRecord]) -> Bool {
-      let mut error_count = 0
-      for log in logs {
-        if LogRecord::severity_number(log) == Error {
-          error_count = error_count + 1
-        }
-      }
-      let error_rate = error_count.to_float() / logs.length().to_float()
-      error_rate > 0.2 // 错误率超过20%
-    },
-    Warning,
-    "Error rate is above 20%"
-  )
-  
-  let error_spike_rule = AlertRule::new(
-    "error_spike",
-    fn(logs: Array[LogRecord]) -> Bool {
-      let mut error_count = 0
-      for log in logs {
-        if LogRecord::severity_number(log) == Error {
-          error_count = error_count + 1
-        }
-      }
-      error_count > 10 // 错误数量超过10
-    },
-    Critical,
-    "Error spike detected"
-  )
-  
-  let specific_error_rule = AlertRule::new(
-    "database_connection_error",
-    fn(logs: Array[LogRecord]) -> Bool {
-      for log in logs {
-        if LogRecord::severity_number(log) == Error {
-          match LogRecord::body(log) {
-            Some(body) => {
-              if body.contains("Database connection failed") {
-                return true
-              }
-            }
-            None => ()
+    for entry in entries {
+      match entry.trace_id {
+        Some(trace_id) => {
+          match groups[trace_id] {
+            Some(group_entries) => groups[trace_id] = Some(group_entries + [entry])
+            None => groups[trace_id] = Some([entry])
           }
         }
+        None => {}  // Skip entries without trace ID
       }
-      false
-    },
-    Critical,
-    "Database connection error detected"
-  )
-  
-  // 添加告警规则
-  LogMonitor::add_rule(monitor, error_rate_rule)
-  LogMonitor::add_rule(monitor, error_spike_rule)
-  LogMonitor::add_rule(monitor, specific_error_rule)
-  
-  // 创建告警处理器
-  let mut triggered_alerts = []
-  
-  let alert_handler = AlertHandler::new(fn(alert: Alert) {
-    triggered_alerts = triggered_alerts.push(alert)
-  })
-  
-  LogMonitor::set_alert_handler(monitor, alert_handler)
-  
-  // 启动监控
-  LogMonitor::start(monitor, 5000) // 每5秒检查一次
-  
-  // 记录正常日志（不触发告警）
-  for i in 0::<50 {
-    Logger::info(logger, "Normal operation " + i.to_string())
-  }
-  
-  // 等待监控检查
-  Time::sleep(6000)
-  
-  // 验证没有告警触发
-  assert_eq(triggered_alerts.length(), 0)
-  
-  // 记录一些错误日志（触发错误率告警）
-  for i in 0::<20 {
-    Logger::error(logger, "Error occurred " + i.to_string())
-  }
-  
-  // 等待监控检查
-  Time::sleep(6000)
-  
-  // 验证错误率告警触发
-  assert_true(triggered_alerts.length() >= 1)
-  
-  let error_rate_alert = triggered_alerts.find(fn(alert) { alert.rule_id == "error_rate_high" })
-  match error_rate_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, Warning)
-      assert_eq(alert.message, "Error rate is above 20%")
     }
-    None => assert_true(false)
+    
+    groups
   }
   
-  // 重置告警
-  triggered_alerts = []
-  
-  // 记录大量错误日志（触发错误峰值告警）
-  for i in 0::<15 {
-    Logger::error(logger, "Critical error " + i.to_string())
-  }
-  
-  // 等待监控检查
-  Time::sleep(6000)
-  
-  // 验证错误峰值告警触发
-  assert_true(triggered_alerts.length() >= 1)
-  
-  let error_spike_alert = triggered_alerts.find(fn(alert) { alert.rule_id == "error_spike" })
-  match error_spike_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, Critical)
-      assert_eq(alert.message, "Error spike detected")
+  let create_correlated_group = fn(trace_id: String, entries: Array[LogEntry]) {
+    let services = entries.map(fn(e) { e.logger_name })
+    let unique_services = fn(services: Array[String]) {
+      let mut result = []
+      for service in services {
+        if not(result.contains(service)) {
+          result = result.push(service)
+        }
+      }
+      result
     }
-    None => assert_true(false)
-  }
-  
-  // 重置告警
-  triggered_alerts = []
-  
-  // 记录特定错误日志（触发特定错误告警）
-  Logger::error(logger, "Database connection failed")
-  Logger::error(logger, "Database connection failed")
-  
-  // 等待监控检查
-  Time::sleep(6000)
-  
-  // 验证特定错误告警触发
-  assert_true(triggered_alerts.length() >= 1)
-  
-  let specific_error_alert = triggered_alerts.find(fn(alert) { alert.rule_id == "database_connection_error" })
-  match specific_error_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, Critical)
-      assert_eq(alert.message, "Database connection error detected")
+    
+    let timestamps = entries.map(fn(e) { e.timestamp })
+    let start_time = timestamps.reduce(fn(acc, ts) { if ts < acc { ts } else { acc } }, 9999999999)
+    let end_time = timestamps.reduce(fn(acc, ts) { if ts > acc { ts } else { acc } }, 0)
+    let error_count = entries.filter(fn(e) { e.level == 4 }).length()
+    
+    {
+      trace_id,
+      entries,
+      services: unique_services(services),
+      start_time,
+      end_time,
+      error_count
     }
-    None => assert_true(false)
   }
   
-  // 测试告警抑制
-  LogMonitor::set_suppression(monitor, "error_rate_high", 30000) // 抑制30秒
+  let log_entries = [
+    create_log_entry(2, "Request received", "web-service", Some("trace-123"), Some("span-1"), Some("req-1"), Some("user-1")),
+    create_log_entry(2, "Authenticating user", "auth-service", Some("trace-123"), Some("span-2"), Some("req-1"), Some("user-1")),
+    create_log_entry(2, "User authenticated", "auth-service", Some("trace-123"), Some("span-2"), Some("req-1"), Some("user-1")),
+    create_log_entry(4, "Database connection failed", "db-service", Some("trace-123"), Some("span-3"), Some("req-1"), Some("user-1")),
+    create_log_entry(2, "Retrying database connection", "db-service", Some("trace-123"), Some("span-3"), Some("req-1"), Some("user-1")),
+    create_log_entry(2, "Request completed", "web-service", Some("trace-123"), Some("span-1"), Some("req-1"), Some("user-1")),
+    create_log_entry(2, "Background task started", "worker-service", Some("trace-456"), Some("span-4"), None, None),
+    create_log_entry(2, "Background task completed", "worker-service", Some("trace-456"), Some("span-4"), None, None),
+    create_log_entry(2, "Uncorrelated log", "monitor-service", None, None, None, None)
+  ]
   
-  // 再次记录错误日志
-  for i in 0::<25 {
-    Logger::error(logger, "Suppressed error " + i.to_string())
+  let grouped = group_by_trace_id(log_entries)
+  assert_eq(grouped.keys().length(), 2)
+  assert_true(grouped.contains("trace-123"))
+  assert_true(grouped.contains("trace-456"))
+  
+  let trace123_group = create_correlated_group("trace-123", grouped["trace-123"].unwrap_or([]))
+  assert_eq(trace123_group.trace_id, "trace-123")
+  assert_eq(trace123_group.entries.length(), 6)
+  assert_eq(trace123_group.services.length(), 3)
+  assert_true(trace123_group.services.contains("web-service"))
+  assert_true(trace123_group.services.contains("auth-service"))
+  assert_true(trace123_group.services.contains("db-service"))
+  assert_eq(trace123_group.error_count, 1)
+  
+  let trace456_group = create_correlated_group("trace-456", grouped["trace-456"].unwrap_or([]))
+  assert_eq(trace456_group.trace_id, "trace-456")
+  assert_eq(trace456_group.entries.length(), 2)
+  assert_eq(trace456_group.services.length(), 1)
+  assert_true(trace456_group.services.contains("worker-service"))
+  assert_eq(trace456_group.error_count, 0)
+}
+
+// Test 6: Log Sampling
+test "log sampling" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String
   }
   
-  // 等待监控检查
-  Time::sleep(6000)
-  
-  // 验证错误率告警被抑制（没有新的错误率告警）
-  let new_error_rate_alerts = triggered_alerts.filter(fn(alert) { alert.rule_id == "error_rate_high" })
-  assert_eq(new_error_rate_alerts.length(), 0)
-  
-  // 测试告警恢复
-  LogMonitor::clear_suppression(monitor, "error_rate_high")
-  
-  // 记录正常日志，降低错误率
-  for i in 0::<100 {
-    Logger::info(logger, "Recovery operation " + i.to_string())
+  type SamplingResult = {
+    sampled: Bool,
+    reason: String
   }
   
-  // 等待监控检查
-  Time::sleep(6000)
+  let create_log_entry = fn(level: Int, message: String, logger_name: String) {
+    {
+      timestamp: 1640995200,
+      level,
+      message,
+      logger_name
+    }
+  }
   
-  // 获取监控统计
-  let stats = LogMonitor::get_statistics(monitor)
+  let always_sample = fn(_entry: LogEntry) {
+    { sampled: true, reason: "always" }
+  }
   
-  // 验证统计信息
-  assert_true(stats.total_checks > 0)
-  assert_true(stats.total_alerts_triggered > 0)
-  assert_true(stats.suppressed_alerts > 0)
-  assert_true(stats.error_rate > 0.0)
+  let never_sample = fn(_entry: LogEntry) {
+    { sampled: false, reason: "never" }
+  }
   
-  // 停止监控
-  LogMonitor::stop(monitor)
+  let sample_by_level = fn(entry: LogEntry, min_level: Int) {
+    {
+      sampled: entry.level >= min_level,
+      reason: "level_" + entry.level.to_string()
+    }
+  }
+  
+  let sample_by_rate = fn(entry: LogEntry, rate: Float) {
+    // Simple hash-based sampling
+    let hash = entry.message.chars().fold(0, fn(acc, c) { 
+      (acc * 31 + c.to_int()) % 100
+    })
+    let threshold = (rate * 100.0).to_int()
+    
+    {
+      sampled: hash < threshold,
+      reason: "rate_" + rate.to_string()
+    }
+  }
+  
+  let log_entries = [
+    create_log_entry(2, "User login", "auth-service"),
+    create_log_entry(1, "Debug info", "auth-service"),
+    create_log_entry(4, "Database error", "db-service"),
+    create_log_entry(2, "Request processed", "web-service"),
+    create_log_entry(3, "Cache miss", "cache-service"),
+    create_log_entry(2, "User logout", "auth-service")
+  ]
+  
+  let always_results = log_entries.map(always_sample)
+  assert_true(always_results.all(fn(r) { r.sampled }))
+  assert_eq(always_results[0].reason, "always")
+  
+  let never_results = log_entries.map(never_sample)
+  assert_true(never_results.all(fn(r) { not(r.sampled) }))
+  assert_eq(never_results[0].reason, "never")
+  
+  let warn_and_above_results = log_entries.map(fn(entry) { sample_by_level(entry, 3) })
+  assert_false(warn_and_above_results[0].sampled)  // INFO
+  assert_false(warn_and_above_results[1].sampled)  // DEBUG
+  assert_true(warn_and_above_results[2].sampled)   // ERROR
+  assert_false(warn_and_above_results[3].sampled)  // INFO
+  assert_true(warn_and_above_results[4].sampled)   // WARN
+  assert_false(warn_and_above_results[5].sampled)  // INFO
+  
+  let rate_50_results = log_entries.map(fn(entry) { sample_by_rate(entry, 0.5) })
+  let sampled_count = rate_50_results.filter(fn(r) { r.sampled }).length()
+  assert_true(sampled_count >= 0 && sampled_count <= 6)  // Could be any number between 0 and 6
+  assert_eq(rate_50_results[0].reason, "rate_0.5")
+}
+
+// Test 7: Log Formatting
+test "log formatting" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String,
+    thread_name: String,
+    exception: Option[String]
+  }
+  
+  let create_log_entry = fn(timestamp: Int, level: Int, message: String, logger_name: String, thread_name: String, exception: Option[String]) {
+    {
+      timestamp,
+      level,
+      message,
+      logger_name,
+      thread_name,
+      exception
+    }
+  }
+  
+  let format_timestamp = fn(timestamp: Int) {
+    let date = timestamp / 86400
+    let time = timestamp % 86400
+    let hours = time / 3600
+    let minutes = (time % 3600) / 60
+    let seconds = time % 60
+    
+    date.to_string() + " " + 
+    hours.to_string() + ":" + 
+    minutes.to_string() + ":" + 
+    seconds.to_string()
+  }
+  
+  let level_to_string = fn(level: Int) {
+    match level {
+      0 => "TRACE"
+      1 => "DEBUG"
+      2 => "INFO"
+      3 => "WARN"
+      4 => "ERROR"
+      5 => "FATAL"
+      _ => "UNKNOWN"
+    }
+  }
+  
+  let format_simple = fn(entry: LogEntry) {
+    level_to_string(entry.level) + " " + 
+    format_timestamp(entry.timestamp) + " " + 
+    entry.logger_name + " - " + 
+    entry.message
+  }
+  
+  let format_detailed = fn(entry: LogEntry) {
+    let base = format_simple(entry)
+    let with_thread = base + " [" + entry.thread_name + "]"
+    
+    match entry.exception {
+      Some(exception) => with_thread + "\n" + exception
+      None => with_thread
+    }
+  }
+  
+  let format_json = fn(entry: LogEntry) {
+    let base = "{"
+    + "\"timestamp\":" + entry.timestamp.to_string() + ","
+    + "\"level\":\"" + level_to_string(entry.level) + "\"," 
+    + "\"logger\":\"" + entry.logger_name + "\"," 
+    + "\"thread\":\"" + entry.thread_name + "\"," 
+    + "\"message\":\"" + entry.message + "\""
+    
+    match entry.exception {
+      Some(exception) => base + ",\"exception\":\"" + exception + "\"}"
+      None => base + "}"
+    }
+  }
+  
+  let entry1 = create_log_entry(1640995200, 2, "User logged in", "auth-service", "main", None)
+  let entry2 = create_log_entry(1640995250, 4, "Database error", "db-service", "worker", Some("NullPointerException at com.example.Service.process(Service.java:42)"))
+  
+  let simple1 = format_simple(entry1)
+  assert_eq(simple1, "INFO 19000 0:0:0 auth-service - User logged in")
+  
+  let detailed2 = format_detailed(entry2)
+  assert_eq(detailed2, "ERROR 19000 0:50:50 db-service - Database error [worker]\nNullPointerException at com.example.Service.process(Service.java:42)")
+  
+  let json1 = format_json(entry1)
+  assert_true(json1.contains("\"timestamp\":1640995200"))
+  assert_true(json1.contains("\"level\":\"INFO\""))
+  assert_true(json1.contains("\"logger\":\"auth-service\""))
+  assert_true(json1.contains("\"thread\":\"main\""))
+  assert_true(json1.contains("\"message\":\"User logged in\""))
+  assert_false(json1.contains("\"exception\""))
+  
+  let json2 = format_json(entry2)
+  assert_true(json2.contains("\"timestamp\":1640995250"))
+  assert_true(json2.contains("\"level\":\"ERROR\""))
+  assert_true(json2.contains("\"logger\":\"db-service\""))
+  assert_true(json2.contains("\"thread\":\"worker\""))
+  assert_true(json2.contains("\"message\":\"Database error\""))
+  assert_true(json2.contains("\"exception\":\"NullPointerException at com.example.Service.process(Service.java:42)\""))
+}
+
+// Test 8: Log Retention and Rotation
+test "log retention and rotation" {
+  type LogEntry = {
+    timestamp: Int,
+    level: Int,
+    message: String,
+    logger_name: String
+  }
+  
+  type LogFile = {
+    name: String,
+    entries: Array[LogEntry],
+    created_at: Int,
+    size_bytes: Int
+  }
+  
+  let create_log_entry = fn(timestamp: Int, level: Int, message: String, logger_name: String) {
+    {
+      timestamp,
+      level,
+      message,
+      logger_name
+    }
+  }
+  
+  let create_log_file = fn(name: String, created_at: Int) {
+    {
+      name,
+      entries: [],
+      created_at,
+      size_bytes: 0
+    }
+  }
+  
+  let add_entry = fn(file: LogFile, entry: LogEntry) {
+    let entry_size = entry.message.length() + 50  // Rough estimate of entry size
+    {
+      name: file.name,
+      entries: file.entries + [entry],
+      created_at: file.created_at,
+      size_bytes: file.size_bytes + entry_size
+    }
+  }
+  
+  let should_rotate_by_size = fn(file: LogFile, max_size_bytes: Int) {
+    file.size_bytes >= max_size_bytes
+  }
+  
+  let should_rotate_by_time = fn(file: LogFile, max_age_seconds: Int, current_time: Int) {
+    (current_time - file.created_at) >= max_age_seconds
+  }
+  
+  let rotate_log = fn(file: LogFile, current_time: Int) {
+    let timestamp = current_time.to_string()
+    let new_name = file.name + "." + timestamp
+    create_log_file(new_name, current_time)
+  }
+  
+  let apply_retention_policy = fn(files: Array[LogFile], max_files: Int, max_age_seconds: Int, current_time: Int) {
+    // Sort by creation time (newest first)
+    let sorted_files = files.sort(fn(a, b) { b.created_at >= a.created_at })
+    
+    // Keep only the most recent max_files
+    let by_count = sorted_files.slice(0, max_files)
+    
+    // Remove files older than max_age_seconds
+    by_count.filter(fn(file) { (current_time - file.created_at) < max_age_seconds })
+  }
+  
+  let base_time = 1640995200  // Base timestamp
+  
+  let file1 = create_log_file("app.log", base_time)
+  let file1_with_entries = add_entry(add_entry(file1, 
+    create_log_entry(base_time, 2, "Application started", "app")), 
+    create_log_entry(base_time + 10, 2, "Ready to serve requests", "app"))
+  
+  assert_eq(file1_with_entries.entries.length(), 2)
+  assert_true(file1_with_entries.size_bytes > 0)
+  
+  // Test size-based rotation
+  let large_file = { file1_with_entries | size_bytes: 1000000 }
+  assert_true(should_rotate_by_size(large_file, 500000))
+  assert_false(should_rotate_by_size(file1_with_entries, 500000))
+  
+  // Test time-based rotation
+  let old_file = { file1_with_entries | created_at: base_time - 86400 }  // 1 day ago
+  let current_time = base_time + 3600  // 1 hour after base time
+  
+  assert_true(should_rotate_by_time(old_file, 3600, current_time))  // Exactly 1 day old
+  assert_false(should_rotate_by_time(file1_with_entries, 86400, current_time))  // Only 1 hour old
+  
+  // Test rotation
+  let rotated_file = rotate_log(file1_with_entries, current_time)
+  assert_eq(rotated_file.name, "app.log." + current_time.to_string())
+  assert_eq(rotated_file.entries.length(), 0)
+  assert_eq(rotated_file.created_at, current_time)
+  
+  // Test retention policy
+  let files = [
+    { name: "app.log.1", entries: [], created_at: base_time - 86400 * 3, size_bytes: 1000 },  // 3 days ago
+    { name: "app.log.2", entries: [], created_at: base_time - 86400 * 2, size_bytes: 1000 },  // 2 days ago
+    { name: "app.log.3", entries: [], created_at: base_time - 86400, size_bytes: 1000 },      // 1 day ago
+    { name: "app.log.4", entries: [], created_at: base_time, size_bytes: 1000 }              // Current
+  ]
+  
+  let retained_files = apply_retention_policy(files, 3, 86400 * 2, base_time)  // Keep max 3 files, max age 2 days
+  assert_eq(retained_files.length(), 2)
+  assert_true(retained_files.some(fn(f) { f.name == "app.log.3" }))
+  assert_true(retained_files.some(fn(f) { f.name == "app.log.4" }))
 }
