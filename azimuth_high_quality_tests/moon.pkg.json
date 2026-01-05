@@ -1,0 +1,18 @@
+{
+  "name": "azimuth_high_quality_tests",
+  "version": "0.1.0",
+  "description": "Azimuth high-quality test cases for advanced features",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": [
+      "azimuth_error_handling_recovery_quality_tests.mbt",
+      "azimuth_realtime_streaming_dependency_analysis_tests.mbt", 
+      "azimuth_archive_retrieval_visualization_tests.mbt",
+      "azimuth_system_health_monitoring_tests.mbt"
+    ]
+  }
+}
