@@ -1834,6 +1834,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_cross_format_conversion_tests.mbt": {
   },
+  "azimuth_cross_cloud_telemetry_tests.mbt": {
+  },
   "azimuth_core_telemetry_tests.mbt": {
   },
   "azimuth_core_telemetry_system_tests.mbt": {
