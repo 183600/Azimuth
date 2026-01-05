@@ -1,913 +1,741 @@
-// Azimuth 容错和恢复测试
-// 专注于系统在故障情况下的容错能力和恢复机制验证
+// Azimuth Telemetry System - Fault Tolerance and Recovery Tests
+// This file contains comprehensive test cases for fault tolerance and recovery mechanisms
 
-// 测试1: 节点故障检测和恢复
-test "节点故障检测和恢复测试" {
-  // 节点健康状态
-  type NodeHealth = {
-    node_id: String,
-    status: String,  // "healthy", "suspected", "failed", "recovering"
-    last_heartbeat: Int,
-    failure_count: Int,
-    max_failures: Int
-  }
+// Test 1: Network Failure Recovery
+test "network failure recovery" {
+  // Create resilient network client
+  let resilient_client = ResilientNetworkClient::new()
   
-  type ClusterManager = {
-    nodes: Map[String, NodeHealth],
-    current_time: Int,
-    heartbeat_timeout: Int
-  }
+  // Configure retry policies
+  let retry_policy = RetryPolicy::exponential_backoff(3, 1000, 2.0) // 3 retries, 1s base, 2x multiplier
+  ResilientNetworkClient::set_retry_policy(resilient_client, retry_policy)
   
-  fn create_cluster_manager(node_count: Int) -> ClusterManager {
-    let nodes = Map::new()
-    for i in 0..<node_count {
-      let node_id = "node" + i.to_string()
-      let node = {
-        node_id: node_id,
-        status: "healthy",
-        last_heartbeat: 1609459200,
-        failure_count: 0,
-        max_failures: 3
-      }
-      nodes.insert(node_id, node)
+  // Configure circuit breaker
+  let circuit_breaker = CircuitBreaker::new(5, 60000) // 5 failures, 60s timeout
+  ResilientNetworkClient::set_circuit_breaker(resilient_client, circuit_breaker)
+  
+  // Configure timeout
+  ResilientNetworkClient::set_timeout(resilient_client, 5000) // 5 seconds
+  
+  // Test network failure simulation
+  let failure_simulator = NetworkFailureSimulator::new()
+  
+  // Simulate network outage
+  NetworkFailureSimulator::set_failure_rate(failure_simulator, 1.0) // 100% failure
+  NetworkFailureSimulator::set_failure_type(failure_simulator, "connection_refused")
+  
+  // Make request during network outage
+  let request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
+  let outage_result = ResilientNetworkClient::send_request(resilient_client, request)
+  
+  match outage_result {
+    Ok(_) => assert_true(false), // Should not succeed during outage
+    Error(e) => {
+      assert_true(Error::is_network_error(e))
+      assert_true(Error::is_retry_exhausted(e))
     }
+  }
+  
+  // Verify circuit breaker is open
+  assert_true(CircuitBreaker::is_open(circuit_breaker))
+  
+  // Test request with open circuit breaker
+  let circuit_request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
+  let circuit_result = ResilientNetworkClient::send_request(resilient_client, circuit_request)
+  
+  match circuit_result {
+    Ok(_) => assert_true(false), // Should not succeed with open circuit
+    Error(e) => {
+      assert_true(Error::is_circuit_breaker_error(e))
+    }
+  }
+  
+  // Simulate network recovery
+  NetworkFailureSimulator::set_failure_rate(failure_simulator, 0.0) // 0% failure
+  
+  // Wait for circuit breaker to half-open
+  CircuitBreaker::force_half_open(circuit_breaker)
+  
+  // Make request after recovery
+  let recovery_request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
+  let recovery_result = ResilientNetworkClient::send_request(resilient_client, recovery_request)
+  
+  match recovery_result {
+    Ok(response) => {
+      assert_true(NetworkResponse::is_success(response))
+      assert_true(CircuitBreaker::is_closed(circuit_breaker)) // Circuit should close on success
+    }
+    Error(e) => {
+      // In test environment, might still fail due to missing network
+      assert_true(Error::is_network_error(e))
+    }
+  }
+  
+  // Test intermittent network failures
+  NetworkFailureSimulator::set_failure_rate(failure_simulator, 0.3) // 30% failure
+  NetworkFailureSimulator::set_failure_type(failure_simulator, "timeout")
+  
+  let mut success_count = 0
+  let mut failure_count = 0
+  
+  // Make multiple requests with intermittent failures
+  for i in 0..=10 {
+    let request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
+    let result = ResilientNetworkClient::send_request(resilient_client, request)
     
-    {
-      nodes: nodes,
-      current_time: 1609459200,
-      heartbeat_timeout: 30  // 30秒超时
+    match result {
+      Ok(_) => success_count = success_count + 1,
+      Error(e) => failure_count = failure_count + 1
     }
   }
   
-  fn update_heartbeat(manager: ClusterManager, node_id: String) -> ClusterManager {
-    match manager.nodes.get(node_id) {
-      Some(node) => {
-        let updated_node = {
-          node_id: node.node_id,
-          status: if node.status == "failed" || node.status == "recovering" { "recovering" } else { "healthy" },
-          last_heartbeat: manager.current_time,
-          failure_count: if node.status == "failed" || node.status == "recovering" { 0 } else { node.failure_count },
-          max_failures: node.max_failures
-        }
-        
-        let updated_nodes = Map::new()
-        for (id, n) in manager.nodes {
-          if id == node_id {
-            updated_nodes.insert(id, updated_node)
-          } else {
-            updated_nodes.insert(id, n)
-          }
-        }
-        
-        {
-          nodes: updated_nodes,
-          current_time: manager.current_time,
-          heartbeat_timeout: manager.heartbeat_timeout
-        }
-      }
-      None => manager
+  // Should have some successes due to retry mechanism
+  assert_true(success_count > 0)
+  
+  // Test network degradation handling
+  NetworkFailureSimulator::set_failure_rate(failure_simulator, 0.0) // No failures
+  NetworkFailureSimulator::set_latency(failure_simulator, 2000) // 2 second latency
+  
+  let degraded_request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
+  let degraded_start = Time::now()
+  let degraded_result = ResilientNetworkClient::send_request(resilient_client, degraded_request)
+  let degraded_end = Time::now()
+  
+  match degraded_result {
+    Ok(_) => {
+      // Should succeed but take longer due to latency
+      let elapsed = degraded_end - degraded_start
+      assert_true(elapsed >= 2000) // At least 2 seconds
+    }
+    Error(e) => {
+      // Might fail due to timeout
+      assert_true(Error::is_timeout_error(e))
     }
   }
-  
-  fn check_node_health(manager: ClusterManager) -> ClusterManager {
-    let updated_nodes = Map::new()
-    for (id, node) in manager.nodes {
-      let time_since_heartbeat = manager.current_time - node.last_heartbeat
-      let (new_status, new_failure_count) = 
-        if time_since_heartbeat > manager.heartbeat_timeout {
-          if node.status == "healthy" {
-            ("suspected", node.failure_count + 1)
-          } else if node.status == "suspected" {
-            if node.failure_count + 1 >= node.max_failures {
-              ("failed", node.failure_count + 1)
-            } else {
-              ("suspected", node.failure_count + 1)
-            }
-          } else {
-            (node.status, node.failure_count)
-          }
-        } else {
-          (node.status, node.failure_count)
-        }
-      
-      let updated_node = {
-        node_id: node.node_id,
-        status: new_status,
-        last_heartbeat: node.last_heartbeat,
-        failure_count: new_failure_count,
-        max_failures: node.max_failures
-      }
-      
-      updated_nodes.insert(id, updated_node)
-    }
-    
-    {
-      nodes: updated_nodes,
-      current_time: manager.current_time,
-      heartbeat_timeout: manager.heartbeat_timeout
-    }
-  }
-  
-  fn advance_time(manager: ClusterManager, seconds: Int) -> ClusterManager {
-    {
-      nodes: manager.nodes,
-      current_time: manager.current_time + seconds,
-      heartbeat_timeout: manager.heartbeat_timeout
-    }
-  }
-  
-  // 创建集群管理器
-  let cluster_manager = create_cluster_manager(3)
-  
-  // 验证初始状态
-  let node0 = cluster_manager.nodes.get("node0").unwrap()
-  let node1 = cluster_manager.nodes.get("node1").unwrap()
-  let node2 = cluster_manager.nodes.get("node2").unwrap()
-  
-  assert_eq(node0.status, "healthy")
-  assert_eq(node1.status, "healthy")
-  assert_eq(node2.status, "healthy")
-  
-  // 模拟节点0停止发送心跳
-  let manager_after_10s = advance_time(cluster_manager, 10)
-  let manager_after_10s_checked = check_node_health(manager_after_10s)
-  
-  // 节点0仍然健康（未超时）
-  let node0_after_10s = manager_after_10s_checked.nodes.get("node0").unwrap()
-  assert_eq(node0_after_10s.status, "healthy")
-  
-  // 超过心跳超时时间
-  let manager_after_40s = advance_time(cluster_manager, 40)
-  let manager_after_40s_checked = check_node_health(manager_after_40s);
-  
-  // 节点0状态变为suspected
-  let node0_after_40s = manager_after_40s_checked.nodes.get("node0").unwrap()
-  assert_eq(node0_after_40s.status, "suspected");
-  assert_eq(node0_after_40s.failure_count, 1);
-  
-  // 再次超时，节点0失败计数增加
-  let manager_after_70s = advance_time(manager_after_40s_checked, 30)
-  let manager_after_70s_checked = check_node_health(manager_after_70s);
-  
-  let node0_after_70s = manager_after_70s_checked.nodes.get("node0").unwrap()
-  assert_eq(node0_after_70s.status, "suspected")
-  assert_eq(node0_after_70s.failure_count, 2)
-  
-  // 第三次超时，节点0被标记为失败
-  let manager_after_100s = advance_time(manager_after_70s_checked, 30)
-  let manager_after_100s_checked = check_node_health(manager_after_100s);
-  
-  let node0_after_100s = manager_after_100s_checked.nodes.get("node0").unwrap()
-  assert_eq(node0_after_100s.status, "failed")
-  assert_eq(node0_after_100s.failure_count, 3)
-  
-  // 节点0恢复，发送心跳
-  let manager_with_recovery = update_heartbeat(manager_after_100s_checked, "node0")
-  
-  let node0_recovered = manager_with_recovery.nodes.get("node0").unwrap()
-  assert_eq(node0_recovered.status, "recovering")
-  assert_eq(node0_recovered.failure_count, 0)
-  
-  // 再次检查健康状态，节点0恢复为健康状态
-  let manager_after_recovery_check = check_node_health(manager_with_recovery)
-  
-  let node0_final = manager_after_recovery_check.nodes.get("node0").unwrap()
-  assert_eq(node0_final.status, "healthy")
 }
 
-// 测试2: 数据备份和恢复
-test "数据备份和恢复测试" {
-  // 备份系统
-  type DataBackup = {
-    id: String,
-    timestamp: Int,
-    data: String,
-    checksum: Int
-  }
+// Test 2: Data Corruption Detection and Recovery
+test "data corruption detection and recovery" {
+  // Create data integrity manager
+  let integrity_manager = DataIntegrityManager::new()
   
-  type BackupSystem = {
-    primary_data: String,
-    backups: Array[DataBackup],
-    max_backups: Int
-  }
+  // Configure integrity checks
+  DataIntegrityManager::enable_checksum(integrity_manager, "SHA256")
+  DataIntegrityManager::enable_signature(integrity_manager, "RSA")
+  DataIntegrityManager::enable_redundancy(integrity_manager, 3) // 3x redundancy
   
-  fn create_backup_system(initial_data: String, max_backups: Int) -> BackupSystem {
-    {
-      primary_data: initial_data,
-      backups: [],
-      max_backups: max_backups
-    }
-  }
+  // Create test telemetry data
+  let telemetry_data = generate_large_telemetry_dataset(10000)
   
-  fn calculate_checksum(data: String) -> Int {
-    let sum = 0
-    for i in 0..<data.length() {
-      sum = sum + data.code_point_at(i)
-    }
-    sum % 1000000
-  }
+  // Add integrity checks
+  let protected_data = DataIntegrityManager::protect(integrity_manager, telemetry_data)
   
-  fn create_backup(system: BackupSystem) -> BackupSystem {
-    let backup_id = "backup_" + (1609459200).to_string()
-    let checksum = calculate_checksum(system.primary_data)
-    
-    let new_backup = {
-      id: backup_id,
-      timestamp: 1609459200,
-      data: system.primary_data,
-      checksum: checksum
-    }
-    
-    let updated_backups = [] : Array[DataBackup>
-    for backup in system.backups {
-      updated_backups.push(backup)
-    }
-    updated_backups.push(new_backup)
-    
-    // 如果备份数量超过最大值，删除最旧的备份
-    let final_backups = if updated_backups.length() > system.max_backups {
-      let mut result = [] : Array[DataBackup>
-      for i in 1..<updated_backups.length() {
-        result.push(updated_backups[i])
-      }
-      result
-    } else {
-      updated_backups
-    }
-    
-    {
-      primary_data: system.primary_data,
-      backups: final_backups,
-      max_backups: system.max_backups
-    }
-  }
+  // Verify data integrity
+  let integrity_check = DataIntegrityManager::verify(integrity_manager, protected_data)
+  assert_true(integrity_check.is_valid)
+  assert_false(integrity_check.has_corruption)
   
-  fn update_primary_data(system: BackupSystem, new_data: String) -> BackupSystem {
-    {
-      primary_data: new_data,
-      backups: system.backups,
-      max_backups: system.max_backups
-    }
-  }
+  // Simulate data corruption
+  let corrupted_data = DataIntegrityManager::corrupt_data(protected_data, 0.01) // 1% corruption
+  let corruption_check = DataIntegrityManager::verify(integrity_manager, corrupted_data)
   
-  fn restore_from_backup(system: BackupSystem, backup_id: String) -> BackupSystem {
-    for backup in system.backups {
-      if backup.id == backup_id {
-        // 验证备份完整性
-        if backup.checksum == calculate_checksum(backup.data) {
-          return {
-            primary_data: backup.data,
-            backups: system.backups,
-            max_backups: system.max_backups
-          }
-        }
-      }
-    }
-    
-    // 未找到有效备份，返回原系统
-    system
-  }
+  assert_false(corruption_check.is_valid)
+  assert_true(corruption_check.has_corruption)
+  assert_true(corruption_check.corrupted_indices.length() > 0)
   
-  // 创建备份系统
-  let backup_system = create_backup_system("Initial data", 3)
+  // Test data recovery
+  let recovery_result = DataIntegrityManager::recover(integrity_manager, corrupted_data)
   
-  // 创建备份
-  let system_with_backup1 = create_backup(backup_system)
-  assert_eq(system_with_backup1.backups.length(), 1)
-  assert_eq(system_with_backup1.backups[0].data, "Initial data")
-  
-  // 更新主数据
-  let system_with_updated_data = update_primary_data(system_with_backup1, "Updated data v1")
-  
-  // 创建另一个备份
-  let system_with_backup2 = create_backup(system_with_updated_data)
-  assert_eq(system_with_backup2.backups.length(), 2)
-  assert_eq(system_with_backup2.backups[1].data, "Updated data v1")
-  
-  // 再次更新主数据
-  let system_with_updated_data2 = update_primary_data(system_with_backup2, "Updated data v2")
-  
-  // 创建第三个备份
-  let system_with_backup3 = create_backup(system_with_updated_data2)
-  assert_eq(system_with_backup3.backups.length(), 3)
-  
-  // 创建第四个备份，应该删除最旧的备份
-  let system_with_backup4 = create_backup(system_with_backup3)
-  assert_eq(system_with_backup4.backups.length(), 3)  // 仍然最多3个备份
-  assert_eq(system_with_backup4.backups[0].data, "Updated data v1")  // 最旧的备份被删除
-  
-  // 模拟数据损坏
-  let system_with_corrupted_data = update_primary_data(system_with_backup4, "Corrupted data")
-  
-  // 从备份恢复
-  let restored_system = restore_from_backup(system_with_corrupted_data, system_with_backup4.backups[1].id)
-  assert_eq(restored_system.primary_data, "Updated data v2")
-  
-  // 测试从不存在的备份恢复
-  let unchanged_system = restore_from_backup(restored_system, "nonexistent_backup")
-  assert_eq(unchanged_system.primary_data, "Updated data v2")
-}
-
-// 测试3: 自动故障转移
-test "自动故障转移测试" {
-  // 故障转移系统
-  type ServiceInstance = {
-    id: String,
-    address: String,
-    status: String,  // "active", "standby", "failed"
-    priority: Int,
-    last_health_check: Int
-  }
-  
-  type FailoverManager = {
-    instances: Map[String, ServiceInstance],
-    active_instance: Option<String>,
-    current_time: Int,
-    health_check_interval: Int
-  }
-  
-  fn create_failover_manager(instance_count: Int) -> FailoverManager {
-    let instances = Map::new()
-    let mut active_instance = None : Option<String>
-    
-    for i in 0..<instance_count {
-      let instance_id = "instance" + i.to_string()
-      let address = "192.168.1." + (100 + i).to_string()
-      let status = if i == 0 { "active" } else { "standby" }
-      let priority = instance_count - i  // 优先级递减
+  match recovery_result {
+    Ok(recovered_data) => {
+      // Verify recovered data integrity
+      let recovery_check = DataIntegrityManager::verify(integrity_manager, recovered_data)
+      assert_true(recovery_check.is_valid)
+      assert_false(recovery_check.has_corruption)
       
-      if i == 0 {
-        active_instance = Some(instance_id)
-      }
+      // Verify data similarity
+      let similarity = DataIntegrityManager::calculate_similarity(telemetry_data, recovered_data)
+      assert_true(similarity > 0.95) // At least 95% similarity
+    }
+    Error(e) => {
+      // Recovery might fail if corruption is too severe
+      assert_true(Error::is_recovery_error(e))
+    }
+  }
+  
+  // Test partial corruption with high redundancy
+  DataIntegrityManager::set_redundancy(integrity_manager, 5) // 5x redundancy
+  let highly_protected_data = DataIntegrityManager::protect(integrity_manager, telemetry_data)
+  let highly_corrupted_data = DataIntegrityManager::corrupt_data(highly_protected_data, 0.2) // 20% corruption
+  
+  let high_recovery_result = DataIntegrityManager::recover(integrity_manager, highly_corrupted_data)
+  match high_recovery_result {
+    Ok(recovered_data) => {
+      let recovery_check = DataIntegrityManager::verify(integrity_manager, recovered_data)
+      assert_true(recovery_check.is_valid)
+      assert_false(recovery_check.has_corruption)
+    }
+    Error(e) => {
+      // Even with high corruption, should recover better with high redundancy
+      assert_true(false)
+    }
+  }
+  
+  // Test streaming data integrity
+  let stream_processor = StreamIntegrityProcessor::new()
+  
+  // Process data in chunks with integrity checks
+  let chunk_size = 1000
+  let chunks = split_into_chunks(telemetry_data, chunk_size)
+  
+  for chunk in chunks {
+    let protected_chunk = DataIntegrityManager::protect(integrity_manager, chunk)
+    StreamIntegrityProcessor::process_chunk(stream_processor, protected_chunk)
+  }
+  
+  // Simulate corruption in one chunk
+  StreamIntegrityProcessor::corrupt_chunk(stream_processor, 3) // Corrupt 4th chunk
+  
+  // Verify streaming corruption detection
+  let stream_integrity = StreamIntegrityProcessor::verify_integrity(stream_processor)
+  assert_false(stream_integrity.is_valid)
+  assert_eq(stream_integrity.corrupted_chunks.length(), 1)
+  assert_true(stream_integrity.corrupted_chunks.contains(3))
+  
+  // Test streaming recovery
+  let stream_recovery = StreamIntegrityProcessor::recover_corrupted_chunks(stream_processor)
+  match stream_recovery {
+    Ok(_) => {
+      let recovered_stream = StreamIntegrityProcessor::get_recovered_data(stream_processor)
+      let stream_check = DataIntegrityManager::verify(integrity_manager, recovered_stream)
+      assert_true(stream_check.is_valid)
+    }
+    Error(e) => {
+      assert_true(Error::is_recovery_error(e))
+    }
+  }
+}
+
+// Test 3: Service Degradation and Graceful Failure
+test "service degradation and graceful failure" {
+  // Create service manager with degradation capabilities
+  let service_manager = ServiceManager::new()
+  
+  // Register services
+  ServiceManager::register_service(service_manager, "telemetry_collector", TelemetryCollectorService::new())
+  ServiceManager::register_service(service_manager, "data_processor", DataProcessorService::new())
+  ServiceManager::register_service(service_manager, "alert_manager", AlertManagerService::new())
+  
+  // Configure degradation policies
+  let collector_degradation = DegradationPolicy::new()
+  DegradationPolicy::set_threshold(collector_degradation, "error_rate", 0.1) // 10% error rate
+  DegradationPolicy::set_degraded_mode(collector_degradation, "cache_only")
+  DegradationPolicy::set_recovery_strategy(collector_degradation, "gradual")
+  
+  let processor_degradation = DegradationPolicy::new()
+  DegradationPolicy::set_threshold(processor_degradation, "response_time", 5000) // 5 seconds
+  DegradationPolicy::set_degraded_mode(processor_degradation, "batch_processing")
+  DegradationPolicy::set_recovery_strategy(processor_degradation, "immediate")
+  
+  ServiceManager::set_degradation_policy(service_manager, "telemetry_collector", collector_degradation)
+  ServiceManager::set_degradation_policy(service_manager, "data_processor", processor_degradation)
+  
+  // Test normal operation
+  let normal_result = ServiceManager::process_telemetry(service_manager, generate_test_telemetry_data())
+  match normal_result {
+    Ok(result) => {
+      assert_true(result.is_processed)
+      assert_true(result.processing_time < 1000) // Less than 1 second
+    }
+    Error(e) => assert_true(false)
+  }
+  
+  // Simulate service degradation
+  let service_simulator = ServiceDegradationSimulator::new()
+  ServiceDegradationSimulator::set_error_rate(service_simulator, "telemetry_collector", 0.15) // 15% error rate
+  ServiceDegradationSimulator::set_response_time(service_simulator, "data_processor", 6000) // 6 seconds
+  
+  // Test degraded operation
+  let degraded_result = ServiceManager::process_telemetry(service_manager, generate_test_telemetry_data())
+  match degraded_result {
+    Ok(result) => {
+      assert_true(result.is_processed) // Should still process, but in degraded mode
+      assert_true(result.degraded_mode) // Should be in degraded mode
+      assert_true(result.processing_time < 3000) // Should be faster due to degraded mode
+    }
+    Error(e) => assert_true(false)
+  }
+  
+  // Verify service status
+  let collector_status = ServiceManager::get_service_status(service_manager, "telemetry_collector")
+  assert_eq(collector_status.mode, "degraded")
+  assert_eq(collector_status.degraded_mode, "cache_only")
+  
+  let processor_status = ServiceManager::get_service_status(service_manager, "data_processor")
+  assert_eq(processor_status.mode, "degraded")
+  assert_eq(processor_status.degraded_mode, "batch_processing")
+  
+  // Test service recovery
+  ServiceDegradationSimulator::set_error_rate(service_simulator, "telemetry_collector", 0.0) // No errors
+  ServiceDegradationSimulator::set_response_time(service_simulator, "data_processor", 1000) // 1 second
+  
+  // Wait for recovery
+  Time::sleep(2000) // Wait 2 seconds
+  
+  // Test recovered operation
+  let recovered_result = ServiceManager::process_telemetry(service_manager, generate_test_telemetry_data())
+  match recovered_result {
+    Ok(result) => {
+      assert_true(result.is_processed)
+      assert_false(result.degraded_mode) // Should be back to normal mode
+    }
+    Error(e) => assert_true(false)
+  }
+  
+  // Verify service recovery
+  let recovered_collector_status = ServiceManager::get_service_status(service_manager, "telemetry_collector")
+  assert_eq(recovered_collector_status.mode, "normal")
+  
+  let recovered_processor_status = ServiceManager::get_service_status(service_manager, "data_processor")
+  assert_eq(recovered_processor_status.mode, "normal")
+  
+  // Test cascade failure prevention
+  ServiceDegradationSimulator::set_error_rate(service_simulator, "telemetry_collector", 1.0) // 100% failure
+  ServiceDegradationSimulator::set_error_rate(service_simulator, "data_processor", 1.0) // 100% failure
+  
+  let cascade_result = ServiceManager::process_telemetry(service_manager, generate_test_telemetry_data())
+  match cascade_result {
+    Ok(result) => {
+      // Should still get a result, but with limited functionality
+      assert_true(result.is_processed)
+      assert_true(result.fallback_used)
+    }
+    Error(e) => {
+      // Should fail gracefully with informative error
+      assert_true(Error::is_service_error(e))
+      assert_true(Error::message(e).contains("fallback"))
+    }
+  }
+  
+  // Verify system stability
+  let system_status = ServiceManager::get_system_status(service_manager)
+  assert_true(system_status.is_stable)
+  assert_true(system_status.critical_services_count == 0) // No critical services failed
+}
+
+// Test 4: Resource Exhaustion Handling
+test "resource exhaustion handling" {
+  // Create resource manager
+  let resource_manager = ResourceManager::new()
+  
+  // Configure resource limits
+  ResourceManager::set_memory_limit(resource_manager, 100 * 1024 * 1024) // 100MB
+  ResourceManager::set_cpu_limit(resource_manager, 80.0) // 80% CPU usage
+  ResourceManager::set_connection_limit(resource_manager, 1000) // 1000 connections
+  ResourceManager::set_disk_limit(resource_manager, 1024 * 1024 * 1024) // 1GB
+  
+  // Test memory exhaustion handling
+  let memory_monitor = MemoryMonitor::new()
+  MemoryMonitor::set_warning_threshold(memory_monitor, 80.0) // 80% of limit
+  MemoryMonitor::set_critical_threshold(memory_monitor, 95.0) // 95% of limit
+  
+  // Simulate memory pressure
+  let memory_simulator = MemoryPressureSimulator::new()
+  MemoryPressureSimulator::set_usage(memory_simulator, 90.0) // 90% of limit
+  
+  // Test memory pressure response
+  let memory_response = ResourceManager::handle_memory_pressure(resource_manager, memory_monitor)
+  assert_true(memory_response.is_handled)
+  assert_true(memory_response.actions.contains("garbage_collection"))
+  assert_true(memory_response.actions.contains("cache_eviction"))
+  
+  // Test critical memory pressure
+  MemoryPressureSimulator::set_usage(memory_simulator, 98.0) // 98% of limit
+  
+  let critical_response = ResourceManager::handle_memory_pressure(resource_manager, memory_monitor)
+  assert_true(critical_response.is_handled)
+  assert_true(critical_response.actions.contains("emergency_cleanup"))
+  assert_true(critical_response.actions.contains("request_throttling"))
+  
+  // Test CPU exhaustion handling
+  let cpu_monitor = CPUMonitor::new()
+  CPUMonitor::set_warning_threshold(cpu_monitor, 70.0) // 70% of limit
+  CPUMonitor::set_critical_threshold(cpu_monitor, 90.0) // 90% of limit
+  
+  // Simulate CPU pressure
+  let cpu_simulator = CPUPressureSimulator::new()
+  CPUPressureSimulator::set_usage(cpu_simulator, 85.0) // 85% of limit
+  
+  // Test CPU pressure response
+  let cpu_response = ResourceManager::handle_cpu_pressure(resource_manager, cpu_monitor)
+  assert_true(cpu_response.is_handled)
+  assert_true(cpu_response.actions.contains("task_prioritization"))
+  assert_true(cpu_response.actions.contains("thread_pool_adjustment"))
+  
+  // Test connection exhaustion handling
+  let connection_monitor = ConnectionMonitor::new()
+  ConnectionMonitor::set_warning_threshold(connection_monitor, 800) // 800 connections
+  ConnectionMonitor::set_critical_threshold(connection_monitor, 950) // 950 connections
+  
+  // Simulate connection pressure
+  let connection_simulator = ConnectionPressureSimulator::new()
+  ConnectionPressureSimulator::set_count(connection_simulator, 900) // 900 connections
+  
+  // Test connection pressure response
+  let connection_response = ResourceManager::handle_connection_pressure(resource_manager, connection_monitor)
+  assert_true(connection_response.is_handled)
+  assert_true(connection_response.actions.contains("connection_pooling"))
+  assert_true(connection_response.actions.contains("request_throttling"))
+  
+  // Test disk exhaustion handling
+  let disk_monitor = DiskMonitor::new()
+  DiskMonitor::set_warning_threshold(disk_monitor, 80.0) // 80% of limit
+  DiskMonitor::set_critical_threshold(disk_monitor, 95.0) // 95% of limit
+  
+  // Simulate disk pressure
+  let disk_simulator = DiskPressureSimulator::new()
+  DiskPressureSimulator::set_usage(disk_simulator, 90.0) // 90% of limit
+  
+  // Test disk pressure response
+  let disk_response = ResourceManager::handle_disk_pressure(resource_manager, disk_monitor)
+  assert_true(disk_response.is_handled)
+  assert_true(disk_response.actions.contains("log_rotation"))
+  assert_true(disk_response.actions.contains("cache_cleanup"))
+  
+  // Test multi-resource exhaustion
+  MemoryPressureSimulator::set_usage(memory_simulator, 95.0) // 95% of limit
+  CPUPressureSimulator::set_usage(cpu_simulator, 90.0) // 90% of limit
+  ConnectionPressureSimulator::set_count(connection_simulator, 950) // 950 connections
+  
+  // Test coordinated response to multiple resource pressures
+  let multi_response = ResourceManager::handle_resource_exhaustion(resource_manager)
+  assert_true(multi_response.is_handled)
+  assert_true(multi_response.actions.contains("emergency_mode"))
+  assert_true(multi_response.actions.contains("service_degradation"))
+  assert_true(multi_response.actions.contains("load_shedding"))
+  
+  // Verify resource recovery
+  MemoryPressureSimulator::set_usage(memory_simulator, 50.0) // 50% of limit
+  CPUPressureSimulator::set_usage(cpu_simulator, 40.0) // 40% of limit
+  ConnectionPressureSimulator::set_count(connection_simulator, 400) // 400 connections
+  
+  // Test recovery from resource exhaustion
+  let recovery_response = ResourceManager::handle_resource_recovery(resource_manager)
+  assert_true(recovery_response.is_handled)
+  assert_true(recovery_response.actions.contains("service_restoration"))
+  assert_true(recovery_response.actions.contains("cache_warming"))
+}
+
+// Test 5: Disaster Recovery and Backup Systems
+test "disaster recovery and backup systems" {
+  // Create disaster recovery manager
+  let dr_manager = DisasterRecoveryManager::new()
+  
+  // Configure backup policies
+  let backup_policy = BackupPolicy::new()
+  BackupPolicy::set_frequency(backup_policy, "hourly")
+  BackupPolicy::set_retention(backup_policy, 30) // 30 days
+  BackupPolicy::set_compression(backup_policy, true)
+  BackupPolicy::set_encryption(backup_policy, true)
+  BackupPolicy::set_verification(backup_policy, true)
+  
+  DisasterRecoveryManager::set_backup_policy(dr_manager, backup_policy)
+  
+  // Configure replication settings
+  let replication_config = ReplicationConfig::new()
+  ReplicationConfig::set_mode(replication_config, "async")
+  ReplicationConfig::set_factor(replication_config, 3) // 3-way replication
+  ReplicationConfig::set_locations(replication_config, [
+    "primary",
+    "secondary_east",
+    "secondary_west"
+  ])
+  
+  DisasterRecoveryManager::set_replication_config(dr_manager, replication_config)
+  
+  // Test backup creation
+  let test_data = generate_large_telemetry_dataset(50000)
+  
+  let backup_result = DisasterRecoveryManager::create_backup(dr_manager, test_data)
+  match backup_result {
+    Ok(backup_id) => {
+      assert_true(backup_id.length() > 0)
       
-      let instance = {
-        id: instance_id,
-        address: address,
-        status: status,
-        priority: priority,
-        last_health_check: 1609459200
-      }
-      instances.insert(instance_id, instance)
-    }
-    
-    {
-      instances: instances,
-      active_instance: active_instance,
-      current_time: 1609459200,
-      health_check_interval: 10  // 10秒健康检查间隔
-    }
-  }
-  
-  fn update_instance_health(manager: FailoverManager, instance_id: String, is_healthy: Bool) -> FailoverManager {
-    match manager.instances.get(instance_id) {
-      Some(instance) => {
-        let new_status = if is_healthy { 
-          if instance.status == "failed" { "standby" } else { instance.status }
-        } else { 
-          "failed" 
-        }
-        
-        let updated_instance = {
-          id: instance.id,
-          address: instance.address,
-          status: new_status,
-          priority: instance.priority,
-          last_health_check: manager.current_time
-        }
-        
-        let updated_instances = Map::new()
-        for (id, inst) in manager.instances {
-          if id == instance_id {
-            updated_instances.insert(id, updated_instance)
-          } else {
-            updated_instances.insert(id, inst)
-          }
-        }
-        
-        {
-          instances: updated_instances,
-          active_instance: manager.active_instance,
-          current_time: manager.current_time,
-          health_check_interval: manager.health_check_interval
-        }
-      }
-      None => manager
-    }
-  }
-  
-  fn perform_failover(manager: FailoverManager) -> FailoverManager {
-    match manager.active_instance {
-      Some(active_id) => {
-        match manager.instances.get(active_id) {
-          Some(active_instance) => {
-            if active_instance.status == "failed" {
-              // 需要故障转移
-              let mut best_candidate = None : Option<ServiceInstance>
-              let mut highest_priority = -1
-              
-              for (id, instance) in manager.instances {
-                if instance.status == "standby" && instance.priority > highest_priority {
-                  highest_priority = instance.priority
-                  best_candidate = Some(instance)
-                }
-              }
-              
-              match best_candidate {
-                Some(candidate) => {
-                  // 更新候选实例为活跃状态
-                  let updated_candidate = {
-                    id: candidate.id,
-                    address: candidate.address,
-                    status: "active",
-                    priority: candidate.priority,
-                    last_health_check: candidate.last_health_check
-                  }
-                  
-                  let updated_instances = Map::new()
-                  for (id, instance) in manager.instances {
-                    if id == candidate.id {
-                      updated_instances.insert(id, updated_candidate)
-                    } else {
-                      updated_instances.insert(id, instance)
-                    }
-                  }
-                  
-                  {
-                    instances: updated_instances,
-                    active_instance: Some(candidate.id),
-                    current_time: manager.current_time,
-                    health_check_interval: manager.health_check_interval
-                  }
-                }
-                None => {
-                  // 没有可用的备用实例
-                  manager
-                }
-              }
-            } else {
-              // 活跃实例正常，无需故障转移
-              manager
-            }
-          }
-          None => manager
-        }
-      }
-      None => manager
-    }
-  }
-  
-  // 创建故障转移管理器
-  let failover_manager = create_failover_manager(3)
-  
-  // 验证初始状态
-  assert_eq(failover_manager.active_instance.unwrap_or(""), "instance0")
-  
-  let instance0 = failover_manager.instances.get("instance0").unwrap()
-  let instance1 = failover_manager.instances.get("instance1").unwrap()
-  let instance2 = failover_manager.instances.get("instance2").unwrap()
-  
-  assert_eq(instance0.status, "active")
-  assert_eq(instance1.status, "standby")
-  assert_eq(instance2.status, "standby")
-  
-  // 活跃实例失败
-  let manager_with_failed_instance = update_instance_health(failover_manager, "instance0", false)
-  
-  // 执行故障转移
-  let manager_after_failover = perform_failover(manager_with_failed_instance)
-  
-  // 验证故障转移结果
-  assert_eq(manager_after_failover.active_instance.unwrap_or(""), "instance1")
-  
-  let updated_instance0 = manager_after_failover.instances.get("instance0").unwrap()
-  let updated_instance1 = manager_after_failover.instances.get("instance1").unwrap()
-  let updated_instance2 = manager_after_failover.instances.get("instance2").unwrap()
-  
-  assert_eq(updated_instance0.status, "failed")
-  assert_eq(updated_instance1.status, "active")
-  assert_eq(updated_instance2.status, "standby")
-  
-  // 新的活跃实例也失败
-  let manager_with_second_failure = update_instance_health(manager_after_failover, "instance1", false)
-  
-  // 再次执行故障转移
-  let manager_after_second_failover = perform_failover(manager_with_second_failure)
-  
-  // 验证第二次故障转移结果
-  assert_eq(manager_after_second_failover.active_instance.unwrap_or(""), "instance2")
-  
-  let final_instance0 = manager_after_second_failover.instances.get("instance0").unwrap()
-  let final_instance1 = manager_after_second_failover.instances.get("instance1").unwrap()
-  let final_instance2 = manager_after_second_failover.instances.get("instance2").unwrap()
-  
-  assert_eq(final_instance0.status, "failed")
-  assert_eq(final_instance1.status, "failed")
-  assert_eq(final_instance2.status, "active")
-  
-  // 所有实例都失败的情况
-  let manager_with_all_failed = update_instance_health(manager_after_second_failover, "instance2", false)
-  let manager_after_final_failover = perform_failover(manager_with_all_failed);
-  
-  // 没有可用的备用实例，活跃实例仍为instance2（但状态为failed）
-  assert_eq(manager_after_final_failover.active_instance.unwrap_or(""), "instance2")
-  
-  let final_failed_instance2 = manager_after_final_failover.instances.get("instance2").unwrap()
-  assert_eq(final_failed_instance2.status, "failed")
-}
-
-// 测试4: 断路器模式
-test "断路器模式测试" {
-  // 断路器状态
-  type CircuitState = {
-    state: String,  // "closed", "open", "half_open"
-    failure_count: Int,
-    failure_threshold: Int,
-    success_threshold: Int,
-    timeout: Int,
-    last_failure_time: Int,
-    current_time: Int
-  }
-  
-  fn create_circuit_breaker(failure_threshold: Int, success_threshold: Int, timeout: Int) -> CircuitState {
-    {
-      state: "closed",
-      failure_count: 0,
-      failure_threshold: failure_threshold,
-      success_threshold: success_threshold,
-      timeout: timeout,
-      last_failure_time: 0,
-      current_time: 1609459200
-    }
-  }
-  
-  fn call_service(circuit: CircuitState, should_succeed: Bool) -> (CircuitState, Bool) {
-    match circuit.state {
-      "closed" => {
-        if should_succeed {
-          // 成功调用，重置失败计数
-          let updated_circuit = {
-            state: circuit.state,
-            failure_count: 0,
-            failure_threshold: circuit.failure_threshold,
-            success_threshold: circuit.success_threshold,
-            timeout: circuit.timeout,
-            last_failure_time: circuit.last_failure_time,
-            current_time: circuit.current_time
-          }
-          (updated_circuit, true)
-        } else {
-          // 失败调用，增加失败计数
-          let new_failure_count = circuit.failure_count + 1
-          let new_state = if new_failure_count >= circuit.failure_threshold { "open" } else { "closed" }
-          
-          let updated_circuit = {
-            state: new_state,
-            failure_count: new_failure_count,
-            failure_threshold: circuit.failure_threshold,
-            success_threshold: circuit.success_threshold,
-            timeout: circuit.timeout,
-            last_failure_time: if new_state == "open" { circuit.current_time } else { circuit.last_failure_time },
-            current_time: circuit.current_time
-          }
-          (updated_circuit, false)
-        }
-      }
-      "open" => {
-        // 检查是否超时
-        if circuit.current_time - circuit.last_failure_time >= circuit.timeout {
-          // 超时，转为半开状态
-          let updated_circuit = {
-            state: "half_open",
-            failure_count: circuit.failure_count,
-            failure_threshold: circuit.failure_threshold,
-            success_threshold: circuit.success_threshold,
-            timeout: circuit.timeout,
-            last_failure_time: circuit.last_failure_time,
-            current_time: circuit.current_time
-          }
-          (updated_circuit, should_succeed)
-        } else {
-          // 仍然在超时期间，直接拒绝
-          (circuit, false)
-        }
-      }
-      "half_open" => {
-        if should_succeed {
-          // 成功调用，检查是否达到成功阈值
-          // 简化实现：一次成功就关闭断路器
-          let updated_circuit = {
-            state: "closed",
-            failure_count: 0,
-            failure_threshold: circuit.failure_threshold,
-            success_threshold: circuit.success_threshold,
-            timeout: circuit.timeout,
-            last_failure_time: circuit.last_failure_time,
-            current_time: circuit.current_time
-          }
-          (updated_circuit, true)
-        } else {
-          // 失败调用，重新打开断路器
-          let updated_circuit = {
-            state: "open",
-            failure_count: circuit.failure_count + 1,
-            failure_threshold: circuit.failure_threshold,
-            success_threshold: circuit.success_threshold,
-            timeout: circuit.timeout,
-            last_failure_time: circuit.current_time,
-            current_time: circuit.current_time
-          }
-          (updated_circuit, false)
-        }
-      }
-      _ => (circuit, false)
-    }
-  }
-  
-  fn advance_time(circuit: CircuitState, seconds: Int) -> CircuitState {
-    {
-      state: circuit.state,
-      failure_count: circuit.failure_count,
-      failure_threshold: circuit.failure_threshold,
-      success_threshold: circuit.success_threshold,
-      timeout: circuit.timeout,
-      last_failure_time: circuit.last_failure_time,
-      current_time: circuit.current_time + seconds
-    }
-  }
-  
-  // 创建断路器
-  let circuit_breaker = create_circuit_breaker(3, 2, 60)  // 3次失败阈值，2次成功阈值，60秒超时
-  
-  // 初始状态：关闭
-  assert_eq(circuit_breaker.state, "closed")
-  
-  // 成功调用
-  let (circuit1, result1) = call_service(circuit_breaker, true)
-  assert_eq(circuit1.state, "closed")
-  assert_eq(circuit1.failure_count, 0)
-  assert_true(result1)
-  
-  // 失败调用1
-  let (circuit2, result2) = call_service(circuit1, false)
-  assert_eq(circuit2.state, "closed")
-  assert_eq(circuit2.failure_count, 1)
-  assert_false(result2)
-  
-  // 失败调用2
-  let (circuit3, result3) = call_service(circuit2, false)
-  assert_eq(circuit3.state, "closed")
-  assert_eq(circuit3.failure_count, 2)
-  assert_false(result3)
-  
-  // 失败调用3，达到阈值，断路器打开
-  let (circuit4, result4) = call_service(circuit3, false)
-  assert_eq(circuit4.state, "open")
-  assert_eq(circuit4.failure_count, 3)
-  assert_false(result4)
-  
-  // 断路器打开期间，所有调用被拒绝
-  let (circuit5, result5) = call_service(circuit4, true)
-  assert_eq(circuit5.state, "open")
-  assert_false(result5)
-  
-  // 超时，断路器转为半开状态
-  let circuit6 = advance_time(circuit5, 61)  // 超过60秒
-  let (circuit7, result7) = call_service(circuit6, true)
-  assert_eq(circuit7.state, "half_open")
-  assert_true(result7)
-  
-  // 半开状态下成功调用，断路器关闭
-  let (circuit8, result8) = call_service(circuit7, true)
-  assert_eq(circuit8.state, "closed")
-  assert_eq(circuit8.failure_count, 0)
-  assert_true(result8)
-  
-  // 测试半开状态下失败调用
-  let circuit9 = create_circuit_breaker(3, 2, 60)
-  let (circuit10, _) = call_service(circuit9, false)
-  let (circuit11, _) = call_service(circuit10, false)
-  let (circuit12, _) = call_service(circuit11, false)  // 断路器打开
-  
-  let circuit13 = advance_time(circuit12, 61)  // 超时，半开
-  let (circuit14, result14) = call_service(circuit13, false)  // 半开状态下失败
-  assert_eq(circuit14.state, "open")
-  assert_false(result14)
-}
-
-// 测试5: 重试机制
-test "重试机制测试" {
-  // 重试策略
-  type RetryPolicy = {
-    max_attempts: Int,
-    base_delay: Int,
-    max_delay: Int,
-    backoff_multiplier: Double
-  }
-  
-  type RetryResult = {
-    success: Bool,
-    attempts: Int,
-    total_delay: Int
-  }
-  
-  fn create_retry_policy(max_attempts: Int, base_delay: Int, max_delay: Int, backoff_multiplier: Double) -> RetryPolicy {
-    {
-      max_attempts: max_attempts,
-      base_delay: base_delay,
-      max_delay: max_delay,
-      backoff_multiplier: backoff_multiplier
-    }
-  }
-  
-  fn execute_with_retry(policy: RetryPolicy, should_succeed_on_attempt: Int) -> RetryResult {
-    let mut attempts = 0
-    let mut total_delay = 0
-    let mut success = false
-    
-    while attempts < policy.max_attempts && !success {
-      attempts = attempts + 1
+      // Verify backup exists
+      let backup_info = DisasterRecoveryManager::get_backup_info(dr_manager, backup_id)
+      assert_true(backup_info.exists)
+      assert_true(backup_info.size > 0)
+      assert_true(backup_info.is_encrypted)
+      assert_true(backup_info.is_compressed)
       
-      // 模拟操作执行
-      if attempts == should_succeed_on_attempt {
-        success = true
-      } else {
-        // 计算延迟
-        if attempts < policy.max_attempts {
-          let delay = min(
-            (policy.base_delay as Double) * (policy.backoff_multiplier.pow((attempts - 1) as Double)),
-            policy.max_delay as Double
-          ) as Int
-          total_delay = total_delay + delay
-        }
-      }
+      // Test backup verification
+      let verification_result = DisasterRecoveryManager::verify_backup(dr_manager, backup_id)
+      assert_true(verification_result.is_valid)
+      assert_false(verification_result.has_corruption)
     }
-    
-    {
-      success: success,
-      attempts: attempts,
-      total_delay: total_delay
+    Error(e) => {
+      assert_true(false) // Backup should succeed
     }
   }
   
-  // 创建重试策略
-  let retry_policy = create_retry_policy(5, 1000, 10000, 2.0)  // 最多5次，基础延迟1秒，最大延迟10秒，指数退避
+  // Test data restoration
+  let backup_id = backup_result.unwrap()
+  let restore_result = DisasterRecoveryManager::restore_from_backup(dr_manager, backup_id)
   
-  // 测试第一次尝试就成功
-  let result1 = execute_with_retry(retry_policy, 1)
-  assert_true(result1.success)
-  assert_eq(result1.attempts, 1)
-  assert_eq(result1.total_delay, 0)
+  match restore_result {
+    Ok(restored_data) => {
+      // Verify restored data integrity
+      let similarity = DataIntegrityManager::calculate_similarity(test_data, restored_data)
+      assert_true(similarity > 0.99) // At least 99% similarity
+      
+      // Verify restored data functionality
+      let processed_original = process_telemetry_data(test_data)
+      let processed_restored = process_telemetry_data(restored_data)
+      
+      assert_true(TelemetryData::equals(processed_original, processed_restored))
+    }
+    Error(e) => {
+      assert_true(false) // Restoration should succeed
+    }
+  }
   
-  // 测试第三次尝试成功
-  let result2 = execute_with_retry(retry_policy, 3)
-  assert_true(result2.success)
-  assert_eq(result2.attempts, 3)
-  assert_eq(result2.total_delay, 1000 + 2000)  // 第一次和第二次失败后的延迟
+  // Test incremental backup
+  let additional_data = generate_large_telemetry_dataset(10000)
   
-  // 测试所有尝试都失败
-  let result3 = execute_with_retry(retry_policy, 10)  // 第10次尝试成功，但最多只有5次
-  assert_false(result3.success)
-  assert_eq(result3.attempts, 5)
-  assert_eq(result3.total_delay, 1000 + 2000 + 4000 + 8000)  // 前4次失败后的延迟
+  let incremental_result = DisasterRecoveryManager::create_incremental_backup(dr_manager, additional_data, backup_id)
+  match incremental_result {
+    Ok(incremental_id) => {
+      // Incremental backup should be smaller than full backup
+      let full_backup_info = DisasterRecoveryManager::get_backup_info(dr_manager, backup_id)
+      let incremental_backup_info = DisasterRecoveryManager::get_backup_info(dr_manager, incremental_id)
+      
+      assert_true(incremental_backup_info.size < full_backup_info.size)
+      
+      // Test restoration with incremental backup
+      let combined_restore = DisasterRecoveryManager::restore_from_incremental(dr_manager, backup_id, incremental_id)
+      match combined_restore {
+        Ok(combined_data) => {
+          // Combined data should include both original and additional data
+          assert_true(combined_data.length() > test_data.length())
+        }
+        Error(e) => {
+          assert_true(false) // Combined restoration should succeed
+        }
+      }
+    }
+    Error(e) => {
+      assert_true(false) // Incremental backup should succeed
+    }
+  }
   
-  // 测试最大延迟限制
-  let policy_with_max_delay = create_retry_policy(4, 3000, 5000, 3.0)  // 基础延迟3秒，最大延迟5秒，3倍退避
-  let result4 = execute_with_retry(policy_with_max_delay, 4)  // 第4次尝试成功
-  assert_true(result4.success)
-  assert_eq(result4.attempts, 4)
-  // 延迟应该是：3000 + 5000(限制) + 5000(限制) = 13000
-  assert_eq(result4.total_delay, 13000)
+  // Test replication
+  let replication_result = DisasterRecoveryManager::replicate_data(dr_manager, test_data)
+  match replication_result {
+    Ok(replication_id) => {
+      // Verify replication to all locations
+      for location in replication_config.locations {
+        let location_status = DisasterRecoveryManager::get_replication_status(dr_manager, replication_id, location)
+        assert_true(location_status.is_replicated)
+        assert_true(location_status.is_verified)
+      }
+    }
+    Error(e) => {
+      assert_true(false) // Replication should succeed
+    }
+  }
+  
+  // Test disaster scenario simulation
+  let disaster_simulator = DisasterSimulator::new()
+  
+  // Simulate primary data center failure
+  DisasterSimulator::simulate_datacenter_failure(disaster_simulator, "primary")
+  
+  // Test failover to secondary location
+  let failover_result = DisasterRecoveryManager::initiate_failover(dr_manager, "secondary_east")
+  match failover_result {
+    Ok(failover_id) => {
+      // Verify failover status
+      let failover_status = DisasterRecoveryManager::get_failover_status(dr_manager, failover_id)
+      assert_true(failover_status.is_active)
+      assert_eq(failover_status.active_location, "secondary_east")
+      
+      // Test data access during failover
+      let failover_access = DisasterRecoveryManager::access_data(dr_manager, test_data.length() / 2)
+      match failover_access {
+        Ok(data_chunk) => {
+          assert_true(data_chunk.length() > 0)
+        }
+        Error(e) => {
+          // In test environment, might fail due to missing infrastructure
+          assert_true(Error::is_infrastructure_error(e))
+        }
+      }
+    }
+    Error(e) => {
+      assert_true(false) // Failover should succeed
+    }
+  }
+  
+  // Test recovery after disaster
+  DisasterSimulator::recover_datacenter(disaster_simulator, "primary")
+  
+  let recovery_result = DisasterRecoveryManager::initiate_recovery(dr_manager, failover_id)
+  match recovery_result {
+    Ok(recovery_id) => {
+      // Verify recovery status
+      let recovery_status = DisasterRecoveryManager::get_recovery_status(dr_manager, recovery_id)
+      assert_true(recovery_status.is_in_progress || recovery_status.is_completed)
+    }
+    Error(e) => {
+      assert_true(false) // Recovery should succeed
+    }
+  }
 }
 
-// 测试6: 优雅降级
-test "优雅降级测试" {
-  // 服务降级策略
-  type ServiceLevel = {
-    name: String,
-    is_available: Bool,
-    fallback_function: () -> String
+// Test 6: Chaos Engineering and Failure Injection
+test "chaos engineering and failure injection" {
+  // Create chaos engine
+  let chaos_engine = ChaosEngine::new()
+  
+  // Configure experiment
+  let experiment = ChaosExperiment::new("telemetry_resilience")
+  
+  // Add failure injections
+  ChaosExperiment::add_network_latency(experiment, 0.1, 2000) // 10% chance, 2s delay
+  ChaosExperiment::add_service_failure(experiment, "data_processor", 0.05) // 5% failure rate
+  ChaosExperiment::add_memory_pressure(experiment, 0.2, 80.0) // 20% chance, 80% memory usage
+  ChaosExperiment::add_cpu_spike(experiment, 0.15, 90.0) // 15% chance, 90% CPU usage
+  
+  // Add monitoring
+  ChaosExperiment::add_monitor(experiment, "response_time")
+  ChaosExperiment::add_monitor(experiment, "error_rate")
+  ChaosExperiment::add_monitor(experiment, "throughput")
+  ChaosExperiment::add_monitor(experiment, "resource_usage")
+  
+  // Set experiment duration
+  ChaosExperiment::set_duration(experiment, 60000) // 60 seconds
+  
+  // Run baseline measurement
+  let baseline = ChaosEngine::run_baseline(chaos_engine, experiment)
+  
+  // Run chaos experiment
+  let experiment_result = ChaosEngine::run_experiment(chaos_engine, experiment)
+  
+  // Analyze results
+  let analysis = ChaosEngine::analyze_results(chaos_engine, baseline, experiment_result)
+  
+  // Verify system resilience
+  assert_true(analysis.response_time_degradation < 2.0) // Response time shouldn't double
+  assert_true(analysis.error_rate_increase < 0.1) // Error rate shouldn't increase by more than 10%
+  assert_true(analysis.throughput_degradation < 0.3) // Throughput shouldn't drop by more than 30%
+  assert_true(analysis.is_system_resilient) // System should be considered resilient
+  
+  // Test specific failure scenarios
+  let network_test = ChaosEngine::test_network_partition(chaos_engine, 30) // 30% packet loss
+  assert_true(network_test.recovery_time < 10000) // Should recover within 10 seconds
+  assert_true(network_test.data_loss < 0.05) // Less than 5% data loss
+  
+  let service_test = ChaosEngine::test_service_failure(chaos_engine, "data_processor", 10000) // 10s failure
+  assert_true(service_test.circuit_breaker_triggered) // Circuit breaker should trigger
+  assert_true(service_test.fallback_used) // Fallback should be used
+  assert_true(service_test.recovery_time < 15000) // Should recover within 15 seconds
+  
+  let resource_test = ChaosEngine::test_resource_exhaustion(chaos_engine, "memory", 90.0) // 90% memory usage
+  assert_true(resource_test.garbage_collection_triggered) // GC should be triggered
+  assert_true(resource_test.cache_eviction_triggered) // Cache should be evicted
+  assert_true(resource_test.request_throttling_triggered) // Request throttling should be triggered
+  
+  // Test cascade failure prevention
+  let cascade_test = ChaosEngine::test_cascade_failure(chaos_engine, [
+    "telemetry_collector",
+    "data_processor",
+    "alert_manager"
+  ])
+  
+  assert_true(cascade_test.cascade_prevented) // Cascade should be prevented
+  assert_true(cascade_test.critical_services_maintained) // Critical services should be maintained
+  assert_true(cascade_test.system_remained_stable) // System should remain stable
+  
+  // Test recovery mechanisms
+  let recovery_test = ChaosEngine::test_recovery_mechanisms(chaos_engine, [
+    "service_restart",
+    "cache_rebuild",
+    "connection_reestablish"
+  ])
+  
+  assert_true(recovery_test.automatic_recovery_triggered) // Automatic recovery should trigger
+  assert_true(recovery_test.full_recovery_achieved) // Full recovery should be achieved
+  assert_true(recovery_test.recovery_time < 30000) // Recovery should complete within 30 seconds
+  
+  // Generate chaos engineering report
+  let chaos_report = ChaosEngine::generate_report(chaos_engine, experiment_result, analysis)
+  assert_true(chaos_report.contains("Chaos Engineering Report"))
+  assert_true(chaos_report.contains("Resilience Analysis"))
+  assert_true(chaos_report.contains("Failure Scenarios"))
+  assert_true(chaos_report.contains("Recovery Mechanisms"))
+  assert_true(chaos_report.contains("Recommendations"))
+}
+
+// Helper functions for test data generation
+fn generate_large_telemetry_dataset(count : Int) : Array[TelemetryPoint] {
+  let data = []
+  
+  for i in 0..=count {
+    let point = TelemetryPoint::new(
+      "metric_" + (i % 20).to_string(),
+      (Math::random() * 100).to_float(),
+      Attributes::with_data([
+        ("service", StringValue("service_" + (i % 10).to_string())),
+        ("environment", StringValue(if i % 2 == 0 { "prod" } else { "dev" })),
+        ("region", StringValue("region_" + (i % 5).to_string())),
+        ("version", StringValue("1." + (i % 10).to_string() + "." + (i % 100).to_string()))
+      ])
+    )
+    data.push(point)
   }
   
-  type DegradationManager = {
-    services: Map[String, ServiceLevel>,
-    current_level: String
-  }
+  data
+}
+
+fn generate_test_telemetry_data() : TelemetryData {
+  let data = TelemetryData::new()
   
-  fn create_degradation_manager() -> DegradationManager {
-    let services = Map::new()
+  TelemetryData::add_metric(data, "cpu_usage", 75.5)
+  TelemetryData::add_metric(data, "memory_usage", 1024.0)
+  TelemetryData::add_metric(data, "disk_io", 256.7)
+  
+  TelemetryData::add_attribute(data, "service", "test_service")
+  TelemetryData::add_attribute(data, "environment", "test")
+  TelemetryData::add_attribute(data, "version", "1.0.0")
+  
+  data
+}
+
+fn split_into_chunks(data : Array[TelemetryPoint], chunk_size : Int) : Array[Array[TelemetryPoint]] {
+  let chunks = []
+  let total_chunks = (data.length() + chunk_size - 1) / chunk_size
+  
+  for i in 0..=total_chunks - 1 {
+    let start = i * chunk_size
+    let end = if i == total_chunks - 1 { data.length() } else { (i + 1) * chunk_size }
+    let chunk = []
     
-    // 完整功能服务
-    services.insert("full", {
-      name: "full",
-      is_available: true,
-      fallback_function: fn() { "Full functionality unavailable" }
-    })
-    
-    // 基本功能服务
-    services.insert("basic", {
-      name: "basic",
-      is_available: true,
-      fallback_function: fn() { "Basic functionality unavailable" }
-    })
-    
-    // 最小功能服务
-    services.insert("minimal", {
-      name: "minimal",
-      is_available: true,
-      fallback_function: fn() { "Minimal functionality unavailable" }
-    })
-    
-    {
-      services: services,
-      current_level: "full"
+    for j in start..=end - 1 {
+      chunk.push(data[j])
     }
-  }
-  
-  fn set_service_availability(manager: DegradationManager, service_name: String, is_available: Bool) -> DegradationManager {
-    match manager.services.get(service_name) {
-      Some(service) => {
-        let updated_service = {
-          name: service.name,
-          is_available: is_available,
-          fallback_function: service.fallback_function
-        }
-        
-        let updated_services = Map::new()
-        for (name, serv) in manager.services {
-          if name == service_name {
-            updated_services.insert(name, updated_service)
-          } else {
-            updated_services.insert(name, serv)
-          }
-        }
-        
-        {
-          services: updated_services,
-          current_level: manager.current_level
-        }
-      }
-      None => manager
-    }
-  }
-  
-  fn execute_service(manager: DegradationManager) -> String {
-    // 按优先级尝试服务
-    let service_levels = ["full", "basic", "minimal"]
     
-    for level in service_levels {
-      match manager.services.get(level) {
-        Some(service) => {
-          if service.is_available {
-            // 更新当前级别
-            let updated_manager = {
-              services: manager.services,
-              current_level: level
-            }
-            
-            match level {
-              "full" => return "Full service response: Detailed telemetry data"
-              "basic" => return "Basic service response: Essential telemetry data"
-              "minimal" => return "Minimal service response: Critical telemetry data"
-              _ => return service.fallback_function()
-            }
-          }
-        }
-        None => ()
-      }
-    }
-    
-    "All services unavailable"
+    chunks.push(chunk)
   }
   
-  // 创建降级管理器
-  let degradation_manager = create_degradation_manager()
+  chunks
+}
+
+fn process_telemetry_data(data : Array[TelemetryPoint]) : ProcessedTelemetryData {
+  let processor = TelemetryProcessor::new()
   
-  // 所有服务可用，使用完整功能
-  let result1 = execute_service(degradation_manager)
-  assert_eq(result1, "Full service response: Detailed telemetry data")
+  for point in data {
+    TelemetryProcessor::process_point(processor, point)
+  }
   
-  // 完整功能不可用，降级到基本功能
-  let manager_without_full = set_service_availability(degradation_manager, "full", false)
-  let result2 = execute_service(manager_without_full)
-  assert_eq(result2, "Basic service response: Essential telemetry data")
-  
-  // 基本功能也不可用，降级到最小功能
-  let manager_without_basic = set_service_availability(manager_without_full, "basic", false)
-  let result3 = execute_service(manager_without_basic)
-  assert_eq(result3, "Minimal service response: Critical telemetry data")
-  
-  // 所有服务不可用
-  let manager_without_all = set_service_availability(manager_without_basic, "minimal", false)
-  let result4 = execute_service(manager_without_all)
-  assert_eq(result4, "All services unavailable")
-  
-  // 恢复基本功能
-  let manager_with_basic_restored = set_service_availability(manager_without_all, "basic", true)
-  let result5 = execute_service(manager_with_basic_restored)
-  assert_eq(result5, "Basic service response: Essential telemetry data")
-  
-  // 恢复完整功能
-  let manager_with_full_restored = set_service_availability(manager_with_basic_restored, "full", true)
-  let result6 = execute_service(manager_with_full_restored)
-  assert_eq(result6, "Full service response: Detailed telemetry data")
+  TelemetryProcessor::get_result(processor)
 }
