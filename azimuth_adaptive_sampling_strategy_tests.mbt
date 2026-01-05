@@ -1,529 +1,830 @@
-// Azimuth自适应采样策略测试用例
-// 专注于遥测系统中不同采样策略的实现和验证
+// Azimuth Adaptive Sampling Strategy Tests
+// This file contains test cases for adaptive telemetry sampling strategies
 
-// 测试1: 固定比例采样策略
-test "fixed ratio sampling strategy" {
-  // 定义采样配置
-  type SamplingConfig = {
-    strategy: String,
-    ratio: Float,  // 采样比例，0.0到1.0之间
-    max_samples_per_second: Int
+// Test 1: Dynamic Rate-Based Sampling
+test "dynamic rate-based sampling" {
+  // Define sampling rate adjustment factors
+  enum RateAdjustmentFactor {
+    Increase(Float)    // Increase rate by factor
+    Decrease(Float)    // Decrease rate by factor
+    Set(Float)         // Set exact rate
+    NoChange
   }
   
-  // 创建固定比例采样配置
-  let fixed_config = {
-    strategy: "fixed_ratio",
-    ratio: 0.1,  // 10%采样率
-    max_samples_per_second: 100
+  // Define rate-based sampler configuration
+  type RateBasedSampler = {
+    current_rate: Float,        // Current sampling rate (0.0 to 1.0)
+    min_rate: Float,           // Minimum allowed rate
+    max_rate: Float,           // Maximum allowed rate
+    adjustment_window: Int,    // Time window for adjustments (seconds)
+    target_throughput: Int,    // Target samples per second
+    current_throughput: Int    // Current samples per second
   }
   
-  // 模拟采样决策函数
-  let should_sample = fn(config: SamplingConfig, trace_id: String) {
-    match config.strategy {
-      "fixed_ratio" => {
-        // 使用trace_id的哈希值进行确定性采样
-        let hash = trace_id.length() % 100
-        hash.to_float() / 100.0 < config.ratio
-      }
-      _ => false
-    }
+  // Define sampling decision
+  type SamplingDecision = {
+    should_sample: Bool,
+    updated_rate: Float,
+    reason: String
   }
   
-  // 测试采样决策
-  let trace_ids = [
-    "trace-001", "trace-002", "trace-003", "trace-004", "trace-005",
-    "trace-006", "trace-007", "trace-008", "trace-009", "trace-010"
-  ]
-  
-  let mut sampled_count = 0
-  let mut sampled_traces = []
-  
-  for trace_id in trace_ids {
-    if should_sample(fixed_config, trace_id) {
-      sampled_count = sampled_count + 1
-      sampled_traces = sampled_traces.push(trace_id)
-    }
-  }
-  
-  // 验证采样比例接近配置值
-  let actual_ratio = sampled_count.to_float() / trace_ids.length.to_float()
-  assert_true(actual_ratio >= 0.0 && actual_ratio <= 0.3)  // 允许一定的误差范围
-  
-  // 测试不同采样率
-  let high_ratio_config = { fixed_config | ratio: 0.5 }
-  let mut high_sampled_count = 0
-  
-  for trace_id in trace_ids {
-    if should_sample(high_ratio_config, trace_id) {
-      high_sampled_count = high_sampled_count + 1
-    }
-  }
-  
-  let high_actual_ratio = high_sampled_count.to_float() / trace_ids.length.to_float()
-  assert_true(high_actual_ratio >= 0.3 && high_actual_ratio <= 0.7)
-  
-  // 测试零采样率
-  let zero_ratio_config = { fixed_config | ratio: 0.0 }
-  let mut zero_sampled_count = 0
-  
-  for trace_id in trace_ids {
-    if should_sample(zero_ratio_config, trace_id) {
-      zero_sampled_count = zero_sampled_count + 1
-    }
-  }
-  
-  assert_eq(zero_sampled_count, 0)
-  
-  // 测试全采样率
-  let full_ratio_config = { fixed_config | ratio: 1.0 }
-  let mut full_sampled_count = 0
-  
-  for trace_id in trace_ids {
-    if should_sample(full_ratio_config, trace_id) {
-      full_sampled_count = full_sampled_count + 1
-    }
-  }
-  
-  assert_eq(full_sampled_count, trace_ids.length())
-}
-
-// 测试2: 动态采样策略
-test "dynamic adaptive sampling strategy" {
-  // 定义系统负载指标
-  type SystemLoad = {
-    cpu_usage: Float,
-    memory_usage: Float,
-    request_rate: Int,
-    error_rate: Float
-  }
-  
-  // 定义动态采样配置
-  type DynamicSamplingConfig = {
-    base_ratio: Float,
-    min_ratio: Float,
-    max_ratio: Float,
-    load_thresholds: {
-      cpu_high: Float,
-      memory_high: Float,
-      request_rate_high: Int,
-      error_rate_high: Float
-    }
-  }
-  
-  // 创建动态采样配置
-  let dynamic_config = {
-    base_ratio: 0.1,
-    min_ratio: 0.01,
-    max_ratio: 0.5,
-    load_thresholds: {
-      cpu_high: 80.0,
-      memory_high: 85.0,
-      request_rate_high: 1000,
-      error_rate_high: 5.0
-    }
-  }
-  
-  // 计算动态采样率
-  let calculate_sampling_ratio = fn(config: DynamicSamplingConfig, load: SystemLoad) {
-    let mut ratio = config.base_ratio
-    
-    // 根据CPU使用率调整
-    if load.cpu_usage > config.load_thresholds.cpu_high {
-      ratio = ratio * 0.5
-    }
-    
-    // 根据内存使用率调整
-    if load.memory_usage > config.load_thresholds.memory_high {
-      ratio = ratio * 0.7
-    }
-    
-    // 根据请求速率调整
-    if load.request_rate > config.load_thresholds.request_rate_high {
-      ratio = ratio * 0.6
-    }
-    
-    // 根据错误率调整（错误率高时增加采样率）
-    if load.error_rate > config.load_thresholds.error_rate_high {
-      ratio = ratio * 1.5
-    }
-    
-    // 确保采样率在合理范围内
-    if ratio < config.min_ratio {
-      ratio = config.min_ratio
-    } else if ratio > config.max_ratio {
-      ratio = config.max_ratio
-    }
-    
-    ratio
-  }
-  
-  // 测试低负载场景
-  let low_load = {
-    cpu_usage: 30.0,
-    memory_usage: 40.0,
-    request_rate: 500,
-    error_rate: 1.0
-  }
-  
-  let low_load_ratio = calculate_sampling_ratio(dynamic_config, low_load)
-  assert_eq(low_load_ratio, 0.1)  // 基础采样率，无调整
-  
-  // 测试高CPU负载场景
-  let high_cpu_load = {
-    cpu_usage: 90.0,
-    memory_usage: 40.0,
-    request_rate: 500,
-    error_rate: 1.0
-  }
-  
-  let high_cpu_ratio = calculate_sampling_ratio(dynamic_config, high_cpu_load)
-  assert_eq(high_cpu_ratio, 0.05)  // 基础采样率 * 0.5
-  
-  // 测试高内存负载场景
-  let high_memory_load = {
-    cpu_usage: 30.0,
-    memory_usage: 90.0,
-    request_rate: 500,
-    error_rate: 1.0
-  }
-  
-  let high_memory_ratio = calculate_sampling_ratio(dynamic_config, high_memory_load)
-  assert_eq(high_memory_ratio, 0.07)  // 基础采样率 * 0.7
-  
-  // 测试高请求率场景
-  let high_request_load = {
-    cpu_usage: 30.0,
-    memory_usage: 40.0,
-    request_rate: 1500,
-    error_rate: 1.0
-  }
-  
-  let high_request_ratio = calculate_sampling_ratio(dynamic_config, high_request_load)
-  assert_eq(high_request_ratio, 0.06)  // 基础采样率 * 0.6
-  
-  // 测试高错误率场景
-  let high_error_load = {
-    cpu_usage: 30.0,
-    memory_usage: 40.0,
-    request_rate: 500,
-    error_rate: 10.0
-  }
-  
-  let high_error_ratio = calculate_sampling_ratio(dynamic_config, high_error_load)
-  assert_eq(high_error_ratio, 0.15)  // 基础采样率 * 1.5
-  
-  // 测试多重高负载场景
-  let multi_high_load = {
-    cpu_usage: 90.0,
-    memory_usage: 90.0,
-    request_rate: 1500,
-    error_rate: 10.0
-  }
-  
-  let multi_high_ratio = calculate_sampling_ratio(dynamic_config, multi_high_load)
-  assert_eq(multi_high_ratio, 0.0315)  // 基础采样率 * 0.5 * 0.7 * 0.6 * 1.5，但不低于最小值
-  
-  // 测试极端低负载场景（错误率调整为负数，但不应低于最小值）
-  let extreme_low_load = {
-    cpu_usage: 95.0,
-    memory_usage: 95.0,
-    request_rate: 2000,
-    error_rate: 0.1
-  }
-  
-  let extreme_low_ratio = calculate_sampling_ratio(dynamic_config, extreme_low_load)
-  assert_eq(extreme_low_ratio, 0.01)  // 不应低于最小采样率
-}
-
-// 测试3: 基于优先级的采样策略
-test "priority-based sampling strategy" {
-  // 定义Span优先级
-  enum SpanPriority {
-    Low
-    Normal
-    High
-    Critical
-  }
-  
-  // 定义优先级采样配置
-  type PrioritySamplingConfig = {
-    critical_ratio: Float,
-    high_ratio: Float,
-    normal_ratio: Float,
-    low_ratio: Float
-  }
-  
-  // 定义带优先级的Span数据
-  type PrioritySpan = {
-    trace_id: String,
-    span_id: String,
-    priority: SpanPriority,
-    duration: Int,
-    status: String
-  }
-  
-  // 创建优先级采样配置
-  let priority_config = {
-    critical_ratio: 1.0,    // 关键Span始终采样
-    high_ratio: 0.8,        // 高优先级Span 80%采样
-    normal_ratio: 0.2,      // 普通Span 20%采样
-    low_ratio: 0.05         // 低优先级Span 5%采样
-  }
-  
-  // 根据优先级决定采样
-  let should_sample_by_priority = fn(config: PrioritySamplingConfig, span: PrioritySpan) {
-    let ratio = match span.priority {
-      SpanPriority::Critical => config.critical_ratio
-      SpanPriority::High => config.high_ratio
-      SpanPriority::Normal => config.normal_ratio
-      SpanPriority::Low => config.low_ratio
-    }
-    
-    // 使用span_id的哈希值进行确定性采样
-    let hash = span.span_id.length() % 100
-    hash.to_float() / 100.0 < ratio
-  }
-  
-  // 创建测试Span数据
-  let test_spans = [
-    { trace_id: "trace-001", span_id: "span-001", priority: SpanPriority::Critical, duration: 100, status: "ok" },
-    { trace_id: "trace-002", span_id: "span-002", priority: SpanPriority::High, duration: 150, status: "ok" },
-    { trace_id: "trace-003", span_id: "span-003", priority: SpanPriority::Normal, duration: 200, status: "error" },
-    { trace_id: "trace-004", span_id: "span-004", priority: SpanPriority::Low, duration: 50, status: "ok" },
-    { trace_id: "trace-005", span_id: "span-005", priority: SpanPriority::High, duration: 120, status: "ok" },
-    { trace_id: "trace-006", span_id: "span-006", priority: SpanPriority::Normal, duration: 80, status: "ok" },
-    { trace_id: "trace-007", span_id: "span-007", priority: SpanPriority::Low, duration: 300, status: "timeout" },
-    { trace_id: "trace-008", span_id: "span-008", priority: SpanPriority::Critical, duration: 250, status: "ok" }
-  ]
-  
-  // 测试优先级采样
-  let mut sampled_spans = []
-  let mut priority_sample_counts = {
-    critical: 0,
-    high: 0,
-    normal: 0,
-    low: 0
-  }
-  let mut priority_total_counts = {
-    critical: 0,
-    high: 0,
-    normal: 0,
-    low: 0
-  }
-  
-  for span in test_spans {
-    priority_total_counts = match span.priority {
-      SpanPriority::Critical => { priority_total_counts | critical: priority_total_counts.critical + 1 }
-      SpanPriority::High => { priority_total_counts | high: priority_total_counts.high + 1 }
-      SpanPriority::Normal => { priority_total_counts | normal: priority_total_counts.normal + 1 }
-      SpanPriority::Low => { priority_total_counts | low: priority_total_counts.low + 1 }
-    }
-    
-    if should_sample_by_priority(priority_config, span) {
-      sampled_spans = sampled_spans.push(span)
-      
-      priority_sample_counts = match span.priority {
-        SpanPriority::Critical => { priority_sample_counts | critical: priority_sample_counts.critical + 1 }
-        SpanPriority::High => { priority_sample_counts | high: priority_sample_counts.high + 1 }
-        SpanPriority::Normal => { priority_sample_counts | normal: priority_sample_counts.normal + 1 }
-        SpanPriority::Low => { priority_sample_counts | low: priority_sample_counts.low + 1 }
-      }
-    }
-  }
-  
-  // 验证关键Span全部被采样
-  assert_eq(priority_sample_counts.critical, priority_total_counts.critical)
-  
-  // 验证采样结果符合优先级策略
-  assert_true(sampled_spans.length() >= 2)  // 至少包含所有关键Span
-  
-  // 检查采样Span的优先级分布
-  let sampled_critical_spans = sampled_spans.filter(fn(span) {
-    match span.priority { SpanPriority::Critical => true, _ => false }
-  })
-  let sampled_high_spans = sampled_spans.filter(fn(span) {
-    match span.priority { SpanPriority::High => true, _ => false }
-  })
-  let sampled_normal_spans = sampled_spans.filter(fn(span) {
-    match span.priority { SpanPriority::Normal => true, _ => false }
-  })
-  let sampled_low_spans = sampled_spans.filter(fn(span) {
-    match span.priority { SpanPriority::Low => true, _ => false }
-  })
-  
-  assert_eq(sampled_critical_spans.length(), 2)  // 所有关键Span
-  assert_true(sampled_high_spans.length() >= 1)  // 至少一个高优先级Span
-  assert_true(sampled_normal_spans.length() >= 0)  // 可能有普通Span
-  assert_true(sampled_low_spans.length() >= 0)    // 可能有低优先级Span
-  
-  // 测试优先级调整
-  let adjusted_config = {
-    critical_ratio: 1.0,
-    high_ratio: 1.0,        // 提高高优先级采样率
-    normal_ratio: 0.5,      // 提高普通采样率
-    low_ratio: 0.1          // 提高低优先级采样率
-  }
-  
-  let mut adjusted_sampled_count = 0
-  for span in test_spans {
-    if should_sample_by_priority(adjusted_config, span) {
-      adjusted_sampled_count = adjusted_sampled_count + 1
-    }
-  }
-  
-  assert_true(adjusted_sampled_count >= sampled_spans.length())  // 调整后采样数应增加
-}
-
-// 测试4: 基于错误率的自适应采样
-test "error-rate adaptive sampling" {
-  // 定义错误率采样配置
-  type ErrorRateSamplingConfig = {
-    base_ratio: Float,
-    error_multiplier: Float,
-    error_threshold: Float,    // 错误率阈值，超过此值时增加采样
-    max_ratio: Float
-  }
-  
-  // 定义时间窗口错误统计
-  type ErrorStats = {
-    window_start: Int,
-    window_end: Int,
-    total_requests: Int,
-    error_count: Int,
-    error_rate: Float
-  }
-  
-  // 创建错误率采样配置
-  let error_config = {
-    base_ratio: 0.1,
-    error_multiplier: 2.0,    // 错误率超过阈值时采样率乘以2
-    error_threshold: 5.0,     // 5%错误率阈值
-    max_ratio: 0.8            // 最大采样率80%
-  }
-  
-  // 计算基于错误率的采样比例
-  let calculate_error_adapted_ratio = fn(config: ErrorRateSamplingConfig, stats: ErrorStats) {
-    let mut ratio = config.base_ratio
-    
-    if stats.error_rate > config.error_threshold {
-      ratio = ratio * config.error_multiplier
-      
-      // 确保不超过最大采样率
-      if ratio > config.max_ratio {
-        ratio = config.max_ratio
-      }
-    }
-    
-    ratio
-  }
-  
-  // 测试正常错误率场景
-  let normal_error_stats = {
-    window_start: 1640995200,
-    window_end: 1640995260,
-    total_requests: 1000,
-    error_count: 30,  // 3%错误率
-    error_rate: 3.0
-  }
-  
-  let normal_ratio = calculate_error_adapted_ratio(error_config, normal_error_stats)
-  assert_eq(normal_ratio, 0.1)  // 基础采样率，无调整
-  
-  // 测试高错误率场景
-  let high_error_stats = {
-    window_start: 1640995200,
-    window_end: 1640995260,
-    total_requests: 1000,
-    error_count: 80,  // 8%错误率
-    error_rate: 8.0
-  }
-  
-  let high_ratio = calculate_error_adapted_ratio(error_config, high_error_stats)
-  assert_eq(high_ratio, 0.2)  // 基础采样率 * 2
-  
-  // 测试极高错误率场景
-  let extreme_error_stats = {
-    window_start: 1640995200,
-    window_end: 1640995260,
-    total_requests: 1000,
-    error_count: 500,  // 50%错误率
-    error_rate: 50.0
-  }
-  
-  let extreme_ratio = calculate_error_adapted_ratio(error_config, extreme_error_stats)
-  assert_eq(extreme_ratio, 0.8)  // 达到最大采样率
-  
-  // 测试错误率统计计算
-  let calculate_error_stats = fn(requests: Array[(String, String)], window_start: Int, window_end: Int) {
-    let window_requests = requests.filter(fn(req) {
-      match req {
-        (_, timestamp) => {
-          let req_time = timestamp.to_int()
-          req_time >= window_start and req_time <= window_end
-        }
-      }
+  // Make sampling decision based on current rate
+  let make_sampling_decision = fn(sampler: RateBasedSampler, trace_id: String) {
+    // Simple deterministic sampling based on trace ID hash
+    let hash = trace_id.chars().fold(0, fn(acc, char) { 
+      (acc * 31 + char.to_int()) % 10000 
     })
+    let normalized = (hash as Float) / 10000.0
     
-    let total_count = window_requests.length()
-    let error_count = window_requests.filter(fn(req) {
-      match req {
-        (status, _) => status == "error"
-      }
-    }).length()
+    let should_sample = normalized <= sampler.current_rate
     
-    let error_rate = if total_count > 0 {
-      (error_count.to_float() / total_count.to_float()) * 100.0
+    // Adjust rate based on throughput
+    let rate_adjustment = if sampler.current_throughput < sampler.target_throughput {
+      // Need higher throughput, increase rate
+      let factor = 1.0 + ((sampler.target_throughput - sampler.current_throughput) as Float) / (sampler.target_throughput as Float)
+      RateAdjustmentFactor::Increase(factor.min(2.0))  // Cap at 2x increase
+    } else if sampler.current_throughput > sampler.target_throughput * 2 {
+      // Too much throughput, decrease rate
+      let factor = (sampler.target_throughput as Float) / (sampler.current_throughput as Float)
+      RateAdjustmentFactor::Decrease(factor.max(0.5))  // Cap at 50% decrease
     } else {
-      0.0
+      RateAdjustmentFactor::NoChange
+    }
+    
+    let updated_rate = match rate_adjustment {
+      RateAdjustmentFactor::Increase(factor) => {
+        (sampler.current_rate * factor).min(sampler.max_rate)
+      }
+      RateAdjustmentFactor::Decrease(factor) => {
+        (sampler.current_rate * factor).max(sampler.min_rate)
+      }
+      RateAdjustmentFactor::Set(rate) => {
+        rate.max(sampler.min_rate).min(sampler.max_rate)
+      }
+      RateAdjustmentFactor::NoChange => {
+        sampler.current_rate
+      }
+    }
+    
+    let reason = match rate_adjustment {
+      RateAdjustmentFactor::Increase(_) => "throughput_too_low"
+      RateAdjustmentFactor::Decrease(_) => "throughput_too_high"
+      RateAdjustmentFactor::Set(_) => "manual_adjustment"
+      RateAdjustmentFactor::NoChange => "optimal_throughput"
     }
     
     {
-      window_start,
-      window_end,
-      total_requests: total_count,
-      error_count,
-      error_rate
+      should_sample: should_sample,
+      updated_rate: updated_rate,
+      reason: reason
     }
   }
   
-  // 模拟请求数据
-  let request_data = [
-    ("ok", "1640995200"),
-    ("ok", "1640995210"),
-    ("error", "1640995220"),
-    ("ok", "1640995230"),
-    ("ok", "1640995240"),
-    ("error", "1640995250"),
-    ("ok", "1640995260"),
-    ("error", "1640995270"),
-    ("ok", "1640995280"),
-    ("ok", "1640995290")
-  ]
-  
-  // 计算窗口统计
-  let window_stats = calculate_error_stats(request_data, 1640995200, 1640995260)
-  assert_eq(window_stats.total_requests, 6)
-  assert_eq(window_stats.error_count, 2)
-  assert_eq(window_stats.error_rate, 33.33)  // 2/6 * 100，四舍五入到两位小数
-  
-  // 测试基于错误率的采样决策
-  let error_adapted_should_sample = fn(config: ErrorRateSamplingConfig, stats: ErrorStats, trace_id: String) {
-    let ratio = calculate_error_adapted_ratio(config, stats)
-    let hash = trace_id.length() % 100
-    hash.to_float() / 100.0 < ratio
+  // Update sampler with new throughput data
+  let update_sampler_throughput = fn(sampler: RateBasedSampler, new_throughput: Int) {
+    { sampler | current_throughput: new_throughput }
   }
   
-  // 测试不同错误率下的采样决策
-  let normal_sample = error_adapted_should_sample(error_config, normal_error_stats, "trace-001")
-  let high_sample = error_adapted_should_sample(error_config, high_error_stats, "trace-002")
-  let extreme_sample = error_adapted_should_sample(error_config, extreme_error_stats, "trace-003")
+  // Test rate-based sampling
+  let sampler = {
+    current_rate: 0.1,        // 10% sampling rate
+    min_rate: 0.01,           // 1% minimum
+    max_rate: 0.5,            // 50% maximum
+    adjustment_window: 60,    // 1 minute
+    target_throughput: 100,   // 100 samples per second
+    current_throughput: 50    // Currently 50 samples per second
+  }
   
-  // 由于使用确定性哈希，我们可以预测结果
-  assert_eq(normal_sample, false)  // 10%采样率，trace-002长度为9，9% < 10%应该被采样，但trace-001长度为9，所以应该被采样
-  assert_eq(high_sample, false)   // 20%采样率，trace-002长度为9，9% < 20%应该被采样
-  assert_eq(extreme_sample, false) // 80%采样率，trace-003长度为9，9% < 80%应该被采样
+  // Test sampling decision with low throughput
+  let decision1 = make_sampling_decision(sampler, "trace-12345")
+  assert_eq(decision1.reason, "throughput_too_low")
+  assert_true(decision1.updated_rate > sampler.current_rate)  // Rate should increase
   
-  // 使用不同的trace_id测试
-  let long_trace_sample = error_adapted_should_sample(error_config, normal_error_stats, "very-long-trace-id-with-many-characters")
-  assert_eq(long_trace_sample, true)  // 长trace_id的哈希值可能超过10%阈值
+  // Test sampling decision with optimal throughput
+  let optimal_sampler = update_sampler_throughput(sampler, 100)
+  let decision2 = make_sampling_decision(optimal_sampler, "trace-67890")
+  assert_eq(decision2.reason, "optimal_throughput")
+  assert_eq(decision2.updated_rate, optimal_sampler.current_rate)  // Rate unchanged
+  
+  // Test sampling decision with high throughput
+  let high_throughput_sampler = update_sampler_throughput(sampler, 250)
+  let decision3 = make_sampling_decision(high_throughput_sampler, "trace-11111")
+  assert_eq(decision3.reason, "throughput_too_high")
+  assert_true(decision3.updated_rate < high_throughput_sampler.current_rate)  // Rate should decrease
+  
+  // Test rate boundaries
+  let min_rate_sampler = { sampler | current_rate: 0.01, current_throughput: 10 }
+  let min_decision = make_sampling_decision(min_rate_sampler, "trace-min")
+  assert_eq(min_decision.updated_rate, 0.01)  // Should not go below minimum
+  
+  let max_rate_sampler = { sampler | current_rate: 0.5, current_throughput: 1000 }
+  let max_decision = make_sampling_decision(max_rate_sampler, "trace-max")
+  assert_eq(max_decision.updated_rate, 0.5)  // Should not go above maximum
+  
+  // Test sampling consistency
+  let consistent_decisions = fn(sampler: RateBasedSampler, trace_id: String, count: Int) {
+    let mut sample_count = 0
+    let mut total_rate = 0.0
+    
+    for i in 0..count {
+      let decision = make_sampling_decision(sampler, trace_id)
+      if decision.should_sample {
+        sample_count = sample_count + 1
+      }
+      total_rate = total_rate + decision.updated_rate
+    }
+    
+    {
+      sample_count: sample_count,
+      sample_rate: (sample_count as Float) / (count as Float),
+      average_rate: total_rate / (count as Float)
+    }
+  }
+  
+  let consistency_results = consistent_decisions(sampler, "trace-consistent", 1000)
+  assert_eq(consistency_results.sample_count, 1000)  // Same trace ID should always get same decision
+  assert_eq(consistency_results.sample_rate, 1.0)
+}
+
+// Test 2: Attribute-Based Adaptive Sampling
+test "attribute-based adaptive sampling" {
+  // Define sampling priority levels
+  enum PriorityLevel {
+    Critical    // Always sample
+    High        // High sampling rate
+    Medium      // Medium sampling rate
+    Low         // Low sampling rate
+    Minimal     // Minimal sampling rate
+  }
+  
+  // Define attribute-based sampling rule
+  type AttributeRule = {
+    attribute_name: String,
+    pattern: String,           // Pattern to match
+    priority: PriorityLevel,
+    sampling_rate: Float
+  }
+  
+  // Define attribute-based sampler
+  type AttributeSampler = {
+    rules: Array[AttributeRule],
+    default_rate: Float,
+    cache: Map[String, PriorityLevel]  // Cache for previously evaluated traces
+  }
+  
+  // Define sampling result
+  type AttributeSamplingResult = {
+    should_sample: Bool,
+    applied_rate: Float,
+    matched_rule: Option[String],
+    priority: PriorityLevel
+  }
+  
+  // Evaluate trace attributes against rules
+  let evaluate_trace_priority = fn(attributes: Array[(String, String)], sampler: AttributeSampler) {
+    let mut highest_priority = PriorityLevel::Minimal
+    let mut matched_rule = None
+    let mut applied_rate = sampler.default_rate
+    
+    for rule in sampler.rules {
+      match attributes.find_fn(a) { a.0 == rule.attribute_name } {
+        Some((key, value)) => {
+          if value.contains(rule.pattern) {
+            // Check if this rule has higher priority
+            let is_higher = match (highest_priority, rule.priority) {
+              (PriorityLevel::Minimal, _) => true
+              (PriorityLevel::Low, PriorityLevel::Medium | PriorityLevel::High | PriorityLevel::Critical) => true
+              (PriorityLevel::Medium, PriorityLevel::High | PriorityLevel::Critical) => true
+              (PriorityLevel::High, PriorityLevel::Critical) => true
+              _ => false
+            }
+            
+            if is_higher {
+              highest_priority = rule.priority
+              matched_rule = Some(rule.attribute_name + "=" + rule.pattern)
+              applied_rate = rule.sampling_rate
+            }
+          }
+        }
+        None => {}  // Attribute not present
+      }
+    }
+    
+    (highest_priority, matched_rule, applied_rate)
+  }
+  
+  // Make attribute-based sampling decision
+  let make_attribute_sampling_decision = fn(sampler: AttributeSampler, trace_id: String, attributes: Array[(String, String)>) {
+    // Check cache first
+    let cached_priority = match Map::get(sampler.cache, trace_id) {
+      Some(priority) => priority
+      None => {
+        let (priority, _, _) = evaluate_trace_priority(attributes, sampler)
+        priority
+      }
+    }
+    
+    let (priority, matched_rule, applied_rate) = evaluate_trace_priority(attributes, sampler)
+    
+    // Determine sampling based on priority
+    let should_sample = match priority {
+      PriorityLevel::Critical => true
+      PriorityLevel::High => {
+        // Use deterministic sampling with high rate
+        let hash = trace_id.chars().fold(0, fn(acc, char) { 
+          (acc * 31 + char.to_int()) % 1000 
+        })
+        (hash as Float) / 1000.0 <= applied_rate
+      }
+      PriorityLevel::Medium => {
+        let hash = trace_id.chars().fold(0, fn(acc, char) { 
+          (acc * 31 + char.to_int()) % 1000 
+        })
+        (hash as Float) / 1000.0 <= applied_rate
+      }
+      PriorityLevel::Low => {
+        let hash = trace_id.chars().fold(0, fn(acc, char) { 
+          (acc * 31 + char.to_int()) % 1000 
+        })
+        (hash as Float) / 1000.0 <= applied_rate
+      }
+      PriorityLevel::Minimal => {
+        let hash = trace_id.chars().fold(0, fn(acc, char) { 
+          (acc * 31 + char.to_int()) % 1000 
+        })
+        (hash as Float) / 1000.0 <= applied_rate
+      }
+    }
+    
+    {
+      should_sample: should_sample,
+      applied_rate: applied_rate,
+      matched_rule: matched_rule,
+      priority: priority
+    }
+  }
+  
+  // Test attribute-based sampling
+  let sampler = {
+    rules: [
+      {
+        attribute_name: "service",
+        pattern: "payment",
+        priority: PriorityLevel::High,
+        sampling_rate: 0.8
+      },
+      {
+        attribute_name: "status",
+        pattern: "error",
+        priority: PriorityLevel::Critical,
+        sampling_rate: 1.0
+      },
+      {
+        attribute_name: "environment",
+        pattern: "production",
+        priority: PriorityLevel::Medium,
+        sampling_rate: 0.3
+      },
+      {
+        attribute_name: "user_tier",
+        pattern: "premium",
+        priority: PriorityLevel::High,
+        sampling_rate: 0.7
+      }
+    ],
+    default_rate: 0.05,
+    cache: Map::empty()
+  }
+  
+  // Test critical priority (error status)
+  let error_attributes = [
+    ("service", "user-api"),
+    ("status", "error"),
+    ("environment", "production")
+  ]
+  
+  let error_decision = make_attribute_sampling_decision(sampler, "trace-error-123", error_attributes)
+  assert_true(error_decision.should_sample)
+  assert_eq(error_decision.applied_rate, 1.0)
+  assert_eq(error_decision.priority, PriorityLevel::Critical)
+  match error_decision.matched_rule {
+    Some(rule) => assert_eq(rule, "status=error")
+    None => assert_true(false)
+  }
+  
+  // Test high priority (payment service)
+  let payment_attributes = [
+    ("service", "payment"),
+    ("status", "success"),
+    ("environment", "production")
+  ]
+  
+  let payment_decision = make_attribute_sampling_decision(sampler, "trace-payment-456", payment_attributes)
+  assert_eq(payment_decision.applied_rate, 0.8)
+  assert_eq(payment_decision.priority, PriorityLevel::High)
+  match payment_decision.matched_rule {
+    Some(rule) => assert_eq(rule, "service=payment")
+    None => assert_true(false)
+  }
+  
+  // Test medium priority (production environment)
+  let prod_attributes = [
+    ("service", "user-api"),
+    ("status", "success"),
+    ("environment", "production")
+  ]
+  
+  let prod_decision = make_attribute_sampling_decision(sampler, "trace-prod-789", prod_attributes)
+  assert_eq(prod_decision.applied_rate, 0.3)
+  assert_eq(prod_decision.priority, PriorityLevel::Medium)
+  match prod_decision.matched_rule {
+    Some(rule) => assert_eq(rule, "environment=production")
+    None => assert_true(false)
+  }
+  
+  // Test default rate (no matching rules)
+  let default_attributes = [
+    ("service", "internal-api"),
+    ("status", "success"),
+    ("environment", "development")
+  ]
+  
+  let default_decision = make_attribute_sampling_decision(sampler, "trace-default-012", default_attributes)
+  assert_eq(default_decision.applied_rate, 0.05)
+  assert_eq(default_decision.priority, PriorityLevel::Minimal)
+  assert_eq(default_decision.matched_rule, None)
+  
+  // Test rule precedence (critical > high > medium)
+  let premium_error_attributes = [
+    ("service", "payment"),
+    ("user_tier", "premium"),
+    ("status", "error"),
+    ("environment", "production")
+  ]
+  
+  let precedence_decision = make_attribute_sampling_decision(sampler, "trace-precedence-345", premium_error_attributes)
+  assert_true(precedence_decision.should_sample)
+  assert_eq(precedence_decision.applied_rate, 1.0)  // Critical rate takes precedence
+  assert_eq(precedence_decision.priority, PriorityLevel::Critical)
+}
+
+// Test 3: Probabilistic Adaptive Sampling with Feedback
+test "probabilistic adaptive sampling with feedback" {
+  // Define sampling feedback metrics
+  type SamplingMetrics = {
+    total_requests: Int,
+    sampled_requests: Int,
+    dropped_requests: Int,
+    error_rate: Float,
+    average_latency: Float,
+    resource_usage: Float
+  }
+  
+  // Define probabilistic sampler with feedback
+  type ProbabilisticSampler = {
+    base_probability: Float,
+    current_probability: Float,
+    min_probability: Float,
+    max_probability: Float,
+    adjustment_factor: Float,
+    metrics: SamplingMetrics,
+    feedback_window: Int
+  }
+  
+  // Define sampling feedback
+  type SamplingFeedback = {
+    error_rate_threshold: Float,
+    latency_threshold: Float,
+    resource_threshold: Float,
+    target_sample_rate: Float
+  }
+  
+  // Update sampler metrics
+  let update_metrics = fn(sampler: ProbabilisticSampler, new_metrics: SamplingMetrics) {
+    { sampler | metrics: new_metrics }
+  }
+  
+  // Adjust sampling probability based on feedback
+  let adjust_sampling_probability = fn(sampler: ProbabilisticSampler, feedback: SamplingFeedback) {
+    let metrics = sampler.metrics
+    let mut adjustment = 0.0
+    let mut reasons = []
+    
+    // Adjust based on error rate
+    if metrics.error_rate > feedback.error_rate_threshold {
+      adjustment = adjustment - 0.1  // Decrease sampling rate
+      reasons = reasons.push("high_error_rate")
+    } else if metrics.error_rate < feedback.error_rate_threshold / 2 {
+      adjustment = adjustment + 0.05  // Increase sampling rate
+      reasons = reasons.push("low_error_rate")
+    }
+    
+    // Adjust based on latency
+    if metrics.average_latency > feedback.latency_threshold {
+      adjustment = adjustment - 0.1  // Decrease sampling rate
+      reasons = reasons.push("high_latency")
+    } else if metrics.average_latency < feedback.latency_threshold / 2 {
+      adjustment = adjustment + 0.05  // Increase sampling rate
+      reasons = reasons.push("low_latency")
+    }
+    
+    // Adjust based on resource usage
+    if metrics.resource_usage > feedback.resource_threshold {
+      adjustment = adjustment - 0.15  // Decrease sampling rate
+      reasons = reasons.push("high_resource_usage")
+    } else if metrics.resource_usage < feedback.resource_threshold / 2 {
+      adjustment = adjustment + 0.05  // Increase sampling rate
+      reasons = reasons.push("low_resource_usage")
+    }
+    
+    // Apply adjustment with bounds
+    let new_probability = (sampler.current_probability + adjustment)
+      .max(sampler.min_probability)
+      .min(sampler.max_probability)
+    
+    {
+      updated_probability: new_probability,
+      adjustment: adjustment,
+      reasons: reasons
+    }
+  }
+  
+  // Make probabilistic sampling decision
+  let make_probabilistic_decision = fn(sampler: ProbabilisticSampler, trace_id: String) {
+    // Generate deterministic hash for consistent sampling
+    let hash = trace_id.chars().fold(0, fn(acc, char) { 
+      (acc * 31 + char.to_int()) % 10000 
+    })
+    let normalized = (hash as Float) / 10000.0
+    
+    let should_sample = normalized <= sampler.current_probability
+    
+    {
+      should_sample: should_sample,
+      probability_used: sampler.current_probability,
+      trace_hash: hash
+    }
+  }
+  
+  // Test probabilistic sampling with feedback
+  let sampler = {
+    base_probability: 0.1,
+    current_probability: 0.1,
+    min_probability: 0.01,
+    max_probability: 0.5,
+    adjustment_factor: 0.1,
+    metrics: {
+      total_requests: 1000,
+      sampled_requests: 100,
+      dropped_requests: 900,
+      error_rate: 0.05,
+      average_latency: 100.0,
+      resource_usage: 0.6
+    },
+    feedback_window: 60
+  }
+  
+  let feedback = {
+    error_rate_threshold: 0.1,
+    latency_threshold: 200.0,
+    resource_threshold: 0.8,
+    target_sample_rate: 0.15
+  }
+  
+  // Test initial sampling decision
+  let decision1 = make_probabilistic_decision(sampler, "trace-prob-123")
+  assert_eq(decision1.probability_used, 0.1)
+  assert_eq(decision1.trace_hash >= 0 && decision1.trace_hash < 10000, true)
+  
+  // Test probability adjustment with good metrics
+  let good_metrics = {
+    total_requests: 1000,
+    sampled_requests: 100,
+    dropped_requests: 900,
+    error_rate: 0.02,  // Below threshold
+    average_latency: 80.0,  // Below threshold
+    resource_usage: 0.3   // Below threshold
+  }
+  
+  let good_sampler = update_metrics(sampler, good_metrics)
+  let adjustment1 = adjust_sampling_probability(good_sampler, feedback)
+  assert_true(adjustment1.adjustment > 0)  // Should increase probability
+  assert_true(adjustment1.reasons.length() >= 2)  // Multiple reasons for increase
+  
+  // Test probability adjustment with bad metrics
+  let bad_metrics = {
+    total_requests: 1000,
+    sampled_requests: 100,
+    dropped_requests: 900,
+    error_rate: 0.15,  // Above threshold
+    average_latency: 250.0,  // Above threshold
+    resource_usage: 0.9   // Above threshold
+  }
+  
+  let bad_sampler = update_metrics(sampler, bad_metrics)
+  let adjustment2 = adjust_sampling_probability(bad_sampler, feedback)
+  assert_true(adjustment2.adjustment < 0)  // Should decrease probability
+  assert_eq(adjustment2.reasons.length(), 3)  // All reasons for decrease
+  
+  // Test probability boundaries
+  let min_sampler = { sampler | current_probability: 0.01 }
+  let min_adjustment = adjust_sampling_probability(min_sampler, feedback)
+  assert_eq(min_adjustment.updated_probability, 0.01)  // Should not go below minimum
+  
+  let max_sampler = { sampler | current_probability: 0.5 }
+  let max_adjustment = adjust_sampling_probability(max_sampler, feedback)
+  assert_eq(max_adjustment.updated_probability, 0.5)  // Should not go above maximum
+  
+  // Test sampling distribution
+  let test_sampling_distribution = fn(sampler: ProbabilisticSampler, trace_ids: Array[String]) {
+    let mut sampled_count = 0
+    let mut total_hash = 0
+    
+    for trace_id in trace_ids {
+      let decision = make_probabilistic_decision(sampler, trace_id)
+      if decision.should_sample {
+        sampled_count = sampled_count + 1
+      }
+      total_hash = total_hash + decision.trace_hash
+    }
+    
+    let actual_rate = (sampled_count as Float) / (trace_ids.length() as Float)
+    
+    {
+      sampled_count: sampled_count,
+      total_traces: trace_ids.length(),
+      actual_rate: actual_rate,
+      expected_rate: sampler.current_probability,
+      rate_error: (actual_rate - sampler.current_probability).abs()
+    }
+  }
+  
+  let test_trace_ids = []
+  let mut i = 0
+  while i < 1000 {
+    test_trace_ids = test_trace_ids.push("trace-dist-" + i.to_string())
+    i = i + 1
+  }
+  
+  let distribution_results = test_sampling_distribution(sampler, test_trace_ids)
+  assert_eq(distribution_results.total_traces, 1000)
+  assert_eq(distribution_results.expected_rate, 0.1)
+  assert_true(distribution_results.rate_error < 0.05)  // Within 5% error
+}
+
+// Test 4: Multi-Layer Adaptive Sampling
+test "multi-layer adaptive sampling" {
+  // Define sampling layer types
+  enum LayerType {
+    Global      // Global sampling across all services
+    Service     // Service-specific sampling
+    Operation   // Operation-specific sampling
+    User        // User-specific sampling
+  }
+  
+  // Define sampling layer
+  type SamplingLayer = {
+    layer_type: LayerType,
+    name: String,
+    sampling_rate: Float,
+    min_rate: Float,
+    max_rate: Float,
+    priority: Int  // Higher priority layers override lower ones
+  }
+  
+  // Define multi-layer sampler
+  type MultiLayerSampler = {
+    layers: Array[SamplingLayer],
+    fallback_rate: Float,
+    layer_cache: Map[String, Float]  // Cache for computed rates
+  }
+  
+  // Define multi-layer sampling result
+  type MultiLayerResult = {
+    should_sample: Bool,
+    applied_layers: Array[String],
+    final_rate: Float,
+    sampling_path: Array[String>
+  }
+  
+  // Get effective sampling rate for a trace
+  let get_effective_sampling_rate = fn(sampler: MultiLayerSampler, trace_id: String, attributes: Array[(String, String)>) {
+    let mut applied_layers = []
+    let mut sampling_path = []
+    let mut effective_rate = sampler.fallback_rate
+    
+    // Sort layers by priority (highest first)
+    let sorted_layers = sampler.layers.sort_by(fn(a, b) { 
+      if a.priority > b.priority { -1 } 
+      else if a.priority < b.priority { 1 } 
+      else { 0 } 
+    })
+    
+    for layer in sorted_layers {
+      let layer_applies = match layer.layer_type {
+        LayerType::Global => true
+        LayerType::Service => {
+          match attributes.find_fn(a) { a.0 == "service" } {
+            Some((_, service_name)) => service_name == layer.name
+            None => false
+          }
+        }
+        LayerType::Operation => {
+          match attributes.find_fn(a) { a.0 == "operation" } {
+            Some((_, operation_name)) => operation_name == layer.name
+            None => false
+          }
+        }
+        LayerType::User => {
+          match attributes.find_fn(a) { a.0 == "user_id" } {
+            Some((_, user_id)) => user_id == layer.name
+            None => false
+          }
+        }
+      }
+      
+      if layer_applies {
+        applied_layers = applied_layers.push(layer.name)
+        sampling_path = sampling_path.push(layer.layer_type.to_string() + ":" + layer.name)
+        effective_rate = layer.sampling_rate
+        
+        // High priority layers override, so break after first match
+        break
+      }
+    }
+    
+    {
+      effective_rate: effective_rate,
+      applied_layers: applied_layers,
+      sampling_path: sampling_path
+    }
+  }
+  
+  // Make multi-layer sampling decision
+  let make_multi_layer_decision = fn(sampler: MultiLayerSampler, trace_id: String, attributes: Array[(String, String)>) {
+    let rate_info = get_effective_sampling_rate(sampler, trace_id, attributes)
+    
+    // Generate deterministic hash for consistent sampling
+    let hash = trace_id.chars().fold(0, fn(acc, char) { 
+      (acc * 31 + char.to_int()) % 10000 
+    })
+    let normalized = (hash as Float) / 10000.0
+    
+    let should_sample = normalized <= rate_info.effective_rate
+    
+    {
+      should_sample: should_sample,
+      applied_layers: rate_info.applied_layers,
+      final_rate: rate_info.effective_rate,
+      sampling_path: rate_info.sampling_path
+    }
+  }
+  
+  // Test multi-layer sampling
+  let sampler = {
+    layers: [
+      {
+        layer_type: LayerType::User,
+        name: "premium-user-123",
+        sampling_rate: 1.0,
+        min_rate: 0.5,
+        max_rate: 1.0,
+        priority: 100  // Highest priority
+      },
+      {
+        layer_type: LayerType::Operation,
+        name: "payment",
+        sampling_rate: 0.8,
+        min_rate: 0.1,
+        max_rate: 1.0,
+        priority: 80
+      },
+      {
+        layer_type: LayerType::Service,
+        name: "payment-service",
+        sampling_rate: 0.5,
+        min_rate: 0.05,
+        max_rate: 0.9,
+        priority: 60
+      },
+      {
+        layer_type: LayerType::Global,
+        name: "default",
+        sampling_rate: 0.1,
+        min_rate: 0.01,
+        max_rate: 0.3,
+        priority: 40  // Lowest priority
+      }
+    ],
+    fallback_rate: 0.05,
+    layer_cache: Map::empty()
+  }
+  
+  // Test user layer (highest priority)
+  let premium_user_attributes = [
+    ("service", "payment-service"),
+    ("operation", "payment"),
+    ("user_id", "premium-user-123"),
+    ("environment", "production")
+  ]
+  
+  let user_decision = make_multi_layer_decision(sampler, "trace-user-456", premium_user_attributes)
+  assert_eq(user_decision.final_rate, 1.0)  // User layer rate
+  assert_eq(user_decision.applied_layers.length(), 1)
+  assert_eq(user_decision.applied_layers[0], "premium-user-123")
+  assert_eq(user_decision.sampling_path[0], "User:premium-user-123")
+  
+  // Test operation layer (second priority)
+  let payment_operation_attributes = [
+    ("service", "user-service"),
+    ("operation", "payment"),
+    ("environment", "production")
+  ]
+  
+  let operation_decision = make_multi_layer_decision(sampler, "trace-operation-789", payment_operation_attributes)
+  assert_eq(operation_decision.final_rate, 0.8)  // Operation layer rate
+  assert_eq(operation_decision.applied_layers.length(), 1)
+  assert_eq(operation_decision.applied_layers[0], "payment")
+  assert_eq(operation_decision.sampling_path[0], "Operation:payment")
+  
+  // Test service layer (third priority)
+  let payment_service_attributes = [
+    ("service", "payment-service"),
+    ("operation", "query"),
+    ("environment", "production")
+  ]
+  
+  let service_decision = make_multi_layer_decision(sampler, "trace-service-012", payment_service_attributes)
+  assert_eq(service_decision.final_rate, 0.5)  // Service layer rate
+  assert_eq(service_decision.applied_layers.length(), 1)
+  assert_eq(service_decision.applied_layers[0], "payment-service")
+  assert_eq(service_decision.sampling_path[0], "Service:payment-service")
+  
+  // Test global layer (lowest priority)
+  let other_service_attributes = [
+    ("service", "analytics-service"),
+    ("operation", "report"),
+    ("environment", "production")
+  ]
+  
+  let global_decision = make_multi_layer_decision(sampler, "trace-global-345", other_service_attributes)
+  assert_eq(global_decision.final_rate, 0.1)  // Global layer rate
+  assert_eq(global_decision.applied_layers.length(), 1)
+  assert_eq(global_decision.applied_layers[0], "default")
+  assert_eq(global_decision.sampling_path[0], "Global:default")
+  
+  // Test fallback (no matching layers)
+  let fallback_attributes = [
+    ("service", "unknown-service"),
+    ("operation", "unknown")
+  ]
+  
+  let fallback_decision = make_multi_layer_decision(sampler, "trace-fallback-678", fallback_attributes)
+  assert_eq(fallback_decision.final_rate, 0.05)  // Fallback rate
+  assert_eq(fallback_decision.applied_layers.length(), 0)
+  assert_eq(fallback_decision.sampling_path.length(), 0)
+  
+  // Test layer precedence and sampling consistency
+  let test_layer_precedence = fn(sampler: MultiLayerSampler, trace_count: Int) {
+    let mut user_samples = 0
+    let mut operation_samples = 0
+    let mut service_samples = 0
+    let mut global_samples = 0
+    let mut fallback_samples = 0
+    
+    let mut i = 0
+    while i < trace_count {
+      let trace_id = "trace-precedence-" + i.to_string()
+      
+      // Test different attribute combinations
+      let user_decision = make_multi_layer_decision(sampler, trace_id + "-user", premium_user_attributes)
+      let operation_decision = make_multi_layer_decision(sampler, trace_id + "-operation", payment_operation_attributes)
+      let service_decision = make_multi_layer_decision(sampler, trace_id + "-service", payment_service_attributes)
+      let global_decision = make_multi_layer_decision(sampler, trace_id + "-global", other_service_attributes)
+      let fallback_decision = make_multi_layer_decision(sampler, trace_id + "-fallback", fallback_attributes)
+      
+      if user_decision.should_sample { user_samples = user_samples + 1 }
+      if operation_decision.should_sample { operation_samples = operation_samples + 1 }
+      if service_decision.should_sample { service_samples = service_samples + 1 }
+      if global_decision.should_sample { global_samples = global_samples + 1 }
+      if fallback_decision.should_sample { fallback_samples = fallback_samples + 1 }
+      
+      i = i + 1
+    }
+    
+    {
+      user_rate: (user_samples as Float) / (trace_count as Float),
+      operation_rate: (operation_samples as Float) / (trace_count as Float),
+      service_rate: (service_samples as Float) / (trace_count as Float),
+      global_rate: (global_samples as Float) / (trace_count as Float),
+      fallback_rate: (fallback_samples as Float) / (trace_count as Float)
+    }
+  }
+  
+  let precedence_results = test_layer_precedence(sampler, 1000)
+  assert_eq(precedence_results.user_rate, 1.0)  // 100% sampling for premium users
+  assert_true((precedence_results.operation_rate - 0.8).abs() < 0.05)  // ~80% for payment operations
+  assert_true((precedence_results.service_rate - 0.5).abs() < 0.05)   // ~50% for payment service
+  assert_true((precedence_results.global_rate - 0.1).abs() < 0.05)    // ~10% for global
+  assert_true((precedence_results.fallback_rate - 0.05).abs() < 0.05)  // ~5% for fallback
 }
