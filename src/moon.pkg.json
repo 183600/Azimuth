@@ -42,6 +42,7 @@
         "../azimuth_enhanced_telemetry_system_tests.mbt", 
         "../azimuth_specialized_telemetry_focus_tests.mbt", 
         "../azimuth_advanced_telemetry_system_tests.mbt", 
+        "../azimuth_enhanced_telemetry_system_tests.mbt", 
         "../azimuth_telemetry_focused_tests.mbt", 
         "azimuth_core_data_types_tests.mbt", 
         "azimuth_attributes_operations_tests.mbt", 
