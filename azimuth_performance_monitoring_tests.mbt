@@ -1,618 +1,280 @@
-// Azimuth Performance Monitoring Tests
-// This file contains test cases for performance monitoring functionality
+// Azimuth Telemetry System - Performance Monitoring Tests
+// This file contains comprehensive test cases for performance monitoring and metrics
 
-// Test 1: Performance Metrics Collection
-test "performance metrics collection" {
-  // Define performance metric types
-  type PerformanceMetric = {
-    name: String,
-    value: Float,
-    unit: String,
-    timestamp: Int,
-    tags: Array[String]
-  }
+// Test 1: CPU Performance Monitoring
+test "cpu performance monitoring" {
+  let cpu_monitor = CpuMonitor::new()
   
-  // Create sample performance metrics
-  let cpu_metrics = [
-    { name: "cpu_usage", value: 45.2, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
-    { name: "cpu_usage", value: 52.7, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
-    { name: "cpu_usage", value: 48.3, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
-  ]
+  // Test CPU usage measurement
+  let cpu_usage = CpuMonitor::get_current_usage(cpu_monitor)
+  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
   
-  let memory_metrics = [
-    { name: "memory_usage", value: 67.8, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
-    { name: "memory_usage", value: 69.4, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
-    { name: "memory_usage", value: 71.2, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
-  ]
+  // Test CPU load average
+  let load_averages = CpuMonitor::get_load_averages(cpu_monitor)
+  assert_eq(load_averages.length(), 3) // 1min, 5min, 15min averages
   
-  let disk_metrics = [
-    { name: "disk_usage", value: 34.5, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
-    { name: "disk_usage", value: 34.6, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
-    { name: "disk_usage", value: 34.7, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
-  ]
+  // Test CPU core utilization
+  let core_count = CpuMonitor::get_core_count(cpu_monitor)
+  assert_true(core_count > 0)
   
-  // Collect all metrics
-  let all_metrics = cpu_metrics + memory_metrics + disk_metrics
-  assert_eq(all_metrics.length(), 9)
+  let core_utilizations = CpuMonitor::get_core_utilizations(cpu_monitor)
+  assert_eq(core_utilizations.length(), core_count)
   
-  // Filter metrics by name
-  let filter_by_name = fn(metrics: Array[PerformanceMetric], name: String) {
-    metrics.filter(fn(m) { m.name == name })
-  }
-  
-  let cpu_only = filter_by_name(all_metrics, "cpu_usage")
-  assert_eq(cpu_only.length(), 3)
-  
-  // Filter metrics by time range
-  let filter_by_time_range = fn(metrics: Array[PerformanceMetric], start: Int, end: Int) {
-    metrics.filter(fn(m) { m.timestamp >= start and m.timestamp <= end })
-  }
-  
-  let time_filtered = filter_by_time_range(all_metrics, 1640995200, 1640995260)
-  assert_eq(time_filtered.length(), 6)
-  
-  // Filter metrics by tags
-  let filter_by_tags = fn(metrics: Array[PerformanceMetric], tags: Array[String]) {
-    metrics.filter(fn(m) { 
-      tags.all_fn(tag) { m.tags.contains(tag) }
-    })
-  }
-  
-  let region_filtered = filter_by_tags(all_metrics, ["region:us-west"])
-  assert_eq(region_filtered.length(), 9)
-  
-  // Calculate statistics for a metric
-  let calculate_stats = fn(metrics: Array[PerformanceMetric]) {
-    if metrics.length() == 0 {
-      { min: 0.0, max: 0.0, avg: 0.0, count: 0 }
-    } else {
-      let values = metrics.map(fn(m) { m.value })
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
-      let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
-      
-      {
-        min: min,
-        max: max,
-        avg: sum / values.length().to_float(),
-        count: values.length()
-      }
-    }
-  }
-  
-  let cpu_stats = calculate_stats(cpu_only)
-  assert_eq(cpu_stats.count, 3)
-  assert_eq(cpu_stats.min, 45.2)
-  assert_eq(cpu_stats.max, 52.7)
-  assert_eq(cpu_stats.avg, (45.2 + 52.7 + 48.3) / 3.0)
-}
-
-// Test 2: Performance Threshold Monitoring
-test "performance threshold monitoring" {
-  type Threshold = {
-    metric_name: String,
-    warning_threshold: Float,
-    critical_threshold: Float,
-    operator: String  // "gt", "lt", "eq"
-  }
-  
-  type Alert = {
-    metric_name: String,
-    current_value: Float,
-    threshold_value: Float,
-    severity: String,  // "warning", "critical"
-    timestamp: Int
-  }
-  
-  // Define monitoring thresholds
-  let thresholds = [
-    { metric_name: "cpu_usage", warning_threshold: 70.0, critical_threshold: 90.0, operator: "gt" },
-    { metric_name: "memory_usage", warning_threshold: 80.0, critical_threshold: 95.0, operator: "gt" },
-    { metric_name: "disk_usage", warning_threshold: 80.0, critical_threshold: 90.0, operator: "gt" },
-    { metric_name: "response_time", warning_threshold: 1000.0, critical_threshold: 5000.0, operator: "gt" },
-    { metric_name: "availability", warning_threshold: 99.0, critical_threshold: 95.0, operator: "lt" }
-  ]
-  
-  // Create sample metrics
-  let current_metrics = [
-    { name: "cpu_usage", value: 75.5, unit: "percent", timestamp: 1640995200, tags: [] },
-    { name: "memory_usage", value: 85.2, unit: "percent", timestamp: 1640995200, tags: [] },
-    { name: "disk_usage", value: 45.3, unit: "percent", timestamp: 1640995200, tags: [] },
-    { name: "response_time", value: 2500.0, unit: "ms", timestamp: 1640995200, tags: [] },
-    { name: "availability", value: 97.5, unit: "percent", timestamp: 1640995200, tags: [] }
-  ]
-  
-  // Check thresholds and generate alerts
-  let check_thresholds = fn(metrics: Array[PerformanceMetric], thresholds: Array[Threshold]) {
-    let mut alerts = []
-    
-    for metric in metrics {
-      let threshold = thresholds.find(fn(t) { t.metric_name == metric.name })
-      
-      match threshold {
-        Some(th) => {
-          let warning_violated = match th.operator {
-            "gt" => metric.value > th.warning_threshold
-            "lt" => metric.value < th.warning_threshold
-            "eq" => metric.value == th.warning_threshold
-            _ => false
-          }
-          
-          let critical_violated = match th.operator {
-            "gt" => metric.value > th.critical_threshold
-            "lt" => metric.value < th.critical_threshold
-            "eq" => metric.value == th.critical_threshold
-            _ => false
-          }
-          
-          if critical_violated {
-            alerts = alerts.push({
-              metric_name: metric.name,
-              current_value: metric.value,
-              threshold_value: th.critical_threshold,
-              severity: "critical",
-              timestamp: metric.timestamp
-            })
-          } else if warning_violated {
-            alerts = alerts.push({
-              metric_name: metric.name,
-              current_value: metric.value,
-              threshold_value: th.warning_threshold,
-              severity: "warning",
-              timestamp: metric.timestamp
-            })
-          }
-        }
-        None => {} // No threshold defined for this metric
-      }
-    }
-    
-    alerts
-  }
-  
-  let alerts = check_thresholds(current_metrics, thresholds)
-  assert_eq(alerts.length(), 4)
-  
-  // Verify CPU usage alert (warning)
-  let cpu_alert = alerts.find(fn(a) { a.metric_name == "cpu_usage" })
-  match cpu_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "warning")
-      assert_eq(alert.current_value, 75.5)
-      assert_eq(alert.threshold_value, 70.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify memory usage alert (warning)
-  let memory_alert = alerts.find(fn(a) { a.metric_name == "memory_usage" })
-  match memory_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "warning")
-      assert_eq(alert.current_value, 85.2)
-      assert_eq(alert.threshold_value, 80.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify response time alert (warning)
-  let response_time_alert = alerts.find(fn(a) { a.metric_name == "response_time" })
-  match response_time_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "warning")
-      assert_eq(alert.current_value, 2500.0)
-      assert_eq(alert.threshold_value, 1000.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify availability alert (critical)
-  let availability_alert = alerts.find(fn(a) { a.metric_name == "availability" })
-  match availability_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "critical")
-      assert_eq(alert.current_value, 97.5)
-      assert_eq(alert.threshold_value, 95.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // No disk usage alert (below threshold)
-  let disk_alert = alerts.find(fn(a) { a.metric_name == "disk_usage" })
-  assert_eq(disk_alert, None)
-}
-
-// Test 3: Performance Trend Analysis
-test "performance trend analysis" {
-  type DataPoint = {
-    timestamp: Int,
-    value: Float
-  }
-  
-  type TrendAnalysis = {
-    direction: String,  // "increasing", "decreasing", "stable"
-    slope: Float,
-    confidence: Float,
-    prediction: Float
-  }
-  
-  // Create sample time series data
-  let cpu_data = [
-    { timestamp: 1640995200, value: 45.2 },
-    { timestamp: 1640995260, value: 47.8 },
-    { timestamp: 1640995320, value: 50.3 },
-    { timestamp: 1640995380, value: 52.1 },
-    { timestamp: 1640995440, value: 54.7 },
-    { timestamp: 1640995500, value: 57.2 },
-    { timestamp: 1640995560, value: 59.8 },
-    { timestamp: 1640995620, value: 62.4 }
-  ]
-  
-  // Simple linear regression for trend analysis
-  let calculate_trend = fn(data: Array[DataPoint]) {
-    if data.length() < 2 {
-      { direction: "stable", slope: 0.0, confidence: 0.0, prediction: 0.0 }
-    } else {
-      // Calculate slope using simple linear regression
-      let n = data.length().to_float()
-      let sum_x = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() }, 0.0)
-      let sum_y = data.reduce(fn(acc, dp) { acc + dp.value }, 0.0)
-      let sum_xy = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() * dp.value }, 0.0)
-      let sum_x2 = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() * dp.timestamp.to_float() }, 0.0)
-      
-      let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-      let intercept = (sum_y - slope * sum_x) / n
-      
-      // Calculate correlation coefficient for confidence
-      let mean_x = sum_x / n
-      let mean_y = sum_y / n
-      let numerator = data.reduce(fn(acc, dp) { 
-        acc + (dp.timestamp.to_float() - mean_x) * (dp.value - mean_y) 
-      }, 0.0)
-      
-      let sum_xx = data.reduce(fn(acc, dp) { 
-        acc + (dp.timestamp.to_float() - mean_x) * (dp.timestamp.to_float() - mean_x) 
-      }, 0.0)
-      
-      let sum_yy = data.reduce(fn(acc, dp) { 
-        acc + (dp.value - mean_y) * (dp.value - mean_y) 
-      }, 0.0)
-      
-      let correlation = if sum_xx == 0.0 or sum_yy == 0.0 {
-        0.0
-      } else {
-        numerator / (sum_xx * sum_yy).sqrt()
-      }
-      
-      let confidence = correlation.abs()
-      
-      // Determine direction
-      let direction = if slope.abs() < 0.001 {
-        "stable"
-      } else if slope > 0 {
-        "increasing"
-      } else {
-        "decreasing"
-      }
-      
-      // Predict next value
-      let last_timestamp = data[data.length() - 1].timestamp
-      let next_timestamp = last_timestamp + 60 // Next time point
-      let prediction = slope * next_timestamp.to_float() + intercept
-      
-      {
-        direction: direction,
-        slope: slope,
-        confidence: confidence,
-        prediction: prediction
-      }
-    }
-  }
-  
-  let cpu_trend = calculate_trend(cpu_data)
-  assert_eq(cpu_trend.direction, "increasing")
-  assert_true(cpu_trend.slope > 0)
-  assert_true(cpu_trend.confidence > 0.8) // High confidence due to clear trend
-  assert_true(cpu_trend.prediction > cpu_data[cpu_data.length() - 1].value) // Prediction higher than last value
-  
-  // Test with decreasing data
-  let memory_data = [
-    { timestamp: 1640995200, value: 85.2 },
-    { timestamp: 1640995260, value: 83.7 },
-    { timestamp: 1640995320, value: 81.4 },
-    { timestamp: 1640995380, value: 79.8 },
-    { timestamp: 1640995440, value: 78.1 },
-    { timestamp: 1640995500, value: 76.5 },
-    { timestamp: 1640995560, value: 74.9 },
-    { timestamp: 1640995620, value: 73.2 }
-  ]
-  
-  let memory_trend = calculate_trend(memory_data)
-  assert_eq(memory_trend.direction, "decreasing")
-  assert_true(memory_trend.slope < 0)
-  assert_true(memory_trend.confidence > 0.8)
-  assert_true(memory_trend.prediction < memory_data[memory_data.length() - 1].value)
-  
-  // Test with stable data
-  let stable_data = [
-    { timestamp: 1640995200, value: 50.1 },
-    { timestamp: 1640995260, value: 50.3 },
-    { timestamp: 1640995320, value: 49.9 },
-    { timestamp: 1640995380, value: 50.2 },
-    { timestamp: 1640995440, value: 50.0 },
-    { timestamp: 1640995500, value: 49.8 },
-    { timestamp: 1640995560, value: 50.1 },
-    { timestamp: 1640995620, value: 49.9 }
-  ]
-  
-  let stable_trend = calculate_trend(stable_data)
-  assert_eq(stable_trend.direction, "stable")
-  assert_true(stable_trend.slope.abs() < 0.1)
-}
-
-// Test 4: Performance Baseline Comparison
-test "performance baseline comparison" {
-  type BaselineMetric = {
-    name: String,
-    baseline_value: Float,
-    tolerance_percent: Float,
-    unit: String
-  }
-  
-  type ComparisonResult = {
-    name: String,
-    current_value: Float,
-    baseline_value: Float,
-    deviation_percent: Float,
-    status: String  // "within_baseline", "warning", "critical"
-  }
-  
-  // Define performance baselines
-  let baselines = [
-    { name: "cpu_usage", baseline_value: 50.0, tolerance_percent: 20.0, unit: "percent" },
-    { name: "memory_usage", baseline_value: 70.0, tolerance_percent: 15.0, unit: "percent" },
-    { name: "response_time", baseline_value: 500.0, tolerance_percent: 50.0, unit: "ms" },
-    { name: "throughput", baseline_value: 1000.0, tolerance_percent: 25.0, unit: "req/s" }
-  ]
-  
-  // Current performance metrics
-  let current_metrics = [
-    { name: "cpu_usage", value: 55.0, unit: "percent", timestamp: 1640995200, tags: [] },
-    { name: "memory_usage", value: 85.0, unit: "percent", timestamp: 1640995200, tags: [] },
-    { name: "response_time", value: 800.0, unit: "ms", timestamp: 1640995200, tags: [] },
-    { name: "throughput", value: 900.0, unit: "req/s", timestamp: 1640995200, tags: [] }
-  ]
-  
-  // Compare current metrics with baselines
-  let compare_with_baseline = fn(current: Array[PerformanceMetric], baselines: Array[BaselineMetric]) {
-    let mut results = []
-    
-    for metric in current {
-      let baseline = baselines.find(fn(b) { b.name == metric.name })
-      
-      match baseline {
-        Some(bl) => {
-          let deviation = if bl.baseline_value == 0.0 {
-            0.0
-          } else {
-            ((metric.value - bl.baseline_value) / bl.baseline_value) * 100.0
-          }
-          
-          let abs_deviation = deviation.abs()
-          let status = if abs_deviation <= bl.tolerance_percent {
-            "within_baseline"
-          } else if abs_deviation <= bl.tolerance_percent * 2.0 {
-            "warning"
-          } else {
-            "critical"
-          }
-          
-          results = results.push({
-            name: metric.name,
-            current_value: metric.value,
-            baseline_value: bl.baseline_value,
-            deviation_percent: deviation,
-            status: status
-          })
-        }
-        None => {} // No baseline for this metric
-      }
-    }
-    
-    results
-  }
-  
-  let comparisons = compare_with_baseline(current_metrics, baselines)
-  assert_eq(comparisons.length(), 4)
-  
-  // Check CPU usage comparison (within tolerance)
-  let cpu_comparison = comparisons.find(fn(c) { c.name == "cpu_usage" })
-  match cpu_comparison {
-    Some(comp) => {
-      assert_eq(comp.current_value, 55.0)
-      assert_eq(comp.baseline_value, 50.0)
-      assert_eq(comp.deviation_percent, 10.0)
-      assert_eq(comp.status, "within_baseline")
-    }
-    None => assert_true(false)
-  }
-  
-  // Check memory usage comparison (warning)
-  let memory_comparison = comparisons.find(fn(c) { c.name == "memory_usage" })
-  match memory_comparison {
-    Some(comp) => {
-      assert_eq(comp.current_value, 85.0)
-      assert_eq(comp.baseline_value, 70.0)
-      assert_eq(comp.deviation_percent, 21.43) // 15/70 * 100 ≈ 21.43%
-      assert_eq(comp.status, "warning")
-    }
-    None => assert_true(false)
-  }
-  
-  // Check response time comparison (warning)
-  let response_time_comparison = comparisons.find(fn(c) { c.name == "response_time" })
-  match response_time_comparison {
-    Some(comp) => {
-      assert_eq(comp.current_value, 800.0)
-      assert_eq(comp.baseline_value, 500.0)
-      assert_eq(comp.deviation_percent, 60.0)
-      assert_eq(comp.status, "warning")
-    }
-    None => assert_true(false)
-  }
-  
-  // Check throughput comparison (within tolerance)
-  let throughput_comparison = comparisons.find(fn(c) { c.name == "throughput" })
-  match throughput_comparison {
-    Some(comp) => {
-      assert_eq(comp.current_value, 900.0)
-      assert_eq(comp.baseline_value, 1000.0)
-      assert_eq(comp.deviation_percent, -10.0)
-      assert_eq(comp.status, "within_baseline")
-    }
-    None => assert_true(false)
+  // Test CPU frequency monitoring
+  let frequencies = CpuMonitor::get_cpu_frequencies(cpu_monitor)
+  assert_true(frequencies.length() > 0)
+  for freq in frequencies {
+    assert_true(freq > 0.0)
   }
 }
 
-// Test 5: Performance Anomaly Detection
-test "performance anomaly detection" {
-  type AnomalyDetector = {
-    threshold_multiplier: Float,
-    window_size: Int
+// Test 2: Memory Performance Monitoring
+test "memory performance monitoring" {
+  let memory_monitor = MemoryMonitor::new()
+  
+  // Test total memory
+  let total_memory = MemoryMonitor::get_total_memory(memory_monitor)
+  assert_true(total_memory > 0L)
+  
+  // Test available memory
+  let available_memory = MemoryMonitor::get_available_memory(memory_monitor)
+  assert_true(available_memory >= 0L && available_memory <= total_memory)
+  
+  // Test used memory calculation
+  let used_memory = MemoryMonitor::get_used_memory(memory_monitor)
+  assert_true(used_memory >= 0L && used_memory <= total_memory)
+  
+  // Test memory usage percentage
+  let memory_usage_percent = MemoryMonitor::get_usage_percentage(memory_monitor)
+  assert_true(memory_usage_percent >= 0.0 && memory_usage_percent <= 100.0)
+  
+  // Test memory allocation tracking
+  let allocation_tracker = MemoryAllocationTracker::new()
+  let block1 = AllocationTracker::allocate(allocation_tracker, 1024)
+  let block2 = AllocationTracker::allocate(allocation_tracker, 2048)
+  
+  assert_eq(AllocationTracker::get_allocated_bytes(allocation_tracker), 3072)
+  assert_eq(AllocationTracker::get_allocation_count(allocation_tracker), 2)
+  
+  AllocationTracker::deallocate(allocation_tracker, block1)
+  assert_eq(AllocationTracker::get_allocated_bytes(allocation_tracker), 2048)
+  assert_eq(AllocationTracker::get_allocation_count(allocation_tracker), 1)
+}
+
+// Test 3: Disk I/O Performance Monitoring
+test "disk io performance monitoring" {
+  let disk_monitor = DiskMonitor::new()
+  
+  // Test disk space information
+  let disk_info = DiskMonitor::get_disk_info(disk_monitor, "/")
+  assert_true(DiskInfo::total_space(disk_info) > 0L)
+  assert_true(DiskInfo::free_space(disk_info) >= 0L)
+  assert_true(DiskInfo::used_space(disk_info) >= 0L)
+  
+  // Test disk usage percentage
+  let usage_percent = DiskInfo::usage_percentage(disk_info)
+  assert_true(usage_percent >= 0.0 && usage_percent <= 100.0)
+  
+  // Test disk I/O statistics
+  let io_stats = DiskMonitor::get_io_statistics(disk_monitor)
+  assert_true(IOStats::read_bytes(io_stats) >= 0L)
+  assert_true(IOStats::write_bytes(io_stats) >= 0L)
+  assert_true(IOStats::read_operations(io_stats) >= 0L)
+  assert_true(IOStats::write_operations(io_stats) >= 0L)
+  
+  // Test disk throughput calculation
+  let read_throughput = DiskMonitor::calculate_read_throughput(disk_monitor, 1000L)
+  let write_throughput = DiskMonitor::calculate_write_throughput(disk_monitor, 1000L)
+  assert_true(read_throughput >= 0.0)
+  assert_true(write_throughput >= 0.0)
+}
+
+// Test 4: Network Performance Monitoring
+test "network performance monitoring" {
+  let network_monitor = NetworkMonitor::new()
+  
+  // Test network interface enumeration
+  let interfaces = NetworkMonitor::get_interfaces(network_monitor)
+  assert_true(interfaces.length() > 0)
+  
+  // Test network interface statistics
+  for interface in interfaces {
+    let stats = NetworkMonitor::get_interface_stats(network_monitor, interface)
+    assert_true(InterfaceStats::bytes_received(stats) >= 0L)
+    assert_true(InterfaceStats::bytes_sent(stats) >= 0L)
+    assert_true(InterfaceStats::packets_received(stats) >= 0L)
+    assert_true(InterfaceStats::packets_sent(stats) >= 0L)
   }
   
-  type AnomalyResult = {
-    timestamp: Int,
-    value: Float,
-    expected_range: (Float, Float),
-    is_anomaly: Bool,
-    anomaly_score: Float
-  }
+  // Test network connection monitoring
+  let connections = NetworkMonitor::get_active_connections(network_monitor)
+  assert_true(connections.length() >= 0)
   
-  // Create sample metrics with some anomalies
-  let metrics_data = [
-    { timestamp: 1640995200, value: 45.2 },
-    { timestamp: 1640995260, value: 47.8 },
-    { timestamp: 1640995320, value: 46.5 },
-    { timestamp: 1640995380, value: 48.1 },
-    { timestamp: 1640995440, value: 47.3 },
-    { timestamp: 1640995500, value: 78.9 }, // Anomaly
-    { timestamp: 1640995560, value: 49.2 },
-    { timestamp: 1640995620, value: 46.8 },
-    { timestamp: 1640995680, value: 47.5 },
-    { timestamp: 1640995740, value: 48.3 },
-    { timestamp: 1640995800, value: 12.1 }, // Another anomaly
-    { timestamp: 1640995860, value: 47.9 }
+  // Test network latency measurement
+  let latency = NetworkMonitor::measure_latency(network_monitor, "8.8.8.8", 53)
+  assert_true(latency >= 0.0)
+  
+  // Test bandwidth measurement
+  let bandwidth = NetworkMonitor::measure_bandwidth(network_monitor, 1000L)
+  assert_true(bandwidth >= 0.0)
+}
+
+// Test 5: Application Performance Monitoring
+test "application performance monitoring" {
+  let app_monitor = ApplicationMonitor::new()
+  
+  // Test request latency tracking
+  let latency_tracker = LatencyTracker::new()
+  LatencyTracker::record_request(latency_tracker, "/api/users", 150.5)
+  LatencyTracker::record_request(latency_tracker, "/api/users", 200.3)
+  LatencyTracker::record_request(latency_tracker, "/api/posts", 75.2)
+  
+  let user_api_stats = LatencyTracker::get_endpoint_stats(latency_tracker, "/api/users")
+  assert_eq(EndpointStats::request_count(user_api_stats), 2)
+  assert_true(EndpointStats::average_latency(user_api_stats) > 0.0)
+  
+  // Test throughput monitoring
+  let throughput_monitor = ThroughputMonitor::new()
+  ThroughputMonitor::record_requests(throughput_monitor, 100)
+  let current_throughput = ThroughputMonitor::get_current_throughput(throughput_monitor)
+  assert_true(current_throughput >= 0.0)
+  
+  // Test error rate monitoring
+  let error_monitor = ErrorRateMonitor::new()
+  ErrorRateMonitor::record_request(error_monitor, true) // Success
+  ErrorRateMonitor::record_request(error_monitor, false) // Error
+  ErrorRateMonitor::record_request(error_monitor, true)  // Success
+  
+  let error_rate = ErrorRateMonitor::get_error_rate(error_monitor)
+  assert_eq(error_rate, 0.3333333333333333) // 1 error out of 3 requests
+}
+
+// Test 6: Performance Thresholds and Alerts
+test "performance thresholds and alerts" {
+  let alert_manager = PerformanceAlertManager::new()
+  
+  // Test CPU threshold alert
+  let cpu_threshold = PerformanceThreshold::new(
+    "cpu_usage",
+    ThresholdType::Percentage,
+    80.0,
+    ComparisonOperator::GreaterThan
+  )
+  
+  PerformanceAlertManager::add_threshold(alert_manager, cpu_threshold)
+  
+  // Test memory threshold alert
+  let memory_threshold = PerformanceThreshold::new(
+    "memory_usage",
+    ThresholdType::Percentage,
+    90.0,
+    ComparisonOperator::GreaterThan
+  )
+  
+  PerformanceAlertManager::add_threshold(alert_manager, memory_threshold)
+  
+  // Test threshold evaluation
+  let metrics = [
+    ("cpu_usage", 85.5),
+    ("memory_usage", 75.2),
+    ("disk_usage", 45.0)
   ]
   
-  // Statistical anomaly detection using moving window
-  let detect_anomalies = fn(data: Array[DataPoint], detector: AnomalyDetector) {
-    let mut results = []
-    
-    for i in 0..data.length() {
-      let point = data[i]
-      
-      // Calculate statistics from window (excluding current point if possible)
-      let window_start = if i >= detector.window_size { i - detector.window_size } else { 0 }
-      let window_end = if i > 0 { i - 1 } else { 0 }
-      
-      let window_data = if window_start <= window_end {
-        let mut window = []
-        for j in window_start..=window_end {
-          window = window.push(data[j])
-        }
-        window
-      } else {
-        [] // No window data available
-      }
-      
-      if window_data.length() > 0 {
-        let values = window_data.map(fn(dp) { dp.value })
-        let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_float()
-        
-        let variance = values.reduce(fn(acc, v) { 
-          acc + (v - mean) * (v - mean) 
-        }, 0.0) / values.length().to_float()
-        
-        let std_dev = variance.sqrt()
-        let threshold = detector.threshold_multiplier * std_dev
-        
-        let expected_min = mean - threshold
-        let expected_max = mean + threshold
-        
-        let is_anomaly = point.value < expected_min or point.value > expected_max
-        
-        // Calculate anomaly score (how many standard deviations from mean)
-        let anomaly_score = if std_dev == 0.0 {
-          0.0
-        } else {
-          (point.value - mean).abs() / std_dev
-        }
-        
-        results = results.push({
-          timestamp: point.timestamp,
-          value: point.value,
-          expected_range: (expected_min, expected_max),
-          is_anomaly: is_anomaly,
-          anomaly_score: anomaly_score
-        })
-      } else {
-        // Not enough data for detection
-        results = results.push({
-          timestamp: point.timestamp,
-          value: point.value,
-          expected_range: (0.0, 0.0),
-          is_anomaly: false,
-          anomaly_score: 0.0
-        })
-      }
-    }
-    
-    results
+  let alerts = PerformanceAlertManager::evaluate_thresholds(alert_manager, metrics)
+  assert_eq(alerts.length(), 1) // Only CPU threshold exceeded
+  
+  // Test alert cooldown period
+  let cooled_alerts = PerformanceAlertManager::apply_cooldown(alert_manager, alerts, 300000L) // 5 minutes
+  assert_true(cooled_alerts.length() <= alerts.length())
+}
+
+// Test 7: Performance Profiling
+test "performance profiling" {
+  let profiler = PerformanceProfiler::new()
+  
+  // Test function execution profiling
+  Profiler::start_profiling(profiler, "test_function")
+  
+  // Simulate some work
+  let mut sum = 0
+  for i = 0; i < 1000; i = i + 1 {
+    sum = sum + i
   }
   
-  let detector = { threshold_multiplier: 2.0, window_size: 5 }
-  let anomaly_results = detect_anomalies(metrics_data, detector)
+  Profiler::end_profiling(profiler, "test_function")
   
-  // Find anomalies
-  let anomalies = anomaly_results.filter(fn(r) { r.is_anomaly })
-  assert_true(anomalies.length() >= 2) // Should detect at least the two obvious anomalies
+  let profile_data = Profiler::get_profile_data(profiler, "test_function")
+  assert_true(ProfileData::execution_time(profile_data) > 0.0)
+  assert_true(ProfileData::call_count(profile_data) >= 1)
   
-  // Check first anomaly (value 78.9)
-  let first_anomaly = anomalies.find(fn(a) { a.value == 78.9 })
-  match first_anomaly {
-    Some(anomaly) => {
-      assert_true(anomaly.is_anomaly)
-      assert_true(anomaly.anomaly_score > 2.0)
-      assert_true(anomaly.value > anomaly.expected_range.1)
-    }
-    None => assert_true(false)
+  // Test memory profiling
+  Profiler::start_memory_profiling(profiler)
+  
+  // Simulate memory allocation
+  let large_array = [0; 10000]
+  let processed_array = process_large_array(large_array)
+  
+  Profiler::end_memory_profiling(profiler)
+  
+  let memory_profile = Profiler::get_memory_profile(profiler)
+  assert_true(MemoryProfile::peak_memory_usage(memory_profile) > 0)
+  assert_true(MemoryProfile::allocation_count(memory_profile) > 0)
+  
+  // Test flame graph generation
+  let flame_graph_data = Profiler::generate_flame_graph_data(profiler)
+  assert_true(flame_graph_data.length() > 0)
+}
+
+// Test 8: Performance Baseline and Anomaly Detection
+test "performance baseline and anomaly detection" {
+  let baseline_manager = BaselineManager::new()
+  
+  // Test baseline establishment
+  let metrics_samples = [
+    [("cpu_usage", 25.5), ("memory_usage", 45.2), ("response_time", 120.3)],
+    [("cpu_usage", 26.1), ("memory_usage", 44.8), ("response_time", 125.7)],
+    [("cpu_usage", 24.9), ("memory_usage", 45.5), ("response_time", 118.9)],
+    [("cpu_usage", 25.8), ("memory_usage", 45.1), ("response_time", 122.4)],
+    [("cpu_usage", 25.3), ("memory_usage", 44.9), ("response_time", 121.1)]
+  ]
+  
+  for sample in metrics_samples {
+    BaselineManager::add_sample(baseline_manager, sample)
   }
   
-  // Check second anomaly (value 12.1)
-  let second_anomaly = anomalies.find(fn(a) { a.value == 12.1 })
-  match second_anomaly {
-    Some(anomaly) => {
-      assert_true(anomaly.is_anomaly)
-      assert_true(anomaly.anomaly_score > 2.0)
-      assert_true(anomaly.value < anomaly.expected_range.0)
-    }
-    None => assert_true(false)
-  }
+  let baseline = BaselineManager::calculate_baseline(baseline_manager)
+  assert_true(Baseline::contains_metric(baseline, "cpu_usage"))
+  assert_true(Baseline::contains_metric(baseline, "memory_usage"))
+  assert_true(Baseline::contains_metric(baseline, "response_time"))
   
-  // Verify normal values are not flagged as anomalies
-  let normal_values = anomaly_results.filter(fn(r) { not(r.is_anomaly) })
-  assert_true(normal_values.length() > 0)
+  // Test anomaly detection
+  let anomaly_detector = AnomalyDetector::new(2.0) // 2 standard deviations
   
-  // Check a normal value
-  let normal_value = normal_values.find(fn(r) { r.value == 47.8 })
-  match normal_value {
-    Some(normal) => {
-      assert_false(normal.is_anomaly)
-      assert_true(normal.anomaly_score < 2.0)
-      assert_true(normal.value >= normal.expected_range.0)
-      assert_true(normal.value <= normal.expected_range.1)
-    }
-    None => assert_true(false)
+  // Normal metrics (should not be anomalous)
+  let normal_metrics = [("cpu_usage", 26.2), ("memory_usage", 45.3), ("response_time", 123.5)]
+  let normal_anomalies = AnomalyDetector::detect_anomalies(anomaly_detector, normal_metrics, baseline)
+  assert_eq(normal_anomalies.length(), 0)
+  
+  // Anomalous metrics (should be detected)
+  let anomalous_metrics = [("cpu_usage", 85.7), ("memory_usage", 45.1), ("response_time", 124.2)]
+  let detected_anomalies = AnomalyDetector::detect_anomalies(anomaly_detector, anomalous_metrics, baseline)
+  assert_true(detected_anomalies.length() > 0)
+  
+  // Test trend analysis
+  let trend_analyzer = TrendAnalyzer::new()
+  let trend_data = [
+    25.5, 26.1, 24.9, 25.8, 25.3, 26.5, 27.2, 28.1, 29.0, 30.5
+  ]
+  
+  let trend = TrendAnalyzer::analyze_trend(trend_analyzer, trend_data)
+  assert_eq(trend, TrendDirection::Increasing)
+}
+
+// Helper function for performance profiling test
+fn process_large_array(array : Array[Int]) -> Array[Int] {
+  let mut result = []
+  for i in 0..array.length() {
+    result = result @ [array[i] * 2]
   }
+  result
 }
