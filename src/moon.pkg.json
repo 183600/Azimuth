@@ -223,5 +223,6 @@
         "azimuth_new_feature_tests.mbt",
         "../azimuth_enhanced_moonbit_tests.mbt",
         "../azimuth_high_quality_comprehensive_test_suite.mbt",
-        "../azimuth_essential_feature_tests.mbt"]  }
+        "../azimuth_essential_feature_tests.mbt",
+        "../azimuth_high_quality_comprehensive_test_cases.mbt"]  }
 }
