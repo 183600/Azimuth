@@ -1,651 +1,1401 @@
-// Azimuth Telemetry System - Comprehensive Security and Encryption Tests
-// This file contains comprehensive test cases for security and encryption mechanisms
+// Azimuth Security and Encryption Comprehensive Test Suite
+// This file contains comprehensive tests for security and encryption functionality in the Azimuth telemetry system
 
-// Test 1: Basic Cryptographic Operations
-test "basic cryptographic operations for telemetry data" {
-  // Simple XOR encryption (for demonstration only)
-  let xor_encrypt = fn(data: Array[Byte], key: Array[Byte>) -> Array[Byte] {
-    let mut result = []
+// Test 1: Data Encryption and Decryption
+test "data encryption and decryption" {
+  // Simple Caesar cipher for demonstration
+  let caesar_encrypt = fn(text: String, shift: Int) {
+    let mut result = ""
     
-    for i in 0..=data.length()-1 {
-      let key_byte = key[i % key.length()]
-      result = result + [Byte::from_int(data[i].to_int() ^ key_byte.to_int())]
+    for i in 0..text.length() {
+      let char = text[i]
+      if char >= 'a' and char <= 'z' {
+        let shifted = ((char.to_int() - 'a'.to_int() + shift) % 26) + 'a'.to_int()
+        result = result + shifted.to_char()
+      } else if char >= 'A' and char <= 'Z' {
+        let shifted = ((char.to_int() - 'A'.to_int() + shift) % 26) + 'A'.to_int()
+        result = result + shifted.to_char()
+      } else {
+        result = result + char
+      }
     }
     
     result
   }
   
-  let xor_decrypt = fn(encrypted_data: Array[Byte], key: Array[Byte>) -> Array[Byte] {
-    // XOR decryption is the same as encryption
-    xor_encrypt(encrypted_data, key)
+  let caesar_decrypt = fn(text: String, shift: Int) {
+    caesar_encrypt(text, 26 - (shift % 26))
   }
   
-  // Test XOR encryption/decryption
-  let key = [Byte::from_int(0x42), Byte::from_int(0x13), Byte::from_int(0x37)]
-  let data = [Byte::from_int(0x48), Byte::from_int(0x65), Byte::from_int(0x6C), Byte::from_int(0x6C), Byte::from_int(0x6F)]
+  // Test encryption and decryption
+  let original_text = "Azimuth telemetry data trace-12345"
+  let encrypted = caesar_encrypt(original_text, 5)
+  let decrypted = caesar_decrypt(encrypted, 5)
   
-  let encrypted = xor_encrypt(data, key)
-  let decrypted = xor_decrypt(encrypted, key)
+  assert_eq(decrypted, original_text)
+  assert_not_eq(encrypted, original_text)
   
-  assert_eq(data.length(), encrypted.length())
-  assert_eq(data.length(), decrypted.length())
+  // Test with different shifts
+  let encrypted_shift_10 = caesar_encrypt(original_text, 10)
+  let decrypted_shift_10 = caesar_decrypt(encrypted_shift_10, 10)
   
-  // Verify decryption restores original data
-  for i in 0..=data.length()-1 {
-    assert_eq(data[i], decrypted[i])
-  }
+  assert_eq(decrypted_shift_10, original_text)
+  assert_not_eq(encrypted_shift_10, encrypted)
   
-  // Verify encrypted data is different from original
-  let mut is_different = false
-  for i in 0..=data.length()-1 {
-    if data[i] != encrypted[i] {
-      is_different = true
-      break
-    }
-  }
-  assert_true(is_different)
+  // Test with numbers and special characters (should remain unchanged)
+  let text_with_special = "Trace-ID: trace-12345, Status: OK"
+  let encrypted_special = caesar_encrypt(text_with_special, 3)
+  let decrypted_special = caesar_decrypt(encrypted_special, 3)
+  
+  assert_eq(decrypted_special, text_with_special)
+  assert_true(encrypted_special.contains("12345"))
+  assert_true(encrypted_special.contains(":"))
+  assert_true(encrypted_special.contains(","))
 }
 
-// Test 2: Hash Functions
-test "hash functions for data integrity" {
-  // Simple hash function (for demonstration only)
-  let simple_hash = fn(data: String) -> Int {
+// Test 2: Hash Function for Data Integrity
+test "hash function for data integrity" {
+  // Simple hash function for demonstration
+  let simple_hash = fn(data: String) {
     let mut hash = 5381
     
-    for char in data.to_char_array() {
-      hash = ((hash << 5) + hash) + char.to_int()
+    for i in 0..data.length() {
+      hash = ((hash << 5) + hash) + data[i].to_int()
     }
     
-    if hash < 0 { -hash } else { hash }
+    // Ensure positive result
+    if hash < 0 {
+      hash = -hash
+    }
+    
+    hash
   }
-  
-  // Test hash function
-  let data1 = "telemetry data"
-  let data2 = "telemetry data"
-  let data3 = "different telemetry data"
-  
-  let hash1 = simple_hash(data1)
-  let hash2 = simple_hash(data2)
-  let hash3 = simple_hash(data3)
-  
-  // Same data should produce same hash
-  assert_eq(hash1, hash2)
-  
-  // Different data should produce different hash
-  assert_ne(hash1, hash3)
   
   // Test hash consistency
-  let hash1_again = simple_hash(data1)
-  assert_eq(hash1, hash1_again)
+  let test_data = "azimuth_telemetry_trace_data"
+  let hash1 = simple_hash(test_data)
+  let hash2 = simple_hash(test_data)
+  
+  assert_eq(hash1, hash2)
+  
+  // Test hash uniqueness
+  let different_data = "azimuth_telemetry_span_data"
+  let hash3 = simple_hash(different_data)
+  
+  assert_not_eq(hash1, hash3)
+  
+  // Test hash with different lengths
+  let short_data = "abc"
+  let long_data = "abcdefghijklmnopqrstuvwxyz"
+  
+  let hash_short = simple_hash(short_data)
+  let hash_long = simple_hash(long_data)
+  
+  assert_not_eq(hash_short, hash_long)
+  
+  // Test hash for telemetry data integrity verification
+  let telemetry_data = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    operation: "database_query",
+    duration: 250,
+    status: "ok"
+  }
+  
+  let data_string = telemetry_data.trace_id + "|" + 
+                   telemetry_data.span_id + "|" + 
+                   telemetry_data.operation + "|" + 
+                   telemetry_data.duration.to_string() + "|" + 
+                   telemetry_data.status
+  
+  let original_hash = simple_hash(data_string)
+  
+  // Simulate data transmission
+  let received_data = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    operation: "database_query",
+    duration: 250,
+    status: "ok"
+  }
+  
+  let received_string = received_data.trace_id + "|" + 
+                       received_data.span_id + "|" + 
+                       received_data.operation + "|" + 
+                       received_data.duration.to_string() + "|" + 
+                       received_data.status
+  
+  let received_hash = simple_hash(received_string)
+  
+  assert_eq(original_hash, received_hash)
+  
+  // Test data tampering detection
+  let tampered_data = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    operation: "database_query",
+    duration: 300,  // Tampered duration
+    status: "ok"
+  }
+  
+  let tampered_string = tampered_data.trace_id + "|" + 
+                       tampered_data.span_id + "|" + 
+                       tampered_data.operation + "|" + 
+                       tampered_data.duration.to_string() + "|" + 
+                       tampered_data.status
+  
+  let tampered_hash = simple_hash(tampered_string)
+  
+  assert_not_eq(original_hash, tampered_hash)
 }
 
-// Test 3: Message Authentication Codes
-test "message authentication codes for data verification" {
-  type HMAC = {
-    key: String,
-    hash_function: (String) -> Int
+// Test 3: Token-based Authentication
+test "token-based authentication" {
+  // Simple token generation and validation
+  let generate_token = fn(user_id: String, timestamp: Int, secret: String) {
+    let base_data = user_id + ":" + timestamp.to_string() + ":" + secret
+    let hash = simple_hash(base_data)
+    user_id + ":" + timestamp.to_string() + ":" + hash.to_string()
   }
   
-  let hmac_new = fn(key: String, hash_function: (String) -> Int) -> HMAC {
-    { key, hash_function }
+  let validate_token = fn(token: String, secret: String, max_age: Int) {
+    let parts = token.split(":")
+    if parts.length() != 3 {
+      return false
+    }
+    
+    let user_id = parts[0]
+    let timestamp_str = parts[1]
+    let hash_str = parts[2]
+    
+    // Parse timestamp
+    let mut timestamp = 0
+    for i in 0..timestamp_str.length() {
+      let char = timestamp_str[i]
+      if char >= '0' and char <= '9' {
+        timestamp = timestamp * 10 + (char.to_int() - '0'.to_int())
+      } else {
+        return false
+      }
+    }
+    
+    // Check token age
+    let current_time = 1640999999  // Simulated current time
+    if current_time - timestamp > max_age {
+      return false
+    }
+    
+    // Re-generate and compare hash
+    let expected_token = generate_token(user_id, timestamp, secret)
+    let expected_parts = expected_token.split(":")
+    let expected_hash = expected_parts[2]
+    
+    hash_str == expected_hash
   }
   
-  let simple_hash = fn(data: String) -> Int {
+  // Helper function from previous test
+  let simple_hash = fn(data: String) {
     let mut hash = 5381
     
-    for char in data.to_char_array() {
-      hash = ((hash << 5) + hash) + char.to_int()
+    for i in 0..data.length() {
+      hash = ((hash << 5) + hash) + data[i].to_int()
     }
     
-    if hash < 0 { -hash } else { hash }
+    if hash < 0 {
+      hash = -hash
+    }
+    
+    hash
   }
   
-  let hmac_compute = fn(hmac: HMAC, message: String) -> Int {
-    // Simplified HMAC computation
-    let inner_pad = "0x36"
-    let outer_pad = "0x5C"
-    
-    let inner_key = hmac.key + inner_pad
-    let outer_key = hmac.key + outer_pad
-    
-    let inner_hash = hmac.hash_function(inner_key + message)
-    let outer_hash = hmac.hash_function(outer_key + inner_hash.to_string())
-    
-    outer_hash
+  // Test token generation and validation
+  let user_id = "user-12345"
+  let timestamp = 1640995200
+  let secret = "azimuth-secret-key"
+  
+  let token = generate_token(user_id, timestamp, secret)
+  assert_true(validate_token(token, secret, 3600))  // Valid for 1 hour
+  
+  // Test token with invalid secret
+  assert_false(validate_token(token, "wrong-secret", 3600))
+  
+  // Test expired token
+  let old_timestamp = 1640990000  // Very old timestamp
+  let expired_token = generate_token(user_id, old_timestamp, secret)
+  assert_false(validate_token(expired_token, secret, 3600))
+  
+  // Test token tampering
+  let parts = token.split(":")
+  let tampered_token = parts[0] + ":" + parts[1] + ":999999"  // Wrong hash
+  assert_false(validate_token(tampered_token, secret, 3600))
+  
+  // Test token parsing
+  let parse_token = fn(token: String) {
+    let parts = token.split(":")
+    if parts.length() != 3 {
+      None
+    } else {
+      Some({
+        user_id: parts[0],
+        timestamp: parts[1],
+        hash: parts[2]
+      })
+    }
   }
   
-  let hmac_verify = fn(hmac: HMAC, message: String, mac: Int) -> Bool {
-    let computed_mac = hmac_compute(hmac, message)
-    computed_mac == mac
+  match parse_token(token) {
+    Some(parsed) => {
+      assert_eq(parsed.user_id, user_id)
+      assert_eq(parsed.timestamp, timestamp.to_string())
+    }
+    None => assert_true(false)
   }
   
-  // Test HMAC
-  let key = "secret_key"
-  let hmac = hmac_new(key, simple_hash)
-  
-  let message = "telemetry data"
-  let mac = hmac_compute(hmac, message)
-  
-  // Verify correct MAC
-  assert_true(hmac_verify(hmac, message, mac))
-  
-  // Verify incorrect MAC
-  assert_false(hmac_verify(hmac, message, mac + 1))
-  
-  // Verify tampered message
-  assert_false(hmac_verify(hmac, "tampered " + message, mac))
+  match parse_token("invalid-token") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
 }
 
-// Test 4: Digital Signatures
-test "digital signatures for telemetry data authentication" {
-  type KeyPair = {
-    public_key: Int,
-    private_key: Int
+// Test 4: API Key Management
+test "api key management" {
+  // API key structure and validation
+  type ApiKey = {
+    key_id: String,
+    key_hash: String,
+    permissions: Array[String],
+    created_at: Int,
+    expires_at: Option[Int],
+    is_active: Bool
   }
   
-  type Signature = {
-    value: Int,
-    algorithm: String
+  let generate_api_key = fn(key_id: String, permissions: Array[String], expires_in: Option[Int]) {
+    let current_time = 1640995200
+    let expires_at = match expires_in {
+      Some(seconds) => Some(current_time + seconds)
+      None => None
+    }
+    
+    let key_data = key_id + ":" + current_time.to_string() + ":azimuth-api-secret"
+    let key_hash = simple_hash(key_data).to_string()
+    
+    {
+      key_id,
+      key_hash,
+      permissions,
+      created_at: current_time,
+      expires_at,
+      is_active: true
+    }
   }
   
-  // Simplified key generation
-  let generate_key_pair = fn() -> KeyPair {
-    // In a real implementation, this would use proper cryptographic algorithms
-    { public_key: 12345, private_key: 67890 }
+  let validate_api_key = fn(api_key: ApiKey, provided_hash: String, required_permission: String) {
+    // Check if key is active
+    if not(api_key.is_active) {
+      return false
+    }
+    
+    // Check expiration
+    let current_time = 1640999999
+    match api_key.expires_at {
+      Some(expiry) => {
+        if current_time > expiry {
+          return false
+        }
+      }
+      None => {}
+    }
+    
+    // Check hash match
+    if api_key.key_hash != provided_hash {
+      return false
+    }
+    
+    // Check permissions
+    api_key.permissions.contains(required_permission)
   }
   
-  // Simplified signing
-  let sign = fn(data: String, private_key: Int) -> Signature {
-    // In a real implementation, this would use proper cryptographic algorithms
+  // Helper function from previous tests
+  let simple_hash = fn(data: String) {
     let mut hash = 5381
     
-    for char in data.to_char_array() {
-      hash = ((hash << 5) + hash) + char.to_int()
+    for i in 0..data.length() {
+      hash = ((hash << 5) + hash) + data[i].to_int()
     }
     
-    let signature_value = hash ^ private_key
-    
-    { value: signature_value, algorithm: "SIMPLE_RSA" }
-  }
-  
-  // Simplified verification
-  let verify = fn(data: String, signature: Signature, public_key: Int) -> Bool {
-    // In a real implementation, this would use proper cryptographic algorithms
-    let mut hash = 5381
-    
-    for char in data.to_char_array() {
-      hash = ((hash << 5) + hash) + char.to_int()
+    if hash < 0 {
+      hash = -hash
     }
     
-    let expected_value = hash ^ public_key
-    
-    signature.value == expected_value
+    hash
   }
   
-  // Test digital signatures
-  let key_pair = generate_key_pair()
+  // Test API key generation
+  let api_key = generate_api_key(
+    "key-12345",
+    ["telemetry.read", "telemetry.write"],
+    Some(86400)  // 24 hours
+  )
   
-  let data = "telemetry data"
-  let signature = sign(data, key_pair.private_key)
+  assert_eq(api_key.key_id, "key-12345")
+  assert_eq(api_key.permissions.length(), 2)
+  assert_true(api_key.permissions.contains("telemetry.read"))
+  assert_true(api_key.permissions.contains("telemetry.write"))
+  assert_true(api_key.is_active)
   
-  // Verify correct signature
-  assert_true(verify(data, signature, key_pair.public_key))
+  match api_key.expires_at {
+    Some(expiry) => assert_eq(expiry, 1640995200 + 86400)
+    None => assert_true(false)
+  }
   
-  // Verify with wrong data
-  assert_false(verify("tampered " + data, signature, key_pair.public_key))
+  // Test API key validation
+  let key_data = api_key.key_id + ":" + api_key.created_at.to_string() + ":azimuth-api-secret"
+  let provided_hash = simple_hash(key_data).to_string()
   
-  // Verify with wrong public key
-  assert_false(verify(data, signature, key_pair.public_key + 1))
+  assert_true(validate_api_key(api_key, provided_hash, "telemetry.read"))
+  assert_true(validate_api_key(api_key, provided_hash, "telemetry.write"))
+  assert_false(validate_api_key(api_key, provided_hash, "admin.delete"))
+  
+  // Test with wrong hash
+  assert_false(validate_api_key(api_key, "wrong-hash", "telemetry.read"))
+  
+  // Test with inactive key
+  let inactive_key = { api_key | is_active: false }
+  assert_false(validate_api_key(inactive_key, provided_hash, "telemetry.read"))
+  
+  // Test with expired key
+  let expired_key = {
+    key_id: "key-12345",
+    key_hash: provided_hash,
+    permissions: ["telemetry.read"],
+    created_at: 1640995200,
+    expires_at: Some(1640990000),  // Expired
+    is_active: true
+  }
+  assert_false(validate_api_key(expired_key, provided_hash, "telemetry.read"))
+  
+  // Test key revocation
+  let revoke_key = fn(key: ApiKey) {
+    { key | is_active: false }
+  }
+  
+  let revoked_key = revoke_key(api_key)
+  assert_false(revoked_key.is_active)
+  assert_false(validate_api_key(revoked_key, provided_hash, "telemetry.read"))
+  
+  // Test key permission update
+  let update_permissions = fn(key: ApiKey, new_permissions: Array[String]) {
+    { key | permissions: new_permissions }
+  }
+  
+  let updated_key = update_permissions(api_key, ["telemetry.read"])
+  assert_eq(updated_key.permissions.length(), 1)
+  assert_true(updated_key.permissions.contains("telemetry.read"))
+  assert_false(updated_key.permissions.contains("telemetry.write"))
 }
 
-// Test 5: Secure Key Exchange
-test "secure key exchange protocols" {
-  type DiffieHellmanKeys = {
-    base: Int,
-    prime: Int,
-    private_key: Int,
-    public_key: Int
-  }
-  
-  // Simplified Diffie-Hellman key generation
-  let generate_dh_keys = fn(base: Int, prime: Int) -> DiffieHellmanKeys {
-    let private_key = 12345  // In a real implementation, this would be randomly generated
-    let public_key = (base ** private_key) % prime
+// Test 5: Data Anonymization
+test "data anonymization" {
+  // PII (Personally Identifiable Information) anonymization
+  let anonymize_email = fn(email: String) {
+    let parts = email.split("@")
+    if parts.length() != 2 {
+      return "invalid-email"
+    }
     
-    { base, prime, private_key, public_key }
+    let username = parts[0]
+    let domain = parts[1]
+    
+    // Keep first 2 characters of username, replace rest with *
+    let mut anonymized_username = ""
+    for i in 0..username.length() {
+      if i < 2 {
+        anonymized_username = anonymized_username + username[i]
+      } else {
+        anonymized_username = anonymized_username + "*"
+      }
+    }
+    
+    anonymized_username + "@" + domain
   }
   
-  // Simplified shared secret computation
-  let compute_shared_secret = fn(dh_keys: DiffieHellmanKeys, other_public_key: Int) -> Int {
-    (other_public_key ** dh_keys.private_key) % dh_keys.prime
+  let anonymize_ip = fn(ip: String) {
+    let parts = ip.split(".")
+    if parts.length() != 4 {
+      return "invalid-ip"
+    }
+    
+    // Keep first two octets, replace last two with *
+    parts[0] + "." + parts[1] + ".*.*"
   }
   
-  // Test Diffie-Hellman key exchange
-  let base = 5
-  let prime = 23  // Small prime for demonstration
+  let anonymize_user_id = fn(user_id: String) {
+    // Keep first and last 2 characters, replace middle with *
+    if user_id.length() <= 4 {
+      return "****"
+    }
+    
+    let first = user_id[0]
+    let last = user_id[user_id.length() - 1]
+    let middle_length = user_id.length() - 2
+    let mut middle = ""
+    
+    for i in 0..middle_length {
+      middle = middle + "*"
+    }
+    
+    first + middle + last
+  }
   
-  let alice_keys = generate_dh_keys(base, prime)
-  let bob_keys = generate_dh_keys(base, prime)
+  // Test email anonymization
+  assert_eq(anonymize_email("john.doe@example.com"), "jo********@example.com")
+  assert_eq(anonymize_email("a@short.com"), "a*@short.com")
+  assert_eq(anonymize_email("invalid-email"), "invalid-email")
   
-  // Exchange public keys and compute shared secrets
-  let alice_shared_secret = compute_shared_secret(alice_keys, bob_keys.public_key)
-  let bob_shared_secret = compute_shared_secret(bob_keys, alice_keys.public_key)
+  // Test IP anonymization
+  assert_eq(anonymize_ip("192.168.1.100"), "192.168.*.*")
+  assert_eq(anonymize_ip("10.0.0.1"), "10.0.*.*")
+  assert_eq(anonymize_ip("invalid-ip"), "invalid-ip")
   
-  // Both should compute the same shared secret
-  assert_eq(alice_shared_secret, bob_shared_secret)
+  // Test user ID anonymization
+  assert_eq(anonymize_user_id("user-12345"), "u******5")
+  assert_eq(anonymize_user_id("abc"), "****")
+  assert_eq(anonymize_user_id("abcd"), "a**d")
   
-  // Verify shared secret is not public
-  assert_ne(alice_shared_secret, alice_keys.public_key)
-  assert_ne(alice_shared_secret, bob_keys.public_key)
+  // Test telemetry data anonymization
+  let anonymize_telemetry_data = fn(data: {
+    user_id: String,
+    email: String,
+    ip_address: String,
+    trace_id: String,
+    operation: String
+  }) {
+    {
+      user_id: anonymize_user_id(data.user_id),
+      email: anonymize_email(data.email),
+      ip_address: anonymize_ip(data.ip_address),
+      trace_id: data.trace_id,  // Not PII, keep as is
+      operation: data.operation  // Not PII, keep as is
+    }
+  }
+  
+  let original_data = {
+    user_id: "user-12345",
+    email: "john.doe@example.com",
+    ip_address: "192.168.1.100",
+    trace_id: "trace-67890",
+    operation: "database_query"
+  }
+  
+  let anonymized_data = anonymize_telemetry_data(original_data)
+  
+  assert_eq(anonymized_data.user_id, "u******5")
+  assert_eq(anonymized_data.email, "jo********@example.com")
+  assert_eq(anonymized_data.ip_address, "192.168.*.*")
+  assert_eq(anonymized_data.trace_id, "trace-67890")
+  assert_eq(anonymized_data.operation, "database_query")
+  
+  // Verify PII is properly anonymized
+  assert_not_eq(anonymized_data.user_id, original_data.user_id)
+  assert_not_eq(anonymized_data.email, original_data.email)
+  assert_not_eq(anonymized_data.ip_address, original_data.ip_address)
+  
+  // Verify non-PII data is preserved
+  assert_eq(anonymized_data.trace_id, original_data.trace_id)
+  assert_eq(anonymized_data.operation, original_data.operation)
 }
 
-// Test 6: Secure Random Number Generation
-test "secure random number generation" {
-  type SecureRandom = {
-    seed: Int,
-    state: Int
+// Test 6: Secure Configuration Management
+test "secure configuration management" {
+  // Secure configuration with encryption
+  type SecureConfig = {
+    database_url: String,
+    api_key: String,
+    encryption_key: String,
+    is_encrypted: Bool
   }
   
-  // Simplified secure random number generator
-  let secure_random_new = fn(seed: Int) -> SecureRandom {
-    { seed, state: seed }
-  }
-  
-  let secure_random_next = fn(rng: SecureRandom) -> (SecureRandom, Int) {
-    // Linear congruential generator (not cryptographically secure, for demonstration only)
-    let a = 1664525
-    let c = 1013904223
-    let m = 2 ^ 32
+  let encrypt_config_value = fn(value: String, key: String) {
+    // Simple XOR encryption for demonstration
+    let mut result = ""
+    let key_length = key.length()
     
-    let new_state = (a * rng.state + c) % m
-    let random_value = new_state
+    for i in 0..value.length() {
+      let value_char = value[i]
+      let key_char = key[i % key_length]
+      let encrypted_char = (value_char.to_int() ^ key_char.to_int()).to_char()
+      result = result + encrypted_char
+    }
     
-    ({ seed: rng.seed, state: new_state }, random_value)
+    result
   }
   
-  let secure_random_range = fn(rng: SecureRandom, min: Int, max: Int) -> (SecureRandom, Int) {
-    let (new_rng, random_value) = secure_random_next(rng)
-    let ranged_value = min + (random_value % (max - min + 1))
-    (new_rng, ranged_value)
+  let decrypt_config_value = fn(encrypted_value: String, key: String) {
+    // XOR decryption is the same as encryption
+    encrypt_config_value(encrypted_value, key)
   }
   
-  // Test secure random number generation
-  let rng1 = secure_random_new(12345)
+  let create_secure_config = fn(database_url: String, api_key: String, encryption_key: String) {
+    {
+      database_url: encrypt_config_value(database_url, encryption_key),
+      api_key: encrypt_config_value(api_key, encryption_key),
+      encryption_key,
+      is_encrypted: true
+    }
+  }
   
-  let (rng2, value1) = secure_random_next(rng1)
-  let (rng3, value2) = secure_random_next(rng2)
-  let (rng4, value3) = secure_random_next(rng3)
+  let get_config_value = fn(config: SecureConfig, field_name: String) {
+    let encrypted_value = match field_name {
+      "database_url" => config.database_url
+      "api_key" => config.api_key
+      _ => ""
+    }
+    
+    if config.is_encrypted {
+      decrypt_config_value(encrypted_value, config.encryption_key)
+    } else {
+      encrypted_value
+    }
+  }
   
-  // Values should be different
-  assert_ne(value1, value2)
-  assert_ne(value2, value3)
-  assert_ne(value1, value3)
+  // Test configuration encryption and decryption
+  let original_db_url = "postgresql://user:password@localhost:5432/azimuth"
+  let original_api_key = "azimuth-api-key-12345"
+  let encryption_key = "secure-encryption-key"
   
-  // Test range
-  let (rng5, range_value1) = secure_random_range(rng4, 10, 20)
-  let (rng6, range_value2) = secure_random_range(rng5, 10, 20)
+  let secure_config = create_secure_config(original_db_url, original_api_key, encryption_key)
   
-  // Values should be within range
-  assert_true(range_value1 >= 10 && range_value1 <= 20)
-  assert_true(range_value2 >= 10 && range_value2 <= 20)
+  assert_true(secure_config.is_encrypted)
+  assert_not_eq(secure_config.database_url, original_db_url)
+  assert_not_eq(secure_config.api_key, original_api_key)
   
-  // Test deterministic behavior with same seed
-  let rng_a = secure_random_new(12345)
-  let (rng_a1, value_a1) = secure_random_next(rng_a)
-  let (rng_a2, value_a2) = secure_random_next(rng_a1)
+  // Test decryption
+  let decrypted_db_url = get_config_value(secure_config, "database_url")
+  let decrypted_api_key = get_config_value(secure_config, "api_key")
   
-  let rng_b = secure_random_new(12345)
-  let (rng_b1, value_b1) = secure_random_next(rng_b)
-  let (rng_b2, value_b2) = secure_random_next(rng_b1)
+  assert_eq(decrypted_db_url, original_db_url)
+  assert_eq(decrypted_api_key, original_api_key)
   
-  assert_eq(value_a1, value_b1)
-  assert_eq(value_a2, value_b2)
+  // Test with wrong encryption key
+  let wrong_key_config = {
+    database_url: secure_config.database_url,
+    api_key: secure_config.api_key,
+    encryption_key: "wrong-encryption-key",
+    is_encrypted: true
+  }
+  
+  let wrong_decrypted_db = get_config_value(wrong_key_config, "database_url")
+  let wrong_decrypted_key = get_config_value(wrong_key_config, "api_key")
+  
+  assert_not_eq(wrong_decrypted_db, original_db_url)
+  assert_not_eq(wrong_decrypted_key, original_api_key)
+  
+  // Test configuration rotation
+  let rotate_encryption_key = fn(config: SecureConfig, new_key: String) {
+    // First decrypt with old key
+    let db_url = get_config_value(config, "database_url")
+    let api_key = get_config_value(config, "api_key")
+    
+    // Then re-encrypt with new key
+    {
+      database_url: encrypt_config_value(db_url, new_key),
+      api_key: encrypt_config_value(api_key, new_key),
+      encryption_key: new_key,
+      is_encrypted: true
+    }
+  }
+  
+  let new_encryption_key = "new-secure-encryption-key"
+  let rotated_config = rotate_encryption_key(secure_config, new_encryption_key)
+  
+  assert_eq(rotated_config.encryption_key, new_encryption_key)
+  assert_not_eq(rotated_config.database_url, secure_config.database_url)
+  assert_not_eq(rotated_config.api_key, secure_config.api_key)
+  
+  // Verify rotation worked correctly
+  let rotated_db_url = get_config_value(rotated_config, "database_url")
+  let rotated_api_key = get_config_value(rotated_config, "api_key")
+  
+  assert_eq(rotated_db_url, original_db_url)
+  assert_eq(rotated_api_key, original_api_key)
 }
 
-// Test 7: Data Encryption Standards
-test "data encryption standards for telemetry" {
-  type EncryptionResult = {
-    ciphertext: Array[Byte>,
-    iv: Array[Byte>
+// Test 7: Access Control Lists (ACL)
+test "access control lists" {
+  // ACL implementation for telemetry resources
+  type ACLRule = {
+    principal: String,  // User or service ID
+    resource: String,   // Resource pattern (e.g., "trace:*", "span:trace-123")
+    action: String,     // "read", "write", "delete"
+    effect: String      // "allow", "deny"
   }
   
-  // Simplified block cipher (for demonstration only)
-  let block_cipher_encrypt = fn(plaintext: Array[Byte>, key: Array[Byte>) -> Array[Byte] {
-    let mut ciphertext = []
-    
-    for i in 0..=plaintext.length()-1 {
-      let key_byte = key[i % key.length()]
-      ciphertext = ciphertext + [Byte::from_int(plaintext[i].to_int() ^ key_byte.to_int())]
-    }
-    
-    ciphertext
+  type ACLPolicy = {
+    rules: Array[ACLRule],
+    default_effect: String
   }
   
-  let block_cipher_decrypt = fn(ciphertext: Array[Byte], key: Array[Byte>) -> Array[Byte> {
-    // Decryption is the same as encryption for XOR
-    block_cipher_encrypt(ciphertext, key)
-  }
-  
-  // Generate random IV (for demonstration)
-  let generate_iv = fn(size: Int) -> Array[Byte] {
-    let mut iv = []
-    for i in 0..=size-1 {
-      iv = iv + [Byte::from_int(i + 42)]  // Simplified IV generation
-    }
-    iv
-  }
-  
-  let encrypt_with_iv = fn(plaintext: Array[Byte], key: Array[Byte>, iv: Array[Byte>) -> EncryptionResult {
-    // XOR plaintext with IV first
-    let mut preprocessed = []
-    for i in 0..=plaintext.length()-1 {
-      let iv_byte = iv[i % iv.length()]
-      preprocessed = preprocessed + [Byte::from_int(plaintext[i].to_int() ^ iv_byte.to_int())]
-    }
-    
-    let ciphertext = block_cipher_encrypt(preprocessed, key)
-    
-    { ciphertext, iv }
-  }
-  
-  let decrypt_with_iv = fn(encryption_result: EncryptionResult, key: Array[Byte>) -> Array[Byte] {
-    // Decrypt first
-    let preprocessed = block_cipher_decrypt(encryption_result.ciphertext, key)
-    
-    // Then XOR with IV
-    let mut plaintext = []
-    for i in 0..=preprocessed.length()-1 {
-      let iv_byte = encryption_result.iv[i % encryption_result.iv.length()]
-      plaintext = plaintext + [Byte::from_int(preprocessed[i].to_int() ^ iv_byte.to_int())]
-    }
-    
-    plaintext
-  }
-  
-  // Test encryption with IV
-  let key = [Byte::from_int(0x42), Byte::from_int(0x13), Byte::from_int(0x37)]
-  let iv = generate_iv(4)
-  
-  let plaintext = [Byte::from_int(0x48), Byte::from_int(0x65), Byte::from_int(0x6C), Byte::from_int(0x6C), Byte::from_int(0x6F)]
-  
-  let encryption_result = encrypt_with_iv(plaintext, key, iv)
-  let decrypted = decrypt_with_iv(encryption_result, key)
-  
-  // Verify decryption restores original plaintext
-  assert_eq(plaintext.length(), decrypted.length())
-  for i in 0..=plaintext.length()-1 {
-    assert_eq(plaintext[i], decrypted[i])
-  }
-  
-  // Verify encryption with different IV produces different ciphertext
-  let iv2 = generate_iv(4)
-  let encryption_result2 = encrypt_with_iv(plaintext, key, iv2)
-  
-  let mut is_different = false
-  for i in 0..=encryption_result.ciphertext.length()-1 {
-    if encryption_result.ciphertext[i] != encryption_result2.ciphertext[i] {
-      is_different = true
-      break
+  let create_acl_rule = fn(principal: String, resource: String, action: String, effect: String) {
+    {
+      principal,
+      resource,
+      action,
+      effect
     }
   }
-  assert_true(is_different)
+  
+  let create_acl_policy = fn(rules: Array[ACLRule], default_effect: String) {
+    {
+      rules,
+      default_effect
+    }
+  }
+  
+  let check_access = fn(policy: ACLPolicy, principal: String, resource: String, action: String) {
+    let mut allowed = policy.default_effect == "allow"
+    
+    // Check for matching rules (in order, last match wins)
+    for rule in policy.rules {
+      let principal_matches = rule.principal == "*" || rule.principal == principal
+      let resource_matches = rule.resource == "*" || 
+                            (rule.resource.ends_with("*") && resource.starts_with(rule.resource.substring(0, rule.resource.length() - 1))) ||
+                            rule.resource == resource
+      let action_matches = rule.action == "*" || rule.action == action
+      
+      if principal_matches && resource_matches && action_matches {
+        allowed = rule.effect == "allow"
+      }
+    }
+    
+    allowed
+  }
+  
+  // Create ACL rules
+  let rules = [
+    create_acl_rule("admin", "*", "*", "allow"),  // Admin can do everything
+    create_acl_rule("service-azimuth", "trace:*", "write", "allow"),  // Service can write traces
+    create_acl_rule("service-azimuth", "span:*", "write", "allow"),   // Service can write spans
+    create_acl_rule("user-12345", "trace:trace-123", "read", "allow"),  // User can read specific trace
+    create_acl_rule("user-12345", "trace:trace-456", "read", "allow"),  // User can read another trace
+    create_acl_rule("user-67890", "trace:*", "read", "allow"),  // Another user can read all traces
+    create_acl_rule("*", "*", "delete", "deny")  // Nobody can delete by default
+  ]
+  
+  let policy = create_acl_policy(rules, "deny")  // Default deny
+  
+  // Test admin access
+  assert_true(check_access(policy, "admin", "trace:any-trace", "read"))
+  assert_true(check_access(policy, "admin", "trace:any-trace", "write"))
+  assert_true(check_access(policy, "admin", "trace:any-trace", "delete"))
+  
+  // Test service access
+  assert_true(check_access(policy, "service-azimuth", "trace:trace-123", "write"))
+  assert_true(check_access(policy, "service-azimuth", "span:span-456", "write"))
+  assert_false(check_access(policy, "service-azimuth", "trace:trace-123", "delete"))
+  assert_false(check_access(policy, "service-azimuth", "metric:metric-789", "write"))
+  
+  // Test user access
+  assert_true(check_access(policy, "user-12345", "trace:trace-123", "read"))
+  assert_true(check_access(policy, "user-12345", "trace:trace-456", "read"))
+  assert_false(check_access(policy, "user-12345", "trace:trace-789", "read"))
+  assert_false(check_access(policy, "user-12345", "trace:trace-123", "write"))
+  
+  // Test another user with broader access
+  assert_true(check_access(policy, "user-67890", "trace:trace-123", "read"))
+  assert_true(check_access(policy, "user-67890", "trace:trace-456", "read"))
+  assert_true(check_access(policy, "user-67890", "trace:trace-789", "read"))
+  assert_false(check_access(policy, "user-67890", "trace:trace-123", "write"))
+  
+  // Test delete restrictions
+  assert_false(check_access(policy, "admin", "trace:any-trace", "delete"))  // Overridden by deny rule
+  assert_false(check_access(policy, "user-12345", "trace:trace-123", "delete"))
+  assert_false(check_access(policy, "service-azimuth", "trace:trace-123", "delete"))
+  
+  // Test unknown user (default deny)
+  assert_false(check_access(policy, "unknown-user", "trace:trace-123", "read"))
+  assert_false(check_access(policy, "unknown-user", "trace:trace-123", "write"))
+  
+  // Test ACL rule addition
+  let add_rule = fn(policy: ACLPolicy, rule: ACLRule) {
+    { policy | rules: policy.rules.push(rule) }
+  }
+  
+  let updated_policy = add_rule(policy, create_acl_rule("user-12345", "trace:*", "write", "allow"))
+  assert_true(check_access(updated_policy, "user-12345", "trace:trace-789", "write"))
+  assert_false(check_access(policy, "user-12345", "trace:trace-789", "write"))  // Original policy unchanged
+  
+  // Test ACL rule removal
+  let remove_rule = fn(policy: ACLPolicy, principal: String, resource: String, action: String) {
+    let mut filtered_rules = []
+    for rule in policy.rules {
+      if not(rule.principal == principal && rule.resource == resource && rule.action == action) {
+        filtered_rules = filtered_rules.push(rule)
+      }
+    }
+    { policy | rules: filtered_rules }
+  }
+  
+  let restricted_policy = remove_rule(updated_policy, "user-12345", "trace:*", "write")
+  assert_false(check_access(restricted_policy, "user-12345", "trace:trace-789", "write"))
 }
 
-// Test 8: Certificate Validation
-test "certificate validation for secure connections" {
+// Test 8: Secure Logging with Sensitive Data Filtering
+test "secure logging with sensitive data filtering" {
+  // Secure logging with sensitive data redaction
+  type LogLevel = 
+    | Trace
+    | Debug
+    | Info
+    | Warn
+    | Error
+  
+  type LogEntry = {
+    timestamp: Int,
+    level: LogLevel,
+    message: String,
+    sensitive_fields: Array[String]
+  }
+  
+  let redact_sensitive_data = fn(message: String, sensitive_patterns: Array[String]) {
+    let mut result = message
+    
+    for pattern in sensitive_patterns {
+      // Simple pattern matching and replacement
+      if pattern == "email" {
+        // Redact email addresses
+        let mut start = 0
+        let mut found = true
+        
+        while found {
+          let mut at_pos = -1
+          let mut dot_pos = -1
+          
+          // Find @ and . after @
+          for i in start..result.length() {
+            if result[i] == '@' && at_pos == -1 {
+              at_pos = i
+            } else if result[i] == '.' && at_pos != -1 && i > at_pos + 1 {
+              dot_pos = i
+              break
+            }
+          }
+          
+          if at_pos != -1 && dot_pos != -1 {
+            // Find start of email
+            let mut email_start = at_pos
+            while email_start > 0 && 
+                  ((result[email_start - 1] >= 'a' && result[email_start - 1] <= 'z') ||
+                   (result[email_start - 1] >= 'A' && result[email_start - 1] <= 'Z') ||
+                   (result[email_start - 1] >= '0' && result[email_start - 1] <= '9') ||
+                   result[email_start - 1] == '.' || result[email_start - 1] == '_') {
+              email_start = email_start - 1
+            }
+            
+            // Find end of email
+            let mut email_end = dot_pos
+            while email_end < result.length() && 
+                  ((result[email_end] >= 'a' && result[email_end] <= 'z') ||
+                   (result[email_end] >= 'A' && result[email_end] <= 'Z') ||
+                   (result[email_end] >= '0' && result[email_end] <= '9')) {
+              email_end = email_end + 1
+            }
+            
+            // Replace with redacted version
+            let email = result.substring(email_start, email_end - email_start)
+            let redacted = "email@" + "domain.com"
+            result = result.substring(0, email_start) + redacted + result.substring(email_end, result.length() - email_end)
+            
+            start = email_start + redacted.length()
+          } else {
+            found = false
+          }
+        }
+      } else if pattern == "api_key" {
+        // Redact API keys (alphanumeric strings of length 20+)
+        let mut i = 0
+        while i < result.length() {
+          if result[i] >= 'a' && result[i] <= 'z' || 
+             result[i] >= 'A' && result[i] <= 'Z' || 
+             result[i] >= '0' && result[i] <= '9' {
+            let mut key_start = i
+            let mut key_length = 0
+            
+            while i < result.length() && 
+                  (result[i] >= 'a' && result[i] <= 'z' || 
+                   result[i] >= 'A' && result[i] <= 'Z' || 
+                   result[i] >= '0' && result[i] <= '9') {
+              key_length = key_length + 1
+              i = i + 1
+            }
+            
+            if key_length >= 20 {
+              let key = result.substring(key_start, key_length)
+              let redacted = "REDACTED-API-KEY"
+              result = result.substring(0, key_start) + redacted + result.substring(i, result.length() - i)
+              i = key_start + redacted.length()
+            }
+          } else {
+            i = i + 1
+          }
+        }
+      }
+    }
+    
+    result
+  }
+  
+  // Test sensitive data redaction
+  let message_with_email = "User john.doe@example.com logged in with API key azimuth12345apikey67890"
+  let sensitive_patterns = ["email", "api_key"]
+  
+  let redacted_message = redact_sensitive_data(message_with_email, sensitive_patterns)
+  
+  assert_true(redacted_message.contains("email@domain.com"))
+  assert_true(redacted_message.contains("REDACTED-API-KEY"))
+  assert_false(redacted_message.contains("john.doe@example.com"))
+  assert_false(redacted_message.contains("azimuth12345apikey67890"))
+  
+  // Test log entry creation and redaction
+  let create_log_entry = fn(level: LogLevel, message: String, sensitive_fields: Array[String]) {
+    let current_time = 1640999999
+    
+    {
+      timestamp: current_time,
+      level,
+      message,
+      sensitive_fields
+    }
+  }
+  
+  let format_log_entry = fn(entry: LogEntry) {
+    let level_str = match entry.level {
+      Trace => "TRACE"
+      Debug => "DEBUG"
+      Info => "INFO"
+      Warn => "WARN"
+      Error => "ERROR"
+    }
+    
+    let redacted_message = redact_sensitive_data(entry.message, entry.sensitive_fields)
+    
+    "[" + entry.timestamp.to_string() + "] " + level_str + ": " + redacted_message
+  }
+  
+  // Test log entry formatting
+  let log_entry = create_log_entry(
+    Info,
+    "User alice@example.com performed operation with key abcdef1234567890abcdef",
+    ["email", "api_key"]
+  )
+  
+  let formatted_log = format_log_entry(log_entry)
+  
+  assert_true(formatted_log.contains("[1640999999]"))
+  assert_true(formatted_log.contains("INFO:"))
+  assert_true(formatted_log.contains("email@domain.com"))
+  assert_true(formatted_log.contains("REDACTED-API-KEY"))
+  assert_false(formatted_log.contains("alice@example.com"))
+  assert_false(formatted_log.contains("abcdef1234567890abcdef"))
+  
+  // Test log filtering
+  type LogFilter = {
+    min_level: LogLevel,
+    include_patterns: Array[String],
+    exclude_patterns: Array[String]
+  }
+  
+  let should_include_log = fn(entry: LogEntry, filter: LogFilter) {
+    // Check level
+    let level_match = match entry.level {
+      Trace => filter.min_level == Trace
+      Debug => filter.min_level == Trace || filter.min_level == Debug
+      Info => filter.min_level == Trace || filter.min_level == Debug || filter.min_level == Info
+      Warn => filter.min_level == Trace || filter.min_level == Debug || filter.min_level == Info || filter.min_level == Warn
+      Error => true  // Always include error logs
+    }
+    
+    if not(level_match) {
+      return false
+    }
+    
+    // Check include patterns
+    if filter.include_patterns.length() > 0 {
+      let mut includes = false
+      for pattern in filter.include_patterns {
+        if entry.message.contains(pattern) {
+          includes = true
+          break
+        }
+      }
+      if not(includes) {
+        return false
+      }
+    }
+    
+    // Check exclude patterns
+    for pattern in filter.exclude_patterns {
+      if entry.message.contains(pattern) {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test log filtering
+  let filter = {
+    min_level: Warn,
+    include_patterns: ["telemetry", "azimuth"],
+    exclude_patterns: ["debug"]
+  }
+  
+  let error_entry = create_log_entry(Error, "Azimuth system error occurred", [])
+  let warn_entry = create_log_entry(Warn, "Telemetry service warning", [])
+  let info_entry = create_log_entry(Info, "Telemetry service info", [])
+  let debug_entry = create_log_entry(Debug, "Azimuth debug info", [])
+  
+  assert_true(should_include_log(error_entry, filter))
+  assert_true(should_include_log(warn_entry, filter))
+  assert_false(should_include_log(info_entry, filter))  // Below min level
+  assert_false(should_include_log(debug_entry, filter))  // Below min level
+}
+
+// Test 9: Secure Network Communication
+test "secure network communication" {
+  // Simulate secure network communication with certificate validation
   type Certificate = {
     subject: String,
     issuer: String,
     serial_number: String,
     not_before: Int,
     not_after: Int,
-    public_key: Int
+    public_key: String
   }
   
-  type CertificateValidationResult = {
-    valid: Bool,
-    errors: Array[String>
+  type TLSHandshake = {
+    client_certificate: Option[Certificate],
+    server_certificate: Certificate,
+    cipher_suite: String,
+    protocol_version: String
   }
   
-  let validate_certificate = fn(cert: Certificate, current_time: Int, trusted_issuers: Array[String>) -> CertificateValidationResult {
-    let mut errors = []
-    
-    // Check if issuer is trusted
-    let mut issuer_trusted = false
-    for issuer in trusted_issuers {
-      if issuer == cert.issuer {
-        issuer_trusted = true
-        break
-      }
+  let validate_certificate = fn(cert: Certificate, current_time: Int) {
+    // Check certificate validity period
+    if current_time < cert.not_before || current_time > cert.not_after {
+      return false
     }
     
-    if !issuer_trusted {
-      errors = errors + ["Untrusted issuer"]
+    // Check certificate fields (simplified)
+    if cert.subject.length() == 0 || cert.issuer.length() == 0 {
+      return false
     }
     
-    // Check validity period
-    if current_time < cert.not_before {
-      errors = errors + ["Certificate not yet valid"]
+    if cert.serial_number.length() == 0 || cert.public_key.length() == 0 {
+      return false
     }
     
-    if current_time > cert.not_after {
-      errors = errors + ["Certificate expired"]
-    }
+    true
+  }
+  
+  let create_certificate = fn(subject: String, issuer: String, valid_from: Int, valid_to: Int) {
+    let serial_number = "SN-" + valid_from.to_string() + "-" + valid_to.to_string()
+    let public_key = "PK-" + subject + "-" + serial_number
     
     {
-      valid: errors.length() == 0,
-      errors
+      subject,
+      issuer,
+      serial_number,
+      not_before: valid_from,
+      not_after: valid_to,
+      public_key
     }
   }
   
-  // Test certificate validation
-  let trusted_issuers = ["Azimuth CA", "Telemetry Root CA"]
-  
-  let valid_cert = {
-    subject: "telemetry.azimuth.com",
-    issuer: "Azimuth CA",
-    serial_number: "123456789",
-    not_before: 1600000000,
-    not_after: 1700000000,
-    public_key: 12345
+  let perform_tls_handshake = fn(server_cert: Certificate, client_cert: Option[Certificate], current_time: Int) {
+    // Validate server certificate
+    if not(validate_certificate(server_cert, current_time)) {
+      return None
+    }
+    
+    // Validate client certificate if provided
+    match client_cert {
+      Some(cert) => {
+        if not(validate_certificate(cert, current_time)) {
+          return None
+        }
+      }
+      None => {}
+    }
+    
+    // Simulate successful TLS handshake
+    Some({
+      client_certificate: client_cert,
+      server_certificate: server_cert,
+      cipher_suite: "TLS_AES_256_GCM_SHA384",
+      protocol_version: "TLSv1.3"
+    })
   }
   
-  let expired_cert = {
-    subject: "expired.azimuth.com",
-    issuer: "Azimuth CA",
-    serial_number: "987654321",
-    not_before: 1500000000,
-    not_after: 1600000000,
-    public_key: 54321
-  }
+  // Test certificate creation and validation
+  let current_time = 1640999999
+  let server_cert = create_certificate(
+    "azimuth-server.example.com",
+    "CA-Example-Root",
+    1640995200,
+    1641081600  // Valid for 24 hours
+  )
   
-  let untrusted_cert = {
-    subject: "untrusted.azimuth.com",
-    issuer: "Unknown CA",
-    serial_number: "555666777",
-    not_before: 1600000000,
-    not_after: 1700000000,
-    public_key: 11111
-  }
-  
-  // Test valid certificate
-  let valid_result = validate_certificate(valid_cert, 1650000000, trusted_issuers)
-  assert_true(valid_result.valid)
-  assert_eq(valid_result.errors.length(), 0)
+  assert_true(validate_certificate(server_cert, current_time))
   
   // Test expired certificate
-  let expired_result = validate_certificate(expired_cert, 1650000000, trusted_issuers)
-  assert_false(expired_result.valid)
-  assert_true(expired_result.errors.contains("Certificate expired"))
+  let expired_cert = create_certificate(
+    "expired-server.example.com",
+    "CA-Example-Root",
+    1640900000,
+    1640903600  // Expired
+  )
   
-  // Test untrusted certificate
-  let untrusted_result = validate_certificate(untrusted_cert, 1650000000, trusted_issuers)
-  assert_false(untrusted_result.valid)
-  assert_true(untrusted_result.errors.contains("Untrusted issuer"))
-}
-
-// Test 9: Access Control
-test "access control for telemetry data" {
-  type Permission = {
-    resource: String,
-    action: String
-  }
+  assert_false(validate_certificate(expired_cert, current_time))
   
-  type User = {
-    id: String,
-    name: String,
-    permissions: Array[Permission>
-  }
+  // Test not-yet-valid certificate
+  let future_cert = create_certificate(
+    "future-server.example.com",
+    "CA-Example-Root",
+    1641081600,
+    1641168000  // Not yet valid
+  )
   
-  let check_permission = fn(user: User, resource: String, action: String) -> Bool {
-    for permission in user.permissions {
-      if permission.resource == resource && permission.action == action {
-        return true
+  assert_false(validate_certificate(future_cert, current_time))
+  
+  // Test TLS handshake with server certificate only
+  match perform_tls_handshake(server_cert, None, current_time) {
+    Some(handshake) => {
+      assert_eq(handshake.cipher_suite, "TLS_AES_256_GCM_SHA384")
+      assert_eq(handshake.protocol_version, "TLSv1.3")
+      assert_eq(handshake.server_certificate.subject, "azimuth-server.example.com")
+      match handshake.client_certificate {
+        Some(_) => assert_true(false)
+        None => assert_true(true)
       }
     }
-    false
+    None => assert_true(false)
   }
   
-  let grant_permission = fn(user: User, resource: String, action: String) -> User {
-    let new_permission = { resource, action }
-    {
-      id: user.id,
-      name: user.name,
-      permissions: user.permissions + [new_permission]
-    }
-  }
+  // Test TLS handshake with both server and client certificates
+  let client_cert = create_certificate(
+    "azimuth-client.example.com",
+    "CA-Example-Client",
+    1640995200,
+    1641081600
+  )
   
-  let revoke_permission = fn(user: User, resource: String, action: String) -> User {
-    let mut new_permissions = []
-    
-    for permission in user.permissions {
-      if !(permission.resource == resource && permission.action == action) {
-        new_permissions = new_permissions + [permission]
+  match perform_tls_handshake(server_cert, Some(client_cert), current_time) {
+    Some(handshake) => {
+      assert_eq(handshake.cipher_suite, "TLS_AES_256_GCM_SHA384")
+      assert_eq(handshake.protocol_version, "TLSv1.3")
+      match handshake.client_certificate {
+        Some(cert) => assert_eq(cert.subject, "azimuth-client.example.com")
+        None => assert_true(false)
       }
     }
-    
-    {
-      id: user.id,
-      name: user.name,
-      permissions: new_permissions
+    None => assert_true(false)
+  }
+  
+  // Test TLS handshake with invalid server certificate
+  match perform_tls_handshake(expired_cert, None, current_time) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test TLS handshake with invalid client certificate
+  match perform_tls_handshake(server_cert, Some(expired_cert), current_time) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test secure data transmission simulation
+  let encrypt_transmission_data = fn(data: String, public_key: String) {
+    // Simulate encryption using public key
+    let mut encrypted = ""
+    for i in 0..data.length() {
+      let key_char = public_key[i % public_key.length()]
+      let encrypted_char = (data[i].to_int() + key_char.to_int()).to_char()
+      encrypted = encrypted + encrypted_char
     }
+    encrypted
   }
   
-  // Test access control
-  let user1 = {
-    id: "user1",
-    name: "Alice",
-    permissions: [
-      { resource: "telemetry", action: "read" },
-      { resource: "metrics", action: "read" }
-    ]
+  let decrypt_transmission_data = fn(encrypted_data: String, private_key: String) {
+    // Simulate decryption using private key
+    let mut decrypted = ""
+    for i in 0..encrypted_data.length() {
+      let key_char = private_key[i % private_key.length()]
+      let decrypted_char = (encrypted_data[i].to_int() - key_char.to_int()).to_char()
+      decrypted = decrypted + decrypted_char
+    }
+    decrypted
   }
   
-  // Test permission checks
-  assert_true(check_permission(user1, "telemetry", "read"))
-  assert_true(check_permission(user1, "metrics", "read"))
-  assert_false(check_permission(user1, "telemetry", "write"))
-  assert_false(check_permission(user1, "traces", "read"))
+  // Test secure data transmission
+  let telemetry_data = "trace-12345:span-67890:database_query:250:ok"
+  let public_key = server_cert.public_key
+  let private_key = "PRIVATE-" + public_key
   
-  // Grant permission
-  let user2 = grant_permission(user1, "telemetry", "write")
-  assert_true(check_permission(user2, "telemetry", "write"))
+  let encrypted_data = encrypt_transmission_data(telemetry_data, public_key)
+  let decrypted_data = decrypt_transmission_data(encrypted_data, private_key)
   
-  // Revoke permission
-  let user3 = revoke_permission(user2, "metrics", "read");
-  assert_false(check_permission(user3, "metrics", "read"));
-  assert_true(check_permission(user3, "telemetry", "read"));
-  assert_true(check_permission(user3, "telemetry", "write"));
+  assert_eq(decrypted_data, telemetry_data)
+  assert_not_eq(encrypted_data, telemetry_data)
+  
+  // Test with wrong private key
+  let wrong_private_key = "WRONG-PRIVATE-KEY"
+  let wrong_decrypted = decrypt_transmission_data(encrypted_data, wrong_private_key)
+  
+  assert_not_eq(wrong_decrypted, telemetry_data)
 }
 
-// Test 10: Secure Logging
-test "secure logging for telemetry events" {
-  type SecureLogEntry = {
+// Test 10: Audit Trail and Security Events
+test "audit trail and security events" {
+  // Security event tracking and audit trail
+  type SecurityEvent = {
     timestamp: Int,
-    level: String,
-    message: String,
-    user_id: Option[String>,
-    source_ip: Option[String>,
-    hash: String
+    event_type: String,
+    principal: String,
+    resource: String,
+    action: String,
+    outcome: String,
+    details: Array[(String, String)]
   }
   
-  let hash_log_entry = fn(timestamp: Int, level: String, message: String, user_id: Option<String>, source_ip: Option<String>) -> String {
-    // Simple hash function for log entry integrity
-    let combined = timestamp.to_string() + level + message + 
-                   match user_id { Some(id) => id | None => "" } +
-                   match source_ip { Some(ip) => ip | None => "" }
-    
-    let mut hash = 5381
-    for char in combined.to_char_array() {
-      hash = ((hash << 5) + hash) + char.to_int()
-    }
-    
-    if hash < 0 { -hash } else { hash }.to_string()
+  type AuditTrail = {
+    events: Array[SecurityEvent],
+    retention_period: Int
   }
   
-  let create_secure_log_entry = fn(timestamp: Int, level: String, message: String, 
-                                  user_id: Option<String>, source_ip: Option<String>) -> SecureLogEntry {
-    let hash = hash_log_entry(timestamp, level, message, user_id, source_ip)
+  let create_security_event = fn(event_type: String, principal: String, resource: String, action: String, outcome: String, details: Array[(String, String)]) {
+    let current_time = 1640999999
     
     {
-      timestamp,
-      level,
-      message,
-      user_id,
-      source_ip,
-      hash
+      timestamp: current_time,
+      event_type,
+      principal,
+      resource,
+      action,
+      outcome,
+      details
     }
   }
   
-  let verify_log_entry = fn(entry: SecureLogEntry) -> Bool {
-    let expected_hash = hash_log_entry(entry.timestamp, entry.level, entry.message, entry.user_id, entry.source_ip)
-    entry.hash == expected_hash
+  let add_audit_event = fn(trail: AuditTrail, event: SecurityEvent) {
+    { trail | events: trail.events.push(event) }
   }
   
-  let sanitize_message = fn(message: String) -> String {
-    // Remove sensitive information (simplified)
-    message
-      .replace("password=", "password=***")
-      .replace("token=", "token=***")
-      .replace("secret=", "secret=***")
+  let query_audit_trail = fn(trail: AuditTrail, filters: {
+    principal: Option[String],
+    resource: Option[String],
+    action: Option[String],
+    outcome: Option[String],
+    from_time: Option[Int],
+    to_time: Option[Int]
+  }) {
+    let mut filtered_events = []
+    
+    for event in trail.events {
+      let matches_principal = match filters.principal {
+        Some(p) => event.principal == p
+        None => true
+      }
+      
+      let matches_resource = match filters.resource {
+        Some(r) => event.resource == r
+        None => true
+      }
+      
+      let matches_action = match filters.action {
+        Some(a) => event.action == a
+        None => true
+      }
+      
+      let matches_outcome = match filters.outcome {
+        Some(o) => event.outcome == o
+        None => true
+      }
+      
+      let matches_from_time = match filters.from_time {
+        Some(t) => event.timestamp >= t
+        None => true
+      }
+      
+      let matches_to_time = match filters.to_time {
+        Some(t) => event.timestamp <= t
+        None => true
+      }
+      
+      if matches_principal && matches_resource && matches_action && matches_outcome && matches_from_time && matches_to_time {
+        filtered_events = filtered_events.push(event)
+      }
+    }
+    
+    filtered_events
   }
   
-  let create_secure_log_entry_sanitized = fn(timestamp: Int, level: String, message: String, 
-                                            user_id: Option<String>, source_ip: Option<String>) -> SecureLogEntry {
-    let sanitized_message = sanitize_message(message)
-    create_secure_log_entry(timestamp, level, sanitized_message, user_id, source_ip)
+  let cleanup_old_events = fn(trail: AuditTrail, current_time: Int) {
+    let mut filtered_events = []
+    
+    for event in trail.events {
+      if current_time - event.timestamp <= trail.retention_period {
+        filtered_events = filtered_events.push(event)
+      }
+    }
+    
+    { trail | events: filtered_events }
   }
   
-  // Test secure logging
-  let timestamp = 1650000000
-  let level = "INFO"
-  let message = "User login successful"
-  let user_id = Some("user123")
-  let source_ip = Some("192.168.1.100")
-  
-  let log_entry = create_secure_log_entry(timestamp, level, message, user_id, source_ip)
-  
-  // Verify log entry
-  assert_true(verify_log_entry(log_entry))
-  
-  // Test tampered log entry
-  let tampered_entry = {
-    timestamp: log_entry.timestamp,
-    level: log_entry.level,
-    message: "User login failed",  // Tampered message
-    user_id: log_entry.user_id,
-    source_ip: log_entry.source_ip,
-    hash: log_entry.hash  // Original hash
+  // Test audit trail creation and event addition
+  let audit_trail = {
+    events: [],
+    retention_period: 7776000  // 90 days in seconds
   }
   
-  assert_false(verify_log_entry(tampered_entry))
+  let login_event = create_security_event(
+    "authentication",
+    "user-12345",
+    "system",
+    "login",
+    "success",
+    [("ip_address", "192.168.1.100"), ("user_agent", "Azimuth-Client/1.0")]
+  )
   
-  // Test sanitized logging
-  let sensitive_message = "User login successful with password=secret123 and token=abc456"
-  let sanitized_entry = create_secure_log_entry_sanitized(timestamp, level, sensitive_message, user_id, source_ip);
+  let data_access_event = create_security_event(
+    "authorization",
+    "user-12345",
+    "trace:trace-67890",
+    "read",
+    "success",
+    [("query", "SELECT * FROM traces WHERE id = 'trace-67890'")]
+  )
   
-  assert_true(sanitized_entry.message.contains("password=***"));
-  assert_true(sanitized_entry.message.contains("token=***"));
-  assert_false(sanitized_entry.message.contains("secret123"));
-  assert_false(sanitized_entry.message.contains("abc456"));
+  let failed_access_event = create_security_event(
+    "authorization",
+    "user-67890",
+    "trace:trace-12345",
+    "delete",
+    "denied",
+    [("reason", "insufficient_permissions")]
+  )
+  
+  let updated_trail = audit_trail
+    |> add_audit_event(login_event)
+    |> add_audit_event(data_access_event)
+    |> add_audit_event(failed_access_event)
+  
+  assert_eq(updated_trail.events.length(), 3)
+  
+  // Test audit trail queries
+  let user_events = query_audit_trail(updated_trail, {
+    principal: Some("user-12345"),
+    resource: None,
+    action: None,
+    outcome: None,
+    from_time: None,
+    to_time: None
+  })
+  
+  assert_eq(user_events.length(), 2)
+  assert_eq(user_events[0].event_type, "authentication")
+  assert_eq(user_events[1].event_type, "authorization")
+  
+  let delete_events = query_audit_trail(updated_trail, {
+    principal: None,
+    resource: None,
+    action: Some("delete"),
+    outcome: None,
+    from_time: None,
+    to_time: None
+  })
+  
+  assert_eq(delete_events.length(), 1)
+  assert_eq(delete_events[0].outcome, "denied")
+  
+  let success_events = query_audit_trail(updated_trail, {
+    principal: None,
+    resource: None,
+    action: None,
+    outcome: Some("success"),
+    from_time: None,
+    to_time: None
+  })
+  
+  assert_eq(success_events.length(), 2)
+  
+  // Test audit trail cleanup
+  let old_timestamp = 1640999999 - 7776000 - 1000  // Older than retention period
+  let old_event = {
+    timestamp: old_timestamp,
+    event_type: "authentication",
+    principal: "user-old",
+    resource: "system",
+    action: "login",
+    outcome: "success",
+    details: []
+  }
+  
+  let trail_with_old_event = add_audit_event(updated_trail, old_event)
+  assert_eq(trail_with_old_event.events.length(), 4)
+  
+  let cleaned_trail = cleanup_old_events(trail_with_old_event, 1640999999)
+  assert_eq(cleaned_trail.events.length(), 3)  // Old event removed
+  
+  // Test security event analysis
+  let detect_suspicious_activity = fn(trail: AuditTrail, time_window: Int, failure_threshold: Int) {
+    let mut suspicious_principals = []
+    let principal_failures = {}
+    
+    // Count failures per principal within time window
+    for event in trail.events {
+      if event.outcome == "denied" || event.outcome == "failure" {
+        let current_count = match principal_failures[event.principal] {
+          Some(count) => count
+          None => 0
+        }
+        principal_failures = principal_failures.insert(event.principal, current_count + 1)
+      }
+    }
+    
+    // Check for suspicious activity
+    for (principal, count) in principal_failures {
+      if count >= failure_threshold {
+        suspicious_principals = suspicious_principals.push({
+          principal,
+          failure_count: count,
+          risk_level: if count >= failure_threshold * 2 { "high" } else { "medium" }
+        })
+      }
+    }
+    
+    suspicious_principals
+  }
+  
+  // Add more failure events for testing
+  let more_failure_events = [
+    create_security_event("authorization", "user-99999", "trace:trace-11111", "read", "denied", []),
+    create_security_event("authorization", "user-99999", "trace:trace-22222", "read", "denied", []),
+    create_security_event("authorization", "user-99999", "trace:trace-33333", "write", "denied", []),
+    create_security_event("authorization", "user-99999", "trace:trace-44444", "delete", "denied", []),
+    create_security_event("authorization", "user-99999", "trace:trace-55555", "read", "denied", [])
+  ]
+  
+  let trail_with_failures = updated_trail
+  let mut i = 0
+  while i < more_failure_events.length() {
+    trail_with_failures = add_audit_event(trail_with_failures, more_failure_events[i])
+    i = i + 1
+  }
+  
+  let suspicious_activity = detect_suspicious_activity(trail_with_failures, 3600, 3)
+  
+  assert_eq(suspicious_activity.length(), 1)
+  assert_eq(suspicious_activity[0].principal, "user-99999")
+  assert_eq(suspicious_activity[0].failure_count, 5)
+  assert_eq(suspicious_activity[0].risk_level, "high")
 }
