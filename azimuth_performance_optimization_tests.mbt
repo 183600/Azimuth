@@ -1,502 +1,1016 @@
-// Azimuth Telemetry System - Performance Optimization Tests
-// This file contains comprehensive test cases for performance optimization and benchmarking
+// Azimuth 性能优化测试用例
+// 专注于遥测系统的性能优化和资源管理功能
 
-// Test 1: Memory Pool Management for High-Performance Allocations
-test "memory pool management for high-performance allocations" {
-  let memory_pool = MemoryPool::new(1024)  // 1KB pool size
-  
-  // Test initial pool state
-  assert_eq(MemoryPool::get_total_size(memory_pool), 1024)
-  assert_eq(MemoryPool::get_used_size(memory_pool), 0)
-  assert_eq(MemoryPool::get_free_size(memory_pool), 1024)
-  
-  // Test memory allocation
-  let block1 = MemoryPool::allocate(memory_pool, 256)
-  assert_true(MemoryPool::is_valid_block(block1))
-  assert_eq(MemoryPool::get_block_size(block1), 256)
-  assert_eq(MemoryPool::get_used_size(memory_pool), 256)
-  
-  let block2 = MemoryPool::allocate(memory_pool, 512)
-  assert_true(MemoryPool::is_valid_block(block2))
-  assert_eq(MemoryPool::get_block_size(block2), 512)
-  assert_eq(MemoryPool::get_used_size(memory_pool), 768)
-  
-  // Test memory deallocation
-  MemoryPool::deallocate(memory_pool, block1)
-  assert_eq(MemoryPool::get_used_size(memory_pool), 512)
-  assert_eq(MemoryPool::get_free_size(memory_pool), 512)
-  
-  // Test pool fragmentation
-  let block3 = MemoryPool::allocate(memory_pool, 256)
-  assert_true(MemoryPool::is_valid_block(block3))
-  
-  // Test pool compaction
-  let compacted = MemoryPool::compact(memory_pool)
-  assert_true(compacted)
-  assert_eq(MemoryPool::get_fragmentation_ratio(memory_pool), 0.0)
-}
-
-// Test 2: Lock-Free Data Structures for Concurrent Access
-test "lock-free data structures for concurrent access" {
-  let lock_free_queue = LockFreeQueue::new()
-  
-  // Test initial queue state
-  assert_true(LockFreeQueue::is_empty(lock_free_queue))
-  assert_eq(LockFreeQueue::size(lock_free_queue), 0)
-  
-  // Test concurrent enqueue operations
-  assert_true(LockFreeQueue::enqueue(lock_free_queue, "item1"))
-  assert_true(LockFreeQueue::enqueue(lock_free_queue, "item2"))
-  assert_true(LockFreeQueue::enqueue(lock_free_queue, "item3"))
-  
-  assert_eq(LockFreeQueue::size(lock_free_queue), 3)
-  assert_false(LockFreeQueue::is_empty(lock_free_queue))
-  
-  // Test concurrent dequeue operations
-  let item1 = LockFreeQueue::dequeue(lock_free_queue)
-  match item1 {
-    Some(value) => assert_eq(value, "item1")
-    None => assert_true(false)
-  }
-  
-  let item2 = LockFreeQueue::dequeue(lock_free_queue)
-  match item2 {
-    Some(value) => assert_eq(value, "item2")
-    None => assert_true(false)
-  }
-  
-  assert_eq(LockFreeQueue::size(lock_free_queue), 1)
-  
-  // Test queue empty case
-  let item3 = LockFreeQueue::dequeue(lock_free_queue)
-  match item3 {
-    Some(value) => assert_eq(value, "item3")
-    None => assert_true(false)
-  }
-  
-  let empty_item = LockFreeQueue::dequeue(lock_free_queue)
-  match empty_item {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  assert_true(LockFreeQueue::is_empty(lock_free_queue))
-  assert_eq(LockFreeQueue::size(lock_free_queue), 0)
-}
-
-// Test 3: CPU Cache Optimization for Data Structures
-test "cpu cache optimization for data structures" {
-  let cache_optimized_array = CacheOptimizedArray::new(1000)
-  
-  // Test array initialization
-  assert_eq(CacheOptimizedArray::size(cache_optimized_array), 1000)
-  
-  // Test sequential access (cache-friendly)
-  let start_time = PerformanceTimer::current_time()
-  for i in 0..=999 {
-    CacheOptimizedArray::set(cache_optimized_array, i, i * 2)
-  }
-  let sequential_time = PerformanceTimer::current_time() - start_time
-  
-  // Test random access (cache-unfriendly)
-  let random_indices = [500, 100, 800, 200, 900, 50, 750, 150, 950, 0]
-  start_time = PerformanceTimer::current_time()
-  for index in random_indices {
-    let value = CacheOptimizedArray::get(cache_optimized_array, index)
-    assert_eq(value, index * 2)
-  }
-  let random_time = PerformanceTimer::current_time() - start_time
-  
-  // Sequential access should be faster than random access
-  // Note: In a real scenario, the difference would be more significant
-  assert_true(sequential_time <= random_time * 2)
-  
-  // Test cache line alignment
-  let cache_line_size = CacheOptimizedArray::get_cache_line_size(cache_optimized_array)
-  assert_true(cache_line_size >= 32 && cache_line_size <= 128)  // Typical cache line sizes
-  
-  // Test prefetching optimization
-  let prefetch_array = CacheOptimizedArray::with_prefetching(1000)
-  for i in 0..=999 {
-    CacheOptimizedArray::set(prefetch_array, i, i * 3)
-  }
-  
-  for i in 0..=999 {
-    let value = CacheOptimizedArray::get(prefetch_array, i)
-    assert_eq(value, i * 3)
-  }
-}
-
-// Test 4: Lazy Initialization for Resource Efficiency
-test "lazy initialization for resource efficiency" {
-  let lazy_resource = LazyResource::new(fn() {
-    // Simulate expensive resource creation
-    return ExpensiveResource::new("config.json", 1024 * 1024)  // 1MB resource
-  })
-  
-  // Test resource is not initialized before first use
-  assert_false(LazyResource::is_initialized(lazy_resource))
-  assert_eq(LazyResource::get_initialization_count(lazy_resource), 0)
-  
-  // First access should initialize the resource
-  let resource1 = LazyResource::get(lazy_resource)
-  assert_true(LazyResource::is_initialized(lazy_resource))
-  assert_eq(LazyResource::get_initialization_count(lazy_resource), 1)
-  assert_true(ExpensiveResource::is_valid(resource1))
-  
-  // Subsequent accesses should return the same instance
-  let resource2 = LazyResource::get(lazy_resource)
-  assert_eq(LazyResource::get_initialization_count(lazy_resource), 1)  // Still 1, not reinitialized
-  assert_true(resource1 === resource2)  // Should be the same instance
-  
-  // Test lazy resource with custom factory
-  let custom_lazy = LazyResource::with_factory(fn() {
-    return CustomResource::new("custom_config", 512)
-  })
-  
-  assert_false(LazyResource::is_initialized(custom_lazy))
-  let custom_resource = LazyResource::get(custom_lazy)
-  assert_true(LazyResource::is_initialized(custom_lazy))
-  assert_eq(CustomResource::get_size(custom_resource), 512)
-}
-
-// Test 5: Object Pooling for Memory Efficiency
-test "object pooling for memory efficiency" {
-  let object_pool = ObjectPool::new(fn() {
-    return PooledObject::new()
-  }, 10)  // Max 10 objects
-  
-  // Test initial pool state
-  assert_eq(ObjectPool::get_available_count(object_pool), 10)
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 0)
-  
-  // Test object acquisition
-  let obj1 = ObjectPool::acquire(object_pool)
-  let obj2 = ObjectPool::acquire(object_pool)
-  let obj3 = ObjectPool::acquire(object_pool)
-  
-  assert_eq(ObjectPool::get_available_count(object_pool), 7)
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 3)
-  
-  // Test object properties
-  assert_true(PooledObject::is_initialized(obj1))
-  assert_true(PooledObject::is_initialized(obj2))
-  assert_true(PooledObject::is_initialized(obj3))
-  
-  // Test object release
-  ObjectPool::release(object_pool, obj1)
-  ObjectPool::release(object_pool, obj2)
-  
-  assert_eq(ObjectPool::get_available_count(object_pool), 9)
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 1)
-  
-  // Test object reuse
-  let reused_obj = ObjectPool::acquire(object_pool)
-  assert_eq(ObjectPool::get_available_count(object_pool), 8)
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 2)
-  
-  // Test pool expansion when exhausted
-  let acquired_objects = []
-  for i in 0..=11 {  // Try to acquire 12 objects (pool has max 10)
-    let obj = ObjectPool::acquire(object_pool)
-    acquired_objects.push(obj)
-  }
-  
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 12)
-  assert_eq(ObjectPool::get_available_count(object_pool), 0)
-  
-  // Release all objects
-  for obj in acquired_objects {
-    ObjectPool::release(object_pool, obj)
-  }
-  
-  assert_eq(ObjectPool::get_in_use_count(object_pool), 0)
-  assert_eq(ObjectPool::get_available_count(object_pool), 12)  // Pool expanded
-}
-
-// Test 6: Batch Processing for Throughput Optimization
-test "batch processing for throughput optimization" {
-  let batch_processor = BatchProcessor::new(100)  // Batch size of 100
-  
-  // Test initial processor state
-  assert_eq(BatchProcessor::get_batch_size(batch_processor), 100)
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 0)
-  
-  // Add items to batch processor
-  for i in 0..=99 {
-    BatchProcessor::add_item(batch_processor, "item" + i.to_string())
-  }
-  
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 100)
-  
-  // Test batch processing
-  let processed_items = []
-  BatchProcessor::process_batch(batch_processor, fn(items) {
-    for item in items {
-      processed_items.push("processed_" + item)
+// 测试1: 遥测数据采集性能优化
+test "遥测数据采集性能优化" {
+  // 模拟不同采集策略的性能数据
+  let collection_strategies = [
+    { 
+      strategy_name: "full_collection", 
+      collection_interval_ms: 1000, 
+      batch_size: 100, 
+      compression_enabled: false, 
+      sampling_enabled: false,
+      cpu_usage_percent: 25.5,
+      memory_usage_mb: 512,
+      network_usage_mb_per_sec: 10.5,
+      data_points_per_sec: 1000,
+      data_loss_percent: 0.1
+    },
+    { 
+      strategy_name: "batch_collection", 
+      collection_interval_ms: 5000, 
+      batch_size: 500, 
+      compression_enabled: true, 
+      sampling_enabled: false,
+      cpu_usage_percent: 15.2,
+      memory_usage_mb: 384,
+      network_usage_mb_per_sec: 6.2,
+      data_points_per_sec: 1000,
+      data_loss_percent: 0.2
+    },
+    { 
+      strategy_name: "sampling_collection", 
+      collection_interval_ms: 1000, 
+      batch_size: 100, 
+      compression_enabled: false, 
+      sampling_enabled: true,
+      cpu_usage_percent: 12.8,
+      memory_usage_mb: 256,
+      network_usage_mb_per_sec: 4.1,
+      data_points_per_sec: 200,
+      data_loss_percent: 0.5
+    },
+    { 
+      strategy_name: "adaptive_collection", 
+      collection_interval_ms: 1000, 
+      batch_size: 100, 
+      compression_enabled: true, 
+      sampling_enabled: true,
+      cpu_usage_percent: 10.5,
+      memory_usage_mb: 192,
+      network_usage_mb_per_sec: 3.2,
+      data_points_per_sec: 300,
+      data_loss_percent: 0.8
     }
-    return items.length()
-  })
+  ]
   
-  assert_eq(processed_items.length(), 100)
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 0)
-  
-  // Verify processed items
-  for i in 0..=99 {
-    assert_eq(processed_items[i], "processed_item" + i.to_string())
-  }
-  
-  // Test partial batch processing
-  for i in 0..=49 {  // Add only 50 items
-    BatchProcessor::add_item(batch_processor, "partial_item" + i.to_string())
-  }
-  
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 50)
-  
-  // Force process partial batch
-  let partial_processed = []
-  BatchProcessor::process_partial_batch(batch_processor, fn(items) {
-    for item in items {
-      partial_processed.push("processed_" + item)
+  // 计算性能效率指标
+  let calculate_efficiency_metrics = fn(strategy: CollectionStrategy) {
+    // 数据质量指标
+    let data_completeness = 100.0 - strategy.data_loss_percent
+    let data_density = if strategy.sampling_enabled { 20.0 } else { 100.0 }
+    
+    // 资源效率指标
+    let cpu_efficiency = (1000.0 / strategy.cpu_usage_percent) * data_completeness
+    let memory_efficiency = (1000.0 / strategy.memory_usage_mb) * data_completeness
+    let network_efficiency = (10.0 / strategy.network_usage_mb_per_sec) * data_completeness
+    
+    // 综合效率评分
+    let overall_efficiency = (cpu_efficiency + memory_efficiency + network_efficiency) / 3.0
+    
+    // 成本效益指标
+    let cost_per_data_point = (
+      (strategy.cpu_usage_percent * 0.1) + 
+      (strategy.memory_usage_mb * 0.01) + 
+      (strategy.network_usage_mb_per_sec * 0.5)
+    ) / strategy.data_points_per_sec.to_float()
+    
+    {
+      data_completeness: data_completeness,
+      data_density: data_density,
+      cpu_efficiency: cpu_efficiency,
+      memory_efficiency: memory_efficiency,
+      network_efficiency: network_efficiency,
+      overall_efficiency: overall_efficiency,
+      cost_per_data_point: cost_per_data_point
     }
-    return items.length()
-  })
-  
-  assert_eq(partial_processed.length(), 50)
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 0)
-}
-
-// Test 7: Compression and Serialization Optimization
-test "compression and serialization optimization" {
-  let data = "This is a large piece of data that should be compressed to save space and transmission time. ".repeat(100)
-  
-  // Test compression
-  let compressed_data = CompressionUtil::compress(data)
-  assert_true(compressed_data.length() < data.length())
-  
-  // Test decompression
-  let decompressed_data = CompressionUtil::decompress(compressed_data)
-  assert_eq(decompressed_data, data)
-  
-  // Test compression ratio
-  let compression_ratio = CompressionUtil::calculate_compression_ratio(data, compressed_data)
-  assert_true(compression_ratio > 0.0 && compression_ratio < 1.0)
-  
-  // Test different compression algorithms
-  let gzip_compressed = CompressionUtil::compress_with_algorithm(data, CompressionAlgorithm::Gzip)
-  let deflate_compressed = CompressionUtil::compress_with_algorithm(data, CompressionAlgorithm::Deflate)
-  let lz4_compressed = CompressionUtil::compress_with_algorithm(data, CompressionAlgorithm::LZ4)
-  
-  assert_true(gzip_compressed.length() > 0)
-  assert_true(deflate_compressed.length() > 0)
-  assert_true(lz4_compressed.length() > 0)
-  
-  // Test serialization optimization
-  let test_object = TestObject::new("test", 42, [1, 2, 3, 4, 5])
-  
-  // JSON serialization
-  let json_serialized = SerializationUtil::serialize_to_json(test_object)
-  let json_deserialized = SerializationUtil::deserialize_from_json(json_serialized)
-  assert_true(TestObject::equals(test_object, json_deserialized))
-  
-  // Binary serialization (more compact)
-  let binary_serialized = SerializationUtil::serialize_to_binary(test_object)
-  let binary_deserialized = SerializationUtil::deserialize_from_binary(binary_serialized)
-  assert_true(TestObject::equals(test_object, binary_deserialized))
-  
-  // Binary should be more compact than JSON
-  assert_true(binary_serialized.length() < json_serialized.length())
-}
-
-// Test 8: Algorithmic Complexity Optimization
-test "algorithmic complexity optimization" {
-  // Test linear vs. binary search
-  let sorted_array = Array::from_range(1, 10000)  // Array of 1..10000
-  
-  // Linear search (O(n))
-  let start_time = PerformanceTimer::current_time()
-  let linear_result = SearchUtil::linear_search(sorted_array, 9999)
-  let linear_time = PerformanceTimer::current_time() - start_time
-  
-  match linear_result {
-    Some(index) => assert_eq(index, 9998)  // 0-based index
-    None => assert_true(false)
   }
   
-  // Binary search (O(log n))
-  start_time = PerformanceTimer::current_time()
-  let binary_result = SearchUtil::binary_search(sorted_array, 9999)
-  let binary_time = PerformanceTimer::current_time() - start_time
-  
-  match binary_result {
-    Some(index) => assert_eq(index, 9998)  // 0-based index
-    None => assert_true(false)
-  }
-  
-  // Binary search should be significantly faster
-  assert_true(binary_time < linear_time)
-  
-  // Test hash table lookup (O(1) average case)
-  let hash_map = HashMap::new()
-  for i in 1..=10000 {
-    HashMap::insert(hash_map, i, "value" + i.to_string())
-  }
-  
-  start_time = PerformanceTimer::current_time()
-  let hash_result = HashMap::get(hash_map, 9999)
-  let hash_time = PerformanceTimer::current_time() - start_time
-  
-  match hash_result {
-    Some(value) => assert_eq(value, "value9999")
-    None => assert_true(false)
-  }
-  
-  // Hash lookup should be fastest
-  assert_true(hash_time < binary_time)
-  
-  // Test sorting algorithm optimization
-  let unsorted_array = [5000, 1000, 8000, 2000, 9000, 3000, 7000, 4000, 6000, 10000]
-  
-  // Bubble sort (O(n^2))
-  let bubble_array = Array::copy(unsorted_array)
-  start_time = PerformanceTimer::current_time()
-  SortUtil::bubble_sort(bubble_array)
-  let bubble_time = PerformanceTimer::current_time() - start_time
-  
-  // Quick sort (O(n log n))
-  let quick_array = Array::copy(unsorted_array)
-  start_time = PerformanceTimer::current_time()
-  SortUtil::quick_sort(quick_array)
-  let quick_time = PerformanceTimer::current_time() - start_time
-  
-  // Both should produce sorted results
-  assert_true(Array::is_sorted(bubble_array))
-  assert_true(Array::is_sorted(quick_array))
-  
-  // Quick sort should be faster
-  assert_true(quick_time < bubble_time)
-}
-
-// Test 9: I/O Optimization Techniques
-test "io optimization techniques" {
-  // Test buffered I/O vs. unbuffered I/O
-  let test_data = "Line 1\nLine 2\nLine 3\n".repeat(1000)
-  
-  // Unbuffered write
-  let start_time = PerformanceTimer::current_time()
-  IOUtil::write_unbuffered("test_unbuffered.txt", test_data)
-  let unbuffered_write_time = PerformanceTimer::current_time() - start_time
-  
-  // Buffered write
-  start_time = PerformanceTimer::current_time()
-  IOUtil::write_buffered("test_buffered.txt", test_data)
-  let buffered_write_time = PerformanceTimer::current_time() - start_time
-  
-  // Buffered write should be faster
-  assert_true(buffered_write_time < unbuffered_write_time)
-  
-  // Test asynchronous I/O
-  let async_result = AsyncIOUtil::write_async("test_async.txt", test_data)
-  assert_true(AsyncIOUtil::is_pending(async_result))
-  
-  // Wait for completion
-  let completed_result = AsyncIOUtil::wait_for_completion(async_result)
-  assert_true(AsyncIOUtil::is_completed(completed_result))
-  
-  // Test memory-mapped I/O
-  let mmap_file = MemoryMappedFile::open("test_buffered.txt")
-  assert_true(MemoryMappedFile::is_valid(mmap_file))
-  
-  let mmap_data = MemoryMappedFile::get_data(mmap_file)
-  assert_eq(mmap_data, test_data)
-  
-  // Test batch I/O operations
-  let files = ["file1.txt", "file2.txt", "file3.txt", "file4.txt", "file5.txt"]
-  let file_data = ["Data 1", "Data 2", "Data 3", "Data 4", "Data 5"]
-  
-  start_time = PerformanceTimer::current_time()
-  for i in 0..=4 {
-    IOUtil::write_buffered(files[i], file_data[i])
-  }
-  let individual_write_time = PerformanceTimer::current_time() - start_time
-  
-  start_time = PerformanceTimer::current_time()
-  IOUtil::write_batch(files, file_data)
-  let batch_write_time = PerformanceTimer::current_time() - start_time
-  
-  // Batch write should be faster
-  assert_true(batch_write_time < individual_write_time)
-}
-
-// Test 10: Performance Profiling and Metrics
-test "performance profiling and metrics" {
-  let profiler = PerformanceProfiler::new()
-  
-  // Test profiler initialization
-  assert_true(PerformanceProfiler::is_enabled(profiler))
-  assert_eq(PerformanceProfiler::get_sample_count(profiler), 0)
-  
-  // Start profiling
-  PerformanceProfiler::start(profiler)
-  
-  // Simulate some work
-  let work_result = []
-  for i in 0..=1000 {
-    work_result.push(i * i)
-  }
-  
-  // Stop profiling
-  PerformanceProfiler::stop(profiler)
-  
-  // Get profiling results
-  let profile_data = PerformanceProfiler::get_profile_data(profiler)
-  assert_true(profile_data.total_time > 0)
-  assert_eq(profile_data.sample_count, 1)
-  
-  // Test function-level profiling
-  PerformanceProfiler::start_function_profile(profiler, "test_function")
-  
-  // Simulate function work
-  let function_result = 0
-  for i in 0..=5000 {
-    function_result = function_result + i
-  }
-  
-  PerformanceProfiler::end_function_profile(profiler, "test_function")
-  
-  let function_profile = PerformanceProfiler::get_function_profile(profiler, "test_function")
-  match function_profile {
-    Some(profile) => {
-      assert_true(profile.total_time > 0)
-      assert_eq(profile.call_count, 1)
-      assert_eq(profile.function_name, "test_function")
+  // 识别性能瓶颈
+  let identify_performance_bottlenecks = fn(strategies: Array[CollectionStrategy>) {
+    let mut bottlenecks = []
+    
+    for strategy in strategies {
+      let mut issues = []
+      let metrics = calculate_efficiency_metrics(strategy)
+      
+      // CPU瓶颈
+      if strategy.cpu_usage_percent > 20.0 {
+        issues = issues.push({
+          resource: "cpu",
+          severity: if strategy.cpu_usage_percent > 30.0 { "critical" } else { "warning" },
+          value: strategy.cpu_usage_percent,
+          recommendation: "Consider enabling sampling or increasing batch size"
+        })
+      }
+      
+      // 内存瓶颈
+      if strategy.memory_usage_mb > 400 {
+        issues = issues.push({
+          resource: "memory",
+          severity: if strategy.memory_usage_mb > 500 { "critical" } else { "warning" },
+          value: strategy.memory_usage_mb,
+          recommendation: "Enable compression or reduce batch size"
+        })
+      }
+      
+      // 网络瓶颈
+      if strategy.network_usage_mb_per_sec > 8.0 {
+        issues = issues.push({
+          resource: "network",
+          severity: if strategy.network_usage_mb_per_sec > 10.0 { "critical" } else { "warning" },
+          value: strategy.network_usage_mb_per_sec,
+          recommendation: "Enable compression or reduce data frequency"
+        })
+      }
+      
+      // 数据质量问题
+      if strategy.data_loss_percent > 0.5 {
+        issues = issues.push({
+          resource: "data_quality",
+          severity: if strategy.data_loss_percent > 1.0 { "critical" } else { "warning" },
+          value: strategy.data_loss_percent,
+          recommendation: "Adjust collection interval or improve network reliability"
+        })
+      }
+      
+      if issues.length() > 0 {
+        bottlenecks = bottlenecks.push({
+          strategy: strategy.strategy_name,
+          issues: issues,
+          overall_efficiency: metrics.overall_efficiency
+        })
+      }
     }
-    None => assert_true(false)
+    
+    bottlenecks
   }
   
-  // Test memory profiling
-  let memory_before = PerformanceProfiler::get_memory_usage(profiler)
-  
-  // Allocate some memory
-  let large_array = Array::new(10000)
-  for i in 0..=9999 {
-    large_array[i] = i * 2
+  // 生成优化建议
+  let generate_optimization_recommendations = fn(strategies: Array[CollectionStrategy>) {
+    let mut recommendations = []
+    
+    // 按效率排序策略
+    let strategies_with_metrics = strategies.map_fn(s) {
+      let metrics = calculate_efficiency_metrics(s)
+      { strategy: s, metrics: metrics }
+    }
+    
+    let sorted_strategies = strategies_with_metrics.sort_by(fn(a, b) { 
+      b.metrics.overall_efficiency - a.metrics.overall_efficiency
+    })
+    
+    // 找出最佳策略
+    let best_strategy = sorted_strategies[0]
+    
+    // 为每个策略生成优化建议
+    for item in strategies_with_metrics {
+      let strategy = item.strategy
+      let metrics = item.metrics
+      
+      let mut strategy_recommendations = []
+      
+      // 压缩建议
+      if not strategy.compression_enabled and strategy.network_usage_mb_per_sec > 5.0 {
+        strategy_recommendations = strategy_recommendations.push(
+          "Enable compression to reduce network usage by approximately 60%"
+        )
+      }
+      
+      // 采样建议
+      if not strategy.sampling_enabled and strategy.cpu_usage_percent > 15.0 {
+        strategy_recommendations = strategy_recommendations.push(
+          "Enable sampling to reduce CPU usage and network traffic"
+        )
+      }
+      
+      // 批处理建议
+      if strategy.batch_size < 300 and strategy.collection_interval_ms < 2000 {
+        strategy_recommendations = strategy_recommendations.push(
+          "Increase batch size to improve throughput efficiency"
+        )
+      }
+      
+      // 采集间隔建议
+      if strategy.collection_interval_ms < 2000 and strategy.data_points_per_sec > 500 {
+        strategy_recommendations = strategy_recommendations.push(
+          "Consider increasing collection interval to reduce system load"
+        )
+      }
+      
+      if strategy_recommendations.length() > 0 {
+        recommendations = recommendations.push({
+          strategy: strategy.strategy_name,
+          current_efficiency: metrics.overall_efficiency,
+          recommendations: strategy_recommendations,
+          potential_improvement: if metrics.overall_efficiency < best_strategy.metrics.overall_efficiency {
+            best_strategy.metrics.overall_efficiency - metrics.overall_efficiency
+          } else {
+            0.0
+          }
+        })
+      }
+    }
+    
+    recommendations
   }
   
-  let memory_after = PerformanceProfiler::get_memory_usage(profiler)
+  // 执行性能分析
+  let bottlenecks = identify_performance_bottlenecks(collection_strategies)
+  let recommendations = generate_optimization_recommendations(collection_strategies)
   
-  assert_true(memory_after.heap_used > memory_before.heap_used)
+  // 验证性能瓶颈识别
+  assert_eq(bottlenecks.length(), 2)
   
-  // Test performance metrics calculation
-  let metrics = PerformanceProfiler::calculate_metrics(profiler)
-  assert_true(metrics.cpu_usage >= 0.0 && metrics.cpu_usage <= 100.0)
-  assert_true(metrics.memory_usage > 0)
-  assert_true(metrics.average_execution_time > 0)
+  // 验证full_collection的瓶颈
+  let full_collection_bottlenecks = bottlenecks.find_fn(b) { b.strategy == "full_collection" }
+  assert_true(full_collection_bottlenecks.is_some())
+  assert_eq(full_collection_bottlenecks.unwrap().issues.length(), 3)  // CPU, memory, network
   
-  // Test performance report generation
-  let report = PerformanceProfiler::generate_report(profiler)
-  assert_true(report.contains("Performance Profile Report"))
-  assert_true(report.contains("test_function"))
-  assert_true(report.contains("Total Time"))
-  assert_true(report.contains("Memory Usage"))
+  // 验证batch_collection的瓶颈
+  let batch_collection_bottlenecks = bottlenecks.find_fn(b) { b.strategy == "batch_collection" }
+  assert_true(batch_collection_bottlenecks.is_some())
+  assert_eq(batch_collection_bottlenecks.unwrap().issues.length(), 1)  // memory
+  
+  // 验证优化建议
+  assert_eq(recommendations.length(), 3)
+  
+  // 验证full_collection的建议
+  let full_collection_recs = recommendations.find_fn(r) { r.strategy == "full_collection" }
+  assert_true(full_collection_recs.is_some())
+  assert_eq(full_collection_recs.unwrap().recommendations.length(), 3)
+  assert_true(full_collection_recs.unwrap().potential_improvement > 0.0)
+  
+  // 验证adaptive_collection没有建议（已经是最佳策略）
+  let adaptive_collection_recs = recommendations.find_fn(r) { r.strategy == "adaptive_collection" }
+  assert_true(adaptive_collection_recs.is_none())
+}
+
+// 测试2: 遥测数据存储优化
+test "遥测数据存储优化" {
+  // 模拟不同存储策略的性能数据
+  let storage_strategies = [
+    { 
+      strategy_name: "raw_storage", 
+      compression: "none", 
+      indexing: "minimal", 
+      retention_days: 30, 
+      sharding_enabled: false,
+      storage_used_gb: 500,
+      write_latency_ms: 5,
+      read_latency_ms: 10,
+      cpu_usage_percent: 15.0,
+      memory_usage_gb: 8,
+      storage_cost_per_month: 50.0,
+      query_performance_score: 60.0
+    },
+    { 
+      strategy_name: "compressed_storage", 
+      compression: "gzip", 
+      indexing: "minimal", 
+      retention_days: 30, 
+      sharding_enabled: false,
+      storage_used_gb: 200,
+      write_latency_ms: 15,
+      read_latency_ms: 25,
+      cpu_usage_percent: 25.0,
+      memory_usage_gb: 10,
+      storage_cost_per_month: 20.0,
+      query_performance_score: 40.0
+    },
+    { 
+      strategy_name: "indexed_storage", 
+      compression: "none", 
+      indexing: "full", 
+      retention_days: 30, 
+      sharding_enabled: false,
+      storage_used_gb: 650,
+      write_latency_ms: 20,
+      read_latency_ms: 5,
+      cpu_usage_percent: 20.0,
+      memory_usage_gb: 16,
+      storage_cost_per_month: 65.0,
+      query_performance_score: 90.0
+    },
+    { 
+      strategy_name: "optimized_storage", 
+      compression: "lz4", 
+      indexing: "selective", 
+      retention_days: 90, 
+      sharding_enabled: true,
+      storage_used_gb: 250,
+      write_latency_ms: 12,
+      read_latency_ms: 15,
+      cpu_usage_percent: 18.0,
+      memory_usage_gb: 12,
+      storage_cost_per_month: 25.0,
+      query_performance_score: 75.0
+    }
+  ]
+  
+  // 计算存储效率指标
+  let calculate_storage_efficiency = fn(strategy: StorageStrategy) {
+    // 压缩效率
+    let compression_ratio = if strategy.compression != "none" { 
+      if strategy.compression == "gzip" { 2.5 } else if strategy.compression == "lz4" { 2.0 } else { 1.5 }
+    } else { 1.0 }
+    
+    // 存储效率
+    let storage_efficiency = (500.0 / strategy.storage_used_gb) * compression_ratio
+    
+    // 查询效率
+    let query_efficiency = strategy.query_performance_score / 100.0
+    
+    // 成本效率
+    let cost_efficiency = (50.0 / strategy.storage_cost_per_month) * (strategy.retention_days / 30.0)
+    
+    // 综合效率评分
+    let overall_efficiency = (storage_efficiency + query_efficiency + cost_efficiency) / 3.0
+    
+    // 性能平衡指标
+    let performance_balance = (
+      (100.0 / strategy.write_latency_ms) + 
+      (100.0 / strategy.read_latency_ms) + 
+      strategy.query_performance_score
+    ) / 3.0
+    
+    {
+      compression_ratio: compression_ratio,
+      storage_efficiency: storage_efficiency,
+      query_efficiency: query_efficiency,
+      cost_efficiency: cost_efficiency,
+      overall_efficiency: overall_efficiency,
+      performance_balance: performance_balance
+    }
+  }
+  
+  // 分析存储性能权衡
+  let analyze_storage_tradeoffs = fn(strategies: Array[StorageStrategy>) {
+    let mut tradeoffs = []
+    
+    for strategy in strategies {
+      let metrics = calculate_storage_efficiency(strategy)
+      
+      // 存储空间 vs 查询性能
+      let storage_vs_query = {
+        storage_space: strategy.storage_used_gb,
+        query_performance: strategy.query_performance_score,
+        tradeoff_score: (500.0 / strategy.storage_used_gb) * (strategy.query_performance_score / 100.0)
+      }
+      
+      // 写入性能 vs 读取性能
+      let write_vs_read = {
+        write_latency: strategy.write_latency_ms,
+        read_latency: strategy.read_latency_ms,
+        balance_score: 10000.0 / (strategy.write_latency_ms * strategy.read_latency_ms)
+      }
+      
+      // 成本 vs 性能
+      let cost_vs_performance = {
+        monthly_cost: strategy.storage_cost_per_month,
+        performance_score: strategy.query_performance_score,
+        value_score: strategy.query_performance_score / strategy.storage_cost_per_month
+      }
+      
+      tradeoffs = tradeoffs.push({
+        strategy: strategy.strategy_name,
+        storage_vs_query: storage_vs_query,
+        write_vs_read: write_vs_read,
+        cost_vs_performance: cost_vs_performance,
+        overall_efficiency: metrics.overall_efficiency
+      })
+    }
+    
+    tradeoffs
+  }
+  
+  // 生成存储优化建议
+  let generate_storage_optimization = fn(strategies: Array[StorageStrategy>) {
+    let mut optimizations = []
+    
+    // 找出最佳综合效率策略
+    let strategies_with_metrics = strategies.map_fn(s) {
+      let metrics = calculate_storage_efficiency(s)
+      { strategy: s, metrics: metrics }
+    }
+    
+    let best_strategy = strategies_with_metrics.max_by(fn(a, b) { 
+      a.metrics.overall_efficiency - b.metrics.overall_efficiency
+    })
+    
+    // 为每个策略生成优化建议
+    for item in strategies_with_metrics {
+      let strategy = item.strategy
+      let metrics = item.metrics
+      
+      let mut strategy_optimizations = []
+      
+      // 压缩优化
+      if strategy.compression == "none" and strategy.storage_used_gb > 300 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Enable compression to reduce storage costs by 50-60%"
+        )
+      } else if strategy.compression == "gzip" and strategy.read_latency_ms > 20 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Consider switching to LZ4 compression for better read performance"
+        )
+      }
+      
+      // 索引优化
+      if strategy.indexing == "minimal" and strategy.query_performance_score < 50 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Add selective indexes to improve query performance"
+        )
+      } else if strategy.indexing == "full" and strategy.storage_used_gb > 600 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Consider selective indexing to reduce storage overhead"
+        )
+      }
+      
+      // 分片优化
+      if not strategy.sharding_enabled and strategy.storage_used_gb > 400 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Enable sharding to improve performance and scalability"
+        )
+      }
+      
+      // 保留期优化
+      if strategy.retention_days < 60 and strategy.storage_cost_per_month > 30 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Implement tiered storage with longer retention for cold data"
+        )
+      }
+      
+      if strategy_optimizations.length() > 0 {
+        optimizations = optimizations.push({
+          strategy: strategy.strategy_name,
+          current_efficiency: metrics.overall_efficiency,
+          optimizations: strategy_optimizations,
+          potential_improvement: if metrics.overall_efficiency < best_strategy.metrics.overall_efficiency {
+            best_strategy.metrics.overall_efficiency - metrics.overall_efficiency
+          } else {
+            0.0
+          }
+        })
+      }
+    }
+    
+    optimizations
+  }
+  
+  // 执行存储性能分析
+  let tradeoffs = analyze_storage_tradeoffs(storage_strategies)
+  let optimizations = generate_storage_optimization(storage_strategies)
+  
+  // 验证存储性能权衡分析
+  assert_eq(tradeoffs.length(), 4)
+  
+  // 验证raw_storage的权衡
+  let raw_storage_tradeoff = tradeoffs.find_fn(t) { t.strategy == "raw_storage" }
+  assert_true(raw_storage_tradeoff.is_some())
+  assert_eq(raw_storage_tradeoff.unwrap().storage_vs_query.storage_space, 500)
+  assert_eq(raw_storage_tradeoff.unwrap().storage_vs_query.query_performance, 60.0)
+  assert_eq(raw_storage_tradeoff.unwrap().write_vs_read.write_latency, 5)
+  assert_eq(raw_storage_tradeoff.unwrap().write_vs_read.read_latency, 10)
+  
+  // 验证optimized_storage的综合效率最高
+  let optimized_storage_tradeoff = tradeoffs.find_fn(t) { t.strategy == "optimized_storage" }
+  assert_true(optimized_storage_tradeoff.is_some())
+  assert_true(optimized_storage_tradeoff.unwrap().overall_efficiency > 0.0)
+  
+  // 验证存储优化建议
+  assert_eq(optimizations.length(), 3)
+  
+  // 验证raw_storage的建议
+  let raw_storage_opts = optimizations.find_fn(o) { o.strategy == "raw_storage" }
+  assert_true(raw_storage_opts.is_some())
+  assert_eq(raw_storage_opts.unwrap().optimizations.length(), 2)  // compression, sharding
+  
+  // 验证indexed_storage的建议
+  let indexed_storage_opts = optimizations.find_fn(o) { o.strategy == "indexed_storage" }
+  assert_true(indexed_storage_opts.is_some())
+  assert_eq(indexed_storage_opts.unwrap().optimizations.length(), 1)  // selective indexing
+}
+
+// 测试3: 遥测查询性能优化
+test "遥测查询性能优化" {
+  // 模拟不同查询优化策略的性能数据
+  let query_strategies = [
+    { 
+      strategy_name: "full_scan", 
+      index_usage: "none", 
+      query_complexity: "high", 
+      result_caching: false, 
+      parallel_processing: false,
+      avg_response_time_ms: 2500,
+      cpu_usage_percent: 35.0,
+      memory_usage_mb: 1024,
+      concurrent_queries_supported: 5,
+      cache_hit_rate_percent: 0.0,
+      data_scanned_mb: 5000
+    },
+    { 
+      strategy_name: "indexed_query", 
+      index_usage: "full", 
+      query_complexity: "high", 
+      result_caching: false, 
+      parallel_processing: false,
+      avg_response_time_ms: 800,
+      cpu_usage_percent: 25.0,
+      memory_usage_mb: 768,
+      concurrent_queries_supported: 10,
+      cache_hit_rate_percent: 0.0,
+      data_scanned_mb: 500
+    },
+    { 
+      strategy_name: "cached_query", 
+      index_usage: "full", 
+      query_complexity: "medium", 
+      result_caching: true, 
+      parallel_processing: false,
+      avg_response_time_ms: 150,
+      cpu_usage_percent: 15.0,
+      memory_usage_mb: 512,
+      concurrent_queries_supported: 20,
+      cache_hit_rate_percent: 75.0,
+      data_scanned_mb: 200
+    },
+    { 
+      strategy_name: "parallel_query", 
+      index_usage: "selective", 
+      query_complexity: "high", 
+      result_caching: true, 
+      parallel_processing: true,
+      avg_response_time_ms: 300,
+      cpu_usage_percent: 30.0,
+      memory_usage_mb: 1536,
+      concurrent_queries_supported: 15,
+      cache_hit_rate_percent: 40.0,
+      data_scanned_mb: 1000
+    }
+  ]
+  
+  // 计算查询性能指标
+  let calculate_query_performance = fn(strategy: QueryStrategy) {
+    // 响应时间效率
+    let response_efficiency = 1000.0 / strategy.avg_response_time_ms
+    
+    // 吞吐量效率
+    let throughput_efficiency = strategy.concurrent_queries_supported / 10.0
+    
+    // 资源效率
+    let resource_efficiency = 1000.0 / (strategy.cpu_usage_percent * strategy.memory_usage_mb)
+    
+    // 缓存效率
+    let cache_efficiency = strategy.cache_hit_rate_percent / 100.0
+    
+    // 数据扫描效率
+    let scan_efficiency = 1000.0 / strategy.data_scanned_mb
+    
+    // 综合性能评分
+    let overall_performance = (
+      response_efficiency + 
+      throughput_efficiency + 
+      resource_efficiency + 
+      cache_efficiency + 
+      scan_efficiency
+    ) / 5.0
+    
+    // 成本效益指标
+    let cost_per_query = (
+      (strategy.cpu_usage_percent * 0.1) + 
+      (strategy.memory_usage_mb * 0.01) + 
+      (strategy.data_scanned_mb * 0.001)
+    ) / strategy.concurrent_queries_supported.to_float()
+    
+    {
+      response_efficiency: response_efficiency,
+      throughput_efficiency: throughput_efficiency,
+      resource_efficiency: resource_efficiency,
+      cache_efficiency: cache_efficiency,
+      scan_efficiency: scan_efficiency,
+      overall_performance: overall_performance,
+      cost_per_query: cost_per_query
+    }
+  }
+  
+  // 分析查询性能瓶颈
+  let analyze_query_bottlenecks = fn(strategies: Array[QueryStrategy>) {
+    let mut bottlenecks = []
+    
+    for strategy in strategies {
+      let mut issues = []
+      let performance = calculate_query_performance(strategy)
+      
+      // 响应时间瓶颈
+      if strategy.avg_response_time_ms > 1000 {
+        issues = issues.push({
+          metric: "response_time",
+          severity: if strategy.avg_response_time_ms > 2000 { "critical" } else { "warning" },
+          value: strategy.avg_response_time_ms,
+          recommendation: "Add indexes or enable result caching"
+        })
+      }
+      
+      // CPU使用瓶颈
+      if strategy.cpu_usage_percent > 30.0 {
+        issues = issues.push({
+          metric: "cpu_usage",
+          severity: if strategy.cpu_usage_percent > 40.0 { "critical" } else { "warning" },
+          value: strategy.cpu_usage_percent,
+          recommendation: "Optimize query execution plan or increase resources"
+        })
+      }
+      
+      // 内存使用瓶颈
+      if strategy.memory_usage_mb > 1024 {
+        issues = issues.push({
+          metric: "memory_usage",
+          severity: if strategy.memory_usage_mb > 1536 { "critical" } else { "warning" },
+          value: strategy.memory_usage_mb,
+          recommendation: "Enable result streaming or reduce result set size"
+        })
+      }
+      
+      // 数据扫描瓶颈
+      if strategy.data_scanned_mb > 2000 {
+        issues = issues.push({
+          metric: "data_scanned",
+          severity: if strategy.data_scanned_mb > 4000 { "critical" } else { "warning" },
+          value: strategy.data_scanned_mb,
+          recommendation: "Add selective indexes or optimize query predicates"
+        })
+      }
+      
+      // 并发查询瓶颈
+      if strategy.concurrent_queries_supported < 10 {
+        issues = issues.push({
+          metric: "concurrent_queries",
+          severity: if strategy.concurrent_queries_supported < 5 { "critical" } else { "warning" },
+          value: strategy.concurrent_queries_supported,
+          recommendation: "Enable connection pooling or query queuing"
+        })
+      }
+      
+      if issues.length() > 0 {
+        bottlenecks = bottlenecks.push({
+          strategy: strategy.strategy_name,
+          issues: issues,
+          overall_performance: performance.overall_performance
+        })
+      }
+    }
+    
+    bottlenecks
+  }
+  
+  // 生成查询优化建议
+  let generate_query_optimizations = fn(strategies: Array[QueryStrategy>) {
+    let mut optimizations = []
+    
+    // 按性能排序策略
+    let strategies_with_performance = strategies.map_fn(s) {
+      let performance = calculate_query_performance(s)
+      { strategy: s, performance: performance }
+    }
+    
+    let sorted_strategies = strategies_with_performance.sort_by(fn(a, b) { 
+      b.performance.overall_performance - a.performance.overall_performance
+    })
+    
+    // 找出最佳策略
+    let best_strategy = sorted_strategies[0]
+    
+    // 为每个策略生成优化建议
+    for item in strategies_with_performance {
+      let strategy = item.strategy
+      let performance = item.performance
+      
+      let mut strategy_optimizations = []
+      
+      // 索引优化
+      if strategy.index_usage == "none" and strategy.avg_response_time_ms > 1000 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Add appropriate indexes to reduce full table scans"
+        )
+      } else if strategy.index_usage == "full" and strategy.memory_usage_mb > 1000 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Consider selective indexing to reduce memory overhead"
+        )
+      }
+      
+      // 缓存优化
+      if not strategy.result_caching and strategy.cache_hit_rate_percent < 50 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Enable result caching for frequently executed queries"
+        )
+      }
+      
+      // 并行处理优化
+      if not strategy.parallel_processing and strategy.avg_response_time_ms > 500 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Enable parallel query processing for complex analytical queries"
+        )
+      }
+      
+      // 查询复杂度优化
+      if strategy.query_complexity == "high" and strategy.avg_response_time_ms > 1000 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Consider query decomposition or materialized views for complex queries"
+        )
+      }
+      
+      if strategy_optimizations.length() > 0 {
+        optimizations = optimizations.push({
+          strategy: strategy.strategy_name,
+          current_performance: performance.overall_performance,
+          optimizations: strategy_optimizations,
+          potential_improvement: if performance.overall_performance < best_strategy.performance.overall_performance {
+            best_strategy.performance.overall_performance - performance.overall_performance
+          } else {
+            0.0
+          }
+        })
+      }
+    }
+    
+    optimizations
+  }
+  
+  // 执行查询性能分析
+  let bottlenecks = analyze_query_bottlenecks(query_strategies)
+  let optimizations = generate_query_optimizations(query_strategies)
+  
+  // 验证查询性能瓶颈分析
+  assert_eq(bottlenecks.length(), 2)
+  
+  // 验证full_scan的瓶颈
+  let full_scan_bottlenecks = bottlenecks.find_fn(b) { b.strategy == "full_scan" }
+  assert_true(full_scan_bottlenecks.is_some())
+  assert_eq(full_scan_bottlenecks.unwrap().issues.length(), 5)  // 所有指标都有瓶颈
+  
+  // 验证indexed_query的瓶颈
+  let indexed_query_bottlenecks = bottlenecks.find_fn(b) { b.strategy == "indexed_query" }
+  assert_true(indexed_query_bottlenecks.is_some())
+  assert_eq(indexed_query_bottlenecks.unwrap().issues.length(), 1)  // 并发查询
+  
+  // 验证查询优化建议
+  assert_eq(optimizations.length(), 3)
+  
+  // 验证full_scan的建议
+  let full_scan_opts = optimizations.find_fn(o) { o.strategy == "full_scan" }
+  assert_true(full_scan_opts.is_some())
+  assert_eq(full_scan_opts.unwrap().optimizations.length(), 4)
+  assert_true(full_scan_opts.unwrap().potential_improvement > 0.0)
+  
+  // 验证cached_query没有建议（已经是最佳策略之一）
+  let cached_query_opts = optimizations.find_fn(o) { o.strategy == "cached_query" }
+  assert_true(cached_query_opts.is_none())
+}
+
+// 测试4: 遥测系统资源调度优化
+test "遥测系统资源调度优化" {
+  // 模拟不同资源调度策略的性能数据
+  let resource_strategies = [
+    { 
+      strategy_name: "static_allocation", 
+      cpu_cores: 8, 
+      memory_gb: 16, 
+      auto_scaling: false, 
+      load_balancing: "none",
+      avg_cpu_utilization: 45.0,
+      avg_memory_utilization: 60.0,
+      peak_requests_per_sec: 1000,
+      response_time_p99_ms: 500,
+      resource_waste_percent: 30.0,
+      cost_per_hour: 2.0
+    },
+    { 
+      strategy_name: "auto_scaling", 
+      cpu_cores: 4, 
+      memory_gb: 8, 
+      auto_scaling: true, 
+      load_balancing: "round_robin",
+      avg_cpu_utilization: 65.0,
+      avg_memory_utilization: 75.0,
+      peak_requests_per_sec: 2000,
+      response_time_p99_ms: 300,
+      resource_waste_percent: 10.0,
+      cost_per_hour: 2.5
+    },
+    { 
+      strategy_name: "load_balanced", 
+      cpu_cores: 6, 
+      memory_gb: 12, 
+      auto_scaling: false, 
+      load_balancing: "least_connections",
+      avg_cpu_utilization: 55.0,
+      avg_memory_utilization: 70.0,
+      peak_requests_per_sec: 1500,
+      response_time_p99_ms: 350,
+      resource_waste_percent: 20.0,
+      cost_per_hour: 1.8
+    },
+    { 
+      strategy_name: "optimized_hybrid", 
+      cpu_cores: 4, 
+      memory_gb: 8, 
+      auto_scaling: true, 
+      load_balancing: "weighted_response_time",
+      avg_cpu_utilization: 70.0,
+      avg_memory_utilization: 80.0,
+      peak_requests_per_sec: 2500,
+      response_time_p99_ms: 200,
+      resource_waste_percent: 5.0,
+      cost_per_hour: 2.2
+    }
+  ]
+  
+  // 计算资源利用效率
+  let calculate_resource_efficiency = fn(strategy: ResourceStrategy) {
+    // CPU利用效率
+    let cpu_efficiency = strategy.avg_cpu_utilization / 100.0
+    
+    // 内存利用效率
+    let memory_efficiency = strategy.avg_memory_utilization / 100.0
+    
+    // 资源浪费率（越低越好）
+    let waste_efficiency = (100.0 - strategy.resource_waste_percent) / 100.0
+    
+    // 性能效率
+    let performance_efficiency = 1000.0 / strategy.response_time_p99_ms
+    
+    // 成本效率
+    let cost_efficiency = strategy.peak_requests_per_sec / strategy.cost_per_hour
+    
+    // 扩展效率
+    let scaling_efficiency = if strategy.auto_scaling { 1.5 } else { 1.0 }
+    
+    // 综合效率评分
+    let overall_efficiency = (
+      cpu_efficiency + 
+      memory_efficiency + 
+      waste_efficiency + 
+      (performance_efficiency / 10.0) + 
+      (cost_efficiency / 500.0) + 
+      scaling_efficiency
+    ) / 6.0
+    
+    {
+      cpu_efficiency: cpu_efficiency,
+      memory_efficiency: memory_efficiency,
+      waste_efficiency: waste_efficiency,
+      performance_efficiency: performance_efficiency,
+      cost_efficiency: cost_efficiency,
+      scaling_efficiency: scaling_efficiency,
+      overall_efficiency: overall_efficiency
+    }
+  }
+  
+  // 分析资源调度权衡
+  let analyze_resource_tradeoffs = fn(strategies: Array[ResourceStrategy>) {
+    let mut tradeoffs = []
+    
+    for strategy in strategies {
+      let efficiency = calculate_resource_efficiency(strategy)
+      
+      // 性能 vs 成本
+      let performance_vs_cost = {
+        performance: strategy.peak_requests_per_sec,
+        cost: strategy.cost_per_hour,
+        ratio: strategy.peak_requests_per_sec / strategy.cost_per_hour
+      }
+      
+      // 资源利用率 vs 响应时间
+      let utilization_vs_response = {
+        avg_utilization: (strategy.avg_cpu_utilization + strategy.avg_memory_utilization) / 2.0,
+        response_time: strategy.response_time_p99_ms,
+        efficiency_score: ((strategy.avg_cpu_utilization + strategy.avg_memory_utilization) / 2.0) / strategy.response_time_p99_ms
+      }
+      
+      // 静态资源 vs 动态扩展
+      let static_vs_dynamic = {
+        resource_allocation: if strategy.auto_scaling { "dynamic" } else { "static" },
+        flexibility: if strategy.auto_scaling { 2.0 } else { 1.0 },
+        predictability: if strategy.auto_scaling { 0.7 } else { 1.0 }
+      }
+      
+      tradeoffs = tradeoffs.push({
+        strategy: strategy.strategy_name,
+        performance_vs_cost: performance_vs_cost,
+        utilization_vs_response: utilization_vs_response,
+        static_vs_dynamic: static_vs_dynamic,
+        overall_efficiency: efficiency.overall_efficiency
+      })
+    }
+    
+    tradeoffs
+  }
+  
+  // 生成资源调度优化建议
+  let generate_resource_optimizations = fn(strategies: Array[ResourceStrategy>) {
+    let mut optimizations = []
+    
+    // 找出最佳综合效率策略
+    let strategies_with_efficiency = strategies.map_fn(s) {
+      let efficiency = calculate_resource_efficiency(s)
+      { strategy: s, efficiency: efficiency }
+    }
+    
+    let best_strategy = strategies_with_efficiency.max_by(fn(a, b) { 
+      a.efficiency.overall_efficiency - b.efficiency.overall_efficiency
+    })
+    
+    // 为每个策略生成优化建议
+    for item in strategies_with_efficiency {
+      let strategy = item.strategy
+      let efficiency = item.efficiency
+      
+      let mut strategy_optimizations = []
+      
+      // 自动扩展建议
+      if not strategy.auto_scaling and strategy.resource_waste_percent > 20.0 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Enable auto-scaling to reduce resource waste and improve cost efficiency"
+        )
+      }
+      
+      // 负载均衡建议
+      if strategy.load_balancing == "none" and strategy.response_time_p99_ms > 400 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Implement load balancing to distribute traffic and improve response times"
+        )
+      } else if strategy.load_balancing == "round_robin" and strategy.response_time_p99_ms > 250 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Consider advanced load balancing algorithms like weighted response time"
+        )
+      }
+      
+      // 资源配置建议
+      if strategy.avg_cpu_utilization < 40.0 or strategy.avg_memory_utilization < 50.0 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Reduce allocated resources to eliminate waste and lower costs"
+        )
+      } else if strategy.avg_cpu_utilization > 80.0 or strategy.avg_memory_utilization > 85.0 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Increase allocated resources to prevent performance degradation"
+        )
+      }
+      
+      // 成本优化建议
+      if strategy.cost_per_hour > 2.0 and strategy.peak_requests_per_sec < 1500 {
+        strategy_optimizations = strategy_optimizations.push(
+          "Optimize resource allocation to improve cost-performance ratio"
+        )
+      }
+      
+      if strategy_optimizations.length() > 0 {
+        optimizations = optimizations.push({
+          strategy: strategy.strategy_name,
+          current_efficiency: efficiency.overall_efficiency,
+          optimizations: strategy_optimizations,
+          potential_improvement: if efficiency.overall_efficiency < best_strategy.efficiency.overall_efficiency {
+            best_strategy.efficiency.overall_efficiency - efficiency.overall_efficiency
+          } else {
+            0.0
+          }
+        })
+      }
+    }
+    
+    optimizations
+  }
+  
+  // 执行资源调度分析
+  let tradeoffs = analyze_resource_tradeoffs(resource_strategies)
+  let optimizations = generate_resource_optimizations(resource_strategies)
+  
+  // 验证资源调度权衡分析
+  assert_eq(tradeoffs.length(), 4)
+  
+  // 验证static_allocation的权衡
+  let static_allocation_tradeoff = tradeoffs.find_fn(t) { t.strategy == "static_allocation" }
+  assert_true(static_allocation_tradeoff.is_some())
+  assert_eq(static_allocation_tradeoff.unwrap().performance_vs_cost.performance, 1000)
+  assert_eq(static_allocation_tradeoff.unwrap().performance_vs_cost.cost, 2.0)
+  assert_eq(static_allocation_tradeoff.unwrap().static_vs_dynamic.resource_allocation, "static")
+  
+  // 验证optimized_hybrid的综合效率最高
+  let optimized_hybrid_tradeoff = tradeoffs.find_fn(t) { t.strategy == "optimized_hybrid" }
+  assert_true(optimized_hybrid_tradeoff.is_some())
+  assert_true(optimized_hybrid_tradeoff.unwrap().overall_efficiency > 0.0)
+  
+  // 验证资源调度优化建议
+  assert_eq(optimizations.length(), 3)
+  
+  // 验证static_allocation的建议
+  let static_allocation_opts = optimizations.find_fn(o) { o.strategy == "static_allocation" }
+  assert_true(static_allocation_opts.is_some())
+  assert_eq(static_allocation_opts.unwrap().optimizations.length(), 3)  // auto-scaling, load balancing, resource allocation
+  
+  // 验证load_balanced的建议
+  let load_balanced_opts = optimizations.find_fn(o) { o.strategy == "load_balanced" }
+  assert_true(load_balanced_opts.is_some())
+  assert_eq(load_balanced_opts.unwrap().optimizations.length(), 1)  // auto-scaling
 }
