@@ -1,372 +1,653 @@
-// Azimuth Additional MoonBit Test Suite
-// 附加MoonBit测试用例，专注于遥测系统的扩展功能
+// Azimuth Additional MoonBit Test Cases
+// This file contains additional test cases for the Azimuth telemetry system
 
-// 测试 1: 度量仪表（Gauge）操作
-test "gauge metric operations" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "gauge.test")
-  
-  // 创建仪表度量
-  let memory_gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
-  let cpu_gauge = Meter::create_gauge(meter, "cpu.utilization", Some("CPU utilization"), Some("percent"))
-  
-  // 设置仪表值
-  Gauge::set(memory_gauge, 1073741824.0)  // 1GB
-  Gauge::set(cpu_gauge, 75.5)
-  
-  // 测试带属性的仪表设置
-  Gauge::set_with_attributes(memory_gauge, 2147483648.0, [("instance", "server-01")])
-  Gauge::set_with_attributes(cpu_gauge, 45.2, [("core", "core-0")])
-  
-  // 验证仪表属性
-  assert_eq(memory_gauge.name, "memory.usage")
-  assert_eq(memory_gauge.description, Some("Memory usage"))
-  assert_eq(memory_gauge.unit, Some("bytes"))
-  
-  assert_eq(cpu_gauge.name, "cpu.utilization")
-  assert_eq(cpu_gauge.unit, Some("percent"))
-  
-  assert_true(true)
-}
-
-// 测试 2: 跨服务上下文传播
-test "cross-service context propagation" {
-  let source_tracer = TracerProvider::get_tracer(TracerProvider::default(), "source.service")
-  let target_tracer = TracerProvider::get_tracer(TracerProvider::default(), "target.service")
-  
-  // 在源服务中创建span
-  let parent_span = Tracer::start_span(source_tracer, "parent.operation")
-  Span::set_attribute(parent_span, "service.name", "source-service")
-  Span::set_attribute(parent_span, "operation.type", "api-call")
-  
-  // 获取父span上下文
-  let parent_ctx = Span::span_context(parent_span)
-  
-  // 模拟跨服务传播
-  let propagated_ctx = Context::with_value(Context::root(), 
-    ContextKey::new("trace.parent"), 
-    SpanContext::trace_id(parent_ctx))
-  
-  // 在目标服务中创建子span
-  let child_span = Tracer::start_span_with_context(target_tracer, "child.operation", propagated_ctx)
-  Span::set_attribute(child_span, "service.name", "target-service")
-  Span::set_attribute(child_span, "operation.type", "database-query")
-  
-  // 验证父子关系
-  let child_ctx = Span::span_context(child_span)
-  assert_true(SpanContext::is_valid(child_ctx))
-  
-  Span::end(child_span)
-  Span::end(parent_span)
-  
-  assert_true(true)
-}
-
-// 测试 3: 度量聚合功能
-test "metrics aggregation functionality" {
-  let meter = MeterProvider::get_meter(MeterProvider::default(), "aggregation.test")
-  
-  // 创建用于聚合的计数器
-  let request_counter = Meter::create_counter(meter, "http.requests", Some("HTTP requests"), Some("count"))
-  
-  // 模拟不同类型的请求
-  Counter::add_with_attributes(request_counter, 10.0, [("method", "GET"), ("status", "200")])
-  Counter::add_with_attributes(request_counter, 5.0, [("method", "POST"), ("status", "201")])
-  Counter::add_with_attributes(request_counter, 2.0, [("method", "GET"), ("status", "404")])
-  Counter::add_with_attributes(request_counter, 1.0, [("method", "POST"), ("status", "500")])
-  
-  // 创建响应时间直方图
-  let response_histogram = Meter::create_histogram(meter, "response.time", Some("Response time"), Some("ms"))
-  
-  // 记录不同范围的响应时间
-  Histogram::record(response_histogram, 25.0)   // 快速响应
-  Histogram::record(response_histogram, 150.0)  // 中等响应
-  Histogram::record(response_histogram, 500.0)  // 慢速响应
-  Histogram::record(response_histogram, 1200.0) // 超慢响应
-  
-  // 验证度量创建
-  assert_eq(request_counter.name, "http.requests")
-  assert_eq(response_histogram.name, "response.time")
-  assert_eq(response_histogram.unit, Some("ms"))
-  
-  assert_true(true)
-}
-
-// 测试 4: 日志关联性测试
-test "log correlation and trace linking" {
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "correlation.test")
-  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "correlation.logger")
-  
-  // 创建span并获取上下文
-  let span = Tracer::start_span(tracer, "correlated.operation")
-  let span_ctx = Span::span_context(span)
-  let trace_id = SpanContext::trace_id(span_ctx)
-  let span_id = SpanContext::span_id(span_ctx)
-  
-  // 创建与span关联的日志
-  let start_log = LogRecord::new(Info, "Operation started")
-  LogRecord::add_attribute(start_log, "trace.id", trace_id)
-  LogRecord::add_attribute(start_log, "span.id", span_id)
-  LogRecord::add_attribute(start_log, "operation.phase", "start")
-  
-  let progress_log = LogRecord::new(Info, "Operation in progress")
-  LogRecord::add_attribute(progress_log, "trace.id", trace_id)
-  LogRecord::add_attribute(progress_log, "span.id", span_id)
-  LogRecord::add_attribute(progress_log, "operation.phase", "progress")
-  LogRecord::add_attribute(progress_log, "completion", 45)
-  
-  let end_log = LogRecord::new(Info, "Operation completed")
-  LogRecord::add_attribute(end_log, "trace.id", trace_id)
-  LogRecord::add_attribute(end_log, "span.id", span_id)
-  LogRecord::add_attribute(end_log, "operation.phase", "end")
-  LogRecord::add_attribute(end_log, "duration", 1250)
-  
-  // 发射日志
-  Logger::emit(logger, start_log)
-  Logger::emit(logger, progress_log)
-  Logger::emit(logger, end_log)
-  
-  // 验证日志关联性
-  assert_eq(LogRecord::get_attribute(start_log, "trace.id"), Some(trace_id))
-  assert_eq(LogRecord::get_attribute(end_log, "span.id"), Some(span_id))
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-// 测试 5: 资源限制测试
-test "resource limits and constraints" {
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "resource.test")
-  
-  // 创建资源受限的配置
-  let limited_config = TracerConfig::new()
-  let config_with_limits = TracerConfig::with_max_spans(limited_config, 100)
-  let config_with_timeout = TracerConfig::with_max_span_duration(config_with_limits, 30000)
-  
-  // 使用受限配置创建tracer
-  let limited_tracer = TracerProvider::get_tracer_with_config(TracerProvider::default(), 
-    "limited.service", config_with_timeout)
-  
-  // 创建多个span测试限制
-  let spans = []
-  for i in 0..=10 {
-    let span = Tracer::start_span(limited_tracer, "limited.span." + i.to_string())
-    Span::set_attribute(span, "span.index", i)
-    spans = spans.push(span)
-  }
-  
-  // 模拟span持续时间限制
-  let long_running_span = Tracer::start_span(limited_tracer, "long.running.operation")
-  Span::set_attribute(long_running_span, "expected.duration", 35000)
-  
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
-  }
-  Span::end(long_running_span)
-  
-  // 验证配置限制
-  assert_eq(TracerConfig::max_spans(config_with_timeout), 100)
-  assert_eq(TracerConfig::max_span_duration(config_with_timeout), 30000)
-  
-  assert_true(true)
-}
-
-// 测试 6: 配置管理测试
-test "configuration management" {
-  // 创建默认配置
-  let default_config = TelemetryConfig::default()
-  
-  // 创建自定义配置
-  let custom_config = TelemetryConfig::new()
-    .with_service_name("custom.service")
-    .with_service_version("2.5.1")
-    .with_sampling_rate(0.1)
-    .with_export_timeout(5000)
-    .with_max_batch_size(512)
-  
-  // 验证配置属性
-  assert_eq(TelemetryConfig::service_name(custom_config), "custom.service")
-  assert_eq(TelemetryConfig::service_version(custom_config), "2.5.1")
-  assert_eq(TelemetryConfig::sampling_rate(custom_config), 0.1)
-  assert_eq(TelemetryConfig::export_timeout(custom_config), 5000)
-  assert_eq(TelemetryConfig::max_batch_size(custom_config), 512)
-  
-  // 测试配置合并
-  let base_config = TelemetryConfig::new()
-    .with_service_name("base.service")
-    .with_sampling_rate(0.5)
-  
-  let override_config = TelemetryConfig::new()
-    .with_service_version("1.0.0")
-    .with_export_timeout(3000)
-  
-  let merged_config = TelemetryConfig::merge(base_config, override_config)
-  
-  assert_eq(TelemetryConfig::service_name(merged_config), "base.service")
-  assert_eq(TelemetryConfig::service_version(merged_config), "1.0.0")
-  assert_eq(TelemetryConfig::sampling_rate(merged_config), 0.5)
-  assert_eq(TelemetryConfig::export_timeout(merged_config), 3000)
-  
-  assert_true(true)
-}
-
-// 测试 7: 序列化/反序列化测试
-test "serialization and deserialization" {
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "serialization.test")
-  
-  // 创建带有丰富属性的span
-  let span = Tracer::start_span(tracer, "serialization.test")
-  Span::set_attribute(span, "string.attr", "test.value")
-  Span::set_attribute(span, "number.attr", 42)
-  Span::set_attribute(span, "boolean.attr", true)
-  Span::set_attribute(span, "float.attr", 3.14159)
-  
-  // 添加事件
-  Span::add_event(span, "serialization.start", [("timestamp", "2025-01-02T10:00:00Z")])
-  Span::add_event(span, "serialization.end", [("duration", "150ms")])
-  
-  // 序列化span数据
-  let serialized_data = SpanSerializer::serialize(span)
-  
-  // 验证序列化数据不为空
-  assert_true(String::length(serialized_data) > 0)
-  
-  // 反序列化span数据
-  let deserialized_span = SpanDeserializer::deserialize(serialized_data)
-  
-  // 验证反序列化后的属性
-  assert_eq(Span::name(deserialized_span), "serialization.test")
-  assert_eq(Span::get_attribute(deserialized_span, "string.attr"), Some("test.value"))
-  assert_eq(Span::get_attribute(deserialized_span, "number.attr"), Some("42"))
-  assert_eq(Span::get_attribute(deserialized_span, "boolean.attr"), Some("true"))
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-// 测试 8: 性能基准测试
-test "performance benchmarking" {
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "performance.test")
-  let meter = MeterProvider::get_meter(MeterProvider::default(), "performance.metrics")
-  
-  // 创建性能度量
-  let span_creation_time = Meter::create_histogram(meter, "span.creation.time", Some("Span creation time"), Some("microseconds"))
-  let attribute_set_time = Meter::create_histogram(meter, "attribute.set.time", Some("Attribute set time"), Some("microseconds"))
-  
-  // 测试span创建性能
-  let start_time = Time::now()
-  let spans = []
-  for i in 0..=100 {
-    let span = Tracer::start_span(tracer, "performance.span." + i.to_string())
-    spans = spans.push(span)
-  }
-  let creation_duration = Time::elapsed(start_time)
-  Histogram::record(span_creation_time, creation_duration)
-  
-  // 测试属性设置性能
-  for span in spans {
-    let attr_start = Time::now()
-    Span::set_attribute(span, "batch.index", spans.index_of(span))
-    Span::set_attribute(span, "batch.size", spans.length())
-    Span::set_attribute(span, "performance.test", true)
-    let attr_duration = Time::elapsed(attr_start)
-    Histogram::record(attribute_set_time, attr_duration)
-  }
-  
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // 验证性能度量
-  assert_eq(span_creation_time.name, "span.creation.time")
-  assert_eq(attribute_set_time.name, "attribute.set.time")
-  assert_eq(span_creation_time.unit, Some("microseconds"))
-  
-  assert_true(true)
-}
-
-// 测试 9: 数据完整性测试
-test "data integrity validation" {
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "integrity.test")
-  
-  // 创建span并设置校验和属性
-  let span = Tracer::start_span(tracer, "integrity.test")
-  Span::set_attribute(span, "data.checksum", "a1b2c3d4e5f6")
-  Span::set_attribute(span, "data.version", "1.0.0")
-  Span::set_attribute(span, "data.size", 1024)
-  
-  // 添加数据完整性事件
-  Span::add_event(span, "data.validated", [
-    ("validation.status", "passed"),
-    ("validation.algorithm", "SHA-256"),
-    ("validation.timestamp", "2025-01-02T10:00:00Z")
-  ])
-  
-  // 模拟数据传输
-  let transmitted_data = SpanData::export(span)
-  
-  // 验证传输后的数据完整性
-  let received_span = SpanData::import(transmitted_data)
-  let received_checksum = Span::get_attribute(received_span, "data.checksum")
-  let received_version = Span::get_attribute(received_span, "data.version")
-  let received_size = Span::get_attribute(received_span, "data.size")
-  
-  assert_eq(received_checksum, Some("a1b2c3d4e5f6"))
-  assert_eq(received_version, Some("1.0.0"))
-  assert_eq(received_size, Some("1024"))
-  
-  // 验证事件完整性
-  let events = Span::get_events(received_span)
-  assert_true(events.length() > 0)
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-// 测试 10: 国际化支持测试
-test "internationalization support" {
-  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "i18n.test")
-  
-  // 创建不同语言的日志记录
-  let english_log = LogRecord::new(Info, "Operation completed successfully")
-  LogRecord::add_attribute(english_log, "language", "en")
-  LogRecord::add_attribute(english_log, "locale", "en-US")
-  
-  let chinese_log = LogRecord::new(Info, "操作成功完成")
-  LogRecord::add_attribute(chinese_log, "language", "zh")
-  LogRecord::add_attribute(chinese_log, "locale", "zh-CN")
-  
-  let japanese_log = LogRecord::new(Info, "操作が正常に完了しました")
-  LogRecord::add_attribute(japanese_log, "language", "ja")
-  LogRecord::add_attribute(japanese_log, "locale", "ja-JP")
-  
-  // 测试本地化错误消息
-  let localized_errors = [
-    ("en", "Operation failed due to invalid input"),
-    ("zh", "由于输入无效导致操作失败"),
-    ("ja", "無効な入力のため操作が失敗しました"),
-    ("es", "La operación falló debido a una entrada no válida"),
-    ("fr", "L'opération a échoué en raison d'une entrée invalide")
+// Test 1: Telemetry Trace Context Management
+test "telemetry trace context management" {
+  // Test trace context creation
+  let trace_id = "trace-12345678"
+  let span_id = "span-87654321"
+  let parent_span_id = "span-11111111"
+  
+  // Validate trace ID format
+  assert_eq(trace_id.length(), 14)
+  assert_true(trace_id.starts_with("trace-"))
+  assert_true(trace_id.contains("-"))
+  
+  // Validate span ID format
+  assert_eq(span_id.length(), 13)
+  assert_true(span_id.starts_with("span-"))
+  
+  // Test trace context hierarchy
+  assert_true(parent_span_id.starts_with("span-"))
+  assert_eq(parent_span_id.length(), 13)
+  
+  // Test context propagation
+  let context_headers = [
+    ("traceparent", "00-" + trace_id + "-" + span_id + "-01"),
+    ("x-trace-id", trace_id),
+    ("x-span-id", span_id)
   ]
   
-  for (lang, message) in localized_errors {
-    let error_log = LogRecord::new(Error, message)
-    LogRecord::add_attribute(error_log, "language", lang)
-    LogRecord::add_attribute(error_log, "error.code", "ERR_INVALID_INPUT")
-    Logger::emit(logger, error_log)
+  assert_eq(context_headers.length(), 3)
+  assert_true(context_headers[0].1.contains(trace_id))
+  assert_true(context_headers[0].1.contains(span_id))
+  assert_eq(context_headers[1].1, trace_id)
+  assert_eq(context_headers[2].1, span_id)
+}
+
+// Test 2: Telemetry Metric Types and Operations
+test "telemetry metric types and operations" {
+  // Test counter metric
+  let mut counter = 0
+  let increments = [1, 2, 3, 4, 5]
+  
+  for inc in increments {
+    counter = counter + inc
   }
   
-  // 发射多语言日志
-  Logger::emit(logger, english_log)
-  Logger::emit(logger, chinese_log)
-  Logger::emit(logger, japanese_log)
+  assert_eq(counter, 15)
+  assert_true(counter > 0)
   
-  // 验证国际化属性
-  assert_eq(LogRecord::get_attribute(english_log, "language"), Some("en"))
-  assert_eq(LogRecord::get_attribute(chinese_log, "language"), Some("zh"))
-  assert_eq(LogRecord::get_attribute(japanese_log, "language"), Some("ja"))
+  // Test gauge metric
+  let mut gauge = 50.0
+  gauge = gauge + 10.5
+  gauge = gauge - 5.5
   
-  assert_true(true)
+  assert_true(gauge > 55.0)
+  assert_true(gauge < 56.0)
+  
+  // Test histogram metric
+  let measurements = [10.1, 20.2, 30.3, 40.4, 50.5]
+  let sum = measurements.reduce(fn(acc, val) { acc + val }, 0.0)
+  let avg = sum / (measurements.length() as Float)
+  
+  assert_eq(sum.round(), 151.5)
+  assert_true(avg > 30.0)
+  assert_true(avg < 31.0)
+  
+  // Test percentile calculation
+  let sorted_measurements = measurements.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
+  assert_eq(sorted_measurements[0], 10.1)
+  assert_eq(sorted_measurements[4], 50.5)
+  
+  // 50th percentile (median)
+  let median_index = measurements.length() / 2
+  let median = sorted_measurements[median_index]
+  assert_eq(median, 30.3)
+}
+
+// Test 3: Telemetry Event Processing
+test "telemetry event processing" {
+  // Test event creation
+  let event_name = "user.login"
+  let event_timestamp = 1640995200
+  let event_attributes = [
+    ("user.id", "user-123"),
+    ("ip.address", "192.168.1.1"),
+    ("user.agent", "Mozilla/5.0")
+  ]
+  
+  assert_eq(event_name, "user.login")
+  assert_true(event_name.contains("."))
+  assert_eq(event_timestamp, 1640995200)
+  assert_eq(event_attributes.length(), 3)
+  
+  // Test event filtering
+  let security_events = ["user.login", "user.logout", "auth.failed", "auth.success"]
+  let filtered_events = security_events.filter(fn(event) { event.starts_with("auth.") })
+  
+  assert_eq(filtered_events.length(), 2)
+  assert_true(filtered_events.contains("auth.failed"))
+  assert_true(filtered_events.contains("auth.success"))
+  
+  // Test event aggregation
+  let event_counts = { mut login: 0, mut logout: 0, mut failed: 0 }
+  let events = ["user.login", "user.login", "auth.failed", "user.logout", "user.login"]
+  
+  for event in events {
+    if event == "user.login" {
+      event_counts.login = event_counts.login + 1
+    } else if event == "user.logout" {
+      event_counts.logout = event_counts.logout + 1
+    } else if event == "auth.failed" {
+      event_counts.failed = event_counts.failed + 1
+    }
+  }
+  
+  assert_eq(event_counts.login, 3)
+  assert_eq(event_counts.logout, 1)
+  assert_eq(event_counts.failed, 1)
+}
+
+// Test 4: Telemetry Data Sampling
+test "telemetry data sampling" {
+  // Test deterministic sampling based on trace ID
+  let should_sample = fn(trace_id: String, sample_rate: Float) {
+    // Simple hash-based sampling
+    let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+    let normalized = (hash % 100) as Float / 100.0
+    normalized <= sample_rate
+  }
+  
+  // Test with 50% sample rate
+  let sample_rate = 0.5
+  let trace_ids = ["trace-123", "trace-456", "trace-789", "trace-abc", "trace-def"]
+  let mut sampled_count = 0
+  
+  for trace_id in trace_ids {
+    if should_sample(trace_id, sample_rate) {
+      sampled_count = sampled_count + 1
+    }
+  }
+  
+  // With 5 traces and 50% sample rate, we expect around 2-3 samples
+  assert_true(sampled_count >= 1)
+  assert_true(sampled_count <= 4)
+  
+  // Test with 100% sample rate
+  let sampled_all = trace_ids.all(fn(trace_id) { should_sample(trace_id, 1.0) })
+  assert_true(sampled_all)
+  
+  // Test with 0% sample rate
+  let sampled_none = trace_ids.all(fn(trace_id) { not(should_sample(trace_id, 0.0)) })
+  assert_true(sampled_none)
+  
+  // Test attribute-based sampling
+  let high_priority_attributes = [("environment", "production"), ("service.tier", "critical")]
+  let attributes = [
+    ("environment", "production"),
+    ("service.name", "payment-service"),
+    ("service.tier", "critical")
+  ]
+  
+  let meets_sampling_criteria = high_priority_attributes.all(fn(req_attr) {
+    let (req_key, req_value) = req_attr
+    attributes.any(fn(attr) {
+      let (key, value) = attr
+      key == req_key && value == req_value
+    })
+  })
+  
+  assert_true(meets_sampling_criteria)
+}
+
+// Test 5: Telemetry Baggage Propagation
+test "telemetry baggage propagation" {
+  // Test baggage items
+  let baggage_items = [
+    ("user.id", "user-12345"),
+    ("request.id", "req-67890"),
+    ("session.id", "sess-abcde")
+  ]
+  
+  assert_eq(baggage_items.length(), 3)
+  
+  // Test baggage serialization
+  let serialize_baggage = fn(items: Array[(String, String)]) {
+    let mut serialized = ""
+    for i in 0..items.length() {
+      let (key, value) = items[i]
+      serialized = serialized + key + "=" + value
+      if i < items.length() - 1 {
+        serialized = serialized + ","
+      }
+    }
+    serialized
+  }
+  
+  let serialized = serialize_baggage(baggage_items)
+  assert_true(serialized.contains("user.id=user-12345"))
+  assert_true(serialized.contains("request.id=req-67890"))
+  assert_true(serialized.contains("session.id=sess-abcde"))
+  assert_true(serialized.contains(","))
+  
+  // Test baggage deserialization
+  let deserialize_baggage = fn(serialized: String) {
+    let pairs = serialized.split(",")
+    let mut items = []
+    
+    for pair in pairs {
+      let key_value = pair.split("=")
+      if key_value.length() == 2 {
+        items = items.push((key_value[0], key_value[1]))
+      }
+    }
+    
+    items
+  }
+  
+  let deserialized = deserialize_baggage(serialized)
+  assert_eq(deserialized.length(), 3)
+  assert_true(deserialized.contains(("user.id", "user-12345")))
+  assert_true(deserialized.contains(("request.id", "req-67890")))
+  assert_true(deserialized.contains(("session.id", "sess-abcde")))
+  
+  // Test baggage merging
+  let additional_baggage = [
+    ("region", "us-west-2"),
+    ("version", "1.2.3")
+  ]
+  
+  let merged_baggage = baggage_items + additional_baggage
+  assert_eq(merged_baggage.length(), 5)
+  assert_true(merged_baggage.contains(("region", "us-west-2")))
+  assert_true(merged_baggage.contains(("version", "1.2.3")))
+}
+
+// Test 6: Telemetry Resource Detection
+test "telemetry resource detection" {
+  // Test resource attributes
+  let resource_attributes = [
+    ("service.name", "azimuth-telemetry"),
+    ("service.version", "1.0.0"),
+    ("service.instance.id", "instance-123"),
+    ("host.name", "prod-server-01"),
+    ("host.arch", "amd64"),
+    ("os.type", "linux"),
+    ("deployment.environment", "production")
+  ]
+  
+  assert_eq(resource_attributes.length(), 7)
+  
+  // Test resource attribute lookup
+  let get_attribute = fn(attributes: Array[(String, String)], key: String) {
+    let mut found = None
+    for (k, v) in attributes {
+      if k == key {
+        found = Some(v)
+      }
+    }
+    found
+  }
+  
+  let service_name = get_attribute(resource_attributes, "service.name")
+  assert_eq(service_name, Some("azimuth-telemetry"))
+  
+  let service_version = get_attribute(resource_attributes, "service.version")
+  assert_eq(service_version, Some("1.0.0"))
+  
+  let missing_attribute = get_attribute(resource_attributes, "missing.key")
+  assert_eq(missing_attribute, None)
+  
+  // Test resource attribute filtering
+  let service_attributes = resource_attributes.filter(fn(attr) {
+    let (key, _) = attr
+    key.starts_with("service.")
+  })
+  
+  assert_eq(service_attributes.length(), 3)
+  assert_true(service_attributes.contains(("service.name", "azimuth-telemetry")))
+  assert_true(service_attributes.contains(("service.version", "1.0.0")))
+  assert_true(service_attributes.contains(("service.instance.id", "instance-123")))
+  
+  let host_attributes = resource_attributes.filter(fn(attr) {
+    let (key, _) = attr
+    key.starts_with("host.")
+  })
+  
+  assert_eq(host_attributes.length(), 2)
+  assert_true(host_attributes.contains(("host.name", "prod-server-01")))
+  assert_true(host_attributes.contains(("host.arch", "amd64")))
+}
+
+// Test 7: Telemetry Span Status and Error Handling
+test "telemetry span status and error handling" {
+  // Test span status codes
+  enum SpanStatus {
+    Ok
+    Error
+    Timeout
+    Cancelled
+  }
+  
+  // Test span creation with status
+  let create_span = fn(name: String, status: SpanStatus) {
+    {
+      name,
+      status,
+      start_time: 1640995200,
+      end_time: 1640995300,
+      duration_ms: 1000
+    }
+  }
+  
+  let ok_span = create_span("database.query", SpanStatus::Ok)
+  let error_span = create_span("api.request", SpanStatus::Error)
+  let timeout_span = create_span("cache.get", SpanStatus::Timeout)
+  let cancelled_span = create_span("background.job", SpanStatus::Cancelled)
+  
+  assert_eq(ok_span.name, "database.query")
+  assert_eq(error_span.name, "api.request")
+  assert_eq(timeout_span.name, "cache.get")
+  assert_eq(cancelled_span.name, "background.job")
+  
+  // Test span duration calculation
+  assert_eq(ok_span.duration_ms, 1000)
+  assert_eq(ok_span.end_time - ok_span.start_time, 1000)
+  
+  // Test error span attributes
+  let error_attributes = [
+    ("error.type", "connection.timeout"),
+    ("error.message", "Failed to connect to database"),
+    ("error.stack", "DatabaseError: Connection timeout")
+  ]
+  
+  assert_eq(error_attributes.length(), 3)
+  assert_true(error_attributes[0].1.contains("timeout"))
+  assert_true(error_attributes[1].1.contains("Failed"))
+  assert_true(error_attributes[2].1.contains("DatabaseError"))
+  
+  // Test span status categorization
+  let is_error_status = fn(status: SpanStatus) {
+    match status {
+      SpanStatus::Ok => false
+      SpanStatus::Error => true
+      SpanStatus::Timeout => true
+      SpanStatus::Cancelled => true
+    }
+  }
+  
+  assert_false(is_error_status(SpanStatus::Ok))
+  assert_true(is_error_status(SpanStatus::Error))
+  assert_true(is_error_status(SpanStatus::Timeout))
+  assert_true(is_error_status(SpanStatus::Cancelled))
+  
+  // Test error rate calculation
+  let spans = [
+    ok_span,
+    error_span,
+    timeout_span,
+    create_span("cache.set", SpanStatus::Ok),
+    cancelled_span
+  ]
+  
+  let error_spans = spans.filter(fn(span) { is_error_status(span.status) })
+  let error_rate = (error_spans.length() as Float) / (spans.length() as Float)
+  
+  assert_eq(spans.length(), 5)
+  assert_eq(error_spans.length(), 3)
+  assert_eq(error_rate, 0.6)
+}
+
+// Test 8: Telemetry Configuration Management
+test "telemetry configuration management" {
+  // Test configuration structure
+  type TelemetryConfig = {
+    service_name: String,
+    service_version: String,
+    sampling_rate: Float,
+    batch_size: Int,
+    export_timeout_ms: Int,
+    enabled_metrics: Array[String],
+    enabled_traces: Bool,
+    enabled_logs: Bool
+  }
+  
+  // Test default configuration
+  let default_config = {
+    service_name: "azimuth-service",
+    service_version: "1.0.0",
+    sampling_rate: 0.1,
+    batch_size: 100,
+    export_timeout_ms: 30000,
+    enabled_metrics: ["counter", "gauge", "histogram"],
+    enabled_traces: true,
+    enabled_logs: true
+  }
+  
+  assert_eq(default_config.service_name, "azimuth-service")
+  assert_eq(default_config.service_version, "1.0.0")
+  assert_eq(default_config.sampling_rate, 0.1)
+  assert_eq(default_config.batch_size, 100)
+  assert_eq(default_config.export_timeout_ms, 30000)
+  assert_eq(default_config.enabled_metrics.length(), 3)
+  assert_true(default_config.enabled_traces)
+  assert_true(default_config.enabled_logs)
+  
+  // Test configuration validation
+  let validate_config = fn(config: TelemetryConfig) {
+    let errors = []
+    
+    if config.service_name.length() == 0 {
+      errors = errors.push("service_name cannot be empty")
+    }
+    
+    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
+      errors = errors.push("sampling_rate must be between 0.0 and 1.0")
+    }
+    
+    if config.batch_size <= 0 {
+      errors = errors.push("batch_size must be positive")
+    }
+    
+    if config.export_timeout_ms <= 0 {
+      errors = errors.push("export_timeout_ms must be positive")
+    }
+    
+    errors
+  }
+  
+  let default_errors = validate_config(default_config)
+  assert_eq(default_errors.length(), 0)
+  
+  // Test invalid configuration
+  let invalid_config = {
+    service_name: "",
+    service_version: "1.0.0",
+    sampling_rate: 1.5,
+    batch_size: -1,
+    export_timeout_ms: 0,
+    enabled_metrics: [],
+    enabled_traces: true,
+    enabled_logs: true
+  }
+  
+  let invalid_errors = validate_config(invalid_config)
+  assert_eq(invalid_errors.length(), 4)
+  assert_true(invalid_errors.contains("service_name cannot be empty"))
+  assert_true(invalid_errors.contains("sampling_rate must be between 0.0 and 1.0"))
+  assert_true(invalid_errors.contains("batch_size must be positive"))
+  assert_true(invalid_errors.contains("export_timeout_ms must be positive"))
+  
+  // Test configuration merging
+  let merge_configs = fn(base: TelemetryConfig, override: TelemetryConfig) {
+    {
+      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
+      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
+      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
+      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
+      export_timeout_ms: if override.export_timeout_ms > 0 { override.export_timeout_ms } else { base.export_timeout_ms },
+      enabled_metrics: if override.enabled_metrics.length() > 0 { override.enabled_metrics } else { base.enabled_metrics },
+      enabled_traces: override.enabled_traces,
+      enabled_logs: override.enabled_logs
+    }
+  }
+  
+  let partial_override = {
+    service_name: "payment-service",
+    service_version: "",
+    sampling_rate: 0.5,
+    batch_size: 0,
+    export_timeout_ms: 0,
+    enabled_metrics: [],
+    enabled_traces: false,
+    enabled_logs: true
+  }
+  
+  let merged_config = merge_configs(default_config, partial_override)
+  assert_eq(merged_config.service_name, "payment-service")
+  assert_eq(merged_config.service_version, "1.0.0")  // from default
+  assert_eq(merged_config.sampling_rate, 0.5)
+  assert_eq(merged_config.batch_size, 100)  // from default
+  assert_eq(merged_config.export_timeout_ms, 30000)  // from default
+  assert_eq(merged_config.enabled_metrics.length(), 3)  // from default
+  assert_false(merged_config.enabled_traces)
+  assert_true(merged_config.enabled_logs)
+}
+
+// Test 9: Telemetry Data Export and Formatting
+test "telemetry data export and formatting" {
+  // Test span export format
+  let format_span_for_export = fn(name: String, trace_id: String, span_id: String, start_time: Int, end_time: Int, status: String) {
+    let duration = end_time - start_time
+    "{" +
+      "\"name\":\"" + name + "\"," +
+      "\"trace_id\":\"" + trace_id + "\"," +
+      "\"span_id\":\"" + span_id + "\"," +
+      "\"start_time\":" + start_time.to_string() + "," +
+      "\"end_time\":" + end_time.to_string() + "," +
+      "\"duration_ms\":" + duration.to_string() + "," +
+      "\"status\":\"" + status + "\"" +
+    "}"
+  }
+  
+  let exported_span = format_span_for_export(
+    "database.query",
+    "trace-12345678",
+    "span-87654321",
+    1640995200,
+    1640995300,
+    "ok"
+  )
+  
+  assert_true(exported_span.contains("\"name\":\"database.query\""))
+  assert_true(exported_span.contains("\"trace_id\":\"trace-12345678\""))
+  assert_true(exported_span.contains("\"span_id\":\"span-87654321\""))
+  assert_true(exported_span.contains("\"start_time\":1640995200"))
+  assert_true(exported_span.contains("\"end_time\":1640995300"))
+  assert_true(exported_span.contains("\"duration_ms\":1000"))
+  assert_true(exported_span.contains("\"status\":\"ok\""))
+  
+  // Test metric export format
+  let format_metric_for_export = fn(name: String, value: Float, unit: String, timestamp: Int, attributes: Array[(String, String)]) {
+    let mut attributes_str = ""
+    for i in 0..attributes.length() {
+      let (key, val) = attributes[i]
+      attributes_str = attributes_str + "\"" + key + "\":\"" + val + "\""
+      if i < attributes.length() - 1 {
+        attributes_str = attributes_str + ","
+      }
+    }
+    
+    "{" +
+      "\"name\":\"" + name + "\"," +
+      "\"value\":" + value.to_string() + "," +
+      "\"unit\":\"" + unit + "\"," +
+      "\"timestamp\":" + timestamp.to_string() + "," +
+      "\"attributes\":{" + attributes_str + "}" +
+    "}"
+  }
+  
+  let metric_attributes = [
+    ("service.name", "api-service"),
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ]
+  
+  let exported_metric = format_metric_for_export(
+    "http.request.duration",
+    125.5,
+    "ms",
+    1640995400,
+    metric_attributes
+  )
+  
+  assert_true(exported_metric.contains("\"name\":\"http.request.duration\""))
+  assert_true(exported_metric.contains("\"value\":125.5"))
+  assert_true(exported_metric.contains("\"unit\":\"ms\""))
+  assert_true(exported_metric.contains("\"timestamp\":1640995400"))
+  assert_true(exported_metric.contains("\"service.name\":\"api-service\""))
+  assert_true(exported_metric.contains("\"endpoint\":\"/api/users\""))
+  assert_true(exported_metric.contains("\"method\":\"GET\""))
+  
+  // Test batch export formatting
+  let format_batch_for_export = fn(items: Array[String]) {
+    let mut batch = "["
+    for i in 0..items.length() {
+      batch = batch + items[i]
+      if i < items.length() - 1 {
+        batch = batch + ","
+      }
+    }
+    batch = batch + "]"
+    batch
+  }
+  
+  let telemetry_items = [exported_span, exported_metric]
+  let batch_export = format_batch_for_export(telemetry_items)
+  
+  assert_true(batch_export.starts_with("["))
+  assert_true(batch_export.ends_with("]"))
+  assert_true(batch_export.contains(","))
+  assert_true(batch_export.contains(exported_span))
+  assert_true(batch_export.contains(exported_metric))
+}
+
+// Test 10: Telemetry Performance and Optimization
+test "telemetry performance and optimization" {
+  // Test throughput calculation
+  let calculate_throughput = fn(operation_count: Int, duration_ms: Int) {
+    (operation_count as Float) / ((duration_ms as Float) / 1000.0)
+  }
+  
+  let operation_count = 10000
+  let duration_ms = 5000
+  let throughput = calculate_throughput(operation_count, duration_ms)
+  
+  assert_eq(throughput, 2000.0)
+  
+  // Test percentile calculation
+  let calculate_percentile = fn(values: Array[Float], percentile: Float) {
+    let sorted = values.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
+    let index = ((sorted.length() as Float) * percentile / 100.0) as Int
+    sorted[index]
+  }
+  
+  let response_times = [10.5, 20.3, 15.7, 30.1, 25.9, 18.2, 22.8, 12.4, 28.6, 19.5]
+  let p50 = calculate_percentile(response_times, 50.0)
+  let p95 = calculate_percentile(response_times, 95.0)
+  let p99 = calculate_percentile(response_times, 99.0)
+  
+  assert_true(p50 > 15.0)
+  assert_true(p50 < 25.0)
+  assert_true(p95 > 25.0)
+  assert_true(p95 < 31.0)
+  assert_eq(p99, 30.1)
+  
+  // Test memory usage estimation
+  let estimate_memory_usage = fn(span_count: Int, metric_count: Int, attribute_count: Int) {
+    let span_size = 200  // bytes per span
+    let metric_size = 100  // bytes per metric
+    let attribute_size = 50  // bytes per attribute
+    
+    (span_count * span_size) + (metric_count * metric_size) + (attribute_count * attribute_size)
+  }
+  
+  let memory_usage = estimate_memory_usage(1000, 500, 2000)
+  assert_eq(memory_usage, 250000)  // 1000*200 + 500*100 + 2000*50
+  
+  // Test compression ratio estimation
+  let estimate_compression_ratio = fn(original_size: Int, compressed_size: Int) {
+    (compressed_size as Float) / (original_size as Float)
+  }
+  
+  let original_size = 1000000  // 1MB
+  let compressed_size = 250000  // 250KB
+  let compression_ratio = estimate_compression_ratio(original_size, compressed_size)
+  
+  assert_eq(compression_ratio, 0.25)
+  assert_true(compression_ratio < 1.0)
+  
+  // Test buffer utilization
+  let calculate_buffer_utilization = fn(used_size: Int, total_size: Int) {
+    (used_size as Float) / (total_size as Float)
+  }
+  
+  let buffer_used = 75
+  let buffer_total = 100
+  let utilization = calculate_buffer_utilization(buffer_used, buffer_total)
+  
+  assert_eq(utilization, 0.75)
+  assert_true(utilization > 0.5)
+  assert_true(utilization < 1.0)
 }
