@@ -206,5 +206,13 @@
         "../azimuth_new_comprehensive_test_cases.mbt",
         "../azimuth_enhanced_comprehensive_test_suite.mbt",
         "../azimuth_enhanced_comprehensive_tests.mbt",
-        "../azimuth_premium_quality_test_suite.mbt"]  }
+        "../azimuth_premium_quality_test_suite.mbt",
+        "../azimuth_data_compression_advanced_tests.mbt",
+        "../azimuth_network_telemetry_advanced_tests.mbt",
+        "../azimuth_distributed_consistency_comprehensive_tests.mbt",
+        "../azimuth_performance_benchmark_advanced_tests.mbt",
+        "../azimuth_security_privacy_enhanced_tests.mbt",
+        "../azimuth_i18n_globalization_comprehensive_tests.mbt",
+        "../azimuth_realtime_stream_processing_comprehensive_tests.mbt",
+        "../azimuth_ml_integration_advanced_tests.mbt"]  }
 }
