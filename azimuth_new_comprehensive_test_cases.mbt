@@ -1,414 +1,473 @@
 // Azimuth Telemetry System - New Comprehensive Test Cases
-// This file contains new comprehensive test cases for various telemetry system components
+// This file contains new test cases for various telemetry system functionalities
 
-// Test 1: Time Series Data Processing
-test "time series data processing" {
-  let time_series = TimeSeries::new("cpu.usage", "percentage")
+// Test 1: Telemetry Data Aggregation
+test "telemetry data aggregation" {
+  let aggregator = TelemetryAggregator::new()
   
-  // Add data points
-  TimeSeries::add_point(time_series, 1000L, 25.5)
-  TimeSeries::add_point(time_series, 2000L, 30.2)
-  TimeSeries::add_point(time_series, 3000L, 28.7)
-  TimeSeries::add_point(time_series, 4000L, 32.1)
+  // Test adding metrics
+  TelemetryAggregator::add_metric(aggregator, "cpu_usage", 75.5)
+  TelemetryAggregator::add_metric(aggregator, "memory_usage", 62.3)
+  TelemetryAggregator::add_metric(aggregator, "cpu_usage", 80.2)
   
-  // Test data retrieval
-  let points = TimeSeries::get_points(time_series)
-  assert_eq(points.length(), 4)
+  // Test getting aggregated metrics
+  let cpu_metrics = TelemetryAggregator::get_metrics(aggregator, "cpu_usage")
+  assert_eq(cpu_metrics.length(), 2)
+  assert_eq(cpu_metrics[0], 75.5)
+  assert_eq(cpu_metrics[1], 80.2)
   
-  // Test aggregation
-  let avg = TimeSeries::average(time_series)
-  assert_true(avg > 25.0 && avg < 35.0)
+  // Test calculating average
+  let cpu_avg = TelemetryAggregator::calculate_average(aggregator, "cpu_usage")
+  match cpu_avg {
+    Some(avg) => assert_eq(avg, 77.85)
+    None => assert_true(false)
+  }
   
-  let max = TimeSeries::max(time_series)
-  assert_eq(max, 32.1)
-  
-  let min = TimeSeries::min(time_series)
-  assert_eq(min, 25.5)
-  
-  // Test time range query
-  let range_points = TimeSeries::get_points_in_range(time_series, 1500L, 3500L)
-  assert_eq(range_points.length(), 2)
+  // Test non-existent metric
+  let non_existent = TelemetryAggregator::get_metrics(aggregator, "network_usage")
+  assert_eq(non_existent.length(), 0)
 }
 
 // Test 2: Distributed Tracing Consistency
 test "distributed tracing consistency" {
-  let tracer = TracerProvider::get_tracer("test_tracer")
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let parent_span_id = "abcdef1234567890"
   
-  // Create root span
-  let root_span = Tracer::start_span(tracer, "root_operation")
-  let root_ctx = Span::span_context(root_span)
+  // Create parent span
+  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "")
+  let parent_span = Span::new("parent_operation", Server, parent_ctx)
   
-  // Create child spans
-  let child1 = Tracer::start_span_with_context(tracer, "child_operation_1", root_ctx)
-  let child2 = Tracer::start_span_with_context(tracer, "child_operation_2", root_ctx)
+  // Create child span
+  let child_span_id = "fedcba0987654321"
+  let child_ctx = SpanContext::new(trace_id, child_span_id, true, "")
+  let child_span = Span::new("child_operation", Client, child_ctx)
   
-  // Verify trace ID consistency
-  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(child1)))
-  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(child2)))
+  // Test trace ID consistency
+  assert_eq(SpanContext::trace_id(Span::span_context(parent_span)), trace_id)
+  assert_eq(SpanContext::trace_id(Span::span_context(child_span)), trace_id)
   
-  // Verify parent-child relationship
-  let child1_ctx = Span::span_context(child1)
-  let child2_ctx = Span::span_context(child2)
+  // Test span relationship
+  assert_not_eq(SpanContext::span_id(Span::span_context(parent_span)), 
+                SpanContext::span_id(Span::span_context(child_span)))
   
-  // Add events and attributes
-  Span::add_event(root_span, "root_event", Some([("event_type", StringValue("start"))]))
-  Span::add_event(child1, "child1_event", Some([("event_type", StringValue("process"))]))
-  Span::add_event(child2, "child2_event", Some([("event_type", StringValue("finalize"))]))
+  // Test span hierarchy
+  Span::add_event(parent_span, "parent_event", Some([("event_type", StringValue("start"))]))
+  Span::add_event(child_span, "child_event", Some([("event_type", StringValue("process"))]))
   
-  // End spans in reverse order
-  Span::end(child1)
-  Span::end(child2)
-  Span::end(root_span)
-  
-  // Verify span status
-  assert_eq(Span::status(root_span), Ok)
-  assert_eq(Span::status(child1), Ok)
-  assert_eq(Span::status(child2), Ok)
+  // End spans in correct order
+  Span::end(child_span)
+  Span::end(parent_span)
 }
 
-// Test 3: Performance Benchmark
-test "performance benchmark" {
+// Test 3: Performance Benchmark Tests
+test "performance benchmark tests" {
   let start_time = Time::now()
   
-  // Create multiple spans
-  let tracer = TracerProvider::get_tracer("benchmark_tracer")
+  // Test span creation performance
   let mut spans = []
-  
-  for i in 0..=100 {
-    let span = Tracer::start_span(tracer, "benchmark_span_" + i.to_string())
+  for i in 0..1000 {
+    let span_ctx = SpanContext::new("trace_id", "span_id_" + i.to_string(), true, "")
+    let span = Span::new("performance_test_" + i.to_string(), Internal, span_ctx)
     spans.push(span)
-    
-    // Add some attributes
-    Span::set_attribute(span, "iteration", IntValue(i))
-    Span::add_event(span, "iteration_event", Some([("value", FloatValue(i * 1.5))]))
   }
   
-  // End all spans
+  let span_creation_time = Time::now()
+  let span_creation_duration = span_creation_time - start_time
+  
+  // Test metric collection performance
+  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "performance_meter")
+  let counter = Meter::create_counter(meter, "performance_counter", None, None)
+  
+  for i in 0..1000 {
+    Counter::add(counter, i.to_float())
+  }
+  
+  let metric_collection_time = Time::now()
+  let metric_collection_duration = metric_collection_time - span_creation_time
+  
+  // Test log emission performance
+  let logger = LoggerProvider::default() |> LoggerProvider::get_logger(_, "performance_logger")
+  
+  for i in 0..1000 {
+    let log_record = LogRecord::new(Info, "Performance log " + i.to_string())
+    Logger::emit(logger, log_record)
+  }
+  
+  let log_emission_time = Time::now()
+  let log_emission_duration = log_emission_time - metric_collection_time
+  
+  // Verify performance is within acceptable bounds
+  assert_true(span_creation_duration < 1000) // Less than 1 second
+  assert_true(metric_collection_duration < 500) // Less than 0.5 seconds
+  assert_true(log_emission_duration < 1000) // Less than 1 second
+  
+  // Clean up spans
   for span in spans {
     Span::end(span)
   }
-  
-  let end_time = Time::now()
-  let duration = end_time - start_time
-  
-  // Verify reasonable performance (should complete within reasonable time)
-  assert_true(duration < 5000L) // Less than 5 seconds
-  
-  // Verify memory usage
-  let memory_usage = Memory::current_usage()
-  assert_true(memory_usage < 100_000_000L) // Less than 100MB
 }
 
 // Test 4: Error Handling and Recovery
 test "error handling and recovery" {
-  let tracer = TracerProvider::get_tracer("error_tracer")
-  let span = Tracer::start_span(tracer, "error_operation")
+  let error_handler = ErrorHandler::new()
   
-  // Simulate error condition
-  let error_condition = true
+  // Test error registration
+  ErrorHandler::register_error_type(error_handler, "network_timeout", "Network operation timed out")
+  ErrorHandler::register_error_type(error_handler, "invalid_data", "Received invalid data format")
   
-  if error_condition {
-    Span::set_status(span, Error, Some("Simulated error condition"))
-    Span::add_event(span, "error_occurred", Some([
-      ("error.type", StringValue("simulation")),
-      ("error.severity", StringValue("high"))
-    ]))
-    
-    // Test error recovery
-    let recovery_span = Tracer::start_span_with_context(tracer, "recovery_operation", Span::span_context(span))
-    Span::set_status(recovery_span, Ok, Some("Recovery successful"))
-    Span::end(recovery_span)
+  // Test error occurrence
+  ErrorHandler::report_error(error_handler, "network_timeout", Some(["url", "timeout_ms"]))
+  ErrorHandler::report_error(error_handler, "invalid_data", Some(["data_format", "expected_format"]))
+  
+  // Test error statistics
+  let network_timeout_count = ErrorHandler::get_error_count(error_handler, "network_timeout")
+  assert_eq(network_timeout_count, 1)
+  
+  let invalid_data_count = ErrorHandler::get_error_count(error_handler, "invalid_data")
+  assert_eq(invalid_data_count, 1)
+  
+  // Test error recovery strategies
+  let recovery_strategy = ErrorHandler::get_recovery_strategy(error_handler, "network_timeout")
+  match recovery_strategy {
+    Some(strategy) => assert_eq(strategy, "retry_with_backoff")
+    None => assert_true(false)
   }
   
-  // Verify error status
-  assert_eq(Span::status(span), Error)
-  
-  // Test exception handling
-  let exception_span = Tracer::start_span(tracer, "exception_operation")
-  try {
-    // Simulate exception
-    raise Exception("Test exception")
-  } catch {
-    Exception(msg) => {
-      Span::set_status(exception_span, Error, Some("Exception caught: " + msg))
-      Span::add_event(exception_span, "exception_handled", Some([
-        ("exception.message", StringValue(msg))
-      ]))
-    }
+  // Test error threshold and circuit breaking
+  ErrorHandler::set_error_threshold(error_handler, "network_timeout", 5)
+  for i in 0..6 {
+    ErrorHandler::report_error(error_handler, "network_timeout", None)
   }
-  Span::end(exception_span)
-  Span::end(span)
+  
+  let is_circuit_open = ErrorHandler::is_circuit_open(error_handler, "network_timeout")
+  assert_true(is_circuit_open)
 }
 
-// Test 5: Resource Management and Cleanup
-test "resource management and cleanup" {
+// Test 5: Concurrent Safety Tests
+test "concurrent safety tests" {
+  let shared_resource = ConcurrentResource::new()
+  let mut results = []
+  
+  // Test concurrent span operations
+  let mut handles = []
+  for i in 0..10 {
+    let handle = ConcurrentTask::spawn(fn() {
+      let span_ctx = SpanContext::new("concurrent_trace", "span_" + i.to_string(), true, "")
+      let span = Span::new("concurrent_operation", Internal, span_ctx)
+      
+      // Add events concurrently
+      Span::add_event(span, "event_" + i.to_string(), None)
+      
+      // Simulate some work
+      Time::sleep(10)
+      
+      Span::end(span)
+      return i * 2
+    })
+    handles.push(handle)
+  }
+  
+  // Collect results
+  for handle in handles {
+    let result = ConcurrentTask::join(handle)
+    results.push(result)
+  }
+  
+  // Verify all operations completed successfully
+  assert_eq(results.length(), 10)
+  for i in 0..10 {
+    assert_eq(results[i], i * 2)
+  }
+  
+  // Test concurrent metric updates
+  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
+  
+  let mut metric_handles = []
+  for i in 0..10 {
+    let handle = ConcurrentTask::spawn(fn() {
+      for j in 0..10 {
+        Counter::add(counter, 1.0)
+      }
+      return 10
+    })
+    metric_handles.push(handle)
+  }
+  
+  // Wait for all metric operations to complete
+  for handle in metric_handles {
+    ConcurrentTask::join(handle)
+  }
+}
+
+// Test 6: Serialization and Deserialization
+test "serialization and deserialization" {
+  // Test span serialization
+  let span_ctx = SpanContext::new("trace_id", "span_id", true, "test_state")
+  let span = Span::new("test_span", Server, span_ctx)
+  Span::add_event(span, "test_event", Some([("key1", StringValue("value1"))]))
+  
+  let serialized_span = Serialization::serialize_span(span)
+  assert_true(serialized_span.length() > 0)
+  
+  let deserialized_span = Serialization::deserialize_span(serialized_span)
+  match deserialized_span {
+    Some(restored_span) => {
+      assert_eq(Span::name(restored_span), "test_span")
+      match Span::kind(restored_span) {
+        Server => assert_true(true)
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test metric serialization
+  let meter = MeterProvider::default() |> MeterProvider::get_meter(_, "serialization_meter")
+  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
+  Histogram::record(histogram, 100.0)
+  Histogram::record(histogram, 200.0)
+  
+  let serialized_metrics = Serialization::serialize_metrics(histogram)
+  assert_true(serialized_metrics.length() > 0)
+  
+  let deserialized_metrics = Serialization::deserialize_metrics(serialized_metrics)
+  match deserialized_metrics {
+    Some(restored_metrics) => {
+      assert_eq(Instrument::name(restored_metrics), "test_histogram")
+      assert_eq(Instrument::description(restored_metrics), Some("Test histogram"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test log record serialization
+  let log_record = LogRecord::new(Error, "Test error message")
+  let serialized_log = Serialization::serialize_log_record(log_record)
+  assert_true(serialized_log.length() > 0)
+  
+  let deserialized_log = Serialization::deserialize_log_record(serialized_log)
+  match deserialized_log {
+    Some(restored_log) => {
+      assert_eq(LogRecord::severity_number(restored_log), Error)
+      match LogRecord::body(restored_log) {
+        Some(body) => assert_eq(body, "Test error message")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 7: Internationalization Support
+test "internationalization support" {
+  let i18n_provider = I18nProvider::new()
+  
+  // Test different locales
+  I18nProvider::add_locale(i18n_provider, "en", "English")
+  I18nProvider::add_locale(i18n_provider, "zh", "中文")
+  I18nProvider::add_locale(i18n_provider, "es", "Español")
+  I18nProvider::add_locale(i18n_provider, "fr", "Français")
+  
+  // Test localized messages
+  I18nProvider::add_message(i18n_provider, "en", "operation_success", "Operation completed successfully")
+  I18nProvider::add_message(i18n_provider, "zh", "operation_success", "操作成功完成")
+  I18nProvider::add_message(i18n_provider, "es", "operation_success", "Operación completada con éxito")
+  I18nProvider::add_message(i18n_provider, "fr", "operation_success", "Opération terminée avec succès")
+  
+  // Test message retrieval
+  let en_message = I18nProvider::get_message(i18n_provider, "en", "operation_success")
+  match en_message {
+    Some(msg) => assert_eq(msg, "Operation completed successfully")
+    None => assert_true(false)
+  }
+  
+  let zh_message = I18nProvider::get_message(i18n_provider, "zh", "operation_success")
+  match zh_message {
+    Some(msg) => assert_eq(msg, "操作成功完成")
+    None => assert_true(false)
+  }
+  
+  let es_message = I18nProvider::get_message(i18n_provider, "es", "operation_success")
+  match es_message {
+    Some(msg) => assert_eq(msg, "Operación completada con éxito")
+    None => assert_true(false)
+  }
+  
+  let fr_message = I18nProvider::get_message(i18n_provider, "fr", "operation_success")
+  match fr_message {
+    Some(msg) => assert_eq(msg, "Opération terminée avec succès")
+    None => assert_true(false)
+  }
+  
+  // Test fallback to default locale
+  let non_existent_message = I18nProvider::get_message(i18n_provider, "de", "operation_success")
+  match non_existent_message {
+    Some(msg) => assert_eq(msg, "Operation completed successfully") // Fallback to English
+    None => assert_true(false)
+  }
+  
+  // Test localized error messages
+  I18nProvider::add_message(i18n_provider, "en", "network_error", "Network connection failed")
+  I18nProvider::add_message(i18n_provider, "zh", "network_error", "网络连接失败")
+  
+  let en_error = I18nProvider::get_message(i18n_provider, "en", "network_error")
+  match en_error {
+    Some(msg) => assert_eq(msg, "Network connection failed")
+    None => assert_true(false)
+  }
+  
+  let zh_error = I18nProvider::get_message(i18n_provider, "zh", "network_error")
+  match zh_error {
+    Some(msg) => assert_eq(msg, "网络连接失败")
+    None => assert_true(false)
+  }
+}
+
+// Test 8: Resource Management
+test "resource management" {
   let resource_manager = ResourceManager::new()
   
-  // Allocate resources
-  let resource1 = ResourceManager::allocate(resource_manager, "resource1", 1024)
-  let resource2 = ResourceManager::allocate(resource_manager, "resource2", 2048)
-  let resource3 = ResourceManager::allocate(resource_manager, "resource3", 512)
+  // Test resource registration
+  ResourceManager::register_resource(resource_manager, "database_connection", "active")
+  ResourceManager::register_resource(resource_manager, "memory_pool", "available")
+  ResourceManager::register_resource(resource_manager, "thread_pool", "active")
   
-  // Verify resource allocation
-  assert_true(ResourceManager::is_allocated(resource_manager, "resource1"))
-  assert_true(ResourceManager::is_allocated(resource_manager, "resource2"))
-  assert_true(ResourceManager::is_allocated(resource_manager, "resource3"))
+  // Test resource state tracking
+  let db_state = ResourceManager::get_resource_state(resource_manager, "database_connection")
+  match db_state {
+    Some(state) => assert_eq(state, "active")
+    None => assert_true(false)
+  }
   
-  // Test resource usage tracking
-  let total_usage = ResourceManager::total_usage(resource_manager)
-  assert_eq(total_usage, 3584) // 1024 + 2048 + 512
+  // Test resource allocation
+  let allocation_success = ResourceManager::allocate_resource(resource_manager, "memory_pool", 1024)
+  assert_true(allocation_success)
+  
+  let memory_usage = ResourceManager::get_resource_usage(resource_manager, "memory_pool")
+  match memory_usage {
+    Some(usage) => assert_eq(usage, 1024)
+    None => assert_true(false)
+  }
+  
+  // Test resource deallocation
+  let deallocation_success = ResourceManager::deallocate_resource(resource_manager, "memory_pool", 512)
+  assert_true(deallocation_success)
+  
+  let updated_memory_usage = ResourceManager::get_resource_usage(resource_manager, "memory_pool")
+  match updated_memory_usage {
+    Some(usage) => assert_eq(usage, 512)
+    None => assert_true(false)
+  }
+  
+  // Test resource limits
+  ResourceManager::set_resource_limit(resource_manager, "memory_pool", 2048)
+  let exceeded_limit = ResourceManager::allocate_resource(resource_manager, "memory_pool", 2048)
+  assert_false(exceeded_limit) // Should fail as it would exceed the limit
   
   // Test resource cleanup
-  ResourceManager::deallocate(resource_manager, "resource2")
-  assert_false(ResourceManager::is_allocated(resource_manager, "resource2"))
-  
-  let usage_after_cleanup = ResourceManager::total_usage(resource_manager)
-  assert_eq(usage_after_cleanup, 1536) // 1024 + 512
-  
-  // Test resource limit enforcement
-  let limited_manager = ResourceManager::with_limit(2000)
-  let res1 = ResourceManager::allocate(limited_manager, "limited1", 1500)
-  let res2 = ResourceManager::allocate(limited_manager, "limited2", 300)
-  let res3 = ResourceManager::allocate(limited_manager, "limited3", 500) // Should fail due to limit
-  
-  assert_true(ResourceManager::is_allocated(limited_manager, "limited1"))
-  assert_true(ResourceManager::is_allocated(limited_manager, "limited2"))
-  assert_false(ResourceManager::is_allocated(limited_manager, "limited3"))
+  ResourceManager::cleanup_resource(resource_manager, "database_connection")
+  let cleaned_up_state = ResourceManager::get_resource_state(resource_manager, "database_connection")
+  match cleaned_up_state {
+    Some(state) => assert_eq(state, "cleaned_up")
+    None => assert_true(false)
+  }
 }
 
-// Test 6: Concurrent Safety
-test "concurrent safety" {
-  let shared_counter = AtomicCounter::new(0)
-  let spans = []
-  let tracer = TracerProvider::get_tracer("concurrent_tracer")
+// Test 9: Advanced Data Processing Pipeline
+test "advanced data processing pipeline" {
+  let pipeline = DataPipeline::new()
   
-  // Create concurrent operations
-  for i in 0..=50 {
-    let span = Tracer::start_span(tracer, "concurrent_operation_" + i.to_string())
-    spans.push(span)
-    
-    // Simulate concurrent counter increment
-    Async::run(() => {
-      AtomicCounter::increment(shared_counter)
-      Span::add_event(span, "counter_incremented", Some([
-        ("thread_id", IntValue(i)),
-        ("counter_value", IntValue(AtomicCounter::get(shared_counter)))
-      ]))
-    })
-  }
+  // Configure pipeline stages
+  DataPipeline::add_stage(pipeline, "data_validation", fn(data) {
+    // Validate data format
+    match data {
+      String(_) => true
+      _ => false
+    }
+  })
   
-  // Wait for all operations to complete
-  Async::wait_all()
+  DataPipeline::add_stage(pipeline, "data_transformation", fn(data) {
+    // Transform data
+    match data {
+      String(s) => String(s.uppercase())
+      _ => data
+    }
+  })
   
-  // Verify final counter value
-  assert_eq(AtomicCounter::get(shared_counter), 51)
+  DataPipeline::add_stage(pipeline, "data_enrichment", fn(data) {
+    // Enrich data with metadata
+    match data {
+      String(s) => Array([data, String("processed_at_" + Time::now().to_string())])
+      _ => data
+    }
+  })
   
-  // End all spans
-  for span in spans {
-    Span::end(span)
-  }
+  // Process data through pipeline
+  let input_data = String("test_data")
+  let result = DataPipeline::process(pipeline, input_data)
   
-  // Verify thread safety of attributes
-  let attrs = Attributes::new()
-  for i in 0..=20 {
-    Async::run(() => {
-      Attributes::set(attrs, "key_" + i.to_string(), IntValue(i))
-    })
-  }
-  Async::wait_all()
-  
-  // Verify attributes were set correctly
-  let value = Attributes::get(attrs, "key_10")
-  match value {
-    Some(IntValue(v)) => assert_eq(v, 10)
+  match result {
+    Array(processed_data) => {
+      assert_eq(processed_data.length(), 2)
+      match processed_data[0] {
+        String(transformed) => assert_eq(transformed, "TEST_DATA")
+        _ => assert_true(false)
+      }
+    }
     _ => assert_true(false)
   }
-}
-
-// Test 7: Data Serialization and Deserialization
-test "data serialization and deserialization" {
-  let original_data = TelemetryData::new(
-    "trace_123",
-    "span_456",
-    [("service.name", StringValue("test_service"))],
-    [Event::new("test_event", 1000L, [("event.data", StringValue("test_data"))])],
-    Status::Ok
-  )
   
-  // Test serialization to JSON
-  let json_data = Serialization::to_json(original_data)
-  assert_true(json_data.contains("trace_123"))
-  assert_true(json_data.contains("span_456"))
-  assert_true(json_data.contains("test_service"))
-  
-  // Test deserialization from JSON
-  let deserialized_data = Serialization::from_json(json_data)
-  assert_eq(TelemetryData::trace_id(deserialized_data), "trace_123")
-  assert_eq(TelemetryData::span_id(deserialized_data), "span_456")
-  
-  // Test binary serialization
-  let binary_data = Serialization::to_binary(original_data)
-  assert_true(binary_data.length() > 0)
-  
-  let binary_deserialized = Serialization::from_binary(binary_data)
-  assert_eq(TelemetryData::trace_id(binary_deserialized), "trace_123")
-  assert_eq(TelemetryData::span_id(binary_deserialized), "span_456")
-  
-  // Test protocol buffer serialization
-  let proto_data = Serialization::to_proto(original_data)
-  assert_true(proto_data.length() > 0)
-  
-  let proto_deserialized = Serialization::from_proto(proto_data)
-  assert_eq(TelemetryData::trace_id(proto_deserialized), "trace_123")
-  assert_eq(TelemetryData::span_id(proto_deserialized), "span_456")
-}
-
-// Test 8: Cross-Service Communication
-test "cross-service communication" {
-  let service_a = Service::new("ServiceA", "localhost:8080")
-  let service_b = Service::new("ServiceB", "localhost:8081")
-  let service_c = Service::new("ServiceC", "localhost:8082")
-  
-  // Setup service communication
-  Service::register_handler(service_a, "process", (request) => {
-    let response = Response::new(200, [("processed", "true")])
-    response
-  })
-  
-  Service::register_handler(service_b, "analyze", (request) => {
-    let response = Response::new(200, [("analyzed", "true")])
-    response
-  })
-  
-  Service::register_handler(service_c, "store", (request) => {
-    let response = Response::new(201, [("stored", "true")])
-    response
-  })
-  
-  // Test service chain communication
-  let tracer = TracerProvider::get_tracer("service_tracer")
-  let root_span = Tracer::start_span(tracer, "service_chain")
-  let ctx = Span::span_context(root_span)
-  
-  // Service A -> Service B -> Service C
-  let request_a = Request::new_with_context("POST", "/process", [("data", "test_data")], ctx)
-  let response_a = Service::send_request(service_a, request_a)
-  assert_eq(Response::status_code(response_a), 200)
-  
-  let request_b = Request::new_with_context("POST", "/analyze", [("data", "test_data")], ctx)
-  let response_b = Service::send_request(service_b, request_b)
-  assert_eq(Response::status_code(response_b), 200)
-  
-  let request_c = Request::new_with_context("POST", "/store", [("data", "test_data")], ctx)
-  let response_c = Service::send_request(service_c, request_c)
-  assert_eq(Response::status_code(response_c), 201)
-  
-  // Verify trace propagation
-  assert_eq(Request::trace_id(request_a), Request::trace_id(request_b))
-  assert_eq(Request::trace_id(request_b), Request::trace_id(request_c))
-  
-  Span::end(root_span)
-}
-
-// Test 9: Configuration Management
-test "configuration management" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set configuration values
-  ConfigurationManager::set(config_manager, "service.name", "azimuth")
-  ConfigurationManager::set(config_manager, "service.version", "1.0.0")
-  ConfigurationManager::set(config_manager, "telemetry.enabled", "true")
-  ConfigurationManager::set(config_manager, "telemetry.sampling_rate", "0.1")
-  ConfigurationManager::set(config_manager, "performance.max_concurrent", "100")
-  
-  // Get configuration values
-  let service_name = ConfigurationManager::get(config_manager, "service.name")
-  match service_name {
-    Some(value) => assert_eq(value, "azimuth")
-    None => assert_true(false)
+  // Test pipeline with invalid data
+  let invalid_data = 123
+  let invalid_result = DataPipeline::process(pipeline, invalid_data)
+  match invalid_result {
+    Error(_) => assert_true(true) // Should fail validation
+    _ => assert_true(false)
   }
   
-  let service_version = ConfigurationManager::get(config_manager, "service.version")
-  match service_version {
-    Some(value) => assert_eq(value, "1.0.0")
-    None => assert_true(false)
-  }
+  // Test batch processing
+  let batch_data = [String("item1"), String("item2"), String("item3")]
+  let batch_results = DataPipeline::process_batch(pipeline, batch_data)
+  assert_eq(batch_results.length(), 3)
   
-  let telemetry_enabled = ConfigurationManager::get_bool(config_manager, "telemetry.enabled")
-  assert_true(telemetry_enabled)
-  
-  let sampling_rate = ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate")
-  assert_true(sampling_rate > 0.0 && sampling_rate <= 1.0)
-  
-  let max_concurrent = ConfigurationManager::get_int(config_manager, "performance.max_concurrent")
-  assert_eq(max_concurrent, 100)
-  
-  // Test configuration validation
-  let validation_result = ConfigurationManager::validate(config_manager)
-  assert_true(validation_result.is_valid)
-  
-  // Test configuration defaults
-  let default_value = ConfigurationManager::get_with_default(config_manager, "nonexistent.key", "default_value")
-  assert_eq(default_value, "default_value")
-  
-  // Test configuration persistence
-  ConfigurationManager::save(config_manager, "test_config.json")
-  let loaded_config = ConfigurationManager::load("test_config.json")
-  
-  let loaded_service_name = ConfigurationManager::get(loaded_config, "service.name")
-  match loaded_service_name {
-    Some(value) => assert_eq(value, "azimuth")
-    None => assert_true(false)
+  for result in batch_results {
+    match result {
+      Array(_) => assert_true(true)
+      _ => assert_true(false)
+    }
   }
 }
 
-// Test 10: Telemetry Data Aggregation
-test "telemetry data aggregation" {
-  let aggregator = DataAggregator::new()
+// Test 10: Cross-Platform Compatibility
+test "cross-platform compatibility" {
+  let platform_adapter = PlatformAdapter::new()
   
-  // Add telemetry data points
-  for i in 0..=100 {
-    let data_point = TelemetryDataPoint::new(
-      "metric_" + (i % 10).to_string(), // 10 different metrics
-      i as Float,
-      Time::now() - (100 - i) * 1000L // Last 100 seconds
-    )
-    DataAggregator::add_point(aggregator, data_point)
-  }
+  // Test platform detection
+  let current_platform = PlatformAdapter::detect_platform(platform_adapter)
+  assert_true(current_platform == "linux" || current_platform == "windows" || current_platform == "macos")
   
-  // Test aggregation by metric name
-  let metric_0_points = DataAggregator::get_by_metric(aggregator, "metric_0")
-  assert_eq(metric_0_points.length(), 11) // 0, 10, 20, ..., 100
+  // Test platform-specific operations
+  let file_path = PlatformAdapter::get_platform_specific_path(platform_adapter, "/tmp/test_file")
+  assert_true(file_path.length() > 0)
   
-  // Test time-based aggregation
-  let recent_points = DataAggregator::get_by_time_range(aggregator, Time::now() - 5000L, Time::now())
-  assert_true(recent_points.length() >= 5)
+  // Test platform-specific time formatting
+  let timestamp = Time::now()
+  let formatted_time = PlatformAdapter::format_time(platform_adapter, timestamp)
+  assert_true(formatted_time.length() > 0)
   
-  // Test statistical aggregation
-  let stats = DataAggregator::get_statistics(aggregator, "metric_5")
-  assert_true(stats.count > 0)
-  assert_true(stats.average >= 0.0)
-  assert_true(stats.max >= stats.min)
+  // Test platform-specific environment variables
+  let env_var = PlatformAdapter::get_platform_env_var(platform_adapter, "PATH")
+  assert_true(env_var.length() > 0)
   
-  // Test percentile calculation
-  let p95 = DataAggregator::get_percentile(aggregator, "metric_3", 95.0)
-  assert_true(p95 >= 0.0)
+  // Test platform-specific network configuration
+  let network_config = PlatformAdapter::get_network_config(platform_adapter)
+  assert_true(network_config.length() > 0)
   
-  let p50 = DataAggregator::get_percentile(aggregator, "metric_3", 50.0)
-  assert_true(p50 <= p95)
+  // Test platform-specific telemetry collection
+  let telemetry_data = PlatformAdapter::collect_platform_telemetry(platform_adapter)
+  assert_true(telemetry_data.length() > 0)
   
-  // Test rate calculation
-  let rate = DataAggregator::get_rate(aggregator, "metric_7", Time::now() - 10000L, Time::now())
-  assert_true(rate >= 0.0)
-  
-  // Test aggregation with grouping
-  let grouped_stats = DataAggregator::get_grouped_statistics(aggregator)
-  assert_eq(grouped_stats.length(), 10) // 10 different metrics
-  
-  // Test data retention
-  DataAggregator::retention_policy(aggregator, 60000L) // Keep data for 60 seconds
-  DataAggregator::cleanup_old_data(aggregator)
-  
-  let all_points_after_cleanup = DataAggregator::get_all_points(aggregator)
-  assert_true(all_points_after_cleanup.length() < 101) // Some points should be cleaned up
+  // Verify platform-specific data is properly formatted
+  let is_valid_format = PlatformAdapter::validate_platform_data(platform_adapter, telemetry_data)
+  assert_true(is_valid_format)
 }

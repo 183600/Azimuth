@@ -189,5 +189,6 @@
         "azimuth_serialization_format_tests.mbt",
         "azimuth_metrics_collection_tests.mbt",
         "azimuth_resource_management_tests.mbt",
-        "azimuth_network_communication_tests.mbt"]  }
+        "azimuth_network_communication_tests.mbt",
+        "../azimuth_new_comprehensive_test_cases.mbt"]  }
 }
