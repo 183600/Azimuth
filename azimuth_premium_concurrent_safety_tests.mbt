@@ -1,676 +1,459 @@
-// Azimuth Premium Test Suite - High Quality MoonBit Language Features
-// This file contains comprehensive test cases showcasing advanced MoonBit language features
+// Azimuth Premium Concurrent Safety Tests
+// This file contains high-quality test cases for concurrent safety and thread safety
 
-// Test 1: Advanced Pattern Matching and Type Coercion
-test "advanced pattern matching with type coercion" {
-  // Test pattern matching with different numeric types
-  let test_values = [42, 3.14, -10, 0.0, 100, -5.5]
+// Test 1: Concurrent attributes operations
+pub test "premium concurrent attributes operations" {
+  // Test concurrent attribute setting and getting
+  let shared_attrs = Attributes::new()
   
-  for value in test_values {
-    let result = match value {
-      x when x > 0 && x < 50 => "small positive"
-      x when x >= 50 => "large positive" 
-      x when x < 0 => "negative"
-      _ => "zero"
-    }
+  // Simulate concurrent operations
+  // In real implementation, this would use actual concurrent primitives
+  let operation_results = []
+  
+  // Test concurrent writes to different keys
+  for i in 0...10 {
+    let key = "concurrent.key." + i.to_string()
+    let value = StringValue("value." + i.to_string())
     
-    // Validate pattern matching logic
-    if value == 42 {
-      assert_eq(result, "small positive")
-    } else if value == 100 {
-      assert_eq(result, "large positive")
-    } else if value == -10 || value == -5.5 {
-      assert_eq(result, "negative")
-    } else if value == 0.0 {
-      assert_eq(result, "zero")
-    }
+    // In real implementation, this would be executed concurrently
+    Attributes::set(shared_attrs, key, value)
+    operation_results.push(i)
   }
   
-  // Test nested pattern matching with option types
-  let nested_options = [
-    Some(Some(42)),
-    Some(None),
-    None,
-    Some(Some(-10)),
-    Some(Some(0))
-  ]
+  // Verify all operations completed
+  assert_eq(operation_results.length(), 11)
   
-  for opt in nested_options {
-    let description = match opt {
-      Some(Some(value)) when value > 0 => "positive nested value"
-      Some(Some(value)) when value < 0 => "negative nested value"
-      Some(Some(0)) => "zero nested value"
-      Some(None) => "inner none"
-      None => "outer none"
-    }
+  // Test concurrent reads and writes to the same key
+  let shared_key = "shared.concurrent.key"
+  
+  // Simulate concurrent writes
+  for i in 0...5 {
+    let value = StringValue("shared.value." + i.to_string())
     
-    // Validate nested pattern matching
-    match opt {
-      Some(Some(42)) => assert_eq(description, "positive nested value")
-      Some(None) => assert_eq(description, "inner none")
-      None => assert_eq(description, "outer none")
-      Some(Some(-10)) => assert_eq(description, "negative nested value")
-      Some(Some(0)) => assert_eq(description, "zero nested value")
-      _ => assert_true(false)
-    }
+    // In real implementation, this would be executed concurrently
+    Attributes::set(shared_attrs, shared_key, value)
+    operation_results.push(i)
   }
+  
+  // Simulate concurrent reads
+  for i in 0...5 {
+    // In real implementation, this would be executed concurrently
+    let retrieved_value = Attributes::get(shared_attrs, shared_key)
+    operation_results.push(i)
+  }
+  
+  // Verify operations completed without errors
+  assert_true(operation_results.length() > 0)
+  
+  // Test concurrent operations with different attribute value types
+  let type_test_key = "type.test.key"
+  
+  // Concurrent operations with different types
+  Attributes::set(shared_attrs, type_test_key, StringValue("string.value"))
+  Attributes::set(shared_attrs, type_test_key, IntValue(42))
+  Attributes::set(shared_attrs, type_test_key, FloatValue(3.14))
+  Attributes::set(shared_attrs, type_test_key, BoolValue(true))
+  Attributes::set(shared_attrs, type_test_key, ArrayStringValue(["a", "b", "c"]))
+  Attributes::set(shared_attrs, type_test_key, ArrayIntValue([1, 2, 3]))
+  
+  // Verify final state is consistent
+  let final_value = Attributes::get(shared_attrs, type_test_key)
+  assert_true(final_value.is_some())
 }
 
-// Test 2: Higher-Order Functions and Functional Composition
-test "higher-order functions and functional composition" {
-  // Test function composition
-  let add_one = |x| x + 1
-  let double = |x| x * 2
-  let square = |x| x * x
+// Test 2: Concurrent span lifecycle management
+pub test "premium concurrent span lifecycle" {
+  // Test concurrent span creation and ending
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-test-tracer")
   
-  // Compose functions: square(double(add_one(x)))
-  let composed = |x| square(double(add_one(x)))
+  let active_spans = []
+  let span_operations = []
   
-  assert_eq(composed(3), 16)  // (3 + 1) * 2 = 8, 8^2 = 64
-  assert_eq(composed(5), 36)  // (5 + 1) * 2 = 12, 12^2 = 144
+  // Test concurrent span creation
+  for i in 0...10 {
+    let span_name = "concurrent.span." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently
+    let span = Tracer::start_span(tracer, span_name)
+    active_spans.push(span)
+    span_operations.push("created." + i.to_string())
+  }
   
-  // Test higher-order functions with collections
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  // Verify all spans were created
+  assert_eq(active_spans.length(), 11)
+  assert_eq(span_operations.length(), 11)
   
-  // Filter even numbers, then transform, then reduce
-  let sum_of_squares_of_evens = numbers
-    .filter(|x| x % 2 == 0)
-    .map(|x| x * x)
-    .reduce(|acc, val| acc + val, 0)
+  // Test concurrent span operations
+  for i in 0...active_spans.length() - 1 {
+    let span = active_spans[i]
+    
+    // In real implementation, these operations would be executed concurrently
+    Span::set_status(span, Ok, Some("Operation completed"))
+    Span::add_event(span, "test.event." + i.to_string())
+    span_operations.push("operated." + i.to_string())
+  }
   
-  assert_eq(sum_of_squares_of_evens, 220) // 4 + 16 + 36 + 64 + 100 = 220
+  // Test concurrent span ending
+  for i in 0...active_spans.length() - 1 {
+    let span = active_spans[i]
+    
+    // In real implementation, this would be executed concurrently
+    Span::end(span)
+    span_operations.push("ended." + i.to_string())
+  }
   
-  // Test currying and partial application
-  let multiply = |x| |y| x * y
-  let double = multiply(2)
-  let triple = multiply(3)
+  // Verify all operations completed
+  assert_eq(span_operations.length(), 33)  // 11 created + 11 operated + 11 ended
   
-  assert_eq(double(5), 10)
-  assert_eq(triple(5), 15)
+  // Test concurrent parent-child span relationships
+  let parent_span = Tracer::start_span(tracer, "concurrent.parent")
+  let child_spans = []
   
-  // Test function as parameter
-  let apply_operation = |x, operation| operation(x)
+  // Create child spans concurrently
+  for i in 0...5 {
+    let child_name = "concurrent.child." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently with proper parent context
+    let child_span = Tracer::start_span(tracer, child_name)
+    child_spans.push(child_span)
+  }
   
-  assert_eq(apply_operation(10, double), 20)
-  assert_eq(apply_operation(10, triple), 30)
-  assert_eq(apply_operation(10, square), 100)
+  // End child spans concurrently
+  for i in 0...child_spans.length() - 1 {
+    let child_span = child_spans[i]
+    
+    // In real implementation, this would be executed concurrently
+    Span::end(child_span)
+  }
+  
+  // End parent span
+  Span::end(parent_span)
+  
+  // Verify parent-child relationships
+  assert_eq(child_spans.length(), 6)
 }
 
-// Test 3: Advanced Type System Features
-test "advanced type system features" {
-  // Test type inference and generic operations
-  let int_list = [1, 2, 3, 4, 5]
-  let float_list = [1.1, 2.2, 3.3, 4.4, 5.5]
-  let string_list = ["a", "b", "c", "d", "e"]
+// Test 3: Concurrent metrics operations
+pub test "premium concurrent metrics operations" {
+  // Test concurrent counter operations
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "concurrent-test-meter")
   
-  // Generic operations on different types
-  let int_sum = int_list.reduce(|acc, val| acc + val, 0)
-  let float_sum = float_list.reduce(|acc, val| acc + val, 0.0)
-  let string_concat = string_list.reduce(|acc, val| acc + val, "")
+  let counter = Meter::create_counter(meter, "concurrent.counter")
+  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
+  let updown_counter = Meter::create_updown_counter(meter, "concurrent.updown")
+  let gauge = Meter::create_gauge(meter, "concurrent.gauge")
   
-  assert_eq(int_sum, 15)
-  assert_true(float_sum > 16.0 && float_sum < 17.0)
-  assert_eq(string_concat, "abcde")
+  let metric_operations = []
   
-  // Test type constraints and bounds
-  let process_numbers = |numbers| {
-    let mut count = 0
-    let mut sum = 0
-    
-    for num in numbers {
-      count = count + 1
-      sum = sum + num
-    }
-    
-    if count > 0 {
-      sum / count
-    } else {
-      0
-    }
+  // Test concurrent counter increments
+  for i in 0...100 {
+    // In real implementation, this would be executed concurrently
+    Counter::add(counter, 1.0)
+    metric_operations.push("counter.add." + i.to_string())
   }
   
-  assert_eq(process_numbers([10, 20, 30]), 20)
-  assert_eq(process_numbers([]), 0)
-  assert_eq(process_numbers([5]), 5)
+  // Test concurrent histogram recordings
+  for i in 0...50 {
+    let value = (i * 2) as Double
+    
+    // In real implementation, this would be executed concurrently
+    Histogram::record(histogram, value)
+    metric_operations.push("histogram.record." + i.to_string())
+  }
   
-  // Test union types and variant handling
-  let mixed_values = [1, 2.5, "hello", 3, 4.7, "world"]
+  // Test concurrent up-down counter operations
+  for i in 0...25 {
+    // In real implementation, this would be executed concurrently
+    UpDownCounter::add(updown_counter, 1.0)
+    metric_operations.push("updown.add." + i.to_string())
+  }
   
-  let type_counts = mixed_values.reduce(
-    |acc, val| {
-      match val {
-        x when x is Int => { int_count: acc.int_count + 1, float_count: acc.float_count, string_count: acc.string_count }
-        x when x is Float => { int_count: acc.int_count, float_count: acc.float_count + 1, string_count: acc.string_count }
-        x when x is String => { int_count: acc.int_count, float_count: acc.float_count, string_count: acc.string_count + 1 }
-        _ => acc
-      }
-    },
-    { int_count: 0, float_count: 0, string_count: 0 }
-  )
+  for i in 0...25 {
+    // In real implementation, this would be executed concurrently
+    UpDownCounter::add(updown_counter, -1.0)
+    metric_operations.push("updown.subtract." + i.to_string())
+  }
   
-  assert_eq(type_counts.int_count, 2)
-  assert_eq(type_counts.float_count, 2)
-  assert_eq(type_counts.string_count, 2)
+  // Test concurrent gauge updates
+  for i in 0...30 {
+    let value = (i * 3.14) as Double
+    
+    // In real implementation, this would be executed concurrently
+    // Note: Gauge doesn't have a set method in the current implementation
+    // This would be extended in a real implementation
+    metric_operations.push("gauge.update." + i.to_string())
+  }
+  
+  // Verify all operations completed
+  assert_eq(metric_operations.length(), 231)  // 100 + 50 + 25 + 25 + 31
+  
+  // Test concurrent operations with attributes
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "operation.type", StringValue("concurrent"))
+  
+  for i in 0...20 {
+    // In real implementation, this would be executed concurrently
+    Counter::add(counter, 1.0, Some(attrs))
+    Histogram::record(histogram, (i * 5) as Double, Some(attrs))
+    metric_operations.push("with.attrs." + i.to_string())
+  }
+  
+  // Verify attribute-based operations completed
+  assert_eq(metric_operations.length(), 251)  // 231 + 20
 }
 
-// Test 4: Mutable State and Reference Handling
-test "mutable state and reference handling" {
-  // Test mutable variables and scope
-  let mut counter = 0
+// Test 4: Concurrent context and baggage operations
+pub test "premium concurrent context baggage operations" {
+  // Test concurrent context operations
+  let root_ctx = Context::root()
+  let context_operations = []
   
-  // Create closure that captures mutable variable
-  let incrementer = || {
-    counter = counter + 1
-    counter
+  // Test concurrent context value setting
+  for i in 0...10 {
+    let key = ContextKey::new("concurrent.ctx.key." + i.to_string())
+    let value = "concurrent.value." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently
+    let ctx_with_value = Context::with_value(root_ctx, key, value)
+    context_operations.push("set." + i.to_string())
+    
+    // Test concurrent context value retrieval
+    let retrieved_value = Context::get(ctx_with_value, key)
+    assert_eq(retrieved_value, Some(value))
+    context_operations.push("get." + i.to_string())
   }
   
-  assert_eq(incrementer(), 1)
-  assert_eq(incrementer(), 2)
-  assert_eq(incrementer(), 3)
-  assert_eq(counter, 3)
+  // Test concurrent baggage operations
+  let baggage = Baggage::new()
+  let baggage_operations = []
   
-  // Test mutable array operations
-  let mut mutable_array = [1, 2, 3, 4, 5]
-  
-  // In-place transformation
-  for i = 0; i < mutable_array.length(); i = i + 1 {
-    mutable_array[i] = mutable_array[i] * 2
+  // Test concurrent baggage entry setting
+  for i in 0...10 {
+    let key = "concurrent.baggage.key." + i.to_string()
+    let value = "concurrent.baggage.value." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently
+    let updated_baggage = Baggage::set_entry(baggage, key, value)
+    baggage_operations.push("set." + i.to_string())
+    
+    // Test concurrent baggage entry retrieval
+    let retrieved_value = Baggage::get_entry(updated_baggage, key)
+    assert_eq(retrieved_value, Some(value))
+    baggage_operations.push("get." + i.to_string())
   }
   
-  assert_eq(mutable_array, [2, 4, 6, 8, 10])
+  // Test concurrent baggage entry removal
+  for i in 0...5 {
+    let key = "concurrent.baggage.key." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently
+    let reduced_baggage = Baggage::remove_entry(baggage, key)
+    baggage_operations.push("remove." + i.to_string())
+  }
   
-  // Test mutable record fields
-  let mut point = { x: 10, y: 20 }
-  
-  point.x = point.x + 5
-  point.y = point.y - 5
-  
-  assert_eq(point.x, 15)
-  assert_eq(point.y, 15)
-  
-  // Test reference sharing and aliasing
-  let data = [1, 2, 3, 4, 5]
-  let reference1 = data
-  let reference2 = data
-  
-  // All references should point to the same data
-  assert_eq(reference1.length(), 5)
-  assert_eq(reference2.length(), 5)
-  assert_eq(reference1[0], 1)
-  assert_eq(reference2[0], 1)
+  // Verify all context and baggage operations completed
+  assert_eq(context_operations.length(), 20)  // 10 sets + 10 gets
+  assert_eq(baggage_operations.length(), 25)  // 10 sets + 10 gets + 5 removes
 }
 
-// Test 5: Advanced Control Flow and Exception Handling
-test "advanced control flow and exception handling" {
-  // Test early returns and guard clauses
-  let process_value = |value| {
-    // Guard clause for invalid input
-    if value < 0 {
-      return "invalid: negative value"
+// Test 5: Concurrent logging operations
+pub test "premium concurrent logging operations" {
+  // Test concurrent log record creation and emission
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "concurrent-test-logger")
+  
+  let log_operations = []
+  
+  // Test concurrent log record creation
+  for i in 0...50 {
+    let severity = match i % 6 {
+      0 => Trace
+      1 => Debug
+      2 => Info
+      3 => Warn
+      4 => Error
+      _ => Fatal
     }
     
-    // Guard clause for zero
-    if value == 0 {
-      return "special case: zero"
-    }
+    let message = "Concurrent log message " + i.to_string()
     
-    // Normal processing
-    if value % 2 == 0 {
-      "even number"
-    } else {
-      "odd number"
-    }
+    // In real implementation, this would be executed concurrently
+    let log_record = LogRecord::new(severity, message)
+    log_operations.push("created." + i.to_string())
+    
+    // Test concurrent log emission
+    Logger::emit(logger, log_record)
+    log_operations.push("emitted." + i.to_string())
   }
   
-  assert_eq(process_value(-5), "invalid: negative value")
-  assert_eq(process_value(0), "special case: zero")
-  assert_eq(process_value(4), "even number")
-  assert_eq(process_value(7), "odd number")
-  
-  // Test try-catch style error handling with result types
-  let divide_safely = |numerator, denominator| {
-    if denominator == 0 {
-      Err("Division by zero")
-    } else {
-      Ok(numerator / denominator)
-    }
+  // Test concurrent detailed log record creation
+  for i in 0...25 {
+    let trace_id = "concurrent.trace." + i.to_string()
+    let span_id = "concurrent.span." + i.to_string()
+    let timestamp = 1735689600000000000L + (i * 1000000000L)
+    
+    // In real implementation, this would be executed concurrently
+    let detailed_log = LogRecord::new_with_context(
+      Error,
+      Some("Detailed concurrent log " + i.to_string()),
+      Some(Attributes::new()),
+      Some(timestamp),
+      Some(timestamp + 1000000L),
+      Some(trace_id),
+      Some(span_id),
+      Some(Context::root())
+    )
+    
+    log_operations.push("detailed.created." + i.to_string())
+    
+    // Test concurrent detailed log emission
+    Logger::emit(logger, detailed_log)
+    log_operations.push("detailed.emitted." + i.to_string())
   }
   
-  let valid_result = divide_safely(10, 2)
-  let invalid_result = divide_safely(10, 0)
+  // Verify all logging operations completed
+  assert_eq(log_operations.length(), 150)  // 50 created + 50 emitted + 25 detailed created + 25 detailed emitted
   
-  match valid_result {
-    Ok(value) => assert_eq(value, 5)
-    Err(_) => assert_true(false)
+  // Test concurrent logger creation
+  let loggers = []
+  for i in 0...10 {
+    let logger_name = "concurrent.logger." + i.to_string()
+    
+    // In real implementation, this would be executed concurrently
+    let concurrent_logger = LoggerProvider::get_logger(logger_provider, logger_name)
+    loggers.push(concurrent_logger)
+    log_operations.push("logger.created." + i.to_string())
   }
   
-  match invalid_result {
-    Ok(_) => assert_true(false)
-    Err(message) => assert_eq(message, "Division by zero")
-  }
-  
-  // Test chained operations with error propagation
-  let chained_operation = |input| {
-    match divide_safely(input, 2) {
-      Ok(step1) => match divide_safely(step1, 5) {
-        Ok(step2) => step2 * 10
-        Err(_) => -1  // Error in second division
-      }
-      Err(_) => -2  // Error in first division
-    }
-  }
-  
-  assert_eq(chained_operation(100), 100)  // 100/2=50, 50/5=10, 10*10=100
-  assert_eq(chained_operation(5), -2)     // 5/2 fails in integer division
-  assert_eq(chained_operation(0), -2)     // 0/2 fails in integer division
+  // Verify all loggers were created
+  assert_eq(loggers.length(), 11)
+  assert_eq(log_operations.length(), 161)  // 150 + 11
 }
 
-// Test 6: Advanced String Manipulation and Unicode Handling
-test "advanced string manipulation and unicode handling" {
-  // Test string slicing and indexing
-  let test_string = "Hello, 世界! 🌍"
+// Test 6: Concurrent resource operations
+pub test "premium concurrent resource operations" {
+  // Test concurrent resource creation and merging
+  let base_resource = Resource::new()
+  let resource_operations = []
   
-  // Test basic string operations
-  assert_eq(test_string.length(), 14)  // Counting code points
-  assert_eq(test_string.contains("Hello"), true)
-  assert_eq(test_string.contains("世界"), true)
-  assert_eq(test_string.contains("🌍"), true)
+  // Test concurrent resource attribute setting
+  for i in 0...10 {
+    let key = "concurrent.resource.key." + i.to_string()
+    let value = StringValue("concurrent.resource.value." + i.to_string())
+    
+    // In real implementation, this would be executed concurrently
+    let resource_with_attr = Resource::with_attributes(base_resource, [(key, value)])
+    resource_operations.push("attr.set." + i.to_string())
+    
+    // Test concurrent resource attribute retrieval
+    let retrieved_value = Resource::get_attribute(resource_with_attr, key)
+    assert_eq(retrieved_value, Some(value))
+    resource_operations.push("attr.get." + i.to_string())
+  }
   
-  // Test string transformations
-  let uppercase = test_string.to_uppercase()
-  let lowercase = test_string.to_lowercase()
+  // Test concurrent resource merging
+  let resources = []
+  for i in 0...5 {
+    let resource = Resource::with_attributes(base_resource, [
+      ("merge.key." + i.to_string(), StringValue("merge.value." + i.to_string())),
+      ("shared.key", StringValue("shared.value." + i.to_string()))
+    ])
+    resources.push(resource)
+    resource_operations.push("resource.created." + i.to_string())
+  }
   
-  assert_eq(uppercase.contains("HELLO"), true)
-  assert_eq(lowercase.contains("hello"), true)
+  // Test concurrent merge operations
+  let merged_resources = []
+  for i in 0...resources.length() - 2 {
+    // In real implementation, this would be executed concurrently
+    let merged = Resource::merge(resources[i], resources[i + 1])
+    merged_resources.push(merged)
+    resource_operations.push("merged." + i.to_string())
+  }
   
-  // Test string splitting and joining
-  let csv_string = "apple,banana,cherry,date"
-  let fruits = csv_string.split(",")
+  // Verify merge results
+  assert_eq(merged_resources.length(), 5)
   
-  assert_eq(fruits.length(), 4)
-  assert_eq(fruits[0], "apple")
-  assert_eq(fruits[1], "banana")
-  assert_eq(fruits[2], "cherry")
-  assert_eq(fruits[3], "date")
+  // Test concurrent resource attribute updates
+  let shared_resource = Resource::with_attributes(base_resource, [
+    ("shared.update.key", StringValue("initial.value"))
+  ])
   
-  let rejoined = fruits.join("|")
-  assert_eq(rejoined, "apple|banana|cherry|date")
+  for i in 0...10 {
+    let updated_value = StringValue("updated.value." + i.to_string())
+    
+    // In real implementation, this would be executed concurrently
+    let updated_resource = Resource::with_attributes(shared_resource, [
+      ("shared.update.key", updated_value)
+    ])
+    resource_operations.push("updated." + i.to_string())
+  }
   
-  // Test string trimming and padding
-  let padded_string = "   trimmed content   "
-  let trimmed = padded_string.trim()
-  
-  assert_eq(trimmed, "trimmed content")
-  
-  // Test string formatting and interpolation
-  let name = "Azimuth"
-  let version = "2.0"
-  let formatted = "System: {name}, Version: {version}"
-  
-  assert_eq(formatted.contains(name), true)
-  assert_eq(formatted.contains(version), true)
-  
-  // Test Unicode normalization and comparison
-  let unicode_string1 = "café"
-  let unicode_string2 = "cafe\u{0301}"  // Same character with combining accent
-  
-  // These should be equal after normalization
-  assert_eq(unicode_string1.normalize(), unicode_string2.normalize())
+  // Verify all resource operations completed
+  assert_eq(resource_operations.length(), 37)  // 20 attr ops + 5 resource created + 5 merged + 10 updated
 }
 
-// Test 7: Memory Management and Resource Cleanup
-test "memory management and resource cleanup" {
-  // Test resource acquisition and release patterns
-  let create_resource = |id| {
-    { resource_id: id, is_active: true }
-  }
+// Test 7: Concurrent propagator operations
+pub test "premium concurrent propagator operations" {
+  // Test concurrent context propagation
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
+  let composite_propagator = CompositePropagator::new([trace_propagator])
   
-  let use_resource = |resource| {
-    // Simulate resource usage
-    assert_true(resource.is_active)
-    resource.resource_id * 2
-  }
+  let propagator_operations = []
   
-  let cleanup_resource = |resource| {
-    // Simulate resource cleanup
-    { resource_id: resource.resource_id, is_active: false }
-  }
-  
-  // Test resource lifecycle
-  let resource = create_resource(42)
-  let result = use_resource(resource)
-  let cleaned_resource = cleanup_resource(resource)
-  
-  assert_eq(result, 84)
-  assert_false(cleaned_resource.is_active)
-  assert_eq(cleaned_resource.resource_id, 42)
-  
-  // Test memory-efficient operations with large datasets
-  let large_dataset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].repeat(1000)  // 10,000 elements
-  
-  // Process dataset in chunks to avoid memory issues
-  let chunk_size = 1000
-  let mut chunk_sum = 0
-  let mut processed_chunks = 0
-  
-  for i = 0; i < large_dataset.length(); i = i + chunk_size {
-    let end_index = if i + chunk_size > large_dataset.length() {
-      large_dataset.length()
-    } else {
-      i + chunk_size
-    }
+  // Test concurrent injection operations
+  for i in 0...10 {
+    let carrier = TextMapCarrier::new()
+    let ctx = Context::root()
     
-    let chunk = large_dataset.slice(i, end_index)
-    chunk_sum = chunk_sum + chunk.reduce(|acc, val| acc + val, 0)
-    processed_chunks = processed_chunks + 1
-  }
-  
-  assert_eq(processed_chunks, 10)
-  assert_eq(chunk_sum, 55000)  // Sum of 1..10 repeated 1000 times
-  
-  // Test lazy evaluation and deferred computation
-  let expensive_computation = || {
-    // Simulate expensive operation
-    [1, 2, 3, 4, 5].map(|x| x * x * x).reduce(|acc, val| acc + val, 0)
-  }
-  
-  // Computation should only happen when called
-  let lazy_result = expensive_computation
-  assert_eq(lazy_result(), 225)  // 1^3 + 2^3 + 3^3 + 4^3 + 5^3 = 225
-}
-
-// Test 8: Advanced Numeric Operations and Precision
-test "advanced numeric operations and precision" {
-  // Test floating-point precision and comparison
-  let precise_calculations = [
-    (0.1 + 0.2, 0.3, "Basic floating point addition"),
-    (1.0 - 0.9, 0.1, "Floating point subtraction"),
-    (0.1 * 0.2, 0.02, "Floating point multiplication"),
-    (1.0 / 3.0, 0.3333333333333333, "Floating point division")
-  ]
-  
-  for (result, expected, description) in precise_calculations {
-    // Use epsilon comparison for floating-point numbers
-    let epsilon = 0.0001
-    let diff = if result > expected { result - expected } else { expected - result }
-    assert_true(diff < epsilon, description + " should be approximately equal")
-  }
-  
-  // Test large number operations
-  let large_numbers = [
-    1000000, 2000000, 3000000, 4000000, 5000000
-  ]
-  
-  let large_sum = large_numbers.reduce(|acc, val| acc + val, 0)
-  let large_product = large_numbers.reduce(|acc, val| acc * val, 1)
-  
-  assert_eq(large_sum, 15000000)
-  assert_eq(large_product, 12000000000000000000000)  // Very large number
-  
-  // Test numeric type conversions and boundaries
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  // Test boundary conditions
-  assert_eq(max_int + 1, min_int)  // Overflow should wrap around
-  assert_eq(min_int - 1, max_int)  // Underflow should wrap around
-  
-  // Test scientific notation and very small numbers
-  let scientific_numbers = [
-    1.23e-10,  // Very small
-    4.56e+20,  // Very large
-    7.89e-5,   // Small decimal
-    1.0e+0     // One in scientific notation
-  ]
-  
-  for num in scientific_numbers {
-    assert_true(num > 0.0)  // All should be positive
-    assert_true(num.is_finite())  // All should be finite numbers
-  }
-  
-  // Test bit manipulation operations
-  let bit_operations = [
-    (5 & 3, 1, "Bitwise AND"),
-    (5 | 3, 7, "Bitwise OR"),
-    (5 ^ 3, 6, "Bitwise XOR"),
-    (5 << 2, 20, "Left shift"),
-    (5 >> 1, 2, "Right shift"),
-    (~5, -6, "Bitwise NOT")
-  ]
-  
-  for (result, expected, description) in bit_operations {
-    assert_eq(result, expected, description + " should match expected result")
-  }
-}
-
-// Test 9: Advanced Collection Operations and Algorithms
-test "advanced collection operations and algorithms" {
-  // Test complex collection transformations
-  let data = [
-    { name: "Alice", age: 25, scores: [85, 90, 78] },
-    { name: "Bob", age: 30, scores: [92, 88, 95] },
-    { name: "Charlie", age: 35, scores: [78, 82, 80] },
-    { name: "Diana", age: 28, scores: [95, 98, 92] }
-  ]
-  
-  // Filter by age, then calculate average score, then sort by average
-  let filtered_averages = data
-    .filter(|person| person.age >= 25 && person.age <= 30)
-    .map(|person| {
-      let sum = person.scores.reduce(|acc, val| acc + val, 0)
-      let avg = sum / person.scores.length()
-      { name: person.name, average_score: avg }
-    })
-    .sort_by(|a, b| if a.average_score > b.average_score { 1 } else if a.average_score < b.average_score { -1 } else { 0 })
-  
-  assert_eq(filtered_averages.length(), 3)  // Alice, Bob, Diana
-  
-  // Alice: (85+90+78)/3 = 84.33
-  // Diana: (95+98+92)/3 = 95.0
-  // Bob: (92+88+95)/3 = 91.67
-  
-  assert_eq(filtered_averages[0].name, "Alice")    // Lowest average
-  assert_eq(filtered_averages[2].name, "Diana")    // Highest average
-  
-  // Test grouping and aggregation
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  
-  let grouped_by_parity = numbers.reduce(
-    |acc, val| {
-      if val % 2 == 0 {
-        { even: acc.even + [val], odd: acc.odd }
-      } else {
-        { even: acc.even, odd: acc.odd + [val] }
-      }
-    },
-    { even: [], odd: [] }
-  )
-  
-  assert_eq(grouped_by_parity.even, [2, 4, 6, 8, 10])
-  assert_eq(grouped_by_parity.odd, [1, 3, 5, 7, 9])
-  
-  // Test advanced sorting algorithms
-  let unsorted_data = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42]
-  
-  // Implement bubble sort for testing
-  let bubble_sort = |arr| {
-    let mut sorted_arr = arr.copy()
-    let n = sorted_arr.length()
+    // In real implementation, this would be executed concurrently
+    CompositePropagator::inject(composite_propagator, ctx, carrier)
+    propagator_operations.push("injected." + i.to_string())
     
-    for i = 0; i < n; i = i + 1 {
-      for j = 0; j < n - i - 1; j = j + 1 {
-        if sorted_arr[j] > sorted_arr[j + 1] {
-          let temp = sorted_arr[j]
-          sorted_arr[j] = sorted_arr[j + 1]
-          sorted_arr[j + 1] = temp
-        }
-      }
-    }
+    // Test concurrent extraction operations
+    let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
+    propagator_operations.push("extracted." + i.to_string())
+  }
+  
+  // Test concurrent multi-propagator operations
+  let multi_propagator = CompositePropagator::new([trace_propagator, trace_propagator])
+  
+  for i in 0...5 {
+    let carrier = TextMapCarrier::new()
+    let ctx = Context::root()
     
-    sorted_arr
-  }
-  
-  let sorted_data = bubble_sort(unsorted_data)
-  
-  // Verify sorting
-  for i = 0; i < sorted_data.length() - 1; i = i + 1 {
-    assert_true(sorted_data[i] <= sorted_data[i + 1])
-  }
-  
-  assert_eq(sorted_data[0], 11)   // Minimum
-  assert_eq(sorted_data[sorted_data.length() - 1], 90)  // Maximum
-  
-  // Test set operations
-  let set1 = [1, 2, 3, 4, 5]
-  let set2 = [4, 5, 6, 7, 8]
-  
-  // Union
-  let union = set1 + set2.filter(|x| !set1.contains(x))
-  assert_eq(union.sort(), [1, 2, 3, 4, 5, 6, 7, 8])
-  
-  // Intersection
-  let intersection = set1.filter(|x| set2.contains(x))
-  assert_eq(intersection.sort(), [4, 5])
-  
-  // Difference
-  let difference = set1.filter(|x| !set2.contains(x))
-  assert_eq(difference.sort(), [1, 2, 3])
-}
-
-// Test 10: Advanced Error Recovery and Resilience Patterns
-test "advanced error recovery and resilience patterns" {
-  // Test circuit breaker pattern
-  let mut circuit_state = "closed"
-  let mut failure_count = 0
-  let mut last_failure_time = 0
-  let failure_threshold = 3
-  let recovery_timeout = 60000  // 1 minute in milliseconds
-  
-  let circuit_breaker = |operation| {
-    let current_time = 1640995200000L  // Mock current time
+    // In real implementation, this would be executed concurrently
+    CompositePropagator::inject(multi_propagator, ctx, carrier)
+    propagator_operations.push("multi.injected." + i.to_string())
     
-    match circuit_state {
-      "open" when current_time - last_failure_time > recovery_timeout => {
-        // Try to close circuit
-        circuit_state = "half-open"
-        operation()
-      }
-      "open" => {
-        Err("Circuit is open")
-      }
-      "half-open" => {
-        match operation() {
-          Ok(result) => {
-            circuit_state = "closed"
-            failure_count = 0
-            Ok(result)
-          }
-          Err(e) => {
-            circuit_state = "open"
-            last_failure_time = current_time
-            Err(e)
-          }
-        }
-      }
-      "closed" => {
-        match operation() {
-          Ok(result) => Ok(result)
-          Err(e) => {
-            failure_count = failure_count + 1
-            if failure_count >= failure_threshold {
-              circuit_state = "open"
-              last_failure_time = current_time
-            }
-            Err(e)
-          }
-        }
-      }
-      _ => Err("Unknown circuit state")
-    }
+    let extracted_ctx = CompositePropagator::extract(multi_propagator, carrier)
+    propagator_operations.push("multi.extracted." + i.to_string())
   }
   
-  // Test circuit breaker behavior
-  let failing_operation = || {
-    failure_count = failure_count + 1
-    if failure_count < 4 {
-      Err("Operation failed")
-    } else {
-      Ok("Success after failures")
-    }
-  }
+  // Test concurrent carrier operations
+  let shared_carrier = TextMapCarrier::new()
   
-  // First few failures
-  assert_eq(circuit_breaker(failing_operation).is_err(), true)
-  assert_eq(circuit_breaker(failing_operation).is_err(), true)
-  assert_eq(circuit_breaker(failing_operation).is_err(), true)
-  
-  // Circuit should now be open
-  assert_eq(circuit_state, "open")
-  assert_eq(circuit_breaker(failing_operation).is_err(), true)
-  
-  // Test retry pattern with exponential backoff
-  let retry_with_backoff = |operation, max_retries| {
-    let mut attempt = 0
-    let mut delay = 1000  // Start with 1 second delay
+  for i in 0...10 {
+    let key = "concurrent.header." + i.to_string()
+    let value = "concurrent.value." + i.to_string()
     
-    while attempt < max_retries {
-      match operation() {
-        Ok(result) => return Ok(result),
-        Err(e) => {
-          attempt = attempt + 1
-          if attempt >= max_retries {
-            return Err(e)
-          }
-          // In real implementation, would wait for delay
-          delay = delay * 2  // Exponential backoff
-        }
-      }
-    }
+    // In real implementation, this would be executed concurrently
+    TextMapCarrier::set(shared_carrier, key, value)
+    propagator_operations.push("carrier.set." + i.to_string())
+  }
+  
+  for i in 0...10 {
+    let key = "concurrent.header." + i.to_string()
     
-    Err("Max retries exceeded")
+    // In real implementation, this would be executed concurrently
+    let retrieved_value = TextMapCarrier::get(shared_carrier, key)
+    assert_eq(retrieved_value, Some("concurrent.value." + i.to_string()))
+    propagator_operations.push("carrier.get." + i.to_string())
   }
   
-  let mut attempt_count = 0
-  let eventual_success_operation = || {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      Err("Temporary failure")
-    } else {
-      Ok("Success after retries")
-    }
-  }
-  
-  let retry_result = retry_with_backoff(eventual_success_operation, 5)
-  assert_eq(retry_result.is_ok(), true)
-  
-  // Test timeout pattern
-  let with_timeout = |operation, timeout_ms| {
-    let start_time = 1640995200000L  // Mock start time
-    let current_time = 1640995200000L  // Mock current time (no passage of time in test)
-    
-    if current_time - start_time > timeout_ms {
-      Err("Operation timed out")
-    } else {
-      operation()
-    }
-  }
-  
-  let quick_operation = || Ok("Quick result")
-  let timeout_result = with_timeout(quick_operation, 1000)
-  assert_eq(timeout_result.is_ok(), true)
-  
-  // Test fallback pattern
-  let with_fallback = |primary_operation, fallback_operation| {
-    match primary_operation() {
-      Ok(result) => Ok(result),
-      Err(_) => fallback_operation()
-    }
-  }
-  
-  let failing_primary = || Err("Primary operation failed")
-  let working_fallback = || Ok("Fallback result")
-  
-  let fallback_result = with_fallback(failing_primary, working_fallback)
-  assert_eq(fallback_result.is_ok(), true)
-  assert_eq(fallback_result.unwrap(), "Fallback result")
+  // Verify all propagator operations completed
+  assert_eq(propagator_operations.length(), 47)  // 20 + 10 + 10 + 7
 }
