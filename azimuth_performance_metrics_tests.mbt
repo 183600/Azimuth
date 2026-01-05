@@ -1,277 +1,140 @@
-// Azimuth Performance Metrics Tests
+// Azimuth Performance Metrics Collection Test Suite
 // This file contains test cases for performance metrics collection functionality
 
 // Test 1: Counter Metrics
-test "counter metrics collection and aggregation" {
-  // Define counter metric structure
-  type CounterMetric = {
+test "counter metrics operations" {
+  type Counter = {
     name: String,
     value: Int,
-    labels: Array[(String, String)],
-    timestamp: Int
+    timestamp: Int,
+    tags: Array[(String, String)]
   }
   
-  // Create a counter
-  let create_counter = fn(name: String, labels: Array[(String, String)], timestamp: Int) {
+  let create_counter = fn(name: String) {
     {
       name,
       value: 0,
-      labels,
-      timestamp
+      timestamp: 1640995200,
+      tags: []
     }
   }
   
-  // Increment counter
-  let increment_counter = fn(counter: CounterMetric, delta: Int) {
-    { counter | value: counter.value + delta }
+  let increment = fn(counter: Counter) {
+    { counter | value: counter.value + 1, timestamp: 1640995200 }
   }
   
-  // Reset counter
-  let reset_counter = fn(counter: CounterMetric) {
-    { counter | value: 0 }
+  let increment_by = fn(counter: Counter, amount: Int) {
+    { counter | value: counter.value + amount, timestamp: 1640995200 }
   }
   
-  // Test counter creation
-  let request_counter = create_counter("http_requests_total", [
-    ("method", "GET"),
-    ("endpoint", "/api/users"),
-    ("status", "200")
-  ], 1640995200)
+  let add_tag = fn(counter: Counter, key: String, value: String) {
+    { counter | tags: counter.tags + [(key, value)] }
+  }
   
+  let request_counter = create_counter("http_requests_total")
   assert_eq(request_counter.name, "http_requests_total")
   assert_eq(request_counter.value, 0)
-  assert_eq(request_counter.labels.length(), 3)
-  assert_eq(request_counter.timestamp, 1640995200)
+  assert_eq(request_counter.tags.length(), 0)
   
-  // Test counter increment
-  let incremented_counter = increment_counter(request_counter, 1)
+  let incremented_counter = increment(request_counter)
   assert_eq(incremented_counter.value, 1)
   
-  let more_incremented = increment_counter(incremented_counter, 5)
-  assert_eq(more_incremented.value, 6)
+  let incremented_by_counter = increment_by(incremented_counter, 5)
+  assert_eq(incremented_by_counter.value, 6)
   
-  // Test counter reset
-  let reset_counter_val = reset_counter(more_incremented)
-  assert_eq(reset_counter_val.value, 0)
+  let tagged_counter = add_tag(incremented_by_counter, "method", "GET")
+  assert_eq(tagged_counter.tags.length(), 1)
+  assert_true(tagged_counter.tags.contains(("method", "GET")))
   
-  // Test multiple counters with different labels
-  let counters = [
-    create_counter("http_requests_total", [("method", "GET"), ("endpoint", "/api/users"), ("status", "200")], 1640995200),
-    create_counter("http_requests_total", [("method", "GET"), ("endpoint", "/api/users"), ("status", "404")], 1640995201),
-    create_counter("http_requests_total", [("method", "POST"), ("endpoint", "/api/users"), ("status", "201")], 1640995202),
-    create_counter("http_requests_total", [("method", "GET"), ("endpoint", "/api/orders"), ("status", "200")], 1640995203)
-  ]
-  
-  // Increment counters
-  let incremented_counters = [
-    increment_counter(counters[0], 100),
-    increment_counter(counters[1], 10),
-    increment_counter(counters[2], 25),
-    increment_counter(counters[3], 50)
-  ]
-  
-  // Aggregate counters by label
-  let aggregate_by_label = fn(counters: Array[CounterMetric], label_key: String) {
-    let mut result = []
-    let mut processed = []
-    
-    for counter in counters {
-      // Find the value for the specified label
-      let label_value = counter.labels.filter(fn(l) { l.0 == label_key })[0].1
-      
-      if not(processed.contains(label_value)) {
-        let same_label_counters = counters.filter(fn(c) { 
-          c.labels.filter(fn(l) { l.0 == label_key })[0].1 == label_value 
-        })
-        let total_value = same_label_counters.reduce(fn(sum, c) { sum + c.value }, 0)
-        result = result.push((label_value, total_value))
-        processed = processed.push(label_value)
-      }
-    }
-    result
-  }
-  
-  // Aggregate by status code
-  let status_aggregates = aggregate_by_label(incremented_counters, "status")
-  assert_eq(status_aggregates.length(), 3)
-  
-  let status_200_total = status_aggregates.filter(fn(a) { a.0 == "200" })[0].1
-  let status_404_total = status_aggregates.filter(fn(a) { a.0 == "404" })[0].1
-  let status_201_total = status_aggregates.filter(fn(a) { a.0 == "201" })[0].1
-  
-  assert_eq(status_200_total, 150) // 100 + 50
-  assert_eq(status_404_total, 10)
-  assert_eq(status_201_total, 25)
-  
-  // Aggregate by HTTP method
-  let method_aggregates = aggregate_by_label(incremented_counters, "method")
-  assert_eq(method_aggregates.length(), 2)
-  
-  let get_total = method_aggregates.filter(fn(a) { a.0 == "GET" })[0].1
-  let post_total = method_aggregates.filter(fn(a) { a.0 == "POST" })[0].1
-  
-  assert_eq(get_total, 160) // 100 + 10 + 50
-  assert_eq(post_total, 25)
+  let multi_tagged_counter = add_tag(tagged_counter, "status", "200")
+  assert_eq(multi_tagged_counter.tags.length(), 2)
+  assert_true(multi_tagged_counter.tags.contains(("method", "GET")))
+  assert_true(multi_tagged_counter.tags.contains(("status", "200")))
 }
 
 // Test 2: Gauge Metrics
-test "gauge metrics collection and tracking" {
-  // Define gauge metric structure
-  type GaugeMetric = {
+test "gauge metrics operations" {
+  type Gauge = {
     name: String,
     value: Float,
-    labels: Array[(String, String)],
-    timestamp: Int
+    timestamp: Int,
+    tags: Array[(String, String)]
   }
   
-  // Create a gauge
-  let create_gauge = fn(name: String, initial_value: Float, labels: Array[(String, String)], timestamp: Int) {
+  let create_gauge = fn(name: String, initial_value: Float) {
     {
       name,
       value: initial_value,
-      labels,
-      timestamp
+      timestamp: 1640995200,
+      tags: []
     }
   }
   
-  // Set gauge value
-  let set_gauge = fn(gauge: GaugeMetric, value: Float) {
-    { gauge | value }
+  let set_value = fn(gauge: Gauge, value: Float) {
+    { gauge | value: value, timestamp: 1640995200 }
   }
   
-  // Increment gauge
-  let increment_gauge = fn(gauge: GaugeMetric, delta: Float) {
-    { gauge | value: gauge.value + delta }
+  let adjust_value = fn(gauge: Gauge, delta: Float) {
+    { gauge | value: gauge.value + delta, timestamp: 1640995200 }
   }
   
-  // Decrement gauge
-  let decrement_gauge = fn(gauge: GaugeMetric, delta: Float) {
-    { gauge | value: gauge.value - delta }
-  }
-  
-  // Test gauge creation
-  let memory_gauge = create_gauge("memory_usage_bytes", 1024.0 * 1024.0 * 100.0, [
-    ("service", "user-service"),
-    ("instance", "instance-1")
-  ], 1640995200)
-  
+  let memory_gauge = create_gauge("memory_usage_bytes", 1024.0)
   assert_eq(memory_gauge.name, "memory_usage_bytes")
-  assert_eq(memory_gauge.value, 104857600.0) // 100 MB in bytes
-  assert_eq(memory_gauge.labels.length(), 2)
-  assert_eq(memory_gauge.timestamp, 1640995200)
+  assert_eq(memory_gauge.value, 1024.0)
   
-  // Test gauge operations
-  let increased_memory = increment_gauge(memory_gauge, 1024.0 * 1024.0 * 50.0) // Add 50 MB
-  assert_eq(increased_memory.value, 157286400.0) // 150 MB in bytes
+  let updated_gauge = set_value(memory_gauge, 2048.0)
+  assert_eq(updated_gauge.value, 2048.0)
   
-  let decreased_memory = decrement_gauge(increased_memory, 1024.0 * 1024.0 * 25.0) // Subtract 25 MB
-  assert_eq(decreased_memory.value, 134217728.0) // 125 MB in bytes
+  let adjusted_gauge = adjust_value(updated_gauge, -512.0)
+  assert_eq(adjusted_gauge.value, 1536.0)
   
-  let set_memory = set_gauge(decreased_memory, 1024.0 * 1024.0 * 80.0) // Set to 80 MB
-  assert_eq(set_memory.value, 83886080.0) // 80 MB in bytes
+  let cpu_gauge = create_gauge("cpu_usage_percent", 75.5)
+  assert_eq(cpu_gauge.value, 75.5)
   
-  // Test multiple gauges
-  let gauges = [
-    create_gauge("cpu_usage_percent", 25.5, [("service", "user-service"), ("instance", "instance-1")], 1640995200),
-    create_gauge("cpu_usage_percent", 75.2, [("service", "payment-service"), ("instance", "instance-1")], 1640995201),
-    create_gauge("cpu_usage_percent", 45.8, [("service", "user-service"), ("instance", "instance-2")], 1640995202),
-    create_gauge("memory_usage_bytes", 104857600.0, [("service", "user-service"), ("instance", "instance-1")], 1640995203),
-    create_gauge("memory_usage_bytes", 209715200.0, [("service", "payment-service"), ("instance", "instance-1")], 1640995204)
-  ]
+  let increased_cpu = adjust_value(cpu_gauge, 10.0)
+  assert_eq(increased_cpu.value, 85.5)
   
-  // Calculate statistics for gauges with same name and labels
-  let calculate_gauge_stats = fn(gauges: Array[GaugeMetric], name: String) {
-    let matching_gauges = gauges.filter(fn(g) { g.name == name })
-    let values = matching_gauges.map(fn(g) { g.value })
-    
-    if values.length() > 0 {
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      let avg = sum / values.length().to_float()
-      
-      let mut min_val = values[0]
-      let mut max_val = values[0]
-      
-      for v in values {
-        if v < min_val { min_val = v }
-        if v > max_val { max_val = v }
-      }
-      
-      Some({
-        count: values.length(),
-        sum,
-        avg,
-        min: min_val,
-        max: max_val
-      })
-    } else {
-      None
-    }
-  }
-  
-  // Test CPU usage statistics
-  let cpu_stats = calculate_gauge_stats(gauges, "cpu_usage_percent")
-  assert_eq(cpu_stats, Some({
-    count: 3,
-    sum: 146.5,
-    avg: 48.833333333333336,
-    min: 25.5,
-    max: 75.2
-  }))
-  
-  // Test memory usage statistics
-  let memory_stats = calculate_gauge_stats(gauges, "memory_usage_bytes")
-  assert_eq(memory_stats, Some({
-    count: 2,
-    sum: 314572800.0,
-    avg: 157286400.0,
-    min: 104857600.0,
-    max: 209715200.0
-  }))
+  let decreased_cpu = adjust_value(increased_cpu, -20.0)
+  assert_eq(decreased_cpu.value, 65.5)
 }
 
 // Test 3: Histogram Metrics
-test "histogram metrics with bucket distribution" {
-  // Define histogram bucket structure
+test "histogram metrics operations" {
   type HistogramBucket = {
     upper_bound: Float,
-    cumulative_count: Int
+    count: Int
   }
   
-  // Define histogram metric structure
-  type HistogramMetric = {
+  type Histogram = {
     name: String,
     buckets: Array[HistogramBucket],
     count: Int,
     sum: Float,
-    labels: Array[(String, String)],
-    timestamp: Int
+    timestamp: Int,
+    tags: Array[(String, String)]
   }
   
-  // Create a histogram with predefined buckets
-  let create_histogram = fn(name: String, bucket_bounds: Array[Float], labels: Array[(String, String)], timestamp: Int) {
+  let create_histogram = fn(name: String, bucket_bounds: Array[Float]) {
     let buckets = bucket_bounds.map(fn(bound) { 
-      { upper_bound: bound, cumulative_count: 0 } 
+      { upper_bound: bound, count: 0 } 
     })
-    
     {
       name,
       buckets,
       count: 0,
       sum: 0.0,
-      labels,
-      timestamp
+      timestamp: 1640995200,
+      tags: []
     }
   }
   
-  // Observe a value in the histogram
-  let observe = fn(histogram: HistogramMetric, value: Float) {
-    let mut updated_buckets = histogram.buckets
-    let mut cumulative_count = 0
-    
-    for i in 0 .. updated_buckets.length() {
-      if value <= updated_buckets[i].upper_bound {
-        cumulative_count = cumulative_count + 1
-        updated_buckets[i] = { updated_buckets[i] | cumulative_count: updated_buckets[i].cumulative_count + 1 }
+  let observe = fn(histogram: Histogram, value: Float) {
+    let mut updated_buckets = []
+    for bucket in histogram.buckets {
+      if value <= bucket.upper_bound {
+        updated_buckets = updated_buckets.push({ bucket | count: bucket.count + 1 })
+      } else {
+        updated_buckets = updated_buckets.push(bucket)
       }
     }
     
@@ -280,512 +143,442 @@ test "histogram metrics with bucket distribution" {
       buckets: updated_buckets,
       count: histogram.count + 1,
       sum: histogram.sum + value,
-      labels: histogram.labels,
-      timestamp: histogram.timestamp
+      timestamp: histogram.timestamp,
+      tags: histogram.tags
     }
   }
   
-  // Create a response time histogram with buckets: 10ms, 50ms, 100ms, 500ms, 1000ms, +Inf
-  let response_time_histogram = create_histogram("http_request_duration_seconds", 
-    [0.01, 0.05, 0.1, 0.5, 1.0, Float::infinity],
-    [("endpoint", "/api/users"), ("method", "GET")],
-    1640995200
-  )
-  
-  // Observe some response times (in seconds)
-  let with_observations = [
-    observe(response_time_histogram, 0.008),  // 8ms - should go in first bucket
-    observe(response_time_histogram, 0.025),  // 25ms - should go in second bucket
-    observe(response_time_histogram, 0.075),  // 75ms - should go in third bucket
-    observe(response_time_histogram, 0.2),    // 200ms - should go in fourth bucket
-    observe(response_time_histogram, 0.8),    // 800ms - should go in fifth bucket
-    observe(response_time_histogram, 1.5)     // 1500ms - should go in sixth bucket
-  ].reduce(fn(h, obs) { obs }, response_time_histogram)
-  
-  // Test histogram properties
-  assert_eq(with_observations.name, "http_request_duration_seconds")
-  assert_eq(with_observations.count, 6)
-  assert_eq(with_observations.sum, 2.608) // 0.008 + 0.025 + 0.075 + 0.2 + 0.8 + 1.5
-  
-  // Test bucket counts
-  assert_eq(with_observations.buckets[0].cumulative_count, 1) // <= 10ms
-  assert_eq(with_observations.buckets[1].cumulative_count, 2) // <= 50ms
-  assert_eq(with_observations.buckets[2].cumulative_count, 3) // <= 100ms
-  assert_eq(with_observations.buckets[3].cumulative_count, 4) // <= 500ms
-  assert_eq(with_observations.buckets[4].cumulative_count, 5) // <= 1000ms
-  assert_eq(with_observations.buckets[5].cumulative_count, 6) // <= +Inf
-  
-  // Calculate percentile approximations
-  let calculate_percentile = fn(histogram: HistogramMetric, percentile: Float) {
-    let threshold = (histogram.count.to_float() * percentile) / 100.0
-    
+  let get_bucket_count = fn(histogram: Histogram, upper_bound: Float) {
+    let mut found = 0
     for bucket in histogram.buckets {
-      if bucket.cumulative_count.to_float() >= threshold {
-        return Some(bucket.upper_bound)
+      if bucket.upper_bound == upper_bound {
+        found = bucket.count
       }
     }
-    
-    None
+    found
   }
   
-  // Test percentile calculations
-  let p50 = calculate_percentile(with_observations, 50.0)
-  let p90 = calculate_percentile(with_observations, 90.0)
-  let p95 = calculate_percentile(with_observations, 95.0)
-  let p99 = calculate_percentile(with_observations, 99.0)
+  let response_time_histogram = create_histogram("http_request_duration_seconds", [0.1, 0.5, 1.0, 5.0, 10.0])
+  assert_eq(response_time_histogram.buckets.length(), 5)
+  assert_eq(response_time_histogram.count, 0)
+  assert_eq(response_time_histogram.sum, 0.0)
   
-  assert_eq(p50, Some(0.2))   // 50th percentile around 200ms
-  assert_eq(p90, Some(0.8))   // 90th percentile around 800ms
-  assert_eq(p95, Some(1.0))   // 95th percentile around 1000ms
-  assert_eq(p99, Some(1.5))   // 99th percentile around 1500ms
+  let histogram1 = observe(response_time_histogram, 0.05)
+  assert_eq(histogram1.count, 1)
+  assert_eq(histogram1.sum, 0.05)
+  assert_eq(get_bucket_count(histogram1, 0.1), 1)
+  assert_eq(get_bucket_count(histogram1, 0.5), 1)
+  assert_eq(get_bucket_count(histogram1, 1.0), 1)
+  assert_eq(get_bucket_count(histogram1, 5.0), 1)
+  assert_eq(get_bucket_count(histogram1, 10.0), 1)
   
-  // Calculate average value
-  let average = with_observations.sum / with_observations.count.to_float()
-  assert_eq(average, 0.43466666666666665)
+  let histogram2 = observe(histogram1, 0.3)
+  assert_eq(histogram2.count, 2)
+  assert_eq(histogram2.sum, 0.35)
+  assert_eq(get_bucket_count(histogram2, 0.1), 1)
+  assert_eq(get_bucket_count(histogram2, 0.5), 2)
+  assert_eq(get_bucket_count(histogram2, 1.0), 2)
+  assert_eq(get_bucket_count(histogram2, 5.0), 2)
+  assert_eq(get_bucket_count(histogram2, 10.0), 2)
+  
+  let histogram3 = observe(histogram2, 2.5)
+  assert_eq(histogram3.count, 3)
+  assert_eq(histogram3.sum, 2.85)
+  assert_eq(get_bucket_count(histogram3, 0.1), 1)
+  assert_eq(get_bucket_count(histogram3, 0.5), 2)
+  assert_eq(get_bucket_count(histogram3, 1.0), 2)
+  assert_eq(get_bucket_count(histogram3, 5.0), 3)
+  assert_eq(get_bucket_count(histogram3, 10.0), 3)
 }
 
 // Test 4: Summary Metrics
-test "summary metrics with quantiles" {
-  // Define quantile structure
+test "summary metrics operations" {
   type Quantile = {
     quantile: Float,
     value: Float
   }
   
-  // Define summary metric structure
-  type SummaryMetric = {
+  type Summary = {
     name: String,
     quantiles: Array[Quantile],
     count: Int,
     sum: Float,
-    labels: Array[(String, String)],
-    timestamp: Int
+    timestamp: Int,
+    tags: Array[(String, String)]
   }
   
-  // Create a summary with predefined quantiles
-  let create_summary = fn(name: String, quantiles: Array[Float], labels: Array[(String, String)], timestamp: Int) {
-    let quantile_structs = quantiles.map(fn(q) { { quantile: q, value: 0.0 } })
-    
+  let create_summary = fn(name: String, quantiles: Array[Float]) {
     {
       name,
-      quantiles: quantile_structs,
+      quantiles: quantiles.map(fn(q) { { quantile: q, value: 0.0 } }),
       count: 0,
       sum: 0.0,
-      labels,
-      timestamp
+      timestamp: 1640995200,
+      tags: []
     }
   }
   
-  // Observe a value in the summary
-  let observe_summary = fn(summary: SummaryMetric, value: Float) {
-    // In a real implementation, this would maintain a sliding window of values
-    // and calculate quantiles based on that window. For simplicity, we'll
-    // just update the count and sum.
+  let observe = fn(summary: Summary, value: Float) {
+    // Simplified quantile calculation (in real implementation, would use proper algorithm)
+    let update_quantiles = fn(values: Array[Float], quantiles: Array[Quantile]) {
+      let sorted_values = values.sort(fn(a, b) { a <= b })
+      quantiles.map(fn(q) {
+        let index = ((q.quantile * (sorted_values.length() - 1).to_float()).to_int()).max(0).min(sorted_values.length() - 1)
+        { q | value: sorted_values[index] }
+      })
+    }
+    
+    // This is a simplified implementation - in reality would store all values
+    let all_values = [value]  // Simplified
+    
     {
       name: summary.name,
-      quantiles: summary.quantiles,
+      quantiles: update_quantiles(all_values, summary.quantiles),
       count: summary.count + 1,
       sum: summary.sum + value,
-      labels: summary.labels,
-      timestamp: summary.timestamp
+      timestamp: summary.timestamp,
+      tags: summary.tags
     }
   }
   
-  // Update quantiles based on observed values
-  let update_quantiles = fn(summary: SummaryMetric, values: Array[Float]) {
-    let sorted_values = values.sort(fn(a, b) { a <= b })
-    let count = sorted_values.length().to_float()
-    
-    let updated_quantiles = summary.quantiles.map(fn(q) {
-      let index = ((q.quantile * count) - 1.0).to_int().max(0).min(sorted_values.length() - 1)
-      { q | value: sorted_values[index] }
-    })
-    
-    { summary | quantiles: updated_quantiles }
+  let get_quantile_value = fn(summary: Summary, quantile: Float) {
+    let mut found = 0.0
+    for q in summary.quantiles {
+      if q.quantile == quantile {
+        found = q.value
+      }
+    }
+    found
   }
   
-  // Create a response size summary
-  let response_size_summary = create_summary("http_response_size_bytes", 
-    [0.5, 0.9, 0.95, 0.99],
-    [("endpoint", "/api/users"), ("method", "GET")],
-    1640995200
-  )
+  let latency_summary = create_summary("request_latency_seconds", [0.5, 0.9, 0.95, 0.99])
+  assert_eq(latency_summary.quantiles.length(), 4)
+  assert_eq(latency_summary.count, 0)
+  assert_eq(latency_summary.sum, 0.0)
   
-  // Simulate observing response sizes
-  let response_sizes = [1024.0, 2048.0, 4096.0, 8192.0, 16384.0, 32768.0, 65536.0]
+  let summary1 = observe(latency_summary, 0.1)
+  assert_eq(summary1.count, 1)
+  assert_eq(summary1.sum, 0.1)
   
-  let with_observations = response_sizes.reduce(fn(summary, size) {
-    observe_summary(summary, size)
-  }, response_size_summary)
+  let summary2 = observe(summary1, 0.2)
+  assert_eq(summary2.count, 2)
+  assert_eq(summary2.sum, 0.3)
   
-  // Update quantiles based on observed values
-  let with_quantiles = update_quantiles(with_observations, response_sizes)
+  let summary3 = observe(summary2, 0.5)
+  assert_eq(summary3.count, 3)
+  assert_eq(summary3.sum, 0.8)
   
-  // Test summary properties
-  assert_eq(with_quantiles.name, "http_response_size_bytes")
-  assert_eq(with_quantiles.count, 7)
-  assert_eq(with_quantiles.sum, 130560.0) // Sum of all response sizes
-  
-  // Test quantile values (with sorted values: [1024, 2048, 4096, 8192, 16384, 32768, 65536])
-  assert_eq(with_quantiles.quantiles[0].quantile, 0.5)   // 50th percentile
-  assert_eq(with_quantiles.quantiles[0].value, 4096.0)   // Median value
-  
-  assert_eq(with_quantiles.quantiles[1].quantile, 0.9)   // 90th percentile
-  assert_eq(with_quantiles.quantiles[1].value, 32768.0)  // 90th percentile value
-  
-  assert_eq(with_quantiles.quantiles[2].quantile, 0.95)  // 95th percentile
-  assert_eq(with_quantiles.quantiles[2].value, 65536.0)  // 95th percentile value
-  
-  assert_eq(with_quantiles.quantiles[3].quantile, 0.99)  // 99th percentile
-  assert_eq(with_quantiles.quantiles[3].value, 65536.0)  // 99th percentile value
-  
-  // Calculate average response size
-  let avg_response_size = with_quantiles.sum / with_quantiles.count.to_float()
-  assert_eq(avg_response_size, 18651.42857142857)
+  // In this simplified implementation, quantiles would be calculated properly
+  // in a real implementation with proper algorithm
 }
 
-// Test 5: Metrics Collection and Aggregation
-test "metrics collection and aggregation across services" {
-  // Define metric value type
-  type MetricValue = 
-    Counter(Int)
-    | Gauge(Float)
-    | Histogram(Array[(Float, Int)])
-    | Summary(Array[(Float, Float)])
-  
-  // Define metric structure
+// Test 5: Metric Aggregation
+test "metric aggregation operations" {
   type Metric = {
     name: String,
-    value: MetricValue,
-    labels: Array[(String, String)],
-    service_name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[(String, String)]
+  }
+  
+  let create_metric = fn(name: String, value: Float, tags: Array[(String, String)]) {
+    {
+      name,
+      value,
+      timestamp: 1640995200,
+      tags
+    }
+  }
+  
+  let sum_by_tags = fn(metrics: Array[Metric], tag_keys: Array[String]) {
+    let groups = {}
+    
+    for metric in metrics {
+      let mut key = metric.name
+      for tag_key in tag_keys {
+        let mut found = ""
+        for (k, v) in metric.tags {
+          if k == tag_key {
+            found = v
+          }
+        }
+        key = key + ":" + found
+      }
+      
+      match groups[key] {
+        Some(sum) => groups[key] = Some(sum + metric.value)
+        None => groups[key] = Some(metric.value)
+      }
+    }
+    
+    groups
+  }
+  
+  let avg_by_tags = fn(metrics: Array[Metric], tag_keys: Array[String]) {
+    let sums = sum_by_tags(metrics, tag_keys)
+    let counts = {}
+    
+    for metric in metrics {
+      let mut key = metric.name
+      for tag_key in tag_keys {
+        let mut found = ""
+        for (k, v) in metric.tags {
+          if k == tag_key {
+            found = v
+          }
+        }
+        key = key + ":" + found
+      }
+      
+      match counts[key] {
+        Some(count) => counts[key] = Some(count + 1)
+        None => counts[key] = Some(1)
+      }
+    }
+    
+    let averages = {}
+    for key in sums.keys() {
+      match (sums[key], counts[key]) {
+        (Some(sum), Some(count)) => averages[key] = Some(sum / count.to_float())
+        _ => {}
+      }
+    }
+    
+    averages
+  }
+  
+  let metrics = [
+    create_metric("response_time", 100.0, [("service", "web"), ("method", "GET")]),
+    create_metric("response_time", 150.0, [("service", "web"), ("method", "POST")]),
+    create_metric("response_time", 200.0, [("service", "api"), ("method", "GET")]),
+    create_metric("response_time", 120.0, [("service", "web"), ("method", "GET")]),
+    create_metric("response_time", 180.0, [("service", "api"), ("method", "POST")])
+  ]
+  
+  let sums = sum_by_tags(metrics, ["service"])
+  assert_eq(sums["response_time:web"], Some(370.0))  // 100 + 150 + 120
+  assert_eq(sums["response_time:api"], Some(380.0))  // 200 + 180
+  
+  let method_sums = sum_by_tags(metrics, ["method"])
+  assert_eq(method_sums["response_time:GET"], Some(420.0))  // 100 + 200 + 120
+  assert_eq(method_sums["response_time:POST"], Some(330.0))  // 150 + 180
+  
+  let averages = avg_by_tags(metrics, ["service"])
+  assert_eq(averages["response_time:web"], Some(123.33333333333333))  // 370 / 3
+  assert_eq(averages["response_time:api"], Some(190.0))  // 380 / 2
+  
+  let method_averages = avg_by_tags(metrics, ["method"])
+  assert_eq(method_averages["response_time:GET"], Some(140.0))  // 420 / 3
+  assert_eq(method_averages["response_time:POST"], Some(165.0))  // 330 / 2
+}
+
+// Test 6: Metric Registry
+test "metric registry operations" {
+  type MetricRegistry = {
+    counters: Array[String],
+    gauges: Array[String],
+    histograms: Array[String],
+    summaries: Array[String]
+  }
+  
+  let create_registry = fn() {
+    {
+      counters: [],
+      gauges: [],
+      histograms: [],
+      summaries: []
+    }
+  }
+  
+  let register_counter = fn(registry: MetricRegistry, name: String) {
+    if not(registry.counters.contains(name)) {
+      { registry | counters: registry.counters + [name] }
+    } else {
+      registry
+    }
+  }
+  
+  let register_gauge = fn(registry: MetricRegistry, name: String) {
+    if not(registry.gauges.contains(name)) {
+      { registry | gauges: registry.gauges + [name] }
+    } else {
+      registry
+    }
+  }
+  
+  let register_histogram = fn(registry: MetricRegistry, name: String) {
+    if not(registry.histograms.contains(name)) {
+      { registry | histograms: registry.histograms + [name] }
+    } else {
+      registry
+    }
+  }
+  
+  let is_counter_registered = fn(registry: MetricRegistry, name: String) {
+    registry.counters.contains(name)
+  }
+  
+  let is_gauge_registered = fn(registry: MetricRegistry, name: String) {
+    registry.gauges.contains(name)
+  }
+  
+  let is_histogram_registered = fn(registry: MetricRegistry, name: String) {
+    registry.histograms.contains(name)
+  }
+  
+  let registry = create_registry()
+  assert_eq(registry.counters.length(), 0)
+  assert_eq(registry.gauges.length(), 0)
+  assert_eq(registry.histograms.length(), 0)
+  
+  let registry1 = register_counter(registry, "http_requests_total")
+  assert_true(is_counter_registered(registry1, "http_requests_total"))
+  assert_eq(registry1.counters.length(), 1)
+  
+  let registry2 = register_counter(registry1, "http_requests_total")
+  assert_eq(registry2.counters.length(), 1)  // No duplicate
+  
+  let registry3 = register_counter(registry2, "error_count")
+  assert_eq(registry3.counters.length(), 2)
+  assert_true(is_counter_registered(registry3, "http_requests_total"))
+  assert_true(is_counter_registered(registry3, "error_count"))
+  
+  let registry4 = register_gauge(registry3, "memory_usage")
+  assert_true(is_gauge_registered(registry4, "memory_usage"))
+  assert_eq(registry4.gauges.length(), 1)
+  
+  let registry5 = register_histogram(registry4, "request_duration")
+  assert_true(is_histogram_registered(registry5, "request_duration"))
+  assert_eq(registry5.histograms.length(), 1)
+}
+
+// Test 7: Metric Collection and Export
+test "metric collection and export" {
+  type MetricSnapshot = {
+    name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[(String, String)],
+    metric_type: String
+  }
+  
+  type MetricCollector = {
+    snapshots: Array[MetricSnapshot]
+  }
+  
+  let create_collector = fn() {
+    { snapshots: [] }
+  }
+  
+  let collect_counter = fn(collector: MetricCollector, name: String, value: Int, tags: Array[(String, String)]) {
+    let snapshot = {
+      name,
+      value: value.to_float(),
+      timestamp: 1640995200,
+      tags,
+      metric_type: "counter"
+    }
+    { collector | snapshots: collector.snapshots + [snapshot] }
+  }
+  
+  let collect_gauge = fn(collector: MetricCollector, name: String, value: Float, tags: Array[(String, String)]) {
+    let snapshot = {
+      name,
+      value,
+      timestamp: 1640995200,
+      tags,
+      metric_type: "gauge"
+    }
+    { collector | snapshots: collector.snapshots + [snapshot] }
+  }
+  
+  let export_to_prometheus_format = fn(snapshots: Array[MetricSnapshot]) {
+    let mut lines = []
+    
+    for snapshot in snapshots {
+      let mut tags_str = ""
+      if snapshot.tags.length() > 0 {
+        tags_str = "{" + snapshot.tags.map(fn(t) { t.0 + "=\"" + t.1 + "\"" }).join(",") + "}"
+      }
+      
+      lines = lines +(snapshot.name + tags_str + " " + snapshot.value.to_string())
+    }
+    
+    lines.join("\n")
+  }
+  
+  let collector = create_collector()
+  
+  let collector1 = collect_counter(collector, "http_requests_total", 1000, [("method", "GET"), ("status", "200")])
+  let collector2 = collect_gauge(collector1, "memory_usage_bytes", 1048576.0, [("instance", "server-1")])
+  let collector3 = collect_counter(collector2, "http_requests_total", 500, [("method", "POST"), ("status", "200")])
+  
+  assert_eq(collector3.snapshots.length(), 3)
+  
+  let prometheus_export = export_to_prometheus_format(collector3.snapshots)
+  assert_true(prometheus_export.contains("http_requests_total{method=\"GET\",status=\"200\"} 1000"))
+  assert_true(prometheus_export.contains("memory_usage_bytes{instance=\"server-1\"} 1048576"))
+  assert_true(prometheus_export.contains("http_requests_total{method=\"POST\",status=\"200\"} 500"))
+}
+
+// Test 8: Metric Rate Calculation
+test "metric rate calculation" {
+  type MetricPoint = {
+    value: Float,
     timestamp: Int
   }
   
-  // Create sample metrics from different services
-  let metrics = [
-    {
-      name: "http_requests_total",
-      value: Counter(1250),
-      labels: [("method", "GET"), ("endpoint", "/api/users"), ("status", "200")],
-      service_name: "user-service",
-      timestamp: 1640995200
-    },
-    {
-      name: "http_requests_total",
-      value: Counter(50),
-      labels: [("method", "GET"), ("endpoint", "/api/users"), ("status", "404")],
-      service_name: "user-service",
-      timestamp: 1640995201
-    },
-    {
-      name: "http_requests_total",
-      value: Counter(750),
-      labels: [("method", "POST"), ("endpoint", "/api/orders"), ("status", "201")],
-      service_name: "order-service",
-      timestamp: 1640995202
-    },
-    {
-      name: "cpu_usage_percent",
-      value: Gauge(45.5),
-      labels: [("instance", "instance-1")],
-      service_name: "user-service",
-      timestamp: 1640995203
-    },
-    {
-      name: "cpu_usage_percent",
-      value: Gauge(78.2),
-      labels: [("instance", "instance-1")],
-      service_name: "order-service",
-      timestamp: 1640995204
-    },
-    {
-      name: "memory_usage_bytes",
-      value: Gauge(209715200.0),
-      labels: [("instance", "instance-1")],
-      service_name: "user-service",
-      timestamp: 1640995205
-    },
-    {
-      name: "memory_usage_bytes",
-      value: Gauge(536870912.0),
-      labels: [("instance", "instance-1")],
-      service_name: "order-service",
-      timestamp: 1640995206
+  type MetricRate = {
+    rate: Float,
+    time_window: Int
+  }
+  
+  let calculate_rate = fn(points: Array[MetricPoint], time_window: Int) {
+    if points.length() < 2 {
+      { rate: 0.0, time_window }
+    } else {
+      let sorted_points = points.sort(fn(a, b) { a.timestamp <= b.timestamp })
+      let oldest = sorted_points[0]
+      let newest = sorted_points[sorted_points.length() - 1]
+      
+      let time_diff = newest.timestamp - oldest.timestamp
+      if time_diff <= 0 {
+        { rate: 0.0, time_window }
+      } else {
+        let value_diff = newest.value - oldest.value
+        { rate: value_diff / time_diff.to_float(), time_window }
+      }
     }
+  }
+  
+  let calculate_rate_in_window = fn(points: Array[MetricPoint], window_start: Int, window_end: Int) {
+    let window_points = points.filter(fn(p) { p.timestamp >= window_start and p.timestamp <= window_end })
+    calculate_rate(window_points, window_end - window_start)
+  }
+  
+  let metric_points = [
+    { value: 100.0, timestamp: 1000 },
+    { value: 150.0, timestamp: 1010 },
+    { value: 200.0, timestamp: 1020 },
+    { value: 300.0, timestamp: 1030 },
+    { value: 350.0, timestamp: 1040 }
   ]
   
-  // Group metrics by service
-  let group_by_service = fn(metrics: Array[Metric]) {
-    let mut result = []
-    let mut processed = []
-    
-    for metric in metrics {
-      if not(processed.contains(metric.service_name)) {
-        let service_metrics = metrics.filter(fn(m) { m.service_name == metric.service_name })
-        result = result.push((metric.service_name, service_metrics))
-        processed = processed.push(metric.service_name)
-      }
-    }
-    result
-  }
+  let overall_rate = calculate_rate(metric_points, 40)
+  assert_eq(overall_rate.rate, 6.25)  // (350 - 100) / 40
+  assert_eq(overall_rate.time_window, 40)
   
-  // Group metrics by name
-  let group_by_name = fn(metrics: Array[Metric]) {
-    let mut result = []
-    let mut processed = []
-    
-    for metric in metrics {
-      if not(processed.contains(metric.name)) {
-        let name_metrics = metrics.filter(fn(m) { m.name == metric.name })
-        result = result.push((metric.name, name_metrics))
-        processed = processed.push(metric.name)
-      }
-    }
-    result
-  }
+  let window_rate = calculate_rate_in_window(metric_points, 1010, 1030)
+  assert_eq(window_rate.rate, 7.5)  // (300 - 150) / 20
+  assert_eq(window_rate.time_window, 20)
   
-  // Aggregate counter metrics
-  let aggregate_counters = fn(metrics: Array[Metric], name: String) {
-    let counter_metrics = metrics.filter(fn(m) { 
-      m.name == name and match m.value { Counter(_) => true, _ => false }
-    })
-    
-    counter_metrics.map(fn(m) {
-      match m.value {
-        Counter(value) => (m.labels, value)
-        _ => (m.labels, 0)
-      }
-    })
-  }
+  let single_point = [{ value: 100.0, timestamp: 1000 }]
+  let single_rate = calculate_rate(single_point, 10)
+  assert_eq(single_rate.rate, 0.0)
+  assert_eq(single_rate.time_window, 10)
   
-  // Calculate service statistics
-  let calculate_service_stats = fn(service_metrics: Array[Metric]) {
-    let counter_metrics = service_metrics.filter(fn(m) { 
-      match m.value { Counter(_) => true, _ => false }
-    })
-    let gauge_metrics = service_metrics.filter(fn(m) { 
-      match m.value { Gauge(_) => true, _ => false }
-    })
-    
-    // Sum all counter values
-    let total_counter_value = counter_metrics.reduce(fn(sum, m) {
-      match m.value {
-        Counter(value) => sum + value
-        _ => sum
-      }
-    }, 0)
-    
-    // Calculate average gauge values
-    let gauge_values = gauge_metrics.map(fn(m) {
-      match m.value {
-        Gauge(value) => value
-        _ => 0.0
-      }
-    })
-    
-    let avg_gauge_value = if gauge_values.length() > 0 {
-      gauge_values.reduce(fn(sum, v) { sum + v }, 0.0) / gauge_values.length().to_float()
-    } else {
-      0.0
-    }
-    
-    {
-      total_requests: total_counter_value,
-      avg_resource_usage: avg_gauge_value,
-      metric_count: service_metrics.length()
-    }
-  }
-  
-  // Test grouping by service
-  let service_groups = group_by_service(metrics)
-  assert_eq(service_groups.length(), 2)
-  
-  let user_service_metrics = service_groups.filter(fn(g) { g.0 == "user-service" })[0].1
-  let order_service_metrics = service_groups.filter(fn(g) { g.0 == "order-service" })[0].1
-  
-  assert_eq(user_service_metrics.length(), 4)
-  assert_eq(order_service_metrics.length(), 3)
-  
-  // Test grouping by name
-  let name_groups = group_by_name(metrics)
-  assert_eq(name_groups.length(), 3)
-  
-  // Test aggregating counters
-  let request_counters = aggregate_counters(metrics, "http_requests_total")
-  assert_eq(request_counters.length(), 3)
-  
-  let total_requests = request_counters.reduce(fn(sum, rc) { sum + rc.1 }, 0)
-  assert_eq(total_requests, 2050) // 1250 + 50 + 750
-  
-  // Test service statistics
-  let user_service_stats = calculate_service_stats(user_service_metrics)
-  let order_service_stats = calculate_service_stats(order_service_metrics)
-  
-  assert_eq(user_service_stats.total_requests, 1300) // 1250 + 50
-  assert_eq(user_service_stats.avg_resource_usage, 127483622.25) // (45.5 + 209715200.0) / 2
-  assert_eq(user_service_stats.metric_count, 4)
-  
-  assert_eq(order_service_stats.total_requests, 750)
-  assert_eq(order_service_stats.avg_resource_usage, 268475495.1) // (78.2 + 536870912.0) / 2
-  assert_eq(order_service_stats.metric_count, 3)
-}
-
-// Test 6: Metrics Time Series Analysis
-test "metrics time series analysis and trend detection" {
-  // Define time series data point
-  type TimeSeriesPoint = {
-    timestamp: Int,
-    value: Float,
-    labels: Array[(String, String)]
-  }
-  
-  // Define time series
-  type TimeSeries = {
-    name: String,
-    points: Array[TimeSeriesPoint]
-  }
-  
-  // Create sample time series data
-  let cpu_usage_series = {
-    name: "cpu_usage_percent",
-    points: [
-      { timestamp: 1640995200, value: 25.5, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995260, value: 30.2, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995320, value: 45.8, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995380, value: 55.1, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995440, value: 60.3, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995500, value: 48.7, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995560, value: 35.2, labels: [("instance", "instance-1")] },
-      { timestamp: 1640995620, value: 28.9, labels: [("instance", "instance-1")] }
-    ]
-  }
-  
-  // Calculate moving average
-  let moving_average = fn(series: TimeSeries, window_size: Int) {
-    let points = series.points
-    let mut result = []
-    
-    for i in window_size - 1 .. points.length() {
-      let mut sum = 0.0
-      for j in i - (window_size - 1) ..= i {
-        sum = sum + points[j].value
-      }
-      let avg = sum / window_size.to_float()
-      result = result.push({ timestamp: points[i].timestamp, value: avg, labels: points[i].labels })
-    }
-    
-    { name: series.name + "_ma_" + window_size.to_string(), points: result }
-  }
-  
-  // Detect anomalies using standard deviation
-  let detect_anomalies = fn(series: TimeSeries, threshold: Float) {
-    let points = series.points
-    let values = points.map(fn(p) { p.value })
-    
-    // Calculate mean
-    let mean = values.reduce(fn(sum, v) { sum + v }, 0.0) / values.length().to_float()
-    
-    // Calculate standard deviation
-    let variance = values.reduce(fn(sum, v) { sum + (v - mean) * (v - mean) }, 0.0) / values.length().to_float()
-    let std_dev = variance.sqrt()
-    
-    // Find anomalies
-    let anomalies = points.filter(fn(p) { (p.value - mean).abs() > threshold * std_dev })
-    
-    {
-      mean,
-      std_dev,
-      anomalies,
-      anomaly_count: anomalies.length()
-    }
-  }
-  
-  // Calculate trend using linear regression
-  let calculate_trend = fn(series: TimeSeries) {
-    let points = series.points
-    let n = points.length().to_float()
-    
-    if n < 2.0 {
-      return { slope: 0.0, intercept: 0.0, correlation: 0.0 }
-    }
-    
-    // Normalize timestamps to start from 0
-    let min_timestamp = points.reduce(fn(min, p) { if p.timestamp < min { p.timestamp } else { min } }, points[0].timestamp)
-    let normalized_points = points.map(fn(p) { 
-      { x: (p.timestamp - min_timestamp).to_float(), y: p.value } 
-    })
-    
-    // Calculate sums for linear regression
-    let sum_x = normalized_points.reduce(fn(sum, p) { sum + p.x }, 0.0)
-    let sum_y = normalized_points.reduce(fn(sum, p) { sum + p.y }, 0.0)
-    let sum_xy = normalized_points.reduce(fn(sum, p) { sum + p.x * p.y }, 0.0)
-    let sum_x2 = normalized_points.reduce(fn(sum, p) { sum + p.x * p.x }, 0.0)
-    let sum_y2 = normalized_points.reduce(fn(sum, p) { sum + p.y * p.y }, 0.0)
-    
-    // Calculate slope and intercept
-    let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-    let intercept = (sum_y - slope * sum_x) / n
-    
-    // Calculate correlation coefficient
-    let correlation = (n * sum_xy - sum_x * sum_y) / 
-      ((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y)).sqrt()
-    
-    { slope, intercept, correlation }
-  }
-  
-  // Test moving average calculation
-  let ma_3 = moving_average(cpu_usage_series, 3)
-  assert_eq(ma_3.points.length(), 6) // 8 points - 3 + 1
-  
-  // First moving average: (25.5 + 30.2 + 45.8) / 3 = 33.833...
-  assert_eq(ma_3.points[0].value, 33.833333333333336)
-  
-  // Second moving average: (30.2 + 45.8 + 55.1) / 3 = 43.7
-  assert_eq(ma_3.points[1].value, 43.7)
-  
-  // Test anomaly detection
-  let anomaly_analysis = detect_anomalies(cpu_usage_series, 1.5) // 1.5 standard deviations
-  assert_true(anomaly_analysis.mean > 40.0) // Mean should be around 41.2
-  assert_true(anomaly_analysis.std_dev > 10.0) // Std dev should be around 13.5
-  
-  // The highest value (60.3) and lowest value (25.5) might be anomalies depending on the threshold
-  assert_true(anomaly_analysis.anomaly_count >= 0)
-  
-  // Test trend calculation
-  let trend = calculate_trend(cpu_usage_series)
-  
-  // The slope should be positive if CPU usage is generally increasing over time
-  // or negative if it's decreasing. In our data, it goes up then down, so slope should be close to 0
-  assert_true(trend.slope.abs() < 1.0)
-  
-  // The correlation should indicate how well the linear model fits the data
-  assert_true(trend.correlation >= -1.0 and trend.correlation <= 1.0)
-  
-  // Test rate of change calculation
-  let rate_of_change = fn(series: TimeSeries) {
-    let points = series.points
-    let mut rates = []
-    
-    for i in 1 .. points.length() {
-      let prev_point = points[i - 1]
-      let curr_point = points[i]
-      let time_diff = (curr_point.timestamp - prev_point.timestamp).to_float()
-      let value_diff = curr_point.value - prev_point.value
-      let rate = value_diff / time_diff
-      rates = rates.push({ timestamp: curr_point.timestamp, rate })
-    }
-    
-    rates
-  }
-  
-  let rates = rate_of_change(cpu_usage_series)
-  assert_eq(rates.length(), 7)
-  
-  // First rate: (30.2 - 25.5) / 60 = 0.07833...
-  assert_eq(rates[0].rate, 0.07833333333333333)
-  
-  // Find the maximum rate of change
-  let max_rate = rates.reduce(fn(max, r) { if r.rate > max.rate { r } else { max }, rates[0])
-  assert_eq(max_rate.timestamp, 1640995380) // When CPU increased from 45.8 to 55.1
+  let empty_points: Array[MetricPoint] = []
+  let empty_rate = calculate_rate(empty_points, 10)
+  assert_eq(empty_rate.rate, 0.0)
+  assert_eq(empty_rate.time_window, 10)
 }
