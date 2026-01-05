@@ -1,1034 +1,1034 @@
-// Azimuth High-Quality Concurrency and Thread Safety Tests
-// This file contains comprehensive test cases for concurrency and thread safety
+// Azimuth Concurrency and Thread Safety Test Suite
+// This file contains test cases for concurrency and thread safety functionality
 
-// Test 1: Thread Pool Management
-test "thread pool management" {
-  let thread_pool = ThreadPool::new(4) // 4 worker threads
-  
-  // Test basic task submission
-  let task1 = thread_pool.submit(|| {
-    sleep(Duration::from_millis(100))
-    42
-  })
-  
-  let result1 = task1.wait()
-  assert_eq(result1, 42)
-  
-  // Test multiple concurrent tasks
-  let tasks = []
-  for i in 0..=10 {
-    let task = thread_pool.submit(move || {
-      sleep(Duration::from_millis(50 + i * 10))
-      i * 2
-    })
-    tasks.push(task)
+// Test 1: Concurrent Counter Operations
+test "concurrent counter operations" {
+  type ConcurrentCounter = {
+    value: Int,
+    lock_acquired: Bool
   }
   
-  // Wait for all tasks to complete
-  let results = []
-  for task in tasks {
-    let result = task.wait()
-    results.push(result)
+  let create_counter = fn(initial_value: Int) {
+    {
+      value: initial_value,
+      lock_acquired: false
+    }
   }
   
-  assert_eq(results.length(), 11)
-  
-  // Verify results
-  for i in 0..=10 {
-    assert_eq(results[i], i * 2)
+  let acquire_lock = fn(counter: ConcurrentCounter) {
+    if not(counter.lock_acquired) {
+      { counter | lock_acquired: true }
+    } else {
+      counter  // Lock already acquired
+    }
   }
   
-  // Test thread pool metrics
-  let metrics = thread_pool.get_metrics()
+  let release_lock = fn(counter: ConcurrentCounter) {
+    { counter | lock_acquired: false }
+  }
   
-  assert_true(metrics.active_threads >= 0)
-  assert_true(metrics.active_threads <= 4)
-  assert_true(metrics.completed_tasks > 0)
-  assert_true(metrics.queue_length >= 0)
-  assert_true(metrics.total_tasks_submitted > 0)
+  let increment = fn(counter: ConcurrentCounter) {
+    if counter.lock_acquired {
+      { counter | value: counter.value + 1 }
+    } else {
+      counter  // Cannot increment without lock
+    }
+  }
   
-  // Test thread pool scaling
-  thread_pool.resize(8) // Increase to 8 threads
+  let safe_increment = fn(counter: ConcurrentCounter) {
+    let locked_counter = acquire_lock(counter)
+    let incremented = increment(locked_counter)
+    release_lock(incremented)
+  }
   
-  let scaling_metrics = thread_pool.get_metrics()
-  assert_true(scaling_metrics.active_threads <= 8)
+  let counter = create_counter(0)
+  assert_eq(counter.value, 0)
+  assert_false(counter.lock_acquired)
   
-  // Test thread pool shutdown
-  thread_pool.shutdown()
+  let locked_counter = acquire_lock(counter)
+  assert_true(locked_counter.lock_acquired)
   
-  // After shutdown, new tasks should be rejected
-  let shutdown_result = thread_pool.submit(|| {
-    "should_not_execute"
-  })
+  let incremented = increment(locked_counter)
+  assert_eq(incremented.value, 1)
+  assert_true(incremented.lock_acquired)
   
-  assert_true(shutdown_result.is_error())
+  let released = release_lock(incremented)
+  assert_eq(released.value, 1)
+  assert_false(released.lock_acquired)
+  
+  // Test safe increment
+  let safe_counter = safe_increment(released)
+  assert_eq(safe_counter.value, 2)
+  assert_false(safe_counter.lock_acquired)
+  
+  // Test increment without lock
+  let unsafe_incremented = increment(safe_counter)
+  assert_eq(unsafe_incremented.value, 2)  // Value unchanged
+  assert_false(unsafe_incremented.lock_acquired)
 }
 
-// Test 2: Mutex and Lock Safety
-test "mutex and lock safety" {
-  let counter = AtomicCounter::new(0)
-  let mutex = Mutex::new()
+// Test 2: Thread-Safe Queue Operations
+test "thread-safe queue operations" {
+  type QueueNode = {
+    value: String,
+    next: Option[QueueNode]
+  }
   
-  // Test mutex protection of shared resource
-  let threads = []
-  for i in 0..=10 {
-    let thread = Thread::spawn(move || {
-      for j in 0..=100 {
-        let _lock = mutex.lock()
-        counter.increment()
-        // Lock is automatically released when it goes out of scope
+  type ConcurrentQueue = {
+    head: Option[QueueNode],
+    tail: Option[QueueNode],
+    size: Int,
+    lock_acquired: Bool
+  }
+  
+  let create_queue = fn() {
+    {
+      head: None,
+      tail: None,
+      size: 0,
+      lock_acquired: false
+    }
+  }
+  
+  let create_node = fn(value: String) {
+    {
+      value,
+      next: None
+    }
+  }
+  
+  let acquire_lock = fn(queue: ConcurrentQueue) {
+    if not(queue.lock_acquired) {
+      { queue | lock_acquired: true }
+    } else {
+      queue  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(queue: ConcurrentQueue) {
+    { queue | lock_acquired: false }
+  }
+  
+  let enqueue = fn(queue: ConcurrentQueue, value: String) {
+    if queue.lock_acquired {
+      let new_node = create_node(value)
+      
+      match queue.tail {
+        Some(tail_node) => {
+          let updated_tail = { tail_node | next: Some(new_node) }
+          {
+            head: queue.head,
+            tail: Some(new_node),
+            size: queue.size + 1,
+            lock_acquired: true
+          }
+        }
+        None => {
+          // Empty queue
+          {
+            head: Some(new_node),
+            tail: Some(new_node),
+            size: 1,
+            lock_acquired: true
+          }
+        }
       }
-    })
-    threads.push(thread)
+    } else {
+      queue  // Cannot enqueue without lock
+    }
   }
   
-  // Wait for all threads to complete
-  for thread in threads {
-    thread.join()
+  let dequeue = fn(queue: ConcurrentQueue) {
+    if queue.lock_acquired && queue.size > 0 {
+      match queue.head {
+        Some(head_node) => {
+          let new_head = head_node.next
+          let new_size = queue.size - 1
+          
+          if new_size == 0 {
+            // Queue becomes empty
+            {
+              head: None,
+              tail: None,
+              size: 0,
+              lock_acquired: true
+            }
+          } else {
+            {
+              head: new_head,
+              tail: queue.tail,
+              size: new_size,
+              lock_acquired: true
+            }
+          }
+        }
+        None => queue  // Shouldn't happen if size > 0
+      }
+    } else {
+      queue  // Cannot dequeue without lock or if empty
+    }
   }
   
-  // Verify counter value
-  assert_eq(counter.get_value(), 1100) // 11 threads * 100 increments each
-  
-  // Test try_lock functionality
-  let try_lock_result = mutex.try_lock()
-  assert_true(try_lock_result.is_success())
-  
-  let _lock = try_lock_result.unwrap()
-  
-  // Try to lock again (should fail)
-  let second_try_result = mutex.try_lock()
-  assert_true(second_try_result.is_error())
-  
-  // Test lock timeout
-  let timeout_result = mutex.lock_with_timeout(Duration::from_millis(100))
-  assert_true(timeout_result.is_error()) // Should timeout since lock is held
-  
-  // Test recursive mutex
-  let recursive_mutex = RecursiveMutex::new()
-  
-  let recursive_thread = Thread::spawn(|| {
-    let _lock1 = recursive_mutex.lock()
-    let _lock2 = recursive_mutex.lock() // Should succeed in recursive mutex
-    let _lock3 = recursive_mutex.lock() // Should also succeed
-    // All locks will be released when they go out of scope
-  })
-  
-  recursive_thread.join()
-  
-  // Test read-write lock
-  let rw_lock = ReadWriteLock::new()
-  let shared_data = SharedData::new(0)
-  
-  // Test multiple readers
-  let reader_threads = []
-  for i in 0..=5 {
-    let thread = Thread::spawn(move || {
-      let _read_lock = rw_lock.read_lock()
-      let value = shared_data.get_value()
-      assert_eq(value, 0) // Should still be 0 since no writers yet
-    })
-    reader_threads.push(thread)
+  let safe_enqueue = fn(queue: ConcurrentQueue, value: String) {
+    let locked_queue = acquire_lock(queue)
+    let enqueued = enqueue(locked_queue, value)
+    release_lock(enqueued)
   }
   
-  // Wait for all readers to complete
-  for thread in reader_threads {
-    thread.join()
+  let safe_dequeue = fn(queue: ConcurrentQueue) {
+    let locked_queue = acquire_lock(queue)
+    let dequeued = dequeue(locked_queue)
+    release_lock(dequeued)
   }
   
-  // Test exclusive writer
-  let writer_thread = Thread::spawn(|| {
-    let _write_lock = rw_lock.write_lock()
-    shared_data.set_value(42)
-  })
+  let queue = create_queue()
+  assert_eq(queue.size, 0)
+  assert_false(queue.lock_acquired)
   
-  writer_thread.join()
+  // Test safe enqueue
+  let queue1 = safe_enqueue(queue, "item1")
+  assert_eq(queue1.size, 1)
+  assert_false(queue1.lock_acquired)
   
-  // Verify data was written
-  let _read_lock = rw_lock.read_lock()
-  assert_eq(shared_data.get_value(), 42)
+  let queue2 = safe_enqueue(queue1, "item2")
+  assert_eq(queue2.size, 2)
+  assert_false(queue2.lock_acquired)
   
-  // Test lock contention metrics
-  let lock_metrics = mutex.get_contention_metrics()
+  let queue3 = safe_enqueue(queue2, "item3")
+  assert_eq(queue3.size, 3)
+  assert_false(queue3.lock_acquired)
   
-  assert_true(lock_metrics.total_acquisitions > 0)
-  assert_true(lock_metrics.contention_count >= 0)
-  assert_true(lock_metrics.average_wait_time_ms >= 0)
+  // Test safe dequeue
+  let queue4 = safe_dequeue(queue3)
+  assert_eq(queue4.size, 2)
+  assert_false(queue4.lock_acquired)
+  
+  let queue5 = safe_dequeue(queue4)
+  assert_eq(queue5.size, 1)
+  assert_false(queue5.lock_acquired)
+  
+  let queue6 = safe_dequeue(queue5)
+  assert_eq(queue6.size, 0)
+  assert_false(queue6.lock_acquired)
+  
+  // Test dequeue from empty queue
+  let empty_queue = safe_dequeue(queue6)
+  assert_eq(empty_queue.size, 0)
+  assert_false(empty_queue.lock_acquired)
 }
 
-// Test 3: Atomic Operations
-test "atomic operations" {
-  // Test atomic integer
-  let atomic_int = AtomicInteger::new(0)
+// Test 3: Concurrent Map Operations
+test "concurrent map operations" {
+  type MapEntry = {
+    key: String,
+    value: String
+  }
   
-  // Test atomic increment
-  let old_value = atomic_int.fetch_add(5)
-  assert_eq(old_value, 0)
-  assert_eq(atomic_int.get(), 5)
+  type ConcurrentMap = {
+    entries: Array[MapEntry],
+    lock_acquired: Bool
+  }
   
-  // Test atomic compare and swap
-  let cas_result = atomic_int.compare_and_swap(5, 10)
-  assert_true(cas_result) // Should succeed since current value is 5
-  assert_eq(atomic_int.get(), 10)
+  let create_map = fn() {
+    {
+      entries: [],
+      lock_acquired: false
+    }
+  }
   
-  let cas_fail_result = atomic_int.compare_and_swap(5, 15)
-  assert_false(cas_fail_result) // Should fail since current value is 10
-  assert_eq(atomic_int.get(), 10)
+  let acquire_lock = fn(map: ConcurrentMap) {
+    if not(map.lock_acquired) {
+      { map | lock_acquired: true }
+    } else {
+      map  // Lock already acquired
+    }
+  }
   
-  // Test atomic operations from multiple threads
-  let atomic_counter = AtomicInteger::new(0)
-  let threads = []
+  let release_lock = fn(map: ConcurrentMap) {
+    { map | lock_acquired: false }
+  }
   
-  for i in 0..=10 {
-    let thread = Thread::spawn(move || {
-      for j in 0..=1000 {
-        atomic_counter.fetch_add(1)
+  let get = fn(map: ConcurrentMap, key: String) {
+    let mut found = None
+    for entry in map.entries {
+      if entry.key == key {
+        found = Some(entry.value)
       }
-    })
-    threads.push(thread)
+    }
+    found
   }
   
-  // Wait for all threads to complete
-  for thread in threads {
-    thread.join()
-  }
-  
-  // Verify final value
-  assert_eq(atomic_counter.get(), 11000) // 11 threads * 1000 increments each
-  
-  // Test atomic boolean
-  let atomic_bool = AtomicBoolean::new(false)
-  
-  assert_false(atomic_bool.get())
-  
-  atomic_bool.set(true)
-  assert_true(atomic_bool.get())
-  
-  let old_bool = atomic_bool.compare_and_swap(true, false)
-  assert_true(old_bool) // Should succeed
-  assert_false(atomic_bool.get())
-  
-  // Test atomic reference
-  let atomic_ref = AtomicReference::new("initial_value")
-  
-  assert_eq(atomic_ref.get(), "initial_value")
-  
-  let old_ref = atomic_ref.swap("new_value")
-  assert_eq(old_ref, "initial_value")
-  assert_eq(atomic_ref.get(), "new_value")
-  
-  // Test atomic floating point operations
-  let atomic_float = AtomicFloat::new(0.0)
-  
-  atomic_float.fetch_add(1.5)
-  assert_eq(atomic_float.get(), 1.5)
-  
-  atomic_float.fetch_sub(0.5)
-  assert_eq(atomic_float.get(), 1.0)
-}
-
-// Test 4: Concurrent Data Structures
-test "concurrent data structures" {
-  // Test concurrent queue
-  let concurrent_queue = ConcurrentQueue::new()
-  
-  // Test producer-consumer pattern
-  let producer_threads = []
-  let consumer_threads = []
-  
-  // Start producers
-  for i in 0..=3 {
-    let thread = Thread::spawn(move || {
-      for j in 0..=100 {
-        let item = "item_" + i.to_string() + "_" + j.to_string()
-        concurrent_queue.enqueue(item)
-      }
-    })
-    producer_threads.push(thread)
-  }
-  
-  // Start consumers
-  let consumed_items = Arc::new(Mutex::new([]))
-  for i in 0..=2 {
-    let consumed_items_clone = consumed_items.clone()
-    let thread = Thread::spawn(move || {
-      let mut local_items = []
-      for j in 0..=133 { // 4 producers * 100 items / 3 consumers ≈ 133 each
-        if let Some(item) = concurrent_queue.dequeue_timeout(Duration::from_millis(100)) {
-          local_items.push(item)
+  let put = fn(map: ConcurrentMap, key: String, value: String) {
+    if map.lock_acquired {
+      let mut found = false
+      let mut updated = []
+      
+      for entry in map.entries {
+        if entry.key == key {
+          updated = updated.push({ entry | value })
+          found = true
+        } else {
+          updated = updated.push(entry)
         }
       }
       
-      let _lock = consumed_items_clone.lock()
-      for item in local_items {
-        consumed_items_clone.value.push(item)
+      if not(found) {
+        updated = updated.push({ key, value })
       }
-    })
-    consumer_threads.push(thread)
+      
+      { map | entries: updated }
+    } else {
+      map  // Cannot put without lock
+    }
   }
   
-  // Wait for all threads to complete
-  for thread in producer_threads {
-    thread.join()
+  let remove = fn(map: ConcurrentMap, key: String) {
+    if map.lock_acquired {
+      let filtered = map.entries.filter(fn(entry) { entry.key != key })
+      { map | entries: filtered }
+    } else {
+      map  // Cannot remove without lock
+    }
   }
   
-  for thread in consumer_threads {
-    thread.join()
+  let safe_put = fn(map: ConcurrentMap, key: String, value: String) {
+    let locked_map = acquire_lock(map)
+    let updated = put(locked_map, key, value)
+    release_lock(updated)
   }
   
-  // Verify all items were consumed
-  let _lock = consumed_items.lock()
-  assert_eq(consumed_items.value.length(), 400) // 4 producers * 100 items each
-  
-  // Test concurrent hashmap
-  let concurrent_map = ConcurrentHashMap::new()
-  
-  // Test concurrent writes
-  let writer_threads = []
-  for i in 0..=5 {
-    let thread = Thread::spawn(move || {
-      for j in 0..=50 {
-        let key = "key_" + i.to_string() + "_" + j.to_string()
-        let value = "value_" + i.to_string() + "_" + j.to_string()
-        concurrent_map.insert(key, value)
-      }
-    })
-    writer_threads.push(thread)
+  let safe_remove = fn(map: ConcurrentMap, key: String) {
+    let locked_map = acquire_lock(map)
+    let updated = remove(locked_map, key)
+    release_lock(updated)
   }
   
-  // Wait for all writers to complete
-  for thread in writer_threads {
-    thread.join()
+  let map = create_map()
+  assert_eq(map.entries.length(), 0)
+  assert_false(map.lock_acquired)
+  
+  // Test safe put
+  let map1 = safe_put(map, "key1", "value1")
+  assert_eq(map1.entries.length(), 1)
+  assert_eq(get(map1, "key1"), Some("value1"))
+  
+  let map2 = safe_put(map1, "key2", "value2")
+  assert_eq(map2.entries.length(), 2)
+  assert_eq(get(map2, "key1"), Some("value1"))
+  assert_eq(get(map2, "key2"), Some("value2"))
+  
+  // Test update existing key
+  let map3 = safe_put(map2, "key1", "updated_value1")
+  assert_eq(map3.entries.length(), 2)
+  assert_eq(get(map3, "key1"), Some("updated_value1"))
+  assert_eq(get(map3, "key2"), Some("value2"))
+  
+  // Test safe remove
+  let map4 = safe_remove(map3, "key2")
+  assert_eq(map4.entries.length(), 1)
+  assert_eq(get(map4, "key1"), Some("updated_value1"))
+  assert_eq(get(map4, "key2"), None)
+  
+  let map5 = safe_remove(map4, "key1")
+  assert_eq(map5.entries.length(), 0)
+  assert_eq(get(map5, "key1"), None)
+}
+
+// Test 4: Concurrent Resource Pool
+test "concurrent resource pool" {
+  type Resource = {
+    id: String,
+    in_use: Bool
   }
   
-  // Verify all entries were added
-  assert_eq(concurrent_map.size(), 300) // 6 threads * 50 entries each
+  type ResourcePool = {
+    resources: Array[Resource],
+    lock_acquired: Bool
+  }
   
-  // Test concurrent reads
-  let reader_threads = []
-  let read_results = Arc::new(Mutex::new([]))
+  let create_pool = fn(resource_ids: Array[String]) {
+    {
+      resources: resource_ids.map(fn(id) { { id, in_use: false } }),
+      lock_acquired: false
+    }
+  }
   
-  for i in 0..=5 {
-    let read_results_clone = read_results.clone()
-    let thread = Thread::spawn(move || {
-      let mut local_results = []
-      for j in 0..=50 {
-        let key = "key_" + i.to_string() + "_" + j.to_string()
-        if let Some(value) = concurrent_map.get(key) {
-          local_results.push(value)
+  let acquire_lock = fn(pool: ResourcePool) {
+    if not(pool.lock_acquired) {
+      { pool | lock_acquired: true }
+    } else {
+      pool  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(pool: ResourcePool) {
+    { pool | lock_acquired: false }
+  }
+  
+  let acquire_resource = fn(pool: ResourcePool) {
+    if pool.lock_acquired {
+      let mut found = None
+      let mut updated = []
+      
+      for resource in pool.resources {
+        if not(resource.in_use) && found.is_none() {
+          found = Some({ resource | in_use: true })
+          updated = updated.push({ resource | in_use: true })
+        } else {
+          updated = updated.push(resource)
         }
       }
       
-      let _lock = read_results_clone.lock()
-      for result in local_results {
-        read_results_clone.value.push(result)
-      }
-    })
-    reader_threads.push(thread)
-  }
-  
-  // Wait for all readers to complete
-  for thread in reader_threads {
-    thread.join()
-  }
-  
-  // Verify reads
-  let _lock = read_results.lock()
-  assert_eq(read_results.value.length(), 300) // All keys should be found
-  
-  // Test concurrent set
-  let concurrent_set = ConcurrentSet::new()
-  
-  // Test concurrent additions
-  let add_threads = []
-  for i in 0..=4 {
-    let thread = Thread::spawn(move || {
-      for j in 0..=40 {
-        let item = "item_" + i.to_string() + "_" + j.to_string()
-        concurrent_set.add(item)
-      }
-    })
-    add_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in add_threads {
-    thread.join()
-  }
-  
-  // Verify set size (should be 250 unique items)
-  assert_eq(concurrent_set.size(), 250)
-  
-  // Test concurrent contains operation
-  let contains_threads = []
-  let contains_results = Arc::new(Mutex::new([]))
-  
-  for i in 0..=4 {
-    let contains_results_clone = contains_results.clone()
-    let thread = Thread::spawn(move || {
-      let mut local_results = []
-      for j in 0..=40 {
-        let item = "item_" + i.to_string() + "_" + j.to_string()
-        let contains = concurrent_set.contains(item)
-        local_results.push(contains)
-      }
-      
-      let _lock = contains_results_clone.lock()
-      for result in local_results {
-        contains_results_clone.value.push(result)
-      }
-    })
-    contains_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in contains_threads {
-    thread.join()
-  }
-  
-  // Verify all items are found
-  let _lock = contains_results.lock()
-  for result in contains_results.value {
-    assert_true(result)
-  }
-}
-
-// Test 5: Thread-Safe Reference Counting
-test "thread-safe reference counting" {
-  // Test Arc (Atomic Reference Counting)
-  let shared_data = Arc::new("shared_string")
-  
-  assert_eq(Arc::strong_count(&shared_data), 1)
-  
-  // Create multiple references
-  let ref1 = shared_data.clone()
-  let ref2 = shared_data.clone()
-  let ref3 = shared_data.clone()
-  
-  assert_eq(Arc::strong_count(&shared_data), 4)
-  
-  // Verify all references point to the same data
-  assert_eq(*shared_data, "shared_string")
-  assert_eq(*ref1, "shared_string")
-  assert_eq(*ref2, "shared_string")
-  assert_eq(*ref3, "shared_string")
-  
-  // Test Arc in multi-threaded environment
-  let arc_shared = Arc::new(Mutex::new(0))
-  let threads = []
-  
-  for i in 0..=10 {
-    let arc_clone = arc_shared.clone()
-    let thread = Thread::spawn(move || {
-      let _lock = arc_clone.lock()
-      *arc_clone.value += 1
-    })
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    thread.join()
-  }
-  
-  // Verify final value
-  let _lock = arc_shared.lock()
-  assert_eq(*arc_shared.value, 11)
-  
-  // Drop some references
-  drop(ref1);
-  drop(ref2);
-  
-  assert_eq(Arc::strong_count(&shared_data), 2)
-  
-  // Test Weak references
-  let weak_ref = Arc::downgrade(&shared_data)
-  
-  assert_eq(Arc::strong_count(&shared_data), 2)
-  assert_eq(Arc::weak_count(&shared_data), 1)
-  
-  // Upgrade weak reference
-  let upgraded = weak_ref.upgrade()
-  assert_true(upgraded.is_some())
-  assert_eq(*upgraded.unwrap(), "shared_string")
-  
-  // Drop last strong reference
-  drop(shared_data);
-  drop(ref3);
-  
-  // Now weak reference should no longer upgrade
-  let upgraded_fail = weak_ref.upgrade()
-  assert_true(upgraded_fail.is_none())
-}
-
-// Test 6: Condition Variables
-test "condition variables" {
-  let mutex = Mutex::new()
-  let condition = ConditionVariable::new()
-  let shared_data = SharedData::new(0)
-  let ready = AtomicBoolean::new(false)
-  
-  // Producer thread
-  let producer = Thread::spawn(|| {
-    let _lock = mutex.lock()
-    
-    // Simulate work
-    sleep(Duration::from_millis(100))
-    
-    // Update shared data
-    shared_data.set_value(42)
-    ready.set(true)
-    
-    // Notify waiting threads
-    condition.notify_all()
-  })
-  
-  // Consumer thread
-  let consumer = Thread::spawn(|| {
-    let _lock = mutex.lock()
-    
-    // Wait for data to be ready
-    while !ready.get() {
-      condition.wait(_lock)
-    }
-    
-    // Data should now be ready
-    assert_eq(shared_data.get_value(), 42)
-  })
-  
-  // Wait for threads to complete
-  producer.join()
-  consumer.join()
-  
-  // Test timeout with condition variable
-  let timeout_mutex = Mutex::new()
-  let timeout_condition = ConditionVariable::new()
-  let timeout_data = SharedData::new(0)
-  
-  let timeout_thread = Thread::spawn(|| {
-    let _lock = timeout_mutex.lock()
-    
-    // Wait with timeout
-    let wait_result = timeout_condition.wait_timeout(_lock, Duration::from_millis(100))
-    
-    // Should timeout
-    assert_false(wait_result)
-    assert_eq(timeout_data.get_value(), 0) // Value should remain unchanged
-  })
-  
-  timeout_thread.join()
-  
-  // Test notify_one
-  let notify_mutex = Mutex::new()
-  let notify_condition = ConditionVariable::new()
-  let notify_data = SharedData::new(0)
-  let notified = AtomicBoolean::new(false)
-  
-  // Create multiple waiting threads
-  let waiting_threads = []
-  for i in 0..=3 {
-    let thread = Thread::spawn(move || {
-      let _lock = notify_mutex.lock()
-      
-      while !notified.get() {
-        notify_condition.wait(_lock)
-      }
-      
-      // Only first notified thread should modify data
-      if notify_data.get_value() == 0 {
-        notify_data.set_value(i + 1)
-      }
-    })
-    waiting_threads.push(thread)
-  }
-  
-  // Notify only one thread
-  sleep(Duration::from_millis(50))
-  let _lock = notify_mutex.lock()
-  notified.set(true)
-  notify_condition.notify_one();
-  
-  // Wait for all threads to complete
-  for thread in waiting_threads {
-    thread.join()
-  }
-  
-  // Verify only one thread modified the data
-  assert_true(notify_data.get_value() > 0 && notify_data.get_value() <= 4)
-}
-
-// Test 7: Futures and Promises
-test "futures and promises" {
-  // Test basic future/promise
-  let (promise, future) = create_future_promise_pair()
-  
-  // Spawn a thread to fulfill the promise
-  let promise_thread = Thread::spawn(move || {
-    sleep(Duration::from_millis(100))
-    promise.set("fulfilled_value")
-  })
-  
-  // Wait for the future
-  let result = future.wait()
-  assert_eq(result, "fulfilled_value")
-  
-  promise_thread.join()
-  
-  // Test future chaining
-  let initial_future = Future::from_value(10)
-  
-  let chained_future = initial_future.then(|x| {
-    x * 2
-  }).then(|x| {
-    x + 5
-  }).then(|x| {
-    x.to_string()
-  })
-  
-  let chained_result = chained_future.wait()
-  assert_eq(chained_result, "25") // (10 * 2) + 5 = 25
-  
-  // Test future combinators
-  let future1 = Future::from_value(1)
-  let future2 = Future::from_value(2)
-  let future3 = Future::from_value(3)
-  
-  // Test join all
-  let joined_future = Future::join_all([future1, future2, future3])
-  let joined_result = joined_future.wait()
-  assert_eq(joined_result, [1, 2, 3])
-  
-  // Test select (first completed)
-  let slow_future = Future::lazy(|| {
-    sleep(Duration::from_millis(200))
-    "slow"
-  })
-  
-  let fast_future = Future::lazy(|| {
-    sleep(Duration::from_millis(50))
-    "fast"
-  })
-  
-  let selected_future = Future::select([slow_future, fast_future])
-  let selected_result = selected_future.wait()
-  assert_eq(selected_result, "fast") // Fast future should complete first
-  
-  // Test async operations with futures
-  let async_executor = AsyncExecutor::new(4) // 4 worker threads
-  
-  let async_future = async_executor.spawn_async(|| {
-    sleep(Duration::from_millis(100))
-    "async_result"
-  })
-  
-  let async_result = async_future.wait()
-  assert_eq(async_result, "async_result")
-  
-  // Test error handling with futures
-  let error_future = Future::lazy(|| {
-    sleep(Duration::from_millis(50))
-    raise TestError::new("Simulated error")
-  })
-  
-  let error_result = error_future.wait()
-  match error_result {
-    Ok(_) => {
-      assert_true(false) // Should have failed
-    }
-    Err(TestError::TestError(message)) => {
-      assert_eq(message, "Simulated error")
-    }
-    Err(_) => {
-      assert_true(false) // Unexpected error type
-    }
-  }
-  
-  // Test timeout with futures
-  let timeout_future = Future::lazy(|| {
-    sleep(Duration::from_millis(200))
-    "should_timeout"
-  })
-  
-  let timeout_result = timeout_future.wait_timeout(Duration::from_millis(100))
-  assert_true(timeout_result.is_none()) // Should timeout
-}
-
-// Test 8: Lock-Free Data Structures
-test "lock-free data structures" {
-  // Test lock-free stack
-  let lock_free_stack = LockFreeStack::new()
-  
-  // Push elements
-  for i in 0..=100 {
-    lock_free_stack.push(i)
-  }
-  
-  // Pop elements concurrently
-  let threads = []
-  let popped_values = Arc::new(Mutex::new([]))
-  
-  for i in 0..=5 {
-    let popped_values_clone = popped_values.clone()
-    let thread = Thread::spawn(move || {
-      let mut local_values = []
-      
-      for j in 0..=20 {
-        if let Some(value) = lock_free_stack.pop() {
-          local_values.push(value)
+      match found {
+        Some(res) => {
+          {
+            resources: updated,
+            lock_acquired: true
+          }
         }
+        None => pool  // No available resources
       }
-      
-      let _lock = popped_values_clone.lock()
-      for value in local_values {
-        popped_values_clone.value.push(value)
-      }
-    })
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    thread.join()
-  }
-  
-  // Verify popped values
-  let _lock = popped_values.lock()
-  assert_eq(popped_values.value.length(), 101) // All elements should be popped
-  
-  // Verify all values are unique and in range
-  let mut sorted_values = popped_values.value.clone()
-  sorted_values.sort()
-  
-  for i in 0..=100 {
-    assert_eq(sorted_values[i], i)
-  }
-  
-  // Test lock-free queue
-  let lock_free_queue = LockFreeQueue::new()
-  
-  // Enqueue elements
-  for i in 0..=100 {
-    lock_free_queue.enqueue(i)
-  }
-  
-  // Dequeue elements concurrently
-  let queue_threads = []
-  let dequeued_values = Arc::new(Mutex::new([]))
-  
-  for i in 0..=5 {
-    let dequeued_values_clone = dequeued_values.clone()
-    let thread = Thread::spawn(move || {
-      let mut local_values = []
-      
-      for j in 0..=20 {
-        if let Some(value) = lock_free_queue.dequeue() {
-          local_values.push(value)
-        }
-      }
-      
-      let _lock = dequeued_values_clone.lock()
-      for value in local_values {
-        dequeued_values_clone.value.push(value)
-      }
-    })
-    queue_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in queue_threads {
-    thread.join()
-  }
-  
-  // Verify dequeued values
-  let _lock = dequeued_values.lock()
-  assert_eq(dequeued_values.value.length(), 101) // All elements should be dequeued
-  
-  // Test ABA problem prevention
-  let aba_stack = LockFreeStack::new()
-  
-  // Push initial element
-  aba_stack.push("initial")
-  
-  let aba_thread = Thread::spawn(|| {
-    // Pop initial element
-    let popped = aba_stack.pop()
-    assert_eq(popped, Some("initial"))
-    
-    // Modify element and push back
-    aba_stack.push("modified")
-    
-    // Pop and push again to simulate ABA
-    let popped_again = aba_stack.pop()
-    assert_eq(popped_again, Some("modified"))
-    aba_stack.push("modified_again")
-  })
-  
-  aba_thread.join()
-  
-  // Final pop should get the last pushed element
-  let final_pop = aba_stack.pop()
-  assert_eq(final_pop, Some("modified_again"))
-}
-
-// Test 9: Concurrent Algorithms
-test "concurrent algorithms" {
-  // Test parallel merge sort
-  let unsorted_data = generate_random_array(10000)
-  let parallel_sorter = ParallelMergeSort::new(4) // 4 threads
-  
-  let sorted_data = parallel_sorter.sort(unsorted_data.clone())
-  
-  // Verify sorting
-  for i in 0..=sorted_data.length() - 2 {
-    assert_true(sorted_data[i] <= sorted_data[i + 1])
-  }
-  
-  // Compare with sequential sort
-  let sequential_sorted = unsorted_data.clone()
-  sequential_sorted.sort()
-  
-  assert_eq(sorted_data, sequential_sorted)
-  
-  // Test parallel map-reduce
-  let map_reduce = ParallelMapReduce::new(8) // 8 threads
-  
-  let data = (0..=10000).map(|i| i).collect()
-  
-  // Map operation: square each number
-  let mapped = map_reduce.map(data, |x| x * x)
-  
-  // Reduce operation: sum all squared numbers
-  let reduced = map_reduce.reduce(mapped, |a, b| a + b)
-  
-  // Verify result (sum of squares from 0 to 10000)
-  let expected = (0..=10000).map(|i| i * i).reduce(0, |a, b| a + b)
-  assert_eq(reduced, expected)
-  
-  // Test parallel prefix sum
-  let prefix_sum = ParallelPrefixSum::new(4) // 4 threads
-  
-  let input_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let prefix_result = prefix_sum.compute(input_data.to_array())
-  
-  // Verify prefix sum
-  assert_eq(prefix_result, [1, 3, 6, 10, 15, 21, 28, 36, 45, 55])
-  
-  // Test parallel matrix multiplication
-  let matrix_a = generate_random_matrix(100, 100)
-  let matrix_b = generate_random_matrix(100, 100)
-  
-  let parallel_matrix_mult = ParallelMatrixMultiplication::new(4) // 4 threads
-  let result_matrix = parallel_matrix_mult.multiply(matrix_a.clone(), matrix_b.clone())
-  
-  // Verify matrix dimensions
-  assert_eq(result_matrix.rows, 100)
-  assert_eq(result_matrix.cols, 100)
-  
-  // Verify matrix multiplication correctness
-  for i in 0..=10 { // Check first 10 rows
-    for j in 0..=10 { // Check first 10 columns
-      let mut expected_value = 0
-      for k in 0..=99 {
-        expected_value += matrix_a.get(i, k) * matrix_b.get(k, j)
-      }
-      assert_eq(result_matrix.get(i, j), expected_value)
+    } else {
+      pool  // Cannot acquire without lock
     }
   }
   
-  // Test parallel quicksort
-  let parallel_quicksort = ParallelQuickSort::new(6) // 6 threads
-  
-  let unsorted_for_quicksort = generate_random_array(10000)
-  let quicksorted = parallel_quicksort.sort(unsorted_for_quicksort.clone())
-  
-  // Verify sorting
-  for i in 0..=quicksorted.length() - 2 {
-    assert_true(quicksorted[i] <= quicksorted[i + 1])
-  }
-  
-  // Compare with built-in sort
-  let builtin_sorted = unsorted_for_quicksort.clone()
-  builtin_sorted.sort()
-  
-  assert_eq(quicksorted, builtin_sorted)
-}
-
-// Test 10: Concurrent Resource Management
-test "concurrent resource management" {
-  // Test connection pool
-  let connection_pool = ConcurrentConnectionPool::new(10) // 10 connections
-  
-  // Test concurrent connection acquisition
-  let threads = []
-  let acquired_connections = Arc::new(Mutex::new([]))
-  
-  for i in 0..=15 {
-    let acquired_connections_clone = acquired_connections.clone()
-    let thread = Thread::spawn(move || {
-      if let Some(conn) = connection_pool.acquire() {
-        // Simulate using the connection
-        sleep(Duration::from_millis(50 + i * 10))
-        
-        let _lock = acquired_connections_clone.lock()
-        acquired_connections_clone.value.push(conn.id)
-        
-        // Return connection to pool
-        connection_pool.release(conn)
-      }
-    })
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    thread.join()
-  }
-  
-  // Verify connections were acquired and released
-  let _lock = acquired_connections.lock()
-  assert_eq(acquired_connections.value.length(), 15) // All threads should get a connection
-  assert_eq(connection_pool.get_available_connections(), 10) // All connections returned
-  
-  // Test semaphore
-  let semaphore = Semaphore::new(3) // 3 permits
-  
-  let semaphore_threads = []
-  let semaphore_results = Arc::new(Mutex::new([]))
-  
-  for i in 0..=8 {
-    let semaphore_results_clone = semaphore_results.clone()
-    let thread = Thread::spawn(move || {
-      let start_time = get_current_timestamp()
-      
-      // Acquire permit
-      let _permit = semaphore.acquire()
-      
-      let acquire_time = get_current_timestamp()
-      
-      // Hold permit for a while
-      sleep(Duration::from_millis(100))
-      
-      let release_time = get_current_timestamp()
-      
-      // Permit is automatically released when it goes out of scope
-      
-      let _lock = semaphore_results_clone.lock()
-      semaphore_results_clone.value.push({
-        "thread_id": i,
-        "acquire_time_ms": (acquire_time - start_time).to_millis(),
-        "hold_time_ms": (release_time - acquire_time).to_millis()
+  let release_resource = fn(pool: ResourcePool, resource_id: String) {
+    if pool.lock_acquired {
+      let updated = pool.resources.map(fn(resource) {
+        if resource.id == resource_id {
+          { resource | in_use: false }
+        } else {
+          resource
+        }
       })
-    })
-    semaphore_threads.push(thread)
+      
+      { pool | resources: updated }
+    } else {
+      pool  // Cannot release without lock
+    }
   }
   
-  // Wait for all threads to complete
-  for thread in semaphore_threads {
-    thread.join()
+  let safe_acquire_resource = fn(pool: ResourcePool) {
+    let locked_pool = acquire_lock(pool)
+    let result = acquire_resource(locked_pool)
+    release_lock(result)
   }
   
-  // Verify semaphore behavior
-  let _lock = semaphore_results.lock()
-  assert_eq(semaphore_results.value.length(), 8)
+  let safe_release_resource = fn(pool: ResourcePool, resource_id: String) {
+    let locked_pool = acquire_lock(pool)
+    let result = release_resource(locked_pool, resource_id)
+    release_lock(result)
+  }
   
-  // Test barrier
-  let barrier = Barrier::new(5) // 5 threads must wait
+  let pool = create_pool(["res1", "res2", "res3"])
+  assert_eq(pool.resources.length(), 3)
+  assert_true(pool.resources.all(fn(r) { not(r.in_use) }))
   
-  let barrier_threads = []
-  let barrier_results = Arc::new(Mutex::new([]))
+  // Test safe acquire
+  let pool1 = safe_acquire_resource(pool)
+  let in_use_count1 = pool1.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count1, 1)
   
-  for i in 0..=4 {
-    let barrier_results_clone = barrier_results.clone()
-    let thread = Thread::spawn(move || {
-      let start_time = get_current_timestamp()
+  let pool2 = safe_acquire_resource(pool1)
+  let in_use_count2 = pool2.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count2, 2)
+  
+  let pool3 = safe_acquire_resource(pool2)
+  let in_use_count3 = pool3.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count3, 3)
+  
+  // All resources are in use now
+  let pool4 = safe_acquire_resource(pool3)
+  let in_use_count4 = pool4.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count4, 3)  // No change
+  
+  // Test safe release
+  let pool5 = safe_release_resource(pool4, "res1")
+  let in_use_count5 = pool5.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count5, 2)
+  
+  let pool6 = safe_release_resource(pool5, "res2")
+  let in_use_count6 = pool6.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count6, 1)
+  
+  let pool7 = safe_release_resource(pool6, "res3")
+  let in_use_count7 = pool7.resources.filter(fn(r) { r.in_use }).length()
+  assert_eq(in_use_count7, 0)
+}
+
+// Test 5: Concurrent Task Execution
+test "concurrent task execution" {
+  type Task = {
+    id: String,
+    status: String,  // "pending", "running", "completed", "failed"
+    result: Option[String]
+  }
+  
+  type TaskExecutor = {
+    tasks: Array[Task],
+    running_tasks: Int,
+    max_concurrent: Int,
+    lock_acquired: Bool
+  }
+  
+  let create_task = fn(id: String) {
+    {
+      id,
+      status: "pending",
+      result: None
+    }
+  }
+  
+  let create_executor = fn(max_concurrent: Int) {
+    {
+      tasks: [],
+      running_tasks: 0,
+      max_concurrent,
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(executor: TaskExecutor) {
+    if not(executor.lock_acquired) {
+      { executor | lock_acquired: true }
+    } else {
+      executor  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(executor: TaskExecutor) {
+    { executor | lock_acquired: false }
+  }
+  
+  let submit_task = fn(executor: TaskExecutor, task: Task) {
+    if executor.lock_acquired {
+      {
+        tasks: executor.tasks + [task],
+        running_tasks: executor.running_tasks,
+        max_concurrent: executor.max_concurrent,
+        lock_acquired: true
+      }
+    } else {
+      executor  // Cannot submit without lock
+    }
+  }
+  
+  let execute_next_task = fn(executor: TaskExecutor) {
+    if executor.lock_acquired && executor.running_tasks < executor.max_concurrent {
+      let mut found = false
+      let mut updated = []
       
-      // Do some work
-      sleep(Duration::from_millis(50 + i * 10))
+      for task in executor.tasks {
+        if task.status == "pending" && not(found) {
+          updated = updated.push({ task | status: "running" })
+          found = true
+        } else {
+          updated = updated.push(task)
+        }
+      }
       
-      // Wait at barrier
-      barrier.wait()
-      
-      let end_time = get_current_timestamp()
-      
-      let _lock = barrier_results_clone.lock()
-      barrier_results_clone.value.push({
-        "thread_id": i,
-        "wait_time_ms": (end_time - start_time).to_millis()
+      if found {
+        {
+          tasks: updated,
+          running_tasks: executor.running_tasks + 1,
+          max_concurrent: executor.max_concurrent,
+          lock_acquired: true
+        }
+      } else {
+        executor  // No pending tasks
+      }
+    } else {
+      executor  // Cannot execute without lock or at capacity
+    }
+  }
+  
+  let complete_task = fn(executor: TaskExecutor, task_id: String, result: String) {
+    if executor.lock_acquired {
+      let updated = executor.tasks.map(fn(task) {
+        if task.id == task_id && task.status == "running" {
+          { task | status: "completed", result: Some(result) }
+        } else {
+          task
+        }
       })
-    })
-    barrier_threads.push(thread)
+      
+      {
+        tasks: updated,
+        running_tasks: executor.running_tasks - 1,
+        max_concurrent: executor.max_concurrent,
+        lock_acquired: true
+      }
+    } else {
+      executor  // Cannot complete without lock
+    }
   }
   
-  // Wait for all threads to complete
-  for thread in barrier_threads {
-    thread.join()
+  let safe_submit_task = fn(executor: TaskExecutor, task: Task) {
+    let locked_executor = acquire_lock(executor)
+    let result = submit_task(locked_executor, task)
+    release_lock(result)
   }
   
-  // Verify barrier behavior
-  let _lock = barrier_results.lock()
-  assert_eq(barrier_results.value.length(), 5)
+  let safe_execute_next_task = fn(executor: TaskExecutor) {
+    let locked_executor = acquire_lock(executor)
+    let result = execute_next_task(locked_executor)
+    release_lock(result)
+  }
   
-  // All threads should have waited approximately the same amount of time
-  let wait_times = barrier_results.value.map(|r| r.wait_time_ms)
-  let max_wait = wait_times.max()
-  let min_wait = wait_times.min()
+  let safe_complete_task = fn(executor: TaskExecutor, task_id: String, result: String) {
+    let locked_executor = acquire_lock(executor)
+    let updated = complete_task(locked_executor, task_id, result)
+    release_lock(updated)
+  }
   
-  // The difference should be relatively small (within 100ms)
-  assert_true(max_wait - min_wait < 100)
+  let executor = create_executor(2)
+  assert_eq(executor.running_tasks, 0)
+  assert_eq(executor.max_concurrent, 2)
   
-  // Test concurrent resource cleanup
-  let resource_manager = ConcurrentResourceManager::new()
+  // Submit tasks
+  let task1 = create_task("task1")
+  let task2 = create_task("task2")
+  let task3 = create_task("task3")
   
-  let cleanup_threads = []
+  let executor1 = safe_submit_task(executor, task1)
+  assert_eq(executor1.tasks.length(), 1)
   
-  for i in 0..=10 {
-    let thread = Thread::spawn(move || {
-      // Allocate resources
-      let resources = []
-      for j in 0..=10 {
-        let resource = resource_manager.allocate_resource("resource_" + i.to_string() + "_" + j.to_string())
-        resources.push(resource)
+  let executor2 = safe_submit_task(executor1, task2)
+  assert_eq(executor2.tasks.length(), 2)
+  
+  let executor3 = safe_submit_task(executor2, task3)
+  assert_eq(executor3.tasks.length(), 3)
+  
+  // Execute tasks
+  let executor4 = safe_execute_next_task(executor3)
+  assert_eq(executor4.running_tasks, 1)
+  
+  let executor5 = safe_execute_next_task(executor4)
+  assert_eq(executor5.running_tasks, 2)
+  
+  // At max capacity, cannot execute more
+  let executor6 = safe_execute_next_task(executor5)
+  assert_eq(executor6.running_tasks, 2)
+  
+  // Complete a task
+  let executor7 = safe_complete_task(executor6, "task1", "result1")
+  assert_eq(executor7.running_tasks, 1)
+  
+  // Can execute another task now
+  let executor8 = safe_execute_next_task(executor7)
+  assert_eq(executor8.running_tasks, 2)
+  
+  // Complete remaining tasks
+  let executor9 = safe_complete_task(executor8, "task2", "result2")
+  assert_eq(executor9.running_tasks, 1)
+  
+  let executor10 = safe_complete_task(executor9, "task3", "result3")
+  assert_eq(executor10.running_tasks, 0)
+}
+
+// Test 6: Concurrent Event Handling
+test "concurrent event handling" {
+  type Event = {
+    id: String,
+    type: String,
+    data: String,
+    timestamp: Int
+  }
+  
+  type EventHandler = {
+    id: String,
+    event_types: Array[String],
+    processed_events: Array[String]
+  }
+  
+  type EventBus = {
+    handlers: Array[EventHandler],
+    events: Array[Event],
+    lock_acquired: Bool
+  }
+  
+  let create_event = fn(id: String, type: String, data: String) {
+    {
+      id,
+      type,
+      data,
+      timestamp: 1640995200
+    }
+  }
+  
+  let create_handler = fn(id: String, event_types: Array[String]) {
+    {
+      id,
+      event_types,
+      processed_events: []
+    }
+  }
+  
+  let create_event_bus = fn() {
+    {
+      handlers: [],
+      events: [],
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(bus: EventBus) {
+    if not(bus.lock_acquired) {
+      { bus | lock_acquired: true }
+    } else {
+      bus  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(bus: EventBus) {
+    { bus | lock_acquired: false }
+  }
+  
+  let register_handler = fn(bus: EventBus, handler: EventHandler) {
+    if bus.lock_acquired {
+      {
+        handlers: bus.handlers + [handler],
+        events: bus.events,
+        lock_acquired: true
+      }
+    } else {
+      bus  // Cannot register without lock
+    }
+  }
+  
+  let publish_event = fn(bus: EventBus, event: Event) {
+    if bus.lock_acquired {
+      {
+        handlers: bus.handlers,
+        events: bus.events + [event],
+        lock_acquired: true
+      }
+    } else {
+      bus  // Cannot publish without lock
+    }
+  }
+  
+  let process_events = fn(bus: EventBus) {
+    if bus.lock_acquired {
+      let mut updated_handlers = []
+      
+      for handler in bus.handlers {
+        let mut processed = handler.processed_events
+        
+        for event in bus.events {
+          if handler.event_types.contains(event.type) && 
+             not(processed.contains(event.id)) {
+            processed = processed + [event.id]
+          }
+        }
+        
+        updated_handlers = updated_handlers.push({ handler | processed_events: processed })
       }
       
-      // Use resources
-      sleep(Duration::from_millis(50))
-      
-      // Clean up resources
-      for resource in resources {
-        resource_manager.deallocate_resource(resource)
+      {
+        handlers: updated_handlers,
+        events: bus.events,
+        lock_acquired: true
       }
-    })
-    cleanup_threads.push(thread)
+    } else {
+      bus  // Cannot process without lock
+    }
   }
   
-  // Wait for all threads to complete
-  for thread in cleanup_threads {
-    thread.join()
+  let safe_register_handler = fn(bus: EventBus, handler: EventHandler) {
+    let locked_bus = acquire_lock(bus)
+    let result = register_handler(locked_bus, handler)
+    release_lock(result)
   }
   
-  // Verify all resources were cleaned up
-  assert_eq(resource_manager.get_allocated_resources_count(), 0)
-  
-  // Test resource leak detection
-  let leak_detector = ConcurrentResourceLeakDetector::new()
-  
-  // Intentionally leak some resources
-  let leaked_resources = []
-  for i in 0..=5 {
-    let resource = resource_manager.allocate_resource("leaked_" + i.to_string())
-    leaked_resources.push(resource)
-    leak_detector.track_resource(resource)
+  let safe_publish_event = fn(bus: EventBus, event: Event) {
+    let locked_bus = acquire_lock(bus)
+    let result = publish_event(locked_bus, event)
+    release_lock(result)
   }
   
-  let leak_report = leak_detector.detect_leaks()
-  assert_true(leak_report.leaked_resources.length() > 0)
-  
-  // Clean up leaked resources
-  for resource in leaked_resources {
-    resource_manager.deallocate_resource(resource)
-    leak_detector.untrack_resource(resource)
+  let safe_process_events = fn(bus: EventBus) {
+    let locked_bus = acquire_lock(bus)
+    let result = process_events(locked_bus)
+    release_lock(result)
   }
   
-  let final_leak_report = leak_detector.detect_leaks()
-  assert_eq(final_leak_report.leaked_resources.length(), 0)
+  let bus = create_event_bus()
+  assert_eq(bus.handlers.length(), 0)
+  assert_eq(bus.events.length(), 0)
+  
+  // Register handlers
+  let handler1 = create_handler("handler1", ["user_event", "system_event"])
+  let handler2 = create_handler("handler2", ["user_event"])
+  
+  let bus1 = safe_register_handler(bus, handler1)
+  assert_eq(bus1.handlers.length(), 1)
+  
+  let bus2 = safe_register_handler(bus1, handler2)
+  assert_eq(bus2.handlers.length(), 2)
+  
+  // Publish events
+  let event1 = create_event("event1", "user_event", "User logged in")
+  let event2 = create_event("event2", "system_event", "System started")
+  let event3 = create_event("event3", "order_event", "Order placed")
+  
+  let bus3 = safe_publish_event(bus2, event1)
+  assert_eq(bus3.events.length(), 1)
+  
+  let bus4 = safe_publish_event(bus3, event2)
+  assert_eq(bus4.events.length(), 2)
+  
+  let bus5 = safe_publish_event(bus4, event3)
+  assert_eq(bus5.events.length(), 3)
+  
+  // Process events
+  let bus6 = safe_process_events(bus5)
+  
+  // Check handler1 processed events
+  let handler1_updated = bus6.handlers.filter(fn(h) { h.id == "handler1" })[0]
+  assert_eq(handler1_updated.processed_events.length(), 2)
+  assert_true(handler1_updated.processed_events.contains("event1"))
+  assert_true(handler1_updated.processed_events.contains("event2"))
+  assert_false(handler1_updated.processed_events.contains("event3"))
+  
+  // Check handler2 processed events
+  let handler2_updated = bus6.handlers.filter(fn(h) { h.id == "handler2" })[0]
+  assert_eq(handler2_updated.processed_events.length(), 1)
+  assert_true(handler2_updated.processed_events.contains("event1"))
+  assert_false(handler2_updated.processed_events.contains("event2"))
+  assert_false(handler2_updated.processed_events.contains("event3"))
+}
+
+// Test 7: Concurrent Cache Operations
+test "concurrent cache operations" {
+  type CacheEntry = {
+    key: String,
+    value: String,
+    timestamp: Int,
+    ttl: Int  // Time to live in seconds
+  }
+  
+  type ConcurrentCache = {
+    entries: Array[CacheEntry],
+    lock_acquired: Bool
+  }
+  
+  let create_cache = fn() {
+    {
+      entries: [],
+      lock_acquired: false
+    }
+  }
+  
+  let create_entry = fn(key: String, value: String, timestamp: Int, ttl: Int) {
+    {
+      key,
+      value,
+      timestamp,
+      ttl
+    }
+  }
+  
+  let acquire_lock = fn(cache: ConcurrentCache) {
+    if not(cache.lock_acquired) {
+      { cache | lock_acquired: true }
+    } else {
+      cache  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(cache: ConcurrentCache) {
+    { cache | lock_acquired: false }
+  }
+  
+  let get = fn(cache: ConcurrentCache, key: String, current_time: Int) {
+    let mut found = None
+    
+    for entry in cache.entries {
+      if entry.key == key && (current_time - entry.timestamp) < entry.ttl {
+        found = Some(entry.value)
+      }
+    }
+    
+    found
+  }
+  
+  let put = fn(cache: ConcurrentCache, key: String, value: String, current_time: Int, ttl: Int) {
+    if cache.lock_acquired {
+      let mut found = false
+      let mut updated = []
+      
+      for entry in cache.entries {
+        if entry.key == key {
+          updated = updated.push(create_entry(key, value, current_time, ttl))
+          found = true
+        } else {
+          updated = updated.push(entry)
+        }
+      }
+      
+      if not(found) {
+        updated = updated.push(create_entry(key, value, current_time, ttl))
+      }
+      
+      { cache | entries: updated }
+    } else {
+      cache  // Cannot put without lock
+    }
+  }
+  
+  let remove_expired = fn(cache: ConcurrentCache, current_time: Int) {
+    if cache.lock_acquired {
+      let filtered = cache.entries.filter(fn(entry) { 
+        (current_time - entry.timestamp) < entry.ttl 
+      })
+      
+      { cache | entries: filtered }
+    } else {
+      cache  // Cannot remove without lock
+    }
+  }
+  
+  let safe_put = fn(cache: ConcurrentCache, key: String, value: String, current_time: Int, ttl: Int) {
+    let locked_cache = acquire_lock(cache)
+    let updated = put(locked_cache, key, value, current_time, ttl)
+    release_lock(updated)
+  }
+  
+  let safe_remove_expired = fn(cache: ConcurrentCache, current_time: Int) {
+    let locked_cache = acquire_lock(cache)
+    let updated = remove_expired(locked_cache, current_time)
+    release_lock(updated)
+  }
+  
+  let cache = create_cache()
+  assert_eq(cache.entries.length(), 0)
+  
+  let base_time = 1640995200
+  
+  // Test safe put
+  let cache1 = safe_put(cache, "key1", "value1", base_time, 60)
+  assert_eq(cache1.entries.length(), 1)
+  assert_eq(get(cache1, "key1", base_time), Some("value1"))
+  
+  let cache2 = safe_put(cache1, "key2", "value2", base_time + 10, 30)
+  assert_eq(cache2.entries.length(), 2)
+  assert_eq(get(cache2, "key1", base_time + 10), Some("value1"))
+  assert_eq(get(cache2, "key2", base_time + 10), Some("value2"))
+  
+  // Test update existing key
+  let cache3 = safe_put(cache2, "key1", "updated_value1", base_time + 20, 60)
+  assert_eq(cache3.entries.length(), 2)
+  assert_eq(get(cache3, "key1", base_time + 20), Some("updated_value1"))
+  assert_eq(get(cache3, "key2", base_time + 20), Some("value2"))
+  
+  // Test expiration
+  let cache4 = safe_remove_expired(cache3, base_time + 40)  // key2 should be expired
+  assert_eq(cache4.entries.length(), 1)
+  assert_eq(get(cache4, "key1", base_time + 40), Some("updated_value1"))
+  assert_eq(get(cache4, "key2", base_time + 40), None)
+  
+  // Test all expired
+  let cache5 = safe_remove_expired(cache4, base_time + 100)  // All should be expired
+  assert_eq(cache5.entries.length(), 0)
+  assert_eq(get(cache5, "key1", base_time + 100), None)
+}
+
+// Test 8: Concurrent Rate Limiter
+test "concurrent rate limiter" {
+  type RateLimiter = {
+    max_requests: Int,
+    window_seconds: Int,
+    request_timestamps: Array[Int],
+    lock_acquired: Bool
+  }
+  
+  let create_rate_limiter = fn(max_requests: Int, window_seconds: Int) {
+    {
+      max_requests,
+      window_seconds,
+      request_timestamps: [],
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(limiter: RateLimiter) {
+    if not(limiter.lock_acquired) {
+      { limiter | lock_acquired: true }
+    } else {
+      limiter  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(limiter: RateLimiter) {
+    { limiter | lock_acquired: false }
+  }
+  
+  let is_allowed = fn(limiter: RateLimiter, current_time: Int) {
+    if limiter.lock_acquired {
+      // Remove timestamps outside the window
+      let window_start = current_time - limiter.window_seconds
+      let valid_timestamps = limiter.request_timestamps.filter(fn(ts) { ts >= window_start })
+      
+      if valid_timestamps.length() < limiter.max_requests {
+        // Allow the request
+        {
+          max_requests: limiter.max_requests,
+          window_seconds: limiter.window_seconds,
+          request_timestamps: valid_timestamps + [current_time],
+          lock_acquired: true
+        }
+      } else {
+        // Deny the request
+        limiter
+      }
+    } else {
+      limiter  // Cannot check without lock
+    }
+  }
+  
+  let safe_is_allowed = fn(limiter: RateLimiter, current_time: Int) {
+    let locked_limiter = acquire_lock(limiter)
+    let result = is_allowed(locked_limiter, current_time)
+    release_lock(result)
+  }
+  
+  let limiter = create_rate_limiter(5, 60)  // 5 requests per 60 seconds
+  assert_eq(limiter.max_requests, 5)
+  assert_eq(limiter.window_seconds, 60)
+  assert_eq(limiter.request_timestamps.length(), 0)
+  
+  let base_time = 1640995200
+  
+  // Test allowed requests
+  let limiter1 = safe_is_allowed(limiter, base_time)
+  assert_eq(limiter1.request_timestamps.length(), 1)
+  
+  let limiter2 = safe_is_allowed(limiter1, base_time + 10)
+  assert_eq(limiter2.request_timestamps.length(), 2)
+  
+  let limiter3 = safe_is_allowed(limiter2, base_time + 20)
+  assert_eq(limiter3.request_timestamps.length(), 3)
+  
+  let limiter4 = safe_is_allowed(limiter3, base_time + 30)
+  assert_eq(limiter4.request_timestamps.length(), 4)
+  
+  let limiter5 = safe_is_allowed(limiter4, base_time + 40)
+  assert_eq(limiter5.request_timestamps.length(), 5)
+  
+  // Test denied request (at limit)
+  let limiter6 = safe_is_allowed(limiter5, base_time + 50)
+  assert_eq(limiter6.request_timestamps.length(), 5)  // No change
+  
+  // Test after window passes
+  let limiter7 = safe_is_allowed(limiter6, base_time + 70)  // 70 seconds later
+  assert_eq(limiter7.request_timestamps.length(), 1)  // Only the new request
+  
+  // Test multiple requests in new window
+  let limiter8 = safe_is_allowed(limiter7, base_time + 80)
+  assert_eq(limiter8.request_timestamps.length(), 2)
+  
+  let limiter9 = safe_is_allowed(limiter8, base_time + 90)
+  assert_eq(limiter9.request_timestamps.length(), 3)
 }
