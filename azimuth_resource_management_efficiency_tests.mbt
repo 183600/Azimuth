@@ -1,929 +1,830 @@
-// Azimuth Resource Management Efficiency Test Suite
-// This file contains comprehensive test cases for resource management efficiency
+// Azimuth Telemetry System - Resource Management Efficiency Tests
+// This file contains comprehensive test cases for resource management functionality
 
-// Test 1: Memory Pool Efficiency
-test "memory pool efficiency" {
-  // Initialize telemetry provider with memory pool configuration
-  let pool_config = {
-    initial_size: 100,
-    max_size: 1000,
-    growth_factor: 1.5,
-    shrink_threshold: 0.25
+// Test 1: Memory Pool Management
+test "memory pool management" {
+  let memory_manager = MemoryPoolManager::new()
+  
+  // Test memory pool allocation and deallocation
+  let pool = MemoryPoolManager::create_pool(memory_manager, 1000, 1024) // 1000 blocks of 1KB each
+  
+  let mut allocated_blocks = []
+  
+  // Allocate blocks
+  for i in 0..=500 {
+    let block = MemoryPool::allocate(pool)
+    match block {
+      Some(ptr) => allocated_blocks.push(ptr),
+      None => assert_true(false) // Should allocate successfully
+    }
   }
   
-  let provider = TelemetryProvider::with_memory_pool(pool_config)
-  let tracer = TelemetryProvider::get_tracer(provider, "memory_pool_tracer")
-  
-  // Measure initial memory usage
-  let initial_memory = Memory::get_usage()
-  let pool_stats_before = TelemetryProvider::get_memory_pool_stats(provider)
-  
-  // Create a large number of spans
-  let span_count = 500
-  let mut spans = []
-  
-  for i in 0..span_count {
-    let span = Tracer::start_span(tracer, "memory_pool_span_" + i.to_string())
-    Span::add_attribute(span, "iteration", i.to_string())
-    spans = spans.push(span)
-  }
-  
-  // Measure memory usage after span creation
-  let peak_memory = Memory::get_usage()
-  let pool_stats_after_creation = TelemetryProvider::get_memory_pool_stats(provider)
-  
-  // End all spans
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // Force export and cleanup
-  TelemetryProvider::force_flush(provider)
-  TelemetryProvider::cleanup(provider)
-  
-  // Measure memory usage after cleanup
-  let final_memory = Memory::get_usage()
-  let pool_stats_after_cleanup = TelemetryProvider::get_memory_pool_stats(provider)
-  
-  // Verify memory pool efficiency
-  let memory_per_span = (peak_memory - initial_memory) / span_count
-  let memory_released = peak_memory - final_memory
-  let release_percentage = memory_released.to_float() / (peak_memory - initial_memory).to_float()
-  
-  // Memory usage should be reasonable
-  assert_true(memory_per_span < 5000) // Less than 5KB per span
-  
-  // Memory should be released back to pool
-  assert_true(release_percentage > 0.8) // At least 80% released
+  assert_eq(allocated_blocks.length(), 500)
   
   // Verify pool statistics
-  assert_true(pool_stats_after_creation.active_objects > pool_stats_before.active_objects)
-  assert_true(pool_stats_after_cleanup.pool_size > pool_stats_before.pool_size)
+  let stats = MemoryPool::get_stats(pool)
+  assert_eq(stats.allocated_blocks, 500)
+  assert_eq(stats.free_blocks, 500)
+  assert_eq(stats.total_blocks, 1000)
   
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "memory_efficiency")
-  let memory_per_span_gauge = Meter::create_gauge(meter, "memory_per_span_bytes")
-  let release_percentage_gauge = Meter::create_gauge(meter, "memory_release_percentage")
-  let pool_efficiency_gauge = Meter::create_gauge(meter, "pool_efficiency_ratio")
-  
-  Gauge::set(memory_per_span_gauge, memory_per_span.to_float())
-  Gauge::set(release_percentage_gauge, release_percentage * 100.0)
-  
-  let pool_efficiency = pool_stats_after_cleanup.pool_size.to_float() / pool_stats_after_creation.active_objects.to_float()
-  Gauge::set(pool_efficiency_gauge, pool_efficiency * 100.0)
-}
-
-// Test 2: Connection Pool Efficiency
-test "connection pool efficiency" {
-  // Initialize telemetry provider with connection pool configuration
-  let conn_pool_config = {
-    min_connections: 2,
-    max_connections: 10,
-    connection_timeout_ms: 5000,
-    idle_timeout_ms: 30000,
-    max_lifetime_ms: 300000
+  // Deallocate blocks
+  for block in allocated_blocks {
+    MemoryPool::deallocate(pool, block)
   }
   
-  let provider = TelemetryProvider::with_connection_pool(conn_pool_config)
-  let tracer = TelemetryProvider::get_tracer(provider, "connection_pool_tracer")
+  // Verify pool statistics after deallocation
+  let deallocated_stats = MemoryPool::get_stats(pool)
+  assert_eq(deallocated_stats.allocated_blocks, 0)
+  assert_eq(deallocated_stats.free_blocks, 1000)
+  assert_eq(deallocated_stats.total_blocks, 1000)
   
-  // Measure initial connection pool stats
-  let pool_stats_before = TelemetryProvider::get_connection_pool_stats(provider)
+  // Test pool exhaustion
+  let mut exhaustion_blocks = []
   
-  // Simulate concurrent operations requiring connections
-  let operation_count = 50
-  let mut operations = []
-  
-  for i in 0..operation_count {
-    let span = Tracer::start_span(tracer, "operation_" + i.to_string())
-    
-    // Simulate connection acquisition
-    let connection_acquired = TelemetryProvider::acquire_connection(provider)
-    
-    if connection_acquired {
-      // Simulate work with connection
-      Span::add_attribute(span, "connection.acquired", "true")
-      Span::add_attribute(span, "connection.id", i.to_string())
-      
-      // Simulate work duration
-      let work_duration = 100 + (i % 10) * 50 // 100-550ms
-      Span::add_attribute(span, "work.duration_ms", work_duration.to_string())
-      
-      // Release connection
-      TelemetryProvider::release_connection(provider, i.to_string())
-      Span::add_attribute(span, "connection.released", "true")
-    } else {
-      Span::add_attribute(span, "connection.acquired", "false")
-      Span::add_attribute(span, "connection.timeout", "true")
+  for i in 0..=1000 {
+    let block = MemoryPool::allocate(pool)
+    match block {
+      Some(ptr) => exhaustion_blocks.push(ptr),
+      None => {} // Expected when pool is exhausted
     }
-    
-    operations = operations.push(span)
   }
   
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
+  assert_eq(exhaustion_blocks.length(), 1000)
+  
+  // Should fail to allocate more blocks
+  let exhausted_block = MemoryPool::allocate(pool)
+  match exhausted_block {
+    Some(_) => assert_true(false), // Should not allocate
+    None => assert_true(true) // Expected when pool is exhausted
   }
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  // Test pool reset
+  MemoryPool::reset(pool)
   
-  // Measure final connection pool stats
-  let pool_stats_after = TelemetryProvider::get_connection_pool_stats(provider)
+  let reset_stats = MemoryPool::get_stats(pool)
+  assert_eq(reset_stats.allocated_blocks, 0)
+  assert_eq(reset_stats.free_blocks, 1000)
+  assert_eq(reset_stats.total_blocks, 1000)
   
-  // Verify connection pool efficiency
-  assert_true(pool_stats_after.total_acquisitions > 0)
-  assert_true(pool_stats_after.total_releases > 0)
+  // Test pool growth
+  let growing_pool = MemoryPoolManager::create_growable_pool(memory_manager, 100, 1024)
   
-  // Most acquisitions should be successful
-  let success_rate = pool_stats_after.successful_acquisitions.to_float() / pool_stats_after.total_acquisitions.to_float()
-  assert_true(success_rate > 0.8) // At least 80% success rate
+  let mut growing_blocks = []
   
-  // Average wait time should be reasonable
-  assert_true(pool_stats_after.average_wait_time_ms < 1000) // Less than 1 second average wait
-  
-  // Verify connection reuse
-  let reuse_rate = pool_stats_after.connection_reuses.to_float() / pool_stats_after.successful_acquisitions.to_float()
-  assert_true(reuse_rate > 0.5) // At least 50% of connections should be reused
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "connection_efficiency")
-  let success_rate_gauge = Meter::create_gauge(meter, "connection_success_rate")
-  let reuse_rate_gauge = Meter::create_gauge(meter, "connection_reuse_rate")
-  let wait_time_gauge = Meter::create_gauge(meter, "average_wait_time_ms")
-  
-  Gauge::set(success_rate_gauge, success_rate * 100.0)
-  Gauge::set(reuse_rate_gauge, reuse_rate * 100.0)
-  Gauge::set(wait_time_gauge, pool_stats_after.average_wait_time_ms.to_float())
-}
-
-// Test 3: Buffer Pool Efficiency
-test "buffer pool efficiency" {
-  // Initialize telemetry provider with buffer pool configuration
-  let buffer_pool_config = {
-    buffer_size: 4096, // 4KB buffers
-    initial_buffers: 10,
-    max_buffers: 100,
-    allocation_threshold: 0.8
-  }
-  
-  let provider = TelemetryProvider::with_buffer_pool(buffer_pool_config)
-  let tracer = TelemetryProvider::get_tracer(provider, "buffer_pool_tracer")
-  
-  // Measure initial buffer pool stats
-  let pool_stats_before = TelemetryProvider::get_buffer_pool_stats(provider)
-  
-  // Simulate operations requiring buffers
-  let operation_count = 100
-  let mut operations = []
-  
-  for i in 0..operation_count {
-    let span = Tracer::start_span(tracer, "buffer_operation_" + i.to_string())
-    
-    // Simulate buffer allocation
-    let buffer_size = 1024 + (i % 4) * 1024 // 1KB-4KB
-    let buffer_acquired = TelemetryProvider::acquire_buffer(provider, buffer_size)
-    
-    if buffer_acquired {
-      Span::add_attribute(span, "buffer.acquired", "true")
-      Span::add_attribute(span, "buffer.size", buffer_size.to_string())
-      
-      // Simulate buffer usage
-      let usage_duration = 50 + (i % 5) * 20 // 50-130ms
-      Span::add_attribute(span, "buffer.usage_duration_ms", usage_duration.to_string())
-      
-      // Release buffer
-      TelemetryProvider::release_buffer(provider, buffer_size)
-      Span::add_attribute(span, "buffer.released", "true")
-    } else {
-      Span::add_attribute(span, "buffer.acquired", "false")
-      Span::add_attribute(span, "buffer.allocation_failed", "true")
+  for i in 0..=200 {
+    let block = MemoryPool::allocate(growing_pool)
+    match block {
+      Some(ptr) => growing_blocks.push(ptr),
+      None => assert_true(false) // Should allocate successfully
     }
-    
-    operations = operations.push(span)
   }
   
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
-  }
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Measure final buffer pool stats
-  let pool_stats_after = TelemetryProvider::get_buffer_pool_stats(provider)
-  
-  // Verify buffer pool efficiency
-  assert_true(pool_stats_after.total_allocations > 0)
-  assert_true(pool_stats_after.total_releases > 0)
-  
-  // Most allocations should be successful
-  let success_rate = pool_stats_after.successful_allocations.to_float() / pool_stats_after.total_allocations.to_float()
-  assert_true(success_rate > 0.9) // At least 90% success rate
-  
-  // Verify buffer reuse
-  let reuse_rate = pool_stats_after.buffer_reuses.to_float() / pool_stats_after.successful_allocations.to_float()
-  assert_true(reuse_rate > 0.7) // At least 70% of buffers should be reused
-  
-  // Memory efficiency - buffer pool should reduce total allocations
-  let memory_efficiency = pool_stats_after.buffer_reuses.to_float() / pool_stats_after.total_allocations.to_float()
-  assert_true(memory_efficiency > 0.5) // At least 50% reduction in allocations
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "buffer_efficiency")
-  let success_rate_gauge = Meter::create_gauge(meter, "buffer_success_rate")
-  let reuse_rate_gauge = Meter::create_gauge(meter, "buffer_reuse_rate")
-  let memory_efficiency_gauge = Meter::create_gauge(meter, "memory_efficiency_ratio")
-  
-  Gauge::set(success_rate_gauge, success_rate * 100.0)
-  Gauge::set(reuse_rate_gauge, reuse_rate * 100.0)
-  Gauge::set(memory_efficiency_gauge, memory_efficiency * 100.0)
+  // Pool should have grown to accommodate all blocks
+  let growing_stats = MemoryPool::get_stats(growing_pool)
+  assert_eq(growing_stats.allocated_blocks, 200)
+  assert_true(growing_stats.total_blocks >= 200)
 }
 
-// Test 4: Thread Pool Efficiency
-test "thread pool efficiency" {
-  // Initialize telemetry provider with thread pool configuration
-  let thread_pool_config = {
-    core_threads: 2,
-    max_threads: 10,
-    keep_alive_time_ms: 60000,
-    queue_capacity: 100
-  }
+// Test 2: File Handle Management
+test "file handle management" {
+  let file_manager = FileManager::new()
   
-  let provider = TelemetryProvider::with_thread_pool(thread_pool_config)
-  let tracer = TelemetryProvider::get_tracer(provider, "thread_pool_tracer")
+  // Test file handle tracking
+  let file1 = FileManager::open(file_manager, "test1.txt", "r")
+  let file2 = FileManager::open(file_manager, "test2.txt", "w")
+  let file3 = FileManager::open(file_manager, "test3.txt", "a")
   
-  // Measure initial thread pool stats
-  let pool_stats_before = TelemetryProvider::get_thread_pool_stats(provider)
-  
-  // Simulate concurrent operations
-  let task_count = 200
-  let mut tasks = []
-  
-  for i in 0..task_count {
-    let span = Tracer::start_span(tracer, "thread_task_" + i.to_string())
-    
-    // Submit task to thread pool
-    let task_submitted = TelemetryProvider::submit_task(provider, fn() {
-      // Simulate work
-      let work_duration = 100 + (i % 10) * 50 // 100-550ms
-      Time::sleep(work_duration)
-      work_duration
-    })
-    
-    if task_submitted {
-      Span::add_attribute(span, "task.submitted", "true")
+  match (file1, file2, file3) {
+    (Ok(f1), Ok(f2), Ok(f3)) => {
+      // Verify file handles are tracked
+      let open_handles = FileManager::get_open_handles(file_manager)
+      assert_eq(open_handles.length(), 3)
       
-      // Wait for task completion
-      let task_result = TelemetryProvider::get_task_result(provider)
+      // Test file handle limits
+      let max_handles = FileManager::get_max_handles(file_manager)
+      FileManager::set_max_handles(file_manager, 5)
       
-      match task_result {
-        Some(duration) => {
-          Span::add_attribute(span, "task.completed", "true")
-          Span::add_attribute(span, "task.duration_ms", duration.to_string())
+      // Open more files up to the limit
+      let file4 = FileManager::open(file_manager, "test4.txt", "r")
+      let file5 = FileManager::open(file_manager, "test5.txt", "r")
+      
+      match (file4, file5) {
+        (Ok(f4), Ok(f5)) => {
+          let handles_after_limit = FileManager::get_open_handles(file_manager)
+          assert_eq(handles_after_limit.length(), 5)
+          
+          // Should fail to open more files beyond the limit
+          let file6 = FileManager::open(file_manager, "test6.txt", "r")
+          match file6 {
+            Ok(_) => assert_true(false), // Should not open
+            Error(_) => assert_true(true) // Expected when limit is reached
+          }
+          
+          // Close some files
+          FileManager::close(file_manager, f1)
+          FileManager::close(file_manager, f2)
+          
+          let handles_after_close = FileManager::get_open_handles(file_manager)
+          assert_eq(handles_after_close.length(), 3)
+          
+          // Should be able to open more files after closing
+          let file6 = FileManager::open(file_manager, "test6.txt", "r")
+          match file6 {
+            Ok(_) => assert_true(true), // Should open now
+            Error(_) => assert_true(false)
+          }
+          
+          FileManager::close(file_manager, f3)
+          FileManager::close(file_manager, f4)
+          FileManager::close(file_manager, f5)
+          match file6 {
+            Ok(f6) => FileManager::close(file_manager, f6),
+            Error(_) => {}
+          }
         }
-        None => {
-          Span::add_attribute(span, "task.completed", "false")
-          Span::add_attribute(span, "task.timeout", "true")
+        _ => assert_true(false) // Should open successfully
+      }
+    }
+    _ => assert_true(false) // Should open successfully
+  }
+  
+  // Test automatic file handle cleanup
+  FileManager::enable_auto_cleanup(file_manager, 1000) // Cleanup after 1 second
+  
+  let cleanup_file = FileManager::open(file_manager, "cleanup_test.txt", "r")
+  match cleanup_file {
+    Ok(f) => {
+      // Don't close the file explicitly
+      Time::sleep(1100) // Wait longer than cleanup timeout
+      
+      // File should be automatically closed
+      let handles_after_cleanup = FileManager::get_open_handles(file_manager)
+      assert_eq(handles_after_cleanup.length(), 0)
+    }
+    Error(_) => assert_true(false) // Should open successfully
+  }
+}
+
+// Test 3: Database Connection Management
+test "database connection management" {
+  let db_manager = DatabaseConnectionManager::new()
+  
+  // Test connection pool creation
+  let pool_config = ConnectionPoolConfig::new()
+  ConnectionPoolConfig::set_min_connections(pool_config, 2)
+  ConnectionPoolConfig::set_max_connections(pool_config, 10)
+  ConnectionPoolConfig::set_connection_timeout(pool_config, 5000)
+  ConnectionPoolConfig::set_idle_timeout(pool_config, 30000)
+  
+  let connection_pool = DatabaseConnectionManager::create_pool(db_manager, "postgresql://localhost/telemetry", pool_config)
+  
+  // Test connection acquisition
+  let mut connections = []
+  
+  for i in 0..=5 {
+    let conn = ConnectionPool::get_connection(connection_pool)
+    match conn {
+      Ok(c) => connections.push(c),
+      Error(_) => assert_true(false) // Should get connection
+    }
+  }
+  
+  assert_eq(connections.length(), 6)
+  
+  // Verify pool statistics
+  let pool_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(pool_stats.active_connections, 6)
+  assert_true(pool_stats.total_connections >= 6)
+  
+  // Test connection release
+  for conn in connections {
+    ConnectionPool::release_connection(connection_pool, conn)
+  }
+  
+  let release_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(release_stats.active_connections, 0)
+  assert_true(release_stats.idle_connections >= 6)
+  
+  // Test connection timeout
+  let timeout_config = ConnectionPoolConfig::new()
+  ConnectionPoolConfig::set_min_connections(timeout_config, 1)
+  ConnectionPoolConfig::set_max_connections(timeout_config, 1)
+  ConnectionPoolConfig::set_connection_timeout(timeout_config, 100)
+  
+  let timeout_pool = DatabaseConnectionManager::create_pool(db_manager, "postgresql://localhost/telemetry", timeout_config)
+  
+  let conn1 = ConnectionPool::get_connection(timeout_pool)
+  match conn1 {
+    Ok(c) => {
+      // Try to get another connection (should timeout)
+      let conn2 = ConnectionPool::get_connection(timeout_pool)
+      match conn2 {
+        Ok(_) => assert_true(false), // Should not get connection
+        Error(err) => {
+          match err {
+            ConnectionTimeout => assert_true(true),
+            _ => assert_true(false)
+          }
         }
       }
-    } else {
-      Span::add_attribute(span, "task.submitted", "false")
-      Span::add_attribute(span, "task.rejected", "true")
+      
+      ConnectionPool::release_connection(timeout_pool, c)
     }
-    
-    tasks = tasks.push(span)
+    Error(_) => assert_true(false) // Should get connection
   }
   
-  // End all spans
-  for task in tasks {
-    Span::end(task)
+  // Test connection validation
+  let validation_config = ConnectionPoolConfig::new()
+  ConnectionPoolConfig::set_min_connections(validation_config, 2)
+  ConnectionPoolConfig::set_max_connections(validation_config, 5)
+  ConnectionPoolConfig::set_validation_interval(validation_config, 10000)
+  ConnectionPoolConfig::set_validation_query(validation_config, "SELECT 1")
+  
+  let validation_pool = DatabaseConnectionManager::create_pool(db_manager, "postgresql://localhost/telemetry", validation_config)
+  
+  let validation_conn = ConnectionPool::get_connection(validation_pool)
+  match validation_conn {
+    Ok(c) => {
+      // Test connection validation
+      let is_valid = ConnectionPool::validate_connection(validation_pool, c)
+      assert_true(is_valid)
+      
+      ConnectionPool::release_connection(validation_pool, c)
+    }
+    Error(_) => assert_true(false) // Should get connection
   }
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Measure final thread pool stats
-  let pool_stats_after = TelemetryProvider::get_thread_pool_stats(provider)
-  
-  // Verify thread pool efficiency
-  assert_true(pool_stats_after.tasks_submitted > 0)
-  assert_true(pool_stats_after.tasks_completed > 0)
-  
-  // Most tasks should be completed
-  let completion_rate = pool_stats_after.tasks_completed.to_float() / pool_stats_after.tasks_submitted.to_float()
-  assert_true(completion_rate > 0.9) // At least 90% completion rate
-  
-  // Thread utilization should be reasonable
-  let max_threads_used = pool_stats_after.max_threads_reached
-  assert_true(max_threads_used <= thread_pool_config.max_threads)
-  
-  // Average execution time should be reasonable
-  assert_true(pool_stats_after.average_execution_time_ms < 1000) // Less than 1 second average
-  
-  // Thread reuse efficiency
-  let thread_efficiency = pool_stats_after.tasks_completed.to_float() / max_threads_used.to_float()
-  assert_true(thread_efficiency > 10.0) // Each thread should handle multiple tasks
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "thread_efficiency")
-  let completion_rate_gauge = Meter::create_gauge(meter, "task_completion_rate")
-  let thread_utilization_gauge = Meter::create_gauge(meter, "thread_utilization_ratio")
-  let execution_time_gauge = Meter::create_gauge(meter, "average_execution_time_ms")
-  
-  Gauge::set(completion_rate_gauge, completion_rate * 100.0)
-  Gauge::set(thread_utilization_gauge, (max_threads_used.to_float() / thread_pool_config.max_threads.to_float()) * 100.0)
-  Gauge::set(execution_time_gauge, pool_stats_after.average_execution_time_ms.to_float())
 }
 
-// Test 5: CPU Resource Management
-test "cpu resource management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "cpu_tracer")
+// Test 4: Thread Pool Management
+test "thread pool management" {
+  let thread_manager = ThreadPoolManager::new()
   
-  // Measure initial CPU usage
-  let initial_cpu = CPU::get_usage()
+  // Test thread pool creation
+  let thread_pool = ThreadPoolManager::create_pool(thread_manager, 4) // 4 worker threads
   
-  // Create CPU-intensive operations
-  let operation_count = 20
-  let mut operations = []
+  // Test task submission
+  let mut futures = []
   
-  for i in 0..operation_count {
-    let span = Tracer::start_span(tracer, "cpu_intensive_operation_" + i.to_string())
-    
-    // Simulate CPU-intensive work
-    let work_start = CPU::get_usage()
-    
-    // Perform CPU-intensive calculation
-    let mut result = 0
-    for j in 0..100000 {
-      result = result + (i * j) % 1000
-    }
-    
-    let work_end = CPU::get_usage()
-    let cpu_used = work_end - work_start
-    
-    Span::add_attribute(span, "cpu.time_ms", cpu_used.to_string())
-    Span::add_attribute(span, "calculation.result", result.to_string())
-    
-    operations = operations.push(span)
+  for i in 0..=10 {
+    let future = ThreadPool::submit(thread_pool, func() {
+      // Simulate work
+      Time::sleep(100)
+      return i * 2
+    })
+    futures.push(future)
   }
   
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
+  // Test task completion
+  let mut results = []
+  
+  for future in futures {
+    let result = Future::await(future, 5000)
+    match result {
+      Some(value) => results.push(value),
+      None => assert_true(false) // Should complete
+    }
   }
   
-  // Measure final CPU usage
-  let final_cpu = CPU::get_usage()
-  let total_cpu_used = final_cpu - initial_cpu
+  assert_eq(results.length(), 11)
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  // Verify results
+  for i in 0..=10 {
+    assert_eq(results[i], i * 2)
+  }
   
-  // Verify CPU resource management
-  assert_true(total_cpu_used > 0)
+  // Test thread pool statistics
+  let pool_stats = ThreadPool::get_stats(thread_pool)
+  assert_eq(pool_stats.completed_tasks, 11)
+  assert_true(pool_stats.active_threads <= 4)
   
-  // Average CPU per operation should be reasonable
-  let avg_cpu_per_operation = total_cpu_used / operation_count
-  assert_true(avg_cpu_per_operation < 100) // Less than 100ms per operation
+  // Test thread pool shutdown
+  ThreadPool::shutdown(thread_pool)
   
-  // CPU usage should be proportional to work
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  let cpu_times = spans.map(fn(s) { 
-    match s.attributes.find(fn(a) { a.0 == "cpu.time_ms" }) {
-      Some((_, time)) => time.to_int()
-      None => 0
-    }
+  let shutdown_stats = ThreadPool::get_stats(thread_pool)
+  assert_eq(shutdown_stats.active_threads, 0)
+  
+  // Test task rejection after shutdown
+  let shutdown_future = ThreadPool::submit(thread_pool, func() {
+    return "should not execute"
   })
   
-  let total_cpu_from_spans = cpu_times.reduce(fn(acc, time) { acc + time }, 0)
+  match shutdown_future {
+    Ok(_) => assert_true(false), // Should not submit
+    Error(_) => assert_true(true) // Expected when pool is shutdown
+  }
   
-  // CPU time from spans should be close to measured CPU time
-  let cpu_measurement_diff = (total_cpu_from_spans - total_cpu_used).abs()
-  assert_true(cpu_measurement_diff < total_cpu_used / 2) // Within 50% of measured time
+  // Test scheduled thread pool
+  let scheduled_pool = ThreadPoolManager::create_scheduled_pool(thread_manager, 2)
   
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "cpu_efficiency")
-  let cpu_per_operation_gauge = Meter::create_gauge(meter, "cpu_time_per_operation_ms")
-  let total_cpu_gauge = Meter::create_gauge(meter, "total_cpu_time_ms")
+  let scheduled_future = ScheduledThreadPool::schedule(scheduled_pool, func() {
+    return "scheduled task"
+  }, 1000) // Schedule after 1 second
   
-  Gauge::set(cpu_per_operation_gauge, avg_cpu_per_operation.to_float())
-  Gauge::set(total_cpu_gauge, total_cpu_used.to_float())
+  let scheduled_result = Future::await(scheduled_future, 2000)
+  match scheduled_result {
+    Some(value) => assert_eq(value, "scheduled task"),
+    None => assert_true(false) // Should complete
+  }
+  
+  // Test periodic task scheduling
+  let counter = AtomicCounter::new(0)
+  
+  let periodic_future = ScheduledThreadPool::schedule_at_fixed_rate(scheduled_pool, func() {
+    AtomicCounter::increment(counter)
+  }, 500, 500) // Every 500ms
+  
+  Time::sleep(1600) // Wait for about 3 executions
+  
+  ScheduledThreadPool::cancel(scheduled_pool, periodic_future)
+  
+  let count = AtomicCounter::get(counter)
+  assert_true(count >= 3 && count <= 4) // Should have executed 3-4 times
 }
 
-// Test 6: Disk I/O Resource Management
-test "disk io resource management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "disk_io_tracer")
+// Test 5: Network Socket Management
+test "network socket management" {
+  let socket_manager = SocketManager::new()
   
-  // Measure initial disk I/O
-  let initial_disk = DiskIO::get_stats()
+  // Test socket creation
+  let server_socket = SocketManager::create_server_socket(socket_manager, "127.0.0.1", 0) // Random port
   
-  // Create disk I/O intensive operations
-  let operation_count = 10
-  let file_size = 1024 * 1024 // 1MB
-  let mut operations = []
-  
-  for i in 0..operation_count {
-    let span = Tracer::start_span(tracer, "disk_io_operation_" + i.to_string())
-    
-    // Simulate file write
-    let write_start = DiskIO::get_stats()
-    
-    let file_name = "test_file_" + i.to_string() + ".tmp"
-    let file_content = "x".repeat(file_size)
-    
-    let write_success = FileSystem::write_file(file_name, file_content)
-    
-    let write_end = DiskIO::get_stats()
-    let write_bytes = write_end.bytes_written - write_start.bytes_written
-    let write_time = write_end.write_time_ms - write_start.write_time_ms
-    
-    if write_success {
-      Span::add_attribute(span, "file.write", "success")
-      Span::add_attribute(span, "file.name", file_name)
-      Span::add_attribute(span, "file.size", file_size.to_string())
-      Span::add_attribute(span, "disk.write_bytes", write_bytes.to_string())
-      Span::add_attribute(span, "disk.write_time_ms", write_time.to_string())
+  match server_socket {
+    Ok(server) => {
+      let server_port = Socket::get_local_port(server)
+      assert_true(server_port > 0)
       
-      // Simulate file read
-      let read_start = DiskIO::get_stats()
-      
-      let read_content = FileSystem::read_file(file_name)
-      
-      let read_end = DiskIO::get_stats()
-      let read_bytes = read_end.bytes_read - read_start.bytes_read
-      let read_time = read_end.read_time_ms - read_start.read_time_ms
-      
-      match read_content {
-        Some(content) => {
-          Span::add_attribute(span, "file.read", "success")
-          Span::add_attribute(span, "disk.read_bytes", read_bytes.to_string())
-          Span::add_attribute(span, "disk.read_time_ms", read_time.to_string())
+      // Test client socket connection
+      let client_socket = SocketManager::connect(socket_manager, "127.0.0.1", server_port)
+      match client_socket {
+        Ok(client) => {
+          // Test socket tracking
+          let active_sockets = SocketManager::get_active_sockets(socket_manager)
+          assert_eq(active_sockets.length(), 2)
           
-          // Verify content
-          assert_eq(content.length(), file_size)
-        }
-        None => {
-          Span::add_attribute(span, "file.read", "failed")
-        }
-      }
-      
-      // Clean up file
-      FileSystem::delete_file(file_name)
-    } else {
-      Span::add_attribute(span, "file.write", "failed")
-    }
-    
-    operations = operations.push(span)
-  }
-  
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
-  }
-  
-  // Measure final disk I/O
-  let final_disk = DiskIO::get_stats()
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Verify disk I/O resource management
-  let total_bytes_written = final_disk.bytes_written - initial_disk.bytes_written
-  let total_bytes_read = final_disk.bytes_read - initial_disk.bytes_read
-  let total_write_time = final_disk.write_time_ms - initial_disk.write_time_ms
-  let total_read_time = final_disk.read_time_ms - initial_disk.read_time_ms
-  
-  // Should have written and read approximately operation_count * file_size bytes
-  let expected_bytes = operation_count * file_size
-  let write_efficiency = total_bytes_written.to_float() / expected_bytes.to_float()
-  let read_efficiency = total_bytes_read.to_float() / expected_bytes.to_float()
-  
-  assert_true(write_efficiency > 0.8) // At least 80% of expected bytes written
-  assert_true(read_efficiency > 0.8) // At least 80% of expected bytes read
-  
-  // Average I/O time should be reasonable
-  let avg_write_time = total_write_time / operation_count
-  let avg_read_time = total_read_time / operation_count
-  
-  assert_true(avg_write_time < 1000) // Less than 1 second per write
-  assert_true(avg_read_time < 1000) // Less than 1 second per read
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "disk_io_efficiency")
-  let write_efficiency_gauge = Meter::create_gauge(meter, "write_efficiency_percentage")
-  let read_efficiency_gauge = Meter::create_gauge(meter, "read_efficiency_percentage")
-  let write_throughput_gauge = Meter::create_gauge(meter, "write_throughput_mb_per_sec")
-  let read_throughput_gauge = Meter::create_gauge(meter, "read_throughput_mb_per_sec")
-  
-  Gauge::set(write_efficiency_gauge, write_efficiency * 100.0)
-  Gauge::set(read_efficiency_gauge, read_efficiency * 100.0)
-  
-  let write_throughput = (total_bytes_written / (1024 * 1024)).to_float() / (total_write_time / 1000.0).to_float()
-  let read_throughput = (total_bytes_read / (1024 * 1024)).to_float() / (total_read_time / 1000.0).to_float()
-  
-  Gauge::set(write_throughput_gauge, write_throughput)
-  Gauge::set(read_throughput_gauge, read_throughput)
-}
-
-// Test 7: Network Resource Management
-test "network resource management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "network_tracer")
-  
-  // Measure initial network stats
-  let initial_network = Network::get_stats()
-  
-  // Create network-intensive operations
-  let operation_count = 15
-  let request_size = 1024 // 1KB
-  let mut operations = []
-  
-  for i in 0..operation_count {
-    let span = Tracer::start_span(tracer, "network_operation_" + i.to_string())
-    
-    // Simulate HTTP request
-    let request_start = Network::get_stats()
-    
-    let url = "https://httpbin.org/post"
-    let request_data = "x".repeat(request_size)
-    
-    let response = HTTP::post(url, request_data)
-    
-    let request_end = Network::get_stats()
-    let bytes_sent = request_end.bytes_sent - request_start.bytes_sent
-    let bytes_received = request_end.bytes_received - request_start.bytes_received
-    let request_time = request_end.request_time_ms - request_start.request_time_ms
-    
-    match response {
-      Some(resp) => {
-        Span::add_attribute(span, "http.request", "success")
-        Span::add_attribute(span, "http.status_code", resp.status_code.to_string())
-        Span::add_attribute(span, "http.url", url)
-        Span::add_attribute(span, "network.bytes_sent", bytes_sent.to_string())
-        Span::add_attribute(span, "network.bytes_received", bytes_received.to_string())
-        Span::add_attribute(span, "network.request_time_ms", request_time.to_string())
-        
-        // Verify response
-        assert_true(resp.status_code >= 200 && resp.status_code < 300)
-      }
-      None => {
-        Span::add_attribute(span, "http.request", "failed")
-        Span::add_attribute(span, "network.error", "true")
-      }
-    }
-    
-    operations = operations.push(span)
-  }
-  
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
-  }
-  
-  // Measure final network stats
-  let final_network = Network::get_stats()
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Verify network resource management
-  let total_bytes_sent = final_network.bytes_sent - initial_network.bytes_sent
-  let total_bytes_received = final_network.bytes_received - initial_network.bytes_sent
-  let total_request_time = final_network.request_time_ms - initial_network.request_time_ms
-  
-  // Should have sent and received approximately operation_count * request_size bytes
-  let min_expected_bytes = operation_count * request_size
-  assert_true(total_bytes_sent >= min_expected_bytes)
-  assert_true(total_bytes_received > 0)
-  
-  // Average request time should be reasonable
-  let avg_request_time = total_request_time / operation_count
-  assert_true(avg_request_time < 5000) // Less than 5 seconds per request
-  
-  // Network efficiency
-  let network_efficiency = total_bytes_received.to_float() / total_bytes_sent.to_float()
-  assert_true(network_efficiency > 0.1) // At least 10% of sent bytes should be received
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "network_efficiency")
-  let avg_request_time_gauge = Meter::create_gauge(meter, "average_request_time_ms")
-  let network_efficiency_gauge = Meter::create_gauge(meter, "network_efficiency_ratio")
-  let throughput_gauge = Meter::create_gauge(meter, "network_throughput_kb_per_sec")
-  
-  Gauge::set(avg_request_time_gauge, avg_request_time.to_float())
-  Gauge::set(network_efficiency_gauge, network_efficiency * 100.0)
-  
-  let total_bytes = total_bytes_sent + total_bytes_received
-  let throughput = (total_bytes / 1024).to_float() / (total_request_time / 1000.0).to_float()
-  Gauge::set(throughput_gauge, throughput)
-}
-
-// Test 8: Resource Cleanup Efficiency
-test "resource cleanup efficiency" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "cleanup_tracer")
-  
-  // Measure initial resource usage
-  let initial_memory = Memory::get_usage()
-  let initial_cpu = CPU::get_usage()
-  
-  // Create resource-intensive operations
-  let resource_count = 100
-  let mut resources = []
-  
-  for i in 0..resource_count {
-    let span = Tracer::start_span(tracer, "resource_operation_" + i.to_string())
-    
-    // Allocate various resources
-    let memory_size = 1024 * (i % 10 + 1) // 1KB-10KB
-    let memory_allocated = Memory::allocate(memory_size)
-    
-    if memory_allocated {
-      Span::add_attribute(span, "memory.allocated", "true")
-      Span::add_attribute(span, "memory.size", memory_size.to_string())
-      
-      // Simulate CPU work
-      let mut result = 0
-      for j in 0..1000 {
-        result = result + (i * j) % 100
-      }
-      
-      Span::add_attribute(span, "cpu.work", "true")
-      Span::add_attribute(span, "cpu.result", result.to_string())
-      
-      // Store resource reference for cleanup
-      resources = resources.push((span, memory_size))
-    } else {
-      Span::add_attribute(span, "memory.allocated", "false")
-    }
-  }
-  
-  // Measure peak resource usage
-  let peak_memory = Memory::get_usage()
-  let peak_cpu = CPU::get_usage()
-  
-  // Cleanup resources
-  let cleanup_start = Time::now()
-  
-  for (span, memory_size) in resources {
-    Memory::deallocate(memory_size)
-    Span::add_event(span, "resource.cleaned", Some([
-      ("memory.size", memory_size.to_string())
-    ]))
-    Span::end(span)
-  }
-  
-  let cleanup_end = Time::now()
-  let cleanup_duration = cleanup_end - cleanup_start
-  
-  // Force cleanup
-  TelemetryProvider::force_flush(provider)
-  TelemetryProvider::cleanup(provider)
-  
-  // Measure final resource usage
-  let final_memory = Memory::get_usage()
-  let final_cpu = CPU::get_usage()
-  
-  // Verify cleanup efficiency
-  let memory_used = peak_memory - initial_memory
-  let memory_released = peak_memory - final_memory
-  let memory_release_rate = memory_released.to_float() / memory_used.to_float()
-  
-  assert_true(memory_release_rate > 0.8) // At least 80% of memory should be released
-  
-  // Cleanup should be fast
-  let cleanup_rate = resource_count.to_float() / cleanup_duration.to_seconds()
-  assert_true(cleanup_rate > 100.0) // At least 100 resources per second
-  
-  // CPU should return to near baseline
-  let cpu_used = peak_cpu - initial_cpu
-  let cpu_recovered = peak_cpu - final_cpu
-  let cpu_recovery_rate = cpu_recovered.to_float() / cpu_used.to_float()
-  
-  assert_true(cpu_recovery_rate > 0.7) // At least 70% of CPU should be recovered
-  
-  // Log efficiency metrics
-  let meter = TelemetryProvider::get_meter(provider, "cleanup_efficiency")
-  let memory_release_rate_gauge = Meter::create_gauge(meter, "memory_release_rate")
-  let cpu_recovery_rate_gauge = Meter::create_gauge(meter, "cpu_recovery_rate")
-  let cleanup_rate_gauge = Meter::create_gauge(meter, "cleanup_rate_resources_per_sec")
-  
-  Gauge::set(memory_release_rate_gauge, memory_release_rate * 100.0)
-  Gauge::set(cpu_recovery_rate_gauge, cpu_recovery_rate * 100.0)
-  Gauge::set(cleanup_rate_gauge, cleanup_rate)
-}
-
-// Test 9: Resource Pool Scaling Efficiency
-test "resource pool scaling efficiency" {
-  // Test different pool sizes
-  let pool_sizes = [5, 10, 25, 50]
-  let operation_count = 100
-  
-  for pool_size in pool_sizes {
-    let pool_config = {
-      min_connections: 2,
-      max_connections: pool_size,
-      connection_timeout_ms: 5000,
-      idle_timeout_ms: 30000,
-      max_lifetime_ms: 300000
-    }
-    
-    let provider = TelemetryProvider::with_connection_pool(pool_config)
-    let tracer = TelemetryProvider::get_tracer(provider, "scaling_tracer")
-    
-    // Measure initial pool stats
-    let pool_stats_before = TelemetryProvider::get_connection_pool_stats(provider)
-    
-    // Simulate operations
-    let scaling_start = Time::now()
-    
-    for i in 0..operation_count {
-      let span = Tracer::start_span(tracer, "scaling_operation_" + i.to_string())
-      
-      // Acquire connection
-      let connection_acquired = TelemetryProvider::acquire_connection(provider)
-      
-      if connection_acquired {
-        // Simulate work
-        Time::sleep(10) // 10ms work
-        
-        // Release connection
-        TelemetryProvider::release_connection(provider, i.to_string())
-      }
-      
-      Span::end(span)
-    }
-    
-    let scaling_end = Time::now()
-    let scaling_duration = scaling_end - scaling_start
-    
-    // Force export
-    TelemetryProvider::force_flush(provider)
-    
-    // Measure final pool stats
-    let pool_stats_after = TelemetryProvider::get_connection_pool_stats(provider)
-    
-    // Calculate scaling efficiency
-    let throughput = operation_count.to_float() / scaling_duration.to_seconds()
-    let connection_utilization = pool_stats_after.max_threads_reached.to_float() / pool_size.to_float()
-    
-    // Log efficiency metrics
-    let meter = TelemetryProvider::get_meter(provider, "scaling_efficiency")
-    let throughput_gauge = Meter::create_gauge(meter, "operation_throughput")
-    let utilization_gauge = Meter::create_gauge(meter, "connection_utilization")
-    let pool_size_gauge = Meter::create_gauge(meter, "pool_size")
-    
-    Gauge::set(throughput_gauge, throughput)
-    Gauge::set(utilization_gauge, connection_utilization * 100.0)
-    Gauge::set(pool_size_gauge, pool_size.to_float())
-    
-    // Verify scaling efficiency
-    assert_true(throughput > 50.0) // At least 50 operations per second
-    assert_true(connection_utilization <= 1.0) // Utilization should not exceed 100%
-  }
-}
-
-// Test 10: Comprehensive Resource Management
-test "comprehensive resource management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "comprehensive_tracer")
-  let meter = TelemetryProvider::get_meter(provider, "resource_meter")
-  
-  // Create resource metrics
-  let memory_gauge = Meter::create_gauge(meter, "memory_usage_mb")
-  let cpu_gauge = Meter::create_gauge(meter, "cpu_usage_percentage")
-  let disk_io_gauge = Meter::create_gauge(meter, "disk_io_kb_per_sec")
-  let network_gauge = Meter::create_gauge(meter, "network_kb_per_sec")
-  
-  // Measure initial resource usage
-  let initial_memory = Memory::get_usage()
-  let initial_cpu = CPU::get_usage()
-  let initial_disk = DiskIO::get_stats()
-  let initial_network = Network::get_stats()
-  
-  // Create comprehensive resource test
-  let test_duration = 5000 // 5 seconds
-  let test_start = Time::now()
-  let mut operations = []
-  
-  while (Time::now() - test_start).to_milliseconds() < test_duration {
-    let i = operations.length()
-    let span = Tracer::start_span(tracer, "comprehensive_operation_" + i.to_string())
-    
-    // Memory operation
-    let memory_size = 1024 * (i % 5 + 1) // 1KB-5KB
-    let memory_allocated = Memory::allocate(memory_size)
-    
-    if memory_allocated {
-      Span::add_attribute(span, "memory.allocated", "true")
-      Span::add_attribute(span, "memory.size", memory_size.to_string())
-      
-      // CPU operation
-      let mut result = 0
-      for j in 0..100 {
-        result = result + (i * j) % 100
-      }
-      
-      Span::add_attribute(span, "cpu.work", "true")
-      
-      // Disk I/O operation (every 10 operations)
-      if i % 10 == 0 {
-        let file_name = "temp_" + i.to_string() + ".tmp"
-        let file_content = "x".repeat(1024) // 1KB
-        
-        if FileSystem::write_file(file_name, file_content) {
-          let read_content = FileSystem::read_file(file_name)
-          FileSystem::delete_file(file_name)
+          // Test socket timeout
+          Socket::set_read_timeout(client, 1000)
+          Socket::set_write_timeout(client, 1000)
           
-          match read_content {
-            Some(_) => Span::add_attribute(span, "disk.io", "success")
-            None => Span::add_attribute(span, "disk.io", "failed")
+          // Test socket statistics
+          let client_stats = Socket::get_stats(client)
+          assert_eq(client_stats.bytes_sent, 0)
+          assert_eq(client_stats.bytes_received, 0)
+          
+          // Test data transmission
+          let test_data = "Hello, World!"
+          let send_result = Socket::send(client, test_data)
+          match send_result {
+            Ok(bytes_sent) => assert_eq(bytes_sent, test_data.length()),
+            Error(_) => assert_true(false) // Should send
           }
-        } else {
-          Span::add_attribute(span, "disk.io", "failed")
+          
+          let receive_buffer = ByteArray::new(1024)
+          let receive_result = Socket::receive(client, receive_buffer)
+          match receive_result {
+            Ok(bytes_received) => assert_true(bytes_received > 0),
+            Error(_) => assert_true(false) // Should receive
+          }
+          
+          // Test socket closure
+          Socket::close(client)
+          Socket::close(server)
+          
+          let sockets_after_close = SocketManager::get_active_sockets(socket_manager)
+          assert_eq(sockets_after_close.length(), 0)
         }
+        Error(_) => assert_true(false) // Should connect
       }
-      
-      // Network operation (every 20 operations)
-      if i % 20 == 0 {
-        let response = HTTP::get("https://httpbin.org/get")
-        
-        match response {
-          Some(_) => Span::add_attribute(span, "network.request", "success")
-          None => Span::add_attribute(span, "network.request", "failed")
-        }
-      }
-      
-      // Deallocate memory
-      Memory::deallocate(memory_size)
     }
-    
-    operations = operations.push(span)
-    
-    // Update resource metrics
-    let current_memory = Memory::get_usage()
-    let current_cpu = CPU::get_usage()
-    let current_disk = DiskIO::get_stats()
-    let current_network = Network::get_stats()
-    
-    Gauge::set(memory_gauge, (current_memory / (1024 * 1024)).to_float())
-    Gauge::set(cpu_gauge, current_cpu.to_float())
-    
-    let disk_io_kb = ((current_disk.bytes_read + current_disk.bytes_written) / 1024).to_float()
-    let network_kb = ((current_network.bytes_sent + current_network.bytes_received) / 1024).to_float()
-    
-    Gauge::set(disk_io_gauge, disk_io_kb)
-    Gauge::set(network_gauge, network_kb)
-    
-    // Small delay to prevent overwhelming the system
-    Time::sleep(10)
+    Error(_) => assert_true(false) // Should create server socket
   }
   
-  // End all spans
-  for operation in operations {
-    Span::end(operation)
+  // Test socket pool
+  let socket_pool = SocketManager::create_pool(socket_manager, 10)
+  
+  let mut pooled_sockets = []
+  
+  for i in 0..=5 {
+    let socket = SocketPool::acquire(socket_pool)
+    match socket {
+      Ok(s) => pooled_sockets.push(s),
+      Error(_) => assert_true(false) // Should acquire
+    }
   }
   
-  // Measure final resource usage
-  let final_memory = Memory::get_usage()
-  let final_cpu = CPU::get_usage()
-  let final_disk = DiskIO::get_stats()
-  let final_network = Network::get_stats()
+  assert_eq(pooled_sockets.length(), 6)
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  // Release sockets back to pool
+  for socket in pooled_sockets {
+    SocketPool::release(socket_pool, socket)
+  }
   
-  // Calculate resource efficiency
-  let memory_used = final_memory - initial_memory
-  let cpu_used = final_cpu - initial_cpu
-  let disk_io_bytes = (final_disk.bytes_read + final_disk.bytes_written) - (initial_disk.bytes_read + initial_disk.bytes_written)
-  let network_bytes = (final_network.bytes_sent + final_network.bytes_received) - (initial_network.bytes_sent + initial_network.bytes_received)
+  let pool_stats = SocketPool::get_stats(socket_pool)
+  assert_eq(pool_stats.available_sockets, 6)
+  assert_eq(pool_stats.active_sockets, 0)
   
-  // Verify resource usage is reasonable
-  let memory_per_operation = memory_used / operations.length()
-  let cpu_per_operation = cpu_used / operations.length()
+  // Test socket pool cleanup
+  SocketPool::cleanup(socket_pool)
   
-  assert_true(memory_per_operation < 10240) // Less than 10KB per operation
-  assert_true(cpu_per_operation < 50) // Less than 50ms per operation
+  let cleanup_stats = SocketPool::get_stats(socket_pool)
+  assert_eq(cleanup_stats.available_sockets, 0)
+}
+
+// Test 6: Resource Quota Management
+test "resource quota management" {
+  let quota_manager = ResourceQuotaManager::new()
   
-  // Resource efficiency metrics
-  let memory_efficiency = operations.length().to_float() / (memory_used / 1024).to_float() // Operations per KB
-  let cpu_efficiency = operations.length().to_float() / (cpu_used / 1000).to_float() // Operations per CPU second
+  // Test CPU quota
+  let cpu_quota = ResourceQuota::new("cpu", 80.0) // 80% CPU limit
+  ResourceQuotaManager::set_quota(quota_manager, cpu_quota)
   
-  assert_true(memory_efficiency > 1.0) // At least 1 operation per KB
-  assert_true(cpu_efficiency > 10.0) // At least 10 operations per CPU second
+  let current_cpu = ResourceQuotaManager::get_current_usage(quota_manager, "cpu")
+  assert_true(current_cpu < 80.0)
   
-  // Log comprehensive efficiency metrics
-  let comprehensive_meter = TelemetryProvider::get_meter(provider, "comprehensive_efficiency")
-  let memory_efficiency_gauge = Meter::create_gauge(comprehensive_meter, "memory_efficiency_ops_per_kb")
-  let cpu_efficiency_gauge = Meter::create_gauge(comprehensive_meter, "cpu_efficiency_ops_per_cpu_sec")
-  let total_operations_gauge = Meter::create_gauge(comprehensive_meter, "total_operations")
+  // Test memory quota
+  let memory_quota = ResourceQuota::new("memory", 1024 * 1024 * 1024) // 1GB limit
+  ResourceQuotaManager::set_quota(quota_manager, memory_quota)
   
-  Gauge::set(memory_efficiency_gauge, memory_efficiency)
-  Gauge::set(cpu_efficiency_gauge, cpu_efficiency)
-  Gauge::set(total_operations_gauge, operations.length().to_float())
+  let current_memory = ResourceQuotaManager::get_current_usage(quota_manager, "memory")
+  assert_true(current_memory < 1024 * 1024 * 1024)
+  
+  // Test disk quota
+  let disk_quota = ResourceQuota::new("disk", 10 * 1024 * 1024 * 1024) // 10GB limit
+  ResourceQuotaManager::set_quota(quota_manager, disk_quota)
+  
+  let current_disk = ResourceQuotaManager::get_current_usage(quota_manager, "disk")
+  assert_true(current_disk < 10 * 1024 * 1024 * 1024)
+  
+  // Test quota enforcement
+  let enforcement_result = ResourceQuotaManager::check_quota(quota_manager, "memory", 500 * 1024 * 1024)
+  match enforcement_result {
+    Ok(_) => assert_true(true), // Should allow
+    Error(_) => assert_true(false) // Should not deny
+  }
+  
+  // Test quota violation
+  let violation_result = ResourceQuotaManager::check_quota(quota_manager, "memory", 2 * 1024 * 1024 * 1024)
+  match violation_result {
+    Ok(_) => assert_true(false), // Should not allow
+    Error(err) => {
+      match err {
+        QuotaExceeded => assert_true(true),
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // Test quota warnings
+  ResourceQuotaManager::set_warning_threshold(quota_manager, "memory", 0.8) // 80% warning
+  
+  // Simulate memory usage at 85%
+  ResourceQuotaManager::simulate_usage(quota_manager, "memory", 1024 * 1024 * 1024 * 0.85)
+  
+  let warnings = ResourceQuotaManager::get_warnings(quota_manager)
+  assert_true(warnings.length() > 0)
+  
+  // Test quota adjustment
+  let new_memory_quota = ResourceQuota::new("memory", 2 * 1024 * 1024 * 1024) // 2GB limit
+  ResourceQuotaManager::adjust_quota(quota_manager, new_memory_quota)
+  
+  let adjusted_quota = ResourceQuotaManager::get_quota(quota_manager, "memory")
+  match adjusted_quota {
+    Some(quota) => assert_eq(quota.limit, 2 * 1024 * 1024 * 1024),
+    None => assert_true(false) // Should have quota
+  }
+}
+
+// Test 7: Resource Leak Detection
+test "resource leak detection" {
+  let leak_detector = ResourceLeakDetector::new()
+  
+  // Enable leak detection for different resource types
+  LeakDetector::enable_detection(leak_detector, "memory")
+  LeakDetector::enable_detection(leak_detector, "file")
+  LeakDetector::enable_detection(leak_detector, "socket")
+  
+  // Simulate resource allocation without proper deallocation
+  let leaked_memory = LeakDetector::allocate_memory(leak_detector, 1024 * 1024) // 1MB
+  let leaked_file = LeakDetector::open_file(leak_detector, "leak_test.txt")
+  let leaked_socket = LeakDetector::create_socket(leak_detector)
+  
+  // Don't deallocate resources to simulate leaks
+  
+  // Run leak detection
+  let leak_report = LeakDetector::detect_leaks(leak_detector)
+  
+  assert_eq(leak_report.memory_leaks, 1)
+  assert_eq(leak_report.file_leaks, 1)
+  assert_eq(leak_report.socket_leaks, 1)
+  assert_true(leak_report.total_leaked_memory > 0)
+  
+  // Test leak prevention
+  LeakDetector::enable_auto_cleanup(leak_detector, 1000) // Auto cleanup after 1 second
+  
+  // Allocate more resources
+  let auto_memory = LeakDetector::allocate_memory(leak_detector, 512 * 1024) // 512KB
+  let auto_file = LeakDetector::open_file(leak_detector, "auto_test.txt")
+  
+  // Don't explicitly deallocate, but wait for auto cleanup
+  Time::sleep(1100)
+  
+  // Run leak detection again
+  let auto_leak_report = LeakDetector::detect_leaks(leak_detector)
+  
+  // Auto cleanup should have cleaned up the new resources
+  assert_eq(auto_leak_report.memory_leaks, 1) // Still the original leak
+  assert_eq(auto_leak_report.file_leaks, 1) // Still the original leak
+  
+  // Test resource tracking
+  let resource_tracker = ResourceTracker::new()
+  ResourceTracker::track_allocation(resource_tracker, "test_resource", 1024)
+  
+  let allocation_info = ResourceTracker::get_info(resource_tracker, "test_resource")
+  match allocation_info {
+    Some(info) => {
+      assert_eq(info.size, 1024)
+      assert_true(info.allocation_time > 0)
+    }
+    None => assert_true(false) // Should track allocation
+  }
+  
+  ResourceTracker::track_deallocation(resource_tracker, "test_resource")
+  
+  let deallocation_info = ResourceTracker::get_info(resource_tracker, "test_resource")
+  match deallocation_info {
+    Some(info) => {
+      assert_true(info.deallocated)
+      assert_true(info.deallocation_time > 0)
+    }
+    None => assert_true(false) // Should track deallocation
+  }
+}
+
+// Test 8: Resource Prioritization
+test "resource prioritization" {
+  let resource_prioritizer = ResourcePrioritizer::new()
+  
+  // Test priority levels
+  ResourcePrioritizer::add_priority_level(resource_prioritizer, "critical", 10)
+  ResourcePrioritizer::add_priority_level(resource_prioritizer, "high", 7)
+  ResourcePrioritizer::add_priority_level(resource_prioritizer, "normal", 5)
+  ResourcePrioritizer::add_priority_level(resource_prioritizer, "low", 3)
+  ResourcePrioritizer::add_priority_level(resource_prioritizer, "background", 1)
+  
+  // Test resource allocation with priorities
+  let critical_request = ResourceRequest::new("memory", 512 * 1024 * 1024, "critical") // 512MB
+  let high_request = ResourceRequest::new("memory", 256 * 1024 * 1024, "high") // 256MB
+  let normal_request = ResourceRequest::new("memory", 128 * 1024 * 1024, "normal") // 128MB
+  let low_request = ResourceRequest::new("memory", 64 * 1024 * 1024, "low") // 64MB
+  
+  // Submit requests
+  ResourcePrioritizer::submit_request(resource_prioritizer, critical_request)
+  ResourcePrioritizer::submit_request(resource_prioritizer, high_request)
+  ResourcePrioritizer::submit_request(resource_prioritizer, normal_request)
+  ResourcePrioritizer::submit_request(resource_prioritizer, low_request)
+  
+  // Get prioritized requests
+  let prioritized_requests = ResourcePrioritizer::get_prioritized_requests(resource_prioritizer)
+  
+  assert_eq(prioritized_requests.length(), 4)
+  assert_eq(prioritized_requests[0].priority, "critical")
+  assert_eq(prioritized_requests[1].priority, "high")
+  assert_eq(prioritized_requests[2].priority, "normal")
+  assert_eq(prioritized_requests[3].priority, "low")
+  
+  // Test resource preemption
+  ResourcePrioritizer::set_total_resources(resource_prioritizer, "memory", 512 * 1024 * 1024) // 512MB total
+  
+  // Allocate critical request (should succeed)
+  let critical_result = ResourcePrioritizer::allocate(resource_prioritizer, critical_request)
+  match critical_result {
+    Ok(_) => assert_true(true),
+    Error(_) => assert_true(false) // Should allocate
+  }
+  
+  // Try to allocate high request (should fail due to insufficient resources)
+  let high_result = ResourcePrioritizer::allocate(resource_prioritizer, high_request)
+  match high_result {
+    Ok(_) => assert_true(false), // Should not allocate
+    Error(_) => assert_true(true) // Expected due to insufficient resources
+  }
+  
+  // Test resource reallocation
+  ResourcePrioritizer::release_resources(resource_prioritizer, critical_request)
+  
+  // Now high request should succeed
+  let high_retry = ResourcePrioritizer::allocate(resource_prioritizer, high_request)
+  match high_retry {
+    Ok(_) => assert_true(true),
+    Error(_) => assert_true(false) // Should allocate
+  }
+  
+  // Test priority adjustment
+  ResourcePrioritizer::adjust_priority(resource_prioritizer, normal_request, "high")
+  
+  let adjusted_requests = ResourcePrioritizer::get_prioritized_requests(resource_prioritizer)
+  
+  // Normal request should now be treated as high priority
+  assert_eq(adjusted_requests[0].priority, "high") // Original high request
+  assert_eq(adjusted_requests[1].priority, "high") // Adjusted normal request
+}
+
+// Test 9: Resource Monitoring and Metrics
+test "resource monitoring and metrics" {
+  let resource_monitor = ResourceMonitor::new()
+  
+  // Enable monitoring for different resources
+  ResourceMonitor::enable_monitoring(resource_monitor, "cpu")
+  ResourceMonitor::enable_monitoring(resource_monitor, "memory")
+  ResourceMonitor::enable_monitoring(resource_monitor, "disk")
+  ResourceMonitor::enable_monitoring(resource_monitor, "network")
+  
+  // Start monitoring
+  ResourceMonitor::start(resource_monitor)
+  
+  // Simulate resource usage
+  Time::sleep(2000) // Let monitoring run for 2 seconds
+  
+  // Get resource metrics
+  let cpu_metrics = ResourceMonitor::get_metrics(resource_monitor, "cpu")
+  let memory_metrics = ResourceMonitor::get_metrics(resource_monitor, "memory")
+  let disk_metrics = ResourceMonitor::get_metrics(resource_monitor, "disk")
+  let network_metrics = ResourceMonitor::get_metrics(resource_monitor, "network")
+  
+  // Verify metrics are collected
+  assert_true(cpu_metrics.current_usage > 0)
+  assert_true(cpu_metrics.average_usage > 0)
+  assert_true(cpu_metrics.peak_usage > 0)
+  
+  assert_true(memory_metrics.current_usage > 0)
+  assert_true(memory_metrics.average_usage > 0)
+  assert_true(memory_metrics.peak_usage > 0)
+  
+  assert_true(disk_metrics.current_usage > 0)
+  assert_true(network_metrics.current_usage >= 0)
+  
+  // Test metric history
+  let cpu_history = ResourceMonitor::get_metric_history(resource_monitor, "cpu", 1000)
+  assert_true(cpu_history.length() > 0)
+  
+  // Test resource alerts
+  ResourceMonitor::set_alert_threshold(resource_monitor, "cpu", 90.0) // Alert at 90% CPU
+  
+  // Simulate high CPU usage
+  ResourceMonitor::simulate_usage(resource_monitor, "cpu", 95.0)
+  
+  let alerts = ResourceMonitor::get_alerts(resource_monitor)
+  assert_true(alerts.length() > 0)
+  
+  // Test resource predictions
+  let cpu_prediction = ResourceMonitor::predict_usage(resource_monitor, "cpu", 3600) // Predict 1 hour ahead
+  match cpu_prediction {
+    Some(prediction) => {
+      assert_true(prediction.predicted_usage > 0)
+      assert_true(prediction.confidence > 0.0)
+      assert_true(prediction.confidence <= 1.0)
+    }
+    None => assert_true(false) // Should make prediction
+  }
+  
+  // Stop monitoring
+  ResourceMonitor::stop(resource_monitor)
+  
+  // Verify monitoring is stopped
+  let stopped_metrics = ResourceMonitor::get_metrics(resource_monitor, "cpu")
+  assert_eq(stopped_metrics.monitoring_active, false)
+}
+
+// Test 10: Resource Optimization
+test "resource optimization" {
+  let resource_optimizer = ResourceOptimizer::new()
+  
+  // Test memory optimization
+  let memory_optimizer = MemoryOptimizer::new()
+  MemoryOptimizer::enable_gc_optimization(memory_optimizer, true)
+  MemoryOptimizer::enable_pool_optimization(memory_optimizer, true)
+  MemoryOptimizer::enable_compression_optimization(memory_optimizer, true)
+  
+  // Create memory pressure
+  let large_data = Array::new(1000000) // Large array
+  for i in 0..=1000000 {
+    large_data.push(i)
+  }
+  
+  let before_optimization = MemoryStats::current_usage()
+  
+  // Run memory optimization
+  let optimization_result = ResourceOptimizer::optimize_memory(resource_optimizer, memory_optimizer)
+  match optimization_result {
+    Ok(report) => {
+      assert_true(report.memory_freed > 0)
+      assert_true(report.optimization_time > 0)
+    }
+    Error(_) => assert_true(false) // Should optimize
+  }
+  
+  let after_optimization = MemoryStats::current_usage()
+  
+  // Memory usage should be reduced
+  assert_true(after_optimization < before_optimization)
+  
+  // Test CPU optimization
+  let cpu_optimizer = CPUOptimizer::new()
+  CPUOptimizer::enable_thread_optimization(cpu_optimizer, true)
+  CPUOptimizer::enable_priority_optimization(cpu_optimizer, true)
+  
+  // Create CPU load
+  let mut handles = []
+  for i in 0..=10 {
+    let handle = Thread::spawn(func() {
+      // CPU-intensive task
+      let mut result = 0
+      for j in 0..=1000000 {
+        result = result + j
+      }
+      return result
+    })
+    handles.push(handle)
+  }
+  
+  let before_cpu_optimization = CPUStats::current_usage()
+  
+  // Run CPU optimization
+  let cpu_optimization_result = ResourceOptimizer::optimize_cpu(resource_optimizer, cpu_optimizer)
+  match cpu_optimization_result {
+    Ok(report) => {
+      assert_true(report.cpu_time_saved > 0)
+      assert_true(report.optimization_time > 0)
+    }
+    Error(_) => assert_true(false) // Should optimize
+  }
+  
+  let after_cpu_optimization = CPUStats::current_usage()
+  
+  // Wait for threads to complete
+  for handle in handles {
+    Thread::join(handle)
+  }
+  
+  // Test I/O optimization
+  let io_optimizer = IOOptimizer::new()
+  IOOptimizer::enable_buffering_optimization(io_optimizer, true)
+  IOOptimizer::enable_batching_optimization(io_optimizer, true)
+  IOOptimizer::enable_caching_optimization(io_optimizer, true)
+  
+  // Create I/O operations
+  let io_start_time = Time::now()
+  
+  for i in 0..=100 {
+    let file = File::open("io_test_" + i.to_string() + ".txt", "w")
+    match file {
+      Ok(f) => {
+        File::write(f, "Test data " + i.to_string())
+        File::close(f)
+      }
+      Error(_) => assert_true(false) // Should open and write
+    }
+  }
+  
+  let before_io_optimization = Time::duration(io_start_time, Time::now())
+  
+  // Run I/O optimization
+  let io_optimization_result = ResourceOptimizer::optimize_io(resource_optimizer, io_optimizer)
+  match io_optimization_result {
+    Ok(report) => {
+      assert_true(report.io_time_saved > 0)
+      assert_true(report.optimization_time > 0)
+    }
+    Error(_) => assert_true(false) // Should optimize
+  }
+  
+  // Test with optimized I/O
+  let optimized_io_start = Time::now()
+  
+  for i in 0..=100 {
+    let file = File::open("io_optimized_test_" + i.to_string() + ".txt", "w")
+    match file {
+      Ok(f) => {
+        File::write(f, "Test data " + i.to_string())
+        File::close(f)
+      }
+      Error(_) => assert_true(false) // Should open and write
+    }
+  }
+  
+  let after_io_optimization = Time::duration(optimized_io_start, Time::now())
+  
+  // Optimized I/O should be faster
+  assert_true(after_io_optimization < before_io_optimization)
+  
+  // Test comprehensive resource optimization
+  let comprehensive_result = ResourceOptimizer::optimize_all(resource_optimizer)
+  match comprehensive_result {
+    Ok(report) => {
+      assert_true(report.memory_optimized)
+      assert_true(report.cpu_optimized)
+      assert_true(report.io_optimized)
+      assert_true(report.total_time_saved > 0)
+    }
+    Error(_) => assert_true(false) // Should optimize
+  }
 }
