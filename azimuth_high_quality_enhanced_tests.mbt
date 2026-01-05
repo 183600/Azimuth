@@ -1,543 +1,1022 @@
-// Azimuth 高质量增强测试套件
-// 本文件包含针对遥测系统关键功能的高质量测试用例
+// Azimuth High Quality Enhanced Test Suite
+// This file contains high-quality test cases focusing on advanced features
 
-// 测试1: 异步操作和并发处理
-test "异步操作和并发处理测试" {
-  // 创建异步任务管理器
-  let async_manager = AsyncTaskManager::new()
+// Test 1: Memory Management and Resource Cleanup
+test "memory management and resource cleanup operations" {
+  // Test resource acquisition and release pattern
+  let resource_manager = ResourceManager::new()
   
-  // 创建多个异步任务
-  let task1 = AsyncTask::new("metrics.collection", fn() {
-    let metrics = MetricsCollector::collect()
-    return metrics
-  })
+  // Acquire multiple resources
+  let resource1 = ResourceManager::acquire(resource_manager, "database_connection")
+  let resource2 = ResourceManager::acquire(resource_manager, "file_handle")
+  let resource3 = ResourceManager::acquire(resource_manager, "network_socket")
   
-  let task2 = AsyncTask::new("span.processing", fn() {
-    let spans = SpanProcessor::process_batch()
-    return spans
-  })
+  // Verify resources are acquired
+  assert_true(ResourceManager::is_active(resource_manager, resource1))
+  assert_true(ResourceManager::is_active(resource_manager, resource2))
+  assert_true(ResourceManager::is_active(resource_manager, resource3))
   
-  let task3 = AsyncTask::new("log.aggregation", fn() {
-    let logs = LogAggregator::aggregate()
-    return logs
-  })
+  // Test resource cleanup
+  ResourceManager::release(resource_manager, resource1)
+  assert_false(ResourceManager::is_active(resource_manager, resource1))
+  assert_true(ResourceManager::is_active(resource_manager, resource2))
+  assert_true(ResourceManager::is_active(resource_manager, resource3))
   
-  // 并发执行任务
-  let results = AsyncTaskManager::execute_concurrent(async_manager, [task1, task2, task3])
+  // Test automatic cleanup on scope exit
+  let scope_resources = ResourceManager::create_scope(resource_manager)
+  let scoped_resource1 = ResourceManager::acquire_in_scope(scope_resources, "temp_file")
+  let scoped_resource2 = ResourceManager::acquire_in_scope(scope_resources, "temp_buffer")
   
-  // 验证所有任务成功完成
-  assert_eq(results.length(), 3)
-  assert_true(results.all(fn(r) { r.status == TaskStatus::Completed }))
+  // Resources should be active within scope
+  assert_true(ResourceManager::is_active(resource_manager, scoped_resource1))
+  assert_true(ResourceManager::is_active(resource_manager, scoped_resource2))
   
-  // 验证任务结果
-  let metrics_result = results[0]
-  let spans_result = results[1]
-  let logs_result = results[2]
+  // Exit scope (simulated)
+  ResourceManager::exit_scope(scope_resources)
   
-  match metrics_result.data {
-    Some(metrics) => assert_true(metrics.length() > 0)
-    None => assert_true(false)
-  }
+  // Resources should be automatically cleaned up
+  assert_false(ResourceManager::is_active(resource_manager, scoped_resource1))
+  assert_false(ResourceManager::is_active(resource_manager, scoped_resource2))
   
-  match spans_result.data {
-    Some(spans) => assert_true(spans.length() > 0)
-    None => assert_true(false)
-  }
+  // Test memory leak detection
+  let leak_detector = LeakDetector::new()
+  LeakDetector::start_tracking(leak_detector)
   
-  match logs_result.data {
-    Some(logs) => assert_true(logs.length() > 0)
-    None => assert_true(false)
-  }
+  // Allocate and deallocate resources
+  let tracked_resource = LeakDetector::allocate(leak_detector, 1024)
+  assert_eq(LeakDetector::get_tracked_memory(leak_detector), 1024)
+  
+  LeakDetector::deallocate(leak_detector, tracked_resource)
+  assert_eq(LeakDetector::get_tracked_memory(leak_detector), 0)
+  
+  // Test leak detection
+  let leaked_resource = LeakDetector::allocate(leak_detector, 512)
+  let leaks = LeakDetector::detect_leaks(leak_detector)
+  assert_eq(leaks.length(), 1)
+  assert_eq(leaks[0].size, 512)
+  
+  LeakDetector::cleanup_all(leak_detector)
 }
 
-// 测试2: 数据压缩和传输优化
-test "数据压缩和传输优化测试" {
-  // 创建测试数据集
-  let large_dataset = generate_large_telemetry_dataset(10000)
+// Test 2: Network Communication and API Integration
+test "network communication and api integration operations" {
+  // Test HTTP client operations
+  let http_client = HttpClient::new()
   
-  // 验证原始数据大小
-  let original_size = DataSerializer::calculate_size(large_dataset)
-  assert_true(original_size > 1000000)  // 至少1MB
+  // Test GET request
+  let get_response = HttpClient::get(http_client, "https://api.example.com/data")
+  assert_eq(get_response.status_code, 200)
+  assert_true(get_response.body.contains("\"success\": true"))
   
-  // 使用不同压缩算法进行压缩
-  let gzip_compressed = CompressionEngine::compress(large_dataset, CompressionType::Gzip)
-  let lz4_compressed = CompressionEngine::compress(large_dataset, CompressionType::LZ4)
-  let zstd_compressed = CompressionEngine::compress(large_dataset, CompressionType::Zstd)
+  // Test POST request with JSON payload
+  let json_payload = "{\"name\": \"test\", \"value\": 42}"
+  let post_response = HttpClient::post_json(http_client, "https://api.example.com/create", json_payload)
+  assert_eq(post_response.status_code, 201)
+  assert_true(post_response.body.contains("\"id\":"))
   
-  // 验证压缩效果
-  let gzip_size = DataSerializer::calculate_size(gzip_compressed)
-  let lz4_size = DataSerializer::calculate_size(lz4_compressed)
-  let zstd_size = DataSerializer::calculate_size(zstd_compressed)
+  // Test request headers
+  let headers = [
+    ("Authorization", "Bearer token123"),
+    ("Content-Type", "application/json"),
+    ("X-Custom-Header", "custom_value")
+  ]
   
-  assert_true(gzip_size < original_size * 0.4)  // 至少60%压缩率
-  assert_true(lz4_size < original_size * 0.5)  // 至少50%压缩率
-  assert_true(zstd_size < original_size * 0.3)  // 至少70%压缩率
+  let header_response = HttpClient::get_with_headers(http_client, "https://api.example.com/protected", headers)
+  assert_eq(header_response.status_code, 200)
   
-  // 验证解压缩后数据完整性
-  let gzip_decompressed = CompressionEngine::decompress(gzip_compressed, CompressionType::Gzip)
-  let lz4_decompressed = CompressionEngine::decompress(lz4_compressed, CompressionType::LZ4)
-  let zstd_decompressed = CompressionEngine::decompress(zstd_compressed, CompressionType::Zstd)
+  // Test error handling
+  let error_response = HttpClient::get(http_client, "https://api.example.com/nonexistent")
+  assert_eq(error_response.status_code, 404)
+  assert_true(error_response.body.contains("\"error\":"))
   
-  assert_eq(DataSerializer::calculate_size(gzip_decompressed), original_size)
-  assert_eq(DataSerializer::calculate_size(lz4_decompressed), original_size)
-  assert_eq(DataSerializer::calculate_size(zstd_decompressed), original_size)
+  // Test timeout handling
+  let timeout_client = HttpClient::with_timeout(5000)  // 5 second timeout
+  let timeout_start = TimeUtil::current_time_millis()
+  let timeout_response = HttpClient::get(timeout_client, "https://api.example.com/slow")
+  let timeout_elapsed = TimeUtil::current_time_millis() - timeout_start
   
-  // 验证数据内容一致性
-  assert_true(DataComparator::equals(large_dataset, gzip_decompressed))
-  assert_true(DataComparator::equals(large_dataset, lz4_decompressed))
-  assert_true(DataComparator::equals(large_dataset, zstd_decompressed))
+  assert_true(timeout_elapsed >= 4900 && timeout_elapsed <= 6000)  // Should timeout after ~5 seconds
+  
+  // Test retry mechanism
+  let retry_client = HttpClient::with_retry(3)  // Retry 3 times
+  let retry_response = HttpClient::get(retry_client, "https://api.example.com/flaky")
+  assert_true(retry_response.status_code == 200 || retry_response.status_code == 500)
+  
+  // Test WebSocket connection
+  let websocket = WebSocketClient::connect("wss://api.example.com/ws")
+  assert_true(WebSocketClient::is_connected(websocket))
+  
+  // Test sending and receiving messages
+  WebSocketClient::send(websocket, "{\"type\": \"ping\"}")
+  let response = WebSocketClient::receive(websocket, 1000)  // 1 second timeout
+  assert_true(response.contains("\"type\": \"pong\""))
+  
+  WebSocketClient::disconnect(websocket)
+  assert_false(WebSocketClient::is_connected(websocket))
 }
 
-// 测试3: 异常检测和警报机制
-test "异常检测和警报机制测试" {
-  // 创建异常检测引擎
-  let anomaly_detector = AnomalyDetector::new()
+// Test 3: Data Serialization and Deserialization
+test "data serialization and deserialization operations" {
+  // Test JSON serialization
+  let test_data = {
+    name: "azimuth_test",
+    version: "1.0.0",
+    metrics: [10.5, 20.3, 30.7],
+    metadata: {
+      created_at: 1640995200,
+      environment: "test",
+      features: ["telemetry", "monitoring", "analytics"]
+    }
+  }
   
-  // 创建警报管理器
+  let json_string = JsonSerializer::serialize(test_data)
+  assert_true(json_string.contains("\"name\": \"azimuth_test\""))
+  assert_true(json_string.contains("\"version\": \"1.0.0\""))
+  assert_true(json_string.contains("\"metrics\": [10.5, 20.3, 30.7]"))
+  
+  // Test JSON deserialization
+  let deserialized_data = JsonSerializer::deserialize(json_string)
+  assert_eq(deserialized_data.name, "azimuth_test")
+  assert_eq(deserialized_data.version, "1.0.0")
+  assert_eq(deserialized_data.metrics.length(), 3)
+  assert_eq(deserialized_data.metrics[0], 10.5)
+  
+  // Test binary serialization
+  let binary_data = BinarySerializer::serialize(test_data)
+  assert_true(binary_data.length() > 0)
+  
+  // Test binary deserialization
+  let binary_deserialized = BinarySerializer::deserialize(binary_data)
+  assert_eq(binary_deserialized.name, test_data.name)
+  assert_eq(binary_deserialized.version, test_data.version)
+  
+  // Test protocol buffer serialization
+  let proto_data = ProtobufSerializer::serialize(test_data)
+  assert_true(proto_data.length() > 0)
+  
+  // Test protocol buffer deserialization
+  let proto_deserialized = ProtobufSerializer::deserialize(proto_data)
+  assert_eq(proto_deserialized.name, test_data.name)
+  assert_eq(proto_deserialized.metadata.environment, "test")
+  
+  // Test CSV serialization
+  let csv_data = [
+    {name: "item1", value: 100, category: "A"},
+    {name: "item2", value: 200, category: "B"},
+    {name: "item3", value: 300, category: "A"}
+  ]
+  
+  let csv_string = CsvSerializer::serialize(csv_data)
+  assert_true(csv_string.contains("name,value,category"))
+  assert_true(csv_string.contains("item1,100,A"))
+  
+  // Test CSV deserialization
+  let csv_deserialized = CsvSerializer::deserialize(csv_string)
+  assert_eq(csv_deserialized.length(), 3)
+  assert_eq(csv_deserialized[0].name, "item1")
+  assert_eq(csv_deserialized[2].value, 300)
+  
+  // Test XML serialization
+  let xml_string = XmlSerializer::serialize(test_data)
+  assert_true(xml_string.contains("<name>azimuth_test</name>"))
+  assert_true(xml_string.contains("<version>1.0.0</version>"))
+  
+  // Test XML deserialization
+  let xml_deserialized = XmlSerializer::deserialize(xml_string)
+  assert_eq(xml_deserialized.name, "azimuth_test")
+  assert_eq(xml_deserialized.version, "1.0.0")
+  
+  // Test YAML serialization
+  let yaml_string = YamlSerializer::serialize(test_data)
+  assert_true(yaml_string.contains("name: azimuth_test"))
+  assert_true(yaml_string.contains("version: 1.0.0"))
+  
+  // Test YAML deserialization
+  let yaml_deserialized = YamlSerializer::deserialize(yaml_string)
+  assert_eq(yaml_deserialized.name, "azimuth_test")
+  assert_eq(yaml_deserialized.version, "1.0.0")
+}
+
+// Test 4: Error Recovery and Fault Tolerance
+test "error recovery and fault tolerance operations" {
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new(
+    failure_threshold = 5,
+    recovery_timeout = 10000,
+    expected_exception = "NetworkException"
+  )
+  
+  // Initially closed
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "CLOSED")
+  
+  // Simulate failures
+  for i in 0..3 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() {
+      throw NetworkException("Connection failed")
+    })
+    assert_true(result.is_error)
+    assert_eq(CircuitBreaker::get_state(circuit_breaker), "CLOSED")
+  }
+  
+  // More failures to trip the circuit
+  for i in 0..3 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() {
+      throw NetworkException("Connection failed")
+    })
+    assert_true(result.is_error)
+  }
+  
+  // Circuit should be open now
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "OPEN")
+  
+  // Requests should fail immediately without execution
+  let quick_fail_result = CircuitBreaker::execute(circuit_breaker, fn() {
+    "This should not execute"
+  })
+  assert_true(quick_fail_result.is_error)
+  assert_true(quick_fail_result.error.contains("Circuit breaker is open"))
+  
+  // Test retry mechanism with exponential backoff
+  let retry_policy = RetryPolicy::exponential_backoff(
+    max_attempts = 5,
+    initial_delay = 100,
+    max_delay = 5000,
+    multiplier = 2.0
+  )
+  
+  let attempt_count = { mut count: 0 }
+  
+  let retry_result = RetryPolicy::execute(retry_policy, fn() {
+    attempt_count.count = attempt_count.count + 1
+    if attempt_count.count < 3 {
+      throw TemporaryException("Temporary failure")
+    }
+    "Success after retries"
+  })
+  
+  assert_true(retry_result.is_success)
+  assert_eq(retry_result.value, "Success after retries")
+  assert_eq(attempt_count.count, 3)
+  
+  // Test timeout with fallback
+  let timeout_with_fallback = TimeoutPolicy::with_fallback(
+    timeout_ms = 1000,
+    fallback_fn = fn() { "Fallback result" }
+  )
+  
+  let slow_result = timeout_with_fallback.execute(fn() {
+    TimeUtil::sleep(2000)  // Sleep for 2 seconds
+    "Slow operation result"
+  })
+  
+  assert_eq(slow_result, "Fallback result")
+  
+  // Test bulkhead pattern
+  let bulkhead = Bulkhead::new(
+    max_concurrent = 3,
+    max_queue = 10
+  )
+  
+  let results = []
+  let threads = []
+  
+  // Submit tasks that exceed bulkhead capacity
+  for i in 0..10 {
+    let thread = ThreadUtil::spawn(() -> {
+      Bulkhead::execute(bulkhead, fn() {
+        TimeUtil::sleep(500)  // Simulate work
+        return "Task " + i.to_string()
+      })
+    })
+    ArrayUtil::push(threads, thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    let result = ThreadUtil::join(thread)
+    ArrayUtil::push(results, result)
+  }
+  
+  // Some tasks should succeed, others should be rejected
+  let success_count = ArrayUtil::count(results, fn(r) { r.is_success })
+  let rejection_count = ArrayUtil::count(results, fn(r) { r.is_error })
+  
+  assert_true(success_count <= 3)  // At most 3 concurrent executions
+  assert_true(rejection_count > 0)  // Some should be rejected
+}
+
+// Test 5: Performance Benchmarking
+test "performance benchmarking operations" {
+  // Test CPU benchmarking
+  let cpu_benchmark = CPUBenchmark::new()
+  
+  let benchmark_start = TimeUtil::current_time_millis()
+  let cpu_result = CPUBenchmark::run_compute_intensive(cpu_benchmark, 1000000)
+  let benchmark_duration = TimeUtil::current_time_millis() - benchmark_start
+  
+  assert_true(cpu_result.score > 0)
+  assert_true(benchmark_duration > 0)
+  
+  // Test memory benchmarking
+  let memory_benchmark = MemoryBenchmark::new()
+  
+  let memory_result = MemoryBenchmark::run_allocation_test(memory_benchmark, 10000, 1024)
+  assert_true(memory_result.allocation_rate > 0)
+  assert_true(memory_result.deallocation_rate > 0)
+  assert_eq(memory_result.allocated_bytes, 10000 * 1024)
+  
+  // Test I/O benchmarking
+  let io_benchmark = IOBenchmark::new()
+  
+  let io_result = IOBenchmark::run_file_io_test(io_benchmark, "/tmp/test_file", 1024 * 1024)
+  assert_true(io_result.write_speed > 0)
+  assert_true(io_result.read_speed > 0)
+  assert_eq(io_result.bytes_written, 1024 * 1024)
+  assert_eq(io_result.bytes_read, 1024 * 1024)
+  
+  // Test network benchmarking
+  let network_benchmark = NetworkBenchmark::new()
+  
+  let network_result = NetworkBenchmark::run_latency_test(network_benchmark, "https://www.google.com", 10)
+  assert_true(network_result.average_latency > 0)
+  assert_eq(network_result.request_count, 10)
+  assert_true(network_result.success_rate > 0.5)  // At least 50% success rate
+  
+  // Test database benchmarking
+  let db_benchmark = DatabaseBenchmark::new()
+  
+  let db_result = DatabaseBenchmark::run_crud_test(db_benchmark, "test_table", 1000)
+  assert_true(db_result.insert_rate > 0)
+  assert_true(db_result.select_rate > 0)
+  assert_true(db_result.update_rate > 0)
+  assert_true(db_result.delete_rate > 0)
+  
+  // Test algorithm benchmarking
+  let algo_benchmark = AlgorithmBenchmark::new()
+  
+  let sort_data = ArrayUtil::shuffle(ArrayUtil::range(1, 10000))
+  
+  let quicksort_result = AlgorithmBenchmark::run_sort_test(algo_benchmark, "quicksort", sort_data)
+  let mergesort_result = AlgorithmBenchmark::run_sort_test(algo_benchmark, "mergesort", sort_data)
+  let heapsort_result = AlgorithmBenchmark::run_sort_test(algo_benchmark, "heapsort", sort_data)
+  
+  assert_true(quicksort_result.execution_time > 0)
+  assert_true(mergesort_result.execution_time > 0)
+  assert_true(heapsort_result.execution_time > 0)
+  
+  // Verify all sorts produce correct results
+  assert_eq(quicksort_result.output.length(), sort_data.length())
+  assert_true(ArrayUtil::is_sorted(quicksort_result.output))
+  
+  assert_eq(mergesort_result.output.length(), sort_data.length())
+  assert_true(ArrayUtil::is_sorted(mergesort_result.output))
+  
+  assert_eq(heapsort_result.output.length(), sort_data.length())
+  assert_true(ArrayUtil::is_sorted(heapsort_result.output))
+  
+  // Test performance regression detection
+  let baseline_metrics = {
+    cpu_score: 1000,
+    memory_bandwidth: 5000,
+    io_throughput: 100,
+    network_latency: 50,
+    database_ops: 1000
+  }
+  
+  let current_metrics = {
+    cpu_score: cpu_result.score,
+    memory_bandwidth: memory_result.allocation_rate,
+    io_throughput: io_result.write_speed,
+    network_latency: network_result.average_latency,
+    database_ops: db_result.insert_rate
+  }
+  
+  let regression_report = PerformanceAnalyzer::detect_regressions(baseline_metrics, current_metrics)
+  
+  // Check for significant regressions (>20% degradation)
+  assert_true(regression_report.cpu_regression < 0.2)
+  assert_true(regression_report.memory_regression < 0.2)
+  assert_true(regression_report.io_regression < 0.2)
+  assert_true(regression_report.network_regression < 0.2)
+  assert_true(regression_report.database_regression < 0.2)
+}
+
+// Test 6: Security and Cryptography
+test "security and cryptography operations" {
+  // Test hash functions
+  let test_string = "azimuth_telemetry_test_data"
+  
+  let md5_hash = HashUtil::md5(test_string)
+  assert_eq(md5_hash.length(), 32)
+  
+  let sha1_hash = HashUtil::sha1(test_string)
+  assert_eq(sha1_hash.length(), 40)
+  
+  let sha256_hash = HashUtil::sha256(test_string)
+  assert_eq(sha256_hash.length(), 64)
+  
+  let sha512_hash = HashUtil::sha512(test_string)
+  assert_eq(sha512_hash.length(), 128)
+  
+  // Test hash verification
+  assert_true(HashUtil::verify_md5(test_string, md5_hash))
+  assert_true(HashUtil::verify_sha256(test_string, sha256_hash))
+  assert_false(HashUtil::verify_sha256(test_string, "invalid_hash"))
+  
+  // Test symmetric encryption
+  let encryption_key = EncryptionUtil::generate_key(256)  // 256-bit key
+  let plaintext = "Sensitive telemetry data"
+  
+  let encrypted_data = EncryptionUtil::encrypt_aes256(plaintext, encryption_key)
+  assert_true(encrypted_data.length() > 0)
+  assert_false(encrypted_data.contains("Sensitive"))
+  
+  let decrypted_data = EncryptionUtil::decrypt_aes256(encrypted_data, encryption_key)
+  assert_eq(decrypted_data, plaintext)
+  
+  // Test with wrong key
+  let wrong_key = EncryptionUtil::generate_key(256)
+  let decrypt_with_wrong_key = try {
+    EncryptionUtil::decrypt_aes256(encrypted_data, wrong_key)
+  } catch {
+    _ => "decryption_failed"
+  }
+  assert_eq(decrypt_with_wrong_key, "decryption_failed")
+  
+  // Test asymmetric encryption
+  let key_pair = EncryptionUtil::generate_rsa_key_pair(2048)
+  let public_key = key_pair.public_key
+  let private_key = key_pair.private_key
+  
+  let rsa_encrypted = EncryptionUtil::encrypt_rsa(plaintext, public_key)
+  let rsa_decrypted = EncryptionUtil::decrypt_rsa(rsa_encrypted, private_key)
+  assert_eq(rsa_decrypted, plaintext)
+  
+  // Test digital signatures
+  let message = "Important telemetry report"
+  let signature = SignatureUtil::sign(message, private_key)
+  
+  assert_true(SignatureUtil::verify(message, signature, public_key))
+  assert_false(SignatureUtil::verify("Tampered message", signature, public_key))
+  
+  // Test certificate operations
+  let certificate = CertificateUtil::generate_self_signed(
+    common_name = "azimuth.example.com",
+    organization = "Azimuth Telemetry",
+    valid_days = 365
+  )
+  
+  assert_true(CertificateUtil::is_valid(certificate))
+  assert_eq(CertificateUtil::get_subject(certificate), "CN=azimuth.example.com, O=Azimuth Telemetry")
+  
+  let expired_certificate = CertificateUtil::generate_expired(
+    common_name = "expired.example.com",
+    organization = "Azimuth Telemetry"
+  )
+  
+  assert_false(CertificateUtil::is_valid(expired_certificate))
+  
+  // Test secure random generation
+  let random_bytes = SecureRandom::generate_bytes(32)
+  assert_eq(random_bytes.length(), 32)
+  
+  let random_string = SecureRandom::generate_string(16, "alphanumeric")
+  assert_eq(random_string.length(), 16)
+  assert_true(random_string.matches("^[a-zA-Z0-9]+$"))
+  
+  // Test password hashing
+  let password = "secure_password_123"
+  let password_hash = PasswordUtil::hash(password)
+  
+  assert_true(PasswordUtil::verify(password, password_hash))
+  assert_false(PasswordUtil::verify("wrong_password", password_hash))
+  
+  // Test token generation and validation
+  let token_payload = {
+    user_id: "user123",
+    permissions: ["read", "write"],
+    expires_at: TimeUtil::current_time() + 3600
+  }
+  
+  let jwt_token = TokenUtil::generate_jwt(token_payload, "secret_key")
+  assert_true(jwt_token.length() > 0)
+  
+  let decoded_payload = TokenUtil::verify_jwt(jwt_token, "secret_key")
+  assert_eq(decoded_payload.user_id, "user123")
+  assert_eq(decoded_payload.permissions.length(), 2)
+  
+  // Test with wrong secret
+  let verify_with_wrong_secret = try {
+    TokenUtil::verify_jwt(jwt_token, "wrong_secret")
+  } catch {
+    _ => { user_id: "invalid" }
+  }
+  assert_eq(verify_with_wrong_secret.user_id, "invalid")
+}
+
+// Test 7: Data Validation and Transformation
+test "data validation and transformation operations" {
+  // Test data validation rules
+  let validation_rules = ValidationRules::new()
+  
+  // Add validation rules
+  ValidationRules::add_rule(validation_rules, "name", ValidationRule::required())
+  ValidationRules::add_rule(validation_rules, "name", ValidationRule::min_length(3))
+  ValidationRules::add_rule(validation_rules, "name", ValidationRule::max_length(50))
+  
+  ValidationRules::add_rule(validation_rules, "age", ValidationRule::required())
+  ValidationRules::add_rule(validation_rules, "age", ValidationRule::min_value(0))
+  ValidationRules::add_rule(validation_rules, "age", ValidationRule::max_value(150))
+  
+  ValidationRules::add_rule(validation_rules, "email", ValidationRule::email())
+  ValidationRules::add_rule(validation_rules, "email", ValidationRule::required())
+  
+  // Test valid data
+  let valid_data = {
+    name: "John Doe",
+    age: 30,
+    email: "john.doe@example.com"
+  }
+  
+  let valid_result = ValidationRules::validate(validation_rules, valid_data)
+  assert_true(valid_result.is_valid)
+  assert_eq(valid_result.errors.length(), 0)
+  
+  // Test invalid data
+  let invalid_data = {
+    name: "Jo",  // Too short
+    age: 200,    // Too high
+    email: "invalid-email"
+  }
+  
+  let invalid_result = ValidationRules::validate(validation_rules, invalid_data)
+  assert_false(invalid_result.is_valid)
+  assert_eq(invalid_result.errors.length(), 3)
+  assert_true(invalid_result.errors.some(fn(e) { e.contains("name") && e.contains("minimum length") }))
+  assert_true(invalid_result.errors.some(fn(e) { e.contains("age") && e.contains("maximum value") }))
+  assert_true(invalid_result.errors.some(fn(e) { e.contains("email") && e.contains("valid email") }))
+  
+  // Test data transformation
+  let transformation_pipeline = TransformationPipeline::new()
+  
+  // Add transformations
+  TransformationPipeline::add_step(transformation_pipeline, "trim", TransformStep::trim_strings())
+  TransformationPipeline::add_step(transformation_pipeline, "normalize", TransformStep::normalize_case())
+  TransformationPipeline::add_step(transformation_pipeline, "sanitize", TransformStep::sanitize_html())
+  
+  let raw_data = {
+    name: "  John Doe  ",
+    email: "  JOHN.DOE@EXAMPLE.COM  ",
+    bio: "<script>alert('xss')</script>Hello World!"
+  }
+  
+  let transformed_data = TransformationPipeline::process(transformation_pipeline, raw_data)
+  assert_eq(transformed_data.name, "John Doe")
+  assert_eq(transformed_data.email, "john.doe@example.com")
+  assert_eq(transformed_data.bio, "Hello World!")
+  
+  // Test data normalization
+  let address_normalizer = AddressNormalizer::new()
+  
+  let raw_address = {
+    street: " 123 Main St. ",
+    city: "New York",
+    state: "NY",
+    zip_code: "10001",
+    country: "USA"
+  }
+  
+  let normalized_address = AddressNormalizer::normalize(address_normalizer, raw_address)
+  assert_eq(normalized_address.street, "123 Main Street")
+  assert_eq(normalized_address.city, "New York")
+  assert_eq(normalized_address.state, "NY")
+  assert_eq(normalized_address.zip_code, "10001")
+  assert_eq(normalized_address.country, "United States")
+  
+  // Test phone number normalization
+  let phone_normalizer = PhoneNormalizer::new()
+  
+  let raw_phone_numbers = [
+    "+1 (555) 123-4567",
+    "555.123.4567",
+    "5551234567",
+    "(555) 123-4567 ext. 123"
+  ]
+  
+  let normalized_phones = ArrayUtil::map(raw_phone_numbers, fn(p) {
+    PhoneNormalizer::normalize(phone_normalizer, p, "US")
+  })
+  
+  assert_eq(normalized_phones[0], "+15551234567")
+  assert_eq(normalized_phones[1], "+15551234567")
+  assert_eq(normalized_phones[2], "+15551234567")
+  assert_eq(normalized_phones[3], "+15551234567")
+  
+  // Test data deduplication
+  let deduplicator = DataDeduplicator::new()
+  
+  let duplicate_records = [
+    {id: 1, name: "John Doe", email: "john@example.com"},
+    {id: 2, name: "John Doe", email: "john@example.com"},
+    {id: 3, name: "Jane Smith", email: "jane@example.com"},
+    {id: 4, name: "J. Smith", email: "jane@example.com"}  // Similar but not exact
+  ]
+  
+  let deduplicated = DataDeduplicator::deduplicate(deduplicator, duplicate_records, ["email"])
+  assert_eq(deduplicated.length(), 2)  // Two unique emails
+  
+  // Test fuzzy matching
+  let fuzzy_matcher = FuzzyMatcher::new()
+  
+  let similarity = FuzzyMatcher::similarity(fuzzy_matcher, "John Doe", "Jon Doe")
+  assert_true(similarity > 0.8)  // High similarity
+  
+  let match_result = FuzzyMatcher::find_best_match(fuzzy_matcher, "Jane Smith", ["John Doe", "Jane Smith", "Bob Johnson"])
+  assert_eq(match_result.match, "Jane Smith")
+  assert_true(match_result.score > 0.9)
+}
+
+// Test 8: Event Processing and Pub/Sub
+test "event processing and pub/sub operations" {
+  // Test event bus
+  let event_bus = EventBus::new()
+  
+  // Test event subscription
+  let received_events = []
+  
+  let subscription1 = EventBus::subscribe(event_bus, "user.created", fn(event) {
+    ArrayUtil::push(received_events, ("user.created", event.data))
+  })
+  
+  let subscription2 = EventBus::subscribe(event_bus, "user.*", fn(event) {
+    ArrayUtil::push(received_events, ("user.*", event.data))
+  })
+  
+  // Test event publishing
+  let user_event = {
+    user_id: "user123",
+    name: "John Doe",
+    email: "john@example.com",
+    timestamp: TimeUtil::current_time()
+  }
+  
+  EventBus::publish(event_bus, "user.created", user_event)
+  
+  // Verify events were received
+  assert_eq(received_events.length(), 2)
+  assert_eq(received_events[0], ("user.created", user_event))
+  assert_eq(received_events[1], ("user.*", user_event))
+  
+  // Test event filtering
+  let filtered_events = []
+  
+  let filter_subscription = EventBus::subscribe_with_filter(event_bus, "metrics.*", fn(event) {
+    ArrayUtil::push(filtered_events, event)
+  }, fn(event) {
+    event.data.value > 100  // Only accept metrics with value > 100
+  })
+  
+  EventBus::publish(event_bus, "metrics.cpu", {value: 80, timestamp: TimeUtil::current_time()})
+  EventBus::publish(event_bus, "metrics.memory", {value: 150, timestamp: TimeUtil::current_time()})
+  
+  // Only the second event should pass the filter
+  assert_eq(filtered_events.length(), 1)
+  assert_eq(filtered_events[0].data.value, 150)
+  
+  // Test event transformation
+  let transformed_events = []
+  
+  let transform_subscription = EventBus::subscribe_with_transform(event_bus, "raw.*", fn(event) {
+    ArrayUtil::push(transformed_events, event)
+  }, fn(event) {
+    {
+      type: event.type,
+      data: {
+        original: event.data,
+        processed: true,
+        processed_at: TimeUtil::current_time()
+      },
+      metadata: event.metadata
+    }
+  })
+  
+  EventBus::publish(event_bus, "raw.telemetry", {sensor_id: "temp-001", reading: 25.5})
+  
+  assert_eq(transformed_events.length(), 1)
+  assert_eq(transformed_events[0].data.original.sensor_id, "temp-001")
+  assert_true(transformed_events[0].data.processed)
+  assert_true(transformed_events[0].data.processed_at > 0)
+  
+  // Test event aggregation
+  let event_aggregator = EventAggregator::new()
+  
+  EventAggregator::add_aggregation_rule(event_aggregator, "metrics.cpu", AggregationRule::average(10))
+  EventAggregator::add_aggregation_rule(event_aggregator, "metrics.memory", AggregationRule::sum(5))
+  
+  // Publish multiple events
+  for i in 0..15 {
+    EventBus::publish(event_bus, "metrics.cpu", {value: 50 + i, timestamp: TimeUtil::current_time()})
+  }
+  
+  for i in 0..8 {
+    EventBus::publish(event_bus, "metrics.memory", {value: 100 + i * 10, timestamp: TimeUtil::current_time()})
+  }
+  
+  // Get aggregated results
+  let cpu_average = EventAggregator::get_aggregated_value(event_aggregator, "metrics.cpu")
+  let memory_sum = EventAggregator::get_aggregated_value(event_aggregator, "metrics.memory")
+  
+  assert_true(cpu_average > 50 && cpu_average < 65)  // Average of values 50-64
+  assert_eq(memory_sum, 100 + 110 + 120 + 130 + 140)  // Sum of first 5 values
+  
+  // Test event persistence
+  let event_store = EventStore::new()
+  
+  let stored_event_id = EventStore::store(event_store, {
+    type: "order.created",
+    data: {order_id: "order-123", amount: 99.99},
+    metadata: {source: "web", version: "1.0"}
+  })
+  
+  assert_true(stored_event_id.length() > 0)
+  
+  let retrieved_event = EventStore::get(event_store, stored_event_id)
+  assert_eq(retrieved_event.type, "order.created")
+  assert_eq(retrieved_event.data.order_id, "order-123")
+  assert_eq(retrieved_event.data.amount, 99.99)
+  
+  // Test event replay
+  let replay_events = []
+  
+  EventStore::replay(event_store, "order.*", fn(event) {
+    ArrayUtil::push(replay_events, event)
+  })
+  
+  assert_eq(replay_events.length(), 1)
+  assert_eq(replay_events[0].type, "order.created")
+  
+  // Clean up subscriptions
+  EventBus::unsubscribe(event_bus, subscription1)
+  EventBus::unsubscribe(event_bus, subscription2)
+  EventBus::unsubscribe(event_bus, filter_subscription)
+  EventBus::unsubscribe(event_bus, transform_subscription)
+}
+
+// Test 9: Caching Mechanisms
+test "caching mechanisms operations" {
+  // Test in-memory cache
+  let memory_cache = MemoryCache::new(max_size = 100)
+  
+  // Test cache put and get
+  MemoryCache::put(memory_cache, "key1", "value1")
+  MemoryCache::put(memory_cache, "key2", "value2")
+  MemoryCache::put(memory_cache, "key3", "value3")
+  
+  assert_eq(MemoryCache::get(memory_cache, "key1"), Some("value1"))
+  assert_eq(MemoryCache::get(memory_cache, "key2"), Some("value2"))
+  assert_eq(MemoryCache::get(memory_cache, "key3"), Some("value3"))
+  assert_eq(MemoryCache::get(memory_cache, "nonexistent"), None)
+  
+  // Test cache size limits
+  for i in 0..150 {
+    MemoryCache::put(memory_cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  assert_eq(MemoryCache::size(memory_cache), 100)  // Should be limited to max_size
+  
+  // Test LRU eviction
+  assert_eq(MemoryCache::get(memory_cache, "key1"), None)  // Should be evicted
+  assert_eq(MemoryCache::get(memory_cache, "key150"), Some("value150"))  // Should still be there
+  
+  // Test TTL-based cache
+  let ttl_cache = TTLCache::new(default_ttl = 1000)  // 1 second TTL
+  
+  TTLCache::put(ttl_cache, "temp_key", "temp_value", 500)  // 500ms TTL
+  assert_eq(TTLCache::get(ttl_cache, "temp_key"), Some("temp_value"))
+  
+  TimeUtil::sleep(600)  // Wait for expiration
+  assert_eq(TTLCache::get(ttl_cache, "temp_key"), None)  // Should be expired
+  
+  // Test distributed cache
+  let distributed_cache = DistributedCache::new("redis://localhost:6379")
+  
+  DistributedCache::put(distributed_cache, "distributed_key1", "distributed_value1")
+  DistributedCache::put(distributed_cache, "distributed_key2", "distributed_value2")
+  
+  assert_eq(DistributedCache::get(distributed_cache, "distributed_key1"), Some("distributed_value1"))
+  assert_eq(DistributedCache::get(distributed_cache, "distributed_key2"), Some("distributed_value2"))
+  
+  // Test cache warming
+  let cache_warmer = CacheWarmer::new(memory_cache)
+  
+  CacheWarmer::add_warming_rule(cache_warmer, "user.*", fn(key_pattern) {
+    // Simulate loading user data
+    [
+      ("user.1", {name: "User 1", email: "user1@example.com"}),
+      ("user.2", {name: "User 2", email: "user2@example.com"}),
+      ("user.3", {name: "User 3", email: "user3@example.com"})
+    ]
+  })
+  
+  CacheWarmer::warm(cache_warmer, "user.*")
+  
+  assert_eq(MemoryCache::get(memory_cache, "user.1"), Some({name: "User 1", email: "user1@example.com"}))
+  assert_eq(MemoryCache::get(memory_cache, "user.2"), Some({name: "User 2", email: "user2@example.com"}))
+  assert_eq(MemoryCache::get(memory_cache, "user.3"), Some({name: "User 3", email: "user3@example.com"}))
+  
+  // Test cache invalidation
+  let invalidation_cache = MemoryCache::new(100)
+  
+  MemoryCache::put(invalidation_cache, "user.1", {name: "User 1", email: "user1@example.com"})
+  MemoryCache::put(invalidation_cache, "user.1.profile", {age: 30, city: "New York"})
+  MemoryCache::put(invalidation_cache, "user.1.settings", {theme: "dark", notifications: true})
+  
+  // Invalidate all user.1 related keys
+  MemoryCache::invalidate_pattern(invalidation_cache, "user.1*")
+  
+  assert_eq(MemoryCache::get(invalidation_cache, "user.1"), None)
+  assert_eq(MemoryCache::get(invalidation_cache, "user.1.profile"), None)
+  assert_eq(MemoryCache::get(invalidation_cache, "user.1.settings"), None)
+  
+  // Test cache statistics
+  let stats_cache = MemoryCache::new(100)
+  
+  // Perform some operations
+  MemoryCache::put(stats_cache, "stats_key1", "stats_value1")
+  MemoryCache::get(stats_cache, "stats_key1")  // Hit
+  MemoryCache::get(stats_cache, "stats_key1")  // Hit
+  MemoryCache::get(stats_cache, "nonexistent")  // Miss
+  
+  let stats = MemoryCache::get_statistics(stats_cache)
+  assert_eq(stats.hits, 2)
+  assert_eq(stats.misses, 1)
+  assert_eq(stats.hit_rate, 2.0 / 3.0)  // 2 hits out of 3 total requests
+  
+  // Test multi-level cache
+  let l1_cache = MemoryCache::new(50)  // L1: Small, fast cache
+  let l2_cache = MemoryCache::new(200)  // L2: Larger, slower cache
+  let multi_cache = MultiLevelCache::new([l1_cache, l2_cache])
+  
+  MultiLevelCache::put(multi_cache, "ml_key1", "ml_value1")
+  
+  // First access - should populate L1 and L2
+  assert_eq(MultiLevelCache::get(multi_cache, "ml_key1"), Some("ml_value1"))
+  
+  // Clear L1 to simulate eviction
+  MemoryCache::clear(l1_cache)
+  
+  // Second access - should get from L2 and repopulate L1
+  assert_eq(MultiLevelCache::get(multi_cache, "ml_key1"), Some("ml_value1"))
+  
+  // Verify L1 is repopulated
+  assert_eq(MemoryCache::get(l1_cache, "ml_key1"), Some("ml_value1"))
+}
+
+// Test 10: Logging and Monitoring
+test "logging and monitoring operations" {
+  // Test logger configuration
+  let logger_config = LoggerConfig::new()
+  LoggerConfig::set_level(logger_config, "INFO")
+  LoggerConfig::add_appender(logger_config, ConsoleAppender::new())
+  LoggerConfig::add_appender(logger_config, FileAppender::new("/tmp/azimuth_test.log"))
+  
+  let logger = Logger::new(logger_config)
+  
+  // Test different log levels
+  Logger::trace(logger, "This is a trace message")
+  Logger::debug(logger, "This is a debug message")
+  Logger::info(logger, "This is an info message")
+  Logger::warn(logger, "This is a warning message")
+  Logger::error(logger, "This is an error message")
+  Logger::fatal(logger, "This is a fatal message")
+  
+  // Test structured logging
+  Logger::info_structured(logger, "User action", {
+    user_id: "user123",
+    action: "login",
+    ip_address: "192.168.1.100",
+    timestamp: TimeUtil::current_time()
+  })
+  
+  // Test log filtering
+  let filter_logger = Logger::with_filter(logger, fn(record) {
+    record.level >= "WARN" || record.message.contains("IMPORTANT")
+  })
+  
+  Logger::debug(filter_logger, "This debug message should be filtered out")
+  Logger::warn(filter_logger, "This warning should pass through")
+  Logger::info(filter_logger, "IMPORTANT: This info should pass through")
+  
+  // Test metrics collection
+  let metrics_collector = MetricsCollector::new()
+  
+  // Register metrics
+  let counter_metric = MetricsCollector::register_counter(metrics_collector, "requests.total")
+  let gauge_metric = MetricsCollector::register_gauge(metrics_collector, "memory.usage")
+  let histogram_metric = MetricsCollector::register_histogram(metrics_collector, "response.time")
+  
+  // Record metrics
+  MetricsCollector::increment_counter(counter_metric)
+  MetricsCollector::increment_counter(counter_metric, 5)  // Increment by 5
+  MetricsCollector::set_gauge(gauge_metric, 1024)
+  MetricsCollector::record_histogram(histogram_metric, 150)
+  MetricsCollector::record_histogram(histogram_metric, 200)
+  MetricsCollector::record_histogram(histogram_metric, 100)
+  
+  // Get metric values
+  assert_eq(MetricsCollector::get_counter_value(counter_metric), 6)
+  assert_eq(MetricsCollector::get_gauge_value(gauge_metric), 1024)
+  
+  let histogram_stats = MetricsCollector::get_histogram_stats(histogram_metric)
+  assert_eq(histogram_stats.count, 3)
+  assert_eq(histogram_stats.sum, 450)
+  assert_eq(histogram_stats.min, 100)
+  assert_eq(histogram_stats.max, 200)
+  assert_eq(histogram_stats.average, 150)
+  
+  // Test health checks
+  let health_checker = HealthChecker::new()
+  
+  // Add health checks
+  HealthChecker::add_check(health_checker, "database", fn() {
+    // Simulate database connectivity check
+    HealthStatus::healthy("Database is responding normally")
+  })
+  
+  HealthChecker::add_check(health_checker, "redis", fn() {
+    // Simulate Redis connectivity check
+    HealthStatus::healthy("Redis is responding normally")
+  })
+  
+  HealthChecker::add_check(health_checker, "external_api", fn() {
+    // Simulate external API check that fails
+    HealthStatus::unhealthy("External API is not responding")
+  })
+  
+  let health_status = HealthChecker::check_all(health_checker)
+  assert_false(health_status.overall_healthy)  // One check is unhealthy
+  assert_eq(health_status.checks.length(), 3)
+  assert_true(health_status.checks["database"].healthy)
+  assert_true(health_status.checks["redis"].healthy)
+  assert_false(health_status.checks["external_api"].healthy)
+  
+  // Test alerting
   let alert_manager = AlertManager::new()
   
-  // 配置异常检测规则
-  let latency_rule = AnomalyRule::new("high.latency", AnomalyType::Threshold, {
-    "metric": "http.request.duration",
-    "threshold": 1000.0,  // 1秒
-    "operator": "greater_than",
-    "window": "5m"
-  })
-  
-  let error_rate_rule = AnomalyRule::new("high.error.rate", AnomalyType::Threshold, {
-    "metric": "http.errors.rate",
-    "threshold": 0.05,  // 5%
-    "operator": "greater_than",
-    "window": "10m"
-  })
-  
-  let pattern_rule = AnomalyRule::new("traffic.pattern", AnomalyType::Pattern, {
-    "metric": "http.requests.rate",
-    "pattern": "seasonal_anomaly",
-    "confidence": 0.95
-  })
-  
-  // 注册规则
-  AnomalyDetector::register_rule(anomaly_detector, latency_rule)
-  AnomalyDetector::register_rule(anomaly_detector, error_rate_rule)
-  AnomalyDetector::register_rule(anomaly_detector, pattern_rule)
-  
-  // 生成正常和异常数据
-  let normal_metrics = generate_normal_metrics(100)
-  let anomalous_metrics = generate_anomalous_metrics(50)
-  
-  // 处理正常数据
-  let normal_results = AnomalyDetector::process(anomaly_detector, normal_metrics)
-  assert_eq(normal_results.anomalies.length(), 0)
-  
-  // 处理异常数据
-  let anomalous_results = AnomalyDetector::process(anomaly_detector, anomalous_metrics)
-  assert_true(anomalous_results.anomalies.length() > 0)
-  
-  // 验证异常详情
-  let first_anomaly = anomalous_results.anomalies[0]
-  assert_true(first_anomaly.severity >= Severity::Medium)
-  assert_true(first_anomaly.confidence >= 0.8)
-  
-  // 触发警报
-  let alerts = AlertManager::create_alerts(alert_manager, anomalous_results.anomalies)
-  assert_eq(alerts.length(), anomalous_results.anomalies.length())
-  
-  // 验证警报内容
-  let first_alert = alerts[0]
-  assert_eq(first_alert.status, AlertStatus::Active)
-  assert_true(first_alert.message.length() > 0)
-  assert_true(first_alert.recommended_actions.length() > 0)
-}
-
-// 测试4: 跨服务一致性
-test "跨服务一致性测试" {
-  // 创建分布式一致性管理器
-  let consistency_manager = ConsistencyManager::new()
-  
-  // 模拟多个服务节点
-  let service_nodes = [
-    ServiceNode::new("payment-service", "node-1"),
-    ServiceNode::new("payment-service", "node-2"),
-    ServiceNode::new("payment-service", "node-3"),
-    ServiceNode::new("inventory-service", "node-1"),
-    ServiceNode::new("inventory-service", "node-2")
-  ]
-  
-  // 创建分布式事务
-  let transaction = DistributedTransaction::new("order-12345")
-  
-  // 添加事务参与者
-  for node in service_nodes {
-    DistributedTransaction::add_participant(transaction, node.id)
-  }
-  
-  // 准备阶段
-  let prepare_results = []
-  for node in service_nodes {
-    let result = ConsistencyManager::prepare(consistency_manager, transaction, node)
-    prepare_results = prepare_results.push(result)
-  }
-  
-  // 验证所有节点准备成功
-  assert_true(prepare_results.all(fn(r) { r.status == PrepareStatus::Ready }))
-  
-  // 提交阶段
-  let commit_results = []
-  for node in service_nodes {
-    let result = ConsistencyManager::commit(consistency_manager, transaction, node)
-    commit_results = commit_results.push(result)
-  }
-  
-  // 验证所有节点提交成功
-  assert_true(commit_results.all(fn(r) { r.status == CommitStatus::Committed }))
-  
-  // 验证数据一致性
-  let node_states = []
-  for node in service_nodes {
-    let state = ServiceNode::get_state(node, transaction.id)
-    node_states = node_states.push(state)
-  }
-  
-  // 检查所有节点状态一致
-  let first_state = node_states[0]
-  assert_true(node_states.all(fn(s) { DataComparator::equals(s, first_state) }))
-  
-  // 测试故障恢复
-  let failed_node = service_nodes[0]
-  ConsistencyManager::simulate_node_failure(consistency_manager, failed_node)
-  
-  // 恢复节点
-  let recovery_result = ConsistencyManager::recover_node(consistency_manager, failed_node, transaction)
-  assert_eq(recovery_result.status, RecoveryStatus::Successful)
-  
-  // 验证恢复后数据一致性
-  let recovered_state = ServiceNode::get_state(failed_node, transaction.id)
-  assert_true(DataComparator::equals(recovered_state, first_state))
-}
-
-// 测试5: 边界条件和错误处理
-test "边界条件和错误处理测试" {
-  // 测试空值处理
-  let empty_metrics = []
-  let empty_result = MetricsProcessor::process(empty_metrics)
-  assert_eq(empty_result.count, 0)
-  assert_eq(empty_result.errors.length(), 0)
-  
-  // 测试极大值处理
-  let max_value = 9223372036854775807  // Int64最大值
-  let large_metrics = [Metric::new("large.value", max_value)]
-  let large_result = MetricsProcessor::process(large_metrics)
-  assert_eq(large_result.count, 1)
-  assert_eq(large_result.errors.length(), 0)
-  
-  // 测试极小值处理
-  let min_value = -9223372036854775808  // Int64最小值
-  let small_metrics = [Metric::new("small.value", min_value)]
-  let small_result = MetricsProcessor::process(small_metrics)
-  assert_eq(small_result.count, 1)
-  assert_eq(small_result.errors.length(), 0)
-  
-  // 测试浮点数边界值
-  let float_inf = Float::infinity()
-  let float_neg_inf = Float::neg_infinity()
-  let float_nan = Float::nan()
-  
-  let float_metrics = [
-    Metric::new("float.inf", FloatValue(float_inf)),
-    Metric::new("float.neg.inf", FloatValue(float_neg_inf)),
-    Metric::new("float.nan", FloatValue(float_nan))
-  ]
-  
-  let float_result = MetricsProcessor::process(float_metrics)
-  assert_eq(float_result.count, 3)
-  assert_eq(float_result.warnings.length(), 3)  // 应该有警告
-  
-  // 测试字符串长度边界
-  let empty_string = ""
-  let long_string = "a".repeat(1000000)  // 1MB字符串
-  
-  let string_metrics = [
-    Metric::new("string.empty", StringValue(empty_string)),
-    Metric::new("string.long", StringValue(long_string))
-  ]
-  
-  let string_result = MetricsProcessor::process(string_metrics)
-  assert_eq(string_result.count, 2)
-  
-  // 测试网络连接错误处理
-  let invalid_endpoint = "http://invalid-endpoint-that-does-not-exist.com"
-  let client = HttpClient::new(invalid_endpoint)
-  let network_result = HttpClient::send_telemetry(client, generate_test_telemetry())
-  
-  assert_eq(network_result.status, NetworkStatus::Error)
-  assert_true(network_result.error_message.length() > 0)
-  
-  // 测试超时处理
-  let slow_endpoint = "http://httpbin.org/delay/10"  // 10秒延迟
-  let timeout_client = HttpClient::new_with_timeout(slow_endpoint, 1000)  // 1秒超时
-  let timeout_result = HttpClient::send_telemetry(timeout_client, generate_test_telemetry())
-  
-  assert_eq(timeout_result.status, NetworkStatus::Timeout)
-  assert_true(timeout_result.error_message.contains("timeout"))
-}
-
-// 测试6: 时间序列数据分析
-test "时间序列数据分析测试" {
-  // 创建时间序列数据生成器
-  let ts_generator = TimeSeriesGenerator::new()
-  
-  // 生成测试数据
-  let now = Timestamp::now()
-  let hourly_data = TimeSeriesGenerator::generate_hourly(ts_generator, now, 24)  // 24小时数据
-  let daily_data = TimeSeriesGenerator::generate_daily(ts_generator, now, 30)    // 30天数据
-  
-  // 验证数据生成
-  assert_eq(hourly_data.points.length(), 24)
-  assert_eq(daily_data.points.length(), 30)
-  
-  // 创建时间序列分析器
-  let analyzer = TimeSeriesAnalyzer::new()
-  
-  // 趋势分析
-  let hourly_trend = TimeSeriesAnalyzer::detect_trend(analyzer, hourly_data)
-  let daily_trend = TimeSeriesAnalyzer::detect_trend(analyzer, daily_data)
-  
-  assert_true(hourly_trend.direction != TrendDirection::Unknown)
-  assert_true(daily_trend.direction != TrendDirection::Unknown)
-  assert_true(hourly_trend.confidence >= 0.0 && hourly_trend.confidence <= 1.0)
-  assert_true(daily_trend.confidence >= 0.0 && daily_trend.confidence <= 1.0)
-  
-  // 季节性分析
-  let seasonality = TimeSeriesAnalyzer::detect_seasonality(analyzer, daily_data)
-  assert_true(seasonality.period > 0)
-  assert_true(seasonality.strength >= 0.0 && seasonality.strength <= 1.0)
-  
-  // 异常值检测
-  let anomalies = TimeSeriesAnalyzer::detect_anomalies(analyzer, hourly_data)
-  assert_true(anomalies.length() >= 0)
-  
-  // 预测分析
-  let forecast_horizon = 12  // 预测12小时
-  let forecast = TimeSeriesAnalyzer::forecast(analyzer, hourly_data, forecast_horizon)
-  assert_eq(forecast.points.length(), forecast_horizon)
-  
-  // 验证预测值的合理性
-  let last_actual = hourly_data.points[hourly_data.points.length() - 1].value
-  let first_predicted = forecast.points[0].value
-  
-  // 预测值不应该与实际值相差过大
-  let relative_diff = Float::abs(first_predicted - last_actual) / Float::abs(last_actual)
-  assert_true(relative_diff < 0.5)  // 相对差异小于50%
-  
-  // 聚合分析
-  let hourly_stats = TimeSeriesAnalyzer::calculate_statistics(analyzer, hourly_data)
-  let daily_stats = TimeSeriesAnalyzer::calculate_statistics(analyzer, daily_data)
-  
-  assert_true(hourly_stats.min <= hourly_stats.max)
-  assert_true(hourly_stats.mean >= hourly_stats.min && hourly_stats.mean <= hourly_stats.max)
-  assert_true(hourly_stats.stddev >= 0.0)
-  
-  assert_true(daily_stats.min <= daily_stats.max)
-  assert_true(daily_stats.mean >= daily_stats.min && daily_stats.mean <= daily_stats.max)
-  assert_true(daily_stats.stddev >= 0.0)
-}
-
-// 测试7: 内存管理和资源清理
-test "内存管理和资源清理测试" {
-  // 创建资源监控器
-  let resource_monitor = ResourceMonitor::new()
-  
-  // 记录初始内存使用
-  let initial_memory = ResourceMonitor::get_memory_usage(resource_monitor)
-  
-  // 创建大量临时对象
-  let temporary_objects = []
-  for i in 0..=10000 {
-    let obj = TemporaryObject::new(i)
-    temporary_objects = temporary_objects.push(obj)
-  }
-  
-  // 验证内存使用增加
-  let peak_memory = ResourceMonitor::get_memory_usage(resource_monitor)
-  assert_true(peak_memory.heap_used > initial_memory.heap_used)
-  
-  // 清理对象
-  TemporaryObject::cleanup_all(temporary_objects)
-  
-  // 强制垃圾回收
-  GarbageCollector::collect()
-  
-  // 验证内存释放
-  let final_memory = ResourceMonitor::get_memory_usage(resource_monitor)
-  let memory_reclaimed = peak_memory.heap_used - final_memory.heap_used
-  assert_true(memory_reclaimed > 0)
-  
-  // 测试资源泄漏检测
-  let leak_detector = ResourceLeakDetector::new()
-  
-  // 模拟资源泄漏
-  let leaked_resources = []
-  for i in 0..=100 {
-    let resource = Resource::new()
-    Resource::acquire(resource)  // 获取但不释放
-    leaked_resources = leaked_resources.push(resource)
-  }
-  
-  // 检测资源泄漏
-  let leaks = ResourceLeakDetector::detect_leaks(leak_detector)
-  assert_true(leaks.length() >= 100)
-  
-  // 清理泄漏的资源
-  for resource in leaked_resources {
-    Resource::release(resource)
-  }
-  
-  // 验证泄漏修复
-  let remaining_leaks = ResourceLeakDetector::detect_leaks(leak_detector)
-  assert_eq(remaining_leaks.length(), 0)
-  
-  // 测试连接池管理
-  let connection_pool = ConnectionPool::new(10)  // 最大10个连接
-  
-  // 获取连接
-  let connections = []
-  for i in 0..=15 {  // 尝试获取15个连接
-    let conn_result = ConnectionPool::acquire(connection_pool)
-    connections = connections.push(conn_result)
-  }
-  
-  // 验证连接池限制
-  let successful_connections = connections.filter(fn(c) { c.status == ConnectionStatus::Established })
-  assert_eq(successful_connections.length(), 10)
-  
-  // 释放连接
-  for conn in successful_connections {
-    ConnectionPool::release(connection_pool, conn)
-  }
-  
-  // 验证连接池状态
-  let pool_stats = ConnectionPool::get_stats(connection_pool)
-  assert_eq(pool_stats.active_connections, 0)
-  assert_eq(pool_stats.available_connections, 10)
-}
-
-// 测试8: 国际化和本地化支持
-test "国际化和本地化支持测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  
-  // 加载不同语言资源
-  I18nManager::load_language(i18n_manager, "en", "resources/locales/en.json")
-  I18nManager::load_language(i18n_manager, "zh", "resources/locales/zh.json")
-  I18nManager::load_language(i18n_manager, "ja", "resources/locales/ja.json")
-  I18nManager::load_language(i18n_manager, "es", "resources/locales/es.json")
-  
-  // 测试英文本地化
-  I18nManager::set_current_language(i18n_manager, "en")
-  let en_alert_title = I18nManager::translate(i18n_manager, "alert.title")
-  let en_error_message = I18nManager::translate(i18n_manager, "error.connection.failed")
-  let en_metric_name = I18nManager::translate(i18n_manager, "metric.http.requests")
-  
-  assert_eq(en_alert_title, "Alert")
-  assert_eq(en_error_message, "Connection failed")
-  assert_eq(en_metric_name, "HTTP Requests")
-  
-  // 测试中文本地化
-  I18nManager::set_current_language(i18n_manager, "zh")
-  let zh_alert_title = I18nManager::translate(i18n_manager, "alert.title")
-  let zh_error_message = I18nManager::translate(i18n_manager, "error.connection.failed")
-  let zh_metric_name = I18nManager::translate(i18n_manager, "metric.http.requests")
-  
-  assert_eq(zh_alert_title, "警报")
-  assert_eq(zh_error_message, "连接失败")
-  assert_eq(zh_metric_name, "HTTP请求")
-  
-  // 测试日文本地化
-  I18nManager::set_current_language(i18n_manager, "ja")
-  let ja_alert_title = I18nManager::translate(i18n_manager, "alert.title")
-  let ja_error_message = I18nManager::translate(i18n_manager, "error.connection.failed")
-  let ja_metric_name = I18nManager::translate(i18n_manager, "metric.http.requests")
-  
-  assert_eq(ja_alert_title, "アラート")
-  assert_eq(ja_error_message, "接続に失敗しました")
-  assert_eq(ja_metric_name, "HTTPリクエスト")
-  
-  // 测试西班牙语本地化
-  I18nManager::set_current_language(i18n_manager, "es")
-  let es_alert_title = I18nManager::translate(i18n_manager, "alert.title")
-  let es_error_message = I18nManager::translate(i18n_manager, "error.connection.failed")
-  let es_metric_name = I18nManager::translate(i18n_manager, "metric.http.requests")
-  
-  assert_eq(es_alert_title, "Alerta")
-  assert_eq(es_error_message, "Conexión fallida")
-  assert_eq(es_metric_name, "Solicitudes HTTP")
-  
-  // 测试参数化翻译
-  I18nManager::set_current_language(i18n_manager, "en")
-  let en_param_message = I18nManager::translate_with_params(
-    i18n_manager, 
-    "error.retry.attempt", 
-    [("attempt", "3"), ("max_attempts", "5")]
-  )
-  assert_eq(en_param_message, "Retry attempt 3 of 5")
-  
-  I18nManager::set_current_language(i18n_manager, "zh")
-  let zh_param_message = I18nManager::translate_with_params(
-    i18n_manager, 
-    "error.retry.attempt", 
-    [("attempt", "3"), ("max_attempts", "5")]
-  )
-  assert_eq(zh_param_message, "重试第3次，最多5次")
-  
-  // 测试复数形式
-  I18nManager::set_current_language(i18n_manager, "en")
-  let en_singular = I18nManager::translate_plural(i18n_manager, "metric.count", 1)
-  let en_plural = I18nManager::translate_plural(i18n_manager, "metric.count", 5)
-  
-  assert_eq(en_singular, "1 metric")
-  assert_eq(en_plural, "5 metrics")
-  
-  I18nManager::set_current_language(i18n_manager, "zh")
-  let zh_singular = I18nManager::translate_plural(i18n_manager, "metric.count", 1)
-  let zh_plural = I18nManager::translate_plural(i18n_manager, "metric.count", 5)
-  
-  assert_eq(zh_singular, "1个指标")
-  assert_eq(zh_plural, "5个指标")
-  
-  // 测试日期和时间格式化
-  let test_timestamp = Timestamp::from_string("2023-12-25T15:30:00Z")
-  
-  I18nManager::set_current_language(i18n_manager, "en")
-  let en_date = I18nManager::format_date(i18n_manager, test_timestamp)
-  let en_time = I18nManager::format_time(i18n_manager, test_timestamp)
-  let en_datetime = I18nManager::format_datetime(i18n_manager, test_timestamp)
-  
-  assert_eq(en_date, "December 25, 2023")
-  assert_eq(en_time, "3:30:00 PM")
-  assert_eq(en_datetime, "December 25, 2023 3:30:00 PM")
-  
-  I18nManager::set_current_language(i18n_manager, "zh")
-  let zh_date = I18nManager::format_date(i18n_manager, test_timestamp)
-  let zh_time = I18nManager::format_time(i18n_manager, test_timestamp)
-  let zh_datetime = I18nManager::format_datetime(i18n_manager, test_timestamp)
-  
-  assert_eq(zh_date, "2023年12月25日")
-  assert_eq(zh_time, "下午3:30:00")
-  assert_eq(zh_datetime, "2023年12月25日 下午3:30:00")
-  
-  // 测试数字格式化
-  let test_number = 1234567.89
-  
-  I18nManager::set_current_language(i18n_manager, "en")
-  let en_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(en_number, "1,234,567.89")
-  
-  I18nManager::set_current_language(i18n_manager, "zh")
-  let zh_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(zh_number, "1,234,567.89")
-  
-  I18nManager::set_current_language(i18n_manager, "de")  // 德语
-  let de_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(de_number, "1.234.567,89")
+  // Add alert rules
+  AlertManager::add_rule(alert_manager, AlertRule::threshold(
+    name = "high_error_rate",
+    metric = "error.rate",
+    threshold = 0.05,  // 5%
+    operator = "greater_than",
+    severity = "warning"
+  ))
+  
+  AlertManager::add_rule(alert_manager, AlertRule::threshold(
+    name = "service_down",
+    metric = "service.availability",
+    threshold = 0.99,  // 99%
+    operator = "less_than",
+    severity = "critical"
+  ))
+  
+  // Simulate metric values that trigger alerts
+  AlertManager::evaluate_metric(alert_manager, "error.rate", 0.08)  // Above 5% threshold
+  AlertManager::evaluate_metric(alert_manager, "service.availability", 0.95)  // Below 99% threshold
+  
+  let alerts = AlertManager::get_active_alerts(alert_manager)
+  assert_eq(alerts.length(), 2)
+  assert_true(alerts.some(fn(a) { a.name == "high_error_rate" && a.severity == "warning" }))
+  assert_true(alerts.some(fn(a) { a.name == "service_down" && a.severity == "critical" }))
+  
+  // Test tracing
+  let tracer = Tracer::new("azimuth_service")
+  
+  // Create a span
+  let parent_span = Tracer::start_span(tracer, "process_request")
+  Tracer::set_tag(parent_span, "http.method", "GET")
+  Tracer::set_tag(parent_span, "http.url", "/api/data")
+  
+  // Create child spans
+  let child_span1 = Tracer::start_child_span(parent_span, "database_query")
+  TimeUtil::sleep(50)  // Simulate work
+  Tracer::finish_span(child_span1)
+  
+  let child_span2 = Tracer::start_child_span(parent_span, "cache_lookup")
+  TimeUtil::sleep(20)  // Simulate work
+  Tracer::finish_span(child_span2)
+  
+  Tracer::finish_span(parent_span)
+  
+  // Test span context propagation
+  let span_context = Tracer::extract_context(tracer, parent_span)
+  let propagated_tracer = Tracer::new("downstream_service")
+  let propagated_span = Tracer::start_span_from_context(propagated_tracer, "downstream_processing", span_context)
+  
+  Tracer::set_tag(propagated_span, "service.name", "downstream_service")
+  Tracer::finish_span(propagated_span)
+  
+  // Verify trace relationship
+  assert_eq(Tracer::get_trace_id(parent_span), Tracer::get_trace_id(propagated_span))
+  assert_eq(Tracer::get_parent_span_id(propagated_span), Tracer::get_span_id(parent_span))
 }
