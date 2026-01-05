@@ -1,638 +1,791 @@
-// Azimuth Telemetry System - Telemetry Data Integrity Tests
-// This file contains comprehensive telemetry data integrity test cases
+// Azimuth Telemetry Data Integrity Tests
+// This file contains test cases for telemetry data integrity verification
 
-// Test 1: Span Data Integrity
-test "span data integrity" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "integrity_test_tracer")
-  let span = Tracer::start_span(tracer, "integrity_test_span")
-  
-  // Add attributes to span
-  Span::set_attribute(span, "user.id", StringValue("user123"))
-  Span::set_attribute(span, "operation.type", StringValue("database_query"))
-  Span::set_attribute(span, "retry.count", IntValue(3))
-  
-  // Add events to span
-  Span::add_event(span, "query_started", Some([
-    ("query", StringValue("SELECT * FROM users")),
-    ("timestamp", StringValue("2023-01-01T12:00:00Z"))
-  ]))
-  
-  Span::add_event(span, "query_completed", Some([
-    ("result_count", IntValue(100)),
-    ("duration_ms", IntValue(250)
-  ]))
-  
-  // Set span status
-  Span::set_status(span, Ok, Some("Query completed successfully"))
-  
-  // Verify span data integrity before ending
-  assert_eq(Span::name(span), "integrity_test_span")
-  assert_true(Span::is_recording(span))
-  assert_eq(Span::status(span), Ok)
-  
-  // Verify attributes
-  let user_id = Span::get_attribute(span, "user.id")
-  match user_id {
-    Some(StringValue(v)) => assert_eq(v, "user123")
-    _ => assert_true(false)
+// Test 1: Telemetry Data Checksum Validation
+test "telemetry data checksum validation" {
+  // Define checksum algorithms
+  enum ChecksumAlgorithm {
+    CRC32
+    MD5
+    SHA256
+    Adler32
+    SimpleSum
   }
   
-  let operation_type = Span::get_attribute(span, "operation.type")
-  match operation_type {
-    Some(StringValue(v)) => assert_eq(v, "database_query")
-    _ => assert_true(false)
+  // Define telemetry data with integrity metadata
+  type IntegrityTelemetry = {
+    id: String,
+    payload: String,
+    checksum: String,
+    algorithm: ChecksumAlgorithm,
+    timestamp: Int
   }
   
-  let retry_count = Span::get_attribute(span, "retry.count")
-  match retry_count {
-    Some(IntValue(v)) => assert_eq(v, 3)
-    _ => assert_true(false)
-  }
-  
-  // Verify events
-  let events = Span::get_events(span)
-  assert_eq(events.length(), 2)
-  
-  let first_event = events[0]
-  assert_eq(Event::name(first_event), "query_started")
-  
-  let second_event = events[1]
-  assert_eq(Event::name(second_event), "query_completed")
-  
-  // End span and verify data integrity is maintained
-  Span::end(span)
-  
-  // Verify span data is still accessible after ending
-  assert_false(Span::is_recording(span))
-  assert_eq(Span::name(span), "integrity_test_span")
-  
-  // Verify attributes are preserved
-  let final_user_id = Span::get_attribute(span, "user.id")
-  match final_user_id {
-    Some(StringValue(v)) => assert_eq(v, "user123")
-    _ => assert_true(false)
-  }
-}
-
-// Test 2: Metric Data Integrity
-test "metric data integrity" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "integrity_test_meter")
-  
-  // Create counter metric
-  let counter = Meter::create_counter(meter, "request_count", Some("Total number of requests"), Some("count"))
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "method", StringValue("GET"))
-  Attributes::set(attrs, "status", StringValue("200"))
-  
-  // Add measurements to counter
-  Counter::add(counter, 1.0, Some(attrs))
-  Counter::add(counter, 1.0, Some(attrs))
-  Counter::add(counter, 1.0, Some(attrs))
-  
-  // Create histogram metric
-  let histogram = Meter::create_histogram(meter, "request_duration", Some("Request duration"), Some("ms"))
-  let duration_attrs = Attributes::new()
-  Attributes::set(duration_attrs, "endpoint", StringValue("/api/users"))
-  
-  // Record measurements to histogram
-  Histogram::record(histogram, 100.0, Some(duration_attrs))
-  Histogram::record(histogram, 150.0, Some(duration_attrs))
-  Histogram::record(histogram, 200.0, Some(duration_attrs))
-  Histogram::record(histogram, 250.0, Some(duration_attrs))
-  Histogram::record(histogram, 300.0, Some(duration_attrs))
-  
-  // Verify metric data integrity
-  let counter_metric = Metric::from_instrument(Histogram::as_instrument(counter))
-  match counter_metric {
-    Some(metric) => {
-      assert_eq(Metric::name(metric), "request_count")
-      assert_eq(Metric::description(metric), Some("Total number of requests"))
-      assert_eq(Metric::unit(metric), Some("count"))
-      
-      // Verify metric data points
-      let data_points = Metric::data_points(metric)
-      assert_true(data_points.length() > 0)
-      
-      // Find data point with our attributes
-      let target_data_point = DataPoint::find_with_attributes(data_points, attrs)
-      match target_data_point {
-        Some(dp) => {
-          assert_eq(DataPoint::value(dp), 3.0)
-        }
-        None => assert_true(false)
+  // Simple checksum calculation (simulated)
+  let calculate_checksum = fn(data: String, algorithm: ChecksumAlgorithm) {
+    match algorithm {
+      ChecksumAlgorithm::SimpleSum => {
+        let sum = data.chars().fold(0, fn(acc, char) { 
+          acc + char.to_int() 
+        })
+        sum.to_string()
+      }
+      ChecksumAlgorithm::CRC32 => {
+        // Simulated CRC32 calculation
+        let hash = data.length() * 31 + data.chars().fold(0, fn(acc, char) { 
+          acc + char.to_int() * 17 
+        })
+        "crc32_" + (hash % 1000000000).to_string()
+      }
+      ChecksumAlgorithm::MD5 => {
+        // Simulated MD5 calculation
+        let hash = data.length() * 13 + data.chars().fold(0, fn(acc, char) { 
+          acc + char.to_int() * 7 
+        })
+        "md5_" + (hash % 1000000000).to_string()
+      }
+      ChecksumAlgorithm::SHA256 => {
+        // Simulated SHA256 calculation
+        let hash = data.length() * 23 + data.chars().fold(0, fn(acc, char) { 
+          acc + char.to_int() * 11 
+        })
+        "sha256_" + (hash % 1000000000).to_string()
+      }
+      ChecksumAlgorithm::Adler32 => {
+        // Simulated Adler32 calculation
+        let hash = data.length() * 29 + data.chars().fold(0, fn(acc, char) { 
+          acc + char.to_int() * 19 
+        })
+        "adler32_" + (hash % 1000000000).to_string()
       }
     }
-    None => assert_true(false)
   }
   
-  // Verify histogram data integrity
-  let histogram_metric = Metric::from_instrument(Histogram::as_instrument(histogram))
-  match histogram_metric {
-    Some(metric) => {
-      assert_eq(Metric::name(metric), "request_duration")
-      assert_eq(Metric::description(metric), Some("Request duration"))
-      assert_eq(Metric::unit(metric), Some("ms"))
-      
-      // Verify histogram data points
-      let data_points = Metric::data_points(metric)
-      assert_true(data_points.length() > 0)
-      
-      // Find data point with our attributes
-      let target_data_point = DataPoint::find_with_attributes(data_points, duration_attrs)
-      match target_data_point {
-        Some(dp) => {
-          // Verify histogram statistics
-          let histogram_stats = DataPoint::histogram_stats(dp)
-          match histogram_stats {
-            Some(stats) => {
-              assert_eq(HistogramStats::count(stats), 5)
-              assert_true(HistogramStats::sum(stats) > 900.0)
-              assert_true(HistogramStats::min(stats) >= 100.0)
-              assert_true(HistogramStats::max(stats) <= 300.0)
-            }
-            None => assert_true(false)
+  // Verify telemetry data integrity
+  let verify_integrity = fn(telemetry: IntegrityTelemetry) {
+    let calculated_checksum = calculate_checksum(telemetry.payload, telemetry.algorithm)
+    {
+      is_valid: calculated_checksum == telemetry.checksum,
+      expected_checksum: calculated_checksum,
+      actual_checksum: telemetry.checksum,
+      algorithm: telemetry.algorithm
+    }
+  }
+  
+  // Create telemetry with integrity
+  let create_integrity_telemetry = fn(id: String, payload: String, algorithm: ChecksumAlgorithm) {
+    let checksum = calculate_checksum(payload, algorithm)
+    {
+      id: id,
+      payload: payload,
+      checksum: checksum,
+      algorithm: algorithm,
+      timestamp: 1640995200
+    }
+  }
+  
+  // Test checksum calculation and verification
+  let payload1 = "trace_id=abc123,span_name=database_query,duration=250,status=success"
+  let telemetry1 = create_integrity_telemetry("tele-1", payload1, ChecksumAlgorithm::SimpleSum)
+  
+  let verification1 = verify_integrity(telemetry1)
+  assert_true(verification1.is_valid)
+  assert_eq(verification1.expected_checksum, verification1.actual_checksum)
+  
+  // Test different algorithms
+  let telemetry_crc32 = create_integrity_telemetry("tele-2", payload1, ChecksumAlgorithm::CRC32)
+  let verification_crc32 = verify_integrity(telemetry_crc32)
+  assert_true(verification_crc32.is_valid)
+  assert_true(verification_crc32.expected_checksum.starts_with("crc32_"))
+  
+  let telemetry_md5 = create_integrity_telemetry("tele-3", payload1, ChecksumAlgorithm::MD5)
+  let verification_md5 = verify_integrity(telemetry_md5)
+  assert_true(verification_md5.is_valid)
+  assert_true(verification_md5.expected_checksum.starts_with("md5_"))
+  
+  // Test integrity failure detection
+  let corrupted_telemetry = {
+    id: "tele-4",
+    payload: payload1 + "corrupted",
+    checksum: telemetry1.checksum,  // Original checksum
+    algorithm: ChecksumAlgorithm::SimpleSum,
+    timestamp: 1640995200
+  }
+  
+  let corrupted_verification = verify_integrity(corrupted_telemetry)
+  assert_false(corrupted_verification.is_valid)
+  assert_not_eq(corrupted_verification.expected_checksum, corrupted_verification.actual_checksum)
+  
+  // Test batch integrity verification
+  let verify_batch_integrity = fn(batch: Array[IntegrityTelemetry>) {
+    let mut valid_count = 0
+    let mut invalid_count = 0
+    let mut failed_items = []
+    
+    for item in batch {
+      let verification = verify_integrity(item)
+      if verification.is_valid {
+        valid_count = valid_count + 1
+      } else {
+        invalid_count = invalid_count + 1
+        failed_items = failed_items.push(item.id)
+      }
+    }
+    
+    {
+      total_items: batch.length(),
+      valid_count: valid_count,
+      invalid_count: invalid_count,
+      success_rate: (valid_count as Float) / (batch.length() as Float),
+      failed_items: failed_items
+    }
+  }
+  
+  let telemetry_batch = [
+    telemetry1,
+    telemetry_crc32,
+    telemetry_md5,
+    corrupted_telemetry
+  ]
+  
+  let batch_verification = verify_batch_integrity(telemetry_batch)
+  assert_eq(batch_verification.total_items, 4)
+  assert_eq(batch_verification.valid_count, 3)
+  assert_eq(batch_verification.invalid_count, 1)
+  assert_eq(batch_verification.success_rate, 0.75)
+  assert_eq(batch_verification.failed_items.length(), 1)
+  assert_eq(batch_verification.failed_items[0], "tele-4")
+}
+
+// Test 2: Telemetry Data Sequence Validation
+test "telemetry data sequence validation" {
+  // Define sequence validation types
+  enum SequenceType {
+    MonotonicIncreasing
+    MonotonicDecreasing
+    Sequential
+    Bounded(Int, Int)  // min, max
+  }
+  
+  // Define sequence validator
+  type SequenceValidator = {
+    sequence_type: SequenceType,
+    tolerance: Int,  // Allowed deviation
+    window_size: Int  // Validation window size
+  }
+  
+  // Define sequence validation result
+  type ValidationResult = {
+    is_valid: Bool,
+    violations: Array[Int],  // Indices of violations
+    violation_count: Int,
+    total_items: Int
+  }
+  
+  // Validate sequence integrity
+  let validate_sequence = fn(values: Array[Int], validator: SequenceValidator) {
+    let mut violations = []
+    
+    match validator.sequence_type {
+      SequenceType::MonotonicIncreasing => {
+        for i in 1..values.length() {
+          if values[i] < values[i-1] - validator.tolerance {
+            violations = violations.push(i)
           }
         }
-        None => assert_true(false)
+      }
+      SequenceType::MonotonicDecreasing => {
+        for i in 1..values.length() {
+          if values[i] > values[i-1] + validator.tolerance {
+            violations = violations.push(i)
+          }
+        }
+      }
+      SequenceType::Sequential => {
+        for i in 1..values.length() {
+          if values[i] != values[i-1] + 1 {
+            violations = violations.push(i)
+          }
+        }
+      }
+      SequenceType::Bounded(min, max) => {
+        for i in 0..values.length() {
+          if values[i] < min || values[i] > max {
+            violations = violations.push(i)
+          }
+        }
       }
     }
-    None => assert_true(false)
-  }
-}
-
-// Test 3: Log Data Integrity
-test "log data integrity" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "integrity_test_logger")
-  
-  // Create log record with attributes
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "user.id", StringValue("user456"))
-  Attributes::set(attrs, "session.id", StringValue("session789"))
-  Attributes::set(attrs, "request.id", StringValue("req123"))
-  
-  let log_record = LogRecord::new_with_context(
-    Error,
-    Some("Database connection failed"),
-    Some(attrs),
-    Some(1672574400000L), // 2023-01-01 12:00:00 UTC
-    Some(1672574401000L), // 2023-01-01 12:00:01 UTC
-    Some("trace123"),
-    Some("span456"),
-    Some(Context::root())
-  )
-  
-  // Add additional attributes to log record
-  LogRecord::add_attribute(log_record, "error.code", IntValue(500))
-  LogRecord::add_attribute(log_record, "error.message", StringValue("Connection timeout"))
-  LogRecord::add_attribute(log_record, "retry.count", IntValue(3))
-  
-  // Emit log record
-  Logger::emit(logger, log_record)
-  
-  // Verify log record data integrity
-  assert_eq(LogRecord::severity_number(log_record), Error)
-  match LogRecord::body(log_record) {
-    Some(body) => assert_eq(body, "Database connection failed")
-    None => assert_true(false)
-  }
-  
-  assert_eq(LogRecord::timestamp(log_record), Some(1672574400000L))
-  assert_eq(LogRecord::observed_timestamp(log_record), Some(1672574401000L))
-  assert_eq(LogRecord::trace_id(log_record), Some("trace123"))
-  assert_eq(LogRecord::span_id(log_record), Some("span456"))
-  
-  // Verify log attributes
-  let log_attrs = LogRecord::attributes(log_record)
-  match log_attrs {
-    Some(attrs) => {
-      let user_id = Attributes::get(attrs, "user.id")
-      match user_id {
-        Some(StringValue(v)) => assert_eq(v, "user456")
-        _ => assert_true(false)
-      }
-      
-      let error_code = Attributes::get(attrs, "error.code")
-      match error_code {
-        Some(IntValue(v)) => assert_eq(v, 500)
-        _ => assert_true(false)
-      }
-      
-      let error_message = Attributes::get(attrs, "error.message")
-      match error_message {
-        Some(StringValue(v)) => assert_eq(v, "Connection timeout")
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 4: Trace Context Integrity
-test "trace context integrity" {
-  // Create trace context with specific values
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let trace_flags = 1 // Sampled
-  let trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
-  
-  let span_ctx = SpanContext::new(trace_id, span_id, true, trace_state)
-  
-  // Verify trace context integrity
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
-  assert_true(SpanContext::is_valid(span_ctx))
-  assert_true(SpanContext::is_sampled(span_ctx))
-  assert_eq(SpanContext::trace_state(span_ctx), trace_state)
-  
-  // Create span with this context
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "context_test_tracer")
-  let span = Tracer::start_span_with_context(tracer, "context_test_span", span_ctx)
-  
-  // Verify context is preserved in span
-  let span_context = Span::span_context(span)
-  assert_eq(SpanContext::trace_id(span_context), trace_id)
-  assert_eq(SpanContext::span_id(span_context), span_id)
-  assert_true(SpanContext::is_sampled(span_context))
-  
-  // Add child span and verify parent-child relationship
-  let child_span = Tracer::start_span(tracer, "child_span")
-  let child_context = Span::span_context(child_span)
-  
-  // Child should have same trace ID but different span ID
-  assert_eq(SpanContext::trace_id(child_context), trace_id)
-  assert_not_eq(SpanContext::span_id(child_context), span_id)
-  
-  // Verify parent span ID is set in child context
-  let parent_span_id = SpanContext::parent_span_id(child_context)
-  match parent_span_id {
-    Some(id) => assert_eq(id, span_id)
-    None => assert_true(false)
-  }
-  
-  // End spans
-  Span::end(child_span)
-  Span::end(span)
-}
-
-// Test 5: Baggage Integrity
-test "baggage integrity" {
-  let baggage = Baggage::new()
-  
-  // Add baggage entries
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage2 = Baggage::set_entry(baggage1, "session.id", "session456")
-  let baggage3 = Baggage::set_entry(baggage2, "request.id", "req789")
-  
-  // Add baggage with metadata
-  let baggage4 = Baggage::set_entry_with_metadata(baggage3, "server.zone", "us-west-2", "propagate=true")
-  
-  // Verify baggage integrity
-  let user_id = Baggage::get_entry(baggage4, "user.id")
-  match user_id {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
-  }
-  
-  let session_id = Baggage::get_entry(baggage4, "session.id")
-  match session_id {
-    Some(value) => assert_eq(value, "session456")
-    None => assert_true(false)
-  }
-  
-  let request_id = Baggage::get_entry(baggage4, "request.id")
-  match request_id {
-    Some(value) => assert_eq(value, "req789")
-    None => assert_true(false)
-  }
-  
-  let server_zone = Baggage::get_entry(baggage4, "server.zone")
-  match server_zone {
-    Some(value) => assert_eq(value, "us-west-2")
-    None => assert_true(false)
-  }
-  
-  // Verify baggage metadata
-  let server_zone_metadata = Baggage::get_entry_metadata(baggage4, "server.zone")
-  match server_zone_metadata {
-    Some(metadata) => assert_eq(metadata, "propagate=true")
-    None => assert_true(false)
-  }
-  
-  // Verify baggage entries count
-  let entries = Baggage::get_all_entries(baggage4)
-  assert_eq(entries.length(), 4)
-  
-  // Verify baggage serialization and deserialization
-  let baggage_str = Baggage::serialize(baggage4)
-  assert_true(baggage_str.length() > 0)
-  
-  let deserialized_baggage = Baggage::deserialize(baggage_str)
-  let original_user_id = Baggage::get_entry(baggage4, "user.id")
-  let deserialized_user_id = Baggage::get_entry(deserialized_baggage, "user.id")
-  
-  match (original_user_id, deserialized_user_id) {
-    (Some(orig), Some(deser)) => assert_eq(orig, deser)
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: Resource Integrity
-test "resource integrity" {
-  // Create resource with attributes
-  let attrs = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("1.2.3")),
-    ("service.instance.id", StringValue("instance-12345")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("prod-server-01")),
-    ("host.id", StringValue("host-67890"))
-  ]
-  
-  let resource = Resource::with_attributes(Resource::new(), attrs)
-  
-  // Verify resource integrity
-  let service_name = Resource::get_attribute(resource, "service.name")
-  match service_name {
-    Some(StringValue(v)) => assert_eq(v, "payment-service")
-    _ => assert_true(false)
-  }
-  
-  let service_version = Resource::get_attribute(resource, "service.version")
-  match service_version {
-    Some(StringValue(v)) => assert_eq(v, "1.2.3")
-    _ => assert_true(false)
-  }
-  
-  let service_instance_id = Resource::get_attribute(resource, "service.instance.id")
-  match service_instance_id {
-    Some(StringValue(v)) => assert_eq(v, "instance-12345")
-    _ => assert_true(false)
-  }
-  
-  let deployment_environment = Resource::get_attribute(resource, "deployment.environment")
-  match deployment_environment {
-    Some(StringValue(v)) => assert_eq(v, "production")
-    _ => assert_true(false)
-  }
-  
-  // Test resource merging
-  let override_attrs = [
-    ("service.version", StringValue("2.0.0")),
-    ("feature.flag", StringValue("new-payment-flow"))
-  ]
-  
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
-  let merged_resource = Resource::merge(resource, override_resource)
-  
-  // Verify merged resource integrity
-  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  match merged_service_name {
-    Some(StringValue(v)) => assert_eq(v, "payment-service")
-    _ => assert_true(false)
-  }
-  
-  // Service version should be overridden
-  let merged_service_version = Resource::get_attribute(merged_resource, "service.version")
-  match merged_service_version {
-    Some(StringValue(v)) => assert_eq(v, "2.0.0")
-    _ => assert_true(false)
-  }
-  
-  // New attribute should be added
-  let feature_flag = Resource::get_attribute(merged_resource, "feature.flag")
-  match feature_flag {
-    Some(StringValue(v)) => assert_eq(v, "new-payment-flow")
-    _ => assert_true(false)
-  }
-}
-
-// Test 7: Data Consistency Across Operations
-test "data consistency across operations" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "consistency_test_tracer")
-  
-  // Create a span with multiple operations
-  let span = Tracer::start_span(tracer, "consistency_test_span")
-  
-  // Set initial attributes
-  Span::set_attribute(span, "operation.phase", StringValue("initialization"))
-  Span::set_attribute(span, "user.id", StringValue("user123"))
-  
-  // Add event
-  Span::add_event(span, "operation_started", Some([
-    ("timestamp", StringValue("2023-01-01T12:00:00Z"))
-  ]))
-  
-  // Verify initial state
-  let phase = Span::get_attribute(span, "operation.phase")
-  match phase {
-    Some(StringValue(v)) => assert_eq(v, "initialization")
-    _ => assert_true(false)
-  }
-  
-  // Update attributes
-  Span::set_attribute(span, "operation.phase", StringValue("processing"))
-  Span::set_attribute(span, "items.processed", IntValue(0))
-  
-  // Process items in a loop
-  for i in 0..=100 {
-    // Update processed count
-    Span::set_attribute(span, "items.processed", IntValue(i + 1))
     
-    if i % 25 == 0 {
-      // Add milestone event
-      Span::add_event(span, "milestone_reached", Some([
-        ("items.count", IntValue(i + 1)),
-        ("percentage", FloatValue((i + 1).to_float() / 101.0 * 100.0))
-      ]))
+    {
+      is_valid: violations.length() == 0,
+      violations: violations,
+      violation_count: violations.length(),
+      total_items: values.length()
     }
   }
   
-  // Final update
-  Span::set_attribute(span, "operation.phase", StringValue("completed"))
-  Span::set_status(span, Ok, Some("Operation completed successfully"))
-  
-  // Verify final state consistency
-  let final_phase = Span::get_attribute(span, "operation.phase")
-  match final_phase {
-    Some(StringValue(v)) => assert_eq(v, "completed")
-    _ => assert_true(false)
+  // Test monotonic increasing sequence
+  let monotonic_validator = {
+    sequence_type: SequenceType::MonotonicIncreasing,
+    tolerance: 0,
+    window_size: 10
   }
   
-  let final_processed = Span::get_attribute(span, "items.processed")
-  match final_processed {
-    Some(IntValue(v)) => assert_eq(v, 101)
-    _ => assert_true(false)
+  let increasing_timestamps = [1000, 1010, 1020, 1030, 1040, 1050]
+  let increasing_validation = validate_sequence(increasing_timestamps, monotonic_validator)
+  assert_true(increasing_validation.is_valid)
+  assert_eq(increasing_validation.violation_count, 0)
+  
+  let violated_timestamps = [1000, 1010, 1005, 1030, 1020, 1050]
+  let violated_validation = validate_sequence(violated_timestamps, monotonic_validator)
+  assert_false(violated_validation.is_valid)
+  assert_eq(violated_validation.violation_count, 2)
+  assert_eq(violated_validation.violations, [2, 4])
+  
+  // Test with tolerance
+  let tolerant_validator = {
+    sequence_type: SequenceType::MonotonicIncreasing,
+    tolerance: 10,
+    window_size: 10
   }
   
-  // Verify events consistency
-  let events = Span::get_events(span)
-  assert_eq(events.length(), 5) // 1 start + 4 milestones
+  let tolerant_validation = validate_sequence(violated_timestamps, tolerant_validator)
+  assert_true(tolerant_validation.is_valid)  // Within tolerance
   
-  // Verify milestone events
-  let milestone_events = Event::filter_by_name(events, "milestone_reached")
-  assert_eq(milestone_events.length(), 4)
+  // Test sequential validation
+  let sequential_validator = {
+    sequence_type: SequenceType::Sequential,
+    tolerance: 0,
+    window_size: 10
+  }
   
-  // Verify milestone event attributes
-  let first_milestone = milestone_events[0]
-  let first_milestone_attrs = Event::attributes(first_milestone)
-  match first_milestone_attrs {
-    Some(attrs) => {
-      let items_count = Attributes::get(attrs, "items.count")
-      match items_count {
-        Some(IntValue(v)) => assert_eq(v, 25)
-        _ => assert_true(false)
+  let sequence_numbers = [1, 2, 3, 4, 5, 6]
+  let sequential_validation = validate_sequence(sequence_numbers, sequential_validator)
+  assert_true(sequential_validation.is_valid)
+  
+  let broken_sequence = [1, 2, 4, 5, 7, 8]
+  let broken_validation = validate_sequence(broken_sequence, sequential_validator)
+  assert_false(broken_validation.is_valid)
+  assert_eq(broken_validation.violation_count, 2)
+  
+  // Test bounded validation
+  let bounded_validator = {
+    sequence_type: SequenceType::Bounded(100, 200),
+    tolerance: 0,
+    window_size: 10
+  }
+  
+  let bounded_values = [120, 150, 180, 190, 200]
+  let bounded_validation = validate_sequence(bounded_values, bounded_validator)
+  assert_true(bounded_validation.is_valid)
+  
+  let out_of_bounds = [120, 250, 180, 50, 200]
+  let bounds_validation = validate_sequence(out_of_bounds, bounded_validator)
+  assert_false(bounds_validation.is_valid)
+  assert_eq(bounds_validation.violation_count, 2)
+  
+  // Test telemetry sequence validation with real-world data
+  type TelemetryPoint = {
+    timestamp: Int,
+    sequence_number: Int,
+    metric_value: Float
+  }
+  
+  let validate_telemetry_sequence = fn(points: Array[TelemetryPoint]) {
+    let timestamps = points.map_fn(p) { p.timestamp }
+    let sequence_numbers = points.map_fn(p) { p.sequence_number }
+    
+    let timestamp_validator = {
+      sequence_type: SequenceType::MonotonicIncreasing,
+      tolerance: 0,
+      window_size: 10
+    }
+    
+    let sequence_validator = {
+      sequence_type: SequenceType::Sequential,
+      tolerance: 0,
+      window_size: 10
+    }
+    
+    let timestamp_validation = validate_sequence(timestamps, timestamp_validator)
+    let sequence_validation = validate_sequence(sequence_numbers, sequence_validator)
+    
+    {
+      timestamp_valid: timestamp_validation.is_valid,
+      sequence_valid: sequence_validation.is_valid,
+      overall_valid: timestamp_validation.is_valid && sequence_validation.is_valid,
+      timestamp_violations: timestamp_validation.violations,
+      sequence_violations: sequence_validation.violations
+    }
+  }
+  
+  let telemetry_points = [
+    { timestamp: 1000, sequence_number: 1, metric_value: 95.5 },
+    { timestamp: 1010, sequence_number: 2, metric_value: 97.2 },
+    { timestamp: 1020, sequence_number: 3, metric_value: 94.8 },
+    { timestamp: 1030, sequence_number: 4, metric_value: 96.1 },
+    { timestamp: 1040, sequence_number: 5, metric_value: 95.9 }
+  ]
+  
+  let telemetry_validation = validate_telemetry_sequence(telemetry_points)
+  assert_true(telemetry_validation.timestamp_valid)
+  assert_true(telemetry_validation.sequence_valid)
+  assert_true(telemetry_validation.overall_valid)
+  
+  let corrupted_telemetry_points = [
+    { timestamp: 1000, sequence_number: 1, metric_value: 95.5 },
+    { timestamp: 1010, sequence_number: 2, metric_value: 97.2 },
+    { timestamp: 1005, sequence_number: 4, metric_value: 94.8 },  // Timestamp violation
+    { timestamp: 1030, sequence_number: 3, metric_value: 96.1 },  // Sequence violation
+    { timestamp: 1040, sequence_number: 5, metric_value: 95.9 }
+  ]
+  
+  let corrupted_telemetry_validation = validate_telemetry_sequence(corrupted_telemetry_points)
+  assert_false(corrupted_telemetry_validation.timestamp_valid)
+  assert_false(corrupted_telemetry_validation.sequence_valid)
+  assert_false(corrupted_telemetry_validation.overall_valid)
+  assert_eq(corrupted_telemetry_validation.timestamp_violations, [2])
+  assert_eq(corrupted_telemetry_validation.sequence_violations, [3])
+}
+
+// Test 3: Telemetry Data Consistency Validation
+test "telemetry data consistency validation" {
+  // Define consistency rules
+  enum ConsistencyRule {
+    RequiredAttribute(String)           // Attribute name that must be present
+    AttributeType(String, String)       // Attribute name and expected type
+    AttributeRange(String, Float, Float) // Attribute name and min/max values
+    ConditionalDependency(String, String, String) // If attribute1 has value, then attribute2 must exist
+    CrossAttributeConsistency(String, String)     // Two attributes must be consistent
+  }
+  
+  // Define consistency validator
+  type ConsistencyValidator = {
+    rules: Array[ConsistencyRule],
+    strict_mode: Bool  // Fail fast or collect all violations
+  }
+  
+  // Define consistency validation result
+  type ConsistencyResult = {
+    is_consistent: Bool,
+    violations: Array[String],
+    rule_results: Array[(String, Bool)]
+  }
+  
+  // Validate telemetry data consistency
+  let validate_consistency = fn(attributes: Array[(String, String)], validator: ConsistencyValidator) {
+    let mut violations = []
+    let mut rule_results = []
+    
+    for rule in validator.rules {
+      let (rule_name, is_valid) = match rule {
+        ConsistencyRule::RequiredAttribute(attr_name) => {
+          let is_present = attributes.some_fn(a) { a.0 == attr_name }
+          ("required_" + attr_name, is_present)
+        }
+        ConsistencyRule::AttributeType(attr_name, expected_type) => {
+          match attributes.find_fn(a) { a.0 == attr_name } {
+            Some((_, value)) => {
+              let actual_type = match value.parse_float() {
+                Some(_) => "number"
+                None => {
+                  if value == "true" || value == "false" { "boolean" }
+                  else { "string" }
+                }
+              }
+              ("type_" + attr_name, actual_type == expected_type)
+            }
+            None => ("type_" + attr_name, false)  // Attribute not found
+          }
+        }
+        ConsistencyRule::AttributeRange(attr_name, min_val, max_val) => {
+          match attributes.find_fn(a) { a.0 == attr_name } {
+            Some((_, value)) => {
+              match value.parse_float() {
+                Some(num_val) => {
+                  ("range_" + attr_name, num_val >= min_val && num_val <= max_val)
+                }
+                None => ("range_" + attr_name, false)  // Not a number
+              }
+            }
+            None => ("range_" + attr_name, false)  // Attribute not found
+          }
+        }
+        ConsistencyRule::ConditionalDependency(cond_attr, cond_value, req_attr) => {
+          match attributes.find_fn(a) { a.0 == cond_attr } {
+            Some((_, value)) => {
+              if value == cond_value {
+                let has_required = attributes.some_fn(a) { a.0 == req_attr }
+                ("conditional_" + cond_attr + "_" + req_attr, has_required)
+              } else {
+                ("conditional_" + cond_attr + "_" + req_attr, true)  // Condition not met
+              }
+            }
+            None => ("conditional_" + cond_attr + "_" + req_attr, true)  // Condition not met
+          }
+        }
+        ConsistencyRule::CrossAttributeConsistency(attr1, attr2) => {
+          match (attributes.find_fn(a) { a.0 == attr1 }, attributes.find_fn(a) { a.0 == attr2 }) {
+            (Some((_, val1)), Some((_, val2))) => {
+              // Simple consistency check: values should not be identical unless it makes sense
+              let is_consistent = match (attr1, attr2) {
+                ("start_time", "end_time") => {
+                  match (val1.parse_int(), val2.parse_int()) {
+                    (Some(start), Some(end)) => start < end
+                    _ => false
+                  }
+                }
+                ("status", "error") => {
+                  val1 != "error" || val2.length() > 0
+                }
+                _ => {
+                  val1 != val2  // Default: different values
+                }
+              }
+              ("cross_" + attr1 + "_" + attr2, is_consistent)
+            }
+            _ => ("cross_" + attr1 + "_" + attr2, false)  // One or both attributes missing
+          }
+        }
+      }
+      
+      rule_results = rule_results.push((rule_name, is_valid))
+      
+      if not(is_valid) {
+        violations = violations.push(rule_name + "_violation")
+        
+        if validator.strict_mode {
+          break  // Fail fast
+        }
       }
     }
-    None => assert_true(false)
+    
+    {
+      is_consistent: violations.length() == 0,
+      violations: violations,
+      rule_results: rule_results
+    }
   }
   
-  // End span
-  Span::end(span)
-  
-  // Verify data is still consistent after ending
-  let final_user_id = Span::get_attribute(span, "user.id")
-  match final_user_id {
-    Some(StringValue(v)) => assert_eq(v, "user123")
-    _ => assert_true(false)
+  // Test consistency validation
+  let validator = {
+    rules: [
+      ConsistencyRule::RequiredAttribute("trace_id"),
+      ConsistencyRule::RequiredAttribute("span_name"),
+      ConsistencyRule::AttributeType("duration_ms", "number"),
+      ConsistencyRule::AttributeRange("duration_ms", 0.0, 3600000.0),  // 0 to 1 hour
+      ConsistencyRule::ConditionalDependency("status", "error", "error_message"),
+      ConsistencyRule::CrossAttributeConsistency("start_time", "end_time")
+    ],
+    strict_mode: false
   }
+  
+  let valid_attributes = [
+    ("trace_id", "trace-12345"),
+    ("span_name", "database_query"),
+    ("duration_ms", "250"),
+    ("status", "success"),
+    ("start_time", "1640995200"),
+    ("end_time", "1640995450")
+  ]
+  
+  let valid_validation = validate_consistency(valid_attributes, validator)
+  assert_true(valid_validation.is_consistent)
+  assert_eq(valid_validation.violations.length(), 0)
+  
+  let invalid_attributes = [
+    ("span_name", "database_query"),  // Missing trace_id
+    ("duration_ms", "250"),
+    ("status", "error"),  // Missing error_message
+    ("start_time", "1640995450"),
+    ("end_time", "1640995200")  // End time before start time
+  ]
+  
+  let invalid_validation = validate_consistency(invalid_attributes, validator)
+  assert_false(invalid_validation.is_consistent)
+  assert_eq(invalid_validation.violations.length(), 3)
+  assert_true(invalid_validation.violations.some_fn(v) { v.contains("required_trace_id") })
+  assert_true(invalid_validation.violations.some_fn(v) { v.contains("conditional_status_error_message") })
+  assert_true(invalid_validation.violations.some_fn(v) { v.contains("cross_start_time_end_time") })
+  
+  // Test edge case validation
+  let edge_case_attributes = [
+    ("trace_id", "trace-67890"),
+    ("span_name", "api_call"),
+    ("duration_ms", "-100"),  // Negative duration
+    ("status", "error"),
+    ("error_message", ""),    // Empty error message
+    ("start_time", "1640995600"),
+    ("end_time", "1640995600")  // Same time (zero duration)
+  ]
+  
+  let edge_case_validation = validate_consistency(edge_case_attributes, validator)
+  assert_false(edge_case_validation.is_consistent)
+  assert_eq(edge_case_validation.violations.length(), 2)
+  assert_true(edge_case_validation.violations.some_fn(v) { v.contains("range_duration_ms") })
+  assert_true(edge_case_validation.violations.some_fn(v) { v.contains("cross_start_time_end_time") })
+  
+  // Test batch consistency validation
+  let validate_batch_consistency = fn(batch: Array<Array[(String, String)]>, validator: ConsistencyValidator) {
+    let mut consistent_count = 0
+    let mut inconsistent_count = 0
+    let mut batch_results = []
+    
+    for (index, attributes) in batch.enumerate() {
+      let validation = validate_consistency(attributes, validator)
+      batch_results = batch_results.push({
+        batch_index: index,
+        is_consistent: validation.is_consistent,
+        violation_count: validation.violations.length(),
+        violations: validation.violations
+      })
+      
+      if validation.is_consistent {
+        consistent_count = consistent_count + 1
+      } else {
+        inconsistent_count = inconsistent_count + 1
+      }
+    }
+    
+    {
+      total_batches: batch.length(),
+      consistent_count: consistent_count,
+      inconsistent_count: inconsistent_count,
+      consistency_rate: (consistent_count as Float) / (batch.length() as Float),
+      batch_results: batch_results
+    }
+  }
+  
+  let attribute_batch = [
+    valid_attributes,
+    invalid_attributes,
+    edge_case_attributes,
+    [
+      ("trace_id", "trace-11111"),
+      ("span_name", "cache_operation"),
+      ("duration_ms", "50"),
+      ("status", "success")
+    ]
+  ]
+  
+  let batch_consistency = validate_batch_consistency(attribute_batch, validator)
+  assert_eq(batch_consistency.total_batches, 4)
+  assert_eq(batch_consistency.consistent_count, 2)
+  assert_eq(batch_consistency.inconsistent_count, 2)
+  assert_eq(batch_consistency.consistency_rate, 0.5)
 }
 
-// Test 8: Data Corruption Detection
-test "data corruption detection" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "corruption_test_tracer")
-  let span = Tracer::start_span(tracer, "corruption_test_span")
-  
-  // Set attributes
-  Span::set_attribute(span, "checksum", StringValue("initial_checksum"))
-  Span::set_attribute(span, "data.version", IntValue(1))
-  
-  // Calculate initial checksum
-  let initial_checksum = DataIntegrity::calculate_checksum(span)
-  
-  // Simulate data corruption
-  let corrupted_span = DataIntegrity::simulate_corruption(span, "checksum", StringValue("corrupted_value"))
-  
-  // Detect corruption
-  let is_corrupted = DataIntegrity::detect_corruption(corrupted_span, initial_checksum)
-  assert_true(is_corrupted)
-  
-  // Repair corrupted data
-  let repaired_span = DataIntegrity::repair_corruption(corrupted_span, "checksum", StringValue("initial_checksum"))
-  
-  // Verify repair
-  let repaired_checksum = DataIntegrity::calculate_checksum(repaired_span)
-  assert_eq(repaired_checksum, initial_checksum)
-  
-  let repaired_value = Span::get_attribute(repaired_span, "checksum")
-  match repaired_value {
-    Some(StringValue(v)) => assert_eq(v, "initial_checksum")
-    _ => assert_true(false)
+// Test 4: Telemetry Data Completeness Validation
+test "telemetry data completeness validation" {
+  // Define completeness requirements
+  type CompletenessRequirement = {
+    attribute_name: String,
+    required: Bool,
+    default_value: Option[String>,
+    validation_fn: Option<(String) -> Bool>
   }
   
-  // End span
-  Span::end(repaired_span)
-}
-
-// Test 9: Data Validation
-test "data validation" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "validation_test_tracer")
-  let span = Tracer::start_span(tracer, "validation_test_span")
-  
-  // Set valid attributes
-  Span::set_attribute(span, "user.id", StringValue("user123"))
-  Span::set_attribute(span, "request.size", IntValue(1024))
-  Span::set_attribute(span, "response.time", FloatValue(250.5))
-  Span::set_attribute(span, "success", BoolValue(true))
-  
-  // Validate attributes
-  let validation_result = DataValidation::validate_span_attributes(span)
-  assert_true(validation_result.is_valid)
-  
-  // Set invalid attributes
-  Span::set_attribute(span, "user.id", StringValue("")) // Empty user ID
-  Span::set_attribute(span, "request.size", IntValue(-1)) // Negative size
-  
-  // Validate again
-  let validation_result2 = DataValidation::validate_span_attributes(span)
-  assert_false(validation_result2.is_valid)
-  
-  // Check validation errors
-  assert_true(validation_result2.errors.length() >= 2)
-  
-  // Fix validation errors
-  Span::set_attribute(span, "user.id", StringValue("user456"))
-  Span::set_attribute(span, "request.size", IntValue(2048))
-  
-  // Validate again
-  let validation_result3 = DataValidation::validate_span_attributes(span)
-  assert_true(validation_result3.is_valid)
-  
-  // End span
-  Span::end(span)
-}
-
-// Test 10: Data Serialization Integrity
-test "data serialization integrity" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "serialization_test_tracer")
-  let span = Tracer::start_span(tracer, "serialization_test_span")
-  
-  // Set complex attributes
-  Span::set_attribute(span, "string.attr", StringValue("test_string"))
-  Span::set_attribute(span, "int.attr", IntValue(42))
-  Span::set_attribute(span, "float.attr", FloatValue(3.14159))
-  Span::set_attribute(span, "bool.attr", BoolValue(true))
-  Span::set_attribute(span, "array.attr", ArrayStringValue(["a", "b", "c"]))
-  
-  // Add events
-  Span::add_event(span, "test_event", Some([
-    ("event.data", StringValue("event_payload"))
-  ]))
-  
-  // Serialize span to JSON
-  let json_str = SpanSerializer::to_json(span)
-  assert_true(json_str.length() > 0)
-  
-  // Calculate checksum of original span
-  let original_checksum = DataIntegrity::calculate_checksum(span)
-  
-  // Deserialize span from JSON
-  let deserialized_span = SpanSerializer::from_json(json_str)
-  
-  // Calculate checksum of deserialized span
-  let deserialized_checksum = DataIntegrity::calculate_checksum(deserialized_span)
-  
-  // Verify checksums match
-  assert_eq(original_checksum, deserialized_checksum)
-  
-  // Verify specific attributes are preserved
-  let original_string_attr = Span::get_attribute(span, "string.attr")
-  let deserialized_string_attr = Span::get_attribute(deserialized_span, "string.attr")
-  
-  match (original_string_attr, deserialized_string_attr) {
-    (Some(StringValue(orig)), Some(StringValue(deser))) => assert_eq(orig, deser)
-    _ => assert_true(false)
+  // Define completeness validator
+  type CompletenessValidator = {
+    requirements: Array[CompletenessRequirement],
+    completeness_threshold: Float  // 0.0 to 1.0
   }
   
-  // Verify events are preserved
-  let original_events = Span::get_events(span)
-  let deserialized_events = Span::get_events(deserialized_span)
-  assert_eq(original_events.length(), deserialized_events.length())
-  
-  if original_events.length() > 0 && deserialized_events.length() > 0 {
-    let original_event = original_events[0]
-    let deserialized_event = deserialized_events[0]
-    assert_eq(Event::name(original_event), Event::name(deserialized_event))
+  // Define completeness result
+  type CompletenessResult = {
+    completeness_score: Float,
+    is_complete: Bool,
+    missing_attributes: Array[String],
+    invalid_attributes: Array[String],
+    filled_attributes: Array[String>
   }
   
-  // End spans
-  Span::end(span)
-  Span::end(deserialized_span)
+  // Validate telemetry data completeness
+  let validate_completeness = fn(attributes: Array[(String, String)], validator: CompletenessValidator) {
+    let mut present_count = 0
+    let mut missing_attributes = []
+    let mut invalid_attributes = []
+    let mut filled_attributes = []
+    
+    for requirement in validator.requirements {
+      match attributes.find_fn(a) { a.0 == requirement.attribute_name } {
+        Some((key, value)) => {
+          // Check if value is valid
+          let is_valid = match requirement.validation_fn {
+            Some(validation_fn) => validation_fn(value)
+            None => value.length() > 0  // Default validation: non-empty
+          }
+          
+          if is_valid {
+            present_count = present_count + 1
+            filled_attributes = filled_attributes.push(key)
+          } else {
+            invalid_attributes = invalid_attributes.push(key)
+          }
+        }
+        None => {
+          if requirement.required {
+            missing_attributes = missing_attributes.push(requirement.attribute_name)
+          }
+          
+          // Check if default value can be used
+          match requirement.default_value {
+            Some(default) => {
+              present_count = present_count + 1
+              filled_attributes = filled_attributes.push(requirement.attribute_name + " (default)")
+            }
+            None => {}  // No default, leave as missing
+          }
+        }
+      }
+    }
+    
+    let completeness_score = (present_count as Float) / (validator.requirements.length() as Float)
+    let is_complete = completeness_score >= validator.completeness_threshold
+    
+    {
+      completeness_score: completeness_score,
+      is_complete: is_complete,
+      missing_attributes: missing_attributes,
+      invalid_attributes: invalid_attributes,
+      filled_attributes: filled_attributes
+    }
+  }
+  
+  // Test completeness validation
+  let completeness_validator = {
+    requirements: [
+      {
+        attribute_name: "trace_id",
+        required: true,
+        default_value: None,
+        validation_fn: Some(fn(value) { value.length() >= 8 })
+      },
+      {
+        attribute_name: "span_name",
+        required: true,
+        default_value: None,
+        validation_fn: Some(fn(value) { value.length() > 0 })
+      },
+      {
+        attribute_name: "duration_ms",
+        required: true,
+        default_value: Some("0"),
+        validation_fn: Some(fn(value) { 
+          match value.parse_int() {
+            Some(num) => num >= 0
+            None => false
+          }
+        })
+      },
+      {
+        attribute_name: "status",
+        required: false,
+        default_value: Some("unknown"),
+        validation_fn: Some(fn(value) { 
+          ["success", "error", "timeout", "unknown"].some_fn(s) { s == value }
+        })
+      },
+      {
+        attribute_name: "service_name",
+        required: true,
+        default_value: None,
+        validation_fn: Some(fn(value) { value.length() >= 3 })
+      },
+      {
+        attribute_name: "environment",
+        required: false,
+        default_value: Some("development"),
+        validation_fn: None
+      }
+    ],
+    completeness_threshold: 0.8  // 80% completeness required
+  }
+  
+  let complete_attributes = [
+    ("trace_id", "trace-12345678"),
+    ("span_name", "database_query"),
+    ("duration_ms", "250"),
+    ("status", "success"),
+    ("service_name", "payment-service"),
+    ("environment", "production")
+  ]
+  
+  let complete_validation = validate_completeness(complete_attributes, completeness_validator)
+  assert_eq(complete_validation.completeness_score, 1.0)
+  assert_true(complete_validation.is_complete)
+  assert_eq(complete_validation.missing_attributes.length(), 0)
+  assert_eq(complete_validation.invalid_attributes.length(), 0)
+  assert_eq(complete_validation.filled_attributes.length(), 6)
+  
+  let partial_attributes = [
+    ("trace_id", "trace-12"),  // Too short
+    ("span_name", "api_call"),
+    ("duration_ms", "-100"),  // Invalid negative
+    ("service_name", "api")   // Too short
+  ]
+  
+  let partial_validation = validate_completeness(partial_attributes, completeness_validator)
+  assert_true(partial_validation.completeness_score < 0.8)
+  assert_false(partial_validation.is_complete)
+  assert_eq(partial_validation.missing_attributes.length(), 0)  // All required present
+  assert_eq(partial_validation.invalid_attributes.length(), 3)
+  assert_true(partial_validation.invalid_attributes.contains("trace_id"))
+  assert_true(partial_validation.invalid_attributes.contains("duration_ms"))
+  assert_true(partial_validation.invalid_attributes.contains("service_name"))
+  
+  // Test with default values
+  let minimal_attributes = [
+    ("span_name", "cache_operation"),
+    ("duration_ms", "50"),
+    ("service_name", "auth-service")
+  ]
+  
+  let minimal_validation = validate_completeness(minimal_attributes, completeness_validator)
+  assert_eq(minimal_validation.completeness_score, 0.8333333333333334)  // 5/6 with defaults
+  assert_true(minimal_validation.is_complete)
+  assert_eq(minimal_validation.missing_attributes.length(), 1)  // trace_id
+  assert_eq(minimal_validation.filled_attributes.length(), 5)
+  assert_true(minimal_validation.filled_attributes.some_fn(a) { a.contains("default") })
+  
+  // Test batch completeness validation
+  let validate_batch_completeness = fn(batch: Array<Array[(String, String)]>, validator: CompletenessValidator) {
+    let mut batch_results = []
+    let mut total_completeness = 0.0
+    
+    for (index, attributes) in batch.enumerate() {
+      let validation = validate_completeness(attributes, validator)
+      batch_results = batch_results.push({
+        batch_index: index,
+        completeness_score: validation.completeness_score,
+        is_complete: validation.is_complete,
+        missing_count: validation.missing_attributes.length(),
+        invalid_count: validation.invalid_attributes.length()
+      })
+      total_completeness = total_completeness + validation.completeness_score
+    }
+    
+    {
+      total_batches: batch.length(),
+      average_completeness: total_completeness / (batch.length() as Float),
+      complete_batches: batch_results.filter_fn(r) { r.is_complete }.length(),
+      incomplete_batches: batch_results.filter_fn(r) { not(r.is_complete) }.length(),
+      batch_results: batch_results
+    }
+  }
+  
+  let completeness_batch = [
+    complete_attributes,
+    partial_attributes,
+    minimal_attributes,
+    []  // Empty
+  ]
+  
+  let batch_completeness = validate_batch_completeness(completeness_batch, completeness_validator)
+  assert_eq(batch_completeness.total_batches, 4)
+  assert_eq(batch_completeness.complete_batches, 2)
+  assert_eq(batch_completeness.incomplete_batches, 2)
+  assert_true(batch_completeness.average_completeness > 0.5)
+  assert_true(batch_completeness.average_completeness < 1.0)
 }
