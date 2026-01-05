@@ -561,6 +561,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6572726f725f68616e646c696e675f74657374732e6d6274_8, ["circuit breaker pattern"]),
     9: (__test_617a696d7574685f6572726f725f68616e646c696e675f74657374732e6d6274_9, ["graceful degradation"]),
   },
+  "azimuth_error_handling_resilience_tests.mbt": {
+    0: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_0, ["network connectivity failure recovery"]),
+    1: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_1, ["memory exhaustion handling"]),
+    2: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_2, ["database connection failure recovery"]),
+    3: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_3, ["invalid data handling"]),
+    4: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_4, ["resource exhaustion and recovery"]),
+    5: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_5, ["concurrent error handling"]),
+    6: (__test_617a696d7574685f6572726f725f68616e646c696e675f726573696c69656e63655f74657374732e6d6274_6, ["graceful degradation under load"]),
+  },
   "azimuth_error_handling_recovery_tests.mbt": {
     0: (__test_617a696d7574685f6572726f725f68616e646c696e675f7265636f766572795f74657374732e6d6274_0, ["network error handling and recovery"]),
     1: (__test_617a696d7574685f6572726f725f68616e646c696e675f7265636f766572795f74657374732e6d6274_1, ["data corruption detection and recovery"]),
