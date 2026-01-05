@@ -1900,6 +1900,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f73656375726974795f636f6d70726568656e736976655f74657374732e6d6274_8, ["vulnerability scanning"]),
     9: (__test_617a696d7574685f73656375726974795f636f6d70726568656e736976655f74657374732e6d6274_9, ["security compliance"]),
   },
+  "azimuth_security_compliance_tests.mbt": {
+    0: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_0, ["data encryption and anonymization"]),
+    1: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_1, ["access control and permission management"]),
+    2: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_2, ["audit logging and compliance reporting"]),
+    3: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_3, ["data retention and cleanup policies"]),
+    4: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_4, ["gdpr compliance and data subject rights"]),
+    5: (__test_617a696d7574685f73656375726974795f636f6d706c69616e63655f74657374732e6d6274_5, ["security incident detection and response"]),
+  },
   "azimuth_security_authentication_tests.mbt": {
     0: (__test_617a696d7574685f73656375726974795f61757468656e7469636174696f6e5f74657374732e6d6274_0, ["api key authentication"]),
     1: (__test_617a696d7574685f73656375726974795f61757468656e7469636174696f6e5f74657374732e6d6274_1, ["jwt token authentication"]),
