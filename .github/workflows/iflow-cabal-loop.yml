@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
 
 concurrency:
   group: iflow-autoflow-${{ github.ref }}
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 360
     env:
       RUN_HOURS: 5
-      WORK_BRANCH: master
+      WORK_BRANCH: main
       RELEASE_MARKER_FILE: .git/azimuth_release_tag
 
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BRANCH="${WORK_BRANCH:-master}"
+          BRANCH="${WORK_BRANCH:-main}"
           git fetch origin "${BRANCH}" --prune
           git checkout -B "${BRANCH}" "origin/${BRANCH}"
           git config user.name "iflow-bot"
@@ -159,7 +159,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BRANCH="${WORK_BRANCH:-master}"
+          BRANCH="${WORK_BRANCH:-main}"
 
           # 确保 gitee 远端存在（不打印 URL，避免日志泄漏）
           if git remote get-url gitee >/dev/null 2>&1; then
