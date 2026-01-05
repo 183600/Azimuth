@@ -288,6 +288,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_anomaly_detection_alerting_tests.mbt": {
   },
+  "azimuth_telemetry_analytics_tests.mbt": {
+  },
   "azimuth_telemetry_aggregation_tests.mbt": {
   },
   "azimuth_telemetry_aggregation_new_tests.mbt": {
