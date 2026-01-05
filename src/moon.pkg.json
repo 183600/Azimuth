@@ -204,5 +204,6 @@
         "../azimuth_internationalization_support_tests.mbt",
         "../azimuth_new_comprehensive_test_cases.mbt",
         "../azimuth_enhanced_comprehensive_test_suite.mbt",
-        "../azimuth_enhanced_comprehensive_tests.mbt"]  }
+        "../azimuth_enhanced_comprehensive_tests.mbt",
+        "../azimuth_premium_quality_test_suite.mbt"]  }
 }
