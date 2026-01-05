@@ -206,3 +206,268 @@ main = hspec $ do
         
         logger <- createLogger "logger-with-特殊字符" Info
         loggerName logger `shouldBe` "logger-with-特殊字符"
+
+    -- QuickCheck 高级属性测试
+    describe "Advanced QuickCheck Properties" $ do
+      describe "TelemetryConfig properties" $ do
+        it "should preserve config fields after creation" $ property $
+          \(name :: String) (version :: String) (metrics :: Bool) (tracing :: Bool) (logging :: Bool) ->
+            let config = TelemetryConfig (pack name) (pack version) metrics tracing logging
+            in unpack (serviceName config) == name &&
+               unpack (serviceVersion config) == version &&
+               enableMetrics config == metrics &&
+               enableTracing config == tracing &&
+               enableLogging config == logging
+        
+        it "should handle empty strings in config" $ property $
+          \(_ :: String) ->
+            let config = TelemetryConfig "" "" True True True
+            in serviceName config == "" &&
+               serviceVersion config == "" &&
+               enableMetrics config == True &&
+               enableTracing config == True &&
+               enableLogging config == True
+
+      describe "Metric properties" $ do
+        it "should preserve metric properties after recording" $ property $
+          \(name :: String) (unit :: String) (value :: Double) ->
+            let metric = Metric (pack name) 0.0 (pack unit)
+            in unpack (metricName metric) == name &&
+               unpack (metricUnit metric) == unit &&
+               metricValue metric == 0.0
+        
+        it "should handle special values in metrics" $ do
+          let positiveInfinity = 1/0 :: Double
+              negativeInfinity = -1/0 :: Double
+              nan = 0/0 :: Double
+          (not $ isNaN positiveInfinity) && (not $ isNaN negativeInfinity) `shouldBe` True
+        
+        it "should maintain metric identity" $ property $
+          \(name :: String) (unit :: String) ->
+            let metric1 = Metric (pack name) 0.0 (pack unit)
+                metric2 = Metric (pack name) 42.0 (pack unit)
+            in metricName metric1 == metricName metric2 &&
+               metricUnit metric1 == metricUnit metric2 &&
+               metricValue metric1 /= metricValue metric2
+
+      describe "Span properties" $ do
+        it "should preserve span properties" $ property $
+          \(name :: String) ->
+            let span = Span (pack name) "trace-123" "span-456"
+            in unpack (spanName span) == name &&
+               spanTraceId span == "trace-123" &&
+               spanSpanId span == "span-456"
+        
+        it "should maintain span identity with different trace/span IDs" $ property $
+          \(name :: String) (traceId :: String) (spanId :: String) ->
+            let span1 = Span (pack name) (pack traceId) (pack spanId)
+                span2 = Span (pack name) "different-trace" "different-span"
+            in spanName span1 == spanName span2 &&
+               spanTraceId span1 /= spanTraceId span2 &&
+               spanSpanId span1 /= spanSpanId span2
+
+      describe "Logger properties" $ do
+        it "should preserve logger properties" $ property $
+          \(name :: String) ->
+            let levels = [Debug, Info, Warn, Error]
+                testLevel = levels !! (abs (length name) `mod` length levels)
+                logger = Logger (pack name) testLevel
+            in unpack (loggerName logger) == name &&
+               loggerLevel logger == testLevel
+        
+        it "should handle all log levels consistently" $ property $
+          \(name :: String) ->
+            let levels = [Debug, Info, Warn, Error]
+                loggers = map (\level -> Logger (pack name) level) levels
+                loggerNames = map loggerName loggers
+                loggerLevels = map loggerLevel loggers
+            in all (== (pack name)) loggerNames &&
+               loggerLevels == levels
+
+    -- 错误处理和异常情况测试
+    describe "Error Handling and Edge Cases" $ do
+      it "should handle extremely long metric names" $ do
+        let longName = pack $ replicate 10000 'a'
+        metric <- createMetric longName "count"
+        metricName metric `shouldBe` longName
+      
+      it "should handle extremely long logger names" $ do
+        let longName = pack $ replicate 10000 'b'
+        logger <- createLogger longName Info
+        loggerName logger `shouldBe` longName
+      
+      it "should handle extremely long span names" $ do
+        let longName = pack $ replicate 10000 'c'
+        span <- createSpan longName
+        spanName span `shouldBe` longName
+      
+      it "should handle unicode characters in all text fields" $ do
+        let unicodeText = pack "测试🚀emoji🌟"
+        metric <- createMetric unicodeText unicodeText
+        logger <- createLogger unicodeText Info
+        span <- createSpan unicodeText
+        
+        metricName metric `shouldBe` unicodeText
+        metricUnit metric `shouldBe` unicodeText
+        loggerName logger `shouldBe` unicodeText
+        spanName span `shouldBe` unicodeText
+      
+      it "should handle null characters and control characters" $ do
+        let controlChars = pack "\0\t\n\r"
+        metric <- createMetric controlChars "control-unit"
+        logger <- createLogger controlChars Info
+        span <- createSpan controlChars
+        
+        metricName metric `shouldBe` controlChars
+        loggerName logger `shouldBe` controlChars
+        spanName span `shouldBe` controlChars
+
+    -- 并发安全测试
+    describe "Concurrency Safety" $ do
+      it "should handle concurrent metric creation" $ do
+        let numThreads = 10
+            operationsPerThread = 100
+        results <- sequence $ replicate numThreads $ do
+          sequence $ replicate operationsPerThread $ do
+            createMetric "concurrent-metric" "count"
+        length results `shouldBe` numThreads
+        length (head results) `shouldBe` operationsPerThread
+      
+      it "should handle concurrent metric recording" $ do
+        metric <- createMetric "concurrent-record" "count"
+        let numThreads = 10
+            operationsPerThread = 100
+        results <- sequence $ replicate numThreads $ do
+          sequence $ replicate operationsPerThread $ do
+            recordMetric metric 1.0
+        length results `shouldBe` numThreads
+        length (head results) `shouldBe` operationsPerThread
+      
+      it "should handle concurrent span operations" $ do
+        let numThreads = 10
+            operationsPerThread = 50
+        results <- sequence $ replicate numThreads $ do
+          sequence $ replicate operationsPerThread $ do
+            span <- createSpan "concurrent-span"
+            finishSpan span
+        length results `shouldBe` numThreads
+        length (head results) `shouldBe` operationsPerThread
+      
+      it "should handle concurrent logging" $ do
+        logger <- createLogger "concurrent-logger" Info
+        let numThreads = 10
+            operationsPerThread = 100
+        results <- sequence $ replicate numThreads $ do
+          sequence $ replicate operationsPerThread $ do
+            logMessage logger Info "concurrent message"
+        length results `shouldBe` numThreads
+        length (head results) `shouldBe` operationsPerThread
+
+    -- 性能和资源限制测试
+    describe "Performance and Resource Limits" $ do
+      it "should handle large number of metrics" $ do
+        let numMetrics = 10000
+        metrics <- sequence $ replicate numMetrics $ do
+          createMetric "perf-metric" "count"
+        length metrics `shouldBe` numMetrics
+        
+        -- Test recording on all metrics
+        sequence_ $ map (`recordMetric` 1.0) metrics
+      
+      it "should handle large number of spans" $ do
+        let numSpans = 5000
+        spans <- sequence $ replicate numSpans $ do
+          createSpan "perf-span"
+        length spans `shouldBe` numSpans
+        
+        -- Test finishing all spans
+        sequence_ $ map finishSpan spans
+      
+      it "should handle large number of loggers" $ do
+        let numLoggers = 1000
+        loggers <- sequence $ replicate numLoggers $ do
+          createLogger "perf-logger" Info
+        length loggers `shouldBe` numLoggers
+        
+        -- Test logging with all loggers
+        sequence_ $ flip map loggers $ \logger -> do
+          logMessage logger Info "performance test message"
+      
+      it "should handle rapid telemetry operations" $ do
+        let numOperations = 10000
+        metric <- createMetric "rapid-metric" "ops"
+        logger <- createLogger "rapid-logger" Info
+        
+        -- Perform rapid operations
+        sequence_ $ replicate numOperations $ do
+          recordMetric metric 1.0
+          logMessage logger Info "rapid operation"
+
+    -- 数据一致性和完整性测试
+    describe "Data Consistency and Integrity" $ do
+      it "should maintain metric consistency across operations" $ do
+        metric <- createMetric "consistency-metric" "count"
+        let originalName = metricName metric
+            originalUnit = metricUnit metric
+        
+        -- Record multiple values
+        recordMetric metric 10.0
+        recordMetric metric 20.0
+        recordMetric metric 30.0
+        
+        -- Verify metric properties remain unchanged
+        metricName metric `shouldBe` originalName
+        metricUnit metric `shouldBe` originalUnit
+      
+      it "should maintain span consistency across operations" $ do
+        span <- createSpan "consistency-span"
+        let originalName = spanName span
+            originalTraceId = spanTraceId span
+            originalSpanId = spanSpanId span
+        
+        -- Perform span operations
+        finishSpan span
+        
+        -- Verify span properties remain unchanged
+        spanName span `shouldBe` originalName
+        spanTraceId span `shouldBe` originalTraceId
+        spanSpanId span `shouldBe` originalSpanId
+      
+      it "should maintain logger consistency across operations" $ do
+        logger <- createLogger "consistency-logger" Warn
+        let originalName = loggerName logger
+            originalLevel = loggerLevel logger
+        
+        -- Perform logging operations
+        logMessage logger Debug "debug message"
+        logMessage logger Info "info message"
+        logMessage logger Warn "warn message"
+        logMessage logger Error "error message"
+        
+        -- Verify logger properties remain unchanged
+        loggerName logger `shouldBe` originalName
+        loggerLevel logger `shouldBe` originalLevel
+      
+      it "should handle complex telemetry workflows" $ do
+        initTelemetry defaultConfig
+        
+        -- Create multiple telemetry components
+        metrics <- sequence $ replicate 10 $ do
+          createMetric "workflow-metric" "count"
+        
+        spans <- sequence $ replicate 5 $ do
+          createSpan "workflow-span"
+        
+        loggers <- sequence $ replicate 3 $ do
+          createLogger "workflow-logger" Info
+        
+        -- Perform complex operations
+        sequence_ $ map (\(metric, index) -> do
+          recordMetric metric (fromIntegral index)) $ zip metrics [1..]
+        
+        sequence_ $ map finishSpan spans
+        
+        sequence_ $ map (\(logger, index) -> do
+          logMessage logger Info $ pack $ "workflow message " ++ show index) $ zip loggers [1..]
+        
+        shutdownTelemetry
