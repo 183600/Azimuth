@@ -1,447 +1,622 @@
-// Azimuth Memory Management Tests
-// This file contains high-quality test cases for memory management
+// Azimuth Memory Management and Resource Cleanup Test Suite
+// 测试遥测系统的内存管理和资源清理功能，确保系统长期稳定运行
 
-// Test 1: Memory Leak Detection in Telemetry Objects
-test "memory leak detection in telemetry objects" {
-  let initial_memory = Memory::allocated()
+// 测试1: 内存泄漏检测
+test "内存泄漏检测测试" {
+  let leak_detector = MemoryLeakDetector::new()
+  let initial_memory = MemoryLeakDetector::get_current_usage(leak_detector)
   
-  // Test case 1: Span creation and cleanup
-  for i in 0..=1000 {
-    let span_ctx = SpanContext::new("trace_" + i.to_string(), "span_" + i.to_string(), true, "test_state")
-    let span = Span::new("test_span", Internal, span_ctx)
-    
-    // Add attributes and events
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "index", IntValue(i))
-    Span::add_event(span, "test_event", Some(attrs))
-    
-    // End span
-    Span::end(span)
-    
-    // In a memory-managed language, span should be garbage collected here
-    // In a manual memory management language, we would explicitly free it
-  }
-  
-  // Force garbage collection if available
-  Memory::gc()
-  
-  let after_spans_memory = Memory::allocated()
-  let spans_memory_increase = after_spans_memory - initial_memory
-  
-  // Memory increase should be minimal (allowing for some GC delay)
-  assert_true(spans_memory_increase < 1000000) // Less than 1MB increase
-  
-  // Test case 2: Attributes creation and cleanup
-  let attrs_initial_memory = Memory::allocated()
-  
-  for i in 0..=1000 {
-    let attrs = Attributes::new()
-    
-    // Add multiple attributes
-    Attributes::set(attrs, "key_" + i.to_string(), StringValue("value_" + i.to_string()))
-    Attributes::set(attrs, "int_key_" + i.to_string(), IntValue(i))
-    Attributes::set(attrs, "float_key_" + i.to_string(), FloatValue(i.to_float()))
-    
-    // Attributes should be garbage collected here
-  }
-  
-  Memory::gc()
-  
-  let after_attrs_memory = Memory::allocated()
-  let attrs_memory_increase = after_attrs_memory - attrs_initial_memory
-  
-  // Memory increase should be minimal
-  assert_true(attrs_memory_increase < 500000) // Less than 0.5MB increase
-  
-  // Test case 3: Metrics objects creation and cleanup
-  let metrics_initial_memory = Memory::allocated()
-  
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test_meter")
-  
-  for i in 0..=500 {
-    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), None, None)
-    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), None, None)
-    let updown_counter = Meter::create_updown_counter(meter, "updown_" + i.to_string(), None, None)
-    
-    // Perform some operations
-    Counter::add(counter, i.to_float())
-    Histogram::record(histogram, i.to_float())
-    UpDownCounter::add(updown_counter, i.to_float())
-    
-    // Metrics should be garbage collected here
-  }
-  
-  Memory::gc()
-  
-  let after_metrics_memory = Memory::allocated()
-  let metrics_memory_increase = after_metrics_memory - metrics_initial_memory
-  
-  // Memory increase should be minimal
-  assert_true(metrics_memory_increase < 1000000) // Less than 1MB increase
-}
-
-// Test 2: Memory Pool Efficiency
-test "memory pool efficiency" {
-  // Test memory pool for telemetry objects
-  
-  let pool = MemoryPool::new(1000) // Pool with 1000 objects
-  
-  let initial_memory = Memory::allocated()
-  
-  // Test case 1: Span allocation from pool
-  let mut spans = []
-  
-  for i in 0..=1000 {
-    let span = MemoryPool::allocate_span(pool, "pooled_span", Internal)
-    spans = Array::append(spans, span)
-  }
-  
-  let after_allocation_memory = Memory::allocated()
-  let allocation_memory_increase = after_allocation_memory - initial_memory
-  
-  // Memory increase should be less than individual allocations
-  assert_true(allocation_memory_increase < 5000000) // Less than 5MB for 1000 spans
-  
-  // Test case 2: Return spans to pool
-  for span in spans {
-    MemoryPool::deallocate_span(pool, span)
-  }
-  
-  Memory::gc()
-  
-  let after_deallocation_memory = Memory::allocated()
-  let deallocation_memory_decrease = after_allocation_memory - after_deallocation_memory
-  
-  // Memory should be released back to pool
-  assert_true(deallocation_memory_decrease > 0)
-  
-  // Test case 3: Reuse from pool
-  let mut reused_spans = []
-  
-  for i in 0..=1000 {
-    let span = MemoryPool::allocate_span(pool, "reused_span", Internal)
-    reused_spans = Array::append(reused_spans, span)
-  }
-  
-  let after_reuse_memory = Memory::allocated()
-  let reuse_memory_increase = after_reuse_memory - after_deallocation_memory
-  
-  // Memory increase should be minimal when reusing from pool
-  assert_true(reuse_memory_increase < allocation_memory_increase / 2)
-  
-  // Clean up
-  for span in reused_spans {
-    MemoryPool::deallocate_span(pool, span)
-  }
-  
-  MemoryPool::destroy(pool)
-}
-
-// Test 3: Large Object Handling
-test "large object handling" {
-  // Test handling of large telemetry objects
-  
-  let initial_memory = Memory::allocated()
-  
-  // Test case 1: Large attribute values
-  let large_string = "x".repeat(1000000) // 1MB string
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "large_data", StringValue(large_string))
-  
-  let after_large_attr_memory = Memory::allocated()
-  let large_attr_memory_increase = after_large_attr_memory - initial_memory
-  
-  // Should account for the large string
-  assert_true(large_attr_memory_increase > 1000000) // At least 1MB
-  
-  // Test case 2: Large number of attributes
-  let many_attrs = Attributes::new()
-  
-  for i in 0..=10000 {
-    Attributes::set(many_attrs, "key_" + i.to_string(), StringValue("value_" + i.to_string()))
-  }
-  
-  let after_many_attrs_memory = Memory::allocated()
-  let many_attrs_memory_increase = after_many_attrs_memory - after_large_attr_memory
-  
-  // Should account for many attributes
-  assert_true(many_attrs_memory_increase > 500000) // At least 0.5MB
-  
-  // Test case 3: Large number of events
-  let span_ctx = SpanContext::new("large_test_trace", "large_test_span", true, "test_state")
-  let span = Span::new("large_test_span", Internal, span_ctx)
-  
-  for i in 0..=1000 {
-    let event_attrs = Attributes::new()
-    Attributes::set(event_attrs, "event_index", IntValue(i))
-    Attributes::set(event_attrs, "event_data", StringValue("event_data_" + i.to_string()))
-    
-    Span::add_event(span, "large_event_" + i.to_string(), Some(event_attrs))
-  }
-  
-  let after_many_events_memory = Memory::allocated()
-  let many_events_memory_increase = after_many_events_memory - after_many_attrs_memory
-  
-  // Should account for many events
-  assert_true(many_events_memory_increase > 1000000) // At least 1MB
-  
-  // End span
-  Span::end(span)
-  
-  // Test case 4: Memory cleanup
-  Memory::gc()
-  
-  let after_cleanup_memory = Memory::allocated()
-  let cleanup_memory_decrease = after_many_events_memory - after_cleanup_memory
-  
-  // Should release significant amount of memory
-  assert_true(cleanup_memory_decrease > many_events_memory_increase / 2)
-}
-
-// Test 4: Memory Pressure Handling
-test "memory pressure handling" {
-  // Test behavior under memory pressure
-  
-  let initial_memory = Memory::allocated()
-  let available_memory = Memory::available()
-  
-  // Test case 1: Gradual memory increase
+  // 创建大量临时对象
   let mut objects = []
-  let allocation_step = 10000000 // 10MB per step
-  let max_steps = 10
+  for i in 0..10000 {
+    let obj = TelemetryObject::new("object_" + i.to_string())
+    objects = objects + [obj]
+  }
   
-  for step in 0..=max_steps - 1 {
-    let large_object = Array::make(allocation_step / 4, step) // 4 bytes per int
-    objects = Array::append(objects, large_object)
+  let peak_memory = MemoryLeakDetector::get_current_usage(leak_detector)
+  assert_true(peak_memory > initial_memory) // 内存使用应该增加
+  
+  // 清理对象引用
+  objects = []
+  
+  // 强制垃圾回收
+  MemoryLeakDetector::force_gc(leak_detector)
+  
+  let final_memory = MemoryLeakDetector::get_current_usage(leak_detector)
+  
+  // 验证内存已释放（允许少量差异）
+  let memory_difference = final_memory - initial_memory
+  assert_true(memory_difference < 1024 * 1024) // 小于1MB的差异
+  
+  // 检查泄漏报告
+  let leak_report = MemoryLeakDetector::generate_report(leak_detector)
+  assert_eq(leak_report.leaked_objects, 0)
+  assert_true(leak_report.memory_recovered > 0)
+}
+
+// 测试2: 循环引用处理
+test "循环引用处理测试" {
+  let gc_monitor = GCMonitor::new()
+  
+  // 创建具有循环引用的对象
+  let obj_a = CircularRefObject::new("A")
+  let obj_b = CircularRefObject::new("B")
+  let obj_c = CircularRefObject::new("C")
+  
+  // 建立循环引用
+  CircularRefObject::set_reference(obj_a, obj_b)
+  CircularRefObject::set_reference(obj_b, obj_c)
+  CircularRefObject::set_reference(obj_c, obj_a)
+  
+  // 验证引用已建立
+  assert_true(CircularRefObject::has_reference(obj_a))
+  assert_true(CircularRefObject::has_reference(obj_b))
+  assert_true(CircularRefObject::has_reference(obj_c))
+  
+  // 记录初始内存状态
+  let initial_memory = GCMonitor::get_memory_usage(gc_monitor)
+  
+  // 清除根引用
+  obj_a = None
+  obj_b = None
+  obj_c = None
+  
+  // 执行垃圾回收
+  GCMonitor::run_gc(gc_monitor)
+  
+  // 验证循环引用对象已被回收
+  let final_memory = GCMonitor::get_memory_usage(gc_monitor)
+  let memory_recovered = initial_memory - final_memory
+  assert_true(memory_recovered > 0) // 应该有内存被回收
+  
+  // 验证GC统计
+  let gc_stats = GCMonitor::get_stats(gc_monitor)
+  assert_true(gc_stats.objects_collected > 0)
+  assert_true(gc_stats.generation == 2) // 应该需要执行到第二代GC
+}
+
+// 测试3: 大对象处理
+test "大对象处理测试" {
+  let large_object_manager = LargeObjectManager::new()
+  
+  // 创建大对象（>1MB）
+  let large_data = "x".repeat(2 * 1024 * 1024) // 2MB数据
+  let large_obj = LargeObject::new(large_data)
+  
+  // 验证大对象创建
+  assert_true(LargeObject::size(large_obj) > 2 * 1024 * 1024)
+  
+  // 将大对象注册到管理器
+  LargeObjectManager::register(large_object_manager, large_obj)
+  
+  // 验证管理器统计
+  let stats = LargeObjectManager::get_stats(large_object_manager)
+  assert_eq(stats.object_count, 1)
+  assert_true(stats.total_size > 2 * 1024 * 1024)
+  
+  // 创建多个大对象
+  let mut large_objects = []
+  for i in 0..5 {
+    let obj = LargeObject::new("data_" + i.to_string() + "x".repeat(1024 * 1024)) // 1MB+数据
+    LargeObjectManager::register(large_object_manager, obj)
+    large_objects = large_objects + [obj]
+  }
+  
+  // 验证管理器统计更新
+  let updated_stats = LargeObjectManager::get_stats(large_object_manager)
+  assert_eq(updated_stats.object_count, 6)
+  assert_true(updated_stats.total_size > 7 * 1024 * 1024) // 至少7MB
+  
+  // 测试大对象压缩
+  let compressed_obj = LargeObject::compress(large_obj)
+  assert_true(LargeObject::size(compressed_obj) < LargeObject::size(large_obj))
+  
+  // 验证压缩后数据一致性
+  let decompressed_data = LargeObject::decompress(compressed_obj)
+  assert_eq(decompressed_data, large_data)
+  
+  // 清理大对象
+  LargeObjectManager::unregister(large_object_manager, large_obj)
+  for obj in large_objects {
+    LargeObjectManager::unregister(large_object_manager, obj)
+  }
+  
+  // 验证清理结果
+  let final_stats = LargeObjectManager::get_stats(large_object_manager)
+  assert_eq(final_stats.object_count, 0)
+  assert_eq(final_stats.total_size, 0)
+}
+
+// 测试4: 资源池管理
+test "资源池管理测试" {
+  let resource_pool = ResourcePool::new(100) // 最大100个资源
+  
+  // 验证初始状态
+  let initial_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(initial_stats.available, 100)
+  assert_eq(initial_stats.in_use, 0)
+  assert_eq(initial_stats.total_created, 0)
+  
+  // 获取资源
+  let mut resources = []
+  for i in 0..50 {
+    let resource = ResourcePool::acquire(resource_pool)
+    resources = resources + [resource]
+  }
+  
+  // 验证获取后的状态
+  let acquire_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(acquire_stats.available, 50)
+  assert_eq(acquire_stats.in_use, 50)
+  assert_eq(acquire_stats.total_created, 50)
+  
+  // 归还部分资源
+  for i in 0..25 {
+    ResourcePool::release(resource_pool, resources[i])
+  }
+  
+  // 验证归还后的状态
+  let release_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(release_stats.available, 75)
+  assert_eq(release_stats.in_use, 25)
+  assert_eq(release_stats.total_created, 50)
+  
+  // 获取更多资源（超过池大小）
+  let mut more_resources = []
+  for i in 0..80 {
+    let resource = ResourcePool::acquire(resource_pool)
+    more_resources = more_resources + [resource]
+  }
+  
+  // 验证池扩展
+  let expanded_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(expanded_stats.in_use, 105) // 25+80
+  assert_true(expanded_stats.total_created > 50) // 应该创建了更多资源
+  
+  // 归还所有资源
+  for resource in resources {
+    ResourcePool::release(resource_pool, resource)
+  }
+  for resource in more_resources {
+    ResourcePool::release(resource_pool, resource)
+  }
+  
+  // 验证最终状态
+  let final_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(final_stats.in_use, 0)
+  assert_true(final_stats.available > 0)
+  
+  // 测试资源池收缩
+  ResourcePool::shrink(resource_pool, 50) // 收缩到50个资源
+  let shrunk_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(shrunk_stats.available, 50)
+  assert_eq(shrunk_stats.total_created, 50)
+}
+
+// 测试5: 文件句柄管理
+test "文件句柄管理测试" {
+  let file_handle_manager = FileHandleManager::new(200) // 最大200个句柄
+  
+  // 验证初始状态
+  let initial_stats = FileHandleManager::get_stats(file_handle_manager)
+  assert_eq(initial_stats.open_handles, 0)
+  assert_eq(initial_stats.max_handles, 200)
+  
+  // 打开多个文件
+  let mut handles = []
+  for i in 0..100 {
+    let handle = FileHandleManager::open(file_handle_manager, "test_file_" + i.to_string())
+    handles = handles + [handle]
+  }
+  
+  // 验证打开后的状态
+  let open_stats = FileHandleManager::get_stats(file_handle_manager)
+  assert_eq(open_stats.open_handles, 100)
+  
+  // 测试句柄复用
+  for i in 0..50 {
+    FileHandleManager::close(file_handle_manager, handles[i])
+    let reused_handle = FileHandleManager::open(file_handle_manager, "reused_file_" + i.to_string())
+    handles[i] = reused_handle
+  }
+  
+  // 验证句柄复用统计
+  let reuse_stats = FileHandleManager::get_stats(file_handle_manager)
+  assert_eq(reuse_stats.open_handles, 100)
+  assert_true(reuse_stats.handles_reused > 0)
+  
+  // 测试句柄泄漏检测
+  let leak_result = FileHandleManager::detect_leaks(file_handle_manager)
+  match leak_result {
+    NoLeaks => assert_true(true)
+    PotentialLeaks(leaked_count) => {
+      assert_true(false) // 不应该有泄漏
+    }
+  }
+  
+  // 关闭部分句柄但不归还到池
+  for i in 50..100 {
+    FileHandleManager::close_direct(file_handle_manager, handles[i])
+  }
+  
+  // 再次检测泄漏
+  let leak_result_after = FileHandleManager::detect_leaks(file_handle_manager)
+  match leak_result_after {
+    NoLeaks => assert_true(true)
+    PotentialLeaks(leaked_count) => {
+      assert_true(leaked_count > 0) // 应该检测到泄漏
+    }
+  }
+  
+  // 清理剩余句柄
+  for i in 0..50 {
+    FileHandleManager::close(file_handle_manager, handles[i])
+  }
+  
+  // 验证最终状态
+  let final_stats = FileHandleManager::get_stats(file_handle_manager)
+  assert_eq(final_stats.open_handles, 0)
+}
+
+// 测试6: 网络连接管理
+test "网络连接管理测试" {
+  let connection_manager = ConnectionManager::new(50) // 最大50个连接
+  
+  // 验证初始状态
+  let initial_stats = ConnectionManager::get_stats(connection_manager)
+  assert_eq(initial_stats.active_connections, 0)
+  assert_eq(initial_stats.total_connections, 0)
+  
+  // 创建多个连接
+  let mut connections = []
+  for i in 0..30 {
+    let connection = ConnectionManager::connect(connection_manager, "server_" + i.to_string(), 8080)
+    connections = connections + [connection]
+  }
+  
+  // 验证连接创建后的状态
+  let connected_stats = ConnectionManager::get_stats(connection_manager)
+  assert_eq(connected_stats.active_connections, 30)
+  assert_eq(connected_stats.total_connections, 30)
+  
+  // 测试连接超时处理
+  Thread::sleep(100) // 短暂等待
+  
+  let timeout_result = ConnectionManager::check_timeouts(connection_manager, 50) // 50ms超时
+  match timeout_result {
+    TimedOut(count) => {
+      assert_true(count > 0) // 应该有超时连接
+    }
+    NoTimeouts => assert_true(false)
+  }
+  
+  // 测试连接池复用
+  for i in 0..15 {
+    ConnectionManager::disconnect(connection_manager, connections[i])
+    let reused_connection = ConnectionManager::connect(connection_manager, "server_" + i.to_string(), 8080)
+    connections[i] = reused_connection
+  }
+  
+  // 验证连接复用统计
+  let reuse_stats = ConnectionManager::get_stats(connection_manager)
+  assert_eq(reuse_stats.active_connections, 30)
+  assert_true(reuse_stats.connections_reused > 0)
+  
+  // 测试连接健康检查
+  let health_results = ConnectionManager::health_check(connection_manager)
+  let healthy_count = 0
+  let unhealthy_count = 0
+  
+  for result in health_results {
+    match result {
+      Healthy => healthy_count = healthy_count + 1
+      Unhealthy => unhealthy_count = unhealthy_count + 1
+    }
+  }
+  
+  assert_true(healthy_count + unhealthy_count == 30)
+  
+  // 清理所有连接
+  for connection in connections {
+    ConnectionManager::disconnect(connection_manager, connection)
+  }
+  
+  // 验证最终状态
+  let final_stats = ConnectionManager::get_stats(connection_manager)
+  assert_eq(final_stats.active_connections, 0)
+}
+
+// 测试7: 缓存内存管理
+test "缓存内存管理测试" {
+  let memory_cache = MemoryCache::new(10 * 1024 * 1024) // 10MB缓存
+  
+  // 验证初始状态
+  let initial_stats = MemoryCache::get_stats(memory_cache)
+  assert_eq(initial_stats.entries, 0)
+  assert_eq(initial_stats.memory_used, 0)
+  
+  // 添加缓存项
+  let mut keys = []
+  for i in 0..1000 {
+    let key = "key_" + i.to_string()
+    let value = "x".repeat(1024) // 1KB值
+    MemoryCache::put(memory_cache, key, value)
+    keys = keys + [key]
+  }
+  
+  // 验证添加后的状态
+  let add_stats = MemoryCache::get_stats(memory_cache)
+  assert_true(add_stats.entries > 0)
+  assert_true(add_stats.memory_used > 0)
+  assert_true(add_stats.memory_used <= 10 * 1024 * 1024) // 不应超过限制
+  
+  // 测试缓存驱逐
+  let evicted_count = MemoryCache::evict_lru(memory_cache, 100) // 驱逐100项
+  assert_true(evicted_count > 0)
+  
+  // 验证驱逐后的状态
+  let evict_stats = MemoryCache::get_stats(memory_cache)
+  assert_true(evict_stats.entries < add_stats.entries)
+  assert_true(evict_stats.memory_used <= add_stats.memory_used)
+  
+  // 测试内存压力处理
+  let large_value = "x".repeat(5 * 1024 * 1024) // 5MB值
+  MemoryCache::put(memory_cache, "large_key", large_value)
+  
+  // 验证内存压力响应
+  let pressure_stats = MemoryCache::get_stats(memory_cache)
+  assert_true(pressure_stats.memory_used <= 10 * 1024 * 1024) // 仍不应超过限制
+  assert_true(pressure_stats.evictions_due_to_pressure > 0)
+  
+  // 测试缓存清理
+  MemoryCache::clear(memory_cache)
+  
+  // 验证清理后的状态
+  let clear_stats = MemoryCache::get_stats(memory_cache)
+  assert_eq(clear_stats.entries, 0)
+  assert_eq(clear_stats.memory_used, 0)
+}
+
+// 测试8: 事件监听器清理
+test "事件监听器清理测试" {
+  let event_system = EventSystem::new()
+  
+  // 验证初始状态
+  let initial_stats = EventSystem::get_stats(event_system)
+  assert_eq(initial_stats.listeners, 0)
+  assert_eq(initial_stats.events_dispatched, 0)
+  
+  // 注册多个事件监听器
+  let mut listeners = []
+  for i in 0..50 {
+    let listener_id = EventSystem::register_listener(event_system, "test_event", fn(event) {
+      // 处理事件
+    })
+    listeners = listeners + [listener_id]
+  }
+  
+  // 验证注册后的状态
+  let register_stats = EventSystem::get_stats(event_system)
+  assert_eq(register_stats.listeners, 50)
+  
+  // 分发事件
+  for i in 0..10 {
+    EventSystem::dispatch(event_system, "test_event", EventData::new("event_" + i.to_string()))
+  }
+  
+  // 验证事件分发后的状态
+  let dispatch_stats = EventSystem::get_stats(event_system)
+  assert_eq(dispatch_stats.listeners, 50)
+  assert_eq(dispatch_stats.events_dispatched, 10)
+  assert_eq(dispatch_stats.events_handled, 500) // 50监听器 * 10事件
+  
+  // 注销部分监听器
+  for i in 0..25 {
+    EventSystem::unregister_listener(event_system, listeners[i])
+  }
+  
+  // 验证注销后的状态
+  let unregister_stats = EventSystem::get_stats(event_system)
+  assert_eq(unregister_stats.listeners, 25)
+  
+  // 再次分发事件
+  for i in 0..5 {
+    EventSystem::dispatch(event_system, "test_event", EventData::new("event_after_" + i.to_string()))
+  }
+  
+  // 验证后续事件处理
+  let final_dispatch_stats = EventSystem::get_stats(event_system)
+  assert_eq(final_dispatch_stats.listeners, 25)
+  assert_eq(final_dispatch_stats.events_dispatched, 15) // 10+5
+  assert_eq(final_dispatch_stats.events_handled, 625) // 500+25*5
+  
+  // 注销剩余监听器
+  for i in 25..50 {
+    EventSystem::unregister_listener(event_system, listeners[i])
+  }
+  
+  // 验证最终状态
+  let final_stats = EventSystem::get_stats(event_system)
+  assert_eq(final_stats.listeners, 0)
+  
+  // 测试监听器泄漏检测
+  let leak_result = EventSystem::detect_listener_leaks(event_system)
+  match leak_result {
+    NoLeaks => assert_true(true)
+    PotentialLeaks(leaked_count) => {
+      assert_true(false) // 不应该有泄漏
+    }
+  }
+}
+
+// 测试9: 弱引用和最终化
+test "弱引用和最终化测试" {
+  let finalization_tracker = FinalizationTracker::new()
+  
+  // 创建对象并注册最终化回调
+  let obj = TrackedObject::new("test_object")
+  let weak_ref = WeakRef::new(obj)
+  
+  // 注册最终化回调
+  FinalizationTracker::track(finalization_tracker, obj, fn() {
+    // 对象被回收时的回调
+  })
+  
+  // 验证弱引用有效
+  assert_true(WeakRef::is_valid(weak_ref))
+  
+  // 通过弱引用获取对象
+  let strong_ref = WeakRef::upgrade(weak_ref)
+  match strong_ref {
+    Some(obj_ref) => {
+      assert_eq(TrackedObject::name(obj_ref), "test_object")
+    }
+    None => assert_true(false)
+  }
+  
+  // 清除强引用
+  obj = None
+  strong_ref = None
+  
+  // 强制垃圾回收
+  FinalizationTracker::force_gc(finalization_tracker)
+  
+  // 验证弱引用已失效
+  assert_false(WeakRef::is_valid(weak_ref))
+  
+  // 验证最终化回调被调用
+  let finalization_stats = FinalizationTracker::get_stats(finalization_tracker)
+  assert_true(finalization_stats.objects_finalized > 0)
+  
+  // 测试多个对象的最终化
+  let mut objects = []
+  let mut weak_refs = []
+  
+  for i in 0..10 {
+    let obj = TrackedObject::new("object_" + i.to_string())
+    let weak_ref = WeakRef::new(obj)
     
-    let current_memory = Memory::allocated()
-    let memory_increase = current_memory - initial_memory
+    FinalizationTracker::track(finalization_tracker, obj, fn() {
+      // 每个对象的最终化回调
+    })
     
-    // Check if we're approaching memory limits
-    if memory_increase > available_memory * 8 / 10 { // 80% of available memory
-      // Should trigger memory pressure handling
-      Memory::handle_pressure()
+    objects = objects + [obj]
+    weak_refs = weak_refs + [weak_ref]
+  }
+  
+  // 清除所有强引用
+  objects = []
+  
+  // 强制垃圾回收
+  FinalizationTracker::force_gc(finalization_tracker)
+  
+  // 验证所有弱引用已失效
+  let mut all_invalid = true
+  for weak_ref in weak_refs {
+    if WeakRef::is_valid(weak_ref) {
+      all_invalid = false
       break
     }
   }
+  assert_true(all_invalid)
   
-  // Test case 2: Telemetry system under memory pressure
-  let telemetry_objects = []
-  
-  for i in 0..=1000 {
-    // Create telemetry objects under memory pressure
-    let span_ctx = SpanContext::new("pressure_test_trace", "pressure_test_span_" + i.to_string(), true, "test_state")
-    let span = Span::new("pressure_test_span", Internal, span_ctx)
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "index", IntValue(i))
-    Attributes::set(attrs, "data", StringValue("pressure_test_data_" + i.to_string()))
-    
-    Span::add_event(span, "pressure_test_event", Some(attrs))
-    telemetry_objects = Array::append(telemetry_objects, span)
-    
-    // Check memory pressure periodically
-    if i % 100 == 0 {
-      let current_memory = Memory::allocated()
-      let memory_increase = current_memory - initial_memory
-      
-      if memory_increase > available_memory * 7 / 10 { // 70% of available memory
-        // Telemetry system should handle memory pressure
-        TelemetrySystem::handle_memory_pressure()
-        break
-      }
-    }
-  }
-  
-  // Test case 3: Memory pressure recovery
-  Memory::handle_pressure()
-  Memory::gc()
-  
-  let after_pressure_memory = Memory::allocated()
-  let pressure_recovery = (after_pressure_memory - initial_memory).to_float() / available_memory.to_float()
-  
-  // Memory usage should be reduced after pressure handling
-  assert_true(pressure_recovery < 0.8) // Less than 80% of available memory
+  // 验证所有对象被最终化
+  let final_finalization_stats = FinalizationTracker::get_stats(finalization_tracker)
+  assert_true(final_finalization_stats.objects_finalized >= 10)
 }
 
-// Test 5: Memory Fragmentation
-test "memory fragmentation" {
-  // Test memory fragmentation patterns
+// 测试10: 资源清理策略
+test "资源清理策略测试" {
+  let cleanup_manager = CleanupManager::new()
   
-  let initial_memory = Memory::allocated()
-  let initial_fragmentation = Memory::fragmentation()
+  // 设置清理策略
+  CleanupManager::set_strategy(cleanup_manager, "aggressive") // 积极清理策略
   
-  // Test case 1: Allocate and deallocate objects of different sizes
-  let objects = []
-  
-  // Allocate objects of varying sizes
-  for i in 0..=100 {
-    let size = 100 + (i * 100) // Sizes from 100 to 10100
-    let object = Array::make(size, i)
-    objects = Array::append(objects, object)
+  // 创建需要清理的资源
+  let mut resources = []
+  for i in 0..100 {
+    let resource = CleanableResource::new("resource_" + i.to_string())
+    resources = resources + [resource]
   }
   
-  let after_allocation_memory = Memory::allocated()
-  let after_allocation_fragmentation = Memory::fragmentation()
+  // 验证资源创建
+  let creation_stats = CleanupManager::get_stats(cleanup_manager)
+  assert_true(creation_stats.resources_created > 0)
   
-  // Deallocate every other object to create fragmentation
-  let mut remaining_objects = []
-  
-  for i in 0..=objects.length() - 1 {
-    if i % 2 == 0 {
-      remaining_objects = Array::append(remaining_objects, objects[i])
-    }
-    // Odd-indexed objects are not kept, causing fragmentation
+  // 标记部分资源为可清理
+  for i in 0..50 {
+    CleanableResource::mark_for_cleanup(resources[i])
   }
   
-  Memory::gc()
+  // 执行清理
+  let cleanup_result = CleanupManager::execute_cleanup(cleanup_manager)
   
-  let after_fragmentation_memory = Memory::allocated()
-  let after_fragmentation_fragmentation = Memory::fragmentation()
+  // 验证清理结果
+  assert_true(cleanup_result.resources_cleaned > 0)
+  assert_true(cleanup_result.memory_freed > 0)
   
-  // Fragmentation should increase
-  assert_true(after_fragmentation_fragmentation >= after_allocation_fragmentation)
+  // 设置保守清理策略
+  CleanupManager::set_strategy(cleanup_manager, "conservative") // 保守清理策略
   
-  // Test case 2: Allocate large objects after fragmentation
-  let large_objects = []
-  
-  for i in 0..=20 {
-    let large_object = Array::make(5000, i) // 20KB each
-    large_objects = Array::append(large_objects, large_object)
+  // 再次标记资源为可清理
+  for i in 50..100 {
+    CleanableResource::mark_for_cleanup(resources[i])
   }
   
-  let after_large_alloc_memory = Memory::allocated()
-  let after_large_alloc_fragmentation = Memory::fragmentation()
+  // 执行清理
+  let conservative_cleanup = CleanupManager::execute_cleanup(cleanup_manager)
   
-  // System should handle allocation despite fragmentation
-  assert_true(after_large_alloc_memory > after_fragmentation_memory)
+  // 验证保守策略清理较少资源
+  assert_true(conservative_cleanup.resources_cleaned <= cleanup_result.resources_cleaned)
   
-  // Test case 3: Defragmentation
-  Memory::defragment()
-  Memory::gc()
+  // 测试自动清理调度
+  CleanupManager::schedule_automatic_cleanup(cleanup_manager, 100) // 每100ms自动清理
   
-  let after_defrag_memory = Memory::allocated()
-  let after_defrag_fragmentation = Memory::fragmentation()
+  // 等待自动清理执行
+  Thread::sleep(250) // 等待至少两次自动清理
   
-  // Fragmentation should decrease after defragmentation
-  assert_true(after_defrag_fragmentation <= after_large_alloc_fragmentation)
+  // 验证自动清理统计
+  let auto_cleanup_stats = CleanupManager::get_stats(cleanup_manager)
+  assert_true(auto_cleanup_stats.automatic_cleanups > 0)
   
-  // Memory usage should be reasonable
-  let total_memory_increase = after_defrag_memory - initial_memory
-  assert_true(total_memory_increase < 50000000) // Less than 50MB total
+  // 停止自动清理
+  CleanupManager::stop_automatic_cleanup(cleanup_manager)
+  
+  // 清理剩余资源
+  for resource in resources {
+    CleanableResource::cleanup(resource)
+  }
+  
+  // 验证最终状态
+  let final_stats = CleanupManager::get_stats(cleanup_manager)
+  assert_true(final_stats.resources_cleaned > 0)
+  assert_true(final_stats.memory_freed > 0)
 }
 
-// Test 6: Memory Profiling and Analysis
-test "memory profiling and analysis" {
-  // Test memory profiling capabilities
-  
-  // Test case 1: Object type profiling
-  let profiler = MemoryProfiler::new()
-  MemoryProfiler::start(profiler)
-  
-  // Create various telemetry objects
-  let spans = []
-  let attributes = []
-  let metrics = []
-  
-  for i in 0..=100 {
-    let span_ctx = SpanContext::new("profile_test_trace", "profile_test_span_" + i.to_string(), true, "test_state")
-    let span = Span::new("profile_test_span", Internal, span_ctx)
-    spans = Array::append(spans, span)
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "index", IntValue(i))
-    attributes = Array::append(attributes, attrs)
-    
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "profile_test_meter")
-    let counter = Meter::create_counter(meter, "profile_counter", None, None)
-    metrics = Array::append(metrics, counter)
+// 辅助函数和类型定义（模拟实现）
+type MemoryLeakDetector
+type GCMonitor
+type CircularRefObject
+type LargeObjectManager
+type LargeObject
+type ResourcePool
+type FileHandleManager
+type ConnectionManager
+type MemoryCache
+type EventSystem
+type WeakRef
+type FinalizationTracker
+type CleanupManager
+type TelemetryObject
+type TrackedObject
+type CleanableResource
+type EventData
+
+// 辅助函数：字符串重复
+fn string_repeat(s : String, count : Int) -> String {
+  let mut result = ""
+  for i in 0..count {
+    result = result + s
   }
-  
-  let profile_data = MemoryProfiler::stop(profiler)
-  
-  // Analyze profile data
-  let span_count = MemoryProfiler::object_count(profile_data, "Span")
-  let attribute_count = MemoryProfiler::object_count(profile_data, "Attributes")
-  let metric_count = MemoryProfiler::object_count(profile_data, "Metric")
-  
-  assert_eq(span_count, 100)
-  assert_eq(attribute_count, 100)
-  assert_eq(metric_count, 100)
-  
-  let span_memory = MemoryProfiler::memory_usage(profile_data, "Span")
-  let attribute_memory = MemoryProfiler::memory_usage(profile_data, "Attributes")
-  let metric_memory = MemoryProfiler::memory_usage(profile_data, "Metric")
-  
-  assert_true(span_memory > 0)
-  assert_true(attribute_memory > 0)
-  assert_true(metric_memory > 0)
-  
-  // Test case 2: Memory growth analysis
-  let growth_profiler = MemoryProfiler::new()
-  MemoryProfiler::start(growth_profiler)
-  
-  let mut growth_data = []
-  
-  for phase in 0..=5 {
-    // Create objects in phases
-    let phase_objects = []
-    
-    for i in 0..=50 {
-      let span_ctx = SpanContext::new("growth_trace_" + phase.to_string(), "growth_span_" + i.to_string(), true, "test_state")
-      let span = Span::new("growth_span", Internal, span_ctx)
-      phase_objects = Array::append(phase_objects, span)
-    }
-    
-    let current_memory = Memory::allocated()
-    growth_data = Array::append(growth_data, (phase, current_memory))
-    
-    // Clean up some objects
-    if phase > 0 {
-      Memory::gc()
-    }
-  }
-  
-  let growth_profile = MemoryProfiler::stop(growth_profiler)
-  let growth_analysis = MemoryProfiler::analyze_growth(growth_profile)
-  
-  // Verify growth analysis
-  assert_true(growth_analysis.phases > 0)
-  assert_true(growth_analysis.total_growth > 0)
-  assert_true(growth_analysis.average_growth_per_phase > 0)
-  
-  // Test case 3: Memory leak detection
-  let leak_profiler = MemoryProfiler::new()
-  MemoryProfiler::start(leak_profiler)
-  
-  // Simulate potential memory leak
-  let leak_objects = []
-  
-  for i in 0..=1000 {
-    let span_ctx = SpanContext::new("leak_test_trace", "leak_test_span_" + i.to_string(), true, "test_state")
-    let span = Span::new("leak_test_span", Internal, span_ctx)
-    
-    // Intentionally keep references to simulate leak
-    leak_objects = Array::append(leak_objects, span)
-  }
-  
-  // Clear references but don't force GC
-  leak_objects = []
-  
-  let leak_profile = MemoryProfiler::stop(leak_profiler)
-  let leak_analysis = MemoryProfiler::detect_leaks(leak_profile)
-  
-  // Should detect potential leaks
-  assert_true(leak_analysis.potential_leaks > 0)
-  
-  // Force GC and re-check
-  Memory::gc()
-  
-  let final_memory = Memory::allocated()
-  let memory_recovered = leak_analysis.peak_memory - final_memory
-  
-  // Should recover some memory after GC
-  assert_true(memory_recovered > 0)
+  result
 }

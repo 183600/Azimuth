@@ -1,939 +1,514 @@
-// Azimuth Concurrent Safety Tests
-// This file contains test cases for concurrent safety functionality
+// Azimuth Concurrent Safety Test Suite
+// 测试遥测系统在并发环境下的安全性和稳定性，确保多线程操作的正确性
 
-// Test 1: Thread-Safe Counter
-test "thread-safe counter implementation" {
-  // Define a thread-safe counter structure
-  type AtomicCounter = {
-    mut value: Int,
-    mut lock: Bool
-  }
+// 测试1: 属性集合并发操作安全性
+test "属性集合并发操作安全性测试" {
+  let shared_attrs = ConcurrentAttributes::new()
+  let num_threads = 50
+  let operations_per_thread = 100
   
-  // Create atomic counter
-  let create_counter = fn(initial_value: Int) {
-    { mut value: initial_value, mut lock: false }
-  }
-  
-  // Acquire lock
-  let acquire_lock = fn(counter: AtomicCounter) {
-    let mut attempts = 0
-    while counter.lock and attempts < 1000 {
-      attempts = attempts + 1
-      // Simulate waiting
-    }
-    counter.lock = true
-    attempts < 1000  // Return true if lock acquired
-  }
-  
-  // Release lock
-  let release_lock = fn(counter: AtomicCounter) {
-    counter.lock = false
-  }
-  
-  // Thread-safe increment
-  let increment = fn(counter: AtomicCounter) {
-    if acquire_lock(counter) {
-      counter.value = counter.value + 1
-      release_lock(counter)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Thread-safe decrement
-  let decrement = fn(counter: AtomicCounter) {
-    if acquire_lock(counter) {
-      counter.value = counter.value - 1
-      release_lock(counter)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Thread-safe get
-  let get_value = fn(counter: AtomicCounter) {
-    if acquire_lock(counter) {
-      let value = counter.value
-      release_lock(counter)
-      value
-    } else {
-      -1  // Error value
-    }
-  }
-  
-  // Test basic operations
-  let counter = create_counter(0)
-  
-  assert_eq(get_value(counter), 0)
-  assert_true(increment(counter))
-  assert_eq(get_value(counter), 1)
-  assert_true(increment(counter))
-  assert_eq(get_value(counter), 2)
-  assert_true(decrement(counter))
-  assert_eq(get_value(counter), 1)
-  
-  // Test multiple operations
-  let mut i = 0
-  while i < 10 {
-    assert_true(increment(counter))
-    i = i + 1
-  }
-  assert_eq(get_value(counter), 11)
-  
-  // Test concurrent access simulation
-  let concurrent_operations = fn(counter: AtomicCounter, operations: Array[String]) {
-    let mut results = []
-    
-    for op in operations {
-      match op {
-        "increment" => results = results.push(increment(counter))
-        "decrement" => results = results.push(decrement(counter))
-        "get" => results = results.push(get_value(counter) >= 0)
-        _ => results = results.push(false)
-      }
-    }
-    
-    results
-  }
-  
-  let ops = ["increment", "increment", "get", "decrement", "increment", "get"]
-  let results = concurrent_operations(counter, ops)
-  
-  assert_true(results.all(fn(r) { r }))
-  assert_eq(get_value(counter), 12)  // 11 + 2 - 1 + 1 = 13, but one decrement
-}
-
-// Test 2: Thread-Safe Queue
-test "thread-safe queue implementation" {
-  // Define a thread-safe queue structure
-  type ThreadSafeQueue = {
-    mut items: Array[String],
-    mut lock: Bool
-  }
-  
-  // Create queue
-  let create_queue = fn() {
-    { mut items: [], mut lock: false }
-  }
-  
-  // Acquire lock
-  let acquire_queue_lock = fn(queue: ThreadSafeQueue) {
-    let mut attempts = 0
-    while queue.lock and attempts < 1000 {
-      attempts = attempts + 1
-    }
-    queue.lock = true
-    attempts < 1000
-  }
-  
-  // Release lock
-  let release_queue_lock = fn(queue: ThreadSafeQueue) {
-    queue.lock = false
-  }
-  
-  // Thread-safe enqueue
-  let enqueue = fn(queue: ThreadSafeQueue, item: String) {
-    if acquire_queue_lock(queue) {
-      queue.items = queue.items.push(item)
-      release_queue_lock(queue)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Thread-safe dequeue
-  let dequeue = fn(queue: ThreadSafeQueue) {
-    if acquire_queue_lock(queue) {
-      if queue.items.length() > 0 {
-        let item = queue.items[0]
-        queue.items = queue.items.slice(1, queue.items.length())
-        release_queue_lock(queue)
-        Some(item)
-      } else {
-        release_queue_lock(queue)
-        None
-      }
-    } else {
-      None
-    }
-  }
-  
-  // Thread-safe peek
-  let peek = fn(queue: ThreadSafeQueue) {
-    if acquire_queue_lock(queue) {
-      let item = if queue.items.length() > 0 {
-        Some(queue.items[0])
-      } else {
-        None
-      }
-      release_queue_lock(queue)
-      item
-    } else {
-      None
-    }
-  }
-  
-  // Thread-safe size
-  let size = fn(queue: ThreadSafeQueue) {
-    if acquire_queue_lock(queue) {
-      let s = queue.items.length()
-      release_queue_lock(queue)
-      s
-    } else {
-      -1  // Error value
-    }
-  }
-  
-  // Test basic queue operations
-  let queue = create_queue()
-  
-  assert_eq(size(queue), 0)
-  assert_eq(peek(queue), None)
-  assert_eq(dequeue(queue), None)
-  
-  // Test enqueue
-  assert_true(enqueue(queue, "item1"))
-  assert_eq(size(queue), 1)
-  assert_eq(peek(queue), Some("item1"))
-  
-  assert_true(enqueue(queue, "item2"))
-  assert_eq(size(queue), 2)
-  assert_eq(peek(queue), Some("item1"))
-  
-  // Test dequeue
-  assert_eq(dequeue(queue), Some("item1"))
-  assert_eq(size(queue), 1)
-  assert_eq(peek(queue), Some("item2"))
-  
-  assert_eq(dequeue(queue), Some("item2"))
-  assert_eq(size(queue), 0)
-  assert_eq(peek(queue), None)
-  
-  // Test multiple operations
-  let mut i = 1
-  while i <= 5 {
-    assert_true(enqueue(queue, "item" + i.to_string()))
-    i = i + 1
-  }
-  assert_eq(size(queue), 5)
-  
-  // Dequeue all items
-  let mut items = []
-  while size(queue) > 0 {
-    match dequeue(queue) {
-      Some(item) => items = items.push(item)
-      None => break
-    }
-  }
-  assert_eq(items.length(), 5)
-  assert_eq(items[0], "item1")
-  assert_eq(items[4], "item5")
-}
-
-// Test 3: Thread-Safe Map
-test "thread-safe map implementation" {
-  // Define a thread-safe map entry
-  type MapEntry = {
-    key: String,
-    value: String
-  }
-  
-  // Define a thread-safe map structure
-  type ThreadSafeMap = {
-    mut entries: Array[MapEntry],
-    mut lock: Bool
-  }
-  
-  // Create map
-  let create_map = fn() {
-    { mut entries: [], mut lock: false }
-  }
-  
-  // Acquire lock
-  let acquire_map_lock = fn(map: ThreadSafeMap) {
-    let mut attempts = 0
-    while map.lock and attempts < 1000 {
-      attempts = attempts + 1
-    }
-    map.lock = true
-    attempts < 1000
-  }
-  
-  // Release lock
-  let release_map_lock = fn(map: ThreadSafeMap) {
-    map.lock = false
-  }
-  
-  // Find entry index
-  let find_entry_index = fn(map: ThreadSafeMap, key: String) {
-    let mut index = -1
-    let mut i = 0
-    
-    while i < map.entries.length() {
-      if map.entries[i].key == key {
-        index = i
-        break
-      }
-      i = i + 1
-    }
-    
-    index
-  }
-  
-  // Thread-safe put
-  let put = fn(map: ThreadSafeMap, key: String, value: String) {
-    if acquire_map_lock(map) {
-      let index = find_entry_index(map, key)
-      
-      if index >= 0 {
-        // Update existing entry
-        map.entries[index] = { key: key, value: value }
-      } else {
-        // Add new entry
-        map.entries = map.entries.push({ key: key, value: value })
-      }
-      
-      release_map_lock(map)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Thread-safe get
-  let get = fn(map: ThreadSafeMap, key: String) {
-    if acquire_map_lock(map) {
-      let index = find_entry_index(map, key)
-      let value = if index >= 0 {
-        Some(map.entries[index].value)
-      } else {
-        None
-      }
-      release_map_lock(map)
-      value
-    } else {
-      None
-    }
-  }
-  
-  // Thread-safe remove
-  let remove = fn(map: ThreadSafeMap, key: String) {
-    if acquire_map_lock(map) {
-      let index = find_entry_index(map, key)
-      let value = if index >= 0 {
-        let value = map.entries[index].value
-        map.entries = map.entries.slice(0, index) + map.entries.slice(index + 1, map.entries.length())
-        Some(value)
-      } else {
-        None
-      }
-      release_map_lock(map)
-      value
-    } else {
-      None
-    }
-  }
-  
-  // Thread-safe contains key
-  let contains_key = fn(map: ThreadSafeMap, key: String) {
-    if acquire_map_lock(map) {
-      let exists = find_entry_index(map, key) >= 0
-      release_map_lock(map)
-      exists
-    } else {
-      false
-    }
-  }
-  
-  // Thread-safe size
-  let map_size = fn(map: ThreadSafeMap) {
-    if acquire_map_lock(map) {
-      let s = map.entries.length()
-      release_map_lock(map)
-      s
-    } else {
-      -1  // Error value
-    }
-  }
-  
-  // Thread-safe keys
-  let keys = fn(map: ThreadSafeMap) {
-    if acquire_map_lock(map) {
-      let all_keys = map.entries.map_fn(e) { e.key }
-      release_map_lock(map)
-      all_keys
-    } else {
-      []
-    }
-  }
-  
-  // Test basic map operations
-  let map = create_map()
-  
-  assert_eq(map_size(map), 0)
-  assert_false(contains_key(map, "key1"))
-  assert_eq(get(map, "key1"), None)
-  assert_eq(remove(map, "key1"), None)
-  
-  // Test put
-  assert_true(put(map, "key1", "value1"))
-  assert_eq(map_size(map), 1)
-  assert_true(contains_key(map, "key1"))
-  assert_eq(get(map, "key1"), Some("value1"))
-  
-  assert_true(put(map, "key2", "value2"))
-  assert_eq(map_size(map), 2)
-  assert_true(contains_key(map, "key2"))
-  assert_eq(get(map, "key2"), Some("value2"))
-  
-  // Test update
-  assert_true(put(map, "key1", "new_value1"))
-  assert_eq(map_size(map), 2)
-  assert_eq(get(map, "key1"), Some("new_value1"))
-  
-  // Test remove
-  assert_eq(remove(map, "key1"), Some("new_value1"))
-  assert_eq(map_size(map), 1)
-  assert_false(contains_key(map, "key1"))
-  assert_eq(get(map, "key1"), None)
-  
-  // Test keys
-  let all_keys = keys(map)
-  assert_eq(all_keys.length(), 1)
-  assert_eq(all_keys[0], "key2")
-}
-
-// Test 4: Thread Pool Simulation
-test "thread pool simulation" {
-  // Define task structure
-  type Task = {
-    id: Int,
-    work: () -> String,
-    status: String,  // "pending", "running", "completed"
-    result: Option[String]
-  }
-  
-  // Define worker structure
-  type Worker = {
-    id: Int,
-    status: String,  // "idle", "busy"
-    current_task: Option[Int]
-  }
-  
-  // Define thread pool structure
-  type ThreadPool = {
-    mut workers: Array[Worker],
-    mut tasks: Array[Task],
-    mut completed_tasks: Array[Task],
-    mut lock: Bool
-  }
-  
-  // Create thread pool
-  let create_thread_pool = fn(worker_count: Int) {
-    let mut workers = []
-    let mut i = 0
-    while i < worker_count {
-      workers = workers.push({
-        id: i,
-        status: "idle",
-        current_task: None
-      })
-      i = i + 1
-    }
-    
-    {
-      mut workers: workers,
-      mut tasks: [],
-      mut completed_tasks: [],
-      mut lock: false
-    }
-  }
-  
-  // Acquire lock
-  let acquire_pool_lock = fn(pool: ThreadPool) {
-    let mut attempts = 0
-    while pool.lock and attempts < 1000 {
-      attempts = attempts + 1
-    }
-    pool.lock = true
-    attempts < 1000
-  }
-  
-  // Release lock
-  let release_pool_lock = fn(pool: ThreadPool) {
-    pool.lock = false
-  }
-  
-  // Submit task
-  let submit_task = fn(pool: ThreadPool, work: () -> String) {
-    if acquire_pool_lock(pool) {
-      let task_id = pool.tasks.length() + pool.completed_tasks.length()
-      let task = {
-        id: task_id,
-        work: work,
-        status: "pending",
-        result: None
-      }
-      pool.tasks = pool.tasks.push(task)
-      release_pool_lock(pool)
-      task_id
-    } else {
-      -1  // Error
-    }
-  }
-  
-  // Find idle worker
-  let find_idle_worker = fn(pool: ThreadPool) {
-    let mut worker_index = -1
-    let mut i = 0
-    
-    while i < pool.workers.length() {
-      if pool.workers[i].status == "idle" {
-        worker_index = i
-        break
-      }
-      i = i + 1
-    }
-    
-    worker_index
-  }
-  
-  // Find pending task
-  let find_pending_task = fn(pool: ThreadPool) {
-    let mut task_index = -1
-    let mut i = 0
-    
-    while i < pool.tasks.length() {
-      if pool.tasks[i].status == "pending" {
-        task_index = i
-        break
-      }
-      i = i + 1
-    }
-    
-    task_index
-  }
-  
-  // Execute one task
-  let execute_one_task = fn(pool: ThreadPool) {
-    if acquire_pool_lock(pool) {
-      let worker_index = find_idle_worker(pool)
-      let task_index = find_pending_task(pool)
-      
-      if worker_index >= 0 and task_index >= 0 {
-        // Assign task to worker
-        pool.workers[worker_index].status = "busy"
-        pool.workers[worker_index].current_task = Some(pool.tasks[task_index].id)
-        pool.tasks[task_index].status = "running"
+  // 创建多个线程同时操作属性集合
+  let mut threads = []
+  for i in 0..num_threads {
+    let thread_id = i
+    let thread = Thread::spawn(fn() {
+      // 每个线程执行读写操作
+      for j in 0..operations_per_thread {
+        let key = "key." + thread_id.to_string() + "." + j.to_string()
+        let value = StringValue("value." + thread_id.to_string() + "." + j.to_string())
         
-        // Execute task
-        let result = pool.tasks[task_index].work()
-        pool.tasks[task_index].result = Some(result)
-        pool.tasks[task_index].status = "completed"
+        // 写入属性
+        ConcurrentAttributes::set(shared_attrs, key, value)
         
-        // Move task to completed
-        let completed_task = pool.tasks[task_index]
-        pool.completed_tasks = pool.completed_tasks.push(completed_task)
-        pool.tasks = pool.tasks.slice(0, task_index) + pool.tasks.slice(task_index + 1, pool.tasks.length())
-        
-        // Free worker
-        pool.workers[worker_index].status = "idle"
-        pool.workers[worker_index].current_task = None
-        
-        release_pool_lock(pool)
-        true
-      } else {
-        release_pool_lock(pool)
-        false
-      }
-    } else {
-      false
-    }
-  }
-  
-  // Execute all tasks
-  let execute_all_tasks = fn(pool: ThreadPool) {
-    let mut executed = 0
-    
-    while execute_one_task(pool) {
-      executed = executed + 1
-    }
-    
-    executed
-  }
-  
-  // Get pool status
-  let get_pool_status = fn(pool: ThreadPool) {
-    if acquire_pool_lock(pool) {
-      let idle_workers = pool.workers.filter_fn(w) { w.status == "idle" }.length()
-      let busy_workers = pool.workers.filter_fn(w) { w.status == "busy" }.length()
-      let pending_tasks = pool.tasks.filter_fn(t) { t.status == "pending" }.length()
-      let running_tasks = pool.tasks.filter_fn(t) { t.status == "running" }.length()
-      let completed_tasks = pool.completed_tasks.length()
-      
-      release_pool_lock(pool)
-      
-      {
-        idle_workers: idle_workers,
-        busy_workers: busy_workers,
-        pending_tasks: pending_tasks,
-        running_tasks: running_tasks,
-        completed_tasks: completed_tasks
-      }
-    } else {
-      {
-        idle_workers: -1,
-        busy_workers: -1,
-        pending_tasks: -1,
-        running_tasks: -1,
-        completed_tasks: -1
-      }
-    }
-  }
-  
-  // Test thread pool
-  let pool = create_thread_pool(3)
-  
-  // Check initial status
-  let status = get_pool_status(pool)
-  assert_eq(status.idle_workers, 3)
-  assert_eq(status.busy_workers, 0)
-  assert_eq(status.pending_tasks, 0)
-  assert_eq(status.running_tasks, 0)
-  assert_eq(status.completed_tasks, 0)
-  
-  // Submit tasks
-  let task1_id = submit_task(pool, fn() { "Task 1 result" })
-  let task2_id = submit_task(pool, fn() { "Task 2 result" })
-  let task3_id = submit_task(pool, fn() { "Task 3 result" })
-  let task4_id = submit_task(pool, fn() { "Task 4 result" })
-  
-  assert_true(task1_id >= 0)
-  assert_true(task2_id >= 0)
-  assert_true(task3_id >= 0)
-  assert_true(task4_id >= 0)
-  
-  // Check status after submitting tasks
-  let status_after_submit = get_pool_status(pool)
-  assert_eq(status_after_submit.idle_workers, 3)
-  assert_eq(status_after_submit.busy_workers, 0)
-  assert_eq(status_after_submit.pending_tasks, 4)
-  assert_eq(status_after_submit.running_tasks, 0)
-  assert_eq(status_after_submit.completed_tasks, 0)
-  
-  // Execute all tasks
-  let executed = execute_all_tasks(pool)
-  assert_eq(executed, 4)
-  
-  // Check final status
-  let final_status = get_pool_status(pool)
-  assert_eq(final_status.idle_workers, 3)
-  assert_eq(final_status.busy_workers, 0)
-  assert_eq(final_status.pending_tasks, 0)
-  assert_eq(final_status.running_tasks, 0)
-  assert_eq(final_status.completed_tasks, 4)
-}
-
-// Test 5: Deadlock Detection
-test "deadlock detection simulation" {
-  // Define resource structure
-  type Resource = {
-    id: String,
-    mut owner: Option[String],
-    mut waiting_queue: Array[String]
-  }
-  
-  // Define process structure
-  type Process = {
-    id: String,
-    mut held_resources: Array[String],
-    mut waiting_for: Option[String>
-  }
-  
-  // Define deadlock detector structure
-  type DeadlockDetector = {
-    mut resources: Array[Resource],
-    mut processes: Array[Process],
-    mut lock: Bool
-  }
-  
-  // Create deadlock detector
-  let create_detector = fn() {
-    {
-      mut resources: [],
-      mut processes: [],
-      mut lock: false
-    }
-  }
-  
-  // Add resource
-  let add_resource = fn(detector: DeadlockDetector, resource_id: String) {
-    if acquire_detector_lock(detector) {
-      detector.resources = detector.resources.push({
-        id: resource_id,
-        mut owner: None,
-        mut waiting_queue: []
-      })
-      release_detector_lock(detector)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Add process
-  let add_process = fn(detector: DeadlockDetector, process_id: String) {
-    if acquire_detector_lock(detector) {
-      detector.processes = detector.processes.push({
-        id: process_id,
-        mut held_resources: [],
-        mut waiting_for: None
-      })
-      release_detector_lock(detector)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Acquire detector lock
-  let acquire_detector_lock = fn(detector: DeadlockDetector) {
-    let mut attempts = 0
-    while detector.lock and attempts < 1000 {
-      attempts = attempts + 1
-    }
-    detector.lock = true
-    attempts < 1000
-  }
-  
-  // Release detector lock
-  let release_detector_lock = fn(detector: DeadlockDetector) {
-    detector.lock = false
-  }
-  
-  // Request resource
-  let request_resource = fn(detector: DeadlockDetector, process_id: String, resource_id: String) {
-    if acquire_detector_lock(detector) {
-      let resource_index = find_resource_index(detector, resource_id)
-      let process_index = find_process_index(detector, process_id)
-      
-      if resource_index >= 0 and process_index >= 0 {
-        let resource = detector.resources[resource_index]
-        
-        match resource.owner {
-          None => {
-            // Resource is free, allocate to process
-            detector.resources[resource_index].owner = Some(process_id)
-            detector.processes[process_index].held_resources = 
-              detector.processes[process_index].held_resources.push(resource_id)
-            release_detector_lock(detector)
-            true
+        // 读取属性
+        let read_result = ConcurrentAttributes::get(shared_attrs, key)
+        match read_result {
+          Some(StringValue(v)) => {
+            // 验证读取的值与写入的值一致
+            assert_eq(v, "value." + thread_id.to_string() + "." + j.to_string())
           }
-          Some(owner) => {
-            if owner == process_id {
-              // Process already owns the resource
-              release_detector_lock(detector)
-              true
-            } else {
-              // Resource is owned by another process, add to waiting queue
-              detector.resources[resource_index].waiting_queue = 
-                detector.resources[resource_index].waiting_queue.push(process_id)
-              detector.processes[process_index].waiting_for = Some(resource_id)
-              release_detector_lock(detector)
-              false
+          _ => assert_true(false)
+        }
+        
+        // 删除属性
+        if j % 10 == 0 {
+          ConcurrentAttributes::remove(shared_attrs, key)
+        }
+      }
+    })
+    threads = threads + [thread]
+  }
+  
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // 验证最终状态
+  let final_size = ConcurrentAttributes::size(shared_attrs)
+  assert_true(final_size > 0) // 应该有剩余的属性
+  assert_true(final_size <= num_threads * operations_per_thread) // 不应该超过最大可能值
+}
+
+// 测试2: 跨度上下文并发创建和传播
+test "跨度上下文并发创建和传播测试" {
+  let context_manager = ConcurrentContextManager::new()
+  let num_threads = 30
+  let spans_per_thread = 50
+  
+  // 创建多个线程同时创建和管理跨度
+  let mut threads = []
+  for i in 0..num_threads {
+    let thread_id = i
+    let thread = Thread::spawn(fn() {
+      let mut span_ids = []
+      
+      // 创建多个跨度
+      for j in 0..spans_per_thread {
+        let trace_id = "trace." + thread_id.to_string()
+        let span_id = "span." + thread_id.to_string() + "." + j.to_string()
+        let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+        
+        // 将跨度上下文存储到管理器
+        ConcurrentContextManager::store(context_manager, span_id, span_ctx)
+        span_ids = span_ids + [span_id]
+        
+        // 从管理器检索跨度上下文
+        let retrieved_ctx = ConcurrentContextManager::get(context_manager, span_id)
+        match retrieved_ctx {
+          Some(ctx) => {
+            assert_eq(SpanContext::trace_id(ctx), trace_id)
+            assert_eq(SpanContext::span_id(ctx), span_id)
+          }
+          None => assert_true(false)
+        }
+      }
+      
+      // 清理创建的跨度
+      for span_id in span_ids {
+        ConcurrentContextManager::remove(context_manager, span_id)
+      }
+    })
+    threads = threads + [thread]
+  }
+  
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // 验证所有跨度已被清理
+  let final_size = ConcurrentContextManager::size(context_manager)
+  assert_eq(final_size, 0)
+}
+
+// 测试3: 度量数据并发收集
+test "度量数据并发收集测试" {
+  let metrics_collector = ConcurrentMetricsCollector::new()
+  let num_producers = 20
+  let metrics_per_producer = 1000
+  
+  // 创建多个生产者线程同时收集度量数据
+  let mut producer_threads = []
+  for i in 0..num_producers {
+    let producer_id = i
+    let thread = Thread::spawn(fn() {
+      for j in 0..metrics_per_producer {
+        let metric_name = "metric." + producer_id.to_string()
+        let metric_value = (j * 1.0) + (producer_id * 0.1)
+        
+        // 记录度量数据
+        ConcurrentMetricsCollector::record_counter(metrics_collector, metric_name, metric_value)
+        ConcurrentMetricsCollector::record_histogram(metrics_collector, metric_name + ".hist", metric_value)
+        
+        // 偶尔获取统计信息
+        if j % 100 == 0 {
+          let stats = ConcurrentMetricsCollector::get_stats(metrics_collector, metric_name)
+          match stats {
+            Some(s) => {
+              assert_true(s.count > 0)
+              assert_true(s.sum >= 0.0)
             }
+            None => assert_true(false)
           }
         }
+      }
+    })
+    producer_threads = producer_threads + [thread]
+  }
+  
+  // 创建消费者线程定期处理度量数据
+  let consumer_thread = Thread::spawn(fn() {
+    let mut processed_count = 0
+    while processed_count < num_producers * metrics_per_producer / 10 {
+      let batch = ConcurrentMetricsCollector::get_batch(metrics_collector, 100)
+      if batch.length() > 0 {
+        // 处理批次数据
+        for metric in batch {
+          // 模拟处理
+          processed_count = processed_count + 1
+        }
       } else {
-        release_detector_lock(detector)
-        false
+        Thread::sleep(10) // 短暂等待
       }
-    } else {
-      false
     }
+  })
+  
+  // 等待所有生产者线程完成
+  for thread in producer_threads {
+    Thread::join(thread)
   }
   
-  // Find resource index
-  let find_resource_index = fn(detector: DeadlockDetector, resource_id: String) {
-    let mut index = -1
-    let mut i = 0
-    
-    while i < detector.resources.length() {
-      if detector.resources[i].id == resource_id {
-        index = i
-        break
+  // 等待消费者线程完成
+  Thread::join(consumer_thread)
+  
+  // 验证最终度量统计
+  let final_stats = ConcurrentMetricsCollector::get_all_stats(metrics_collector)
+  assert_true(final_stats.length() >= num_producers)
+}
+
+// 测试4: 日志记录并发安全性
+test "日志记录并发安全性测试" {
+  let log_processor = ConcurrentLogProcessor::new()
+  let num_writers = 40
+  let logs_per_writer = 500
+  
+  // 创建多个写入线程同时记录日志
+  let mut writer_threads = []
+  for i in 0..num_writers {
+    let writer_id = i
+    let thread = Thread::spawn(fn() {
+      for j in 0..logs_per_writer {
+        let log_level = if j % 4 == 0 { Info } 
+                       else if j % 4 == 1 { Warn }
+                       else if j % 4 == 2 { Error }
+                       else { Debug }
+        
+        let log_message = "Log from writer " + writer_id.to_string() + " message " + j.to_string()
+        let log_record = LogRecord::new(log_level, log_message)
+        
+        // 添加上下文信息
+        LogRecord::add_attribute(log_record, "writer.id", IntValue(writer_id))
+        LogRecord::add_attribute(log_record, "message.index", IntValue(j))
+        
+        // 提交日志记录
+        ConcurrentLogProcessor::submit(log_processor, log_record)
+        
+        // 偶尔检查处理状态
+        if j % 50 == 0 {
+          let processed_count = ConcurrentLogProcessor::get_processed_count(log_processor)
+          assert_true(processed_count >= 0)
+        }
       }
-      i = i + 1
-    }
-    
-    index
+    })
+    writer_threads = writer_threads + [thread]
   }
   
-  // Find process index
-  let find_process_index = fn(detector: DeadlockDetector, process_id: String) {
-    let mut index = -1
-    let mut i = 0
-    
-    while i < detector.processes.length() {
-      if detector.processes[i].id == process_id {
-        index = i
-        break
-      }
-      i = i + 1
-    }
-    
-    index
+  // 等待所有写入线程完成
+  for thread in writer_threads {
+    Thread::join(thread)
   }
   
-  // Release resource
-  let release_resource = fn(detector: DeadlockDetector, process_id: String, resource_id: String) {
-    if acquire_detector_lock(detector) {
-      let resource_index = find_resource_index(detector, resource_id)
-      let process_index = find_process_index(detector, process_id)
+  // 等待所有日志被处理
+  while ConcurrentLogProcessor::get_pending_count(log_processor) > 0 {
+    Thread::sleep(10)
+  }
+  
+  // 验证最终处理统计
+  let total_processed = ConcurrentLogProcessor::get_processed_count(log_processor)
+  let expected_total = num_writers * logs_per_writer
+  assert_eq(total_processed, expected_total)
+}
+
+// 测试5: 资源池并发访问
+test "资源池并发访问测试" {
+  let resource_pool = ConcurrentResourcePool::new(10) // 10个资源
+  let num_clients = 50
+  let operations_per_client = 20
+  
+  // 创建多个客户端线程同时访问资源池
+  let mut client_threads = []
+  for i in 0..num_clients {
+    let client_id = i
+    let thread = Thread::spawn(fn() {
+      let mut successful_acquisitions = 0
+      let mut failed_acquisitions = 0
       
-      if resource_index >= 0 and process_index >= 0 {
-        // Check if process owns the resource
-        if detector.resources[resource_index].owner == Some(process_id) {
-          // Release the resource
-          detector.resources[resource_index].owner = None
-          
-          // Remove from process's held resources
-          let held = detector.processes[process_index].held_resources
-          let mut updated = []
-          for r in held {
-            if r != resource_id {
-              updated = updated.push(r)
-            }
-          }
-          detector.processes[process_index].held_resources = updated
-          
-          // Check waiting queue
-          if detector.resources[resource_index].waiting_queue.length() > 0 {
-            // Allocate to first waiting process
-            let next_process = detector.resources[resource_index].waiting_queue[0]
-            detector.resources[resource_index].owner = Some(next_process)
-            detector.resources[resource_index].waiting_queue = 
-              detector.resources[resource_index].waiting_queue.slice(1, detector.resources[resource_index].waiting_queue.length())
+      for j in 0..operations_per_client {
+        // 尝试从池中获取资源
+        let resource = ConcurrentResourcePool::acquire(resource_pool, 100) // 100ms超时
+        match resource {
+          Some(res) => {
+            successful_acquisitions = successful_acquisitions + 1
             
-            // Update process's held resources
-            let next_process_index = find_process_index(detector, next_process)
-            if next_process_index >= 0 {
-              detector.processes[next_process_index].held_resources = 
-                detector.processes[next_process_index].held_resources.push(resource_id)
-              detector.processes[next_process_index].waiting_for = None
+            // 使用资源
+            Resource::use_for(res, 10 + (client_id % 20)) // 使用10-30ms
+            
+            // 归还资源
+            ConcurrentResourcePool::release(resource_pool, res)
+          }
+          None => {
+            failed_acquisitions = failed_acquisitions + 1
+          }
+        }
+        
+        // 短暂休息
+        Thread::sleep(1 + (client_id % 5))
+      }
+      
+      // 验证至少有一些成功的获取
+      assert_true(successful_acquisitions > 0)
+    })
+    client_threads = client_threads + [thread]
+  }
+  
+  // 等待所有客户端线程完成
+  for thread in client_threads {
+    Thread::join(thread)
+  }
+  
+  // 验证资源池状态
+  let available_resources = ConcurrentResourcePool::available_count(resource_pool)
+  assert_eq(available_resources, 10) // 所有资源应该已归还
+  
+  let total_acquisitions = ConcurrentResourcePool::total_acquisitions(resource_pool)
+  let total_releases = ConcurrentResourcePool::total_releases(resource_pool)
+  assert_eq(total_acquisitions, total_releases) // 获取和释放次数应该相等
+}
+
+// 测试6: 缓存并发操作
+test "缓存并发操作测试" {
+  let cache = ConcurrentCache::new(1000) // 最大1000个条目
+  let num_threads = 30
+  let operations_per_thread = 200
+  
+  // 创建多个线程同时操作缓存
+  let mut cache_threads = []
+  for i in 0..num_threads {
+    let thread_id = i
+    let thread = Thread::spawn(fn() {
+      for j in 0..operations_per_thread {
+        let key = "key." + thread_id.to_string() + "." + j.to_string()
+        let value = "value." + thread_id.to_string() + "." + j.to_string()
+        
+        if j % 3 == 0 {
+          // 缓存写入
+          ConcurrentCache::put(cache, key, value)
+        } else if j % 3 == 1 {
+          // 缓存读取
+          let cached_value = ConcurrentCache::get(cache, key)
+          match cached_value {
+            Some(v) => {
+              // 验证值格式
+              assert_true(v.starts_with("value."))
+            }
+            None => {
+              // 缓存未命中是正常的
             }
           }
-          
-          release_detector_lock(detector)
-          true
         } else {
-          release_detector_lock(detector)
-          false
+          // 缓存删除
+          ConcurrentCache::remove(cache, key)
         }
-      } else {
-        release_detector_lock(detector)
-        false
+        
+        // 偶尔获取缓存统计
+        if j % 50 == 0 {
+          let stats = ConcurrentCache::get_stats(cache)
+          assert_true(stats.size >= 0)
+          assert_true(stats.hits >= 0)
+          assert_true(stats.misses >= 0)
+        }
       }
-    } else {
-      false
-    }
+    })
+    cache_threads = cache_threads + [thread]
   }
   
-  // Detect deadlock
-  let detect_deadlock = fn(detector: DeadlockDetector) {
-    if acquire_detector_lock(detector) {
-      // Build wait graph
-      let mut wait_edges = []
+  // 等待所有线程完成
+  for thread in cache_threads {
+    Thread::join(thread)
+  }
+  
+  // 验证缓存最终状态
+  let final_stats = ConcurrentCache::get_stats(cache)
+  assert_true(final_stats.size <= 1000) // 不应该超过最大容量
+  assert_true(final_stats.hits + final_stats.misses > 0) // 应该有访问操作
+}
+
+// 测试7: 队列并发生产消费
+test "队列并发生产消费测试" {
+  let queue = ConcurrentQueue::new(500) // 最大500个元素
+  let num_producers = 10
+  let num_consumers = 15
+  let items_per_producer = 100
+  
+  // 创建生产者线程
+  let mut producer_threads = []
+  for i in 0..num_producers {
+    let producer_id = i
+    let thread = Thread::spawn(fn() {
+      for j in 0..items_per_producer {
+        let item = "item." + producer_id.to_string() + "." + j.to_string()
+        
+        // 尝试将项目放入队列
+        let enqueued = ConcurrentQueue::enqueue(queue, item, 50) // 50ms超时
+        if !enqueued {
+          // 队列满，稍后重试
+          Thread::sleep(10)
+          let retry_enqueued = ConcurrentQueue::enqueue(queue, item, 50)
+          assert_true(retry_enqueued) // 重试应该成功
+        }
+        
+        // 偶尔休息
+        if j % 20 == 0 {
+          Thread::sleep(1 + (producer_id % 5))
+        }
+      }
+    })
+    producer_threads = producer_threads + [thread]
+  }
+  
+  // 创建消费者线程
+  let mut consumer_threads = []
+  let consumed_count = AtomicCounter::new(0)
+  
+  for i in 0..num_consumers {
+    let thread = Thread::spawn(fn() {
+      let mut local_consumed = 0
       
-      for process in detector.processes {
-        match process.waiting_for {
-          Some(resource_id) => {
-            let resource_index = find_resource_index(detector, resource_id)
-            if resource_index >= 0 {
-              match detector.resources[resource_index].owner {
-                Some(owner_id) => {
-                  wait_edges = wait_edges.push((process.id, owner_id))
-                }
-                None => {}
+      while local_consumed < items_per_producer * num_producers / num_consumers + 10 {
+        // 尝试从队列取出项目
+        let item = ConcurrentQueue::dequeue(queue, 50) // 50ms超时
+        match item {
+          Some(value) => {
+            local_consumed = local_consumed + 1
+            consumed_count.increment()
+            
+            // 验证项目格式
+            assert_true(value.starts_with("item."))
+          }
+          None => {
+            // 队列空，检查是否还有生产者在运行
+            if ConcurrentQueue::is_empty(queue) && 
+               ConcurrentQueue::total_enqueued(queue) >= num_producers * items_per_producer {
+              break // 所有项目已被消费
+            }
+            Thread::sleep(10)
+          }
+        }
+      }
+    })
+    consumer_threads = consumer_threads + [thread]
+  }
+  
+  // 等待所有生产者线程完成
+  for thread in producer_threads {
+    Thread::join(thread)
+  }
+  
+  // 等待所有消费者线程完成
+  for thread in consumer_threads {
+    Thread::join(thread)
+  }
+  
+  // 验证最终状态
+  let total_enqueued = ConcurrentQueue::total_enqueued(queue)
+  let total_dequeued = ConcurrentQueue::total_dequeued(queue)
+  assert_eq(total_enqueued, num_producers * items_per_producer)
+  assert_eq(total_dequeued, total_enqueued)
+  assert_true(ConcurrentQueue::is_empty(queue))
+}
+
+// 测试8: 原子操作复合
+test "原子操作复合测试" {
+  let atomic_map = AtomicMap::new()
+  let num_threads = 25
+  let operations_per_thread = 100
+  
+  // 创建多个线程同时执行复合原子操作
+  let mut threads = []
+  for i in 0..num_threads {
+    let thread_id = i
+    let thread = Thread::spawn(fn() {
+      for j in 0..operations_per_thread {
+        let key = "counter." + (thread_id % 5).to_string() // 5个不同的计数器
+        
+        // 复合原子操作：读取-修改-写入
+        let new_value = AtomicMap::update(atomic_map, key, fn(old_value) {
+          match old_value {
+            Some(IntValue(v)) => IntValue(v + 1)
+            None => IntValue(1)
+          }
+        })
+        
+        match new_value {
+          IntValue(v) => assert_true(v > 0)
+          _ => assert_true(false)
+        }
+        
+        // 原子条件更新
+        if j % 10 == 0 {
+          let conditional_result = AtomicMap::compare_and_set(atomic_map, key, 
+            fn(current_value) {
+              match current_value {
+                IntValue(v) => v > 5 // 只有当值大于5时才更新
+                _ => false
               }
+            },
+            IntValue(100) // 设置为100
+          )
+          
+          if conditional_result {
+            let updated_value = AtomicMap::get(atomic_map, key)
+            match updated_value {
+              Some(IntValue(v)) => assert_eq(v, 100)
+              _ => assert_true(false)
             }
           }
-          None => {}
         }
       }
-      
-      // Simple cycle detection
-      let mut deadlocked_processes = []
-      
-      for edge in wait_edges {
-        let (waiter, holder) = edge
-        
-        // Check if holder is waiting for waiter (direct cycle)
-        let holder_waiting = wait_edges.some_fn(e) { 
-          e.0 == holder and e.1 == waiter 
-        }
-        
-        if holder_waiting {
-          if not(deadlocked_processes.contains(waiter)) {
-            deadlocked_processes = deadlocked_processes.push(waiter)
-          }
-          if not(deadlocked_processes.contains(holder)) {
-            deadlocked_processes = deadlocked_processes.push(holder)
-          }
-        }
-      }
-      
-      release_detector_lock(detector)
-      deadlocked_processes
-    } else {
-      []
-    }
+    })
+    threads = threads + [thread]
   }
   
-  // Test deadlock detection
-  let detector = create_detector()
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
+  }
   
-  // Add resources
-  assert_true(add_resource(detector, "R1"))
-  assert_true(add_resource(detector, "R2"))
+  // 验证最终状态
+  let final_size = AtomicMap::size(atomic_map)
+  assert_eq(final_size, 5) // 应该有5个计数器
   
-  // Add processes
-  assert_true(add_process(detector, "P1"))
-  assert_true(add_process(detector, "P2"))
-  
-  // No deadlock initially
-  let deadlocked = detect_deadlock(detector)
-  assert_eq(deadlocked.length(), 0)
-  
-  // P1 requests R1
-  assert_true(request_resource(detector, "P1", "R1"))
-  
-  // P2 requests R2
-  assert_true(request_resource(detector, "P2", "R2"))
-  
-  // No deadlock yet
-  let deadlocked_after_alloc = detect_deadlock(detector)
-  assert_eq(deadlocked_after_alloc.length(), 0)
-  
-  // P1 requests R2 (waits)
-  assert_false(request_resource(detector, "P1", "R2"))
-  
-  // P2 requests R1 (waits) - this creates a deadlock
-  assert_false(request_resource(detector, "P2", "R1"))
-  
-  // Detect deadlock
-  let deadlocked_final = detect_deadlock(detector)
-  assert_eq(deadlocked_final.length(), 2)
-  assert_true(deadlocked_final.contains("P1"))
-  assert_true(deadlocked_final.contains("P2"))
-  
-  // Break deadlock by having P1 release R1
-  assert_true(release_resource(detector, "P1", "R1"))
-  
-  // Check if deadlock is resolved
-  let deadlocked_after_release = detect_deadlock(detector)
-  assert_eq(deadlocked_after_release.length(), 0)
+  for i in 0..5 {
+    let key = "counter." + i.to_string()
+    let final_value = AtomicMap::get(atomic_map, key)
+    match final_value {
+      Some(IntValue(v)) => assert_true(v > 0)
+      None => assert_true(false)
+    }
+  }
+}
+
+// 辅助类型定义（模拟实现）
+type ConcurrentAttributes
+type ConcurrentContextManager
+type ConcurrentMetricsCollector
+type ConcurrentLogProcessor
+type ConcurrentResourcePool
+type ConcurrentCache
+type ConcurrentQueue
+type AtomicMap
+type AtomicCounter
+type Thread
+type Resource
+type LogRecord
+type SpanContext
+
+// 辅助函数：字符串重复
+fn string_repeat(s : String, count : Int) -> String {
+  let mut result = ""
+  for i in 0..count {
+    result = result + s
+  }
+  result
 }
