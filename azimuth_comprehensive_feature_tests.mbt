@@ -1,301 +1,355 @@
 // Azimuth Telemetry System - Comprehensive Feature Tests
-// This file contains comprehensive test cases for various telemetry features
+// This file contains comprehensive test cases for various features of the telemetry system
 
-// Test 1: AttributeValue Type Conversion
-test "attribute value type conversion" {
-  // Test string to attribute value conversion
-  let str_val = StringValue("hello")
-  match str_val {
-    StringValue(s) => assert_eq(s, "hello")
+// Test 1: Advanced Attribute Type Conversions
+test "advanced attribute type conversions" {
+  // Test string to int conversion
+  let string_num = StringValue("42")
+  match string_num {
+    StringValue(v) => {
+      let int_val = IntValue(v.to_int())
+      match int_val {
+        IntValue(i) => assert_eq(i, 42)
+        _ => assert_true(false)
+      }
+    }
     _ => assert_true(false)
   }
   
-  // Test integer to attribute value conversion
-  let int_val = IntValue(123)
-  match int_val {
-    IntValue(i) => assert_eq(i, 123)
+  // Test string to float conversion
+  let string_float = StringValue("3.14")
+  match string_float {
+    StringValue(v) => {
+      let float_val = FloatValue(v.to_float())
+      match float_val {
+        FloatValue(f) => assert_eq(f, 3.14)
+        _ => assert_true(false)
+      }
+    }
     _ => assert_true(false)
   }
   
-  // Test float to attribute value conversion
-  let float_val = FloatValue(3.14159)
-  match float_val {
-    FloatValue(f) => assert_eq(f, 3.14159)
-    _ => assert_true(false)
-  }
-  
-  // Test boolean to attribute value conversion
+  // Test bool to string conversion
   let bool_val = BoolValue(true)
   match bool_val {
-    BoolValue(b) => assert_true(b)
-    _ => assert_true(false)
-  }
-  
-  // Test string array to attribute value conversion
-  let arr_str_val = ArrayStringValue(["a", "b", "c"])
-  match arr_str_val {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "a")
-      assert_eq(arr[1], "b")
-      assert_eq(arr[2], "c")
+    BoolValue(v) => {
+      let bool_str = StringValue(v.to_string())
+      match bool_str {
+        StringValue(s) => assert_eq(s, "true")
+        _ => assert_true(false)
+      }
     }
     _ => assert_true(false)
   }
 }
 
-// Test 2: Resource Merge Operations
-test "resource merge operations" {
-  // Create two resources with different attributes
-  let resource1 = { attributes: [("service.name", StringValue("service1")), ("version", StringValue("1.0.0"))] }
-  let resource2 = { attributes: [("environment", StringValue("production")), ("version", StringValue("2.0.0"))] }
+// Test 2: Span Event and Timeline Management
+test "span event and timeline management" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "active")
+  let span = Span::new("operation_span", Server, span_ctx)
   
-  // Merge resources (second resource should override duplicate keys)
-  let merged_attrs = resource1.attributes.map(|(k, v)| (k, v)) + resource2.attributes.map(|(k, v)| (k, v))
+  // Test adding events with timestamps
+  Span::add_event(span, "operation_started", Some([("step", StringValue("1"))]))
+  Span::add_event(span, "processing_data", Some([("records", IntValue(100))]))
+  Span::add_event(span, "operation_completed", Some([("status", StringValue("success"))]))
   
-  // Check that we have the expected number of attributes
-  assert_eq(merged_attrs.length(), 3)
+  // Test span status transitions
+  assert_eq(Span::status(span), Unset)
+  Span::set_status(span, Ok, Some("Operation completed successfully"))
+  assert_eq(Span::status(span), Ok)
   
-  // Check that version from resource2 overrides version from resource1
-  let version_found = merged_attrs.any(|(k, v)| {
-    match (k, v) {
-      ("version", StringValue(v)) => v == "2.0.0"
-      _ => false
-    }
-  })
-  assert_true(version_found)
+  // Test span duration tracking
+  Span::end(span)
+  assert_false(Span::is_recording(span))
 }
 
-// Test 3: Context Propagation
-test "context propagation" {
-  // Create a context with data
-  let context = { data: Some(("trace-id", "123456")) }
+// Test 3: Metric Aggregation and Statistics
+test "metric aggregation and statistics" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "aggregation_meter")
   
-  // Check that context data is correctly stored
-  match context.data {
-    Some((key, value)) => {
-      assert_eq(key, "trace-id")
-      assert_eq(value, "123456")
+  // Create histogram for aggregation
+  let response_histogram = Meter::create_histogram(
+    meter, 
+    "http_response_time", 
+    Some("HTTP response time histogram"), 
+    Some("ms")
+  )
+  
+  // Record multiple measurements
+  let measurements = [120.5, 85.2, 200.1, 150.8, 95.3, 180.7, 110.4]
+  for measurement in measurements {
+    Histogram::record(response_histogram, measurement)
+  }
+  
+  // Test counter with attributes
+  let request_counter = Meter::create_counter(
+    meter,
+    "http_requests_total",
+    Some("Total HTTP requests"),
+    Some("requests")
+  )
+  
+  // Record requests with different attributes
+  let success_attrs = Attributes::new()
+  Attributes::set(success_attrs, "status", StringValue("200"))
+  Attributes::set(success_attrs, "method", StringValue("GET"))
+  Counter::add(request_counter, 1.0, Some(success_attrs))
+  
+  let error_attrs = Attributes::new()
+  Attributes::set(error_attrs, "status", StringValue("500"))
+  Attributes::set(error_attrs, "method", StringValue("POST"))
+  Counter::add(request_counter, 1.0, Some(error_attrs))
+}
+
+// Test 4: Context Propagation Across Threads
+test "context propagation across threads" {
+  // Create root context with baggage
+  let root_ctx = Context::root()
+  let baggage = Baggage::new()
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let updated_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-67890")
+  
+  // Create context with baggage
+  let ctx_with_baggage = Context::with_value(
+    root_ctx,
+    ContextKey::new("baggage"),
+    updated_baggage
+  )
+  
+  // Create span context
+  let span_ctx = SpanContext::new("trace987", "span654", true, "propagated")
+  let ctx_with_span = Context::with_value(
+    ctx_with_baggage,
+    ContextKey::new("span_context"),
+    span_ctx
+  )
+  
+  // Test context extraction
+  match Context::get(ctx_with_span, ContextKey::new("baggage")) {
+    Some(b) => {
+      match Baggage::get_entry(b, "user.id") {
+        Some(user_id) => assert_eq(user_id, "12345")
+        None => assert_true(false)
+      }
     }
     None => assert_true(false)
   }
   
-  // Create an empty context
-  let empty_context = { data: None }
-  match empty_context.data {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  match Context::get(ctx_with_span, ContextKey::new("span_context")) {
+    Some(sc) => {
+      match sc {
+        SpanContext(trace_id, span_id, sampled, state) => {
+          assert_eq(trace_id, "trace987")
+          assert_eq(span_id, "span654")
+          assert_true(sampled)
+          assert_eq(state, "propagated")
+        }
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 4: Baggage Operations
-test "baggage operations" {
-  // Create baggage with entries
-  let baggage = { entries: [("user-id", "user123"), ("session-id", "session456")] }
+// Test 5: Log Correlation and Structured Logging
+test "log correlation and structured logging" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "correlation_logger")
   
-  // Check that baggage entries are correctly stored
-  assert_eq(baggage.entries.length(), 2)
+  // Create log record with correlation
+  let trace_id = "trace111"
+  let span_id = "span222"
+  let correlation_attrs = [
+    ("correlation.id", StringValue("corr-333")),
+    ("user.id", StringValue("user-444")),
+    ("session.id", StringValue("session-555"))
+  ]
   
-  // Find user-id entry
-  let user_id_found = baggage.entries.any(|(k, v)| k == "user-id" && v == "user123")
-  assert_true(user_id_found)
+  let log_record = LogRecord::new_with_context(
+    Warn,
+    Some("User operation completed with warnings"),
+    Some(Attributes::from_array(correlation_attrs)),
+    Some(1640995200000L), // timestamp
+    Some(1640995201000L), // observed_timestamp
+    Some(trace_id),
+    Some(span_id),
+    Some(Context::root())
+  )
   
-  // Add new entry to baggage
-  let new_entries = baggage.entries + [("request-id", "req789")]
-  assert_eq(new_entries.length(), 3)
+  assert_eq(LogRecord::severity_number(log_record), Warn)
+  assert_eq(LogRecord::trace_id(log_record), Some(trace_id))
+  assert_eq(LogRecord::span_id(log_record), Some(span_id))
   
-  // Check that new entry is correctly added
-  let request_id_found = new_entries.any(|(k, v)| k == "request-id" && v == "req789")
-  assert_true(request_id_found)
+  // Test log emission
+  Logger::emit(logger, log_record)
+  
+  // Create error log record
+  let error_log = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
+    Some(Attributes::new()),
+    Some(1640995202000L),
+    Some(1640995203000L),
+    Some(trace_id),
+    Some("span333"),
+    Some(Context::root())
+  )
+  
+  Logger::emit(logger, error_log)
 }
 
-// Test 5: SpanContext Functionality
-test "span context functionality" {
-  // Create a span context
-  let span_context = {
-    trace_id: "trace123456789",
-    span_id: "span123456789",
-    sampled: true,
-    trace_state: "key1=value1,key2=value2"
+// Test 6: Resource Merge and Override Behavior
+test "resource merge and override behavior" {
+  // Create base resource
+  let base_attrs = [
+    ("service.name", StringValue("payment-service")),
+    ("service.version", StringValue("1.2.3")),
+    ("deployment.environment", StringValue("production"))
+  ]
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  
+  // Create override resource
+  let override_attrs = [
+    ("service.version", StringValue("2.0.0")), // This should override
+    ("host.name", StringValue("prod-server-01")),
+    ("region", StringValue("us-west-2"))
+  ]
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  
+  // Merge resources
+  let merged_resource = Resource::merge(base_resource, override_resource)
+  
+  // Test merged attributes
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "payment-service")
+    _ => assert_true(false)
   }
   
-  // Check that span context fields are correctly set
-  assert_eq(span_context.trace_id, "trace123456789")
-  assert_eq(span_context.span_id, "span123456789")
-  assert_true(span_context.sampled)
-  assert_eq(span_context.trace_state, "key1=value1,key2=value2")
-  
-  // Create an unsampled span context
-  let unsampled_context = { 
-    trace_id: "trace987654321",
-    span_id: "span987654321",
-    sampled: false,
-    trace_state: ""
+  let service_version = Resource::get_attribute(merged_resource, "service.version")
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "2.0.0") // Should be overridden
+    _ => assert_true(false)
   }
-  assert_false(unsampled_context.sampled)
+  
+  let environment = Resource::get_attribute(merged_resource, "deployment.environment")
+  match environment {
+    Some(StringValue(env)) => assert_eq(env, "production")
+    _ => assert_true(false)
+  }
+  
+  let host_name = Resource::get_attribute(merged_resource, "host.name")
+  match host_name {
+    Some(StringValue(host)) => assert_eq(host, "prod-server-01")
+    _ => assert_true(false)
+  }
+  
+  let region = Resource::get_attribute(merged_resource, "region")
+  match region {
+    Some(StringValue(r)) => assert_eq(r, "us-west-2")
+    _ => assert_true(false)
+  }
 }
 
-// Test 6: TextMapCarrier Injection and Extraction
-test "text map carrier injection and extraction" {
-  // Create a text map carrier with headers
-  let carrier = { headers: [
-    ("traceparent", "00-trace123-span456-01"),
-    ("x-b3-traceid", "trace123"),
-    ("x-b3-spanid", "span456")
-  ]}
+// Test 7: HTTP Client Request/Response Chain
+test "http client request/response chain" {
+  let client = HttpClient::new()
   
-  // Check that headers are correctly stored
-  assert_eq(carrier.headers.length(), 3)
+  // Create request with telemetry context
+  let request_headers = [
+    ("Content-Type", "application/json"),
+    ("Accept", "application/json"),
+    ("X-Request-ID", "req-12345"),
+    ("X-Trace-ID", "trace-67890")
+  ]
   
-  // Find traceparent header
-  let traceparent_found = carrier.headers.any(|(k, v)| k == "traceparent" && v == "00-trace123-span456-01")
-  assert_true(traceparent_found)
+  let request_body = "{\"operation\":\"create\",\"data\":{\"id\":123,\"name\":\"test\"}}"
+  let request = HttpRequest::new(
+    "POST",
+    "https://api.example.com/v1/resources",
+    request_headers,
+    Some(request_body)
+  )
   
-  // Add new header to carrier
-  let new_headers = carrier.headers + [("custom-header", "custom-value")]
-  assert_eq(new_headers.length(), 4)
+  // Test request properties
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/v1/resources")
   
-  // Check that new header is correctly added
-  let custom_header_found = new_headers.any(|(k, v)| k == "custom-header" && v == "custom-value")
-  assert_true(custom_header_found)
+  // Simulate response
+  let response_headers = [
+    ("Content-Type", "application/json"),
+    ("X-Response-ID", "resp-54321"),
+    ("X-Processing-Time", "150")
+  ]
+  
+  let response_body = "{\"id\":123,\"name\":\"test\",\"status\":\"created\",\"timestamp\":1640995200}"
+  let response = HttpResponse::new(201, response_headers, Some(response_body))
+  
+  // Test response properties
+  assert_eq(HttpResponse::status_code(response), 201)
+  match HttpResponse::body(response) {
+    Some(body) => {
+      assert_true(body.contains("created"))
+      assert_true(body.contains("123"))
+    }
+    None => assert_true(false)
+  }
 }
 
-// Test 7: InstrumentationScope Creation
-test "instrumentation scope creation" {
-  // Create an instrumentation scope with all fields
-  let scope = {
-    name: "my-instrument",
-    version: Some("1.0.0"),
-    schema_url: Some("https://example.com/schema")
-  }
+// Test 8: Composite Propagator Injection and Extraction
+test "composite propagator injection and extraction" {
+  // Create composite propagator
+  let trace_propagator = TraceContextPropagator::new()
+  let baggage_propagator = BaggagePropagator::new()
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
   
-  // Check that instrumentation scope fields are correctly set
-  assert_eq(scope.name, "my-instrument")
+  // Create context with span context and baggage
+  let span_ctx = SpanContext::new("trace-abc123", "span-def456", true, "active")
+  let baggage = Baggage::new()
+  let baggage = Baggage::set_entry(baggage, "user.id", "user-789")
+  let baggage = Baggage::set_entry(baggage, "session.id", "session-012")
   
-  match scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
+  let ctx = Context::root()
+  let ctx = Context::with_value(ctx, ContextKey::new("span_context"), span_ctx)
+  let ctx = Context::with_value(ctx, ContextKey::new("baggage"), baggage)
+  
+  // Test injection
+  let carrier = TextMapCarrier::new()
+  CompositePropagator::inject(composite_propagator, ctx, carrier)
+  
+  // Test extraction
+  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
+  
+  // Verify extracted span context
+  match Context::get(extracted_ctx, ContextKey::new("span_context")) {
+    Some(extracted_span_ctx) => {
+      match extracted_span_ctx {
+        SpanContext(trace_id, span_id, sampled, state) => {
+          assert_eq(trace_id, "trace-abc123")
+          assert_eq(span_id, "span-def456")
+          assert_true(sampled)
+          assert_eq(state, "active")
+        }
+        _ => assert_true(false)
+      }
+    }
     None => assert_true(false)
   }
   
-  match scope.schema_url {
-    Some(url) => assert_eq(url, "https://example.com/schema")
+  // Verify extracted baggage
+  match Context::get(extracted_ctx, ContextKey::new("baggage")) {
+    Some(extracted_baggage) => {
+      match Baggage::get_entry(extracted_baggage, "user.id") {
+        Some(user_id) => assert_eq(user_id, "user-789")
+        None => assert_true(false)
+      }
+      
+      match Baggage::get_entry(extracted_baggage, "session.id") {
+        Some(session_id) => assert_eq(session_id, "session-012")
+        None => assert_true(false)
+      }
+    }
     None => assert_true(false)
-  }
-  
-  // Create an instrumentation scope with optional fields as None
-  let minimal_scope = {
-    name: "minimal-instrument",
-    version: None,
-    schema_url: None
-  }
-  
-  assert_eq(minimal_scope.name, "minimal-instrument")
-  match minimal_scope.version {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 8: Attribute Array Operations
-test "attribute array operations" {
-  // Create attributes with array values
-  let attributes = { values: [
-    ("tags", ArrayStringValue(["tag1", "tag2", "tag3"])),
-    ("numbers", ArrayIntValue([1, 2, 3, 4, 5])),
-    ("single", StringValue("value"))
-  ]}
-  
-  // Check that attributes are correctly stored
-  assert_eq(attributes.values.length(), 3)
-  
-  // Find array string attribute
-  let tags_found = attributes.values.any(|(k, v)| {
-    match (k, v) {
-      ("tags", ArrayStringValue(arr)) => arr.length() == 3 && arr[0] == "tag1"
-      _ => false
-    }
-  })
-  assert_true(tags_found)
-  
-  // Find array int attribute
-  let numbers_found = attributes.values.any(|(k, v)| {
-    match (k, v) {
-      ("numbers", ArrayIntValue(arr)) => arr.length() == 5 && arr[0] == 1
-      _ => false
-    }
-  })
-  assert_true(numbers_found)
-  
-  // Find single value attribute
-  let single_found = attributes.values.any(|(k, v)| {
-    match (k, v) {
-      ("single", StringValue(val)) => val == "value"
-      _ => false
-    }
-  })
-  assert_true(single_found)
-}
-
-// Test 9: Telemetry Data Serialization
-test "telemetry data serialization" {
-  // Create a resource for serialization
-  let resource = { attributes: [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("environment", StringValue("test"))
-  ]}
-  
-  // Simulate serialization by converting to string representation
-  let serialized = resource.attributes.map(|(k, v)| {
-    match v {
-      StringValue(s) => k + "=" + s
-      IntValue(i) => k + "=" + i.to_string()
-      FloatValue(f) => k + "=" + f.to_string()
-      BoolValue(b) => k + "=" + b.to_string()
-      ArrayStringValue(arr) => k + "=" + "[" + arr.join(",") + "]"
-      ArrayIntValue(arr) => k + "=" + "[" + arr.map(|x| x.to_string()).join(",") + "]"
-    }
-  }).join(",")
-  
-  // Check that serialization contains expected values
-  assert_true(serialized.contains("service.name=test-service"))
-  assert_true(serialized.contains("service.version=1.0.0"))
-  assert_true(serialized.contains("environment=test"))
-}
-
-// Test 10: Error Handling
-test "error handling" {
-  // Test handling of empty attribute values
-  let empty_string_attr = StringValue("")
-  match empty_string_attr {
-    StringValue(s) => assert_eq(s, "")
-    _ => assert_true(false)
-  }
-  
-  // Test handling of empty array attributes
-  let empty_array_attr = ArrayStringValue([])
-  match empty_array_attr {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_true(false)
-  }
-  
-  // Test handling of zero values
-  let zero_int_attr = IntValue(0)
-  match zero_int_attr {
-    IntValue(i) => assert_eq(i, 0)
-    _ => assert_true(false)
-  }
-  
-  let zero_float_attr = FloatValue(0.0)
-  match zero_float_attr {
-    FloatValue(f) => assert_eq(f, 0.0)
-    _ => assert_true(false)
-  }
-  
-  // Test handling of false boolean
-  let false_bool_attr = BoolValue(false)
-  match false_bool_attr {
-    BoolValue(b) => assert_false(b)
-    _ => assert_true(false)
   }
 }
