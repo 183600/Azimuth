@@ -1,1813 +1,807 @@
-// Azimuth New Comprehensive MoonBit Test Suite
-// This file contains comprehensive test cases for the Azimuth telemetry system
-// focusing on advanced features and edge cases
+// Azimuth Telemetry System - New Comprehensive MoonBit Tests
+// This file contains comprehensive test cases for various telemetry functionalities
 
-// Test 1: Telemetry Data Aggregation and Statistical Analysis
-test "telemetry data aggregation and statistical analysis" {
-  // Define telemetry data structures
-  type Metric = {
-    name: String,
-    value: Float,
-    timestamp: Int,
-    tags: Array[String]
+// Test 1: Data Conversion and Serialization
+test "data conversion and serialization operations" {
+  // Test string to number conversion
+  let str_int = "42"
+  let str_float = "3.14159"
+  let str_bool = "true"
+  
+  // Convert string to int
+  let converted_int = str_int.to_int()
+  match converted_int {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false)
   }
   
-  type AggregatedMetrics = {
-    count: Int,
-    sum: Float,
-    min: Float,
-    max: Float,
-    average: Float,
-    median: Float,
-    percentile_95: Float
+  // Convert string to float
+  let converted_float = str_float.to_float()
+  assert_true(converted_float > 3.14 && converted_float < 3.15)
+  
+  // Convert string to boolean
+  let converted_bool = str_bool.to_bool()
+  assert_true(converted_bool)
+  
+  // Test number to string conversion
+  let int_val = 123
+  let float_val = 45.67
+  let bool_val = false
+  
+  let int_str = int_val.to_string()
+  let float_str = float_val.to_string()
+  let bool_str = bool_val.to_string()
+  
+  assert_eq(int_str, "123")
+  assert_eq(float_str, "45.67")
+  assert_eq(bool_str, "false")
+  
+  // Test array serialization
+  let int_array = [1, 2, 3, 4, 5]
+  let string_array = ["apple", "banana", "cherry"]
+  
+  let int_array_str = int_array.to_string()
+  let string_array_str = string_array.to_string()
+  
+  assert_true(int_array_str.contains("1"))
+  assert_true(int_array_str.contains("5"))
+  assert_true(string_array_str.contains("apple"))
+  assert_true(string_array_str.contains("cherry"))
+  
+  // Test option type serialization
+  let some_value = Some("test")
+  let none_value = None
+  
+  let some_str = some_value.to_string()
+  let none_str = none_value.to_string()
+  
+  assert_true(some_str.contains("test"))
+  assert_eq(none_str, "None")
+}
+
+// Test 2: Caching Mechanism
+test "caching mechanism operations" {
+  // Test simple cache implementation
+  let cache = Cache::new(10) // Cache with capacity of 10 items
+  
+  // Test cache insertion
+  Cache::put(cache, "key1", "value1")
+  Cache::put(cache, "key2", "value2")
+  Cache::put(cache, "key3", "value3")
+  
+  // Test cache retrieval
+  let value1 = Cache::get(cache, "key1")
+  let value2 = Cache::get(cache, "key2")
+  let value3 = Cache::get(cache, "key3")
+  
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
   }
   
-  // Create sample metrics
-  let metrics = [
-    { name: "response_time", value: 120.5, timestamp: 1640995200, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 85.3, timestamp: 1640995260, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 200.1, timestamp: 1640995320, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 95.7, timestamp: 1640995380, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 150.2, timestamp: 1640995440, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 110.8, timestamp: 1640995500, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 180.4, timestamp: 1640995560, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 75.9, timestamp: 1640995620, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 165.3, timestamp: 1640995680, tags: ["endpoint:/api/users"] },
-    { name: "response_time", value: 90.6, timestamp: 1640995740, tags: ["endpoint:/api/users"] }
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
+  }
+  
+  match value3 {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
+  }
+  
+  // Test cache miss
+  let non_existent = Cache::get(cache, "non_existent_key")
+  assert_eq(non_existent, None)
+  
+  // Test cache removal
+  Cache::remove(cache, "key2")
+  let removed_value = Cache::get(cache, "key2")
+  assert_eq(removed_value, None)
+  
+  // Test cache capacity
+  for i = 0; i < 15; i = i + 1 {
+    Cache::put(cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  // Cache should only contain the last 10 items
+  let old_value = Cache::get(cache, "key1")
+  let new_value = Cache::get(cache, "key14")
+  
+  assert_eq(old_value, None) // Should be evicted
+  match new_value {
+    Some(v) => assert_eq(v, "value14")
+    None => assert_true(false)
+  }
+  
+  // Test cache clearing
+  Cache::clear(cache)
+  let cleared_value = Cache::get(cache, "key14")
+  assert_eq(cleared_value, None)
+}
+
+// Test 3: Network Communication
+test "network communication operations" {
+  // Test URL parsing
+  let url1 = "https://example.com:8080/path?query=value#fragment"
+  let url2 = "http://localhost:3000/api/v1/resource"
+  
+  let parsed_url1 = URL::parse(url1)
+  let parsed_url2 = URL::parse(url2)
+  
+  match parsed_url1 {
+    Some(url) => {
+      assert_eq(URL::scheme(url), "https")
+      assert_eq(URL::host(url), "example.com")
+      assert_eq(URL::port(url), Some(8080))
+      assert_eq(URL::path(url), "/path")
+      assert_eq(URL::query(url), Some("query=value"))
+      assert_eq(URL::fragment(url), Some("fragment"))
+    }
+    None => assert_true(false)
+  }
+  
+  match parsed_url2 {
+    Some(url) => {
+      assert_eq(URL::scheme(url), "http")
+      assert_eq(URL::host(url), "localhost")
+      assert_eq(URL::port(url), Some(3000))
+      assert_eq(URL::path(url), "/api/v1/resource")
+      assert_eq(URL::query(url), None)
+      assert_eq(URL::fragment(url), None)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test HTTP header operations
+  let headers = Headers::new()
+  Headers::set(headers, "Content-Type", "application/json")
+  Headers::set(headers, "Authorization", "Bearer token123")
+  Headers::set(headers, "User-Agent", "Azimuth-Telemetry/1.0")
+  
+  let content_type = Headers::get(headers, "Content-Type")
+  let authorization = Headers::get(headers, "Authorization")
+  let user_agent = Headers::get(headers, "User-Agent")
+  
+  match content_type {
+    Some(value) => assert_eq(value, "application/json")
+    None => assert_true(false)
+  }
+  
+  match authorization {
+    Some(value) => assert_eq(value, "Bearer token123")
+    None => assert_true(false)
+  }
+  
+  match user_agent {
+    Some(value) => assert_eq(value, "Azimuth-Telemetry/1.0")
+    None => assert_true(false)
+  }
+  
+  // Test HTTP status codes
+  let status_codes = [
+    (200, "OK"),
+    (201, "Created"),
+    (400, "Bad Request"),
+    (401, "Unauthorized"),
+    (404, "Not Found"),
+    (500, "Internal Server Error")
   ]
   
-  // Filter metrics by name
-  let filter_by_name = fn(name: String, all_metrics: Array[Metric]) {
-    let mut result = []
-    for metric in all_metrics {
-      if metric.name == name {
-        result = result.push(metric)
-      }
-    }
-    result
-  }
-  
-  let response_time_metrics = filter_by_name("response_time", metrics)
-  assert_eq(response_time_metrics.length(), 10)
-  
-  // Calculate basic statistics
-  let calculate_basic_stats = fn(values: Array[Float]) {
-    let mut sum = 0.0
-    let mut min = values[0]
-    let mut max = values[0]
+  for (code, message) in status_codes {
+    let status = HttpStatus::new(code)
+    assert_eq(HttpStatus::code(status), code)
+    assert_eq(HttpStatus::message(status), message)
     
-    for value in values {
-      sum = sum + value
-      if value < min { min = value }
-      if value > max { max = value }
+    // Test status category
+    if code >= 200 && code < 300 {
+      assert_true(HttpStatus::is_success(status))
+    } else if code >= 400 && code < 500 {
+      assert_true(HttpStatus::is_client_error(status))
+    } else if code >= 500 {
+      assert_true(HttpStatus::is_server_error(status))
     }
-    
-    {
-      count: values.length(),
-      sum: sum,
-      min: min,
-      max: max,
-      average: sum / values.length().to_float()
-    }
-  }
-  
-  let values = response_time_metrics.map(fn(m) { m.value })
-  let basic_stats = calculate_basic_stats(values)
-  
-  assert_eq(basic_stats.count, 10)
-  assert_eq(basic_stats.min, 75.9)
-  assert_eq(basic_stats.max, 200.1)
-  assert_eq(basic_stats.sum, 1374.8)
-  assert_eq(basic_stats.average, 137.48)
-  
-  // Calculate median
-  let calculate_median = fn(values: Array[Float]) {
-    let sorted = values.sort(fn(a, b) { a <= b })
-    let n = sorted.length()
-    
-    if n % 2 == 1 {
-      sorted[n / 2]
-    } else {
-      (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
-    }
-  }
-  
-  let median = calculate_median(values)
-  assert_eq(median, 115.3)  // Average of 110.8 and 120.5
-  
-  // Calculate percentile
-  let calculate_percentile = fn(values: Array[Float], percentile: Float) {
-    let sorted = values.sort(fn(a, b) { a <= b })
-    let n = sorted.length()
-    let index = (n.to_float() * percentile / 100.0).to_int()
-    
-    if index >= n { sorted[n - 1] }
-    else { sorted[index] }
-  }
-  
-  let percentile_95 = calculate_percentile(values, 95.0)
-  assert_eq(percentile_95, 200.1)
-  
-  // Create aggregated metrics
-  let aggregated = {
-    count: basic_stats.count,
-    sum: basic_stats.sum,
-    min: basic_stats.min,
-    max: basic_stats.max,
-    average: basic_stats.average,
-    median: median,
-    percentile_95: percentile_95
-  }
-  
-  assert_eq(aggregated.count, 10)
-  assert_eq(aggregated.min, 75.9)
-  assert_eq(aggregated.max, 200.1)
-  assert_eq(aggregated.average, 137.48)
-  assert_eq(aggregated.median, 115.3)
-  assert_eq(aggregated.percentile_95, 200.1)
-  
-  // Test time-based aggregation
-  let aggregate_by_time_window = fn(metrics: Array[Metric], window_size: Int) {
-    let mut result = []
-    let mut current_window = []
-    let mut current_start = if metrics.length() > 0 { metrics[0].timestamp } else { 0 }
-    
-    for metric in metrics {
-      if metric.timestamp < current_start + window_size {
-        current_window = current_window.push(metric)
-      } else {
-        if current_window.length() > 0 {
-          result = result.push(current_window)
-          current_window = []
-        }
-        current_start = metric.timestamp
-        current_window = current_window.push(metric)
-      }
-    }
-    
-    if current_window.length() > 0 {
-      result = result.push(current_window)
-    }
-    
-    result
-  }
-  
-  let time_windows = aggregate_by_time_window(response_time_metrics, 300)  // 5-minute windows
-  assert_eq(time_windows.length(), 2)
-  assert_eq(time_windows[0].length(), 5)
-  assert_eq(time_windows[1].length(), 5)
-}
-
-// Test 2: Distributed Tracing Context Propagation
-test "distributed tracing context propagation" {
-  // Define tracing context structures
-  type TraceContext = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    baggage: Array[(String, String)],
-    flags: Int
-  }
-  
-  type Span = {
-    name: String,
-    context: TraceContext,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    events: Array[SpanEvent]
-  }
-  
-  type SpanEvent = {
-    name: String,
-    timestamp: Int,
-    attributes: Array[(String, String)]
-  }
-  
-  // Create root span
-  let create_root_span = fn(name: String) {
-    let trace_id = "trace-" + (1000 + name.length()).to_string()
-    let span_id = "span-" + (2000 + name.length()).to_string()
-    
-    {
-      name: name,
-      context: {
-        trace_id: trace_id,
-        span_id: span_id,
-        parent_span_id: None,
-        baggage: [],
-        flags: 0
-      },
-      start_time: 1640995200,
-      end_time: 1640995300,
-      status: "ok",
-      events: []
-    }
-  }
-  
-  // Create child span
-  let create_child_span = fn(name: String, parent_context: TraceContext) {
-    let span_id = "span-" + (3000 + name.length()).to_string()
-    
-    {
-      name: name,
-      context: {
-        trace_id: parent_context.trace_id,
-        span_id: span_id,
-        parent_span_id: Some(parent_context.span_id),
-        baggage: parent_context.baggage,
-        flags: parent_context.flags
-      },
-      start_time: 1640995250,
-      end_time: 1640995280,
-      status: "ok",
-      events: []
-    }
-  }
-  
-  // Add baggage item
-  let add_baggage_item = fn(context: TraceContext, key: String, value: String) {
-    {
-      trace_id: context.trace_id,
-      span_id: context.span_id,
-      parent_span_id: context.parent_span_id,
-      baggage: context.baggage.push((key, value)),
-      flags: context.flags
-    }
-  }
-  
-  // Create span hierarchy
-  let root_span = create_root_span("http_request")
-  assert_eq(root_span.context.trace_id, "trace-12")
-  assert_eq(root_span.context.span_id, "span-13")
-  assert_eq(root_span.context.parent_span_id, None)
-  
-  // Add baggage to root context
-  let root_context_with_baggage = add_baggage_item(root_span.context, "user.id", "12345")
-  assert_eq(root_context_with_baggage.baggage.length(), 1)
-  assert_eq(root_context_with_baggage.baggage[0], ("user.id", "12345"))
-  
-  // Create child span with baggage
-  let child_span = create_child_span("database_query", root_context_with_baggage)
-  assert_eq(child_span.context.trace_id, "trace-12")
-  assert_eq(child_span.context.span_id, "span-15")
-  assert_eq(child_span.context.parent_span_id, Some("span-13"))
-  assert_eq(child_span.context.baggage.length(), 1)
-  assert_eq(child_span.context.baggage[0], ("user.id", "12345"))
-  
-  // Add more baggage to child
-  let child_context_with_more_baggage = add_baggage_item(child_span.context, "db.query", "SELECT * FROM users")
-  assert_eq(child_context_with_more_baggage.baggage.length(), 2)
-  
-  // Create grandchild span
-  let grandchild_span = create_child_span("cache_lookup", child_context_with_more_baggage)
-  assert_eq(grandchild_span.context.trace_id, "trace-12")
-  assert_eq(grandchild_span.context.span_id, "span-12")
-  assert_eq(grandchild_span.context.parent_span_id, Some("span-15"))
-  assert_eq(grandchild_span.context.baggage.length(), 2)
-  
-  // Test context extraction and injection
-  let inject_context = fn(context: TraceContext) {
-    "trace-id:" + context.trace_id + 
-    ",span-id:" + context.span_id + 
-    ",parent-span-id:" + (match context.parent_span_id {
-      Some(id) => id
-      None => ""
-    }) + 
-    ",baggage:" + context.baggage.map(fn(item) { 
-      item.0 + "=" + item.1 
-    }).join(",")
-  }
-  
-  let extract_context = fn(headers: String) {
-    let parts = headers.split(",")
-    let mut trace_id = ""
-    let mut span_id = ""
-    let mut parent_span_id = None
-    let mut baggage = []
-    
-    for part in parts {
-      let kv = part.split(":")
-      if kv.length() == 2 {
-        match kv[0] {
-          "trace-id" => trace_id = kv[1]
-          "span-id" => span_id = kv[1]
-          "parent-span-id" => {
-            if kv[1] != "" {
-              parent_span_id = Some(kv[1])
-            }
-          }
-          "baggage" => {
-            if kv[1] != "" {
-              let items = kv[1].split(",")
-              for item in items {
-                let item_kv = item.split("=")
-                if item_kv.length() == 2 {
-                  baggage = baggage.push((item_kv[0], item_kv[1]))
-                }
-              }
-            }
-          }
-          _ => ()
-        }
-      }
-    }
-    
-    {
-      trace_id: trace_id,
-      span_id: span_id,
-      parent_span_id: parent_span_id,
-      baggage: baggage,
-      flags: 0
-    }
-  }
-  
-  // Test context injection
-  let injected = inject_context(grandchild_span.context)
-  assert_true(injected.contains("trace-id:trace-12"))
-  assert_true(injected.contains("span-id:span-12"))
-  assert_true(injected.contains("parent-span-id:span-15"))
-  assert_true(injected.contains("user.id=12345"))
-  assert_true(injected.contains("db.query=SELECT * FROM users"))
-  
-  // Test context extraction
-  let extracted = extract_context(injected)
-  assert_eq(extracted.trace_id, "trace-12")
-  assert_eq(extracted.span_id, "span-12")
-  assert_eq(extracted.parent_span_id, Some("span-15"))
-  assert_eq(extracted.baggage.length(), 2)
-  
-  // Test span event addition
-  let add_span_event = fn(span: Span, event_name: String, attributes: Array[(String, String)]) {
-    let event = {
-      name: event_name,
-      timestamp: 1640995270,
-      attributes: attributes
-    }
-    
-    {
-      name: span.name,
-      context: span.context,
-      start_time: span.start_time,
-      end_time: span.end_time,
-      status: span.status,
-      events: span.events.push(event)
-    }
-  }
-  
-  let child_span_with_event = add_span_event(
-    child_span, 
-    "db.query.start", 
-    [("query", "SELECT * FROM users"), ("table", "users")]
-  )
-  
-  assert_eq(child_span_with_event.events.length(), 1)
-  assert_eq(child_span_with_event.events[0].name, "db.query.start")
-  assert_eq(child_span_with_event.events[0].attributes.length(), 2)
-}
-
-// Test 3: Performance Benchmarking and Resource Management
-test "performance benchmarking and resource management" {
-  // Define performance measurement structures
-  type BenchmarkResult = {
-    name: String,
-    iterations: Int,
-    total_time: Int,
-    min_time: Int,
-    max_time: Int,
-    average_time: Float,
-    operations_per_second: Float
-  }
-  
-  type ResourceUsage = {
-    memory_used: Int,
-    memory_peak: Int,
-    cpu_time: Int,
-    allocations: Int
-  }
-  
-  // Simulate performance measurement
-  let measure_performance = fn(name: String, operation: () -> (), iterations: Int) {
-    let start_time = 1640995200
-    let mut total_time = 0
-    let mut min_time = 999999
-    let mut max_time = 0
-    
-    for i in 1..=iterations {
-      let iteration_start = 1640995200 + i
-      operation()
-      let iteration_end = 1640995200 + i + 10  // Simulate 10ms operation
-      let iteration_time = iteration_end - iteration_start
-      
-      total_time = total_time + iteration_time
-      if iteration_time < min_time { min_time = iteration_time }
-      if iteration_time > max_time { max_time = iteration_time }
-    }
-    
-    let average_time = total_time.to_float() / iterations.to_float()
-    let operations_per_second = 1000.0 / average_time
-    
-    {
-      name: name,
-      iterations: iterations,
-      total_time: total_time,
-      min_time: min_time,
-      max_time: max_time,
-      average_time: average_time,
-      operations_per_second: operations_per_second
-    }
-  }
-  
-  // Test string concatenation performance
-  let string_concat_operation = fn() {
-    let mut result = ""
-    for i in 1..=100 {
-      result = result + "item-" + i.to_string()
-    }
-    result.length()
-  }
-  
-  let string_benchmark = measure_performance("string_concatenation", string_concat_operation, 10)
-  assert_eq(string_benchmark.name, "string_concatenation")
-  assert_eq(string_benchmark.iterations, 10)
-  assert_eq(string_benchmark.min_time, 10)
-  assert_eq(string_benchmark.max_time, 10)
-  assert_eq(string_benchmark.average_time, 10.0)
-  assert_eq(string_benchmark.operations_per_second, 100.0)
-  
-  // Test array operations performance
-  let array_operation = fn() {
-    let mut arr = []
-    for i in 1..=1000 {
-      arr = arr.push(i)
-    }
-    let sum = arr.reduce(fn(acc, x) { acc + x }, 0)
-    sum
-  }
-  
-  let array_benchmark = measure_performance("array_operations", array_operation, 5)
-  assert_eq(array_benchmark.name, "array_operations")
-  assert_eq(array_benchmark.iterations, 5)
-  assert_eq(array_benchmark.min_time, 10)
-  assert_eq(array_benchmark.max_time, 10)
-  assert_eq(array_benchmark.average_time, 10.0)
-  assert_eq(array_benchmark.operations_per_second, 100.0)
-  
-  // Simulate resource usage tracking
-  let track_resource_usage = fn(operation: () -> ()) {
-    let initial_memory = 1024 * 1024  // 1MB
-    let peak_memory = initial_memory
-    let allocations = 100
-    
-    operation()
-    
-    let final_memory = initial_memory + (1024 * 100)  // 100KB more
-    let new_peak = final_memory + (1024 * 50)  // 50KB peak
-    
-    {
-      memory_used: final_memory - initial_memory,
-      memory_peak: new_peak,
-      cpu_time: 50,
-      allocations: allocations
-    }
-  }
-  
-  let resource_usage = track_resource_usage(fn() {
-    let mut arr = []
-    for i in 1..=1000 {
-      arr = arr.push("item-" + i.to_string())
-    }
-    arr.length()
-  })
-  
-  assert_eq(resource_usage.memory_used, 102400)  // 100KB
-  assert_eq(resource_usage.memory_peak, 1075200)  // 1MB + 100KB + 50KB
-  assert_eq(resource_usage.cpu_time, 50)
-  assert_eq(resource_usage.allocations, 100)
-  
-  // Test memory efficiency comparison
-  let compare_memory_efficiency = fn(operation1: () -> (), operation2: () -> ()) {
-    let usage1 = track_resource_usage(operation1)
-    let usage2 = track_resource_usage(operation2)
-    
-    {
-      operation1_memory: usage1.memory_used,
-      operation2_memory: usage2.memory_used,
-      efficiency_ratio: usage1.memory_used.to_float() / usage2.memory_used.to_float()
-    }
-  }
-  
-  let inefficient_operation = fn() {
-    let mut result = ""
-    for i in 1..=100 {
-      result = result + "item-" + i.to_string() + ","
-    }
-    result
-  }
-  
-  let efficient_operation = fn() {
-    let mut arr = []
-    for i in 1..=100 {
-      arr = arr.push("item-" + i.to_string())
-    }
-    arr.join(",")
-  }
-  
-  let efficiency_comparison = compare_memory_efficiency(inefficient_operation, efficient_operation)
-  assert_eq(efficiency_comparison.operation1_memory, 102400)
-  assert_eq(efficiency_comparison.operation2_memory, 102400)
-  assert_eq(efficiency_comparison.efficiency_ratio, 1.0)
-}
-
-// Test 4: Error Handling and Recovery Mechanisms
-test "error handling and recovery mechanisms" {
-  // Define error types
-  enum TelemetryError {
-    NetworkTimeout(String)
-    SerializationError(String)
-    InvalidData(String)
-    ResourceExhausted(String)
-    ServiceUnavailable(String)
-  }
-  
-  type ErrorRecoveryStrategy = {
-    max_retries: Int,
-    backoff_multiplier: Float,
-    max_backoff: Int,
-    retry_on: Array[TelemetryError]
-  }
-  
-  type OperationResult[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryError],
-    attempts: Int
-  }
-  
-  // Create retry operation with exponential backoff
-  let retry_with_backoff = fn[T](
-    operation: () -> OperationResult[T], 
-    strategy: ErrorRecoveryStrategy
-  ) -> OperationResult[T] {
-    let mut attempt = 0
-    let mut backoff = 100  // Initial backoff in ms
-    let mut last_result = operation()
-    
-    while attempt < strategy.max_retries and not(last_result.success) {
-      attempt = attempt + 1
-      
-      // Check if error is retryable
-      let should_retry = match last_result.error {
-        Some(error) => {
-          strategy.retry_on.any(fn(retryable_error) {
-            match (error, retryable_error) {
-              (TelemetryError::NetworkTimeout(_), TelemetryError::NetworkTimeout(_)) => true
-              (TelemetryError::ServiceUnavailable(_), TelemetryError::ServiceUnavailable(_)) => true
-              _ => false
-            }
-          })
-        }
-        None => false
-      }
-      
-      if should_retry {
-        // Simulate backoff delay
-        backoff = (backoff.to_float() * strategy.backoff_multiplier).to_int()
-        if backoff > strategy.max_backoff {
-          backoff = strategy.max_backoff
-        }
-        
-        last_result = operation()
-        last_result.attempts = attempt + 1
-      } else {
-        break
-      }
-    }
-    
-    last_result
-  }
-  
-  // Test successful operation
-  let successful_operation = fn() -> OperationResult[String] {
-    {
-      success: true,
-      data: Some("operation succeeded"),
-      error: None,
-      attempts: 1
-    }
-  }
-  
-  let retry_strategy = {
-    max_retries: 3,
-    backoff_multiplier: 2.0,
-    max_backoff: 1000,
-    retry_on: [TelemetryError::NetworkTimeout(""), TelemetryError::ServiceUnavailable("")]
-  }
-  
-  let success_result = retry_with_backoff(successful_operation, retry_strategy)
-  assert_true(success_result.success)
-  assert_eq(success_result.data, Some("operation succeeded"))
-  assert_eq(success_result.error, None)
-  assert_eq(success_result.attempts, 1)
-  
-  // Test operation that always fails with retryable error
-  let failing_operation = fn() -> OperationResult[String] {
-    {
-      success: false,
-      data: None,
-      error: Some(TelemetryError::NetworkTimeout("Connection timed out")),
-      attempts: 1
-    }
-  }
-  
-  let failure_result = retry_with_backoff(failing_operation, retry_strategy)
-  assert_false(failure_result.success)
-  assert_eq(failure_result.data, None)
-  assert_eq(failure_result.attempts, 4)  // 1 initial + 3 retries
-  
-  // Test operation that fails with non-retryable error
-  let non_retryable_operation = fn() -> OperationResult[String] {
-    {
-      success: false,
-      data: None,
-      error: Some(TelemetryError::InvalidData("Invalid format")),
-      attempts: 1
-    }
-  }
-  
-  let non_retryable_result = retry_with_backoff(non_retryable_operation, retry_strategy)
-  assert_false(non_retryable_result.success)
-  assert_eq(non_retryable_result.data, None)
-  assert_eq(non_retryable_result.attempts, 1)  // No retries for non-retryable error
-  
-  // Test circuit breaker pattern
-  type CircuitBreakerState = {
-    is_open: Bool,
-    failure_count: Int,
-    failure_threshold: Int,
-    recovery_timeout: Int,
-    last_failure_time: Int
-  }
-  
-  let circuit_breaker_operation = fn[T](
-    operation: () -> OperationResult[T],
-    state: CircuitBreakerState,
-    current_time: Int
-  ) -> (OperationResult[T], CircuitBreakerState) {
-    // Check if circuit is open and recovery timeout has passed
-    let is_recovery_time_passed = state.is_open and 
-      (current_time - state.last_failure_time) > state.recovery_timeout
-    
-    let updated_state = if is_recovery_time_passed {
-      // Reset circuit breaker
-      {
-        is_open: false,
-        failure_count: 0,
-        failure_threshold: state.failure_threshold,
-        recovery_timeout: state.recovery_timeout,
-        last_failure_time: state.last_failure_time
-      }
-    } else {
-      state
-    }
-    
-    // If circuit is open, return immediately
-    if updated_state.is_open {
-      let error_result: OperationResult[T] = {
-        success: false,
-        data: None,
-        error: Some(TelemetryError::ServiceUnavailable("Circuit breaker is open")),
-        attempts: 0
-      }
-      return (error_result, updated_state)
-    }
-    
-    // Execute operation
-    let result = operation()
-    
-    // Update circuit breaker state based on result
-    let new_state = if result.success {
-      // Reset failure count on success
-      {
-        is_open: false,
-        failure_count: 0,
-        failure_threshold: updated_state.failure_threshold,
-        recovery_timeout: updated_state.recovery_timeout,
-        last_failure_time: updated_state.last_failure_time
-      }
-    } else {
-      // Increment failure count
-      let new_failure_count = updated_state.failure_count + 1
-      let should_open_circuit = new_failure_count >= updated_state.failure_threshold
-      
-      {
-        is_open: should_open_circuit,
-        failure_count: new_failure_count,
-        failure_threshold: updated_state.failure_threshold,
-        recovery_timeout: updated_state.recovery_timeout,
-        last_failure_time: if should_open_circuit { current_time } else { updated_state.last_failure_time }
-      }
-    }
-    
-    (result, new_state)
-  }
-  
-  // Test circuit breaker with failing operations
-  let initial_state = {
-    is_open: false,
-    failure_count: 0,
-    failure_threshold: 3,
-    recovery_timeout: 60000,  // 1 minute
-    last_failure_time: 0
-  }
-  
-  let mut current_state = initial_state
-  let mut current_time = 1640995200
-  
-  // Execute failing operations
-  for i in 1..=3 {
-    let (result, new_state) = circuit_breaker_operation(failing_operation, current_state, current_time)
-    current_state = new_state
-    current_time = current_time + 1000
-  }
-  
-  // Circuit should be open after 3 failures
-  assert_true(current_state.is_open)
-  assert_eq(current_state.failure_count, 3)
-  
-  // Next operation should fail immediately due to open circuit
-  let (blocked_result, _) = circuit_breaker_operation(failing_operation, current_state, current_time)
-  assert_false(blocked_result.success)
-  match blocked_result.error {
-    Some(TelemetryError::ServiceUnavailable(msg)) => assert_eq(msg, "Circuit breaker is open")
-    _ => assert_true(false)
   }
 }
 
-// Test 5: Data Serialization and Deserialization
-test "data serialization and deserialization" {
-  // Define serialization formats
-  enum SerializationFormat {
-    Json
-    Xml
-    Binary
-    Custom
+// Test 4: Configuration Management
+test "configuration management operations" {
+  // Test configuration loading
+  let config = Config::new()
+  
+  // Test setting and getting configuration values
+  Config::set_string(config, "database.host", "localhost")
+  Config::set_int(config, "database.port", 5432)
+  Config::set_bool(config, "database.ssl", true)
+  Config::set_float(config, "database.timeout", 30.5)
+  
+  // Test retrieving configuration values
+  let db_host = Config::get_string(config, "database.host")
+  let db_port = Config::get_int(config, "database.port")
+  let db_ssl = Config::get_bool(config, "database.ssl")
+  let db_timeout = Config::get_float(config, "database.timeout")
+  
+  match db_host {
+    Some(value) => assert_eq(value, "localhost")
+    None => assert_true(false)
   }
   
-  type SerializableData = {
-    id: String,
-    name: String,
-    timestamp: Int,
-    metrics: Array[(String, Float)],
-    tags: Array[String]
+  match db_port {
+    Some(value) => assert_eq(value, 5432)
+    None => assert_true(false)
   }
   
-  // Simulate JSON serialization
-  let serialize_to_json = fn(data: SerializableData) -> String {
-    let metrics_str = data.metrics.map(fn(item) {
-      "\"" + item.0 + "\":" + item.1.to_string()
-    }).join(",")
-    
-    let tags_str = data.tags.map(fn(tag) { "\"" + tag + "\"" }).join(",")
-    
-    "{" +
-    "\"id\":\"" + data.id + "\"," +
-    "\"name\":\"" + data.name + "\"," +
-    "\"timestamp\":" + data.timestamp.to_string() + "," +
-    "\"metrics\":{" + metrics_str + "}," +
-    "\"tags\":[" + tags_str + "]" +
-    "}"
+  match db_ssl {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
   }
   
-  // Simulate JSON deserialization
-  let deserialize_from_json = fn(json: String) -> SerializableData {
-    // Simplified parsing - in real implementation would use proper JSON parser
-    let id = json.substring(json.find("\"id\":\"") + 6, json.find("\",\"name\":\"") - (json.find("\"id\":\"") + 6))
-    let name_start = json.find("\"name\":\"") + 8
-    let name_end = json.find("\",\"timestamp\":")
-    let name = json.substring(name_start, name_end - name_start)
-    
-    let timestamp_start = json.find("\"timestamp\":") + 11
-    let timestamp_end = json.find(",\"metrics\":")
-    let timestamp = json.substring(timestamp_start, timestamp_end - timestamp_start).to_int()
-    
-    // Parse metrics (simplified)
-    let metrics = [("response_time", 120.5), ("throughput", 1000.0)]
-    
-    // Parse tags (simplified)
-    let tags = ["service:api", "environment:production"]
-    
-    {
-      id: id,
-      name: name,
-      timestamp: timestamp,
-      metrics: metrics,
-      tags: tags
-    }
+  match db_timeout {
+    Some(value) => assert_true(value > 30.0 && value < 31.0)
+    None => assert_true(false)
   }
   
-  // Create test data
-  let test_data = {
-    id: "span-12345",
-    name: "http_request",
-    timestamp: 1640995200,
-    metrics: [("response_time", 120.5), ("throughput", 1000.0)],
-    tags: ["service:api", "environment:production"]
+  // Test default values
+  let non_existent_string = Config::get_string(config, "non.existent.key")
+  let non_existent_int = Config::get_int(config, "non.existent.key")
+  let non_existent_bool = Config::get_bool(config, "non.existent.key")
+  let non_existent_float = Config::get_float(config, "non.existent.key")
+  
+  assert_eq(non_existent_string, None)
+  assert_eq(non_existent_int, None)
+  assert_eq(non_existent_bool, None)
+  assert_eq(non_existent_float, None)
+  
+  // Test configuration with defaults
+  let default_string = Config::get_string_with_default(config, "non.existent.key", "default_value")
+  let default_int = Config::get_int_with_default(config, "non.existent.key", 42)
+  let default_bool = Config::get_bool_with_default(config, "non.existent.key", false)
+  let default_float = Config::get_float_with_default(config, "non.existent.key", 3.14)
+  
+  assert_eq(default_string, "default_value")
+  assert_eq(default_int, 42)
+  assert_false(default_bool)
+  assert_true(default_float > 3.1 && default_float < 3.2)
+  
+  // Test nested configuration
+  Config::set_string(config, "logging.level", "info")
+  Config::set_string(config, "logging.format", "json")
+  Config::set_string(config, "logging.output", "file")
+  
+  let log_level = Config::get_string(config, "logging.level")
+  let log_format = Config::get_string(config, "logging.format")
+  let log_output = Config::get_string(config, "logging.output")
+  
+  match log_level {
+    Some(value) => assert_eq(value, "info")
+    None => assert_true(false)
   }
   
-  // Test JSON serialization
-  let json = serialize_to_json(test_data)
-  assert_true(json.contains("\"id\":\"span-12345\""))
-  assert_true(json.contains("\"name\":\"http_request\""))
-  assert_true(json.contains("\"timestamp\":1640995200"))
-  assert_true(json.contains("\"metrics\":"))
-  assert_true(json.contains("\"tags\":"))
-  
-  // Test JSON deserialization
-  let deserialized_data = deserialize_from_json(json)
-  assert_eq(deserialized_data.id, test_data.id)
-  assert_eq(deserialized_data.name, test_data.name)
-  assert_eq(deserialized_data.timestamp, test_data.timestamp)
-  assert_eq(deserialized_data.metrics.length(), test_data.metrics.length())
-  assert_eq(deserialized_data.tags.length(), test_data.tags.length())
-  
-  // Simulate XML serialization
-  let serialize_to_xml = fn(data: SerializableData) -> String {
-    let metrics_xml = data.metrics.map(fn(item) {
-      "<metric><name>" + item.0 + "</name><value>" + item.1.to_string() + "</value></metric>"
-    }).join("")
-    
-    let tags_xml = data.tags.map(fn(tag) {
-      "<tag>" + tag + "</tag>"
-    }).join("")
-    
-    "<data>" +
-    "<id>" + data.id + "</id>" +
-    "<name>" + data.name + "</name>" +
-    "<timestamp>" + data.timestamp.to_string() + "</timestamp>" +
-    "<metrics>" + metrics_xml + "</metrics>" +
-    "<tags>" + tags_xml + "</tags>" +
-    "</data>"
+  match log_format {
+    Some(value) => assert_eq(value, "json")
+    None => assert_true(false)
   }
   
-  // Test XML serialization
-  let xml = serialize_to_xml(test_data)
-  assert_true(xml.contains("<id>span-12345</id>"))
-  assert_true(xml.contains("<name>http_request</name>"))
-  assert_true(xml.contains("<timestamp>1640995200</timestamp>"))
-  assert_true(xml.contains("<metrics>"))
-  assert_true(xml.contains("<tags>"))
-  
-  // Simulate binary serialization
-  let serialize_to_binary = fn(data: SerializableData) -> Array[Int] {
-    // Simplified binary representation
-    let mut result = []
-    
-    // Add string lengths and character codes
-    result = result.push(data.id.length())
-    for c in data.id.to_char_array() {
-      result = result.push(c.to_int())
-    }
-    
-    result = result.push(data.name.length())
-    for c in data.name.to_char_array() {
-      result = result.push(c.to_int())
-    }
-    
-    // Add timestamp as 4 bytes (simplified)
-    result = result.push(data.timestamp / 1000000)
-    result = result.push((data.timestamp / 1000) % 1000)
-    result = result.push(data.timestamp % 1000)
-    result = result.push(0)
-    
-    // Add metrics count and values
-    result = result.push(data.metrics.length())
-    for metric in data.metrics {
-      result = result.push(metric.0.length())
-      for c in metric.0.to_char_array() {
-        result = result.push(c.to_int())
-      }
-      // Simplified float encoding
-      result = result.push(metric.1.to_int())
-    }
-    
-    result
+  match log_output {
+    Some(value) => assert_eq(value, "file")
+    None => assert_true(false)
   }
   
-  // Test binary serialization
-  let binary = serialize_to_binary(test_data)
-  assert_eq(binary[0], test_data.id.length())  // ID length
-  assert_eq(binary[0] + 1 + test_data.id.length(), test_data.name.length())  // Name length position
+  // Test configuration serialization
+  let serialized = Config::serialize(config)
+  assert_true(serialized.contains("database.host"))
+  assert_true(serialized.contains("localhost"))
+  assert_true(serialized.contains("logging.level"))
+  assert_true(serialized.contains("info"))
   
-  // Test format conversion
-  let convert_format = fn(data: SerializableData, from: SerializationFormat, to: SerializationFormat) -> String {
-    match (from, to) {
-      (SerializationFormat::Json, SerializationFormat::Xml) => {
-        let json = serialize_to_json(data)
-        let xml = serialize_to_xml(data)
-        "Converted JSON to XML: " + xml.length().to_string() + " chars"
-      }
-      (SerializationFormat::Xml, SerializationFormat::Json) => {
-        let xml = serialize_to_xml(data)
-        let json = serialize_to_json(data)
-        "Converted XML to JSON: " + json.length().to_string() + " chars"
-      }
-      (SerializationFormat::Json, SerializationFormat::Binary) => {
-        let json = serialize_to_json(data)
-        let binary = serialize_to_binary(data)
-        "Converted JSON to Binary: " + binary.length().to_string() + " bytes"
-      }
-      _ => "Unsupported conversion"
-    }
-  }
+  // Test configuration deserialization
+  let new_config = Config::deserialize(serialized)
+  let deserialized_host = Config::get_string(new_config, "database.host")
   
-  // Test format conversions
-  let json_to_xml = convert_format(test_data, SerializationFormat::Json, SerializationFormat::Xml)
-  assert_true(json_to_xml.contains("Converted JSON to XML"))
-  
-  let xml_to_json = convert_format(test_data, SerializationFormat::Xml, SerializationFormat::Json)
-  assert_true(xml_to_json.contains("Converted XML to JSON"))
-  
-  let json_to_binary = convert_format(test_data, SerializationFormat::Json, SerializationFormat::Binary)
-  assert_true(json_to_binary.contains("Converted JSON to Binary"))
-  
-  // Test serialization error handling
-  let serialize_with_validation = fn(data: SerializableData) -> Result[String] {
-    if data.id.length() == 0 {
-      Err("Invalid ID: empty string")
-    } else if data.name.length() == 0 {
-      Err("Invalid name: empty string")
-    } else if data.timestamp <= 0 {
-      Err("Invalid timestamp: must be positive")
-    } else if data.metrics.length() == 0 {
-      Err("Invalid metrics: empty array")
-    } else {
-      Ok(serialize_to_json(data))
-    }
-  }
-  
-  // Test valid data
-  let valid_result = serialize_with_validation(test_data)
-  match valid_result {
-    Ok(json) => assert_true(json.contains("\"id\":\"span-12345\""))
-    Err(_) => assert_true(false)
-  }
-  
-  // Test invalid data
-  let invalid_data = { test_data | id: "" }
-  let invalid_result = serialize_with_validation(invalid_data)
-  match invalid_result {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Invalid ID: empty string")
+  match deserialized_host {
+    Some(value) => assert_eq(value, "localhost")
+    None => assert_true(false)
   }
 }
 
-// Test 6: Concurrent Safety and Thread Synchronization
-test "concurrent safety and thread synchronization" {
-  // Define concurrent data structures
-  type ConcurrentCounter = {
-    mut value: Int,
-    mut lock: Bool
+// Test 5: Internationalization Support
+test "internationalization support operations" {
+  // Test locale creation
+  let en_us = Locale::new("en-US")
+  let zh_cn = Locale::new("zh-CN")
+  let fr_fr = Locale::new("fr-FR")
+  
+  assert_eq(Locale::language(en_us), "en")
+  assert_eq(Locale::country(en_us), "US")
+  
+  assert_eq(Locale::language(zh_cn), "zh")
+  assert_eq(Locale::country(zh_cn), "CN")
+  
+  assert_eq(Locale::language(fr_fr), "fr")
+  assert_eq(Locale::country(fr_fr), "FR")
+  
+  // Test message formatting
+  let messages = Messages::new()
+  
+  // Add messages for different locales
+  Messages::add(messages, en_us, "welcome", "Welcome to Azimuth Telemetry")
+  Messages::add(messages, zh_cn, "welcome", "欢迎使用 Azimuth 遥测系统")
+  Messages::add(messages, fr_fr, "welcome", "Bienvenue dans Azimuth Télémétrie")
+  
+  Messages::add(messages, en_us, "error.database", "Database connection failed")
+  Messages::add(messages, zh_cn, "error.database", "数据库连接失败")
+  Messages::add(messages, fr_fr, "error.database", "La connexion à la base de données a échoué")
+  
+  // Test message retrieval
+  let welcome_en = Messages::get(messages, en_us, "welcome")
+  let welcome_zh = Messages::get(messages, zh_cn, "welcome")
+  let welcome_fr = Messages::get(messages, fr_fr, "welcome")
+  
+  match welcome_en {
+    Some(msg) => assert_eq(msg, "Welcome to Azimuth Telemetry")
+    None => assert_true(false)
   }
   
-  type ConcurrentQueue[T] = {
-    mut items: Array[T],
-    mut lock: Bool
+  match welcome_zh {
+    Some(msg) => assert_eq(msg, "欢迎使用 Azimuth 遥测系统")
+    None => assert_true(false)
   }
   
-  // Simulate atomic operations
-  let atomic_increment = fn(counter: ConcurrentCounter) -> Int {
-    // Simulate acquiring lock
-    while counter.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    counter.lock = true
-    
-    // Perform operation
-    counter.value = counter.value + 1
-    let result = counter.value
-    
-    // Release lock
-    counter.lock = false
-    
-    result
+  match welcome_fr {
+    Some(msg) => assert_eq(msg, "Bienvenue dans Azimuth Télémétrie")
+    None => assert_true(false)
   }
   
-  // Test concurrent counter
-  let counter = { mut value: 0, mut lock: false }
+  // Test parameterized messages
+  Messages::add(messages, en_us, "user.greeting", "Hello, {name}! You have {count} new messages.")
+  Messages::add(messages, zh_cn, "user.greeting", "你好，{name}！您有 {count} 条新消息。")
+  Messages::add(messages, fr_fr, "user.greeting", "Bonjour, {name}! Vous avez {count} nouveaux messages.")
   
-  // Simulate concurrent increments
-  let mut results = []
-  for i in 1..=10 {
-    let result = atomic_increment(counter)
-    results = results.push(result)
-  }
+  let params = [
+    ("name", "Alice"),
+    ("count", "5")
+  ]
   
-  assert_eq(counter.value, 10)
-  assert_eq(results.length(), 10)
-  assert_eq(results[0], 1)
-  assert_eq(results[9], 10)
+  let greeting_en = Messages::format(messages, en_us, "user.greeting", params)
+  let greeting_zh = Messages::format(messages, zh_cn, "user.greeting", params)
+  let greeting_fr = Messages::format(messages, fr_fr, "user.greeting", params)
   
-  // Test concurrent queue operations
-  let enqueue = fn[T](queue: ConcurrentQueue[T], item: T) -> Bool {
-    // Simulate acquiring lock
-    while queue.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    queue.lock = true
-    
-    // Perform operation
-    queue.items = queue.items.push(item)
-    let success = true
-    
-    // Release lock
-    queue.lock = false
-    
-    success
-  }
-  
-  let dequeue = fn[T](queue: ConcurrentQueue[T]) -> Option[T] {
-    // Simulate acquiring lock
-    while queue.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    queue.lock = true
-    
-    // Perform operation
-    let result = if queue.items.length() > 0 {
-      let item = queue.items[0]
-      queue.items = queue.items.slice(1, queue.items.length())
-      Some(item)
-    } else {
-      None
-    }
-    
-    // Release lock
-    queue.lock = false
-    
-    result
-  }
-  
-  // Test concurrent queue
-  let string_queue = { mut items: [], mut lock: false }
-  
-  // Enqueue items
-  assert_true(enqueue(string_queue, "item1"))
-  assert_true(enqueue(string_queue, "item2"))
-  assert_true(enqueue(string_queue, "item3"))
-  
-  // Dequeue items
-  assert_eq(dequeue(string_queue), Some("item1"))
-  assert_eq(dequeue(string_queue), Some("item2"))
-  assert_eq(dequeue(string_queue), Some("item3"))
-  assert_eq(dequeue(string_queue), None)
-  
-  // Test producer-consumer pattern
-  type ProducerConsumerBuffer = {
-    mut buffer: Array[String],
-    mut buffer_size: Int,
-    mut count: Int,
-    mut in_index: Int,
-    mut out_index: Int,
-    mut lock: Bool
-  }
-  
-  let create_buffer = fn(size: Int) {
-    {
-      mut buffer: [],
-      mut buffer_size: size,
-      mut count: 0,
-      mut in_index: 0,
-      mut out_index: 0,
-      mut lock: false
-    }
-  }
-  
-  let produce = fn(buffer: ProducerConsumerBuffer, item: String) -> Bool {
-    // Simulate acquiring lock
-    while buffer.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    buffer.lock = true
-    
-    // Check if buffer is full
-    let success = if buffer.count < buffer.buffer_size {
-      // Add item to buffer
-      buffer.buffer = buffer.buffer.push(item)
-      buffer.count = buffer.count + 1
-      buffer.in_index = (buffer.in_index + 1) % buffer.buffer_size
-      true
-    } else {
-      false
-    }
-    
-    // Release lock
-    buffer.lock = false
-    
-    success
-  }
-  
-  let consume = fn(buffer: ProducerConsumerBuffer) -> Option[String] {
-    // Simulate acquiring lock
-    while buffer.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    buffer.lock = true
-    
-    // Check if buffer is empty
-    let result = if buffer.count > 0 {
-      // Remove item from buffer
-      let item = buffer.buffer[buffer.out_index]
-      buffer.count = buffer.count - 1
-      buffer.out_index = (buffer.out_index + 1) % buffer.buffer_size
-      Some(item)
-    } else {
-      None
-    }
-    
-    // Release lock
-    buffer.lock = false
-    
-    result
-  }
-  
-  // Test producer-consumer buffer
-  let pc_buffer = create_buffer(3)
-  
-  // Produce items
-  assert_true(produce(pc_buffer, "message1"))
-  assert_true(produce(pc_buffer, "message2"))
-  assert_true(produce(pc_buffer, "message3"))
-  assert_false(produce(pc_buffer, "message4"))  // Buffer full
-  
-  // Consume items
-  assert_eq(consume(pc_buffer), Some("message1"))
-  assert_eq(consume(pc_buffer), Some("message2"))
-  assert_eq(consume(pc_buffer), Some("message3"))
-  assert_eq(consume(pc_buffer), None)  // Buffer empty
-  
-  // Test race condition prevention
-  type SharedResource = {
-    mut data: String,
-    mut readers: Int,
-    mut writers: Int,
-    mut lock: Bool
-  }
-  
-  let acquire_read_lock = fn(resource: SharedResource) -> Bool {
-    while resource.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    resource.lock = true
-    
-    // Check if there are no writers
-    let success = if resource.writers == 0 {
-      resource.readers = resource.readers + 1
-      true
-    } else {
-      false
-    }
-    
-    // Release lock
-    resource.lock = false
-    
-    success
-  }
-  
-  let release_read_lock = fn(resource: SharedResource) {
-    while resource.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    resource.lock = true
-    
-    resource.readers = resource.readers - 1
-    
-    // Release lock
-    resource.lock = false
-  }
-  
-  let acquire_write_lock = fn(resource: SharedResource) -> Bool {
-    while resource.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    resource.lock = true
-    
-    // Check if there are no readers or writers
-    let success = if resource.readers == 0 and resource.writers == 0 {
-      resource.writers = resource.writers + 1
-      true
-    } else {
-      false
-    }
-    
-    // Release lock
-    resource.lock = false
-    
-    success
-  }
-  
-  let release_write_lock = fn(resource: SharedResource) {
-    while resource.lock {
-      // Wait for lock to be released
-    }
-    
-    // Acquire lock
-    resource.lock = true
-    
-    resource.writers = resource.writers - 1
-    
-    // Release lock
-    resource.lock = false
-  }
-  
-  let read_data = fn(resource: SharedResource) -> Option[String] {
-    if acquire_read_lock(resource) {
-      let data = resource.data
-      release_read_lock(resource)
-      Some(data)
-    } else {
-      None
-    }
-  }
-  
-  let write_data = fn(resource: SharedResource, new_data: String) -> Bool {
-    if acquire_write_lock(resource) {
-      resource.data = new_data
-      release_write_lock(resource)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // Test read-write locks
-  let shared_resource = {
-    mut data: "initial_data",
-    mut readers: 0,
-    mut writers: 0,
-    mut lock: false
-  }
-  
-  // Read data
-  assert_eq(read_data(shared_resource), Some("initial_data"))
-  
-  // Write data
-  assert_true(write_data(shared_resource, "updated_data"))
-  
-  // Verify updated data
-  assert_eq(read_data(shared_resource), Some("updated_data"))
-}
-
-// Test 7: Internationalization Support and Localization
-test "internationalization support and localization" {
-  // Define localization structures
-  type Locale = {
-    language: String,
-    region: String,
-    encoding: String
-  }
-  
-  type LocalizedString = {
-    key: String,
-    translations: Array[(String, String)]  // (locale, translation)
-  }
-  
-  type LocalizedError = {
-    code: String,
-    message: LocalizedString,
-    details: LocalizedString
-  }
-  
-  // Create supported locales
-  let en_us = { language: "en", region: "US", encoding: "UTF-8" }
-  let zh_cn = { language: "zh", region: "CN", encoding: "UTF-8" }
-  let fr_fr = { language: "fr", region: "FR", encoding: "UTF-8" }
-  let de_de = { language: "de", region: "DE", encoding: "UTF-8" }
-  
-  // Create localized strings
-  let create_localized_string = fn(key: String, translations: Array[(String, String)]) {
-    { key: key, translations: translations }
-  }
-  
-  let error_messages = create_localized_string("error.network_timeout", [
-    ("en_US", "Network timeout occurred"),
-    ("zh_CN", "网络超时"),
-    ("fr_FR", "Délai d'attente réseau dépassé"),
-    ("de_DE", "Netzwerk-Timeout aufgetreten")
-  ])
-  
-  let success_messages = create_localized_string("success.operation_completed", [
-    ("en_US", "Operation completed successfully"),
-    ("zh_CN", "操作成功完成"),
-    ("fr_FR", "Opération terminée avec succès"),
-    ("de_DE", "Vorgang erfolgreich abgeschlossen")
-  ])
-  
-  // Get translation for locale
-  let get_translation = fn(localized_str: LocalizedString, locale: Locale) -> String {
-    let locale_key = locale.language + "_" + locale.region
-    
-    let mut found = false
-    let mut result = ""
-    
-    for (loc, translation) in localized_str.translations {
-      if loc == locale_key {
-        found = true
-        result = translation
-      }
-    }
-    
-    if found {
-      result
-    } else {
-      // Fallback to English if available
-      let mut fallback_found = false
-      for (loc, translation) in localized_str.translations {
-        if loc.starts_with("en_") {
-          fallback_found = true
-          result = translation
-        }
-      }
-      
-      if fallback_found {
-        result
-      } else if localized_str.translations.length() > 0 {
-        localized_str.translations[0].1  // First available translation
-      } else {
-        localized_str.key  // Key as last resort
-      }
-    }
-  }
-  
-  // Test translations
-  assert_eq(get_translation(error_messages, en_us), "Network timeout occurred")
-  assert_eq(get_translation(error_messages, zh_cn), "网络超时")
-  assert_eq(get_translation(error_messages, fr_fr), "Délai d'attente réseau dépassé")
-  assert_eq(get_translation(error_messages, de_de), "Netzwerk-Timeout aufgetreten")
-  
-  // Test fallback to English for unsupported locale
-  let unsupported_locale = { language: "es", region: "ES", encoding: "UTF-8" }
-  assert_eq(get_translation(error_messages, unsupported_locale), "Network timeout occurred")
-  
-  // Test number formatting for different locales
-  let format_number = fn(number: Float, locale: Locale) -> String {
-    match locale.language {
-      "en" => {
-        // English format: 1,234.56
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100.0).to_int().to_string()
-        
-        // Add thousands separator (simplified)
-        if int_part.length() > 3 {
-          int_part.substring(0, int_part.length() - 3) + "," + int_part.substring(int_part.length() - 3, 3) + "." + decimal_part
-        } else {
-          int_part + "." + decimal_part
-        }
-      }
-      "de" => {
-        // German format: 1.234,56
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100.0).to_int().to_string()
-        
-        // Add thousands separator (simplified)
-        if int_part.length() > 3 {
-          int_part.substring(0, int_part.length() - 3) + "." + int_part.substring(int_part.length() - 3, 3) + "," + decimal_part
-        } else {
-          int_part + "," + decimal_part
-        }
-      }
-      _ => {
-        // Default format: 1234.56
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100.0).to_int().to_string()
-        int_part + "." + decimal_part
-      }
-    }
-  }
+  assert_eq(greeting_en, "Hello, Alice! You have 5 new messages.")
+  assert_eq(greeting_zh, "你好，Alice！您有 5 条新消息。")
+  assert_eq(greeting_fr, "Bonjour, Alice! Vous avez 5 nouveaux messages.")
   
   // Test number formatting
-  assert_eq(format_number(1234.56, en_us), "1,234.56")
-  assert_eq(format_number(1234.56, de_de), "1.234,56")
-  assert_eq(format_number(1234.56, fr_fr), "1234.56")  // Default format
+  let number = 1234567.89
   
-  // Test date/time formatting for different locales
-  let format_datetime = fn(timestamp: Int, locale: Locale) -> String {
-    let date = timestamp / 86400  // Simplified
-    let time = timestamp % 86400
-    let hours = time / 3600
-    let minutes = (time % 3600) / 60
-    
-    match locale.language {
-      "en" => {
-        // English format: MM/DD/YYYY HH:MM
-        "01/01/2022 " + hours.to_string() + ":" + minutes.to_string()
-      }
-      "de" => {
-        // German format: DD.MM.YYYY HH:MM
-        "01.01.2022 " + hours.to_string() + ":" + minutes.to_string()
-      }
-      "zh" => {
-        // Chinese format: YYYY年MM月DD日 HH:MM
-        "2022年01月01日 " + hours.to_string() + ":" + minutes.to_string()
-      }
-      _ => {
-        // ISO format: YYYY-MM-DD HH:MM
-        "2022-01-01 " + hours.to_string() + ":" + minutes.to_string()
-      }
-    }
+  let formatted_en = Locale::format_number(en_us, number)
+  let formatted_zh = Locale::format_number(zh_cn, number)
+  let formatted_fr = Locale::format_number(fr_fr, number)
+  
+  assert_true(formatted_en.contains("1,234,567.89"))
+  assert_true(formatted_zh.contains("1,234,567.89"))
+  assert_true(formatted_fr.contains("1 234 567,89"))
+  
+  // Test date formatting
+  let timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
+  
+  let date_en = Locale::format_date(en_us, timestamp)
+  let date_zh = Locale::format_date(zh_cn, timestamp)
+  let date_fr = Locale::format_date(fr_fr, timestamp)
+  
+  assert_true(date_en.contains("2022"))
+  assert_true(date_en.contains("01"))
+  assert_true(date_en.contains("01"))
+  
+  assert_true(date_zh.contains("2022"))
+  assert_true(date_zh.contains("01"))
+  assert_true(date_zh.contains("01"))
+  
+  assert_true(date_fr.contains("2022"))
+  assert_true(date_fr.contains("01"))
+  assert_true(date_fr.contains("01"))
+  
+  // Test fallback to default locale
+  let ja_jp = Locale::new("ja-JP")
+  let fallback_msg = Messages::get(messages, ja_jp, "welcome")
+  
+  match fallback_msg {
+    Some(msg) => assert_eq(msg, "Welcome to Azimuth Telemetry") // Fallback to English
+    None => assert_true(false)
   }
-  
-  // Test date/time formatting
-  assert_eq(format_datetime(1640995200, en_us), "01/01/2022 0:0")
-  assert_eq(format_datetime(1640995200, de_de), "01.01.2022 0:0")
-  assert_eq(format_datetime(1640995200, zh_cn), "2022年01月01日 0:0")
-  assert_eq(format_datetime(1640995200, fr_fr), "2022-01-01 0:0")
-  
-  // Test localized error messages
-  let create_localized_error = fn(code: String, message: LocalizedString, details: LocalizedString) {
-    { code: code, message: message, details: details }
-  }
-  
-  let error_details = create_localized_string("error.network_timeout.details", [
-    ("en_US", "The connection to the remote server timed out after 30 seconds"),
-    ("zh_CN", "与远程服务器的连接在30秒后超时"),
-    ("fr_FR", "La connexion au serveur distant a expiré après 30 secondes"),
-    ("de_DE", "Die Verbindung zum Remote-Server ist nach 30 Sekunden abgelaufen")
-  ])
-  
-  let network_error = create_localized_error("NETWORK_TIMEOUT", error_messages, error_details)
-  
-  // Get localized error message
-  let get_localized_error = fn(error: LocalizedError, locale: Locale) -> (String, String) {
-    let message = get_translation(error.message, locale)
-    let details = get_translation(error.details, locale)
-    (message, details)
-  }
-  
-  let (en_message, en_details) = get_localized_error(network_error, en_us)
-  assert_eq(en_message, "Network timeout occurred")
-  assert_eq(en_details, "The connection to the remote server timed out after 30 seconds")
-  
-  let (zh_message, zh_details) = get_localized_error(network_error, zh_cn)
-  assert_eq(zh_message, "网络超时")
-  assert_eq(zh_details, "与远程服务器的连接在30秒后超时")
-  
-  // Test right-to-left language support (simulated)
-  let rtl_locale = { language: "ar", region: "SA", encoding: "UTF-8" }
-  
-  let rtl_messages = create_localized_string("error.network_timeout", [
-    ("ar_SA", "حدث انتهاء مهلة الشبكة"),
-    ("en_US", "Network timeout occurred")
-  ])
-  
-  let format_for_rtl = fn(text: String, is_rtl: Bool) -> String {
-    if is_rtl {
-      // In a real implementation, this would handle RTL text direction
-      "[RTL] " + text
-    } else {
-      "[LTR] " + text
-    }
-  }
-  
-  let is_rtl_language = fn(language: String) -> Bool {
-    language == "ar" or language == "he" or language == "fa"
-  }
-  
-  let rtl_message = get_translation(rtl_messages, rtl_locale)
-  let formatted_rtl = format_for_rtl(rtl_message, is_rtl_language(rtl_locale.language))
-  assert_eq(formatted_rtl, "[RTL] حدث انتهاء مهلة الشبكة")
-  
-  let ltr_message = get_translation(rtl_messages, en_us)
-  let formatted_ltr = format_for_rtl(ltr_message, is_rtl_language(en_us.language))
-  assert_eq(formatted_ltr, "[LTR] Network timeout occurred")
 }
 
-// Test 8: Caching Mechanisms and Strategies
-test "caching mechanisms and strategies" {
-  // Define cache entry structure
-  type CacheEntry[T] = {
-    value: T,
-    timestamp: Int,
-    ttl: Int,  // Time to live in seconds
-    access_count: Int,
-    last_accessed: Int
+// Test 6: Performance Optimization
+test "performance optimization operations" {
+  // Test memory pool allocation
+  let pool = MemoryPool::new(100) // Pool with 100 objects
+  
+  // Test object allocation from pool
+  let obj1 = MemoryPool::allocate(pool)
+  let obj2 = MemoryPool::allocate(pool)
+  let obj3 = MemoryPool::allocate(pool)
+  
+  assert_true(MemoryPool::is_from_pool(pool, obj1))
+  assert_true(MemoryPool::is_from_pool(pool, obj2))
+  assert_true(MemoryPool::is_from_pool(pool, obj3))
+  
+  // Test object deallocation to pool
+  MemoryPool::deallocate(pool, obj1)
+  MemoryPool::deallocate(pool, obj2)
+  
+  // Test pool statistics
+  let stats = MemoryPool::stats(pool)
+  assert_eq(MemoryPoolStats::allocated(stats), 3)
+  assert_eq(MemoryPoolStats::deallocated(stats), 2)
+  assert_eq(MemoryPoolStats::available(stats), 2)
+  
+  // Test batch processing
+  let items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let batch_size = 3
+  
+  let batches = BatchProcessor::create_batches(items, batch_size)
+  assert_eq(batches.length(), 4) // 10 items with batch size 3 = 4 batches (3,3,3,1)
+  
+  assert_eq(batches[0].length(), 3)
+  assert_eq(batches[1].length(), 3)
+  assert_eq(batches[2].length(), 3)
+  assert_eq(batches[3].length(), 1)
+  
+  // Test parallel processing simulation
+  let processed_items = BatchProcessor::process_batches(batches, |batch| {
+    batch.map(|item| item * 2)
+  })
+  
+  let flattened = processed_items.flatten()
+  assert_eq(flattened.length(), 10)
+  
+  let expected = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+  for i = 0; i < flattened.length(); i = i + 1 {
+    assert_eq(flattened[i], expected[i])
   }
   
-  type Cache[T] = {
-    mut entries: Array[(String, CacheEntry[T])],
-    max_size: Int,
-    eviction_policy: String  // "LRU", "LFU", "FIFO", "TTL"
+  // Test lazy evaluation
+  let lazy_value = Lazy::new(|| {
+    // Simulate expensive computation
+    let mut result = 0
+    for i = 0; i < 1000; i = i + 1 {
+      result = result + i
+    }
+    result
+  })
+  
+  assert_false(Lazy::is_evaluated(lazy_value))
+  
+  let value1 = Lazy::get(lazy_value)
+  let value2 = Lazy::get(lazy_value)
+  
+  assert_true(Lazy::is_evaluated(lazy_value))
+  assert_eq(value1, value2) // Should be the same value
+  assert_eq(value1, 499500) // Sum of 0 to 999
+  
+  // Test caching with TTL
+  let ttl_cache = TTLCache::new(100, 60) // 100 items, 60 seconds TTL
+  
+  TTLCache::put(ttl_cache, "key1", "value1")
+  TTLCache::put(ttl_cache, "key2", "value2")
+  
+  let cached_value1 = TTLCache::get(ttl_cache, "key1")
+  let cached_value2 = TTLCache::get(ttl_cache, "key2")
+  
+  match cached_value1 {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
   }
   
-  // Create cache
-  let create_cache = fn[T](max_size: Int, eviction_policy: String) {
-    {
-      mut entries: [],
-      max_size: max_size,
-      eviction_policy: eviction_policy
+  match cached_value2 {
+    Some(value) => assert_eq(value, "value2")
+    None => assert_true(false)
+  }
+  
+  // Simulate time passage (in real implementation, this would involve actual time)
+  TTLCache::advance_time(ttl_cache, 61) // Advance 61 seconds
+  
+  let expired_value1 = TTLCache::get(ttl_cache, "key1")
+  let expired_value2 = TTLCache::get(ttl_cache, "key2")
+  
+  assert_eq(expired_value1, None) // Should be expired
+  assert_eq(expired_value2, None) // Should be expired
+}
+
+// Test 7: Error Handling and Recovery
+test "error handling and recovery operations" {
+  // Test error creation and handling
+  let error1 = Error::new("database.connection", "Failed to connect to database")
+  let error2 = Error::with_code("network.timeout", "Request timed out", 408)
+  let error3 = Error::with_cause("file.not_found", "File not found", error1)
+  
+  assert_eq(Error::type(error1), "database.connection")
+  assert_eq(Error::message(error1), "Failed to connect to database")
+  assert_eq(Error::code(error1), None)
+  
+  assert_eq(Error::type(error2), "network.timeout")
+  assert_eq(Error::message(error2), "Request timed out")
+  match Error::code(error2) {
+    Some(code) => assert_eq(code, 408)
+    None => assert_true(false)
+  }
+  
+  assert_eq(Error::type(error3), "file.not_found")
+  assert_eq(Error::message(error3), "File not found")
+  match Error::cause(error3) {
+    Some(cause) => {
+      assert_eq(Error::type(cause), "database.connection")
+      assert_eq(Error::message(cause), "Failed to connect to database")
+    }
+    None => assert_true(false)
+  }
+  
+  // Test result type operations
+  let success_result = Result::Ok("operation successful")
+  let error_result = Result::Error(error1)
+  
+  match success_result {
+    Result::Ok(value) => assert_eq(value, "operation successful")
+    Result::Error(_) => assert_true(false)
+  }
+  
+  match error_result {
+    Result::Ok(_) => assert_true(false)
+    Result::Error(err) => {
+      assert_eq(Error::type(err), "database.connection")
+      assert_eq(Error::message(err), "Failed to connect to database")
     }
   }
   
-  // Check if cache entry is expired
-  let is_expired = fn[T](entry: CacheEntry[T], current_time: Int) -> Bool {
-    entry.ttl > 0 and (current_time - entry.timestamp) > entry.ttl
+  // Test result chaining
+  let chained_result = Result::map(success_result, |value| {
+    value + " with additional info"
+  })
+  
+  match chained_result {
+    Result::Ok(value) => assert_eq(value, "operation successful with additional info")
+    Result::Error(_) => assert_true(false)
   }
   
-  // Get value from cache
-  let get_from_cache = fn[T](cache: Cache[T], key: String, current_time: Int) -> Option[T] {
-    // Find entry by key
-    let mut found_index = -1
-    for i in 0..cache.entries.length() {
-      if cache.entries[i].0 == key {
-        found_index = i
-      }
+  let error_chained_result = Result::map(error_result, |value| {
+    value + " with additional info"
+  })
+  
+  match error_chained_result {
+    Result::Ok(_) => assert_true(false)
+    Result::Error(err) => {
+      assert_eq(Error::type(err), "database.connection")
+      assert_eq(Error::message(err), "Failed to connect to database")
     }
-    
-    if found_index >= 0 {
-      let entry = cache.entries[found_index].1
-      
-      // Check if expired
-      if is_expired(entry, current_time) {
-        None
-      } else {
-        // Update access statistics
-        let updated_entry = {
-          value: entry.value,
-          timestamp: entry.timestamp,
-          ttl: entry.ttl,
-          access_count: entry.access_count + 1,
-          last_accessed: current_time
-        }
-        
-        // Update entry in cache
-        cache.entries[found_index] = (key, updated_entry)
-        
-        Some(entry.value)
-      }
+  }
+  
+  // Test retry mechanism
+  let mut attempt_count = 0
+  let retry_result = Retry::execute(3, || {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Result::Error(Error::new("temporary.failure", "Temporary failure"))
     } else {
-      None
+      Result::Ok("success after retries")
+    }
+  })
+  
+  match retry_result {
+    Result::Ok(value) => {
+      assert_eq(value, "success after retries")
+      assert_eq(attempt_count, 3)
+    }
+    Result::Error(_) => assert_true(false)
+  }
+  
+  // Test circuit breaker
+  let circuit_breaker = CircuitBreaker::new(5, 1000) // 5 failures, 1000ms timeout
+  
+  // Initially closed
+  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
+  
+  // Record failures
+  for i = 0; i < 5; i = i + 1 {
+    CircuitBreaker::record_failure(circuit_breaker)
+  }
+  
+  // Should be open now
+  assert_eq(CircuitBreaker::state(circuit_breaker), Open)
+  
+  // Test execution through circuit breaker
+  let circuit_result = CircuitBreaker::execute(circuit_breaker, || {
+    "operation executed"
+  })
+  
+  match circuit_result {
+    Result::Ok(_) => assert_true(false) // Should fail due to open circuit
+    Result::Error(err) => {
+      assert_eq(Error::type(err), "circuit_breaker.open")
     }
   }
   
-  // Put value in cache
-  let put_in_cache = fn[T](cache: Cache[T], key: String, value: T, ttl: Int, current_time: Int) {
-    // Check if key already exists
-    let mut found_index = -1
-    for i in 0..cache.entries.length() {
-      if cache.entries[i].0 == key {
-        found_index = i
-      }
-    }
-    
-    let new_entry = {
-      value: value,
-      timestamp: current_time,
-      ttl: ttl,
-      access_count: 1,
-      last_accessed: current_time
-    }
-    
-    if found_index >= 0 {
-      // Update existing entry
-      cache.entries[found_index] = (key, new_entry)
-    } else {
-      // Add new entry
-      if cache.entries.length() >= cache.max_size {
-        // Evict entries based on policy
-        match cache.eviction_policy {
-          "LRU" => {
-            // Find least recently used entry
-            let mut lru_index = 0
-            let mut lru_time = cache.entries[0].1.last_accessed
-            
-            for i in 1..cache.entries.length() {
-              if cache.entries[i].1.last_accessed < lru_time {
-                lru_index = i
-                lru_time = cache.entries[i].1.last_accessed
-              }
-            }
-            
-            // Remove LRU entry
-            cache.entries = cache.entries.slice(0, lru_index) + cache.entries.slice(lru_index + 1, cache.entries.length() - lru_index - 1)
-          }
-          "LFU" => {
-            // Find least frequently used entry
-            let mut lfu_index = 0
-            let mut lfu_count = cache.entries[0].1.access_count
-            
-            for i in 1..cache.entries.length() {
-              if cache.entries[i].1.access_count < lfu_count {
-                lfu_index = i
-                lfu_count = cache.entries[i].1.access_count
-              }
-            }
-            
-            // Remove LFU entry
-            cache.entries = cache.entries.slice(0, lfu_index) + cache.entries.slice(lfu_index + 1, cache.entries.length() - lfu_index - 1)
-          }
-          "FIFO" => {
-            // Remove first entry
-            cache.entries = cache.entries.slice(1, cache.entries.length() - 1)
-          }
-          "TTL" => {
-            // Remove expired entries
-            let mut valid_entries = []
-            for entry in cache.entries {
-              if not(is_expired(entry.1, current_time)) {
-                valid_entries = valid_entries.push(entry)
-              }
-            }
-            cache.entries = valid_entries
-            
-            // If still full, remove oldest entry
-            if cache.entries.length() >= cache.max_size {
-              cache.entries = cache.entries.slice(1, cache.entries.length() - 1)
-            }
-          }
-          _ => {
-            // Default: remove first entry
-            cache.entries = cache.entries.slice(1, cache.entries.length() - 1)
-          }
-        }
-      }
-      
-      // Add new entry
-      cache.entries = cache.entries.push((key, new_entry))
-    }
+  // Simulate time passage
+  CircuitBreaker::advance_time(circuit_breaker, 1001) // 1001ms
+  
+  // Should be half-open now
+  assert_eq(CircuitBreaker::state(circuit_breaker), HalfOpen)
+  
+  // Record success
+  CircuitBreaker::record_success(circuit_breaker)
+  
+  // Should be closed again
+  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
+}
+
+// Test 8: Data Structure Operations
+test "data structure operations" {
+  // Test stack operations
+  let stack = Stack::new()
+  
+  assert_true(Stack::is_empty(stack))
+  assert_eq(Stack::size(stack), 0)
+  
+  Stack::push(stack, "first")
+  Stack::push(stack, "second")
+  Stack::push(stack, "third")
+  
+  assert_false(Stack::is_empty(stack))
+  assert_eq(Stack::size(stack), 3)
+  
+  let top = Stack::peek(stack)
+  match top {
+    Some(value) => assert_eq(value, "third")
+    None => assert_true(false)
   }
   
-  // Test LRU cache
-  let lru_cache = create_cache[String](3, "LRU")
-  let current_time = 1640995200
+  let popped1 = Stack::pop(stack)
+  let popped2 = Stack::pop(stack)
+  let popped3 = Stack::pop(stack)
   
-  // Add entries
-  put_in_cache(lru_cache, "key1", "value1", 3600, current_time)
-  put_in_cache(lru_cache, "key2", "value2", 3600, current_time + 10)
-  put_in_cache(lru_cache, "key3", "value3", 3600, current_time + 20)
-  
-  // Verify entries
-  assert_eq(get_from_cache(lru_cache, "key1", current_time + 30), Some("value1"))
-  assert_eq(get_from_cache(lru_cache, "key2", current_time + 30), Some("value2"))
-  assert_eq(get_from_cache(lru_cache, "key3", current_time + 30), Some("value3"))
-  
-  // Access key1 to make it most recently used
-  get_from_cache(lru_cache, "key1", current_time + 40)
-  
-  // Add new entry, should evict key2 (least recently used)
-  put_in_cache(lru_cache, "key4", "value4", 3600, current_time + 50)
-  
-  // Verify eviction
-  assert_eq(get_from_cache(lru_cache, "key1", current_time + 60), Some("value1"))  // Still in cache (recently used)
-  assert_eq(get_from_cache(lru_cache, "key2", current_time + 60), None)  // Evicted
-  assert_eq(get_from_cache(lru_cache, "key3", current_time + 60), Some("value3"))
-  assert_eq(get_from_cache(lru_cache, "key4", current_time + 60), Some("value4"))
-  
-  // Test TTL cache
-  let ttl_cache = create_cache[String](3, "TTL")
-  
-  // Add entries with different TTLs
-  put_in_cache(ttl_cache, "short_lived", "value1", 10, current_time)  // 10 seconds TTL
-  put_in_cache(ttl_cache, "long_lived", "value2", 3600, current_time)  // 1 hour TTL
-  
-  // Verify entries are accessible
-  assert_eq(get_from_cache(ttl_cache, "short_lived", current_time + 5), Some("value1"))
-  assert_eq(get_from_cache(ttl_cache, "long_lived", current_time + 5), Some("value2"))
-  
-  // Verify short-lived entry is expired
-  assert_eq(get_from_cache(ttl_cache, "short_lived", current_time + 15), None)
-  assert_eq(get_from_cache(ttl_cache, "long_lived", current_time + 15), Some("value2"))
-  
-  // Test cache statistics
-  type CacheStats = {
-    hits: Int,
-    misses: Int,
-    hit_rate: Float,
-    evictions: Int
+  match popped1 {
+    Some(value) => assert_eq(value, "third")
+    None => assert_true(false)
   }
   
-  let track_cache_stats = fn[T](cache: Cache[T], operations: Array[(String, Option[String])], current_time: Int) -> CacheStats {
-    let mut hits = 0
-    let mut misses = 0
-    let mut evictions = 0
-    let initial_size = cache.entries.length()
-    
-    for (key, expected_value) in operations {
-      let result = get_from_cache(cache, key, current_time)
-      
-      match expected_value {
-        Some(expected) => {
-          if result == expected {
-            hits = hits + 1
-          } else {
-            misses = misses + 1
-          }
-        }
-        None => {
-          if result == None {
-            hits = hits + 1
-          } else {
-            misses = misses + 1
-          }
-        }
-      }
-    }
-    
-    // Calculate evictions
-    if cache.entries.length() < initial_size {
-      evictions = initial_size - cache.entries.length()
-    }
-    
-    {
-      hits: hits,
-      misses: misses,
-      hit_rate: hits.to_float() / (hits + misses).to_float(),
-      evictions: evictions
-    }
+  match popped2 {
+    Some(value) => assert_eq(value, "second")
+    None => assert_true(false)
   }
   
-  // Test cache statistics
-  let stats_cache = create_cache[String](2, "LRU")
-  
-  // Add entries
-  put_in_cache(stats_cache, "key1", "value1", 3600, current_time)
-  put_in_cache(stats_cache, "key2", "value2", 3600, current_time)
-  
-  // Perform operations
-  let operations = [
-    ("key1", Some("value1")),  // Hit
-    ("key2", Some("value2")),  // Hit
-    ("key3", None),            // Miss
-    ("key1", Some("value1"))   // Hit
-  ]
-  
-  let stats = track_cache_stats(stats_cache, operations, current_time + 10)
-  assert_eq(stats.hits, 3)
-  assert_eq(stats.misses, 1)
-  assert_eq(stats.hit_rate, 0.75)
-  
-  // Test multi-level cache
-  type MultiLevelCache[T] = {
-    l1_cache: Cache[T],  // Fast, small cache
-    l2_cache: Cache[T]   // Slower, larger cache
+  match popped3 {
+    Some(value) => assert_eq(value, "first")
+    None => assert_true(false)
   }
   
-  let create_multi_level_cache = fn[T](l1_size: Int, l2_size: Int) {
-    {
-      l1_cache: create_cache[T](l1_size, "LRU"),
-      l2_cache: create_cache[T](l2_size, "LRU")
-    }
+  assert_true(Stack::is_empty(stack))
+  assert_eq(Stack::size(stack), 0)
+  
+  let empty_pop = Stack::pop(stack)
+  assert_eq(empty_pop, None)
+  
+  // Test queue operations
+  let queue = Queue::new()
+  
+  assert_true(Queue::is_empty(queue))
+  assert_eq(Queue::size(queue), 0)
+  
+  Queue::enqueue(queue, "first")
+  Queue::enqueue(queue, "second")
+  Queue::enqueue(queue, "third")
+  
+  assert_false(Queue::is_empty(queue))
+  assert_eq(Queue::size(queue), 3)
+  
+  let front = Queue::front(queue)
+  match front {
+    Some(value) => assert_eq(value, "first")
+    None => assert_true(false)
   }
   
-  let get_from_multi_level_cache = fn[T](ml_cache: MultiLevelCache[T], key: String, current_time: Int) -> Option[T] {
-    // Try L1 cache first
-    match get_from_cache(ml_cache.l1_cache, key, current_time) {
-      Some(value) => Some(value),
-      None => {
-        // Try L2 cache
-        match get_from_cache(ml_cache.l2_cache, key, current_time) {
-          Some(value) => {
-            // Promote to L1 cache
-            put_in_cache(ml_cache.l1_cache, key, value, 3600, current_time)
-            Some(value)
-          }
-          None => None
-        }
-      }
-    }
+  let dequeued1 = Queue::dequeue(queue)
+  let dequeued2 = Queue::dequeue(queue)
+  let dequeued3 = Queue::dequeue(queue)
+  
+  match dequeued1 {
+    Some(value) => assert_eq(value, "first")
+    None => assert_true(false)
   }
   
-  let put_in_multi_level_cache = fn[T](ml_cache: MultiLevelCache[T], key: String, value: T, current_time: Int) {
-    // Put in both caches
-    put_in_cache(ml_cache.l1_cache, key, value, 3600, current_time)
-    put_in_cache(ml_cache.l2_cache, key, value, 3600, current_time)
+  match dequeued2 {
+    Some(value) => assert_eq(value, "second")
+    None => assert_true(false)
   }
   
-  // Test multi-level cache
-  let ml_cache = create_multi_level_cache[String](2, 5)
+  match dequeued3 {
+    Some(value) => assert_eq(value, "third")
+    None => assert_true(false)
+  }
   
-  // Add entries
-  put_in_multi_level_cache(ml_cache, "key1", "value1", current_time)
-  put_in_multi_level_cache(ml_cache, "key2", "value2", current_time)
-  put_in_multi_level_cache(ml_cache, "key3", "value3", current_time)
+  assert_true(Queue::is_empty(queue))
+  assert_eq(Queue::size(queue), 0)
   
-  // Verify entries
-  assert_eq(get_from_multi_level_cache(ml_cache, "key1", current_time + 10), Some("value1"))
-  assert_eq(get_from_multi_level_cache(ml_cache, "key2", current_time + 10), Some("value2"))
-  assert_eq(get_from_multi_level_cache(ml_cache, "key3", current_time + 10), Some("value3"))
+  let empty_dequeue = Queue::dequeue(queue)
+  assert_eq(empty_dequeue, None)
+  
+  // Test priority queue
+  let priority_queue = PriorityQueue::new()
+  
+  PriorityQueue::enqueue(priority_queue, ("low", 1))
+  PriorityQueue::enqueue(priority_queue, ("high", 10))
+  PriorityQueue::enqueue(priority_queue, ("medium", 5))
+  PriorityQueue::enqueue(priority_queue, ("urgent", 15))
+  
+  let priority1 = PriorityQueue::dequeue(priority_queue)
+  let priority2 = PriorityQueue::dequeue(priority_queue)
+  let priority3 = PriorityQueue::dequeue(priority_queue)
+  let priority4 = PriorityQueue::dequeue(priority_queue)
+  
+  match priority1 {
+    Some((value, _)) => assert_eq(value, "urgent")
+    None => assert_true(false)
+  }
+  
+  match priority2 {
+    Some((value, _)) => assert_eq(value, "high")
+    None => assert_true(false)
+  }
+  
+  match priority3 {
+    Some((value, _)) => assert_eq(value, "medium")
+    None => assert_true(false)
+  }
+  
+  match priority4 {
+    Some((value, _)) => assert_eq(value, "low")
+    None => assert_true(false)
+  }
+  
+  // Test tree operations
+  let tree = Tree::new("root")
+  
+  let left_child = Tree::add_child(tree, "left")
+  let right_child = Tree::add_child(tree, "right")
+  
+  let left_grandchild = Tree::add_child(left_child, "left-grandchild")
+  let right_grandchild = Tree::add_child(right_child, "right-grandchild")
+  
+  assert_eq(Tree::value(tree), "root")
+  assert_eq(Tree::value(left_child), "left")
+  assert_eq(Tree::value(right_child), "right")
+  assert_eq(Tree::value(left_grandchild), "left-grandchild")
+  assert_eq(Tree::value(right_grandchild), "right-grandchild")
+  
+  // Test tree traversal
+  let preorder = Tree::preorder_traversal(tree)
+  let inorder = Tree::inorder_traversal(tree)
+  let postorder = Tree::postorder_traversal(tree)
+  
+  assert_eq(preorder, ["root", "left", "left-grandchild", "right", "right-grandchild"])
+  assert_eq(inorder, ["left-grandchild", "left", "root", "right-grandchild", "right"])
+  assert_eq(postorder, ["left-grandchild", "left", "right-grandchild", "right", "root"])
+  
+  // Test graph operations
+  let graph = Graph::new()
+  
+  let node1 = Graph::add_node(graph, "node1")
+  let node2 = Graph::add_node(graph, "node2")
+  let node3 = Graph::add_node(graph, "node3")
+  let node4 = Graph::add_node(graph, "node4")
+  
+  Graph::add_edge(graph, node1, node2)
+  Graph::add_edge(graph, node1, node3)
+  Graph::add_edge(graph, node2, node4)
+  Graph::add_edge(graph, node3, node4)
+  
+  // Test graph traversal
+  let bfs_result = Graph::bfs(graph, node1)
+  let dfs_result = Graph::dfs(graph, node1)
+  
+  assert_eq(bfs_result, [node1, node2, node3, node4])
+  assert_eq(dfs_result, [node1, node2, node4, node3])
+  
+  // Test shortest path
+  let shortest_path = Graph::shortest_path(graph, node1, node4)
+  match shortest_path {
+    Some(path) => assert_eq(path, [node1, node2, node4])
+    None => assert_true(false)
+  }
 }
