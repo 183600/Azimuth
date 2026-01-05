@@ -1354,6 +1354,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_error_handling_boundary_tests.mbt": {
   },
+  "azimuth_error_handling_boundary_conditions_tests.mbt": {
+  },
   "azimuth_error_handling_advanced_tests.mbt": {
   },
   "azimuth_error_boundary_tests.mbt": {
@@ -1875,6 +1877,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_comprehensive_moonbit_tests.mbt": {
   },
   "azimuth_comprehensive_moonbit_test_suite.mbt": {
+  },
+  "azimuth_comprehensive_integration_tests.mbt": {
   },
   "azimuth_comprehensive_integration_final_tests.mbt": {
   },
