@@ -9295,6 +9295,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_3, ["上下文传播的跨服务场景模拟"]),
     4: (__test_617a696d7574685f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_4, ["上下文传播的性能和内存效率测试"]),
   },
+  "azimuth_containerization_tests.mbt": {
+    0: (__test_617a696d7574685f636f6e7461696e6572697a6174696f6e5f74657374732e6d6274_0, ["docker container configuration for telemetry services"]),
+    1: (__test_617a696d7574685f636f6e7461696e6572697a6174696f6e5f74657374732e6d6274_1, ["docker compose service orchestration for telemetry stack"]),
+    2: (__test_617a696d7574685f636f6e7461696e6572697a6174696f6e5f74657374732e6d6274_2, ["kubernetes deployment configuration for telemetry services"]),
+    3: (__test_617a696d7574685f636f6e7461696e6572697a6174696f6e5f74657374732e6d6274_3, ["container health monitoring and telemetry collection"]),
+    4: (__test_617a696d7574685f636f6e7461696e6572697a6174696f6e5f74657374732e6d6274_4, ["container orchestration scaling policies"]),
+  },
   "azimuth_configuration_validation_tests.mbt": {
     0: (__test_617a696d7574685f636f6e66696775726174696f6e5f76616c69646174696f6e5f74657374732e6d6274_0, ["basic configuration validation"]),
     1: (__test_617a696d7574685f636f6e66696775726174696f6e5f76616c69646174696f6e5f74657374732e6d6274_1, ["default values management"]),
