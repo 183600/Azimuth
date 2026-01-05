@@ -1,812 +1,807 @@
-// Azimuth 遥测数据质量验证测试
-// 测试遥测数据的质量验证功能
+// Azimuth Telemetry System - Data Quality Tests
+// This file contains comprehensive test cases for telemetry data quality validation
 
-// 测试1: 数据完整性验证
-test "数据完整性验证测试" {
-  // 创建数据质量验证器
-  let quality_validator = DataQualityValidator::new()
-  
-  // 配置验证规则
-  QualityValidator::add_rule(quality_validator, {
-    name: "required_fields",
-    type: "field_presence",
-    description: "验证必要字段是否存在",
-    fields: ["trace_id", "span_id", "operation_name", "start_time", "end_time"],
-    severity: "critical"
-  })
-  
-  QualityValidator::add_rule(quality_validator, {
-    name: "time_range",
-    type: "value_range",
-    description: "验证时间范围是否合理",
-    field: "duration",
-    min_value: 0,
-    max_value: 3600000,  // 最大1小时
-    severity: "warning"
-  })
-  
-  // 测试完整数据
-  let complete_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let complete_result = QualityValidator::validate(quality_validator, complete_data)
-  assert_true(complete_result.is_valid)
-  assert_eq(complete_result.errors.length(), 0)
-  assert_eq(complete_result.warnings.length(), 0)
-  
-  // 测试缺少必要字段的数据
-  let incomplete_data = {
-    trace_id: "trace-12345",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let incomplete_result = QualityValidator::validate(quality_validator, incomplete_data)
-  assert_false(incomplete_result.is_valid)
-  assert_true(incomplete_result.errors.length() > 0)
-  
-  let missing_field_error = incomplete_result.errors.find(fn(e) { 
-    e.rule == "required_fields" and e.field == "span_id" 
-  })
-  assert_true(missing_field_error != None)
-  
-  // 测试时间范围异常的数据
-  let invalid_time_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995200 - 100,  // 结束时间早于开始时间
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let invalid_time_result = QualityValidator::validate(quality_validator, invalid_time_data)
-  assert_true(invalid_time_result.warnings.length() > 0)
-  
-  let time_range_warning = invalid_time_result.warnings.find(fn(w) { 
-    w.rule == "time_range" 
-  })
-  assert_true(time_range_warning != None)
-}
-
-// 测试2: 数据一致性验证
-test "数据一致性验证测试" {
-  // 创建一致性验证器
-  let consistency_validator = ConsistencyValidator::new()
-  
-  // 配置一致性规则
-  ConsistencyValidator::add_rule(consistency_validator, {
-    name: "parent_child_relationship",
-    description: "验证父子Span关系的一致性",
-    validation: fn(data) {
-      match data.parent_span_id {
-        Some(parent_id) => {
-          // 如果有父Span，则开始时间应该晚于父Span
-          let parent_span = SpanRepository::get_by_id(parent_id)
-          match parent_span {
-            Some(parent) => data.start_time >= parent.start_time,
-            None => false  // 父Span不存在
-          }
-        }
-        None => true  // 根Span，无需验证
-      }
-    }
-  })
-  
-  ConsistencyValidator::add_rule(consistency_validator, {
-    name: "status_consistency",
-    description: "验证状态与错误事件的一致性",
-    validation: fn(data) {
-      let has_error_events = data.events.any(fn(e) { 
-        e.name.contains("error") or e.name.contains("exception") 
-      })
-      
-      if has_error_events {
-        data.status == "error"
-      } else {
-        true  // 没有错误事件，状态可以是任何值
-      }
-    }
-  })
-  
-  // 创建父Span
-  let parent_span = {
-    trace_id: "trace-12345",
-    span_id: "parent-span",
-    operation_name: "parent.operation",
-    start_time: 1640995200,
-    end_time: 1640995300,
-    status: "ok"
-  }
-  SpanRepository::store(parent_span)
-  
-  // 测试一致的子Span
-  let consistent_child = {
-    trace_id: "trace-12345",
-    span_id: "child-span",
-    parent_span_id: Some("parent-span"),
-    operation_name: "child.operation",
-    start_time: 1640995250,  // 晚于父Span开始时间
-    end_time: 1640995270,
-    status: "ok",
-    events: []
-  }
-  
-  let consistent_result = ConsistencyValidator::validate(consistency_validator, consistent_child)
-  assert_true(consistent_result.is_consistent)
-  assert_eq(consistent_result.inconsistencies.length(), 0)
-  
-  // 测试时间不一致的子Span
-  let time_inconsistent_child = {
-    trace_id: "trace-12345",
-    span_id: "time-inconsistent-child",
-    parent_span_id: Some("parent-span"),
-    operation_name: "time.inconsistent.child",
-    start_time: 1640995100,  // 早于父Span开始时间
-    end_time: 1640995150,
-    status: "ok",
-    events: []
-  }
-  
-  let time_inconsistent_result = ConsistencyValidator::validate(consistency_validator, time_inconsistent_child)
-  assert_false(time_inconsistent_result.is_consistent)
-  assert_true(time_inconsistent_result.inconsistencies.length() > 0)
-  
-  let time_inconsistency = time_inconsistent_result.inconsistencies.find(fn(i) { 
-    i.rule == "parent_child_relationship" 
-  })
-  assert_true(time_inconsistency != None)
-  
-  // 测试状态不一致的Span
-  let status_inconsistent_span = {
-    trace_id: "trace-12345",
-    span_id: "status-inconsistent-span",
-    operation_name: "status.inconsistent.operation",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    status: "ok",  // 状态为ok
-    events: [
-      {
-        name: "error.exception",
-        timestamp: 1640995230,
-        attributes: [("error.type", "NullPointerException"), ("error.message", "Null pointer")]
-      }
-    ]
-  }
-  
-  let status_inconsistent_result = ConsistencyValidator::validate(consistency_validator, status_inconsistent_span)
-  assert_false(status_inconsistent_result.is_consistent)
-  
-  let status_inconsistency = status_inconsistent_result.inconsistencies.find(fn(i) { 
-    i.rule == "status_consistency" 
-  })
-  assert_true(status_inconsistency != None)
-}
-
-// 测试3: 数据格式验证
-test "数据格式验证测试" {
-  // 创建格式验证器
-  let format_validator = FormatValidator::new()
-  
-  // 配置格式规则
-  FormatValidator::add_rule(format_validator, {
-    name: "trace_id_format",
-    field: "trace_id",
-    pattern: "trace-[a-f0-9]{8}",
-    description: "Trace ID格式应为trace-后跟8位十六进制字符"
-  })
-  
-  FormatValidator::add_rule(format_validator, {
-    name: "span_id_format",
-    field: "span_id",
-    pattern: "span-[a-f0-9]{8}",
-    description: "Span ID格式应为span-后跟8位十六进制字符"
-  })
-  
-  FormatValidator::add_rule(format_validator, {
-    name: "timestamp_format",
-    field: "start_time",
-    type: "timestamp",
-    description: "时间戳应为Unix时间戳格式"
-  })
-  
-  FormatValidator::add_rule(format_validator, {
-    name: "service_name_format",
-    field: "service_name",
-    pattern: "[a-z][a-z0-9-]*",
-    description: "服务名应以小写字母开头，只包含小写字母、数字和连字符"
-  })
-  
-  // 测试格式正确的数据
-  let valid_format_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let valid_format_result = FormatValidator::validate(format_validator, valid_format_data)
-  assert_true(valid_format_result.is_valid)
-  assert_eq(valid_format_result.errors.length(), 0)
-  
-  // 测试Trace ID格式错误的数据
-  let invalid_trace_id_data = {
-    trace_id: "invalid-trace-id",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let invalid_trace_id_result = FormatValidator::validate(format_validator, invalid_trace_id_data)
-  assert_false(invalid_trace_id_result.is_valid)
-  
-  let trace_id_error = invalid_trace_id_result.errors.find(fn(e) { 
-    e.field == "trace_id" and e.rule == "trace_id_format" 
-  })
-  assert_true(trace_id_error != None)
-  
-  // 测试服务名格式错误的数据
-  let invalid_service_name_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "Invalid-Service-Name",  // 包含大写字母
-    status: "ok"
-  }
-  
-  let invalid_service_name_result = FormatValidator::validate(format_validator, invalid_service_name_data)
-  assert_false(invalid_service_name_result.is_valid)
-  
-  let service_name_error = invalid_service_name_result.errors.find(fn(e) { 
-    e.field == "service_name" and e.rule == "service_name_format" 
-  })
-  assert_true(service_name_error != None)
-  
-  // 测试时间戳格式错误的数据
-  let invalid_timestamp_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: "invalid-timestamp",  // 字符串而非数字
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "ok"
-  }
-  
-  let invalid_timestamp_result = FormatValidator::validate(format_validator, invalid_timestamp_data)
-  assert_false(invalid_timestamp_result.is_valid)
-  
-  let timestamp_error = invalid_timestamp_result.errors.find(fn(e) { 
-    e.field == "start_time" and e.rule == "timestamp_format" 
-  })
-  assert_true(timestamp_error != None)
-}
-
-// 测试4: 数据业务逻辑验证
-test "数据业务逻辑验证测试" {
-  // 创建业务逻辑验证器
-  let business_validator = BusinessLogicValidator::new()
-  
-  // 配置业务规则
-  BusinessLogicValidator::add_rule(business_validator, {
-    name: "http_status_code_logic",
-    description: "验证HTTP状态码与逻辑的一致性",
-    validation: fn(data) {
-      match data.attributes.find(fn(a) { a[0] == "http.status_code" }) {
-        Some((_, status_str)) => {
-          let status = status_str.to_int()
-          match data.status {
-            "ok" => status >= 200 and status < 400,
-            "error" => status >= 400,
-            _ => false
-          }
-        }
-        None => true  // 没有HTTP状态码，无需验证
-      }
-    }
-  })
-  
-  BusinessLogicValidator::add_rule(business_validator, {
-    name: "database_operation_logic",
-    description: "验证数据库操作的业务逻辑",
-    validation: fn(data) {
-      if data.operation_name.contains("select") or data.operation_name.contains("query") {
-        // 查询操作应该有相应的结果属性
-        data.attributes.any(fn(a) { 
-          a[0] == "db.rows_read" or a[0] == "db.result_count" 
-        })
-      } else if data.operation_name.contains("insert") or data.operation_name.contains("update") or data.operation_name.contains("delete") {
-        // 修改操作应该有影响的行数
-        data.attributes.any(fn(a) { 
-          a[0] == "db.rows_affected" 
-        })
-      } else {
-        true  // 其他操作无需验证
-      }
-    }
-  })
-  
-  // 测试HTTP状态码逻辑正确的数据
-  let valid_http_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "http.request",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "api.gateway",
-    status: "ok",
-    attributes: [
-      ("http.method", "GET"),
-      ("http.status_code", "200"),
-      ("http.url", "/api/users")
-    ]
-  }
-  
-  let valid_http_result = BusinessLogicValidator::validate(business_validator, valid_http_data)
-  assert_true(valid_http_result.is_valid)
-  assert_eq(valid_http_result.violations.length(), 0)
-  
-  // 测试HTTP状态码逻辑错误的数据
-  let invalid_http_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef02",
-    operation_name: "http.request",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "api.gateway",
-    status: "ok",  // 状态为ok
-    attributes: [
-      ("http.method", "GET"),
-      ("http.status_code", "500"),  // 但状态码为500
-      ("http.url", "/api/users")
-    ]
-  }
-  
-  let invalid_http_result = BusinessLogicValidator::validate(business_validator, invalid_http_data)
-  assert_false(invalid_http_result.is_valid)
-  
-  let http_violation = invalid_http_result.violations.find(fn(v) { 
-    v.rule == "http_status_code_logic" 
-  })
-  assert_true(http_violation != None)
-  
-  // 测试数据库操作逻辑正确的数据
-  let valid_db_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef03",
-    operation_name: "select.users",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "user-service",
-    status: "ok",
-    attributes: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM users"),
-      ("db.rows_read", "10")
-    ]
-  }
-  
-  let valid_db_result = BusinessLogicValidator::validate(business_validator, valid_db_data)
-  assert_true(valid_db_result.is_valid)
-  assert_eq(valid_db_result.violations.length(), 0)
-  
-  // 测试数据库操作逻辑错误的数据
-  let invalid_db_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef04",
-    operation_name: "select.users",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "user-service",
-    status: "ok",
-    attributes: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM users")
-      // 缺少db.rows_read或db.result_count
-    ]
-  }
-  
-  let invalid_db_result = BusinessLogicValidator::validate(business_validator, invalid_db_data)
-  assert_false(invalid_db_result.is_valid)
-  
-  let db_violation = invalid_db_result.violations.find(fn(v) { 
-    v.rule == "database_operation_logic" 
-  })
-  assert_true(db_violation != None)
-}
-
-// 测试5: 数据质量评分
-test "数据质量评分测试" {
-  // 创建质量评分器
-  let quality_scorer = DataQualityScorer::new()
-  
-  // 配置评分规则
-  QualityScorer::add_completeness_rule(quality_scorer, {
-    field: "trace_id",
-    weight: 0.2,
-    required: true
-  })
-  
-  QualityScorer::add_completeness_rule(quality_scorer, {
-    field: "span_id",
-    weight: 0.2,
-    required: true
-  })
-  
-  QualityScorer::add_completeness_rule(quality_scorer, {
-    field: "service_name",
-    weight: 0.1,
-    required: true
-  })
-  
-  QualityScorer::add_accuracy_rule(quality_scorer, {
-    field: "start_time",
-    weight: 0.15,
-    validation: fn(value) { value > 0 and value < 4102444800 }  // 合理的时间戳范围
-  })
-  
-  QualityScorer::add_consistency_rule(quality_scorer, {
-    name: "time_consistency",
-    weight: 0.2,
-    validation: fn(data) { data.start_time <= data.end_time }
-  })
-  
-  QualityScorer::add_validity_rule(quality_scorer, {
-    field: "status",
-    weight: 0.15,
-    valid_values: ["ok", "error", "timeout"]
-  })
-  
-  // 测试高质量数据
-  let high_quality_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "ok",
-    attributes: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM orders")
-    ]
-  }
-  
-  let high_quality_score = QualityScorer::score(quality_scorer, high_quality_data)
-  assert_true(high_quality_score.overall >= 0.9)  // 至少90%分数
-  assert_eq(high_quality_score.completeness, 1.0)  // 100%完整性
-  assert_eq(high_quality_score.accuracy, 1.0)      // 100%准确性
-  assert_eq(high_quality_score.consistency, 1.0)   // 100%一致性
-  assert_eq(high_quality_score.validity, 1.0)      // 100%有效性
-  
-  // 测试中等质量数据
-  let medium_quality_data = {
-    trace_id: "trace-12345678",
-    span_id: "span-abcdef01",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    service_name: "payment-service",
-    status: "unknown",  // 无效状态
-    attributes: [
-      ("db.type", "postgresql")
-    ]
-  }
-  
-  let medium_quality_score = QualityScorer::score(quality_scorer, medium_quality_data)
-  assert_true(medium_quality_score.overall >= 0.7 and medium_quality_score.overall < 0.9)
-  assert_eq(medium_quality_score.completeness, 1.0)  // 100%完整性
-  assert_eq(medium_quality_score.accuracy, 1.0)      // 100%准确性
-  assert_eq(medium_quality_score.consistency, 1.0)   // 100%一致性
-  assert_true(medium_quality_score.validity < 1.0)   // 有效性不足100%
-  
-  // 测试低质量数据
-  let low_quality_data = {
-    trace_id: "trace-12345678",
-    operation_name: "database.query",
-    start_time: 1640995200,
-    end_time: 1640995100,  // 结束时间早于开始时间
-    service_name: "payment-service",
-    status: "unknown",  // 无效状态
-    attributes: []
-  }
-  
-  let low_quality_score = QualityScorer::score(quality_scorer, low_quality_data)
-  assert_true(low_quality_score.overall < 0.7)
-  assert_true(low_quality_score.completeness < 1.0)  // 完整性不足100%（缺少span_id）
-  assert_eq(low_quality_score.accuracy, 1.0)         // 100%准确性
-  assert_true(low_quality_score.consistency < 1.0)   // 一致性不足100%
-  assert_true(low_quality_score.validity < 1.0)      // 有效性不足100%
-  
-  // 测试批量数据质量评分
-  let batch_data = [high_quality_data, medium_quality_data, low_quality_data]
-  let batch_scores = QualityScorer::score_batch(quality_scorer, batch_data)
-  
-  assert_eq(batch_scores.length(), 3)
-  assert_eq(batch_scores[0].overall, high_quality_score.overall)
-  assert_eq(batch_scores[1].overall, medium_quality_score.overall)
-  assert_eq(batch_scores[2].overall, low_quality_score.overall)
-  
-  // 计算平均质量分数
-  let average_score = batch_scores.reduce(fn(acc, score) { acc + score.overall }, 0.0) / batch_scores.length().to_float()
-  assert_true(average_score >= 0.7 and average_score <= 0.9)
-  
-  // 计算质量分布
-  let quality_distribution = QualityScorer::analyze_distribution(batch_scores)
-  assert_eq(quality_distribution.high_quality_count, 1)
-  assert_eq(quality_distribution.medium_quality_count, 1)
-  assert_eq(quality_distribution.low_quality_count, 1)
-  assert_eq(quality_distribution.total_count, 3)
-}
-
-// 测试6: 数据质量改进建议
-test "数据质量改进建议测试" {
-  // 创建质量改进建议器
-  let quality_advisor = DataQualityAdvisor::new()
-  
-  // 配置建议规则
-  QualityAdvisor::add_suggestion_rule(quality_advisor, {
-    name: "missing_trace_id",
-    condition: fn(data) { data.trace_id == "" or data.trace_id == None },
-    suggestion: "添加Trace ID以实现分布式追踪",
-    priority: "high",
-    implementation: "使用分布式追踪上下文注入Trace ID"
-  })
-  
-  QualityAdvisor::add_suggestion_rule(quality_advisor, {
-    name: "missing_service_name",
-    condition: fn(data) { data.service_name == "" or data.service_name == None },
-    suggestion: "添加服务名以便于服务级别监控",
-    priority: "high",
-    implementation: "在服务启动时配置服务名并在遥测数据中包含"
-  })
-  
-  QualityAdvisor::add_suggestion_rule(quality_advisor, {
-    name: "inconsistent_timestamps",
-    condition: fn(data) { data.start_time > data.end_time },
-    suggestion: "修复时间戳不一致问题",
-    priority: "medium",
-    implementation: "确保使用统一的时钟源或进行时钟同步"
-  })
-  
-  QualityAdvisor::add_suggestion_rule(quality_advisor, {
-    name: "missing_operation_name",
-    condition: fn(data) { data.operation_name == "" or data.operation_name == None },
-    suggestion: "添加操作名以便于性能分析",
-    priority: "medium",
-    implementation: "在关键操作开始时设置有意义的操作名"
-  })
-  
-  // 测试需要改进的数据
-  let needs_improvement_data = {
-    trace_id: "",  // 缺少Trace ID
-    span_id: "span-abcdef01",
-    operation_name: "",  // 缺少操作名
-    start_time: 1640995250,
-    end_time: 1640995200,  // 时间戳不一致
-    service_name: "",  // 缺少服务名
-    status: "ok",
-    attributes: []
-  }
-  
-  let suggestions = QualityAdvisor::generate_suggestions(quality_advisor, needs_improvement_data)
-  
-  // 验证建议数量和优先级
-  assert_eq(suggestions.length(), 4)
-  
-  let high_priority_suggestions = suggestions.filter(fn(s) { s.priority == "high" })
-  let medium_priority_suggestions = suggestions.filter(fn(s) { s.priority == "medium" })
-  
-  assert_eq(high_priority_suggestions.length(), 2)
-  assert_eq(medium_priority_suggestions.length(), 2)
-  
-  // 验证具体建议
-  let trace_id_suggestion = suggestions.find(fn(s) { s.name == "missing_trace_id" })
-  assert_true(trace_id_suggestion != None)
-  
-  match trace_id_suggestion {
-    Some(suggestion) => {
-      assert_eq(suggestion.suggestion, "添加Trace ID以实现分布式追踪")
-      assert_eq(suggestion.implementation, "使用分布式追踪上下文注入Trace ID")
-    }
-    None => assert_true(false)
-  }
-  
-  let service_name_suggestion = suggestions.find(fn(s) { s.name == "missing_service_name" })
-  assert_true(service_name_suggestion != None)
-  
-  let timestamp_suggestion = suggestions.find(fn(s) { s.name == "inconsistent_timestamps" })
-  assert_true(timestamp_suggestion != None)
-  
-  let operation_name_suggestion = suggestions.find(fn(s) { s.name == "missing_operation_name" })
-  assert_true(operation_name_suggestion != None)
-  
-  // 测试批量数据质量改进建议
-  let batch_data = [
-    needs_improvement_data,
-    {
-      trace_id: "trace-12345678",
-      span_id: "span-abcdef02",
-      operation_name: "database.query",
-      start_time: 1640995200,
-      end_time: 1640995250,
-      service_name: "",  // 缺少服务名
-      status: "ok",
-      attributes: []
-    },
-    {
-      trace_id: "trace-12345678",
-      span_id: "span-abcdef03",
-      operation_name: "http.request",
-      start_time: 1640995200,
-      end_time: 1640995250,
-      service_name: "api.gateway",
-      status: "ok",
-      attributes: []
-    }
-  ]
-  
-  let batch_suggestions = QualityAdvisor::generate_batch_suggestions(quality_advisor, batch_data)
-  
-  // 验证批量建议
-  assert_true(batch_suggestions.length() > 0)
-  
-  // 验证建议频率分析
-  let suggestion_frequency = QualityAdvisor::analyze_suggestion_frequency(batch_suggestions)
-  
-  let missing_service_name_frequency = suggestion_frequency.get("missing_service_name")
-  assert_true(missing_service_name_frequency != None)
-  match missing_service_name_frequency {
-    Some(freq) => assert_eq(freq, 2),  // 两个数据项缺少服务名
-    None => assert_true(false)
-  }
-  
-  let missing_trace_id_frequency = suggestion_frequency.get("missing_trace_id")
-  assert_true(missing_trace_id_frequency != None)
-  match missing_trace_id_frequency {
-    Some(freq) => assert_eq(freq, 1),  // 一个数据项缺少Trace ID
-    None => assert_true(false)
-  }
-  
-  // 生成改进优先级报告
-  let priority_report = QualityAdvisor::generate_priority_report(batch_suggestions)
-  
-  assert_eq(priority_report.high_priority_count, 3)
-  assert_eq(priority_report.medium_priority_count, 2)
-  assert_eq(priority_report.total_suggestions, 5)
-  
-  // 验证最高优先级建议
-  assert_eq(priority_report.top_suggestions[0].name, "missing_trace_id")  // 高优先级
-  assert_eq(priority_report.top_suggestions[1].name, "missing_service_name")  // 高优先级
-}
-
-// 测试7: 数据质量趋势分析
-test "数据质量趋势分析测试" {
-  // 创建质量趋势分析器
-  let trend_analyzer = QualityTrendAnalyzer::new()
-  
-  // 模拟历史质量数据
-  let historical_quality_data = []
-  let base_time = 1640995200  // 2022-01-01
-  
-  for day in 0..30 {
-    let day_score = 0.7 + (day.to_float() / 30.0) * 0.25  // 从70%逐渐提升到95%
-    let daily_score = {
-      timestamp: base_time + day * 86400,  // 每天一个数据点
-      overall_score: day_score,
-      completeness: 0.8 + (day.to_float() / 30.0) * 0.2,
-      accuracy: 0.9 + (day.to_float() / 30.0) * 0.1,
-      consistency: 0.7 + (day.to_float() / 30.0) * 0.25,
-      validity: 0.85 + (day.to_float() / 30.0) * 0.15,
-      data_point_count: 1000 + day * 100
+// Test 1: Data Integrity Validation
+test "telemetry data integrity validation" {
+  // Test trace ID format validation
+  let validate_trace_id = fn(trace_id: String) -> Bool {
+    // Valid trace ID should be 32 hex characters
+    if trace_id.length() != 32 {
+      return false
     }
     
-    historical_quality_data = historical_quality_data.push(daily_score)
+    for char in trace_id.to_char_array() {
+      if !((char >= '0' && char <= '9') || 
+           (char >= 'a' && char <= 'f') || 
+           (char >= 'A' && char <= 'F')) {
+        return false
+      }
+    }
+    
+    true
   }
   
-  // 分析质量趋势
-  let trend_analysis = TrendAnalyzer::analyze_trend(trend_analyzer, historical_quality_data)
-  
-  // 验证趋势分析结果
-  assert_true(trend_analysis.overall_trend == "improving")
-  assert_true(trend_analysis.overall_change > 0.2)  // 整体提升超过20%
-  
-  // 验证各维度趋势
-  assert_eq(trend_analysis.completeness_trend, "improving")
-  assert_eq(trend_analysis.accuracy_trend, "stable")
-  assert_eq(trend_analysis.consistency_trend, "improving")
-  assert_eq(trend_analysis.validity_trend, "stable")
-  
-  // 验证趋势统计
-  assert_true(trend_analysis.average_improvement_rate > 0.01)  // 平均每天改善超过1%
-  assert_true(trend_analysis.best_day_score > 0.9)  // 最好的一天超过90%
-  assert_true(trend_analysis.worst_day_score < 0.8)  // 最差的一天低于80%
-  
-  // 预测未来质量趋势
-  let future_prediction = TrendAnalyzer::predict_future_quality(trend_analyzer, historical_quality_data, 7)  // 预测7天
-  
-  assert_eq(future_prediction.predictions.length(), 7)
-  
-  // 验证预测值合理
-  let last_historical_score = historical_quality_data[historical_quality_data.length() - 1].overall_score
-  let first_predicted_score = future_prediction.predictions[0].score
-  
-  assert_true(first_predicted_score >= last_historical_score)  // 预测值应不低于最后一个历史值
-  
-  // 验证预测置信度
-  assert_true(future_prediction.confidence_level > 0.7)  // 置信度应超过70%
-  
-  // 分析质量异常点
-  let anomaly_analysis = TrendAnalyzer::detect_quality_anomalies(trend_analyzer, historical_quality_data)
-  
-  // 由于我们创建的是平滑递增的数据，应该没有异常点
-  assert_eq(anomaly_analysis.anomalies.length(), 0)
-  
-  // 添加一些异常点并重新分析
-  let data_with_anomalies = historical_quality_data.map(fn(score, index) {
-    if index == 10 {
-      { score | overall_score: 0.4 }  // 第10天异常低分
-    } else if index == 20 {
-      { score | overall_score: 1.0 }  // 第20天异常高分
-    } else {
-      score
+  // Test span ID format validation
+  let validate_span_id = fn(span_id: String) -> Bool {
+    // Valid span ID should be 16 hex characters
+    if span_id.length() != 16 {
+      return false
     }
-  })
-  
-  let anomaly_analysis_with_anomalies = TrendAnalyzer::detect_quality_anomalies(trend_analyzer, data_with_anomalies)
-  
-  assert_eq(anomaly_analysis_with_anomalies.anomalies.length(), 2)
-  
-  // 验证异常点详情
-  let low_anomaly = anomaly_analysis_with_anomalies.anomalies.find(fn(a) { a.type == "low" })
-  assert_true(low_anomaly != None)
-  
-  match low_anomaly {
-    Some(anomaly) => {
-      assert_eq(anomaly.day_index, 10)
-      assert_true(anomaly.severity == "high")
+    
+    for char in span_id.to_char_array() {
+      if !((char >= '0' && char <= '9') || 
+           (char >= 'a' && char <= 'f') || 
+           (char >= 'A' && char <= 'F')) {
+        return false
+      }
     }
-    None => assert_true(false)
+    
+    true
   }
   
-  let high_anomaly = anomaly_analysis_with_anomalies.anomalies.find(fn(a) { a.type == "high" })
-  assert_true(high_anomaly != None)
+  // Test valid trace IDs
+  assert_true(validate_trace_id("0af7651916cd43dd8448eb211c80319c"))
+  assert_true(validate_trace_id("1234567890abcdef1234567890abcdef"))
+  assert_true(validate_trace_id("ABCDEF1234567890ABCDEF1234567890"))
   
-  match high_anomaly {
-    Some(anomaly) => {
-      assert_eq(anomaly.day_index, 20)
-      assert_true(anomaly.severity == "medium")  // 高分异常严重性较低
+  // Test invalid trace IDs
+  assert_false(validate_trace_id("0af7651916cd43dd8448eb211c80319"))  // Too short
+  assert_false(validate_trace_id("0af7651916cd43dd8448eb211c80319cc"))  // Too long
+  assert_false(validate_trace_id("0af7651916cd43dd8448eb211c80319g"))  // Invalid character
+  assert_false(validate_trace_id("0af7651916cd43dd8448eb211c80319c "))  // Contains space
+  
+  // Test valid span IDs
+  assert_true(validate_span_id("b7ad6b7169203331"))
+  assert_true(validate_span_id("1234567890abcdef"))
+  assert_true(validate_span_id("ABCDEF1234567890"))
+  
+  // Test invalid span IDs
+  assert_false(validate_span_id("b7ad6b716920333"))   // Too short
+  assert_false(validate_span_id("b7ad6b71692033311")) // Too long
+  assert_false(validate_span_id("b7ad6b716920333g"))  // Invalid character
+  assert_false(validate_span_id("b7ad6b7169203331 ")) // Contains space
+}
+
+// Test 2: Attribute Value Quality Checks
+test "attribute value quality checks" {
+  // Test string attribute validation
+  let validate_string_attr = fn(value: String) -> Bool {
+    // String should not be empty or too long
+    if value.length() == 0 || value.length() > 255 {
+      return false
     }
-    None => assert_true(false)
+    
+    // Check for null bytes
+    for char in value.to_char_array() {
+      if char == '\0' {
+        return false
+      }
+    }
+    
+    true
   }
   
-  // 生成质量改进建议
-  let improvement_recommendations = TrendAnalyzer::generate_improvement_recommendations(trend_analyzer, trend_analysis, anomaly_analysis_with_anomalies)
+  // Test numeric attribute validation
+  let validate_numeric_attr = fn(value: Float) -> Bool {
+    // Check for NaN and infinity
+    if value.is_nan() || value.is_infinite() {
+      return false
+    }
+    
+    // Check for reasonable range
+    if value < -1.0e10 || value > 1.0e10 {
+      return false
+    }
+    
+    true
+  }
   
-  assert_true(improvement_recommendations.length() > 0)
+  // Test array attribute validation
+  let validate_array_attr = fn(values: Array[String]) -> Bool {
+    // Array should not be too large
+    if values.length() > 100 {
+      return false
+    }
+    
+    // Each element should be valid
+    for value in values {
+      if !validate_string_attr(value) {
+        return false
+      }
+    }
+    
+    true
+  }
   
-  // 验证建议内容
-  let trend_recommendation = improvement_recommendations.find(fn(r) { r.category == "trend" })
-  assert_true(trend_recommendation != None)
+  // Test string attributes
+  assert_true(validate_string_attr("valid_attribute"))
+  assert_true(validate_string_attr("a"))  // Minimum length
+  assert_true(validate_string_attr("a".repeat(255)))  // Maximum length
   
-  let anomaly_recommendation = improvement_recommendations.find(fn(r) { r.category == "anomaly" })
-  assert_true(anomaly_recommendation != None)
+  assert_false(validate_string_attr(""))  // Empty string
+  assert_false(validate_string_attr("a".repeat(256)))  // Too long
+  assert_false(validate_string_attr("invalid\0attribute"))  // Contains null byte
+  
+  // Test numeric attributes
+  assert_true(validate_numeric_attr(42.0))
+  assert_true(validate_numeric_attr(-100.5))
+  assert_true(validate_numeric_attr(1.0e9))
+  
+  assert_false(validate_numeric_attr(Float::nan()))
+  assert_false(validate_numeric_attr(Float::infinity()))
+  assert_false(validate_numeric_attr(-Float::infinity()))
+  assert_false(validate_numeric_attr(1.0e11))  // Too large
+  assert_false(validate_numeric_attr(-1.0e11))  // Too small
+  
+  // Test array attributes
+  assert_true(validate_array_attr(["item1", "item2", "item3"]))
+  assert_true(validate_array_attr([]))  // Empty array is valid
+  assert_true(validate_array_attr(["a".repeat(255)]))  // Max length item
+  
+  assert_false(validate_array_attr([""]))  // Contains empty string
+  assert_false(validate_array_attr(["valid", "invalid\0"]))  // Contains invalid item
+  
+  // Test too large array
+  let mut large_array = []
+  for i in 0..=101 {
+    large_array = large_array + ["item" + i.to_string()]
+  }
+  assert_false(validate_array_attr(large_array))
+}
+
+// Test 3: Metric Data Quality Validation
+test "metric data quality validation" {
+  // Test metric name validation
+  let validate_metric_name = fn(name: String) -> Bool {
+    // Name should not be empty or too long
+    if name.length() == 0 || name.length() > 63 {
+      return false
+    }
+    
+    // Name should start with a letter
+    let first_char = name.to_char_array()[0]
+    if !((first_char >= 'a' && first_char <= 'z') || 
+         (first_char >= 'A' && first_char <= 'Z')) {
+      return false
+    }
+    
+    // Name should contain only letters, numbers, underscores, and dots
+    for char in name.to_char_array() {
+      if !((char >= 'a' && char <= 'z') || 
+           (char >= 'A' && char <= 'Z') || 
+           (char >= '0' && char <= '9') || 
+           char == '_' || char == '.') {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test metric unit validation
+  let validate_metric_unit = fn(unit: String) -> Bool {
+    // Unit should not be too long
+    if unit.length() > 63 {
+      return false
+    }
+    
+    // Unit should contain only valid characters
+    for char in unit.to_char_array() {
+      if !((char >= 'a' && char <= 'z') || 
+           (char >= 'A' && char <= 'Z') || 
+           (char >= '0' && char <= '9') || 
+           char == '%' || char == '/' || char == '*' || 
+           char == 's' || char == 'm' || char == 'h' || 
+           char == 'B' || char == 'b' || char == ' ' || 
+           char == '^' || char == '-' || char == 'µ') {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test metric description validation
+  let validate_metric_description = fn(description: String) -> Bool {
+    // Description should not be too long
+    if description.length() > 1023 {
+      return false
+    }
+    
+    // Description should not contain control characters
+    for char in description.to_char_array() {
+      if char < ' ' && char != '\t' && char != '\n' {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test metric names
+  assert_true(validate_metric_name("counter_total"))
+  assert_true(validate_metric_name("http.requests"))
+  assert_true(validate_metric_name("database_connections"))
+  assert_true(validate_metric_name("a"))  // Minimum length
+  
+  assert_false(validate_metric_name(""))  // Empty
+  assert_false(validate_metric_name("1invalid"))  // Starts with number
+  assert_false(validate_metric_name("_invalid"))  // Starts with underscore
+  assert_false(validate_metric_name(".invalid"))  // Starts with dot
+  assert_false(validate_metric_name("invalid-name"))  // Contains hyphen
+  assert_false(validate_metric_name("invalid@name"))  // Contains invalid char
+  assert_false(validate_metric_name("a".repeat(64)))  // Too long
+  
+  // Test metric units
+  assert_true(validate_metric_unit("ms"))
+  assert_true(validate_metric_unit("bytes"))
+  assert_true(validate_metric_unit("requests/s"))
+  assert_true(validate_metric_unit("%"))
+  assert_true(validate_metric_unit("°C"))
+  assert_true(validate_metric_unit(""))  // Empty unit is valid
+  
+  assert_false(validate_metric_unit("invalid@unit"))
+  assert_false(validate_metric_unit("a".repeat(64)))  // Too long
+  
+  // Test metric descriptions
+  assert_true(validate_metric_description("Total number of HTTP requests"))
+  assert_true(validate_metric_description("Description with\ttab"))
+  assert_true(validate_metric_description("Description with\nnewline"))
+  assert_true(validate_metric_description(""))  // Empty description is valid
+  assert_true(validate_metric_description("a".repeat(1023)))  // Maximum length
+  
+  assert_false(validate_metric_description("Description with\x00null"))
+  assert_false(validate_metric_description("a".repeat(1024)))  // Too long
+}
+
+// Test 4: Log Record Quality Validation
+test "log record quality validation" {
+  // Test log severity validation
+  let validate_log_severity = fn(severity: Int) -> Bool {
+    // Severity should be between 1 and 24
+    severity >= 1 && severity <= 24
+  }
+  
+  // Test log message validation
+  let validate_log_message = fn(message: String) -> Bool {
+    // Message should not be empty or too long
+    if message.length() == 0 || message.length() > 32768 {
+      return false
+    }
+    
+    // Message should be valid UTF-8 (simplified check)
+    for char in message.to_char_array() {
+      if char == '\0' {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test timestamp validation
+  let validate_timestamp = fn(timestamp: Int) -> Bool {
+    // Timestamp should be positive and not too far in the future
+    let current_time = 1700000000  // Mock current time
+    timestamp > 0 && timestamp <= current_time + 86400  // Not more than 1 day in future
+  }
+  
+  // Test log severities
+  assert_true(validate_log_severity(1))   // TRACE
+  assert_true(validate_log_severity(5))   // DEBUG
+  assert_true(validate_log_severity(9))   // INFO
+  assert_true(validate_log_severity(13))  // WARN
+  assert_true(validate_log_severity(17))  // ERROR
+  assert_true(validate_log_severity(21))  // FATAL
+  assert_true(validate_log_severity(24))  // Maximum severity
+  
+  assert_false(validate_log_severity(0))   // Below minimum
+  assert_false(validate_log_severity(25))  // Above maximum
+  assert_false(validate_log_severity(-1))  // Negative
+  
+  // Test log messages
+  assert_true(validate_log_message("Valid log message"))
+  assert_true(validate_log_message("a"))  // Minimum length
+  assert_true(validate_log_message("a".repeat(32768)))  // Maximum length
+  
+  assert_false(validate_log_message(""))  // Empty
+  assert_false(validate_log_message("a".repeat(32769)))  // Too long
+  assert_false(validate_log_message("Message with\x00null"))  // Contains null byte
+  
+  // Test timestamps
+  assert_true(validate_timestamp(1600000000))  // Valid past timestamp
+  assert_true(validate_timestamp(1700000000))  // Valid current timestamp
+  assert_true(validate_timestamp(1700086400))  // Valid future timestamp (1 day ahead)
+  
+  assert_false(validate_timestamp(0))  // Invalid zero timestamp
+  assert_false(validate_timestamp(-1))  // Negative timestamp
+  assert_false(validate_timestamp(1700086401))  // Too far in future
+}
+
+// Test 5: Span Quality Validation
+test "span quality validation" {
+  // Test span name validation
+  let validate_span_name = fn(name: String) -> Bool {
+    // Name should not be empty or too long
+    if name.length() == 0 || name.length() > 128 {
+      return false
+    }
+    
+    // Name should not contain control characters
+    for char in name.to_char_array() {
+      if char < ' ' && char != '\t' {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test span duration validation
+  let validate_span_duration = fn(duration: Int) -> Bool {
+    // Duration should be non-negative and not too long
+    duration >= 0 && duration <= 3600000  // Max 1 hour in milliseconds
+  }
+  
+  // Test span kind validation
+  let validate_span_kind = fn(kind: Int) -> Bool {
+    // Kind should be between 0 and 6
+    kind >= 0 && kind <= 6
+  }
+  
+  // Test span names
+  assert_true(validate_span_name("HTTP GET /api/users"))
+  assert_true(validate_span_name("database.query"))
+  assert_true(validate_span_name("cache.get"))
+  assert_true(validate_span_name("a"))  // Minimum length
+  assert_true(validate_span_name("a".repeat(128)))  // Maximum length
+  
+  assert_false(validate_span_name(""))  // Empty
+  assert_false(validate_span_name("a".repeat(129)))  // Too long
+  assert_false(validate_span_name("Span with\x00null"))  // Contains null byte
+  assert_false(validate_span_name("Span with\nnewline"))  // Contains newline
+  
+  // Test span durations
+  assert_true(validate_span_duration(0))  // Zero duration is valid
+  assert_true(validate_span_duration(100))  // 100ms
+  assert_true(validate_span_duration(60000))  // 1 minute
+  assert_true(validate_span_duration(3600000))  // 1 hour (maximum)
+  
+  assert_false(validate_span_duration(-1))  // Negative duration
+  assert_false(validate_span_duration(3600001))  // Too long
+  
+  // Test span kinds
+  assert_true(validate_span_kind(0))  // Internal
+  assert_true(validate_span_kind(1))  // Server
+  assert_true(validate_span_kind(2))  // Client
+  assert_true(validate_span_kind(3))  // Producer
+  assert_true(validate_span_kind(4))  // Consumer
+  assert_true(validate_span_kind(5))  // Unspecified
+  assert_true(validate_span_kind(6))  // Maximum kind
+  
+  assert_false(validate_span_kind(-1))  // Invalid negative kind
+  assert_false(validate_span_kind(7))   // Invalid kind above maximum
+}
+
+// Test 6: Resource Quality Validation
+test "resource quality validation" {
+  // Test resource attribute validation
+  let validate_resource_attr = fn(key: String, value: String) -> Bool {
+    // Key should not be empty or too long
+    if key.length() == 0 || key.length() > 63 {
+      return false
+    }
+    
+    // Value should not be too long
+    if value.length() > 255 {
+      return false
+    }
+    
+    // Key should follow naming conventions
+    for char in key.to_char_array() {
+      if !((char >= 'a' && char <= 'z') || 
+           (char >= 'A' && char <= 'Z') || 
+           (char >= '0' && char <= '9') || 
+           char == '_' || char == '.') {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test service name validation
+  let validate_service_name = fn(name: String) -> Bool {
+    // Service name should not be empty or too long
+    if name.length() == 0 || name.length() > 63 {
+      return false
+    }
+    
+    // Service name should follow naming conventions
+    for char in name.to_char_array() {
+      if !((char >= 'a' && char <= 'z') || 
+           (char >= 'A' && char <= 'Z') || 
+           (char >= '0' && char <= '9') || 
+           char == '_' || char == '-' || char == '.') {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test resource attributes
+  assert_true(validate_resource_attr("service.name", "my-service"))
+  assert_true(validate_resource_attr("service.version", "1.0.0"))
+  assert_true(validate_resource_attr("service.instance.id", "instance-123"))
+  assert_true(validate_resource_attr("a", "v"))  // Minimum lengths
+  
+  assert_false(validate_resource_attr("", "value"))  // Empty key
+  assert_false(validate_resource_attr("a".repeat(64), "value"))  // Key too long
+  assert_false(validate_resource_attr("key", "a".repeat(256)))  // Value too long
+  assert_false(validate_resource_attr("invalid@key", "value"))  // Invalid key character
+  
+  // Test service names
+  assert_true(validate_service_name("my-service"))
+  assert_true(validate_service_name("my_service"))
+  assert_true(validate_service_name("service.v1"))
+  assert_true(validate_service_name("a"))  // Minimum length
+  assert_true(validate_service_name("a".repeat(63)))  // Maximum length
+  
+  assert_false(validate_service_name(""))  // Empty
+  assert_false(validate_service_name("a".repeat(64)))  // Too long
+  assert_false(validate_service_name("invalid@service"))  // Invalid character
+}
+
+// Test 7: Data Consistency Validation
+test "data consistency validation" {
+  // Test parent-child span relationship validation
+  let validate_parent_child = fn(parent_trace_id: String, parent_span_id: String, 
+                                 child_trace_id: String, child_span_id: String) -> Bool {
+    // Child should have same trace ID as parent
+    if parent_trace_id != child_trace_id {
+      return false
+    }
+    
+    // Parent and child should have different span IDs
+    if parent_span_id == child_span_id {
+      return false
+    }
+    
+    // IDs should be valid format
+    if parent_trace_id.length() != 32 || child_trace_id.length() != 32 ||
+       parent_span_id.length() != 16 || child_span_id.length() != 16 {
+      return false
+    }
+    
+    true
+  }
+  
+  // Test timestamp ordering validation
+  let validate_timestamp_order = fn(start_time: Int, end_time: Int) -> Bool {
+    // End time should be >= start time
+    end_time >= start_time
+  }
+  
+  // Test metric value consistency
+  let validate_metric_consistency = fn(previous_value: Float, current_value: Float, 
+                                      metric_type: String) -> Bool {
+    match metric_type {
+      "counter" => current_value >= previous_value  // Counters should only increase
+      "gauge" => true  // Gauges can go up or down
+      "histogram" => current_value >= 0.0  // Histogram values should be non-negative
+      _ => true  // Unknown type, assume valid
+    }
+  }
+  
+  // Test parent-child relationships
+  assert_true(validate_parent_child(
+    "0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331",
+    "0af7651916cd43dd8448eb211c80319c", "c8be7c827a314442"
+  ))
+  
+  assert_false(validate_parent_child(
+    "0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331",
+    "0af7651916cd43dd8448eb211c80319d", "c8be7c827a314442"  // Different trace ID
+  ))
+  
+  assert_false(validate_parent_child(
+    "0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331",
+    "0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331"  // Same span ID
+  ))
+  
+  // Test timestamp ordering
+  assert_true(validate_timestamp_order(1600000000, 1600001000))
+  assert_true(validate_timestamp_order(1600000000, 1600000000))  // Equal is valid
+  
+  assert_false(validate_timestamp_order(1600001000, 1600000000))  // End before start
+  
+  // Test metric consistency
+  assert_true(validate_metric_consistency(10.0, 15.0, "counter"))
+  assert_true(validate_metric_consistency(10.0, 10.0, "counter"))  // Equal is valid
+  assert_false(validate_metric_consistency(10.0, 5.0, "counter"))  // Counter decreased
+  
+  assert_true(validate_metric_consistency(10.0, 5.0, "gauge"))  // Gauge can decrease
+  assert_true(validate_metric_consistency(10.0, 15.0, "gauge"))  // Gauge can increase
+  
+  assert_true(validate_metric_consistency(0.0, 10.0, "histogram"))
+  assert_false(validate_metric_consistency(0.0, -5.0, "histogram"))  // Negative histogram value
+}
+
+// Test 8: Data Completeness Validation
+test "data completeness validation" {
+  // Test required fields validation
+  let validate_required_fields = fn(data: Array[(String, String)], 
+                                   required_fields: Array[String]) -> Bool {
+    for field in required_fields {
+      let mut found = false
+      for (key, _) in data {
+        if key == field {
+          found = true
+          break
+        }
+      }
+      if !found {
+        return false
+      }
+    }
+    true
+  }
+  
+  // Test trace completeness
+  let validate_trace_completeness = fn(spans: Array[(String, String, String)]) -> Bool {
+    // All spans should have valid trace ID, span ID, and span name
+    for (trace_id, span_id, span_name) in spans {
+      if trace_id.length() != 32 || span_id.length() != 16 || span_name.length() == 0 {
+        return false
+      }
+    }
+    true
+  }
+  
+  // Test metric completeness
+  let validate_metric_completeness = fn(name: String, unit: Option[String], 
+                                       description: Option[String]) -> Bool {
+    // Metric should have at least a name
+    if name.length() == 0 {
+      return false
+    }
+    
+    // If unit is present, it should not be empty
+    match unit {
+      Some(u) => if u.length() == 0 { return false }
+      None => ()
+    }
+    
+    // If description is present, it should not be empty
+    match description {
+      Some(d) => if d.length() == 0 { return false }
+      None => ()
+    }
+    
+    true
+  }
+  
+  // Test required fields validation
+  let data = [
+    ("trace_id", "0af7651916cd43dd8448eb211c80319c"),
+    ("span_id", "b7ad6b7169203331"),
+    ("parent_span_id", "a9c5a5a5a5a5a5a5"),
+    ("operation_name", "HTTP GET /api/users")
+  ]
+  
+  let required_fields = ["trace_id", "span_id", "operation_name"]
+  let missing_fields = ["trace_id", "span_id", "operation_name", "service_name"]
+  
+  assert_true(validate_required_fields(data, required_fields))
+  assert_false(validate_required_fields(data, missing_fields))
+  
+  // Test trace completeness
+  let valid_spans = [
+    ("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", "HTTP GET /api/users"),
+    ("0af7651916cd43dd8448eb211c80319c", "c8be7c827a314442", "database.query")
+  ]
+  
+  let invalid_spans = [
+    ("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", ""),
+    ("0af7651916cd43dd8448eb211c80319", "c8be7c827a314442", "database.query")
+  ]
+  
+  assert_true(validate_trace_completeness(valid_spans))
+  assert_false(validate_trace_completeness(invalid_spans))
+  
+  // Test metric completeness
+  assert_true(validate_metric_completeness("counter_total", Some("requests"), Some("Total requests")))
+  assert_true(validate_metric_completeness("gauge_value", None, Some("Current value")))
+  assert_true(validate_metric_completeness("histogram_duration", Some("ms"), None))
+  assert_true(validate_metric_completeness("simple_metric", None, None))
+  
+  assert_false(validate_metric_completeness("", Some("unit"), Some("description")))
+  assert_false(validate_metric_completeness("name", Some(""), Some("description")))
+  assert_false(validate_metric_completeness("name", Some("unit"), Some("")))
+}
+
+// Test 9: Data Freshness Validation
+test "data freshness validation" {
+  // Test timestamp freshness
+  let validate_timestamp_freshness = fn(timestamp: Int, max_age_seconds: Int) -> Bool {
+    let current_time = 1700000000  // Mock current time
+    let age = current_time - timestamp
+    age >= 0 && age <= max_age_seconds
+  }
+  
+  // Test metric freshness
+  let validate_metric_freshness = fn(last_updated: Int, update_interval_seconds: Int) -> Bool {
+    let current_time = 1700000000  // Mock current time
+    let time_since_update = current_time - last_updated
+    time_since_update <= update_interval_seconds * 2  // Allow up to 2x interval
+  }
+  
+  // Test log freshness
+  let validate_log_freshness = fn(log_timestamp: Int, current_time: Int) -> Bool {
+    // Log should not be from the future
+    if log_timestamp > current_time {
+      return false
+    }
+    
+    // Log should not be too old (more than 24 hours)
+    let age = current_time - log_timestamp
+    age <= 86400
+  }
+  
+  // Test timestamp freshness
+  assert_true(validate_timestamp_freshness(1699999900, 120))  // 100 seconds old, max 120s
+  assert_true(validate_timestamp_freshness(1700000000, 120))  // Current time, max 120s
+  
+  assert_false(validate_timestamp_freshness(1699999700, 120))  // 300 seconds old, max 120s
+  assert_false(validate_timestamp_freshness(1700000100, 120))  // Future timestamp
+  
+  // Test metric freshness
+  assert_true(validate_metric_freshness(1699999400, 300))  // Updated 600s ago, interval 300s
+  assert_true(validate_metric_freshness(1699999700, 300))  // Updated 300s ago, interval 300s
+  
+  assert_false(validate_metric_freshness(1699999100, 300))  // Updated 900s ago, interval 300s
+  
+  // Test log freshness
+  assert_true(validate_log_freshness(1699913600, 1700000000))  // 24 hours ago
+  assert_true(validate_log_freshness(1699999900, 1700000000))  // 100 seconds ago
+  
+  assert_false(validate_log_freshness(1699913599, 1700000000))  // More than 24 hours ago
+  assert_false(validate_log_freshness(1700000100, 1700000000))  // Future log
+}
+
+// Test 10: Data Format Validation
+test "data format validation" {
+  // Test JSON format validation (simplified)
+  let validate_json_format = fn(json_string: String) -> Bool {
+    // Very basic JSON validation - just check for balanced braces and brackets
+    let mut brace_count = 0
+    let mut bracket_count = 0
+    let mut in_string = false
+    let mut escape_next = false
+    
+    for char in json_string.to_char_array() {
+      if escape_next {
+        escape_next = false
+        continue
+      }
+      
+      if char == '\\' && in_string {
+        escape_next = true
+        continue
+      }
+      
+      if char == '"' {
+        in_string = !in_string
+        continue
+      }
+      
+      if in_string {
+        continue
+      }
+      
+      match char {
+        '{' => brace_count = brace_count + 1
+        '}' => brace_count = brace_count - 1
+        '[' => bracket_count = bracket_count + 1
+        ']' => bracket_count = bracket_count - 1
+        _ => ()
+      }
+      
+      if brace_count < 0 || bracket_count < 0 {
+        return false
+      }
+    }
+    
+    brace_count == 0 && bracket_count == 0
+  }
+  
+  // Test URL format validation (simplified)
+  let validate_url_format = fn(url: String) -> Bool {
+    // Very basic URL validation
+    if url.length() < 8 {  // Minimum "http://a"
+      return false
+    }
+    
+    // Should start with http:// or https://
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+      return false
+    }
+    
+    // Should contain at least one dot after protocol
+    let after_protocol = url.split("://")[1]
+    if !after_protocol.contains(".") {
+      return false
+    }
+    
+    true
+  }
+  
+  // Test IP address format validation (simplified)
+  let validate_ip_format = fn(ip: String) -> Bool {
+    let parts = ip.split(".")
+    if parts.length() != 4 {
+      return false
+    }
+    
+    for part in parts {
+      if part.length() == 0 || part.length() > 3 {
+        return false
+      }
+      
+      // Check if all characters are digits
+      for char in part.to_char_array() {
+        if char < '0' || char > '9' {
+          return false
+        }
+      }
+      
+      // Convert to int and check range
+      let value = part.to_int()
+      if value < 0 || value > 255 {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test JSON format
+  assert_true(validate_json_format("{}"))
+  assert_true(validate_json_format("[]"))
+  assert_true(validate_json_format("{\"key\": \"value\"}"))
+  assert_true(validate_json_format("[1, 2, 3]"))
+  assert_true(validate_json_format("{\"nested\": {\"array\": [1, 2, 3]}}"))
+  
+  assert_false(validate_json_format("{"))
+  assert_false(validate_json_format("}"))
+  assert_false(validate_json_format("["))
+  assert_false(validate_json_format("]"))
+  assert_false(validate_json_format("{\"key\": \"value\""))
+  assert_false(validate_json_format("{\"key\": \"value\"}}"))
+  
+  // Test URL format
+  assert_true(validate_url_format("http://example.com"))
+  assert_true(validate_url_format("https://example.com"))
+  assert_true(validate_url_format("http://example.com/path"))
+  assert_true(validate_url_format("https://example.com/path/to/resource"))
+  
+  assert_false(validate_url_format("ftp://example.com"))
+  assert_false(validate_url_format("http://"))
+  assert_false(validate_url_format("http://example"))
+  assert_false(validate_url_format("example.com"))
+  
+  // Test IP format
+  assert_true(validate_ip_format("127.0.0.1"))
+  assert_true(validate_ip_format("192.168.1.1"))
+  assert_true(validate_ip_format("10.0.0.1"))
+  assert_true(validate_ip_format("255.255.255.255"))
+  assert_true(validate_ip_format("0.0.0.0"))
+  
+  assert_false(validate_ip_format("127.0.0"))
+  assert_false(validate_ip_format("127.0.0.1.1"))
+  assert_false(validate_ip_format("256.0.0.1"))
+  assert_false(validate_ip_format("-1.0.0.1"))
+  assert_false(validate_ip_format("127.0.0.a"))
+  assert_false(validate_ip_format("127.0..1"))
 }
