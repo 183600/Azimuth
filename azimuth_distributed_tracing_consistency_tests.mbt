@@ -1,400 +1,559 @@
-// Distributed Tracing Consistency Tests
-// This file contains test cases for distributed tracing consistency across services
+// Azimuth Distributed Tracing Consistency Tests
+// 分布式追踪一致性测试用例 - 测试分布式系统中追踪数据的一致性和完整性
 
-// Test 1: Cross-Service Trace Context Propagation
-test "cross-service trace context propagation" {
-  // Create initial trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let initial_span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, initial_span_id, true, "initial_state")
+// Test 1: 跨服务追踪传播一致性
+test "cross-service trace propagation consistency" {
+  // 创建根追踪上下文
+  let trace_id = TraceId::generate()
+  let root_span_id = SpanId::generate()
+  let root_ctx = SpanContext::new(trace_id, root_span_id, true, "")
   
-  // Simulate service A
-  let service_a_span = Span::new("service-a-operation", Server, span_ctx)
-  let service_a_ctx = Span::span_context(service_a_span)
-  
-  // Service A creates child span for service B call
-  let service_b_span_ctx = SpanContext::create_child(service_a_ctx, "service_b_span_id")
-  let service_b_span = Span::new("service-b-operation", Client, service_b_span_ctx)
-  
-  // Simulate HTTP headers propagation from A to B
-  let headers_a_to_b = TracePropagator::inject(service_b_span_ctx)
-  
-  // Service B extracts context from headers
-  let service_b_extracted_ctx = TracePropagator::extract(headers_a_to_b)
-  assert_eq(SpanContext::trace_id(service_b_extracted_ctx), trace_id)
-  assert_eq(SpanContext::span_id(service_b_extracted_ctx), "service_b_span_id")
-  
-  // Service B creates child span for service C call
-  let service_c_span_ctx = SpanContext::create_child(service_b_extracted_ctx, "service_c_span_id")
-  let service_c_span = Span::new("service-c-operation", Client, service_c_span_ctx)
-  
-  // Simulate HTTP headers propagation from B to C
-  let headers_b_to_c = TracePropagator::inject(service_c_span_ctx)
-  
-  // Service C extracts context from headers
-  let service_c_extracted_ctx = TracePropagator::extract(headers_b_to_c)
-  assert_eq(SpanContext::trace_id(service_c_extracted_ctx), trace_id)
-  assert_eq(SpanContext::span_id(service_c_extracted_ctx), "service_c_span_id")
-  
-  // Verify all spans share the same trace ID
-  assert_eq(SpanContext::trace_id(Span::span_context(service_a_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service_b_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service_c_span)), trace_id)
-}
-
-// Test 2: Distributed Trace Consistency Validation
-test "distributed trace consistency validation" {
-  // Create a distributed trace with multiple services
-  let trace_id = "1234567890abcdef1234567890abcdef"
-  let trace_validator = TraceConsistencyValidator::new()
-  
-  // Create spans for different services
-  let spans = [
-    Span::with_parent("web-server", Server, trace_id, "span1", None),
-    Span::with_parent("auth-service", Server, trace_id, "span2", Some("span1")),
-    Span::with_parent("user-service", Server, trace_id, "span3", Some("span2")),
-    Span::with_parent("database", Server, trace_id, "span4", Some("span3")),
-    Span::with_parent("cache-service", Server, trace_id, "span5", Some("span2")),
-    Span::with_parent("notification-service", Server, trace_id, "span6", Some("span3"))
-  ]
-  
-  // Validate trace consistency
-  let validation_result = TraceConsistencyValidator::validate(trace_validator, spans)
-  
-  // Check if all spans have the same trace ID
-  assert_true(ValidationResult::has_consistent_trace_id(validation_result))
-  
-  // Check if parent-child relationships are valid
-  assert_true(ValidationResult::has_valid_parent_child_relationships(validation_result))
-  
-  // Check if there are any orphan spans (spans with non-existent parents)
-  assert_eq(ValidationResult::orphan_span_count(validation_result), 0)
-  
-  // Check if trace forms a valid DAG (Directed Acyclic Graph)
-  assert_true(ValidationResult::is_valid_dag(validation_result))
-}
-
-// Test 3: Trace Sampling Consistency Across Services
-test "trace sampling consistency across services" {
-  // Create a sampling strategy
-  let sampling_strategy = TraceSamplingStrategy::probability_based(0.1) // 10% sampling
-  
-  // Create initial span with sampling decision
-  let trace_id = "fedcba0987654321fedcba0987654321"
-  let initial_span_id = "initial_span_id"
-  let span_ctx = SpanContext::new(trace_id, initial_span_id, false, "not_sampled")
-  
-  // Check if initial span is sampled
-  let initial_sampled = TraceSamplingStrategy::should_sample(sampling_strategy, span_ctx)
-  let sample_decision = if initial_sampled { true } else { false }
-  
-  // Create sampled context
-  let sampled_ctx = SpanContext::new(trace_id, initial_span_id, sample_decision, "sampled_state")
-  
-  // Propagate through multiple services
-  let service_spans = []
-  let current_ctx = sampled_ctx
-  
-  for i in 0..5 {
-    let service_name = "service-" + i.to_string()
-    let span_id = "span-" + i.to_string()
-    let child_ctx = SpanContext::create_child(current_ctx, span_id)
-    let span = Span::new(service_name, Server, child_ctx)
-    service_spans = service_spans + [span]
-    current_ctx = Span::span_context(span)
-  }
-  
-  // Verify all services have the same sampling decision
-  for span in service_spans {
-    let span_ctx = Span::span_context(span)
-    assert_eq(SpanContext::is_sampled(span_ctx), sample_decision)
-  }
-  
-  // Verify sampling decision is consistent across the trace
-  let all_sampled = service_spans.all(fn(span) {
-    SpanContext::is_sampled(Span::span_context(span))
-  })
-  assert_eq(all_sampled, sample_decision)
-}
-
-// Test 4: Distributed Trace Timeline Consistency
-test "distributed trace timeline consistency" {
-  let trace_analyzer = TraceTimelineAnalyzer::new()
-  
-  // Create spans with timestamps
-  let base_time = 1640995200L // January 1, 2022 00:00:00 UTC
-  let spans = [
-    Span::with_timestamp("gateway", Server, "trace1", "span1", base_time, base_time + 100L),
-    Span::with_timestamp("auth-service", Server, "trace1", "span2", base_time + 50L, base_time + 80L),
-    Span::with_timestamp("user-service", Server, "trace1", "span3", base_time + 90L, base_time + 150L),
-    Span::with_timestamp("database", Server, "trace1", "span4", base_time + 120L, base_time + 140L),
-    Span::with_timestamp("cache-service", Server, "trace1", "span5", base_time + 85L, base_time + 95L)
-  ]
-  
-  // Analyze timeline consistency
-  let timeline_analysis = TraceTimelineAnalyzer::analyze(trace_analyzer, spans)
-  
-  // Check for overlapping spans with inconsistent parent-child relationships
-  assert_true(TimelineAnalysis::has_consistent_timeline(timeline_analysis))
-  
-  // Check for spans that end before they start
-  assert_eq(TimelineAnalysis::invalid_timeline_span_count(timeline_analysis), 0)
-  
-  // Check for clock skew between services
-  let clock_skew_report = TimelineAnalysis::clock_skew_analysis(timeline_analysis)
-  assert_true(ClockSkewReport::max_skew(clock_skew_report) < 5000L) // Allow max 5 seconds skew
-}
-
-// Test 5: Distributed Trace Baggage Propagation
-test "distributed trace baggage propagation" {
-  // Create initial baggage
-  let initial_baggage = Baggage::new()
-  let baggage_with_entries = Baggage::set_entry(initial_baggage, "user.id", "12345")
-  let baggage_with_entries = Baggage::set_entry(baggage_with_entries, "request.source", "mobile")
-  let baggage_with_entries = Baggage::set_entry(baggage_with_entries, "tenant.id", "tenant-001")
-  
-  // Create trace context with baggage
-  let trace_id = "baggage_trace_id"
-  let span_ctx = SpanContext::with_baggage(trace_id, "root_span", true, baggage_with_entries)
-  
-  // Propagate through services
-  let service_baggage_checks = []
-  
-  // Service A
-  let service_a_ctx = SpanContext::create_child(span_ctx, "service_a_span")
-  let service_a_baggage = SpanContext::baggage(service_a_ctx)
-  let user_id = Baggage::get_entry(service_a_baggage, "user.id")
-  service_baggage_checks = service_baggage_checks + [("user.id", user_id)]
-  
-  // Service B
-  let service_b_ctx = SpanContext::create_child(service_a_ctx, "service_b_span")
-  let service_b_baggage = SpanContext::baggage(service_b_ctx)
-  let request_source = Baggage::get_entry(service_b_baggage, "request.source")
-  service_baggage_checks = service_baggage_checks + [("request.source", request_source)]
-  
-  // Service C
-  let service_c_ctx = SpanContext::create_child(service_b_ctx, "service_c_span")
-  let service_c_baggage = SpanContext::baggage(service_c_ctx)
-  let tenant_id = Baggage::get_entry(service_c_baggage, "tenant.id")
-  service_baggage_checks = service_baggage_checks + [("tenant.id", tenant_id)]
-  
-  // Verify baggage is propagated consistently
-  for (key, value) in service_baggage_checks {
-    match value {
-      Some(v) => {
-        match key {
-          "user.id" => assert_eq(v, "12345")
-          "request.source" => assert_eq(v, "mobile")
-          "tenant.id" => assert_eq(v, "tenant-001")
-          _ => assert_true(false)
-        }
-      }
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 6: Distributed Trace Error Propagation
-test "distributed trace error propagation" {
-  let trace_id = "error_trace_id"
-  
-  // Create a trace with an error in one of the services
-  let spans = [
-    Span::with_status("web-server", Server, trace_id, "span1", Unset, None),
-    Span::with_status("auth-service", Server, trace_id, "span2", Unset, Some("span1")),
-    Span::with_status("user-service", Server, trace_id, "span3", Error, Some("span2")), // Error occurs here
-    Span::with_status("database", Server, trace_id, "span4", Unset, Some("span3")),
-    Span::with_status("notification-service", Server, trace_id, "span5", Unset, Some("span3"))
-  ]
-  
-  // Add error details to the failing span
-  let error_span = spans[2]
-  Span::set_status(error_span, Error, Some("Database connection timeout"))
-  Span::add_event(error_span, "exception", Some([
-    ("exception.type", "TimeoutException"),
-    ("exception.message", "Failed to connect to database within 30 seconds")
+  // 服务A：创建根跨度
+  let service_a_span = Span::new("service_a_request", Server, root_ctx)
+  Span::add_event(service_a_span, "request_received", Some([
+    ("service", StringValue("service_a")),
+    ("endpoint", StringValue("/api/process"))
   ]))
   
-  // Analyze error propagation
-  let error_analyzer = TraceErrorAnalyzer::new()
-  let error_analysis = TraceErrorAnalyzer::analyze(error_analyzer, spans)
+  // 服务A调用服务B：传播追踪上下文
+  let service_b_headers = TracePropagator::inject_to_headers(root_ctx)
+  assert_true(service_b_headers.contains("traceparent"))
+  assert_true(service_b_headers.contains("tracestate"))
   
-  // Verify error is properly recorded
-  assert_eq(ErrorAnalysis::error_span_count(error_analysis), 1)
-  assert_eq(ErrorAnalysis::root_error_span_id(error_analysis), "span3")
+  // 服务B：提取追踪上下文
+  let service_b_ctx = TracePropagator::extract_from_headers(service_b_headers)
+  assert_true(SpanContext::is_valid(service_b_ctx))
+  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
   
-  // Verify error propagation chain
-  let error_chain = ErrorAnalysis::error_propagation_chain(error_analysis)
-  assert_eq(error_chain.length(), 3) // span2 -> span3 -> span4/span5
+  let service_b_span = Span::new("service_b_processing", Server, service_b_ctx)
+  Span::add_event(service_b_span, "processing_started", Some([
+    ("service", StringValue("service_b")),
+    ("parent_service", StringValue("service_a"))
+  ]))
   
-  // Verify spans following the error have appropriate status
-  let post_error_spans = ErrorAnalysis::spans_following_error(error_analysis)
-  for span in post_error_spans {
-    // Spans following an error might have different status based on implementation
-    // This test verifies the error is properly tracked
-    assert_true(true)
-  }
+  // 服务B调用服务C：传播追踪上下文
+  let service_c_headers = TracePropagator::inject_to_headers(service_b_ctx)
+  let service_c_ctx = TracePropagator::extract_from_headers(service_c_headers)
+  
+  let service_c_span = Span::new("service_c_operation", Server, service_c_ctx)
+  Span::add_event(service_c_span, "operation_started", Some([
+    ("service", StringValue("service_c")),
+    ("parent_service", StringValue("service_b"))
+  ]))
+  
+  // 完成所有跨度
+  Span::end(service_c_span)
+  Span::end(service_b_span)
+  Span::end(service_a_span)
+  
+  // 验证追踪一致性
+  let trace_consistency = TraceConsistencyValidator::validate_trace(trace_id)
+  assert_true(trace_consistency.is_consistent)
+  assert_eq(trace_consistency.span_count, 3)
+  assert_eq(trace_consistency.service_count, 3)
+  
+  // 验证父子关系
+  let parent_child_relations = TraceConsistencyValidator::get_parent_child_relations(trace_id)
+  assert_eq(parent_child_relations.length(), 2) // A->B, B->C
 }
 
-// Test 7: Distributed Trace Performance Analysis
-test "distributed trace performance analysis" {
-  let performance_analyzer = TracePerformanceAnalyzer::new()
+// Test 2: 异步操作追踪一致性
+test "asynchronous operation trace consistency" {
+  // 创建异步操作的根上下文
+  let trace_id = TraceId::generate()
+  let root_span_id = SpanId::generate()
+  let async_ctx = SpanContext::new(trace_id, root_span_id, true, "")
   
-  // Create spans with performance metrics
-  let base_time = 1640995200L
-  let spans = [
-    Span::with_timestamp("api-gateway", Server, "trace1", "span1", base_time, base_time + 50L),
-    Span::with_timestamp("auth-service", Server, "trace1", "span2", base_time + 10L, base_time + 30L),
-    Span::with_timestamp("user-service", Server, "trace1", "span3", base_time + 35L, base_time + 120L),
-    Span::with_timestamp("database", Server, "trace1", "span4", base_time + 60L, base_time + 100L),
-    Span::with_timestamp("cache-service", Server, "trace1", "span5", base_time + 40L, base_time + 55L),
-    Span::with_timestamp("notification-service", Server, "trace1", "span6", base_time + 125L, base_time + 140L)
-  ]
+  // 主跨度
+  let main_span = Span::new("async_operation_main", Server, async_ctx)
+  Span::add_event(main_span, "async_operation_started", Some([
+    ("operation_type", StringValue("async_batch_processing"))
+  ]))
   
-  // Add performance-related attributes
-  let db_span = spans[3]
-  Span::add_attribute(db_span, "db.query", "SELECT * FROM users WHERE id = ?")
-  Span::add_attribute(db_span, "db.rows_affected", "1")
-  
-  let cache_span = spans[4]
-  Span::add_attribute(cache_span, "cache.hit", "true")
-  
-  // Analyze performance
-  let performance_analysis = TracePerformanceAnalyzer::analyze(performance_analyzer, spans)
-  
-  // Verify total trace duration
-  assert_eq(PerformanceAnalysis::total_duration_ms(performance_analysis), 140L)
-  
-  // Identify slowest spans
-  let slowest_spans = PerformanceAnalysis::slowest_spans(performance_analysis, 3)
-  assert_eq(slowest_spans[0], "user-service") // 85ms
-  assert_eq(slowest_spans[1], "database") // 40ms
-  assert_eq(slowest_spans[2], "notification-service") // 15ms
-  
-  // Identify performance bottlenecks
-  let bottlenecks = PerformanceAnalysis::performance_bottlenecks(performance_analysis)
-  assert_true(bottlenecks.length() > 0)
-  assert_true(bottlenecks.any(fn(b) { b.span_name == "user-service" }))
-}
-
-// Test 8: Distributed Trace Data Integrity
-test "distributed trace data integrity" {
-  let integrity_validator = TraceIntegrityValidator::new()
-  
-  // Create spans with various data integrity challenges
-  let spans = [
-    // Valid span
-    Span::with_complete_data("service-a", Server, "trace1", "span1", 1640995200L, 1640995250L),
-    // Span with missing end time
-    Span::with_missing_end_time("service-b", Server, "trace1", "span2", 1640995210L),
-    // Span with invalid timestamp (end before start)
-    Span::with_invalid_timestamp("service-c", Server, "trace1", "span3", 1640995300L, 1640995200L),
-    // Span with malformed trace ID
-    Span::with_malformed_trace_id("service-d", Server, "invalid_trace", "span4", 1640995400L, 1640995450L),
-    // Span with orphaned parent reference
-    Span::with_orphaned_parent("service-e", Server, "trace1", "span5", 1640995500L, 1640995550L, "non_existent_parent")
-  ]
-  
-  // Validate data integrity
-  let integrity_report = TraceIntegrityValidator::validate(integrity_validator, spans)
-  
-  // Check validation results
-  assert_eq(IntegrityReport::total_spans(integrity_report), 5)
-  assert_eq(IntegrityReport::valid_spans(integrity_report), 1)
-  assert_eq(IntegrityReport::spans_with_missing_data(integrity_report), 1)
-  assert_eq(IntegrityReport::spans_with_invalid_timestamps(integrity_report), 1)
-  assert_eq(IntegrityReport::spans_with_malformed_ids(integrity_report), 1)
-  assert_eq(IntegrityReport::spans_with_orphaned_references(integrity_report), 1)
-  
-  // Attempt to repair data
-  let repaired_spans = TraceIntegrityValidator::repair_data(integrity_validator, spans)
-  let repaired_report = TraceIntegrityValidator::validate(integrity_validator, repaired_spans)
-  
-  // Verify repair improved data quality
-  assert_true(IntegrityReport::valid_spans(repaired_report) >= IntegrityReport::valid_spans(integrity_report))
-}
-
-// Test 9: Distributed Trace Consistency Under Load
-test "distributed trace consistency under load" {
-  let load_tester = TraceConsistencyLoadTester::new()
-  
-  // Simulate high load scenario with many concurrent traces
-  let concurrent_traces = 100
-  let spans_per_trace = 5
-  
-  // Generate traces under load
-  let generated_spans = TraceConsistencyLoadTester::generate_concurrent_traces(
-    load_tester, 
-    concurrent_traces, 
-    spans_per_trace
-  )
-  
-  // Verify all spans were generated
-  assert_eq(generated_spans.length(), concurrent_traces * spans_per_trace)
-  
-  // Group spans by trace ID
-  let traces_by_id = TraceConsistencyLoadTester::group_by_trace_id(generated_spans)
-  assert_eq(traces_by_id.length(), concurrent_traces)
-  
-  // Validate each trace for consistency
-  let consistent_traces = 0
-  for (_, trace_spans) in traces_by_id {
-    let validator = TraceConsistencyValidator::new()
-    let validation_result = TraceConsistencyValidator::validate(validator, trace_spans)
+  // 创建多个异步子操作
+  let async_tasks = []
+  for i in 1..=5 {
+    let task_span_id = SpanId::generate()
+    let task_ctx = SpanContext::new(trace_id, task_span_id, true, "")
     
-    if ValidationResult::is_consistent(validation_result) {
-      consistent_traces = consistent_traces + 1
-    }
+    let task_span = Span::new("async_task_" + i.to_string(), Client, task_ctx)
+    Span::add_event(task_span, "task_started", Some([
+      ("task_id", StringValue("task_" + i.to_string())),
+      ("batch_id", StringValue("batch_001"))
+    ]))
+    
+    async_tasks.push(task_span)
   }
   
-  // Verify consistency rate is high (should be close to 100% in a well-implemented system)
-  let consistency_rate = (consistent_traces as Float) / (concurrent_traces as Float)
-  assert_true(consistency_rate > 0.95) // At least 95% consistency rate
+  // 模拟异步任务完成（乱序完成）
+  let completion_order = [3, 1, 5, 2, 4]
+  for task_index in completion_order {
+    let task_span = async_tasks[task_index - 1]
+    Span::add_event(task_span, "task_completed", Some([
+      ("completion_order", IntValue(task_index))
+    ]))
+    Span::set_status(task_span, Ok, Some("Task completed successfully"))
+    Span::end(task_span)
+  }
+  
+  // 完成主跨度
+  Span::add_event(main_span, "all_async_tasks_completed", Some([
+    ("total_tasks", IntValue(5))
+  ]))
+  Span::end(main_span)
+  
+  // 验证异步追踪一致性
+  let async_trace_consistency = AsyncTraceValidator::validate_async_trace(trace_id)
+  assert_true(async_trace_consistency.is_consistent)
+  assert_eq(async_trace_consistency.total_spans, 6) // 1主 + 5子
+  assert_eq(async_trace_consistency.completed_spans, 6)
+  
+  // 验证时间顺序一致性
+  let time_consistency = AsyncTraceValidator::validate_temporal_consistency(trace_id)
+  assert_true(time_consistency.is_temporally_consistent)
+  assert_true(time_consistency.main_span_duration > 0L)
+  
+  // 验证异步任务完整性
+  let task_completeness = AsyncTraceValidator::validate_task_completeness(trace_id)
+  assert_true(task_completeness.all_tasks_completed)
+  assert_eq(task_completeness.expected_task_count, 5)
+  assert_eq(task_completeness.actual_task_count, 5)
 }
 
-// Test 10: Distributed Trace Cross-Protocol Consistency
-test "distributed trace cross-protocol consistency" {
-  // Test trace consistency across different protocols (HTTP, gRPC, Message Queue)
-  let cross_protocol_validator = CrossProtocolTraceValidator::new()
+// Test 3: 微服务链路追踪一致性
+test "microservice chain trace consistency" {
+  // 模拟微服务调用链：API Gateway -> Auth Service -> User Service -> Order Service -> Payment Service
   
-  // Create initial context
-  let trace_id = "cross_protocol_trace"
-  let initial_span_id = "http_gateway_span"
-  let http_span_ctx = SpanContext::new(trace_id, initial_span_id, true, "http_protocol")
+  let trace_id = TraceId::generate()
   
-  // Simulate HTTP to gRPC transition
-  let http_headers = TracePropagator::inject_http(http_span_ctx)
-  let grpc_context = TracePropagator::extract_from_http_headers(http_headers)
+  // API Gateway
+  let gateway_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  let gateway_span = Span::new("api_gateway_request", Server, gateway_ctx)
+  Span::add_event(gateway_span, "request_received", Some([
+    ("service", StringValue("api_gateway")),
+    ("endpoint", StringValue("/api/orders"))
+  ]))
   
-  // Create gRPC span
-  let grpc_span_ctx = SpanContext::create_child(grpc_context, "grpc_service_span")
-  let grpc_span = Span::new("grpc-service", Server, grpc_span_ctx)
+  // Auth Service
+  let auth_headers = TracePropagator::inject_to_headers(gateway_ctx)
+  let auth_ctx = TracePropagator::extract_from_headers(auth_headers)
+  let auth_span = Span::new("auth_service_validate", Server, auth_ctx)
+  Span::add_event(auth_span, "auth_validation_started", Some([
+    ("service", StringValue("auth_service")),
+    ("token_type", StringValue("bearer"))
+  ]))
   
-  // Simulate gRPC to Message Queue transition
-  let grpc_metadata = TracePropagator::inject_grpc(grpc_span_ctx)
-  let mq_context = TracePropagator::extract_from_grpc_metadata(grpc_metadata)
+  // User Service
+  let user_headers = TracePropagator::inject_to_headers(auth_ctx)
+  let user_ctx = TracePropagator::extract_from_headers(user_headers)
+  let user_span = Span::new("user_service_get_profile", Server, user_ctx)
+  Span::add_event(user_span, "user_profile_fetch", Some([
+    ("service", StringValue("user_service")),
+    ("user_id", StringValue("user_12345"))
+  ]))
   
-  // Create Message Queue span
-  let mq_span_ctx = SpanContext::create_child(mq_context, "mq_processor_span")
-  let mq_span = Span::new("mq-processor", Consumer, mq_span_ctx)
+  // Order Service
+  let order_headers = TracePropagator::inject_to_headers(user_ctx)
+  let order_ctx = TracePropagator::extract_from_headers(order_headers)
+  let order_span = Span::new("order_service_process", Server, order_ctx)
+  Span::add_event(order_span, "order_processing_started", Some([
+    ("service", StringValue("order_service")),
+    ("order_id", StringValue("order_67890"))
+  ]))
   
-  // Collect all spans for validation
-  let cross_protocol_spans = [
-    Span::new("http-gateway", Server, http_span_ctx),
-    grpc_span,
-    mq_span
-  ]
+  // Payment Service
+  let payment_headers = TracePropagator::inject_to_headers(order_ctx)
+  let payment_ctx = TracePropagator::extract_from_headers(payment_headers)
+  let payment_span = Span::new("payment_service_process", Server, payment_ctx)
+  Span::add_event(payment_span, "payment_processing_started", Some([
+    ("service", StringValue("payment_service")),
+    ("amount", FloatValue(99.99))
+  ]))
   
-  // Validate cross-protocol consistency
-  let validation_result = CrossProtocolTraceValidator::validate(cross_protocol_validator, cross_protocol_spans)
+  // 模拟支付服务错误
+  Span::set_status(payment_span, Error, Some("Payment declined"))
+  Span::add_event(payment_span, "payment_failed", Some([
+    ("error_code", StringValue("PAYMENT_DECLINED")),
+    ("error_message", StringValue("Insufficient funds"))
+  ]))
+  Span::end(payment_span)
   
-  // Verify trace ID is consistent across protocols
-  assert_true(CrossProtocolValidationResult::has_consistent_trace_id(validation_result))
+  // 错误传播回前序服务
+  Span::set_status(order_span, Error, Some("Order processing failed"))
+  Span::add_event(order_span, "order_processing_failed", Some([
+    ("error_source", StringValue("payment_service"))
+  ]))
+  Span::end(order_span)
   
-  // Verify protocol transitions are properly recorded
-  let protocol_transitions = CrossProtocolValidationResult::protocol_transitions(validation_result)
-  assert_eq(protocol_transitions.length(), 2) // HTTP -> gRPC, gRPC -> MQ
+  Span::set_status(user_span, Error, Some("User operation failed"))
+  Span::end(user_span)
   
-  // Verify parent-child relationships are maintained across protocols
-  assert_true(CrossProtocolValidationResult::has_valid_cross_protocol_relationships(validation_result))
+  Span::set_status(auth_span, Error, Some("Auth operation failed"))
+  Span::end(auth_span)
+  
+  Span::set_status(gateway_span, Error, Some("Request processing failed"))
+  Span::end(gateway_span)
+  
+  // 验证微服务链路追踪一致性
+  let chain_consistency = MicroserviceChainValidator::validate_service_chain(trace_id)
+  assert_true(chain_consistency.is_consistent)
+  assert_eq(chain_consistency.service_count, 5)
+  assert_eq(chain_consistency.error_propagation_count, 4) // 错误从支付服务传播到其他4个服务
+  
+  // 验证错误传播路径
+  let error_path = MicroserviceChainValidator::get_error_propagation_path(trace_id)
+  assert_eq(error_path.length(), 5)
+  assert_eq(error_path[0], "payment_service")
+  assert_eq(error_path[1], "order_service")
+  assert_eq(error_path[2], "user_service")
+  assert_eq(error_path[3], "auth_service")
+  assert_eq(error_path[4], "api_gateway")
+  
+  // 验证服务调用顺序
+  let call_sequence = MicroserviceChainValidator::get_service_call_sequence(trace_id)
+  assert_eq(call_sequence.length(), 5)
+  assert_eq(call_sequence[0], "api_gateway")
+  assert_eq(call_sequence[1], "auth_service")
+  assert_eq(call_sequence[2], "user_service")
+  assert_eq(call_sequence[3], "order_service")
+  assert_eq(call_sequence[4], "payment_service")
+}
+
+// Test 4: 跨区域部署追踪一致性
+test "cross-region deployment trace consistency" {
+  // 模拟跨区域部署：US-East -> EU-West -> AP-Southeast
+  
+  let trace_id = TraceId::generate()
+  
+  // US-East Region
+  let us_east_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  let us_east_span = Span::new("us_east_request_handler", Server, us_east_ctx)
+  Span::add_event(us_east_span, "request_received", Some([
+    ("region", StringValue("us-east-1")),
+    ("availability_zone", StringValue("us-east-1a"))
+  ]))
+  
+  // 跨区域调用到EU-West
+  let eu_west_headers = TracePropagator::inject_to_headers_with_region(us_east_ctx, "eu-west-1")
+  let eu_west_ctx = TracePropagator::extract_from_headers_with_region(eu_west_headers)
+  let eu_west_span = Span::new("eu_west_data_processor", Server, eu_west_ctx)
+  Span::add_event(eu_west_span, "data_processing_started", Some([
+    ("region", StringValue("eu-west-1")),
+    ("availability_zone", StringValue("eu-west-1b"))
+  ]))
+  
+  // 跨区域调用到AP-Southeast
+  let ap_southeast_headers = TracePropagator::inject_to_headers_with_region(eu_west_ctx, "ap-southeast-1")
+  let ap_southeast_ctx = TracePropagator::extract_from_headers_with_region(ap_southeast_headers)
+  let ap_southeast_span = Span::new("ap_southeast_storage_service", Server, ap_southeast_ctx)
+  Span::add_event(ap_southeast_span, "storage_operation_started", Some([
+    ("region", StringValue("ap-southeast-1")),
+    ("availability_zone", StringValue("ap-southeast-1c"))
+  ]))
+  
+  // 模拟网络延迟和时钟偏移
+  let network_delay = 150L // 150ms
+  let clock_skew = 50L     // 50ms
+  
+  // 完成AP-Southeast操作
+  Span::end(ap_southeast_span)
+  
+  // 模拟网络延迟后完成EU-West操作
+  Time::sleep(network_delay)
+  Span::end(eu_west_span)
+  
+  // 模拟时钟偏移后完成US-East操作
+  Time::sleep(clock_skew)
+  Span::end(us_east_span)
+  
+  // 验证跨区域追踪一致性
+  let cross_region_consistency = CrossRegionValidator::validate_cross_region_trace(trace_id)
+  assert_true(cross_region_consistency.is_consistent)
+  assert_eq(cross_region_consistency.region_count, 3)
+  assert_true(cross_region_consistency.network_delays_detected)
+  assert_true(cross_region_consistency.clock_skew_detected)
+  
+  // 验证区域跳转路径
+  let region_path = CrossRegionValidator::get_region_path(trace_id)
+  assert_eq(region_path.length(), 3)
+  assert_eq(region_path[0], "us-east-1")
+  assert_eq(region_path[1], "eu-west-1")
+  assert_eq(region_path[2], "ap-southeast-1")
+  
+  // 验证网络延迟计算
+  let delay_analysis = CrossRegionValidator::analyze_network_delays(trace_id)
+  assert_true(delay_analysis.total_delay >= network_delay)
+  assert_true(delay_analysis.average_delay_per_hop > 0L)
+  
+  // 验证时钟偏移校正
+  let skew_correction = CrossRegionValidator::correct_clock_skew(trace_id)
+  assert_true(skew_correction.correction_applied)
+  assert_true(skew_correction.max_skew_detected >= clock_skew)
+}
+
+// Test 5: 批处理操作追踪一致性
+test "batch operation trace consistency" {
+  // 创建批处理操作的追踪上下文
+  let trace_id = TraceId::generate()
+  let batch_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  
+  // 批处理主跨度
+  let batch_span = Span::new("batch_processing_job", Server, batch_ctx)
+  Span::add_event(batch_span, "batch_job_started", Some([
+    ("job_type", StringValue("data_import")),
+    ("batch_size", IntValue(1000))
+  ]))
+  
+  // 创建批处理子任务
+  let batch_items = []
+  for i in 1..=100 {
+    let item_span_id = SpanId::generate()
+    let item_ctx = SpanContext::new(trace_id, item_span_id, true, "")
+    
+    let item_span = Span::new("batch_item_" + i.to_string(), Client, item_ctx)
+    Span::add_event(item_span, "item_processing_started", Some([
+      ("item_id", StringValue("item_" + i.to_string())),
+      ("batch_id", StringValue("batch_20230101"))
+    ]))
+    
+    batch_items.push(item_span)
+  }
+  
+  // 模拟部分批处理项目失败
+  let failed_items = [15, 32, 67, 89]
+  for i in 1..=100 {
+    let item_span = batch_items[i - 1]
+    
+    if failed_items.contains(i) {
+      Span::set_status(item_span, Error, Some("Item processing failed"))
+      Span::add_event(item_span, "item_processing_failed", Some([
+        ("error_code", StringValue("VALIDATION_ERROR")),
+        ("error_message", StringValue("Invalid data format"))
+      ]))
+    } else {
+      Span::set_status(item_span, Ok, Some("Item processed successfully"))
+    }
+    
+    Span::end(item_span)
+  }
+  
+  // 完成批处理主跨度
+  Span::add_event(batch_span, "batch_job_completed", Some([
+    ("total_items", IntValue(100)),
+    ("successful_items", IntValue(96)),
+    ("failed_items", IntValue(4))
+  ]))
+  Span::set_status(batch_span, Ok, Some("Batch job completed with some failures"))
+  Span::end(batch_span)
+  
+  // 验证批处理追踪一致性
+  let batch_consistency = BatchTraceValidator::validate_batch_trace(trace_id)
+  assert_true(batch_consistency.is_consistent)
+  assert_eq(batch_consistency.total_items, 100)
+  assert_eq(batch_consistency.successful_items, 96)
+  assert_eq(batch_consistency.failed_items, 4)
+  
+  // 验证批处理完整性
+  let batch_completeness = BatchTraceValidator::validate_batch_completeness(trace_id)
+  assert_true(batch_completeness.all_items_processed)
+  assert_eq(batch_completeness.expected_item_count, 100)
+  assert_eq(batch_completeness.actual_item_count, 100)
+  
+  // 验证错误分布
+  let error_distribution = BatchTraceValidator::get_error_distribution(trace_id)
+  assert_true(error_distribution.contains("VALIDATION_ERROR"))
+  assert_eq(error_distribution["VALIDATION_ERROR"], 4)
+  
+  // 验证批处理性能指标
+  let batch_metrics = BatchTraceValidator::calculate_batch_metrics(trace_id)
+  assert_true(batch_metrics.average_item_processing_time > 0.0)
+  assert_true(batch_metrics.total_processing_time > 0L)
+  assert_eq(batch_metrics.success_rate, 0.96)
+}
+
+// Test 6: 重试机制追踪一致性
+test "retry mechanism trace consistency" {
+  // 创建重试操作的追踪上下文
+  let trace_id = TraceId::generate()
+  let retry_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  
+  // 主操作跨度
+  let main_span = Span::new("unreliable_operation", Server, retry_ctx)
+  Span::add_event(main_span, "operation_started", Some([
+    ("operation_type", StringValue("external_api_call")),
+    ("max_retries", IntValue(3))
+  ]))
+  
+  // 第一次尝试
+  let attempt1_span = Span::new("operation_attempt_1", Client, retry_ctx)
+  Span::add_event(attempt1_span, "attempt_started", Some([
+    ("attempt_number", IntValue(1)),
+    ("retry_reason", StringValue("initial_attempt"))
+  ]))
+  Span::set_status(attempt1_span, Error, Some("Network timeout"))
+  Span::add_event(attempt1_span, "attempt_failed", Some([
+    ("error_code", StringValue("NETWORK_TIMEOUT")),
+    ("retry_after_ms", IntValue(1000))
+  ]))
+  Span::end(attempt1_span)
+  
+  // 第二次尝试
+  let attempt2_span = Span::new("operation_attempt_2", Client, retry_ctx)
+  Span::add_event(attempt2_span, "attempt_started", Some([
+    ("attempt_number", IntValue(2)),
+    ("retry_reason", StringValue("network_timeout"))
+  ]))
+  Span::set_status(attempt2_span, Error, Some("Service unavailable"))
+  Span::add_event(attempt2_span, "attempt_failed", Some([
+    ("error_code", StringValue("SERVICE_UNAVAILABLE")),
+    ("retry_after_ms", IntValue(2000))
+  ]))
+  Span::end(attempt2_span)
+  
+  // 第三次尝试（成功）
+  let attempt3_span = Span::new("operation_attempt_3", Client, retry_ctx)
+  Span::add_event(attempt3_span, "attempt_started", Some([
+    ("attempt_number", IntValue(3)),
+    ("retry_reason", StringValue("service_unavailable"))
+  ]))
+  Span::set_status(attempt3_span, Ok, Some("Operation successful"))
+  Span::add_event(attempt3_span, "attempt_succeeded", Some([
+    ("response_time_ms", IntValue(300))
+  ]))
+  Span::end(attempt3_span)
+  
+  // 完成主操作
+  Span::add_event(main_span, "operation_completed", Some([
+    ("total_attempts", IntValue(3)),
+    ("successful_attempt", IntValue(3)),
+    ("total_retry_time_ms", IntValue(3300))
+  ]))
+  Span::set_status(main_span, Ok, Some("Operation completed after retries"))
+  Span::end(main_span)
+  
+  // 验证重试追踪一致性
+  let retry_consistency = RetryTraceValidator::validate_retry_trace(trace_id)
+  assert_true(retry_consistency.is_consistent)
+  assert_eq(retry_consistency.total_attempts, 3)
+  assert_eq(retry_consistency.successful_attempt, 3)
+  assert_eq(retry_consistency.failed_attempts, 2)
+  
+  // 验证重试策略
+  let retry_strategy = RetryTraceValidator::analyze_retry_strategy(trace_id)
+  assert_true(retry_strategy.exponential_backoff_detected)
+  assert_true(retry_strategy.max_retries_reached)
+  assert_eq(retry_strategy.final_attempt_successful, true)
+  
+  // 验证错误演进
+  let error_evolution = RetryTraceValidator::get_error_evolution(trace_id)
+  assert_eq(error_evolution.length(), 2)
+  assert_eq(error_evolution[0].error_code, "NETWORK_TIMEOUT")
+  assert_eq(error_evolution[1].error_code, "SERVICE_UNAVAILABLE")
+  
+  // 验证重试性能影响
+  let retry_performance = RetryTraceValidator::calculate_retry_performance_impact(trace_id)
+  assert_true(retry_performance.total_retry_time > 0L)
+  assert_true(retry_performance.average_retry_delay > 0L)
+  assert_eq(retry_performance.success_rate_after_retries, 1.0)
+}
+
+// Test 7: 分布式事务追踪一致性
+test "distributed transaction trace consistency" {
+  // 模拟分布式事务：订单处理涉及订单服务、库存服务、支付服务
+  
+  let trace_id = TraceId::generate()
+  let transaction_id = TransactionId::generate()
+  let transaction_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  
+  // 分布式事务协调器
+  let coordinator_span = Span::new("distributed_transaction_coordinator", Server, transaction_ctx)
+  Span::add_event(coordinator_span, "transaction_started", Some([
+    ("transaction_id", StringValue(transaction_id)),
+    ("transaction_type", StringValue("order_processing")),
+    ("participants", IntValue(3))
+  ]))
+  
+  // 订单服务参与者
+  let order_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "order_service")
+  let order_span = Span::new("order_service_participant", Server, order_ctx)
+  Span::add_event(order_span, "participant_started", Some([
+    ("service", StringValue("order_service")),
+    ("operation", StringValue("create_order"))
+  ]))
+  
+  // 库存服务参与者
+  let inventory_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "inventory_service")
+  let inventory_span = Span::new("inventory_service_participant", Server, inventory_ctx)
+  Span::add_event(inventory_span, "participant_started", Some([
+    ("service", StringValue("inventory_service")),
+    ("operation", StringValue("reserve_inventory"))
+  ]))
+  
+  // 支付服务参与者
+  let payment_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "payment_service")
+  let payment_span = Span::new("payment_service_participant", Server, payment_ctx)
+  Span::add_event(payment_span, "participant_started", Some([
+    ("service", StringValue("payment_service")),
+    ("operation", StringValue("process_payment"))
+  ]))
+  
+  // 模拟两阶段提交
+  // 阶段1：准备阶段
+  Span::add_event(order_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
+  Span::add_event(inventory_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
+  Span::add_event(payment_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
+  
+  // 阶段2：提交阶段
+  Span::add_event(order_span, "commit_phase", Some([("status", StringValue("committed"))]))
+  Span::add_event(inventory_span, "commit_phase", Some([("status", StringValue("committed"))]))
+  
+  // 模拟支付服务提交失败
+  Span::add_event(payment_span, "commit_phase", Some([("status", StringValue("failed"))]))
+  Span::set_status(payment_span, Error, Some("Payment commit failed"))
+  Span::end(payment_span)
+  
+  // 事务协调器检测到失败，启动回滚
+  Span::add_event(coordinator_span, "rollback_initiated", Some([
+    ("reason", StringValue("payment_commit_failed"))
+  ]))
+  
+  // 回滚其他参与者
+  Span::add_event(order_span, "rollback_phase", Some([("status", StringValue("rolled_back"))]))
+  Span::set_status(order_span, Error, Some("Rolled back due to payment failure"))
+  Span::end(order_span)
+  
+  Span::add_event(inventory_span, "rollback_phase", Some([("status", StringValue("rolled_back"))]))
+  Span::set_status(inventory_span, Error, Some("Rolled back due to payment failure"))
+  Span::end(inventory_span)
+  
+  // 完成事务协调器
+  Span::add_event(coordinator_span, "transaction_rolled_back", Some([
+    ("transaction_status", StringValue("rolled_back")),
+    ("rollback_reason", StringValue("payment_commit_failed"))
+  ]))
+  Span::set_status(coordinator_span, Error, Some("Transaction rolled back"))
+  Span::end(coordinator_span)
+  
+  // 验证分布式事务追踪一致性
+  let transaction_consistency = DistributedTransactionValidator::validate_transaction_trace(trace_id)
+  assert_true(transaction_consistency.is_consistent)
+  assert_eq(transaction_consistency.participant_count, 3)
+  assert_eq(transaction_consistency.transaction_status, "rolled_back")
+  
+  // 验证两阶段提交一致性
+  let two_phase_consistency = DistributedTransactionValidator::validate_two_phase_commit_consistency(trace_id)
+  assert_true(two_phase_consistency.prepare_phase_consistent)
+  assert_true(two_phase_consistency.rollback_phase_consistent)
+  assert_false(two_phase_consistency.commit_phase_consistent) // 提交阶段失败
+  
+  // 验证事务参与者状态
+  let participant_states = DistributedTransactionValidator::get_participant_states(trace_id)
+  assert_eq(participant_states["order_service"], "rolled_back")
+  assert_eq(participant_states["inventory_service"], "rolled_back")
+  assert_eq(participant_states["payment_service"], "failed")
+  
+  // 验证事务原子性
+  let atomicity = DistributedTransactionValidator::validate_transaction_atomicity(trace_id)
+  assert_true(atomicity.all_participants_finalized)
+  assert_true(atomicity.consistent_outcome_achieved) // 全部回滚，保持一致性
 }

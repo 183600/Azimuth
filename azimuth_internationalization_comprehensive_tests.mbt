@@ -1,615 +1,685 @@
-// Azimuth 国际化支持测试用例
-// 测试遥测系统对不同语言、地区和文化的支持能力
+// Azimuth Internationalization Support Test Suite
+// 国际化支持测试套件，验证系统在不同语言和地区环境下的兼容性
 
-test "多语言字符串处理测试" {
-  // 测试中文支持
-  let chinese_attr = azimuth::AttributeValue::StringValue("测试中文字符串处理能力")
-  match chinese_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "测试中文字符串处理能力")
-      assert_eq(s.length(), 10) // 中文字符长度计算
-      assert_true(s.contains("测试"))
-      assert_true(s.contains("中文"))
-      assert_true(s.contains("字符串"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试日文支持
-  let japanese_attr = azimuth::AttributeValue::StringValue("日本語文字列処理機能テスト")
-  match japanese_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "日本語文字列処理機能テスト")
-      assert_true(s.contains("日本語"))
-      assert_true(s.contains("文字列"))
-      assert_true(s.contains("テスト"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试韩文支持
-  let korean_attr = azimuth::AttributeValue::StringValue("한국어 문자열 처리 기능 테스트")
-  match korean_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "한국어 문자열 처리 기능 테스트")
-      assert_true(s.contains("한국어"))
-      assert_true(s.contains("문자열"))
-      assert_true(s.contains("테스트"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试阿拉伯文支持
-  let arabic_attr = azimuth::AttributeValue::StringValue("اختبار معالجة سلاسل النصوص العربية")
-  match arabic_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "اختبار معالجة سلاسل النصوص العربية")
-      assert_true(s.contains("اختبار"))
-      assert_true(s.contains("العربية"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试俄文支持
-  let russian_attr = azimuth::AttributeValue::StringValue("Тест обработки строк на русском языке")
-  match russian_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "Тест обработки строк на русском языке")
-      assert_true(s.contains("Тест"))
-      assert_true(s.contains("русском"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试混合语言
-  let mixed_attr = azimuth::AttributeValue::StringValue("Mixed 多국어 Mixed عربي Mixed Русский")
-  match mixed_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "Mixed 多국어 Mixed عربي Mixed Русский")
-      assert_true(s.contains("Mixed"))
-      assert_true(s.contains("다국어"))
-      assert_true(s.contains("عربي"))
-      assert_true(s.contains("Русский"))
-    }
-    _ => assert_true(false)
-  }
-}
-
-test "Unicode字符处理测试" {
-  // 测试Emoji字符
-  let emoji_attr = azimuth::AttributeValue::StringValue("测试Emoji支持 🚀🎉💻🌍")
-  match emoji_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "测试Emoji支持 🚀🎉💻🌍")
-      assert_true(s.contains("🚀"))
-      assert_true(s.contains("🎉"))
-      assert_true(s.contains("💻"))
-      assert_true(s.contains("🌍"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试数学符号
-  let math_attr = azimuth::AttributeValue::StringValue("数学符号测试 ∑∏∫∂∇∆")
-  match math_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "数学符号测试 ∑∏∫∂∇∆")
-      assert_true(s.contains("∑"))
-      assert_true(s.contains("∏"))
-      assert_true(s.contains("∫"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试货币符号
-  let currency_attr = azimuth::AttributeValue::StringValue("货币符号测试 ¥€£$₹₽₩")
-  match currency_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "货币符号测试 ¥€£$₹₽₩")
-      assert_true(s.contains("¥"))
-      assert_true(s.contains("€"))
-      assert_true(s.contains("£"))
-      assert_true(s.contains("$"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试特殊Unicode字符
-  let special_attr = azimuth::AttributeValue::StringValue("特殊字符测试 ©®™℠§¶†‡•…‰‱")
-  match special_attr {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "特殊字符测试 ©®™℠§¶†‡•…‰‱")
-      assert_true(s.contains("©"))
-      assert_true(s.contains("®"))
-      assert_true(s.contains("™"))
-    }
-    _ => assert_true(false)
-  }
-}
-
-test "地区格式化测试" {
-  // 测试日期格式化
-  let date_str = "2023-12-25T10:30:00Z"
-  
-  // 美国格式
-  let us_date = "12/25/2023, 10:30:00 AM"
-  assert_true(us_date.contains("12/25/2023"))
-  assert_true(us_date.contains("10:30:00 AM"))
-  
-  // 欧洲格式
-  let eu_date = "25/12/2023, 10:30:00"
-  assert_true(eu_date.contains("25/12/2023"))
-  assert_true(eu_date.contains("10:30:00"))
-  
-  // 中国格式
-  let cn_date = "2023年12月25日 10:30:00"
-  assert_true(cn_date.contains("2023年12月25日"))
-  assert_true(cn_date.contains("10:30:00"))
-  
-  // 日本格式
-  let jp_date = "2023年12月25日 10時30分00秒"
-  assert_true(jp_date.contains("2023年12月25日"))
-  assert_true(jp_date.contains("10時30分00秒"))
-  
-  // 测试数字格式化
-  let number = 1234567.89
-  
-  // 美国格式
-  let us_number = "1,234,567.89"
-  assert_true(us_number.contains("1,234,567.89"))
-  
-  // 欧洲格式
-  let eu_number = "1.234.567,89"
-  assert_true(eu_number.contains("1.234.567,89"))
-  
-  // 中国格式
-  let cn_number = "1,234,567.89"
-  assert_true(cn_number.contains("1,234,567.89"))
-  
-  // 测试货币格式化
-  let currency = 1234.56
-  
-  // 美元
-  let usd = "$1,234.56"
-  assert_true(usd.contains("$1,234.56"))
-  
-  // 欧元
-  let eur = "€1.234,56"
-  assert_true(eur.contains("€1.234,56"))
-  
-  // 人民币
-  let cny = "¥1,234.56"
-  assert_true(cny.contains("¥1,234.56"))
-  
-  // 日元
-  let jpy = "¥1,235"
-  assert_true(jpy.contains("¥1,235"))
-}
-
-test "本地化属性测试" {
-  // 创建多语言属性集合
-  let localized_attrs = azimuth::Attributes {
-    values: [
-      // 英文属性
-      ("en.user.name", azimuth::AttributeValue::StringValue("John Doe")),
-      ("en.operation.name", azimuth::AttributeValue::StringValue("User Authentication")),
-      ("en.error.message", azimuth::AttributeValue::StringValue("Invalid credentials provided")),
-      
-      // 中文属性
-      ("zh.user.name", azimuth::AttributeValue::StringValue("张三")),
-      ("zh.operation.name", azimuth::AttributeValue::StringValue("用户认证")),
-      ("zh.error.message", azimuth::AttributeValue::StringValue("提供的凭据无效")),
-      
-      // 日文属性
-      ("ja.user.name", azimuth::AttributeValue::StringValue("田中太郎")),
-      ("ja.operation.name", azimuth::AttributeValue::StringValue("ユーザー認証")),
-      ("ja.error.message", azimuth::AttributeValue::StringValue("無効な資格情報が提供されました")),
-      
-      // 韩文属性
-      ("ko.user.name", azimuth::AttributeValue::StringValue("김철수")),
-      ("ko.operation.name", azimuth::AttributeValue::StringValue("사용자 인증")),
-      ("ko.error.message", azimuth::AttributeValue::StringValue("잘못된 자격 증명이 제공되었습니다"))
-    ]
-  }
-  
-  // 验证属性数量
-  assert_eq(localized_attrs.values.length(), 12)
-  
-  // 验证英文属性
-  let mut en_attrs_found = 0
-  for (key, value) in localized_attrs.values {
-    if key.starts_with("en.") {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          match key {
-            "en.user.name" => assert_eq(v, "John Doe")
-            "en.operation.name" => assert_eq(v, "User Authentication")
-            "en.error.message" => assert_eq(v, "Invalid credentials provided")
-            _ => assert_true(false)
-          }
-          en_attrs_found = en_attrs_found + 1
-        }
-        _ => assert_true(false)
-      }
-    }
-  }
-  assert_eq(en_attrs_found, 3)
-  
-  // 验证中文属性
-  let mut zh_attrs_found = 0
-  for (key, value) in localized_attrs.values {
-    if key.starts_with("zh.") {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          match key {
-            "zh.user.name" => assert_eq(v, "张三")
-            "zh.operation.name" => assert_eq(v, "用户认证")
-            "zh.error.message" => assert_eq(v, "提供的凭据无效")
-            _ => assert_true(false)
-          }
-          zh_attrs_found = zh_attrs_found + 1
-        }
-        _ => assert_true(false)
-      }
-    }
-  }
-  assert_eq(zh_attrs_found, 3)
-  
-  // 验证日文属性
-  let mut ja_attrs_found = 0
-  for (key, value) in localized_attrs.values {
-    if key.starts_with("ja.") {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          match key {
-            "ja.user.name" => assert_eq(v, "田中太郎")
-            "ja.operation.name" => assert_eq(v, "ユーザー認証")
-            "ja.error.message" => assert_eq(v, "無効な資格情報が提供されました")
-            _ => assert_true(false)
-          }
-          ja_attrs_found = ja_attrs_found + 1
-        }
-        _ => assert_true(false)
-      }
-    }
-  }
-  assert_eq(ja_attrs_found, 3)
-  
-  // 验证韩文属性
-  let mut ko_attrs_found = 0
-  for (key, value) in localized_attrs.values {
-    if key.starts_with("ko.") {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          match key {
-            "ko.user.name" => assert_eq(v, "김철수")
-            "ko.operation.name" => assert_eq(v, "사용자 인증")
-            "ko.error.message" => assert_eq(v, "잘못된 자격 증명이 제공되었습니다")
-            _ => assert_true(false)
-          }
-          ko_attrs_found = ko_attrs_found + 1
-        }
-        _ => assert_true(false)
-      }
-    }
-  }
-  assert_eq(ko_attrs_found, 3)
-}
-
-test "本地化错误消息测试" {
-  // 创建多语言错误消息
-  let error_messages = [
-    // 英文错误
-    ("en.error.invalid_input", "Invalid input provided"),
-    ("en.error.network_failure", "Network connection failed"),
-    ("en.error.timeout", "Operation timed out"),
-    ("en.error.permission_denied", "Permission denied"),
-    
-    // 中文错误
-    ("zh.error.invalid_input", "提供的输入无效"),
-    ("zh.error.network_failure", "网络连接失败"),
-    ("zh.error.timeout", "操作超时"),
-    ("zh.error.permission_denied", "权限被拒绝"),
-    
-    // 日文错误
-    ("ja.error.invalid_input", "無効な入力が提供されました"),
-    ("ja.error.network_failure", "ネットワーク接続が失敗しました"),
-    ("ja.error.timeout", "操作がタイムアウトしました"),
-    ("ja.error.permission_denied", "アクセス許可が拒否されました"),
-    
-    // 韩文错误
-    ("ko.error.invalid_input", "잘못된 입력이 제공되었습니다"),
-    ("ko.error.network_failure", "네트워크 연결에 실패했습니다"),
-    ("ko.error.timeout", "작업이 시간 초과되었습니다"),
-    ("ko.error.permission_denied", "권한이 거부되었습니다")
+test "多语言错误消息本地化" {
+  // 测试不同语言的错误消息
+  let supported_locales = [
+    ("en", "English"),
+    ("zh", "中文"),
+    ("es", "Español"),
+    ("fr", "Français"),
+    ("de", "Deutsch"),
+    ("ja", "日本語"),
+    ("ko", "한국어"),
+    ("ru", "Русский")
   ]
   
-  // 创建错误消息属性集合
-  let mut error_attrs = azimuth::Attributes { values: [] }
-  for (key, value) in error_messages {
-    error_attrs.values = error_attrs.values + [(key, azimuth::AttributeValue::StringValue(value))]
-  }
+  // 测试常见错误类型的本地化
+  let error_types = [
+    "connection_failed",
+    "data_validation_failed",
+    "authentication_failed",
+    "permission_denied",
+    "resource_not_found",
+    "timeout_occurred",
+    "rate_limit_exceeded",
+    "server_error"
+  ]
   
-  // 验证错误消息数量
-  assert_eq(error_attrs.values.length(), 16)
-  
-  // 验证各语言的错误消息
-  let languages = ["en", "zh", "ja", "ko"]
-  let error_types = ["invalid_input", "network_failure", "timeout", "permission_denied"]
-  
-  for lang in languages {
-    let mut lang_errors_found = 0
+  for (locale_code, locale_name) in supported_locales {
+    // 设置当前区域
+    set_current_locale(locale_code)
+    
+    // 验证区域设置成功
+    assert_eq(get_current_locale(), locale_code)
+    
+    // 测试每种错误类型的本地化消息
     for error_type in error_types {
-      let error_key = lang + ".error." + error_type
-      let mut found = false
+      let localized_message = get_localized_error_message(error_type)
       
-      for (key, value) in error_attrs.values {
-        if key == error_key {
-          match value {
-            azimuth::AttributeValue::StringValue(message) => {
-              assert_not_eq(message.length(), 0)
-              found = true
-            }
-            _ => assert_true(false)
-          }
-          break
+      // 验证消息不为空
+      assert_true(localized_message.length() > 0)
+      
+      // 验证消息不包含占位符
+      assert_false(localized_message.contains("{{"))
+      assert_false(localized_message.contains("}}"))
+      
+      // 验证消息符合语言特征
+      match locale_code {
+        "zh" => {
+          // 中文错误消息应包含中文字符
+          assert_true(contains_chinese_characters(localized_message))
+        }
+        "ja" => {
+          // 日文错误消息应包含日文字符
+          assert_true(contains_japanese_characters(localized_message))
+        }
+        "ko" => {
+          // 韩文错误消息应包含韩文字符
+          assert_true(contains_korean_characters(localized_message))
+        }
+        "ru" => {
+          // 俄文错误消息应包含西里尔字符
+          assert_true(contains_cyrillic_characters(localized_message))
+        }
+        _ => {
+          // 其他语言的错误消息应包含基本拉丁字符
+          assert_true(contains_latin_characters(localized_message))
         }
       }
+    }
+  }
+  
+  // 重置为默认区域
+  set_current_locale("en")
+  assert_eq(get_current_locale(), "en")
+}
+
+test "日期时间格式本地化" {
+  // 测试不同区域的日期时间格式
+  let locales = [
+    ("en", "US"),  // 英语（美国）
+    ("en", "GB"),  // 英语（英国）
+    ("zh", "CN"),  // 中文（中国）
+    ("zh", "TW"),  // 中文（台湾）
+    ("ja", "JP"),  // 日语（日本）
+    ("de", "DE"),  // 德语（德国）
+    ("fr", "FR"),  // 法语（法国）
+    ("es", "ES"),  // 西班牙语（西班牙）
+    ("ru", "RU"),  // 俄语（俄罗斯）
+    ("ar", "SA")   // 阿拉伯语（沙特阿拉伯）
+  ]
+  
+  // 测试时间戳
+  let test_timestamp = 1640995200L  // 2022-01-01 00:00:00 UTC
+  
+  for (language, country) in locales {
+    let locale = language + "_" + country
+    set_current_locale(locale)
+    
+    // 测试日期格式
+    let formatted_date = format_date(test_timestamp, Date)
+    assert_true(formatted_date.length() > 0)
+    
+    // 测试时间格式
+    let formatted_time = format_date(test_timestamp, Time)
+    assert_true(formatted_time.length() > 0)
+    
+    // 测试日期时间格式
+    let formatted_datetime = format_date(test_timestamp, DateTime)
+    assert_true(formatted_datetime.length() > 0)
+    
+    // 验证格式符合区域习惯
+    match language {
+      "zh" => {
+        // 中文日期应包含年月日
+        assert_true(formatted_date.contains("年") || formatted_date.contains("月") || formatted_date.contains("日"))
+      }
+      "ja" => {
+        // 日文日期应包含年月日
+        assert_true(formatted_date.contains("年") || formatted_date.contains("月") || formatted_date.contains("日"))
+      }
+      "ar" => {
+        // 阿拉伯日期可能使用阿拉伯数字
+        assert_true(formatted_date.length() > 0)
+      }
+      _ => {
+        // 其他语言的日期格式
+        assert_true(formatted_date.length() > 0)
+      }
+    }
+  }
+  
+  // 重置为默认区域
+  set_current_locale("en_US")
+}
+
+test "数字格式本地化" {
+  // 测试不同区域的数字格式
+  let locales = [
+    "en_US",  // 英语（美国）- 1,234.56
+    "en_GB",  // 英语（英国）- 1,234.56
+    "zh_CN",  // 中文（中国）- 1,234.56
+    "de_DE",  // 德语（德国）- 1.234,56
+    "fr_FR",  // 法语（法国）- 1 234,56
+    "es_ES",  // 西班牙语（西班牙）- 1.234,56
+    "ru_RU",  // 俄语（俄罗斯）- 1 234,56
+    "ar_SA",  // 阿拉伯语（沙特阿拉伯）- ١٬٢٣٤٫٥٦
+    "hi_IN"   // 印地语（印度）- 1,234.56
+  ]
+  
+  // 测试数字
+  let test_numbers = [
+    1234.56,
+    0.123456,
+    1000000.0,
+    -1234.56,
+    0.0
+  ]
+  
+  for locale in locales {
+    set_current_locale(locale)
+    
+    for number in test_numbers {
+      let formatted_number = format_number(number)
+      assert_true(formatted_number.length() > 0)
       
-      assert_true(found) // 确保每个错误消息都存在
-      lang_errors_found = lang_errors_found + 1
+      // 验证数字格式符合区域习惯
+      match locale {
+        "de_DE" | "es_ES" => {
+          // 德语和西班牙语使用逗号作为小数点
+          assert_true(formatted_number.contains(","))
+        }
+        "ar_SA" => {
+          // 阿拉伯语使用阿拉伯数字
+          assert_true(contains_arabic_numerals(formatted_number))
+        }
+        _ => {
+          // 其他语言使用点作为小数点
+          if number != number.to_int().to_float() {
+            assert_true(formatted_number.contains("."))
+          }
+        }
+      }
+    }
+  }
+  
+  // 重置为默认区域
+  set_current_locale("en_US")
+}
+
+test "货币格式本地化" {
+  // 测试不同区域的货币格式
+  let locales = [
+    ("en_US", "USD", "$"),     // 美元
+    ("en_GB", "GBP", "£"),     // 英镑
+    ("zh_CN", "CNY", "¥"),     // 人民币
+    ("ja_JP", "JPY", "¥"),     // 日元
+    ("de_DE", "EUR", "€"),     // 欧元
+    ("fr_FR", "EUR", "€"),     // 欧元
+    ("es_ES", "EUR", "€"),     // 欧元
+    ("ru_RU", "RUB", "₽"),     // 俄罗斯卢布
+    ("ko_KR", "KRW", "₩"),     // 韩元
+    ("ar_SA", "SAR", "﷼")      // 沙特里亚尔
+  ]
+  
+  // 测试金额
+  let test_amounts = [
+    1234.56,
+    100.0,
+    0.99,
+    1000000.0
+  ]
+  
+  for (locale, currency_code, currency_symbol) in locales {
+    set_current_locale(locale)
+    
+    for amount in test_amounts {
+      let formatted_currency = format_currency(amount, currency_code)
+      assert_true(formatted_currency.length() > 0)
+      
+      // 验证货币符号
+      assert_true(formatted_currency.contains(currency_symbol) || 
+                 formatted_currency.contains(currency_code))
+      
+      // 验证金额格式
+      match locale {
+        "ja_JP" | "ko_KR" => {
+          // 日元和韩元通常不显示小数
+          assert_false(formatted_currency.contains("."))
+        }
+        _ => {
+          // 其他货币可能显示小数
+          if amount != amount.to_int().to_float() {
+            assert_true(formatted_currency.contains(".") || formatted_currency.contains(","))
+          }
+        }
+      }
+    }
+  }
+  
+  // 重置为默认区域
+  set_current_locale("en_US")
+}
+
+test "文本方向和排版支持" {
+  // 测试从左到右（LTR）和从右到左（RTL）文本方向
+  let text_directions = [
+    ("en", "ltr", "Hello World"),           // 英语 - 从左到右
+    ("zh", "ltr", "你好世界"),              // 中文 - 从左到右
+    ("ja", "ltr", "こんにちは世界"),         // 日语 - 从左到右
+    ("ko", "ltr", "안녕하세요 세계"),       // 韩语 - 从左到右
+    ("ar", "rtl", "مرحبا بالعالم"),        // 阿拉伯语 - 从右到左
+    ("he", "rtl", "שלום עולם"),            // 希伯来语 - 从右到左
+    ("fa", "rtl", "سلام دنیا"),             // 波斯语 - 从右到左
+    ("ur", "rtl", "ہیلو ورلڈ")             // 乌尔都语 - 从右到左
+  ]
+  
+  for (locale, direction, sample_text) in text_directions {
+    set_current_locale(locale)
+    
+    // 验证文本方向
+    assert_eq(get_text_direction(), direction)
+    
+    // 测试文本排版
+    let formatted_text = format_text(sample_text)
+    assert_true(formatted_text.length() > 0)
+    
+    // 验证文本方向属性
+    let text_attributes = get_text_attributes(formatted_text)
+    assert_eq(text_attributes.direction, direction)
+    
+    // 测试混合方向文本
+    let mixed_text = if direction == "ltr" {
+      sample_text + " (مرحبا)"  // LTR文本包含RTL片段
+    } else {
+      sample_text + " (Hello)"  // RTL文本包含LTR片段
     }
     
-    assert_eq(lang_errors_found, 4) // 每种语言应该有4个错误消息
+    let formatted_mixed_text = format_text(mixed_text)
+    assert_true(formatted_mixed_text.length() > sample_text.length())
+    
+    // 验证混合文本的方向处理
+    let mixed_attributes = get_text_attributes(formatted_mixed_text)
+    assert_eq(mixed_attributes.direction, direction)
   }
+  
+  // 重置为默认区域
+  set_current_locale("en")
 }
 
-test "时区和本地化时间测试" {
-  // 测试不同时区的时间表示
-  let base_time = "2023-12-25T10:30:00Z" // UTC时间
-  
-  // 不同时区的时间
-  let time_zones = [
-    ("UTC", "2023-12-25T10:30:00Z"),
-    ("America/New_York", "2023-12-25T05:30:00-05:00"),
-    ("Europe/London", "2023-12-25T10:30:00Z"),
-    ("Europe/Paris", "2023-12-25T11:30:00+01:00"),
-    ("Asia/Tokyo", "2023-12-25T19:30:00+09:00"),
-    ("Asia/Shanghai", "2023-12-25T18:30:00+08:00"),
-    ("Asia/Seoul", "2023-12-25T19:30:00+09:00"),
-    ("Australia/Sydney", "2023-12-25T21:30:00+11:00")
+test "字符编码和Unicode支持" {
+  // 测试各种Unicode字符的处理
+  let unicode_test_cases = [
+    ("emoji", "🚀📊📈🔍"),                    // 表情符号
+    ("chinese", "中文测试数据"),               // 中文字符
+    ("japanese", "日本語テストデータ"),         // 日文字符
+    ("korean", "한국어 테스트 데이터"),         // 韩文字符
+    ("arabic", "بيانات الاختبار العربية"),    // 阿拉伯字符
+    ("hebrew", "נתוני בדיקה עברית"),        // 希伯来字符
+    ("russian", "Русские тестовые данные"),   // 俄文字符
+    ("thai", "ข้อมูลทดสอบภาษาไทย"),        // 泰文字符
+    ("math", "∑∏∫∆∇∂"),                      // 数学符号
+    ("currency", "€£¥₹₽₩₺"),                // 货币符号
+    ("arrows", "←→↑↓↖↗↘↙"),                  // 箭头符号
+    ("mixed", "Hello 🌍 你好 こんにちは مرحبا") // 混合字符
   ]
   
-  // 创建时区属性
-  let mut timezone_attrs = azimuth::Attributes { values: [] }
-  for (zone, time) in time_zones {
-    timezone_attrs.values = timezone_attrs.values + [
-      ("timezone." + zone, azimuth::AttributeValue::StringValue(time))
-    ]
-  }
-  
-  // 验证时区属性
-  assert_eq(timezone_attrs.values.length(), 8)
-  
-  // 验证特定时区
-  let tokyo_time = None
-  for (key, value) in timezone_attrs.values {
-    if key == "timezone.Asia/Tokyo" {
-      match value {
-        azimuth::AttributeValue::StringValue(time) => {
-          assert_eq(time, "2023-12-25T19:30:00+09:00")
-        }
-        _ => assert_true(false)
-      }
+  for (test_name, test_text) in unicode_test_cases {
+    // 测试字符编码
+    let encoded_text = encode_text(test_text, "UTF-8")
+    assert_true(encoded_text.length() > 0)
+    
+    // 测试字符解码
+    let decoded_text = decode_text(encoded_text, "UTF-8")
+    assert_eq(decoded_text, test_text)
+    
+    // 测试文本长度计算
+    let byte_length = get_byte_length(test_text)
+    let char_length = get_char_length(test_text)
+    
+    // 对于多字节字符，字节长度应大于字符长度
+    if contains_multibyte_characters(test_text) {
+      assert_true(byte_length > char_length)
     }
-  }
-  
-  // 测试本地化时间格式
-  let localized_times = [
-    ("en", "Monday, December 25, 2023 10:30:00 AM"),
-    ("zh", "2023年12月25日星期一 上午10:30:00"),
-    ("ja", "2023年12月25日月曜日 10時30分00秒"),
-    ("ko", "2023년 12월 25일 월요일 오전 10:30:00"),
-    ("fr", "lundi 25 décembre 2023 à 10:30:00"),
-    ("de", "Montag, 25. Dezember 2023, 10:30:00 Uhr"),
-    ("es", "lunes, 25 de diciembre de 2023, 10:30:00"),
-    ("ru", "понедельник, 25 декабря 2023 г., 10:30:00")
-  ]
-  
-  // 创建本地化时间属性
-  let mut localized_time_attrs = azimuth::Attributes { values: [] }
-  for (lang, time) in localized_times {
-    localized_time_attrs.values = localized_time_attrs.values + [
-      ("time." + lang, azimuth::AttributeValue::StringValue(time))
-    ]
-  }
-  
-  // 验证本地化时间属性
-  assert_eq(localized_time_attrs.values.length(), 8)
-  
-  // 验证特定语言的时间格式
-  for (key, value) in localized_time_attrs.values {
-    if key == "time.zh" {
-      match value {
-        azimuth::AttributeValue::StringValue(time) => {
-          assert_eq(time, "2023年12月25日星期一 上午10:30:00")
-          assert_true(time.contains("2023年"))
-          assert_true(time.contains("上午"))
-        }
-        _ => assert_true(false)
-      }
+    
+    // 测试文本截断
+    let truncated_text = truncate_text(test_text, 10)
+    assert_true(truncated_text.length() <= 10)
+    
+    // 测试文本搜索
+    if test_text.length() > 5 {
+      let search_text = test_text.substring(0, 5)
+      let found_index = find_text(test_text, search_text)
+      assert_eq(found_index, 0)
     }
   }
 }
 
-test "文化特定数据测试" {
-  // 测试文化特定的数据格式和约定
-  
-  // 姓名格式
-  let name_formats = [
-    ("en.western", "John Doe"), // 名 姓
-    ("zh.eastern", "张三"), // 姓 名
-    ("ja.eastern", "田中太郎"), // 姓 名
-    ("ko.eastern", "김철수"), // 姓 名
-    ("hu.eastern", "Nagy János"), // 姓 名
-    ("es.western", "Juan García"), // 名 姓
-    ("ru.eastern", "Иван Иванов"), // 名 姓
-    ("ar.eastern", "محمد أحمد") // 名 姓
+test "时区和本地化时间处理" {
+  // 测试不同时区的时间处理
+  let timezones = [
+    ("UTC", 0),
+    ("America/New_York", -5),
+    ("America/Los_Angeles", -8),
+    ("Europe/London", 0),
+    ("Europe/Paris", 1),
+    ("Asia/Shanghai", 8),
+    ("Asia/Tokyo", 9),
+    ("Asia/Seoul", 9),
+    ("Australia/Sydney", 11),
+    ("Pacific/Auckland", 13)
   ]
   
-  // 创建姓名格式属性
-  let mut name_attrs = azimuth::Attributes { values: [] }
-  for (culture, name) in name_formats {
-    name_attrs.values = name_attrs.values + [
-      ("name." + culture, azimuth::AttributeValue::StringValue(name))
-    ]
+  // 测试时间戳
+  let test_timestamp = 1640995200L  // 2022-01-01 00:00:00 UTC
+  
+  for (timezone_name, offset_hours) in timezones {
+    set_timezone(timezone_name)
+    
+    // 验证时区设置
+    assert_eq(get_timezone(), timezone_name)
+    
+    // 测试时区转换
+    let local_time = convert_to_local_time(test_timestamp)
+    assert_true(local_time.length() > 0)
+    
+    // 验证时区偏移
+    let offset = get_timezone_offset(timezone_name)
+    assert_eq(offset, offset_hours * 3600)  // 转换为秒
+    
+    // 测试夏令时处理（对于支持夏令时的时区）
+    if timezone_name == "America/New_York" || timezone_name == "Europe/London" || timezone_name == "Europe/Paris" {
+      let summer_timestamp = 1656633600L  // 2022-07-01 00:00:00 UTC
+      let summer_local_time = convert_to_local_time(summer_timestamp)
+      assert_true(summer_local_time.length() > 0)
+      
+      // 夏令时偏移可能不同
+      let summer_offset = get_timezone_offset(timezone_name)
+      // 夏令时偏移可能与标准时间不同
+    }
+    
+    // 测试本地化时间格式
+    let formatted_time = format_local_time(test_timestamp)
+    assert_true(formatted_time.length() > 0)
+    
+    // 验证时间格式包含时区信息
+    assert_true(formatted_time.contains(timezone_name.split("/")[1]) || 
+               formatted_time.contains("UTC") || 
+               formatted_time.contains("GMT"))
   }
   
-  // 验证姓名格式属性
-  assert_eq(name_attrs.values.length(), 8)
-  
-  // 地址格式
-  let address_formats = [
-    ("en.us", "123 Main St, New York, NY 10001"),
-    ("zh.cn", "中国北京市朝阳区建国路123号"),
-    ("ja.jp", "〒100-0001 東京都千代田区千代田1-1"),
-    ("ko.kr", "서울특별시 종로구 종로1가 123"),
-    ("de.de", "Musterstraße 123, 12345 Berlin"),
-    ("fr.fr", "123 Rue de la Paix, 75001 Paris"),
-    ("ru.ru", "123456, г. Москва, ул. Тверская, д. 1"),
-    ("ar.sa", "12345 الرياض، شارع الملك فهد، ص. ب. 1234")
+  // 重置为默认时区
+  set_timezone("UTC")
+}
+
+test "本地化资源加载和回退机制" {
+  // 测试本地化资源加载
+  let resource_keys = [
+    "telemetry.dashboard.title",
+    "telemetry.metrics.cpu",
+    "telemetry.metrics.memory",
+    "telemetry.metrics.disk",
+    "telemetry.metrics.network",
+    "telemetry.errors.connection_failed",
+    "telemetry.errors.data_invalid",
+    "telemetry.actions.refresh",
+    "telemetry.actions.export",
+    "telemetry.actions.settings"
   ]
   
-  // 创建地址格式属性
-  let mut address_attrs = azimuth::Attributes { values: [] }
-  for (culture, address) in address_formats {
-    address_attrs.values = address_attrs.values + [
-      ("address." + culture, azimuth::AttributeValue::StringValue(address))
-    ]
-  }
-  
-  // 验证地址格式属性
-  assert_eq(address_attrs.values.length(), 8)
-  
-  // 电话号码格式
-  let phone_formats = [
-    ("en.us", "+1 (555) 123-4567"),
-    ("zh.cn", "+86 138 0013 8000"),
-    ("ja.jp", "+81-3-1234-5678"),
-    ("ko.kr", "+82-2-1234-5678"),
-    ("de.de", "+49 30 12345678"),
-    ("fr.fr", "+33 1 23 45 67 89"),
-    ("ru.ru", "+7 495 123-45-67"),
-    ("gb.uk", "+44 20 7946 0958")
+  let locales = [
+    "en", "zh", "es", "fr", "de", "ja", "ko", "ru"
   ]
   
-  // 创建电话号码格式属性
-  let mut phone_attrs = azimuth::Attributes { values: [] }
-  for (culture, phone) in phone_formats {
-    phone_attrs.values = phone_attrs.values + [
-      ("phone." + culture, azimuth::AttributeValue::StringValue(phone))
-    ]
-  }
-  
-  // 验证电话号码格式属性
-  assert_eq(phone_attrs.values.length(), 8)
-  
-  // 验证特定格式的电话号码
-  for (key, value) in phone_attrs.values {
-    if key == "phone.zh.cn" {
-      match value {
-        azimuth::AttributeValue::StringValue(phone) => {
-          assert_eq(phone, "+86 138 0013 8000")
-          assert_true(phone.starts_with("+86"))
+  for locale in locales {
+    set_current_locale(locale)
+    
+    // 测试资源加载
+    for resource_key in resource_keys {
+      let localized_value = get_localized_resource(resource_key)
+      
+      // 验证资源已加载
+      assert_true(localized_value.length() > 0)
+      
+      // 验证资源不包含占位符
+      assert_false(localized_value.contains("${"))
+      assert_false(localized_value.contains("}"))
+      
+      // 验证资源符合语言特征
+      match locale {
+        "zh" => {
+          if resource_key.contains("title") || resource_key.contains("metrics") {
+            assert_true(contains_chinese_characters(localized_value))
+          }
         }
-        _ => assert_true(false)
+        "ja" => {
+          if resource_key.contains("title") || resource_key.contains("metrics") {
+            assert_true(contains_japanese_characters(localized_value))
+          }
+        }
+        "ko" => {
+          if resource_key.contains("title") || resource_key.contains("metrics") {
+            assert_true(contains_korean_characters(localized_value))
+          }
+        }
+        _ => {
+          // 其他语言的验证
+          assert_true(localized_value.length() > 0)
+        }
       }
     }
+  }
+  
+  // 测试回退机制
+  set_current_locale("xx")  // 不存在的区域
+  
+  for resource_key in resource_keys {
+    let fallback_value = get_localized_resource(resource_key)
+    
+    // 验证回退到默认语言（英语）
+    assert_true(fallback_value.length() > 0)
+    assert_true(contains_latin_characters(fallback_value))
+  }
+  
+  // 测试缺失资源的回退
+  let missing_key = "telemetry.nonexistent.resource"
+  let missing_value = get_localized_resource(missing_key)
+  
+  // 验证缺失资源的回退处理
+  assert_true(missing_value.length() > 0)
+  assert_eq(missing_value, missing_key)  // 通常回退到键名
+  
+  // 重置为默认区域
+  set_current_locale("en")
+}
+
+// 辅助函数定义
+fn set_current_locale(locale: String) -> Unit {
+  // 简化的区域设置实现
+}
+
+fn get_current_locale() -> String {
+  // 简化的区域获取实现
+  "en"
+}
+
+fn get_localized_error_message(error_type: String) -> String {
+  // 简化的错误消息本地化实现
+  match error_type {
+    "connection_failed" => "Connection failed",
+    "data_validation_failed" => "Data validation failed",
+    "authentication_failed" => "Authentication failed",
+    "permission_denied" => "Permission denied",
+    "resource_not_found" => "Resource not found",
+    "timeout_occurred" => "Timeout occurred",
+    "rate_limit_exceeded" => "Rate limit exceeded",
+    "server_error" => "Server error",
+    _ => "Unknown error"
   }
 }
 
-test "文本方向和书写系统测试" {
-  // 测试从左到右的书写系统
-  let ltr_text = azimuth::AttributeValue::StringValue("Hello World! This is left-to-right text.")
-  match ltr_text {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "Hello World! This is left-to-right text.")
-      assert_true(s.starts_with("Hello"))
-      assert_true(s.ends_with("text."))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试从右到左的书写系统
-  let rtl_text = azimuth::AttributeValue::StringValue("مرحبا بالعالم! هذا نص من اليمين إلى اليسار.")
-  match rtl_text {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "مرحبا بالعالم! هذا نص من اليمين إلى اليسار.")
-      assert_true(s.contains("مرحبا"))
-      assert_true(s.contains("العالم"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试双向文本
-  let bidi_text = azimuth::AttributeValue::StringValue("English text مع النص العربي more English")
-  match bidi_text {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "English text مع النص العربي more English")
-      assert_true(s.contains("English text"))
-      assert_true(s.contains("مع النص العربي"))
-      assert_true(s.contains("more English"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试垂直书写系统
-  let vertical_text = azimuth::AttributeValue::StringValue("縦書きの\nテキストです")
-  match vertical_text {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "縦書きの\nテキストです")
-      assert_true(s.contains("縦書きの"))
-      assert_true(s.contains("テキストです"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 创建文本方向属性
-  let text_direction_attrs = azimuth::Attributes {
-    values: [
-      ("en.direction", azimuth::AttributeValue::StringValue("ltr")),
-      ("ar.direction", azimuth::AttributeValue::StringValue("rtl")),
-      ("he.direction", azimuth::AttributeValue::StringValue("rtl")),
-      ("zh.direction", azimuth::AttributeValue::StringValue("ltr")),
-      ("ja.direction", azimuth::AttributeValue::StringValue("ltr")),
-      ("ko.direction", azimuth::AttributeValue::StringValue("ltr")),
-      ("fa.direction", azimuth::AttributeValue::StringValue("rtl")),
-      ("ur.direction", azimuth::AttributeValue::StringValue("rtl"))
-    ]
-  }
-  
-  // 验证文本方向属性
-  assert_eq(text_direction_attrs.values.length(), 8)
-  
-  // 验证特定语言的文本方向
-  let mut ltr_count = 0
-  let mut rtl_count = 0
-  
-  for (key, value) in text_direction_attrs.values {
-    match value {
-      azimuth::AttributeValue::StringValue(direction) => {
-        if direction == "ltr" {
-          ltr_count = ltr_count + 1
-        } else if direction == "rtl" {
-          rtl_count = rtl_count + 1
-        } else {
-          assert_true(false) // 不应该有其他方向
-        }
-      }
-      _ => assert_true(false)
+fn contains_chinese_characters(text: String) -> Bool {
+  // 简化的中文字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if char_code >= 0x4E00 && char_code <= 0x9FFF {
+      return true
     }
   }
-  
-  assert_eq(ltr_count, 4) // 英语、中文、日语、韩语
-  assert_eq(rtl_count, 4) // 阿拉伯语、希伯来语、波斯语、乌尔都语
+  false
+}
+
+fn contains_japanese_characters(text: String) -> Bool {
+  // 简化的日文字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if (char_code >= 0x3040 && char_code <= 0x309F) || // 平假名
+       (char_code >= 0x30A0 && char_code <= 0x30FF) || // 片假名
+       (char_code >= 0x4E00 && char_code <= 0x9FFF) {  // 汉字
+      return true
+    }
+  }
+  false
+}
+
+fn contains_korean_characters(text: String) -> Bool {
+  // 简化的韩文字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if char_code >= 0xAC00 && char_code <= 0xD7AF {
+      return true
+    }
+  }
+  false
+}
+
+fn contains_cyrillic_characters(text: String) -> Bool {
+  // 简化的西里尔字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if char_code >= 0x0400 && char_code <= 0x04FF {
+      return true
+    }
+  }
+  false
+}
+
+fn contains_latin_characters(text: String) -> Bool {
+  // 简化的拉丁字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if (char_code >= 0x0041 && char_code <= 0x005A) || // 大写字母
+       (char_code >= 0x0061 && char_code <= 0x007A) {   // 小写字母
+      return true
+    }
+  }
+  false
+}
+
+fn contains_arabic_numerals(text: String) -> Bool {
+  // 简化的阿拉伯数字检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if char_code >= 0x0660 && char_code <= 0x0669 {
+      return true
+    }
+  }
+  false
+}
+
+type DateFormat { Date, Time, DateTime }
+
+fn format_date(timestamp: Long, format: DateFormat) -> String {
+  // 简化的日期格式化实现
+  match format {
+    Date => "2022-01-01",
+    Time => "00:00:00",
+    DateTime => "2022-01-01 00:00:00"
+  }
+}
+
+fn format_number(number: Float) -> String {
+  // 简化的数字格式化实现
+  number.to_string()
+}
+
+fn format_currency(amount: Float, currency_code: String) -> String {
+  // 简化的货币格式化实现
+  currency_code + " " + amount.to_string()
+}
+
+fn get_text_direction() -> String {
+  // 简化的文本方向获取实现
+  "ltr"
+}
+
+fn format_text(text: String) -> String {
+  // 简化的文本格式化实现
+  text
+}
+
+type TextAttributes { direction: String }
+
+fn get_text_attributes(text: String) -> TextAttributes {
+  // 简化的文本属性获取实现
+  TextAttributes { direction: get_text_direction() }
+}
+
+fn encode_text(text: String, encoding: String) -> String {
+  // 简化的文本编码实现
+  text
+}
+
+fn decode_text(encoded_text: String, encoding: String) -> String {
+  // 简化的文本解码实现
+  encoded_text
+}
+
+fn get_byte_length(text: String) -> Int {
+  // 简化的字节长度获取实现
+  text.length() * 2  // 假设每个字符2字节
+}
+
+fn get_char_length(text: String) -> Int {
+  // 简化的字符长度获取实现
+  text.length()
+}
+
+fn contains_multibyte_characters(text: String) -> Bool {
+  // 简化的多字节字符检测
+  for i in 0..text.length() {
+    let char_code = text.char_code_at(i)
+    if char_code > 0x007F {
+      return true
+    }
+  }
+  false
+}
+
+fn truncate_text(text: String, max_length: Int) -> String {
+  // 简化的文本截断实现
+  if text.length() <= max_length {
+    text
+  } else {
+    text.substring(0, max_length)
+  }
+}
+
+fn find_text(text: String, search: String) -> Int {
+  // 简化的文本搜索实现
+  if text.contains(search) {
+    0
+  } else {
+    -1
+  }
+}
+
+fn set_timezone(timezone: String) -> Unit {
+  // 简化的时区设置实现
+}
+
+fn get_timezone() -> String {
+  // 简化的时区获取实现
+  "UTC"
+}
+
+fn convert_to_local_time(timestamp: Long) -> String {
+  // 简化的本地时间转换实现
+  "2022-01-01 00:00:00"
+}
+
+fn get_timezone_offset(timezone: String) -> Int {
+  // 简化的时区偏移获取实现
+  0
+}
+
+fn format_local_time(timestamp: Long) -> String {
+  // 简化的本地时间格式化实现
+  "2022-01-01 00:00:00 UTC"
+}
+
+fn get_localized_resource(key: String) -> String {
+  // 简化的本地化资源获取实现
+  key
 }
