@@ -1,907 +1,1032 @@
-// Azimuth Network Communication Tests
-// This file contains test cases for network communication functionality
+// Azimuth 网络通信测试用例
+// 专注于网络通信功能和可靠性测试
 
-// Test 1: HTTP Client Request Handling
-test "http client request handling" {
-  // Define HTTP request and response types
-  type HTTPRequest = {
-    method: String,
-    url: String,
-    headers: Array[(String, String)],
-    body: Option<String>,
-    timeout_ms: Int
+// 测试1: 网络连接和断开连接
+test "网络连接建立和断开测试" {
+  // 创建网络连接管理器
+  let connection_manager = NetworkConnectionManager::new()
+  
+  // 配置连接参数
+  let connection_config = {
+    host: "localhost",
+    port: 8080,
+    protocol: "http",
+    timeout_ms: 5000,
+    keep_alive: true,
+    max_retries: 3
   }
   
-  type HTTPResponse = {
-    status_code: Int,
-    headers: Array[(String, String)],
-    body: Option<String>,
-    response_time_ms: Int
+  // 建立连接
+  let connection_result = NetworkConnectionManager::connect(connection_manager, connection_config)
+  assert_true(connection_result.success)
+  
+  let connection = connection_result.connection
+  assert_eq(connection.host, "localhost")
+  assert_eq(connection.port, 8080)
+  assert_eq(connection.status, "connected")
+  
+  // 验证连接状态
+  let connection_status = NetworkConnectionManager::get_connection_status(connection_manager, connection.id)
+  assert_eq(connection_status.state, "active")
+  assert_true(connection_status.established_at > 0)
+  
+  // 测试连接池管理
+  let pool_config = {
+    min_connections: 2,
+    max_connections: 10,
+    idle_timeout_ms: 30000,
+    health_check_interval_ms: 10000
   }
   
-  type HTTPError = {
-    type: String,
-    message: String,
-    retry_after: Option<Int>
-  }
+  let connection_pool = NetworkConnectionManager::create_connection_pool(connection_manager, pool_config)
+  assert_eq(connection_pool.active_connections, 0)
+  assert_eq(connection_pool.max_connections, 10)
   
-  type HTTPResult = {
-    success: Bool,
-    response: Option<HTTPResponse>,
-    error: Option<HTTPError>
-  }
+  // 从连接池获取连接
+  let pooled_connection = NetworkConnectionManager::get_connection_from_pool(connection_manager, connection_pool.id)
+  assert_true(pooled_connection != None)
   
-  // Simulate HTTP request execution
-  let execute_http_request = fn(request: HTTPRequest, should_fail: Bool, response_delay_ms: Int) -> HTTPResult {
-    if should_fail {
-      {
-        success: false,
-        response: None,
-        error: Some({
-          type: "NetworkTimeout",
-          message: "Request timed out after " + request.timeout_ms.to_string() + "ms",
-          retry_after: Some(1000)
-        })
-      }
-    } else {
-      // Simulate successful response
-      let response_headers = [
-        ("Content-Type", "application/json"),
-        ("Content-Length", "123"),
-        ("Cache-Control", "no-cache")
-      ]
-      
-      let response_body = Some("{\"status\": \"ok\", \"data\": {\"id\": 123, \"name\": \"test\"}}")
-      
-      {
-        success: true,
-        response: Some({
-          status_code: 200,
-          headers: response_headers,
-          body: response_body,
-          response_time_ms: response_delay_ms
-        }),
-        error: None
-      }
-    }
-  }
+  // 将连接返回到池中
+  let return_result = NetworkConnectionManager::return_connection_to_pool(connection_manager, connection_pool.id, connection)
+  assert_true(return_result.success)
   
-  // Create test requests
-  let get_request = {
-    method: "GET",
-    url: "https://api.example.com/users/123",
-    headers: [("Accept", "application/json"), ("User-Agent", "Azimuth/1.0")],
-    body: None,
-    timeout_ms: 5000
-  }
+  // 断开连接
+  let disconnect_result = NetworkConnectionManager::disconnect(connection_manager, connection.id)
+  assert_true(disconnect_result.success)
   
-  let post_request = {
-    method: "POST",
-    url: "https://api.example.com/users",
-    headers: [("Content-Type", "application/json"), ("User-Agent", "Azimuth/1.0")],
-    body: Some("{\"name\": \"John Doe\", \"email\": \"john@example.com\"}"),
-    timeout_ms: 10000
-  }
-  
-  // Test successful GET request
-  let get_result = execute_http_request(get_request, false, 250)
-  assert_true(get_result.success)
-  assert_eq(get_result.error, None)
-  
-  match get_result.response {
-    Some(response) => {
-      assert_eq(response.status_code, 200)
-      assert_eq(response.headers.length(), 3)
-      assert_eq(response.response_time_ms, 250)
-      assert_eq(response.body, Some("{\"status\": \"ok\", \"data\": {\"id\": 123, \"name\": \"test\"}}"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Test successful POST request
-  let post_result = execute_http_request(post_request, false, 500)
-  assert_true(post_result.success)
-  assert_eq(post_result.error, None)
-  
-  match post_result.response {
-    Some(response) => {
-      assert_eq(response.status_code, 200)
-      assert_eq(response.headers.length(), 3)
-      assert_eq(response.response_time_ms, 500)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test failed request
-  let failed_result = execute_http_request(get_request, true, 0)
-  assert_false(failed_result.success)
-  assert_eq(failed_result.response, None)
-  
-  match failed_result.error {
-    Some(error) => {
-      assert_eq(error.type, "NetworkTimeout")
-      assert_eq(error.message, "Request timed out after 5000ms")
-      assert_eq(error.retry_after, Some(1000))
-    }
-    None => assert_true(false)
-  }
+  // 验证连接已断开
+  let final_status = NetworkConnectionManager::get_connection_status(connection_manager, connection.id)
+  assert_eq(final_status.state, "disconnected")
 }
 
-// Test 2: WebSocket Connection Management
-test "websocket connection management" {
-  // Define WebSocket connection types
-  enum WebSocketState {
-    Connecting
-    Connected
-    Disconnecting
-    Disconnected
-    Error
-  }
+// 测试2: 网络超时和重试机制
+test "网络超时和重试机制测试" {
+  // 创建网络请求管理器
+  let request_manager = NetworkRequestManager::new()
   
-  type WebSocketMessage = {
-    type: String,  // "text", "binary", "ping", "pong"
-    data: String,
-    timestamp: Int
-  }
-  
-  type WebSocketConnection = {
-    id: String,
-    url: String,
-    state: WebSocketState,
-    last_ping: Int,
-    last_pong: Int,
-    messages_sent: Int,
-    messages_received: Int,
-    error_message: Option<String>
-  }
-  
-  // Create a WebSocket connection
-  let create_websocket_connection = fn(url: String) -> WebSocketConnection {
-    {
-      id: "ws_" + (1640995200).to_string(),
-      url: url,
-      state: WebSocketState::Connecting,
-      last_ping: 0,
-      last_pong: 0,
-      messages_sent: 0,
-      messages_received: 0,
-      error_message: None
-    }
-  }
-  
-  // Connect to WebSocket
-  let connect_websocket = fn(connection: WebSocketConnection, should_fail: Bool) -> WebSocketConnection {
-    if should_fail {
-      {
-        id: connection.id,
-        url: connection.url,
-        state: WebSocketState::Error,
-        last_ping: connection.last_ping,
-        last_pong: connection.last_pong,
-        messages_sent: connection.messages_sent,
-        messages_received: connection.messages_received,
-        error_message: Some("Connection failed: Unable to establish connection")
-      }
-    } else {
-      {
-        id: connection.id,
-        url: connection.url,
-        state: WebSocketState::Connected,
-        last_ping: 1640995200,
-        last_pong: 1640995200,
-        messages_sent: connection.messages_sent,
-        messages_received: connection.messages_received,
-        error_message: None
-      }
-    }
-  }
-  
-  // Send a message
-  let send_message = fn(connection: WebSocketConnection, message: String) -> WebSocketConnection {
-    if connection.state == WebSocketState::Connected {
-      {
-        id: connection.id,
-        url: connection.url,
-        state: connection.state,
-        last_ping: connection.last_ping,
-        last_pong: connection.last_pong,
-        messages_sent: connection.messages_sent + 1,
-        messages_received: connection.messages_received,
-        error_message: None
-      }
-    } else {
-      connection
-    }
-  }
-  
-  // Receive a message
-  let receive_message = fn(connection: WebSocketConnection, message: String) -> WebSocketConnection {
-    if connection.state == WebSocketState::Connected {
-      {
-        id: connection.id,
-        url: connection.url,
-        state: connection.state,
-        last_ping: connection.last_ping,
-        last_pong: connection.last_pong,
-        messages_sent: connection.messages_sent,
-        messages_received: connection.messages_received + 1,
-        error_message: None
-      }
-    } else {
-      connection
-    }
-  }
-  
-  // Disconnect from WebSocket
-  let disconnect_websocket = fn(connection: WebSocketConnection) -> WebSocketConnection {
-    {
-      id: connection.id,
-      url: connection.url,
-      state: WebSocketState::Disconnected,
-      last_ping: connection.last_ping,
-      last_pong: connection.last_pong,
-      messages_sent: connection.messages_sent,
-      messages_received: connection.messages_received,
-      error_message: None
-    }
-  }
-  
-  // Test WebSocket connection lifecycle
-  let ws1 = create_websocket_connection("wss://example.com/ws")
-  assert_eq(ws1.state, WebSocketState::Connecting)
-  assert_eq(ws1.messages_sent, 0)
-  assert_eq(ws1.messages_received, 0)
-  
-  // Connect successfully
-  let ws2 = connect_websocket(ws1, false)
-  assert_eq(ws2.state, WebSocketState::Connected)
-  assert_eq(ws2.last_ping, 1640995200)
-  assert_eq(ws2.last_pong, 1640995200)
-  
-  // Send messages
-  let ws3 = send_message(ws2, "Hello, WebSocket!")
-  assert_eq(ws3.messages_sent, 1)
-  
-  let ws4 = send_message(ws3, "Another message")
-  assert_eq(ws4.messages_sent, 2)
-  
-  // Receive messages
-  let ws5 = receive_message(ws4, "Response 1")
-  assert_eq(ws5.messages_received, 1)
-  
-  let ws6 = receive_message(ws5, "Response 2")
-  assert_eq(ws6.messages_received, 2)
-  
-  // Disconnect
-  let ws7 = disconnect_websocket(ws6)
-  assert_eq(ws7.state, WebSocketState::Disconnected)
-  assert_eq(ws7.messages_sent, 2)
-  assert_eq(ws7.messages_received, 2)
-  
-  // Test connection failure
-  let ws8 = create_websocket_connection("wss://invalid.example.com/ws")
-  let ws9 = connect_websocket(ws8, true)
-  assert_eq(ws9.state, WebSocketState::Error)
-  assert_eq(ws9.error_message, Some("Connection failed: Unable to establish connection"))
-  
-  // Try to send message on failed connection
-  let ws10 = send_message(ws9, "This should fail")
-  assert_eq(ws10.messages_sent, 0)  // Unchanged
-}
-
-// Test 3: Network Retry Strategy
-test "network retry strategy" {
-  // Define retry strategy types
-  type RetryStrategy = {
-    max_attempts: Int,
-    initial_delay_ms: Int,
-    max_delay_ms: Int,
-    backoff_multiplier: Float,
-    retryable_errors: Array[String]
-  }
-  
-  type NetworkOperation = {
-    id: String,
-    attempt: Int,
-    success: Bool,
-    error_type: Option<String>
-  }
-  
-  // Execute operation with retry strategy
-  let execute_with_retry = fn(
-    operation: () -> NetworkOperation,
-    strategy: RetryStrategy
-  ) -> NetworkOperation {
-    let mut current_attempt = 1
-    let mut current_delay = strategy.initial_delay_ms
-    let mut last_result = operation()
-    
-    while current_attempt < strategy.max_attempts and not(last_result.success) {
-      match last_result.error_type {
-        Some(error_type) => {
-          if strategy.retryable_errors.contains(error_type) {
-            // Simulate delay (in real implementation, this would be an actual delay)
-            current_attempt = current_attempt + 1
-            
-            // Calculate next delay with exponential backoff
-            current_delay = (current_delay.to_float() * strategy.backoff_multiplier).to_int()
-            if current_delay > strategy.max_delay_ms {
-              current_delay = strategy.max_delay_ms
-            }
-            
-            // Retry the operation
-            last_result = operation()
-            last_result.attempt = current_attempt
-          } else {
-            // Don't retry this type of error
-            break
-          }
-        }
-        None => {
-          // No error, but success is false (shouldn't happen)
-          break
-        }
-      }
-    }
-    
-    last_result
-  }
-  
-  // Create test operations
-  let attempt_counter = { mut count: 0 }
-  let test_operation = fn() -> NetworkOperation {
-    attempt_counter.count = attempt_counter.count + 1
-    
-    if attempt_counter.count < 3 {
-      {
-        id: "op_123",
-        attempt: attempt_counter.count,
-        success: false,
-        error_type: Some("NetworkTimeout")
-      }
-    } else {
-      {
-        id: "op_123",
-        attempt: attempt_counter.count,
-        success: true,
-        error_type: None
-      }
-    }
-  }
-  
-  // Define retry strategy
-  let retry_strategy = {
+  // 配置重试策略
+  let retry_config = {
     max_attempts: 5,
-    initial_delay_ms: 100,
-    max_delay_ms: 1000,
+    base_delay_ms: 1000,
+    max_delay_ms: 10000,
     backoff_multiplier: 2.0,
-    retryable_errors: ["NetworkTimeout", "ConnectionRefused", "ServiceUnavailable"]
+    retryable_status_codes: [408, 429, 500, 502, 503, 504]
   }
   
-  // Execute operation with retry
-  attempt_counter.count = 0
-  let result1 = execute_with_retry(test_operation, retry_strategy)
-  
-  assert_true(result1.success)
-  assert_eq(result1.attempt, 3)
-  assert_eq(result1.error_type, None)
-  
-  // Test with non-retryable error
-  let non_retryable_operation = fn() -> NetworkOperation {
-    attempt_counter.count = attempt_counter.count + 1
-    
-    {
-      id: "op_456",
-      attempt: attempt_counter.count,
-      success: false,
-      error_type: Some("AuthenticationError")
-    }
+  // 配置超时设置
+  let timeout_config = {
+    connect_timeout_ms: 3000,
+    read_timeout_ms: 10000,
+    write_timeout_ms: 5000,
+    total_timeout_ms: 30000
   }
   
-  attempt_counter.count = 0
-  let result2 = execute_with_retry(non_retryable_operation, retry_strategy)
-  
-  assert_false(result2.success)
-  assert_eq(result2.attempt, 1)  // Only attempted once
-  assert_eq(result2.error_type, Some("AuthenticationError"))
-  
-  // Test with max attempts reached
-  let always_failing_operation = fn() -> NetworkOperation {
-    attempt_counter.count = attempt_counter.count + 1
-    
-    {
-      id: "op_789",
-      attempt: attempt_counter.count,
-      success: false,
-      error_type: Some("NetworkTimeout")
-    }
+  // 创建测试请求
+  let test_request = {
+    url: "http://localhost:8080/api/test",
+    method: "GET",
+    headers: [
+      ("Content-Type", "application/json"),
+      ("User-Agent", "Azimuth-Telemetry/1.0")
+    ],
+    body: "",
+    timeout_config: timeout_config,
+    retry_config: retry_config
   }
   
-  attempt_counter.count = 0
-  let result3 = execute_with_retry(always_failing_operation, retry_strategy)
+  // 模拟网络超时场景
+  let timeout_simulator = NetworkTimeoutSimulator::new()
+  NetworkTimeoutSimulator::set_response_delay(timeout_simulator, 5000)  // 5秒延迟
   
-  assert_false(result3.success)
-  assert_eq(result3.attempt, 5)  // Max attempts reached
-  assert_eq(result3.error_type, Some("NetworkTimeout"))
+  // 发送请求（应该超时）
+  let timeout_result = NetworkRequestManager::send_request(request_manager, test_request)
+  assert_false(timeout_result.success)
+  assert_eq(timeout_result.error_type, "timeout")
+  
+  // 模拟服务器错误场景
+  let error_simulator = NetworkErrorSimulator::new()
+  NetworkErrorSimulator::set_error_rate(error_simulator, 0.5)  // 50%错误率
+  NetworkErrorSimulator::set_error_type(error_simulator, "server_error")
+  
+  // 发送请求（应该触发重试）
+  let retry_result = NetworkRequestManager::send_request_with_retry(request_manager, test_request)
+  
+  // 验证重试行为
+  assert_true(retry_result.attempts > 1)
+  assert_true(retry_result.attempts <= retry_config.max_attempts)
+  
+  // 模拟指数退避
+  let retry_delays = retry_result.retry_delays
+  assert_true(retry_delays.length() >= 1)
+  
+  // 验证退避延迟递增
+  for i in 1..=retry_delays.length() - 1 {
+    assert_true(retry_delays[i] >= retry_delays[i-1])
+  }
+  
+  // 测试断路器模式
+  let circuit_breaker = NetworkCircuitBreaker::new()
+  CircuitBreaker::configure(circuit_breaker, {
+    failure_threshold: 5,
+    success_threshold: 3,
+    timeout_ms: 30000,
+    half_open_max_calls: 3
+  })
+  
+  // 模拟连续失败
+  for i in 0..=5 {
+    let failure_result = NetworkRequestManager::send_request_with_circuit_breaker(request_manager, test_request, circuit_breaker)
+    assert_false(failure_result.success)
+  }
+  
+  // 验证断路器打开
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "open")
+  
+  // 测试断路器阻止请求
+  let blocked_result = NetworkRequestManager::send_request_with_circuit_breaker(request_manager, test_request, circuit_breaker)
+  assert_false(blocked_result.success)
+  assert_eq(blocked_result.error_type, "circuit_breaker_open")
+  
+  // 等待断路器超时并进入半开状态
+  NetworkCircuitBreaker::advance_time(circuit_breaker, 31000)
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "half_open")
 }
 
-// Test 4: Connection Pool Management
-test "connection pool management" {
-  // Define connection types
-  type Connection = {
-    id: String,
-    host: String,
-    port: Int,
-    created_time: Int,
-    last_used_time: Int,
-    in_use: Bool,
-    is_healthy: Bool
-  }
+// 测试3: 网络数据传输和序列化
+test "网络数据传输和序列化测试" {
+  // 创建数据传输管理器
+  let transfer_manager = DataTransferManager::new()
   
-  type ConnectionPool = {
-    max_connections: Int,
-    min_connections: Int,
-    active_connections: Int,
-    idle_connections: Int,
-    connections: Array[Connection]
-  }
-  
-  // Create a connection pool
-  let create_connection_pool = fn(max_connections: Int, min_connections: Int) -> ConnectionPool {
-    let mut initial_connections = []
-    
-    // Create minimum connections
-    for i in 0..min_connections {
-      let connection_id = "conn_" + i.to_string()
-      initial_connections = initial_connections.push({
-        id: connection_id,
-        host: "db.example.com",
-        port: 5432,
-        created_time: 1640995200,
-        last_used_time: 1640995200,
-        in_use: false,
-        is_healthy: true
-      })
-    }
-    
-    {
-      max_connections: max_connections,
-      min_connections: min_connections,
-      active_connections: min_connections,
-      idle_connections: min_connections,
-      connections: initial_connections
-    }
-  }
-  
-  // Get a connection from the pool
-  let get_connection = fn(pool: ConnectionPool) -> (ConnectionPool, Option[String]) {
-    // Find an idle, healthy connection
-    let mut found_idle = false
-    let mut updated_connections = []
-    let mut connection_id = None
-    
-    for connection in pool.connections {
-      if connection.is_healthy and not(connection.in_use) and not(found_idle) {
-        found_idle = true
-        connection_id = Some(connection.id)
-        
-        updated_connections = updated_connections.push({
-          id: connection.id,
-          host: connection.host,
-          port: connection.port,
-          created_time: connection.created_time,
-          last_used_time: 1640995300,
-          in_use: true,
-          is_healthy: connection.is_healthy
-        })
-      } else {
-        updated_connections = updated_connections.push(connection)
-      }
-    }
-    
-    if found_idle {
-      let updated_pool = {
-        max_connections: pool.max_connections,
-        min_connections: pool.min_connections,
-        active_connections: pool.active_connections,
-        idle_connections: pool.idle_connections - 1,
-        connections: updated_connections
-      }
-      
-      (updated_pool, connection_id)
-    } else if pool.active_connections < pool.max_connections {
-      // Create a new connection
-      let new_connection_id = "conn_" + pool.active_connections.to_string()
-      let new_connection = {
-        id: new_connection_id,
-        host: "db.example.com",
-        port: 5432,
-        created_time: 1640995300,
-        last_used_time: 1640995300,
-        in_use: true,
-        is_healthy: true
-      }
-      
-      let updated_pool = {
-        max_connections: pool.max_connections,
-        min_connections: pool.min_connections,
-        active_connections: pool.active_connections + 1,
-        idle_connections: pool.idle_connections,
-        connections: pool.connections.push(new_connection)
-      }
-      
-      (updated_pool, Some(new_connection_id))
-    } else {
-      // No available connections
-      (pool, None)
-    }
-  }
-  
-  // Release a connection back to the pool
-  let release_connection = fn(pool: ConnectionPool, connection_id: String) -> ConnectionPool {
-    let mut updated_connections = []
-    let mut found = false
-    
-    for connection in pool.connections {
-      if connection.id == connection_id and connection.in_use {
-        found = true
-        
-        updated_connections = updated_connections.push({
-          id: connection.id,
-          host: connection.host,
-          port: connection.port,
-          created_time: connection.created_time,
-          last_used_time: 1640995400,
-          in_use: false,
-          is_healthy: connection.is_healthy
-        })
-      } else {
-        updated_connections = updated_connections.push(connection)
-      }
-    }
-    
-    if found {
+  // 创建测试数据
+  let test_data = {
+    trace_id: "trace-12345",
+    spans: [
       {
-        max_connections: pool.max_connections,
-        min_connections: pool.min_connections,
-        active_connections: pool.active_connections,
-        idle_connections: pool.idle_connections + 1,
-        connections: updated_connections
+        span_id: "span-1",
+        operation_name: "http.request",
+        start_time: 1640995200000,
+        duration: 150,
+        status: "ok",
+        attributes: [
+          ("http.method", "GET"),
+          ("http.url", "/api/users"),
+          ("http.status_code", "200")
+        ]
+      },
+      {
+        span_id: "span-2",
+        operation_name: "db.query",
+        start_time: 1640995200100,
+        duration: 80,
+        status: "ok",
+        attributes: [
+          ("db.type", "postgresql"),
+          ("db.statement", "SELECT * FROM users WHERE id = $1")
+        ]
       }
-    } else {
-      pool
-    }
+    ]
   }
   
-  // Mark a connection as unhealthy
-  let mark_connection_unhealthy = fn(pool: ConnectionPool, connection_id: String) -> ConnectionPool {
-    let updated_connections = []
-    
-    for connection in pool.connections {
-      if connection.id == connection_id {
-        updated_connections = updated_connections.push({
-          id: connection.id,
-          host: connection.host,
-          port: connection.port,
-          created_time: connection.created_time,
-          last_used_time: connection.last_used_time,
-          in_use: connection.in_use,
-          is_healthy: false
-        })
-      } else {
-        updated_connections = updated_connections.push(connection)
-      }
-    }
-    
-    {
-      max_connections: pool.max_connections,
-      min_connections: pool.min_connections,
-      active_connections: pool.active_connections,
-      idle_connections: pool.idle_connections,
-      connections: updated_connections
-    }
+  // 测试JSON序列化
+  let json_serializer = JsonSerializer::new()
+  let serialized_data = JsonSerializer::serialize(json_serializer, test_data)
+  
+  assert_true(serialized_data.length() > 0)
+  assert_true(serialized_data.contains("trace-12345"))
+  assert_true(serialized_data.contains("span-1"))
+  
+  // 测试JSON反序列化
+  let deserialized_data = JsonSerializer::deserialize(json_serializer, serialized_data)
+  assert_eq(deserialized_data.trace_id, test_data.trace_id)
+  assert_eq(deserialized_data.spans.length(), test_data.spans.length())
+  
+  // 测试二进制序列化
+  let binary_serializer = BinarySerializer::new()
+  let binary_data = BinarySerializer::serialize(binary_serializer, test_data)
+  
+  // 验证二进制数据更紧凑
+  assert_true(binary_data.length() < serialized_data.length())
+  
+  // 测试二进制反序列化
+  let binary_deserialized = BinarySerializer::deserialize(binary_serializer, binary_data)
+  assert_eq(binary_deserialized.trace_id, test_data.trace_id)
+  assert_eq(binary_deserialized.spans.length(), test_data.spans.length())
+  
+  // 测试分块传输
+  let chunk_manager = ChunkTransferManager::new()
+  ChunkTransferManager::set_chunk_size(chunk_manager, 1024)  // 1KB块大小
+  
+  let large_data = create_large_telemetry_data(10000)  // 创建10KB数据
+  let chunks = ChunkTransferManager::split_into_chunks(chunk_manager, large_data)
+  
+  assert_true(chunks.length() > 1)
+  assert_true(chunks[0].data.length() <= 1024)
+  
+  // 重组分块数据
+  let reassembled_data = ChunkTransferManager::reassemble_chunks(chunk_manager, chunks)
+  assert_eq(reassembled_data.length(), large_data.length())
+  
+  // 测试压缩传输
+  let compression_manager = CompressionTransferManager::new()
+  let compressed_data = CompressionTransferManager::compress(compression_manager, large_data, "gzip")
+  
+  // 验证压缩效果
+  assert_true(compressed_data.length() < large_data.length())
+  
+  // 解压缩数据
+  let decompressed_data = CompressionTransferManager::decompress(compression_manager, compressed_data, "gzip")
+  assert_eq(decompressed_data.length(), large_data.length())
+  
+  // 测试流式传输
+  let stream_manager = StreamTransferManager::new()
+  let data_stream = StreamTransferManager::create_stream(stream_manager, large_data)
+  
+  // 读取流数据
+  let mut stream_data = []
+  while StreamTransferManager::has_more_data(stream_manager, data_stream) {
+    let chunk = StreamTransferManager::read_chunk(stream_manager, data_stream, 512)
+    stream_data = stream_data.concat(chunk)
   }
   
-  // Test connection pool operations
-  let pool1 = create_connection_pool(5, 2)
-  assert_eq(pool1.max_connections, 5)
-  assert_eq(pool1.min_connections, 2)
-  assert_eq(pool1.active_connections, 2)
-  assert_eq(pool1.idle_connections, 2)
-  assert_eq(pool1.connections.length(), 2)
-  
-  // Get connections
-  let (pool2, conn1_id) = get_connection(pool1)
-  assert_eq(pool2.active_connections, 2)
-  assert_eq(pool2.idle_connections, 1)
-  assert_eq(conn1_id, Some("conn_0"))
-  
-  let (pool3, conn2_id) = get_connection(pool2)
-  assert_eq(pool3.active_connections, 2)
-  assert_eq(pool3.idle_connections, 0)
-  assert_eq(conn2_id, Some("conn_1"))
-  
-  // Get more connections (will create new ones)
-  let (pool4, conn3_id) = get_connection(pool3)
-  assert_eq(pool4.active_connections, 3)
-  assert_eq(pool4.idle_connections, 0)
-  assert_eq(conn3_id, Some("conn_2"))
-  
-  let (pool5, conn4_id) = get_connection(pool4)
-  assert_eq(pool5.active_connections, 4)
-  assert_eq(pool5.idle_connections, 0)
-  assert_eq(conn4_id, Some("conn_3"))
-  
-  let (pool6, conn5_id) = get_connection(pool5)
-  assert_eq(pool6.active_connections, 5)
-  assert_eq(pool6.idle_connections, 0)
-  assert_eq(conn5_id, Some("conn_4"))
-  
-  // Try to get another connection (should fail)
-  let (pool7, conn6_id) = get_connection(pool6)
-  assert_eq(pool7.active_connections, 5)  // Unchanged
-  assert_eq(pool7.idle_connections, 0)  // Unchanged
-  assert_eq(conn6_id, None)
-  
-  // Release connections
-  let pool8 = release_connection(pool7, "conn_0")
-  assert_eq(pool8.active_connections, 5)
-  assert_eq(pool8.idle_connections, 1)
-  
-  let pool9 = release_connection(pool8, "conn_1")
-  assert_eq(pool9.active_connections, 5)
-  assert_eq(pool9.idle_connections, 2)
-  
-  // Now we can get connections again
-  let (pool10, conn7_id) = get_connection(pool9)
-  assert_eq(pool10.active_connections, 5)
-  assert_eq(pool10.idle_connections, 1)
-  assert_eq(conn7_id, Some("conn_0"))
-  
-  // Mark a connection as unhealthy
-  let pool11 = mark_connection_unhealthy(pool10, "conn_2")
-  assert_false(pool11.connections[2].is_healthy)
-  
-  // Release the unhealthy connection
-  let pool12 = release_connection(pool11, "conn_2")
-  assert_eq(pool12.active_connections, 5)
-  assert_eq(pool12.idle_connections, 2)
-  
-  // Get connections (should skip the unhealthy one)
-  let (pool13, conn8_id) = get_connection(pool12)
-  assert_eq(pool13.active_connections, 5)
-  assert_eq(pool13.idle_connections, 1)
-  assert_eq(conn8_id, Some("conn_0"))
+  assert_eq(stream_data.length(), large_data.length())
 }
 
-// Test 5: Network Load Balancing
-test "network load balancing" {
-  // Define server and load balancer types
-  type Server = {
-    id: String,
-    host: String,
-    port: Int,
-    weight: Int,
-    current_connections: Int,
-    max_connections: Int,
-    is_healthy: Bool,
-    response_time_ms: Int
+// 测试4: 网络安全和加密传输
+test "网络安全和加密传输测试" {
+  // 创建安全管理器
+  let security_manager = NetworkSecurityManager::new()
+  
+  // 配置TLS设置
+  let tls_config = {
+    version: "TLSv1.3",
+    cipher_suites: ["TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"],
+    certificate_validation: true,
+    hostname_verification: true,
+    client_certificate: None
   }
   
-  enum LoadBalancingStrategy {
-    RoundRobin
-    LeastConnections
-    WeightedRoundRobin
-    ResponseTime
-  }
+  // 创建安全连接
+  let secure_connection = NetworkSecurityManager::create_secure_connection(security_manager, {
+    host: "secure.example.com",
+    port: 443,
+    tls_config: tls_config
+  })
   
-  type LoadBalancer = {
-    servers: Array[Server],
-    strategy: LoadBalancingStrategy,
-    current_index: Int
-  }
+  assert_true(secure_connection.is_encrypted)
+  assert_eq(secure_connection.tls_version, "TLSv1.3")
   
-  // Create a load balancer
-  let create_load_balancer = fn(servers: Array[Server], strategy: LoadBalancingStrategy) -> LoadBalancer {
-    {
-      servers: servers,
-      strategy: strategy,
-      current_index: 0
-    }
-  }
+  // 测试数据加密
+  let encryption_manager = DataEncryptionManager::new()
+  let encryption_key = EncryptionKey::generate("AES-256-GCM")
   
-  // Select server using round-robin strategy
-  let select_server_round_robin = fn(lb: LoadBalancer) -> (LoadBalancer, Option[Server]) {
-    if lb.servers.length() == 0 {
-      (lb, None)
-    } else {
-      let server = lb.servers[lb.current_index]
-      let next_index = (lb.current_index + 1) % lb.servers.length()
-      
-      ({
-        servers: lb.servers,
-        strategy: lb.strategy,
-        current_index: next_index
-      }, Some(server))
-    }
-  }
+  let sensitive_data = "user_id=12345&session_token=abc123def456"
+  let encrypted_data = DataEncryptionManager::encrypt(encryption_manager, sensitive_data, encryption_key)
   
-  // Select server using least connections strategy
-  let select_server_least_connections = fn(lb: LoadBalancer) -> (LoadBalancer, Option[Server]) {
-    if lb.servers.length() == 0 {
-      (lb, None)
-    } else {
-      let mut min_connections = lb.servers[0].current_connections
-      let mut selected_server = lb.servers[0]
-      
-      for server in lb.servers {
-        if server.is_healthy and server.current_connections < min_connections {
-          min_connections = server.current_connections
-          selected_server = server
-        }
-      }
-      
-      (lb, Some(selected_server))
-    }
-  }
+  // 验证加密数据与原始数据不同
+  assert_true(encrypted_data != sensitive_data)
+  assert_true(encrypted_data.length() > 0)
   
-  // Select server using weighted round-robin strategy
-  let select_server_weighted_round_robin = fn(lb: LoadBalancer, current_weight: Int) -> (LoadBalancer, Option[Server], Int) {
-    if lb.servers.length() == 0 {
-      (lb, None, current_weight)
-    } else {
-      let mut selected_server = None
-      let mut new_weight = current_weight
-      
-      for server in lb.servers {
-        if server.is_healthy {
-          new_weight = new_weight + server.weight
-          if new_weight >= 100 {
-            selected_server = Some(server)
-            new_weight = new_weight - 100
-            break
-          }
-        }
-      }
-      
-      if selected_server.is_none() and lb.servers.length() > 0 {
-        // Fallback to first healthy server
-        for server in lb.servers {
-          if server.is_healthy {
-            selected_server = Some(server)
-            break
-          }
-        }
-      }
-      
-      (lb, selected_server, new_weight)
-    }
-  }
+  // 测试数据解密
+  let decrypted_data = DataEncryptionManager::decrypt(encryption_manager, encrypted_data, encryption_key)
+  assert_eq(decrypted_data, sensitive_data)
   
-  // Select server using response time strategy
-  let select_server_response_time = fn(lb: LoadBalancer) -> (LoadBalancer, Option[Server]) {
-    if lb.servers.length() == 0 {
-      (lb, None)
-    } else {
-      let mut min_response_time = 999999
-      let mut selected_server = None
-      
-      for server in lb.servers {
-        if server.is_healthy and server.response_time_ms < min_response_time {
-          min_response_time = server.response_time_ms
-          selected_server = Some(server)
-        }
-      }
-      
-      (lb, selected_server)
-    }
-  }
+  // 测试消息认证码
+  let mac_manager = MessageAuthenticationManager::new()
+  let mac_key = MacKey::generate("HMAC-SHA256")
   
-  // Update server connection count
-  let update_server_connections = fn(lb: LoadBalancer, server_id: String, delta: Int) -> LoadBalancer {
-    let updated_servers = []
-    
-    for server in lb.servers {
-      if server.id == server_id {
-        updated_servers = updated_servers.push({
-          id: server.id,
-          host: server.host,
-          port: server.port,
-          weight: server.weight,
-          current_connections: server.current_connections + delta,
-          max_connections: server.max_connections,
-          is_healthy: server.is_healthy,
-          response_time_ms: server.response_time_ms
-        })
-      } else {
-        updated_servers = updated_servers.push(server)
-      }
-    }
-    
-    {
-      servers: updated_servers,
-      strategy: lb.strategy,
-      current_index: lb.current_index
-    }
-  }
+  let message = "critical telemetry data"
+  let mac = MessageAuthenticationManager::generate_mac(mac_manager, message, mac_key)
   
-  // Create test servers
-  let servers = [
-    {
-      id: "server1",
-      host: "server1.example.com",
-      port: 8080,
-      weight: 50,
-      current_connections: 0,
-      max_connections: 100,
-      is_healthy: true,
-      response_time_ms: 100
-    },
-    {
-      id: "server2",
-      host: "server2.example.com",
-      port: 8080,
-      weight: 30,
-      current_connections: 0,
-      max_connections: 100,
-      is_healthy: true,
-      response_time_ms: 150
-    },
-    {
-      id: "server3",
-      host: "server3.example.com",
-      port: 8080,
-      weight: 20,
-      current_connections: 0,
-      max_connections: 100,
-      is_healthy: true,
-      response_time_ms: 200
-    }
+  // 验证MAC
+  let is_valid = MessageAuthenticationManager::verify_mac(mac_manager, message, mac, mac_key)
+  assert_true(is_valid)
+  
+  // 测试篡改检测
+  let tampered_message = "tampered telemetry data"
+  let is_tampered_valid = MessageAuthenticationManager::verify_mac(mac_manager, tampered_message, mac, mac_key)
+  assert_false(is_tampered_valid)
+  
+  // 测试数字签名
+  let signature_manager = DigitalSignatureManager::new()
+  let key_pair = KeyPair::generate("RSA-2048")
+  
+  let document = "telemetry report v1.0"
+  let signature = DigitalSignatureManager::sign(signature_manager, document, key_pair.private_key)
+  
+  // 验证签名
+  let is_signature_valid = DigitalSignatureManager::verify(signature_manager, document, signature, key_pair.public_key)
+  assert_true(is_signature_valid)
+  
+  // 测试证书验证
+  let certificate_manager = CertificateManager::new()
+  let trusted_certificates = CertificateManager::load_trusted_certificates(certificate_manager, "/etc/ssl/certs")
+  
+  let server_certificate = CertificateManager::load_certificate(certificate_manager, "server.crt")
+  let certificate_chain = CertificateManager::build_certificate_chain(certificate_manager, server_certificate, trusted_certificates)
+  
+  // 验证证书链
+  let chain_valid = CertificateManager::verify_certificate_chain(certificate_manager, certificate_chain)
+  assert_true(chain_valid)
+  
+  // 测试证书吊销检查
+  let crl_manager = CertificateRevocationManager::new()
+  let crl = CertificateRevocationManager::download_crl(crl_manager, "http://ca.example.com/crl")
+  
+  let is_revoked = CertificateRevocationManager::check_revocation(crl_manager, server_certificate, crl)
+  assert_false(is_revoked)  // 假设证书未被吊销
+  
+  // 测试安全策略执行
+  let security_policy = SecurityPolicy::new()
+  SecurityPolicy::add_rule(security_policy, {
+    name: "require_encryption",
+    condition: "connection.type == external",
+    action: "encrypt",
+    priority: 1
+  })
+  
+  SecurityPolicy::add_rule(security_policy, {
+    name: "authenticate_internal",
+    condition: "connection.type == internal",
+    action: "mutual_tls",
+    priority: 2
+  })
+  
+  // 应用安全策略
+  let external_connection = Connection::new("external", "api.example.com", 443)
+  let applied_policies = SecurityPolicy::apply_policies(security_policy, external_connection)
+  
+  let has_encryption_policy = applied_policies.any(fn(p) { p.action == "encrypt" })
+  assert_true(has_encryption_policy)
+}
+
+// 测试5: 网络负载均衡和故障转移
+test "网络负载均衡和故障转移测试" {
+  // 创建负载均衡管理器
+  let load_balancer = NetworkLoadBalancer::new()
+  
+  // 配置服务器池
+  let server_pool = [
+    { host: "server1.example.com", port: 8080, weight: 3, status: "healthy" },
+    { host: "server2.example.com", port: 8080, weight: 2, status: "healthy" },
+    { host: "server3.example.com", port: 8080, weight: 1, status: "healthy" }
   ]
   
-  // Test round-robin strategy
-  let lb_rr = create_load_balancer(servers, LoadBalancingStrategy::RoundRobin)
+  // 配置负载均衡策略
+  let lb_config = {
+    algorithm: "weighted_round_robin",
+    health_check_interval_ms: 10000,
+    unhealthy_threshold: 3,
+    healthy_threshold: 2,
+    connection_timeout_ms: 5000
+  }
   
-  let (lb_rr1, server1) = select_server_round_robin(lb_rr)
-  assert_eq(server1.unwrap().id, "server1")
-  assert_eq(lb_rr1.current_index, 1)
+  // 初始化负载均衡器
+  NetworkLoadBalancer::configure(load_balancer, server_pool, lb_config)
   
-  let (lb_rr2, server2) = select_server_round_robin(lb_rr1)
-  assert_eq(server2.unwrap().id, "server2")
-  assert_eq(lb_rr2.current_index, 2)
+  // 测试加权轮询算法
+  let server_selections = []
+  for i in 0..=12 {  // 12次请求，应该分布为6:4:2
+    let selected_server = NetworkLoadBalancer::select_server(load_balancer)
+    server_selections = server_selections.push(selected_server.host)
+  }
   
-  let (lb_rr3, server3) = select_server_round_robin(lb_rr2)
-  assert_eq(server3.unwrap().id, "server3")
-  assert_eq(lb_rr3.current_index, 0)
+  // 验证服务器选择分布
+  let server1_count = server_selections.filter(fn(s) { s == "server1.example.com" }).length()
+  let server2_count = server_selections.filter(fn(s) { s == "server2.example.com" }).length()
+  let server3_count = server_selections.filter(fn(s) { s == "server3.example.com" }).length()
   
-  let (lb_rr4, server4) = select_server_round_robin(lb_rr3)
-  assert_eq(server4.unwrap().id, "server1")  // Back to first server
-  assert_eq(lb_rr4.current_index, 1)
+  assert_eq(server1_count, 6)
+  assert_eq(server2_count, 4)
+  assert_eq(server3_count, 2)
   
-  // Test least connections strategy
-  let lb_lc = create_load_balancer(servers, LoadBalancingStrategy::LeastConnections)
+  // 测试健康检查
+  let health_checker = HealthCheckManager::new()
   
-  // Simulate some connections
-  let lb_lc1 = update_server_connections(lb_lc, "server1", 10)
-  let lb_lc2 = update_server_connections(lb_lc1, "server2", 5)
+  // 模拟服务器健康状态
+  HealthCheckManager::set_server_status(health_checker, "server1.example.com", "healthy")
+  HealthCheckManager::set_server_status(health_checker, "server2.example.com", "healthy")
+  HealthCheckManager::set_server_status(health_checker, "server3.example.com", "unhealthy")
   
-  let (_, lc_server) = select_server_least_connections(lb_lc2)
-  assert_eq(lc_server.unwrap().id, "server3")  // Has 0 connections
+  // 更新负载均衡器状态
+  NetworkLoadBalancer::update_server_health(load_balancer, health_checker)
   
-  // Test weighted round-robin strategy
-  let lb_wrr = create_load_balancer(servers, LoadBalancingStrategy::WeightedRoundRobin)
+  // 验证不健康服务器被排除
+  let healthy_servers = NetworkLoadBalancer::get_healthy_servers(load_balancer)
+  assert_eq(healthy_servers.length(), 2)
+  assert_false(healthy_servers.any(fn(s) { s.host == "server3.example.com" }))
   
-  let (lb_wrr1, wrr_server1, weight1) = select_server_weighted_round_robin(lb_wrr, 0)
-  assert_eq(wrr_server1.unwrap().id, "server1")  // Weight 50
-  assert_eq(weight1, 0)
+  // 测试故障转移
+  let failover_manager = FailoverManager::new()
   
-  let (lb_wrr2, wrr_server2, weight2) = select_server_weighted_round_robin(lb_wrr1, 0)
-  assert_eq(wrr_server2.unwrap().id, "server1")  // Still server1 due to weight
-  assert_eq(weight2, 0)
+  // 配置故障转移策略
+  let failover_config = {
+    primary_region: "us-east-1",
+    backup_regions: ["us-west-2", "eu-west-1"],
+    failover_threshold: 0.5,  // 50%服务器失败时触发故障转移
+    failback_delay_ms: 300000,  // 5分钟后尝试切回
+    health_check_interval_ms: 30000
+  }
   
-  // Test response time strategy
-  let lb_rt = create_load_balancer(servers, LoadBalancingStrategy::ResponseTime)
+  FailoverManager::configure(failover_manager, failover_config)
   
-  let (_, rt_server) = select_server_response_time(lb_rt)
-  assert_eq(rt_server.unwrap().id, "server1")  // Lowest response time (100ms)
+  // 模拟主区域服务器故障
+  for i in 0..=3 {
+    HealthCheckManager::set_server_status(health_checker, "server" + (i + 1).to_string() + ".example.com", "unhealthy")
+  }
+  
+  NetworkLoadBalancer::update_server_health(load_balancer, health_checker)
+  
+  // 检查是否触发故障转移
+  let failover_status = FailoverManager::check_failover_needed(failover_manager, load_balancer)
+  assert_true(failover_status.should_failover)
+  assert_eq(failover_status.target_region, "us-west-2")
+  
+  // 执行故障转移
+  let failover_result = FailoverManager::execute_failover(failover_manager, "us-west-2")
+  assert_true(failover_result.success)
+  
+  // 验证流量已转移到备份区域
+  let current_region = FailoverManager::get_active_region(failover_manager)
+  assert_eq(current_region, "us-west-2")
+  
+  // 测试会话保持
+  let session_manager = SessionPersistenceManager::new()
+  
+  // 创建会话
+  let session_id = "session-12345"
+  let initial_server = NetworkLoadBalancer::select_server_for_session(load_balancer, session_id)
+  
+  SessionPersistenceManager::bind_session(session_manager, session_id, initial_server.host)
+  
+  // 验证会话保持
+  for i in 0..=5 {
+    let server_for_session = NetworkLoadBalancer::select_server_for_session(load_balancer, session_id)
+    assert_eq(server_for_session.host, initial_server.host)
+  }
+  
+  // 测试连接 draining
+  let draining_manager = ConnectionDrainingManager::new()
+  
+  // 将服务器标记为 draining 状态
+  let draining_server = "server1.example.com"
+  ConnectionDrainingManager::start_draining(draining_manager, draining_server, 60000)  // 60秒drain时间
+  
+  // 验证新连接不会被分配到draining服务器
+  let new_connections = []
+  for i in 0..=10 {
+    let server = NetworkLoadBalancer::select_server(load_balancer)
+    new_connections = new_connections.push(server.host)
+  }
+  
+  let draining_connections = new_connections.filter(fn(s) { s == draining_server })
+  assert_eq(draining_connections.length(), 0)
+}
+
+// 测试6: 网络性能监控和指标收集
+test "网络性能监控和指标收集测试" {
+  // 创建网络性能监控器
+  let performance_monitor = NetworkPerformanceMonitor::new()
+  
+  // 配置监控指标
+  let monitoring_config = {
+    metrics_collection_interval_ms: 1000,
+    metrics_retention_period_ms: 3600000,  // 1小时
+    enable_detailed_metrics: true,
+    enable_aggregation: true
+  }
+  
+  NetworkPerformanceMonitor::configure(performance_monitor, monitoring_config)
+  
+  // 模拟网络活动
+  let activities = []
+  for i in 0..=100 {
+    let activity = {
+      timestamp: 1640995200000 + i * 1000,
+      connection_id: "conn-" + (i % 5).to_string(),
+      bytes_sent: 1024 + (i % 10) * 512,
+      bytes_received: 2048 + (i % 15) * 256,
+      latency_ms: 50 + (i % 20) * 5,
+      status: if i % 20 == 0 { "error" } else { "success" }
+    }
+    activities = activities.push(activity)
+    NetworkPerformanceMonitor::record_activity(performance_monitor, activity)
+  }
+  
+  // 收集性能指标
+  let performance_metrics = NetworkPerformanceMonitor::collect_metrics(performance_monitor)
+  
+  // 验证基本指标
+  assert_true(performance_metrics.total_requests > 0)
+  assert_true(performance_metrics.successful_requests > 0)
+  assert_true(performance_metrics.failed_requests > 0)
+  assert_true(performance_metrics.total_bytes_sent > 0)
+  assert_true(performance_metrics.total_bytes_received > 0)
+  assert_true(performance_metrics.average_latency > 0)
+  
+  // 验证错误率计算
+  let calculated_error_rate = performance_metrics.failed_requests.to_float() / performance_metrics.total_requests.to_float()
+  assert_eq(performance_metrics.error_rate, calculated_error_rate)
+  
+  // 测试吞吐量计算
+  let throughput_metrics = NetworkPerformanceMonitor::calculate_throughput(performance_monitor, 60000)  // 1分钟窗口
+  assert_true(throughput_metrics.requests_per_second > 0)
+  assert_true(throughput_metrics.bytes_per_second > 0)
+  
+  // 测试延迟百分位数
+  let latency_metrics = NetworkPerformanceMonitor::calculate_latency_percentiles(performance_monitor)
+  assert_true(latency_metrics.p50 > 0)
+  assert_true(latency_metrics.p90 > 0)
+  assert_true(latency_metrics.p95 > 0)
+  assert_true(latency_metrics.p99 > 0)
+  
+  // 验证百分位数递增
+  assert_true(latency_metrics.p50 <= latency_metrics.p90)
+  assert_true(latency_metrics.p90 <= latency_metrics.p95)
+  assert_true(latency_metrics.p95 <= latency_metrics.p99)
+  
+  // 测试连接池指标
+  let connection_pool_metrics = NetworkPerformanceMonitor::get_connection_pool_metrics(performance_monitor)
+  assert_true(connection_pool_metrics.active_connections >= 0)
+  assert_true(connection_pool_metrics.idle_connections >= 0)
+  assert_true(connection_pool_metrics.total_connections >= 0)
+  
+  // 测试实时监控
+  let realtime_monitor = RealtimeNetworkMonitor::new()
+  RealtimeNetworkMonitor::start_monitoring(realtime_monitor)
+  
+  // 模拟实时网络活动
+  for i in 0..=10 {
+    let realtime_activity = {
+      timestamp: Time::now(),
+      operation: "send_request",
+      duration_ms: 30 + i * 5,
+      bytes: 512 + i * 128,
+      status: "success"
+    }
+    RealtimeNetworkMonitor::record_realtime_activity(realtime_monitor, realtime_activity)
+  }
+  
+  // 获取实时指标
+  let realtime_metrics = RealtimeNetworkMonitor::get_current_metrics(realtime_monitor)
+  assert_true(realtime_metrics.current_rps > 0)
+  assert_true(realtime_metrics.current_latency > 0)
+  assert_true(realtime_metrics.current_throughput > 0)
+  
+  // 测试网络拓扑监控
+  let topology_monitor = NetworkTopologyMonitor::new()
+  
+  // 添加网络节点
+  TopologyMonitor::add_node(topology_monitor, {
+    id: "node-1",
+    host: "server1.example.com",
+    port: 8080,
+    region: "us-east-1",
+    role: "primary"
+  })
+  
+  TopologyMonitor::add_node(topology_monitor, {
+    id: "node-2",
+    host: "server2.example.com",
+    port: 8080,
+    region: "us-east-1",
+    role: "secondary"
+  })
+  
+  TopologyMonitor::add_node(topology_monitor, {
+    id: "node-3",
+    host: "server3.example.com",
+    port: 8080,
+    region: "us-west-2",
+    role: "backup"
+  })
+  
+  // 添加网络连接
+  TopologyMonitor::add_connection(topology_monitor, {
+    source: "node-1",
+    target: "node-2",
+    latency_ms: 15,
+    bandwidth_mbps: 1000,
+    status: "active"
+  })
+  
+  TopologyMonitor::add_connection(topology_monitor, {
+    source: "node-1",
+    target: "node-3",
+    latency_ms: 75,
+    bandwidth_mbps: 500,
+    status: "active"
+  })
+  
+  // 分析网络拓扑
+  let topology_analysis = TopologyMonitor::analyze_topology(topology_monitor)
+  
+  // 验证拓扑分析结果
+  assert_eq(topology_analysis.total_nodes, 3)
+  assert_eq(topology_analysis.total_connections, 2)
+  assert_true(topology_analysis.average_latency > 0)
+  assert_true(topology_analysis.total_bandwidth > 0)
+  
+  // 测试网络性能基线
+  let baseline_manager = NetworkBaselineManager::new()
+  
+  // 建立性能基线
+  let baseline_period = 7 * 24 * 60 * 60 * 1000  // 7天
+  let baseline_data = NetworkBaselineManager::collect_baseline_data(performance_monitor, baseline_period)
+  
+  let baseline = NetworkBaselineManager::establish_baseline(baseline_manager, baseline_data)
+  assert_true(baseline.average_latency > 0)
+  assert_true(baseline.throughput_range.min > 0)
+  assert_true(baseline.throughput_range.max > baseline.throughput_range.min)
+  
+  // 比较当前性能与基线
+  let current_performance = NetworkPerformanceMonitor::collect_metrics(performance_monitor)
+  let performance_comparison = NetworkBaselineManager::compare_with_baseline(baseline_manager, current_performance, baseline)
+  
+  // 验证性能比较结果
+  assert_true(performance_comparison.latency_variance != 0)
+  assert_true(performance_comparison.throughput_variance != 0)
+  assert_true(performance_comparison.overall_health_score >= 0 and performance_comparison.overall_health_score <= 100)
+}
+
+// 测试7: 网络协议兼容性
+test "网络协议兼容性测试" {
+  // 创建协议兼容性管理器
+  let protocol_manager = ProtocolCompatibilityManager::new()
+  
+  // 测试HTTP/1.1兼容性
+  let http11_client = HttpClient::new("HTTP/1.1")
+  let http11_request = {
+    method: "POST",
+    url: "http://api.example.com/telemetry",
+    headers: [
+      ("Content-Type", "application/json"),
+      ("Connection", "keep-alive"),
+      ("User-Agent", "Azimuth-Telemetry/1.0")
+    ],
+    body: "{\"trace_id\":\"test-123\",\"spans\":[]}"
+  }
+  
+  let http11_response = HttpClient::send_request(http11_client, http11_request)
+  assert_eq(http11_response.status_code, 200)
+  assert_eq(http11_response.protocol_version, "HTTP/1.1")
+  assert_true(http11_response.headers.contains(("Connection", "keep-alive")))
+  
+  // 测试HTTP/2兼容性
+  let http2_client = HttpClient::new("HTTP/2")
+  let http2_request = {
+    method: "POST",
+    url: "https://api.example.com/telemetry",
+    headers: [
+      ("Content-Type", "application/json"),
+      ("User-Agent", "Azimuth-Telemetry/1.0")
+    ],
+    body: "{\"trace_id\":\"test-456\",\"spans\":[]}"
+  }
+  
+  let http2_response = HttpClient::send_request(http2_client, http2_request)
+  assert_eq(http2_response.status_code, 200)
+  assert_eq(http2_response.protocol_version, "HTTP/2")
+  
+  // 验证HTTP/2多路复用
+  let multiplexed_requests = []
+  for i in 0..=5 {
+    let request = {
+      method: "GET",
+      url: "https://api.example.com/data/" + i.to_string(),
+      headers: [],
+      body: ""
+    }
+    multiplexed_requests = multiplexed_requests.push(request)
+  }
+  
+  let multiplexed_responses = HttpClient::send_multiplexed_requests(http2_client, multiplexed_requests)
+  assert_eq(multiplexed_responses.length(), 6)
+  assert_true(multiplexed_responses.all(fn(r) { r.status_code == 200 }))
+  
+  // 测试WebSocket兼容性
+  let websocket_client = WebSocketClient::new("wss://stream.example.com/telemetry")
+  
+  // 建立WebSocket连接
+  let ws_connection = WebSocketClient::connect(websocket_client)
+  assert_true(ws_connection.is_connected)
+  
+  // 发送WebSocket消息
+  let ws_message = "{\"type\":\"telemetry_data\",\"data\":{\"trace_id\":\"ws-123\"}}"
+  let send_result = WebSocketClient::send_message(websocket_client, ws_message)
+  assert_true(send_result.success)
+  
+  // 接收WebSocket消息
+  let received_message = WebSocketClient::receive_message(websocket_client, 5000)  // 5秒超时
+  assert_true(received_message != None)
+  
+  // 测试gRPC兼容性
+  let grpc_client = GrpcClient::new("grpc.example.com:443")
+  
+  // 创建gRPC请求
+  let grpc_request = GrpcRequest::new("SubmitTelemetry", {
+    trace_id: "grpc-123",
+    spans: [
+      {
+        operation_name: "grpc_operation",
+        start_time: 1640995200000,
+        duration: 100,
+        status: "ok"
+      }
+    ]
+  })
+  
+  let grpc_response = GrpcClient::send_request(grpc_client, grpc_request)
+  assert_true(grpc_response.success)
+  assert_eq(grpc_response.status, "OK")
+  
+  // 测试协议自动检测
+  let protocol_detector = ProtocolDetector::new()
+  
+  // 检测HTTP协议
+  let http_endpoint = "http://api.example.com"
+  let detected_http_protocol = ProtocolDetector::detect_protocol(protocol_detector, http_endpoint)
+  assert_eq(detected_http_protocol, "HTTP")
+  
+  // 检测HTTPS协议
+  let https_endpoint = "https://api.example.com"
+  let detected_https_protocol = ProtocolDetector::detect_protocol(protocol_detector, https_endpoint)
+  assert_eq(detected_https_protocol, "HTTPS")
+  
+  // 检测WebSocket协议
+  let ws_endpoint = "wss://stream.example.com"
+  let detected_ws_protocol = ProtocolDetector::detect_protocol(protocol_detector, ws_endpoint)
+  assert_eq(detected_ws_protocol, "WebSocket")
+  
+  // 测试协议版本协商
+  let version_negotiator = ProtocolVersionNegotiator::new()
+  
+  // 配置支持的协议版本
+  VersionNegotiator::add_supported_version(version_negotiator, "HTTP", ["1.1", "2"])
+  VersionNegotiator::add_supported_version(version_negotiator, "WebSocket", ["13"])
+  
+  // 协商最佳协议版本
+  let negotiated_http_version = VersionNegotiator::negotiate_version(version_negotiator, "HTTP", ["1.0", "1.1", "2"])
+  assert_eq(negotiated_http_version, "2")  // 选择最高支持版本
+  
+  let negotiated_ws_version = VersionNegotiator::negotiate_version(version_negotiator, "WebSocket", ["13"])
+  assert_eq(negotiated_ws_version, "13")
+  
+  // 测试协议适配器
+  let protocol_adapter = ProtocolAdapter::new()
+  
+  // 创建HTTP到gRPC的适配器
+  let http_to_grpc_adapter = ProtocolAdapter::create_adapter(protocol_adapter, {
+    source_protocol: "HTTP",
+    target_protocol: "gRPC",
+    transformation_rules: [
+      {
+        source_field: "method",
+        target_field: "rpc_method",
+        transformation: "map_to_rpc"
+      },
+      {
+        source_field: "body",
+        target_field: "request_data",
+        transformation: "json_to_protobuf"
+      }
+    ]
+  })
+  
+  // 使用适配器转换请求
+  let http_request = {
+    method: "POST",
+    path: "/telemetry/submit",
+    headers: [("Content-Type", "application/json")],
+    body: "{\"trace_id\":\"adapter-123\",\"spans\":[]}"
+  }
+  
+  let grpc_request = ProtocolAdapter::adapt_request(http_to_grpc_adapter, http_request)
+  assert_eq(grpc_request.method, "SubmitTelemetry")
+  assert_true(grpc_request.data.contains("adapter-123"))
+  
+  // 测试协议降级
+  let protocol_fallback = ProtocolFallbackManager::new()
+  
+  // 配置降级策略
+  ProtocolFallbackManager::add_fallback_strategy(protocol_fallback, {
+    primary_protocol: "HTTP/2",
+    fallback_protocols: ["HTTP/1.1"],
+    fallback_conditions: ["connection_timeout", "protocol_not_supported"]
+  })
+  
+  // 模拟HTTP/2失败
+  let connection_result = ProtocolFallbackManager::connect_with_fallback(protocol_fallback, "https://api.example.com", "HTTP/2")
+  
+  // 验证降级到HTTP/1.1
+  if connection_result.protocol == "HTTP/1.1" {
+    assert_true(connection_result.used_fallback)
+  } else {
+    assert_eq(connection_result.protocol, "HTTP/2")
+    assert_false(connection_result.used_fallback)
+  }
+}
+
+// 测试8: 网络资源管理和优化
+test "网络资源管理和优化测试" {
+  // 创建网络资源管理器
+  let resource_manager = NetworkResourceManager::new()
+  
+  // 配置资源限制
+  let resource_limits = {
+    max_connections: 100,
+    max_bandwidth_mbps: 1000,
+    max_concurrent_requests: 50,
+    connection_pool_size: 20,
+    buffer_size: 65536
+  }
+  
+  NetworkResourceManager::set_limits(resource_manager, resource_limits)
+  
+  // 测试连接资源管理
+  let connection_resources = NetworkResourceManager::get_connection_resources(resource_manager)
+  assert_eq(connection_resources.active_connections, 0)
+  assert_eq(connection_resources.max_connections, 100)
+  
+  // 创建连接
+  for i in 0..=10 {
+    let connection = NetworkResourceManager::create_connection(resource_manager, {
+      host: "server" + (i % 3).to_string() + ".example.com",
+      port: 8080,
+      protocol: "HTTP"
+    })
+    assert_true(connection.success)
+  }
+  
+  // 验证连接资源使用
+  let updated_connection_resources = NetworkResourceManager::get_connection_resources(resource_manager)
+  assert_eq(updated_connection_resources.active_connections, 11)
+  
+  // 测试带宽资源管理
+  let bandwidth_tracker = BandwidthTracker::new()
+  
+  // 模拟带宽使用
+  let base_time = Time::now()
+  for i in 0..=60 {
+    let timestamp = base_time + i * 1000
+    BandwidthTracker::record_usage(bandwidth_tracker, timestamp, 1024 * 1024)  // 1MB/s
+  }
+  
+  // 计算带宽使用统计
+  let bandwidth_stats = BandwidthTracker::calculate_statistics(bandwidth_tracker, base_time, base_time + 60000)
+  assert_eq(bandwidth_stats.average_mbps, 8.0)  // 1MB/s = 8Mbps
+  assert_eq(bandwidth_stats.peak_mbps, 8.0)
+  
+  // 测试缓冲区管理
+  let buffer_manager = BufferManager::new()
+  
+  // 创建缓冲区池
+  BufferManager::create_pool(buffer_manager, {
+    buffer_size: 65536,  // 64KB
+    pool_size: 10,
+    allocation_strategy: "lazy"
+  })
+  
+  // 分配缓冲区
+  let buffers = []
+  for i in 0..=5 {
+    let buffer = BufferManager::allocate_buffer(buffer_manager)
+    buffers = buffers.push(buffer)
+  }
+  
+  // 验证缓冲区分配
+  assert_eq(buffers.length(), 6)
+  assert_true(buffers.all(fn(b) { b.size == 65536 }))
+  
+  // 释放缓冲区
+  for buffer in buffers {
+    BufferManager::release_buffer(buffer_manager, buffer)
+  }
+  
+  // 验证缓冲区释放
+  let available_buffers = BufferManager::get_available_count(buffer_manager)
+  assert_eq(available_buffers, 6)
+  
+  // 测试网络连接复用
+  let connection_reuse_manager = ConnectionReuseManager::new()
+  
+  // 配置复用策略
+  ConnectionReuseManager::configure_reuse_strategy(connection_reuse_manager, {
+    max_keep_alive_ms: 300000,  // 5分钟
+    max_requests_per_connection: 1000,
+    reuse_timeout_ms: 10000
+  })
+  
+  // 创建可复用连接
+  let reusable_connection = ConnectionReuseManager::create_reusable_connection(connection_reuse_manager, {
+    host: "api.example.com",
+    port: 443,
+    protocol: "HTTPS"
+  })
+  
+  // 复用连接发送多个请求
+  let reuse_results = []
+  for i in 0..=5 {
+    let request = {
+      method: "GET",
+      path: "/data/" + i.to_string(),
+      headers: [],
+      body: ""
+    }
+    let result = ConnectionReuseManager::send_request_with_reuse(connection_reuse_manager, reusable_connection, request)
+    reuse_results = reuse_results.push(result)
+  }
+  
+  // 验证连接复用
+  assert_true(reuse_results.all(fn(r) { r.success }))
+  assert_eq(reusable_connection.request_count, 6)
+  
+  // 测试网络资源优化
+  let resource_optimizer = NetworkResourceOptimizer::new()
+  
+  // 配置优化策略
+  ResourceOptimizer::set_optimization_strategy(resource_optimizer, {
+    enable_connection_pooling: true,
+    enable_compression: true,
+    enable_caching: true,
+    enable_batching: true,
+    batch_size: 10,
+    batch_timeout_ms: 100
+  })
+  
+  // 分析当前资源使用
+  let resource_analysis = ResourceOptimizer::analyze_resource_usage(resource_optimizer, resource_manager)
+  
+  // 验证资源分析结果
+  assert_true(resource_analysis.connection_efficiency >= 0.0 and resource_analysis.connection_efficiency <= 1.0)
+  assert_true(resource_analysis.bandwidth_utilization >= 0.0 and resource_analysis.bandwidth_utilization <= 1.0)
+  assert_true(resource_analysis.buffer_utilization >= 0.0 and resource_analysis.buffer_utilization <= 1.0)
+  
+  // 获取优化建议
+  let optimization_recommendations = ResourceOptimizer::get_recommendations(resource_optimizer, resource_analysis)
+  
+  // 验证优化建议
+  assert_true(optimization_recommendations.length() > 0)
+  
+  // 应用优化策略
+  let optimization_results = ResourceOptimizer::apply_optimizations(resource_optimizer, optimization_recommendations)
+  
+  // 验证优化结果
+  assert_true(optimization_results.length() > 0)
+  
+  // 检查优化效果
+  let optimized_analysis = ResourceOptimizer::analyze_resource_usage(resource_optimizer, resource_manager)
+  
+  // 验证资源使用改善
+  assert_true(optimized_analysis.connection_efficiency >= resource_analysis.connection_efficiency)
+  assert_true(optimized_analysis.bandwidth_utilization <= resource_analysis.bandwidth_utilization)
+  
+  // 测试自适应资源管理
+  let adaptive_manager = AdaptiveNetworkResourceManager::new()
+  
+  // 配置自适应规则
+  AdaptiveResourceManager::add_adaptation_rule(adaptive_manager, {
+    name: "high_traffic",
+    condition: "requests_per_second > 100",
+    actions: [
+      { type: "increase_connection_pool", parameters: { increment: 5 } },
+      { type: "enable_compression", parameters: { level: 6 } }
+    ]
+  })
+  
+  AdaptiveResourceManager::add_adaptation_rule(adaptive_manager, {
+    name: "low_traffic",
+    condition: "requests_per_second < 10",
+    actions: [
+      { type: "decrease_connection_pool", parameters: { decrement: 3 } },
+      { type: "increase_keep_alive", parameters: { timeout_ms: 600000 } }
+    ]
+  })
+  
+  // 模拟高流量场景
+  let high_traffic_metrics = {
+    requests_per_second: 150,
+    average_response_time_ms: 200,
+    error_rate: 0.01
+  }
+  
+  let high_traffic_adaptations = AdaptiveResourceManager::adapt_to_conditions(adaptive_manager, high_traffic_metrics)
+  
+  // 验证高流量自适应
+  assert_true(high_traffic_adaptations.length() > 0)
+  let has_pool_increase = high_traffic_adaptations.any(fn(a) { a.action_type == "increase_connection_pool" })
+  assert_true(has_pool_increase)
+  
+  // 模拟低流量场景
+  let low_traffic_metrics = {
+    requests_per_second: 5,
+    average_response_time_ms: 50,
+    error_rate: 0.001
+  }
+  
+  let low_traffic_adaptations = AdaptiveResourceManager::adapt_to_conditions(adaptive_manager, low_traffic_metrics)
+  
+  // 验证低流量自适应
+  assert_true(low_traffic_adaptations.length() > 0)
+  let has_pool_decrease = low_traffic_adaptations.any(fn(a) { a.action_type == "decrease_connection_pool" })
+  assert_true(has_pool_decrease)
 }
