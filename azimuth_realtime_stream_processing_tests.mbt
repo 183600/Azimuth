@@ -1,781 +1,505 @@
-// Real-time Stream Processing Tests for Azimuth Telemetry System
-// This file contains test cases for real-time stream processing capabilities
+// 阿兹米克实时流处理测试用例
+// 专注于遥测数据的实时流处理、分析和响应功能
 
-// Test 1: Real-time Data Ingestion
-test "real-time data ingestion" {
+// 测试1: 基本流数据处理
+test "基本流数据处理测试" {
   let stream_processor = StreamProcessor::new()
+  let telemetry_stream = TelemetryStream::new("realtime.telemetry")
   
-  // Configure stream processor
-  stream_processor.configure(StreamConfig::new()
-    .with_buffer_size(1000)
-    .with_batch_size(100)
-    .with_processing_interval(50))
+  // 创建流数据源
+  let data_source = DataSource::new("system.metrics")
   
-  // Start stream processor
-  stream_processor.start()
+  // 注册流处理器
+  StreamProcessor::register_source(stream_processor, data_source, telemetry_stream)
   
-  // Generate real-time telemetry data
-  let telemetry_stream = generate_realtime_telemetry_stream(500)
+  // 模拟实时数据流
+  let metric_events = [
+    MetricEvent::new("cpu.usage", 45.2, Timestamp::now()),
+    MetricEvent::new("memory.usage", 67.8, Timestamp::now()),
+    MetricEvent::new("disk.usage", 23.1, Timestamp::now()),
+    MetricEvent::new("network.throughput", 1024.5, Timestamp::now()),
+    MetricEvent::new("response.time", 120.3, Timestamp::now())
+  ]
   
-  // Ingest data into stream processor
-  let ingestion_results = []
-  for data_point in telemetry_stream {
-    let result = stream_processor.ingest(data_point)
-    ingestion_results.push(result)
+  // 处理流数据
+  let processed_events = []
+  for event in metric_events {
+    let processed = StreamProcessor::process_event(stream_processor, event)
+    processed_events = processed_events.push(processed)
   }
   
-  // Verify ingestion results
-  assert_eq(ingestion_results.length(), 500)
+  // 验证处理结果
+  assert_eq(processed_events.length(), 5)
   
-  let successful_ingestions = ingestion_results.filter(|r| r.success).length()
-  assert_true(successful_ingestions > 480) // At least 96% success rate
+  // 验证事件处理顺序
+  assert_eq(MetricEvent::name(processed_events[0]), "cpu.usage")
+  assert_eq(MetricEvent::name(processed_events[4]), "response.time")
   
-  // Verify processing metrics
-  let metrics = stream_processor.get_metrics()
-  assert_true(metrics.total_ingested > 480)
-  assert_true(metrics.processing_latency_ms < 100)
-  assert_true(metrics.buffer_utilization < 0.9)
-  
-  // Stop stream processor
-  stream_processor.stop()
+  // 验证数据完整性
+  for i in 0..processed_events.length() {
+    assert_eq(MetricEvent::name(processed_events[i]), MetricEvent::name(metric_events[i]))
+    assert_eq(MetricEvent::value(processed_events[i]), MetricEvent::value(metric_events[i]))
+  }
 }
 
-// Test 2: Stream Window Operations
-test "stream window operations" {
+// 测试2: 流数据窗口聚合
+test "流数据窗口聚合测试" {
   let stream_processor = StreamProcessor::new()
+  let telemetry_stream = TelemetryStream::new("windowed.telemetry")
   
-  // Configure window operations
-  let tumbling_window = WindowConfig::tumbling(1000) // 1 second windows
-  let sliding_window = WindowConfig::sliding(500, 100) // 500ms window, 100ms slide
-  let session_window = WindowConfig::session(2000) // 2 second session timeout
+  // 创建时间窗口聚合器
+  let window_aggregator = TimeWindowAggregator::new(5000) // 5秒窗口
   
-  stream_processor.add_window_operation("tumbling_avg", WindowOperation::average(tumbling_window))
-  stream_processor.add_window_operation("sliding_max", WindowOperation::maximum(sliding_window))
-  stream_processor.add_window_operation("session_count", WindowOperation::count(session_window))
+  // 注册聚合器
+  StreamProcessor::register_aggregator(stream_processor, window_aggregator, telemetry_stream)
   
-  // Start stream processor
-  stream_processor.start()
+  // 模拟时间序列数据流
+  let base_time = Timestamp::now()
+  let time_series_events = [
+    MetricEvent::with_timestamp("cpu.usage", 45.2, base_time),
+    MetricEvent::with_timestamp("cpu.usage", 52.8, base_time + 1000),
+    MetricEvent::with_timestamp("cpu.usage", 48.1, base_time + 2000),
+    MetricEvent::with_timestamp("cpu.usage", 61.3, base_time + 3000),
+    MetricEvent::with_timestamp("cpu.usage", 55.7, base_time + 4000),
+    MetricEvent::with_timestamp("cpu.usage", 49.2, base_time + 6000), // 新窗口
+    MetricEvent::with_timestamp("cpu.usage", 53.4, base_time + 7000)
+  ]
   
-  // Generate time-series telemetry data
-  let time_series_data = generate_time_series_stream(2000, 10) // 2000ms duration, 10ms intervals
-  
-  // Process data through windows
-  let window_results = []
-  for data_point in time_series_data {
-    let results = stream_processor.process_windows(data_point)
-    window_results.push(results)
+  // 处理时间序列数据
+  for event in time_series_events {
+    StreamProcessor::process_event(stream_processor, event)
   }
   
-  // Verify window operations
-  assert_true(window_results.length() > 0)
+  // 获取窗口聚合结果
+  let windows = TimeWindowAggregator::get_completed_windows(window_aggregator)
   
-  // Check tumbling window averages
-  let tumbling_results = window_results.flat_map(|r| r).filter(|r| r.operation == "tumbling_avg")
-  assert_true(tumbling_results.length() > 0)
+  // 验证窗口聚合
+  assert_eq(windows.length(), 2) // 应该有2个完成的窗口
   
-  for result in tumbling_results {
-    assert_true(result.value >= 0.0)
-    assert_true(result.window_start < result.window_end)
-    assert_true(result.window_end - result.window_start == 1000) // 1 second window
-  }
+  // 验证第一个窗口的聚合结果
+  let first_window = windows[0]
+  let first_window_avg = TimeWindow::average(first_window)
+  let first_window_max = TimeWindow::maximum(first_window)
+  let first_window_min = TimeWindow::minimum(first_window)
   
-  // Check sliding window maximums
-  let sliding_results = window_results.flat_map(|r| r).filter(|r| r.operation == "sliding_max")
-  assert_true(sliding_results.length() > 0)
+  assert_true(first_window_avg > 45.0 && first_window_avg < 60.0)
+  assert_eq(first_window_max, 61.3)
+  assert_eq(first_window_min, 45.2)
   
-  for result in sliding_results {
-    assert_true(result.value >= 0.0)
-    assert_true(result.window_end - result.window_start == 500) // 500ms window
-  }
+  // 验证第二个窗口的聚合结果
+  let second_window = windows[1]
+  let second_window_avg = TimeWindow::average(second_window)
+  let second_window_max = TimeWindow::maximum(second_window)
+  let second_window_min = TimeWindow::minimum(second_window)
   
-  // Check session window counts
-  let session_results = window_results.flat_map(|r| r).filter(|r| r.operation == "session_count")
-  assert_true(session_results.length() > 0)
-  
-  for result in session_results {
-    assert_true(result.value >= 1.0) // At least 1 item per session
-    assert_true(result.window_start < result.window_end)
-  }
-  
-  // Stop stream processor
-  stream_processor.stop()
+  assert_true(second_window_avg > 49.0 && second_window_avg < 54.0)
+  assert_eq(second_window_max, 53.4)
+  assert_eq(second_window_min, 49.2)
 }
 
-// Test 3: Stream Aggregation and Analytics
-test "stream aggregation and analytics" {
+// 测试3: 流数据异常检测
+test "流数据异常检测测试" {
   let stream_processor = StreamProcessor::new()
+  let anomaly_detector = AnomalyDetector::new()
+  let telemetry_stream = TelemetryStream::new("anomaly.detection")
   
-  // Configure aggregations
-  stream_processor.add_aggregation("avg_response_time", Aggregation::average("response_time"))
-  stream_processor.add_aggregation("error_rate", Aggregation::rate("error", "total_requests"))
-  stream_processor.add_aggregation("throughput", Aggregation::sum("request_count"))
-  stream_processor.add_aggregation("p95_latency", Aggregation::percentile("latency", 95))
+  // 配置异常检测器
+  AnomalyDetector::set_threshold(anomaly_detector, "response.time", 2.0) // 2倍标准差
+  AnomalyDetector::set_sensitivity(anomaly_detector, "error.rate", 0.1) // 10%阈值
   
-  // Start stream processor
-  stream_processor.start()
+  // 注册异常检测器
+  StreamProcessor::register_anomaly_detector(stream_processor, anomaly_detector, telemetry_stream)
   
-  // Generate streaming telemetry with various metrics
-  let stream_data = generate_multi_metric_stream(1000)
+  // 模拟正常数据流
+  let normal_events = [
+    MetricEvent::new("response.time", 120.5, Timestamp::now()),
+    MetricEvent::new("response.time", 115.2, Timestamp::now()),
+    MetricEvent::new("response.time", 125.8, Timestamp::now()),
+    MetricEvent::new("response.time", 118.3, Timestamp::now()),
+    MetricEvent::new("response.time", 122.1, Timestamp::now())
+  ]
   
-  // Process stream data
-  let aggregation_results = []
-  for data_point in stream_data {
-    let results = stream_processor.aggregate(data_point)
-    aggregation_results.push(results)
+  // 处理正常数据
+  for event in normal_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    // 正常数据不应该触发异常
+    assert_false(ProcessEvent::is_anomaly(result))
   }
   
-  // Verify aggregation results
-  assert_true(aggregation_results.length() > 0)
+  // 模拟异常数据流
+  let anomaly_events = [
+    MetricEvent::new("response.time", 350.7, Timestamp::now()), // 异常高响应时间
+    MetricEvent::new("error.rate", 0.15, Timestamp::now()),     // 异常高错误率
+    MetricEvent::new("response.time", 95.2, Timestamp::now()),  // 正常数据
+    MetricEvent::new("error.rate", 0.05, Timestamp::now())       // 正常数据
+  ]
   
-  // Check average response time
-  let avg_results = aggregation_results.flat_map(|r| r).filter(|r| r.metric == "avg_response_time")
-  assert_true(avg_results.length() > 0)
-  
-  for result in avg_results {
-    assert_true(result.value >= 0.0)
-    assert_true(result.timestamp > 0)
+  // 处理异常数据
+  let detected_anomalies = []
+  for event in anomaly_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    if ProcessEvent::is_anomaly(result) {
+      detected_anomalies = detected_anomalies.push(result)
+    }
   }
   
-  // Check error rate
-  let error_rate_results = aggregation_results.flat_map(|r| r).filter(|r| r.metric == "error_rate")
-  assert_true(error_rate_results.length() > 0)
+  // 验证异常检测结果
+  assert_eq(detected_anomalies.length(), 2) // 应该检测到2个异常
   
-  for result in error_rate_results {
-    assert_true(result.value >= 0.0 && result.value <= 1.0) // Rate should be between 0 and 1
-  }
+  // 验证异常详情
+  let first_anomaly = detected_anomalies[0]
+  assert_eq(MetricEvent::name(ProcessEvent::original_event(first_anomaly)), "response.time")
+  assert_eq(MetricEvent::value(ProcessEvent::original_event(first_anomaly)), 350.7)
   
-  // Check throughput
-  let throughput_results = aggregation_results.flat_map(|r| r).filter(|r| r.metric == "throughput")
-  assert_true(throughput_results.length() > 0)
-  
-  for result in throughput_results {
-    assert_true(result.value >= 0.0)
-  }
-  
-  // Check 95th percentile latency
-  let p95_results = aggregation_results.flat_map(|r| r).filter(|r| r.metric == "p95_latency")
-  assert_true(p95_results.length() > 0)
-  
-  for result in p95_results {
-    assert_true(result.value >= 0.0)
-  }
-  
-  // Stop stream processor
-  stream_processor.stop()
+  let second_anomaly = detected_anomalies[1]
+  assert_eq(MetricEvent::name(ProcessEvent::original_event(second_anomaly)), "error.rate")
+  assert_eq(MetricEvent::value(ProcessEvent::original_event(second_anomaly)), 0.15)
 }
 
-// Test 4: Stream Filtering and Transformation
-test "stream filtering and transformation" {
+// 测试4: 流数据实时警报
+test "流数据实时警报测试" {
   let stream_processor = StreamProcessor::new()
+  let alert_manager = AlertManager::new()
+  let telemetry_stream = TelemetryStream::new("realtime.alerts")
   
-  // Configure filters
-  stream_processor.add_filter("high_latency", Filter::greater_than("latency", 1000))
-  stream_processor.add_filter("error_only", Filter::equals("status", "error"))
-  stream_processor.add_filter("critical_services", Filter::in_list("service", ["auth", "payment", "database"]))
+  // 配置警报规则
+  let cpu_alert_rule = AlertRule::new("high.cpu.usage")
+  AlertRule::set_condition(cpu_alert_rule, "cpu.usage", "gt", 80.0)
+  AlertRule::set_severity(cpu_alert_rule, "warning")
+  AlertRule::set_message(cpu_alert_rule, "CPU usage exceeded 80%")
   
-  // Configure transformations
-  stream_processor.add_transformation("normalize_latency", Transform::normalize("latency", 0.0, 5000.0))
-  stream_processor.add_transformation("extract_timestamp", Transform::extract_field("timestamp", "epoch"))
-  stream_processor.add_transformation("calculate_duration", Transform::calculate("end_time", "start_time", "subtract"))
+  let memory_alert_rule = AlertRule::new("high.memory.usage")
+  AlertRule::set_condition(memory_alert_rule, "memory.usage", "gt", 90.0)
+  AlertRule::set_severity(memory_alert_rule, "critical")
+  AlertRule::set_message(memory_alert_rule, "Memory usage exceeded 90%")
   
-  // Start stream processor
-  stream_processor.start()
+  // 注册警报规则
+  AlertManager::register_rule(alert_manager, cpu_alert_rule)
+  AlertManager::register_rule(alert_manager, memory_alert_rule)
   
-  // Generate diverse stream data
-  let diverse_data = generate_diverse_stream_data(800)
+  // 注册警报管理器
+  StreamProcessor::register_alert_manager(stream_processor, alert_manager, telemetry_stream)
   
-  // Process data through filters and transformations
-  let processed_results = []
-  for data_point in diverse_data {
-    let filtered_data = stream_processor.apply_filters(data_point)
-    if filtered_data.is_some() {
-      let transformed_data = stream_processor.apply_transformations(filtered_data.unwrap())
-      processed_results.push(transformed_data)
-    }
+  // 模拟触发警报的数据流
+  let alert_events = [
+    MetricEvent::new("cpu.usage", 75.2, Timestamp::now()),      // 正常
+    MetricEvent::new("memory.usage", 85.3, Timestamp::now()),    // 正常
+    MetricEvent::new("cpu.usage", 82.5, Timestamp::now()),      // 触发CPU警报
+    MetricEvent::new("memory.usage", 92.1, Timestamp::now()),    // 触发内存警报
+    MetricEvent::new("cpu.usage", 78.9, Timestamp::now()),      // 恢复正常
+    MetricEvent::new("memory.usage", 88.4, Timestamp::now())     // 恢复正常
+  ]
+  
+  // 处理警报事件
+  let triggered_alerts = []
+  for event in alert_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    let alerts = ProcessEvent::alerts(result)
+    triggered_alerts = triggered_alerts.concat(alerts)
   }
   
-  // Verify filtering results
-  assert_true(processed_results.length() > 0)
-  assert_true(processed_results.length() < diverse_data.length()) // Some data should be filtered out
+  // 验证警报触发
+  assert_eq(triggered_alerts.length(), 2) // 应该触发2个警报
   
-  // Verify high latency filter
-  let high_latency_count = diverse_data.filter(|d| d.get("latency") > Some(1000)).length()
-  let processed_high_latency = processed_results.filter(|d| d.get("latency") > Some(1000)).length()
-  assert_eq(high_latency_count, processed_high_latency)
+  // 验证CPU警报
+  let cpu_alert = triggered_alerts[0]
+  assert_eq(Alert::rule_name(cpu_alert), "high.cpu.usage")
+  assert_eq(Alert::severity(cpu_alert), "warning")
+  assert_eq(Alert::metric_name(cpu_alert), "cpu.usage")
+  assert_eq(Alert::metric_value(cpu_alert), 82.5)
   
-  // Verify error-only filter
-  let error_data = processed_results.filter(|d| d.get("status") == Some("error"))
-  for error in error_data {
-    assert_eq(error.get("status"), Some("error"))
-  }
-  
-  // Verify critical services filter
-  let critical_services = ["auth", "payment", "database"]
-  let service_data = processed_results.filter(|d| {
-    match d.get("service") {
-      Some(service) => critical_services.contains(service),
-      None => false
-    }
-  })
-  
-  for service in service_data {
-    match service.get("service") {
-      Some(service_name) => assert_true(critical_services.contains(service_name)),
-      None => assert_true(false)
-    }
-  }
-  
-  // Verify transformations
-  for transformed in processed_results {
-    // Check normalized latency
-    match transformed.get("latency") {
-      Some(normalized_latency) => {
-        assert_true(normalized_latency >= 0.0 && normalized_latency <= 1.0)
-      },
-      None => {}
-    }
-    
-    // Check extracted timestamp
-    assert_true(transformed.contains_key("epoch"))
-    
-    // Check calculated duration
-    if transformed.contains_key("end_time") && transformed.contains_key("start_time") {
-      assert_true(transformed.contains_key("duration"))
-    }
-  }
-  
-  // Stop stream processor
-  stream_processor.stop()
+  // 验证内存警报
+  let memory_alert = triggered_alerts[1]
+  assert_eq(Alert::rule_name(memory_alert), "high.memory.usage")
+  assert_eq(Alert::severity(memory_alert), "critical")
+  assert_eq(Alert::metric_name(memory_alert), "memory.usage")
+  assert_eq(Alert::metric_value(memory_alert), 92.1)
 }
 
-// Test 5: Stream Anomaly Detection
-test "stream anomaly detection" {
+// 测试5: 流数据过滤和转换
+test "流数据过滤和转换测试" {
   let stream_processor = StreamProcessor::new()
+  let telemetry_stream = TelemetryStream::new("filter.transform")
   
-  // Configure anomaly detection
-  let stat_detector = AnomalyDetector::statistical("z_score", 2.5)
-  let ml_detector = AnomalyDetector::machine_learning("isolation_forest", 0.1)
-  let pattern_detector = AnomalyDetector::pattern_based("sequential", 0.05)
+  // 创建数据过滤器
+  let filter = StreamFilter::new()
+  StreamFilter::add_condition(filter, "service", "web")          // 只处理web服务
+  StreamFilter::add_condition(filter, "environment", "prod")     // 只处理生产环境
+  StreamFilter::add_numeric_condition(filter, "response.time", "lt", 1000.0) // 只处理响应时间小于1秒的
   
-  stream_processor.add_anomaly_detector("statistical", stat_detector)
-  stream_processor.add_anomaly_detector("ml_based", ml_detector)
-  stream_processor.add_anomaly_detector("pattern_based", pattern_detector)
+  // 创建数据转换器
+  let transformer = StreamTransformer::new()
+  StreamTransformer::add_mapping(transformer, "response.time", "response.time.ms")
+  StreamTransformer::add_unit_conversion(transformer, "cpu.usage", "percent", "ratio", 0.01)
+  StreamTransformer::add_tag_enrichment(transformer, "region", "us-west-2")
   
-  // Start stream processor
-  stream_processor.start()
+  // 注册过滤器和转换器
+  StreamProcessor::register_filter(stream_processor, filter, telemetry_stream)
+  StreamProcessor::register_transformer(stream_processor, transformer, telemetry_stream)
   
-  // Generate normal stream data
-  let normal_data = generate_normal_stream_data(500)
+  // 模拟混合数据流
+  let mixed_events = [
+    MetricEvent::with_attributes("response.time", 850.5, Timestamp::now(), [
+      ("service", StringValue("web")),
+      ("environment", StringValue("prod"))
+    ]),
+    MetricEvent::with_attributes("response.time", 1200.0, Timestamp::now(), [
+      ("service", StringValue("web")),
+      ("environment", StringValue("prod"))
+    ]),
+    MetricEvent::with_attributes("response.time", 450.2, Timestamp::now(), [
+      ("service", StringValue("api")),
+      ("environment", StringValue("prod"))
+    ]),
+    MetricEvent::with_attributes("cpu.usage", 75.5, Timestamp::now(), [
+      ("service", StringValue("web")),
+      ("environment", StringValue("prod"))
+    ]),
+    MetricEvent::with_attributes("response.time", 650.3, Timestamp::now(), [
+      ("service", StringValue("web")),
+      ("environment", StringValue("staging"))
+    ])
+  ]
   
-  // Train anomaly detectors
-  for data_point in normal_data {
-    stream_processor.train_anomaly_detectors(data_point)
-  }
-  
-  // Generate mixed stream data (normal + anomalies)
-  let mixed_data = generate_mixed_stream_data(500, 0.1) // 10% anomalies
-  
-  // Detect anomalies
-  let anomaly_results = []
-  for data_point in mixed_data {
-    let anomalies = stream_processor.detect_anomalies(data_point)
-    anomaly_results.push(anomalies)
-  }
-  
-  // Verify anomaly detection results
-  assert_eq(anomaly_results.length(), 500)
-  
-  let total_anomalies = anomaly_results.flat_map(|a| a).length()
-  assert_true(total_anomalies > 20) // Should detect some anomalies
-  assert_true(total_anomalies < 150) // But not too many false positives
-  
-  // Verify anomaly properties
-  for anomalies in anomaly_results {
-    for anomaly in anomalies {
-      assert_true(anomaly.detector_name.length() > 0)
-      assert_true(anomaly.anomaly_score > 0.5)
-      assert_true(anomaly.confidence >= 0.0 && anomaly.confidence <= 1.0)
-      assert_true(anomaly.timestamp > 0)
+  // 处理混合数据
+  let processed_events = []
+  for event in mixed_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    if ProcessEvent::is_passed_filter(result) {
+      processed_events = processed_events.push(ProcessEvent::transformed_event(result))
     }
   }
   
-  // Check ensemble anomaly detection
-  let ensemble_results = stream_detector.detect_ensemble_anomalies(mixed_data)
-  assert_eq(ensemble_results.length(), 500)
+  // 验证过滤结果
+  assert_eq(processed_events.length(), 2) // 只有2个事件通过所有过滤条件
   
-  let ensemble_anomalies = ensemble_results.filter(|r| r.is_anomaly).length()
-  assert_true(ensemble_anomalies > 20 && ensemble_anomalies < 150)
+  // 验证转换结果
+  let first_event = processed_events[0]
+  assert_eq(MetricEvent::name(first_event), "response.time.ms") // 名称已转换
+  assert_eq(MetricEvent::value(first_event), 850.5) // 值保持不变
   
-  // Verify ensemble provides better confidence
-  for result in ensemble_results {
-    if result.is_anomaly {
-      assert_true(result.ensemble_score > 0.6)
-      assert_true(result.confidence > 0.7)
-      assert_true(result.detector_agreement > 0.5)
-    }
+  let second_event = processed_events[1]
+  assert_eq(MetricEvent::name(second_event), "cpu.usage") // 名称保持不变
+  assert_eq(MetricEvent::value(second_event), 0.755) // 值已转换（75.5% -> 0.755 ratio）
+  
+  // 验证标签丰富
+  let first_event_attrs = MetricEvent::attributes(first_event)
+  let region_attr = Attributes::get(first_event_attrs, "region")
+  match region_attr {
+    Some(StringValue(region)) => assert_eq(region, "us-west-2")
+    _ => assert_true(false)
   }
-  
-  // Stop stream processor
-  stream_processor.stop()
 }
 
-// Test 6: Stream Backpressure and Flow Control
-test "stream backpressure and flow control" {
+// 测试6: 流数据背压处理
+test "流数据背压处理测试" {
   let stream_processor = StreamProcessor::new()
+  let telemetry_stream = TelemetryStream::new("backpressure.handling")
   
-  // Configure flow control
-  stream_processor.configure_flow_control(FlowControlConfig::new()
-    .with_max_buffer_size(500)
-    .with_backpressure_threshold(0.8)
-    .with_slow_consumer_threshold(100))
+  // 配置背压处理策略
+  let backpressure_strategy = BackpressureStrategy::buffer(1000) // 缓冲1000个事件
+  StreamProcessor::set_backpressure_strategy(stream_processor, backpressure_strategy)
   
-  // Start stream processor
-  stream_processor.start()
-  
-  // Simulate slow consumer
-  let slow_consumer = SlowConsumer::new(50) // 50ms processing delay
-  
-  // Generate high-volume stream data
-  let high_volume_data = generate_high_volume_stream_data(2000)
-  
-  // Process data with backpressure
-  let processing_results = []
-  let backpressure_events = []
-  
-  for data_point in high_volume_data {
-    // Check for backpressure
-    if stream_processor.is_backpressure_active() {
-      backpressure_events.push(stream_processor.get_backpressure_info())
-    }
-    
-    // Process data point
-    let result = stream_processor.process_with_flow_control(data_point, slow_consumer)
-    processing_results.push(result)
+  // 模拟高吞吐量数据流
+  let high_volume_events = []
+  for i in 1..=1500 {
+    let event = MetricEvent::new("high.volume.metric", i.to_float(), Timestamp::now())
+    high_volume_events = high_volume_events.push(event)
   }
   
-  // Verify backpressure handling
-  assert_true(backpressure_events.length() > 0) // Should have triggered backpressure
+  // 处理高吞吐量数据
+  let processed_count = 0
+  let dropped_count = 0
   
-  for event in backpressure_events {
-    assert_true(event.buffer_utilization > 0.8)
-    assert_true(event.is_active)
-    assert_true(event.strategy.length() > 0)
+  for event in high_volume_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    if ProcessEvent::is_processed(result) {
+      processed_count = processed_count + 1
+    } else if ProcessEvent::is_dropped(result) {
+      dropped_count = dropped_count + 1
+    }
   }
   
-  // Verify processing results
-  assert_eq(processing_results.length(), 2000)
+  // 验证背压处理结果
+  assert_eq(processed_count, 1000) // 缓冲区大小
+  assert_eq(dropped_count, 500)    // 超出缓冲区的事件被丢弃
   
-  let successful_processes = processing_results.filter(|r| r.success).length()
-  assert_true(successful_processes > 1800) // At least 90% success rate
+  // 测试背压恢复
+  let recovery_strategy = BackpressureStrategy::drop_oldest(100) // 丢弃最旧的100个事件
+  StreamProcessor::set_backpressure_strategy(stream_processor, recovery_strategy)
   
-  // Verify no buffer overflow
-  let metrics = stream_processor.get_metrics()
-  assert_true(metrics.buffer_overflow_count == 0)
-  assert_true(metrics.max_buffer_utilization <= 1.0)
+  // 模拟背压恢复场景
+  let recovery_events = []
+  for i in 1..=200 {
+    let event = MetricEvent::new("recovery.metric", i.to_float(), Timestamp::now())
+    recovery_events = recovery_events.push(event)
+  }
   
-  // Test different backpressure strategies
-  let strategies = ["drop_oldest", "drop_newest", "batch_process", "throttle"]
-  
-  for strategy in strategies {
-    stream_processor.set_backpressure_strategy(strategy)
-    
-    let strategy_data = generate_high_volume_stream_data(500)
-    let strategy_results = []
-    
-    for data_point in strategy_data {
-      let result = stream_processor.process_with_flow_control(data_point, slow_consumer)
-      strategy_results.push(result)
+  // 处理恢复数据
+  let recovery_processed_count = 0
+  for event in recovery_events {
+    let result = StreamProcessor::process_event(stream_processor, event)
+    if ProcessEvent::is_processed(result) {
+      recovery_processed_count = recovery_processed_count + 1
     }
+  }
+  
+  // 验证背压恢复结果
+  assert_eq(recovery_processed_count, 100) // 应该处理最新的100个事件
+}
+
+// 测试7: 流数据状态管理
+test "流数据状态管理测试" {
+  let stream_processor = StreamProcessor::new()
+  let state_manager = StateManager::new()
+  let telemetry_stream = TelemetryStream::new("state.management")
+  
+  // 注册状态管理器
+  StreamProcessor::register_state_manager(stream_processor, state_manager, telemetry_stream)
+  
+  // 定义状态键
+  let cpu_usage_key = StateKey::new("cpu.usage.history")
+  let error_count_key = StateKey::new("error.count")
+  let service_health_key = StateKey::new("service.health")
+  
+  // 初始化状态
+  StateManager::set_state(state_manager, cpu_usage_key, [])
+  StateManager::set_state(state_manager, error_count_key, 0)
+  StateManager::set_state(state_manager, service_health_key, "healthy")
+  
+  // 模拟状态变化事件流
+  let state_events = [
+    MetricEvent::new("cpu.usage", 45.2, Timestamp::now()),
+    MetricEvent::new("error.count", 1, Timestamp::now()),
+    MetricEvent::new("cpu.usage", 52.8, Timestamp::now()),
+    MetricEvent::new("error.count", 1, Timestamp::now()),
+    MetricEvent::new("cpu.usage", 78.5, Timestamp::now()),
+    MetricEvent::new("error.count", 3, Timestamp::now()),
+    MetricEvent::new("cpu.usage", 35.1, Timestamp::now())
+  ]
+  
+  // 处理状态变化事件
+  for event in state_events {
+    let result = StreamProcessor::process_event_with_state(stream_processor, event)
     
-    // Verify strategy-specific behavior
-    match strategy {
-      "drop_oldest" => {
-        // Should drop oldest data when buffer is full
-        assert_true(strategy_results.filter(|r| r.dropped).length() > 0)
-      },
-      "drop_newest" => {
-        // Should drop newest data when buffer is full
-        assert_true(strategy_results.filter(|r| r.dropped).length() > 0)
-      },
-      "batch_process" => {
-        // Should process data in batches
-        let batch_count = strategy_results.filter(|r| r.batched).length()
-        assert_true(batch_count > 0)
-      },
-      "throttle" => {
-        // Should throttle processing rate
-        let throttled_count = strategy_results.filter(|r| r.throttled).length()
-        assert_true(throttled_count > 0)
-      },
+    // 更新状态
+    match MetricEvent::name(event) {
+      "cpu.usage" => {
+        let history = StateManager::get_state(state_manager, cpu_usage_key)
+        match history {
+          Some(ArrayFloatValue(values)) => {
+            let new_values = values.push(MetricEvent::value(event))
+            StateManager::set_state(state_manager, cpu_usage_key, new_values)
+          }
+          _ => assert_true(false)
+        }
+      }
+      "error.count" => {
+        let count = StateManager::get_state(state_manager, error_count_key)
+        match count {
+          Some(IntValue(current)) => {
+            let new_count = current + MetricEvent::value(event).to_int()
+            StateManager::set_state(state_manager, error_count_key, new_count)
+            
+            // 根据错误数更新服务健康状态
+            let new_health = if new_count > 5 { "unhealthy" } else if new_count > 2 { "degraded" } else { "healthy" }
+            StateManager::set_state(state_manager, service_health_key, new_health)
+          }
+          _ => assert_true(false)
+        }
+      }
       _ => assert_true(false)
     }
   }
   
-  // Stop stream processor
-  stream_processor.stop()
+  // 验证最终状态
+  let final_cpu_history = StateManager::get_state(state_manager, cpu_usage_key)
+  match final_cpu_history {
+    Some(ArrayFloatValue(values)) => {
+      assert_eq(values.length(), 4)
+      assert_eq(values[0], 45.2)
+      assert_eq(values[3], 35.1)
+    }
+    _ => assert_true(false)
+  }
+  
+  let final_error_count = StateManager::get_state(state_manager, error_count_key)
+  match final_error_count {
+    Some(IntValue(count)) => assert_eq(count, 5)
+    _ => assert_true(false)
+  }
+  
+  let final_service_health = StateManager::get_state(state_manager, service_health_key)
+  match final_service_health {
+    Some(StringValue(health)) => assert_eq(health, "degraded")
+    _ => assert_true(false)
+  }
 }
 
-// Test 7: Stream State Management and Recovery
-test "stream state management and recovery" {
+// 测试8: 流数据多路复用和分发
+test "流数据多路复用和分发测试" {
   let stream_processor = StreamProcessor::new()
+  let telemetry_stream = TelemetryStream::new("multiplex.distribution")
   
-  // Configure state management
-  stream_processor.configure_state_management(StateConfig::new()
-    .with_checkpoint_interval(1000)
-    .with_state_backend("memory")
-    .with_recovery_strategy("exactly_once"))
+  // 创建多个输出流
+  let metrics_stream = TelemetryStream::new("metrics.output")
+  let alerts_stream = TelemetryStream::new("alerts.output")
+  let archive_stream = TelemetryStream::new("archive.output")
   
-  // Start stream processor
-  stream_processor.start()
+  // 配置流分发规则
+  let distribution_rules = [
+    DistributionRule::new("metrics", fn(event) {
+      MetricEvent::name(event).starts_with("metric.")
+    }, metrics_stream),
+    DistributionRule::new("alerts", fn(event) {
+      MetricEvent::name(event).starts_with("alert.") || MetricEvent::value(event) > 100.0
+    }, alerts_stream),
+    DistributionRule::new("archive", fn(event) {
+      true // 所有事件都归档
+    }, archive_stream)
+  ]
   
-  // Generate stream data with state
-  let stateful_data = generate_stateful_stream_data(1500)
-  
-  // Process data and update state
-  let state_updates = []
-  for (i, data_point) in stateful_data.enumerate() {
-    let result = stream_processor.process_with_state(data_point)
-    state_updates.push(result)
-    
-    // Create checkpoints periodically
-    if i % 100 == 0 {
-      stream_processor.create_checkpoint()
-    }
+  // 注册分发规则
+  for rule in distribution_rules {
+    StreamProcessor::register_distribution_rule(stream_processor, rule, telemetry_stream)
   }
   
-  // Verify state management
-  assert_eq(state_updates.length(), 1500)
+  // 模拟混合事件流
+  let mixed_events = [
+    MetricEvent::new("metric.cpu.usage", 45.2, Timestamp::now()),
+    MetricEvent::new("alert.high.memory", 95.5, Timestamp::now()),
+    MetricEvent::new("metric.disk.io", 120.8, Timestamp::now()),
+    MetricEvent::new("log.application.error", 1, Timestamp::now()),
+    MetricEvent::new("metric.network.throughput", 1024.5, Timestamp::now()),
+    MetricEvent::new("custom.event", 150.0, Timestamp::now())
+  ]
   
-  let successful_updates = state_updates.filter(|u| u.success).length()
-  assert_true(successful_updates > 1400) // At least 93% success rate
-  
-  // Verify checkpoint creation
-  let checkpoints = stream_processor.get_checkpoints()
-  assert_true(checkpoints.length() > 10)
-  
-  for checkpoint in checkpoints {
-    assert_true(checkpoint.checkpoint_id.length() > 0)
-    assert_true(checkpoint.timestamp > 0)
-    assert_true(checkpoint.state_size > 0)
+  // 处理混合事件
+  for event in mixed_events {
+    StreamProcessor::process_event(stream_processor, event)
   }
   
-  // Simulate failure and recovery
-  let failure_point = 750
-  let pre_failure_state = stream_processor.get_current_state()
+  // 验证流分发结果
+  let metrics_output = TelemetryStream::get_events(metrics_stream)
+  let alerts_output = TelemetryStream::get_events(alerts_stream)
+  let archive_output = TelemetryStream::get_events(archive_stream)
   
-  // Process some data after failure point
-  let post_failure_data = stateful_data.slice(failure_point, stateful_data.length())
-  let post_failure_results = []
+  // 验证metrics流
+  assert_eq(metrics_output.length(), 3) // metric.cpu.usage, metric.disk.io, metric.network.throughput
   
-  for data_point in post_failure_data {
-    let result = stream_processor.process_with_state(data_point)
-    post_failure_results.push(result)
+  // 验证alerts流
+  assert_eq(alerts_output.length(), 3) // alert.high.memory, metric.disk.io (value > 100), custom.event (value > 100)
+  
+  // 验证archive流
+  assert_eq(archive_output.length(), 6) // 所有事件
+  
+  // 验证事件内容一致性
+  for event in metrics_output {
+    assert_true(MetricEvent::name(event).starts_with("metric."))
   }
   
-  // Trigger recovery
-  let recovery_checkpoint = checkpoints[checkpoints.length() / 2] // Use middle checkpoint
-  let recovery_result = stream_processor.recover_from_checkpoint(recovery_checkpoint.checkpoint_id)
-  
-  assert_true(recovery_result.success)
-  
-  // Verify recovery state
-  let recovered_state = stream_processor.get_current_state()
-  assert_eq(recovered_state.checkpoint_id, recovery_checkpoint.checkpoint_id)
-  
-  // Re-process data from recovery point
-  let recovery_data = stateful_data.slice(failure_point, stateful_data.length())
-  let recovery_results = []
-  
-  for data_point in recovery_data {
-    let result = stream_processor.process_with_state(data_point)
-    recovery_results.push(result)
+  for event in alerts_output {
+    let is_alert = MetricEvent::name(event).starts_with("alert.") || MetricEvent::value(event) > 100.0
+    assert_true(is_alert)
   }
-  
-  // Verify recovery results match original results
-  assert_eq(recovery_results.length(), post_failure_results.length())
-  
-  for (i, recovery_result) in recovery_results.enumerate() {
-    let original_result = post_failure_results[i]
-    assert_eq(recovery_result.success, original_result.success)
-    
-    if recovery_result.success && original_result.success {
-      assert_eq(recovery_result.output, original_result.output)
-    }
-  }
-  
-  // Test different recovery strategies
-  let strategies = ["at_least_once", "exactly_once", "at_most_once"]
-  
-  for strategy in strategies {
-    stream_processor.set_recovery_strategy(strategy)
-    
-    let strategy_data = generate_stateful_stream_data(200)
-    let strategy_results = []
-    
-    // Create checkpoint
-    stream_processor.create_checkpoint()
-    
-    // Process data
-    for data_point in strategy_data {
-      let result = stream_processor.process_with_state(data_point)
-      strategy_results.push(result)
-    }
-    
-    // Simulate failure and recovery
-    let strategy_checkpoint = stream_processor.get_latest_checkpoint()
-    let strategy_recovery = stream_processor.recover_from_checkpoint(strategy_checkpoint.checkpoint_id)
-    
-    assert_true(strategy_recovery.success)
-    
-    // Verify strategy-specific behavior
-    match strategy {
-      "at_least_once" => {
-        // May process some data multiple times
-        assert_true(strategy_results.filter(|r| r.duplicate).length() >= 0)
-      },
-      "exactly_once" => {
-        // Should process each data point exactly once
-        assert_eq(strategy_results.filter(|r| r.duplicate).length(), 0)
-        assert_eq(strategy_results.filter(|r| r.missed).length(), 0)
-      },
-      "at_most_once" => {
-        // May miss some data but never process duplicates
-        assert_eq(strategy_results.filter(|r| r.duplicate).length(), 0)
-      },
-      _ => assert_true(false)
-    }
-  }
-  
-  // Stop stream processor
-  stream_processor.stop()
-}
-
-// Test 8: Stream Scaling and Load Distribution
-test "stream scaling and load distribution" {
-  let stream_processor = StreamProcessor::new()
-  
-  // Configure scaling
-  stream_processor.configure_scaling(ScalingConfig::new()
-    .with_min_partitions(2)
-    .with_max_partitions(8)
-    .with_scale_up_threshold(0.8)
-    .with_scale_down_threshold(0.3)
-    .with_auto_scale_enabled(true))
-  
-  // Start stream processor
-  stream_processor.start()
-  
-  // Generate variable load stream data
-  let low_load_data = generate_stream_data_with_load(200, "low")
-  let medium_load_data = generate_stream_data_with_load(400, "medium")
-  let high_load_data = generate_stream_data_with_load(600, "high")
-  
-  // Process data with varying load
-  let scaling_events = []
-  
-  // Process low load data
-  for data_point in low_load_data {
-    let result = stream_processor.process_with_scaling(data_point)
-    
-    if stream_processor.has_scaling_event_occurred() {
-      scaling_events.push(stream_processor.get_latest_scaling_event())
-    }
-  }
-  
-  // Process medium load data
-  for data_point in medium_load_data {
-    let result = stream_processor.process_with_scaling(data_point)
-    
-    if stream_processor.has_scaling_event_occurred() {
-      scaling_events.push(stream_processor.get_latest_scaling_event())
-    }
-  }
-  
-  // Process high load data
-  for data_point in high_load_data {
-    let result = stream_processor.process_with_scaling(data_point)
-    
-    if stream_processor.has_scaling_event_occurred() {
-      scaling_events.push(stream_processor.get_latest_scaling_event())
-    }
-  }
-  
-  // Verify scaling events
-  assert_true(scaling_events.length() > 0)
-  
-  for event in scaling_events {
-    assert_true(event.event_type == "scale_up" || event.event_type == "scale_down")
-    assert_true(event.old_partition_count > 0)
-    assert_true(event.new_partition_count > 0)
-    assert_true(event.timestamp > 0)
-    assert_true(event.reason.length() > 0)
-  }
-  
-  // Verify partition management
-  let partitions = stream_processor.get_partitions()
-  assert_true(partitions.length() >= 2) // At least min partitions
-  assert_true(partitions.length() <= 8) // At most max partitions
-  
-  for partition in partitions {
-    assert_true(partition.partition_id >= 0)
-    assert_true(partition.current_load >= 0.0)
-    assert_true(partition.max_capacity > 0.0)
-    assert_true(partition.is_active)
-  }
-  
-  // Test load distribution strategies
-  let strategies = ["round_robin", "hash_based", "load_balanced"]
-  
-  for strategy in strategies {
-    stream_processor.set_load_distribution_strategy(strategy)
-    
-    let strategy_data = generate_stream_data_with_load(300, "medium")
-    let strategy_results = []
-    
-    for data_point in strategy_data {
-      let result = stream_processor.process_with_scaling(data_point)
-      strategy_results.push(result)
-    }
-    
-    // Verify strategy-specific behavior
-    let partition_usage = stream_processor.get_partition_usage()
-    
-    match strategy {
-      "round_robin" => {
-        // Should distribute evenly across partitions
-        let max_usage = partition_usage.reduce(0.0, |max, usage| if usage > max { usage } else { max })
-        let min_usage = partition_usage.reduce(max_usage, |min, usage| if usage < min { usage } else { min })
-        assert_true(max_usage - min_usage < 0.2) // Fairly even distribution
-      },
-      "hash_based" => {
-        // Should distribute based on data key
-        assert_true(partition_usage.length() > 0)
-      },
-      "load_balanced" => {
-        // Should distribute based on current load
-        let max_usage = partition_usage.reduce(0.0, |max, usage| if usage > max { usage } else { max })
-        let min_usage = partition_usage.reduce(max_usage, |min, usage| if usage < min { usage } else { min })
-        assert_true(max_usage - min_usage < 0.3) // Reasonably balanced
-      },
-      _ => assert_true(false)
-    }
-  }
-  
-  // Stop stream processor
-  stream_processor.stop()
-}
-
-// Test 9: Stream Monitoring and Metrics
-test "stream monitoring and metrics" {
-  let stream_processor = StreamProcessor::new()
-  
-  // Configure monitoring
-  stream_processor.configure_monitoring(MonitoringConfig::new()
-    .with_metrics_collection_interval(100)
-    .with_performance_tracking_enabled(true)
-    .with_health_check_enabled(true)
-    .with_alert_thresholds(AlertThresholds::new()
-      .with_latency_threshold(500)
-      .with_error_rate_threshold(0.05)
-      .with_throughput_threshold(1000)))
-  
-  // Start stream processor
-  stream_processor.start()
-  
-  // Generate stream data for monitoring
-  let monitoring_data = generate_monitoring_stream_data(1000)
-  
-  // Process data and collect metrics
-  let processing_results = []
-  let metrics_snapshots = []
-  
-  for (i, data_point) in monitoring_data.enumerate() {
-    let result = stream_processor.process_with_monitoring(data_point)
-    processing_results.push(result)
-    
-    // Collect metrics periodically
-    if i % 100 == 0 {
-      let metrics = stream_processor.get_metrics_snapshot()
-      metrics_snapshots.push(metrics)
-    }
-  }
-  
-  // Verify processing results
-  assert_eq(processing_results.length(), 1000)
-  
-  let successful_processes = processing_results.filter(|r| r.success).length()
-  assert_true(successful_processes > 950) // At least 95% success rate
-  
-  // Verify metrics collection
-  assert_true(metrics_snapshots.length() > 5)
-  
-  for metrics in metrics_snapshots {
-    assert_true(metrics.timestamp > 0)
-    assert_true(metrics.total_processed >= 0)
-    assert_true(metrics.successful_processed >= 0)
-    assert_true(metrics.failed_processed >= 0)
-    assert_true(metrics.avg_latency_ms >= 0.0)
-    assert_true(metrics.max_latency_ms >= metrics.avg_latency_ms)
-    assert_true(metrics.throughput_per_second >= 0.0)
-    assert_true(metrics.buffer_utilization >= 0.0 && metrics.buffer_utilization <= 1.0)
-    assert_true(metrics.error_rate >= 0.0 && metrics.error_rate <= 1.0)
-  }
-  
-  // Verify health checks
-  let health_status = stream_processor.get_health_status()
-  assert_true(health_status.is_healthy)
-  assert_true(health_status.checks.length() > 0)
-  
-  for check in health_status.checks {
-    assert_true(check.name.length() > 0)
-    assert_true(check.status == "healthy" || check.status == "unhealthy" || check.status == "degraded")
-    assert_true(check.last_check_time > 0)
-    assert_true(check.response_time_ms >= 0)
-  }
-  
-  // Verify alert generation
-  let alerts = stream_processor.get_alerts()
-  assert_true(alerts.length() >= 0)
-  
-  for alert in alerts {
-    assert_true(alert.alert_id.length() > 0)
-    assert_true(alert.alert_type.length() > 0)
-    assert_true(alert.severity == "low" || alert.severity == "medium" || alert.severity == "high" || alert.severity == "critical")
-    assert_true(alert.message.length() > 0)
-    assert_true(alert.timestamp > 0)
-    assert_true(alert.acknowledged == false || alert.acknowledged == true)
-  }
-  
-  // Test performance benchmarks
-  let benchmark_data = generate_benchmark_stream_data(2000)
-  let benchmark_start_time = get_current_time_ms()
-  
-  for data_point in benchmark_data {
-    stream_processor.process_with_monitoring(data_point)
-  }
-  
-  let benchmark_end_time = get_current_time_ms()
-  let benchmark_duration = benchmark_end_time - benchmark_start_time
-  
-  // Verify performance benchmarks
-  assert_true(benchmark_duration < 10000) // Should complete within 10 seconds
-  
-  let benchmark_metrics = stream_processor.get_performance_benchmark()
-  assert_true(benchmark_metrics.total_processed == 2000)
-  assert_true(benchmark_metrics.avg_latency_ms < 100)
-  assert_true(benchmark_metrics.max_latency_ms < 1000)
-  assert_true(benchmark_metrics.throughput_per_second > 100)
-  assert_true(benchmark_metrics.error_rate < 0.01)
-  
-  // Test metrics export
-  let exported_metrics = stream_processor.export_metrics("json")
-  assert_true(exported_metrics.length() > 0)
-  
-  // Verify metrics format
-  assert_true(exported_metrics.contains("\"total_processed\""))
-  assert_true(exported_metrics.contains("\"avg_latency_ms\""))
-  assert_true(exported_metrics.contains("\"throughput_per_second\""))
-  
-  // Stop stream processor
-  stream_processor.stop()
 }
