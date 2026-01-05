@@ -172,6 +172,13 @@
         "azimuth_concurrent_thread_safety_enhanced_tests.mbt",
         "azimuth_performance_resource_optimization_tests.mbt",
         "azimuth_internationalization_enhanced_tests.mbt",
-        "azimuth_error_handling_boundary_enhanced_tests.mbt",
-        "azimuth_serialization_format_enhanced_tests.mbt"]  }
+          "azimuth_error_handling_boundary_enhanced_tests.mbt",
+          "azimuth_serialization_format_enhanced_tests.mbt",
+          "azimuth_enhanced_data_types_tests.mbt",
+          "azimuth_enhanced_error_handling_tests.mbt",
+          "azimuth_enhanced_performance_tests.mbt",
+          "azimuth_enhanced_concurrent_safety_tests.mbt",
+          "azimuth_enhanced_serialization_tests.mbt",
+          "azimuth_enhanced_resource_management_tests.mbt",
+          "azimuth_enhanced_internationalization_tests.mbt"]  }
 }
