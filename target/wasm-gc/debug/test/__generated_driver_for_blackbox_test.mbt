@@ -2010,6 +2010,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_cross_cloud_telemetry_tests.mbt": {
   },
+  "azimuth_cross_cloud_sync_tests.mbt": {
+  },
   "azimuth_core_types_test.mbt": {
     0: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_0, ["AttributeValue类型创建和操作"]),
     1: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_1, ["Attributes类型操作"]),
@@ -2265,6 +2267,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_boundary_condition_edge_case_comprehensive_tests.mbt": {
   },
   "azimuth_boundary_condition_comprehensive_tests.mbt": {
+  },
+  "azimuth_blockchain_technology_tests.mbt": {
   },
   "azimuth_batch_processing_tests.mbt": {
   },
