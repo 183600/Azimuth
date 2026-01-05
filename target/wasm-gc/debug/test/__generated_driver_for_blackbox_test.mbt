@@ -534,6 +534,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_realtime_stream_processing_tests.mbt": {
   },
+  "azimuth_realtime_stream_processing_quality_tests.mbt": {
+  },
   "azimuth_realtime_stream_processing_performance_tests.mbt": {
   },
   "azimuth_realtime_stream_processing_high_quality_tests.mbt": {
