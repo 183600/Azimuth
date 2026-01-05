@@ -136,6 +136,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f7574696c6974795f66756e6374696f6e735f74657374732e6d6274_8, ["encoding and decoding utilities"]),
     9: (__test_617a696d7574685f7574696c6974795f66756e6374696f6e735f74657374732e6d6274_9, ["hash and checksum utilities"]),
   },
+  "azimuth_user_interface_tests.mbt": {
+    0: (__test_617a696d7574685f757365725f696e746572666163655f74657374732e6d6274_0, ["ui component rendering and state management"]),
+    1: (__test_617a696d7574685f757365725f696e746572666163655f74657374732e6d6274_1, ["chart visualization components for telemetry data"]),
+    2: (__test_617a696d7574685f757365725f696e746572666163655f74657374732e6d6274_2, ["data table components for telemetry data display"]),
+    3: (__test_617a696d7574685f757365725f696e746572666163655f74657374732e6d6274_3, ["form components for telemetry configuration"]),
+    4: (__test_617a696d7574685f757365725f696e746572666163655f74657374732e6d6274_4, ["responsive layout and navigation components"]),
+  },
   "azimuth_updown_counter_gauge_tests.mbt": {
     0: (__test_617a696d7574685f7570646f776e5f636f756e7465725f67617567655f74657374732e6d6274_0, ["UpDownCounter基本操作"]),
     1: (__test_617a696d7574685f7570646f776e5f636f756e7465725f67617567655f74657374732e6d6274_1, ["UpDownCounter带属性操作"]),
