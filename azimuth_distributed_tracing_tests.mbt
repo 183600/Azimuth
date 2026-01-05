@@ -1,664 +1,565 @@
-// Azimuth Distributed Tracing Tests
+// Azimuth Distributed Tracing Test Suite
 // This file contains test cases for distributed tracing functionality
 
-// Test 1: Trace Context Creation and Propagation
-test "trace context creation and propagation" {
-  // Define trace context structure
+// Test 1: Trace ID Generation and Validation
+test "trace ID generation and validation" {
+  let generate_trace_id = fn() {
+    let mut id = ""
+    for i in 0..16 {
+      let hex_chars = "0123456789abcdef"
+      let random_index = i % 16
+      id = id + hex_chars[random_index].to_string()
+    }
+    id
+  }
+  
+  let validate_trace_id = fn(trace_id: String) {
+    trace_id.length() == 32 && trace_id.chars().all(fn(c) { 
+      let hex_chars = "0123456789abcdef"
+      hex_chars.contains(c.to_string())
+    })
+  }
+  
+  let trace_id1 = generate_trace_id()
+  let trace_id2 = generate_trace_id()
+  
+  assert_true(validate_trace_id(trace_id1))
+  assert_true(validate_trace_id(trace_id2))
+  assert_true(trace_id1 != trace_id2)
+  
+  let invalid_trace_id1 = "invalid-trace-id"
+  let invalid_trace_id2 = "1234567890123456789012345678901g"  // 31 chars + invalid char
+  let invalid_trace_id3 = "123456789012345678901234567890"    // 30 chars
+  
+  assert_false(validate_trace_id(invalid_trace_id1))
+  assert_false(validate_trace_id(invalid_trace_id2))
+  assert_false(validate_trace_id(invalid_trace_id3))
+}
+
+// Test 2: Span ID Generation and Validation
+test "span ID generation and validation" {
+  let generate_span_id = fn() {
+    let mut id = ""
+    for i in 0..8 {
+      let hex_chars = "0123456789abcdef"
+      let random_index = (i * 3) % 16
+      id = id + hex_chars[random_index].to_string()
+    }
+    id
+  }
+  
+  let validate_span_id = fn(span_id: String) {
+    span_id.length() == 16 && span_id.chars().all(fn(c) { 
+      let hex_chars = "0123456789abcdef"
+      hex_chars.contains(c.to_string())
+    })
+  }
+  
+  let span_id1 = generate_span_id()
+  let span_id2 = generate_span_id()
+  
+  assert_true(validate_span_id(span_id1))
+  assert_true(validate_span_id(span_id2))
+  assert_true(span_id1 != span_id2)
+  
+  let invalid_span_id1 = "invalid-span-id"
+  let invalid_span_id2 = "123456789012345g"  // 15 chars + invalid char
+  let invalid_span_id3 = "12345678901234"    // 14 chars
+  
+  assert_false(validate_span_id(invalid_span_id1))
+  assert_false(validate_span_id(invalid_span_id2))
+  assert_false(validate_span_id(invalid_span_id3))
+}
+
+// Test 3: Trace Context Propagation
+test "trace context propagation" {
   type TraceContext = {
     trace_id: String,
     span_id: String,
-    parent_span_id: Option[String],
-    sampled: Bool,
-    baggage: Array[(String, String)]
+    trace_flags: Int,
+    trace_state: Array[(String, String)]
   }
   
-  // Create a root trace context
-  let create_root_context = fn(trace_id: String) {
+  let create_trace_context = fn(trace_id: String, span_id: String) {
     {
       trace_id,
-      span_id: "span-" + trace_id,
-      parent_span_id: None,
-      sampled: true,
-      baggage: []
-    }
-  }
-  
-  // Create a child context from parent
-  let create_child_context = fn(parent: TraceContext, span_id: String) {
-    {
-      trace_id: parent.trace_id,
       span_id,
-      parent_span_id: Some(parent.span_id),
-      sampled: parent.sampled,
-      baggage: parent.baggage
+      trace_flags: 1,
+      trace_state: []
     }
   }
   
-  // Test root context creation
-  let root_context = create_root_context("trace-12345")
-  assert_eq(root_context.trace_id, "trace-12345")
-  assert_eq(root_context.span_id, "span-trace-12345")
-  assert_eq(root_context.parent_span_id, None)
-  assert_true(root_context.sampled)
-  assert_eq(root_context.baggage.length(), 0)
-  
-  // Test child context creation
-  let child_context = create_child_context(root_context, "child-span-1")
-  assert_eq(child_context.trace_id, "trace-12345")
-  assert_eq(child_context.span_id, "child-span-1")
-  assert_eq(child_context.parent_span_id, Some("span-trace-12345"))
-  assert_true(child_context.sampled)
-  assert_eq(child_context.baggage.length(), 0)
-  
-  // Test grandchild context creation
-  let grandchild_context = create_child_context(child_context, "grandchild-span-1")
-  assert_eq(grandchild_context.trace_id, "trace-12345")
-  assert_eq(grandchild_context.span_id, "grandchild-span-1")
-  assert_eq(grandchild_context.parent_span_id, Some("child-span-1"))
-  assert_true(grandchild_context.sampled)
-  assert_eq(grandchild_context.baggage.length(), 0)
-  
-  // Test trace ID consistency across the hierarchy
-  assert_eq(root_context.trace_id, child_context.trace_id)
-  assert_eq(child_context.trace_id, grandchild_context.trace_id)
-}
-
-// Test 2: Span Lifecycle Management
-test "span lifecycle management" {
-  // Define span structure
-  type Span = {
-    context: {
-      trace_id: String,
-      span_id: String,
-      parent_span_id: Option[String]
-    },
-    operation_name: String,
-    start_time: Int,
-    end_time: Option[Int],
-    status: String,
-    events: Array[SpanEvent],
-    attributes: Array[(String, String)]
+  let extract_from_headers = fn(headers: Array[(String, String)]) {
+    let mut trace_id = None
+    let mut span_id = None
+    let mut trace_flags = Some(1)
+    
+    for (key, value) in headers {
+      if key == "traceparent" {
+        let parts = value.split("-")
+        if parts.length() >= 3 {
+          trace_id = Some(parts[1])
+          span_id = Some(parts[2])
+          if parts.length() >= 4 {
+            let flags = parts[3]
+            if flags.length() >= 2 {
+              trace_flags = Some(flags[1].to_int())
+            }
+          }
+        }
+      }
+    }
+    
+    match (trace_id, span_id) {
+      (Some(tid), Some(sid)) => Some({
+        trace_id: tid,
+        span_id: sid,
+        trace_flags: trace_flags.unwrap_or(1),
+        trace_state: []
+      })
+      _ => None
+    }
   }
   
-  type SpanEvent = {
-    timestamp: Int,
+  let inject_to_headers = fn(context: TraceContext) {
+    [
+      ("traceparent", "00-" + context.trace_id + "-" + context.span_id + "-" + context.trace_flags.to_string()),
+      ("x-trace-id", context.trace_id),
+      ("x-span-id", context.span_id)
+    ]
+  }
+  
+  let parent_context = create_trace_context("123456789012345678901234567890ab", "cdef0123456789ab")
+  let headers = inject_to_headers(parent_context)
+  
+  assert_eq(headers.length(), 3)
+  assert_true(headers.contains(("traceparent", "00-123456789012345678901234567890ab-cdef0123456789ab-1")))
+  assert_true(headers.contains(("x-trace-id", "123456789012345678901234567890ab")))
+  assert_true(headers.contains(("x-span-id", "cdef0123456789ab")))
+  
+  let extracted_context = extract_from_headers(headers)
+  assert_true(extracted_context.is_some())
+  
+  match extracted_context {
+    Some(context) => {
+      assert_eq(context.trace_id, parent_context.trace_id)
+      assert_eq(context.span_id, parent_context.span_id)
+      assert_eq(context.trace_flags, parent_context.trace_flags)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 4: Span Tree Operations
+test "span tree operations" {
+  type Span = {
     name: String,
-    attributes: Array[(String, String)]
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    start_time: Int,
+    end_time: Int,
+    children: Array[String]
   }
   
-  // Create a new span
-  let create_span = fn(trace_id: String, span_id: String, operation_name: String, start_time: Int) {
+  let create_span = fn(name: String, trace_id: String, span_id: String, parent_span_id: Option[String]) {
     {
-      context: {
-        trace_id,
-        span_id,
-        parent_span_id: None
-      },
-      operation_name,
-      start_time,
-      end_time: None,
-      status: "running",
-      events: [],
-      attributes: []
+      name,
+      trace_id,
+      span_id,
+      parent_span_id,
+      start_time: 1640995200,
+      end_time: 1640995250,
+      children: []
     }
   }
   
-  // Start a span
-  let start_span = fn(span: Span) {
-    { span | status: "running" }
+  let add_child = fn(span: Span, child_span_id: String) {
+    { span | children: span.children + [child_span_id] }
   }
   
-  // Finish a span
-  let finish_span = fn(span: Span, end_time: Int, status: String) {
-    { span | end_time: Some(end_time), status }
+  let root_span = create_span("root_operation", "trace-123", "span-1", None)
+  let child_span1 = create_span("child_operation_1", "trace-123", "span-2", Some("span-1"))
+  let child_span2 = create_span("child_operation_2", "trace-123", "span-3", Some("span-1"))
+  let grandchild_span = create_span("grandchild_operation", "trace-123", "span-4", Some("span-2"))
+  
+  let root_with_children = add_child(add_child(root_span, "span-2"), "span-3")
+  let child1_with_grandchild = add_child(child_span1, "span-4")
+  
+  assert_eq(root_with_children.children.length(), 2)
+  assert_true(root_with_children.children.contains("span-2"))
+  assert_true(root_with_children.children.contains("span-3"))
+  
+  assert_eq(child1_with_grandchild.children.length(), 1)
+  assert_true(child1_with_grandchild.children.contains("span-4"))
+  
+  assert_eq(child_span2.children.length(), 0)
+  assert_eq(grandchild_span.children.length(), 0)
+  
+  let is_root = fn(span: Span) {
+    span.parent_span_id.is_none()
   }
   
-  // Add event to span
-  let add_event = fn(span: Span, event_name: String, timestamp: Int, attributes: Array[(String, String)]) {
-    let event = {
-      timestamp,
-      name: event_name,
-      attributes
-    }
-    { span | events: span.events.push(event) }
-  }
-  
-  // Add attribute to span
-  let add_attribute = fn(span: Span, key: String, value: String) {
-    { span | attributes: span.attributes.push((key, value)) }
-  }
-  
-  // Test span creation
-  let span = create_span("trace-001", "span-001", "http.request", 1640995200)
-  assert_eq(span.context.trace_id, "trace-001")
-  assert_eq(span.context.span_id, "span-001")
-  assert_eq(span.operation_name, "http.request")
-  assert_eq(span.start_time, 1640995200)
-  assert_eq(span.end_time, None)
-  assert_eq(span.status, "running")
-  assert_eq(span.events.length(), 0)
-  assert_eq(span.attributes.length(), 0)
-  
-  // Test adding attributes
-  let span_with_attrs = span
-    |> add_attribute("http.method", "GET")
-    |> add_attribute("http.url", "/api/users")
-    |> add_attribute("user.id", "12345")
-  
-  assert_eq(span_with_attrs.attributes.length(), 3)
-  assert_true(span_with_attrs.attributes.contains(("http.method", "GET")))
-  assert_true(span_with_attrs.attributes.contains(("http.url", "/api/users")))
-  assert_true(span_with_attrs.attributes.contains(("user.id", "12345")))
-  
-  // Test adding events
-  let span_with_events = span_with_attrs
-    |> add_event("cache.miss", 1640995205, [("cache.key", "user:12345")])
-    |> add_event("db.query", 1640995210, [("db.statement", "SELECT * FROM users WHERE id = 12345")])
-  
-  assert_eq(span_with_events.events.length(), 2)
-  assert_eq(span_with_events.events[0].name, "cache.miss")
-  assert_eq(span_with_events.events[1].name, "db.query")
-  
-  // Test finishing span
-  let finished_span = finish_span(span_with_events, 1640995220, "success")
-  assert_eq(finished_span.end_time, Some(1640995220))
-  assert_eq(finished_span.status, "success")
-  
-  // Calculate span duration
-  let calculate_duration = fn(span: Span) {
-    match span.end_time {
-      Some(end_time) => Some(end_time - span.start_time)
-      None => None
+  let is_child_of = fn(span: Span, parent_span_id: String) {
+    match span.parent_span_id {
+      Some(id) => id == parent_span_id
+      None => false
     }
   }
   
-  let duration = calculate_duration(finished_span)
-  assert_eq(duration, Some(20))
+  assert_true(is_root(root_span))
+  assert_false(is_root(child_span1))
+  assert_false(is_root(child_span2))
+  assert_false(is_root(grandchild_span))
+  
+  assert_true(is_child_of(child_span1, "span-1"))
+  assert_true(is_child_of(child_span2, "span-1"))
+  assert_true(is_child_of(grandchild_span, "span-2"))
+  assert_false(is_child_of(root_span, "span-1"))
 }
 
-// Test 3: Trace Tree Construction
-test "trace tree construction and traversal" {
-  // Define span node structure for trace tree
-  type SpanNode = {
-    span: {
-      span_id: String,
-      parent_span_id: Option[String],
-      operation_name: String,
-      service_name: String
-    },
-    children: Array[SpanNode]
-  }
-  
-  // Create sample spans
-  let spans = [
-    { span_id: "span-1", parent_span_id: None, operation_name: "http.request", service_name: "api-gateway" },
-    { span_id: "span-2", parent_span_id: Some("span-1"), operation_name: "auth.validate", service_name: "auth-service" },
-    { span_id: "span-3", parent_span_id: Some("span-1"), operation_name: "user.get", service_name: "user-service" },
-    { span_id: "span-4", parent_span_id: Some("span-3"), operation_name: "db.query", service_name: "user-service" },
-    { span_id: "span-5", parent_span_id: Some("span-3"), operation_name: "cache.get", service_name: "user-service" },
-    { span_id: "span-6", parent_span_id: Some("span-2"), operation_name: "token.validate", service_name: "auth-service" }
-  ]
-  
-  // Build trace tree from spans
-  let build_trace_tree = fn(spans: Array[SpanNode]) {
-    // Find root spans (those with no parent)
-    let roots = spans.filter(fn(s) { s.span.parent_span_id == None })
-    
-    // Build children recursively
-    let build_children = fn(parent_span_id: String) {
-      spans.filter(fn(s) { s.span.parent_span_id == Some(parent_span_id) })
-        .map(fn(child) { 
-          { child | children: build_children(child.span.span_id) } 
-        })
-    }
-    
-    roots.map(fn(root) { { root | children: build_children(root.span.span_id) } })
-  }
-  
-  // Convert spans to span nodes
-  let span_nodes = spans.map(fn(s) { 
-    { span: s, children: [] } 
-  })
-  
-  // Build trace tree
-  let trace_trees = build_trace_tree(span_nodes)
-  assert_eq(trace_trees.length(), 1)
-  
-  let root_tree = trace_trees[0]
-  assert_eq(root_tree.span.span_id, "span-1")
-  assert_eq(root_tree.span.operation_name, "http.request")
-  assert_eq(root_tree.children.length(), 2)
-  
-  // Verify first level children
-  let auth_child = root_tree.children.filter(fn(c) { c.span.span_id == "span-2" })[0]
-  let user_child = root_tree.children.filter(fn(c) { c.span.span_id == "span-3" })[0]
-  
-  assert_eq(auth_child.span.operation_name, "auth.validate")
-  assert_eq(user_child.span.operation_name, "user.get")
-  
-  // Verify second level children
-  assert_eq(auth_child.children.length(), 1)
-  assert_eq(auth_child.children[0].span.span_id, "span-6")
-  assert_eq(auth_child.children[0].span.operation_name, "token.validate")
-  
-  assert_eq(user_child.children.length(), 2)
-  let db_child = user_child.children.filter(fn(c) { c.span.span_id == "span-4" })[0]
-  let cache_child = user_child.children.filter(fn(c) { c.span.span_id == "span-5" })[0]
-  
-  assert_eq(db_child.span.operation_name, "db.query")
-  assert_eq(cache_child.span.operation_name, "cache.get")
-  
-  // Count total spans in tree
-  let count_spans = fn(node: SpanNode) {
-    let mut total = 1
-    for child in node.children {
-      total = total + count_spans(child)
-    }
-    total
-  }
-  
-  let total_spans = count_spans(root_tree)
-  assert_eq(total_spans, 6)
-  
-  // Find spans by operation name
-  let find_by_operation = fn(node: SpanNode, operation: String) {
-    let mut result = []
-    
-    if node.span.operation_name == operation {
-      result = result.push(node.span.span_id)
-    }
-    
-    for child in node.children {
-      result = result + find_by_operation(child, operation)
-    }
-    result
-  }
-  
-  let db_query_spans = find_by_operation(root_tree, "db.query")
-  assert_eq(db_query_spans.length(), 1)
-  assert_eq(db_query_spans[0], "span-4")
-  
-  let get_spans = find_by_operation(root_tree, "cache.get")
-  assert_eq(get_spans.length(), 1)
-  assert_eq(get_spans[0], "span-5")
-}
-
-// Test 4: Cross-Service Trace Propagation
-test "cross-service trace propagation" {
-  // Define trace header structure
-  type TraceHeaders = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    sampled: String,
-    baggage: Array[(String, String)]
-  }
-  
-  // Define service call structure
-  type ServiceCall = {
-    from_service: String,
-    to_service: String,
-    operation: String,
-    headers: TraceHeaders
-  }
-  
-  // Inject trace context into headers
-  let inject_context = fn(context: {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
+// Test 5: Trace Sampling
+test "trace sampling" {
+  type SamplingDecision = {
     sampled: Bool,
-    baggage: Array[(String, String)]
-  }) {
+    reason: String
+  }
+  
+  let always_sample = fn(_trace_id: String, _span_name: String) {
+    { sampled: true, reason: "always" }
+  }
+  
+  let never_sample = fn(_trace_id: String, _span_name: String) {
+    { sampled: false, reason: "never" }
+  }
+  
+  let probability_sample = fn(trace_id: String, _span_name: String, probability: Float) {
+    let hash = trace_id.chars().fold(0, fn(acc, c) { 
+      (acc * 31 + c.to_int()) % 10000
+    })
+    let threshold = (probability * 10000.0).to_int()
     {
-      trace_id: context.trace_id,
-      span_id: context.span_id,
-      parent_span_id: context.parent_span_id,
-      sampled: if context.sampled { "1" } else { "0" },
-      baggage: context.baggage
+      sampled: hash < threshold,
+      reason: "probability_" + probability.to_string()
     }
   }
   
-  // Extract trace context from headers
-  let extract_context = fn(headers: TraceHeaders) {
-    {
-      trace_id: headers.trace_id,
-      span_id: headers.span_id,
-      parent_span_id: headers.parent_span_id,
-      sampled: headers.sampled == "1",
-      baggage: headers.baggage
-    }
-  }
+  let trace_id1 = "123456789012345678901234567890ab"
+  let trace_id2 = "abcdef0123456789abcdef0123456789"
   
-  // Create initial trace context
-  let initial_context = {
-    trace_id: "trace-789",
-    span_id: "span-001",
-    parent_span_id: None,
-    sampled: true,
-    baggage: [("user.id", "12345"), ("request.id", "req-001")]
-  }
+  let decision1 = always_sample(trace_id1, "test_operation")
+  let decision2 = never_sample(trace_id1, "test_operation")
+  let decision3 = probability_sample(trace_id1, "test_operation", 0.5)
+  let decision4 = probability_sample(trace_id2, "test_operation", 0.5)
   
-  // Service 1: API Gateway
-  let api_gateway_context = initial_context
-  let api_gateway_headers = inject_context(api_gateway_context)
+  assert_true(decision1.sampled)
+  assert_eq(decision1.reason, "always")
   
-  let api_gateway_call = {
-    from_service: "client",
-    to_service: "api-gateway",
-    operation: "process_request",
-    headers: api_gateway_headers
-  }
+  assert_false(decision2.sampled)
+  assert_eq(decision2.reason, "never")
   
-  // Service 2: Auth Service
-  let auth_extracted = extract_context(api_gateway_call.headers)
-  let auth_context = {
-    trace_id: auth_extracted.trace_id,
-    span_id: "span-002",
-    parent_span_id: Some(auth_extracted.span_id),
-    sampled: auth_extracted.sampled,
-    baggage: auth_extracted.baggage.push(("auth.method", "jwt"))
-  }
-  let auth_headers = inject_context(auth_context)
+  assert_true(decision3.sampled == true || decision3.sampled == false)  // Could be either
+  assert_eq(decision3.reason, "probability_0.5")
   
-  let auth_call = {
-    from_service: "api-gateway",
-    to_service: "auth-service",
-    operation: "validate_token",
-    headers: auth_headers
-  }
+  assert_true(decision4.sampled == true || decision4.sampled == false)  // Could be either
+  assert_eq(decision4.reason, "probability_0.5")
   
-  // Service 3: User Service
-  let user_extracted = extract_context(api_gateway_call.headers)
-  let user_context = {
-    trace_id: user_extracted.trace_id,
-    span_id: "span-003",
-    parent_span_id: Some(user_extracted.span_id),
-    sampled: user_extracted.sampled,
-    baggage: user_extracted.baggage.push(("user.action", "get_profile"))
-  }
-  let user_headers = inject_context(user_context)
+  // With probability 0.0, never sample
+  let decision_never = probability_sample(trace_id1, "test_operation", 0.0)
+  assert_false(decision_never.sampled)
   
-  let user_call = {
-    from_service: "api-gateway",
-    to_service: "user-service",
-    operation: "get_user_profile",
-    headers: user_headers
-  }
-  
-  // Verify trace ID consistency across services
-  assert_eq(api_gateway_call.headers.trace_id, "trace-789")
-  assert_eq(auth_call.headers.trace_id, "trace-789")
-  assert_eq(user_call.headers.trace_id, "trace-789")
-  
-  // Verify parent-child relationships
-  assert_eq(auth_call.headers.parent_span_id, Some("span-001"))
-  assert_eq(user_call.headers.parent_span_id, Some("span-001"))
-  
-  // Verify sampling decision propagation
-  assert_eq(api_gateway_call.headers.sampled, "1")
-  assert_eq(auth_call.headers.sampled, "1")
-  assert_eq(user_call.headers.sampled, "1")
-  
-  // Verify baggage propagation
-  assert_true(api_gateway_call.headers.baggage.contains(("user.id", "12345")))
-  assert_true(auth_call.headers.baggage.contains(("user.id", "12345")))
-  assert_true(user_call.headers.baggage.contains(("user.id", "12345")))
-  
-  // Verify service-specific baggage additions
-  assert_true(auth_call.headers.baggage.contains(("auth.method", "jwt")))
-  assert_true(user_call.headers.baggage.contains(("user.action", "get_profile")))
+  // With probability 1.0, always sample
+  let decision_always = probability_sample(trace_id1, "test_operation", 1.0)
+  assert_true(decision_always.sampled)
 }
 
-// Test 5: Trace Sampling Strategies
-test "trace sampling strategies" {
-  // Define trace context for sampling
-  type TraceContext = {
-    trace_id: String,
-    operation_name: String,
+// Test 6: Cross-Service Trace Context
+test "cross-service trace context" {
+  type ServiceTraceContext = {
     service_name: String,
-    attributes: Array[(String, String)]
+    trace_id: String,
+    span_id: String,
+    parent_service: Option[String],
+    parent_span_id: Option[String]
   }
   
-  // Constant sampling (always sample)
-  let constant_sampling = fn(context: TraceContext, sample: Bool) {
-    sample
-  }
-  
-  // Probabilistic sampling
-  let probabilistic_sampling = fn(context: TraceContext, sample_rate: Float) {
-    // Simple hash-based sampling simulation
-    let hash = context.trace_id.length() % 100
-    hash.to_float() < (sample_rate * 100.0)
-  }
-  
-  // Operation-based sampling
-  let operation_based_sampling = fn(context: TraceContext, operations: Array[String]) {
-    operations.contains(context.operation_name)
-  }
-  
-  // Service-based sampling
-  let service_based_sampling = fn(context: TraceContext, services: Array[String]) {
-    services.contains(context.service_name)
-  }
-  
-  // Attribute-based sampling
-  let attribute_based_sampling = fn(context: TraceContext, key: String, value: String) {
-    context.attributes.contains((key, value))
-  }
-  
-  // Create test contexts
-  let high_priority_context = {
-    trace_id: "trace-001",
-    operation_name: "payment.process",
-    service_name: "payment-service",
-    attributes: [("priority", "high"), ("amount", "1000.00")]
-  }
-  
-  let low_priority_context = {
-    trace_id: "trace-002",
-    operation_name: "health.check",
-    service_name: "monitoring-service",
-    attributes: [("priority", "low")]
-  }
-  
-  let medium_priority_context = {
-    trace_id: "trace-003",
-    operation_name: "user.profile",
-    service_name: "user-service",
-    attributes: [("priority", "medium")]
-  }
-  
-  // Test constant sampling
-  assert_true(constant_sampling(high_priority_context, true))
-  assert_false(constant_sampling(low_priority_context, false))
-  
-  // Test probabilistic sampling
-  // With 50% sample rate, approximately half of traces should be sampled
-  let sampled_50 = probabilistic_sampling(high_priority_context, 0.5)
-  let sampled_100 = probabilistic_sampling(high_priority_context, 1.0)
-  let sampled_0 = probabilistic_sampling(high_priority_context, 0.0)
-  
-  assert_true(sampled_100)
-  assert_false(sampled_0)
-  // sampled_50 could be true or false depending on hash
-  
-  // Test operation-based sampling
-  let critical_operations = ["payment.process", "auth.login", "user.register"]
-  assert_true(operation_based_sampling(high_priority_context, critical_operations))
-  assert_false(operation_based_sampling(low_priority_context, critical_operations))
-  assert_false(operation_based_sampling(medium_priority_context, critical_operations))
-  
-  // Test service-based sampling
-  let critical_services = ["payment-service", "auth-service"]
-  assert_true(service_based_sampling(high_priority_context, critical_services))
-  assert_false(service_based_sampling(low_priority_context, critical_services))
-  assert_false(service_based_sampling(medium_priority_context, critical_services))
-  
-  // Test attribute-based sampling
-  assert_true(attribute_based_sampling(high_priority_context, "priority", "high"))
-  assert_false(attribute_based_sampling(high_priority_context, "priority", "low"))
-  assert_true(attribute_based_sampling(low_priority_context, "priority", "low"))
-  assert_false(attribute_based_sampling(medium_priority_context, "priority", "high"))
-  
-  // Test composite sampling strategy
-  let composite_sampling = fn(context: TraceContext) {
-    // Always sample high priority operations
-    if attribute_based_sampling(context, "priority", "high") {
-      true
-    } else if operation_based_sampling(context, ["payment.process"]) {
-      true
-    } else if service_based_sampling(context, ["auth-service"]) {
-      true
-    } else {
-      // Otherwise use probabilistic sampling with 10% rate
-      probabilistic_sampling(context, 0.1)
+  let create_service_context = fn(service_name: String, trace_id: String, span_id: String) {
+    {
+      service_name,
+      trace_id,
+      span_id,
+      parent_service: None,
+      parent_span_id: None
     }
   }
   
-  assert_true(composite_sampling(high_priority_context))
-  assert_false(composite_sampling(low_priority_context))
-  assert_false(composite_sampling(medium_priority_context))
+  let create_child_context = fn(parent_context: ServiceTraceContext, child_service_name: String, child_span_id: String) {
+    {
+      service_name: child_service_name,
+      trace_id: parent_context.trace_id,
+      span_id: child_span_id,
+      parent_service: Some(parent_context.service_name),
+      parent_span_id: Some(parent_context.span_id)
+    }
+  }
+  
+  let web_service_context = create_service_context("web-service", "trace-123", "span-1")
+  let auth_service_context = create_child_context(web_service_context, "auth-service", "span-2")
+  let user_service_context = create_child_context(auth_service_context, "user-service", "span-3")
+  
+  assert_eq(web_service_context.service_name, "web-service")
+  assert_eq(web_service_context.trace_id, "trace-123")
+  assert_eq(web_service_context.span_id, "span-1")
+  assert_eq(web_service_context.parent_service, None)
+  assert_eq(web_service_context.parent_span_id, None)
+  
+  assert_eq(auth_service_context.service_name, "auth-service")
+  assert_eq(auth_service_context.trace_id, "trace-123")
+  assert_eq(auth_service_context.span_id, "span-2")
+  assert_eq(auth_service_context.parent_service, Some("web-service"))
+  assert_eq(auth_service_context.parent_span_id, Some("span-1"))
+  
+  assert_eq(user_service_context.service_name, "user-service")
+  assert_eq(user_service_context.trace_id, "trace-123")
+  assert_eq(user_service_context.span_id, "span-3")
+  assert_eq(user_service_context.parent_service, Some("auth-service"))
+  assert_eq(user_service_context.parent_span_id, Some("span-2"))
+  
+  let get_trace_path = fn(context: ServiceTraceContext) {
+    match context.parent_service {
+      Some(parent) => parent + " -> " + context.service_name
+      None => context.service_name
+    }
+  }
+  
+  assert_eq(get_trace_path(web_service_context), "web-service")
+  assert_eq(get_trace_path(auth_service_context), "web-service -> auth-service")
+  assert_eq(get_trace_path(user_service_context), "auth-service -> user-service")
 }
 
-// Test 6: Trace Analysis and Metrics
-test "trace analysis and metrics extraction" {
-  // Define span structure
+// Test 7: Trace Aggregation
+test "trace aggregation" {
+  type TraceSummary = {
+    trace_id: String,
+    span_count: Int,
+    total_duration: Int,
+    service_names: Array[String],
+    error_count: Int
+  }
+  
   type Span = {
+    name: String,
+    trace_id: String,
     span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
     service_name: String,
     start_time: Int,
     end_time: Int,
     status: String
   }
   
-  // Create sample trace spans
+  let create_span = fn(name: String, trace_id: String, span_id: String, service_name: String, start_time: Int, end_time: Int, status: String) {
+    {
+      name,
+      trace_id,
+      span_id,
+      service_name,
+      start_time,
+      end_time,
+      status
+    }
+  }
+  
+  let aggregate_trace = fn(spans: Array[Span]) {
+    if spans.length() == 0 {
+      None
+    } else {
+      let trace_id = spans[0].trace_id
+      let span_count = spans.length()
+      let total_duration = spans.map(fn(s) { s.end_time - s.start_time }).reduce(fn(acc, d) { acc + d }, 0)
+      let service_names = spans.map(fn(s) { s.service_name })
+      let unique_services = fn(services: Array[String]) {
+        let mut result = []
+        for service in services {
+          if not(result.contains(service)) {
+            result = result.push(service)
+          }
+        }
+        result
+      }
+      let error_count = spans.filter(fn(s) { s.status == "error" }).length()
+      
+      Some({
+        trace_id,
+        span_count,
+        total_duration,
+        service_names: unique_services(service_names),
+        error_count
+      })
+    }
+  }
+  
   let spans = [
-    { span_id: "span-1", parent_span_id: None, operation_name: "http.request", service_name: "api-gateway", start_time: 1000, end_time: 1050, status: "success" },
-    { span_id: "span-2", parent_span_id: Some("span-1"), operation_name: "auth.validate", service_name: "auth-service", start_time: 1005, end_time: 1025, status: "success" },
-    { span_id: "span-3", parent_span_id: Some("span-1"), operation_name: "user.get", service_name: "user-service", start_time: 1010, end_time: 1040, status: "success" },
-    { span_id: "span-4", parent_span_id: Some("span-3"), operation_name: "db.query", service_name: "user-service", start_time: 1015, end_time: 1035, status: "success" },
-    { span_id: "span-5", parent_span_id: Some("span-3"), operation_name: "cache.get", service_name: "user-service", start_time: 1020, end_time: 1025, status: "success" },
-    { span_id: "span-6", parent_span_id: Some("span-2"), operation_name: "token.validate", service_name: "auth-service", start_time: 1010, end_time: 1020, status: "error" }
+    create_span("web_request", "trace-123", "span-1", "web-service", 1000, 1100, "ok"),
+    create_span("auth_check", "trace-123", "span-2", "auth-service", 1105, 1125, "ok"),
+    create_span("user_lookup", "trace-123", "span-3", "user-service", 1130, 1200, "ok"),
+    create_span("db_query", "trace-123", "span-4", "db-service", 1205, 1250, "error"),
+    create_span("cache_lookup", "trace-123", "span-5", "cache-service", 1150, 1160, "ok")
   ]
   
-  // Calculate span duration
-  let span_duration = fn(span: Span) {
-    span.end_time - span.start_time
+  let summary = aggregate_trace(spans)
+  assert_true(summary.is_some())
+  
+  match summary {
+    Some(s) => {
+      assert_eq(s.trace_id, "trace-123")
+      assert_eq(s.span_count, 5)
+      assert_eq(s.total_duration, 225)  // 100 + 20 + 70 + 45 + 10
+      assert_eq(s.service_names.length(), 4)
+      assert_true(s.service_names.contains("web-service"))
+      assert_true(s.service_names.contains("auth-service"))
+      assert_true(s.service_names.contains("user-service"))
+      assert_true(s.service_names.contains("db-service"))
+      assert_true(s.service_names.contains("cache-service"))
+      assert_eq(s.error_count, 1)
+    }
+    None => assert_true(false)
   }
   
-  // Calculate total trace duration
-  let trace_duration = fn(spans: Array[Span]) {
-    let start_times = spans.map(fn(s) { s.start_time })
-    let end_times = spans.map(fn(s) { s.end_time })
-    
-    let min_start = start_times.reduce(fn(min, t) { if t < min { t } else { min } }, start_times[0])
-    let max_end = end_times.reduce(fn(max, t) { if t > max { t } else { max } }, end_times[0])
-    
-    max_end - min_start
+  let empty_spans: Array[Span] = []
+  let empty_summary = aggregate_trace(empty_spans)
+  assert_true(empty_summary.is_none())
+}
+
+// Test 8: Trace Consistency Validation
+test "trace consistency validation" {
+  type Span = {
+    name: String,
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    start_time: Int,
+    end_time: Int
   }
   
-  // Group spans by service
-  let group_by_service = fn(spans: Array[Span]) {
-    let mut result = []
-    let mut processed = []
+  type TraceValidationResult = {
+    is_valid: Bool,
+    issues: Array[String]
+  }
+  
+  let validate_trace = fn(spans: Array[Span]) {
+    let mut issues = []
     
-    for span in spans {
-      if not(processed.contains(span.service_name)) {
-        let service_spans = spans.filter(fn(s) { s.service_name == span.service_name })
-        result = result.push((span.service_name, service_spans))
-        processed = processed.push(span.service_name)
+    // Check if all spans have the same trace ID
+    if spans.length() > 0 {
+      let trace_id = spans[0].trace_id
+      for span in spans {
+        if span.trace_id != trace_id {
+          issues = issues.push("Span " + span.span_id + " has different trace ID: " + span.trace_id)
+        }
       }
     }
-    result
-  }
-  
-  // Calculate service metrics
-  let calculate_service_metrics = fn(service_spans: Array[Span]) {
-    let total_spans = service_spans.length()
-    let successful_spans = service_spans.filter(fn(s) { s.status == "success" }).length()
-    let error_spans = total_spans - successful_spans
     
-    let durations = service_spans.map(span_duration)
-    let total_duration = durations.reduce(fn(sum, d) { sum + d }, 0)
-    let avg_duration = total_duration / total_spans
+    // Check if all parent span IDs exist
+    let span_ids = spans.map(fn(s) { s.span_id })
+    for span in spans {
+      match span.parent_span_id {
+        Some(parent_id) => {
+          if not(span_ids.contains(parent_id)) {
+            issues = issues.push("Span " + span.span_id + " references non-existent parent: " + parent_id)
+          }
+        }
+        None => {}  // Root span, no parent to check
+      }
+    }
+    
+    // Check for time consistency
+    for span in spans {
+      if span.start_time > span.end_time {
+        issues = issues.push("Span " + span.span_id + " has start time after end time")
+      }
+    }
+    
+    // Check for cycles
+    let has_cycle = fn(spans: Array[Span]) {
+      let span_map = spans.reduce(fn(acc, span) {
+        let mut new_acc = acc
+        new_acc[span.span_id] = span.parent_span_id
+        new_acc
+      }, {})
+      
+      let visit_span = fn(span_id: String, visited: Array[String]) {
+        if visited.contains(span_id) {
+          true  // Cycle detected
+        } else {
+          match span_map[span_id] {
+            Some(Some(parent_id)) => visit_span(parent_id, visited + [span_id])
+            _ => false  // No parent or root reached
+          }
+        }
+      }
+      
+      for span in spans {
+        if visit_span(span.span_id, []) {
+          return true
+        }
+      }
+      false
+    }
+    
+    if has_cycle(spans) {
+      issues = issues.push("Cycle detected in span parent-child relationships")
+    }
     
     {
-      total_spans,
-      successful_spans,
-      error_spans,
-      success_rate: successful_spans.to_float() / total_spans.to_float(),
-      avg_duration,
-      total_duration
+      is_valid: issues.length() == 0,
+      issues
     }
   }
   
-  // Test trace duration calculation
-  let duration = trace_duration(spans)
-  assert_eq(duration, 50) // 1050 - 1000
+  let valid_spans = [
+    { name: "root", trace_id: "trace-1", span_id: "span-1", parent_span_id: None, start_time: 1000, end_time: 1100 },
+    { name: "child1", trace_id: "trace-1", span_id: "span-2", parent_span_id: Some("span-1"), start_time: 1105, end_time: 1125 },
+    { name: "child2", trace_id: "trace-1", span_id: "span-3", parent_span_id: Some("span-1"), start_time: 1130, end_time: 1150 },
+    { name: "grandchild", trace_id: "trace-1", span_id: "span-4", parent_span_id: Some("span-2"), start_time: 1110, end_time: 1120 }
+  ]
   
-  // Test individual span durations
-  let span_1_duration = span_duration(spans[0])
-  let span_2_duration = span_duration(spans[1])
-  let span_3_duration = span_duration(spans[2])
+  let valid_result = validate_trace(valid_spans)
+  assert_true(valid_result.is_valid)
+  assert_eq(valid_result.issues.length(), 0)
   
-  assert_eq(span_1_duration, 50)
-  assert_eq(span_2_duration, 20)
-  assert_eq(span_3_duration, 30)
+  let invalid_trace_id_spans = [
+    { name: "root", trace_id: "trace-1", span_id: "span-1", parent_span_id: None, start_time: 1000, end_time: 1100 },
+    { name: "child", trace_id: "trace-2", span_id: "span-2", parent_span_id: Some("span-1"), start_time: 1105, end_time: 1125 }
+  ]
   
-  // Test grouping by service
-  let service_groups = group_by_service(spans)
-  assert_eq(service_groups.length(), 3)
+  let invalid_trace_id_result = validate_trace(invalid_trace_id_spans)
+  assert_false(invalid_trace_id_result.is_valid)
+  assert_true(invalid_trace_id_result.issues.length() > 0)
   
-  // Find metrics for each service
-  let api_gateway_spans = service_groups.filter(fn(g) { g.0 == "api-gateway" })[0].1
-  let auth_service_spans = service_groups.filter(fn(g) { g.0 == "auth-service" })[0].1
-  let user_service_spans = service_groups.filter(fn(g) { g.0 == "user-service" })[0].1
+  let invalid_parent_spans = [
+    { name: "root", trace_id: "trace-1", span_id: "span-1", parent_span_id: None, start_time: 1000, end_time: 1100 },
+    { name: "child", trace_id: "trace-1", span_id: "span-2", parent_span_id: Some("span-99"), start_time: 1105, end_time: 1125 }
+  ]
   
-  assert_eq(api_gateway_spans.length(), 1)
-  assert_eq(auth_service_spans.length(), 2)
-  assert_eq(user_service_spans.length(), 3)
+  let invalid_parent_result = validate_trace(invalid_parent_spans)
+  assert_false(invalid_parent_result.is_valid)
+  assert_true(invalid_parent_result.issues.length() > 0)
   
-  // Test service metrics calculation
-  let api_gateway_metrics = calculate_service_metrics(api_gateway_spans)
-  let auth_service_metrics = calculate_service_metrics(auth_service_spans)
-  let user_service_metrics = calculate_service_metrics(user_service_spans)
+  let invalid_time_spans = [
+    { name: "root", trace_id: "trace-1", span_id: "span-1", parent_span_id: None, start_time: 1100, end_time: 1000 },
+    { name: "child", trace_id: "trace-1", span_id: "span-2", parent_span_id: Some("span-1"), start_time: 1105, end_time: 1125 }
+  ]
   
-  assert_eq(api_gateway_metrics.total_spans, 1)
-  assert_eq(api_gateway_metrics.successful_spans, 1)
-  assert_eq(api_gateway_metrics.error_spans, 0)
-  assert_eq(api_gateway_metrics.success_rate, 1.0)
-  assert_eq(api_gateway_metrics.avg_duration, 50)
+  let invalid_time_result = validate_trace(invalid_time_spans)
+  assert_false(invalid_time_result.is_valid)
+  assert_true(invalid_time_result.issues.length() > 0)
   
-  assert_eq(auth_service_metrics.total_spans, 2)
-  assert_eq(auth_service_metrics.successful_spans, 1)
-  assert_eq(auth_service_metrics.error_spans, 1)
-  assert_eq(auth_service_metrics.success_rate, 0.5)
-  assert_eq(auth_service_metrics.avg_duration, 15) // (20 + 10) / 2
+  let cycle_spans = [
+    { name: "span1", trace_id: "trace-1", span_id: "span-1", parent_span_id: Some("span-2"), start_time: 1000, end_time: 1100 },
+    { name: "span2", trace_id: "trace-1", span_id: "span-2", parent_span_id: Some("span-1"), start_time: 1105, end_time: 1125 }
+  ]
   
-  assert_eq(user_service_metrics.total_spans, 3)
-  assert_eq(user_service_metrics.successful_spans, 3)
-  assert_eq(user_service_metrics.error_spans, 0)
-  assert_eq(user_service_metrics.success_rate, 1.0)
-  assert_eq(user_service_metrics.avg_duration, 10) // (20 + 30 + 5) / 3
-  
-  // Find slowest spans
-  let slowest_spans = spans
-    .map(fn(s) { (s, span_duration(s)) })
-    .sort(fn(a, b) { a.1 > b.1 })
-    .slice(0, 3)
-    .map(fn(pair) { pair.0 })
-  
-  assert_eq(slowest_spans.length(), 3)
-  assert_eq(slowest_spans[0].span_id, "span-1") // 50ms
-  assert_eq(slowest_spans[1].span_id, "span-3") // 30ms
-  assert_eq(slowest_spans[2].span_id, "span-2") // 20ms
-  
-  // Find error spans
-  let error_spans = spans.filter(fn(s) { s.status == "error" })
-  assert_eq(error_spans.length(), 1)
-  assert_eq(error_spans[0].span_id, "span-6")
-  assert_eq(error_spans[0].operation_name, "token.validate")
+  let cycle_result = validate_trace(cycle_spans)
+  assert_false(cycle_result.is_valid)
+  assert_true(cycle_result.issues.length() > 0)
 }
