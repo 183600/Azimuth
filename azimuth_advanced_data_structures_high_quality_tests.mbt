@@ -1,870 +1,465 @@
-// Azimuth 高级数据结构测试用例
-// 专注于复杂数据结构操作和算法实现
+// Azimuth Telemetry System - Advanced Data Structures Tests
+// This file contains comprehensive test cases for advanced data structures
 
-// 测试1: 高效树结构操作
-test "高效树结构操作测试" {
-  // 定义树节点类型
-  type TreeNode = {
-    value: String,
-    children: Array[TreeNode],
-    metadata: Map[String, String]
+// Test 1: Tree Data Structure Operations
+test "tree data structure operations" {
+  // Test binary tree creation and traversal
+  let tree = BinaryTree::new()
+  BinaryTree::insert(tree, 5)
+  BinaryTree::insert(tree, 3)
+  BinaryTree::insert(tree, 7)
+  BinaryTree::insert(tree, 2)
+  BinaryTree::insert(tree, 4)
+  BinaryTree::insert(tree, 6)
+  BinaryTree::insert(tree, 8)
+  
+  // Test in-order traversal
+  let in_order_result = BinaryTree::in_order_traversal(tree)
+  assert_eq(in_order_result, [2, 3, 4, 5, 6, 7, 8])
+  
+  // Test pre-order traversal
+  let pre_order_result = BinaryTree::pre_order_traversal(tree)
+  assert_eq(pre_order_result, [5, 3, 2, 4, 7, 6, 8])
+  
+  // Test post-order traversal
+  let post_order_result = BinaryTree::post_order_traversal(tree)
+  assert_eq(post_order_result, [2, 4, 3, 6, 8, 7, 5])
+  
+  // Test search functionality
+  assert_true(BinaryTree::search(tree, 5))
+  assert_true(BinaryTree::search(tree, 2))
+  assert_false(BinaryTree::search(tree, 10))
+  
+  // Test tree properties
+  assert_eq(BinaryTree::size(tree), 7)
+  assert_eq(BinaryTree::height(tree), 3)
+  assert_true(BinaryTree::is_balanced(tree))
+}
+
+// Test 2: Graph Data Structure Operations
+test "graph data structure operations" {
+  // Test directed graph creation and operations
+  let graph = DirectedGraph::new()
+  
+  // Add vertices
+  let v1 = DirectedGraph::add_vertex(graph, "A")
+  let v2 = DirectedGraph::add_vertex(graph, "B")
+  let v3 = DirectedGraph::add_vertex(graph, "C")
+  let v4 = DirectedGraph::add_vertex(graph, "D")
+  
+  // Add edges
+  DirectedGraph::add_edge(graph, v1, v2, 5)
+  DirectedGraph::add_edge(graph, v1, v3, 3)
+  DirectedGraph::add_edge(graph, v2, v4, 2)
+  DirectedGraph::add_edge(graph, v3, v4, 4)
+  
+  // Test vertex count
+  assert_eq(DirectedGraph::vertex_count(graph), 4)
+  
+  // Test edge count
+  assert_eq(DirectedGraph::edge_count(graph), 4)
+  
+  // Test adjacency
+  assert_true(DirectedGraph::has_edge(graph, v1, v2))
+  assert_true(DirectedGraph::has_edge(graph, v1, v3))
+  assert_false(DirectedGraph::has_edge(graph, v4, v1))
+  
+  // Test path finding
+  let path = DirectedGraph::find_path(graph, v1, v4)
+  assert_eq(path.length(), 3)  // A -> B -> D or A -> C -> D
+  
+  // Test shortest path
+  let shortest_path = DirectedGraph::shortest_path(graph, v1, v4)
+  assert_eq(shortest_path.length(), 3)  // A -> B -> D (weight 5+2=7 is shorter than A -> C -> D weight 3+4=7)
+}
+
+// Test 3: Priority Queue Operations
+test "priority queue operations" {
+  // Test max priority queue
+  let max_pq = MaxPriorityQueue::new()
+  MaxPriorityQueue::push(max_pq, 5, "high")
+  MaxPriorityQueue::push(max_pq, 3, "medium")
+  MaxPriorityQueue::push(max_pq, 7, "highest")
+  MaxPriorityQueue::push(max_pq, 1, "low")
+  
+  // Test size
+  assert_eq(MaxPriorityQueue::size(max_pq), 4)
+  
+  // Test peek (should be highest priority)
+  assert_eq(MaxPriorityQueue::peek(max_pq), Some("highest"))
+  
+  // Test pop (should return in priority order)
+  assert_eq(MaxPriorityQueue::pop(max_pq), Some("highest"))
+  assert_eq(MaxPriorityQueue::pop(max_pq), Some("high"))
+  assert_eq(MaxPriorityQueue::pop(max_pq), Some("medium"))
+  assert_eq(MaxPriorityQueue::pop(max_pq), Some("low"))
+  assert_eq(MaxPriorityQueue::pop(max_pq), None)
+  
+  // Test min priority queue
+  let min_pq = MinPriorityQueue::new()
+  MinPriorityQueue::push(min_pq, 5, "high")
+  MinPriorityQueue::push(min_pq, 3, "medium")
+  MinPriorityQueue::push(min_pq, 7, "highest")
+  MinPriorityQueue::push(min_pq, 1, "low")
+  
+  // Test peek (should be lowest priority)
+  assert_eq(MinPriorityQueue::peek(min_pq), Some("low"))
+  
+  // Test pop (should return in reverse priority order)
+  assert_eq(MinPriorityQueue::pop(min_pq), Some("low"))
+  assert_eq(MinPriorityQueue::pop(min_pq), Some("medium"))
+  assert_eq(MinPriorityQueue::pop(min_pq), Some("high"))
+  assert_eq(MinPriorityQueue::pop(min_pq), Some("highest"))
+  assert_eq(MinPriorityQueue::pop(min_pq), None)
+}
+
+// Test 4: Hash Table Operations
+test "hash table operations" {
+  // Test hash table creation and operations
+  let hash_table = HashTable::new()
+  
+  // Test insertion
+  HashTable::insert(hash_table, "key1", "value1")
+  HashTable::insert(hash_table, "key2", "value2")
+  HashTable::insert(hash_table, "key3", "value3")
+  
+  // Test size
+  assert_eq(HashTable::size(hash_table), 3)
+  
+  // Test lookup
+  assert_eq(HashTable::get(hash_table, "key1"), Some("value1"))
+  assert_eq(HashTable::get(hash_table, "key2"), Some("value2"))
+  assert_eq(HashTable::get(hash_table, "key3"), Some("value3"))
+  assert_eq(HashTable::get(hash_table, "nonexistent"), None)
+  
+  // Test update
+  HashTable::insert(hash_table, "key1", "new_value1")
+  assert_eq(HashTable::get(hash_table, "key1"), Some("new_value1"))
+  
+  // Test removal
+  HashTable::remove(hash_table, "key2")
+  assert_eq(HashTable::get(hash_table, "key2"), None)
+  assert_eq(HashTable::size(hash_table), 2)
+  
+  // Test contains
+  assert_true(HashTable::contains(hash_table, "key1"))
+  assert_true(HashTable::contains(hash_table, "key3"))
+  assert_false(HashTable::contains(hash_table, "key2"))
+  
+  // Test keys and values
+  let keys = HashTable::keys(hash_table)
+  let values = HashTable::values(hash_table)
+  assert_eq(keys.length(), 2)
+  assert_eq(values.length(), 2)
+}
+
+// Test 5: Stack and Queue Operations
+test "stack and queue operations" {
+  // Test stack operations
+  let stack = Stack::new()
+  
+  // Test push
+  Stack::push(stack, 1)
+  Stack::push(stack, 2)
+  Stack::push(stack, 3)
+  
+  // Test size
+  assert_eq(Stack::size(stack), 3)
+  
+  // Test peek
+  assert_eq(Stack::peek(stack), Some(3))
+  
+  // Test pop (LIFO)
+  assert_eq(Stack::pop(stack), Some(3))
+  assert_eq(Stack::pop(stack), Some(2))
+  assert_eq(Stack::pop(stack), Some(1))
+  assert_eq(Stack::pop(stack), None)
+  
+  // Test queue operations
+  let queue = Queue::new()
+  
+  // Test enqueue
+  Queue::enqueue(queue, "first")
+  Queue::enqueue(queue, "second")
+  Queue::enqueue(queue, "third")
+  
+  // Test size
+  assert_eq(Queue::size(queue), 3)
+  
+  // Test peek
+  assert_eq(Queue::peek(queue), Some("first"))
+  
+  // Test dequeue (FIFO)
+  assert_eq(Queue::dequeue(queue), Some("first"))
+  assert_eq(Queue::dequeue(queue), Some("second"))
+  assert_eq(Queue::dequeue(queue), Some("third"))
+  assert_eq(Queue::dequeue(queue), None)
+}
+
+// Test 6: Set Operations
+test "set operations" {
+  // Test set creation and operations
+  let set1 = Set::new()
+  let set2 = Set::new()
+  
+  // Test insertion
+  Set::insert(set1, 1)
+  Set::insert(set1, 2)
+  Set::insert(set1, 3)
+  
+  Set::insert(set2, 3)
+  Set::insert(set2, 4)
+  Set::insert(set2, 5)
+  
+  // Test size
+  assert_eq(Set::size(set1), 3)
+  assert_eq(Set::size(set2), 3)
+  
+  // Test contains
+  assert_true(Set::contains(set1, 1))
+  assert_true(Set::contains(set1, 2))
+  assert_true(Set::contains(set1, 3))
+  assert_false(Set::contains(set1, 4))
+  
+  // Test union
+  let union_set = Set::union(set1, set2)
+  assert_eq(Set::size(union_set), 5)
+  assert_true(Set::contains(union_set, 1))
+  assert_true(Set::contains(union_set, 5))
+  
+  // Test intersection
+  let intersection_set = Set::intersection(set1, set2)
+  assert_eq(Set::size(intersection_set), 1)
+  assert_true(Set::contains(intersection_set, 3))
+  
+  // Test difference
+  let difference_set = Set::difference(set1, set2)
+  assert_eq(Set::size(difference_set), 2)
+  assert_true(Set::contains(difference_set, 1))
+  assert_true(Set::contains(difference_set, 2))
+  assert_false(Set::contains(difference_set, 3))
+  
+  // Test subset
+  let subset = Set::new()
+  Set::insert(subset, 1)
+  Set::insert(subset, 2)
+  assert_true(Set::is_subset(subset, set1))
+  assert_false(Set::is_subset(set1, subset))
+}
+
+// Test 7: Linked List Operations
+test "linked list operations" {
+  // Test singly linked list
+  let list = LinkedList::new()
+  
+  // Test insertion at end
+  LinkedList::append(list, 1)
+  LinkedList::append(list, 2)
+  LinkedList::append(list, 3)
+  
+  // Test size
+  assert_eq(LinkedList::size(list), 3)
+  
+  // Test get by index
+  assert_eq(LinkedList::get(list, 0), Some(1))
+  assert_eq(LinkedList::get(list, 1), Some(2))
+  assert_eq(LinkedList::get(list, 2), Some(3))
+  assert_eq(LinkedList::get(list, 3), None)
+  
+  // Test insertion at beginning
+  LinkedList::prepend(list, 0)
+  assert_eq(LinkedList::get(list, 0), Some(0))
+  assert_eq(LinkedList::get(list, 1), Some(1))
+  assert_eq(LinkedList::size(list), 4)
+  
+  // Test insertion at specific position
+  LinkedList::insert_at(list, 2, 5)
+  assert_eq(LinkedList::get(list, 2), Some(5))
+  assert_eq(LinkedList::get(list, 3), Some(2))
+  assert_eq(LinkedList::size(list), 5)
+  
+  // Test removal
+  LinkedList::remove_at(list, 2)
+  assert_eq(LinkedList::get(list, 2), Some(2))
+  assert_eq(LinkedList::size(list), 4)
+  
+  // Test conversion to array
+  let array = LinkedList::to_array(list)
+  assert_eq(array, [0, 1, 2, 3])
+}
+
+// Test 8: Advanced Tree Operations
+test "advanced tree operations" {
+  // Test AVL tree (self-balancing binary search tree)
+  let avl_tree = AVLTree::new()
+  
+  // Insert elements that would cause imbalance in regular BST
+  AVLTree::insert(avl_tree, 10)
+  AVLTree::insert(avl_tree, 20)
+  AVLTree::insert(avl_tree, 30)
+  AVLTree::insert(avl_tree, 40)
+  AVLTree::insert(avl_tree, 50)
+  
+  // Test that tree remains balanced
+  assert_true(AVLTree::is_balanced(avl_tree))
+  
+  // Test search
+  assert_true(AVLTree::search(avl_tree, 30))
+  assert_false(AVLTree::search(avl_tree, 25))
+  
+  // Test removal
+  AVLTree::remove(avl_tree, 20)
+  assert_false(AVLTree::search(avl_tree, 20))
+  assert_true(AVLTree::is_balanced(avl_tree))
+  
+  // Test red-black tree
+  let rb_tree = RedBlackTree::new()
+  
+  // Insert elements
+  RedBlackTree::insert(rb_tree, 10)
+  RedBlackTree::insert(rb_tree, 20)
+  RedBlackTree::insert(rb_tree, 30)
+  RedBlackTree::insert(rb_tree, 15)
+  RedBlackTree::insert(rb_tree, 25)
+  
+  // Test that tree remains balanced
+  assert_true(RedBlackTree::is_balanced(rb_tree))
+  
+  // Test search
+  assert_true(RedBlackTree::search(rb_tree, 15))
+  assert_false(RedBlackTree::search(rb_tree, 35))
+  
+  // Test in-order traversal
+  let in_order = RedBlackTree::in_order_traversal(rb_tree)
+  assert_eq(in_order, [10, 15, 20, 25, 30])
+}
+
+// Test 9: Advanced Graph Algorithms
+test "advanced graph algorithms" {
+  // Test weighted undirected graph
+  let graph = WeightedGraph::new()
+  
+  // Add vertices
+  let v1 = WeightedGraph::add_vertex(graph, "A")
+  let v2 = WeightedGraph::add_vertex(graph, "B")
+  let v3 = WeightedGraph::add_vertex(graph, "C")
+  let v4 = WeightedGraph::add_vertex(graph, "D")
+  let v5 = WeightedGraph::add_vertex(graph, "E")
+  
+  // Add edges with weights
+  WeightedGraph::add_edge(graph, v1, v2, 2)
+  WeightedGraph::add_edge(graph, v1, v3, 4)
+  WeightedGraph::add_edge(graph, v2, v3, 1)
+  WeightedGraph::add_edge(graph, v2, v4, 7)
+  WeightedGraph::add_edge(graph, v3, v4, 3)
+  WeightedGraph::add_edge(graph, v3, v5, 5)
+  WeightedGraph::add_edge(graph, v4, v5, 1)
+  
+  // Test Dijkstra's algorithm
+  let distances = WeightedGraph::dijkstra(graph, v1)
+  assert_eq(distances[v1], 0)  // Distance to itself
+  assert_eq(distances[v2], 2)  // A -> B
+  assert_eq(distances[v3], 3)  // A -> B -> C
+  assert_eq(distances[v4], 6)  // A -> B -> C -> D or A -> B -> D
+  assert_eq(distances[v5], 7)  // A -> B -> C -> D -> E or A -> B -> C -> E
+  
+  // Test minimum spanning tree (Prim's algorithm)
+  let mst = WeightedGraph::prim_mst(graph)
+  assert_eq(mst.length(), 4)  // 5 vertices, 4 edges in MST
+  
+  // Test minimum spanning tree (Kruskal's algorithm)
+  let mst_kruskal = WeightedGraph::kruskal_mst(graph)
+  assert_eq(mst_kruskal.length(), 4)  // 5 vertices, 4 edges in MST
+  
+  // Test connected components
+  let components = WeightedGraph::connected_components(graph)
+  assert_eq(components.length(), 1)  // All vertices are connected
+  
+  // Test topological sort
+  let dag = DirectedAcyclicGraph::new()
+  let a = DirectedAcyclicGraph::add_vertex(dag, "A")
+  let b = DirectedAcyclicGraph::add_vertex(dag, "B")
+  let c = DirectedAcyclicGraph::add_vertex(dag, "C")
+  let d = DirectedAcyclicGraph::add_vertex(dag, "D")
+  
+  DirectedAcyclicGraph::add_edge(dag, a, b)
+  DirectedAcyclicGraph::add_edge(dag, a, c)
+  DirectedAcyclicGraph::add_edge(dag, b, d)
+  DirectedAcyclicGraph::add_edge(dag, c, d)
+  
+  let topological_order = DirectedAcyclicGraph::topological_sort(dag)
+  // A should come before B and C, and B and C should come before D
+  let a_index = topological_order.index_of(a)
+  let b_index = topological_order.index_of(b)
+  let c_index = topological_order.index_of(c)
+  let d_index = topological_order.index_of(d)
+  
+  assert_true(a_index < b_index)
+  assert_true(a_index < c_index)
+  assert_true(b_index < d_index)
+  assert_true(c_index < d_index)
+}
+
+// Test 10: Advanced Data Structure Performance
+test "advanced data structure performance" {
+  // Test performance with large datasets
+  let large_array = Array::new(10000)
+  for i in 0..10000 {
+    large_array[i] = i
   }
   
-  // 创建树节点
-  let create_node = fn(value: String) {
-    {
-      value,
-      children: [],
-      metadata: Map::new()
-    }
-  }
+  // Test binary search on sorted array
+  let index = binary_search(large_array, 5000)
+  assert_eq(index, Some(5000))
   
-  // 添加子节点
-  let add_child = fn(parent: TreeNode, child: TreeNode) {
-    { parent | children: parent.children.push(child) }
-  }
-  
-  // 构建测试树结构
-  let root = create_node("root")
-  let child1 = create_node("child1")
-  let child2 = create_node("child2")
-  let child3 = create_node("child3")
-  let grandchild1 = create_node("grandchild1")
-  let grandchild2 = create_node("grandchild2")
-  
-  // 构建树结构
-  let tree_with_child1 = add_child(root, child1)
-  let tree_with_child2 = add_child(tree_with_child1, child2)
-  let tree_with_child3 = add_child(tree_with_child2, child3)
-  
-  let child1_with_grandchild1 = add_child(child1, grandchild1)
-  let child2_with_grandchild2 = add_child(child2, grandchild2)
-  
-  // 验证树结构
-  assert_eq(tree_with_child3.children.length(), 3)
-  assert_eq(tree_with_child3.children[0].value, "child1")
-  assert_eq(tree_with_child3.children[1].value, "child2")
-  assert_eq(tree_with_child3.children[2].value, "child3")
-  
-  // 深度优先遍历
-  let dfs_traverse = fn(node: TreeNode) {
-    let mut result = []
-    let mut stack = [node]
-    
-    while stack.length() > 0 {
-      let current = stack.pop()
-      result = result.push(current.value)
-      
-      // 反向添加子节点以保持顺序
-      for i in reverse(0..current.children.length()) {
-        stack = stack.push(current.children[i])
-      }
-    }
-    
-    result
-  }
-  
-  let dfs_result = dfs_traverse(tree_with_child3)
-  assert_eq(dfs_result.length(), 6)  // root + 3 children + 2 grandchildren
-  assert_eq(dfs_result[0], "root")
-  
-  // 广度优先遍历
-  let bfs_traverse = fn(node: TreeNode) {
-    let mut result = []
-    let mut queue = [node]
-    
-    while queue.length() > 0 {
-      let current = queue.shift()
-      result = result.push(current.value)
-      
-      for child in current.children {
-        queue = queue.push(child)
-      }
-    }
-    
-    result
-  }
-  
-  let bfs_result = bfs_traverse(tree_with_child3)
-  assert_eq(bfs_result[0], "root")
-  assert_eq(bfs_result[1], "child1")
-  assert_eq(bfs_result[2], "child2")
-  assert_eq(bfs_result[3], "child3")
-  
-  // 计算树深度
-  let tree_depth = fn(node: TreeNode) {
-    if node.children.length() == 0 {
-      1
-    } else {
-      let max_child_depth = node.children
-        .map(tree_depth)
-        .reduce(fn(max, depth) { if depth > max { depth } else { max } }, 0)
-      max_child_depth + 1
-    }
-  }
-  
-  assert_eq(tree_depth(tree_with_child3), 3)  // root -> child -> grandchild
-  
-  // 查找节点
-  let find_node = fn(node: TreeNode, target: String) {
-    let mut result = None
-    let mut stack = [node]
-    
-    while stack.length() > 0 and result == None {
-      let current = stack.pop()
-      if current.value == target {
-        result = Some(current)
-      } else {
-        for child in current.children {
-          stack = stack.push(child)
-        }
-      }
-    }
-    
-    result
-  }
-  
-  let found = find_node(tree_with_child3, "child2")
-  assert_true(found != None)
-  
-  match found {
-    Some(node) => assert_eq(node.value, "child2")
-    None => assert_true(false)
-  }
-  
-  let not_found = find_node(tree_with_child3, "nonexistent")
+  let not_found = binary_search(large_array, 15000)
   assert_eq(not_found, None)
-}
-
-// 测试2: 高性能图算法
-test "高性能图算法测试" {
-  // 定义图结构
-  type Graph = {
-    nodes: Map[String, Map[String, Float]],
-    directed: Bool
+  
+  // Test heap operations with large dataset
+  let heap = MaxHeap::new()
+  for i in 0..10000 {
+    MaxHeap::push(heap, i)
   }
   
-  // 创建图
-  let create_graph = fn(directed: Bool) {
-    {
-      nodes: Map::new(),
-      directed
-    }
-  }
+  // Test that heap maintains max property
+  assert_eq(MaxHeap::peek(heap), Some(9999))
   
-  // 添加节点
-  let add_node = fn(graph: Graph, node: String) {
-    if not(graph.nodes.contains(node)) {
-      { graph | nodes: graph.nodes.set(node, Map::new()) }
-    } else {
-      graph
-    }
-  }
-  
-  // 添加边
-  let add_edge = fn(graph: Graph, from: String, to: String, weight: Float) {
-    let graph_with_nodes = add_node(add_node(graph, from), to)
-    let from_edges = graph_with_nodes.nodes.get(from)
-    
-    match from_edges {
-      Some(edges) => {
-        let updated_edges = edges.set(to, weight)
-        let updated_nodes = graph_with_nodes.nodes.set(from, updated_edges)
-        { graph_with_nodes | nodes: updated_nodes }
-      }
-      None => graph_with_nodes
-    }
-  }
-  
-  // 构建测试图
-  let initial_graph = create_graph(false)  // 无向图
-  let graph = add_edge(add_edge(add_edge(initial_graph, "A", "B", 1.0), "B", "C", 2.0), "C", "D", 1.5)
-  let graph_with_extra = add_edge(add_edge(graph, "A", "C", 4.0), "B", "D", 3.0)
-  
-  // 验证图结构
-  assert_true(graph_with_extra.nodes.contains("A"))
-  assert_true(graph_with_extra.nodes.contains("B"))
-  assert_true(graph_with_extra.nodes.contains("C"))
-  assert_true(graph_with_extra.nodes.contains("D"))
-  
-  // Dijkstra最短路径算法
-  let dijkstra = fn(graph: Graph, start: String, end: String) {
-    let mut distances = Map::new()
-    let mut visited = Set::new()
-    let mut previous = Map::new()
-    
-    // 初始化距离
-    for node in graph.nodes.keys() {
-      distances = distances.set(node, if node == start { 0.0 } else { Float::infinity })
-    }
-    
-    while visited.size() < graph.nodes.size() {
-      // 找到未访问节点中距离最小的
-      let mut current = None
-      let mut min_distance = Float::infinity()
-      
-      for node in graph.nodes.keys() {
-        if not(visited.contains(node)) {
-          let distance = distances.get(node)
-          match distance {
-            Some(d) => {
-              if d < min_distance {
-                min_distance = d
-                current = Some(node)
-              }
-            }
-            None => {}
-          }
-        }
-      }
-      
-      match current {
-        Some(curr) => {
-          visited = visited.add(curr)
-          
-          // 更新邻居距离
-          let neighbors = graph.nodes.get(curr)
-          match neighbors {
-            Some(edges) => {
-              for (neighbor, weight) in edges {
-                if not(visited.contains(neighbor)) {
-                  let alt = distances.get(curr) + weight
-                  match alt {
-                    Some(alt_dist) => {
-                      let current_dist = distances.get(neighbor)
-                      match current_dist {
-                        Some(curr_dist) => {
-                          if alt_dist < curr_dist {
-                            distances = distances.set(neighbor, alt_dist)
-                            previous = previous.set(neighbor, curr)
-                          }
-                        }
-                        None => {}
-                      }
-                    }
-                    None => {}
-                  }
-                }
-              }
-            }
-            None => {}
-          }
-        }
-        None => break
-      }
-    }
-    
-    // 构建路径
-    let mut path = []
-    let mut current = end
-    
-    while previous.contains(current) {
-      path = path.push(current)
-      match previous.get(current) {
-        Some(prev) => current = prev
-        None => break
-      }
-    }
-    
-    if current == start {
-      path = path.push(start)
-      path.reverse()
-      Some(path)
-    } else {
-      None
-    }
-  }
-  
-  // 测试最短路径
-  let shortest_path = dijkstra(graph_with_extra, "A", "D")
-  assert_true(shortest_path != None)
-  
-  match shortest_path {
-    Some(path) => {
-      assert_eq(path.length(), 3)  // A -> B -> C -> D or A -> C -> D
-      assert_eq(path[0], "A")
-      assert_eq(path[path.length() - 1], "D")
-    }
-    None => assert_true(false)
-  }
-  
-  // 检测环
-  let has_cycle = fn(graph: Graph) {
-    let mut visited = Set::new()
-    let mut recursion_stack = Set::new()
-    
-    let detect_cycle_util = fn(node: String) {
-      if recursion_stack.contains(node) {
-        true
-      } else if visited.contains(node) {
-        false
-      } else {
-        visited = visited.add(node)
-        recursion_stack = recursion_stack.add(node)
-        
-        let neighbors = graph.nodes.get(node)
-        match neighbors {
-          Some(edges) => {
-            for neighbor in edges.keys() {
-              if detect_cycle_util(neighbor) {
-                return true
-              }
-            }
-          }
-          None => {}
-        }
-        
-        recursion_stack = recursion_stack.remove(node)
-        false
-      }
-    }
-    
-    for node in graph.nodes.keys() {
-      if not(visited.contains(node)) {
-        if detect_cycle_util(node) {
-          return true
-        }
-      }
-    }
-    
-    false
-  }
-  
-  // 创建有环图测试
-  let cyclic_graph = add_edge(add_edge(add_edge(initial_graph, "X", "Y", 1.0), "Y", "Z", 1.0), "Z", "X", 1.0)
-  assert_true(has_cycle(cyclic_graph))
-  assert_false(has_cycle(graph_with_extra))
-}
-
-// 测试3: 高级优先队列实现
-test "高级优先队列实现测试" {
-  // 定义优先队列项
-  type PriorityQueueItem[T] = {
-    value: T,
-    priority: Int,
-    insertion_order: Int
-  }
-  
-  // 定义优先队列
-  type PriorityQueue[T] = {
-    items: Array[PriorityQueueItem[T]],
-    counter: Int
-  }
-  
-  // 创建优先队列
-  let create_priority_queue = fn() {
-    {
-      items: [],
-      counter: 0
-    }
-  }
-  
-  // 添加元素
-  let enqueue = fn(queue: PriorityQueue[T], value: T, priority: Int) {
-    let item = {
-      value,
-      priority,
-      insertion_order: queue.counter
-    }
-    
-    let mut new_items = queue.items
-    let mut inserted = false
-    
-    // 按优先级插入，相同优先级按插入顺序
-    for i in 0..new_items.length() {
-      if priority > new_items[i].priority or 
-         (priority == new_items[i].priority and queue.counter < new_items[i].insertion_order) {
-        new_items = new_items.insert(i, item)
-        inserted = true
-        break
-      }
-    }
-    
-    if not(inserted) {
-      new_items = new_items.push(item)
-    }
-    
-    {
-      items: new_items,
-      counter: queue.counter + 1
-    }
-  }
-  
-  // 移除元素
-  let dequeue = fn(queue: PriorityQueue[T]) {
-    if queue.items.length() == 0 {
-      (queue, None)
-    } else {
-      let first = queue.items[0]
-      let remaining_items = queue.items.slice(1, queue.items.length())
-      (
-        {
-          items: remaining_items,
-          counter: queue.counter
-        },
-        Some(first.value)
-      )
-    }
-  }
-  
-  // 查看元素
-  let peek = fn(queue: PriorityQueue[T]) {
-    if queue.items.length() == 0 {
-      None
-    } else {
-      Some(queue.items[0].value)
-    }
-  }
-  
-  // 测试优先队列操作
-  let mut queue = create_priority_queue()
-  
-  // 添加不同优先级的元素
-  queue = enqueue(queue, "low priority task", 1)
-  queue = enqueue(queue, "high priority task", 3)
-  queue = enqueue(queue, "medium priority task", 2)
-  queue = enqueue(queue, "another high priority task", 3)
-  
-  // 验证队列顺序
-  assert_eq(peek(queue), Some("high priority task"))
-  
-  // 出队测试
-  let (queue1, item1) = dequeue(queue)
-  assert_eq(item1, Some("high priority task"))
-  assert_eq(peek(queue1), Some("another high priority task"))
-  
-  let (queue2, item2) = dequeue(queue1)
-  assert_eq(item2, Some("another high priority task"))
-  assert_eq(peek(queue2), Some("medium priority task"))
-  
-  let (queue3, item3) = dequeue(queue2)
-  assert_eq(item3, Some("medium priority task"))
-  assert_eq(peek(queue3), Some("low priority task"))
-  
-  let (queue4, item4) = dequeue(queue3)
-  assert_eq(item4, Some("low priority task"))
-  assert_eq(peek(queue4), None)
-  
-  // 测试复杂数据类型
-  type Task = {
-    id: Int,
-    name: String,
-    estimated_time: Float
-  }
-  
-  let task_queue = create_priority_queue()
-  let task1 = { id: 1, name: "Database backup", estimated_time: 30.0 }
-  let task2 = { id: 2, name: "Security scan", estimated_time: 15.0 }
-  let task3 = { id: 3, name: "Log cleanup", estimated_time: 5.0 }
-  
-  let task_queue1 = enqueue(enqueue(enqueue(task_queue, task1, 2), task2, 3), task3, 1)
-  
-  let (task_queue2, next_task) = dequeue(task_queue1)
-  match next_task {
-    Some(task) => assert_eq(task.id, 2)  // Security scan has highest priority
-    None => assert_true(false)
-  }
-}
-
-// 测试4: 智能缓存系统
-test "智能缓存系统测试" {
-  // 定义缓存项
-  type CacheItem[T] = {
-    value: T,
-    access_count: Int,
-    last_accessed: Int,
-    created_at: Int,
-    size: Int
-  }
-  
-  // 定义缓存配置
-  type CacheConfig = {
-    max_size: Int,
-    max_memory: Int,
-    ttl_seconds: Int,
-    eviction_policy: String  // "LRU", "LFU", "FIFO"
-  }
-  
-  // 定义缓存
-  type Cache[T] = {
-    items: Map[String, CacheItem[T]],
-    config: CacheConfig,
-    current_memory: Int,
-    access_order: Array[String]
-  }
-  
-  // 创建缓存
-  let create_cache = fn(config: CacheConfig) {
-    {
-      items: Map::new(),
-      config,
-      current_memory: 0,
-      access_order: []
-    }
-  }
-  
-  // 计算对象大小（简化版）
-  let calculate_size = fn(value: T) {
-    // 简化实现，实际应用中需要更复杂的计算
+  // Test extracting all elements
+  let mut last_value = 10000
+  while MaxHeap::size(heap) > 0 {
+    let value = MaxHeap::pop(heap)
     match value {
-      String(s) => s.length(),
-      Int(_) => 8,
-      Float(_) => 8,
-      _ => 16  // 默认大小
+      Some(v) => {
+        assert_true(v <= last_value)
+        last_value = v
+      }
+      None => assert_true(false)
     }
   }
   
-  // 获取当前时间戳
-  let current_time = fn() { 1640995200 }  // 固定时间戳用于测试
+  // Test trie (prefix tree) operations
+  let trie = Trie::new()
+  let words = ["apple", "app", "application", "banana", "band", "bandana"]
   
-  // 添加缓存项
-  let put = fn(cache: Cache[T], key: String, value: T) {
-    let now = current_time()
-    let size = calculate_size(value)
-    let item = {
-      value,
-      access_count: 1,
-      last_accessed: now,
-      created_at: now,
-      size
-    }
-    
-    // 检查是否需要驱逐
-    let needs_eviction = cache.current_memory + size > cache.config.max_memory or
-                       cache.items.size() >= cache.config.max_size
-    
-    let updated_cache = if needs_eviction {
-      // 简化的LRU驱逐策略
-      if cache.access_order.length() > 0 {
-        let oldest_key = cache.access_order[0]
-        let removed_item = cache.items.get(oldest_key)
-        
-        match removed_item {
-          Some(removed) => {
-            let new_items = cache.items.remove(oldest_key)
-            let new_access_order = cache.access_order.filter(fn(k) { k != oldest_key })
-            {
-              items: new_items,
-              config: cache.config,
-              current_memory: cache.current_memory - removed.size,
-              access_order: new_access_order
-            }
-          }
-          None => cache
-        }
-      } else {
-        cache
-      }
-    } else {
-      cache
-    }
-    
-    // 更新访问顺序
-    let new_access_order = updated_cache.access_order.filter(fn(k) { k != key }).push(key)
-    
-    // 添加新项
-    let new_items = updated_cache.items.set(key, item)
-    let new_memory = updated_cache.current_memory + size
-    
-    {
-      items: new_items,
-      config: updated_cache.config,
-      current_memory: new_memory,
-      access_order: new_access_order
-    }
+  for word in words {
+    Trie::insert(trie, word)
   }
   
-  // 获取缓存项
-  let get = fn(cache: Cache[T], key: String) {
-    let item = cache.items.get(key)
-    match item {
-      Some(cache_item) => {
-        let now = current_time()
-        
-        // 检查TTL
-        if now - cache_item.created_at > cache.config.ttl_seconds {
-          (cache, None)  // 已过期
-        } else {
-          // 更新访问信息
-          let updated_item = {
-            value: cache_item.value,
-            access_count: cache_item.access_count + 1,
-            last_accessed: now,
-            created_at: cache_item.created_at,
-            size: cache_item.size
-          }
-          
-          let new_items = cache.items.set(key, updated_item)
-          let new_access_order = cache.access_order.filter(fn(k) { k != key }).push(key)
-          
-          let updated_cache = {
-            items: new_items,
-            config: cache.config,
-            current_memory: cache.current_memory,
-            access_order: new_access_order
-          }
-          
-          (updated_cache, Some(cache_item.value))
-        }
-      }
-      None => (cache, None)
-    }
-  }
+  // Test search
+  assert_true(Trie::search(trie, "apple"))
+  assert_true(Trie::search(trie, "app"))
+  assert_false(Trie::search(trie, "appl"))
   
-  // 创建缓存配置
-  let cache_config = {
-    max_size: 3,
-    max_memory: 100,
-    ttl_seconds: 3600,
-    eviction_policy: "LRU"
-  }
+  // Test prefix search
+  let app_words = Trie::prefix_search(trie, "app")
+  assert_eq(app_words.length(), 3)  // app, apple, application
   
-  // 创建缓存
-  let mut cache = create_cache(cache_config)
+  let ban_words = Trie::prefix_search(trie, "ban")
+  assert_eq(ban_words.length(), 3)  // banana, band, bandana
   
-  // 添加缓存项
-  cache = put(cache, "key1", "value1")
-  cache = put(cache, "key2", "value2")
-  cache = put(cache, "key3", "value3")
-  
-  // 验证缓存状态
-  assert_eq(cache.items.size(), 3)
-  assert_eq(cache.current_memory, 18)  // 3个字符串的长度之和
-  
-  // 获取缓存项
-  let (cache1, value1) = get(cache, "key2")
-  assert_eq(value1, Some("value2"))
-  
-  // 验证访问计数增加
-  let key2_item = cache1.items.get("key2")
-  match key2_item {
-    Some(item) => assert_eq(item.access_count, 2)
-    None => assert_true(false)
-  }
-  
-  // 添加第4个项，应该驱逐最旧的
-  let cache2 = put(cache1, "key4", "value4")
-  assert_eq(cache2.items.size(), 3)  // 仍然是3个项
-  assert_true(cache2.items.contains("key4"))
-  assert_false(cache2.items.contains("key1"))  // key1应该被驱逐
-  
-  // 测试缓存统计
-  let get_cache_stats = fn(cache: Cache[T]) {
-    let mut total_access_count = 0
-    let mut oldest_item = None
-    let mut newest_item = None
-    
-    for (key, item) in cache.items {
-      total_access_count = total_access_count + item.access_count
-      
-      match oldest_item {
-        None => oldest_item = Some((key, item.created_at))
-        Some((_, oldest_time)) => {
-          if item.created_at < oldest_time {
-            oldest_item = Some((key, item.created_at))
-          }
-        }
-      }
-      
-      match newest_item {
-        None => newest_item = Some((key, item.created_at))
-        Some((_, newest_time)) => {
-          if item.created_at > newest_time {
-            newest_item = Some((key, item.created_at))
-          }
-        }
-      }
-    }
-    
-    {
-      total_items: cache.items.size(),
-      total_memory: cache.current_memory,
-      total_access_count,
-      oldest_key: match oldest_item {
-        Some((key, _)) => Some(key)
-        None => None
-      },
-      newest_key: match newest_item {
-        Some((key, _)) => Some(key)
-        None => None
-      }
-    }
-  }
-  
-  let stats = get_cache_stats(cache2)
-  assert_eq(stats.total_items, 3)
-  assert_eq(stats.total_memory, 18)
-  assert_eq(stats.oldest_key, Some("key2"))
-  assert_eq(stats.newest_key, Some("key4"))
-}
-
-// 测试5: 高效字符串匹配算法
-test "高效字符串匹配算法测试" {
-  // KMP算法实现
-  let compute_lps_array = fn(pattern: String) {
-    let chars = pattern.to_char_array()
-    let mut lps = []
-    let mut length = 0
-    let mut i = 1
-    
-    // 初始化lps数组
-    for _ in 0..chars.length() {
-      lps = lps.push(0)
-    }
-    
-    while i < chars.length() {
-      if chars[i] == chars[length] {
-        length = length + 1
-        lps = lps.set(i, length)
-        i = i + 1
-      } else {
-        if length != 0 {
-          length = lps[length - 1]
-        } else {
-          lps = lps.set(i, 0)
-          i = i + 1
-        }
-      }
-    }
-    
-    lps
-  }
-  
-  let kmp_search = fn(text: String, pattern: String) {
-    let text_chars = text.to_char_array()
-    let pattern_chars = pattern.to_char_array()
-    let lps = compute_lps_array(pattern)
-    
-    let mut i = 0  // text的索引
-    let mut j = 0  // pattern的索引
-    let mut matches = []
-    
-    while i < text_chars.length() {
-      if pattern_chars[j] == text_chars[i] {
-        i = i + 1
-        j = j + 1
-        
-        if j == pattern_chars.length() {
-          matches = matches.push(i - j)
-          j = lps[j - 1]
-        }
-      } else {
-        if j != 0 {
-          j = lps[j - 1]
-        } else {
-          i = i + 1
-        }
-      }
-    }
-    
-    matches
-  }
-  
-  // 测试KMP算法
-  let text = "ababcabcabababd"
-  let pattern = "ababd"
-  
-  let matches = kmp_search(text, pattern)
-  assert_eq(matches.length(), 1)
-  assert_eq(matches[0], 10)
-  
-  // 测试多个匹配
-  let text2 = "testtesttest"
-  let pattern2 = "test"
-  
-  let matches2 = kmp_search(text2, pattern2)
-  assert_eq(matches2.length(), 3)
-  assert_eq(matches2[0], 0)
-  assert_eq(matches2[1], 4)
-  assert_eq(matches2[2], 8)
-  
-  // 测试无匹配
-  let text3 = "abcdefg"
-  let pattern3 = "xyz"
-  
-  let matches3 = kmp_search(text3, pattern3)
-  assert_eq(matches3.length(), 0)
-  
-  // Rabin-Karp算法实现
-  let rabin_karp_search = fn(text: String, pattern: String) {
-    let text_chars = text.to_char_array()
-    let pattern_chars = pattern.to_char_array()
-    let prime = 101  // 质数
-    let d = 256      // 字符集大小
-    
-    let n = text_chars.length()
-    let m = pattern_chars.length()
-    let mut matches = []
-    
-    if m > n {
-      return matches
-    }
-    
-    // 计算h = d^(m-1) % prime
-    let mut h = 1
-    for _ in 0..m-1 {
-      h = (h * d) % prime
-    }
-    
-    // 计算模式和文本第一个窗口的哈希值
-    let mut pattern_hash = 0
-    let mut text_hash = 0
-    
-    for i in 0..m {
-      pattern_hash = (d * pattern_hash + pattern_chars[i].to_int()) % prime
-      text_hash = (d * text_hash + text_chars[i].to_int()) % prime
-    }
-    
-    // 滑动窗口
-    for i in 0..=(n - m) {
-      if pattern_hash == text_hash {
-        // 检查字符是否匹配
-        let mut match_found = true
-        for j in 0..m {
-          if text_chars[i + j] != pattern_chars[j] {
-            match_found = false
-            break
-          }
-        }
-        
-        if match_found {
-          matches = matches.push(i)
-        }
-      }
-      
-      if i < n - m {
-        text_hash = (d * (text_hash - text_chars[i].to_int() * h) + text_chars[i + m].to_int()) % prime
-        
-        if text_hash < 0 {
-          text_hash = text_hash + prime
-        }
-      }
-    }
-    
-    matches
-  }
-  
-  // 测试Rabin-Karp算法
-  let rk_matches = rabin_karp_search(text, pattern)
-  assert_eq(rk_matches.length(), 1)
-  assert_eq(rk_matches[0], 10)
-  
-  let rk_matches2 = rabin_karp_search(text2, pattern2)
-  assert_eq(rk_matches2.length(), 3)
-  
-  // 比较两种算法的结果
-  assert_eq(matches, rk_matches)
-  assert_eq(matches2, rk_matches2)
-  
-  // 测试性能敏感场景
-  let long_text = "a".repeat(10000) + "b" + "a".repeat(10000)
-  let pattern_in_long = "b"
-  
-  let long_matches_kmp = kmp_search(long_text, pattern_in_long)
-  let long_matches_rk = rabin_karp_search(long_text, pattern_in_long)
-  
-  assert_eq(long_matches_kmp.length(), 1)
-  assert_eq(long_matches_kmp[0], 10000)
-  assert_eq(long_matches_rk.length(), 1)
-  assert_eq(long_matches_rk[0], 10000)
+  // Test deletion
+  Trie::remove(trie, "app")
+  assert_false(Trie::search(trie, "app"))
+  assert_true(Trie::search(trie, "apple"))
+  assert_true(Trie::search(trie, "application"))
 }

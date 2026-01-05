@@ -1,526 +1,688 @@
-// Azimuth Serialization and Deserialization Comprehensive Tests
+// Azimuth Telemetry System - Serialization and Deserialization Tests
 // This file contains comprehensive test cases for serialization and deserialization
 
-// Test 1: Span Serialization and Deserialization
-test "span serialization and deserialization" {
-  let tracer = TracerProvider::get_tracer("serialization_test")
-  let json_serializer = JsonSerializer::new()
-  let binary_serializer = BinarySerializer::new()
+// Test 1: Basic JSON Serialization
+test "basic json serialization" {
+  // Test primitive types
+  let int_value = 42
+  let int_json = serialize_to_json(int_value)
+  assert_eq(int_json, "42")
   
-  // Create a complex span with various attributes and events
-  let span = Tracer::start_span(tracer, "serialization_test_span")
-  Span::set_attribute(span, "service.name", StringValue("test-service"))
-  Span::set_attribute(span, "operation.name", StringValue("test-operation"))
-  Span::set_attribute(span, "user.id", IntValue(12345))
-  Span::set_attribute(span, "request.size", FloatValue(1024.5))
-  Span::set_attribute(span, "authenticated", BoolValue(true))
-  Span::set_attribute(span, "tags", ArrayStringValue(["tag1", "tag2", "tag3"]))
-  Span::set_attribute(span, "retry.counts", ArrayIntValue([1, 2, 3]))
+  let int_deserialized = deserialize_from_json(int_json)
+  assert_eq(int_deserialized, int_value)
   
-  // Add events
-  Span::add_event(span, "request.received", Some([
-    ("timestamp", IntValue(1609459200)),
-    ("size", IntValue(1024))
-  ]))
+  let float_value = 3.14
+  let float_json = serialize_to_json(float_value)
+  assert_eq(float_json, "3.14")
   
-  Span::add_event(span, "request.processed", Some([
-    ("timestamp", IntValue(1609459210)),
-    ("duration", IntValue(10))
-  ]))
+  let float_deserialized = deserialize_from_json(float_json)
+  assert_eq(float_deserialized, float_value)
   
-  Span::set_status(span, Ok, Some("Operation completed successfully"))
+  let string_value = "hello world"
+  let string_json = serialize_to_json(string_value)
+  assert_eq(string_json, "\"hello world\"")
   
-  // Test JSON serialization
-  let json_serialized = JsonSerializer::serialize_span(json_serializer, span)
-  assert_true(json_serialized.length() > 0, "JSON serialization should produce non-empty result")
+  let string_deserialized = deserialize_from_json(string_json)
+  assert_eq(string_deserialized, string_value)
   
-  // Test JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize_span(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_span) => {
-      assert_eq(Span::name(deserialized_span), Span::name(span))
-      assert_eq(Span::status(deserialized_span), Span::status(span))
-      
-      // Verify attributes
-      let service_name = Span::get_attribute(deserialized_span, "service.name")
-      match service_name {
-        Some(StringValue(name)) => assert_eq(name, "test-service")
-        _ => assert_true(false)
-      }
-      
-      let user_id = Span::get_attribute(deserialized_span, "user.id")
-      match user_id {
-        Some(IntValue(id)) => assert_eq(id, 12345)
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false, "JSON deserialization should succeed")
+  let bool_value = true
+  let bool_json = serialize_to_json(bool_value)
+  assert_eq(bool_json, "true")
+  
+  let bool_deserialized = deserialize_from_json(bool_json)
+  assert_eq(bool_deserialized, bool_value)
+  
+  // Test null/none values
+  let none_value = None
+  let none_json = serialize_to_json(none_value)
+  assert_eq(none_json, "null")
+  
+  let none_deserialized = deserialize_from_json(none_json)
+  match none_deserialized {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
   }
-  
-  // Test binary serialization
-  let binary_serialized = BinarySerializer::serialize_span(binary_serializer, span)
-  assert_true(binary_serialized.length() > 0, "Binary serialization should produce non-empty result")
-  
-  // Test binary deserialization
-  let binary_deserialized = BinarySerializer::deserialize_span(binary_serializer, binary_serialized)
-  match binary_deserialized {
-    Some(deserialized_span) => {
-      assert_eq(Span::name(deserialized_span), Span::name(span))
-      assert_eq(Span::status(deserialized_span), Span::status(span))
-      
-      // Verify attributes
-      let authenticated = Span::get_attribute(deserialized_span, "authenticated")
-      match authenticated {
-        Some(BoolValue(auth)) => assert_true(auth)
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false, "Binary deserialization should succeed")
-  }
-  
-  Span::end(span)
 }
 
-// Test 2: Metrics Serialization and Deserialization
-test "metrics serialization and deserialization" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "serialization_metrics")
-  let json_serializer = JsonSerializer::new()
+// Test 2: Complex JSON Serialization
+test "complex json serialization" {
+  // Test arrays
+  let array_value = [1, 2, 3, 4, 5]
+  let array_json = serialize_to_json(array_value)
+  assert_eq(array_json, "[1,2,3,4,5]")
   
-  // Create metrics with various data points
-  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  let gauge = Meter::create_gauge(meter, "test_gauge", Some("Test gauge"), Some("value"))
+  let array_deserialized = deserialize_from_json(array_json)
+  assert_eq(array_deserialized, array_value)
   
-  // Add data points
-  for i in 0..=10 {
-    Counter::add(counter, 1.0, Some(Attributes::with_data([
-      ("operation", StringValue("test_op")),
-      ("status", StringValue(if i % 3 == 0 { "error" } else { "success" }))
-    ])))
-    
-    Histogram::record(histogram, (i as Float) * 10.0, Some(Attributes::with_data([
-      ("percentile", StringValue("p" + (i * 10).to_string()))
-    ])))
-    
-    if i % 2 == 0 {
-      Gauge::record(gauge, (i as Float) * 5.0, Some(Attributes::with_data([
-        ("instance", StringValue("instance_" + (i / 2).to_string()))
-      ])))
+  // Test nested arrays
+  let nested_array = [[1, 2], [3, 4], [5, 6]]
+  let nested_array_json = serialize_to_json(nested_array)
+  assert_eq(nested_array_json, "[[1,2],[3,4],[5,6]]")
+  
+  let nested_array_deserialized = deserialize_from_json(nested_array_json)
+  assert_eq(nested_array_deserialized, nested_array)
+  
+  // Test objects/records
+  let object_value = {
+    "name": "John Doe",
+    "age": 30,
+    "email": "john@example.com",
+    "active": true
+  }
+  let object_json = serialize_to_json(object_value)
+  assert_true(object_json.contains("\"name\":\"John Doe\""))
+  assert_true(object_json.contains("\"age\":30"))
+  assert_true(object_json.contains("\"email\":\"john@example.com\""))
+  assert_true(object_json.contains("\"active\":true"))
+  
+  let object_deserialized = deserialize_from_json(object_json)
+  assert_eq(object_deserialized.name, "John Doe")
+  assert_eq(object_deserialized.age, 30)
+  assert_eq(object_deserialized.email, "john@example.com")
+  assert_eq(object_deserialized.active, true)
+  
+  // Test nested objects
+  let nested_object = {
+    "user": {
+      "name": "Jane Doe",
+      "contact": {
+        "email": "jane@example.com",
+        "phone": "123-456-7890"
+      }
+    },
+    "settings": {
+      "theme": "dark",
+      "notifications": true
     }
   }
+  let nested_object_json = serialize_to_json(nested_object)
+  let nested_object_deserialized = deserialize_from_json(nested_object_json)
   
-  // Test metrics serialization
-  let metrics_data = MetricsData::from_meter(meter)
-  let json_serialized = JsonSerializer::serialize_metrics(json_serializer, metrics_data)
-  assert_true(json_serialized.length() > 0, "Metrics JSON serialization should produce non-empty result")
+  assert_eq(nested_object_deserialized.user.name, "Jane Doe")
+  assert_eq(nested_object_deserialized.user.contact.email, "jane@example.com")
+  assert_eq(nested_object_deserialized.settings.theme, "dark")
+  assert_eq(nested_object_deserialized.settings.notifications, true)
+}
+
+// Test 3: Binary Serialization
+test "binary serialization" {
+  // Test primitive types
+  let int_value = 42
+  let int_binary = serialize_to_binary(int_value)
+  let int_deserialized = deserialize_from_binary(int_binary)
+  assert_eq(int_deserialized, int_value)
   
-  // Test metrics deserialization
-  let json_deserialized = JsonSerializer::deserialize_metrics(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_metrics) => {
-      assert_eq(deserialized_metrics.metrics.length(), 3, "Should have 3 metrics")
-      
-      // Verify counter data
-      let counter_metric = deserialized_metrics.metrics.find(|m| m.name == "test_counter")
-      match counter_metric {
-        Some(metric) => {
-          assert_eq(metric.data_type, Counter)
-          assert_true(metric.data_points.length() > 0)
+  let float_value = 3.14
+  let float_binary = serialize_to_binary(float_value)
+  let float_deserialized = deserialize_from_binary(float_binary)
+  assert_eq(float_deserialized, float_value)
+  
+  let string_value = "hello world"
+  let string_binary = serialize_to_binary(string_value)
+  let string_deserialized = deserialize_from_binary(string_binary)
+  assert_eq(string_deserialized, string_value)
+  
+  // Test arrays
+  let array_value = [1, 2, 3, 4, 5]
+  let array_binary = serialize_to_binary(array_value)
+  let array_deserialized = deserialize_from_binary(array_binary)
+  assert_eq(array_deserialized, array_value)
+  
+  // Test objects
+  let object_value = {
+    "name": "John Doe",
+    "age": 30,
+    "active": true
+  }
+  let object_binary = serialize_to_binary(object_value)
+  let object_deserialized = deserialize_from_binary(object_binary)
+  assert_eq(object_deserialized.name, "John Doe")
+  assert_eq(object_deserialized.age, 30)
+  assert_eq(object_deserialized.active, true)
+  
+  // Test binary serialization is more compact than JSON
+  let object_json = serialize_to_json(object_value)
+  assert_true(int_binary.length() < int_json.length())
+  assert_true(object_binary.length() < object_json.length())
+}
+
+// Test 4: Protocol Buffers Serialization
+test "protocol buffers serialization" {
+  // Test with Protocol Buffers
+  let proto_message = {
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
+    "parent_span_id": "b7ad6b7169203330",
+    "operation_name": "http.request",
+    "start_time": 1589273771000000000,
+    "end_time": 1589273772000000000,
+    "status": 1,
+    "attributes": [
+      {"key": "http.method", "value": {"string_value": "GET"}},
+      {"key": "http.url", "value": {"string_value": "https://example.com/api"}},
+      {"key": "http.status_code", "value": {"int_value": 200}}
+    ]
+  }
+  
+  // Serialize to Protocol Buffers
+  let proto_binary = serialize_to_protobuf(proto_message)
+  
+  // Deserialize from Protocol Buffers
+  let proto_deserialized = deserialize_from_protobuf(proto_binary)
+  
+  // Verify deserialized data
+  assert_eq(proto_deserialized.trace_id, "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(proto_deserialized.span_id, "b7ad6b7169203331")
+  assert_eq(proto_deserialized.operation_name, "http.request")
+  assert_eq(proto_deserialized.status, 1)
+  assert_eq(proto_deserialized.attributes.length(), 3)
+  
+  // Test Protocol Buffers is more compact than JSON
+  let proto_json = serialize_to_json(proto_message)
+  assert_true(proto_binary.length() < proto_json.length())
+}
+
+// Test 5: MessagePack Serialization
+test "messagepack serialization" {
+  // Test with MessagePack
+  let msgpack_data = {
+    "service": "payment-service",
+    "version": "1.2.3",
+    "instances": 3,
+    "healthy": true,
+    "metadata": {
+      "region": "us-west-2",
+      "zone": "us-west-2a",
+      "tags": ["payment", "critical", "v1"]
+    },
+    "metrics": [
+      {"name": "request_count", "value": 12345, "type": "counter"},
+      {"name": "response_time", "value": 123.45, "type": "histogram"},
+      {"name": "error_rate", "value": 0.01, "type": "gauge"}
+    ]
+  }
+  
+  // Serialize to MessagePack
+  let msgpack_binary = serialize_to_msgpack(msgpack_data)
+  
+  // Deserialize from MessagePack
+  let msgpack_deserialized = deserialize_from_msgpack(msgpack_binary)
+  
+  // Verify deserialized data
+  assert_eq(msgpack_deserialized.service, "payment-service")
+  assert_eq(msgpack_deserialized.version, "1.2.3")
+  assert_eq(msgpack_deserialized.instances, 3)
+  assert_eq(msgpack_deserialized.healthy, true)
+  assert_eq(msgpack_deserialized.metadata.region, "us-west-2")
+  assert_eq(msgpack_deserialized.metadata.tags.length(), 3)
+  assert_eq(msgpack_deserialized.metrics.length(), 3)
+  assert_eq(msgpack_deserialized.metrics[0].name, "request_count")
+  assert_eq(msgpack_deserialized.metrics[0].value, 12345)
+  
+  // Test MessagePack is more compact than JSON
+  let msgpack_json = serialize_to_json(msgpack_data)
+  assert_true(msgpack_binary.length() < msgpack_json.length())
+}
+
+// Test 6: XML Serialization
+test "xml serialization" {
+  // Test with XML
+  let xml_data = {
+    "order": {
+      "id": "12345",
+      "customer": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "address": {
+          "street": "123 Main St",
+          "city": "Anytown",
+          "state": "CA",
+          "zip": "12345"
         }
-        None => assert_true(false)
-      }
-      
-      // Verify histogram data
-      let histogram_metric = deserialized_metrics.metrics.find(|m| m.name == "test_histogram")
-      match histogram_metric {
-        Some(metric) => {
-          assert_eq(metric.data_type, Histogram)
-          assert_true(metric.data_points.length() > 0)
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false, "Metrics JSON deserialization should succeed")
-  }
-}
-
-// Test 3: Log Record Serialization and Deserialization
-test "log record serialization and deserialization" {
-  let json_serializer = JsonSerializer::new()
-  
-  // Create complex log record
-  let log_record = LogRecord::new_with_context(
-    Warn,
-    Some("Complex log message with special characters: !@#$%^&*()"),
-    Some(Attributes::with_data([
-      ("service.name", StringValue("log-service")),
-      ("operation.id", StringValue("op-12345")),
-      ("user.id", IntValue(67890)),
-      ("duration.ms", FloatValue(123.45)),
-      ("success", BoolValue(true)),
-      ("tags", ArrayStringValue(["log", "warning", "test"])),
-      ("metadata", StringValue("{\"key\":\"value\",\"nested\":{\"data\":true}}"))
-    ])),
-    Some(1609459200L),
-    Some(1609459200L + 100L),
-    Some("trace-12345"),
-    Some("span-67890"),
-    Some(Context::with_value(
-      Context::root(),
-      ContextKey::new("correlation_id"),
-      "corr-abcde"
-    ))
-  )
-  
-  // Test log record JSON serialization
-  let json_serialized = JsonSerializer::serialize_log_record(json_serializer, log_record)
-  assert_true(json_serialized.length() > 0, "Log record JSON serialization should produce non-empty result")
-  
-  // Test log record JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize_log_record(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_record) => {
-      assert_eq(LogRecord::severity_number(deserialized_record), Warn)
-      
-      match LogRecord::body(deserialized_record) {
-        Some(body) => assert_eq(body, "Complex log message with special characters: !@#$%^&*()")
-        None => assert_true(false)
-      }
-      
-      // Verify attributes
-      let service_name = LogRecord::get_attribute(deserialized_record, "service.name")
-      match service_name {
-        Some(StringValue(name)) => assert_eq(name, "log-service")
-        _ => assert_true(false)
-      }
-      
-      let success = LogRecord::get_attribute(deserialized_record, "success")
-      match success {
-        Some(BoolValue(s)) => assert_true(s)
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false, "Log record JSON deserialization should succeed")
-  }
-}
-
-// Test 4: Resource Serialization and Deserialization
-test "resource serialization and deserialization" {
-  let json_serializer = JsonSerializer::new()
-  
-  // Create resource with various attributes
-  let resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("telemetry-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-12345")),
-    ("host.name", StringValue("production-server-01")),
-    ("host.ip", StringValue("192.168.1.100")),
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.4.0-74-generic")),
-    ("process.id", IntValue(1234)),
-    ("process.executable.name", StringValue("telemetry-service")),
-    ("process.command_line", StringValue("./telemetry-service --config prod.yaml")),
-    ("deployment.environment", StringValue("production")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2")),
-    ("cloud.availability_zone", StringValue("us-west-2a")),
-    ("custom.tags", ArrayStringValue(["production", "critical", "monitored"]))
-  ])
-  
-  // Test resource JSON serialization
-  let json_serialized = JsonSerializer::serialize_resource(json_serializer, resource)
-  assert_true(json_serialized.length() > 0, "Resource JSON serialization should produce non-empty result")
-  
-  // Test resource JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize_resource(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_resource) => {
-      // Verify key attributes
-      let service_name = Resource::get_attribute(deserialized_resource, "service.name")
-      match service_name {
-        Some(StringValue(name)) => assert_eq(name, "telemetry-service")
-        _ => assert_true(false)
-      }
-      
-      let process_id = Resource::get_attribute(deserialized_resource, "process.id")
-      match process_id {
-        Some(IntValue(pid)) => assert_eq(pid, 1234)
-        _ => assert_true(false)
-      }
-      
-      let custom_tags = Resource::get_attribute(deserialized_resource, "custom.tags")
-      match custom_tags {
-        Some(ArrayStringValue(tags)) => {
-          assert_eq(tags.length(), 3)
-          assert_true(tags.contains("production"))
-          assert_true(tags.contains("critical"))
-          assert_true(tags.contains("monitored"))
-        }
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false, "Resource JSON deserialization should succeed")
-  }
-}
-
-// Test 5: Context and Baggage Serialization
-test "context and baggage serialization" {
-  let json_serializer = JsonSerializer::new()
-  
-  // Create context with baggage
-  let baggage = Baggage::new()
-  let baggage_with_data = Baggage::set_entry(baggage, "user.id", "user-12345")
-  let baggage_with_more_data = Baggage::set_entry(baggage_with_data, "session.id", "session-67890")
-  let baggage_with_even_more_data = Baggage::set_entry(baggage_with_more_data, "request.id", "req-abcde")
-  
-  let context = Context::with_value(
-    Context::with_value(
-      Context::root(),
-      ContextKey::new("correlation_id"),
-      "corr-12345"
-    ),
-    ContextKey::new("baggage"),
-    baggage_with_even_more_data
-  )
-  
-  // Test context JSON serialization
-  let json_serialized = JsonSerializer::serialize_context(json_serializer, context)
-  assert_true(json_serialized.length() > 0, "Context JSON serialization should produce non-empty result")
-  
-  // Test context JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize_context(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_context) => {
-      // Verify correlation ID
-      let correlation_id = Context::get(deserialized_context, ContextKey::new("correlation_id"))
-      match correlation_id {
-        Some(id) => assert_eq(id, "corr-12345")
-        None => assert_true(false)
-      }
-      
-      // Verify baggage
-      let baggage = Context::get(deserialized_context, ContextKey::new("baggage"))
-      match baggage {
-        Some(b) => {
-          let user_id = Baggage::get_entry(b, "user.id")
-          match user_id {
-            Some(id) => assert_eq(id, "user-12345")
-            None => assert_true(false)
-          }
-          
-          let session_id = Baggage::get_entry(b, "session.id")
-          match session_id {
-            Some(id) => assert_eq(id, "session-67890")
-            None => assert_true(false)
-          }
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false, "Context JSON deserialization should succeed")
-  }
-}
-
-// Test 6: Batch Serialization and Deserialization
-test "batch serialization and deserialization" {
-  let json_serializer = JsonSerializer::new()
-  let tracer = TracerProvider::get_tracer("batch_test")
-  
-  // Create batch of spans
-  let mut spans = []
-  for i in 0..=5 {
-    let span = Tracer::start_span(tracer, "batch_span_" + i.to_string())
-    Span::set_attribute(span, "batch.index", IntValue(i))
-    Span::set_attribute(span, "batch.size", IntValue(6))
-    
-    if i % 2 == 0 {
-      Span::add_event(span, "batch_event_" + i.to_string(), Some([
-        ("event_type", StringValue("batch_processing")),
-        ("event_index", IntValue(i))
-      ]))
-    }
-    
-    spans.push(span)
-  }
-  
-  // Create batch data
-  let batch_data = BatchData {
-    spans: spans,
-    resource: Resource::with_attributes(Resource::new(), [
-      ("batch.id", StringValue("batch-12345")),
-      ("batch.timestamp", IntValue(1609459200))
-    ]),
-    instrumentation_scope: InstrumentationScope {
-      name: "batch_test_scope",
-      version: Some("1.0.0"),
-      attributes: []
-    }
-  }
-  
-  // Test batch JSON serialization
-  let json_serialized = JsonSerializer::serialize_batch(json_serializer, batch_data)
-  assert_true(json_serialized.length() > 0, "Batch JSON serialization should produce non-empty result")
-  
-  // Test batch JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize_batch(json_serializer, json_serialized)
-  match json_deserialized {
-    Some(deserialized_batch) => {
-      assert_eq(deserialized_batch.spans.length(), 6, "Should have 6 spans in batch")
-      
-      // Verify batch resource
-      let batch_id = Resource::get_attribute(deserialized_batch.resource, "batch.id")
-      match batch_id {
-        Some(StringValue(id)) => assert_eq(id, "batch-12345")
-        _ => assert_true(false)
-      }
-      
-      // Verify instrumentation scope
-      assert_eq(deserialized_batch.instrumentation_scope.name, "batch_test_scope")
-      assert_eq(deserialized_batch.instrumentation_scope.version, Some("1.0.0"))
-      
-      // Verify span attributes
-      for i in 0..=deserialized_batch.spans.length() - 1 {
-        let span = deserialized_batch.spans[i]
-        let batch_index = Span::get_attribute(span, "batch.index")
-        match batch_index {
-          Some(IntValue(index)) => assert_eq(index, i)
-          _ => assert_true(false)
-        }
-      }
-    }
-    None => assert_true(false, "Batch JSON deserialization should succeed")
-  }
-  
-  // End all spans
-  for span in spans {
-    Span::end(span)
-  }
-}
-
-// Test 7: Cross-Format Serialization
-test "cross-format serialization" {
-  let json_serializer = JsonSerializer::new()
-  let binary_serializer = BinarySerializer::new()
-  let xml_serializer = XmlSerializer::new()
-  let tracer = TracerProvider::get_tracer("cross_format_test")
-  
-  // Create test span
-  let span = Tracer::start_span(tracer, "cross_format_span")
-  Span::set_attribute(span, "test.value", StringValue("cross-format-test"))
-  Span::set_attribute(span, "test.number", IntValue(42))
-  
-  // Serialize to different formats
-  let json_data = JsonSerializer::serialize_span(json_serializer, span)
-  let binary_data = BinarySerializer::serialize_span(binary_serializer, span)
-  let xml_data = XmlSerializer::serialize_span(xml_serializer, span)
-  
-  // Verify all formats produce data
-  assert_true(json_data.length() > 0, "JSON serialization should produce data")
-  assert_true(binary_data.length() > 0, "Binary serialization should produce data")
-  assert_true(xml_data.length() > 0, "XML serialization should produce data")
-  
-  // Deserialize from different formats
-  let json_deserialized = JsonSerializer::deserialize_span(json_serializer, json_data)
-  let binary_deserialized = BinarySerializer::deserialize_span(binary_serializer, binary_data)
-  let xml_deserialized = XmlSerializer::deserialize_span(xml_serializer, xml_data)
-  
-  // Verify all deserializations succeed
-  match (json_deserialized, binary_deserialized, xml_deserialized) {
-    (Some(json_span), Some(binary_span), Some(xml_span)) => {
-      // Verify all deserialized spans have the same name
-      assert_eq(Span::name(json_span), Span::name(binary_span))
-      assert_eq(Span::name(binary_span), Span::name(xml_span))
-      assert_eq(Span::name(xml_span), "cross_format_span")
-      
-      // Verify attributes are preserved across formats
-      let json_value = Span::get_attribute(json_span, "test.value")
-      let binary_value = Span::get_attribute(binary_span, "test.value")
-      let xml_value = Span::get_attribute(xml_span, "test.value")
-      
-      match (json_value, binary_value, xml_value) {
-        (Some(StringValue(json_v)), Some(StringValue(binary_v)), Some(StringValue(xml_v))) => {
-          assert_eq(json_v, binary_v)
-          assert_eq(binary_v, xml_v)
-          assert_eq(xml_v, "cross-format-test")
-        }
-        _ => assert_true(false)
-      }
-    }
-    _ => assert_true(false, "All format deserializations should succeed")
-  }
-  
-  Span::end(span)
-}
-
-// Test 8: Serialization Error Handling
-test "serialization error handling" {
-  let json_serializer = JsonSerializer::new()
-  let error_handler = SerializationErrorHandler::new()
-  
-  // Test serialization with invalid data
-  let invalid_span_data = SpanData {
-    name: "", // Empty name might cause error
-    attributes: [],
-    events: [],
-    status: Unset,
-    start_time: -1L, // Invalid timestamp
-    end_time: None
-  }
-  
-  let error_result = SerializationErrorHandler::with_error_handling(error_handler, || {
-    JsonSerializer::serialize_span_data(json_serializer, invalid_span_data)
-  })
-  
-  match error_result {
-    Ok(data) => assert_true(data.length() > 0, "Should handle invalid data gracefully")
-    Error(error) => assert_true(error.contains("serialization"), "Should provide meaningful error message")
-  }
-  
-  // Test deserialization with invalid JSON
-  let invalid_json = "{ invalid json syntax }"
-  
-  let deserialization_error_result = SerializationErrorHandler::with_error_handling(error_handler, || {
-    JsonSerializer::deserialize_span(json_serializer, invalid_json)
-  })
-  
-  match deserialization_error_result {
-    Ok(_) => assert_true(false, "Should not succeed with invalid JSON")
-    Error(error) => assert_true(error.contains("deserialization"), "Should provide meaningful error message")
-  }
-  
-  // Test partial recovery from serialization errors
-  let partial_span_data = SpanData {
-    name: "valid_name",
-    attributes: [
-      ("valid.attribute", StringValue("valid_value")),
-      ("invalid.attribute", StringValue("")) // Empty value might cause error
-    ],
-    events: [],
-    status: Ok,
-    start_time: 1609459200L,
-    end_time: Some(1609459210L)
-  }
-  
-  let recovery_result = SerializationErrorHandler::with_recovery(error_handler, || {
-    JsonSerializer::serialize_span_data(json_serializer, partial_span_data)
-  }, || {
-    // Fallback: serialize with only valid attributes
-    let valid_span_data = SpanData {
-      name: partial_span_data.name,
-      attributes: [
-        ("valid.attribute", StringValue("valid_value"))
+      },
+      "items": [
+        {"id": "1", "name": "Product A", "quantity": 2, "price": 19.99},
+        {"id": "2", "name": "Product B", "quantity": 1, "price": 29.99}
       ],
-      events: partial_span_data.events,
-      status: partial_span_data.status,
-      start_time: partial_span_data.start_time,
-      end_time: partial_span_data.end_time
+      "total": 69.97
     }
-    JsonSerializer::serialize_span_data(json_serializer, valid_span_data)
+  }
+  
+  // Serialize to XML
+  let xml_string = serialize_to_xml(xml_data)
+  
+  // Verify XML structure
+  assert_true(xml_string.contains("<order>"))
+  assert_true(xml_string.contains("<id>12345</id>"))
+  assert_true(xml_string.contains("<customer>"))
+  assert_true(xml_string.contains("<name>John Doe</name>"))
+  assert_true(xml_string.contains("<items>"))
+  assert_true(xml_string.contains("<item>"))
+  assert_true(xml_string.contains("<name>Product A</name>"))
+  assert_true(xml_string.contains("<quantity>2</quantity>"))
+  assert_true(xml_string.contains("<price>19.99</price>"))
+  assert_true(xml_string.contains("<total>69.97</total>"))
+  
+  // Deserialize from XML
+  let xml_deserialized = deserialize_from_xml(xml_string)
+  
+  // Verify deserialized data
+  assert_eq(xml_deserialized.order.id, "12345")
+  assert_eq(xml_deserialized.order.customer.name, "John Doe")
+  assert_eq(xml_deserialized.order.customer.address.city, "Anytown")
+  assert_eq(xml_deserialized.order.items.length(), 2)
+  assert_eq(xml_deserialized.order.items[0].name, "Product A")
+  assert_eq(xml_deserialized.order.items[0].quantity, 2)
+  assert_eq(xml_deserialized.order.total, 69.97)
+}
+
+// Test 7: Custom Serialization Formats
+test "custom serialization formats" {
+  // Test with custom format (e.g., CSV)
+  let csv_data = [
+    {"name": "John", "age": 30, "city": "New York"},
+    {"name": "Jane", "age": 25, "city": "Los Angeles"},
+    {"name": "Bob", "age": 35, "city": "Chicago"}
+  ]
+  
+  // Serialize to CSV
+  let csv_string = serialize_to_csv(csv_data)
+  
+  // Verify CSV structure
+  assert_true(csv_string.contains("name,age,city"))
+  assert_true(csv_string.contains("John,30,New York"))
+  assert_true(csv_string.contains("Jane,25,Los Angeles"))
+  assert_true(csv_string.contains("Bob,35,Chicago"))
+  
+  // Deserialize from CSV
+  let csv_deserialized = deserialize_from_csv(csv_string)
+  
+  // Verify deserialized data
+  assert_eq(csv_deserialized.length(), 3)
+  assert_eq(csv_deserialized[0].name, "John")
+  assert_eq(csv_deserialized[0].age, 30)
+  assert_eq(csv_deserialized[0].city, "New York")
+  assert_eq(csv_deserialized[1].name, "Jane")
+  assert_eq(csv_deserialized[1].age, 25)
+  assert_eq(csv_deserialized[1].city, "Los Angeles")
+  
+  // Test with custom format (e.g., YAML)
+  let yaml_data = {
+    "application": {
+      "name": "my-app",
+      "version": "1.0.0",
+      "environment": "production",
+      "servers": [
+        {"host": "server1.example.com", "port": 8080, "weight": 1},
+        {"host": "server2.example.com", "port": 8080, "weight": 2}
+      ],
+      "database": {
+        "host": "db.example.com",
+        "port": 5432,
+        "name": "myapp_prod",
+        "ssl": true
+      }
+    }
+  }
+  
+  // Serialize to YAML
+  let yaml_string = serialize_to_yaml(yaml_data)
+  
+  // Verify YAML structure
+  assert_true(yaml_string.contains("name: my-app"))
+  assert_true(yaml_string.contains("version: 1.0.0"))
+  assert_true(yaml_string.contains("environment: production"))
+  assert_true(yaml_string.contains("servers:"))
+  assert_true(yaml_string.contains("- host: server1.example.com"))
+  assert_true(yaml_string.contains("port: 8080"))
+  assert_true(yaml_string.contains("database:"))
+  assert_true(yaml_string.contains("ssl: true"))
+  
+  // Deserialize from YAML
+  let yaml_deserialized = deserialize_from_yaml(yaml_string)
+  
+  // Verify deserialized data
+  assert_eq(yaml_deserialized.application.name, "my-app")
+  assert_eq(yaml_deserialized.application.version, "1.0.0")
+  assert_eq(yaml_deserialized.application.environment, "production")
+  assert_eq(yaml_deserialized.application.servers.length(), 2)
+  assert_eq(yaml_deserialized.application.servers[0].host, "server1.example.com")
+  assert_eq(yaml_deserialized.application.database.ssl, true)
+}
+
+// Test 8: Telemetry Data Serialization
+test "telemetry data serialization" {
+  // Test span serialization
+  let span = {
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
+    "parent_span_id": "b7ad6b7169203330",
+    "operation_name": "http.request",
+    "kind": "SERVER",
+    "start_time": 1589273771000000000,
+    "end_time": 1589273772000000000,
+    "status": {
+      "code": 1,
+      "message": "OK"
+    },
+    "attributes": [
+      {"key": "http.method", "value": {"string_value": "GET"}},
+      {"key": "http.url", "value": {"string_value": "https://example.com/api"}},
+      {"key": "http.status_code", "value": {"int_value": 200}}
+    ],
+    "events": [
+      {
+        "name": "exception",
+        "timestamp": 1589273771500000000,
+        "attributes": [
+          {"key": "exception.type", "value": {"string_value": "TimeoutException"}},
+          {"key": "exception.message", "value": {"string_value": "Request timed out"}}
+        ]
+      }
+    ],
+    "links": []
+  }
+  
+  // Serialize span to different formats
+  let span_json = serialize_to_json(span)
+  let span_binary = serialize_to_binary(span)
+  let span_protobuf = serialize_to_protobuf(span)
+  
+  // Deserialize and verify
+  let span_from_json = deserialize_from_json(span_json)
+  let span_from_binary = deserialize_from_binary(span_binary)
+  let span_from_protobuf = deserialize_from_protobuf(span_protobuf)
+  
+  assert_eq(span_from_json.operation_name, "http.request")
+  assert_eq(span_from_json.attributes.length(), 3)
+  assert_eq(span_from_json.events.length(), 1)
+  
+  assert_eq(span_from_binary.operation_name, "http.request")
+  assert_eq(span_from_binary.attributes.length(), 3)
+  assert_eq(span_from_binary.events.length(), 1)
+  
+  assert_eq(span_from_protobuf.operation_name, "http.request")
+  assert_eq(span_from_protobuf.attributes.length(), 3)
+  assert_eq(span_from_protobuf.events.length(), 1)
+  
+  // Test metric serialization
+  let metric = {
+    "name": "http.requests",
+    "description": "Total number of HTTP requests",
+    "unit": "count",
+    "data": {
+      "type": "sum",
+      "is_monotonic": true,
+      "aggregation_temporality": 1,
+      "data_points": [
+        {
+          "start_time_unix_nano": 1589273770000000000,
+          "time_unix_nano": 1589273771000000000,
+          "value": 12345,
+          "attributes": [
+            {"key": "http.method", "value": {"string_value": "GET"}},
+            {"key": "http.status_code", "value": {"int_value": 200}}
+          ]
+        }
+      ]
+    }
+  }
+  
+  // Serialize metric to different formats
+  let metric_json = serialize_to_json(metric)
+  let metric_binary = serialize_to_binary(metric)
+  
+  // Deserialize and verify
+  let metric_from_json = deserialize_from_json(metric_json)
+  let metric_from_binary = deserialize_from_binary(metric_binary)
+  
+  assert_eq(metric_from_json.name, "http.requests")
+  assert_eq(metric_from_json.data.type, "sum")
+  assert_eq(metric_from_json.data.data_points.length(), 1)
+  assert_eq(metric_from_json.data.data_points[0].value, 12345)
+  
+  assert_eq(metric_from_binary.name, "http.requests")
+  assert_eq(metric_from_binary.data.type, "sum")
+  assert_eq(metric_from_binary.data.data_points.length(), 1)
+  assert_eq(metric_from_binary.data.data_points[0].value, 12345)
+  
+  // Test log serialization
+  let log = {
+    "time_unix_nano": 1589273771000000000,
+    "observed_time_unix_nano": 1589273771000000000,
+    "severity_number": 9,
+    "severity_text": "INFO",
+    "body": {
+      "string_value": "User login successful"
+    },
+    "attributes": [
+      {"key": "user.id", "value": {"string_value": "12345"}},
+      {"key": "user.name", "value": {"string_value": "john.doe"}},
+      {"key": "ip.address", "value": {"string_value": "192.168.1.100"}}
+    ],
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
+    "flags": 1
+  }
+  
+  // Serialize log to different formats
+  let log_json = serialize_to_json(log)
+  let log_binary = serialize_to_binary(log)
+  
+  // Deserialize and verify
+  let log_from_json = deserialize_from_json(log_json)
+  let log_from_binary = deserialize_from_binary(log_binary)
+  
+  assert_eq(log_from_json.severity_text, "INFO")
+  assert_eq(log_from_json.body.string_value, "User login successful")
+  assert_eq(log_from_json.attributes.length(), 3)
+  assert_eq(log_from_json.trace_id, "0af7651916cd43dd8448eb211c80319c")
+  
+  assert_eq(log_from_binary.severity_text, "INFO")
+  assert_eq(log_from_binary.body.string_value, "User login successful")
+  assert_eq(log_from_binary.attributes.length(), 3)
+  assert_eq(log_from_binary.trace_id, "0af7651916cd43dd8448eb211c80319c")
+}
+
+// Test 9: Serialization Performance Comparison
+test "serialization performance comparison" {
+  // Create large test data
+  let large_data = {
+    "spans": [],
+    "metrics": [],
+    "logs": []
+  }
+  
+  // Generate 1000 spans
+  for i in 0..1000 {
+    large_data.spans.push({
+      "trace_id": "trace_" + i.to_string(),
+      "span_id": "span_" + i.to_string(),
+      "operation_name": "operation_" + i.to_string(),
+      "start_time": 1589273771000000000 + i,
+      "end_time": 1589273772000000000 + i,
+      "attributes": [
+        {"key": "index", "value": {"int_value": i}},
+        {"key": "name", "value": {"string_value": "item_" + i.to_string()}}
+      ]
+    })
+  }
+  
+  // Generate 1000 metrics
+  for i in 0..1000 {
+    large_data.metrics.push({
+      "name": "metric_" + i.to_string(),
+      "value": i * 1.5,
+      "attributes": [
+        {"key": "index", "value": {"int_value": i}},
+        {"key": "type", "value": {"string_value": "gauge"}}
+      ]
+    })
+  }
+  
+  // Generate 1000 logs
+  for i in 0..1000 {
+    large_data.logs.push({
+      "time": 1589273771000000000 + i,
+      "severity": "INFO",
+      "message": "Log message " + i.to_string(),
+      "attributes": [
+        {"key": "index", "value": {"int_value": i}},
+        {"key": "source", "value": {"string_value": "component_" + (i % 10).to_string()}}
+      ]
+    })
+  }
+  
+  // Benchmark JSON serialization
+  let json_serialize_time = benchmark(|| {
+    serialize_to_json(large_data)
   })
   
-  match recovery_result {
-    Ok(data) => assert_true(data.length() > 0, "Should recover from partial serialization errors")
-    Error(_) => assert_true(false, "Should recover from serialization errors")
+  // Benchmark JSON deserialization
+  let json_data = serialize_to_json(large_data)
+  let json_deserialize_time = benchmark(|| {
+    deserialize_from_json(json_data)
+  })
+  
+  // Benchmark binary serialization
+  let binary_serialize_time = benchmark(|| {
+    serialize_to_binary(large_data)
+  })
+  
+  // Benchmark binary deserialization
+  let binary_data = serialize_to_binary(large_data)
+  let binary_deserialize_time = benchmark(|| {
+    deserialize_from_binary(binary_data)
+  })
+  
+  // Benchmark Protocol Buffers serialization
+  let protobuf_serialize_time = benchmark(|| {
+    serialize_to_protobuf(large_data)
+  })
+  
+  // Benchmark Protocol Buffers deserialization
+  let protobuf_data = serialize_to_protobuf(large_data)
+  let protobuf_deserialize_time = benchmark(|| {
+    deserialize_from_protobuf(protobuf_data)
+  })
+  
+  // Verify size differences
+  let json_size = json_data.length()
+  let binary_size = binary_data.length()
+  let protobuf_size = protobuf_data.length()
+  
+  // Binary formats should be more compact
+  assert_true(binary_size < json_size)
+  assert_true(protobuf_size < json_size)
+  
+  // Binary formats should be faster for serialization
+  assert_true(binary_serialize_time < json_serialize_time)
+  assert_true(protobuf_serialize_time < json_serialize_time)
+  
+  // Binary formats should be faster for deserialization
+  assert_true(binary_deserialize_time < json_deserialize_time)
+  assert_true(protobuf_deserialize_time < json_deserialize_time)
+}
+
+// Test 10: Serialization Error Handling
+test "serialization error handling" {
+  // Test invalid JSON deserialization
+  let invalid_json = "{invalid json}"
+  let result = try {
+    deserialize_from_json(invalid_json)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Invalid JSON"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
   }
+  
+  assert_eq(result, "error_caught")
+  
+  // Test invalid binary deserialization
+  let invalid_binary = [0xFF, 0xFF, 0xFF, 0xFF]
+  let result2 = try {
+    deserialize_from_binary(invalid_binary)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Invalid binary data"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
+  }
+  
+  assert_eq(result2, "error_caught")
+  
+  // Test circular reference handling
+  let circular_object = {}
+  circular_object.self = circular_object  // Create circular reference
+  
+  let result3 = try {
+    serialize_to_json(circular_object)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Circular reference"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
+  }
+  
+  assert_eq(result3, "error_caught")
+  
+  // Test too large data handling
+  let large_string = "a" * 1000000  // 1MB string
+  let large_object = {
+    "data": large_string
+  }
+  
+  // This should succeed
+  let large_json = serialize_to_json(large_object)
+  let large_deserialized = deserialize_from_json(large_json)
+  assert_eq(large_deserialized.data, large_string)
+  
+  // Create extremely large object (should fail)
+  let extremely_large_object = {
+    "data": "a" * 100000000  // 100MB string
+  }
+  
+  let result4 = try {
+    serialize_to_json(extremely_large_object)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Data too large"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
+  }
+  
+  assert_eq(result4, "error_caught")
+  
+  // Test type mismatch handling
+  let json_string = "\"hello\""  // String, but we expect a number
+  let result5 = try {
+    deserialize_from_json_typed[Int](json_string)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Type mismatch"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
+  }
+  
+  assert_eq(result5, "error_caught")
+  
+  // Test missing field handling
+  let json_object = "{\"name\": \"John\"}"  // Missing "age" field
+  let result6 = try {
+    deserialize_from_json_typed[Person](json_object)
+  } catch {
+    SerializationError(message) => {
+      assert_true(message.contains("Missing field"))
+      "error_caught"
+    }
+    _ => "unexpected_error"
+  }
+  
+  assert_eq(result6, "error_caught")
 }
