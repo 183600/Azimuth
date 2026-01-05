@@ -288,6 +288,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_data_aggregation_statistics_tests.mbt": {
   },
+  "azimuth_telemetry_data_aggregation_new_tests.mbt": {
+  },
   "azimuth_telemetry_data_aggregation_analysis_tests.mbt": {
   },
   "azimuth_telemetry_core_tests.mbt": {
@@ -545,6 +547,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_resource_management_comprehensive_tests.mbt": {
   },
   "azimuth_resource_management_cleanup_tests.mbt": {
+  },
+  "azimuth_resource_management_cleanup_new_tests.mbt": {
   },
   "azimuth_resource_management_cleanup_comprehensive_tests.mbt": {
   },
@@ -915,6 +919,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_performance_benchmark_resource_limits_tests.mbt": {
   },
   "azimuth_performance_benchmark_quality_tests.mbt": {
+  },
+  "azimuth_performance_benchmark_new_tests.mbt": {
   },
   "azimuth_performance_benchmark_load_tests.mbt": {
   },
@@ -1498,6 +1504,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_error_handling_recovery_quality_tests.mbt": {
   },
+  "azimuth_error_handling_recovery_new_tests.mbt": {
+  },
   "azimuth_error_handling_recovery_enhanced_tests.mbt": {
   },
   "azimuth_error_handling_recovery_comprehensive_tests.mbt": {
@@ -1706,6 +1714,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_distributed_tracing_consistency_quality_tests.mbt": {
   },
+  "azimuth_distributed_tracing_consistency_new_tests.mbt": {
+  },
   "azimuth_distributed_tracing_consistency_high_quality_tests.mbt": {
   },
   "azimuth_distributed_tracing_consistency_enhanced_tests.mbt": {
@@ -1861,6 +1871,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_data_compression_advanced_tests.mbt": {
   },
   "azimuth_data_analysis_high_quality_tests.mbt": {
+  },
+  "azimuth_data_aggregation_advanced_tests.mbt": {
   },
   "azimuth_dashboard_realtime_update_tests.mbt": {
   },
