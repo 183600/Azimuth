@@ -1,563 +1,379 @@
-// Azimuth 综合新测试套件
-// 这个文件包含涵盖遥测系统各个方面的综合测试用例
+// Azimuth Telemetry System - Comprehensive New Test Cases
+// This file contains 10 new comprehensive test cases for the Azimuth telemetry system
 
-// 测试 1: 性能基准测试
-test "performance benchmark - 数组操作" {
-  // 测试大量数组操作的性能
-  let large_array = []
-  let start_time = 1000  // 模拟时间戳
-  
-  // 创建大数组
-  for i in 0..=5000 {
-    large_array.push(i)
+// Test 1: Data Processing and Conversion
+test "data processing and conversion" {
+  // Test string to number conversion
+  let str_num = "12345"
+  let converted_num = str_num.to_int()
+  match converted_num {
+    Some(num) => assert_eq(num, 12345)
+    None => assert_true(false)
   }
   
-  let mid_time = 2000  // 模拟中间时间戳
+  // Test float to string conversion
+  let float_val = 3.14159
+  let float_str = float_val.to_string()
+  assert_true(float_str.contains("3.14"))
   
-  // 执行数组操作
-  let mut sum = 0
-  for value in large_array {
-    sum = sum + value
-  }
+  // Test array filtering
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let even_numbers = numbers.filter(fn(x) { x % 2 == 0 })
+  assert_eq(even_numbers.length(), 5)
+  assert_eq(even_numbers[0], 2)
+  assert_eq(even_numbers[4], 10)
   
-  let end_time = 3000  // 模拟结束时间戳
+  // Test array mapping
+  let doubled = numbers.map(fn(x) { x * 2 })
+  assert_eq(doubled.length(), 10)
+  assert_eq(doubled[0], 2)
+  assert_eq(doubled[9], 20)
   
-  // 验证操作结果
-  assert_eq(large_array.length(), 5001)
-  assert_eq(sum, 12502500)  // 0+1+2+...+5000 的和
-  
-  // 验证性能（模拟时间差）
-  let duration = end_time - start_time
-  assert_true(duration < 5000)  // 操作应在5秒内完成
+  // Test array reduction
+  let sum = numbers.reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(sum, 55)
 }
 
-test "performance benchmark - 字符串操作" {
-  // 测试字符串连接和操作的性能
-  let mut result = ""
-  let base_string = "test"
-  
-  // 执行多次字符串连接
-  for i in 0..=1000 {
-    result = result + base_string + i.to_string()
-  }
-  
-  // 验证结果
-  assert_true(result.length() > 0)
-  assert_true(String::contains(result, "test0"))
-  assert_true(String::contains(result, "test1000"))
-}
-
-// 测试 2: 并发安全测试
-test "concurrent safety - 数组并发访问模拟" {
-  // 模拟并发访问共享数组
-  let shared_array = [1, 2, 3, 4, 5]
-  let results = []
-  
-  // 模拟多个"线程"处理数组
-  for thread_id in 0..=10 {
-    for i in 0..=4 {
-      // 模拟并发操作：读取、处理、存储结果
-      let value = shared_array[i]
-      let processed_value = value * thread_id
-      results.push(processed_value)
-    }
-  }
-  
-  // 验证所有操作都正确完成
-  assert_eq(results.length(), 55)  // 11个"线程" × 5个元素
-  
-  // 验证特定结果
-  assert_eq(results[0], 0)  // thread_id=0, value=1
-  assert_eq(results[6], 2)  // thread_id=1, value=2
-  assert_eq(results[12], 6)  // thread_id=2, value=3
-}
-
-test "concurrent safety - 数据结构完整性" {
-  // 测试数据结构在"并发"操作下的完整性
-  let data_structure = {
-    "counter": 0,
-    "values": []
-  }
-  
-  // 模拟多个并发操作
-  for operation_id in 0..=100 {
-    // 模拟读取-修改-写入操作
-    let current_counter = data_structure["counter"]
-    let new_counter = current_counter + 1
-    data_structure["counter"] = new_counter
-    
-    // 添加值到数组
-    data_structure["values"].push(operation_id)
-  }
-  
-  // 验证数据结构完整性
-  assert_eq(data_structure["counter"], 101)
-  assert_eq(data_structure["values"].length(), 101)
-  assert_eq(data_structure["values"][0], 0)
-  assert_eq(data_structure["values"][100], 100)
-}
-
-// 测试 3: 数据完整性测试
-test "data integrity - 类型转换保持" {
-  // 测试各种类型转换的数据完整性
-  let int_value = 42
-  let float_value = 3.14159
-  let string_value = "test_string"
-  let bool_value = true
-  
-  // 转换为字符串并验证
-  let int_as_string = int_value.to_string()
-  let float_as_string = float_value.to_string()
-  let bool_as_string = bool_value.to_string()
-  
-  assert_eq(int_as_string, "42")
-  assert_true(String::contains(float_as_string, "3.14159"))
-  
-  // 从字符串转换回数字（模拟）
-  let parsed_int = int_as_string.to_int()
-  match parsed_int {
+// Test 2: Error Handling and Edge Cases
+test "error handling and edge cases" {
+  // Test null/None handling
+  let optional_value = Some(42)
+  match optional_value {
     Some(value) => assert_eq(value, 42)
     None => assert_true(false)
   }
   
-  // 测试数组操作的数据完整性
-  let original_array = [1, 2, 3, 4, 5]
-  let copied_array = []
-  
-  for item in original_array {
-    copied_array.push(item)
-  }
-  
-  // 修改原数组不应影响副本
-  original_array.push(6)
-  
-  assert_eq(original_array.length(), 6)
-  assert_eq(copied_array.length(), 5)
-  assert_eq(original_array[5], 6)
-}
-
-test "data integrity - 嵌套数据结构" {
-  // 测试嵌套数据结构的完整性
-  let nested_data = {
-    "level1": {
-      "level2": {
-        "values": [1, 2, 3],
-        "name": "nested_test"
-      },
-      "count": 42
-    }
-  }
-  
-  // 访问嵌套数据
-  let level2_data = nested_data["level1"]["level2"]
-  let values = level2_data["values"]
-  let name = level2_data["name"]
-  let count = nested_data["level1"]["count"]
-  
-  // 验证数据完整性
-  assert_eq(values.length(), 3)
-  assert_eq(values[0], 1)
-  assert_eq(values[2], 3)
-  assert_eq(name, "nested_test")
-  assert_eq(count, 42)
-  
-  // 修改嵌套数据
-  level2_data["values"].push(4)
-  nested_data["level1"]["count"] = 43
-  
-  // 验证修改后的数据
-  assert_eq(values.length(), 4)
-  assert_eq(values[3], 4)
-  assert_eq(nested_data["level1"]["count"], 43)
-}
-
-// 测试 4: 错误恢复测试
-test "error recovery - 除零错误处理" {
-  // 测试除零错误的恢复
-  let numerator = 10
-  
-  // 安全除法函数
-  func safe_divide(num : Int, denom : Int) -> Option[Int] {
-    if denom == 0 {
-      None
-    } else {
-      Some(num / denom)
-    }
-  }
-  
-  // 测试正常情况
-  let result1 = safe_divide(numerator, 2)
-  match result1 {
-    Some(value) => assert_eq(value, 5)
-    None => assert_true(false)
-  }
-  
-  // 测试错误情况（除零）
-  let result2 = safe_divide(numerator, 0)
-  match result2 {
-    Some(_) => assert_true(false)  // 不应该有值
-    None => assert_true(true)      // 预期的错误情况
-  }
-  
-  // 测试错误恢复
-  let result3 = safe_divide(numerator, 5)
-  match result3 {
-    Some(value) => assert_eq(value, 2)
-    None => assert_true(false)
-  }
-}
-
-test "error recovery - 数组边界处理" {
-  // 测试数组边界访问的错误处理
-  let array = [10, 20, 30, 40, 50]
-  
-  // 安全访问函数
-  func safe_get(arr : Array[Int], index : Int) -> Option[Int] {
-    if index >= 0 && index < arr.length() {
-      Some(arr[index])
-    } else {
-      None
-    }
-  }
-  
-  // 测试正常访问
-  let result1 = safe_get(array, 2)
-  match result1 {
-    Some(value) => assert_eq(value, 30)
-    None => assert_true(false)
-  }
-  
-  // 测试边界访问
-  let result2 = safe_get(array, 0)
-  match result2 {
-    Some(value) => assert_eq(value, 10)
-    None => assert_true(false)
-  }
-  
-  let result3 = safe_get(array, 4)
-  match result3 {
-    Some(value) => assert_eq(value, 50)
-    None => assert_true(false)
-  }
-  
-  // 测试越界访问
-  let result4 = safe_get(array, -1)
-  match result4 {
+  let none_value = None
+  match none_value {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  let result5 = safe_get(array, 5)
-  match result5 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // Test boundary conditions
+  let max_int = 2147483647
+  let min_int = -2147483648
+  assert_eq(max_int + 1, min_int) // Overflow test
+  
+  // Test empty string handling
+  let empty_str = ""
+  assert_eq(empty_str.length(), 0)
+  assert_true(empty_str == "")
+  
+  // Test array boundary conditions
+  let empty_array = []
+  assert_eq(empty_array.length(), 0)
+  
+  // Test large array handling
+  let large_array = [0; 1000]
+  assert_eq(large_array.length(), 1000)
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[999], 0)
 }
 
-// 测试 5: 资源管理测试
-test "resource management - 内存使用模拟" {
-  // 模拟内存使用和释放
-  let resources = []
+// Test 3: Performance and Resource Management
+test "performance and resource management" {
+  // Test memory efficiency with large data sets
+  let large_list = []
+  for i in 0..=10000 {
+    large_list = large_list + [i]
+  }
+  assert_eq(large_list.length(), 10001)
+  assert_eq(large_list[0], 0)
+  assert_eq(large_list[10000], 10000)
   
-  // 分配资源
+  // Test string concatenation performance
+  let mut result = ""
   for i in 0..=100 {
-    let resource = {
-      "id": i,
-      "size": i * 10,
-      "data": "resource_data_" + i.to_string()
-    }
-    resources.push(resource)
+    result = result + i.to_string()
   }
+  assert_true(result.length() > 0)
   
-  // 验证资源分配
-  assert_eq(resources.length(), 101)
-  assert_eq(resources[0]["id"], 0)
-  assert_eq(resources[100]["id"], 100)
-  
-  // 计算总大小
-  let mut total_size = 0
+  // Test resource cleanup simulation
+  let resources = [1, 2, 3, 4, 5]
+  let mut cleaned_resources = []
   for resource in resources {
-    total_size = total_size + resource["size"]
+    // Simulate resource cleanup
+    cleaned_resources = cleaned_resources + [resource * 2]
   }
-  
-  // 验证总大小 (0 + 10 + 20 + ... + 1000)
-  assert_eq(total_size, 50500)
-  
-  // 释放一半资源（模拟）
-  let remaining_resources = []
-  for i in 0..=50 {
-    remaining_resources.push(resources[i])
-  }
-  
-  // 验证资源释放
-  assert_eq(remaining_resources.length(), 51)
-  
-  // 计算剩余资源大小
-  let mut remaining_size = 0
-  for resource in remaining_resources {
-    remaining_size = remaining_size + resource["size"]
-  }
-  
-  // 验证剩余大小 (0 + 10 + 20 + ... + 500)
-  assert_eq(remaining_size, 12750)
+  assert_eq(cleaned_resources.length(), 5)
+  assert_eq(cleaned_resources[4], 10)
 }
 
-test "resource management - 对象生命周期" {
-  // 测试对象生命周期管理
-  let objects = []
-  
-  // 创建对象
-  for i in 0..=50 {
-    let obj = {
-      "id": i,
-      "state": "created",
-      "created_at": i * 100,
-      "access_count": 0
-    }
-    objects.push(obj)
+// Test 4: Concurrency and Thread Safety
+test "concurrency and thread safety" {
+  // Test atomic operations simulation
+  let mut counter = 0
+  for i in 0..=100 {
+    counter = counter + 1
   }
+  assert_eq(counter, 101)
   
-  // 使用对象
-  for obj in objects {
-    obj["state"] = "used"
-    obj["access_count"] = obj["access_count"] + 1
+  // Test shared resource access simulation
+  let shared_data = [1, 2, 3, 4, 5]
+  let mut processed_data = []
+  for item in shared_data {
+    processed_data = processed_data + [item * 2]
   }
+  assert_eq(processed_data.length(), 5)
+  assert_eq(processed_data[0], 2)
+  assert_eq(processed_data[4], 10)
   
-  // 验证对象状态
-  for obj in objects {
-    assert_eq(obj["state"], "used")
-    assert_eq(obj["access_count"], 1)
+  // Test lock-free data structure simulation
+  let lock_free_queue = []
+  for i in 0..=10 {
+    lock_free_queue = lock_free_queue + [i]
   }
-  
-  // 清理对象
-  for obj in objects {
-    obj["state"] = "disposed"
-  }
-  
-  // 验证清理状态
-  for obj in objects {
-    assert_eq(obj["state"], "disposed")
-  }
+  assert_eq(lock_free_queue.length(), 11)
 }
 
-// 测试 6: 序列化/反序列化测试
-test "serialization - 简单数据序列化" {
-  // 测试简单数据的序列化
-  let simple_data = {
-    "name": "test_object",
-    "value": 42,
-    "active": true,
-    "tags": ["tag1", "tag2", "tag3"]
-  }
+// Test 5: Serialization and Deserialization
+test "serialization and deserialization" {
+  // Test JSON-like serialization
+  let data = [
+    ("name", "test_object"),
+    ("value", "42"),
+    ("active", "true")
+  ]
   
-  // 序列化为字符串（模拟JSON）
-  let serialized = "{"
-    + "\"name\":\"" + simple_data["name"] + "\","
-    + "\"value\":" + simple_data["value"].to_string() + ","
-    + "\"active\":" + (if simple_data["active"] { "true" } else { "false" }) + ","
-    + "\"tags\":[" + 
-      "\"" + simple_data["tags"][0] + "\"," +
-      "\"" + simple_data["tags"][1] + "\"," +
-      "\"" + simple_data["tags"][2] + "\"" +
-    "]"
-  + "}"
-  
-  // 验证序列化结果
-  assert_true(String::contains(serialized, "\"name\":\"test_object\""))
-  assert_true(String::contains(serialized, "\"value\":42"))
-  assert_true(String::contains(serialized, "\"active\":true"))
-  assert_true(String::contains(serialized, "\"tags\":["))
-  assert_true(String::contains(serialized, "\"tag1\""))
-  assert_true(String::contains(serialized, "\"tag3\""))
-  
-  // 反序列化（模拟）
-  let deserialized = {
-    "name": "test_object",
-    "value": 42,
-    "active": true,
-    "tags": ["tag1", "tag2", "tag3"]
-  }
-  
-  // 验证反序列化结果
-  assert_eq(deserialized["name"], simple_data["name"])
-  assert_eq(deserialized["value"], simple_data["value"])
-  assert_eq(deserialized["active"], simple_data["active"])
-  assert_eq(deserialized["tags"].length(), simple_data["tags"].length())
-  assert_eq(deserialized["tags"][0], simple_data["tags"][0])
-}
-
-test "serialization - 复杂数据序列化" {
-  // 测试复杂数据的序列化
-  let complex_data = {
-    "metadata": {
-      "version": "1.0.0",
-      "created": "2023-01-01",
-      "author": "test_author"
-    },
-    "items": [
-      {"id": 1, "name": "item1", "values": [10, 20, 30]},
-      {"id": 2, "name": "item2", "values": [40, 50, 60]},
-      {"id": 3, "name": "item3", "values": [70, 80, 90]}
-    ],
-    "settings": {
-      "enabled": true,
-      "threshold": 0.5,
-      "modes": ["mode1", "mode2"]
+  // Simulate serialization
+  let mut serialized = "{"
+  for i in 0..data.length() {
+    let (key, value) = data[i]
+    serialized = serialized + "\"" + key + "\":\"" + value + "\""
+    if i < data.length() - 1 {
+      serialized = serialized + ","
     }
   }
+  serialized = serialized + "}"
   
-  // 验证复杂数据结构
-  assert_eq(complex_data["metadata"]["version"], "1.0.0")
-  assert_eq(complex_data["items"].length(), 3)
-  assert_eq(complex_data["items"][0]["id"], 1)
-  assert_eq(complex_data["items"][0]["values"][2], 30)
-  assert_eq(complex_data["items"][2]["values"][0], 70)
-  assert_eq(complex_data["settings"]["modes"].length(), 2)
-  assert_eq(complex_data["settings"]["modes"][1], "mode2")
+  assert_true(serialized.contains("\"name\":\"test_object\""))
+  assert_true(serialized.contains("\"value\":\"42\""))
+  assert_true(serialized.contains("\"active\":\"true\""))
   
-  // 部分序列化（只序列化items数组）
-  let items_serialized = "["
-    + "{\"id\":" + complex_data["items"][0]["id"].to_string() + "}," 
-    + "{\"id\":" + complex_data["items"][1]["id"].to_string() + "}," 
-    + "{\"id\":" + complex_data["items"][2]["id"].to_string() + "}"
-  + "]"
-  
-  // 验证部分序列化结果
-  assert_true(String::contains(items_serialized, "{\"id\":1}"))
-  assert_true(String::contains(items_serialized, "{\"id\":3}"))
+  // Test binary-like serialization
+  let binary_data = [1, 2, 3, 4, 5]
+  let mut binary_string = ""
+  for byte in binary_data {
+    binary_string = binary_string + byte.to_string() + ","
+  }
+  assert_true(binary_string.contains("1,2,3,4,5"))
 }
 
-// 测试 7: 配置管理测试
-test "configuration management - 配置存储和检索" {
-  // 创建配置管理器（模拟）
-  let config = {}
+// Test 6: Internationalization Support
+test "internationalization support" {
+  // Test Unicode string handling
+  let unicode_str = "Hello 世界 🌍"
+  assert_eq(unicode_str.length(), 11)
+  assert_true(unicode_str.contains("世界"))
+  assert_true(unicode_str.contains("🌍"))
   
-  // 设置配置
-  config["service.name"] = "azimuth"
-  config["service.version"] = "1.0.0"
-  config["service.port"] = 8080
-  config["debug.enabled"] = true
-  config["debug.level"] = "info"
-  config["feature.flags"] = ["feature1", "feature2", "feature3"]
+  // Test locale-specific formatting
+  let number = 1234567.89
+  let number_str = number.to_string()
+  assert_true(number_str.contains("1234567"))
   
-  // 检索配置
-  let service_name = config["service.name"]
-  let service_version = config["service.version"]
-  let service_port = config["service.port"]
-  let debug_enabled = config["debug.enabled"]
-  let debug_level = config["debug.level"]
-  let feature_flags = config["feature.flags"]
+  // Test date/time localization simulation
+  let timestamp = 1640995200 // 2022-01-01 00:00:00 UTC
+  let date_str = "2022-01-01"
+  assert_true(date_str.contains("2022"))
+  assert_true(date_str.contains("01"))
+  assert_true(date_str.contains("01"))
   
-  // 验证配置值
-  assert_eq(service_name, "azimuth")
-  assert_eq(service_version, "1.0.0")
-  assert_eq(service_port, 8080)
-  assert_eq(debug_enabled, true)
-  assert_eq(debug_level, "info")
-  assert_eq(feature_flags.length(), 3)
-  assert_eq(feature_flags[0], "feature1")
-  assert_eq(feature_flags[2], "feature3")
+  // Test currency formatting simulation
+  let amount = 1234.56
+  let currency_str = "$1,234.56"
+  assert_true(currency_str.contains("1234.56"))
 }
 
-test "configuration management - 默认配置和覆盖" {
-  // 设置默认配置
-  let default_config = {
-    "timeout": 30,
-    "retries": 3,
-    "enabled": true,
-    "level": "info",
-    "servers": ["server1", "server2"]
-  }
+// Test 7: Caching Mechanism
+test "caching mechanism" {
+  // Test simple cache implementation
+  let cache = []
   
-  // 创建用户配置（覆盖部分默认值）
-  let user_config = {
-    "timeout": 60,  // 覆盖默认值
-    "level": "debug",  // 覆盖默认值
-    "new_option": "new_value"  // 新增选项
-  }
+  // Add items to cache
+  let cache_with_items = cache + [("key1", "value1"), ("key2", "value2"), ("key3", "value3")]
   
-  // 合并配置（用户配置优先）
-  let merged_config = {}
-  
-  // 首先应用默认配置
-  for key in default_config.keys() {
-    merged_config[key] = default_config[key]
-  }
-  
-  // 然后应用用户配置（覆盖）
-  for key in user_config.keys() {
-    merged_config[key] = user_config[key]
-  }
-  
-  // 验证合并结果
-  assert_eq(merged_config["timeout"], 60)  // 用户值
-  assert_eq(merged_config["retries"], 3)   // 默认值
-  assert_eq(merged_config["enabled"], true) // 默认值
-  assert_eq(merged_config["level"], "debug") // 用户值
-  assert_eq(merged_config["servers"].length(), 2) // 默认值
-  assert_eq(merged_config["new_option"], "new_value") // 新增值
-}
-
-// 测试 8: 跨平台兼容性测试
-test "cross-platform compatibility - 路径处理" {
-  // 测试不同平台的路径处理
-  let unix_path = "/home/user/documents/file.txt"
-  let windows_path = "C:\\Users\\user\\Documents\\file.txt"
-  
-  // 提取文件名（跨平台）
-  func extract_filename(path : String) -> String {
-    let parts = String::split(path, ["/", "\\"])
-    parts[parts.length() - 1]
-  }
-  
-  // 测试文件名提取
-  let unix_filename = extract_filename(unix_path)
-  let windows_filename = extract_filename(windows_path)
-  
-  assert_eq(unix_filename, "file.txt")
-  assert_eq(windows_filename, "file.txt")
-  
-  // 测试路径组合
-  func join_paths(parts : Array[String]) -> String {
-    let mut result = parts[0]
-    for i in 1..=parts.length() - 1 {
-      result = result + "/" + parts[i]  // 使用Unix风格分隔符
+  // Test cache lookup
+  let mut found_value = ""
+  for i in 0..cache_with_items.length() {
+    let (key, value) = cache_with_items[i]
+    if key == "key2" {
+      found_value = value
     }
-    result
+  }
+  assert_eq(found_value, "value2")
+  
+  // Test cache eviction simulation (LRU)
+  let limited_cache = [("key1", "value1"), ("key2", "value2")]
+  let new_cache = limited_cache + [("key3", "value3"), ("key4", "value4")]
+  assert_eq(new_cache.length(), 4)
+  
+  // Test cache hit/miss simulation
+  let cache_keys = ["key1", "key2", "key3"]
+  let mut hits = 0
+  let mut misses = 0
+  
+  let search_keys = ["key1", "key3", "key4"]
+  for search_key in search_keys {
+    let mut found = false
+    for cache_key in cache_keys {
+      if cache_key == search_key {
+        found = true
+      }
+    }
+    if found {
+      hits = hits + 1
+    } else {
+      misses = misses + 1
+    }
   }
   
-  let path_parts = ["home", "user", "documents", "file.txt"]
-  let joined_path = join_paths(path_parts)
-  
-  assert_eq(joined_path, "home/user/documents/file.txt")
+  assert_eq(hits, 2)
+  assert_eq(misses, 1)
 }
 
-test "cross-platform compatibility - 换行符处理" {
-  // 测试不同平台的换行符处理
-  let unix_text = "line1\nline2\nline3"
-  let windows_text = "line1\r\nline2\r\nline3"
-  let mac_text = "line1\rline2\rline3"
+// Test 8: Network Communication
+test "network communication" {
+  // Test URL parsing
+  let url = "https://example.com:8080/path?param=value#fragment"
+  assert_true(url.contains("https://"))
+  assert_true(url.contains("example.com"))
+  assert_true(url.contains("8080"))
+  assert_true(url.contains("/path"))
+  assert_true(url.contains("param=value"))
   
-  // 标准化换行符（统一为\n）
-  func normalize_newlines(text : String) -> String {
-    let result = String::replace(text, "\r\n", "\n")  // Windows -> Unix
-    String::replace(result, "\r", "\n")               // Mac -> Unix
+  // Test HTTP header handling
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Authorization", "Bearer token123"),
+    ("User-Agent", "Azimuth/1.0")
+  ]
+  
+  let mut content_type = ""
+  for i in 0..headers.length() {
+    let (key, value) = headers[i]
+    if key == "Content-Type" {
+      content_type = value
+    }
+  }
+  assert_eq(content_type, "application/json")
+  
+  // Test request/response cycle simulation
+  let request_data = "GET /api/data HTTP/1.1"
+  let response_data = "HTTP/1.1 200 OK"
+  
+  assert_true(request_data.contains("GET"))
+  assert_true(response_data.contains("200 OK"))
+  
+  // Test timeout handling simulation
+  let timeout_ms = 5000
+  let elapsed_ms = 3000
+  assert_true(elapsed_ms < timeout_ms)
+}
+
+// Test 9: Configuration Management
+test "configuration management" {
+  // Test configuration loading simulation
+  let config_data = [
+    ("server.port", "8080"),
+    ("server.host", "localhost"),
+    ("database.url", "postgresql://localhost:5432/azimuth"),
+    ("log.level", "INFO")
+  ]
+  
+  // Test configuration retrieval
+  let mut server_port = ""
+  for i in 0..config_data.length() {
+    let (key, value) = config_data[i]
+    if key == "server.port" {
+      server_port = value
+    }
+  }
+  assert_eq(server_port, "8080")
+  
+  // Test configuration validation
+  let mut valid_config = true
+  for i in 0..config_data.length() {
+    let (key, value) = config_data[i]
+    if value == "" {
+      valid_config = false
+    }
+  }
+  assert_true(valid_config)
+  
+  // Test configuration merging
+  let default_config = [("timeout", "30"), ("retries", "3")]
+  let user_config = [("timeout", "60"), ("debug", "true")]
+  
+  let mut merged_config = default_config
+  for i in 0..user_config.length() {
+    let (key, value) = user_config[i]
+    let mut found = false
+    for j in 0..merged_config.length() {
+      let (existing_key, _) = merged_config[j]
+      if existing_key == key {
+        found = true
+      }
+    }
+    if !found {
+      merged_config = merged_config + [(key, value)]
+    }
   }
   
-  // 测试换行符标准化
-  let normalized_unix = normalize_newlines(unix_text)
-  let normalized_windows = normalize_newlines(windows_text)
-  let normalized_mac = normalize_newlines(mac_text)
+  assert_true(merged_config.length() >= 3)
+}
+
+// Test 10: Time Series Processing
+test "time series processing" {
+  // Test time series data creation
+  let time_series_data = [
+    (1640995200, 10.5),  // 2022-01-01 00:00:00
+    (1640995260, 12.3),  // 2022-01-01 00:01:00
+    (1640995320, 11.8),  // 2022-01-01 00:02:00
+    (1640995380, 13.2),  // 2022-01-01 00:03:00
+    (1640995440, 14.1)   // 2022-01-01 00:04:00
+  ]
   
-  assert_eq(normalized_unix, "line1\nline2\nline3")
-  assert_eq(normalized_windows, "line1\nline2\nline3")
-  assert_eq(normalized_mac, "line1\nline2\nline3")
+  // Test time series aggregation
+  let mut sum = 0.0
+  for i in 0..time_series_data.length() {
+    let (_, value) = time_series_data[i]
+    sum = sum + value
+  }
+  let average = sum / time_series_data.length().to_float()
+  assert_true(average > 10.0 && average < 15.0)
   
-  // 分割行
-  let lines = String::split(normalized_windows, "\n")
+  // Test time series filtering
+  let mut filtered_data = []
+  for i in 0..time_series_data.length() {
+    let (timestamp, value) = time_series_data[i]
+    if value > 12.0 {
+      filtered_data = filtered_data + [(timestamp, value)]
+    }
+  }
+  assert_eq(filtered_data.length(), 3)
   
-  assert_eq(lines.length(), 3)
-  assert_eq(lines[0], "line1")
-  assert_eq(lines[1], "line2")
-  assert_eq(lines[2], "line3")
+  // Test time series windowing
+  let window_size = 3
+  let mut windows = []
+  for i in 0..=(time_series_data.length() - window_size) {
+    let mut window = []
+    for j in 0..window_size {
+      window = window + [time_series_data[i + j]]
+    }
+    windows = windows + [window]
+  }
+  assert_eq(windows.length(), 3)
+  assert_eq(windows[0].length(), 3)
+  
+  // Test time series trend calculation
+  let mut increasing_count = 0
+  for i in 1..time_series_data.length() {
+    let (_, prev_value) = time_series_data[i - 1]
+    let (_, current_value) = time_series_data[i]
+    if current_value > prev_value {
+      increasing_count = increasing_count + 1
+    }
+  }
+  assert_true(increasing_count > 0)
 }

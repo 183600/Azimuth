@@ -848,6 +848,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_adaptive_threshold_tests.mbt": {
   },
+  "azimuth_practical_test_cases.mbt": {
+  },
   "azimuth_practical_telemetry_tests.mbt": {
   },
   "azimuth_platform_specific_telemetry_adaptation_tests.mbt": {
