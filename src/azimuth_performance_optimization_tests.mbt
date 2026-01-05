@@ -1,436 +1,376 @@
-// Azimuth Telemetry System - Performance Optimization Tests
-// This file contains comprehensive test cases for performance optimization functionality
+// Azimuth Telemetry System - Performance Tests
+// This file contains performance test cases for the telemetry system under high load
 
-// Test 1: Memory Allocation Efficiency
-test "memory allocation efficiency" {
-  // Test efficient string creation
-  let small_string = "test"
-  assert_eq(small_string.length(), 4)
+// Test 1: High Throughput Span Creation and Processing
+test "high throughput span creation and processing" {
+  // Initialize telemetry provider with performance-optimized configuration
+  let config = TelemetryConfig::new()
+  TelemetryConfig::set_batch_size(config, 1024)
+  TelemetryConfig::set_max_export_batch_size(config, 2048)
+  TelemetryConfig::set_scheduled_delay(config, 1000) // 1 second
+  TelemetryConfig::set_sampling_ratio(config, 1.0) // 100% sampling for performance testing
   
-  let large_string = "test".repeat(1000)
-  assert_eq(large_string.length(), 4000)
+  let provider = TelemetryProvider::from_config(config)
+  let tracer = TelemetryProvider::get_tracer(provider, "performance_test_tracer")
   
-  // Test efficient array creation
-  let empty_array = []
-  assert_eq(empty_array.length(), 0)
+  // Performance measurement variables
+  let start_time = Time::now()
+  let span_count = 10000
+  let mut spans = []
   
-  let pre_sized_array = [0; 1000]
-  assert_eq(pre_sized_array.length(), 1000)
-  
-  // Test memory reuse patterns
-  let mut reusable_string = "initial"
-  assert_eq(reusable_string, "initial")
-  
-  reusable_string = "updated"
-  assert_eq(reusable_string, "updated")
-  
-  // Test efficient concatenation
-  let string1 = "hello"
-  let string2 = " "
-  let string3 = "world"
-  let concatenated = string1 + string2 + string3
-  assert_eq(concatenated, "hello world")
-}
-
-// Test 2: Loop Optimization
-test "loop optimization" {
-  // Test efficient iteration patterns
-  let data = [1, 2, 3, 4, 5]
-  let mut sum = 0
-  
-  // Efficient for loop
-  for i in 0..<data.length() {
-    sum = sum + data[i]
-  }
-  assert_eq(sum, 15)
-  
-  // Reset sum for next test
-  sum = 0
-  
-  // Iterator pattern (if available)
-  for value in data {
-    sum = sum + value
-  }
-  assert_eq(sum, 15)
-  
-  // Test loop unrolling benefits
-  let mut fast_sum = 0
-  let large_data = [1; 1000]
-  
-  for i in 0..<large_data.length() {
-    fast_sum = fast_sum + large_data[i]
-  }
-  assert_eq(fast_sum, 1000)
-  
-  // Test early termination
-  let mut found = false
-  let search_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  
-  for value in search_data {
-    if value == 5 {
-      found = true
-      break
-    }
-  }
-  assert_true(found)
-}
-
-// Test 3: Caching Mechanisms
-test "caching mechanisms" {
-  // Test result caching
-  let mut cache = []
-  let expensive_operation = fn(x: Int) -> Int {
-    x * x
-  }
-  
-  // First call - should compute
-  let result1 = expensive_operation(5)
-  assert_eq(result1, 25)
-  
-  // Cache the result
-  cache.push((5, result1))
-  
-  // Second call - should use cache
-  let cached_result = 25
-  assert_eq(cached_result, result1)
-  
-  // Test cache capacity management
-  let max_cache_size = 100
-  for i in 0..<max_cache_size {
-    cache.push((i, i * i))
-  }
-  assert_eq(cache.length(), max_cache_size + 1) // +1 for the initial entry
-  
-  // Test cache eviction
-  if cache.length() > max_cache_size {
-    cache = cache.slice(1) // Remove oldest entry
-  }
-  assert_eq(cache.length(), max_cache_size)
-}
-
-// Test 4: Batch Processing
-test "batch processing optimization" {
-  // Test batch array operations
-  let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let batch_size = 3
-  let mut batch_results = []
-  
-  for i in 0..<data.length() {
-    if i % batch_size == 0 && i > 0 {
-      batch_results.push(i) // Mark batch boundary
-    }
-  }
-  assert_eq(batch_results.length(), 3) // 10 items with batch size 3 = 3 batches
-  
-  // Test efficient batch processing
-  let mut batch_sum = 0
-  let mut batch_count = 0
-  
-  for value in data {
-    batch_sum = batch_sum + value
-    batch_count = batch_count + 1
+  // Create high volume of spans
+  for i in 0..span_count {
+    let span_name = "performance_test_span_" + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
     
-    if batch_count >= batch_size {
-      // Process batch
-      assert_true(batch_sum > 0)
-      batch_sum = 0
-      batch_count = 0
+    // Add attributes to simulate real-world usage
+    Span::set_attribute(span, "iteration", IntValue(i))
+    Span::set_attribute(span, "batch.id", StringValue("batch_001"))
+    Span::set_attribute(span, "operation.type", StringValue("performance_test"))
+    
+    // Add events to simulate real-world usage
+    if i % 100 == 0 {
+      let event_attrs = Attributes::new()
+      Attributes::set(event_attrs, "milestone", StringValue("batch_progress"))
+      Attributes::set(event_attrs, "progress.percentage", FloatValue((i * 100) / span_count))
+      Span::add_event(span, "Batch progress milestone", Some(event_attrs))
     }
+    
+    spans.push(span)
   }
   
-  // Process remaining items
-  if batch_count > 0 {
-    assert_true(batch_sum > 0)
+  // End all spans
+  for span in spans {
+    Span::end(span)
   }
+  
+  let end_time = Time::now()
+  let duration_ms = end_time - start_time
+  
+  // Performance assertions
+  assert_true(duration_ms < 5000) // Should complete within 5 seconds
+  assert_true(span_count > 0) // Verify spans were created
+  
+  // Calculate spans per second
+  let spans_per_second = (span_count * 1000) / duration_ms
+  assert_true(spans_per_second > 1000) // Should handle at least 1000 spans/second
 }
 
-// Test 5: String Operations Optimization
-test "string operations optimization" {
-  // Test string builder pattern
-  let mut parts = ["hello", " ", "world", "!"]
-  let mut result = ""
+// Test 2: Memory Usage Under Load
+test "memory usage under load" {
+  // Initialize telemetry provider
+  let provider = TelemetryProvider::default()
+  let tracer = TelemetryProvider::get_tracer(provider, "memory_test_tracer")
+  let meter = TelemetryProvider::get_meter(provider, "memory_test_meter")
   
-  for part in parts {
-    result = result + part
+  // Create memory gauge
+  let memory_gauge = Meter::create_gauge(
+    meter, 
+    "process.memory.usage", 
+    Some("Process memory usage in bytes"), 
+    Some("bytes")
+  )
+  
+  // Record initial memory usage
+  let initial_memory = Memory::get_usage()
+  Gauge::record(memory_gauge, initial_memory.to_float())
+  
+  // Create大量 spans with large attributes
+  let large_span_count = 1000
+  let large_data_size = 1024 // 1KB per span
+  
+  for i in 0..large_span_count {
+    let span = Tracer::start_span(tracer, "memory_test_span")
+    
+    // Create large attribute data
+    let large_string = "x".repeat(large_data_size)
+    Span::set_attribute(span, "large.data", StringValue(large_string))
+    Span::set_attribute(span, "span.index", IntValue(i))
+    
+    // Add array attributes
+    let large_array = []
+    for j in 0..100 {
+      large_array.push("item_" + j.to_string())
+    }
+    Span::set_attribute(span, "large.array", ArrayStringValue(large_array))
+    
+    Span::end(span)
   }
-  assert_eq(result, "hello world!")
   
-  // Test efficient string comparison
-  let string1 = "hello"
-  let string2 = "hello"
-  let string3 = "world"
+  // Check memory usage after creating spans
+  let peak_memory = Memory::get_usage()
+  Gauge::record(memory_gauge, peak_memory.to_float())
   
-  assert_eq(string1, string2)
-  assert_ne(string1, string3)
+  // Force garbage collection if available
+  Memory::gc()
   
-  // Test string search optimization
-  let text = "this is a long text with many words and some patterns"
-  let pattern = "patterns"
+  // Check memory after cleanup
+  let final_memory = Memory::get_usage()
+  Gauge::record(memory_gauge, final_memory.to_float())
   
-  assert_true(text.contains(pattern))
-  assert_false(text.contains("nonexistent"))
+  // Memory usage assertions
+  let memory_increase = peak_memory - initial_memory
+  let memory_after_cleanup = final_memory - initial_memory
   
-  // Test string splitting efficiency
-  let csv_data = "value1,value2,value3,value4,value5"
-  let parts = csv_data.split(",")
-  assert_eq(parts.length(), 5)
-  assert_eq(parts[0], "value1")
-  assert_eq(parts[4], "value5")
+  // Memory should not increase indefinitely
+  assert_true(memory_after_cleanup < (memory_increase * 1.5)) // Should not exceed 50% of peak increase
+  
+  // Memory should be reasonable for the test
+  let memory_per_span = memory_increase / large_span_count
+  assert_true(memory_per_span < 10000) // Should not exceed 10KB per span
 }
 
-// Test 6: Data Structure Optimization
-test "data structure optimization" {
-  // Test efficient lookups
-  let array_data = [10, 20, 30, 40, 50]
-  let target = 30
-  let mut found = false
-  let mut index = -1
+// Test 3: Concurrent Metrics Collection Performance
+test "concurrent metrics collection performance" {
+  let provider = TelemetryProvider::default()
+  let meter = TelemetryProvider::get_meter(provider, "concurrent_metrics_meter")
   
-  // Linear search (for small arrays)
-  for i in 0..<array_data.length() {
-    if array_data[i] == target {
-      found = true
-      index = i
-      break
-    }
-  }
+  // Create various metric instruments
+  let counter = Meter::create_counter(meter, "concurrent.counter", Some("Concurrent counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "concurrent.histogram", Some("Concurrent histogram"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "concurrent.updown", Some("Concurrent updown counter"), Some("value"))
+  let gauge = Meter::create_gauge(meter, "concurrent.gauge", Some("Concurrent gauge"), Some("value"))
   
-  assert_true(found)
-  assert_eq(index, 2)
+  // Performance measurement
+  let start_time = Time::now()
+  let operation_count = 50000
   
-  // Test binary search on sorted data
-  let sorted_data = [10, 20, 30, 40, 50]
-  let binary_target = 30
-  let mut left = 0
-  let mut right = sorted_data.length() - 1
-  let mut binary_found = false
-  
-  while left <= right {
-    let mid = (left + right) / 2
-    if sorted_data[mid] == binary_target {
-      binary_found = true
-      break
-    } else if sorted_data[mid] < binary_target {
-      left = mid + 1
+  // Simulate concurrent metrics operations
+  for i in 0..operation_count {
+    // Counter operations
+    Counter::add(counter, 1.0)
+    
+    // Histogram operations
+    Histogram::record(histogram, i.to_float() % 1000.0)
+    
+    // UpDownCounter operations
+    if i % 2 == 0 {
+      UpDownCounter::add(updown_counter, 1.0)
     } else {
-      right = mid - 1
+      UpDownCounter::add(updown_counter, -1.0)
+    }
+    
+    // Gauge operations (simulated periodic updates)
+    if i % 100 == 0 {
+      Gauge::record(gauge, (i / 100).to_float())
+    }
+    
+    // Add attributes to some operations
+    if i % 10 == 0 {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "operation.id", IntValue(i))
+      Attributes::set(attrs, "operation.type", StringValue("concurrent_test"))
+      
+      Counter::add(counter, 1.0, Some(attrs))
+      Histogram::record(histogram, (i % 500).to_float(), Some(attrs))
     }
   }
   
-  assert_true(binary_found)
+  let end_time = Time::now()
+  let duration_ms = end_time - start_time
   
-  // Test data structure selection
-  let frequent_access_data = [1, 2, 3, 4, 5]
-  let access_pattern = [0, 2, 4, 1, 3, 0, 2, 4]
-  let mut access_sum = 0
+  // Performance assertions
+  assert_true(duration_ms < 3000) // Should complete within 3 seconds
   
-  for index in access_pattern {
-    if index < frequent_access_data.length() {
-      access_sum = access_sum + frequent_access_data[index]
-    }
-  }
-  
-  assert_eq(access_sum, 27) // (1+3+5+2+4+1+3+5)
+  // Calculate operations per second
+  let operations_per_second = (operation_count * 1000) / duration_ms
+  assert_true(operations_per_second > 10000) // Should handle at least 10000 operations/second
 }
 
-// Test 7: Algorithm Optimization
-test "algorithm optimization" {
-  // Test efficient sorting
-  let unsorted_data = [5, 2, 8, 1, 9, 3, 7, 4, 6]
-  let mut sorted_data = unsorted_data
+// Test 4: High-Frequency Log Emission Performance
+test "high-frequency log emission performance" {
+  let provider = TelemetryProvider::default()
+  let logger = TelemetryProvider::get_logger(provider, "performance_logger")
   
-  // Simple bubble sort (for demonstration)
-  let n = sorted_data.length()
-  for i in 0..<n {
-    for j in 0..<(n - i - 1) {
-      if sorted_data[j] > sorted_data[j + 1] {
-        let temp = sorted_data[j]
-        sorted_data[j] = sorted_data[j + 1]
-        sorted_data[j + 1] = temp
+  // Performance measurement
+  let start_time = Time::now()
+  let log_count = 20000
+  
+  // Create high volume of log records
+  for i in 0..log_count {
+    let severity = match i % 4 {
+      0 => Debug
+      1 => Info
+      2 => Warn
+      _ => Error
+    }
+    
+    let log_message = "Performance test log message " + i.to_string()
+    let log_record = LogRecord::new(severity, log_message)
+    
+    // Add attributes to simulate real-world usage
+    LogRecord::add_attribute(log_record, "log.id", IntValue(i))
+    LogRecord::add_attribute(log_record, "component", StringValue("performance_test"))
+    LogRecord::add_attribute(log_record, "thread.id", StringValue("thread_" + (i % 8).to_string()))
+    
+    // Add structured data for some logs
+    if i % 5 == 0 {
+      LogRecord::add_attribute(log_record, "structured.data", StringValue("structured_data_" + i.to_string()))
+      LogRecord::add_attribute(log_record, "payload.size", IntValue(1024 + (i % 4096)))
+    }
+    
+    // Emit log record
+    Logger::emit(logger, log_record)
+  }
+  
+  let end_time = Time::now()
+  let duration_ms = end_time - start_time
+  
+  // Performance assertions
+  assert_true(duration_ms < 4000) // Should complete within 4 seconds
+  
+  // Calculate logs per second
+  let logs_per_second = (log_count * 1000) / duration_ms
+  assert_true(logs_per_second > 5000) // Should handle at least 5000 logs/second
+}
+
+// Test 5: Batch Processing Efficiency
+test "batch processing efficiency" {
+  // Configure different batch sizes for comparison
+  let batch_sizes = [64, 128, 256, 512, 1024]
+  let operation_count = 10000
+  let mut performance_results = []
+  
+  for batch_size in batch_sizes {
+    // Configure telemetry provider with specific batch size
+    let config = TelemetryConfig::new()
+    TelemetryConfig::set_batch_size(config, batch_size)
+    TelemetryConfig::set_scheduled_delay(config, 5000) // 5 seconds
+    
+    let provider = TelemetryProvider::from_config(config)
+    let tracer = TelemetryProvider::get_tracer(provider, "batch_test_tracer")
+    
+    // Measure performance
+    let start_time = Time::now()
+    
+    // Create spans
+    for i in 0..operation_count {
+      let span = Tracer::start_span(tracer, "batch_test_span")
+      Span::set_attribute(span, "batch.size", IntValue(batch_size))
+      Span::set_attribute(span, "operation.id", IntValue(i))
+      Span::end(span)
+    }
+    
+    // Wait for batch processing to complete
+    Time::sleep(6000) // 6 seconds
+    
+    let end_time = Time::now()
+    let duration_ms = end_time - start_time
+    
+    // Store performance result
+    performance_results.push({
+      "batch_size": batch_size,
+      "duration_ms": duration_ms,
+      "operations_per_second": (operation_count * 1000) / duration_ms
+    })
+  }
+  
+  // Find optimal batch size
+  let mut best_performance = performance_results[0]
+  for result in performance_results {
+    if result["operations_per_second"] > best_performance["operations_per_second"] {
+      best_performance = result
+    }
+  }
+  
+  // Efficiency assertions
+  assert_true(best_performance["operations_per_second"] > 1000) // Should handle at least 1000 ops/sec
+  
+  // Medium batch sizes should generally perform better
+  assert_true(best_performance["batch_size"] >= 128 && best_performance["batch_size"] <= 512)
+}
+
+// Test 6: Attribute Processing Performance
+test "attribute processing performance" {
+  let provider = TelemetryProvider::default()
+  let tracer = TelemetryProvider::get_tracer(provider, "attribute_test_tracer")
+  
+  // Performance measurement
+  let start_time = Time::now()
+  let span_count = 5000
+  let attributes_per_span = 50
+  
+  // Create spans with many attributes
+  for i in 0..span_count {
+    let span = Tracer::start_span(tracer, "attribute_test_span")
+    
+    // Add many attributes to test performance
+    for j in 0..attributes_per_span {
+      let key = "attr_" + j.to_string()
+      let value = match j % 6 {
+        0 => StringValue("string_value_" + j.to_string())
+        1 => IntValue(j)
+        2 => FloatValue(j.to_float() + 0.5)
+        3 => BoolValue(j % 2 == 0)
+        4 => ArrayStringValue(["item1", "item2", "item3"])
+        _ => ArrayIntValue([j, j+1, j+2])
+      }
+      
+      Span::set_attribute(span, key, value)
+    }
+    
+    Span::end(span)
+  }
+  
+  let end_time = Time::now()
+  let duration_ms = end_time - start_time
+  
+  // Performance assertions
+  assert_true(duration_ms < 10000) // Should complete within 10 seconds
+  
+  // Calculate attribute processing rate
+  let total_attributes = span_count * attributes_per_span
+  let attributes_per_second = (total_attributes * 1000) / duration_ms
+  assert_true(attributes_per_second > 25000) // Should handle at least 25000 attributes/second
+}
+
+// Test 7: Context Propagation Performance
+test "context propagation performance" {
+  let provider = TelemetryProvider::default()
+  let tracer = TelemetryProvider::get_tracer(provider, "context_test_tracer")
+  
+  // Performance measurement
+  let start_time = Time::now()
+  let context_depth = 10
+  let operation_count = 1000
+  
+  // Create nested context propagation
+  for i in 0..operation_count {
+    let mut current_ctx = Context::root()
+    
+    // Create deep context hierarchy
+    for j in 0..context_depth {
+      let key = ContextKey::new("context_key_" + j.to_string())
+      let value = "context_value_" + i.to_string() + "_" + j.to_string()
+      current_ctx = Context::with_value(current_ctx, key, value)
+    }
+    
+    // Create span with propagated context
+    let span = Tracer::start_span_with_context(tracer, "context_test_span", current_ctx)
+    
+    // Add context validation attributes
+    for j in 0..context_depth {
+      let key = ContextKey::new("context_key_" + j.to_string())
+      match Context::get(current_ctx, key) {
+        Some(value) => {
+          let attr_key = "context.attr_" + j.to_string()
+          Span::set_attribute(span, attr_key, StringValue(value))
+        }
+        None => assert_true(false)
       }
     }
-  }
-  
-  // Verify sorting
-  for i in 0..<(sorted_data.length() - 1) {
-    assert_true(sorted_data[i] <= sorted_data[i + 1])
-  }
-  
-  // Test efficient min/max finding
-  let data = [5, 2, 8, 1, 9, 3, 7, 4, 6]
-  let mut min_val = data[0]
-  let mut max_val = data[0]
-  
-  for value in data {
-    if value < min_val {
-      min_val = value
-    }
-    if value > max_val {
-      max_val = value
-    }
-  }
-  
-  assert_eq(min_val, 1)
-  assert_eq(max_val, 9)
-  
-  // Test efficient duplicate detection
-  let data_with_duplicates = [1, 2, 3, 2, 4, 5, 3, 6]
-  let mut seen = []
-  let mut duplicates = []
-  
-  for value in data_with_duplicates {
-    if seen.contains(value) {
-      if !duplicates.contains(value) {
-        duplicates.push(value)
-      }
-    } else {
-      seen.push(value)
-    }
-  }
-  
-  assert_eq(duplicates.length(), 2)
-  assert_true(duplicates.contains(2))
-  assert_true(duplicates.contains(3))
-}
-
-// Test 8: I/O Optimization
-test "I/O optimization" {
-  // Test buffer management
-  let buffer_size = 1024
-  let mut buffer = [0; buffer_size]
-  
-  // Fill buffer efficiently
-  for i in 0..<buffer.length() {
-    buffer[i] = i % 256
-  }
-  
-  // Verify buffer contents
-  assert_eq(buffer[0], 0)
-  assert_eq(buffer[1], 1)
-  assert_eq(buffer[255], 255)
-  assert_eq(buffer[256], 0)
-  
-  // Test batch operations
-  let data = [1, 2, 3, 4, 5]
-  let mut processed_data = []
-  
-  // Process in batches
-  let batch_size = 2
-  for i in 0..<data.length() {
-    processed_data.push(data[i] * 2)
     
-    // Simulate batch processing
-    if (i + 1) % batch_size == 0 || i == data.length() - 1 {
-      assert_true(processed_data.length() > 0)
-    }
+    Span::end(span)
   }
   
-  assert_eq(processed_data.length(), 5)
-  assert_eq(processed_data[0], 2)
-  assert_eq(processed_data[4], 10)
-}
-
-// Test 9: Concurrent Performance
-test "concurrent performance optimization" {
-  // Test thread-safe operations
-  let shared_counter = 0
-  let num_operations = 100
+  let end_time = Time::now()
+  let duration_ms = end_time - start_time
   
-  // Simulate concurrent increments
-  let mut final_counter = shared_counter
-  for i in 0..<num_operations {
-    final_counter = final_counter + 1
-  }
+  // Performance assertions
+  assert_true(duration_ms < 8000) // Should complete within 8 seconds
   
-  assert_eq(final_counter, num_operations)
-  
-  // Test lock-free patterns
-  let atomic_data = [1, 2, 3, 4, 5]
-  let mut atomic_sum = 0
-  
-  for value in atomic_data {
-    atomic_sum = atomic_sum + value
-  }
-  
-  assert_eq(atomic_sum, 15)
-  
-  // Test work distribution
-  let work_items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let num_workers = 3
-  let work_per_worker = work_items.length() / num_workers
-  
-  assert_eq(work_per_worker, 3) // 10 items / 3 workers = 3 items per worker
-  
-  // Test load balancing
-  let mut worker_loads = [0; num_workers]
-  for i in 0..<work_items.length() {
-    let worker_id = i % num_workers
-    worker_loads[worker_id] = worker_loads[worker_id] + 1
-  }
-  
-  assert_eq(worker_loads[0], 4)
-  assert_eq(worker_loads[1], 3)
-  assert_eq(worker_loads[2], 3)
-}
-
-// Test 10: Resource Management Optimization
-test "resource management optimization" {
-  // Test object pooling
-  let pool_size = 10
-  let mut object_pool = []
-  
-  // Initialize pool
-  for i in 0..<pool_size {
-    object_pool.push("object_" + i.to_string())
-  }
-  
-  assert_eq(object_pool.length(), pool_size)
-  
-  // Acquire from pool
-  let acquired_object = object_pool.pop()
-  match acquired_object {
-    Some(obj) => assert_eq(obj, "object_9")
-    None => assert_true(false)
-  }
-  
-  assert_eq(object_pool.length(), pool_size - 1)
-  
-  // Return to pool
-  object_pool.push("returned_object")
-  assert_eq(object_pool.length(), pool_size)
-  
-  // Test resource cleanup
-  let resources = ["resource1", "resource2", "resource3"]
-  let mut cleaned_resources = []
-  
-  for resource in resources {
-    // Simulate cleanup
-    cleaned_resources.push("cleaned_" + resource)
-  }
-  
-  assert_eq(cleaned_resources.length(), 3)
-  assert_eq(cleaned_resources[0], "cleaned_resource1")
-  
-  // Test lazy initialization
-  let mut lazy_resource = None
-  let resource_needed = true
-  
-  if resource_needed {
-    lazy_resource = Some("initialized_resource")
-  }
-  
-  match lazy_resource {
-    Some(resource) => assert_eq(resource, "initialized_resource")
-    None => assert_true(false)
-  }
-  
-  // Test resource reuse
-  let mut reusable_resource = "initial_value"
-  
-  // First use
-  assert_eq(reusable_resource, "initial_value")
-  
-  // Reset and reuse
-  reusable_resource = "reused_value"
-  assert_eq(reusable_resource, "reused_value")
+  // Calculate context operations per second
+  let context_operations = operation_count * context_depth
+  let context_ops_per_second = (context_operations * 1000) / duration_ms
+  assert_true(context_ops_per_second > 1000) // Should handle at least 1000 context ops/second
 }

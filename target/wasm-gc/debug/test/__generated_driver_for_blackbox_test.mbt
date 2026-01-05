@@ -980,6 +980,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_new_high_quality_tests.mbt": {
   },
+  "azimuth_new_high_quality_test_cases.mbt": {
+  },
   "azimuth_new_fundamental_tests.mbt": {
   },
   "azimuth_new_fundamental_telemetry_tests.mbt": {
