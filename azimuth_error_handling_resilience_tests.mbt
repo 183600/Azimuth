@@ -1,1140 +1,969 @@
-// Azimuth Error Handling and Resilience Test Suite
-// This file contains test cases for error handling and resilience mechanisms in Azimuth
+// Azimuth Telemetry System - Error Handling and Resilience Tests
+// This file contains comprehensive test cases for error handling and resilience mechanisms
 
-// Test 1: Error Type Definitions and Handling
-test "error type definitions and handling patterns" {
-  // Define error types
-  enum TelemetryError {
-    InvalidSpanId(String)
-    TraceNotFound(String)
-    SerializationError(String)
-    NetworkTimeout(Int)
-    DatabaseConnectionError(String)
-    AuthenticationError(String)
-    RateLimitExceeded(Int, Int)  // current, limit
-    ResourceExhausted(String)
-    ConfigurationError(String)
-    ValidationError(String)
+// Test 1: Result Type Error Handling
+test "result type error handling patterns" {
+  enum Result[T, E] {
+    Ok(T)
+    Err(E)
   }
   
-  // Define result type
-  type Result[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryError]
-  }
-  
-  // Create success result
-  let create_success = fn(data: T) {
-    {
-      success: true,
-      data: Some(data),
-      error: None
+  // Safe division with result type
+  let safe_divide = fn(a: Int, b: Int) -> Result[Int, String] {
+    if b == 0 {
+      Err("Division by zero")
+    } else {
+      Ok(a / b)
     }
   }
   
-  // Create error result
-  let create_error = fn(error: TelemetryError) {
-    {
-      success: false,
-      data: None,
-      error: Some(error)
+  // Safe array access with result type
+  let safe_array_get = fn[T](arr: Array[T], index: Int) -> Result[T, String] {
+    if index < 0 || index >= arr.length() {
+      Err("Index out of bounds")
+    } else {
+      Ok(arr[index])
     }
   }
   
-  // Test success result
-  let success_result = create_success("span-12345")
-  assert_true(success_result.success)
-  assert_eq(success_result.data, Some("span-12345"))
-  assert_eq(success_result.error, None)
-  
-  // Test error result
-  let error_result = create_error(TelemetryError::InvalidSpanId("invalid-id"))
-  assert_false(error_result.success)
-  assert_eq(error_result.data, None)
-  
-  match error_result.error {
-    Some(TelemetryError::InvalidSpanId(id)) => assert_eq(id, "invalid-id")
-    _ => assert_true(false)
-  }
-  
-  // Test different error types
-  let timeout_error = create_error(TelemetryError::NetworkTimeout(5000))
-  match timeout_error.error {
-    Some(TelemetryError::NetworkTimeout(timeout)) => assert_eq(timeout, 5000)
-    _ => assert_true(false)
-  }
-  
-  let rate_limit_error = create_error(TelemetryError::RateLimitExceeded(150, 100))
-  match rate_limit_error.error {
-    Some(TelemetryError::RateLimitExceeded(current, limit)) => {
-      assert_eq(current, 150)
-      assert_eq(limit, 100)
+  // Safe string to int conversion with result type
+  let safe_string_to_int = fn(s: String) -> Result[Int, String] {
+    let mut result = 0
+    let mut valid = true
+    
+    for char in s.to_char_array() {
+      if char < '0' || char > '9' {
+        valid = false
+        break
+      }
+      result = result * 10 + (char.to_int() - '0'.to_int())
     }
-    _ => assert_true(false)
+    
+    if valid {
+      Ok(result)
+    } else {
+      Err("Invalid number format")
+    }
+  }
+  
+  // Test safe division
+  match safe_divide(10, 2) {
+    Ok(result) => assert_eq(result, 5)
+    Err(_) => assert_true(false)
+  }
+  
+  match safe_divide(10, 0) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Division by zero")
+  }
+  
+  // Test safe array access
+  let arr = [1, 2, 3]
+  
+  match safe_array_get(arr, 1) {
+    Ok(value) => assert_eq(value, 2)
+    Err(_) => assert_true(false)
+  }
+  
+  match safe_array_get(arr, 5) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Index out of bounds")
+  }
+  
+  // Test safe string to int conversion
+  match safe_string_to_int("123") {
+    Ok(value) => assert_eq(value, 123)
+    Err(_) => assert_true(false)
+  }
+  
+  match safe_string_to_int("abc") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Invalid number format")
   }
 }
 
-// Test 2: Error Recovery Mechanisms
-test "error recovery mechanisms with retry logic" {
-  // Define operation result
-  type OperationResult = {
-    success: Bool,
-    data: String,
-    error_message: Option[String]
+// Test 2: Error Chaining and Composition
+test "error chaining and composition" {
+  enum Error {
+    ValidationError(String)
+    ProcessingError(String)
+    SystemError(String)
   }
   
-  // Simulate operation that might fail
-  let simulate_operation = fn(should_fail: Bool, attempt: Int) {
-    if should_fail && attempt < 3 {
-      {
-        success: false,
-        data: "",
-        error_message: Some("Operation failed on attempt " + attempt.to_string())
-      }
+  type Result[T] = {
+    value: Option[T],
+    error: Option[Error]
+  }
+  
+  let ok = fn[T](value: T) -> Result[T] {
+    { value: Some(value), error: None }
+  }
+  
+  let err = fn[T](error: Error) -> Result[T] {
+    { value: None, error: Some(error) }
+  }
+  
+  let map = fn[T, U](result: Result[T], f: (T) -> U) -> Result[U] {
+    match result.value {
+      Some(v) => ok(f(v))
+      None => { value: None, error: result.error }
+    }
+  }
+  
+  let flat_map = fn[T, U](result: Result[T], f: (T) -> Result[U]) -> Result[U] {
+    match result.value {
+      Some(v) => f(v)
+      None => { value: None, error: result.error }
+    }
+  }
+  
+  // Validate input
+  let validate = fn(input: String) -> Result[String] {
+    if input.length() == 0 {
+      err(ValidationError("Input cannot be empty"))
+    } else if input.length() > 10 {
+      err(ValidationError("Input too long"))
     } else {
-      {
-        success: true,
-        data: "success-data-" + attempt.to_string(),
-        error_message: None
+      ok(input)
+    }
+  }
+  
+  // Process input
+  let process = fn(input: String) -> Result[Int] {
+    let mut sum = 0
+    for char in input.to_char_array() {
+      if char < '0' || char > '9' {
+        return err(ProcessingError("Input contains non-numeric characters"))
       }
+      sum = sum + (char.to_int() - '0'.to_int())
     }
+    ok(sum)
   }
   
-  // Retry mechanism with exponential backoff
-  let retry_with_backoff = fn(operation: () -> OperationResult, max_attempts: Int) {
-    let mut attempt = 1
-    let mut result = operation()
-    let mut backoff_time = 100  // Initial backoff in milliseconds
-    
-    while not(result.success) && attempt < max_attempts {
-      attempt = attempt + 1
-      backoff_time = backoff_time * 2  // Exponential backoff
-      result = operation()
-    }
-    
-    {
-      result,
-      attempts_made: attempt,
-      final_backoff: backoff_time
-    }
+  // Complete pipeline
+  let pipeline = fn(input: String) -> Result[Int] {
+    let validated = validate(input)
+    flat_map(validated, process)
   }
   
-  // Test successful retry
-  let retry_result = retry_with_backoff(fn() { simulate_operation(true, 1) }, 5)
-  assert_true(retry_result.result.success)
-  assert_eq(retry_result.attempts_made, 3)  // Should succeed on 3rd attempt
-  assert_eq(retry_result.result.data, "success-data-3")
+  // Test successful pipeline
+  match pipeline("123") {
+    { value: Some(v), error: None } => assert_eq(v, 6)
+    _ => assert_true(false)
+  }
   
-  // Test immediate success
-  let immediate_result = retry_with_backoff(fn() { simulate_operation(false, 1) }, 5)
-  assert_true(immediate_result.result.success)
-  assert_eq(immediate_result.attempts_made, 1)  // Should succeed on 1st attempt
-  assert_eq(immediate_result.result.data, "success-data-1")
+  // Test validation error
+  match pipeline("") {
+    { value: None, error: Some(ValidationError(msg)) } => assert_eq(msg, "Input cannot be empty")
+    _ => assert_true(false)
+  }
   
-  // Test max attempts reached
-  let max_attempts_result = retry_with_backoff(fn() { simulate_operation(true, 1) }, 2)
-  assert_false(max_attempts_result.result.success)
-  assert_eq(max_attempts_result.attempts_made, 2)  // Should reach max attempts
+  // Test processing error
+  match pipeline("12a") {
+    { value: None, error: Some(ProcessingError(msg)) } => assert_eq(msg, "Input contains non-numeric characters")
+    _ => assert_true(false)
+  }
 }
 
 // Test 3: Circuit Breaker Pattern
-test "circuit breaker pattern for service resilience" {
-  // Define circuit breaker states
+test "circuit breaker pattern for resilience" {
   enum CircuitState {
     Closed
     Open
     HalfOpen
   }
   
-  // Define circuit breaker
   type CircuitBreaker = {
     state: CircuitState,
     failure_count: Int,
     failure_threshold: Int,
-    success_threshold: Int,
     timeout: Int,
-    last_failure_time: Int,
-    current_time: Int
+    last_failure_time: Int
   }
   
-  // Create circuit breaker
-  let create_circuit_breaker = fn(failure_threshold: Int, success_threshold: Int, timeout: Int) {
+  let circuit_breaker_new = fn(threshold: Int, timeout: Int) -> CircuitBreaker {
     {
-      state: CircuitState::Closed,
+      state: Closed,
       failure_count: 0,
-      failure_threshold,
-      success_threshold,
-      timeout,
-      last_failure_time: 0,
-      current_time: 0
+      failure_threshold: threshold,
+      timeout: timeout,
+      last_failure_time: 0
     }
   }
   
-  // Call through circuit breaker
-  let circuit_breaker_call = fn(cb: CircuitBreaker, operation: () -> { success: Bool, data: String }) {
-    let current_time = cb.current_time
-    let state = cb.state
-    let failure_count = cb.failure_count
+  let circuit_breaker_call = fn[T](cb: CircuitBreaker, operation: () -> Result[T, String], current_time: Int) -> (CircuitBreaker, Result[T, String]) {
+    let CircuitBreaker(state, failure_count, failure_threshold, timeout, last_failure_time) = cb
     
     match state {
-      CircuitState::Open => {
-        // Check if timeout has passed
-        if current_time - cb.last_failure_time >= cb.timeout {
-          // Try to transition to half-open
-          let result = operation()
-          if result.success {
-            // Success, transition to closed
-            {
-              result: Some(result),
-              updated_cb: { cb | state: CircuitState::Closed, failure_count: 0 }
+      Closed => {
+        match operation() {
+          Ok(value) => {
+            // Success, reset failure count
+            let new_cb = {
+              state: Closed,
+              failure_count: 0,
+              failure_threshold,
+              timeout,
+              last_failure_time
             }
-          } else {
-            // Still failing, stay open
-            {
-              result: None,
-              updated_cb: { cb | last_failure_time: current_time }
+            (new_cb, Ok(value))
+          }
+          Err(error) => {
+            // Failure, increment count
+            let new_failure_count = failure_count + 1
+            let new_state = if new_failure_count >= failure_threshold {
+              Open
+            } else {
+              Closed
             }
-          }
-        } else {
-          // Still in open state
-          {
-            result: None,
-            updated_cb: cb
-          }
-        }
-      }
-      CircuitState::HalfOpen => {
-        let result = operation()
-        if result.success {
-          // Success, transition to closed
-          {
-            result: Some(result),
-            updated_cb: { cb | state: CircuitState::Closed, failure_count: 0 }
-          }
-        } else {
-          // Failure, transition back to open
-          {
-            result: None,
-            updated_cb: { 
-              cb | 
-              state: CircuitState::Open, 
-              failure_count: failure_count + 1,
+            
+            let new_cb = {
+              state: new_state,
+              failure_count: new_failure_count,
+              failure_threshold,
+              timeout,
               last_failure_time: current_time
             }
+            (new_cb, Err(error))
           }
         }
       }
-      CircuitState::Closed => {
-        let result = operation()
-        if result.success {
-          // Success, stay closed
-          {
-            result: Some(result),
-            updated_cb: cb
+      Open => {
+        // Check if timeout has passed
+        if current_time - last_failure_time >= timeout {
+          // Try half-open state
+          let new_cb = {
+            state: HalfOpen,
+            failure_count,
+            failure_threshold,
+            timeout,
+            last_failure_time
           }
-        } else {
-          // Failure, check if should open
-          let new_failure_count = failure_count + 1
-          if new_failure_count >= cb.failure_threshold {
-            // Open circuit
-            {
-              result: None,
-              updated_cb: {
-                cb |
-                state: CircuitState::Open,
-                failure_count: new_failure_count,
+          
+          match operation() {
+            Ok(value) => {
+              // Success, close the circuit
+              let closed_cb = {
+                state: Closed,
+                failure_count: 0,
+                failure_threshold,
+                timeout,
+                last_failure_time
+              }
+              (closed_cb, Ok(value))
+            }
+            Err(error) => {
+              // Failure, open again
+              let open_cb = {
+                state: Open,
+                failure_count: failure_count + 1,
+                failure_threshold,
+                timeout,
                 last_failure_time: current_time
               }
+              (open_cb, Err(error))
             }
-          } else {
-            // Stay closed
-            {
-              result: None,
-              updated_cb: { cb | failure_count: new_failure_count }
+          }
+        } else {
+          // Still in timeout, fail fast
+          (cb, Err("Circuit breaker is open"))
+        }
+      }
+      HalfOpen => {
+        match operation() {
+          Ok(value) => {
+            // Success, close the circuit
+            let new_cb = {
+              state: Closed,
+              failure_count: 0,
+              failure_threshold,
+              timeout,
+              last_failure_time
             }
+            (new_cb, Ok(value))
+          }
+          Err(error) => {
+            // Failure, open again
+            let new_cb = {
+              state: Open,
+              failure_count: failure_count + 1,
+              failure_threshold,
+              timeout,
+              last_failure_time: current_time
+            }
+            (new_cb, Err(error))
           }
         }
       }
     }
   }
   
-  // Create circuit breaker
-  let mut circuit_breaker = create_circuit_breaker(3, 2, 5000)
+  // Test circuit breaker
+  let mut success_count = 0
+  let mut failure_count = 0
   
-  // Test initial closed state
-  assert_eq(circuit_breaker.state, CircuitState::Closed)
-  assert_eq(circuit_breaker.failure_count, 0)
+  let operation = fn() -> Result[String, String] {
+    if failure_count < 3 {
+      failure_count = failure_count + 1
+      Err("Simulated failure")
+    } else {
+      success_count = success_count + 1
+      Ok("Success")
+    }
+  }
   
-  // Test successful operation
-  let success_operation = fn() { { success: true, data: "success" } }
-  let call_result1 = circuit_breaker_call(circuit_breaker, success_operation)
-  assert_true(call_result1.result.is_some())
-  assert_eq(call_result1.updated_cb.state, CircuitState::Closed)
-  assert_eq(call_result1.updated_cb.failure_count, 0)
-  circuit_breaker = call_result1.updated_cb
+  let cb = circuit_breaker_new(3, 100)
   
-  // Test failing operations
-  let fail_operation = fn() { { success: false, data: "" } }
+  // First few calls should fail but circuit remains closed
+  let (cb1, result1) = circuit_breaker_call(cb, operation, 0)
+  match result1 {
+    Err(_) => assert_true(true)
+    Ok(_) => assert_true(false)
+  }
   
-  // First failure
-  let call_result2 = circuit_breaker_call(circuit_breaker, fail_operation)
-  assert_false(call_result2.result.is_some())
-  assert_eq(call_result2.updated_cb.state, CircuitState::Closed)
-  assert_eq(call_result2.updated_cb.failure_count, 1)
-  circuit_breaker = call_result2.updated_cb
+  let (cb2, result2) = circuit_breaker_call(cb1, operation, 10)
+  match result2 {
+    Err(_) => assert_true(true)
+    Ok(_) => assert_true(false)
+  }
   
-  // Second failure
-  let call_result3 = circuit_breaker_call(circuit_breaker, fail_operation)
-  assert_false(call_result3.result.is_some())
-  assert_eq(call_result3.updated_cb.state, CircuitState::Closed)
-  assert_eq(call_result3.updated_cb.failure_count, 2)
-  circuit_breaker = call_result3.updated_cb
+  let (cb3, result3) = circuit_breaker_call(cb2, operation, 20)
+  match result3 {
+    Err(_) => assert_true(true)
+    Ok(_) => assert_true(false)
+  }
   
-  // Third failure - should open circuit
-  let call_result4 = circuit_breaker_call(circuit_breaker, fail_operation)
-  assert_false(call_result4.result.is_some())
-  assert_eq(call_result4.updated_cb.state, CircuitState::Open)
-  assert_eq(call_result4.updated_cb.failure_count, 3)
-  circuit_breaker = call_result4.updated_cb
+  // Circuit should now be open
+  let (cb4, result4) = circuit_breaker_call(cb3, operation, 30)
+  match result4 {
+    Err(msg) => assert_eq(msg, "Circuit breaker is open")
+    Ok(_) => assert_true(false)
+  }
   
-  // Test open state - should not call operation
-  let call_result5 = circuit_breaker_call(circuit_breaker, success_operation)
-  assert_false(call_result5.result.is_some())
-  assert_eq(call_result5.updated_cb.state, CircuitState::Open)
+  // After timeout, should try half-open
+  let (cb5, result5) = circuit_breaker_call(cb4, operation, 150)
+  match result5 {
+    Ok(value) => assert_eq(value, "Success")
+    Err(_) => assert_true(false)
+  }
+  
+  // Circuit should be closed again
+  let (cb6, result6) = circuit_breaker_call(cb5, operation, 160)
+  match result6 {
+    Ok(value) => assert_eq(value, "Success")
+    Err(_) => assert_true(false)
+  }
 }
 
-// Test 4: Bulkhead Pattern for Resource Isolation
-test "bulkhead pattern for resource isolation" {
-  // Define bulkhead
-  type Bulkhead = {
-    name: String,
-    max_concurrent: Int,
-    current_count: Int,
-    queue_size: Int,
-    queue_length: Int
+// Test 4: Retry Mechanism
+test "retry mechanism with exponential backoff" {
+  type RetryConfig = {
+    max_attempts: Int,
+    base_delay: Int,
+    max_delay: Int,
+    backoff_multiplier: Float
   }
   
-  // Create bulkhead
-  let create_bulkhead = fn(name: String, max_concurrent: Int, queue_size: Int) {
+  let retry_config_default = fn() -> RetryConfig {
     {
-      name,
-      max_concurrent,
-      current_count: 0,
-      queue_size,
-      queue_length: 0
+      max_attempts: 3,
+      base_delay: 100,
+      max_delay: 1000,
+      backoff_multiplier: 2.0
     }
   }
   
-  // Try to acquire resource from bulkhead
-  let bulkhead_acquire = fn(bulkhead: Bulkhead) {
-    if bulkhead.current_count < bulkhead.max_concurrent {
-      // Resource available
-      {
-        success: true,
-        updated_bulkhead: { bulkhead | current_count: bulkhead.current_count + 1 }
-      }
-    } else if bulkhead.queue_length < bulkhead.queue_size {
-      // Queue space available
-      {
-        success: true,
-        updated_bulkhead: { bulkhead | queue_length: bulkhead.queue_length + 1 }
-      }
+  let calculate_delay = fn(attempt: Int, config: RetryConfig) -> Int {
+    let delay = Float::from_int(config.base_delay) * 
+                (config.backoff_multiplier ** Float::from_int(attempt))
+    
+    let delay_int = delay.to_int()
+    if delay_int > config.max_delay {
+      config.max_delay
     } else {
-      // No resources or queue space available
-      {
-        success: false,
-        updated_bulkhead: bulkhead
-      }
+      delay_int
     }
   }
   
-  // Release resource from bulkhead
-  let bulkhead_release = fn(bulkhead: Bulkhead) {
-    if bulkhead.current_count > 0 {
-      // Release active resource
-      {
-        updated_bulkhead: { bulkhead | current_count: bulkhead.current_count - 1 }
-      }
-    } else if bulkhead.queue_length > 0 {
-      // Move from queue to active
-      {
-        updated_bulkhead: { 
-          bulkhead | 
-          queue_length: bulkhead.queue_length - 1,
-          current_count: bulkhead.current_count + 1
+  let retry_with_backoff = fn[T](config: RetryConfig, operation: () -> Result[T, String]) -> Result[T, String] {
+    let mut attempt = 0
+    
+    while attempt < config.max_attempts {
+      match operation() {
+        Ok(value) => return Ok(value),
+        Err(error) => {
+          if attempt == config.max_attempts - 1 {
+            return Err(error)
+          }
+          
+          // Calculate delay and wait (simulated)
+          let delay = calculate_delay(attempt, config)
+          // In real implementation, would wait for 'delay' milliseconds
+          attempt = attempt + 1
         }
       }
+    }
+    
+    Err("Max attempts exceeded")
+  }
+  
+  // Test retry configuration
+  let config = retry_config_default()
+  
+  assert_eq(calculate_delay(0, config), 100)
+  assert_eq(calculate_delay(1, config), 200)
+  assert_eq(calculate_delay(2, config), 400)
+  
+  // Test with max delay
+  let config_with_max = {
+    max_attempts: 3,
+    base_delay: 100,
+    max_delay: 300,
+    backoff_multiplier: 2.0
+  }
+  
+  assert_eq(calculate_delay(0, config_with_max), 100)
+  assert_eq(calculate_delay(1, config_with_max), 200)
+  assert_eq(calculate_delay(2, config_with_max), 300)  // Capped at max
+  
+  // Test retry mechanism
+  let mut call_count = 0
+  
+  let failing_operation = fn() -> Result[String, String] {
+    call_count = call_count + 1
+    if call_count < 3 {
+      Err("Not ready yet")
     } else {
-      // Nothing to release
-      {
-        updated_bulkhead: bulkhead
-      }
+      Ok("Success after retries")
     }
   }
   
-  // Create bulkheads for different services
-  let telemetry_bulkhead = create_bulkhead("telemetry", 3, 5)
-  let payment_bulkhead = create_bulkhead("payment", 2, 3)
+  let result = retry_with_backoff(config, failing_operation)
+  match result {
+    Ok(value) => {
+      assert_eq(value, "Success after retries")
+      assert_eq(call_count, 3)
+    }
+    Err(_) => assert_true(false)
+  }
   
-  // Test telemetry bulkhead
-  let mut current_bulkhead = telemetry_bulkhead
+  // Reset for next test
+  call_count = 0
   
-  // Acquire resources
-  let acquire1 = bulkhead_acquire(current_bulkhead)
-  assert_true(acquire1.success)
-  assert_eq(acquire1.updated_bulkhead.current_count, 1)
-  current_bulkhead = acquire1.updated_bulkhead
+  let always_failing_operation = fn() -> Result[String, String] {
+    call_count = call_count + 1
+    Err("Always fails")
+  }
   
-  let acquire2 = bulkhead_acquire(current_bulkhead)
-  assert_true(acquire2.success)
-  assert_eq(acquire2.updated_bulkhead.current_count, 2)
-  current_bulkhead = acquire2.updated_bulkhead
-  
-  let acquire3 = bulkhead_acquire(current_bulkhead)
-  assert_true(acquire3.success)
-  assert_eq(acquire3.updated_bulkhead.current_count, 3)
-  current_bulkhead = acquire3.updated_bulkhead
-  
-  // Should now be at capacity
-  let acquire4 = bulkhead_acquire(current_bulkhead)
-  assert_true(acquire4.success)
-  assert_eq(acquire4.updated_bulkhead.current_count, 3)
-  assert_eq(acquire4.updated_bulkhead.queue_length, 1)
-  current_bulkhead = acquire4.updated_bulkhead
-  
-  // Release resource
-  let release1 = bulkhead_release(current_bulkhead)
-  assert_eq(release1.updated_bulkhead.current_count, 3)  // Should move from queue
-  assert_eq(release1.updated_bulkhead.queue_length, 0)
-  current_bulkhead = release1.updated_bulkhead
-  
-  // Test payment bulkhead with smaller capacity
-  let mut payment_current = payment_bulkhead
-  
-  let payment_acquire1 = bulkhead_acquire(payment_current)
-  assert_true(payment_acquire1.success)
-  assert_eq(payment_acquire1.updated_bulkhead.current_count, 1)
-  payment_current = payment_acquire1.updated_bulkhead
-  
-  let payment_acquire2 = bulkhead_acquire(payment_current)
-  assert_true(payment_acquire2.success)
-  assert_eq(payment_acquire2.updated_bulkhead.current_count, 2)
-  payment_current = payment_acquire2.updated_bulkhead
-  
-  // Should now be at capacity
-  let payment_acquire3 = bulkhead_acquire(payment_current)
-  assert_true(payment_acquire3.success)
-  assert_eq(payment_acquire3.updated_bulkhead.current_count, 2)
-  assert_eq(payment_acquire3.updated_bulkhead.queue_length, 1)
-  payment_current = payment_acquire3.updated_bulkhead
+  let result2 = retry_with_backoff(config, always_failing_operation)
+  match result2 {
+    Err(msg) => {
+      assert_eq(msg, "Always fails")
+      assert_eq(call_count, 3)  // Should have tried max attempts
+    }
+    Ok(_) => assert_true(false)
+  }
 }
 
 // Test 5: Timeout Handling
-test "timeout handling for long-running operations" {
-  // Define operation with timeout
-  let operation_with_timeout = fn(operation: () -> String, timeout_ms: Int) {
-    let start_time = 0  // Simulated start time
-    let operation_result = operation()
-    let end_time = 100   // Simulated end time (100ms)
-    let duration = end_time - start_time
+test "timeout handling for operations" {
+  type TimeoutConfig = {
+    timeout_ms: Int
+  }
+  
+  let execute_with_timeout = fn[T](config: TimeoutConfig, operation: () -> T, current_time: Int) -> Result[T, String] {
+    let start_time = current_time
     
-    if duration > timeout_ms {
-      {
-        success: false,
-        data: "",
-        error: Some("Operation timed out after " + timeout_ms.to_string() + "ms")
-      }
+    // Simulate operation execution time
+    let execution_time = if operation() == "fast" { 50 } else { 200 }
+    let end_time = start_time + execution_time
+    
+    if end_time - start_time > config.timeout_ms {
+      Err("Operation timed out")
     } else {
-      {
-        success: true,
-        data: operation_result,
-        error: None
-      }
+      Ok(operation())
     }
   }
+  
+  // Test timeout configuration
+  let fast_config = { timeout_ms: 100 }
+  let slow_config = { timeout_ms: 150 }
   
   // Test fast operation
-  let fast_operation = fn() { "fast-result" }
-  let fast_result = operation_with_timeout(fast_operation, 200)
-  assert_true(fast_result.success)
-  assert_eq(fast_result.data, "fast-result")
-  assert_eq(fast_result.error, None)
+  let fast_operation = fn() -> String { "fast" }
   
-  // Test slow operation
-  let slow_operation = fn() { "slow-result" }
-  let slow_result = operation_with_timeout(slow_operation, 50)
-  assert_false(slow_result.success)
-  assert_eq(slow_result.data, "")
-  assert_eq(slow_result.error, Some("Operation timed out after 50ms"))
+  match execute_with_timeout(fast_config, fast_operation, 0) {
+    Ok(value) => assert_eq(value, "fast")
+    Err(_) => assert_true(false)
+  }
   
-  // Test operation with exact timeout
-  let exact_result = operation_with_timeout(fast_operation, 100)
-  assert_true(exact_result.success)
-  assert_eq(exact_result.data, "fast-result")
-  assert_eq(exact_result.error, None)
+  // Test slow operation with sufficient timeout
+  match execute_with_timeout(slow_config, fast_operation, 0) {
+    Ok(value) => assert_eq(value, "fast")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test slow operation with insufficient timeout
+  let slow_operation = fn() -> String { "slow" }
+  
+  match execute_with_timeout(fast_config, slow_operation, 0) {
+    Err(msg) => assert_eq(msg, "Operation timed out")
+    Ok(_) => assert_true(false)
+  }
 }
 
-// Test 6: Graceful Degradation
-test "graceful degradation when services are unavailable" {
-  // Define service availability
-  type ServiceStatus = {
-    name: String,
-    available: Bool,
-    degraded: Bool,
-    message: Option[String]
+// Test 6: Bulkhead Pattern
+test "bulkhead pattern for resource isolation" {
+  type Bulkhead = {
+    max_concurrent: Int,
+    current_concurrent: Int,
+    queue: Array[String>
   }
   
-  // Define service response
-  type ServiceResponse = {
-    success: Bool,
-    data: Option[String],
-    fallback_used: Bool,
-    fallback_data: Option[String]
+  let bulkhead_new = fn(max_concurrent: Int) -> Bulkhead {
+    {
+      max_concurrent,
+      current_concurrent: 0,
+      queue: []
+    }
   }
   
-  // Service call with fallback
-  let service_call_with_fallback = fn(
-    primary_service: ServiceStatus,
-    fallback_service: ServiceStatus,
-    primary_operation: () -> String,
-    fallback_operation: () -> String
-  ) {
-    if primary_service.available {
-      // Try primary service
-      if not(primary_service.degraded) {
-        // Full functionality
+  let bulkhead_acquire = fn(bh: Bulkhead, operation_id: String) -> Result[Bulkhead, String> {
+    let Bulkhead(max_concurrent, current_concurrent, queue) = bh
+    
+    if current_concurrent < max_concurrent {
+      // Can execute immediately
+      Ok({
+        max_concurrent,
+        current_concurrent: current_concurrent + 1,
+        queue
+      })
+    } else if queue.length() < 10 {
+      // Add to queue
+      Ok({
+        max_concurrent,
+        current_concurrent,
+        queue: queue + [operation_id]
+      })
+    } else {
+      // Queue is full
+      Err("Bulkhead queue is full")
+    }
+  }
+  
+  let bulkhead_release = fn(bh: Bulkhead) -> Bulkhead {
+    let Bulkhead(max_concurrent, current_concurrent, queue) = bh
+    
+    if current_concurrent > 0 {
+      if queue.length() > 0 {
+        // Process next from queue
+        let new_queue = queue.slice(1, queue.length())
         {
-          success: true,
-          data: Some(primary_operation()),
-          fallback_used: false,
-          fallback_data: None
+          max_concurrent,
+          current_concurrent: current_concurrent,  // One finishes, one starts
+          queue: new_queue
         }
       } else {
-        // Degraded service, use fallback for some features
         {
-          success: true,
-          data: Some(primary_operation()),
-          fallback_used: true,
-          fallback_data: Some(fallback_operation())
+          max_concurrent,
+          current_concurrent: current_concurrent - 1,
+          queue
         }
       }
-    } else if fallback_service.available {
-      // Use fallback service
-      {
-        success: true,
-        data: Some(fallback_operation()),
-        fallback_used: true,
-        fallback_data: None
-      }
     } else {
-      // No services available
-      {
-        success: false,
-        data: None,
-        fallback_used: false,
-        fallback_data: None
+      bh  // Nothing to release
+    }
+  }
+  
+  // Test bulkhead
+  let bh = bulkhead_new(2)
+  
+  // Acquire first slot
+  match bulkhead_acquire(bh, "op1") {
+    Ok(new_bh) => {
+      assert_eq(new_bh.current_concurrent, 1)
+      
+      // Acquire second slot
+      match bulkhead_acquire(new_bh, "op2") {
+        Ok(new_bh2) => {
+          assert_eq(new_bh2.current_concurrent, 2)
+          
+          // Try to acquire third, should queue
+          match bulkhead_acquire(new_bh2, "op3") {
+            Ok(new_bh3) => {
+              assert_eq(new_bh3.current_concurrent, 2)
+              assert_eq(new_bh3.queue.length(), 1)
+              assert_eq(new_bh3.queue[0], "op3")
+              
+              // Release one
+              let bh4 = bulkhead_release(new_bh3)
+              assert_eq(bh4.current_concurrent, 2)  // One finishes, queued one starts
+              assert_eq(bh4.queue.length(), 0)
+              
+              // Release another
+              let bh5 = bulkhead_release(bh4)
+              assert_eq(bh5.current_concurrent, 1)
+              
+              // Release last
+              let bh6 = bulkhead_release(bh5)
+              assert_eq(bh6.current_concurrent, 0)
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 7: Graceful Degradation
+test "graceful degradation mechanisms" {
+  enum ServiceLevel {
+    Full
+    Degraded
+    Minimal
+    Unavailable
+  }
+  
+  type ServiceStatus = {
+    level: ServiceLevel,
+    message: String
+  }
+  
+  let check_service_health = fn(dependency_healthy: Bool, load_factor: Float) -> ServiceStatus {
+    if !dependency_healthy {
+      return { level: Unavailable, message: "Critical dependency unavailable" }
+    }
+    
+    if load_factor > 0.9 {
+      return { level: Minimal, message: "Service under extreme load" }
+    }
+    
+    if load_factor > 0.7 {
+      return { level: Degraded, message: "Service under high load" }
+    }
+    
+    { level: Full, message: "Service operating normally" }
+  }
+  
+  let get_feature_set = fn(level: ServiceLevel) -> Array[String] {
+    match level {
+      Full => ["feature1", "feature2", "feature3", "feature4", "feature5"]
+      Degraded => ["feature1", "feature2", "feature3"]
+      Minimal => ["feature1", "feature2"]
+      Unavailable => []
+    }
+  }
+  
+  // Test service health checks
+  let status1 = check_service_health(true, 0.5)
+  match status1.level {
+    Full => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let status2 = check_service_health(true, 0.8)
+  match status2.level {
+    Degraded => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let status3 = check_service_health(true, 0.95)
+  match status3.level {
+    Minimal => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let status4 = check_service_health(false, 0.5)
+  match status4.level {
+    Unavailable => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test feature sets
+  let full_features = get_feature_set(Full)
+  assert_eq(full_features.length(), 5)
+  
+  let degraded_features = get_feature_set(Degraded)
+  assert_eq(degraded_features.length(), 3)
+  
+  let minimal_features = get_feature_set(Minimal)
+  assert_eq(minimal_features.length(), 2)
+  
+  let unavailable_features = get_feature_set(Unavailable)
+  assert_eq(unavailable_features.length(), 0)
+}
+
+// Test 8: Error Recovery Strategies
+test "error recovery strategies" {
+  enum RecoveryStrategy {
+    Retry
+    Fallback
+    CircuitBreak
+    Degraded
+  }
+  
+  type RecoveryAction = {
+    strategy: RecoveryStrategy,
+    max_attempts: Int,
+    fallback_value: Option[String]
+  }
+  
+  let execute_with_recovery = fn(action: RecoveryAction, operation: () -> Result[String, String>) -> Result[String, String] {
+    match action.strategy {
+      Retry => {
+        let mut attempts = 0
+        while attempts < action.max_attempts {
+          match operation() {
+            Ok(value) => return Ok(value),
+            Err(_) => {
+              attempts = attempts + 1
+              if attempts >= action.max_attempts {
+                break
+              }
+            }
+          }
+        }
+        Err("Operation failed after retries")
+      }
+      Fallback => {
+        match operation() {
+          Ok(value) => Ok(value),
+          Err(_) => {
+            match action.fallback_value {
+              Some(fallback) => Ok(fallback),
+              None => Err("No fallback value available")
+            }
+          }
+        }
+      }
+      CircuitBreak => {
+        // Simplified circuit breaker - just fail fast
+        Err("Circuit breaker is open")
+      }
+      Degraded => {
+        // Try operation once, if fails return degraded response
+        match operation() {
+          Ok(value) => Ok(value),
+          Err(_) => Ok("Degraded response")
+        }
       }
     }
   }
   
-  // Test normal operation
-  let primary_normal = { name: "telemetry", available: true, degraded: false, message: None }
-  let fallback_normal = { name: "cache", available: true, degraded: false, message: None }
+  // Test recovery strategies
+  let mut call_count = 0
   
-  let normal_result = service_call_with_fallback(
-    primary_normal,
-    fallback_normal,
-    fn() { "primary-data" },
-    fn() { "fallback-data" }
-  )
-  
-  assert_true(normal_result.success)
-  assert_eq(normal_result.data, Some("primary-data"))
-  assert_false(normal_result.fallback_used)
-  
-  // Test degraded service
-  let primary_degraded = { name: "telemetry", available: true, degraded: true, message: Some("High load") }
-  
-  let degraded_result = service_call_with_fallback(
-    primary_degraded,
-    fallback_normal,
-    fn() { "primary-data" },
-    fn() { "fallback-data" }
-  )
-  
-  assert_true(degraded_result.success)
-  assert_eq(degraded_result.data, Some("primary-data"))
-  assert_true(degraded_result.fallback_used)
-  assert_eq(degraded_result.fallback_data, Some("fallback-data"))
-  
-  // Test primary unavailable
-  let primary_unavailable = { name: "telemetry", available: false, degraded: false, message: Some("Service down") }
-  
-  let unavailable_result = service_call_with_fallback(
-    primary_unavailable,
-    fallback_normal,
-    fn() { "primary-data" },
-    fn() { "fallback-data" }
-  )
-  
-  assert_true(unavailable_result.success)
-  assert_eq(unavailable_result.data, Some("fallback-data"))
-  assert_true(unavailable_result.fallback_used)
-  
-  // Test all services unavailable
-  let fallback_unavailable = { name: "cache", available: false, degraded: false, message: Some("Service down") }
-  
-  let all_unavailable_result = service_call_with_fallback(
-    primary_unavailable,
-    fallback_unavailable,
-    fn() { "primary-data" },
-    fn() { "fallback-data" }
-  )
-  
-  assert_false(all_unavailable_result.success)
-  assert_eq(all_unavailable_result.data, None)
-  assert_false(all_unavailable_result.fallback_used)
-}
-
-// Test 7: Error Aggregation and Reporting
-test "error aggregation and reporting" {
-  // Define error entry
-  type ErrorEntry = {
-    timestamp: Int,
-    error_type: String,
-    message: String,
-    service: String,
-    severity: String  // "low", "medium", "high", "critical"
+  let flaky_operation = fn() -> Result[String, String] {
+    call_count = call_count + 1
+    if call_count < 3 {
+      Err("Temporary failure")
+    } else {
+      Ok("Success")
+    }
   }
   
-  // Define error report
+  // Test retry strategy
+  let retry_action = { strategy: Retry, max_attempts: 3, fallback_value: None }
+  let retry_result = execute_with_recovery(retry_action, flaky_operation)
+  match retry_result {
+    Ok(value) => assert_eq(value, "Success")
+    Err(_) => assert_true(false)
+  }
+  
+  // Reset for next test
+  call_count = 0
+  
+  // Test fallback strategy
+  let fallback_action = { strategy: Fallback, max_attempts: 1, fallback_value: Some("Fallback value") }
+  let fallback_result = execute_with_recovery(fallback_action, flaky_operation)
+  match fallback_result {
+    Ok(value) => assert_eq(value, "Fallback value")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test circuit breaker strategy
+  let circuit_action = { strategy: CircuitBreak, max_attempts: 1, fallback_value: None }
+  let circuit_result = execute_with_recovery(circuit_action, flaky_operation)
+  match circuit_result {
+    Err(msg) => assert_eq(msg, "Circuit breaker is open")
+    Ok(_) => assert_true(false)
+  }
+  
+  // Test degraded strategy
+  let degraded_action = { strategy: Degraded, max_attempts: 1, fallback_value: None }
+  let degraded_result = execute_with_recovery(degraded_action, flaky_operation)
+  match degraded_result {
+    Ok(value) => assert_eq(value, "Degraded response")
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 9: Error Aggregation and Reporting
+test "error aggregation and reporting" {
+  type ErrorInfo = {
+    error_type: String,
+    message: String,
+    timestamp: Int,
+    count: Int
+  }
+  
   type ErrorReport = {
     total_errors: Int,
-    errors_by_type: Array[(String, Int)],
-    errors_by_service: Array[(String, Int)],
-    errors_by_severity: Array[(String, Int)],
-    recent_errors: Array[ErrorEntry]
+    error_types: Array[String],
+    recent_errors: Array[ErrorInfo],
+    most_common: ErrorInfo
   }
   
-  // Aggregate errors
-  let aggregate_errors = fn(errors: Array[ErrorEntry]) {
-    let mut total_errors = errors.length()
-    let mut errors_by_type = []
-    let mut errors_by_service = []
-    let mut errors_by_severity = []
-    
-    // Count errors by type
-    for error in errors {
-      let mut found_type = false
-      for i in 0..errors_by_type.length() {
-        if errors_by_type[i].0 == error.error_type {
-          errors_by_type[i] = (errors_by_type[i].0, errors_by_type[i].1 + 1)
-          found_type = true
-        }
-      }
-      if not(found_type) {
-        errors_by_type = errors_by_type.push((error.error_type, 1))
-      }
-      
-      // Count errors by service
-      let mut found_service = false
-      for i in 0..errors_by_service.length() {
-        if errors_by_service[i].0 == error.service {
-          errors_by_service[i] = (errors_by_service[i].0, errors_by_service[i].1 + 1)
-          found_service = true
-        }
-      }
-      if not(found_service) {
-        errors_by_service = errors_by_service.push((error.service, 1))
-      }
-      
-      // Count errors by severity
-      let mut found_severity = false
-      for i in 0..errors_by_severity.length() {
-        if errors_by_severity[i].0 == error.severity {
-          errors_by_severity[i] = (errors_by_severity[i].0, errors_by_severity[i].1 + 1)
-          found_severity = true
-        }
-      }
-      if not(found_severity) {
-        errors_by_severity = errors_by_severity.push((error.severity, 1))
-      }
-    }
-    
-    // Get recent errors (last 5)
-    let recent_errors = if errors.length() > 5 {
-      errors.slice(errors.length() - 5, errors.length())
-    } else {
-      errors
-    }
-    
+  let error_report_new = fn() -> ErrorReport {
     {
-      total_errors,
-      errors_by_type,
-      errors_by_service,
-      errors_by_severity,
-      recent_errors
+      total_errors: 0,
+      error_types: [],
+      recent_errors: [],
+      most_common: { error_type: "", message: "", timestamp: 0, count: 0 }
     }
   }
   
-  // Create test errors
-  let errors = [
-    { timestamp: 1640995200, error_type: "NetworkTimeout", message: "Connection timeout", service: "telemetry", severity: "medium" },
-    { timestamp: 1640995250, error_type: "DatabaseError", message: "Connection failed", service: "payment", severity: "high" },
-    { timestamp: 1640995300, error_type: "ValidationError", message: "Invalid input", service: "api", severity: "low" },
-    { timestamp: 1640995350, error_type: "NetworkTimeout", message: "Read timeout", service: "user", severity: "medium" },
-    { timestamp: 1640995400, error_type: "AuthenticationError", message: "Invalid token", service: "auth", severity: "high" },
-    { timestamp: 1640995450, error_type: "NetworkTimeout", message: "Write timeout", service: "notification", severity: "critical" },
-    { timestamp: 1640995500, error_type: "ValidationError", message: "Missing field", service: "order", severity: "low" }
-  ]
-  
-  // Aggregate errors
-  let report = aggregate_errors(errors)
-  
-  // Test error report
-  assert_eq(report.total_errors, 7)
-  
-  // Test errors by type
-  assert_eq(report.errors_by_type.length(), 4)  // NetworkTimeout, DatabaseError, ValidationError, AuthenticationError
-  assert_true(report.errors_by_type.contains(("NetworkTimeout", 3)))
-  assert_true(report.errors_by_type.contains(("ValidationError", 2)))
-  assert_true(report.errors_by_type.contains(("DatabaseError", 1)))
-  assert_true(report.errors_by_type.contains(("AuthenticationError", 1)))
-  
-  // Test errors by service
-  assert_eq(report.errors_by_service.length(), 7)  // All different services
-  assert_true(report.errors_by_service.contains(("telemetry", 1)))
-  assert_true(report.errors_by_service.contains(("payment", 1)))
-  assert_true(report.errors_by_service.contains(("api", 1)))
-  
-  // Test errors by severity
-  assert_eq(report.errors_by_severity.length(), 4)  // low, medium, high, critical
-  assert_true(report.errors_by_severity.contains(("low", 2)))
-  assert_true(report.errors_by_severity.contains(("medium", 2)))
-  assert_true(report.errors_by_severity.contains(("high", 2)))
-  assert_true(report.errors_by_severity.contains(("critical", 1)))
-  
-  // Test recent errors
-  assert_eq(report.recent_errors.length(), 5)
-  assert_eq(report.recent_errors[4].error_type, "ValidationError")
-  assert_eq(report.recent_errors[4].service, "order")
-}
-
-// Test 8: Dead Letter Queue for Failed Messages
-test "dead letter queue for failed telemetry messages" {
-  // Define message
-  type Message = {
-    id: String,
-    payload: String,
-    timestamp: Int,
-    retry_count: Int
-  }
-  
-  // Define dead letter queue
-  type DeadLetterQueue = {
-    messages: Array[Message],
-    max_size: Int,
-    processing_errors: Array[(String, String)]  // (message_id, error_reason)
-  }
-  
-  // Create dead letter queue
-  let create_dlq = fn(max_size: Int) {
-    {
-      messages: [],
-      max_size,
-      processing_errors: []
-    }
-  }
-  
-  // Add message to dead letter queue
-  let dlq_add = fn(dlq: DeadLetterQueue, message: Message, error_reason: String) {
-    if dlq.messages.length() < dlq.max_size {
-      {
-        messages: dlq.messages.push(message),
-        max_size: dlq.max_size,
-        processing_errors: dlq.processing_errors.push((message.id, error_reason))
-      }
+  let error_report_add = fn(report: ErrorReport, error_type: String, message: String, timestamp: Int) -> ErrorReport {
+    let error_info = { error_type, message, timestamp, count: 1 }
+    
+    // Update recent errors (keep last 10)
+    let new_recent_errors = if report.recent_errors.length() >= 10 {
+      report.recent_errors.slice(1, report.recent_errors.length()) + [error_info]
     } else {
-      // Queue is full, remove oldest message
-      let updated_messages = dlq.messages.slice(1, dlq.messages.length())
-      let updated_errors = dlq.processing_errors.slice(1, dlq.processing_errors.length())
-      
-      {
-        messages: updated_messages.push(message),
-        max_size: dlq.max_size,
-        processing_errors: updated_errors.push((message.id, error_reason))
-      }
+      report.recent_errors + [error_info]
     }
-  }
-  
-  // Retry message from dead letter queue
-  let dlq_retry = fn(dlq: DeadLetterQueue, message_id: String) {
+    
+    // Update error types
+    let mut new_error_types = report.error_types
     let mut found = false
-    let mut updated_messages = []
-    let mut updated_errors = []
-    
-    for i in 0..dlq.messages.length() {
-      if dlq.messages[i].id == message_id {
+    for et in report.error_types {
+      if et == error_type {
         found = true
-      } else {
-        updated_messages = updated_messages.push(dlq.messages[i])
-        updated_errors = updated_errors.push(dlq.processing_errors[i])
+        break
       }
     }
+    if !found {
+      new_error_types = new_error_types + [error_type]
+    }
     
-    if found {
-      {
-        success: true,
-        updated_dlq: {
-          messages: updated_messages,
-          max_size: dlq.max_size,
-          processing_errors: updated_errors
-        }
-      }
+    // Update most common (simplified)
+    let new_most_common = if report.total_errors == 0 {
+      error_info
     } else {
-      {
-        success: false,
-        updated_dlq: dlq
-      }
+      report.most_common
+    }
+    
+    {
+      total_errors: report.total_errors + 1,
+      error_types: new_error_types,
+      recent_errors: new_recent_errors,
+      most_common: new_most_common
     }
   }
   
-  // Create dead letter queue
-  let mut dlq = create_dlq(5)
+  // Test error reporting
+  let report = error_report_new()
   
-  // Test empty queue
-  assert_eq(dlq.messages.length(), 0)
-  assert_eq(dlq.processing_errors.length(), 0)
+  let report1 = error_report_add(report, "ValidationError", "Invalid input", 1000)
+  assert_eq(report1.total_errors, 1)
+  assert_eq(report1.error_types.length(), 1)
+  assert_eq(report1.recent_errors.length(), 1)
   
-  // Add messages to dead letter queue
-  let message1 = { id: "msg-1", payload: "telemetry-data-1", timestamp: 1640995200, retry_count: 3 }
-  let message2 = { id: "msg-2", payload: "telemetry-data-2", timestamp: 1640995250, retry_count: 2 }
-  let message3 = { id: "msg-3", payload: "telemetry-data-3", timestamp: 1640995300, retry_count: 4 }
+  let report2 = error_report_add(report1, "NetworkError", "Connection failed", 1010)
+  assert_eq(report2.total_errors, 2)
+  assert_eq(report2.error_types.length(), 2)
+  assert_eq(report2.recent_errors.length(), 2)
   
-  dlq = dlq_add(dlq, message1, "Network timeout")
-  dlq = dlq_add(dlq, message2, "Service unavailable")
-  dlq = dlq_add(dlq, message3, "Data validation failed")
+  let report3 = error_report_add(report2, "ValidationError", "Missing field", 1020)
+  assert_eq(report3.total_errors, 3)
+  assert_eq(report3.error_types.length(), 2)  // ValidationError already exists
+  assert_eq(report3.recent_errors.length(), 3)
   
-  // Test queue after adding messages
-  assert_eq(dlq.messages.length(), 3)
-  assert_eq(dlq.processing_errors.length(), 3)
-  assert_eq(dlq.messages[0].id, "msg-1")
-  assert_eq(dlq.messages[1].id, "msg-2")
-  assert_eq(dlq.messages[2].id, "msg-3")
-  assert_eq(dlq.processing_errors[0], ("msg-1", "Network timeout"))
-  assert_eq(dlq.processing_errors[1], ("msg-2", "Service unavailable"))
-  assert_eq(dlq.processing_errors[2], ("msg-3", "Data validation failed"))
+  // Add more errors to test truncation
+  let mut report4 = report3
+  for i in 0..=8 {
+    report4 = error_report_add(report4, "TestError", "Test message " + i.to_string(), 2000 + i)
+  }
   
-  // Test retry message
-  let retry_result = dlq_retry(dlq, "msg-2")
-  assert_true(retry_result.success)
-  assert_eq(retry_result.updated_dlq.messages.length(), 2)
-  assert_eq(retry_result.updated_dlq.messages[0].id, "msg-1")
-  assert_eq(retry_result.updated_dlq.messages[1].id, "msg-3")
-  dlq = retry_result.updated_dlq
-  
-  // Test retry non-existent message
-  let retry_missing = dlq_retry(dlq, "msg-999")
-  assert_false(retry_missing.success)
-  assert_eq(retry_missing.updated_dlq.messages.length(), 2)
-  
-  // Test queue overflow
-  let message4 = { id: "msg-4", payload: "telemetry-data-4", timestamp: 1640995350, retry_count: 1 }
-  let message5 = { id: "msg-5", payload: "telemetry-data-5", timestamp: 1640995400, retry_count: 2 }
-  let message6 = { id: "msg-6", payload: "telemetry-data-6", timestamp: 1640995450, retry_count: 3 }
-  
-  dlq = dlq_add(dlq, message4, "Rate limit exceeded")
-  dlq = dlq_add(dlq, message5, "Authentication failed")
-  dlq = dlq_add(dlq, message6, "Server error")  // This should remove msg-1 (oldest)
-  
-  assert_eq(dlq.messages.length(), 5)  // Should still be at max capacity
-  assert_eq(dlq.messages[0].id, "msg-3")  // msg-1 should be removed
-  assert_eq(dlq.messages[4].id, "msg-6")
+  assert_eq(report4.total_errors, 12)
+  assert_eq(report4.recent_errors.length(), 10)  // Should be truncated to 10
 }
 
-// Test 9: Health Check and Recovery
-test "health check and recovery mechanisms" {
-  // Define health status
-  enum HealthStatus {
-    Healthy
-    Degraded
-    Unhealthy
-    Unknown
-  }
-  
-  // Define health check result
-  type HealthCheckResult = {
-    service: String,
-    status: HealthStatus,
-    message: String,
-    timestamp: Int,
-    response_time: Int
-  }
-  
-  // Define recovery action
-  type RecoveryAction = {
-    name: String,
-    description: String,
-    executed: Bool,
-    success: Bool,
-    timestamp: Int
-  }
-  
-  // Perform health check
-  let health_check = fn(service_name: String) {
-    // Simulate health check with different scenarios
-    match service_name {
-      "telemetry" => {
-        {
-          service: service_name,
-          status: HealthStatus::Healthy,
-          message: "All systems operational",
-          timestamp: 1640995200,
-          response_time: 50
-        }
-      }
-      "payment" => {
-        {
-          service: service_name,
-          status: HealthStatus::Degraded,
-          message: "High latency detected",
-          timestamp: 1640995200,
-          response_time: 500
-        }
-      }
-      "notification" => {
-        {
-          service: service_name,
-          status: HealthStatus::Unhealthy,
-          message: "Database connection failed",
-          timestamp: 1640995200,
-          response_time: 5000  // Timeout
-        }
-      }
-      _ => {
-        {
-          service: service_name,
-          status: HealthStatus::Unknown,
-          message: "Service not responding",
-          timestamp: 1640995200,
-          response_time: 10000  // Timeout
-        }
-      }
-    }
-  }
-  
-  // Execute recovery action
-  let execute_recovery = fn(service_name: String, health_status: HealthStatus) {
-    match health_status {
-      HealthStatus::Healthy => {
-        {
-          name: "no_action",
-          description: "No recovery needed",
-          executed: false,
-          success: true,
-          timestamp: 1640995200
-        }
-      }
-      HealthStatus::Degraded => {
-        {
-          name: "restart_service",
-          description: "Restarting service to improve performance",
-          executed: true,
-          success: true,
-          timestamp: 1640995200
-        }
-      }
-      HealthStatus::Unhealthy => {
-        {
-          name: "failover",
-          description: "Initiating failover to backup instance",
-          executed: true,
-          success: true,
-          timestamp: 1640995200
-        }
-      }
-      HealthStatus::Unknown => {
-        {
-          name: "investigate",
-          description: "Manual investigation required",
-          executed: false,
-          success: false,
-          timestamp: 1640995200
-        }
-      }
-    }
-  }
-  
-  // Test health checks
-  let telemetry_health = health_check("telemetry")
-  assert_eq(telemetry_health.service, "telemetry")
-  assert_eq(telemetry_health.status, HealthStatus::Healthy)
-  assert_eq(telemetry_health.message, "All systems operational")
-  assert_eq(telemetry_health.response_time, 50)
-  
-  let payment_health = health_check("payment")
-  assert_eq(payment_health.service, "payment")
-  assert_eq(payment_health.status, HealthStatus::Degraded)
-  assert_eq(payment_health.message, "High latency detected")
-  assert_eq(payment_health.response_time, 500)
-  
-  let notification_health = health_check("notification")
-  assert_eq(notification_health.service, "notification")
-  assert_eq(notification_health.status, HealthStatus::Unhealthy)
-  assert_eq(notification_health.message, "Database connection failed")
-  assert_eq(notification_health.response_time, 5000)
-  
-  let unknown_health = health_check("unknown-service")
-  assert_eq(unknown_health.service, "unknown-service")
-  assert_eq(unknown_health.status, HealthStatus::Unknown)
-  assert_eq(unknown_health.message, "Service not responding")
-  assert_eq(unknown_health.response_time, 10000)
-  
-  // Test recovery actions
-  let telemetry_recovery = execute_recovery("telemetry", telemetry_health.status)
-  assert_eq(telemetry_recovery.name, "no_action")
-  assert_false(telemetry_recovery.executed)
-  
-  let payment_recovery = execute_recovery("payment", payment_health.status)
-  assert_eq(payment_recovery.name, "restart_service")
-  assert_true(payment_recovery.executed)
-  assert_true(payment_recovery.success)
-  
-  let notification_recovery = execute_recovery("notification", notification_health.status)
-  assert_eq(notification_recovery.name, "failover")
-  assert_true(notification_recovery.executed)
-  assert_true(notification_recovery.success)
-  
-  let unknown_recovery = execute_recovery("unknown-service", unknown_health.status)
-  assert_eq(unknown_recovery.name, "investigate")
-  assert_false(unknown_recovery.executed)
-  assert_false(unknown_recovery.success)
-}
-
-// Test 10: Error Context and Correlation
-test "error context and correlation across services" {
-  // Define error context
-  type ErrorContext = {
-    trace_id: String,
-    span_id: String,
-    service_name: String,
-    operation: String,
-    user_id: Option[String],
-    request_id: String,
-    timestamp: Int
-  }
-  
-  // Define correlated error
-  type CorrelatedError = {
-    error_id: String,
-    error_type: String,
-    message: String,
-    context: ErrorContext,
-    caused_by: Option[String],  // ID of the error that caused this one
-    stack_trace: Array[String]
-  }
-  
-  // Create error context
-  let create_context = fn(trace_id: String, span_id: String, service: String, operation: String) {
-    {
-      trace_id,
-      span_id,
-      service_name: service,
-      operation,
-      user_id: None,
-      request_id: "req-" + span_id,
-      timestamp: 1640995200
-    }
-  }
-  
-  // Create correlated error
-  let create_error = fn(error_id: String, error_type: String, message: String, context: ErrorContext, caused_by: Option[String>) {
-    {
-      error_id,
-      error_type,
-      message,
-      context,
-      caused_by,
-      stack_trace: [
-        context.service_name + "." + context.operation + " at line 42",
-        "internal.process_data at line 123",
-        "external.api_call at line 67"
-      ]
-    }
-  }
-  
-  // Trace error propagation
-  let trace_error_propagation = fn(errors: Array[CorrelatedError], trace_id: String) {
-    let mut trace_errors = []
+// Test 10: Panic Recovery and System Stability
+test "panic recovery and system stability" {
+  // Safe operation wrapper
+  let safe_execute = fn[T](operation: () -> T, fallback: T) -> T {
+    // In a real implementation, this would catch panics
+    // For testing, we'll simulate with a condition
+    let mut should_panic = false
     
-    for error in errors {
-      if error.context.trace_id == trace_id {
-        trace_errors = trace_errors.push(error)
-      }
+    // Simulate checking if operation might panic
+    if should_panic {
+      fallback
+    } else {
+      operation()
+    }
+  }
+  
+  // Resource cleanup guard
+  type ResourceGuard[T] = {
+    resource: T,
+    cleanup: (T) -> Unit
+  }
+  
+  let with_resource = fn[T, U](create: () -> T, cleanup: (T) -> Unit, use_resource: (T) -> U) -> U {
+    let resource = create()
+    let result = use_resource(resource)
+    cleanup(resource)
+    result
+  }
+  
+  // Test safe execution
+  let safe_operation = fn() -> String { "Safe result" }
+  let result = safe_execute(safe_operation, "Fallback result")
+  assert_eq(result, "Safe result")
+  
+  // Test resource guard
+  let mut cleanup_called = false
+  
+  let create_resource = fn() -> Int { 42 }
+  let cleanup_resource = fn(resource: Int) -> Unit { cleanup_called = true }
+  let use_resource = fn(resource: Int) -> String { "Resource value: " + resource.to_string() }
+  
+  let guarded_result = with_resource(create_resource, cleanup_resource, use_resource)
+  assert_eq(guarded_result, "Resource value: 42")
+  assert_true(cleanup_called)
+  
+  // Test system stability monitors
+  type SystemHealth = {
+    memory_usage: Float,
+    cpu_usage: Float,
+    error_rate: Float,
+    response_time: Float
+  }
+  
+  let check_system_health = fn(health: SystemHealth) -> String {
+    if health.memory_usage > 0.9 || health.cpu_usage > 0.9 || health.error_rate > 0.1 {
+      return "Critical"
     }
     
-    trace_errors
-  }
-  
-  // Find root cause
-  let find_root_cause = fn(errors: Array[CorrelatedError]) {
-    let mut root_cause = None
-    
-    for error in errors {
-      match error.caused_by {
-        None => root_cause = Some(error)
-        Some(_) => ()  // Has a cause, not root
-      }
+    if health.memory_usage > 0.7 || health.cpu_usage > 0.7 || health.error_rate > 0.05 || health.response_time > 1000.0 {
+      return "Warning"
     }
     
-    root_cause
+    "Healthy"
   }
   
-  // Create error contexts
-  let api_context = create_context("trace-123", "span-abc", "api-service", "process_request")
-  let db_context = create_context("trace-123", "span-def", "database-service", "execute_query")
-  let cache_context = create_context("trace-123", "span-ghi", "cache-service", "get_data")
+  // Test system health checks
+  let healthy_system = { memory_usage: 0.5, cpu_usage: 0.3, error_rate: 0.01, response_time: 100.0 }
+  assert_eq(check_system_health(healthy_system), "Healthy")
   
-  // Create correlated errors
-  let db_error = create_error("error-1", "DatabaseError", "Connection timeout", db_context, None)
-  let cache_error = create_error("error-2", "CacheError", "Cache miss", cache_context, Some("error-1"))
-  let api_error = create_error("error-3", "ValidationError", "Invalid response data", api_context, Some("error-2"))
+  let warning_system = { memory_usage: 0.8, cpu_usage: 0.3, error_rate: 0.01, response_time: 100.0 }
+  assert_eq(check_system_health(warning_system), "Warning")
   
-  let errors = [db_error, cache_error, api_error]
-  
-  // Test error correlation
-  let trace_errors = trace_error_propagation(errors, "trace-123")
-  assert_eq(trace_errors.length(), 3)
-  
-  // Test root cause detection
-  let root_cause = find_root_cause(trace_errors)
-  assert_true(root_cause.is_some())
-  
-  match root_cause {
-    Some(error) => {
-      assert_eq(error.error_id, "error-1")
-      assert_eq(error.error_type, "DatabaseError")
-      assert_eq(error.message, "Connection timeout")
-      assert_eq(error.caused_by, None)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test error chain
-  let api_error_detail = trace_errors[2]
-  assert_eq(api_error_detail.error_id, "error-3")
-  assert_eq(api_error_detail.error_type, "ValidationError")
-  assert_eq(api_error_detail.caused_by, Some("error-2"))
-  
-  let cache_error_detail = trace_errors[1]
-  assert_eq(cache_error_detail.error_id, "error-2")
-  assert_eq(cache_error_detail.error_type, "CacheError")
-  assert_eq(cache_error_detail.caused_by, Some("error-1"))
-  
-  // Test stack trace
-  assert_eq(api_error_detail.stack_trace.length(), 3)
-  assert_eq(api_error_detail.stack_trace[0], "api-service.process_request at line 42")
-  assert_eq(api_error_detail.stack_trace[1], "internal.process_data at line 123")
-  assert_eq(api_error_detail.stack_trace[2], "external.api_call at line 67")
+  let critical_system = { memory_usage: 0.95, cpu_usage: 0.3, error_rate: 0.01, response_time: 100.0 }
+  assert_eq(check_system_health(critical_system), "Critical")
 }
