@@ -2218,6 +2218,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_caching_mechanism_comprehensive_tests.mbt": {
   },
+  "azimuth_cache_performance_tests.mbt": {
+  },
   "azimuth_boundary_error_handling_tests.mbt": {
   },
   "azimuth_boundary_edge_case_tests.mbt": {
