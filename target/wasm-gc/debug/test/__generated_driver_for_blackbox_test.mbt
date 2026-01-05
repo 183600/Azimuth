@@ -1726,6 +1726,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_distributed_consistency_comprehensive_tests.mbt": {
   },
+  "azimuth_distributed_caching_tests.mbt": {
+  },
   "azimuth_deep_nested_attributes_tests.mbt": {
   },
   "azimuth_datetime_processing_tests.mbt": {
@@ -2133,6 +2135,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_cloud_native_integration_tests.mbt": {
   },
   "azimuth_clock_random_functionality_tests.mbt": {
+  },
+  "azimuth_circuit_breaker_tests.mbt": {
   },
   "azimuth_caching_mechanism_tests.mbt": {
   },
