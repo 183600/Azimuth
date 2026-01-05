@@ -1,1058 +1,1247 @@
-// Azimuth Resource Management Tests
-// This file contains test cases for resource management functionality
+// Azimuth Resource Management and Cleanup Test Suite
+// This file contains test cases for resource management and cleanup functionality
 
-// Test 1: Memory Pool Management
-test "memory pool management" {
-  // Define memory block
+// Test 1: Memory Resource Management
+test "memory resource management" {
   type MemoryBlock = {
-    id: Int,
+    id: String,
     size: Int,
     allocated: Bool,
-    data: Array[Int>  // Simplified representation of memory content
+    data: Array[Int]  // Simulated memory data
   }
   
-  // Define memory pool
-  type MemoryPool = {
-    blocks: Array[MemoryBlock>,
-    total_size: Int,
-    allocated_size: Int,
-    free_blocks: Array<Int>  // Indices of free blocks
+  type MemoryManager = {
+    total_memory: Int,
+    allocated_memory: Int,
+    blocks: Array[MemoryBlock],
+    lock_acquired: Bool
   }
   
-  // Create memory pool
-  let create_memory_pool = fn(block_count: Int, block_size: Int) {
-    let mut blocks = []
-    let mut free_blocks = []
-    
-    for i in 0 .. block_count {
-      blocks = blocks.push({
-        id: i,
-        size: block_size,
-        allocated: false,
-        data: []
-      })
-      free_blocks = free_blocks.push(i)
-    }
-    
+  let create_memory_block = fn(id: String, size: Int) {
     {
-      blocks,
-      total_size: block_count * block_size,
-      allocated_size: 0,
-      free_blocks
+      id,
+      size,
+      allocated: false,
+      data: []  // Initially empty
     }
   }
   
-  // Allocate block
-  let allocate_block = fn(pool: MemoryPool) {
-    if pool.free_blocks.length() > 0 {
-      let block_id = pool.free_blocks[0]
-      let updated_blocks = pool.blocks.map(fn(block) {
-        if block.id == block_id {
-          { block | allocated: true }
-        } else {
-          block
-        }
-      })
-      
-      let updated_free_blocks = pool.free_blocks.slice(1)
-      let allocated_block = pool.blocks[block_id]
-      
-      (
-        Some(allocated_block),
-        {
-          blocks: updated_blocks,
-          total_size: pool.total_size,
-          allocated_size: pool.allocated_size + allocated_block.size,
-          free_blocks: updated_free_blocks
-        }
-      )
+  let create_memory_manager = fn(total_memory: Int) {
+    {
+      total_memory,
+      allocated_memory: 0,
+      blocks: [],
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(manager: MemoryManager) {
+    if not(manager.lock_acquired) {
+      { manager | lock_acquired: true }
     } else {
-      (None, pool)
+      manager  // Lock already acquired
     }
   }
   
-  // Free block
-  let free_block = fn(pool: MemoryPool, block_id: Int) {
-    let block = pool.blocks[block_id]
-    
-    if block.allocated {
-      let updated_blocks = pool.blocks.map(fn(b) {
-        if b.id == block_id {
-          { b | allocated: false, data: [] }
-        } else {
-          b
-        }
-      })
-      
-      let updated_free_blocks = pool.free_blocks.push(block_id)
+  let release_lock = fn(manager: MemoryManager) {
+    { manager | lock_acquired: false }
+  }
+  
+  let allocate_memory = fn(manager: MemoryManager, id: String, size: Int) {
+    if manager.lock_acquired && (manager.allocated_memory + size) <= manager.total_memory {
+      let block = create_memory_block(id, size)
+      let filled_block = { block | 
+        allocated: true,
+        data: [0] * size  // Fill with zeros
+      }
       
       {
-        blocks: updated_blocks,
-        total_size: pool.total_size,
-        allocated_size: pool.allocated_size - block.size,
-        free_blocks: updated_free_blocks
+        total_memory: manager.total_memory,
+        allocated_memory: manager.allocated_memory + size,
+        blocks: manager.blocks + [filled_block],
+        lock_acquired: true
       }
     } else {
-      pool
+      manager  // Cannot allocate without lock or not enough memory
     }
   }
   
-  // Get pool statistics
-  let get_pool_stats = fn(pool: MemoryPool) {
-    {
-      total_blocks: pool.blocks.length(),
-      allocated_blocks: pool.blocks.filter(fn(b) { b.allocated }).length(),
-      free_blocks: pool.free_blocks.length(),
-      total_size: pool.total_size,
-      allocated_size: pool.allocated_size,
-      free_size: pool.total_size - pool.allocated_size,
-      utilization_rate: pool.allocated_size.to_float() / pool.total_size.to_float()
+  let deallocate_memory = fn(manager: MemoryManager, id: String) {
+    if manager.lock_acquired {
+      let mut found = false
+      let mut freed_size = 0
+      let updated = manager.blocks.filter(fn(block) {
+        if block.id == id {
+          found = true
+          freed_size = block.size
+          false  // Remove this block
+        } else {
+          true
+        }
+      })
+      
+      if found {
+        {
+          total_memory: manager.total_memory,
+          allocated_memory: manager.allocated_memory - freed_size,
+          blocks: updated,
+          lock_acquired: true
+        }
+      } else {
+        manager  // Block not found
+      }
+    } else {
+      manager  // Cannot deallocate without lock
     }
   }
   
-  // Create memory pool with 10 blocks of 1024 bytes each
-  let pool = create_memory_pool(10, 1024)
-  assert_eq(pool.blocks.length(), 10)
-  assert_eq(pool.total_size, 10240)
-  assert_eq(pool.allocated_size, 0)
-  assert_eq(pool.free_blocks.length(), 10)
-  
-  // Get initial statistics
-  let initial_stats = get_pool_stats(pool)
-  assert_eq(initial_stats.total_blocks, 10)
-  assert_eq(initial_stats.allocated_blocks, 0)
-  assert_eq(initial_stats.free_blocks, 10)
-  assert_eq(initial_stats.utilization_rate, 0.0)
-  
-  // Allocate blocks
-  let (block1, pool_after_alloc1) = allocate_block(pool)
-  match block1 {
-    Some(b) => {
-      assert_eq(b.id, 0)
-      assert_true(b.allocated)
-      assert_eq(b.size, 1024)
-    }
-    None => assert_true(false)
+  let safe_allocate_memory = fn(manager: MemoryManager, id: String, size: Int) {
+    let locked_manager = acquire_lock(manager)
+    let result = allocate_memory(locked_manager, id, size)
+    release_lock(result)
   }
   
-  let (block2, pool_after_alloc2) = allocate_block(pool_after_alloc1)
-  match block2 {
-    Some(b) => {
-      assert_eq(b.id, 1)
-      assert_true(b.allocated)
-    }
-    None => assert_true(false)
+  let safe_deallocate_memory = fn(manager: MemoryManager, id: String) {
+    let locked_manager = acquire_lock(manager)
+    let result = deallocate_memory(locked_manager, id)
+    release_lock(result)
   }
   
-  // Check statistics after allocations
-  let stats_after_alloc = get_pool_stats(pool_after_alloc2)
-  assert_eq(stats_after_alloc.allocated_blocks, 2)
-  assert_eq(stats_after_alloc.free_blocks, 8)
-  assert_eq(stats_after_alloc.allocated_size, 2048)
-  assert_eq(stats_after_alloc.utilization_rate, 0.2)
+  let manager = create_memory_manager(1024)  // 1024 bytes total
+  assert_eq(manager.total_memory, 1024)
+  assert_eq(manager.allocated_memory, 0)
+  assert_eq(manager.blocks.length(), 0)
   
-  // Free a block
-  let pool_after_free = free_block(pool_after_alloc2, 0)
-  let stats_after_free = get_pool_stats(pool_after_free)
-  assert_eq(stats_after_free.allocated_blocks, 1)
-  assert_eq(stats_after_free.free_blocks, 9)
-  assert_eq(stats_after_free.allocated_size, 1024)
-  assert_eq(stats_after_free.utilization_rate, 0.1)
+  // Test safe allocate
+  let manager1 = safe_allocate_memory(manager, "block1", 256)
+  assert_eq(manager1.allocated_memory, 256)
+  assert_eq(manager1.blocks.length(), 1)
   
-  // Allocate all remaining blocks
-  let mut current_pool = pool_after_free
-  let mut allocated_blocks = []
+  let manager2 = safe_allocate_memory(manager1, "block2", 512)
+  assert_eq(manager2.allocated_memory, 768)
+  assert_eq(manager2.blocks.length(), 2)
   
-  for i in 0 .. 9 {
-    let (block, updated_pool) = allocate_block(current_pool)
-    match block {
-      Some(b) => allocated_blocks = allocated_blocks.push(b)
-      None => assert_true(false)
-    }
-    current_pool = updated_pool
-  }
+  // Test allocation failure (not enough memory)
+  let manager3 = safe_allocate_memory(manager2, "block3", 512)
+  assert_eq(manager3.allocated_memory, 768)  // No change
+  assert_eq(manager3.blocks.length(), 2)
   
-  // Pool should be full now
-  let full_stats = get_pool_stats(current_pool)
-  assert_eq(full_stats.allocated_blocks, 10)
-  assert_eq(full_stats.free_blocks, 0)
-  assert_eq(full_stats.allocated_size, 10240)
-  assert_eq(full_stats.utilization_rate, 1.0)
+  // Test safe deallocate
+  let manager4 = safe_deallocate_memory(manager3, "block1")
+  assert_eq(manager4.allocated_memory, 512)
+  assert_eq(manager4.blocks.length(), 1)
   
-  // Try to allocate from full pool
-  let (no_block, _) = allocate_block(current_pool)
-  assert_eq(no_block, None)
-  
-  // Free all blocks
-  let mut empty_pool = current_pool
-  for block in allocated_blocks {
-    empty_pool = free_block(empty_pool, block.id)
-  }
-  
-  // Pool should be empty now
-  let empty_stats = get_pool_stats(empty_pool)
-  assert_eq(empty_stats.allocated_blocks, 0)
-  assert_eq(empty_stats.free_blocks, 10)
-  assert_eq(empty_stats.allocated_size, 0)
-  assert_eq(empty_stats.utilization_rate, 0.0)
+  // Can allocate again after deallocation
+  let manager5 = safe_allocate_memory(manager4, "block3", 400)
+  assert_eq(manager5.allocated_memory, 912)
+  assert_eq(manager5.blocks.length(), 2)
 }
 
-// Test 2: Connection Pool Management
+// Test 2: File Handle Management
+test "file handle management" {
+  type FileHandle = {
+    id: String,
+    path: String,
+    mode: String,  // "read", "write", "append"
+    open: Bool,
+    position: Int
+  }
+  
+  type FileManager = {
+    max_handles: Int,
+    handles: Array[FileHandle],
+    lock_acquired: Bool
+  }
+  
+  let create_file_handle = fn(id: String, path: String, mode: String) {
+    {
+      id,
+      path,
+      mode,
+      open: true,
+      position: 0
+    }
+  }
+  
+  let create_file_manager = fn(max_handles: Int) {
+    {
+      max_handles,
+      handles: [],
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(manager: FileManager) {
+    if not(manager.lock_acquired) {
+      { manager | lock_acquired: true }
+    } else {
+      manager  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(manager: FileManager) {
+    { manager | lock_acquired: false }
+  }
+  
+  let open_file = fn(manager: FileManager, id: String, path: String, mode: String) {
+    if manager.lock_acquired && manager.handles.length() < manager.max_handles {
+      let handle = create_file_handle(id, path, mode)
+      {
+        max_handles: manager.max_handles,
+        handles: manager.handles + [handle],
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot open without lock or at max handles
+    }
+  }
+  
+  let close_file = fn(manager: FileManager, id: String) {
+    if manager.lock_acquired {
+      let updated = manager.handles.map(fn(handle) {
+        if handle.id == id {
+          { handle | open: false }
+        } else {
+          handle
+        }
+      })
+      
+      {
+        max_handles: manager.max_handles,
+        handles: updated,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot close without lock
+    }
+  }
+  
+  let remove_closed_handles = fn(manager: FileManager) {
+    if manager.lock_acquired {
+      let open_handles = manager.handles.filter(fn(handle) { handle.open })
+      {
+        max_handles: manager.max_handles,
+        handles: open_handles,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot remove without lock
+    }
+  }
+  
+  let safe_open_file = fn(manager: FileManager, id: String, path: String, mode: String) {
+    let locked_manager = acquire_lock(manager)
+    let result = open_file(locked_manager, id, path, mode)
+    release_lock(result)
+  }
+  
+  let safe_close_file = fn(manager: FileManager, id: String) {
+    let locked_manager = acquire_lock(manager)
+    let result = close_file(locked_manager, id)
+    release_lock(result)
+  }
+  
+  let safe_remove_closed_handles = fn(manager: FileManager) {
+    let locked_manager = acquire_lock(manager)
+    let result = remove_closed_handles(locked_manager)
+    release_lock(result)
+  }
+  
+  let manager = create_file_manager(5)
+  assert_eq(manager.max_handles, 5)
+  assert_eq(manager.handles.length(), 0)
+  
+  // Test safe open
+  let manager1 = safe_open_file(manager, "file1", "/path/to/file1.txt", "read")
+  assert_eq(manager1.handles.length(), 1)
+  
+  let manager2 = safe_open_file(manager1, "file2", "/path/to/file2.txt", "write")
+  assert_eq(manager2.handles.length(), 2)
+  
+  let manager3 = safe_open_file(manager2, "file3", "/path/to/file3.txt", "append")
+  assert_eq(manager3.handles.length(), 3)
+  
+  // Test safe close
+  let manager4 = safe_close_file(manager3, "file1")
+  let file1 = manager4.handles.filter(fn(h) { h.id == "file1" })[0]
+  assert_false(file1.open)
+  
+  // Test remove closed handles
+  let manager5 = safe_remove_closed_handles(manager4)
+  assert_eq(manager5.handles.length(), 2)
+  assert_true(manager5.handles.all(fn(h) { h.open }))
+}
+
+// Test 3: Connection Pool Management
 test "connection pool management" {
-  // Define connection
   type Connection = {
     id: String,
     host: String,
     port: Int,
-    created_at: Int,
-    last_used: Int,
     in_use: Bool,
-    active: Bool
+    created_at: Int,
+    last_used: Int
   }
   
-  // Define connection pool
   type ConnectionPool = {
-    connections: Array[Connection>,
     max_connections: Int,
-    min_connections: Int,
-    connection_timeout_ms: Int,
-    idle_timeout_ms: Int
+    connection_timeout: Int,  // in seconds
+    connections: Array[Connection],
+    lock_acquired: Bool
   }
   
-  // Create connection pool
-  let create_connection_pool = fn(
-    max_connections: Int,
-    min_connections: Int,
-    connection_timeout_ms: Int,
-    idle_timeout_ms: Int
-  ) {
-    {
-      connections: [],
-      max_connections,
-      min_connections,
-      connection_timeout_ms,
-      idle_timeout_ms
-    }
-  }
-  
-  // Create connection
   let create_connection = fn(id: String, host: String, port: Int, current_time: Int) {
     {
       id,
       host,
       port,
+      in_use: false,
       created_at: current_time,
-      last_used: current_time,
-      in_use: False,
-      active: True
+      last_used: current_time
     }
   }
   
-  // Get available connection
-  let get_available_connection = fn(pool: ConnectionPool, current_time: Int) {
-    let available_connections = pool.connections.filter(fn(c) { 
-      not(c.in_use) and c.active and 
-      (current_time - c.last_used) < pool.idle_timeout_ms
-    })
-    
-    if available_connections.length() > 0 {
-      let connection = available_connections[0]
-      let updated_connections = pool.connections.map(fn(c) {
-        if c.id == connection.id {
-          { c | in_use: true, last_used: current_time }
-        } else {
-          c
-        }
-      })
-      
-      Some((
-        connection,
-        { pool | connections: updated_connections }
-      ))
-    } else if pool.connections.length() < pool.max_connections {
-      // Create new connection
-      let new_id = "conn-" + pool.connections.length().to_string()
-      let new_connection = create_connection(new_id, "localhost", 5432, current_time)
-      let updated_pool = { pool | connections: pool.connections.push({ new_connection | in_use: true }) }
-      
-      Some((new_connection, updated_pool))
-    } else {
-      None
-    }
-  }
-  
-  // Release connection
-  let release_connection = fn(pool: ConnectionPool, connection_id: String, current_time: Int) {
-    let updated_connections = pool.connections.map(fn(c) {
-      if c.id == connection_id {
-        { c | in_use: False, last_used: current_time }
-      } else {
-        c
-      }
-    })
-    
-    { pool | connections: updated_connections }
-  }
-  
-  // Close connection
-  let close_connection = fn(pool: ConnectionPool, connection_id: String) {
-    let updated_connections = pool.connections.map(fn(c) {
-      if c.id == connection_id {
-        { c | active: False, in_use: False }
-      } else {
-        c
-      }
-    })
-    
-    { pool | connections: updated_connections }
-  }
-  
-  // Clean up idle connections
-  let cleanup_idle_connections = fn(pool: ConnectionPool, current_time: Int) {
-    let active_connections = pool.connections.filter(fn(c) { 
-      c.active or (not(c.in_use) and (current_time - c.last_used) < pool.idle_timeout_ms)
-    })
-    
-    { pool | connections: active_connections }
-  }
-  
-  // Get pool statistics
-  let get_pool_statistics = fn(pool: ConnectionPool) {
-    let active_connections = pool.connections.filter(fn(c) { c.active })
-    let in_use_connections = pool.connections.filter(fn(c) { c.in_use })
-    let idle_connections = pool.connections.filter(fn(c) { not(c.in_use) and c.active })
-    
+  let create_connection_pool = fn(max_connections: Int, connection_timeout: Int) {
     {
-      total_connections: pool.connections.length(),
-      active_connections: active_connections.length(),
-      in_use_connections: in_use_connections.length(),
-      idle_connections: idle_connections.length(),
-      max_connections: pool.max_connections,
-      min_connections: pool.min_connections,
-      utilization_rate: in_use_connections.length().to_float() / pool.max_connections.to_float()
+      max_connections,
+      connection_timeout,
+      connections: [],
+      lock_acquired: false
     }
   }
   
-  // Create connection pool
-  let pool = create_connection_pool(10, 2, 5000, 30000)
-  assert_eq(pool.max_connections, 10)
-  assert_eq(pool.min_connections, 2)
-  
-  // Get initial statistics
-  let initial_stats = get_pool_statistics(pool)
-  assert_eq(initial_stats.total_connections, 0)
-  assert_eq(initial_stats.active_connections, 0)
-  assert_eq(initial_stats.in_use_connections, 0)
-  assert_eq(initial_stats.idle_connections, 0)
-  
-  // Get connection (should create new one)
-  match get_available_connection(pool, 1640995200) {
-    Some((connection, updated_pool)) => {
-      assert_eq(connection.id, "conn-0")
-      assert_true(connection.in_use)
-      assert_eq(updated_pool.connections.length(), 1)
-    }
-    None => assert_true(false)
-  }
-  
-  // Get another connection
-  let pool_after_first = match get_available_connection(pool, 1640995200) {
-    Some((_, updated)) => updated
-    None => pool
-  }
-  
-  match get_available_connection(pool_after_first, 1640995200) {
-    Some((connection, updated_pool)) => {
-      assert_eq(connection.id, "conn-1")
-      assert_true(connection.in_use)
-      assert_eq(updated_pool.connections.length(), 2)
-    }
-    None => assert_true(false)
-  }
-  
-  // Release first connection
-  let pool_after_second = match get_available_connection(pool_after_first, 1640995200) {
-    Some((_, updated)) => updated
-    None => pool_after_first
-  }
-  
-  let pool_after_release = release_connection(pool_after_second, "conn-0", 1640995300)
-  
-  // Check statistics after release
-  let stats_after_release = get_pool_statistics(pool_after_release)
-  assert_eq(stats_after_release.total_connections, 2)
-  assert_eq(stats_after_release.in_use_connections, 1)
-  assert_eq(stats_after_release.idle_connections, 1)
-  
-  // Get connection again (should reuse the released one)
-  match get_available_connection(pool_after_release, 1640995300) {
-    Some((connection, _)) => {
-      assert_eq(connection.id, "conn-0")  // Should reuse the released connection
-      assert_true(connection.in_use)
-    }
-    None => assert_true(false)
-  }
-  
-  // Close connection
-  let pool_with_closed = close_connection(pool_after_release, "conn-1")
-  let stats_after_close = get_pool_statistics(pool_with_closed)
-  assert_eq(stats_after_close.active_connections, 1)
-  
-  // Clean up idle connections
-  let pool_after_cleanup = cleanup_idle_connections(pool_with_closed, 1640995600)  // 5 minutes later
-  let stats_after_cleanup = get_pool_statistics(pool_after_cleanup)
-  // Should remove connections idle for more than 30 seconds
-  assert_eq(stats_after_cleanup.active_connections, 1)
-}
-
-// Test 3: Resource Quota Management
-test "resource quota management" {
-  // Define resource type
-  enum ResourceType {
-    CPU
-    Memory
-    Disk
-    Network
-  }
-  
-  // Define resource quota
-  type ResourceQuota = {
-    resource_type: ResourceType,
-    limit: Float,
-    used: Float,
-    unit: String
-  }
-  
-  // Define resource manager
-  type ResourceManager = {
-    quotas: Array[ResourceQuota>,
-    alerts: Array[String]
-  }
-  
-  // Create resource manager
-  let create_resource_manager = fn() {
-    { quotas: [], alerts: [] }
-  }
-  
-  // Add quota
-  let add_quota = fn(manager: ResourceManager, resource_type: ResourceType, limit: Float, unit: String) {
-    let quota = {
-      resource_type,
-      limit,
-      used: 0.0,
-      unit
-    }
-    { manager | quotas: manager.quotas.push(quota) }
-  }
-  
-  // Use resource
-  let use_resource = fn(manager: ResourceManager, resource_type: ResourceType, amount: Float) {
-    let updated_quotas = manager.quotas.map(fn(quota) {
-      if quota.resource_type == resource_type {
-        let new_used = quota.used + amount
-        let updated_quota = { quota | used: new_used }
-        
-        // Check if quota is exceeded
-        if new_used > quota.limit {
-          (updated_quota, Some("Resource quota exceeded for " + resource_type.to_string()))
-        } else {
-          (updated_quota, None)
-        }
-      } else {
-        (quota, None)
-      }
-    })
-    
-    let mut alerts = manager.alerts
-    for quota in updated_quotas {
-      match quota {
-        (q, Some(alert)) => alerts = alerts.push(alert)
-        (q, None) => ()  // No alert
-      }
-    }
-    
-    let final_quotas = updated_quotas.map(fn(pair) { pair.0 })
-    { manager | quotas: final_quotas, alerts }
-  }
-  
-  // Release resource
-  let release_resource = fn(manager: ResourceManager, resource_type: ResourceType, amount: Float) {
-    let updated_quotas = manager.quotas.map(fn(quota) {
-      if quota.resource_type == resource_type {
-        let new_used = (quota.used - amount).max(0.0)
-        { quota | used: new_used }
-      } else {
-        quota
-      }
-    })
-    
-    { manager | quotas: updated_quotas }
-  }
-  
-  // Get quota usage
-  let get_quota_usage = fn(manager: ResourceManager, resource_type: ResourceType) {
-    match manager.quotas.find(fn(q) { q.resource_type == resource_type }) {
-      Some(quota) => Some({
-        resource_type: quota.resource_type,
-        limit: quota.limit,
-        used: quota.used,
-        available: quota.limit - quota.used,
-        utilization: quota.used / quota.limit,
-        unit: quota.unit
-      })
-      None => None
-    }
-  }
-  
-  // Check for alerts
-  let check_alerts = fn(manager: ResourceManager) {
-    manager.alerts
-  }
-  
-  // Clear alerts
-  let clear_alerts = fn(manager: ResourceManager) {
-    { manager | alerts: [] }
-  }
-  
-  // Create resource manager
-  let manager = create_resource_manager()
-  
-  // Add quotas
-  let manager_with_quotas = manager
-    |> add_quota(ResourceType::CPU, 1000.0, "mCPU")
-    |> add_quota(ResourceType::Memory, 2048.0, "MB")
-    |> add_quota(ResourceType::Disk, 10240.0, "MB")
-    |> add_quota(ResourceType::Network, 100.0, "Mbps")
-  
-  assert_eq(manager_with_quotas.quotas.length(), 4)
-  
-  // Get initial quota usage
-  match get_quota_usage(manager_with_quotas, ResourceType::CPU) {
-    Some(usage) => {
-      assert_eq(usage.limit, 1000.0)
-      assert_eq(usage.used, 0.0)
-      assert_eq(usage.available, 1000.0)
-      assert_eq(usage.utilization, 0.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Use resources
-  let manager_after_use = manager_with_quotas
-    |> use_resource(ResourceType::CPU, 500.0)
-    |> use_resource(ResourceType::Memory, 1024.0)
-    |> use_resource(ResourceType::Disk, 2048.0)
-    |> use_resource(ResourceType::Network, 50.0)
-  
-  // Check quota usage after use
-  match get_quota_usage(manager_after_use, ResourceType::CPU) {
-    Some(usage) => {
-      assert_eq(usage.used, 500.0)
-      assert_eq(usage.available, 500.0)
-      assert_eq(usage.utilization, 0.5)
-    }
-    None => assert_true(false)
-  }
-  
-  // Use more resources (exceed CPU quota)
-  let manager_after_exceed = use_resource(manager_after_use, ResourceType::CPU, 600.0)
-  
-  // Check for alerts
-  let alerts = check_alerts(manager_after_exceed)
-  assert_eq(alerts.length(), 1)
-  assert_true(alerts[0].contains("Resource quota exceeded"))
-  
-  // Check CPU usage after exceeding quota
-  match get_quota_usage(manager_after_exceed, ResourceType::CPU) {
-    Some(usage) => {
-      assert_eq(usage.used, 1100.0)  // 500 + 600
-      assert_eq(usage.available, -100.0)  // Over limit
-      assert_eq(usage.utilization, 1.1)  // 110% utilization
-    }
-    None => assert_true(false)
-  }
-  
-  // Release some resources
-  let manager_after_release = release_resource(manager_after_exceed, ResourceType::CPU, 200.0)
-  
-  // Check CPU usage after release
-  match get_quota_usage(manager_after_release, ResourceType::CPU) {
-    Some(usage) => {
-      assert_eq(usage.used, 900.0)  // 1100 - 200
-      assert_eq(usage.available, 100.0)
-      assert_eq(usage.utilization, 0.9)
-    }
-    None => assert_true(false)
-  }
-  
-  // Clear alerts
-  let manager_after_clear = clear_alerts(manager_after_release)
-  let cleared_alerts = check_alerts(manager_after_clear)
-  assert_eq(cleared_alerts.length(), 0)
-}
-
-// Test 4: Resource Scheduling and Allocation
-test "resource scheduling and allocation" {
-  // Define resource requirement
-  type ResourceRequirement = {
-    cpu: Float,
-    memory: Float,
-    disk: Float,
-    network: Float
-  }
-  
-  // Define task
-  type Task = {
-    id: String,
-    name: String,
-    priority: Int,
-    resource_requirement: ResourceRequirement,
-    status: String
-  }
-  
-  // Define node
-  type Node = {
-    id: String,
-    name: String,
-    total_resources: ResourceRequirement,
-    used_resources: ResourceRequirement,
-    available_resources: ResourceRequirement,
-    tasks: Array[String>
-  }
-  
-  // Define scheduler
-  type Scheduler = {
-    nodes: Array[Node>,
-    pending_tasks: Array[Task>,
-    scheduled_tasks: Array[Task>
-  }
-  
-  // Create scheduler
-  let create_scheduler = fn() {
-    { nodes: [], pending_tasks: [], scheduled_tasks: [] }
-  }
-  
-  // Add node
-  let add_node = fn(scheduler: Scheduler, node: Node) {
-    { scheduler | nodes: scheduler.nodes.push(node) }
-  }
-  
-  // Calculate available resources
-  let calculate_available_resources = fn(total: ResourceRequirement, used: ResourceRequirement) {
-    {
-      cpu: total.cpu - used.cpu,
-      memory: total.memory - used.memory,
-      disk: total.disk - used.disk,
-      network: total.network - used.network
-    }
-  }
-  
-  // Check if node can accommodate task
-  let can_accommodate = fn(node: Node, requirement: ResourceRequirement) {
-    requirement.cpu <= node.available_resources.cpu and
-    requirement.memory <= node.available_resources.memory and
-    requirement.disk <= node.available_resources.disk and
-    requirement.network <= node.available_resources.network
-  }
-  
-  // Find best node for task
-  let find_best_node = fn(scheduler: Scheduler, requirement: ResourceRequirement) {
-    let suitable_nodes = scheduler.nodes.filter(fn(node) { 
-      can_accommodate(node, requirement) 
-    })
-    
-    if suitable_nodes.length() > 0 {
-      // Sort by available resources (prefer nodes with more available resources)
-      let sorted_nodes = suitable_nodes.sort(fn(a, b) { 
-        let a_total = a.available_resources.cpu + a.available_resources.memory + 
-                     a.available_resources.disk + a.available_resources.network
-        let b_total = b.available_resources.cpu + b.available_resources.memory + 
-                     b.available_resources.disk + b.available_resources.network
-        a_total >= b_total
-      })
-      
-      Some(sorted_nodes[0])
+  let acquire_lock = fn(pool: ConnectionPool) {
+    if not(pool.lock_acquired) {
+      { pool | lock_acquired: true }
     } else {
-      None
+      pool  // Lock already acquired
     }
   }
   
-  // Schedule task
-  let schedule_task = fn(scheduler: Scheduler, task: Task) {
-    match find_best_node(scheduler, task.resource_requirement) {
-      Some(node) => {
-        // Update node resources
-        let new_used_resources = {
-          cpu: node.used_resources.cpu + task.resource_requirement.cpu,
-          memory: node.used_resources.memory + task.resource_requirement.memory,
-          disk: node.used_resources.disk + task.resource_requirement.disk,
-          network: node.used_resources.network + task.resource_requirement.network
+  let release_lock = fn(pool: ConnectionPool) {
+    { pool | lock_acquired: false }
+  }
+  
+  let add_connection = fn(pool: ConnectionPool, connection: Connection) {
+    if pool.lock_acquired && pool.connections.length() < pool.max_connections {
+      {
+        max_connections: pool.max_connections,
+        connection_timeout: pool.connection_timeout,
+        connections: pool.connections + [connection],
+        lock_acquired: true
+      }
+    } else {
+      pool  // Cannot add without lock or at max connections
+    }
+  }
+  
+  let acquire_connection = fn(pool: ConnectionPool) {
+    if pool.lock_acquired {
+      let mut found = false
+      let mut updated = []
+      
+      for connection in pool.connections {
+        if not(connection.in_use) && not(found) {
+          updated = updated.push({ connection | in_use: true })
+          found = true
+        } else {
+          updated = updated.push(connection)
         }
-        
-        let new_available_resources = calculate_available_resources(
-          node.total_resources, 
-          new_used_resources
-        )
-        
-        let updated_node = {
-          id: node.id,
-          name: node.name,
-          total_resources: node.total_resources,
-          used_resources: new_used_resources,
-          available_resources: new_available_resources,
-          tasks: node.tasks.push(task.id)
-        }
-        
-        // Update scheduler
-        let updated_nodes = scheduler.nodes.map(fn(n) {
-          if n.id == node.id { updated_node } else { n }
-        })
-        
-        let updated_task = { task | status: "scheduled" }
-        
+      }
+      
+      if found {
         {
-          nodes: updated_nodes,
-          pending_tasks: scheduler.pending_tasks.filter(fn(t) { t.id != task.id }),
-          scheduled_tasks: scheduler.scheduled_tasks.push(updated_task)
+          max_connections: pool.max_connections,
+          connection_timeout: pool.connection_timeout,
+          connections: updated,
+          lock_acquired: true
         }
+      } else {
+        pool  // No available connections
       }
-      None => {
-        // Cannot schedule, keep in pending
-        { scheduler | pending_tasks: scheduler.pending_tasks.push(task) }
-      }
+    } else {
+      pool  // Cannot acquire without lock
     }
   }
   
-  // Submit task
-  let submit_task = fn(scheduler: Scheduler, task: Task) {
-    schedule_task(scheduler, task)
-  }
-  
-  // Complete task
-  let complete_task = fn(scheduler: Scheduler, task_id: String) {
-    // Find the task
-    match scheduler.scheduled_tasks.find(fn(t) { t.id == task_id }) {
-      Some(task) => {
-        // Find the node running the task
-        match scheduler.nodes.find(fn(n) { n.tasks.contains(task_id) }) {
-          Some(node) => {
-            // Update node resources
-            let new_used_resources = {
-              cpu: node.used_resources.cpu - task.resource_requirement.cpu,
-              memory: node.used_resources.memory - task.resource_requirement.memory,
-              disk: node.used_resources.disk - task.resource_requirement.disk,
-              network: node.used_resources.network - task.resource_requirement.network
-            }
-            
-            let new_available_resources = calculate_available_resources(
-              node.total_resources, 
-              new_used_resources
-            )
-            
-            let updated_node = {
-              id: node.id,
-              name: node.name,
-              total_resources: node.total_resources,
-              used_resources: new_used_resources,
-              available_resources: new_available_resources,
-              tasks: node.tasks.filter(fn(t) { t != task_id })
-            }
-            
-            // Update scheduler
-            let updated_nodes = scheduler.nodes.map(fn(n) {
-              if n.id == node.id { updated_node } else { n }
-            })
-            
-            let completed_task = { task | status: "completed" }
-            
-            {
-              nodes: updated_nodes,
-              pending_tasks: scheduler.pending_tasks,
-              scheduled_tasks: scheduler.scheduled_tasks.filter(fn(t) { t.id != task_id })
-            }
-          }
-          None => scheduler
+  let release_connection = fn(pool: ConnectionPool, connection_id: String, current_time: Int) {
+    if pool.lock_acquired {
+      let updated = pool.connections.map(fn(connection) {
+        if connection.id == connection_id {
+          { connection | in_use: false, last_used: current_time }
+        } else {
+          connection
         }
+      })
+      
+      {
+        max_connections: pool.max_connections,
+        connection_timeout: pool.connection_timeout,
+        connections: updated,
+        lock_acquired: true
       }
-      None => scheduler
+    } else {
+      pool  // Cannot release without lock
     }
   }
   
-  // Create scheduler
-  let scheduler = create_scheduler()
-  
-  // Add nodes
-  let node1 = {
-    id: "node-1",
-    name: "worker-node-1",
-    total_resources: { cpu: 2000.0, memory: 4096.0, disk: 10240.0, network: 100.0 },
-    used_resources: { cpu: 0.0, memory: 0.0, disk: 0.0, network: 0.0 },
-    available_resources: { cpu: 2000.0, memory: 4096.0, disk: 10240.0, network: 100.0 },
-    tasks: []
+  let remove_expired_connections = fn(pool: ConnectionPool, current_time: Int) {
+    if pool.lock_acquired {
+      let active = pool.connections.filter(fn(connection) { 
+        not(connection.in_use) && 
+        (current_time - connection.last_used) < pool.connection_timeout 
+      })
+      
+      {
+        max_connections: pool.max_connections,
+        connection_timeout: pool.connection_timeout,
+        connections: active,
+        lock_acquired: true
+      }
+    } else {
+      pool  // Cannot remove without lock
+    }
   }
   
-  let node2 = {
-    id: "node-2",
-    name: "worker-node-2",
-    total_resources: { cpu: 1000.0, memory: 2048.0, disk: 5120.0, network: 50.0 },
-    used_resources: { cpu: 0.0, memory: 0.0, disk: 0.0, network: 0.0 },
-    available_resources: { cpu: 1000.0, memory: 2048.0, disk: 5120.0, network: 50.0 },
-    tasks: []
+  let safe_add_connection = fn(pool: ConnectionPool, connection: Connection) {
+    let locked_pool = acquire_lock(pool)
+    let result = add_connection(locked_pool, connection)
+    release_lock(result)
   }
   
-  let scheduler_with_nodes = scheduler
-    |> add_node(node1)
-    |> add_node(node2)
-  
-  assert_eq(scheduler_with_nodes.nodes.length(), 2)
-  
-  // Submit tasks
-  let task1 = {
-    id: "task-1",
-    name: "data-processing",
-    priority: 1,
-    resource_requirement: { cpu: 500.0, memory: 1024.0, disk: 2048.0, network: 10.0 },
-    status: "pending"
+  let safe_acquire_connection = fn(pool: ConnectionPool) {
+    let locked_pool = acquire_lock(pool)
+    let result = acquire_connection(locked_pool)
+    release_lock(result)
   }
   
-  let task2 = {
-    id: "task-2",
-    name: "web-server",
-    priority: 2,
-    resource_requirement: { cpu: 200.0, memory: 512.0, disk: 1024.0, network: 20.0 },
-    status: "pending"
+  let safe_release_connection = fn(pool: ConnectionPool, connection_id: String, current_time: Int) {
+    let locked_pool = acquire_lock(pool)
+    let result = release_connection(locked_pool, connection_id, current_time)
+    release_lock(result)
   }
   
-  let task3 = {
-    id: "task-3",
-    name: "batch-job",
-    priority: 1,
-    resource_requirement: { cpu: 1500.0, memory: 3072.0, disk: 4096.0, network: 30.0 },
-    status: "pending"
+  let safe_remove_expired_connections = fn(pool: ConnectionPool, current_time: Int) {
+    let locked_pool = acquire_lock(pool)
+    let result = remove_expired_connections(locked_pool, current_time)
+    release_lock(result)
   }
   
-  let scheduler_with_tasks = scheduler_with_nodes
-    |> submit_task(task1)
-    |> submit_task(task2)
-    |> submit_task(task3)
+  let pool = create_connection_pool(5, 300)  // 5 max connections, 300s timeout
+  assert_eq(pool.max_connections, 5)
+  assert_eq(pool.connections.length(), 0)
   
-  // Check task scheduling
-  assert_eq(scheduler_with_tasks.scheduled_tasks.length(), 3)
-  assert_eq(scheduler_with_tasks.pending_tasks.length(), 0)
+  let base_time = 1640995200
   
-  // Check node resource usage
-  let node1_after = scheduler_with_tasks.nodes.filter(fn(n) { n.id == "node-1" })[0]
-  let node2_after = scheduler_with_tasks.nodes.filter(fn(n) { n.id == "node-2" })[0]
+  // Add connections
+  let conn1 = create_connection("conn1", "db.example.com", 5432, base_time)
+  let conn2 = create_connection("conn2", "db.example.com", 5432, base_time + 10)
   
-  // Task 3 should be scheduled on node-1 (larger capacity)
-  assert_true(node1_after.tasks.contains("task-3"))
-  assert_eq(node1_after.used_resources.cpu, 1500.0)
+  let pool1 = safe_add_connection(pool, conn1)
+  assert_eq(pool1.connections.length(), 1)
   
-  // Task 1 and 2 should be scheduled on node-2
-  assert_true(node2_after.tasks.contains("task-1"))
-  assert_true(node2_after.tasks.contains("task-2"))
-  assert_eq(node2_after.used_resources.cpu, 700.0)
+  let pool2 = safe_add_connection(pool1, conn2)
+  assert_eq(pool2.connections.length(), 2)
   
-  // Complete task
-  let scheduler_after_complete = complete_task(scheduler_with_tasks, "task-1")
+  // Acquire connections
+  let pool3 = safe_acquire_connection(pool2)
+  let in_use_count = pool3.connections.filter(fn(c) { c.in_use }).length()
+  assert_eq(in_use_count, 1)
   
-  // Check node resource usage after completion
-  let node2_after_complete = scheduler_after_complete.nodes.filter(fn(n) { n.id == "node-2" })[0]
-  assert_false(node2_after_complete.tasks.contains("task-1"))
-  assert_eq(node2_after_complete.used_resources.cpu, 500.0)
+  let pool4 = safe_acquire_connection(pool3)
+  let in_use_count2 = pool4.connections.filter(fn(c) { c.in_use }).length()
+  assert_eq(in_use_count2, 2)
   
-  // Submit a task that cannot be scheduled
-  let large_task = {
-    id: "task-large",
-    name: "large-computation",
-    priority: 1,
-    resource_requirement: { cpu: 3000.0, memory: 8192.0, disk: 20480.0, network: 200.0 },
-    status: "pending"
-  }
+  // Release connections
+  let pool5 = safe_release_connection(pool4, "conn1", base_time + 100)
+  let conn1_updated = pool5.connections.filter(fn(c) { c.id == "conn1" })[0]
+  assert_false(conn1_updated.in_use)
+  assert_eq(conn1_updated.last_used, base_time + 100)
   
-  let scheduler_with_large = submit_task(scheduler_after_complete, large_task)
+  // Remove expired connections
+  let pool6 = safe_remove_expired_connections(pool5, base_time + 500)  // 500s later
+  assert_eq(pool6.connections.length(), 2)  // No connections expired yet
   
-  // Task should remain pending
-  assert_eq(scheduler_with_large.pending_tasks.length(), 1)
-  assert_eq(scheduler_with_large.pending_tasks[0].id, "task-large")
+  let pool7 = safe_remove_expired_connections(pool6, base_time + 1000)  // 1000s later
+  assert_eq(pool7.connections.length(), 0)  // All connections expired
 }
 
-// Test 5: Resource Monitoring and Metrics
-test "resource monitoring and metrics" {
-  // Define metric type
-  enum MetricType {
-    Counter
-    Gauge
-    Histogram
+// Test 4: Resource Cleanup on Shutdown
+test "resource cleanup on shutdown" {
+  type Resource = {
+    id: String,
+    type: String,  // "memory", "file", "connection"
+    allocated: Bool,
+    cleanup_called: Bool
   }
   
-  // Define metric
-  type Metric = {
-    name: String,
-    metric_type: MetricType,
-    value: Float,
-    labels: Array[(String, String)],
+  type ResourceManager = {
+    resources: Array[Resource],
+    shutting_down: Bool,
+    lock_acquired: Bool
+  }
+  
+  let create_resource = fn(id: String, type: String) {
+    {
+      id,
+      type,
+      allocated: true,
+      cleanup_called: false
+    }
+  }
+  
+  let create_resource_manager = fn() {
+    {
+      resources: [],
+      shutting_down: false,
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(manager: ResourceManager) {
+    if not(manager.lock_acquired) {
+      { manager | lock_acquired: true }
+    } else {
+      manager  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(manager: ResourceManager) {
+    { manager | lock_acquired: false }
+  }
+  
+  let allocate_resource = fn(manager: ResourceManager, resource: Resource) {
+    if manager.lock_acquired && not(manager.shutting_down) {
+      {
+        resources: manager.resources + [resource],
+        shutting_down: manager.shutting_down,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot allocate during shutdown or without lock
+    }
+  }
+  
+  let cleanup_resource = fn(resource: Resource) {
+    { resource | allocated: false, cleanup_called: true }
+  }
+  
+  let cleanup_all_resources = fn(manager: ResourceManager) {
+    if manager.lock_acquired {
+      let cleaned = manager.resources.map(cleanup_resource)
+      {
+        resources: cleaned,
+        shutting_down: true,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot cleanup without lock
+    }
+  }
+  
+  let shutdown = fn(manager: ResourceManager) {
+    if manager.lock_acquired {
+      let cleaned = cleanup_all_resources(manager)
+      { cleaned | lock_acquired: false }
+    } else {
+      manager  // Cannot shutdown without lock
+    }
+  }
+  
+  let safe_allocate_resource = fn(manager: ResourceManager, resource: Resource) {
+    let locked_manager = acquire_lock(manager)
+    let result = allocate_resource(locked_manager, resource)
+    release_lock(result)
+  }
+  
+  let safe_shutdown = fn(manager: ResourceManager) {
+    let locked_manager = acquire_lock(manager)
+    let result = shutdown(locked_manager)
+    result
+  }
+  
+  let manager = create_resource_manager()
+  assert_false(manager.shutting_down)
+  assert_eq(manager.resources.length(), 0)
+  
+  // Allocate resources
+  let resource1 = create_resource("res1", "memory")
+  let resource2 = create_resource("res2", "file")
+  let resource3 = create_resource("res3", "connection")
+  
+  let manager1 = safe_allocate_resource(manager, resource1)
+  assert_eq(manager1.resources.length(), 1)
+  
+  let manager2 = safe_allocate_resource(manager1, resource2)
+  assert_eq(manager2.resources.length(), 2)
+  
+  let manager3 = safe_allocate_resource(manager2, resource3)
+  assert_eq(manager3.resources.length(), 3)
+  
+  // Test shutdown
+  let manager4 = safe_shutdown(manager3)
+  assert_true(manager4.shutting_down)
+  assert_false(manager4.lock_acquired)  // Lock should be released after shutdown
+  
+  // Check all resources are cleaned up
+  assert_true(manager4.resources.all(fn(r) { not(r.allocated) && r.cleanup_called }))
+  
+  // Cannot allocate resources after shutdown
+  let resource4 = create_resource("res4", "memory")
+  let manager5 = safe_allocate_resource(manager4, resource4)
+  assert_eq(manager5.resources.length(), 3)  // No change
+}
+
+// Test 5: Resource Leak Detection
+test "resource leak detection" {
+  type ResourceLeak = {
+    resource_id: String,
+    resource_type: String,
+    allocated_at: Int,
+    stack_trace: Array[String],
+    size: Int
+  }
+  
+  type LeakDetector = {
+    allocated_resources: Array[ResourceLeak],
+    leak_threshold: Int,  // in seconds
+    lock_acquired: Bool
+  }
+  
+  let create_resource_leak = fn(resource_id: String, resource_type: String, allocated_at: Int, stack_trace: Array[String], size: Int) {
+    {
+      resource_id,
+      resource_type,
+      allocated_at,
+      stack_trace,
+      size
+    }
+  }
+  
+  let create_leak_detector = fn(leak_threshold: Int) {
+    {
+      allocated_resources: [],
+      leak_threshold,
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(detector: LeakDetector) {
+    if not(detector.lock_acquired) {
+      { detector | lock_acquired: true }
+    } else {
+      detector  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(detector: LeakDetector) {
+    { detector | lock_acquired: false }
+  }
+  
+  let track_allocation = fn(detector: LeakDetector, resource_id: String, resource_type: String, allocated_at: Int, stack_trace: Array[String>, size: Int) {
+    if detector.lock_acquired {
+      let leak = create_resource_leak(resource_id, resource_type, allocated_at, stack_trace, size)
+      {
+        allocated_resources: detector.allocated_resources + [leak],
+        leak_threshold: detector.leak_threshold,
+        lock_acquired: true
+      }
+    } else {
+      detector  // Cannot track without lock
+    }
+  }
+  
+  let track_deallocation = fn(detector: LeakDetector, resource_id: String) {
+    if detector.lock_acquired {
+      let filtered = detector.allocated_resources.filter(fn(leak) { leak.resource_id != resource_id })
+      {
+        allocated_resources: filtered,
+        leak_threshold: detector.leak_threshold,
+        lock_acquired: true
+      }
+    } else {
+      detector  // Cannot track without lock
+    }
+  }
+  
+  let detect_leaks = fn(detector: LeakDetector, current_time: Int) {
+    if detector.lock_acquired {
+      let leaks = detector.allocated_resources.filter(fn(leak) { 
+        (current_time - leak.allocated_at) > detector.leak_threshold 
+      })
+      leaks
+    } else {
+      []  // Cannot detect without lock
+    }
+  }
+  
+  let safe_track_allocation = fn(detector: LeakDetector, resource_id: String, resource_type: String, allocated_at: Int, stack_trace: Array[String], size: Int) {
+    let locked_detector = acquire_lock(detector)
+    let result = track_allocation(locked_detector, resource_id, resource_type, allocated_at, stack_trace, size)
+    release_lock(result)
+  }
+  
+  let safe_track_deallocation = fn(detector: LeakDetector, resource_id: String) {
+    let locked_detector = acquire_lock(detector)
+    let result = track_deallocation(locked_detector, resource_id)
+    release_lock(result)
+  }
+  
+  let safe_detect_leaks = fn(detector: LeakDetector, current_time: Int) {
+    let locked_detector = acquire_lock(detector)
+    let result = detect_leaks(locked_detector, current_time)
+    release_lock(locked_detector)
+    result
+  }
+  
+  let detector = create_leak_detector(60)  // 60 seconds threshold
+  assert_eq(detector.leak_threshold, 60)
+  assert_eq(detector.allocated_resources.length(), 0)
+  
+  let base_time = 1640995200
+  
+  // Track allocations
+  let detector1 = safe_track_allocation(detector, "res1", "memory", base_time, ["func1", "func2"], 1024)
+  assert_eq(detector1.allocated_resources.length(), 1)
+  
+  let detector2 = safe_track_allocation(detector1, "res2", "file", base_time + 10, ["func3", "func4"], 512)
+  assert_eq(detector2.allocated_resources.length(), 2)
+  
+  let detector3 = safe_track_allocation(detector2, "res3", "connection", base_time + 20, ["func5", "func6"], 256)
+  assert_eq(detector3.allocated_resources.length(), 3)
+  
+  // Track deallocation
+  let detector4 = safe_track_deallocation(detector3, "res2")
+  assert_eq(detector4.allocated_resources.length(), 2)
+  
+  // Detect leaks (before threshold)
+  let leaks1 = safe_detect_leaks(detector4, base_time + 50)
+  assert_eq(leaks1.length(), 0)
+  
+  // Detect leaks (after threshold)
+  let leaks2 = safe_detect_leaks(detector4, base_time + 100)
+  assert_eq(leaks2.length(), 2)  // res1 and res3 should be detected as leaks
+  assert_true(leaks2.some(fn(l) { l.resource_id == "res1" }))
+  assert_true(leaks2.some(fn(l) { l.resource_id == "res3" }))
+}
+
+// Test 6: Resource Usage Monitoring
+test "resource usage monitoring" {
+  type ResourceUsage = {
+    resource_type: String,
+    used: Int,
+    total: Int,
     timestamp: Int
   }
   
-  // Define resource monitor
   type ResourceMonitor = {
-    metrics: Array[Metric>,
-    alerts: Array[String],
-    thresholds: Array[(String, Float)]
+    usages: Array[ResourceUsage],
+    history_size: Int,
+    lock_acquired: Bool
   }
   
-  // Create resource monitor
-  let create_resource_monitor = fn() {
-    { metrics: [], alerts: [], thresholds: [] }
-  }
-  
-  // Add threshold
-  let add_threshold = fn(monitor: ResourceMonitor, metric_name: String, threshold: Float) {
-    { monitor | thresholds: monitor.thresholds.push((metric_name, threshold)) }
-  }
-  
-  // Record metric
-  let record_metric = fn(monitor: ResourceMonitor, name: String, metric_type: MetricType, value: Float, labels: Array[(String, String)>, timestamp: Int) {
-    let metric = {
-      name,
-      metric_type,
-      value,
-      labels,
+  let create_resource_usage = fn(resource_type: String, used: Int, total: Int, timestamp: Int) {
+    {
+      resource_type,
+      used,
+      total,
       timestamp
     }
+  }
+  
+  let create_resource_monitor = fn(history_size: Int) {
+    {
+      usages: [],
+      history_size,
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(monitor: ResourceMonitor) {
+    if not(monitor.lock_acquired) {
+      { monitor | lock_acquired: true }
+    } else {
+      monitor  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(monitor: ResourceMonitor) {
+    { monitor | lock_acquired: false }
+  }
+  
+  let record_usage = fn(monitor: ResourceMonitor, resource_type: String, used: Int, total: Int, timestamp: Int) {
+    if monitor.lock_acquired {
+      let usage = create_resource_usage(resource_type, used, total, timestamp)
+      let updated = monitor.usages + [usage]
+      
+      // Keep only the most recent history_size entries
+      let trimmed = if updated.length() > monitor.history_size {
+        updated.slice(updated.length() - monitor.history_size, updated.length())
+      } else {
+        updated
+      }
+      
+      {
+        usages: trimmed,
+        history_size: monitor.history_size,
+        lock_acquired: true
+      }
+    } else {
+      monitor  // Cannot record without lock
+    }
+  }
+  
+  let get_latest_usage = fn(monitor: ResourceMonitor, resource_type: String) {
+    let mut latest = None
     
-    // Check threshold
-    let threshold_option = monitor.thresholds.find(fn(t) { t.0 == name })
-    let new_alerts = match threshold_option {
-      Some((_, threshold)) => {
-        if value > threshold {
-          monitor.alerts.push("Alert: " + name + " exceeded threshold " + threshold.to_string())
-        } else {
-          monitor.alerts
+    for usage in monitor.usages {
+      if usage.resource_type == resource_type {
+        match latest {
+          Some(l) => {
+            if usage.timestamp > l.timestamp {
+              latest = Some(usage)
+            }
+          }
+          None => latest = Some(usage)
         }
       }
-      None => monitor.alerts
     }
     
+    latest
+  }
+  
+  let get_usage_trend = fn(monitor: ResourceMonitor, resource_type: String) {
+    let filtered = monitor.usages.filter(fn(u) { u.resource_type == resource_type })
+    
+    if filtered.length() < 2 {
+      "stable"
+    } else {
+      let sorted = filtered.sort(fn(a, b) { a.timestamp <= b.timestamp })
+      let first = sorted[0]
+      let last = sorted[sorted.length() - 1]
+      
+      let first_ratio = first.used.to_float() / first.total.to_float()
+      let last_ratio = last.used.to_float() / last.total.to_float()
+      
+      if last_ratio > first_ratio + 0.1 {
+        "increasing"
+      } else if last_ratio < first_ratio - 0.1 {
+        "decreasing"
+      } else {
+        "stable"
+      }
+    }
+  }
+  
+  let safe_record_usage = fn(monitor: ResourceMonitor, resource_type: String, used: Int, total: Int, timestamp: Int) {
+    let locked_monitor = acquire_lock(monitor)
+    let result = record_usage(locked_monitor, resource_type, used, total, timestamp)
+    release_lock(result)
+  }
+  
+  let monitor = create_resource_monitor(10)
+  assert_eq(monitor.history_size, 10)
+  assert_eq(monitor.usages.length(), 0)
+  
+  let base_time = 1640995200
+  
+  // Record usages
+  let monitor1 = safe_record_usage(monitor, "memory", 512, 1024, base_time)
+  assert_eq(monitor1.usages.length(), 1)
+  
+  let monitor2 = safe_record_usage(monitor1, "memory", 600, 1024, base_time + 10)
+  assert_eq(monitor2.usages.length(), 2)
+  
+  let monitor3 = safe_record_usage(monitor2, "disk", 2048, 4096, base_time + 20)
+  assert_eq(monitor3.usages.length(), 3)
+  
+  let monitor4 = safe_record_usage(monitor3, "memory", 700, 1024, base_time + 30)
+  assert_eq(monitor4.usages.length(), 4)
+  
+  // Test get latest usage
+  let latest_memory = get_latest_usage(monitor4, "memory")
+  assert_true(latest_memory.is_some())
+  
+  match latest_memory {
+    Some(usage) => {
+      assert_eq(usage.resource_type, "memory")
+      assert_eq(usage.used, 700)
+      assert_eq(usage.total, 1024)
+      assert_eq(usage.timestamp, base_time + 30)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test usage trend
+  let memory_trend = get_usage_trend(monitor4, "memory")
+  assert_eq(memory_trend, "increasing")  // Usage went from 512 to 700
+  
+  let disk_trend = get_usage_trend(monitor4, "disk")
+  assert_eq(disk_trend, "stable")  // Only one data point
+}
+
+// Test 7: Resource Quota Management
+test "resource quota management" {
+  type ResourceQuota = {
+    resource_type: String,
+    limit: Int,
+    used: Int
+  }
+  
+  type QuotaManager = {
+    quotas: Array[ResourceQuota],
+    lock_acquired: Bool
+  }
+  
+  let create_resource_quota = fn(resource_type: String, limit: Int) {
     {
-      metrics: monitor.metrics.push(metric),
-      alerts: new_alerts,
-      thresholds: monitor.thresholds
+      resource_type,
+      limit,
+      used: 0
     }
   }
   
-  // Get metrics by name
-  let get_metrics_by_name = fn(monitor: ResourceMonitor, name: String) {
-    monitor.metrics.filter(fn(m) { m.name == name })
+  let create_quota_manager = fn() {
+    {
+      quotas: [],
+      lock_acquired: false
+    }
   }
   
-  // Get latest metric value
-  let get_latest_metric = fn(monitor: ResourceMonitor, name: String) {
-    let metrics = get_metrics_by_name(monitor, name)
-    if metrics.length() > 0 {
-      let sorted_metrics = metrics.sort(fn(a, b) { a.timestamp >= b.timestamp })
-      Some(sorted_metrics[0])
+  let acquire_lock = fn(manager: QuotaManager) {
+    if not(manager.lock_acquired) {
+      { manager | lock_acquired: true }
     } else {
-      None
+      manager  // Lock already acquired
     }
   }
   
-  // Calculate average metric value
-  let calculate_average = fn(monitor: ResourceMonitor, name: String, time_range: (Int, Int)) {
-    let filtered_metrics = monitor.metrics.filter(fn(m) { 
-      m.name == name and m.timestamp >= time_range.0 and m.timestamp <= time_range.1
-    })
-    
-    if filtered_metrics.length() > 0 {
-      let sum = filtered_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
-      Some(sum / filtered_metrics.length().to_float())
+  let release_lock = fn(manager: QuotaManager) {
+    { manager | lock_acquired: false }
+  }
+  
+  let add_quota = fn(manager: QuotaManager, quota: ResourceQuota) {
+    if manager.lock_acquired {
+      let updated = manager.quotas.map(fn(q) {
+        if q.resource_type == quota.resource_type {
+          quota  // Replace existing quota
+        } else {
+          q
+        }
+      })
+      
+      let exists = manager.quotas.some(fn(q) { q.resource_type == quota.resource_type })
+      
+      if exists {
+        {
+          quotas: updated,
+          lock_acquired: true
+        }
+      } else {
+        {
+          quotas: manager.quotas + [quota],
+          lock_acquired: true
+        }
+      }
     } else {
-      None
+      manager  // Cannot add without lock
     }
   }
   
-  // Calculate percentile
-  let calculate_percentile = fn(monitor: ResourceMonitor, name: String, percentile: Float, time_range: (Int, Int)) {
-    let filtered_metrics = monitor.metrics.filter(fn(m) { 
-      m.name == name and m.timestamp >= time_range.0 and m.timestamp <= time_range.1
-    })
-    
-    if filtered_metrics.length() > 0 {
-      let sorted_values = filtered_metrics.map(fn(m) { m.value }).sort(fn(a, b) { a <= b })
-      let index = ((sorted_values.length().to_float() * percentile) / 100.0).to_int().min(sorted_values.length() - 1)
-      Some(sorted_values[index])
+  let check_quota = fn(manager: QuotaManager, resource_type: String, amount: Int) {
+    if manager.lock_acquired {
+      let mut allowed = false
+      
+      for quota in manager.quotas {
+        if quota.resource_type == resource_type && (quota.used + amount) <= quota.limit {
+          allowed = true
+        }
+      }
+      
+      allowed
     } else {
-      None
+      false  // Cannot check without lock
     }
   }
   
-  // Get alerts
-  let get_alerts = fn(monitor: ResourceMonitor) {
-    monitor.alerts
-  }
-  
-  // Clear alerts
-  let clear_alerts = fn(monitor: ResourceMonitor) {
-    { monitor | alerts: [] }
-  }
-  
-  // Create resource monitor
-  let monitor = create_resource_monitor()
-  
-  // Add thresholds
-  let monitor_with_thresholds = monitor
-    |> add_threshold("cpu_usage", 80.0)
-    |> add_threshold("memory_usage", 90.0)
-    |> add_threshold("disk_usage", 85.0)
-    |> add_threshold("network_usage", 75.0)
-  
-  assert_eq(monitor_with_thresholds.thresholds.length(), 4)
-  
-  // Record metrics
-  let monitor_with_metrics = monitor_with_thresholds
-    |> record_metric("cpu_usage", MetricType::Gauge, 45.5, [("service", "user-service")], 1640995200)
-    |> record_metric("memory_usage", MetricType::Gauge, 60.2, [("service", "user-service")], 1640995200)
-    |> record_metric("disk_usage", MetricType::Gauge, 30.0, [("service", "user-service")], 1640995200)
-    |> record_metric("network_usage", MetricType::Gauge, 25.5, [("service", "user-service")], 1640995200)
-    |> record_metric("cpu_usage", MetricType::Gauge, 85.0, [("service", "user-service")], 1640995260)
-    |> record_metric("memory_usage", MetricType::Gauge, 92.0, [("service", "user-service")], 1640995260)
-    |> record_metric("request_count", MetricType::Counter, 1000.0, [("service", "user-service")], 1640995200)
-    |> record_metric("response_time", MetricType::Histogram, 150.0, [("service", "user-service")], 1640995200)
-  
-  assert_eq(monitor_with_metrics.metrics.length(), 8)
-  
-  // Check for alerts
-  let alerts = get_alerts(monitor_with_metrics)
-  assert_eq(alerts.length(), 2)  // CPU and memory exceeded thresholds
-  
-  // Get metrics by name
-  let cpu_metrics = get_metrics_by_name(monitor_with_metrics, "cpu_usage")
-  assert_eq(cpu_metrics.length(), 2)
-  
-  // Get latest metric
-  match get_latest_metric(monitor_with_metrics, "cpu_usage") {
-    Some(metric) => {
-      assert_eq(metric.value, 85.0)
-      assert_eq(metric.timestamp, 1640995260)
+  let consume_quota = fn(manager: QuotaManager, resource_type: String, amount: Int) {
+    if manager.lock_acquired && check_quota(manager, resource_type, amount) {
+      let updated = manager.quotas.map(fn(quota) {
+        if quota.resource_type == resource_type {
+          { quota | used: quota.used + amount }
+        } else {
+          quota
+        }
+      })
+      
+      {
+        quotas: updated,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot consume without lock or quota exceeded
     }
-    None => assert_true(false)
   }
   
-  // Calculate average
-  match calculate_average(monitor_with_metrics, "cpu_usage", (1640995200, 1640995300)) {
-    Some(average) => assert_eq(average, 65.25)  // (45.5 + 85.0) / 2
-    None => assert_true(false)
+  let release_quota = fn(manager: QuotaManager, resource_type: String, amount: Int) {
+    if manager.lock_acquired {
+      let updated = manager.quotas.map(fn(quota) {
+        if quota.resource_type == resource_type {
+          { quota | used: (quota.used - amount).max(0) }
+        } else {
+          quota
+        }
+      })
+      
+      {
+        quotas: updated,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot release without lock
+    }
   }
   
-  // Calculate percentile
-  match calculate_percentile(monitor_with_metrics, "cpu_usage", 90.0, (1640995200, 1640995300)) {
-    Some(percentile) => assert_eq(percentile, 85.0)  // 90th percentile is the higher value
-    None => assert_true(false)
+  let safe_add_quota = fn(manager: QuotaManager, quota: ResourceQuota) {
+    let locked_manager = acquire_lock(manager)
+    let result = add_quota(locked_manager, quota)
+    release_lock(result)
   }
   
-  // Clear alerts
-  let monitor_after_clear = clear_alerts(monitor_with_metrics)
-  let cleared_alerts = get_alerts(monitor_after_clear)
-  assert_eq(cleared_alerts.length(), 0)
+  let safe_consume_quota = fn(manager: QuotaManager, resource_type: String, amount: Int) {
+    let locked_manager = acquire_lock(manager)
+    let result = consume_quota(locked_manager, resource_type, amount)
+    release_lock(result)
+  }
+  
+  let safe_release_quota = fn(manager: QuotaManager, resource_type: String, amount: Int) {
+    let locked_manager = acquire_lock(manager)
+    let result = release_quota(locked_manager, resource_type, amount)
+    release_lock(result)
+  }
+  
+  let manager = create_quota_manager()
+  assert_eq(manager.quotas.length(), 0)
+  
+  // Add quotas
+  let memory_quota = create_resource_quota("memory", 1024)
+  let disk_quota = create_resource_quota("disk", 4096)
+  
+  let manager1 = safe_add_quota(manager, memory_quota)
+  assert_eq(manager1.quotas.length(), 1)
+  
+  let manager2 = safe_add_quota(manager1, disk_quota)
+  assert_eq(manager2.quotas.length(), 2)
+  
+  // Consume quotas
+  let manager3 = safe_consume_quota(manager2, "memory", 512)
+  let memory_quota_updated = manager3.quotas.filter(fn(q) { q.resource_type == "memory" })[0]
+  assert_eq(memory_quota_updated.used, 512)
+  
+  let manager4 = safe_consume_quota(manager3, "disk", 2048)
+  let disk_quota_updated = manager4.quotas.filter(fn(q) { q.resource_type == "disk" })[0]
+  assert_eq(disk_quota_updated.used, 2048)
+  
+  // Test quota exceeded
+  let manager5 = safe_consume_quota(manager4, "memory", 1024)
+  let memory_quota_updated2 = manager5.quotas.filter(fn(q) { q.resource_type == "memory" })[0]
+  assert_eq(memory_quota_updated2.used, 512)  // No change
+  
+  // Release quotas
+  let manager6 = safe_release_quota(manager5, "memory", 256)
+  let memory_quota_updated3 = manager6.quotas.filter(fn(q) { q.resource_type == "memory" })[0]
+  assert_eq(memory_quota_updated3.used, 256)
+  
+  // Can consume again after release
+  let manager7 = safe_consume_quota(manager6, "memory", 500)
+  let memory_quota_updated4 = manager7.quotas.filter(fn(q) { q.resource_type == "memory" })[0]
+  assert_eq(memory_quota_updated4.used, 756)
+}
+
+// Test 8: Resource Cleanup Strategies
+test "resource cleanup strategies" {
+  type CleanupStrategy = {
+    name: String,
+    priority: Int,  // Lower number = higher priority
+    condition: String,  // Description of when to apply
+    action: String  // Description of what to do
+  }
+  
+  type Resource = {
+    id: String,
+    type: String,
+    size: Int,
+    last_accessed: Int,
+    cleanup_priority: Int
+  }
+  
+  type CleanupManager = {
+    resources: Array[Resource],
+    strategies: Array[CleanupStrategy],
+    lock_acquired: Bool
+  }
+  
+  let create_resource = fn(id: String, type: String, size: Int, last_accessed: Int, cleanup_priority: Int) {
+    {
+      id,
+      type,
+      size,
+      last_accessed,
+      cleanup_priority
+    }
+  }
+  
+  let create_cleanup_strategy = fn(name: String, priority: Int, condition: String, action: String) {
+    {
+      name,
+      priority,
+      condition,
+      action
+    }
+  }
+  
+  let create_cleanup_manager = fn() {
+    {
+      resources: [],
+      strategies: [],
+      lock_acquired: false
+    }
+  }
+  
+  let acquire_lock = fn(manager: CleanupManager) {
+    if not(manager.lock_acquired) {
+      { manager | lock_acquired: true }
+    } else {
+      manager  // Lock already acquired
+    }
+  }
+  
+  let release_lock = fn(manager: CleanupManager) {
+    { manager | lock_acquired: false }
+  }
+  
+  let add_resource = fn(manager: CleanupManager, resource: Resource) {
+    if manager.lock_acquired {
+      {
+        resources: manager.resources + [resource],
+        strategies: manager.strategies,
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot add without lock
+    }
+  }
+  
+  let add_strategy = fn(manager: CleanupManager, strategy: CleanupStrategy) {
+    if manager.lock_acquired {
+      {
+        resources: manager.resources,
+        strategies: manager.strategies + [strategy],
+        lock_acquired: true
+      }
+    } else {
+      manager  // Cannot add without lock
+    }
+  }
+  
+  let apply_cleanup_strategy = fn(manager: CleanupManager, strategy_name: String, current_time: Int) {
+    if manager.lock_acquired {
+      let strategy = manager.strategies.find(fn(s) { s.name == strategy_name })
+      
+      match strategy {
+        Some(s) => {
+          let mut cleaned = []
+          
+          // Apply different cleanup strategies based on strategy name
+          if s.name == "lru" {  // Least Recently Used
+            let sorted = manager.resources.sort(fn(a, b) { a.last_accessed <= b.last_accessed })
+            // Remove the oldest 25% of resources
+            let remove_count = (sorted.length() / 4).max(1)
+            cleaned = sorted.slice(remove_count, sorted.length())
+          } else if s.name == "largest_first" {  // Clean up largest resources first
+            let sorted = manager.resources.sort(fn(a, b) { a.size >= b.size })
+            // Remove the largest 25% of resources
+            let remove_count = (sorted.length() / 4).max(1)
+            cleaned = sorted.slice(remove_count, sorted.length())
+          } else if s.name == "high_priority_first" {  // Clean up high priority resources first
+            let sorted = manager.resources.sort(fn(a, b) { a.cleanup_priority >= b.cleanup_priority })
+            // Remove the highest priority 25% of resources
+            let remove_count = (sorted.length() / 4).max(1)
+            cleaned = sorted.slice(remove_count, sorted.length())
+          }
+          
+          {
+            resources: cleaned,
+            strategies: manager.strategies,
+            lock_acquired: true
+          }
+        }
+        None => manager  // Strategy not found
+      }
+    } else {
+      manager  // Cannot apply without lock
+    }
+  }
+  
+  let safe_add_resource = fn(manager: CleanupManager, resource: Resource) {
+    let locked_manager = acquire_lock(manager)
+    let result = add_resource(locked_manager, resource)
+    release_lock(result)
+  }
+  
+  let safe_add_strategy = fn(manager: CleanupManager, strategy: CleanupStrategy) {
+    let locked_manager = acquire_lock(manager)
+    let result = add_strategy(locked_manager, strategy)
+    release_lock(result)
+  }
+  
+  let safe_apply_cleanup_strategy = fn(manager: CleanupManager, strategy_name: String, current_time: Int) {
+    let locked_manager = acquire_lock(manager)
+    let result = apply_cleanup_strategy(locked_manager, strategy_name, current_time)
+    release_lock(result)
+  }
+  
+  let manager = create_cleanup_manager()
+  assert_eq(manager.resources.length(), 0)
+  assert_eq(manager.strategies.length(), 0)
+  
+  let base_time = 1640995200
+  
+  // Add resources
+  let resource1 = create_resource("res1", "memory", 512, base_time, 2)
+  let resource2 = create_resource("res2", "memory", 256, base_time + 100, 1)
+  let resource3 = create_resource("res3", "disk", 1024, base_time + 200, 3)
+  let resource4 = create_resource("res4", "memory", 128, base_time + 300, 1)
+  
+  let manager1 = safe_add_resource(manager, resource1)
+  assert_eq(manager1.resources.length(), 1)
+  
+  let manager2 = safe_add_resource(manager1, resource2)
+  assert_eq(manager2.resources.length(), 2)
+  
+  let manager3 = safe_add_resource(manager2, resource3)
+  assert_eq(manager3.resources.length(), 3)
+  
+  let manager4 = safe_add_resource(manager3, resource4)
+  assert_eq(manager4.resources.length(), 4)
+  
+  // Add cleanup strategies
+  let lru_strategy = create_cleanup_strategy("lru", 1, "When memory is low", "Remove least recently used resources")
+  let largest_strategy = create_cleanup_strategy("largest_first", 2, "When disk is full", "Remove largest resources first")
+  
+  let manager5 = safe_add_strategy(manager4, lru_strategy)
+  assert_eq(manager5.strategies.length(), 1)
+  
+  let manager6 = safe_add_strategy(manager5, largest_strategy)
+  assert_eq(manager6.strategies.length(), 2)
+  
+  // Apply LRU strategy (should remove oldest 25% = 1 resource)
+  let manager7 = safe_apply_cleanup_strategy(manager6, "lru", base_time + 500)
+  assert_eq(manager7.resources.length(), 3)
+  assert_false(manager7.resources.some(fn(r) { r.id == "res1" }))  // res1 should be removed (oldest)
+  
+  // Apply largest first strategy (should remove largest 25% = 1 resource)
+  let manager8 = safe_apply_cleanup_strategy(manager7, "largest_first", base_time + 600)
+  assert_eq(manager8.resources.length(), 2)
+  assert_false(manager8.resources.some(fn(r) { r.id == "res3" }))  // res3 should be removed (largest)
 }
