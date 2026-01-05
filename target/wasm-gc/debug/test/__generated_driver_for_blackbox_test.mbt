@@ -156,6 +156,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_self_monitoring_tests.mbt": {
   },
+  "azimuth_telemetry_security_tests.mbt": {
+  },
   "azimuth_telemetry_security_privacy_tests.mbt": {
   },
   "azimuth_telemetry_security_encryption_tests.mbt": {
@@ -845,6 +847,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_performance_benchmark_resource_limits_tests.mbt": {
   },
   "azimuth_performance_benchmark_quality_tests.mbt": {
+  },
+  "azimuth_performance_benchmark_high_quality_tests.mbt": {
   },
   "azimuth_performance_benchmark_comprehensive_tests.mbt": {
   },
