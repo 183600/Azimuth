@@ -1721,10 +1721,10 @@ test "telemetry data retention with tiered storage optimization" {
   
   // Test retention policy enforcement
   let enforce_retention = fn(records: Array[DataRecord], current_time: Int, policy: TieredRetentionPolicy) {
-    records.filter_fn(record) {
+    records.filter(fn(record) {
       let age_days = (current_time - record.timestamp) / 86400
       age_days <= record.retention_days
-    }
+    })
   }
   
   let all_records_retained = enforce_retention(data_records, current_time, retention_policy)
