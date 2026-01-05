@@ -1,847 +1,319 @@
-// Azimuth Advanced Data Structures Test Suite
-// This file contains comprehensive test cases for advanced data structures
+// Azimuth Telemetry System - Advanced Data Structures High-Quality Tests
+// This file contains comprehensive test cases for advanced data structures used in telemetry
 
-// Test 1: Efficient Tree Operations with Telemetry Context
-test "efficient tree operations with telemetry context" {
-  // Define a simple tree node structure for testing
-  type TreeNode {
-    value : Int
-    left : Option[TreeNode]
-    right : Option[TreeNode]
-    metadata : Attributes
+// Test 1: Circular Buffer Operations
+test "circular buffer operations" {
+  let buffer = CircularBuffer::new(5)
+  
+  // Test empty buffer
+  assert_true(CircularBuffer::is_empty(buffer))
+  assert_false(CircularBuffer::is_full(buffer))
+  assert_eq(CircularBuffer::size(buffer), 0)
+  
+  // Test adding elements
+  CircularBuffer::push(buffer, 1)
+  CircularBuffer::push(buffer, 2)
+  CircularBuffer::push(buffer, 3)
+  
+  assert_false(CircularBuffer::is_empty(buffer))
+  assert_false(CircularBuffer::is_full(buffer))
+  assert_eq(CircularBuffer::size(buffer), 3)
+  
+  // Test removing elements
+  let first = CircularBuffer::pop(buffer)
+  match first {
+    Some(value) => assert_eq(value, 1)
+    None => assert_true(false)
   }
   
-  // Create a function to build a balanced tree
-  let build_balanced_tree = |values: Array[Int], start: Int, end: Int, attrs: Attributes -> TreeNode {
-    if start > end {
-      panic("Invalid range for tree construction")
-    }
-    
-    let mid = (start + end) / 2
-    let node_attrs = Attributes::with_parent(attrs)
-    Attributes::set(node_attrs, "node.depth", IntValue((end - start) / 2))
-    Attributes::set(node_attrs, "node.value", IntValue(values[mid]))
-    
-    TreeNode {
-      value: values[mid],
-      left: if mid > start { Some(build_balanced_tree(values, start, mid - 1, node_attrs)) } else { None },
-      right: if mid < end { Some(build_balanced_tree(values, mid + 1, end, node_attrs)) } else { None },
-      metadata: node_attrs
-    }
-  }
+  assert_eq(CircularBuffer::size(buffer), 2)
   
-  // Test tree construction
-  let values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let base_attrs = Attributes::new()
-  Attributes::set(base_attrs, "tree.type", StringValue("balanced"))
-  Attributes::set(base_attrs, "tree.size", IntValue(values.length()))
+  // Test filling buffer to capacity
+  CircularBuffer::push(buffer, 4)
+  CircularBuffer::push(buffer, 5)
+  CircularBuffer::push(buffer, 6) // This should overwrite the first element
   
-  let root = build_balanced_tree(values, 0, values.length() - 1, base_attrs)
+  assert_true(CircularBuffer::is_full(buffer))
+  assert_eq(CircularBuffer::size(buffer), 5)
   
-  // Verify tree structure
-  assert_eq(root.value, 6) // Root should be middle value
-  assert_eq(root.left.unwrap().value, 3) // Left subtree root
-  assert_eq(root.right.unwrap().value, 8) // Right subtree root
-  
-  // Test tree traversal with telemetry collection
-  let traverse_in_order = |node: Option[TreeNode], acc: Array[Int] -> Array[Int] {
-    match node {
-      Some(n) => {
-        let left_result = traverse_in_order(n.left, acc)
-        let with_current = left_result.push(n.value)
-        traverse_in_order(n.right, with_current)
-      }
-      None => acc
-    }
-  }
-  
-  let in_order_result = traverse_in_order(Some(root), [])
-  assert_eq(in_order_result, values) // Should match original array
-  
-  // Test tree depth calculation with metrics
-  let calculate_depth = |node: Option[TreeNode] -> Int {
-    match node {
-      Some(n) => {
-        let left_depth = calculate_depth(n.left)
-        let right_depth = calculate_depth(n.right)
-        1 + (if left_depth > right_depth { left_depth } else { right_depth })
-      }
-      None => 0
-    }
-  }
-  
-  let tree_depth = calculate_depth(Some(root))
-  assert_eq(tree_depth, 4) // For 10 elements, balanced tree depth should be 4
-  
-  // Test tree node count
-  let count_nodes = |node: Option[TreeNode] -> Int {
-    match node {
-      Some(n) => 1 + count_nodes(n.left) + count_nodes(n.right)
-      None => 0
-    }
-  }
-  
-  let node_count = count_nodes(Some(root))
-  assert_eq(node_count, values.length())
-  
-  // Test tree search with telemetry tracking
-  let search_with_tracking = |node: Option[TreeNode], target: Int, search_attrs: Attributes -> (Bool, Int) {
-    match node {
-      Some(n) => {
-        Attributes::set(search_attrs, "search.nodes_visited", IntValue(1))
-        
-        if n.value == target {
-          (true, 1)
-        } else if target < n.value {
-          let (found, depth) = search_with_tracking(n.left, target, search_attrs)
-          (found, depth + 1)
-        } else {
-          let (found, depth) = search_with_tracking(n.right, target, search_attrs)
-          (found, depth + 1)
-        }
-      }
-      None => (false, 0)
-    }
-  }
-  
-  let search_attrs = Attributes::new()
-  Attributes::set(search_attrs, "search.algorithm", StringValue("binary_search_tree"))
-  
-  // Search for existing value
-  let (found1, depth1) = search_with_tracking(Some(root), 7, search_attrs)
-  assert_true(found1)
-  assert_eq(depth1, 3) // Should find at depth 3
-  
-  // Search for non-existing value
-  let (found2, depth2) = search_with_tracking(Some(root), 11, search_attrs)
-  assert_false(found2)
-  assert_eq(depth2, 4) // Should traverse to depth 4
+  // Test buffer iteration
+  let mut sum = 0
+  CircularBuffer::for_each(buffer, fn(x) { sum = sum + x })
+  assert_eq(sum, 20) // 2 + 3 + 4 + 5 + 6
 }
 
-// Test 2: Graph Data Structure with Path Finding Algorithms
-test "graph data structure with path finding algorithms" {
-  // Define graph structure
-  type GraphNode {
-    id : String
-    weight : Int
-    attributes : Attributes
-  }
+// Test 2: Priority Queue Operations
+test "priority queue operations" {
+  let queue = PriorityQueue::new()
   
-  type Graph {
-    nodes : Array[GraphNode]
-    edges : Array[(String, String, Int)] // (from, to, weight)
-  }
+  // Test empty queue
+  assert_true(PriorityQueue::is_empty(queue))
+  assert_eq(PriorityQueue::size(queue), 0)
   
-  // Create a test graph
-  let nodes = [
-    GraphNode { id: "A", weight: 10, attributes: Attributes::new() },
-    GraphNode { id: "B", weight: 15, attributes: Attributes::new() },
-    GraphNode { id: "C", weight: 20, attributes: Attributes::new() },
-    GraphNode { id: "D", weight: 25, attributes: Attributes::new() },
-    GraphNode { id: "E", weight: 30, attributes: Attributes::new() }
-  ]
+  // Test inserting elements with priorities
+  PriorityQueue::insert(queue, 10, 1) // value, priority
+  PriorityQueue::insert(queue, 20, 3)
+  PriorityQueue::insert(queue, 15, 2)
+  PriorityQueue::insert(queue, 5, 0)
   
-  let edges = [
-    ("A", "B", 5),
-    ("A", "C", 10),
-    ("B", "C", 3),
-    ("B", "D", 9),
-    ("C", "D", 7),
-    ("D", "E", 8),
-    ("C", "E", 15)
-  ]
+  assert_false(PriorityQueue::is_empty(queue))
+  assert_eq(PriorityQueue::size(queue), 4)
   
-  let graph = Graph { nodes: nodes, edges: edges }
-  
-  // Test graph adjacency list creation
-  let create_adjacency_list = |g: Graph -> Array[(String, Array[(String, Int)])] {
-    let mut adj_list = []
-    
-    for node in g.nodes {
-      let mut neighbors = []
-      
-      for edge in g.edges {
-        if edge.0 == node.id {
-          neighbors = neighbors.push((edge.1, edge.2))
-        }
-      }
-      
-      adj_list = adj_list.push((node.id, neighbors))
-    }
-    
-    adj_list
-  }
-  
-  let adj_list = create_adjacency_list(graph)
-  
-  // Verify adjacency list
-  assert_eq(adj_list.length(), 5)
-  
-  // Find node A in adjacency list
-  let mut node_a_neighbors = []
-  for (node_id, neighbors) in adj_list {
-    if node_id == "A" {
-      node_a_neighbors = neighbors
-      break
-    }
-  }
-  
-  assert_eq(node_a_neighbors.length(), 2)
-  assert_true(node_a_neighbors.contains(|(id, _)| id == "B"))
-  assert_true(node_a_neighbors.contains(|(id, _)| id == "C"))
-  
-  // Test Dijkstra's shortest path algorithm
-  let dijkstra_shortest_path = |g: Graph, start: String, end: String -> (Int, Array[String]) {
-    // Simplified Dijkstra implementation for testing
-    let distances = [
-      ("A", 0),
-      ("B", 999999),
-      ("C", 999999),
-      ("D", 999999),
-      ("E", 999999)
-    ]
-    
-    let previous = [
-      ("A", ""),
-      ("B", ""),
-      ("C", ""),
-      ("D", ""),
-      ("E", "")
-    ]
-    
-    let unvisited = ["A", "B", "C", "D", "E"]
-    
-    // Simplified algorithm - in real implementation would use priority queue
-    let mut current_distances = distances.to_map()
-    let mut current_previous = previous.to_map()
-    
-    // For this test, we'll use the known shortest path from A to E
-    // A -> B -> C -> D -> E with total weight 5 + 3 + 7 + 8 = 23
-    // But actually A -> C -> D -> E is shorter: 10 + 7 + 8 = 25
-    // And A -> B -> D -> E is: 5 + 9 + 8 = 22 (shortest)
-    
-    if start == "A" && end == "E" {
-      (22, ["A", "B", "D", "E"])
-    } else {
-      (0, [])
-    }
-  }
-  
-  let (distance, path) = dijkstra_shortest_path(graph, "A", "E")
-  assert_eq(distance, 22)
-  assert_eq(path, ["A", "B", "D", "E"])
-  
-  // Test graph cycle detection
-  let has_cycle = |g: Graph -> Bool {
-    // Simplified cycle detection
-    // In this specific graph, there's a cycle A -> B -> C -> A
-    true
-  }
-  
-  assert_true(has_cycle(graph))
-  
-  // Test graph connectivity
-  let is_connected = |g: Graph -> Bool {
-    // For this test graph, all nodes are reachable from A
-    true
-  }
-  
-  assert_true(is_connected(graph))
-  
-  // Test topological sort (for directed acyclic graphs)
-  let topological_sort = |g: Graph -> Array[String] {
-    // This would work on DAGs, but our graph has cycles
-    // For testing purposes, return a valid ordering if possible
-    if has_cycle(g) {
-      [] // Empty result for graphs with cycles
-    } else {
-      ["A", "B", "C", "D", "E"] // Example ordering
-    }
-  }
-  
-  let top_order = topological_sort(graph)
-  assert_eq(top_order.length(), 0) // Should be empty due to cycles
-}
-
-// Test 3: Priority Queue with Custom Comparators
-test "priority queue with custom comparators" {
-  // Define priority queue structure
-  type PriorityQueue {
-    elements : Array[(Int, String)] // (priority, value)
-    comparator : (Int, Int) -> Bool
-  }
-  
-  // Create a max-heap priority queue
-  let max_comparator = |a: Int, b: Int -> Bool { a > b }
-  
-  let create_max_priority_queue = || -> PriorityQueue {
-    PriorityQueue { 
-      elements: [], 
-      comparator: max_comparator 
-    }
-  }
-  
-  // Create a min-heap priority queue
-  let min_comparator = |a: Int, b: Int -> Bool { a < b }
-  
-  let create_min_priority_queue = || -> PriorityQueue {
-    PriorityQueue { 
-      elements: [], 
-      comparator: min_comparator 
-    }
-  }
-  
-  // Priority queue operations
-  let enqueue = |pq: PriorityQueue, priority: Int, value: String -> PriorityQueue {
-    let new_elements = pq.elements.push((priority, value))
-    // In a real implementation, would heapify here
-    PriorityQueue { 
-      elements: new_elements, 
-      comparator: pq.comparator 
-    }
-  }
-  
-  let dequeue = |pq: PriorityQueue -> (Option[(Int, String)], PriorityQueue) {
-    if pq.elements.length() == 0 {
-      (None, pq)
-    } else {
-      // Find element with highest priority according to comparator
-      let mut best_index = 0
-      let mut best_priority = pq.elements[0].0
-      
-      for i = 1; i < pq.elements.length(); i = i + 1 {
-        if pq.comparator(pq.elements[i].0, best_priority) {
-          best_index = i
-          best_priority = pq.elements[i].0
-        }
-      }
-      
-      let best_element = pq.elements[best_index]
-      let remaining_elements = pq.elements.remove_at(best_index)
-      
-      (Some(best_element), PriorityQueue { 
-        elements: remaining_elements, 
-        comparator: pq.comparator 
-      })
-    }
-  }
-  
-  let peek = |pq: PriorityQueue -> Option[(Int, String)] {
-    if pq.elements.length() == 0 {
-      None
-    } else {
-      // Find element with highest priority
-      let mut best_index = 0
-      let mut best_priority = pq.elements[0].0
-      
-      for i = 1; i < pq.elements.length(); i = i + 1 {
-        if pq.comparator(pq.elements[i].0, best_priority) {
-          best_index = i
-          best_priority = pq.elements[i].0
-        }
-      }
-      
-      Some(pq.elements[best_index])
-    }
-  }
-  
-  // Test max priority queue
-  let max_pq = create_max_priority_queue()
-  let max_pq1 = enqueue(max_pq, 5, "medium")
-  let max_pq2 = enqueue(max_pq1, 10, "high")
-  let max_pq3 = enqueue(max_pq2, 1, "low")
-  
-  let max_peek = peek(max_pq3)
-  match max_peek {
-    Some((priority, value)) => {
-      assert_eq(priority, 10)
-      assert_eq(value, "high")
-    }
+  // Test extracting elements (should come out in priority order)
+  let first = PriorityQueue::extract_max(queue)
+  match first {
+    Some(value) => assert_eq(value, 20) // Highest priority
     None => assert_true(false)
   }
   
-  let (max_elem1, max_pq4) = dequeue(max_pq3)
-  match max_elem1 {
-    Some((priority, value)) => {
-      assert_eq(priority, 10)
-      assert_eq(value, "high")
-    }
+  let second = PriorityQueue::extract_max(queue)
+  match second {
+    Some(value) => assert_eq(value, 15) // Second highest
     None => assert_true(false)
   }
   
-  let max_peek2 = peek(max_pq4)
-  match max_peek2 {
-    Some((priority, value)) => {
-      assert_eq(priority, 5)
-      assert_eq(value, "medium")
-    }
+  assert_eq(PriorityQueue::size(queue), 2)
+  
+  // Test peek at max element
+  let max = PriorityQueue::peek_max(queue)
+  match max {
+    Some(value) => assert_eq(value, 10)
     None => assert_true(false)
-  }
-  
-  // Test min priority queue
-  let min_pq = create_min_priority_queue()
-  let min_pq1 = enqueue(min_pq, 5, "medium")
-  let min_pq2 = enqueue(min_pq1, 10, "high")
-  let min_pq3 = enqueue(min_pq2, 1, "low")
-  
-  let min_peek = peek(min_pq3)
-  match min_peek {
-    Some((priority, value)) => {
-      assert_eq(priority, 1)
-      assert_eq(value, "low")
-    }
-    None => assert_true(false)
-  }
-  
-  // Test priority queue with telemetry
-  let enqueue_with_telemetry = |pq: PriorityQueue, priority: Int, value: String, metrics: Attributes -> (PriorityQueue, Attributes) {
-    Attributes::set(metrics, "queue.enqueue.count", IntValue(1))
-    Attributes::set(metrics, "queue.size", IntValue(pq.elements.length() + 1))
-    
-    let new_pq = enqueue(pq, priority, value)
-    (new_pq, metrics)
-  }
-  
-  let dequeue_with_telemetry = |pq: PriorityQueue, metrics: Attributes -> (Option[(Int, String)], PriorityQueue, Attributes) {
-    Attributes::set(metrics, "queue.dequeue.count", IntValue(1))
-    
-    let (element, new_pq) = dequeue(pq)
-    Attributes::set(metrics, "queue.size", IntValue(new_pq.elements.length()))
-    
-    (element, new_pq, metrics)
-  }
-  
-  let telemetry_attrs = Attributes::new()
-  Attributes::set(telemetry_attrs, "queue.type", StringValue("max_priority"))
-  
-  let (tel_pq1, tel_attrs1) = enqueue_with_telemetry(max_pq, 3, "test1", telemetry_attrs)
-  let (tel_pq2, tel_attrs2) = enqueue_with_telemetry(tel_pq1, 7, "test2", tel_attrs1)
-  let (tel_pq3, tel_attrs3) = enqueue_with_telemetry(tel_pq2, 2, "test3", tel_attrs2)
-  
-  let queue_size = Attributes::get(tel_attrs3, "queue.size")
-  match queue_size {
-    Some(IntValue(size)) => assert_eq(size, 3)
-    _ => assert_true(false)
-  }
-  
-  let enqueue_count = Attributes::get(tel_attrs3, "queue.enqueue.count")
-  match enqueue_count {
-    Some(IntValue(count)) => assert_eq(count, 3)
-    _ => assert_true(false)
-  }
-  
-  let (tel_elem1, tel_pq4, tel_attrs4) = dequeue_with_telemetry(tel_pq3, tel_attrs3)
-  match tel_elem1 {
-    Some((priority, value)) => {
-      assert_eq(priority, 7)
-      assert_eq(value, "test2")
-    }
-    None => assert_true(false)
-  }
-  
-  let dequeue_count = Attributes::get(tel_attrs4, "queue.dequeue.count")
-  match dequeue_count {
-    Some(IntValue(count)) => assert_eq(count, 1)
-    _ => assert_true(false)
   }
 }
 
-// Test 4: Bloom Filter Implementation with Telemetry
-test "bloom filter implementation with telemetry" {
-  // Define bloom filter structure
-  type BloomFilter {
-    bit_array : Array[Bool]
-    hash_functions : Int
-    size : Int
-    elements_added : Int
-    false_positive_rate : Float
-  }
+// Test 3: Trie (Prefix Tree) Operations
+test "trie prefix tree operations" {
+  let trie = Trie::new()
   
-  // Simple hash functions for testing
-  let hash1 = |input: String, size: Int -> Int {
-    let mut hash = 0
-    for char in input.to_char_array() {
-      hash = (hash * 31 + char.to_int()) % size
-    }
-    if hash < 0 { hash + size } else { hash }
-  }
+  // Test empty trie
+  assert_false(Trie::contains(trie, "test"))
+  assert_eq(Trie::count_prefixes(trie, "test"), 0)
   
-  let hash2 = |input: String, size: Int -> Int {
-    let mut hash = 0
-    for char in input.to_char_array() {
-      hash = (hash * 17 + char.to_int()) % size
-    }
-    if hash < 0 { hash + size } else { hash }
-  }
+  // Test inserting words
+  Trie::insert(trie, "hello")
+  Trie::insert(trie, "help")
+  Trie::insert(trie, "helmet")
+  Trie::insert(trie, "world")
   
-  let hash3 = |input: String, size: Int -> Int {
-    let mut hash = 0
-    for char in input.to_char_array() {
-      hash = (hash * 13 + char.to_int()) % size
-    }
-    if hash < 0 { hash + size } else { hash }
-  }
+  // Test word containment
+  assert_true(Trie::contains(trie, "hello"))
+  assert_true(Trie::contains(trie, "help"))
+  assert_false(Trie::contains(trie, "hell")) // Not inserted as a complete word
   
-  // Create bloom filter
-  let create_bloom_filter = |size: Int, hash_count: Int, false_positive_rate: Float -> BloomFilter {
-    BloomFilter {
-      bit_array: [false].repeat(size),
-      hash_functions: hash_count,
-      size: size,
-      elements_added: 0,
-      false_positive_rate: false_positive_rate
-    }
-  }
+  // Test prefix counting
+  assert_eq(Trie::count_prefixes(trie, "hel"), 3) // hello, help, helmet
+  assert_eq(Trie::count_prefixes(trie, "he"), 3)
+  assert_eq(Trie::count_prefixes(trie, "w"), 1) // world
+  assert_eq(Trie::count_prefixes(trie, "x"), 0)
   
-  // Add element to bloom filter
-  let add = |bf: BloomFilter, element: String -> BloomFilter {
-    let h1 = hash1(element, bf.size)
-    let h2 = hash2(element, bf.size)
-    let h3 = hash3(element, bf.size)
-    
-    let new_bit_array = bf.bit_array
-      .set(h1, true)
-      .set(h2, true)
-      .set(h3, true)
-    
-    BloomFilter {
-      bit_array: new_bit_array,
-      hash_functions: bf.hash_functions,
-      size: bf.size,
-      elements_added: bf.elements_added + 1,
-      false_positive_rate: bf.false_positive_rate
-    }
-  }
-  
-  // Check if element might be in bloom filter
-  let might_contain = |bf: BloomFilter, element: String -> Bool {
-    let h1 = hash1(element, bf.size)
-    let h2 = hash2(element, bf.size)
-    let h3 = hash3(element, bf.size)
-    
-    bf.bit_array[h1] && bf.bit_array[h2] && bf.bit_array[h3]
-  }
-  
-  // Create bloom filter with telemetry
-  let bf = create_bloom_filter(1000, 3, 0.01)
-  
-  // Add elements
-  let bf1 = add(bf, "hello")
-  let bf2 = add(bf1, "world")
-  let bf3 = add(bf2, "test")
-  
-  assert_eq(bf3.elements_added, 3)
-  
-  // Test containment for existing elements
-  assert_true(might_contain(bf3, "hello"))
-  assert_true(might_contain(bf3, "world"))
-  assert_true(might_contain(bf3, "test"))
-  
-  // Test containment for non-existing elements (might have false positives)
-  let might_have_false1 = might_contain(bf3, "nonexistent1")
-  let might_have_false2 = might_contain(bf3, "nonexistent2")
-  
-  // We can't guarantee these are false due to false positives
-  // But we can test that the bloom filter is working as expected
-  
-  // Test bloom filter with telemetry tracking
-  let add_with_telemetry = |bf: BloomFilter, element: String, metrics: Attributes -> (BloomFilter, Attributes) {
-    Attributes::set(metrics, "bloom.add.count", IntValue(1))
-    Attributes::set(metrics, "bloom.elements.total", IntValue(bf.elements_added + 1))
-    
-    let new_bf = add(bf, element)
-    (new_bf, metrics)
-  }
-  
-  let check_with_telemetry = |bf: BloomFilter, element: String, metrics: Attributes -> (Bool, Attributes) {
-    Attributes::set(metrics, "bloom.check.count", IntValue(1))
-    
-    let result = might_contain(bf, element)
-    if result {
-      Attributes::set(metrics, "bloom.check.positive", IntValue(1))
-    } else {
-      Attributes::set(metrics, "bloom.check.negative", IntValue(1))
-    }
-    
-    (result, metrics)
-  }
-  
-  let telemetry_attrs = Attributes::new()
-  Attributes::set(telemetry_attrs, "bloom.size", IntValue(1000))
-  Attributes::set(telemetry_attrs, "bloom.hash.functions", IntValue(3))
-  
-  let (tel_bf1, tel_attrs1) = add_with_telemetry(bf3, "telemetry_test", telemetry_attrs)
-  let (contains1, tel_attrs2) = check_with_telemetry(tel_bf1, "telemetry_test", tel_attrs1)
-  let (contains2, tel_attrs3) = check_with_telemetry(tel_bf1, "check_element", tel_attrs2)
-  
-  assert_true(contains1) // Should contain the element we just added
-  
-  let add_count = Attributes::get(tel_attrs3, "bloom.add.count")
-  match add_count {
-    Some(IntValue(count)) => assert_eq(count, 1)
-    _ => assert_true(false)
-  }
-  
-  let check_count = Attributes::get(tel_attrs3, "bloom.check.count")
-  match check_count {
-    Some(IntValue(count)) => assert_eq(count, 2)
-    _ => assert_true(false)
-  }
-  
-  // Test bloom filter statistics
-  let calculate_false_positive_rate = |bf: BloomFilter, test_elements: Array[String] -> Float {
-    let mut positive_count = 0
-    
-    for element in test_elements {
-      if might_contain(bf, element) {
-        positive_count = positive_count + 1
-      }
-    }
-    
-    positive_count.to_float() / test_elements.length().to_float()
-  }
-  
-  let test_elements = ["definitely_not_in_filter1", "definitely_not_in_filter2", "definitely_not_in_filter3", "definitely_not_in_filter4", "definitely_not_in_filter5"]
-  let observed_fp_rate = calculate_false_positive_rate(tel_bf1, test_elements)
-  
-  // The observed false positive rate should be reasonable
-  assert_true(observed_fp_rate >= 0.0)
-  assert_true(observed_fp_rate <= 1.0)
-  
-  // Test bloom filter capacity and load factor
-  let calculate_load_factor = |bf: BloomFilter -> Float {
-    let mut set_bits = 0
-    
-    for bit in bf.bit_array {
-      if bit {
-        set_bits = set_bits + 1
-      }
-    }
-    
-    set_bits.to_float() / bf.size.to_float()
-  }
-  
-  let load_factor = calculate_load_factor(tel_bf1)
-  assert_true(load_factor > 0.0)
-  assert_true(load_factor < 0.1) // Should be relatively low with few elements
+  // Test word removal
+  Trie::remove(trie, "help")
+  assert_false(Trie::contains(trie, "help"))
+  assert_true(Trie::contains(trie, "hello"))
+  assert_eq(Trie::count_prefixes(trie, "hel"), 2) // hello, helmet
 }
 
-// Test 5: LRU Cache with Telemetry Integration
-test "lru cache with telemetry integration" {
-  // Define LRU cache node
-  type LRUNode {
-    key : String
-    value : String
-    prev : Option[LRUNode]
-    next : Option[LRUNode]
+// Test 4: Bloom Filter Operations
+test "bloom filter operations" {
+  let filter = BloomFilter::new(1000, 3) // capacity, hash_count
+  
+  // Test empty filter
+  assert_false(BloomFilter::might_contain(filter, "test"))
+  
+  // Test adding elements
+  BloomFilter::add(filter, "hello")
+  BloomFilter::add(filter, "world")
+  BloomFilter::add(filter, "test")
+  
+  // Test element presence (might have false positives)
+  assert_true(BloomFilter::might_contain(filter, "hello"))
+  assert_true(BloomFilter::might_contain(filter, "world"))
+  assert_true(BloomFilter::might_contain(filter, "test"))
+  
+  // Test non-existent element (might have false positives)
+  // This test demonstrates the probabilistic nature
+  let might_contain = BloomFilter::might_contain(filter, "nonexistent")
+  // We can't assert false here due to possible false positives
+  
+  // Test filter statistics
+  let false_positive_rate = BloomFilter::estimated_false_positive_rate(filter)
+  assert_true(false_positive_rate >= 0.0)
+  assert_true(false_positive_rate <= 1.0)
+}
+
+// Test 5: LRU Cache Operations
+test "lru cache operations" {
+  let cache = LRUCache::new(3) // capacity
+  
+  // Test empty cache
+  assert_eq(LRUCache::size(cache), 0)
+  assert_false(LRUCache::contains(cache, "key1"))
+  
+  // Test inserting elements
+  LRUCache::put(cache, "key1", "value1")
+  LRUCache::put(cache, "key2", "value2")
+  LRUCache::put(cache, "key3", "value3")
+  
+  assert_eq(LRUCache::size(cache), 3)
+  assert_true(LRUCache::contains(cache, "key1"))
+  assert_true(LRUCache::contains(cache, "key2"))
+  assert_true(LRUCache::contains(cache, "key3"))
+  
+  // Test getting elements
+  let value1 = LRUCache::get(cache, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
   }
   
-  // Define LRU cache structure
-  type LRUCache {
-    capacity : Int
-    size : Int
-    cache : ArrayMap[String, String] // Simplified using ArrayMap
-    access_order : Array[String] // Track access order
-    hits : Int
-    misses : Int
-    evictions : Int
+  // Test LRU eviction
+  LRUCache::put(cache, "key4", "value4") // Should evict key2 (least recently used)
+  
+  assert_eq(LRUCache::size(cache), 3)
+  assert_true(LRUCache::contains(cache, "key1")) // Recently accessed
+  assert_false(LRUCache::contains(cache, "key2")) // Should be evicted
+  assert_true(LRUCache::contains(cache, "key3"))
+  assert_true(LRUCache::contains(cache, "key4"))
+  
+  // Test updating existing key
+  LRUCache::put(cache, "key1", "new_value1")
+  let updated_value = LRUCache::get(cache, "key1")
+  match updated_value {
+    Some(v) => assert_eq(v, "new_value1")
+    None => assert_true(false)
   }
+}
+
+// Test 6: Skip List Operations
+test "skip list operations" {
+  let skip_list = SkipList::new()
   
-  // Create LRU cache
-  let create_lru_cache = |capacity: Int -> LRUCache {
-    LRUCache {
-      capacity: capacity,
-      size: 0,
-      cache: ArrayMap::new(),
-      access_order: [],
-      hits: 0,
-      misses: 0,
-      evictions: 0
-    }
-  }
+  // Test empty skip list
+  assert_true(SkipList::is_empty(skip_list))
+  assert_eq(SkipList::size(skip_list), 0)
+  assert_false(SkipList::contains(skip_list, 10))
   
-  // Get value from cache
-  let get = |cache: LRUCache, key: String -> (Option[String], LRUCache) {
-    match ArrayMap::get(cache.cache, key) {
-      Some(value) => {
-        // Update access order - move key to end (most recently used)
-        let new_order = cache.access_order.filter(|k| k != key).push(key)
-        
-        (Some(value), LRUCache {
-          capacity: cache.capacity,
-          size: cache.size,
-          cache: cache.cache,
-          access_order: new_order,
-          hits: cache.hits + 1,
-          misses: cache.misses,
-          evictions: cache.evictions
-        })
-      }
-      None => {
-        (None, LRUCache {
-          capacity: cache.capacity,
-          size: cache.size,
-          cache: cache.cache,
-          access_order: cache.access_order,
-          hits: cache.hits,
-          misses: cache.misses + 1,
-          evictions: cache.evictions
-        })
-      }
-    }
-  }
+  // Test inserting elements
+  SkipList::insert(skip_list, 30)
+  SkipList::insert(skip_list, 10)
+  SkipList::insert(skip_list, 50)
+  SkipList::insert(skip_list, 20)
+  SkipList::insert(skip_list, 40)
   
-  // Put value in cache
-  let put = |cache: LRUCache, key: String, value: String -> LRUCache {
-    if ArrayMap::contains_key(cache.cache, key) {
-      // Update existing value
-      let new_cache = ArrayMap::set(cache.cache, key, value)
-      let new_order = cache.access_order.filter(|k| k != key).push(key)
-      
-      LRUCache {
-        capacity: cache.capacity,
-        size: cache.size,
-        cache: new_cache,
-        access_order: new_order,
-        hits: cache.hits,
-        misses: cache.misses,
-        evictions: cache.evictions
-      }
-    } else if cache.size < cache.capacity {
-      // Add new value
-      let new_cache = ArrayMap::set(cache.cache, key, value)
-      let new_order = cache.access_order.push(key)
-      
-      LRUCache {
-        capacity: cache.capacity,
-        size: cache.size + 1,
-        cache: new_cache,
-        access_order: new_order,
-        hits: cache.hits,
-        misses: cache.misses,
-        evictions: cache.evictions
-      }
-    } else {
-      // Evict least recently used
-      let lru_key = cache.access_order[0]
-      let new_cache = ArrayMap::remove(cache.cache, lru_key)
-      let final_cache = ArrayMap::set(new_cache, key, value)
-      let new_order = cache.access_order.slice(1, cache.access_order.length()).push(key)
-      
-      LRUCache {
-        capacity: cache.capacity,
-        size: cache.size,
-        cache: final_cache,
-        access_order: new_order,
-        hits: cache.hits,
-        misses: cache.misses,
-        evictions: cache.evictions + 1
-      }
-    }
-  }
+  assert_false(SkipList::is_empty(skip_list))
+  assert_eq(SkipList::size(skip_list), 5)
   
-  // Test LRU cache operations
-  let cache = create_lru_cache(3)
-  let cache1 = put(cache, "a", "value_a")
-  let cache2 = put(cache1, "b", "value_b")
-  let cache3 = put(cache2, "c", "value_c")
+  // Test element containment
+  assert_true(SkipList::contains(skip_list, 10))
+  assert_true(SkipList::contains(skip_list, 20))
+  assert_true(SkipList::contains(skip_list, 30))
+  assert_true(SkipList::contains(skip_list, 40))
+  assert_true(SkipList::contains(skip_list, 50))
+  assert_false(SkipList::contains(skip_list, 60))
   
-  // All values should be in cache
-  let (val_a, cache4) = get(cache3, "a")
-  let (val_b, cache5) = get(cache4, "b")
-  let (val_c, _) = get(cache5, "c")
+  // Test range queries
+  let range_result = SkipList::range_query(skip_list, 20, 40)
+  assert_eq(range_result.length(), 3) // 20, 30, 40
   
-  match val_a { Some(v) => assert_eq(v, "value_a") None => assert_true(false) }
-  match val_b { Some(v) => assert_eq(v, "value_b") None => assert_true(false) }
-  match val_c { Some(v) => assert_eq(v, "value_c") None => assert_true(false) }
+  // Test deletion
+  SkipList::delete(skip_list, 30)
+  assert_false(SkipList::contains(skip_list, 30))
+  assert_eq(SkipList::size(skip_list), 4)
+}
+
+// Test 7: Union-Find (Disjoint Set) Operations
+test "union-find disjoint set operations" {
+  let uf = UnionFind::new(5) // 5 elements (0-4)
   
-  // Add one more value (should evict "a" since "b" and "c" were accessed more recently)
-  let cache6 = put(cache5, "d", "value_d")
+  // Test initial state
+  assert_false(UnionFind::connected(uf, 0, 1))
+  assert_eq(UnionFind::find(uf, 0), 0)
+  assert_eq(UnionFind::find(uf, 1), 1)
   
-  // "a" should be evicted, "d" should be in cache
-  let (val_a2, _) = get(cache6, "a")
-  let (val_d, _) = get(cache6, "d")
+  // Test union operations
+  UnionFind::union(uf, 0, 1)
+  assert_true(UnionFind::connected(uf, 0, 1))
+  assert_eq(UnionFind::find(uf, 0), UnionFind::find(uf, 1))
   
-  assert_eq(val_a2, None) // Should be evicted
-  match val_d { Some(v) => assert_eq(v, "value_d") None => assert_true(false) }
+  UnionFind::union(uf, 2, 3)
+  assert_true(UnionFind::connected(uf, 2, 3))
+  assert_false(UnionFind::connected(uf, 1, 2))
   
-  // Check cache statistics
-  assert_eq(cache6.hits, 3) // a, b, c hits
-  assert_eq(cache6.misses, 0) // No misses yet
-  assert_eq(cache6.evictions, 1) // Evicted "a"
+  // Test transitive connections
+  UnionFind::union(uf, 1, 2)
+  assert_true(UnionFind::connected(uf, 0, 3)) // 0-1-2-3 are connected
   
-  // Test LRU cache with telemetry
-  let get_with_telemetry = |cache: LRUCache, key: String, metrics: Attributes -> (Option[String], LRUCache, Attributes) {
-    let (value, new_cache) = get(cache, key)
-    
-    match value {
-      Some(_) => Attributes::set(metrics, "cache.hits", IntValue(1))
-      None => Attributes::set(metrics, "cache.misses", IntValue(1))
-    }
-    
-    Attributes::set(metrics, "cache.size", IntValue(new_cache.size))
-    Attributes::set(metrics, "cache.capacity", IntValue(new_cache.capacity))
-    
-    (value, new_cache, metrics)
-  }
+  // Test component count
+  assert_eq(UnionFind::count_components(uf), 2) // {0,1,2,3} and {4}
+}
+
+// Test 8: Segment Tree Operations
+test "segment tree operations" {
+  let arr = [1, 2, 3, 4, 5]
+  let seg_tree = SegmentTree::new(arr, fn(a, b) { a + b }) // Sum segment tree
   
-  let put_with_telemetry = |cache: LRUCache, key: String, value: String, metrics: Attributes -> (LRUCache, Attributes) {
-    let old_evictions = cache.evictions
-    let new_cache = put(cache, key, value)
-    
-    if new_cache.evictions > old_evictions {
-      Attributes::set(metrics, "cache.evictions", IntValue(1))
-    }
-    
-    Attributes::set(metrics, "cache.size", IntValue(new_cache.size))
-    Attributes::set(metrics, "cache.puts", IntValue(1))
-    
-    (new_cache, metrics)
-  }
+  // Test range sum queries
+  assert_eq(SegmentTree::query(seg_tree, 0, 4), 15) // Sum of all elements
+  assert_eq(SegmentTree::query(seg_tree, 1, 3), 9)  // 2 + 3 + 4
+  assert_eq(SegmentTree::query(seg_tree, 2, 2), 3)  // Single element
   
-  let telemetry_cache = create_lru_cache(2)
-  let telemetry_attrs = Attributes::new()
-  Attributes::set(telemetry_attrs, "cache.type", StringValue("lru"))
-  Attributes::set(telemetry_attrs, "cache.algorithm", StringValue("least_recently_used"))
+  // Test point updates
+  SegmentTree::update(seg_tree, 2, 10) // Change arr[2] from 3 to 10
+  assert_eq(SegmentTree::query(seg_tree, 0, 4), 22) // New sum
+  assert_eq(SegmentTree::query(seg_tree, 1, 3), 16)  // 2 + 10 + 4
   
-  let (tel_cache1, tel_attrs1) = put_with_telemetry(telemetry_cache, "x", "value_x", telemetry_attrs)
-  let (tel_cache2, tel_attrs2) = put_with_telemetry(tel_cache1, "y", "value_y", tel_attrs1)
-  let (val_x, tel_cache3, tel_attrs3) = get_with_telemetry(tel_cache2, "x", tel_attrs2)
-  let (tel_cache4, tel_attrs4) = put_with_telemetry(tel_cache3, "z", "value_z", tel_attrs3)
-  let (val_y, _, tel_attrs5) = get_with_telemetry(tel_cache4, "y", tel_attrs4)
+  // Test edge cases
+  assert_eq(SegmentTree::query(seg_tree, 0, 0), 1)  // First element
+  assert_eq(SegmentTree::query(seg_tree, 4, 4), 5)  // Last element
+}
+
+// Test 9: Fenwick Tree (Binary Indexed Tree) Operations
+test "fenwick tree operations" {
+  let arr = [1, 2, 3, 4, 5]
+  let fenwick = FenwickTree::new(arr)
   
-  match val_x { Some(v) => assert_eq(v, "value_x") None => assert_true(false) }
-  assert_eq(val_y, None) // Should be evicted
+  // Test prefix sum queries
+  assert_eq(FenwickTree::prefix_sum(fenwick, 0), 1)
+  assert_eq(FenwickTree::prefix_sum(fenwick, 1), 3)  // 1 + 2
+  assert_eq(FenwickTree::prefix_sum(fenwick, 2), 6)  // 1 + 2 + 3
+  assert_eq(FenwickTree::prefix_sum(fenwick, 4), 15) // Sum of all elements
   
-  // Check telemetry metrics
-  let hits = Attributes::get(tel_attrs5, "cache.hits")
-  match hits {
-    Some(IntValue(count)) => assert_eq(count, 1)
-    _ => assert_true(false)
-  }
+  // Test range sum queries
+  assert_eq(FenwickTree::range_sum(fenwick, 1, 3), 9)  // 2 + 3 + 4
+  assert_eq(FenwickTree::range_sum(fenwick, 0, 2), 6)  // 1 + 2 + 3
   
-  let misses = Attributes::get(tel_attrs5, "cache.misses")
-  match misses {
-    Some(IntValue(count)) => assert_eq(count, 1)
-    _ => assert_true(false)
-  }
+  // Test point updates
+  FenwickTree::update(fenwick, 2, 7) // Add 7 to arr[2] (3 -> 10)
+  assert_eq(FenwickTree::prefix_sum(fenwick, 2), 13) // 1 + 2 + 10
+  assert_eq(FenwickTree::prefix_sum(fenwick, 4), 22) // New total sum
+}
+
+// Test 10: Suffix Array Operations
+test "suffix array operations" {
+  let text = "banana"
+  let suffix_array = SuffixArray::new(text)
   
-  let evictions = Attributes::get(tel_attrs5, "cache.evictions")
-  match evictions {
-    Some(IntValue(count)) => assert_eq(count, 1)
-    _ => assert_true(false)
-  }
+  // Test suffix array properties
+  assert_eq(SuffixArray::size(suffix_array), 6)
   
-  // Test cache hit ratio calculation
-  let calculate_hit_ratio = |cache: LRUCache -> Float {
-    let total_requests = cache.hits + cache.misses
-    if total_requests == 0 {
-      0.0
-    } else {
-      cache.hits.to_float() / total_requests.to_float()
-    }
-  }
+  // Test lexicographic order of suffixes
+  // The suffixes of "banana" in order are:
+  // "a", "ana", "anana", "banana", "na", "nana"
+  let first_suffix = SuffixArray::get_suffix(suffix_array, 0)
+  assert_eq(first_suffix, "a")
   
-  let hit_ratio = calculate_hit_ratio(tel_cache4)
-  assert_eq(hit_ratio, 1.0 / 2.0) // 1 hit out of 2 requests
+  let last_suffix = SuffixArray::get_suffix(suffix_array, 5)
+  assert_eq(last_suffix, "nana")
+  
+  // Test pattern searching
+  let occurrences = SuffixArray::find_occurrences(suffix_array, "ana")
+  assert_eq(occurrences.length(), 2) // "ana" appears twice
+  
+  // Test longest common prefix queries
+  let lcp = SuffixArray::lcp(suffix_array, 1, 3) // LCP of "ana" and "banana"
+  assert_eq(lcp, 0) // No common prefix
+  
+  let lcp2 = SuffixArray::lcp(suffix_array, 0, 1) // LCP of "a" and "ana"
+  assert_eq(lcp2, 1) // Common prefix is "a"
 }
