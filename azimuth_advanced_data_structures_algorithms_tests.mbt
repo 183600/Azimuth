@@ -1,799 +1,638 @@
 // Azimuth Advanced Data Structures and Algorithms Test Suite
-// This file contains tests for advanced data structures and algorithms
+// 高级数据结构和算法测试套件，验证遥测系统中的复杂数据操作和算法实现
 
-// Test 1: Priority Queue Implementation
-test "priority queue implementation" {
-  // Priority queue element
-  type PQElement = {
-    value: String,
-    priority: Int
+// 测试1: 高效属性索引结构
+test "高效属性索引结构测试" {
+  // 创建一个高效的属性索引结构，支持快速查找
+  let mut attr_index = azimuth::AttributeIndex::new()
+  
+  // 添加1000个属性到索引
+  for i in 0..1000 {
+    let key = "attr.key." + i.to_string()
+    let value = azimuth::AttributeValue::StringValue("value." + i.to_string())
+    attr_index = azimuth::AttributeIndex::add(attr_index, key, value)
   }
   
-  // Priority queue
-  type PriorityQueue = {
-    elements: Array[PQElement]
+  // 测试快速查找功能
+  let result = azimuth::AttributeIndex::get(attr_index, "attr.key.500")
+  match result {
+    Some(azimuth::AttributeValue::StringValue(v)) => assert_eq(v, "value.500")
+    _ => assert_true(false)
   }
   
-  // Create empty priority queue
-  let create_pq = fn() {
-    { elements: [] }
+  // 测试不存在的键
+  let non_existent = azimuth::AttributeIndex::get(attr_index, "non.existent.key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Check if priority queue is empty
-  let is_empty = fn(pq: PriorityQueue) {
-    pq.elements.length() == 0
-  }
+  // 测试前缀查找
+  let prefix_results = azimuth::AttributeIndex::get_by_prefix(attr_index, "attr.key.5")
+  assert_eq(prefix_results.length(), 100) // attr.key.500到attr.key.599
   
-  // Get size of priority queue
-  let size = fn(pq: PriorityQueue) {
-    pq.elements.length()
-  }
-  
-  // Insert element into priority queue (min-heap)
-  let insert = fn(pq: PriorityQueue, value: String, priority: Int) {
-    let new_element = { value, priority }
-    let mut new_elements = pq.elements.push(new_element)
-    
-    // Bubble up to maintain heap property
-    let mut index = new_elements.length() - 1
-    while index > 0 {
-      let parent_index = (index - 1) / 2
-      if new_elements[index].priority < new_elements[parent_index].priority {
-        let temp = new_elements[index]
-        new_elements[index] = new_elements[parent_index]
-        new_elements[parent_index] = temp
-        index = parent_index
-      } else {
-        break
-      }
+  // 验证前缀查找结果
+  match prefix_results[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "attr.key.500")
+      assert_eq(value, "value.500")
     }
-    
-    { elements: new_elements }
+    _ => assert_true(false)
   }
-  
-  // Extract minimum element
-  let extract_min = fn(pq: PriorityQueue) {
-    if is_empty(pq) {
-      return (pq, None)
-    }
-    
-    let min_element = pq.elements[0]
-    let last_element = pq.elements[pq.elements.length() - 1]
-    
-    // Move last element to root
-    let mut new_elements = pq.elements.slice(0, pq.elements.length() - 1)
-    
-    if new_elements.length() > 0 {
-      new_elements[0] = last_element
-      
-      // Bubble down to maintain heap property
-      let mut index = 0
-      let heap_size = new_elements.length()
-      
-      while true {
-        let left_child = 2 * index + 1
-        let right_child = 2 * index + 2
-        let mut smallest = index
-        
-        if left_child < heap_size and new_elements[left_child].priority < new_elements[smallest].priority {
-          smallest = left_child
-        }
-        
-        if right_child < heap_size and new_elements[right_child].priority < new_elements[smallest].priority {
-          smallest = right_child
-        }
-        
-        if smallest != index {
-          let temp = new_elements[index]
-          new_elements[index] = new_elements[smallest]
-          new_elements[smallest] = temp
-          index = smallest
-        } else {
-          break
-        }
-      }
-    }
-    
-    ({ elements: new_elements }, Some(min_element))
-  }
-  
-  // Peek at minimum element
-  let peek = fn(pq: PriorityQueue) {
-    if is_empty(pq) {
-      None
-    } else {
-      Some(pq.elements[0])
-    }
-  }
-  
-  // Test priority queue operations
-  let pq = create_pq()
-  assert_true(is_empty(pq))
-  assert_eq(size(pq), 0)
-  assert_eq(peek(pq), None)
-  
-  // Insert elements
-  let pq1 = insert(pq, "task1", 5)
-  assert_false(is_empty(pq1))
-  assert_eq(size(pq1), 1)
-  assert_eq(peek(pq1).unwrap().value, "task1")
-  
-  let pq2 = insert(pq1, "task2", 3)
-  assert_eq(size(pq2), 2)
-  assert_eq(peek(pq2).unwrap().value, "task2")  // Higher priority (lower number)
-  
-  let pq3 = insert(pq2, "task3", 7)
-  let pq4 = insert(pq3, "task4", 1)
-  let pq5 = insert(pq4, "task5", 4)
-  
-  assert_eq(size(pq5), 5)
-  assert_eq(peek(pq5).unwrap().value, "task4")  // Highest priority
-  
-  // Extract elements in priority order
-  let (pq6, min1) = extract_min(pq5)
-  assert_eq(min1.unwrap().value, "task4")
-  assert_eq(min1.unwrap().priority, 1)
-  assert_eq(size(pq6), 4)
-  
-  let (pq7, min2) = extract_min(pq6)
-  assert_eq(min2.unwrap().value, "task2")
-  assert_eq(min2.unwrap().priority, 3)
-  
-  let (pq8, min3) = extract_min(pq7)
-  assert_eq(min3.unwrap().value, "task5")
-  assert_eq(min3.unwrap().priority, 4)
-  
-  let (pq9, min4) = extract_min(pq8)
-  assert_eq(min4.unwrap().value, "task1")
-  assert_eq(min4.unwrap().priority, 5)
-  
-  let (pq10, min5) = extract_min(pq9)
-  assert_eq(min5.unwrap().value, "task3")
-  assert_eq(min5.unwrap().priority, 7)
-  
-  assert_true(is_empty(pq10))
-  
-  // Test extraction from empty queue
-  let (pq11, empty_min) = extract_min(pq10)
-  assert_true(is_empty(pq11))
-  assert_eq(empty_min, None)
 }
 
-// Test 2: Trie (Prefix Tree) Implementation
-test "trie prefix tree implementation" {
-  // Trie node
-  type TrieNode = {
-    children: Array[(Char, TrieNode)],
-    is_end_of_word: Bool,
-    value: Option[String>
+// 测试2: 时间窗口数据聚合算法
+test "时间窗口数据聚合算法测试" {
+  // 创建时间窗口聚合器
+  let window_size = 60000 // 60秒窗口
+  let mut aggregator = azimuth::TimeWindowAggregator::new(window_size)
+  
+  // 添加不同时间点的数据点
+  let base_time = 1609459200000L // 2021-01-01 00:00:00 UTC
+  
+  // 在窗口内添加数据点
+  for i in 0..100 {
+    let timestamp = base_time + (i * 600) // 每600ms一个数据点
+    let value = i.to_float() * 1.5
+    let data_point = azimuth::DataPoint::new(timestamp, value)
+    aggregator = azimuth::TimeWindowAggregator::add(aggregator, data_point)
   }
   
-  // Create new trie node
-  let create_trie_node = fn() {
-    {
-      children: [],
-      is_end_of_word: false,
-      value: None
-    }
-  }
+  // 测试窗口内数据点计数
+  let count = azimuth::TimeWindowAggregator::count(aggregator)
+  assert_eq(count, 100)
   
-  // Insert word into trie
-  let insert = fn(node: TrieNode, word: String, value: String) {
-    let mut current_node = node
-    let chars = word.to_char_array()
-    
-    for i in 0..chars.length() {
-      let char = chars[i]
-      let mut child_found = false
-      
-      // Check if character already exists in children
-      let mut updated_children = []
-      let mut child_index = -1
-      
-      for i in 0..current_node.children.length() {
-        let (c, child) = current_node.children[i]
-        updated_children = updated_children.push((c, child))
-        
-        if c == char {
-          child_found = true
-          child_index = i
-        }
-      }
-      
-      if child_found {
-        // Navigate to existing child
-        current_node = updated_children[child_index].1
-      } else {
-        // Create new child
-        let new_child = create_trie_node()
-        updated_children = updated_children.push((char, new_child))
-        current_node = new_child
-      }
-      
-      // Update current node with new children
-      current_node = { current_node | children: updated_children }
-    }
-    
-    // Mark as end of word and set value
-    { current_node | is_end_of_word: true, value: Some(value) }
-  }
+  // 测试窗口内数据求和
+  let sum = azimuth::TimeWindowAggregator::sum(aggregator)
+  let expected_sum = 0.0 + 1.5 + 3.0 + ... + 148.5 // 等差数列求和
+  assert_eq(sum, expected_sum)
   
-  // Search for word in trie
-  let search = fn(node: TrieNode, word: String) {
-    let mut current_node = node
-    let chars = word.to_char_array()
-    
-    for i in 0..chars.length() {
-      let char = chars[i]
-      let mut child_found = false
-      
-      for (c, child) in current_node.children {
-        if c == char {
-          current_node = child
-          child_found = true
-          break
-        }
-      }
-      
-      if not(child_found) {
-        return None
-      }
-    }
-    
-    if current_node.is_end_of_word {
-      current_node.value
-    } else {
-      None
-    }
-  }
+  // 测试窗口内数据平均值
+  let avg = azimuth::TimeWindowAggregator::average(aggregator)
+  assert_eq(avg, expected_sum / 100.0)
   
-  // Check if any word starts with prefix
-  let starts_with = fn(node: TrieNode, prefix: String) {
-    let mut current_node = node
-    let chars = prefix.to_char_array()
-    
-    for i in 0..chars.length() {
-      let char = chars[i]
-      let mut child_found = false
-      
-      for (c, child) in current_node.children {
-        if c == char {
-          current_node = child
-          child_found = true
-          break
-        }
-      }
-      
-      if not(child_found) {
-        return false
-      }
-    }
-    
-    true
-  }
+  // 测试窗口内数据最大值和最小值
+  let max = azimuth::TimeWindowAggregator::max(aggregator)
+  let min = azimuth::TimeWindowAggregator::min(aggregator)
+  assert_eq(max, 148.5)
+  assert_eq(min, 0.0)
   
-  // Create trie
-  let trie = create_trie_node()
+  // 测试窗口外数据点（应该被忽略）
+  let out_of_window_point = azimuth::DataPoint::new(base_time + window_size + 1000, 200.0)
+  aggregator = azimuth::TimeWindowAggregator::add(aggregator, out_of_window_point)
   
-  // Insert words
-  let trie1 = insert(trie, "cat", "feline animal")
-  let trie2 = insert(trie1, "car", "vehicle")
-  let trie3 = insert(trie2, "dog", "canine animal")
-  let trie4 = insert(trie3, "cart", "wheeled vehicle")
-  
-  // Test search
-  assert_eq(search(trie4, "cat"), Some("feline animal"))
-  assert_eq(search(trie4, "car"), Some("vehicle"))
-  assert_eq(search(trie4, "dog"), Some("canine animal"))
-  assert_eq(search(trie4, "cart"), Some("wheeled vehicle"))
-  
-  // Test non-existing words
-  assert_eq(search(trie4, "bat"), None)
-  assert_eq(search(trie4, "care"), None)
-  
-  // Test prefix search
-  assert_true(starts_with(trie4, "ca"))
-  assert_true(starts_with(trie4, "car"))
-  assert_true(starts_with(trie4, "cat"))
-  assert_false(starts_with(trie4, "ba"))
-  assert_false(starts_with(trie4, "do"))
-  
-  // Test empty trie
-  let empty_trie = create_trie_node()
-  assert_eq(search(empty_trie, "word"), None)
-  assert_false(starts_with(empty_trie, "prefix"))
-  
-  // Test single character words
-  let trie5 = insert(trie4, "a", "first letter")
-  assert_eq(search(trie5, "a"), Some("first letter"))
-  assert_true(starts_with(trie5, "a"))
+  // 窗口内数据点计数应该不变
+  let count_after = azimuth::TimeWindowAggregator::count(aggregator)
+  assert_eq(count_after, 100)
 }
 
-// Test 3: Graph Algorithms - Shortest Path
-test "graph shortest path algorithms" {
-  // Graph edge
-  type GraphEdge = {
-    to: Int,
-    weight: Int
+// 测试3: 层级属性树结构
+test "层级属性树结构测试" {
+  // 创建一个层级属性树
+  let mut tree = azimuth::AttributeTree::new()
+  
+  // 添加层级属性
+  tree = azimuth::AttributeTree::set(tree, ["service", "name"], azimuth::AttributeValue::StringValue("azimuth-service"))
+  tree = azimuth::AttributeTree::set(tree, ["service", "version"], azimuth::AttributeValue::StringValue("1.0.0"))
+  tree = azimuth::AttributeTree::set(tree, ["service", "instance", "id"], azimuth::AttributeValue::StringValue("instance-123"))
+  tree = azimuth::AttributeTree::set(tree, ["http", "method"], azimuth::AttributeValue::StringValue("GET"))
+  tree = azimuth::AttributeTree::set(tree, ["http", "status"], azimuth::AttributeValue::IntValue(200))
+  tree = azimuth::AttributeTree::set(tree, ["http", "duration"], azimuth::AttributeValue::FloatValue(125.5))
+  
+  // 测试获取单个属性
+  let service_name = azimuth::AttributeTree::get(tree, ["service", "name"])
+  match service_name {
+    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "azimuth-service")
+    _ => assert_true(false)
   }
   
-  // Graph node
-  type GraphNode = {
-    id: Int,
-    edges: Array[GraphEdge>
+  let http_status = azimuth::AttributeTree::get(tree, ["http", "status"])
+  match http_status {
+    Some(azimuth::AttributeValue::IntValue(status)) => assert_eq(status, 200)
+    _ => assert_true(false)
   }
   
-  // Path result
-  type PathResult = {
-    distance: Int,
-    path: Array[Int]
+  // 测试获取子树
+  let service_subtree = azimuth::AttributeTree::get_subtree(tree, ["service"])
+  match service_subtree {
+    Some(subtree) => {
+      let name = azimuth::AttributeTree::get(subtree, ["name"])
+      let version = azimuth::AttributeTree::get(subtree, ["version"])
+      let instance = azimuth::AttributeTree::get(subtree, ["instance", "id"])
+      
+      match name {
+        Some(azimuth::AttributeValue::StringValue(n)) => assert_eq(n, "azimuth-service")
+        _ => assert_true(false)
+      }
+      
+      match version {
+        Some(azimuth::AttributeValue::StringValue(v)) => assert_eq(v, "1.0.0")
+        _ => assert_true(false)
+      }
+      
+      match instance {
+        Some(azimuth::AttributeValue::StringValue(i)) => assert_eq(i, "instance-123")
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
   }
   
-  // Create graph node
-  let create_node = fn(id: Int) {
-    {
-      id,
-      edges: []
+  // 测试获取所有键
+  let all_keys = azimuth::AttributeTree::get_all_keys(tree)
+  assert_eq(all_keys.length(), 6)
+  assert_true(all_keys.contains(["service", "name"]))
+  assert_true(all_keys.contains(["service", "version"]))
+  assert_true(all_keys.contains(["service", "instance", "id"]))
+  assert_true(all_keys.contains(["http", "method"]))
+  assert_true(all_keys.contains(["http", "status"]))
+  assert_true(all_keys.contains(["http", "duration"]))
+}
+
+// 测试4: 高效采样算法
+test "高效采样算法测试" {
+  // 创建概率采样器
+  let probability = 0.1 // 10%采样率
+  let sampler = azimuth::ProbabilitySampler::new(probability)
+  
+  // 测试采样决策一致性（相同trace_id应该得到相同决策）
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let decision1 = azimuth::ProbabilitySampler::should_sample(sampler, trace_id)
+  let decision2 = azimuth::ProbabilitySampler::should_sample(sampler, trace_id)
+  assert_eq(decision1, decision2) // 相同trace_id应该得到相同决策
+  
+  // 测试不同trace_id的采样分布
+  let mut sample_count = 0
+  let total_traces = 10000
+  
+  for i in 0..total_traces {
+    let test_trace_id = "trace-" + i.to_string()
+    if azimuth::ProbabilitySampler::should_sample(sampler, test_trace_id) {
+      sample_count = sample_count + 1
     }
   }
   
-  // Add edge to node
-  let add_edge = fn(node: GraphNode, to: Int, weight: Int) {
-    {
-      node |
-      edges: node.edges.push({ to, weight })
-    }
+  // 采样率应该接近10%（允许一定误差）
+  let actual_rate = sample_count.to_float() / total_traces.to_float()
+  assert_true(actual_rate > 0.09 && actual_rate < 0.11)
+  
+  // 测试确定性采样器
+  let deterministic_sampler = azimuth::DeterministicSampler::new()
+  
+  // 测试已知trace_id的采样决策
+  let sampled_trace = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let not_sampled_trace = "4bf92f3577b34da6a3ce929d0e0e4737"
+  
+  assert_true(azimuth::DeterministicSampler::should_sample(deterministic_sampler, sampled_trace))
+  assert_false(azimuth::DeterministicSampler::should_sample(deterministic_sampler, not_sampled_trace))
+}
+
+// 测试5: 属性值高效序列化算法
+test "属性值高效序列化算法测试" {
+  // 测试不同类型属性值的序列化
+  let string_attr = azimuth::AttributeValue::StringValue("test string")
+  let int_attr = azimuth::AttributeValue::IntValue(42)
+  let float_attr = azimuth::AttributeValue::FloatValue(3.14159)
+  let bool_attr = azimuth::AttributeValue::BoolValue(true)
+  let array_string_attr = azimuth::AttributeValue::ArrayStringValue(["a", "b", "c"])
+  let array_int_attr = azimuth::AttributeValue::ArrayIntValue([1, 2, 3])
+  
+  // 序列化属性值
+  let serialized_string = azimuth::AttributeValue::serialize(string_attr)
+  let serialized_int = azimuth::AttributeValue::serialize(int_attr)
+  let serialized_float = azimuth::AttributeValue::serialize(float_attr)
+  let serialized_bool = azimuth::AttributeValue::serialize(bool_attr)
+  let serialized_array_string = azimuth::AttributeValue::serialize(array_string_attr)
+  let serialized_array_int = azimuth::AttributeValue::serialize(array_int_attr)
+  
+  // 验证序列化结果
+  assert_eq(serialized_string, "{\"type\":\"string\",\"value\":\"test string\"}")
+  assert_eq(serialized_int, "{\"type\":\"int\",\"value\":42}")
+  assert_eq(serialized_float, "{\"type\":\"float\",\"value\":3.14159}")
+  assert_eq(serialized_bool, "{\"type\":\"bool\",\"value\":true}")
+  assert_eq(serialized_array_string, "{\"type\":\"array_string\",\"value\":[\"a\",\"b\",\"c\"]}")
+  assert_eq(serialized_array_int, "{\"type\":\"array_int\",\"value\":[1,2,3]}")
+  
+  // 测试反序列化
+  let deserialized_string = azimuth::AttributeValue::deserialize(serialized_string)
+  let deserialized_int = azimuth::AttributeValue::deserialize(serialized_int)
+  let deserialized_float = azimuth::AttributeValue::deserialize(serialized_float)
+  let deserialized_bool = azimuth::AttributeValue::deserialize(serialized_bool)
+  let deserialized_array_string = azimuth::AttributeValue::deserialize(serialized_array_string)
+  let deserialized_array_int = azimuth::AttributeValue::deserialize(serialized_array_int)
+  
+  // 验证反序列化结果
+  match deserialized_string {
+    Some(azimuth::AttributeValue::StringValue(s)) => assert_eq(s, "test string")
+    _ => assert_true(false)
   }
   
-  // Dijkstra's algorithm for shortest path
-  let dijkstra = fn(graph: Array[GraphNode], start: Int, end: Int) {
-    let mut distances = {}
-    let mut previous = {}
-    let mut unvisited = []
+  match deserialized_int {
+    Some(azimuth::AttributeValue::IntValue(i)) => assert_eq(i, 42)
+    _ => assert_true(false)
+  }
+  
+  match deserialized_float {
+    Some(azimuth::AttributeValue::FloatValue(f)) => assert_eq(f, 3.14159)
+    _ => assert_true(false)
+  }
+  
+  match deserialized_bool {
+    Some(azimuth::AttributeValue::BoolValue(b)) => assert_true(b)
+    _ => assert_true(false)
+  }
+  
+  match deserialized_array_string {
+    Some(azimuth::AttributeValue::ArrayStringValue(arr)) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], "a")
+      assert_eq(arr[1], "b")
+      assert_eq(arr[2], "c")
+    }
+    _ => assert_true(false)
+  }
+  
+  match deserialized_array_int {
+    Some(azimuth::AttributeValue::ArrayIntValue(arr)) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], 1)
+      assert_eq(arr[1], 2)
+      assert_eq(arr[2], 3)
+    }
+    _ => assert_true(false)
+  }
+}
+
+// 测试6: 高效属性过滤器
+test "高效属性过滤器测试" {
+  // 创建属性集合
+  let attrs = azimuth::Attributes::new()
+  attrs = azimuth::Attributes::set(attrs, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  attrs = azimuth::Attributes::set(attrs, "service.version", azimuth::AttributeValue::StringValue("2.1.0"))
+  attrs = azimuth::Attributes::set(attrs, "http.method", azimuth::AttributeValue::StringValue("POST"))
+  attrs = azimuth::Attributes::set(attrs, "http.status", azimuth::AttributeValue::IntValue(200))
+  attrs = azimuth::Attributes::set(attrs, "http.duration", azimuth::AttributeValue::FloatValue(150.5))
+  attrs = azimuth::Attributes::set(attrs, "user.id", azimuth::AttributeValue::StringValue("user-12345"))
+  attrs = azimuth::Attributes::set(attrs, "transaction.id", azimuth::AttributeValue::StringValue("txn-abcde"))
+  
+  // 测试精确匹配过滤器
+  let exact_filter = azimuth::ExactMatchFilter::new("service.name", "payment-service")
+  assert_true(azimuth::ExactMatchFilter::matches(exact_filter, attrs))
+  
+  let non_match_filter = azimuth::ExactMatchFilter::new("service.name", "order-service")
+  assert_false(azimuth::ExactMatchFilter::matches(non_match_filter, attrs))
+  
+  // 测试范围过滤器
+  let status_range_filter = azimuth::RangeFilter::new("http.status", 200, 299)
+  assert_true(azimuth::RangeFilter::matches(status_range_filter, attrs))
+  
+  let high_status_filter = azimuth::RangeFilter::new("http.status", 400, 499)
+  assert_false(azimuth::RangeFilter::matches(high_status_filter, attrs))
+  
+  let duration_filter = azimuth::RangeFilter::new("http.duration", 100.0, 200.0)
+  assert_true(azimuth::RangeFilter::matches(duration_filter, attrs))
+  
+  // 测试前缀过滤器
+  let prefix_filter = azimuth::PrefixFilter::new("user.id", "user-")
+  assert_true(azimuth::PrefixFilter::matches(prefix_filter, attrs))
+  
+  let wrong_prefix_filter = azimuth::PrefixFilter::new("user.id", "admin-")
+  assert_false(azimuth::PrefixFilter::matches(wrong_prefix_filter, attrs))
+  
+  // 测试复合过滤器（AND逻辑）
+  let and_filter = azimuth::AndFilter::new([
+    azimuth::ExactMatchFilter::new("service.name", "payment-service"),
+    azimuth::RangeFilter::new("http.status", 200, 299),
+    azimuth::PrefixFilter::new("user.id", "user-")
+  ])
+  assert_true(azimuth::AndFilter::matches(and_filter, attrs))
+  
+  let and_filter_fail = azimuth::AndFilter::new([
+    azimuth::ExactMatchFilter::new("service.name", "payment-service"),
+    azimuth::RangeFilter::new("http.status", 400, 499),
+    azimuth::PrefixFilter::new("user.id", "user-")
+  ])
+  assert_false(azimuth::AndFilter::matches(and_filter_fail, attrs))
+  
+  // 测试复合过滤器（OR逻辑）
+  let or_filter = azimuth::OrFilter::new([
+    azimuth::ExactMatchFilter::new("service.name", "order-service"),
+    azimuth::RangeFilter::new("http.status", 200, 299),
+    azimuth::PrefixFilter::new("admin.id", "admin-")
+  ])
+  assert_true(azimuth::OrFilter::matches(or_filter, attrs))
+  
+  let or_filter_fail = azimuth::OrFilter::new([
+    azimuth::ExactMatchFilter::new("service.name", "order-service"),
+    azimuth::RangeFilter::new("http.status", 400, 499),
+    azimuth::PrefixFilter::new("admin.id", "admin-")
+  ])
+  assert_false(azimuth::OrFilter::matches(or_filter_fail, attrs))
+}
+
+// 测试7: 高效属性聚合算法
+test "高效属性聚合算法测试" {
+  // 创建多个属性集合
+  let attrs1 = azimuth::Attributes::new()
+  attrs1 = azimuth::Attributes::set(attrs1, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  attrs1 = azimuth::Attributes::set(attrs1, "http.method", azimuth::AttributeValue::StringValue("POST"))
+  attrs1 = azimuth::Attributes::set(attrs1, "http.status", azimuth::AttributeValue::IntValue(200))
+  attrs1 = azimuth::Attributes::set(attrs1, "http.duration", azimuth::AttributeValue::FloatValue(120.5))
+  
+  let attrs2 = azimuth::Attributes::new()
+  attrs2 = azimuth::Attributes::set(attrs2, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  attrs2 = azimuth::Attributes::set(attrs2, "http.method", azimuth::AttributeValue::StringValue("GET"))
+  attrs2 = azimuth::Attributes::set(attrs2, "http.status", azimuth::AttributeValue::IntValue(200))
+  attrs2 = azimuth::Attributes::set(attrs2, "http.duration", azimuth::AttributeValue::FloatValue(85.2))
+  
+  let attrs3 = azimuth::Attributes::new()
+  attrs3 = azimuth::Attributes::set(attrs3, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  attrs3 = azimuth::Attributes::set(attrs3, "http.method", azimuth::AttributeValue::StringValue("POST"))
+  attrs3 = azimuth::Attributes::set(attrs3, "http.status", azimuth::AttributeValue::IntValue(400))
+  attrs3 = azimuth::Attributes::set(attrs3, "http.duration", azimuth::AttributeValue::FloatValue(45.8))
+  
+  let attrs4 = azimuth::Attributes::new()
+  attrs4 = azimuth::Attributes::set(attrs4, "service.name", azimuth::AttributeValue::StringValue("order-service"))
+  attrs4 = azimuth::Attributes::set(attrs4, "http.method", azimuth::AttributeValue::StringValue("POST"))
+  attrs4 = azimuth::Attributes::set(attrs4, "http.status", azimuth::AttributeValue::IntValue(200))
+  attrs4 = azimuth::Attributes::set(attrs4, "http.duration", azimuth::AttributeValue::FloatValue(200.3))
+  
+  let attributes_list = [attrs1, attrs2, attrs3, attrs4]
+  
+  // 测试按属性值分组聚合
+  let grouped_by_status = azimuth::AttributeAggregator::group_by(attributes_list, "http.status")
+  assert_eq(grouped_by_status.size(), 2) // 200和400两种状态码
+  
+  let status_200_group = grouped_by_status.get("200")
+  match status_200_group {
+    Some(group) => assert_eq(group.length(), 3)
+    None => assert_true(false)
+  }
+  
+  let status_400_group = grouped_by_status.get("400")
+  match status_400_group {
+    Some(group) => assert_eq(group.length(), 1)
+    None => assert_true(false)
+  }
+  
+  // 测试数值属性统计聚合
+  let duration_stats = azimuth::AttributeAggregator::aggregate_numeric(attributes_list, "http.duration")
+  assert_eq(duration_stats.count, 4)
+  assert_eq(duration_stats.sum, 120.5 + 85.2 + 45.8 + 200.3)
+  assert_eq(duration_stats.min, 45.8)
+  assert_eq(duration_stats.max, 200.3)
+  assert_eq(duration_stats.average, (120.5 + 85.2 + 45.8 + 200.3) / 4.0)
+  
+  // 测试分位数计算
+  let durations = [45.8, 85.2, 120.5, 200.3]
+  let p50 = azimuth::AttributeAggregator::percentile(durations, 0.5)
+  let p95 = azimuth::AttributeAggregator::percentile(durations, 0.95)
+  let p99 = azimuth::AttributeAggregator::percentile(durations, 0.99)
+  
+  assert_eq(p50, 102.85) // (85.2 + 120.5) / 2
+  assert_eq(p95, 200.3)
+  assert_eq(p99, 200.3)
+  
+  // 测试频率统计
+  let method_freq = azimuth::AttributeAggregator::frequency(attributes_list, "http.method")
+  assert_eq(method_freq.get("POST"), Some(3))
+  assert_eq(method_freq.get("GET"), Some(1))
+  assert_eq(method_freq.get("PUT"), None)
+}
+
+// 测试8: 高效属性转换算法
+test "高效属性转换算法测试" {
+  // 创建原始属性集合
+  let raw_attrs = azimuth::Attributes::new()
+  raw_attrs = azimuth::Attributes::set(raw_attrs, "http.status_code", azimuth::AttributeValue::IntValue(200))
+  raw_attrs = azimuth::Attributes::set(raw_attrs, "http.response_time_ms", azimuth::AttributeValue::IntValue(150))
+  raw_attrs = azimuth::Attributes::set(raw_attrs, "service.version", azimuth::AttributeValue::StringValue("1.2.3"))
+  raw_attrs = azimuth::Attributes::set(raw_attrs, "error.count", azimuth::AttributeValue::IntValue(0))
+  raw_attrs = azimuth::Attributes::set(raw_attrs, "memory.usage", azimuth::AttributeValue::IntValue(5242880)) // 字节
+  
+  // 定义转换规则
+  let transform_rules = [
+    // 将状态码转换为状态类别
+    ("http.status_code", azimuth::TransformRule::Category([
+      (100, 199, "informational"),
+      (200, 299, "success"),
+      (300, 399, "redirection"),
+      (400, 499, "client_error"),
+      (500, 599, "server_error")
+    ])),
     
-    // Initialize distances
-    for node in graph {
-      let distance = if node.id == start { 0 } else { 1000000 }  // Large number as infinity
-      distances = distances.insert(node.id, distance)
-      previous = previous.insert(node.id, None)
-      unvisited = unvisited.push(node.id)
-    }
+    // 将响应时间从毫秒转换为秒
+    ("http.response_time_ms", azimuth::TransformRule::UnitConversion("ms", "s", 0.001)),
     
-    while unvisited.length() > 0 {
-      // Find unvisited node with minimum distance
-      let mut min_distance = 1000000
-      let mut current = -1
-      let mut current_index = -1
-      
-      for i in 0..unvisited.length() {
-        let node_id = unvisited[i]
-        if distances[node_id] < min_distance {
-          min_distance = distances[node_id]
-          current = node_id
-          current_index = i
-        }
-      }
-      
-      if current == -1 or current == end {
-        break
-      }
-      
-      // Remove current from unvisited
-      let mut new_unvisited = []
-      for i in 0..unvisited.length() {
-        if i != current_index {
-          new_unvisited = new_unvisited.push(unvisited[i])
-        }
-      }
-      unvisited = new_unvisited
-      
-      // Update distances to neighbors
-      let mut current_node = None
-      for node in graph {
-        if node.id == current {
-          current_node = Some(node)
-          break
-        }
-      }
-      
-      match current_node {
-        Some(node) => {
-          for edge in node.edges {
-            let alt = distances[current] + edge.weight
-            if alt < distances[edge.to] {
-              distances = distances.insert(edge.to, alt)
-              previous = previous.insert(edge.to, Some(current))
-            }
-          }
-        }
-        None => {}
-      }
-    }
+    // 从版本字符串提取主版本号
+    ("service.version", azimuth::TransformRule::RegexExtract(r"(\d+)\.\d+\.\d+", "$1")),
     
-    // Reconstruct path
-    let mut path = []
-    let mut current = end
+    // 将错误计数转换为布尔标志
+    ("error.count", azimuth::TransformRule::Threshold(0, "no_error", "has_error")),
     
-    while true {
-      match previous[current] {
-        Some(prev) => {
-          path = [prev] + path
-          if prev == start {
-            path = path.push(end)
-            return {
-              distance: distances[end],
-              path
-            }
-          }
-          current = prev
-        }
-        None => {
-          if current == start {
-            return {
-              distance: 0,
-              path: [start]
-            }
-          } else {
-            return {
-              distance: -1,  // No path
-              path: []
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // Create test graph
-  let node1 = create_node(1)
-  let node2 = create_node(2)
-  let node3 = create_node(3)
-  let node4 = create_node(4)
-  let node5 = create_node(5)
-  let node6 = create_node(6)
-  
-  // Add edges
-  let graph = [
-    add_edge(add_edge(node1, 2, 7), 3, 9),
-    add_edge(add_edge(add_edge(node2, 1, 7), 3, 10), 4, 15),
-    add_edge(add_edge(add_edge(node3, 1, 9), 2, 10), 4, 11),
-    add_edge(add_edge(add_edge(node4, 2, 15), 3, 11), 5, 6),
-    add_edge(add_edge(node5, 4, 6), 6, 9),
-    create_node(6)  // No outgoing edges
+    // 将内存使用从字节转换为MB
+    ("memory.usage", azimuth::TransformRule::UnitConversion("bytes", "MB", 0.000001))
   ]
   
-  // Test shortest paths
-  let path_1_to_5 = dijkstra(graph, 1, 5)
-  assert_eq(path_1_to_5.distance, 26)  // 1->3->4->5
-  assert_eq(path_1_to_5.path, [1, 3, 4, 5])
+  // 应用转换规则
+  let transformed_attrs = azimuth::AttributeTransformer::transform(raw_attrs, transform_rules)
   
-  let path_1_to_4 = dijkstra(graph, 1, 4)
-  assert_eq(path_1_to_4.distance, 20)  // 1->3->4
-  assert_eq(path_1_to_4.path, [1, 3, 4])
+  // 验证转换结果
+  let status_category = azimuth::Attributes::get(transformed_attrs, "http.status_code.category")
+  match status_category {
+    Some(azimuth::AttributeValue::StringValue(category)) => assert_eq(category, "success")
+    _ => assert_true(false)
+  }
   
-  let path_2_to_5 = dijkstra(graph, 2, 5)
-  assert_eq(path_2_to_5.distance, 21)  // 2->4->5
-  assert_eq(path_2_to_5.path, [2, 4, 5])
+  let response_time_sec = azimuth::Attributes::get(transformed_attrs, "http.response_time_ms.s")
+  match response_time_sec {
+    Some(azimuth::AttributeValue::FloatValue(seconds)) => assert_eq(seconds, 0.15)
+    _ => assert_true(false)
+  }
   
-  let path_5_to_6 = dijkstra(graph, 5, 6)
-  assert_eq(path_5_to_6.distance, 9)
-  assert_eq(path_5_to_6.path, [5, 6])
+  let major_version = azimuth::Attributes::get(transformed_attrs, "service.version.major")
+  match major_version {
+    Some(azimuth::AttributeValue::StringValue(version)) => assert_eq(version, "1")
+    _ => assert_true(false)
+  }
   
-  // Test path to self
-  let path_3_to_3 = dijkstra(graph, 3, 3)
-  assert_eq(path_3_to_3.distance, 0)
-  assert_eq(path_3_to_3.path, [3])
+  let error_flag = azimuth::Attributes::get(transformed_attrs, "error.count.flag")
+  match error_flag {
+    Some(azimuth::AttributeValue::StringValue(flag)) => assert_eq(flag, "no_error")
+    _ => assert_true(false)
+  }
   
-  // Test no path (disconnected node)
-  let path_6_to_1 = dijkstra(graph, 6, 1)
-  assert_eq(path_6_to_1.distance, -1)
-  assert_eq(path_6_to_1.path, [])
+  let memory_mb = azimuth::Attributes::get(transformed_attrs, "memory.usage.MB")
+  match memory_mb {
+    Some(azimuth::AttributeValue::FloatValue(mb)) => assert_eq(mb, 5.24288)
+    _ => assert_true(false)
+  }
 }
 
-// Test 4: Dynamic Programming - Fibonacci Sequence
-test "dynamic programming fibonacci sequence" {
-  // Calculate Fibonacci using memoization
-  let fibonacci_memo = fn(n: Int, memo: Array[Option[Int]]) {
-    if n <= 1 {
-      return (n, memo)
-    }
-    
-    match memo[n] {
-      Some(value) => (value, memo),
-      None => {
-        let (fib1, memo1) = fibonacci_memo(n - 1, memo)
-        let (fib2, memo2) = fibonacci_memo(n - 2, memo1)
-        let result = fib1 + fib2
-        
-        // Update memo
-        let mut updated_memo = memo2
-        updated_memo[n] = Some(result)
-        
-        (result, updated_memo)
-      }
-    }
+// 测试9: 高效属性合并算法
+test "高效属性合并算法测试" {
+  // 创建多个属性集合，模拟不同来源的数据
+  let base_attrs = azimuth::Attributes::new()
+  base_attrs = azimuth::Attributes::set(base_attrs, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  base_attrs = azimuth::Attributes::set(base_attrs, "service.version", azimuth::AttributeValue::StringValue("1.0.0"))
+  base_attrs = azimuth::Attributes::set(base_attrs, "host.name", azimuth::AttributeValue::StringValue("host-001"))
+  
+  let runtime_attrs = azimuth::Attributes::new()
+  runtime_attrs = azimuth::Attributes::set(runtime_attrs, "service.version", azimuth::AttributeValue::StringValue("1.0.1")) // 覆盖基础版本
+  runtime_attrs = azimuth::Attributes::set(runtime_attrs, "runtime.start_time", azimuth::AttributeValue::StringValue("2023-01-01T00:00:00Z"))
+  runtime_attrs = azimuth::Attributes::set(runtime_attrs, "runtime.pid", azimuth::AttributeValue::IntValue(12345))
+  
+  let request_attrs = azimuth::Attributes::new()
+  request_attrs = azimuth::Attributes::set(request_attrs, "http.method", azimuth::AttributeValue::StringValue("POST"))
+  request_attrs = azimuth::Attributes::set(request_attrs, "http.url", azimuth::AttributeValue::StringValue("/api/payments"))
+  request_attrs = azimuth::Attributes::set(request_attrs, "http.status", azimuth::AttributeValue::IntValue(200))
+  
+  let user_attrs = azimuth::Attributes::new()
+  user_attrs = azimuth::Attributes::set(user_attrs, "user.id", azimuth::AttributeValue::StringValue("user-123"))
+  user_attrs = azimuth::Attributes::set(user_attrs, "user.role", azimuth::AttributeValue::StringValue("customer"))
+  user_attrs = azimuth::Attributes::set(user_attrs, "user.region", azimuth::AttributeValue::StringValue("us-west"))
+  
+  // 测试简单合并策略（后添加的覆盖先添加的）
+  let simple_merged = azimuth::AttributeMerger::merge_simple([base_attrs, runtime_attrs, request_attrs, user_attrs])
+  
+  // 验证合并结果
+  let service_name = azimuth::Attributes::get(simple_merged, "service.name")
+  match service_name {
+    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "payment-service")
+    _ => assert_true(false)
   }
   
-  // Calculate Fibonacci using tabulation (bottom-up)
-  let fibonacci_tabular = fn(n: Int) {
-    if n <= 1 {
-      return n
-    }
-    
-    let mut fib = []
-    for i in 0..(n + 1) {
-      fib = fib.push(0)
-    }
-    
-    fib[0] = 0
-    fib[1] = 1
-    
-    for i in 2..(n + 1) {
-      fib[i] = fib[i - 1] + fib[i - 2]
-    }
-    
-    fib[n]
+  let service_version = azimuth::Attributes::get(simple_merged, "service.version")
+  match service_version {
+    Some(azimuth::AttributeValue::StringValue(version)) => assert_eq(version, "1.0.1") // 应该是runtime_attrs中的版本
+    _ => assert_true(false)
   }
   
-  // Initialize memoization table
-  let init_memo = fn(size: Int) {
-    let mut memo = []
-    for i in 0..size {
-      memo = memo.push(None)
+  // 测试优先级合并策略
+  let priority_rules = [
+    ("user.", 10), // 用户属性优先级最高
+    ("request.", 8), // 请求属性次之
+    ("runtime.", 6), // 运行时属性再次之
+    ("base.", 4) // 基础属性优先级最低
+  ]
+  
+  let priority_merged = azimuth::AttributeMerger::merge_with_priority(
+    [base_attrs, runtime_attrs, request_attrs, user_attrs],
+    priority_rules
+  )
+  
+  // 验证优先级合并结果（应该与简单合并相同，因为属性键没有冲突）
+  let user_id = azimuth::Attributes::get(priority_merged, "user.id")
+  match user_id {
+    Some(azimuth::AttributeValue::StringValue(id)) => assert_eq(id, "user-123")
+    _ => assert_true(false)
+  }
+  
+  // 测试数组合并策略
+  let attrs_with_arrays1 = azimuth::Attributes::new()
+  attrs_with_arrays1 = azimuth::Attributes::set(attrs_with_arrays1, "tags", azimuth::AttributeValue::ArrayStringValue(["payment", "api", "v1"]))
+  
+  let attrs_with_arrays2 = azimuth::Attributes::new()
+  attrs_with_arrays2 = azimuth::Attributes::set(attrs_with_arrays2, "tags", azimuth::AttributeValue::ArrayStringValue(["critical", "production"]))
+  
+  let array_merged = azimuth::AttributeMerger::merge_with_array_strategy(
+    [attrs_with_arrays1, attrs_with_arrays2],
+    "union" // 合并策略：并集
+  )
+  
+  let merged_tags = azimuth::Attributes::get(array_merged, "tags")
+  match merged_tags {
+    Some(azimuth::AttributeValue::ArrayStringValue(tags)) => {
+      assert_eq(tags.length(), 5)
+      assert_true(tags.contains("payment"))
+      assert_true(tags.contains("api"))
+      assert_true(tags.contains("v1"))
+      assert_true(tags.contains("critical"))
+      assert_true(tags.contains("production"))
     }
-    memo
+    _ => assert_true(false)
   }
-  
-  // Test Fibonacci sequences
-  assert_eq(fibonacci_tabular(0), 0)
-  assert_eq(fibonacci_tabular(1), 1)
-  assert_eq(fibonacci_tabular(2), 1)
-  assert_eq(fibonacci_tabular(3), 2)
-  assert_eq(fibonacci_tabular(4), 3)
-  assert_eq(fibonacci_tabular(5), 5)
-  assert_eq(fibonacci_tabular(6), 8)
-  assert_eq(fibonacci_tabular(7), 13)
-  assert_eq(fibonacci_tabular(8), 21)
-  assert_eq(fibonacci_tabular(9), 34)
-  assert_eq(fibonacci_tabular(10), 55)
-  
-  // Test memoization
-  let memo = init_memo(20)
-  let (fib10, _) = fibonacci_memo(10, memo)
-  assert_eq(fib10, 55)
-  
-  let (fib15, _) = fibonacci_memo(15, init_memo(20))
-  assert_eq(fib15, 610)
-  
-  // Compare results
-  for i in 0..15 {
-    let tab_result = fibonacci_tabular(i)
-    let (memo_result, _) = fibonacci_memo(i, init_memo(20))
-    assert_eq(tab_result, memo_result)
-  }
-  
-  // Test edge cases
-  assert_eq(fibonacci_tabular(0), 0)
-  assert_eq(fibonacci_tabular(1), 1)
-  
-  // Test larger values
-  assert_eq(fibonacci_tabular(20), 6765)
-  assert_eq(fibonacci_tabular(25), 75025)
 }
 
-// Test 5: String Searching Algorithms
-test "string searching algorithms" {
-  // Naive string search
-  let naive_search = fn(text: String, pattern: String) {
-    let text_len = text.length()
-    let pattern_len = pattern.length()
-    
-    if pattern_len == 0 {
-      return Some(0)
-    }
-    
-    if pattern_len > text_len {
-      return None
-    }
-    
-    for i in 0..(text_len - pattern_len + 1) {
-      let mut match_found = true
-      
-      for j in 0..pattern_len {
-        if text[i + j] != pattern[j] {
-          match_found = false
-          break
-        }
-      }
-      
-      if match_found {
-        return Some(i)
+// 测试10: 高效属性缓存算法
+test "高效属性缓存算法测试" {
+  // 创建LRU缓存
+  let cache_size = 100
+  let mut cache = azimuth::AttributeCache::new_lru(cache_size)
+  
+  // 测试缓存存取
+  let key1 = "trace-001"
+  let value1 = azimuth::Attributes::new()
+  let value1_with_data = azimuth::Attributes::set(value1, "service.name", azimuth::AttributeValue::StringValue("payment-service"))
+  
+  // 存入缓存
+  cache = azimuth::AttributeCache::put(cache, key1, value1_with_data)
+  
+  // 从缓存获取
+  let cached_value1 = azimuth::AttributeCache::get(cache, key1)
+  match cached_value1 {
+    Some(attrs) => {
+      let service_name = azimuth::Attributes::get(attrs, "service.name")
+      match service_name {
+        Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "payment-service")
+        _ => assert_true(false)
       }
     }
-    
-    None
+    None => assert_true(false)
   }
   
-  // Knuth-Morris-Pratt (KMP) algorithm
-  let kmp_compute_lps = fn(pattern: String) {
-    let pattern_len = pattern.length()
-    let mut lps = []
-    
-    for i in 0..pattern_len {
-      lps = lps.push(0)
-    }
-    
-    let mut len = 0  // Length of previous longest prefix suffix
-    let mut i = 1
-    
-    while i < pattern_len {
-      if pattern[i] == pattern[len] {
-        len = len + 1
-        lps[i] = len
-        i = i + 1
-      } else {
-        if len != 0 {
-          len = lps[len - 1]
-        } else {
-          lps[i] = 0
-          i = i + 1
-        }
-      }
-    }
-    
-    lps
+  // 测试缓存未命中
+  let non_existent = azimuth::AttributeCache::get(cache, "non-existent-key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  let kmp_search = fn(text: String, pattern: String) {
-    let text_len = text.length()
-    let pattern_len = pattern.length()
-    
-    if pattern_len == 0 {
-      return Some(0)
-    }
-    
-    if pattern_len > text_len {
-      return None
-    }
-    
-    let lps = kmp_compute_lps(pattern)
-    let mut i = 0  // Index for text
-    let mut j = 0  // Index for pattern
-    
-    while i < text_len {
-      if text[i] == pattern[j] {
-        i = i + 1
-        j = j + 1
-        
-        if j == pattern_len {
-          return Some(i - j)
-        }
-      } else {
-        if j != 0 {
-          j = lps[j - 1]
-        } else {
-          i = i + 1
-        }
-      }
-    }
-    
-    None
+  // 测试缓存容量限制
+  for i in 0..150 {
+    let key = "trace-" + i.to_string()
+    let value = azimuth::Attributes::new()
+    let value_with_data = azimuth::Attributes::set(value, "index", azimuth::AttributeValue::IntValue(i))
+    cache = azimuth::AttributeCache::put(cache, key, value_with_data)
   }
   
-  // Rabin-Karp algorithm
-  let rabin_karp_search = fn(text: String, pattern: String) {
-    let text_len = text.length()
-    let pattern_len = pattern.length()
-    let prime = 101  // A prime number for modulus
-    
-    if pattern_len == 0 {
-      return Some(0)
-    }
-    
-    if pattern_len > text_len {
-      return None
-    }
-    
-    let mut pattern_hash = 0
-    let mut text_hash = 0
-    let mut h = 1
-    
-    // Calculate h = pow(d, pattern_len-1) % prime
-    for i in 0..(pattern_len - 1) {
-      h = (h * 256) % prime
-    }
-    
-    // Calculate initial hash values
-    for i in 0..pattern_len {
-      pattern_hash = (256 * pattern_hash + pattern[i].to_int()) % prime
-      text_hash = (256 * text_hash + text[i].to_int()) % prime
-    }
-    
-    // Slide the pattern over text
-    for i in 0..(text_len - pattern_len + 1) {
-      // Check hash values
-      if pattern_hash == text_hash {
-        // Check actual characters
-        let mut match_found = true
-        
-        for j in 0..pattern_len {
-          if text[i + j] != pattern[j] {
-            match_found = false
-            break
-          }
-        }
-        
-        if match_found {
-          return Some(i)
-        }
-      }
-      
-      // Calculate hash for next window
-      if i < (text_len - pattern_len) {
-        text_hash = (256 * (text_hash - text[i].to_int() * h) + text[i + pattern_len].to_int()) % prime
-        
-        if text_hash < 0 {
-          text_hash = text_hash + prime
-        }
-      }
-    }
-    
-    None
+  // 验证缓存大小不超过限制
+  let cache_size_after = azimuth::AttributeCache::size(cache)
+  assert_eq(cache_size_after, 100)
+  
+  // 验证最早的条目被淘汰（trace-0应该不在缓存中）
+  let evicted_value = azimuth::AttributeCache::get(cache, "trace-0")
+  match evicted_value {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Test string searching algorithms
-  let text = "ABABDABACDABABCABAB"
-  let pattern = "ABABCABAB"
+  // 验证最新的条目仍在缓存中（trace-149应该在缓存中）
+  let latest_value = azimuth::AttributeCache::get(cache, "trace-149")
+  match latest_value {
+    Some(attrs) => {
+      let index = azimuth::Attributes::get(attrs, "index")
+      match index {
+        Some(azimuth::AttributeValue::IntValue(i)) => assert_eq(i, 149)
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
   
-  // Test naive search
-  let naive_result = naive_search(text, pattern)
-  assert_eq(naive_result, Some(10))
+  // 测试缓存统计
+  let stats = azimuth::AttributeCache::stats(cache)
+  assert_eq(stats.hits, 1) // 我们之前成功获取了一次
+  assert_eq(stats.misses, 1) // 我们有一次未命中
+  assert_eq(stats.evictions, 50) // 应该淘汰了50个条目
   
-  // Test KMP search
-  let kmp_result = kmp_search(text, pattern)
-  assert_eq(kmp_result, Some(10))
+  // 测试缓存清空
+  let empty_cache = azimuth::AttributeCache::clear(cache)
+  assert_eq(azimuth::AttributeCache::size(empty_cache), 0)
   
-  // Test Rabin-Karp search
-  let rk_result = rabin_karp_search(text, pattern)
-  assert_eq(rk_result, Some(10))
-  
-  // Test with pattern at beginning
-  let pattern_begin = "ABABD"
-  assert_eq(naive_search(text, pattern_begin), Some(0))
-  assert_eq(kmp_search(text, pattern_begin), Some(0))
-  assert_eq(rabin_karp_search(text, pattern_begin), Some(0))
-  
-  // Test with pattern at end
-  let pattern_end = "ABAB"
-  assert_eq(naive_search(text, pattern_end), Some(15))
-  assert_eq(kmp_search(text, pattern_end), Some(15))
-  assert_eq(rabin_karp_search(text, pattern_end), Some(15))
-  
-  // Test with non-existing pattern
-  let pattern_nonexistent = "XYZ"
-  assert_eq(naive_search(text, pattern_nonexistent), None)
-  assert_eq(kmp_search(text, pattern_nonexistent), None)
-  assert_eq(rabin_karp_search(text, pattern_nonexistent), None)
-  
-  // Test with empty pattern
-  assert_eq(naive_search(text, ""), Some(0))
-  assert_eq(kmp_search(text, ""), Some(0))
-  assert_eq(rabin_karp_search(text, ""), Some(0))
-  
-  // Test with pattern longer than text
-  assert_eq(naive_search("short", "longerpattern"), None)
-  assert_eq(kmp_search("short", "longerpattern"), None)
-  assert_eq(rabin_karp_search("short", "longerpattern"), None)
-  
-  // Test with single character
-  assert_eq(naive_search("hello", "h"), Some(0))
-  assert_eq(kmp_search("hello", "h"), Some(0))
-  assert_eq(rabin_karp_search("hello", "h"), Some(0))
-  
-  // Test with repeated characters
-  let repeated_text = "AAAAAA"
-  let repeated_pattern = "AAA"
-  assert_eq(naive_search(repeated_text, repeated_pattern), Some(0))
-  assert_eq(kmp_search(repeated_text, repeated_pattern), Some(0))
-  assert_eq(rabin_karp_search(repeated_text, repeated_pattern), Some(0))
+  let value_after_clear = azimuth::AttributeCache::get(empty_cache, "trace-149")
+  match value_after_clear {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
 }
