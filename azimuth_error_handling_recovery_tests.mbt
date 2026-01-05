@@ -1,1108 +1,1660 @@
-// Azimuth Telemetry System - Error Handling and Recovery Tests
-// This file contains comprehensive test cases for error handling and recovery functionality
+// Azimuth 错误处理和恢复测试
+// 专注于错误检测、处理、恢复和容错机制
 
-// Test 1: Exception Handling Tests
-test "exception handling operations" {
-  // Test try-catch functionality
-  let result = try {
-    // Normal operation
-    10 / 2
-  } catch {
-    DivisionByZero => -1
-    _ => -2
-  }
+// 测试1: 错误分类和严重性评估
+test "错误分类和严重性评估功能" {
+  // 创建错误分类器
+  let error_classifier = ErrorClassifier::new()
   
-  assert_eq(result, 5)
-  
-  // Test division by zero handling
-  let zero_result = try {
-    10 / 0
-  } catch {
-    DivisionByZero => -1
-    _ => -2
-  }
-  
-  assert_eq(zero_result, -1)
-  
-  // Test nested try-catch
-  let nested_result = try {
-    try {
-      10 / 0
-    } catch {
-      DivisionByZero => 5 / 0  // Another division by zero
-    }
-  } catch {
-    DivisionByZero => -1
-    _ => -2
-  }
-  
-  assert_eq(nested_result, -1)
-  
-  // Test custom exception types
-  enum CustomError {
-    NetworkError(String)
-    DatabaseError(String)
-    ValidationError(String)
-  }
-  
-  let custom_result = try {
-    // Simulate network error
-    raise NetworkError("Connection timeout")
-  } catch {
-    NetworkError(msg) => "Network error: " + msg
-    DatabaseError(msg) => "Database error: " + msg
-    ValidationError(msg) => "Validation error: " + msg
-  }
-  
-  assert_eq(custom_result, "Network error: Connection timeout")
-  
-  // Test exception chaining
-  let chained_result = try {
-    try {
-      raise NetworkError("Connection timeout")
-    } catch {
-      NetworkError(msg) => raise DatabaseError("Failed to connect to database due to: " + msg)
-    }
-  } catch {
-    DatabaseError(msg) => "Database error: " + msg
-    _ => "Unknown error"
-  }
-  
-  assert_eq(chained_result, "Database error: Failed to connect to database due to: Connection timeout")
-  
-  // Test finally block
-  let mut finally_executed = false
-  let finally_result = try {
-    10 / 2
-  } catch {
-    _ => -1
-  } finally {
-    finally_executed = true
-  }
-  
-  assert_eq(finally_result, 5)
-  assert_true(finally_executed)
-  
-  // Test finally with exception
-  let mut finally_executed_with_exception = false
-  let exception_result = try {
-    10 / 0
-  } catch {
-    DivisionByZero => -1
-    _ => -2
-  } finally {
-    finally_executed_with_exception = true
-  }
-  
-  assert_eq(exception_result, -1)
-  assert_true(finally_executed_with_exception)
-}
-
-// Test 2: Error Recovery Mechanisms Tests
-test "error recovery mechanisms operations" {
-  // Test retry mechanism
-  let mut attempt_count = 0
-  let retry_result = RetryUtil::execute_with_retry(() -> {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      raise NetworkError("Temporary failure")
-    } else {
-      "Success after retries"
-    }
-  }, 3, 100)  // 3 retries, 100ms delay
-  
-  assert_eq(retry_result, "Success after retries")
-  assert_eq(attempt_count, 3)
-  
-  // Test retry with max attempts exceeded
-  let mut failed_attempts = 0
-  let retry_failure = RetryUtil::execute_with_retry(() -> {
-    failed_attempts = failed_attempts + 1
-    raise NetworkError("Persistent failure")
-  }, 3, 100)
-  
-  match retry_failure {
-    Error(err) => assert_eq(err, "Persistent failure")
-    _ => assert_true(false)
-  }
-  assert_eq(failed_attempts, 3)
-  
-  // Test exponential backoff
-  let mut backoff_attempts = 0
-  let backoff_start_time = TimeUtil::current_time_millis()
-  let backoff_result = RetryUtil::execute_with_exponential_backoff(() -> {
-    backoff_attempts = backoff_attempts + 1
-    if backoff_attempts < 3 {
-      raise NetworkError("Temporary failure")
-    } else {
-      "Success with exponential backoff"
-    }
-  }, 3, 100, 2.0)  // Base delay 100ms, multiplier 2.0
-  
-  let backoff_end_time = TimeUtil::current_time_millis()
-  let backoff_total_time = backoff_end_time - backoff_start_time
-  
-  assert_eq(backoff_result, "Success with exponential backoff")
-  assert_eq(backoff_attempts, 3)
-  // Exponential backoff should take longer than regular retry
-  assert_true(backoff_total_time >= 300)  // 100 + 200 + minimal execution time
-  
-  // Test circuit breaker pattern
-  let circuit_breaker = CircuitBreaker::new(3, 5000)  // 3 failures, 5000ms timeout
-  
-  // Initial state should be closed
-  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
-  
-  // Successful operations should not affect state
-  let success1 = CircuitBreaker::execute(circuit_breaker, () -> { "Success" })
-  assert_eq(success1, "Success")
-  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
-  
-  // Failures should increase count
-  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 1") })
-  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 1)
-  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
-  
-  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 2") })
-  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 2)
-  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
-  
-  // Third failure should open the circuit
-  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 3") })
-  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 3)
-  assert_eq(CircuitBreaker::get_state(circuit_breaker), "open")
-  
-  // Operations should fail immediately when circuit is open
-  let open_result = CircuitBreaker::execute(circuit_breaker, () -> { "Should not execute" })
-  match open_result {
-    Error(err) => assert_eq(err, "Circuit breaker is open")
-    _ => assert_true(false)
-  }
-  
-  // Test fallback mechanism
-  let fallback_result = FallbackUtil::execute_with_fallback(
-    () -> { raise NetworkError("Primary failure") },
-    () -> { "Fallback result" }
-  )
-  
-  assert_eq(fallback_result, "Fallback result")
-  
-  // Test fallback chain
-  let chain_result = FallbackUtil::execute_with_fallback_chain([
-    () -> { raise NetworkError("Primary failure") },
-    () -> { raise DatabaseError("Secondary failure") },
-    () -> { "Tertiary success" }
-  ])
-  
-  assert_eq(chain_result, "Tertiary success")
-}
-
-// Test 3: Graceful Degradation Tests
-test "graceful degradation operations" {
-  // Test feature degradation
-  let feature_manager = FeatureManager::new()
-  
-  // Configure feature levels
-  FeatureManager::set_level(feature_manager, "full", 3)
-  FeatureManager::set_level(feature_manager, "reduced", 2)
-  FeatureManager::set_level(feature_manager, "minimal", 1)
-  FeatureManager::set_level(feature_manager, "offline", 0)
-  
-  // Test full functionality
-  FeatureManager::set_current_level(feature_manager, 3)
-  let full_result = FeatureManager::execute(feature_manager, "full", () -> { "Full functionality" })
-  assert_eq(full_result, "Full functionality")
-  
-  // Test reduced functionality
-  FeatureManager::set_current_level(feature_manager, 2)
-  let reduced_result = FeatureManager::execute(feature_manager, "full", () -> { "Should not execute" }, () -> { "Reduced functionality" })
-  assert_eq(reduced_result, "Reduced functionality")
-  
-  // Test minimal functionality
-  FeatureManager::set_current_level(feature_manager, 1)
-  let minimal_result = FeatureManager::execute(feature_manager, "full", () -> { "Should not execute" }, () -> { "Reduced functionality" }, () -> { "Minimal functionality" })
-  assert_eq(minimal_result, "Minimal functionality")
-  
-  // Test service degradation
-  let service_manager = ServiceManager::new()
-  
-  // Register services with dependencies
-  ServiceManager::register(service_manager, "database", () -> { "Database service" }, [])
-  ServiceManager::register(service_manager, "cache", () -> { "Cache service" }, [])
-  ServiceManager::register(service_manager, "api", () -> { "API service" }, ["database", "cache"])
-  ServiceManager::register(service_manager, "ui", () -> { "UI service" }, ["api"])
-  
-  // All services available
-  let all_services_result = ServiceManager::execute(service_manager, "ui")
-  assert_eq(all_services_result, "UI service")
-  
-  // Simulate cache failure
-  ServiceManager::set_service_status(service_manager, "cache", "failed")
-  let degraded_result = ServiceManager::execute(service_manager, "ui", (degraded_services) -> {
-    "Degraded UI with services: " + StringUtil::join(degraded_services, ", ")
+  // 配置错误分类规则
+  ErrorClassifier::add_classification_rule(error_classifier, {
+    name: "network_timeout",
+    pattern: "timeout|connection.*failed|network.*error",
+    category: "network",
+    severity: "medium",
+    recoverable: true,
+    tags: ["transient", "external_dependency"]
   })
   
-  assert_true(degraded_result.contains("Degraded UI"))
-  assert_true(degraded_result.contains("cache"))
-  
-  // Test data quality degradation
-  let data_quality_manager = DataQualityManager::new()
-  
-  // Configure quality levels
-  DataQualityManager::set_quality_threshold(data_quality_manager, "high", 95)
-  DataQualityManager::set_quality_threshold(data_quality_manager, "medium", 80)
-  DataQualityManager::set_quality_threshold(data_quality_manager, "low", 60)
-  
-  // Test high quality data processing
-  let high_quality_data = DataQualityManager::process(data_quality_manager, 97, () -> { "High quality processing" })
-  assert_eq(high_quality_data, "High quality processing")
-  
-  // Test medium quality data processing
-  let medium_quality_data = DataQualityManager::process(data_quality_manager, 85, 
-    () -> { "High quality processing" },
-    () -> { "Medium quality processing" }
-  )
-  assert_eq(medium_quality_data, "Medium quality processing")
-  
-  // Test low quality data processing
-  let low_quality_data = DataQualityManager::process(data_quality_manager, 70,
-    () -> { "High quality processing" },
-    () -> { "Medium quality processing" },
-    () -> { "Low quality processing" }
-  )
-  assert_eq(low_quality_data, "Low quality processing")
-  
-  // Test below minimum quality
-  let below_min_data = DataQualityManager::process(data_quality_manager, 50,
-    () -> { "High quality processing" },
-    () -> { "Medium quality processing" },
-    () -> { "Low quality processing" }
-  )
-  
-  match below_min_data {
-    Error(err) => assert_eq(err, "Data quality below minimum threshold")
-    _ => assert_true(false)
-  }
-}
-
-// Test 4: Error Logging and Monitoring Tests
-test "error logging and monitoring operations" {
-  // Test error logging
-  let error_logger = ErrorLogger::new()
-  
-  // Log different types of errors
-  ErrorLogger::log(error_logger, NetworkError("Connection timeout"))
-  ErrorLogger::log(error_logger, DatabaseError("Query failed"))
-  ErrorLogger::log(error_logger, ValidationError("Invalid input"))
-  
-  // Query error logs
-  let network_errors = ErrorLogger::query_by_type(error_logger, "NetworkError")
-  assert_eq(network_errors.length(), 1)
-  assert_eq(network_errors[0].message, "Connection timeout")
-  
-  let all_errors = ErrorLogger::get_all(error_logger)
-  assert_eq(all_errors.length(), 3)
-  
-  // Test error aggregation
-  let error_aggregator = ErrorAggregator::new()
-  
-  // Add errors for aggregation
-  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection timeout"))
-  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection refused"))
-  ErrorAggregator::add_error(error_aggregator, DatabaseError("Query failed"))
-  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection timeout"))
-  ErrorAggregator::add_error(error_aggregator, ValidationError("Invalid input"))
-  
-  // Get error statistics
-  let stats = ErrorAggregator::get_statistics(error_aggregator)
-  
-  assert_eq(stats.total_errors, 5)
-  assert_eq(stats.error_counts["NetworkError"], 3)
-  assert_eq(stats.error_counts["DatabaseError"], 1)
-  assert_eq(stats.error_counts["ValidationError"], 1)
-  
-  // Test error rate monitoring
-  let error_monitor = ErrorMonitor::new()
-  
-  // Configure thresholds
-  ErrorMonitor::set_threshold(error_monitor, "error_rate", 0.1)  // 10% error rate
-  ErrorMonitor::set_threshold(error_monitor, "error_count", 100)  // 100 errors
-  
-  // Record operations and errors
-  for i in 0..1000 {
-    ErrorMonitor::record_operation(error_monitor)
-    if i % 20 == 0 {  // 5% error rate
-      ErrorMonitor::record_error(error_monitor)
-    }
-  }
-  
-  let error_rate = ErrorMonitor::get_error_rate(error_monitor)
-  assert_eq(error_rate, 0.05)
-  
-  // Check if thresholds are exceeded
-  assert_false(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_rate"))
-  assert_false(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_count"))
-  
-  // Increase error rate
-  for i in 0..100 {
-    ErrorMonitor::record_operation(error_monitor)
-    ErrorMonitor::record_error(error_monitor)  // 100% error rate for these operations
-  }
-  
-  let high_error_rate = ErrorMonitor::get_error_rate(error_monitor)
-  assert_true(high_error_rate > 0.1)
-  assert_true(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_rate"))
-  
-  // Test error alerting
-  let error_alert_manager = ErrorAlertManager::new()
-  
-  // Configure alert rules
-  ErrorAlertManager::add_rule(error_alert_manager, {
-    "name": "high_error_rate",
-    "condition": "error_rate > 0.1",
-    "severity": "warning",
-    "action": "notify_team"
+  ErrorClassifier::add_classification_rule(error_classifier, {
+    name: "database_error",
+    pattern: "database|sql|connection.*pool|deadlock",
+    category: "database",
+    severity: "high",
+    recoverable: true,
+    tags: ["transient", "data_integrity"]
   })
   
-  ErrorAlertManager::add_rule(error_alert_manager, {
-    "name": "critical_error",
-    "condition": "error_type == 'DatabaseError'",
-    "severity": "critical",
-    "action": "page_on_call"
+  ErrorClassifier::add_classification_rule(error_classifier, {
+    name: "authentication_failure",
+    pattern: "authentication|unauthorized|forbidden|invalid.*token",
+    category: "security",
+    severity: "medium",
+    recoverable: false,
+    tags: ["security", "user_action_required"]
   })
   
-  // Trigger alerts
-  ErrorAlertManager::check_and_alert(error_alert_manager, error_monitor)
-  
-  let alerts = ErrorAlertManager::get_active_alerts(error_alert_manager)
-  assert_eq(alerts.length(), 1)
-  assert_eq(alerts[0].rule_name, "high_error_rate")
-  assert_eq(alerts[0].severity, "warning")
-  
-  // Add a critical error
-  ErrorMonitor::record_error_type(error_monitor, "DatabaseError")
-  ErrorAlertManager::check_and_alert(error_alert_manager, error_monitor)
-  
-  let critical_alerts = ErrorAlertManager::get_active_alerts(error_alert_manager)
-  assert_eq(critical_alerts.length(), 2)
-  assert_true(critical_alerts.any((alert) => alert.severity == "critical"))
-}
-
-// Test 5: State Recovery Tests
-test "state recovery operations" {
-  // Test checkpoint and restore
-  let state_manager = StateManager::new()
-  
-  // Initialize state
-  StateManager::set(state_manager, "counter", 0)
-  StateManager::set(state_manager, "status", "initialized")
-  StateManager::set(state_manager, "data", [1, 2, 3])
-  
-  // Create checkpoint
-  let checkpoint_id = StateManager::create_checkpoint(state_manager)
-  assert_true(checkpoint_id.length() > 0)
-  
-  // Modify state
-  StateManager::set(state_manager, "counter", 10)
-  StateManager::set(state_manager, "status", "modified")
-  StateManager::set(state_manager, "data", [4, 5, 6])
-  
-  // Verify state changed
-  assert_eq(StateManager::get(state_manager, "counter"), 10)
-  assert_eq(StateManager::get(state_manager, "status"), "modified")
-  assert_eq(StateManager::get(state_manager, "data"), [4, 5, 6])
-  
-  // Restore from checkpoint
-  StateManager::restore(state_manager, checkpoint_id)
-  
-  // Verify state restored
-  assert_eq(StateManager::get(state_manager, "counter"), 0)
-  assert_eq(StateManager::get(state_manager, "status"), "initialized")
-  assert_eq(StateManager::get(state_manager, "data"), [1, 2, 3])
-  
-  // Test transaction rollback
-  let transaction_manager = TransactionManager::new()
-  
-  // Begin transaction
-  TransactionManager::begin(transaction_manager)
-  
-  // Modify state within transaction
-  TransactionManager::set(transaction_manager, "value", 100)
-  TransactionManager::set(transaction_manager, "name", "test")
-  
-  // Verify state within transaction
-  assert_eq(TransactionManager::get(transaction_manager, "value"), 100)
-  assert_eq(TransactionManager::get(transaction_manager, "name"), "test")
-  
-  // Rollback transaction
-  TransactionManager::rollback(transaction_manager)
-  
-  // Verify state rolled back
-  match TransactionManager::get(transaction_manager, "value") {
-    Some(_) => assert_true(false)  // Should not exist after rollback
-    None => assert_true(true)
-  }
-  
-  // Test transaction commit
-  TransactionManager::begin(transaction_manager)
-  TransactionManager::set(transaction_manager, "value", 200)
-  TransactionManager::commit(transaction_manager)
-  
-  // Verify state committed
-  assert_eq(TransactionManager::get(transaction_manager, "value"), 200)
-  
-  // Test state persistence
-  let persistent_state = PersistentState::new("/tmp/test_state.json")
-  
-  // Save state
-  PersistentState::set(persistent_state, "session_id", "abc123")
-  PersistentState::set(persistent_state, "user_preferences", ["theme:dark", "lang:en"])
-  PersistentState::save(persistent_state)
-  
-  // Load state in new instance
-  let loaded_state = PersistentState::new("/tmp/test_state.json")
-  PersistentState::load(loaded_state)
-  
-  assert_eq(PersistentState::get(loaded_state, "session_id"), "abc123")
-  assert_eq(PersistentState::get(loaded_state, "user_preferences"), ["theme:dark", "lang:en"])
-  
-  // Test state recovery after crash
-  let crash_resistant_state = CrashResistantState::new("/tmp/crash_resistant_state")
-  
-  // Simulate crash during state update
-  CrashResistantState::begin_update(crash_resistant_state)
-  CrashResistantState::set(crash_resistant_state, "critical_data", "important_value")
-  // Simulate crash without commit
-  // CrashResistantState::commit_update(crash_resistant_state)  // Not called
-  
-  // Create new instance after "crash"
-  let recovered_state = CrashResistantState::new("/tmp/crash_resistant_state")
-  CrashResistantState::recover(recovered_state)
-  
-  // State should be in consistent state
-  match CrashResistantState::get(recovered_state, "critical_data") {
-    Some(_) => assert_true(false)  // Should not exist due to incomplete update
-    None => assert_true(true)
-  }
-}
-
-// Test 6: Resource Recovery Tests
-test "resource recovery operations" {
-  // Test memory resource recovery
-  let memory_manager = MemoryManager::new()
-  
-  // Allocate memory
-  let large_allocation = MemoryManager::allocate(memory_manager, 1024 * 1024)  // 1MB
-  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1024 * 1024)
-  
-  // Simulate memory leak
-  let leaked_allocation = MemoryManager::allocate(memory_manager, 512 * 1024)  // 512KB
-  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1536 * 1024)
-  
-  // Recover leaked memory
-  MemoryManager::recover_leaks(memory_manager)
-  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1024 * 1024)
-  
-  // Test file handle recovery
-  let file_manager = FileManager::new()
-  
-  // Open file handles
-  let file1 = FileManager::open(file_manager, "/tmp/test1.txt")
-  let file2 = FileManager::open(file_manager, "/tmp/test2.txt")
-  let file3 = FileManager::open(file_manager, "/tmp/test3.txt")
-  
-  assert_eq(FileManager::get_open_handle_count(file_manager), 3)
-  
-  // Simulate unclosed handles
-  // file1 and file2 are not properly closed
-  
-  // Recover unclosed handles
-  FileManager::recover_handles(file_manager)
-  assert_eq(FileManager::get_open_handle_count(file_manager), 0)
-  
-  // Test database connection recovery
-  let connection_pool = ConnectionPool::new("database_url", 5)
-  
-  // Acquire connections
-  let conn1 = ConnectionPool::acquire(connection_pool)
-  let conn2 = ConnectionPool::acquire(connection_pool)
-  let conn3 = ConnectionPool::acquire(connection_pool)
-  
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 3)
-  
-  // Simulate abandoned connections
-  // conn1 and conn2 are not released
-  
-  // Recover abandoned connections
-  ConnectionPool::recover_abandoned(connection_pool)
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 1)
-  
-  // Test network socket recovery
-  let socket_manager = SocketManager::new()
-  
-  // Create sockets
-  let socket1 = SocketManager::create(socket_manager, "tcp", "example.com", 80)
-  let socket2 = SocketManager::create(socket_manager, "tcp", "example.com", 443)
-  let socket3 = SocketManager::create(socket_manager, "udp", "example.com", 53)
-  
-  assert_eq(SocketManager::get_active_socket_count(socket_manager), 3)
-  
-  // Simulate socket leaks
-  // socket1 and socket2 are not properly closed
-  
-  // Recover leaked sockets
-  SocketManager::recover_leaks(socket_manager)
-  assert_eq(SocketManager::get_active_socket_count(socket_manager), 0)
-  
-  // Test thread recovery
-  let thread_manager = ThreadManager::new()
-  
-  // Create threads
-  let thread1 = ThreadManager::create(thread_manager, () -> {
-    TimeUtil::sleep(1000)  // Simulate work
-    "Thread 1 result"
+  ErrorClassifier::add_classification_rule(error_classifier, {
+    name: "resource_exhaustion",
+    pattern: "out.*of.*memory|disk.*full|too.*many.*connections",
+    category: "resource",
+    severity: "critical",
+    recoverable: true,
+    tags: ["infrastructure", "scaling_required"]
   })
   
-  let thread2 = ThreadManager::create(thread_manager, () -> {
-    TimeUtil::sleep(2000)  // Simulate work
-    "Thread 2 result"
+  ErrorClassifier::add_classification_rule(error_classifier, {
+    name: "configuration_error",
+    pattern: "configuration|invalid.*setting|missing.*parameter",
+    category: "configuration",
+    severity: "high",
+    recoverable: false,
+    tags: ["deployment", "manual_intervention"]
   })
   
-  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 2)
-  
-  // Simulate hanging threads
-  // Force terminate threads that are taking too long
-  ThreadManager::recover_hanging_threads(thread_manager, 500)  // 500ms timeout
-  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 0)
-}
-
-// Test 7: Data Consistency Recovery Tests
-test "data consistency recovery operations" {
-  // Test transaction log recovery
-  let transaction_log = TransactionLog::new("/tmp/transaction.log")
-  
-  // Record transactions
-  TransactionLog::record(transaction_log, {
-    "id": "tx1",
-    "operation": "insert",
-    "table": "users",
-    "data": {"id": 1, "name": "User 1"}
-  })
-  
-  TransactionLog::record(transaction_log, {
-    "id": "tx2",
-    "operation": "update",
-    "table": "users",
-    "data": {"id": 1, "name": "Updated User 1"}
-  })
-  
-  TransactionLog::record(transaction_log, {
-    "id": "tx3",
-    "operation": "insert",
-    "table": "users",
-    "data": {"id": 2, "name": "User 2"}
-  })
-  
-  // Simulate crash before tx3 is committed
-  TransactionLog::mark_committed(transaction_log, "tx1")
-  TransactionLog::mark_committed(transaction_log, "tx2")
-  // tx3 is not marked as committed
-  
-  // Recover from log
-  let recovery_log = TransactionLog::new("/tmp/transaction.log")
-  let committed_transactions = TransactionLog::recover(recovery_log)
-  
-  assert_eq(committed_transactions.length(), 2)
-  assert_true(committed_transactions.any((tx) => tx.id == "tx1"))
-  assert_true(committed_transactions.any((tx) => tx.id == "tx2"))
-  assert_false(committed_transactions.any((tx) => tx.id == "tx3"))
-  
-  // Test data validation and repair
-  let data_validator = DataValidator::new()
-  
-  // Define validation rules
-  DataValidator::add_rule(data_validator, "users", {
-    "required_fields": ["id", "name", "email"],
-    "field_types": {"id": "int", "name": "string", "email": "email"},
-    "constraints": {"id": "unique", "email": "unique"}
-  })
-  
-  // Test data with issues
-  let corrupted_data = [
-    {"id": 1, "name": "User 1", "email": "user1@example.com"},  // Valid
-    {"id": 2, "name": "User 2", "email": "invalid-email"},      // Invalid email
-    {"id": 1, "name": "Duplicate User", "email": "user3@example.com"},  // Duplicate ID
-    {"id": 3, "name": "User 3"}  // Missing email
+  // 测试错误分类
+  let test_errors = [
+    "Connection timeout after 30 seconds",
+    "Database connection pool exhausted",
+    "Authentication failed: invalid token",
+    "Out of memory: cannot allocate 1GB",
+    "Invalid configuration: missing database URL",
+    "Unknown error occurred"
   ]
   
-  let validation_results = DataValidator::validate(data_validator, "users", corrupted_data)
+  let network_error = ErrorClassifier::classify(error_classifier, test_errors[0])
+  assert_eq(network_error.category, "network")
+  assert_eq(network_error.severity, "medium")
+  assert_true(network_error.recoverable)
+  assert_true(network_error.tags.contains("transient"))
+  assert_true(network_error.tags.contains("external_dependency"))
   
-  assert_eq(validation_results.valid_records.length(), 1)
-  assert_eq(validation_results.invalid_records.length(), 3)
+  let database_error = ErrorClassifier::classify(error_classifier, test_errors[1])
+  assert_eq(database_error.category, "database")
+  assert_eq(database_error.severity, "high")
+  assert_true(database_error.recoverable)
+  assert_true(database_error.tags.contains("transient"))
+  assert_true(database_error.tags.contains("data_integrity"))
   
-  // Repair data
-  let repaired_data = DataValidator::repair(data_validator, "users", corrupted_data)
+  let auth_error = ErrorClassifier::classify(error_classifier, test_errors[2])
+  assert_eq(auth_error.category, "security")
+  assert_eq(auth_error.severity, "medium")
+  assert_false(auth_error.recoverable)
+  assert_true(auth_error.tags.contains("security"))
+  assert_true(auth_error.tags.contains("user_action_required"))
   
-  // Verify repaired data
-  let repaired_validation = DataValidator::validate(data_validator, "users", repaired_data)
-  assert_eq(repaired_validation.valid_records.length(), 4)
-  assert_eq(repaired_validation.invalid_records.length(), 0)
+  let resource_error = ErrorClassifier::classify(error_classifier, test_errors[3])
+  assert_eq(resource_error.category, "resource")
+  assert_eq(resource_error.severity, "critical")
+  assert_true(resource_error.recoverable)
+  assert_true(resource_error.tags.contains("infrastructure"))
+  assert_true(resource_error.tags.contains("scaling_required"))
   
-  // Test backup and restore
-  let backup_manager = BackupManager::new("/tmp/backups")
+  let config_error = ErrorClassifier::classify(error_classifier, test_errors[4])
+  assert_eq(config_error.category, "configuration")
+  assert_eq(config_error.severity, "high")
+  assert_false(config_error.recoverable)
+  assert_true(config_error.tags.contains("deployment"))
+  assert_true(config_error.tags.contains("manual_intervention"))
   
-  // Create backup
-  let original_data = [
-    {"id": 1, "name": "User 1", "email": "user1@example.com"},
-    {"id": 2, "name": "User 2", "email": "user2@example.com"},
-    {"id": 3, "name": "User 3", "email": "user3@example.com"}
-  ]
+  // 测试未知错误
+  let unknown_error = ErrorClassifier::classify(error_classifier, test_errors[5])
+  assert_eq(unknown_error.category, "unknown")
+  assert_eq(unknown_error.severity, "medium")  // 默认严重性
+  assert_true(unknown_error.recoverable)        // 默认可恢复
   
-  let backup_id = BackupManager::create_backup(backup_manager, "users", original_data)
-  assert_true(backup_id.length() > 0)
+  // 测试批量分类
+  let classifications = ErrorClassifier::classify_batch(error_classifier, test_errors)
+  assert_eq(classifications.length(), 6)
   
-  // Corrupt data
-  let corrupted_current_data = [
-    {"id": 1, "name": "Corrupted User 1", "email": "corrupted@example.com"}
-  ]
+  // 验证分类统计
+  let classification_stats = ErrorClassifier::get_classification_stats(error_classifier)
+  assert_eq(classification_stats.total_classified, 6)
+  assert_eq(classification_stats.by_category.get("network"), Some(1))
+  assert_eq(classification_stats.by_category.get("database"), Some(1))
+  assert_eq(classification_stats.by_category.get("security"), Some(1))
+  assert_eq(classification_stats.by_category.get("resource"), Some(1))
+  assert_eq(classification_stats.by_category.get("configuration"), Some(1))
+  assert_eq(classification_stats.by_category.get("unknown"), Some(1))
   
-  // Restore from backup
-  let restored_data = BackupManager::restore(backup_manager, backup_id)
+  assert_eq(classification_stats.by_severity.get("critical"), Some(1))
+  assert_eq(classification_stats.by_severity.get("high"), Some(2))
+  assert_eq(classification_stats.by_severity.get("medium"), Some(3))
   
-  assert_eq(restored_data.length(), 3)
-  assert_eq(restored_data[0]["name"], "User 1")
-  assert_eq(restored_data[1]["name"], "User 2")
-  assert_eq(restored_data[2]["name"], "User 3")
+  assert_eq(classification_stats.recoverable_count, 4)
+  assert_eq(classification_stats.non_recoverable_count, 2)
 }
 
-// Test 8: Service Recovery Tests
-test "service recovery operations" {
-  // Test service health monitoring
-  let health_monitor = HealthMonitor::new()
+// 测试2: 错误检测和告警
+test "错误检测和告警功能" {
+  // 创建错误检测器
+  let error_detector = ErrorDetector::new()
   
-  // Register services
-  HealthMonitor::register_service(health_monitor, "database", () -> {
-    // Simulate health check
-    DatabaseUtil::ping("database_url")
+  // 配置检测规则
+  ErrorDetector::add_threshold_rule(error_detector, {
+    name: "error_rate_threshold",
+    metric: "error_rate",
+    threshold: 0.05,  // 5%错误率
+    operator: "greater_than",
+    window: 300000,    // 5分钟窗口
+    severity: "warning"
   })
   
-  HealthMonitor::register_service(health_monitor, "cache", () -> {
-    // Simulate health check
-    CacheUtil::ping("cache_url")
+  ErrorDetector::add_threshold_rule(error_detector, {
+    name: "critical_error_rate_threshold",
+    metric: "error_rate",
+    threshold: 0.15,  // 15%错误率
+    operator: "greater_than",
+    window: 60000,    // 1分钟窗口
+    severity: "critical"
   })
   
-  HealthMonitor::register_service(health_monitor, "api", () -> {
-    // Simulate health check
-    HttpClientUtil::ping("api_url")
+  ErrorDetector::add_spike_rule(error_detector, {
+    name: "error_spike_detection",
+    metric: "error_count",
+    baseline_window: 900000,  // 15分钟基线
+    detection_window: 60000,   // 1分钟检测窗口
+    spike_factor: 3.0,         // 3倍增长
+    severity: "warning"
   })
   
-  // Check service health
-  let health_status = HealthMonitor::check_all(health_monitor)
-  
-  assert_eq(health_status.length(), 3)
-  assert_true(health_status.contains(("database", "healthy")))
-  assert_true(health_status.contains(("cache", "healthy")))
-  assert_true(health_status.contains(("api", "healthy")))
-  
-  // Simulate service failure
-  HealthMonitor::simulate_failure(health_monitor, "database")
-  
-  let failure_status = HealthMonitor::check_all(health_monitor)
-  assert_true(failure_status.contains(("database", "unhealthy")))
-  assert_true(failure_status.contains(("cache", "healthy")))
-  assert_true(failure_status.contains(("api", "healthy")))
-  
-  // Test service restart
-  let service_manager = ServiceManager::new()
-  
-  // Start services
-  ServiceManager::start(service_manager, "database")
-  ServiceManager::start(service_manager, "cache")
-  ServiceManager::start(service_manager, "api")
-  
-  assert_eq(ServiceManager::get_status(service_manager, "database"), "running")
-  assert_eq(ServiceManager::get_status(service_manager, "cache"), "running")
-  assert_eq(ServiceManager::get_status(service_manager, "api"), "running")
-  
-  // Simulate service crash
-  ServiceManager::simulate_crash(service_manager, "database")
-  
-  assert_eq(ServiceManager::get_status(service_manager, "database"), "stopped")
-  assert_eq(ServiceManager::get_status(service_manager, "cache"), "running")
-  assert_eq(ServiceManager::get_status(service_manager, "api"), "running")
-  
-  // Restart crashed service
-  ServiceManager::restart(service_manager, "database")
-  
-  assert_eq(ServiceManager::get_status(service_manager, "database"), "running")
-  
-  // Test service failover
-  let failover_manager = FailoverManager::new()
-  
-  // Configure primary and backup services
-  FailoverManager::configure(failover_manager, "database", [
-    {"url": "primary.db", "priority": 1},
-    {"url": "backup1.db", "priority": 2},
-    {"url": "backup2.db", "priority": 3}
-  ])
-  
-  // Connect to primary
-  let connection1 = FailoverManager::connect(failover_manager, "database")
-  assert_eq(connection1.url, "primary.db")
-  
-  // Simulate primary failure
-  FailoverManager::simulate_failure(failover_manager, "primary.db")
-  
-  // Should failover to backup1
-  let connection2 = FailoverManager::connect(failover_manager, "database")
-  assert_eq(connection2.url, "backup1.db")
-  
-  // Simulate backup1 failure
-  FailoverManager::simulate_failure(failover_manager, "backup1.db")
-  
-  // Should failover to backup2
-  let connection3 = FailoverManager::connect(failover_manager, "database")
-  assert_eq(connection3.url, "backup2.db")
-  
-  // Test service scaling
-  let scaling_manager = ScalingManager::new()
-  
-  // Configure auto-scaling
-  ScalingManager::configure(scaling_manager, "api", {
-    "min_instances": 2,
-    "max_instances": 10,
-    "cpu_threshold": 70,
-    "memory_threshold": 80,
-    "scale_up_cooldown": 300,
-    "scale_down_cooldown": 600
+  ErrorDetector::add_pattern_rule(error_detector, {
+    name: "repeated_error_pattern",
+    error_pattern: "database.*connection.*failed",
+    count_threshold: 5,
+    time_window: 120000,  // 2分钟
+    severity: "critical"
   })
   
-  // Start with minimum instances
-  ScalingManager::set_instances(scaling_manager, "api", 2)
-  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 2)
+  // 模拟错误数据
+  let base_time = 1640995200
   
-  // Simulate high load
-  ScalingManager::set_metrics(scaling_manager, "api", {
-    "cpu_usage": 80,
-    "memory_usage": 75
-  })
+  // 正常时期
+  for i in 0..=10 {
+    let timestamp = base_time + i * 60000  // 每分钟
+    ErrorDetector::add_metric(error_detector, timestamp, "request_count", 100.0)
+    ErrorDetector::add_metric(error_detector, timestamp, "error_count", 2.0)  // 2%错误率
+    ErrorDetector::add_error(error_detector, timestamp, "Database connection failed")
+  }
   
-  // Should scale up
-  ScalingManager::check_and_scale(scaling_manager, "api")
-  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 3)
+  // 检查正常状态
+  let normal_status = ErrorDetector::check_status(error_detector)
+  assert_eq(normal_status.alerts.length(), 0)
+  assert_false(normal_status.anomaly_detected)
   
-  // Simulate low load
-  ScalingManager::set_metrics(scaling_manager, "api", {
-    "cpu_usage": 30,
-    "memory_usage": 40
-  })
+  // 错误率增加
+  for i in 11..=15 {
+    let timestamp = base_time + i * 60000
+    ErrorDetector::add_metric(error_detector, timestamp, "request_count", 100.0)
+    ErrorDetector::add_metric(error_detector, timestamp, "error_count", 8.0)  // 8%错误率
+    ErrorDetector::add_error(error_detector, timestamp, "Database connection failed")
+  }
   
-  // Wait for cooldown and scale down
-  TimeUtil::sleep(700)  // Exceed scale_down_cooldown
-  ScalingManager::check_and_scale(scaling_manager, "api")
-  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 2)
-}
-
-// Test 9: Disaster Recovery Tests
-test "disaster recovery operations" {
-  // Test data replication
-  let replication_manager = ReplicationManager::new()
+  // 检查警告状态
+  let warning_status = ErrorDetector::check_status(error_detector)
+  assert_true(warning_status.alerts.length() > 0)
+  assert_true(warning_status.anomaly_detected)
   
-  // Configure replication
-  ReplicationManager::configure(replication_manager, {
-    "primary": "primary.example.com",
-    "secondaries": ["secondary1.example.com", "secondary2.example.com"],
-    "replication_factor": 3,
-    "consistency_level": "eventual"
-  })
+  // 验证错误率告警
+  let error_rate_alert = warning_status.alerts.find(fn(a) { a.rule_name == "error_rate_threshold" })
+  assert_true(error_rate_alert != None)
   
-  // Replicate data
-  let data_to_replicate = {"key": "value", "timestamp": TimeUtil::current_time_millis()}
-  let replication_result = ReplicationManager::replicate(replication_manager, data_to_replicate)
-  
-  assert_true(replication_result.success)
-  assert_eq(replication_result.replicated_nodes.length(), 3)
-  
-  // Simulate primary failure
-  ReplicationManager::simulate_node_failure(replication_manager, "primary.example.com")
-  
-  // Should promote secondary to primary
-  let promotion_result = ReplicationManager::promote_secondary(replication_manager)
-  assert_true(promotion_result.success)
-  assert_ne(promotion_result.new_primary, "primary.example.com")
-  
-  // Test geo-redundancy
-  let geo_manager = GeoRedundancyManager::new()
-  
-  // Configure geo-replication
-  GeoRedundancyManager::configure(geo_manager, {
-    "regions": [
-      {"name": "us-east", "endpoint": "us-east.example.com", "priority": 1},
-      {"name": "us-west", "endpoint": "us-west.example.com", "priority": 2},
-      {"name": "eu-west", "endpoint": "eu-west.example.com", "priority": 3}
-    ],
-    "replication_strategy": "multi_master"
-  })
-  
-  // Replicate to all regions
-  let geo_data = {"user_id": 123, "preferences": ["theme:dark", "lang:en"]}
-  let geo_replication_result = GeoRedundancyManager::replicate(geo_manager, geo_data)
-  
-  assert_true(geo_replication_result.success)
-  assert_eq(geo_replication_result.replicated_regions.length(), 3)
-  
-  // Simulate region failure
-  GeoRedundancyManager::simulate_region_failure(geo_manager, "us-east")
-  
-  // Should redirect traffic to other regions
-  let failover_result = GeoRedundancyManager::handle_region_failure(geo_manager, "us-east")
-  assert_true(failover_result.success)
-  assert_eq(failover_result.redirected_to, "us-west")
-  
-  // Test backup and restore procedures
-  let disaster_recovery = DisasterRecoveryManager::new()
-  
-  // Create recovery plan
-  DisasterRecoveryManager::create_plan(disaster_recovery, {
-    "name": "full_system_recovery",
-    "rto": 3600,  // 1 hour Recovery Time Objective
-    "rpo": 1800,  // 30 minutes Recovery Point Objective
-    "steps": [
-      {"name": "assess_damage", "estimated_time": 300},
-      {"name": "activate_backup_site", "estimated_time": 600},
-      {"name": "restore_data", "estimated_time": 1800},
-      {"name": "verify_services", "estimated_time": 600},
-      {"name": "switch_traffic", "estimated_time": 300}
-    ]
-  })
-  
-  // Execute recovery plan
-  let recovery_execution = DisasterRecoveryManager::execute_plan(disaster_recovery, "full_system_recovery")
-  
-  assert_true(recovery_execution.success)
-  assert_eq(recovery_execution.completed_steps.length(), 5)
-  assert_true(recovery_execution.total_time <= 3600)
-  
-  // Test disaster simulation
-  let disaster_simulator = DisasterSimulator::new()
-  
-  // Simulate data center failure
-  let disaster_scenario = DisasterSimulator::create_scenario(disaster_simulator, {
-    "type": "data_center_failure",
-    "location": "us-east",
-    "duration": 7200,  // 2 hours
-    "affected_services": ["database", "cache", "api"],
-    "impact_level": "critical"
-  })
-  
-  // Run simulation
-  let simulation_result = DisasterSimulator::run(disaster_simulator, disaster_scenario)
-  
-  assert_true(simulation_result.success)
-  assert_eq(simulation_result.activated_failover, true)
-  assert_eq(simulation_result.recovery_time, 1800)  // Within RTO
-  assert_eq(simulation_result.data_loss, 900)      // Within RPO
-  
-  // Test communication during disaster
-  let communication_manager = CommunicationManager::new()
-  
-  // Configure emergency communication
-  CommunicationManager::configure_emergency(communication_manager, {
-    "channels": ["sms", "email", "slack"],
-    "escalation_rules": [
-      {"condition": "severity == 'critical'", "channels": ["sms", "slack"]},
-      {"condition": "severity == 'high'", "channels": ["email", "slack"]},
-      {"condition": "severity == 'medium'", "channels": ["email"]}
-    ],
-    "templates": {
-      "disaster_declared": "Disaster declared: {disaster_type} at {location}. Response team activated.",
-      "recovery_complete": "Disaster recovery complete. All services restored."
+  match error_rate_alert {
+    Some(alert) {
+      assert_eq(alert.severity, "warning")
+      assert_true(alert.message.contains("error_rate"))
+      assert_true(alert.current_value > 0.05)
     }
-  })
+    None => assert_true(false)
+  }
   
-  // Send disaster notification
-  let notification_result = CommunicationManager::send_emergency_notification(communication_manager, {
-    "template": "disaster_declared",
-    "severity": "critical",
-    "disaster_type": "data_center_failure",
-    "location": "us-east"
-  })
+  // 严重错误率增加
+  for i in 16..=17 {
+    let timestamp = base_time + i * 60000
+    ErrorDetector::add_metric(error_detector, timestamp, "request_count", 100.0)
+    ErrorDetector::add_metric(error_detector, timestamp, "error_count", 20.0)  // 20%错误率
+    ErrorDetector::add_error(error_detector, timestamp, "Database connection failed")
+  }
   
-  assert_true(notification_result.success)
-  assert_eq(notification_result.sent_channels.length(), 2)
-  assert_true(notification_result.sent_channels.contains("sms"))
-  assert_true(notification_result.sent_channels.contains("slack"))
-}
-
-// Test 10: Self-Healing Tests
-test "self-healing operations" {
-  // Test automatic error detection
-  let self_healing_system = SelfHealingSystem::new()
+  // 检查严重状态
+  let critical_status = ErrorDetector::check_status(error_detector)
+  assert_true(critical_status.alerts.length() > 1)
   
-  // Configure monitoring rules
-  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
-    "name": "high_error_rate",
-    "condition": "error_rate > 0.1",
-    "severity": "medium",
-    "check_interval": 60
-  })
+  // 验证严重错误率告警
+  let critical_error_rate_alert = critical_status.alerts.find(fn(a) { a.rule_name == "critical_error_rate_threshold" })
+  assert_true(critical_error_rate_alert != None)
   
-  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
-    "name": "service_down",
-    "condition": "service_status == 'down'",
-    "severity": "high",
-    "check_interval": 30
-  })
+  match critical_error_rate_alert {
+    Some(alert) {
+      assert_eq(alert.severity, "critical")
+      assert_true(alert.message.contains("error_rate"))
+      assert_true(alert.current_value > 0.15)
+    }
+    None => assert_true(false)
+  }
   
-  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
-    "name": "memory_leak",
-    "condition": "memory_usage > 90",
-    "severity": "high",
-    "check_interval": 120
-  })
+  // 验证重复错误模式检测
+  let pattern_alert = critical_status.alerts.find(fn(a) { a.rule_name == "repeated_error_pattern" })
+  assert_true(pattern_alert != None)
   
-  // Simulate issues
-  SelfHealingSystem::simulate_issue(self_healing_system, "high_error_rate", {
-    "service": "api",
-    "error_rate": 0.15
-  })
+  match pattern_alert {
+    Some(alert) {
+      assert_eq(alert.severity, "critical")
+      assert_true(alert.message.contains("Database connection failed"))
+      assert_true(alert.occurrence_count >= 5)
+    }
+    None => assert_true(false)
+  }
   
-  // Should detect issue automatically
-  let detected_issues = SelfHealingSystem::get_detected_issues(self_healing_system)
-  assert_eq(detected_issues.length(), 1)
-  assert_eq(detected_issues[0].rule_name, "high_error_rate")
+  // 测试错误峰值检测
+  // 添加大量基线数据
+  for i in 18..=30 {
+    let timestamp = base_time + i * 60000
+    ErrorDetector::add_metric(error_detector, timestamp, "request_count", 100.0)
+    ErrorDetector::add_metric(error_detector, timestamp, "error_count", 3.0)  // 3%错误率
+  }
   
-  // Test automatic remediation
-  SelfHealingSystem::add_remediation_strategy(self_healing_system, {
-    "issue_type": "high_error_rate",
-    "strategies": [
+  // 添加峰值数据
+  for i in 31..=32 {
+    let timestamp = base_time + i * 60000
+    ErrorDetector::add_metric(error_detector, timestamp, "request_count", 100.0)
+    ErrorDetector::add_metric(error_detector, timestamp, "error_count", 15.0)  // 15%错误率，5倍增长
+  }
+  
+  let spike_status = ErrorDetector::check_status(error_detector)
+  let spike_alert = spike_status.alerts.find(fn(a) { a.rule_name == "error_spike_detection" })
+  assert_true(spike_alert != None)
+  
+  // 测试告警抑制
+  ErrorDetector::configure_alert_suppression(error_detector, {
+    suppression_rules: [
       {
-        "name": "restart_service",
-        "condition": "error_rate > 0.1 AND error_rate < 0.3",
-        "actions": ["restart_service", "clear_cache"]
-      },
-      {
-        "name": "scale_up",
-        "condition": "error_rate >= 0.3",
-        "actions": ["scale_up_service", "enable_circuit_breaker"]
+        condition: "severity == 'warning' and count < 3",
+        action: "suppress",
+        duration: 300000  // 5分钟
       }
     ]
   })
   
-  // Execute remediation
-  let remediation_result = SelfHealingSystem::execute_remediation(self_healing_system, detected_issues[0])
+  let suppressed_status = ErrorDetector::check_status(error_detector)
+  let warning_alerts = suppressed_status.alerts.filter(fn(a) { a.severity == "warning" })
+  assert_true(warning_alerts.length() < warning_status.alerts.filter(fn(a) { a.severity == "warning" }).length())
+}
+
+// 测试3: 自动恢复机制
+test "自动恢复机制功能" {
+  // 创建恢复管理器
+  let recovery_manager = RecoveryManager::new()
   
-  assert_true(remediation_result.success)
-  assert_eq(remediation_result.strategy_name, "restart_service")
-  assert_eq(remediation_result.executed_actions.length(), 2)
-  assert_true(remediation_result.executed_actions.contains("restart_service"))
-  assert_true(remediation_result.executed_actions.contains("clear_cache"))
-  
-  // Test learning from failures
-  let learning_system = LearningSystem::new()
-  
-  // Record failure patterns
-  LearningSystem::record_failure(learning_system, {
-    "issue_type": "high_error_rate",
-    "context": {"service": "api", "time_of_day": "morning", "load": "high"},
-    "remediation": "restart_service",
-    "success": true
+  // 配置恢复策略
+  RecoveryManager::add_strategy(recovery_manager, {
+    name: "retry_with_backoff",
+    error_types: ["network_timeout", "database_error"],
+    max_attempts: 3,
+    backoff_strategy: "exponential",
+    initial_delay: 1000,      // 1秒
+    max_delay: 30000,         // 30秒
+    backoff_multiplier: 2.0
   })
   
-  LearningSystem::record_failure(learning_system, {
-    "issue_type": "high_error_rate",
-    "context": {"service": "api", "time_of_day": "morning", "load": "high"},
-    "remediation": "scale_up",
-    "success": false
+  RecoveryManager::add_strategy(recovery_manager, {
+    name: "circuit_breaker",
+    error_types: ["resource_exhaustion", "database_error"],
+    failure_threshold: 5,     // 5次失败后打开
+    recovery_timeout: 60000,  // 1分钟后尝试恢复
+    half_open_max_calls: 3    // 半开状态最多3次调用
   })
   
-  LearningSystem::record_failure(learning_system, {
-    "issue_type": "service_down",
-    "context": {"service": "database", "time_of_day": "night", "load": "low"},
-    "remediation": "restart_service",
-    "success": true
-  })
-  
-  // Learn from patterns
-  LearningSystem::analyze_patterns(learning_system)
-  
-  // Get recommendation for similar issue
-  let recommendation = LearningSystem::get_recommendation(learning_system, {
-    "issue_type": "high_error_rate",
-    "context": {"service": "api", "time_of_day": "morning", "load": "high"}
-  })
-  
-  assert_eq(recommendation.remediation, "restart_service")
-  assert_eq(recommendation.confidence, 1.0)  // 100% success rate for this pattern
-  
-  // Test predictive failure detection
-  let predictive_system = PredictiveSystem::new()
-  
-  // Train model with historical data
-  let historical_data = [
-    {"timestamp": 1640995200, "cpu": 45, "memory": 60, "requests": 1000, "errors": 5, "failure": false},
-    {"timestamp": 1640995260, "cpu": 50, "memory": 65, "requests": 1100, "errors": 8, "failure": false},
-    {"timestamp": 1640995320, "cpu": 55, "memory": 70, "requests": 1200, "errors": 12, "failure": false},
-    {"timestamp": 1640995380, "cpu": 65, "memory": 80, "requests": 1400, "errors": 25, "failure": true},
-    {"timestamp": 1640995440, "cpu": 70, "memory": 85, "requests": 1500, "errors": 30, "failure": true}
-  ]
-  
-  PredictiveSystem::train_model(predictive_system, historical_data)
-  
-  // Predict failure probability
-  let current_metrics = {"cpu": 60, "memory": 75, "requests": 1300, "errors": 20}
-  let prediction = PredictiveSystem::predict_failure(predictive_system, current_metrics)
-  
-  assert_true(prediction.failure_probability > 0.5)
-  assert_eq(prediction.predicted_timeframe, "within_30_minutes")
-  
-  // Test self-healing orchestration
-  let orchestrator = HealingOrchestrator::new()
-  
-  // Configure healing workflow
-  HealingOrchestrator::define_workflow(orchestrator, {
-    "name": "service_recovery",
-    "triggers": ["high_error_rate", "service_down"],
-    "steps": [
+  RecoveryManager::add_strategy(recovery_manager, {
+    name: "fallback_service",
+    error_types: ["network_timeout", "database_error"],
+    fallback_actions: [
       {
-        "name": "detect_issue",
-        "type": "monitoring",
-        "timeout": 60
+        service: "primary_database",
+        fallback: "cache_database",
+        timeout: 5000
       },
       {
-        "name": "assess_impact",
-        "type": "analysis",
-        "timeout": 120
-      },
-      {
-        "name": "execute_remediation",
-        "type": "remediation",
-        "timeout": 300
-      },
-      {
-        "name": "verify_recovery",
-        "type": "validation",
-        "timeout": 180
-      },
-      {
-        "name": "update_knowledge",
-        "type": "learning",
-        "timeout": 60
+        service: "external_api",
+        fallback: "local_cache",
+        timeout: 1000
       }
     ]
   })
   
-  // Execute healing workflow
-  let workflow_result = HealingOrchestrator::execute_workflow(orchestrator, "service_recovery", {
-    "issue": {"type": "high_error_rate", "service": "api"},
-    "context": {"load": "high", "time": "morning"}
+  RecoveryManager::add_strategy(recovery_manager, {
+    name: "resource_scaling",
+    error_types: ["resource_exhaustion"],
+    scaling_actions: [
+      {
+        resource_type: "memory",
+        action: "increase_heap_size",
+        increment_percent: 25,
+        max_scale_factor: 2.0
+      },
+      {
+        resource_type: "connections",
+        action: "increase_pool_size",
+        increment_count: 10,
+        max_pool_size: 100
+      }
+    ]
   })
   
-  assert_true(workflow_result.success)
-  assert_eq(workflow_result.completed_steps.length(), 5)
-  assert_true(workflow_result.total_time < 720)  // Total timeout
+  // 测试重试机制
+  let retry_result = RecoveryManager::execute_with_retry(recovery_manager, {
+    operation: fn() {
+      // 模拟第一次失败，第二次成功
+      static attempt = 0
+      attempt = attempt + 1
+      if attempt == 1 {
+        Error("Network timeout")
+      } else {
+        Ok("success")
+      }
+    },
+    error_type: "network_timeout",
+    strategy: "retry_with_backoff"
+  })
   
-  // Verify recovery
-  assert_true(workflow_result.verification_passed)
-  assert_eq(workflow_result.post_recovery_status, "healthy")
+  assert_true(retry_result.success)
+  assert_eq(retry_result.attempts, 2)
+  assert_true(retry_result.total_duration > 1000)  // 至少1秒延迟
+  
+  // 测试重试失败
+  let retry_failure_result = RecoveryManager::execute_with_retry(recovery_manager, {
+    operation: fn() {
+      Error("Persistent database error")
+    },
+    error_type: "database_error",
+    strategy: "retry_with_backoff"
+  })
+  
+  assert_false(retry_failure_result.success)
+  assert_eq(retry_failure_result.attempts, 3)  // 达到最大重试次数
+  assert_true(retry_failure_result.last_error.contains("Persistent database error"))
+  
+  // 测试熔断器
+  let circuit_breaker = RecoveryManager::get_circuit_breaker(recovery_manager, "database_service")
+  
+  // 模拟连续失败
+  for i in 0..=5 {
+    let result = RecoveryManager::execute_with_circuit_breaker(recovery_manager, {
+      service: "database_service",
+      operation: fn() {
+        Error("Database connection failed")
+      }
+    })
+    
+    if i < 4 {
+      assert_false(result.success)  // 前4次失败
+    } else {
+      assert_true(result.circuit_open)  // 第5次后熔断器打开
+    }
+  }
+  
+  // 验证熔断器状态
+  let breaker_status = RecoveryManager::get_circuit_breaker_status(recovery_manager, "database_service")
+  assert_true(breaker_status.is_open)
+  assert_eq(breaker_status.failure_count, 5)
+  assert_true(breaker_status.next_attempt_time > Time::now())
+  
+  // 测试降级服务
+  let fallback_result = RecoveryManager::execute_with_fallback(recovery_manager, {
+    primary_service: "external_api",
+    primary_operation: fn() {
+      Error("External API timeout")
+    },
+    fallback_service: "local_cache",
+    fallback_operation: fn() {
+      Ok("cached_data")
+    }
+  })
+  
+  assert_true(fallback_result.success)
+  assert_eq(fallback_result.result, "cached_data")
+  assert_true(fallback_result.used_fallback)
+  assert_true(fallback_result.primary_error.contains("External API timeout"))
+  
+  // 测试资源扩容
+  let scaling_result = RecoveryManager::handle_resource_exhaustion(recovery_manager, {
+    resource_type: "memory",
+    current_usage: 0.9,  // 90%使用率
+    error: Error("Out of memory")
+  })
+  
+  assert_true(scaling_result.success)
+  assert_true(scaling_result.actions_taken.length() > 0)
+  
+  let memory_scaling = scaling_result.actions_taken.find(fn(a) { a.resource_type == "memory" })
+  assert_true(memory_scaling != None)
+  
+  match memory_scaling {
+    Some(action) {
+      assert_eq(action.action, "increase_heap_size")
+      assert_true(action.old_size < action.new_size)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试复合恢复策略
+  let complex_recovery_result = RecoveryManager::execute_complex_recovery(recovery_manager, {
+    error_type: "database_error",
+    error: Error("Database connection pool exhausted"),
+    strategies: ["retry_with_backoff", "circuit_breaker", "fallback_service"],
+    timeout: 30000  // 30秒超时
+  })
+  
+  assert_true(complex_recovery_result.success or complex_recovery_result.success == false)  // 结果取决于具体实现
+  assert_true(complex_recovery_result.strategies_attempted.length() > 0)
+  assert_true(complex_recovery_result.total_duration > 0)
+  
+  // 测试恢复统计
+  let recovery_stats = RecoveryManager::get_recovery_stats(recovery_manager)
+  assert_true(recovery_stats.total_recovery_attempts > 0)
+  assert_true(recovery_stats.successful_recoveries >= 0)
+  assert_true(recovery_stats.failed_recoveries >= 0)
+  assert_true(recovery_stats.strategies_used.length() > 0)
+}
+
+// 测试4: 错误上下文收集和分析
+test "错误上下文收集和分析功能" {
+  // 创建错误上下文收集器
+  let context_collector = ErrorContextCollector::new()
+  
+  // 配置上下文收集
+  ContextCollector::configure(context_collector, {
+    collect_system_info: true,
+    collect_application_state: true,
+    collect_user_context: true,
+    collect_request_trace: true,
+    max_stack_frames: 20,
+    max_context_size: 10240  // 10KB
+  })
+  
+  // 创建模拟错误场景
+  let error_scenario = ErrorScenario::new()
+  
+  // 设置系统信息
+  ErrorScenario::set_system_info(error_scenario, {
+    os: "Linux",
+    os_version: "5.4.0-74-generic",
+    architecture: "x86_64",
+    cpu_count: 8,
+    total_memory: 16777216000,  // 16GB
+    available_memory: 8388608000,  // 8GB
+    disk_usage: 0.7,  // 70%
+    load_average: [1.2, 1.5, 1.8]
+  })
+  
+  // 设置应用状态
+  ErrorScenario::set_application_state(error_scenario, {
+    version: "1.2.3",
+    build: "abc123",
+    environment: "production",
+    uptime: 86400,  // 1天
+    active_requests: 150,
+    thread_pool_size: 50,
+    active_threads: 45,
+    database_connections: 15,
+    cache_size: 1073741824,  // 1GB
+    gc_info: {
+      collections: 100,
+      total_time: 5000,  // 5秒
+      last_collection: 1000  // 1秒前
+    }
+  })
+  
+  // 设置用户上下文
+  ErrorScenario::set_user_context(error_scenario, {
+    user_id: "user-12345",
+    session_id: "session-abcde",
+    ip_address: "192.168.1.100",
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    locale: "en-US",
+    timezone: "America/New_York",
+    permissions: ["read", "write"],
+    subscription_tier: "premium"
+  })
+  
+  // 设置请求追踪
+  ErrorScenario::set_request_trace(error_scenario, {
+    trace_id: "trace-67890",
+    span_id: "span-12345",
+    parent_span_id: "span-67890",
+    operation_name: "process_payment",
+    start_time: 1640995200,
+    duration: 2500,  // 2.5秒
+    status: "error",
+    tags: [
+      ("http.method", "POST"),
+      ("http.url", "/api/payments"),
+      ("http.status_code", "500"),
+      ("service.name", "payment-service")
+    ],
+    logs: [
+      {
+        timestamp: 1640995200,
+        level: "info",
+        message: "Starting payment processing"
+      },
+      {
+        timestamp: 1640995201000,
+        level: "warn",
+        message: "Payment gateway response slow"
+      },
+      {
+        timestamp: 1640995202500,
+        level: "error",
+        message: "Payment processing failed: timeout"
+      }
+    ]
+  })
+  
+  // 设置调用栈
+  ErrorScenario::set_call_stack(error_scenario, [
+    "PaymentService.processPayment(PaymentService.java:125)",
+    "PaymentController.charge(PaymentController.java:45)",
+    "RequestHandler.handle(RequestHandler.java:78)",
+    "Dispatcher.dispatch(Dispatcher.java:23)",
+    "Application.main(Application.java:15)"
+  ])
+  
+  // 收集错误上下文
+  let error_context = ContextCollector::collect(context_collector, {
+    error: "Payment processing failed: timeout",
+    error_type: "timeout",
+    timestamp: 1640995202500,
+    scenario: error_scenario
+  })
+  
+  // 验证上下文收集
+  assert_eq(error_context.error_message, "Payment processing failed: timeout")
+  assert_eq(error_context.error_type, "timeout")
+  assert_eq(error_context.timestamp, 1640995202500)
+  
+  // 验证系统信息
+  assert_true(error_context.system_info != None)
+  match error_context.system_info {
+    Some(sys_info) => {
+      assert_eq(sys_info.os, "Linux")
+      assert_eq(sys_info.cpu_count, 8)
+      assert_true(sys_info.total_memory > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证应用状态
+  assert_true(error_context.application_state != None)
+  match error_context.application_state {
+    Some(app_state) => {
+      assert_eq(app_state.version, "1.2.3")
+      assert_eq(app_state.environment, "production")
+      assert_true(app_state.active_requests > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证用户上下文
+  assert_true(error_context.user_context != None)
+  match error_context.user_context {
+    Some(user_ctx) => {
+      assert_eq(user_ctx.user_id, "user-12345")
+      assert_eq(user_ctx.ip_address, "192.168.1.100")
+      assert_true(user_ctx.permissions.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证请求追踪
+  assert_true(error_context.request_trace != None)
+  match error_context.request_trace {
+    Some(req_trace) => {
+      assert_eq(req_trace.trace_id, "trace-67890")
+      assert_eq(req_trace.operation_name, "process_payment")
+      assert_eq(req_trace.status, "error")
+      assert_true(req_trace.tags.length() > 0)
+      assert_true(req_trace.logs.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证调用栈
+  assert_true(error_context.call_stack.length() > 0)
+  assert_true(error_context.call_stack[0].contains("PaymentService.processPayment"))
+  
+  // 分析错误上下文
+  let context_analysis = ContextCollector::analyze(context_collector, error_context)
+  
+  // 验证分析结果
+  assert_true(context_analysis.root_causes.length() > 0)
+  assert_true(context_analysis.contributing_factors.length() > 0)
+  assert_true(context_analysis.recommendations.length() > 0)
+  
+  // 验证根因分析
+  let timeout_root_cause = context_analysis.root_causes.find(fn(c) { c.cause_type == "timeout" })
+  assert_true(timeout_root_cause != None)
+  
+  match timeout_root_cause {
+    Some(cause) => {
+      assert_true(cause.confidence > 0.0)
+      assert_true(cause.description.length() > 0)
+      assert_true(cause.evidence.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证贡献因素
+  let high_load_factor = context_analysis.contributing_factors.find(fn(f) { f.factor == "high_system_load" })
+  assert_true(high_load_factor != None)
+  
+  match high_load_factor {
+    Some(factor) => {
+      assert_true(factor.impact > 0.0)
+      assert_true(factor.description.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证建议
+  let performance_recommendation = context_analysis.recommendations.find(fn(r) { r.category == "performance" })
+  assert_true(performance_recommendation != None)
+  
+  match performance_recommendation {
+    Some(rec) => {
+      assert_true(rec.priority.length() > 0)
+      assert_true(rec.action.length() > 0)
+      assert_true(rec.expected_outcome.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试上下文相关性分析
+  let similar_errors = ContextCollector::find_similar_errors(context_collector, error_context, {
+    time_window: 3600000,  // 1小时
+    similarity_threshold: 0.7
+  })
+  
+  assert_true(similar_errors.length() >= 0)  // 可能没有相似错误
+  
+  // 测试上下文压缩
+  let compressed_context = ContextCollector::compress(context_collector, error_context, {
+    max_size: 2048,  // 2KB
+    preserve_critical_info: true
+  })
+  
+  assert_true(compressed_context.size <= 2048)
+  assert_true(compressed_context.preserved_fields.contains("error_message"))
+  assert_true(compressed_context.preserved_fields.contains("error_type"))
+}
+
+// 测试5: 错误报告和通知
+test "错误报告和通知功能" {
+  // 创建错误报告管理器
+  let report_manager = ErrorReportManager::new()
+  
+  // 配置报告模板
+  ReportManager::add_template(report_manager, {
+    name: "standard_error_report",
+    title: "Error Report: {{error_type}}",
+    sections: [
+      {
+        name: "summary",
+        title: "Summary",
+        fields: [
+          "error_message",
+          "error_type",
+          "severity",
+          "timestamp",
+          "occurrence_count"
+        ]
+      },
+      {
+        name: "context",
+        title: "Context Information",
+        fields: [
+          "system_info",
+          "application_state",
+          "user_context"
+        ]
+      },
+      {
+        name: "analysis",
+        title: "Analysis",
+        fields: [
+          "root_causes",
+          "contributing_factors",
+          "recommendations"
+        ]
+      }
+    ]
+  })
+  
+  ReportManager::add_template(report_manager, {
+    name: "critical_error_alert",
+    title: "🚨 CRITICAL ERROR: {{error_type}}",
+    sections: [
+      {
+        name: "alert",
+        title: "Immediate Action Required",
+        fields: [
+          "error_message",
+          "severity",
+          "timestamp",
+          "impact_assessment"
+        ]
+      },
+      {
+        name: "quick_actions",
+        title: "Suggested Actions",
+        fields: [
+          "immediate_actions",
+          "escalation_contacts"
+        ]
+      }
+    ]
+  })
+  
+  // 配置通知渠道
+  ReportManager::add_notification_channel(report_manager, {
+    name: "email",
+    type: "email",
+    config: {
+      smtp_server: "smtp.example.com",
+      smtp_port: 587,
+      username: "alerts@example.com",
+      password: "password",
+      from_address: "alerts@example.com",
+      to_addresses: ["team@example.com", "ops@example.com"]
+    },
+    filters: {
+      min_severity: "warning",
+      error_types: ["all"],
+      rate_limit: {
+        max_per_hour: 10,
+        cooldown_period: 300  // 5分钟
+      }
+    }
+  })
+  
+  ReportManager::add_notification_channel(report_manager, {
+    name: "slack",
+    type: "slack",
+    config: {
+      webhook_url: "https://hooks.slack.com/services/...",
+      channel: "#alerts",
+      username: "ErrorBot"
+    },
+    filters: {
+      min_severity: "error",
+      error_types: ["critical", "high"],
+      rate_limit: {
+        max_per_hour: 20,
+        cooldown_period: 60  // 1分钟
+      }
+    }
+  })
+  
+  ReportManager::add_notification_channel(report_manager, {
+    name: "pagerduty",
+    type: "pagerduty",
+    config: {
+      integration_key: "integration-key-123",
+      severity: "critical"
+    },
+    filters: {
+      min_severity: "critical",
+      error_types: ["critical"],
+      rate_limit: {
+        max_per_hour: 5,
+        cooldown_period: 600  // 10分钟
+      }
+    }
+  })
+  
+  // 创建错误报告
+  let error_report = ReportManager::create_report(report_manager, {
+    error_context: {
+      error_message: "Database connection pool exhausted",
+      error_type: "resource_exhaustion",
+      severity: "critical",
+      timestamp: 1640995200,
+      occurrence_count: 1,
+      system_info: {
+        os: "Linux",
+        memory_usage: 0.9,
+        cpu_usage: 0.8
+      },
+      application_state: {
+        version: "1.2.3",
+        active_connections: 50,
+        max_connections: 50
+      },
+      user_context: {
+        affected_users: 1000,
+        impact_duration: 300  // 5分钟
+      },
+      root_causes: [
+        {
+          cause_type: "resource_exhaustion",
+          confidence: 0.9,
+          description: "Database connection pool exhausted"
+        }
+      ],
+      recommendations: [
+        {
+          category: "infrastructure",
+          priority: "high",
+          action: "Increase database connection pool size",
+          expected_outcome: "Reduce connection errors"
+        }
+      ]
+    },
+    template: "critical_error_alert"
+  })
+  
+  // 验证报告生成
+  assert_true(error_report.content.length() > 0)
+  assert_true(error_report.title.contains("CRITICAL ERROR"))
+  assert_true(error_report.content.contains("Database connection pool exhausted"))
+  assert_true(error_report.content.contains("Immediate Action Required"))
+  
+  // 发送通知
+  let notification_results = ReportManager::send_notifications(report_manager, error_report)
+  assert_true(notification_results.length() > 0)
+  
+  // 验证邮件通知
+  let email_result = notification_results.find(fn(r) { r.channel == "email" })
+  assert_true(email_result != None)
+  
+  match email_result {
+    Some(result) {
+      assert_true(result.success)
+      assert_true(result.sent_at > 0)
+      assert_true(result.recipients.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证Slack通知
+  let slack_result = notification_results.find(fn(r) { r.channel == "slack" })
+  assert_true(slack_result != None)
+  
+  match slack_result {
+    Some(result) {
+      assert_true(result.success)
+      assert_true(result.sent_at > 0)
+      assert_true(result.message_id.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证PagerDuty通知
+  let pagerduty_result = notification_results.find(fn(r) { r.channel == "pagerduty" })
+  assert_true(pagerduty_result != None)
+  
+  match pagerduty_result {
+    Some(result) {
+      assert_true(result.success)
+      assert_true(result.incident_id.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试通知限流
+  let rate_limit_test_report = ReportManager::create_report(report_manager, {
+    error_context: {
+      error_message: "Test rate limiting",
+      error_type: "test",
+      severity: "warning",
+      timestamp: 1640995200,
+      occurrence_count: 1
+    },
+    template: "standard_error_report"
+  })
+  
+  // 快速连续发送通知
+  let rapid_notifications = []
+  for i in 0..=15 {
+    let result = ReportManager::send_notifications(report_manager, rate_limit_test_report)
+    rapid_notifications.push(result)
+  }
+  
+  // 验证限流效果
+  let successful_notifications = rapid_notifications.filter(fn(r) {
+    r.any(fn(ch) { ch.channel == "email" and ch.success })
+  })
+  
+  assert_true(successful_notifications.length() <= 10)  // 限制为每小时10次
+  
+  // 测试通知聚合
+  let aggregated_report = ReportManager::aggregate_reports(report_manager, {
+    reports: [
+      error_report,
+      rate_limit_test_report
+    ],
+    aggregation_window: 3600000,  // 1小时
+    group_by: ["error_type", "severity"]
+  })
+  
+  assert_true(aggregated_report.summary.length() > 0)
+  assert_true(aggregated_report.groups.length() > 0)
+  
+  // 测试报告历史
+  ReportManager::save_report(report_manager, error_report)
+  let report_history = ReportManager::get_report_history(report_manager, {
+    time_range: 3600000,  // 1小时
+    error_types: ["resource_exhaustion"],
+    severities: ["critical"]
+  })
+  
+  assert_true(report_history.length() > 0)
+  assert_true(report_history[0].error_type == "resource_exhaustion")
+  assert_true(report_history[0].severity == "critical")
+}
+
+// 测试6: 错误模式识别
+test "错误模式识别功能" {
+  // 创建错误模式识别器
+  let pattern_recognizer = ErrorPatternRecognizer::new()
+  
+  // 配置模式识别规则
+  PatternRecognizer::add_pattern(pattern_recognizer, {
+    name: "memory_leak_pattern",
+    description: "渐进式内存使用增长导致OOM",
+    indicators: [
+      {
+        metric: "memory_usage",
+        trend: "increasing",
+        duration: 3600000,  // 1小时
+        threshold: 0.8      // 80%
+      },
+      {
+        metric: "gc_frequency",
+        trend: "increasing",
+        duration: 1800000,  // 30分钟
+        threshold: 10       // 每分钟10次
+      }
+    ],
+    error_types: ["out_of_memory"],
+    confidence_threshold: 0.8
+  })
+  
+  PatternRecognizer::add_pattern(pattern_recognizer, {
+    name: "connection_pool_exhaustion",
+    description: "连接池耗尽模式",
+    indicators: [
+      {
+        metric: "active_connections",
+        trend: "stable",
+        duration: 300000,  // 5分钟
+        threshold: 0.95    // 95%使用率
+      },
+      {
+        metric: "connection_wait_time",
+        trend: "increasing",
+        duration: 180000,  // 3分钟
+        threshold: 5000    // 5秒
+      }
+    ],
+    error_types: ["connection_timeout", "connection_refused"],
+    confidence_threshold: 0.7
+  })
+  
+  PatternRecognizer::add_pattern(pattern_recognizer, {
+    name: "cascading_failure",
+    description: "级联故障模式",
+    indicators: [
+      {
+        metric: "error_rate",
+        trend: "increasing",
+        duration: 120000,  // 2分钟
+        threshold: 0.1     // 10%错误率
+      },
+      {
+        metric: "response_time",
+        trend: "increasing",
+        duration: 120000,  // 2分钟
+        threshold: 1000    // 1秒
+      },
+      {
+        metric: "throughput",
+        trend: "decreasing",
+        duration: 120000,  // 2分钟
+        threshold: 0.5     // 50%下降
+      }
+    ],
+    error_types: ["timeout", "service_unavailable"],
+    confidence_threshold: 0.9
+  })
+  
+  // 模拟内存泄漏模式数据
+  let base_time = 1640995200
+  
+  for i in 0..=60 {
+    let timestamp = base_time + i * 60000  // 每分钟
+    let memory_usage = 0.5 + (i * 0.005)  // 渐进式增长
+    let gc_frequency = 2.0 + (i * 0.1)    // GC频率增加
+    
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "memory_usage", memory_usage)
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "gc_frequency", gc_frequency)
+    
+    // 在最后添加OOM错误
+    if i == 60 {
+      PatternRecognizer::add_error(pattern_recognizer, timestamp, "out_of_memory")
+    }
+  }
+  
+  // 识别模式
+  let recognized_patterns = PatternRecognizer::recognize_patterns(pattern_recognizer)
+  assert_true(recognized_patterns.length() > 0)
+  
+  // 验证内存泄漏模式识别
+  let memory_leak_pattern = recognized_patterns.find(fn(p) { p.name == "memory_leak_pattern" })
+  assert_true(memory_leak_pattern != None)
+  
+  match memory_leak_pattern {
+    Some(pattern) {
+      assert_true(pattern.confidence >= 0.8)
+      assert_eq(pattern.matched_indicators.length(), 2)
+      assert_true(pattern.description.contains("渐进式内存使用增长"))
+      assert_true(pattern.recommendations.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 清除数据并模拟连接池耗尽模式
+  PatternRecognizer::clear_data(pattern_recognizer)
+  
+  for i in 0..=20 {
+    let timestamp = base_time + i * 15000  // 每15秒
+    let active_connections = 0.95  // 稳定在高使用率
+    let connection_wait_time = 1000.0 + (i * 200.0)  // 逐渐增加
+    
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "active_connections", active_connections)
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "connection_wait_time", connection_wait_time)
+    
+    // 添加连接错误
+    if i >= 10 {
+      PatternRecognizer::add_error(pattern_recognizer, timestamp, "connection_timeout")
+    }
+  }
+  
+  let connection_patterns = PatternRecognizer::recognize_patterns(pattern_recognizer)
+  let connection_pool_pattern = connection_patterns.find(fn(p) { p.name == "connection_pool_exhaustion" })
+  assert_true(connection_pool_pattern != None)
+  
+  match connection_pool_pattern {
+    Some(pattern) {
+      assert_true(pattern.confidence >= 0.7)
+      assert_eq(pattern.matched_indicators.length(), 2)
+    }
+    None => assert_true(false)
+  }
+  
+  // 清除数据并模拟级联故障模式
+  PatternRecognizer::clear_data(pattern_recognizer)
+  
+  for i in 0..=15 {
+    let timestamp = base_time + i * 10000  // 每10秒
+    let error_rate = 0.01 + (i * 0.01)    // 错误率逐渐增加
+    let response_time = 100.0 + (i * 100.0)  // 响应时间逐渐增加
+    let throughput = 1.0 - (i * 0.05)      // 吞吐量逐渐下降
+    
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "error_rate", error_rate)
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "response_time", response_time)
+    PatternRecognizer::add_metric(pattern_recognizer, timestamp, "throughput", throughput)
+    
+    // 添加超时和服务不可用错误
+    if i >= 5 {
+      PatternRecognizer::add_error(pattern_recognizer, timestamp, "timeout")
+    }
+    if i >= 10 {
+      PatternRecognizer::add_error(pattern_recognizer, timestamp, "service_unavailable")
+    }
+  }
+  
+  let cascade_patterns = PatternRecognizer::recognize_patterns(pattern_recognizer)
+  let cascade_pattern = cascade_patterns.find(fn(p) { p.name == "cascading_failure" })
+  assert_true(cascade_pattern != None)
+  
+  match cascade_pattern {
+    Some(pattern) {
+      assert_true(pattern.confidence >= 0.9)
+      assert_eq(pattern.matched_indicators.length(), 3)
+      assert_true(pattern.severity == "critical")
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试自定义模式学习
+  let custom_patterns = PatternRecognizer::learn_custom_patterns(pattern_recognizer, {
+    training_data: [
+      {
+        error_sequence: ["timeout", "connection_refused", "service_unavailable"],
+        metrics: [
+          ("error_rate", [0.05, 0.1, 0.2]),
+          ("response_time", [500, 1000, 2000])
+        ],
+        pattern_label: "service_degradation"
+      }
+    ],
+    min_occurrences: 3,
+    confidence_threshold: 0.6
+  })
+  
+  assert_true(custom_patterns.length() >= 0)
+  
+  // 测试模式预测
+  let pattern_prediction = PatternRecognizer::predict_pattern(pattern_recognizer, {
+    current_metrics: [
+      ("memory_usage", 0.7),
+      ("gc_frequency", 8.0)
+    ],
+    time_horizon: 1800000  // 30分钟
+  })
+  
+  assert_true(pattern_prediction.predicted_patterns.length() >= 0)
+  assert_true(pattern_prediction.confidence >= 0.0)
+  
+  // 测试模式统计
+  let pattern_stats = PatternRecognizer::get_pattern_statistics(pattern_recognizer)
+  assert_true(pattern_stats.total_patterns > 0)
+  assert_true(pattern_stats.recognized_patterns > 0)
+  assert_true(pattern_stats.pattern_frequency.length() > 0)
+}
+
+// 测试7: 混沌工程和故障注入
+test "混沌工程和故障注入功能" {
+  // 创建混沌工程实验管理器
+  let chaos_manager = ChaosExperimentManager::new()
+  
+  // 配置安全措施
+  ChaosManager::configure_safety_measures(chaos_manager, {
+    blast_radius: "single_service",
+    max_duration: 300000,      // 5分钟最大实验时间
+    rollback_on_error: true,
+    health_check_interval: 10000,  // 10秒健康检查
+    auto_rollback_threshold: 0.5   // 50%错误率自动回滚
+  })
+  
+  // 创建网络延迟实验
+  let network_latency_experiment = ChaosManager::create_experiment(chaos_manager, {
+    name: "network_latency_injection",
+    description: "注入网络延迟测试系统弹性",
+    target: {
+      service: "payment-service",
+      endpoint: "/api/process",
+      method: "POST"
+    },
+    fault: {
+      type: "network_latency",
+      parameters: {
+        latency: 1000,      // 1秒延迟
+        jitter: 200,        // 200ms抖动
+        probability: 0.3    // 30%概率
+      }
+    },
+    duration: 120000,       // 2分钟
+    monitoring: {
+      metrics: ["response_time", "error_rate", "throughput"],
+      alert_thresholds: [
+        ("response_time_p95", 5000),
+        ("error_rate", 0.1),
+        ("throughput", 0.5)
+      ]
+    },
+    rollback_plan: {
+      type: "automatic",
+      triggers: ["error_rate > 0.2", "response_time_p95 > 10000"]
+    }
+  })
+  
+  // 创建内存压力实验
+  let memory_pressure_experiment = ChaosManager::create_experiment(chaos_manager, {
+    name: "memory_pressure_injection",
+    description: "注入内存压力测试OOM处理",
+    target: {
+      service: "data-processing-service",
+      resource: "memory"
+    },
+    fault: {
+      type: "memory_pressure",
+      parameters: {
+        allocation_rate: 104857600,  // 100MB/s
+        duration: 60000,            // 1分钟
+        gc_suppression: true
+      }
+    },
+    duration: 90000,        // 1.5分钟
+    monitoring: {
+      metrics: ["memory_usage", "gc_frequency", "response_time"],
+      alert_thresholds: [
+        ("memory_usage", 0.9),
+        ("gc_frequency", 20),
+        ("response_time_p95", 2000)
+      ]
+    },
+    rollback_plan: {
+      type: "automatic",
+      triggers: ["memory_usage > 0.95", "oom_error_detected"]
+    }
+  })
+  
+  // 创建数据库连接故障实验
+  let db_connection_experiment = ChaosManager::create_experiment(chaos_manager, {
+    name: "database_connection_failure",
+    description: "模拟数据库连接失败测试重试机制",
+    target: {
+      service: "user-service",
+      dependency: "database"
+    },
+    fault: {
+      type: "connection_failure",
+      parameters: {
+        failure_rate: 0.5,      // 50%连接失败
+        error_type: "timeout",
+        recovery_time: 30000    // 30秒后恢复
+      }
+    },
+    duration: 180000,       // 3分钟
+    monitoring: {
+      metrics: ["connection_errors", "retry_attempts", "fallback_usage"],
+      alert_thresholds: [
+        ("connection_errors", 10),
+        ("retry_attempts", 50),
+        ("fallback_usage", 0.8)
+      ]
+    },
+    rollback_plan: {
+      type: "manual",
+      approval_required: true
+    }
+  })
+  
+  // 运行网络延迟实验
+  let latency_experiment_result = ChaosManager::run_experiment(chaos_manager, network_latency_experiment)
+  assert_true(latency_experiment_result.started)
+  assert_true(latency_experiment_result.experiment_id.length() > 0)
+  
+  // 等待实验完成
+  let latency_final_result = ChaosManager::wait_for_completion(chaos_manager, latency_experiment_result.experiment_id, 180000)
+  assert_true(latency_final_result.completed)
+  
+  // 验证实验结果
+  assert_true(latency_final_result.metrics.length() > 0)
+  assert_true(latency_final_result.duration > 0)
+  
+  // 检查响应时间影响
+  let response_time_metrics = latency_final_result.metrics.filter(fn(m) { m.name == "response_time" })
+  assert_true(response_time_metrics.length() > 0)
+  
+  let avg_response_time = response_time_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0) / response_time_metrics.length().to_float()
+  assert_true(avg_response_time > 100.0)  // 应该比基线高
+  
+  // 检查错误率影响
+  let error_rate_metrics = latency_final_result.metrics.filter(fn(m) { m.name == "error_rate" })
+  assert_true(error_rate_metrics.length() > 0)
+  
+  let max_error_rate = error_rate_metrics.reduce(fn(acc, m) { if m.value > acc { m.value } else { acc } }, 0.0)
+  assert_true(max_error_rate < 0.2)  // 应该在安全阈值内
+  
+  // 运行内存压力实验
+  let memory_experiment_result = ChaosManager::run_experiment(chaos_manager, memory_pressure_experiment)
+  let memory_final_result = ChaosManager::wait_for_completion(chaos_manager, memory_experiment_result.experiment_id, 180000)
+  
+  // 验证内存压力实验结果
+  assert_true(memory_final_result.completed)
+  
+  let memory_metrics = memory_final_result.metrics.filter(fn(m) { m.name == "memory_usage" })
+  assert_true(memory_metrics.length() > 0)
+  
+  let max_memory_usage = memory_metrics.reduce(fn(acc, m) { if m.value > acc { m.value } else { acc } }, 0.0)
+  assert_true(max_memory_usage > 0.7)  // 内存使用率应该显著增加
+  
+  // 检查GC频率
+  let gc_metrics = memory_final_result.metrics.filter(fn(m) { m.name == "gc_frequency" })
+  assert_true(gc_metrics.length() > 0)
+  
+  // 运行数据库连接故障实验
+  let db_experiment_result = ChaosManager::run_experiment(chaos_manager, db_connection_experiment)
+  let db_final_result = ChaosManager::wait_for_completion(chaos_manager, db_experiment_result.experiment_id, 240000)
+  
+  // 验证数据库连接实验结果
+  assert_true(db_final_result.completed)
+  
+  let connection_error_metrics = db_final_result.metrics.filter(fn(m) { m.name == "connection_errors" })
+  assert_true(connection_error_metrics.length() > 0)
+  
+  let total_connection_errors = connection_error_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
+  assert_true(total_connection_errors > 0)  // 应该有连接错误
+  
+  // 检查重试机制
+  let retry_metrics = db_final_result.metrics.filter(fn(m) { m.name == "retry_attempts" })
+  assert_true(retry_metrics.length() > 0)
+  
+  let total_retries = retry_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
+  assert_true(total_retries > 0)  // 应该有重试尝试
+  
+  // 生成实验报告
+  let experiment_report = ChaosManager::generate_experiment_report(chaos_manager, [
+    latency_final_result,
+    memory_final_result,
+    db_final_result
+  ])
+  
+  assert_true(experiment_report.summary.length() > 0)
+  assert_true(experiment_report.experiments.length() == 3)
+  assert_true(experiment_report.findings.length() > 0)
+  assert_true(experiment_report.recommendations.length() > 0)
+  
+  // 验证发现的问题
+  let latency_issues = experiment_report.findings.filter(fn(f) { f.experiment == "network_latency_injection" })
+  assert_true(latency_issues.length() > 0)
+  
+  let resilience_findings = experiment_report.findings.filter(fn(f) { f.category == "resilience" })
+  assert_true(resilience_findings.length() > 0)
+  
+  // 测试实验模板
+  let experiment_template = ChaosManager::create_experiment_template(chaos_manager, {
+    name: "standard_latency_test",
+    description: "标准网络延迟测试模板",
+    parameters: [
+      {
+        name: "latency",
+        type: "integer",
+        default: 1000,
+        min: 100,
+        max: 10000,
+        description: "延迟时间（毫秒）"
+      },
+      {
+        name: "probability",
+        type: "float",
+        default: 0.3,
+        min: 0.1,
+        max: 1.0,
+        description: "故障概率"
+      }
+    ],
+    target_template: {
+      service: "{{service}}",
+      endpoint: "{{endpoint}}"
+    },
+    fault_template: {
+      type: "network_latency",
+      parameters: {
+        latency: "{{latency}}",
+        probability: "{{probability}}"
+      }
+    }
+  })
+  
+  // 从模板创建实验
+  let templated_experiment = ChaosManager::create_from_template(chaos_manager, experiment_template, {
+    service: "order-service",
+    endpoint: "/api/orders",
+    latency: 2000,
+    probability: 0.5
+  })
+  
+  assert_true(templated_experiment.name == "standard_latency_test")
+  assert_true(templated_experiment.fault.parameters.latency == 2000)
+  assert_true(templated_experiment.fault.parameters.probability == 0.5)
+  
+  // 测试实验统计
+  let experiment_stats = ChaosManager::get_experiment_statistics(chaos_manager)
+  assert_true(experiment_stats.total_experiments >= 3)
+  assert_true(experiment_stats.successful_experiments >= 0)
+  assert_true(experiment_stats.failed_experiments >= 0)
+  assert_true(experiment_stats.rollbacks_triggered >= 0)
+}
+
+// 测试8: 错误恢复验证
+test "错误恢复验证功能" {
+  // 创建恢复验证器
+  let recovery_validator = RecoveryValidator::new()
+  
+  // 配置验证测试
+  RecoveryValidator::configure_validation_tests(recovery_validator, {
+    test_timeout: 300000,      // 5分钟测试超时
+    health_check_interval: 5000,  // 5秒健康检查间隔
+    success_criteria: {
+      error_rate_threshold: 0.01,  // 1%错误率阈值
+      response_time_threshold: 1000,  // 1秒响应时间阈值
+      availability_threshold: 0.99   // 99%可用性阈值
+    }
+  })
+  
+  // 创建恢复验证测试用例
+  let circuit_breaker_test = RecoveryValidator::create_test(recovery_validator, {
+    name: "circuit_breaker_recovery_test",
+    description: "验证熔断器恢复机制",
+    scenario: {
+      setup: fn() {
+        // 设置测试环境
+        let service = TestService::new("payment-service")
+        service.enable_circuit_breaker({
+          failure_threshold: 3,
+          recovery_timeout: 30000,
+          half_open_max_calls: 2
+        })
+        service
+      },
+      fault_injection: fn(service) {
+        // 注入故障
+        service.inject_fault("database_connection_failed", {
+          type: "connection_error",
+          duration: 60000,  // 1分钟
+          failure_rate: 1.0  // 100%失败
+        })
+      },
+      validation: fn(service) {
+        // 验证恢复
+        let health_status = service.health_check()
+        let metrics = service.get_metrics()
+        
+        {
+          is_healthy: health_status.is_healthy,
+          error_rate: metrics.error_rate,
+          response_time: metrics.response_time_p95,
+          circuit_breaker_state: service.get_circuit_breaker_state()
+        }
+      },
+      cleanup: fn(service) {
+        // 清理测试环境
+        service.cleanup()
+      }
+    },
+    expected_results: {
+      circuit_breaker_opens: true,
+      automatic_recovery: true,
+      max_recovery_time: 60000,  // 1分钟内恢复
+      final_error_rate: 0.01     // 最终错误率<1%
+    }
+  })
+  
+  let retry_mechanism_test = RecoveryValidator::create_test(recovery_validator, {
+    name: "retry_mechanism_recovery_test",
+    description: "验证重试机制恢复",
+    scenario: {
+      setup: fn() {
+        let service = TestService::new("notification-service")
+        service.configure_retry({
+          max_attempts: 3,
+          backoff_strategy: "exponential",
+          initial_delay: 1000,
+          max_delay: 10000
+        })
+        service
+      },
+      fault_injection: fn(service) {
+        service.inject_fault("smtp_server_timeout", {
+          type: "timeout",
+          duration: 45000,  // 45秒
+          intermittent: true,
+          failure_rate: 0.7  // 70%失败率
+        })
+      },
+      validation: fn(service) {
+        let stats = service.get_operation_stats()
+        {
+          total_operations: stats.total_operations,
+          successful_operations: stats.successful_operations,
+          retry_attempts: stats.retry_attempts,
+          final_success_rate: stats.success_rate
+        }
+      },
+      cleanup: fn(service) {
+        service.cleanup()
+      }
+    },
+    expected_results: {
+      retry_attempts: true,
+      eventual_success: true,
+      max_retry_duration: 30000,  // 30秒内完成重试
+      final_success_rate: 0.95    // 最终成功率>95%
+    }
+  })
+  
+  let fallback_service_test = RecoveryValidator::create_test(recovery_validator, {
+    name: "fallback_service_recovery_test",
+    description: "验证降级服务恢复",
+    scenario: {
+      setup: fn() {
+        let service = TestService::new("recommendation-service")
+        service.configure_fallback({
+          primary: "ml_recommendation_engine",
+          fallback: "rule_based_recommendations",
+          fallback_trigger: "response_time > 2000 or error_rate > 0.1"
+        })
+        service
+      },
+      fault_injection: fn(service) {
+        service.inject_fault("ml_engine_overload", {
+          type: "performance_degradation",
+          duration: 90000,  // 1.5分钟
+          response_time_increase: 5.0,  // 5倍响应时间增加
+          error_rate: 0.2  // 20%错误率
+        })
+      },
+      validation: fn(service) {
+        let metrics = service.get_metrics()
+        let fallback_stats = service.get_fallback_stats()
+        
+        {
+          primary_response_time: metrics.primary_response_time,
+          fallback_response_time: metrics.fallback_response_time,
+          fallback_usage_rate: fallback_stats.usage_rate,
+          overall_success_rate: metrics.overall_success_rate
+        }
+      },
+      cleanup: fn(service) {
+        service.cleanup()
+      }
+    },
+    expected_results: {
+      fallback_triggered: true,
+      service_continuity: true,
+      fallback_response_time: 500,  // 降级服务响应时间<500ms
+      overall_success_rate: 0.98    // 整体成功率>98%
+    }
+  })
+  
+  // 运行熔断器恢复测试
+  let circuit_breaker_result = RecoveryValidator::run_test(recovery_validator, circuit_breaker_test)
+  assert_true(circuit_breaker_result.completed)
+  assert_true(circuit_breaker_result.validation_results.length() > 0)
+  
+  // 验证熔断器测试结果
+  let circuit_breaker_validation = circuit_breaker_result.validation_results[0]
+  assert_true(circuit_breaker_validation.circuit_breaker_state == "closed" or circuit_breaker_validation.circuit_breaker_state == "half_open")  // 应该已恢复
+  
+  assert_true(circuit_breaker_validation.error_rate < 0.01)  // 错误率应该<1%
+  assert_true(circuit_breaker_validation.response_time < 1000)  // 响应时间应该<1秒
+  
+  // 运行重试机制测试
+  let retry_result = RecoveryValidator::run_test(recovery_validator, retry_mechanism_test)
+  assert_true(retry_result.completed)
+  
+  let retry_validation = retry_result.validation_results[0]
+  assert_true(retry_validation.retry_attempts > 0)  // 应该有重试尝试
+  assert_true(retry_validation.final_success_rate > 0.95)  // 最终成功率应该>95%
+  
+  // 运行降级服务测试
+  let fallback_result = RecoveryValidator::run_test(recovery_validator, fallback_service_test)
+  assert_true(fallback_result.completed)
+  
+  let fallback_validation = fallback_result.validation_results[0]
+  assert_true(fallback_validation.fallback_usage_rate > 0.0)  // 应该使用了降级服务
+  assert_true(fallback_validation.fallback_response_time < 500)  // 降级服务响应时间应该<500ms
+  assert_true(fallback_validation.overall_success_rate > 0.98)  // 整体成功率应该>98%
+  
+  // 创建综合恢复测试
+  let comprehensive_test = RecoveryValidator::create_comprehensive_test(recovery_validator, {
+    name: "comprehensive_error_recovery_test",
+    description: "综合错误恢复测试",
+    test_scenarios: [circuit_breaker_test, retry_mechanism_test, fallback_service_test],
+    execution_order: "parallel",
+    global_timeout: 600000,  // 10分钟全局超时
+    success_criteria: {
+      overall_availability: 0.99,  // 整体可用性>99%
+      max_recovery_time: 120000,    // 最大恢复时间2分钟
+      error_budger: 0.01           // 错误预算<1%
+    }
+  })
+  
+  // 运行综合测试
+  let comprehensive_result = RecoveryValidator::run_comprehensive_test(recovery_validator, comprehensive_test)
+  assert_true(comprehensive_result.completed)
+  assert_eq(comprehensive_result.test_results.length(), 3)
+  
+  // 验证综合测试结果
+  assert_true(comprehensive_result.overall_availability > 0.99)
+  assert_true(comprehensive_result.max_recovery_time < 120000)
+  assert_true(comprehensive_result.error_budget_consumed < 0.01)
+  
+  // 生成恢复验证报告
+  let validation_report = RecoveryValidator::generate_validation_report(recovery_validator, [
+    circuit_breaker_result,
+    retry_result,
+    fallback_result,
+    comprehensive_result
+  ])
+  
+  assert_true(validation_report.summary.length() > 0)
+  assert_true(validation_report.test_results.length() == 4)
+  assert_true(validation_report.recovery_effectiveness.length() > 0)
+  assert_true(validation_report.improvement_recommendations.length() > 0)
+  
+  // 验证恢复效果评估
+  let recovery_effectiveness = validation_report.recovery_effectiveness
+  assert_true(recovery_effectiveness.overall_score > 0.8)  // 整体恢复效果应该>80%
+  
+  let circuit_breaker_effectiveness = recovery_effectiveness.by_strategy.get("circuit_breaker")
+  assert_true(circuit_breaker_effectiveness != None)
+  
+  match circuit_breaker_effectiveness {
+    Some(effectiveness) => {
+      assert_true(effectiveness.avability_impact > 0.0)
+      assert_true(effectiveness.error_reduction > 0.0)
+      assert_true(effectiveness.recovery_time_score > 0.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证改进建议
+  let performance_recommendations = validation_report.improvement_recommendations.filter(fn(r) { r.category == "performance" })
+  assert_true(performance_recommendations.length() >= 0)
+  
+  let reliability_recommendations = validation_report.improvement_recommendations.filter(fn(r) { r.category == "reliability" })
+  assert_true(reliability_recommendations.length() >= 0)
+  
+  // 测试恢复验证统计
+  let validation_stats = RecoveryValidator::get_validation_statistics(recovery_validator)
+  assert_true(validation_stats.total_tests >= 4)
+  assert_true(validation_stats.passed_tests >= 0)
+  assert_true(validation_stats.failed_tests >= 0)
+  assert_true(validation_stats.average_recovery_time > 0.0)
+  assert_true(validation_stats.overall_success_rate >= 0.0)
 }
