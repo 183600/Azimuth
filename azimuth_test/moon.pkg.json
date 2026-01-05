@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
 "test": {
-    "test": ["azimuth_comprehensive_test_suite.mbt", "azimuth_new_test_suites.mbt", "../src/azimuth_focused_telemetry_tests.mbt", "azimuth_high_quality_security_tests.mbt"]
+    "test": ["azimuth_comprehensive_test_suite.mbt", "azimuth_new_test_suites.mbt", "../src/azimuth_focused_telemetry_tests.mbt", "azimuth_high_quality_security_tests.mbt", "azimuth_cloud_native_microservices_tests.mbt", "azimuth_edge_iot_telemetry_tests.mbt", "azimuth_realtime_stream_processing_tests.mbt", "azimuth_advanced_security_tests.mbt", "azimuth_ml_anomaly_detection_tests.mbt", "azimuth_performance_optimization_tests.mbt", "azimuth_distributed_tracing_tests.mbt", "azimuth_advanced_data_structures_tests.mbt"]
   }
 }

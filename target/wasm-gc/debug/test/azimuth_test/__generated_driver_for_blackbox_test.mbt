@@ -67,9 +67,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_specialized_comprehensive_tests.mbt": {
   },
+  "azimuth_realtime_stream_processing_tests.mbt": {
+  },
   "azimuth_premium_technical_tests.mbt": {
   },
   "azimuth_premium_comprehensive_tests.mbt": {
+  },
+  "azimuth_performance_optimization_tests.mbt": {
   },
   "azimuth_new_tests.mbt": {
   },
@@ -78,6 +82,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_new_focused_tests.mbt": {
   },
   "azimuth_new_comprehensive_moonbit_tests.mbt": {
+  },
+  "azimuth_ml_anomaly_detection_tests.mbt": {
   },
   "azimuth_high_quality_security_tests.mbt": {
   },
@@ -89,13 +95,23 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_enhanced_core_tests.mbt": {
   },
+  "azimuth_edge_iot_telemetry_tests.mbt": {
+  },
+  "azimuth_distributed_tracing_tests.mbt": {
+  },
   "azimuth_comprehensive_test_suite.mbt": {
   },
   "azimuth_comprehensive_enhanced_tests.mbt": {
   },
+  "azimuth_cloud_native_microservices_tests.mbt": {
+  },
   "azimuth_advanced_telemetry_edge_cases_tests.mbt": {
   },
+  "azimuth_advanced_security_tests.mbt": {
+  },
   "azimuth_advanced_lifecycle_tests.mbt": {
+  },
+  "azimuth_advanced_data_structures_tests.mbt": {
   },
   "azimuth.mbt": {
   },

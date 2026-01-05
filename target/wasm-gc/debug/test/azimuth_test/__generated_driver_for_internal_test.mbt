@@ -109,6 +109,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f7370656369616c697a65645f636f6d70726568656e736976655f74657374732e6d6274_8, ["跨平台兼容性测试"]),
     9: (__test_617a696d7574685f7370656369616c697a65645f636f6d70726568656e736976655f74657374732e6d6274_9, ["性能基准测试"]),
   },
+  "azimuth_realtime_stream_processing_tests.mbt": {
+    0: (__test_617a696d7574685f7265616c74696d655f73747265616d5f70726f63657373696e675f74657374732e6d6274_0, ["stream data processing pipeline"]),
+    1: (__test_617a696d7574685f7265616c74696d655f73747265616d5f70726f63657373696e675f74657374732e6d6274_1, ["windowed stream aggregation"]),
+  },
   "azimuth_premium_technical_tests.mbt": {
     0: (__test_617a696d7574685f7072656d69756d5f746563686e6963616c5f74657374732e6d6274_0, ["resource management and merge strategy"]),
     1: (__test_617a696d7574685f7072656d69756d5f746563686e6963616c5f74657374732e6d6274_1, ["advanced attribute operations"]),
@@ -128,6 +132,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f7072656d69756d5f636f6d70726568656e736976655f74657374732e6d6274_5, ["平台特定遥测适配测试"]),
     6: (__test_617a696d7574685f7072656d69756d5f636f6d70726568656e736976655f74657374732e6d6274_6, ["遥测系统端到端集成测试"]),
     7: (__test_617a696d7574685f7072656d69756d5f636f6d70726568656e736976655f74657374732e6d6274_7, ["遥测数据序列化完整性测试"]),
+  },
+  "azimuth_performance_optimization_tests.mbt": {
+    0: (__test_617a696d7574685f706572666f726d616e63655f6f7074696d697a6174696f6e5f74657374732e6d6274_0, ["caching strategies and performance"]),
+    1: (__test_617a696d7574685f706572666f726d616e63655f6f7074696d697a6174696f6e5f74657374732e6d6274_1, ["database query optimization"]),
   },
   "azimuth_new_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f74657374732e6d6274_0, ["属性基本操作测试"]),
@@ -172,6 +180,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_7, ["span生命周期管理测试"]),
     8: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_8, ["http客户端和请求处理测试"]),
     9: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_9, ["时钟和随机数生成测试"]),
+  },
+  "azimuth_ml_anomaly_detection_tests.mbt": {
+    0: (__test_617a696d7574685f6d6c5f616e6f6d616c795f646574656374696f6e5f74657374732e6d6274_0, ["time series anomaly detection"]),
+    1: (__test_617a696d7574685f6d6c5f616e6f6d616c795f646574656374696f6e5f74657374732e6d6274_1, ["multivariate anomaly detection"]),
   },
   "azimuth_high_quality_security_tests.mbt": {
     0: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_0, ["输入验证和清理机制"]),
@@ -231,6 +243,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_6, ["资源和属性管理功能测试"]),
     7: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_7, ["上下文传播和行李传递功能测试"]),
   },
+  "azimuth_edge_iot_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_0, ["edge device telemetry collection"]),
+    1: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_1, ["edge computing data processing"]),
+  },
+  "azimuth_distributed_tracing_tests.mbt": {
+    0: (__test_617a696d7574685f64697374726962757465645f74726163696e675f74657374732e6d6274_0, ["trace context propagation"]),
+    1: (__test_617a696d7574685f64697374726962757465645f74726163696e675f74657374732e6d6274_1, ["span lifecycle management"]),
+  },
   "azimuth_comprehensive_test_suite.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_0, ["attribute value type conversion - string to int"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_1, ["attribute value type conversion - float and bool"]),
@@ -265,6 +285,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_6, ["metrics operations with different instrument types"]),
     7: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_7, ["context chain propagation with multiple values"]),
   },
+  "azimuth_cloud_native_microservices_tests.mbt": {
+    0: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_0, ["service discovery and registration"]),
+    1: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_1, ["circuit breaker pattern implementation"]),
+    2: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_2, ["distributed configuration management"]),
+    3: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_3, ["service mesh telemetry collection"]),
+    4: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_4, ["container orchestration telemetry"]),
+    5: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_5, ["microservice resilience patterns"]),
+    6: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_6, ["distributed tracing in microservices"]),
+    7: (__test_617a696d7574685f636c6f75645f6e61746976655f6d6963726f73657276696365735f74657374732e6d6274_7, ["api gateway telemetry"]),
+  },
   "azimuth_advanced_telemetry_edge_cases_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f74656c656d657472795f656467655f63617365735f74657374732e6d6274_0, ["高并发场景下的遥测数据一致性测试"]),
     1: (__test_617a696d7574685f616476616e6365645f74656c656d657472795f656467655f63617365735f74657374732e6d6274_1, ["遥测数据压缩和优化测试"]),
@@ -274,6 +304,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f616476616e6365645f74656c656d657472795f656467655f63617365735f74657374732e6d6274_5, ["遥测数据聚合和统计分析测试"]),
     6: (__test_617a696d7574685f616476616e6365645f74656c656d657472795f656467655f63617365735f74657374732e6d6274_6, ["遥测配置验证和约束检查测试"]),
     7: (__test_617a696d7574685f616476616e6365645f74656c656d657472795f656467655f63617365735f74657374732e6d6274_7, ["遥测数据质量验证和异常检测测试"]),
+  },
+  "azimuth_advanced_security_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f73656375726974795f74657374732e6d6274_0, ["threat detection and response"]),
+    1: (__test_617a696d7574685f616476616e6365645f73656375726974795f74657374732e6d6274_1, ["encryption and key management"]),
   },
   "azimuth_advanced_lifecycle_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f6c6966656379636c655f74657374732e6d6274_0, ["span lifecycle management"]),
@@ -286,6 +320,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f616476616e6365645f6c6966656379636c655f74657374732e6d6274_7, ["concurrent span operations"]),
     8: (__test_617a696d7574685f616476616e6365645f6c6966656379636c655f74657374732e6d6274_8, ["telemetry data serialization"]),
     9: (__test_617a696d7574685f616476616e6365645f6c6966656379636c655f74657374732e6d6274_9, ["system fault recovery"]),
+  },
+  "azimuth_advanced_data_structures_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_0, ["trie prefix tree implementation"]),
+    1: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_1, ["bloom filter implementation"]),
+    2: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_2, ["skip list implementation"]),
+    3: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_3, ["lru cache implementation"]),
   },
   "azimuth.mbt": {
   },
