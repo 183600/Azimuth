@@ -1706,6 +1706,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_edge_iot_telemetry_comprehensive_tests.mbt": {
   },
+  "azimuth_edge_iot_integration_tests.mbt": {
+  },
   "azimuth_edge_iot_device_telemetry_tests.mbt": {
   },
   "azimuth_edge_computing_tests.mbt": {
@@ -2275,6 +2277,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_boundary_condition_comprehensive_tests.mbt": {
   },
   "azimuth_blockchain_technology_tests.mbt": {
+  },
+  "azimuth_bioinformatics_tests.mbt": {
   },
   "azimuth_batch_processing_tests.mbt": {
   },
