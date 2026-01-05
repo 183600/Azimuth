@@ -171,6 +171,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_8, ["data serialization simulation"]),
     9: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_9, ["lifecycle management simulation"]),
   },
+  "azimuth_serialization_format_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f73657269616c697a6174696f6e5f666f726d61745f656e68616e6365645f74657374732e6d6274_0, ["json serialization and deserialization of telemetry data"]),
+    1: (__test_617a696d7574685f73657269616c697a6174696f6e5f666f726d61745f656e68616e6365645f74657374732e6d6274_1, ["binary serialization and deserialization of telemetry data"]),
+    2: (__test_617a696d7574685f73657269616c697a6174696f6e5f666f726d61745f656e68616e6365645f74657374732e6d6274_2, ["protocol buffer serialization of telemetry data"]),
+    3: (__test_617a696d7574685f73657269616c697a6174696f6e5f666f726d61745f656e68616e6365645f74657374732e6d6274_3, ["cross-format serialization compatibility"]),
+  },
   "azimuth_serialization_deserialization_tests.mbt": {
     0: (__test_617a696d7574685f73657269616c697a6174696f6e5f646573657269616c697a6174696f6e5f74657374732e6d6274_0, ["basic serialization"]),
     1: (__test_617a696d7574685f73657269616c697a6174696f6e5f646573657269616c697a6174696f6e5f74657374732e6d6274_1, ["array serialization"]),
@@ -244,6 +250,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f7072656d69756d5f616476616e6365645f746573745f63617365732e6d6274_7, ["text map carrier operations"]),
     8: (__test_617a696d7574685f7072656d69756d5f616476616e6365645f746573745f63617365732e6d6274_8, ["propagator operations"]),
     9: (__test_617a696d7574685f7072656d69756d5f616476616e6365645f746573745f63617365732e6d6274_9, ["span operations"]),
+  },
+  "azimuth_performance_resource_optimization_tests.mbt": {
+    0: (__test_617a696d7574685f706572666f726d616e63655f7265736f757263655f6f7074696d697a6174696f6e5f74657374732e6d6274_0, ["resource pool management efficiency"]),
+    1: (__test_617a696d7574685f706572666f726d616e63655f7265736f757263655f6f7074696d697a6174696f6e5f74657374732e6d6274_1, ["memory usage optimization in telemetry data"]),
+    2: (__test_617a696d7574685f706572666f726d616e63655f7265736f757263655f6f7074696d697a6174696f6e5f74657374732e6d6274_2, ["batch processing performance optimization"]),
   },
   "azimuth_performance_resource_management_tests.mbt": {
     0: (__test_617a696d7574685f706572666f726d616e63655f7265736f757263655f6d616e6167656d656e745f74657374732e6d6274_0, ["memory usage optimization"]),
@@ -383,6 +394,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f737570706f72745f74657374732e6d6274_4, ["currency and unit localization"]),
     5: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f737570706f72745f74657374732e6d6274_5, ["time zone and calendar localization"]),
   },
+  "azimuth_internationalization_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f656e68616e6365645f74657374732e6d6274_0, ["multi-language error message support"]),
+    1: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f656e68616e6365645f74657374732e6d6274_1, ["localized date and time formatting"]),
+    2: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f656e68616e6365645f74657374732e6d6274_2, ["unicode and special character handling in telemetry"]),
+  },
   "azimuth_internationalization_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f636f6d70726568656e736976655f74657374732e6d6274_0, ["locale detection and management"]),
     1: (__test_617a696d7574685f696e7465726e6174696f6e616c697a6174696f6e5f636f6d70726568656e736976655f74657374732e6d6274_1, ["message translation"]),
@@ -464,6 +480,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f74657374732e6d6274_4, ["result boundary conditions"]),
     5: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f74657374732e6d6274_5, ["enum boundary conditions"]),
     6: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f74657374732e6d6274_6, ["map boundary conditions"]),
+  },
+  "azimuth_error_handling_boundary_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f656e68616e6365645f74657374732e6d6274_0, ["extreme value handling in telemetry"]),
+    1: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f656e68616e6365645f74657374732e6d6274_1, ["invalid input handling and validation"]),
+    2: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f656e68616e6365645f74657374732e6d6274_2, ["resource exhaustion handling"]),
+    3: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f656e68616e6365645f74657374732e6d6274_3, ["network failure and recovery handling"]),
   },
   "azimuth_error_boundary_handling_tests.mbt": {
     0: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_0, ["span error handling with exceptions"]),
