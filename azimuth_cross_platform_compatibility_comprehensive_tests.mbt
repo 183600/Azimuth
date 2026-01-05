@@ -1,577 +1,467 @@
-// Cross-Platform Compatibility Tests
+// Azimuth Cross-Platform Compatibility Comprehensive Tests
 // This file contains comprehensive test cases for cross-platform compatibility
 
-// Test 1: Platform Detection and Adaptation
-test "platform detection and adaptation" {
+// Test 1: Operating System Compatibility
+test "operating system compatibility" {
   let platform_detector = PlatformDetector::new()
+  let tracer = TracerProvider::get_tracer("platform_compatibility_test")
   
-  // Test platform detection
+  // Create platform detection span
+  let platform_span = Tracer::start_span(tracer, "platform_detection")
+  
+  // Detect current platform
   let platform_info = PlatformDetector::detect(platform_detector)
   
-  // Verify platform information is detected
-  assert_true(PlatformInfo::os_type(platform_info).length() > 0)
-  assert_true(PlatformInfo::arch(platform_info).length() > 0)
-  assert_true(PlatformInfo::runtime(platform_info).length() > 0)
+  // Add platform information to span
+  Span::set_attribute(platform_span, "platform.os", StringValue(platform_info.os_type))
+  Span::set_attribute(platform_span, "platform.arch", StringValue(platform_info.architecture))
+  Span::set_attribute(platform_span, "platform.version", StringValue(platform_info.os_version))
   
-  // Test platform-specific adaptations
-  let adapter = PlatformAdapter::new(platform_info)
-  
-  // Test file path handling
-  let test_path = "/tmp/telemetry/test.log"
-  let adapted_path = PlatformAdapter::adapt_file_path(adapter, test_path)
-  
-  // Path should be adapted based on platform
-  match PlatformInfo::os_type(platform_info) {
-    "windows" => assert_true(adapted_path.contains("\\")),
-    "linux" | "macos" => assert_true(adapted_path.contains("/")),
-    _ => assert_true(true) // Other platforms
+  // Test OS-specific functionality
+  match platform_info.os_type {
+    "linux" => {
+      // Test Linux-specific functionality
+      let linux_result = PlatformDetector::test_linux_features(platform_detector)
+      Span::set_attribute(platform_span, "platform.linux.features", StringValue(linux_result))
+      assert_true(linux_result.length() > 0, "Should detect Linux features")
+    }
+    "windows" => {
+      // Test Windows-specific functionality
+      let windows_result = PlatformDetector::test_windows_features(platform_detector)
+      Span::set_attribute(platform_span, "platform.windows.features", StringValue(windows_result))
+      assert_true(windows_result.length() > 0, "Should detect Windows features")
+    }
+    "macos" => {
+      // Test macOS-specific functionality
+      let macos_result = PlatformDetector::test_macos_features(platform_detector)
+      Span::set_attribute(platform_span, "platform.macos.features", StringValue(macos_result))
+      assert_true(macos_result.length() > 0, "Should detect macOS features")
+    }
+    _ => {
+      // Test generic functionality for other platforms
+      let generic_result = PlatformDetector::test_generic_features(platform_detector)
+      Span::set_attribute(platform_span, "platform.generic.features", StringValue(generic_result))
+      assert_true(generic_result.length() > 0, "Should detect generic features")
+    }
   }
   
-  // Test line ending adaptation
-  let test_text = "line1\nline2\nline3"
-  let adapted_text = PlatformAdapter::adapt_line_endings(adapter, test_text)
+  // Test cross-platform file operations
+  let file_operations_span = Tracer::start_span(tracer, "cross_platform_file_operations")
   
-  // Line endings should be adapted based on platform
-  match PlatformInfo::os_type(platform_info) {
-    "windows" => assert_true(adapted_text.contains("\r\n")),
-    "linux" | "macos" => assert_true(adapted_text.contains("\n")),
-    _ => assert_true(true) // Other platforms
-  }
+  let test_file_path = PlatformDetector::get_temp_path(platform_detector) + "azimuth_test.txt"
+  let file_content = "Cross-platform test content with unicode: 你好 🌍"
   
-  // Test timezone handling
-  let timezone = PlatformAdapter::get_system_timezone(adapter)
-  assert_true(timezone.length() > 0)
+  // Test file writing
+  let write_result = PlatformFileOperations::write_file(test_file_path, file_content)
+  assert_true(write_result, "Should successfully write file on current platform")
   
-  // Test locale handling
-  let locale = PlatformAdapter::get_system_locale(adapter)
-  assert_true(locale.length() > 0)
-}
-
-// Test 2: File System Compatibility
-test "file system compatibility" {
-  let file_system_adapter = FileSystemAdapter::new()
-  
-  // Test path normalization
-  let test_paths = [
-    "/path/to/file",
-    "\\path\\to\\file",
-    "path/to/file",
-    "path\\to\\file",
-    "./relative/path",
-    ".\\relative\\path"
-  ]
-  
-  for path in test_paths {
-    let normalized = FileSystemAdapter::normalize_path(file_system_adapter, path)
-    assert_true(normalized.length() > 0)
-    
-    // Normalized path should use consistent separators
-    let has_forward_slash = normalized.contains("/")
-    let has_backslash = normalized.contains("\\")
-    
-    // Should not mix separators
-    assert_false(has_forward_slash && has_backslash)
-  }
-  
-  // Test temporary directory handling
-  let temp_dir = FileSystemAdapter::get_temp_directory(file_system_adapter)
-  assert_true(temp_dir.length() > 0)
-  
-  // Test user directory handling
-  let user_dir = FileSystemAdapter::get_user_directory(file_system_adapter)
-  assert_true(user_dir.length() > 0)
-  
-  // Test file permissions
-  let test_file = FileSystemAdapter::join_path(file_system_adapter, temp_dir, "telemetry_test_file")
-  
-  // Create test file
-  let create_result = FileSystemAdapter::create_file(file_system_adapter, test_file)
-  assert_true(create_result.is_ok())
-  
-  // Write to file
-  let write_result = FileSystemAdapter::write_to_file(file_system_adapter, test_file, "test content")
-  assert_true(write_result.is_ok())
-  
-  // Read from file
-  let read_result = FileSystemAdapter::read_from_file(file_system_adapter, test_file)
+  // Test file reading
+  let read_result = PlatformFileOperations::read_file(test_file_path)
   match read_result {
-    Ok(content) => assert_eq(content, "test content"),
-    Err(_) => assert_true(false)
+    Some(content) => {
+      assert_eq(content, file_content, "Should read same content that was written")
+      Span::set_attribute(file_operations_span, "file.read.success", BoolValue(true))
+    }
+    None => {
+      Span::set_attribute(file_operations_span, "file.read.success", BoolValue(false))
+      assert_true(false, "Should successfully read file on current platform")
+    }
   }
   
-  // Check file permissions
-  let permissions = FileSystemAdapter::get_file_permissions(file_system_adapter, test_file)
-  assert_true(permissions.length() > 0)
+  // Test file deletion
+  let delete_result = PlatformFileOperations::delete_file(test_file_path)
+  assert_true(delete_result, "Should successfully delete file on current platform")
   
-  // Clean up test file
-  let delete_result = FileSystemAdapter::delete_file(file_system_adapter, test_file)
-  assert_true(delete_result.is_ok())
+  Span::end(file_operations_span)
+  Span::end(platform_span)
 }
 
-// Test 3: Network Compatibility
-test "network compatibility" {
-  let network_adapter = NetworkAdapter::new()
+// Test 2: Architecture Compatibility
+test "architecture compatibility" {
+  let arch_detector = ArchitectureDetector::new()
+  let tracer = TracerProvider::get_tracer("architecture_compatibility_test")
   
-  // Test hostname resolution
-  let hostname = NetworkAdapter::get_hostname(network_adapter)
-  assert_true(hostname.length() > 0)
+  // Create architecture detection span
+  let arch_span = Tracer::start_span(tracer, "architecture_detection")
   
-  // Test IP address detection
-  let ip_addresses = NetworkAdapter::get_ip_addresses(network_adapter)
-  assert_true(ip_addresses.length() > 0)
+  // Detect current architecture
+  let arch_info = ArchitectureDetector::detect(arch_detector)
+  
+  // Add architecture information to span
+  Span::set_attribute(arch_span, "architecture.type", StringValue(arch_info.arch_type))
+  Span::set_attribute(arch_span, "architecture.bits", IntValue(arch_info.bits))
+  Span::set_attribute(arch_span, "architecture.endian", StringValue(arch_info.endian))
+  
+  // Test architecture-specific optimizations
+  match arch_info.arch_type {
+    "x86_64" => {
+      // Test x86_64-specific optimizations
+      let optimization_result = ArchitectureDetector::test_x86_64_optimizations(arch_detector)
+      Span::set_attribute(arch_span, "architecture.x86_64.optimizations", StringValue(optimization_result))
+      assert_true(optimization_result.length() > 0, "Should detect x86_64 optimizations")
+    }
+    "arm64" => {
+      // Test ARM64-specific optimizations
+      let optimization_result = ArchitectureDetector::test_arm64_optimizations(arch_detector)
+      Span::set_attribute(arch_span, "architecture.arm64.optimizations", StringValue(optimization_result))
+      assert_true(optimization_result.length() > 0, "Should detect ARM64 optimizations")
+    }
+    _ => {
+      // Test generic optimizations
+      let optimization_result = ArchitectureDetector::test_generic_optimizations(arch_detector)
+      Span::set_attribute(arch_span, "architecture.generic.optimizations", StringValue(optimization_result))
+      assert_true(optimization_result.length() > 0, "Should detect generic optimizations")
+    }
+  }
+  
+  // Test endianness handling
+  let endianness_span = Tracer::start_span(tracer, "endianness_handling")
+  
+  let test_value = 0x12345678
+  let serialized = ArchitectureDetector::serialize_int(arch_detector, test_value)
+  let deserialized = ArchitectureDetector::deserialize_int(arch_detector, serialized)
+  
+  assert_eq(test_value, deserialized, "Should handle endianness correctly")
+  
+  Span::set_attribute(endianness_span, "endianness.test.original", IntValue(test_value))
+  Span::set_attribute(endianness_span, "endianness.test.serialized", StringValue(serialized))
+  Span::set_attribute(endianness_span, "endianness.test.deserialized", IntValue(deserialized))
+  Span::set_attribute(endianness_span, "endianness.test.success", BoolValue(true))
+  
+  Span::end(endianness_span)
+  Span::end(arch_span)
+}
+
+// Test 3: Runtime Environment Compatibility
+test "runtime environment compatibility" {
+  let runtime_detector = RuntimeDetector::new()
+  let tracer = TracerProvider::get_tracer("runtime_compatibility_test")
+  
+  // Create runtime detection span
+  let runtime_span = Tracer::start_span(tracer, "runtime_detection")
+  
+  // Detect current runtime
+  let runtime_info = RuntimeDetector::detect(runtime_detector)
+  
+  // Add runtime information to span
+  Span::set_attribute(runtime_span, "runtime.name", StringValue(runtime_info.runtime_name))
+  Span::set_attribute(runtime_span, "runtime.version", StringValue(runtime_info.runtime_version))
+  Span::set_attribute(runtime_span, "runtime.build_info", StringValue(runtime_info.build_info))
+  
+  // Test runtime-specific features
+  match runtime_info.runtime_name {
+    "moonbit" => {
+      // Test MoonBit-specific features
+      let moonbit_features = RuntimeDetector::test_moonbit_features(runtime_detector)
+      Span::set_attribute(runtime_span, "runtime.moonbit.features", StringValue(moonbit_features))
+      assert_true(moonbit_features.length() > 0, "Should detect MoonBit features")
+    }
+    _ => {
+      // Test generic runtime features
+      let generic_features = RuntimeDetector::test_generic_features(runtime_detector)
+      Span::set_attribute(runtime_span, "runtime.generic.features", StringValue(generic_features))
+      assert_true(generic_features.length() > 0, "Should detect generic runtime features")
+    }
+  }
+  
+  // Test memory management compatibility
+  let memory_span = Tracer::start_span(tracer, "memory_management_compatibility")
+  
+  let memory_info = RuntimeDetector::get_memory_info(runtime_detector)
+  
+  Span::set_attribute(memory_span, "memory.total_bytes", IntValue(memory_info.total_bytes))
+  Span::set_attribute(memory_span, "memory.available_bytes", IntValue(memory_info.available_bytes))
+  Span::set_attribute(memory_span, "memory.used_bytes", IntValue(memory_info.used_bytes))
+  
+  // Test memory allocation and deallocation
+  let allocation_result = RuntimeDetector::test_memory_operations(runtime_detector, 1024 * 1024) // 1MB
+  assert_true(allocation_result, "Should successfully allocate and deallocate memory")
+  
+  Span::set_attribute(memory_span, "memory.allocation_test.success", BoolValue(allocation_result))
+  
+  Span::end(memory_span)
+  Span::end(runtime_span)
+}
+
+// Test 4: Network Stack Compatibility
+test "network stack compatibility" {
+  let network_detector = NetworkDetector::new()
+  let tracer = TracerProvider::get_tracer("network_compatibility_test")
+  
+  // Create network detection span
+  let network_span = Tracer::start_span(tracer, "network_stack_detection")
+  
+  // Detect network stack
+  let network_info = NetworkDetector::detect(network_detector)
+  
+  // Add network information to span
+  Span::set_attribute(network_span, "network.stack", StringValue(network_info.stack_type))
+  Span::set_attribute(network_span, "network.ipv4_support", BoolValue(network_info.ipv4_support))
+  Span::set_attribute(network_span, "network.ipv6_support", BoolValue(network_info.ipv6_support))
+  Span::set_attribute(network_span, "network.dns_support", BoolValue(network_info.dns_support))
+  
+  // Test network operations
+  let network_operations_span = Tracer::start_span(tracer, "network_operations")
+  
+  // Test socket creation
+  let socket_result = NetworkDetector::test_socket_operations(network_detector)
+  assert_true(socket_result, "Should successfully create and use sockets")
+  Span::set_attribute(network_operations_span, "network.socket_test.success", BoolValue(socket_result))
   
   // Test DNS resolution
-  let dns_result = NetworkAdapter::resolve_hostname(network_adapter, "localhost")
-  match dns_result {
-    Ok(ips) => assert_true(ips.length() > 0),
-    Err(_) => assert_true(false)
-  }
+  let dns_result = NetworkDetector::test_dns_resolution(network_detector, "example.com")
+  assert_true(dns_result, "Should successfully resolve DNS names")
+  Span::set_attribute(network_operations_span, "network.dns_test.success", BoolValue(dns_result))
   
-  // Test HTTP client compatibility
-  let http_client = NetworkAdapter::create_http_client(network_adapter)
+  // Test HTTP client
+  let http_result = NetworkDetector::test_http_operations(network_detector, "https://httpbin.org/get")
+  assert_true(http_result, "Should successfully make HTTP requests")
+  Span::set_attribute(network_operations_span, "network.http_test.success", BoolValue(http_result))
   
-  // Test HTTP request
-  let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-  let response = HttpClient::send(http_client, request)
-  
-  match response {
-    Ok(resp) => {
-      assert_eq(HttpResponse::status_code(resp), 200)
-      match HttpResponse::body(resp) {
-        Some(body) => assert_true(body.length() > 0),
-        None => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // Network might not be available, which is OK for this test
-      assert_true(true)
-    }
-  }
-  
-  // Test TLS/SSL compatibility
-  let tls_version = NetworkAdapter::get_tls_version(network_adapter)
-  assert_true(tls_version.length() > 0)
-  
-  // Test proxy support
-  let proxy_config = NetworkAdapter::detect_proxy_config(network_adapter)
-  // Proxy might not be configured, which is OK
-  assert_true(true)
+  Span::end(network_operations_span)
+  Span::end(network_span)
 }
 
-// Test 4: Process and Thread Compatibility
-test "process and thread compatibility" {
-  let process_adapter = ProcessAdapter::new()
+// Test 5: File System Compatibility
+test "file system compatibility" {
+  let fs_detector = FileSystemDetector::new()
+  let tracer = TracerProvider::get_tracer("filesystem_compatibility_test")
   
-  // Test process ID
-  let process_id = ProcessAdapter::get_process_id(process_adapter)
-  assert_true(process_id > 0)
+  // Create filesystem detection span
+  let fs_span = Tracer::start_span(tracer, "filesystem_detection")
   
-  // Test parent process ID
-  let parent_process_id = ProcessAdapter::get_parent_process_id(process_adapter)
-  assert_true(parent_process_id > 0)
+  // Detect filesystem
+  let fs_info = FileSystemDetector::detect(fs_detector)
   
-  // Test process name
-  let process_name = ProcessAdapter::get_process_name(process_adapter)
-  assert_true(process_name.length() > 0)
+  // Add filesystem information to span
+  Span::set_attribute(fs_span, "filesystem.type", StringValue(fs_info.fs_type))
+  Span::set_attribute(fs_span, "filesystem.case_sensitive", BoolValue(fs_info.case_sensitive))
+  Span::set_attribute(fs_span, "filesystem.path_separator", StringValue(fs_info.path_separator))
+  Span::set_attribute(fs_span, "filesystem.max_path_length", IntValue(fs_info.max_path_length))
   
-  // Test command line arguments
-  let command_line = ProcessAdapter::get_command_line(process_adapter)
-  assert_true(command_line.length() > 0)
+  // Test filesystem operations
+  let fs_operations_span = Tracer::start_span(tracer, "filesystem_operations")
   
-  // Test environment variables
-  let env_vars = ProcessAdapter::get_environment_variables(process_adapter)
-  assert_true(env_vars.length() > 0)
+  // Test directory operations
+  let test_dir = fs_info.path_separator + "tmp" + fs_info.path_separator + "azimuth_test_dir_" + 
+    Timestamp::now().to_string()
   
-  // Test working directory
-  let working_dir = ProcessAdapter::get_working_directory(process_adapter)
-  assert_true(working_dir.length() > 0)
+  let create_dir_result = FileSystemDetector::create_directory(fs_detector, test_dir)
+  assert_true(create_dir_result, "Should successfully create directory")
+  Span::set_attribute(fs_operations_span, "filesystem.create_dir.success", BoolValue(create_dir_result))
   
-  // Test thread compatibility
-  let thread_adapter = ThreadAdapter::new()
+  // Test file operations with different encodings
+  let test_file = test_dir + fs_info.path_separator + "test_file.txt"
+  let unicode_content = "Test content with unicode: 🌍🚀✨ 中文测试 日本語テ스트"
   
-  // Test thread ID
-  let thread_id = ThreadAdapter::get_thread_id(thread_adapter)
-  assert_true(thread_id.length() > 0)
+  let write_result = FileSystemDetector::write_file(fs_detector, test_file, unicode_content)
+  assert_true(write_result, "Should successfully write file with unicode content")
+  Span::set_attribute(fs_operations_span, "filesystem.write_file.success", BoolValue(write_result))
   
-  // Test thread name
-  let thread_name = ThreadAdapter::get_thread_name(thread_adapter)
-  // Thread name might not be available on all platforms
-  assert_true(true)
-  
-  // Test CPU count
-  let cpu_count = ProcessAdapter::get_cpu_count(process_adapter)
-  assert_true(cpu_count > 0)
-  
-  // Test memory info
-  let memory_info = ProcessAdapter::get_memory_info(process_adapter)
-  assert_true(MemoryInfo::total_memory(memory_info) > 0)
-}
-
-// Test 5: Time and Date Compatibility
-test "time and date compatibility" {
-  let time_adapter = TimeAdapter::new()
-  
-  // Test current time
-  let current_time = TimeAdapter::get_current_time(time_adapter)
-  assert_true(current_time > 0)
-  
-  // Test timezone offset
-  let timezone_offset = TimeAdapter::get_timezone_offset(time_adapter)
-  assert_true(timezone_offset != 0 || true) // Might be 0 for UTC
-  
-  // Test time formatting
-  let formatted_time = TimeAdapter::format_time(time_adapter, current_time, "%Y-%m-%d %H:%M:%S")
-  assert_true(formatted_time.length() > 0)
-  
-  // Test time parsing
-  let parse_result = TimeAdapter::parse_time(time_adapter, formatted_time, "%Y-%m-%d %H:%M:%S")
-  match parse_result {
-    Ok(parsed_time) => assert_true(parsed_time > 0),
-    Err(_) => assert_true(false)
-  }
-  
-  // Test high-resolution timer
-  let start_time = TimeAdapter::get_high_resolution_time(time_adapter)
-  
-  // Sleep for a short duration
-  TimeAdapter::sleep(time_adapter, 10) // 10ms
-  
-  let end_time = TimeAdapter::get_high_resolution_time(time_adapter)
-  let elapsed = TimeAdapter::calculate_elapsed(time_adapter, start_time, end_time)
-  
-  // Should have slept at least 10ms (with some tolerance)
-  assert_true(elapsed >= 10.0)
-  
-  // Test monotonic clock
-  let monotonic_time = TimeAdapter::get_monotonic_time(time_adapter)
-  assert_true(monotonic_time > 0)
-  
-  // Test date/time arithmetic
-  let future_time = TimeAdapter::add_seconds(time_adapter, current_time, 3600) // Add 1 hour
-  assert_true(future_time > current_time)
-  
-  let past_time = TimeAdapter::subtract_seconds(time_adapter, current_time, 3600) // Subtract 1 hour
-  assert_true(past_time < current_time)
-}
-
-// Test 6: Encoding and Character Set Compatibility
-test "encoding and character set compatibility" {
-  let encoding_adapter = EncodingAdapter::new()
-  
-  // Test UTF-8 encoding
-  let test_string = "Hello, 世界! 👋"
-  let utf8_bytes = EncodingAdapter::encode_utf8(encoding_adapter, test_string)
-  assert_true(utf8_bytes.length() > test_string.length()) // UTF-8 should be longer for multi-byte chars
-  
-  // Test UTF-8 decoding
-  let decoded_string = EncodingAdapter::decode_utf8(encoding_adapter, utf8_bytes)
-  assert_eq(decoded_string, test_string)
-  
-  // Test UTF-16 encoding
-  let utf16_bytes = EncodingAdapter::encode_utf16(encoding_adapter, test_string)
-  assert_true(utf16_bytes.length() > 0)
-  
-  // Test UTF-16 decoding
-  let decoded_utf16 = EncodingAdapter::decode_utf16(encoding_adapter, utf16_bytes)
-  assert_eq(decoded_utf16, test_string)
-  
-  // Test ASCII encoding (should fail for non-ASCII characters)
-  let ascii_result = EncodingAdapter::encode_ascii(encoding_adapter, test_string)
-  match ascii_result {
-    Ok(_) => assert_true(false, "ASCII encoding should fail for non-ASCII characters"),
-    Err(_) => assert_true(true)
-  }
-  
-  // Test ASCII encoding for ASCII-only string
-  let ascii_string = "Hello, World!"
-  let ascii_bytes = EncodingAdapter::encode_ascii(encoding_adapter, ascii_string).unwrap()
-  assert_eq(ascii_bytes.length(), ascii_string.length())
-  
-  let decoded_ascii = EncodingAdapter::decode_ascii(encoding_adapter, ascii_bytes)
-  assert_eq(decoded_ascii, ascii_string)
-  
-  // Test base64 encoding
-  let base64_encoded = EncodingAdapter::encode_base64(encoding_adapter, utf8_bytes)
-  assert_true(base64_encoded.length() > 0)
-  
-  // Test base64 decoding
-  let base64_decoded = EncodingAdapter::decode_base64(encoding_adapter, base64_encoded)
-  assert_eq(base64_decoded, utf8_bytes)
-  
-  // Test system default encoding
-  let default_encoding = EncodingAdapter::get_system_default_encoding(encoding_adapter)
-  assert_true(default_encoding.length() > 0)
-}
-
-// Test 7: Platform-Specific Telemetry Features
-test "platform-specific telemetry features" {
-  let platform_telemetry = PlatformTelemetry::new()
-  
-  // Test CPU metrics
-  let cpu_metrics = PlatformTelemetry::get_cpu_metrics(platform_telemetry)
-  assert_true(CpuMetrics::usage_percent(cpu_metrics) >= 0.0)
-  assert_true(CpuMetrics::usage_percent(cpu_metrics) <= 100.0)
-  assert_true(CpuMetrics::core_count(cpu_metrics) > 0)
-  
-  // Test memory metrics
-  let memory_metrics = PlatformTelemetry::get_memory_metrics(platform_telemetry)
-  assert_true(MemoryMetrics::total_bytes(memory_metrics) > 0)
-  assert_true(MemoryMetrics::available_bytes(memory_metrics) > 0)
-  assert_true(MemoryMetrics::used_bytes(memory_metrics) > 0)
-  
-  // Test disk metrics
-  let disk_metrics = PlatformTelemetry::get_disk_metrics(platform_telemetry)
-  assert_true(DiskMetrics::total_bytes(disk_metrics) > 0)
-  assert_true(DiskMetrics::available_bytes(disk_metrics) > 0)
-  assert_true(DiskMetrics::used_bytes(disk_metrics) > 0)
-  
-  // Test network metrics
-  let network_metrics = PlatformTelemetry::get_network_metrics(platform_telemetry)
-  assert_true(NetworkMetrics::bytes_sent(network_metrics) >= 0)
-  assert_true(NetworkMetrics::bytes_received(network_metrics) >= 0)
-  assert_true(NetworkMetrics::packets_sent(network_metrics) >= 0)
-  assert_true(NetworkMetrics::packets_received(network_metrics) >= 0)
-  
-  // Test process metrics
-  let process_metrics = PlatformTelemetry::get_process_metrics(platform_telemetry)
-  assert_true(ProcessMetrics::pid(process_metrics) > 0)
-  assert_true(ProcessMetrics::memory_usage(process_metrics) > 0)
-  assert_true(ProcessMetrics::cpu_time(process_metrics) >= 0.0)
-  
-  // Test platform-specific features
-  let platform_info = PlatformDetector::detect(PlatformDetector::new())
-  
-  match PlatformInfo::os_type(platform_info) {
-    "linux" => {
-      // Test Linux-specific features
-      let linux_metrics = PlatformTelemetry::get_linux_metrics(platform_telemetry);
-      // Verify Linux-specific metrics are available
-      assert_true(true);
-    }
-    "windows" => {
-      // Test Windows-specific features
-      let windows_metrics = PlatformTelemetry::get_windows_metrics(platform_telemetry);
-      // Verify Windows-specific metrics are available
-      assert_true(true);
-    }
-    "macos" => {
-      // Test macOS-specific features
-      let macos_metrics = PlatformTelemetry::get_macos_metrics(platform_telemetry);
-      // Verify macOS-specific metrics are available
-      assert_true(true);
-    }
-    _ => {
-      // Other platforms
-      assert_true(true);
-    }
-  }
-}
-
-// Test 8: Cross-Platform Configuration
-test "cross-platform configuration" {
-  let config_adapter = ConfigAdapter::new()
-  
-  // Test config directory detection
-  let config_dir = ConfigAdapter::get_config_directory(config_adapter)
-  assert_true(config_dir.length() > 0)
-  
-  // Test config file paths
-  let config_file = ConfigAdapter::get_config_file_path(config_adapter, "telemetry.json")
-  assert_true(config_file.length() > 0)
-  
-  // Test config creation and loading
-  let test_config = TelemetryConfig::new()
-  TelemetryConfig::set(test_config, "service.name", "test-service")
-  TelemetryConfig::set(test_config, "service.version", "1.0.0")
-  TelemetryConfig::set(test_config, "exporter.endpoint", "http://localhost:4318")
-  
-  // Save config
-  let save_result = ConfigAdapter::save_config(config_adapter, test_config, config_file)
-  assert_true(save_result.is_ok())
-  
-  // Load config
-  let load_result = ConfigAdapter::load_config(config_adapter, config_file)
-  match load_result {
-    Ok(loaded_config) => {
-      let service_name = TelemetryConfig::get_string(loaded_config, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "test-service"),
-        None => assert_true(false)
-      }
-      
-      let service_version = TelemetryConfig::get_string(loaded_config, "service.version")
-      match service_version {
-        Some(version) => assert_eq(version, "1.0.0"),
-        None => assert_true(false)
-      }
-      
-      let endpoint = TelemetryConfig::get_string(loaded_config, "exporter.endpoint")
-      match endpoint {
-        Some(ep) => assert_eq(ep, "http://localhost:4318"),
-        None => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // Test environment variable config
-  ConfigAdapter::set_environment_variable(config_adapter, "TELEMETRY_SERVICE_NAME", "env-test-service")
-  
-  let env_config = ConfigAdapter::load_from_environment(config_adapter)
-  let env_service_name = TelemetryConfig::get_string(env_config, "service.name")
-  match env_service_name {
-    Some(name) => assert_eq(name, "env-test-service"),
-    None => assert_true(false)
-  }
-  
-  // Clean up
-  let delete_result = FileSystemAdapter::delete_file(FileSystemAdapter::new(), config_file)
-  assert_true(delete_result.is_ok())
-}
-
-// Test 9: Cross-Platform Logging
-test "cross-platform logging" {
-  let logging_adapter = LoggingAdapter::new()
-  
-  // Test log directory detection
-  let log_dir = LoggingAdapter::get_log_directory(logging_adapter)
-  assert_true(log_dir.length() > 0)
-  
-  // Test log file creation
-  let log_file = LoggingAdapter::get_log_file_path(logging_adapter, "telemetry", "log")
-  assert_true(log_file.length() > 0)
-  
-  // Test log file rotation
-  let rotation_config = LogRotationConfig::new()
-  LogRotationConfig::set_max_size(rotation_config, 1024 * 1024) // 1MB
-  LogRotationConfig::set_max_files(rotation_config, 5)
-  
-  // Create logger with rotation
-  let logger = LoggingAdapter::create_logger(logging_adapter, "test_logger", log_file, rotation_config)
-  
-  // Test logging at different levels
-  LoggingAdapter::log(logger, Debug, "Debug message")
-  LoggingAdapter::log(logger, Info, "Info message")
-  LoggingAdapter::log(logger, Warn, "Warning message")
-  LoggingAdapter::log(logger, Error, "Error message")
-  
-  // Test structured logging
-  let structured_data = [
-    ("key1", "value1"),
-    ("key2", "value2"),
-    ("number", "42")
-  ]
-  LoggingAdapter::log_structured(logger, Info, "Structured message", structured_data)
-  
-  // Test logging with exceptions
-  LoggingAdapter::log_exception(logger, Error, "Exception occurred", "Test exception")
-  
-  // Verify log file exists and has content
-  let file_exists = FileSystemAdapter::file_exists(FileSystemAdapter::new(), log_file)
-  assert_true(file_exists)
-  
-  let read_result = FileSystemAdapter::read_from_file(FileSystemAdapter::new(), log_file)
+  let read_result = FileSystemDetector::read_file(fs_detector, test_file)
   match read_result {
-    Ok(content) => {
-      assert_true(content.contains("Debug message"))
-      assert_true(content.contains("Info message"))
-      assert_true(content.contains("Warning message"))
-      assert_true(content.contains("Error message"))
-      assert_true(content.contains("Structured message"))
-      assert_true(content.contains("Exception occurred"))
+    Some(content) => {
+      assert_eq(content, unicode_content, "Should read unicode content correctly")
+      Span::set_attribute(fs_operations_span, "filesystem.read_file.success", BoolValue(true))
     }
-    Err(_) => assert_true(false)
+    None => {
+      Span::set_attribute(fs_operations_span, "filesystem.read_file.success", BoolValue(false))
+      assert_true(false, "Should successfully read file with unicode content")
+    }
   }
   
-  // Test log level filtering
-  LoggingAdapter::set_log_level(logger, Warn)
-  LoggingAdapter::log(logger, Debug, "This should not be logged")
-  LoggingAdapter::log(logger, Warn, "This should be logged")
+  // Test file permissions
+  let permission_result = FileSystemDetector::test_file_permissions(fs_detector, test_file)
+  assert_true(permission_result, "Should successfully handle file permissions")
+  Span::set_attribute(fs_operations_span, "filesystem.permissions_test.success", BoolValue(permission_result))
   
-  // Verify log filtering
-  let filtered_content = FileSystemAdapter::read_from_file(FileSystemAdapter::new(), log_file).unwrap()
-  assert_false(filtered_content.contains("This should not be logged"))
-  assert_true(filtered_content.contains("This should be logged"))
+  // Cleanup
+  let delete_file_result = FileSystemDetector::delete_file(fs_detector, test_file)
+  let delete_dir_result = FileSystemDetector::delete_directory(fs_detector, test_dir)
   
-  // Clean up
-  let delete_result = FileSystemAdapter::delete_file(FileSystemAdapter::new(), log_file)
-  assert_true(delete_result.is_ok())
+  assert_true(delete_file_result, "Should successfully delete file")
+  assert_true(delete_dir_result, "Should successfully delete directory")
+  
+  Span::set_attribute(fs_operations_span, "filesystem.cleanup.success", BoolValue(delete_file_result && delete_dir_result))
+  
+  Span::end(fs_operations_span)
+  Span::end(fs_span)
 }
 
-// Test 10: Cross-Platform Telemetry Export
-test "cross-platform telemetry export" {
-  let export_adapter = ExportAdapter::new()
+// Test 6: Thread and Concurrency Compatibility
+test "thread and concurrency compatibility" {
+  let concurrency_detector = ConcurrencyDetector::new()
+  let tracer = TracerProvider::get_tracer("concurrency_compatibility_test")
   
-  // Test exporter creation
-  let exporter = ExportAdapter::create_http_exporter(export_adapter, "http://localhost:4318")
+  // Create concurrency detection span
+  let concurrency_span = Tracer::start_span(tracer, "concurrency_detection")
   
-  // Test span export
-  let span_ctx = SpanContext::new("cross_platform_trace", "cross_platform_span", true, "")
-  let span = Span::new("cross_platform_operation", Server, span_ctx)
-  Span::add_attribute(span, "platform", PlatformDetector::detect(PlatformDetector::new()).os_type)
-  Span::add_event(span, "start_event", None)
-  Span::set_status(span, Ok, Some("Cross-platform test completed"))
+  // Detect concurrency capabilities
+  let concurrency_info = ConcurrencyDetector::detect(concurrency_detector)
   
-  let export_result = ExportAdapter::export_span(exporter, span)
-  // Export might fail if collector is not available, which is OK for this test
-  assert_true(export_result.is_ok() || export_result.is_err())
+  // Add concurrency information to span
+  Span::set_attribute(concurrency_span, "concurrency.thread_support", BoolValue(concurrency_info.thread_support))
+  Span::set_attribute(concurrency_span, "concurrency.max_threads", IntValue(concurrency_info.max_threads))
+  Span::set_attribute(concurrency_span, "concurrency.atomic_operations", BoolValue(concurrency_info.atomic_operations))
+  Span::set_attribute(concurrency_span, "concurrency.mutex_support", BoolValue(concurrency_info.mutex_support))
   
-  // Test metrics export
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "cross_platform_meter")
-  let counter = Meter::create_counter(meter, "cross_platform_counter", None, None)
-  Counter::add(counter, 1.0)
+  // Test threading operations
+  let threading_span = Tracer::start_span(tracer, "threading_operations")
   
-  let metrics_export_result = ExportAdapter::export_metrics(exporter, [counter])
-  // Export might fail if collector is not available, which is OK for this test
-  assert_true(metrics_export_result.is_ok() || metrics_export_result.is_err())
+  // Test thread creation and joining
+  let threading_result = ConcurrencyDetector::test_thread_operations(concurrency_detector, 5)
+  assert_true(threading_result, "Should successfully create and join threads")
+  Span::set_attribute(threading_span, "threading.thread_test.success", BoolValue(threading_result))
   
-  // Test log export
-  let log_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(log_provider, "cross_platform_logger")
-  let log_record = LogRecord::new(Info, "Cross-platform log message")
-  LogRecord::add_attribute(log_record, "platform", PlatformDetector::detect(PlatformDetector::new()).os_type)
+  // Test atomic operations
+  let atomic_result = ConcurrencyDetector::test_atomic_operations(concurrency_detector, 10)
+  assert_true(atomic_result, "Should successfully perform atomic operations")
+  Span::set_attribute(threading_span, "threading.atomic_test.success", BoolValue(atomic_result))
   
-  let log_export_result = ExportAdapter::export_log(exporter, log_record)
-  // Export might fail if collector is not available, which is OK for this test
-  assert_true(log_export_result.is_ok() || log_export_result.is_err())
+  // Test mutex operations
+  let mutex_result = ConcurrencyDetector::test_mutex_operations(concurrency_detector, 3)
+  assert_true(mutex_result, "Should successfully use mutex for synchronization")
+  Span::set_attribute(threading_span, "threading.mutex_test.success", BoolValue(mutex_result))
   
-  // Test file-based export
-  let file_exporter = ExportAdapter::create_file_exporter(export_adapter, "/tmp/telemetry_export.json")
+  Span::end(threading_span)
+  Span::end(concurrency_span)
+}
+
+// Test 7: Time and Date Compatibility
+test "time and date compatibility" {
+  let time_detector = TimeDetector::new()
+  let tracer = TracerProvider::get_tracer("time_compatibility_test")
   
-  let file_export_result = ExportAdapter::export_span_to_file(file_exporter, span)
-  assert_true(file_export_result.is_ok())
+  // Create time detection span
+  let time_span = Tracer::start_span(tracer, "time_detection")
   
-  // Verify file was created
-  let file_exists = FileSystemAdapter::file_exists(FileSystemAdapter::new(), "/tmp/telemetry_export.json")
-  assert_true(file_exists)
+  // Detect time capabilities
+  let time_info = TimeDetector::detect(time_detector)
   
-  // Clean up
-  let delete_result = FileSystemAdapter::delete_file(FileSystemAdapter::new(), "/tmp/telemetry_export.json")
-  assert_true(delete_result.is_ok())
+  // Add time information to span
+  Span::set_attribute(time_span, "time.timezone_support", BoolValue(time_info.timezone_support))
+  Span::set_attribute(time_span, "time.high_resolution", BoolValue(time_info.high_resolution))
+  Span::set_attribute(time_span, "time.monotonic_clock", BoolValue(time_info.monotonic_clock))
   
-  // Test platform-specific export configurations
-  let platform_info = PlatformDetector::detect(PlatformDetector::new())
+  // Test time operations
+  let time_operations_span = Tracer::start_span(tracer, "time_operations")
   
-  match PlatformInfo::os_type(platform_info) {
-    "linux" => {
-      // Test Linux-specific export configuration
-      let linux_config = ExportAdapter::get_linux_export_config(export_adapter)
-      assert_true(linux_config.is_some())
+  // Test timestamp operations
+  let timestamp_result = TimeDetector::test_timestamp_operations(time_detector)
+  assert_true(timestamp_result, "Should successfully handle timestamps")
+  Span::set_attribute(time_operations_span, "time.timestamp_test.success", BoolValue(timestamp_result))
+  
+  // Test timezone operations
+  let timezone_result = TimeDetector::test_timezone_operations(time_detector)
+  assert_true(timezone_result, "Should successfully handle timezones")
+  Span::set_attribute(time_operations_span, "time.timezone_test.success", BoolValue(timezone_result))
+  
+  // Test duration operations
+  let duration_result = TimeDetector::test_duration_operations(time_detector)
+  assert_true(duration_result, "Should successfully handle durations")
+  Span::set_attribute(time_operations_span, "time.duration_test.success", BoolValue(duration_result))
+  
+  Span::end(time_operations_span)
+  Span::end(time_span)
+}
+
+// Test 8: Cross-Platform Telemetry Data Consistency
+test "cross-platform telemetry data consistency" {
+  let tracer = TracerProvider::get_tracer("cross_platform_consistency_test")
+  let platform_detector = PlatformDetector::new()
+  
+  // Create consistency test span
+  let consistency_span = Tracer::start_span(tracer, "cross_platform_consistency")
+  
+  // Add platform information to span
+  let platform_info = PlatformDetector::detect(platform_detector)
+  Span::set_attribute(consistency_span, "platform.os", StringValue(platform_info.os_type))
+  Span::set_attribute(consistency_span, "platform.arch", StringValue(platform_info.architecture))
+  
+  // Create standardized telemetry data
+  let telemetry_data = TelemetryData {
+    timestamp: Timestamp::now(),
+    metric_name: "cross_platform_test_metric",
+    value: FloatValue(42.5),
+    attributes: [
+      ("platform", StringValue(platform_info.os_type)),
+      ("architecture", StringValue(platform_info.architecture)),
+      ("test_case", StringValue("consistency")),
+      ("unicode_test", StringValue("Unicode test: 🌍🚀✨")),
+      ("number_test", IntValue(123)),
+      ("boolean_test", BoolValue(true)),
+      ("array_test", ArrayStringValue(["item1", "item2", "item3"]))
+    ]
+  }
+  
+  // Test serialization consistency
+  let json_serializer = JsonSerializer::new()
+  let serialized_data = JsonSerializer::serialize_telemetry_data(json_serializer, telemetry_data)
+  
+  // Test deserialization consistency
+  let deserialized_data = JsonSerializer::deserialize_telemetry_data(json_serializer, serialized_data)
+  
+  match deserialized_data {
+    Some(data) => {
+      // Verify data consistency across platforms
+      assert_eq(data.metric_name, telemetry_data.metric_name)
+      
+      match data.value {
+        FloatValue(v) => {
+          match telemetry_data.value {
+            FloatValue(original_v) => assert_true(Float::abs(v - original_v) < 0.001)
+            _ => assert_true(false)
+          }
+        }
+        _ => assert_true(false)
+      }
+      
+      // Verify attribute consistency
+      let platform_attr = data.attributes.find(|(k, _)| k == "platform")
+      match platform_attr {
+        Some((_, StringValue(platform))) => assert_eq(platform, platform_info.os_type)
+        _ => assert_true(false)
+      }
+      
+      Span::set_attribute(consistency_span, "consistency.serialization_test", BoolValue(true))
     }
-    "windows" => {
-      // Test Windows-specific export configuration
-      let windows_config = ExportAdapter::get_windows_export_config(export_adapter)
-      assert_true(windows_config.is_some())
-    }
-    "macos" => {
-      // Test macOS-specific export configuration
-      let macos_config = ExportAdapter::get_macos_export_config(export_adapter)
-      assert_true(macos_config.is_some())
-    }
-    _ => {
-      // Other platforms
-      assert_true(true)
+    None => {
+      Span::set_attribute(consistency_span, "consistency.serialization_test", BoolValue(false))
+      assert_true(false, "Should successfully deserialize telemetry data")
     }
   }
+  
+  // Test cross-platform format compatibility
+  let formats = ["json", "binary", "xml"]
+  
+  for format in formats {
+    let format_span = Tracer::start_span(tracer, "format_compatibility_" + format)
+    
+    let format_result = match format {
+      "json" => {
+        let json_data = JsonSerializer::serialize_telemetry_data(json_serializer, telemetry_data)
+        JsonSerializer::deserialize_telemetry_data(json_serializer, json_data).is_some()
+      }
+      "binary" => {
+        let binary_serializer = BinarySerializer::new()
+        let binary_data = BinarySerializer::serialize_telemetry_data(binary_serializer, telemetry_data)
+        BinarySerializer::deserialize_telemetry_data(binary_serializer, binary_data).is_some()
+      }
+      "xml" => {
+        let xml_serializer = XmlSerializer::new()
+        let xml_data = XmlSerializer::serialize_telemetry_data(xml_serializer, telemetry_data)
+        XmlSerializer::deserialize_telemetry_data(xml_serializer, xml_data).is_some()
+      }
+      _ => false
+    }
+    
+    Span::set_attribute(format_span, "format.type", StringValue(format))
+    Span::set_attribute(format_span, "format.compatibility", BoolValue(format_result))
+    
+    assert_true(format_result, "Format " + format + " should be compatible across platforms")
+    
+    Span::end(format_span)
+  }
+  
+  Span::end(consistency_span)
 }
