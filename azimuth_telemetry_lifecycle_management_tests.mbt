@@ -1,664 +1,709 @@
-// 遥测数据生命周期管理测试 - Telemetry Data Lifecycle Management Tests
-// 专注于遥测数据的创建、存储、归档和销毁的完整生命周期
+// Azimuth 遥测数据生命周期管理测试
+// 测试遥测数据的生命周期管理功能
 
-test "遥测数据创建与初始化测试" {
-  // 测试各种类型遥测数据的创建和初始化
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
+// 测试1: 数据创建和初始化
+test "数据创建和初始化测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
   
-  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle.test.service", Some("1.0.0"))
-  let meter = MeterProvider::get_meter(meter_provider, "lifecycle.test.service", Some("1.0.0"))
-  let logger = LoggerProvider::get_logger(logger_provider, "lifecycle.test.service", Some("1.0.0"))
+  // 配置数据创建策略
+  LifecycleManager::set_creation_strategy(lifecycle_manager, {
+    auto_generate_ids: true,
+    validate_on_create: true,
+    assign_default_attributes: true,
+    timestamp_on_creation: true
+  })
   
-  // 验证instrumentation scope
-  let tracer_scope = Tracer::instrumentation_scope(tracer)
-  assert_eq(tracer_scope.name, "lifecycle.test.service")
-  match tracer_scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false)
+  // 创建遥测Span
+  let span_creation_request = {
+    operation_name: "database.query",
+    service_name: "payment-service",
+    parent_span_id: None,
+    attributes: [
+      ("db.type", "postgresql"),
+      ("db.statement", "SELECT * FROM orders")
+    ]
   }
   
-  // 创建span并验证初始化状态
-  let span = Tracer::start_span(tracer, "lifecycle.test.operation")
-  assert_eq(Span::name(span), "lifecycle.test.operation")
-  assert_eq(Span::kind(span), Internal) // 默认kind
-  assert_true(Span::is_recording(span)) // 初始状态应该是recording
+  let created_span = LifecycleManager::create_span(lifecycle_manager, span_creation_request)
   
-  let span_context = Span::span_context(span)
-  assert_true(SpanContext::is_valid(span_context)) // 应该有有效的context
-  assert_true(SpanContext::is_sampled(span_context)) // 默认应该是sampled
+  // 验证自动生成的ID
+  assert_true(created_span.trace_id.length() > 0)
+  assert_true(created_span.span_id.length() > 0)
   
-  // 创建metrics并验证初始化
-  let counter = Meter::create_counter(meter, "test.requests.total")
-  assert_eq(counter.name, "test.requests.total")
+  // 验证默认属性
+  assert_true(created_span.attributes.any(fn(a) { a[0] == "service.name" and a[1] == "payment-service" }))
+  assert_true(created_span.attributes.any(fn(a) { a[0] == "telemetry.version" }))
   
-  let histogram = Meter::create_histogram(meter, "test.response.time", Some("Response time histogram"), Some("ms"))
-  assert_eq(histogram.name, "test.response.time")
-  match histogram.description {
-    Some(desc) => assert_eq(desc, "Response time histogram")
-    None => assert_true(false)
-  }
-  match histogram.unit {
-    Some(unit) => assert_eq(unit, "ms")
-    None => assert_true(false)
-  }
+  // 验证时间戳
+  assert_true(created_span.start_time > 0)
+  assert_eq(created_span.end_time, 0)  // 未结束，结束时间为0
   
-  let updown_counter = Meter::create_updown_counter(meter, "test.active.connections")
-  assert_eq(updown_counter.name, "test.active.connections")
+  // 验证初始状态
+  assert_eq(created_span.status, "created")
   
-  let gauge = Meter::create_gauge(meter, "test.memory.usage")
-  assert_eq(gauge.name, "test.memory.usage")
-  
-  // 创建log record并验证初始化
-  let log_record = LogRecord::new(Info, "Test log message")
-  assert_eq(LogRecord::severity_number(log_record), Info)
-  match LogRecord::body(log_record) {
-    Some(body) => assert_eq(body, "Test log message")
-    None => assert_true(false)
+  // 创建遥测Metric
+  let metric_creation_request = {
+    name: "http.request.duration",
+    description: "HTTP请求持续时间",
+    unit: "ms",
+    metric_type: "histogram",
+    service_name: "api.gateway"
   }
   
-  // 创建带有完整上下文的log record
-  let detailed_log = LogRecord::new_with_context(
-    Error,
-    Some("Detailed error message"),
-    Some(Attributes::with_attributes(Attributes::new(), [
-      ("error.code", StringValue("LIFECYCLE_ERROR")),
-      ("error.severity", IntValue(5))
-    ])),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    Some(Clock::now_unix_nanos(Clock::system()) + 1000L),
-    Some(SpanContext::trace_id(span_context)),
-    Some(SpanContext::span_id(span_context)),
-    Some(Context::root())
-  )
+  let created_metric = LifecycleManager::create_metric(lifecycle_manager, metric_creation_request)
   
-  assert_eq(LogRecord::severity_number(detailed_log), Error)
-  match LogRecord::body(detailed_log) {
-    Some(body) => assert_eq(body, "Detailed error message")
-    None => assert_true(false)
+  // 验证Metric创建
+  assert_eq(created_metric.name, "http.request.duration")
+  assert_eq(created_metric.description, "HTTP请求持续时间")
+  assert_eq(created_metric.unit, "ms")
+  assert_eq(created_metric.metric_type, "histogram")
+  
+  // 验证自动生成的属性
+  assert_true(created_metric.attributes.any(fn(a) { a[0] == "service.name" and a[1] == "api.gateway" }))
+  assert_true(created_metric.attributes.any(fn(a) { a[0] == "metric.created_at" }))
+  
+  // 创建遥测Log
+  let log_creation_request = {
+    level: "info",
+    message: "Processing payment request",
+    service_name: "payment-service",
+    trace_id: created_span.trace_id,
+    span_id: created_span.span_id
   }
-  assert_eq(LogRecord::trace_id(detailed_log), Some(SpanContext::trace_id(span_context)))
-  assert_eq(LogRecord::span_id(detailed_log), Some(SpanContext::span_id(span_context)))
+  
+  let created_log = LifecycleManager::create_log(lifecycle_manager, log_creation_request)
+  
+  // 验证Log创建
+  assert_eq(created_log.level, "info")
+  assert_eq(created_log.message, "Processing payment request")
+  assert_eq(created_log.trace_id, created_span.trace_id)
+  assert_eq(created_log.span_id, created_span.span_id)
+  
+  // 验证时间戳
+  assert_true(created_log.timestamp > 0)
 }
 
-test "遥测数据状态转换测试" {
-  // 测试遥测数据在其生命周期中的状态转换
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "state.test.service")
+// 测试2: 数据状态转换
+test "数据状态转换测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
   
-  // 创建span并测试状态转换
-  let span = Tracer::start_span(tracer, "state.test.operation")
+  // 配置状态转换规则
+  LifecycleManager::add_state_transition(lifecycle_manager, {
+    from_state: "created",
+    to_state: "active",
+    condition: fn(data) { data.start_time > 0 and data.end_time == 0 },
+    action: fn(data) { { data | status: "active" } }
+  })
   
-  // 初始状态：recording = true, status = Unset
-  assert_true(Span::is_recording(span))
-  match Span::status(span) {
-    Unset => assert_true(true)
-    _ => assert_true(false)
+  LifecycleManager::add_state_transition(lifecycle_manager, {
+    from_state: "active",
+    to_state: "completed",
+    condition: fn(data) { data.end_time > 0 },
+    action: fn(data) { { data | status: "completed" } }
+  })
+  
+  LifecycleManager::add_state_transition(lifecycle_manager, {
+    from_state: "active",
+    to_state: "error",
+    condition: fn(data) { data.attributes.any(fn(a) { a[0] == "error.type" }) },
+    action: fn(data) { { data | status: "error" } }
+  })
+  
+  // 创建Span
+  let span_request = {
+    operation_name: "http.request",
+    service_name: "api.gateway"
   }
   
-  // 添加事件：状态应该保持recording
-  Span::add_event(span, "operation.started", Some([
-    ("operation.type", StringValue("test")),
-    ("operation.id", IntValue(12345))
-  ]))
-  assert_true(Span::is_recording(span))
+  let span = LifecycleManager::create_span(lifecycle_manager, span_request)
+  assert_eq(span.status, "created")
   
-  // 设置状态为Ok：状态应该改变但仍然recording
-  Span::set_status(span, Ok, Some("Operation completed successfully"))
-  match Span::status(span) {
-    Unset => assert_true(true) // 简化实现返回Unset
-    _ => assert_true(false)
+  // 激活Span
+  let activated_span = LifecycleManager::activate_span(lifecycle_manager, span.span_id)
+  assert_eq(activated_span.status, "active")
+  
+  // 完成Span
+  let completed_span = LifecycleManager::complete_span(lifecycle_manager, span.span_id, {
+    end_time: Time::now(),
+    attributes: [("http.status_code", "200")]
+  })
+  assert_eq(completed_span.status, "completed")
+  assert_true(completed_span.end_time > 0)
+  
+  // 创建另一个Span用于错误测试
+  let error_span_request = {
+    operation_name: "database.query",
+    service_name: "payment-service"
   }
-  assert_true(Span::is_recording(span))
   
-  // 添加更多事件
-  Span::add_event(span, "operation.progress", Some([
-    ("progress.percentage", IntValue(50))
-  ]))
-  assert_true(Span::is_recording(span))
+  let error_span = LifecycleManager::create_span(lifecycle_manager, error_span_request)
+  let activated_error_span = LifecycleManager::activate_span(lifecycle_manager, error_span.span_id)
   
-  // 设置状态为Error
-  Span::set_status(span, Error, Some("Operation failed"))
-  match Span::status(span) {
-    Unset => assert_true(true) // 简化实现返回Unset
-    _ => assert_true(false)
+  // 设置错误状态
+  let error_span_with_error = LifecycleManager::set_error(lifecycle_manager, error_span.span_id, {
+    error_type: "connection_timeout",
+    error_message: "Database connection timeout"
+  })
+  
+  assert_eq(error_span_with_error.status, "error")
+  assert_true(error_span_with_error.attributes.any(fn(a) { a[0] == "error.type" and a[1] == "connection_timeout" }))
+  
+  // 测试无效状态转换
+  let invalid_transition_result = LifecycleManager::force_state_transition(lifecycle_manager, span.span_id, "created", "invalid_state")
+  
+  match invalid_transition_result {
+    Ok(_) => assert_true(false),  // 应该失败
+    Err(error) => {
+      assert_true(error.contains("invalid") or error.contains("transition"))
+    }
   }
-  assert_true(Span::is_recording(span))
   
-  // 结束span：状态应该变为非recording
-  Span::end(span)
-  // 简化实现可能仍为recording，但至少不应该崩溃
-  assert_true(true)
+  // 测试状态历史记录
+  let state_history = LifecycleManager::get_state_history(lifecycle_manager, error_span.span_id)
+  assert_eq(state_history.length(), 3)  // created -> active -> error
   
-  // 测试在已结束span上的操作
-  Span::add_event(span, "operation.after.end", Some([
-    ("status", StringValue("completed"))
-  ]))
-  Span::set_status(span, Ok)
+  assert_eq(state_history[0].from_state, "none")
+  assert_eq(state_history[0].to_state, "created")
   
-  // 测试不同类型span的状态转换
-  let server_span = Tracer::start_span(tracer, "server.operation")
-  Span::set_status(server_span, Ok)
-  Span::end(server_span)
+  assert_eq(state_history[1].from_state, "created")
+  assert_eq(state_history[1].to_state, "active")
   
-  let client_span = Tracer::start_span(tracer, "client.operation")
-  Span::add_event(client_span, "client.request.sent")
-  Span::set_status(client_span, Error, Some("Client error"))
-  Span::end(client_span)
-  
-  let producer_span = Tracer::start_span(tracer, "producer.operation")
-  Span::end(producer_span)
-  
-  let consumer_span = Tracer::start_span(tracer, "consumer.operation")
-  Span::end(consumer_span)
-  
-  assert_true(true) // 所有操作完成没有崩溃
+  assert_eq(state_history[2].from_state, "active")
+  assert_eq(state_history[2].to_state, "error")
 }
 
-test "遥测数据存储与检索测试" {
-  // 测试遥测数据的存储和检索功能
-  let stored_data = {
-    "spans": [],
-    "metrics": [],
-    "logs": []
-  }
+// 测试3: 数据过期和清理
+test "数据过期和清理测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
   
-  // 存储span数据
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "storage.test.service")
-  
-  for i = 0; i < 10; i = i + 1 {
-    let span = Tracer::start_span(tracer, "storage.test.operation." + i.to_string())
-    Span::add_event(span, "event." + i.to_string())
-    Span::set_status(span, Ok)
-    
-    let span_data = {
-      "name": Span::name(span),
-      "kind": Span::kind(span),
-      "context": {
-        "trace_id": SpanContext::trace_id(Span::span_context(span)),
-        "span_id": SpanContext::span_id(Span::span_context(span))
-      },
-      "status": Span::status(span),
-      "recording": Span::is_recording(span)
-    }
-    
-    stored_data["spans"].push(span_data)
-    Span::end(span)
-  }
-  
-  // 存储metrics数据
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "storage.test.service")
-  
-  let counter = Meter::create_counter(meter, "storage.test.counter")
-  let histogram = Meter::create_histogram(meter, "storage.test.histogram")
-  let updown_counter = Meter::create_updown_counter(meter, "storage.test.updown")
-  let gauge = Meter::create_gauge(meter, "storage.test.gauge")
-  
-  // 记录metrics
-  Counter::add(counter, 100.0)
-  Histogram::record(histogram, 150.5)
-  Counter::add(updown_counter, 50.0)
-  
-  let metrics_data = [
-    {
-      "type": "counter",
-      "name": counter.name,
-      "value": 100.0
-    },
-    {
-      "type": "histogram",
-      "name": histogram.name,
-      "value": 150.5
-    },
-    {
-      "type": "updown_counter",
-      "name": updown_counter.name,
-      "value": 50.0
-    },
-    {
-      "type": "gauge",
-      "name": gauge.name,
-      "value": 0.0
-    }
-  ]
-  
-  for metric in metrics_data {
-    stored_data["metrics"].push(metric)
-  }
-  
-  // 存储log数据
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "storage.test.service")
-  
-  for i = 0; i < 5; i = i + 1 {
-    let severity = if i % 2 == 0 { Info } else if i % 3 == 0 { Warn } else { Error }
-    let log_record = LogRecord::new(severity, "Storage test log " + i.to_string())
-    
-    let log_data = {
-      "severity": LogRecord::severity_number(log_record),
-      "body": LogRecord::body(log_record),
-      "timestamp": Clock::now_unix_nanos(Clock::system())
-    }
-    
-    stored_data["logs"].push(log_data)
-    Logger::emit(logger, log_record)
-  }
-  
-  // 验证存储的数据
-  assert_eq(stored_data["spans"].length(), 10)
-  assert_eq(stored_data["metrics"].length(), 4)
-  assert_eq(stored_data["logs"].length(), 5)
-  
-  // 测试数据检索
-  let retrieved_spans = stored_data["spans"].filter(fn(span) { 
-    span["name"].contains("storage.test.operation") 
+  // 配置过期策略
+  LifecycleManager::set_retention_policy(lifecycle_manager, {
+    span_retention_days: 7,      // Span保留7天
+    metric_retention_days: 30,   // Metric保留30天
+    log_retention_days: 14,      // Log保留14天
+    archive_before_delete: true
   })
-  assert_eq(retrieved_spans.length(), 10)
   
-  let retrieved_metrics = stored_data["metrics"].filter(fn(metric) { 
-    metric["name"].contains("storage.test") 
+  // 创建不同时间的测试数据
+  let base_time = Time::now()
+  
+  // 创建7天前的Span（应该被清理）
+  let old_span_request = {
+    operation_name: "old.operation",
+    service_name: "old-service"
+  }
+  
+  let old_span = LifecycleManager::create_span_with_timestamp(lifecycle_manager, old_span_request, base_time - 7 * 24 * 3600 * 1000)
+  LifecycleManager::complete_span(lifecycle_manager, old_span.span_id, {
+    end_time: base_time - 7 * 24 * 3600 * 1000 + 1000
   })
-  assert_eq(retrieved_metrics.length(), 4)
   
-  let retrieved_logs = stored_data["logs"].filter(fn(log) { 
-    match log["body"] { 
-      Some(body) => body.contains("Storage test log") 
-      None => false 
-    }
+  // 创建3天前的Span（不应该被清理）
+  let recent_span_request = {
+    operation_name: "recent.operation",
+    service_name: "recent-service"
+  }
+  
+  let recent_span = LifecycleManager::create_span_with_timestamp(lifecycle_manager, recent_span_request, base_time - 3 * 24 * 3600 * 1000)
+  LifecycleManager::complete_span(lifecycle_manager, recent_span.span_id, {
+    end_time: base_time - 3 * 24 * 3600 * 1000 + 1000
   })
-  assert_eq(retrieved_logs.length(), 5)
   
-  // 测试特定条件检索
-  let error_logs = stored_data["logs"].filter(fn(log) { 
-    log["severity"] == Error 
-  })
-  assert_true(error_logs.length() >= 1)
-  
-  let counter_metrics = stored_data["metrics"].filter(fn(metric) { 
-    metric["type"] == "counter" 
-  })
-  assert_true(counter_metrics.length() >= 1)
-}
-
-test "遥测数据归档策略测试" {
-  // 测试遥测数据的归档策略和实现
-  let active_data = {
-    "spans": [],
-    "metrics": [],
-    "logs": []
+  // 创建35天前的Metric（应该被清理）
+  let old_metric_request = {
+    name: "old.metric",
+    service_name: "old-service"
   }
   
-  let archived_data = {
-    "spans": [],
-    "metrics": [],
-    "logs": []
+  let old_metric = LifecycleManager::create_metric_with_timestamp(lifecycle_manager, old_metric_request, base_time - 35 * 24 * 3600 * 1000)
+  
+  // 创建15天前的Log（应该被清理）
+  let old_log_request = {
+    level: "info",
+    message: "Old log message",
+    service_name: "old-service"
   }
   
-  // 生成不同时间戳的遥测数据
-  let current_time = Clock::now_unix_nanos(Clock::system())
-  let day_in_nanos = 86400000000000L // 24小时的纳秒数
+  let old_log = LifecycleManager::create_log_with_timestamp(lifecycle_manager, old_log_request, base_time - 15 * 24 * 3600 * 1000)
   
-  // 生成最近7天的数据
-  for day_offset = 0; day_offset < 7; day_offset = day_offset + 1 {
-    let day_time = current_time - (day_offset.to_int64() * day_in_nanos)
-    
-    // 每天生成10个span
-    for i = 0; i < 10; i = i + 1 {
-      let span_data = {
-        "name": "archive.test.span",
-        "timestamp": day_time + i.to_int64() * 1000000L,
-        "day_offset": day_offset
-      }
-      active_data["spans"].push(span_data)
-    }
-    
-    // 每天生成5个metrics
-    for i = 0; i < 5; i = i + 1 {
-      let metric_data = {
-        "name": "archive.test.metric",
-        "value": i.to_double() * 10.0,
-        "timestamp": day_time + i.to_int64() * 1000000L,
-        "day_offset": day_offset
-      }
-      active_data["metrics"].push(metric_data)
-    }
-    
-    // 每天生成3个logs
-    for i = 0; i < 3; i = i + 1 {
-      let log_data = {
-        "message": "Archive test log " + i.to_string(),
-        "severity": Info,
-        "timestamp": day_time + i.to_int64() * 1000000L,
-        "day_offset": day_offset
-      }
-      active_data["logs"].push(log_data)
-    }
-  }
-  
-  // 验证数据生成
-  assert_eq(active_data["spans"].length(), 70) // 7天 × 10个span
-  assert_eq(active_data["metrics"].length(), 35) // 7天 × 5个metrics
-  assert_eq(active_data["logs"].length(), 21)    // 7天 × 3个logs
-  
-  // 执行归档策略：归档超过3天的数据
-  let archive_threshold_days = 3
-  
-  // 归档spans
-  let remaining_spans = []
-  for span in active_data["spans"] {
-    if span["day_offset"] > archive_threshold_days {
-      remaining_spans.push(span)
-    } else {
-      archived_data["spans"].push(span)
-    }
-  }
-  
-  // 归档metrics
-  let remaining_metrics = []
-  for metric in active_data["metrics"] {
-    if metric["day_offset"] > archive_threshold_days {
-      remaining_metrics.push(metric)
-    } else {
-      archived_data["metrics"].push(metric)
-    }
-  }
-  
-  // 归档logs
-  let remaining_logs = []
-  for log in active_data["logs"] {
-    if log["day_offset"] > archive_threshold_days {
-      remaining_logs.push(log)
-    } else {
-      archived_data["logs"].push(log)
-    }
-  }
-  
-  // 验证归档结果
-  assert_eq(remaining_spans.length(), 40) // 最近3天 × 10个span
-  assert_eq(remaining_metrics.length(), 20) // 最近3天 × 5个metrics
-  assert_eq(remaining_logs.length(), 9)     // 最近3天 × 3个logs
-  
-  assert_eq(archived_data["spans"].length(), 30) // 4天 × 10个span
-  assert_eq(archived_data["metrics"].length(), 15) // 4天 × 5个metrics
-  assert_eq(archived_data["logs"].length(), 12)    // 4天 × 3个logs
-  
-  // 验证归档数据的正确性
-  for span in archived_data["spans"] {
-    assert_true(span["day_offset"] <= archive_threshold_days)
-  }
-  
-  for metric in archived_data["metrics"] {
-    assert_true(metric["day_offset"] <= archive_threshold_days)
-  }
-  
-  for log in archived_data["logs"] {
-    assert_true(log["day_offset"] <= archive_threshold_days)
-  }
-  
-  // 验证剩余数据的正确性
-  for span in remaining_spans {
-    assert_true(span["day_offset"] > archive_threshold_days)
-  }
-  
-  for metric in remaining_metrics {
-    assert_true(metric["day_offset"] > archive_threshold_days)
-  }
-  
-  for log in remaining_logs {
-    assert_true(log["day_offset"] > archive_threshold_days)
-  }
-}
-
-test "遥测数据销毁与清理测试" {
-  // 测试遥测数据的销毁和清理策略
-  let data_to_cleanup = {
-    "spans": [],
-    "metrics": [],
-    "logs": []
-  }
-  
-  let current_time = Clock::now_unix_nanos(Clock::system())
-  let day_in_nanos = 86400000000000L
-  
-  // 生成不同保留期限的数据
-  for day_offset = 0; day_offset < 30; day_offset = day_offset + 1 {
-    let day_time = current_time - (day_offset.to_int64() * day_in_nanos)
-    let retention_days = 30 - day_offset // 保留期限
-    
-    // 每天生成数据
-    let span_data = {
-      "name": "cleanup.test.span",
-      "timestamp": day_time,
-      "retention_days": retention_days,
-      "data_size": 1024 + day_offset * 100
-    }
-    data_to_cleanup["spans"].push(span_data)
-    
-    let metric_data = {
-      "name": "cleanup.test.metric",
-      "timestamp": day_time,
-      "retention_days": retention_days,
-      "data_size": 512 + day_offset * 50
-    }
-    data_to_cleanup["metrics"].push(metric_data)
-    
-    let log_data = {
-      "message": "Cleanup test log",
-      "timestamp": day_time,
-      "retention_days": retention_days,
-      "data_size": 256 + day_offset * 25
-    }
-    data_to_cleanup["logs"].push(log_data)
-  }
-  
-  // 验证数据生成
-  assert_eq(data_to_cleanup["spans"].length(), 30)
-  assert_eq(data_to_cleanup["metrics"].length(), 30)
-  assert_eq(data_to_cleanup["logs"].length(), 30)
-  
-  // 计算总数据大小
-  let total_size_before = 
-    data_to_cleanup["spans"].map(fn(s) { s["data_size"] }).reduce(fn(acc, x) { acc + x }, 0) +
-    data_to_cleanup["metrics"].map(fn(m) { m["data_size"] }).reduce(fn(acc, x) { acc + x }, 0) +
-    data_to_cleanup["logs"].map(fn(l) { l["data_size"] }).reduce(fn(acc, x) { acc + x }, 0)
-  
-  // 执行清理策略：删除保留期限超过7天的数据
-  let cleanup_retention_days = 7
-  
-  // 清理spans
-  let remaining_spans = []
-  for span in data_to_cleanup["spans"] {
-    if span["retention_days"] > cleanup_retention_days {
-      remaining_spans.push(span)
-    }
-  }
-  
-  // 清理metrics
-  let remaining_metrics = []
-  for metric in data_to_cleanup["metrics"] {
-    if metric["retention_days"] > cleanup_retention_days {
-      remaining_metrics.push(metric)
-    }
-  }
-  
-  // 清理logs
-  let remaining_logs = []
-  for log in data_to_cleanup["logs"] {
-    if log["retention_days"] > cleanup_retention_days {
-      remaining_logs.push(log)
-    }
-  }
+  // 执行清理
+  let cleanup_result = LifecycleManager::cleanup_expired_data(lifecycle_manager)
   
   // 验证清理结果
-  assert_eq(remaining_spans.length(), 7)   // 保留7天的数据
-  assert_eq(remaining_metrics.length(), 7) // 保留7天的数据
-  assert_eq(remaining_logs.length(), 7)    // 保留7天的数据
+  assert_eq(cleanup_result.expired_spans.length(), 1)
+  assert_eq(cleanup_result.expired_metrics.length(), 1)
+  assert_eq(cleanup_result.expired_logs.length(), 1)
   
-  // 计算清理后的总数据大小
-  let total_size_after = 
-    remaining_spans.map(fn(s) { s["data_size"] }).reduce(fn(acc, x) { acc + x }, 0) +
-    remaining_metrics.map(fn(m) { m["data_size"] }).reduce(fn(acc, x) { acc + x }, 0) +
-    remaining_logs.map(fn(l) { l["data_size"] }).reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(cleanup_result.expired_spans[0].span_id, old_span.span_id)
+  assert_eq(cleanup_result.expired_metrics[0].id, old_metric.id)
+  assert_eq(cleanup_result.expired_logs[0].id, old_log.id)
   
-  // 验证数据大小减少
-  assert_true(total_size_after < total_size_before)
+  // 验证数据已被归档
+  assert_true(cleanup_result.archived_data.length() > 0)
   
-  // 计算空间节省
-  let space_saved = total_size_before - total_size_after
-  let space_saved_percentage = space_saved.to_double() / total_size_before.to_double()
-  assert_true(space_saved_percentage > 0.7) // 应该节省超过70%的空间
+  // 验证近期数据未被清理
+  let remaining_span = LifecycleManager::get_span(lifecycle_manager, recent_span.span_id)
+  assert_true(remaining_span != None)
   
-  // 验证剩余数据的正确性
-  for span in remaining_spans {
-    assert_true(span["retention_days"] > cleanup_retention_days)
-  }
+  // 测试自定义清理策略
+  let custom_cleanup_result = LifecycleManager::cleanup_with_custom_policy(lifecycle_manager, {
+    data_type: "span",
+    condition: fn(data) { data.service_name == "old-service" },
+    archive: false
+  })
   
-  for metric in remaining_metrics {
-    assert_true(metric["retention_days"] > cleanup_retention_days)
-  }
+  // 验证自定义清理结果
+  assert_eq(custom_cleanup_result.cleaned_items.length(), 1)
   
-  for log in remaining_logs {
-    assert_true(log["retention_days"] > cleanup_retention_days)
-  }
+  // 测试清理统计
+  let cleanup_stats = LifecycleManager::get_cleanup_statistics(lifecycle_manager)
+  
+  assert_true(cleanup_stats.total_cleaned > 0)
+  assert_true(cleanup_stats.total_archived > 0)
+  assert_true(cleanup_stats.space_freed > 0)
 }
 
-test "遥测数据生命周期监控测试" {
-  // 测试遥测数据生命周期各阶段的监控
-  let lifecycle_metrics = {
-    "created": { "spans": 0, "metrics": 0, "logs": 0 },
-    "stored": { "spans": 0, "metrics": 0, "logs": 0 },
-    "archived": { "spans": 0, "metrics": 0, "logs": 0 },
-    "destroyed": { "spans": 0, "metrics": 0, "logs": 0 }
-  }
+// 测试4: 数据归档和恢复
+test "数据归档和恢复测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
   
-  let current_time = Clock::now_unix_nanos(Clock::system())
+  // 配置归档策略
+  LifecycleManager::set_archive_strategy(lifecycle_manager, {
+    archive_format: "compressed_json",
+    compression_algorithm: "gzip",
+    archive_location: "s3://telemetry-archive/",
+    partition_by: "date",
+    verify_after_archive: true
+  })
   
-  // 创建阶段
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
+  // 创建测试数据
+  let test_data = []
   
-  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle.monitor.service")
-  let meter = MeterProvider::get_meter(meter_provider, "lifecycle.monitor.service")
-  let logger = LoggerProvider::get_logger(logger_provider, "lifecycle.monitor.service")
-  
-  // 创建5个spans
-  let created_spans = []
-  for i = 0; i < 5; i = i + 1 {
-    let span = Tracer::start_span(tracer, "lifecycle.monitor.span." + i.to_string())
-    created_spans.push(span)
-    lifecycle_metrics["created"]["spans"] = lifecycle_metrics["created"]["spans"] + 1
-  }
-  
-  // 创建3个metrics
-  let counter = Meter::create_counter(meter, "lifecycle.monitor.counter")
-  let histogram = Meter::create_histogram(meter, "lifecycle.monitor.histogram")
-  let gauge = Meter::create_gauge(meter, "lifecycle.monitor.gauge")
-  lifecycle_metrics["created"]["metrics"] = lifecycle_metrics["created"]["metrics"] + 3
-  
-  // 创建4个logs
-  let created_logs = []
-  for i = 0; i < 4; i = i + 1 {
-    let log_record = LogRecord::new(Info, "Lifecycle monitor log " + i.to_string())
-    created_logs.push(log_record)
-    lifecycle_metrics["created"]["logs"] = lifecycle_metrics["created"]["logs"] + 1
-  }
-  
-  // 存储阶段
-  let stored_data = {
-    "spans": [],
-    "metrics": [],
-    "logs": []
-  }
-  
-  // 存储spans
-  for span in created_spans {
-    let span_data = {
-      "name": Span::name(span),
-      "timestamp": current_time
+  for i in 0..100 {
+    let span_request = {
+      operation_name: "operation." + i.to_string(),
+      service_name: "service-" + (i % 5).to_string()
     }
-    stored_data["spans"].push(span_data)
-    lifecycle_metrics["stored"]["spans"] = lifecycle_metrics["stored"]["spans"] + 1
-    Span::end(span)
+    
+    let span = LifecycleManager::create_span(lifecycle_manager, span_request)
+    LifecycleManager::complete_span(lifecycle_manager, span.span_id, {
+      end_time: Time::now() + i * 1000,
+      attributes: [("iteration", i.to_string())]
+    })
+    
+    test_data = test_data.push(span)
   }
   
-  // 存储metrics
-  Counter::add(counter, 10.0)
-  Histogram::record(histogram, 50.0)
-  let metric_data = [
-    { "name": counter.name, "value": 10.0 },
-    { "name": histogram.name, "value": 50.0 },
-    { "name": gauge.name, "value": 0.0 }
-  ]
-  for metric in metric_data {
-    stored_data["metrics"].push(metric)
-    lifecycle_metrics["stored"]["metrics"] = lifecycle_metrics["stored"]["metrics"] + 1
-  }
+  // 执行归档
+  let archive_result = LifecycleManager::archive_data(lifecycle_manager, test_data)
   
-  // 存储logs
-  for log in created_logs {
-    let log_data = {
-      "message": match LogRecord::body(log) { Some(body) => body | None => "" },
-      "severity": LogRecord::severity_number(log),
-      "timestamp": current_time
+  // 验证归档结果
+  assert_true(archive_result.success)
+  assert_eq(archive_result.archived_items, 100)
+  assert_true(archive_result.archive_id.length() > 0)
+  assert_true(archive_result.archive_size > 0)
+  
+  // 验证归档元数据
+  assert_eq(archive_result.metadata.item_count, 100)
+  assert_eq(archive_result.metadata.data_types, ["span"])
+  assert_true(archive_result.metadata.archive_timestamp > 0)
+  
+  // 测试归档数据恢复
+  let restore_result = LifecycleManager::restore_from_archive(lifecycle_manager, archive_result.archive_id)
+  
+  // 验证恢复结果
+  assert_true(restore_result.success)
+  assert_eq(restore_result.restored_items, 100)
+  assert_eq(restore_result.data.length(), 100)
+  
+  // 验证恢复的数据完整性
+  for i in 0..test_data.length() {
+    let original = test_data[i]
+    let restored = restore_result.data.find(fn(d) { d.span_id == original.span_id })
+    
+    assert_true(restored != None)
+    match restored {
+      Some(item) => {
+        assert_eq(item.operation_name, original.operation_name)
+        assert_eq(item.service_name, original.service_name)
+      }
+      None => assert_true(false)
     }
-    stored_data["logs"].push(log_data)
-    lifecycle_metrics["stored"]["logs"] = lifecycle_metrics["stored"]["logs"] + 1
-    Logger::emit(logger, log)
   }
   
-  // 归档阶段（模拟部分数据被归档）
-  let archived_spans = stored_data["spans"].slice(0, 2)
-  let archived_metrics = stored_data["metrics"].slice(0, 1)
-  let archived_logs = stored_data["logs"].slice(0, 2)
+  // 测试部分恢复
+  let partial_restore_result = LifecycleManager::restore_from_archive_with_filter(lifecycle_manager, archive_result.archive_id, {
+    service_name: "service-0"
+  })
   
-  lifecycle_metrics["archived"]["spans"] = archived_spans.length()
-  lifecycle_metrics["archived"]["metrics"] = archived_metrics.length()
-  lifecycle_metrics["archived"]["logs"] = archived_logs.length()
+  // 验证部分恢复结果
+  assert_true(partial_restore_result.success)
+  assert_eq(partial_restore_result.restored_items, 20)  // 100个项目中20个属于service-0
   
-  // 销毁阶段（模拟部分数据被销毁）
-  let destroyed_spans = stored_data["spans"].slice(2, 5)
-  let destroyed_metrics = stored_data["metrics"].slice(1, 3)
-  let destroyed_logs = stored_data["logs"].slice(2, 4)
+  // 测试归档压缩比
+  let original_size = test_data.reduce(fn(acc, item) { 
+    acc + item.to_string().length() 
+  }, 0)
   
-  lifecycle_metrics["destroyed"]["spans"] = destroyed_spans.length()
-  lifecycle_metrics["destroyed"]["metrics"] = destroyed_metrics.length()
-  lifecycle_metrics["destroyed"]["logs"] = destroyed_logs.length()
+  let compression_ratio = archive_result.archive_size.to_float() / original_size.to_float()
+  assert_true(compression_ratio < 0.5)  // 压缩后应小于原始大小的50%
   
-  // 验证生命周期监控指标
-  assert_eq(lifecycle_metrics["created"]["spans"], 5)
-  assert_eq(lifecycle_metrics["created"]["metrics"], 3)
-  assert_eq(lifecycle_metrics["created"]["logs"], 4)
+  // 测试归档验证
+  let verification_result = LifecycleManager::verify_archive(lifecycle_manager, archive_result.archive_id)
   
-  assert_eq(lifecycle_metrics["stored"]["spans"], 5)
-  assert_eq(lifecycle_metrics["stored"]["metrics"], 3)
-  assert_eq(lifecycle_metrics["stored"]["logs"], 4)
+  assert_true(verification_result.is_valid)
+  assert_eq(verification_result.verified_items, 100)
+  assert_eq(verification_result.corrupted_items, 0)
+}
+
+// 测试5: 数据版本管理
+test "数据版本管理测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
   
-  assert_eq(lifecycle_metrics["archived"]["spans"], 2)
-  assert_eq(lifecycle_metrics["archived"]["metrics"], 1)
-  assert_eq(lifecycle_metrics["archived"]["logs"], 2)
+  // 配置版本管理策略
+  LifecycleManager::set_versioning_strategy(lifecycle_manager, {
+    auto_version_on_update: true,
+    max_versions_per_item: 5,
+    version_metadata: true,
+    version_retention_days: 90
+  })
   
-  assert_eq(lifecycle_metrics["destroyed"]["spans"], 3)
-  assert_eq(lifecycle_metrics["destroyed"]["metrics"], 2)
-  assert_eq(lifecycle_metrics["destroyed"]["logs"], 2)
+  // 创建初始数据
+  let initial_span_request = {
+    operation_name: "versioned.operation",
+    service_name: "versioned-service",
+    attributes: [("version", "1.0")]
+  }
   
-  // 验证生命周期平衡性
-  assert_eq(lifecycle_metrics["created"]["spans"], 
-           lifecycle_metrics["archived"]["spans"] + lifecycle_metrics["destroyed"]["spans"])
-  assert_eq(lifecycle_metrics["created"]["metrics"], 
-           lifecycle_metrics["archived"]["metrics"] + lifecycle_metrics["destroyed"]["metrics"])
-  assert_eq(lifecycle_metrics["created"]["logs"], 
-           lifecycle_metrics["archived"]["logs"] + lifecycle_metrics["destroyed"]["logs"])
+  let initial_span = LifecycleManager::create_span(lifecycle_manager, initial_span_request)
   
-  // 计算生命周期效率指标
-  let archival_rate = lifecycle_metrics["archived"]["spans"].to_double() / 
-                      lifecycle_metrics["created"]["spans"].to_double()
-  let destruction_rate = lifecycle_metrics["destroyed"]["spans"].to_double() / 
-                         lifecycle_metrics["created"]["spans"].to_double()
+  // 验证初始版本
+  assert_eq(initial_span.version, 1)
   
-  assert_eq(archival_rate, 0.4)  // 40%的数据被归档
-  assert_eq(destruction_rate, 0.6) // 60%的数据被销毁
+  // 更新数据
+  let updated_span_v1 = LifecycleManager::update_span(lifecycle_manager, initial_span.span_id, {
+    attributes: [("version", "1.1"), ("feature", "new_feature")]
+  })
+  
+  assert_eq(updated_span_v1.version, 2)
+  assert_true(updated_span_v1.attributes.any(fn(a) { a[0] == "version" and a[1] == "1.1" }))
+  assert_true(updated_span_v1.attributes.any(fn(a) { a[0] == "feature" and a[1] == "new_feature" }))
+  
+  // 再次更新
+  let updated_span_v2 = LifecycleManager::update_span(lifecycle_manager, initial_span.span_id, {
+    attributes: [("version", "1.2"), ("performance", "optimized")]
+  })
+  
+  assert_eq(updated_span_v2.version, 3)
+  assert_true(updated_span_v2.attributes.any(fn(a) { a[0] == "version" and a[1] == "1.2" }))
+  assert_true(updated_span_v2.attributes.any(fn(a) { a[0] == "performance" and a[1] == "optimized" }))
+  
+  // 获取版本历史
+  let version_history = LifecycleManager::get_version_history(lifecycle_manager, initial_span.span_id)
+  
+  assert_eq(version_history.length(), 3)
+  assert_eq(version_history[0].version, 1)
+  assert_eq(version_history[1].version, 2)
+  assert_eq(version_history[2].version, 3)
+  
+  // 验证版本时间戳
+  assert_true(version_history[0].timestamp <= version_history[1].timestamp)
+  assert_true(version_history[1].timestamp <= version_history[2].timestamp)
+  
+  // 恢复到特定版本
+  let restored_span_v1 = LifecycleManager::restore_to_version(lifecycle_manager, initial_span.span_id, 2)
+  
+  assert_eq(restored_span_v1.version, 4)  // 恢复操作创建新版本
+  assert_true(restored_span_v1.attributes.any(fn(a) { a[0] == "version" and a[1] == "1.1" }))
+  assert_true(restored_span_v1.attributes.any(fn(a) { a[0] == "feature" and a[1] == "new_feature" }))
+  assert_false(restored_span_v1.attributes.any(fn(a) { a[0] == "performance" }))  // v1不应有此属性
+  
+  // 比较版本差异
+  let diff_v2_v1 = LifecycleManager::compare_versions(lifecycle_manager, initial_span.span_id, 3, 2)
+  
+  assert_eq(diff_v2_v1.added.length(), 1)  // 添加了performance属性
+  assert_eq(diff_v2_v1.removed.length(), 1)  // 移除了feature属性
+  assert_eq(diff_v2_v1.modified.length(), 1)  // 修改了version属性
+  
+  // 测试版本清理
+  LifecycleManager::update_span(lifecycle_manager, initial_span.span_id, {
+    attributes: [("version", "1.3")]
+  })
+  
+  LifecycleManager::update_span(lifecycle_manager, initial_span.span_id, {
+    attributes: [("version", "1.4")]
+  })
+  
+  LifecycleManager::update_span(lifecycle_manager, initial_span.span_id, {
+    attributes: [("version", "1.5")]
+  })
+  
+  // 现在有6个版本，超过最大版本数限制
+  let cleanup_versions_result = LifecycleManager::cleanup_old_versions(lifecycle_manager, initial_span.span_id)
+  
+  assert_eq(cleanup_versions_result.removed_versions, 1)  // 移除了最旧的版本
+  assert_eq(cleanup_versions_result.remaining_versions, 5)  // 保留5个版本
+  
+  // 验证版本清理后的历史
+  let cleaned_version_history = LifecycleManager::get_version_history(lifecycle_manager, initial_span.span_id)
+  assert_eq(cleaned_version_history.length(), 5)
+  assert_eq(cleaned_version_history[0].version, 2)  // 最早的版本现在是v2
+}
+
+// 测试6: 数据生命周期事件
+test "数据生命周期事件测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
+  
+  // 创建事件监听器
+  let event_log = Ref::new([])
+  
+  LifecycleManager::add_event_listener(lifecycle_manager, {
+    name: "test_listener",
+    events: ["created", "updated", "deleted", "archived", "restored"],
+    handler: fn(event) {
+      let current_log = Ref::get(event_log)
+      Ref::set(event_log, ArrayUtil::append(current_log, [event]))
+    }
+  })
+  
+  // 创建数据并验证事件
+  let span_request = {
+    operation_name: "event.test.operation",
+    service_name: "event-test-service"
+  }
+  
+  let span = LifecycleManager::create_span(lifecycle_manager, span_request)
+  
+  // 验证创建事件
+  let current_log = Ref::get(event_log)
+  assert_eq(current_log.length(), 1)
+  assert_eq(current_log[0].event_type, "created")
+  assert_eq(current_log[0].data_type, "span")
+  assert_eq(current_log[0].item_id, span.span_id)
+  
+  // 更新数据并验证事件
+  LifecycleManager::update_span(lifecycle_manager, span.span_id, {
+    attributes: [("updated", "true")]
+  })
+  
+  let updated_log = Ref::get(event_log)
+  assert_eq(updated_log.length(), 2)
+  assert_eq(updated_log[1].event_type, "updated")
+  assert_eq(updated_log[1].data_type, "span")
+  assert_eq(updated_log[1].item_id, span.span_id)
+  
+  // 归档数据并验证事件
+  let archive_result = LifecycleManager::archive_data(lifecycle_manager, [span])
+  
+  let archived_log = Ref::get(event_log)
+  assert_eq(archived_log.length(), 3)
+  assert_eq(archived_log[2].event_type, "archived")
+  assert_eq(archived_log[2].data_type, "span")
+  assert_eq(archived_log[2].archive_id, archive_result.archive_id)
+  
+  // 恢复数据并验证事件
+  LifecycleManager::restore_from_archive(lifecycle_manager, archive_result.archive_id)
+  
+  let restored_log = Ref::get(event_log)
+  assert_eq(restored_log.length(), 4)
+  assert_eq(restored_log[3].event_type, "restored")
+  assert_eq(restored_log[3].data_type, "span")
+  
+  // 删除数据并验证事件
+  LifecycleManager::delete_span(lifecycle_manager, span.span_id)
+  
+  let deleted_log = Ref::get(event_log)
+  assert_eq(deleted_log.length(), 5)
+  assert_eq(deleted_log[4].event_type, "deleted")
+  assert_eq(deleted_log[4].data_type, "span")
+  assert_eq(deleted_log[4].item_id, span.span_id)
+  
+  // 测试事件过滤
+  let filtered_events = LifecycleManager::get_events(lifecycle_manager, {
+    event_type: Some("created"),
+    data_type: Some("span"),
+    start_time: Some(Time::now() - 3600000),  // 最近1小时
+    end_time: Some(Time::now())
+  })
+  
+  assert_eq(filtered_events.length(), 1)
+  assert_eq(filtered_events[0].event_type, "created")
+  
+  // 测试事件统计
+  let event_stats = LifecycleManager::get_event_statistics(lifecycle_manager)
+  
+  assert_eq(event_stats.total_events, 5)
+  assert_eq(event_stats.event_counts.get("created"), Some(1))
+  assert_eq(event_stats.event_counts.get("updated"), Some(1))
+  assert_eq(event_stats.event_counts.get("archived"), Some(1))
+  assert_eq(event_stats.event_counts.get("restored"), Some(1))
+  assert_eq(event_stats.event_counts.get("deleted"), Some(1))
+  
+  // 测试条件事件监听器
+  LifecycleManager::add_conditional_event_listener(lifecycle_manager, {
+    name: "conditional_listener",
+    condition: fn(event) { 
+      event.event_type == "created" and event.data_type == "span" 
+    },
+    handler: fn(event) {
+      // 只有满足条件的Span创建事件才会触发
+      assert_eq(event.event_type, "created")
+      assert_eq(event.data_type, "span")
+    }
+  })
+  
+  // 创建新的Span以测试条件监听器
+  let conditional_span_request = {
+    operation_name: "conditional.test.operation",
+    service_name: "conditional-test-service"
+  }
+  
+  LifecycleManager::create_span(lifecycle_manager, conditional_span_request)
+  
+  // 创建Metric以测试条件监听器（不应触发）
+  let metric_request = {
+    name: "conditional.test.metric",
+    service_name: "conditional-test-service"
+  }
+  
+  LifecycleManager::create_metric(lifecycle_manager, metric_request)
+}
+
+// 测试7: 数据生命周期策略应用
+test "数据生命周期策略应用测试" {
+  // 创建生命周期管理器
+  let lifecycle_manager = LifecycleManager::new()
+  
+  // 创建服务级别的生命周期策略
+  LifecycleManager::add_service_policy(lifecycle_manager, {
+    service_name: "payment-service",
+    span_retention_days: 14,      // 比默认更长的保留期
+    metric_retention_days: 60,    // 比默认更长的保留期
+    archive_immediately: true,    // 立即归档
+    priority: "high"              // 高优先级
+  })
+  
+  // 创建操作级别的生命周期策略
+  LifecycleManager::add_operation_policy(lifecycle_manager, {
+    service_name: "payment-service",
+    operation_name: "critical.operation",
+    span_retention_days: 30,      // 关键操作保留更长时间
+    archive_immediately: true,
+    encrypt_before_archive: true, // 归档前加密
+    priority: "critical"
+  })
+  
+  // 创建测试数据
+  let payment_span_request = {
+    operation_name: "payment.process",
+    service_name: "payment-service"
+  }
+  
+  let payment_span = LifecycleManager::create_span(lifecycle_manager, payment_span_request)
+  LifecycleManager::complete_span(lifecycle_manager, payment_span.span_id, {
+    end_time: Time::now() + 1000
+  })
+  
+  let critical_operation_request = {
+    operation_name: "critical.operation",
+    service_name: "payment-service"
+  }
+  
+  let critical_operation_span = LifecycleManager::create_span(lifecycle_manager, critical_operation_request)
+  LifecycleManager::complete_span(lifecycle_manager, critical_operation_span.span_id, {
+    end_time: Time::now() + 1000
+  })
+  
+  // 应用生命周期策略
+  let policy_application_result = LifecycleManager::apply_lifecycle_policies(lifecycle_manager)
+  
+  // 验证策略应用结果
+  assert_eq(policy_application_result.processed_items, 2)
+  assert_eq(policy_application_result.applied_policies, 2)
+  
+  // 验证支付Span的策略应用
+  let payment_span_policy = LifecycleManager::get_applied_policy(lifecycle_manager, payment_span.span_id)
+  assert_true(payment_span_policy != None)
+  
+  match payment_span_policy {
+    Some(policy) => {
+      assert_eq(policy.service_name, "payment-service")
+      assert_eq(policy.span_retention_days, 14)
+      assert_eq(policy.archive_immediately, true)
+      assert_eq(policy.priority, "high")
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证关键操作Span的策略应用
+  let critical_operation_span_policy = LifecycleManager::get_applied_policy(lifecycle_manager, critical_operation_span.span_id)
+  assert_true(critical_operation_span_policy != None)
+  
+  match critical_operation_span_policy {
+    Some(policy) => {
+      assert_eq(policy.service_name, "payment-service")
+      assert_eq(policy.operation_name, "critical.operation")
+      assert_eq(policy.span_retention_days, 30)
+      assert_eq(policy.archive_immediately, true)
+      assert_eq(policy.encrypt_before_archive, true)
+      assert_eq(policy.priority, "critical")
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试策略优先级
+  let default_service_span_request = {
+    operation_name: "default.operation",
+    service_name: "default-service"
+  }
+  
+  let default_service_span = LifecycleManager::create_span(lifecycle_manager, default_service_span_request)
+  LifecycleManager::complete_span(lifecycle_manager, default_service_span.span_id, {
+    end_time: Time::now() + 1000
+  })
+  
+  let default_service_span_policy = LifecycleManager::get_applied_policy(lifecycle_manager, default_service_span.span_id)
+  
+  match default_service_span_policy {
+    Some(policy) => {
+      assert_eq(policy.service_name, "default-service")
+      assert_eq(policy.priority, "normal")  // 默认优先级
+    }
+    None => {}  // 可能没有应用特定策略
+  }
+  
+  // 测试策略冲突解决
+  LifecycleManager::add_global_policy(lifecycle_manager, {
+    span_retention_days: 7,       // 全局策略，比服务策略更短
+    archive_immediately: false,   // 全局策略，与服务策略冲突
+    priority: "normal"
+  })
+  
+  let conflict_resolution_result = LifecycleManager::resolve_policy_conflicts(lifecycle_manager)
+  
+  // 验证冲突解决结果（服务级别策略应优先于全局策略）
+  assert_eq(conflict_resolution_result.resolved_conflicts, 1)
+  
+  let resolved_payment_span_policy = LifecycleManager::get_applied_policy(lifecycle_manager, payment_span.span_id)
+  
+  match resolved_payment_span_policy {
+    Some(policy) => {
+      assert_eq(policy.span_retention_days, 14)  // 服务策略优先
+      assert_eq(policy.archive_immediately, true)  // 服务策略优先
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试策略效果统计
+  let policy_stats = LifecycleManager::get_policy_statistics(lifecycle_manager)
+  
+  assert_eq(policy_stats.total_policies, 4)  // 1个全局 + 1个服务 + 1个操作 + 1个默认
+  assert_eq(policy_stats.applied_policies, 3)  // 应用于3个数据项
+  assert_eq(policy_stats.policy_conflicts, 1)   // 1个已解决的冲突
 }
