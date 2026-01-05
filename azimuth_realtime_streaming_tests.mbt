@@ -1,1517 +1,636 @@
-// Azimuth Real-time Streaming Tests
-// 实时流处理测试 - 验证遥测系统的实时流处理功能
+// Azimuth Real-time Streaming Test Suite
+// 实时流处理测试套件 - 测试遥测数据的实时流处理功能
 
-// 测试1: 基本流处理测试
-test "基本流处理测试" {
-  // 创建流处理器
-  let stream_processor = StreamProcessor::new()
+// Test 1: 实时数据流处理
+test "real-time data stream processing" {
+  // 创建实时流处理器
+  let stream_processor = @azimuth.StreamProcessor::new(
+    @azimuth.StreamConfig {
+      buffer_size: 1000,
+      batch_size: 100,
+      processing_interval_ms: 1000,
+      max_lag_ms: 5000
+    }
+  )
   
-  // 创建流源
-  let stream_source = TelemetryStreamSource::new("test-source")
+  // 添加流处理阶段
+  @azimuth.StreamProcessor::add_stage(stream_processor, @azimuth.ValidationStage::new())
+  @azimuth.StreamProcessor::add_stage(stream_processor, @azimuth.EnrichmentStage::new())
+  @azimuth.StreamProcessor::add_stage(stream_processor, @azimuth.FilteringStage::new())
+  @azimuth.StreamProcessor::add_stage(stream_processor, @azimuth.AggregationStage::new())
   
-  // 创建流汇
-  let stream_sink = TelemetryStreamSink::new("test-sink")
+  // 创建实时遥测数据流
+  let telemetry_stream = @azimuth.TelemetryStream::new()
   
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source)
-  StreamPipeline::add_sink(pipeline, stream_sink)
+  // 模拟实时数据产生
+  let base_timestamp = @azimuth.current_timestamp()
+  let stream_data = []
   
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
+  for i = 0; i < 500; i = i + 1 {
+    let data_point = @azimuth.TelemetryDataPoint {
+      trace_id: "realtime-trace-" + i.to_string(),
+      span_id: "realtime-span-" + i.to_string(),
+      timestamp: base_timestamp + i * 10,  // 每10ms一个数据点
+      metric_name: if i % 3 == 0 { "response.time" } else if i % 3 == 1 { "error.rate" } else { "throughput" },
+      metric_value: (50 + (i % 100)).to_double(),
+      attributes: [
+        ("service.name", @azimuth.StringValue("realtime-service")),
+        ("instance.id", @azimuth.StringValue("instance-" + (i % 5).to_string())),
+        ("operation.type", @azimuth.StringValue("api-request"))
+      ]
+    }
+    stream_data = stream_data.push(data_point)
+  }
+  
+  // 将数据添加到流中
+  for data_point in stream_data {
+    @azimuth.TelemetryStream::add_data_point(telemetry_stream, data_point)
+  }
   
   // 启动流处理
-  let start_result = StreamProcessor::start(stream_processor, topology)
+  let processing_result = @azimuth.StreamProcessor::process_stream(stream_processor, telemetry_stream)
   
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
+  // 验证流处理结果
+  assert_true(processing_result.success)
+  assert_eq(processing_result.processed_count, 500)
+  assert_eq(processing_result.error_count, 0)
   
-  // 生成测试数据流
-  let test_data_stream = generate_test_data_stream(100, 10) // 100个数据点，每10ms一个
+  // 验证处理延迟
+  assert_true(processing_result.average_processing_latency_ms < 100)
+  assert_true(processing_result.max_processing_latency_ms < 500)
   
-  // 发送数据到流源
-  let mut sent_count = 0
-  for data_point in test_data_stream {
-    let send_result = StreamSource::send_data(stream_source, data_point)
-    match send_result {
-      Success => sent_count = sent_count + 1
-      Failed(_) => assert_true(false)
+  // 验证吞吐量
+  assert_true(processing_result.throughput_per_second > 100)
+  
+  // 获取处理后的数据
+  let processed_data = @azimuth.StreamProcessor::get_processed_data(stream_processor)
+  assert_eq(processed_data.length(), 500)
+  
+  // 验证数据增强
+  let first_processed = processed_data[0]
+  assert_true(@azimuth.Attributes::contains_key(first_processed.attributes, "processing.timestamp"))
+  assert_true(@azimuth.Attributes::contains_key(first_processed.attributes, "processing.stage"))
+  
+  // 验证数据过滤
+  let filtered_data = processed_data.filter(fn(data) {
+    match @azimuth.Attributes::get(data.attributes, "filtered") {
+      Some(@azimuth.BoolValue(filtered)) => not(filtered)
+      _ => true
     }
-  }
-  
-  // 验证所有数据都已发送
-  assert_eq(sent_count, 100)
-  
-  // 等待流处理完成
-  StreamProcessor::wait_for_completion(stream_processor, 5000) // 最多等待5秒
-  
-  // 验证流汇接收到的数据
-  let received_data = StreamSink::get_received_data(stream_sink)
-  assert_eq(received_data.length(), 100)
-  
-  // 验证数据顺序和内容
-  let mut i = 0
-  while i < received_data.length() {
-    let expected_data = test_data_stream[i]
-    let actual_data = received_data[i]
-    
-    assert_eq(actual_data.metric_name, expected_data.metric_name)
-    assert_eq(actual_data.value, expected_data.value)
-    assert_eq(actual_data.timestamp, expected_data.timestamp)
-    
-    i = i + 1
-  }
-  
-  // 停止流处理
-  let stop_result = StreamProcessor::stop(stream_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证流处理统计
-  let stats = StreamProcessor::get_stats(stream_processor)
-  assert_eq(stats.total_processed, 100)
-  assert_eq(stats.successful_processed, 100)
-  assert_eq(stats.failed_processed, 0)
-  assert_true(stats.average_processing_time > 0)
-  assert_true(stats.throughput > 0)
+  })
+  assert_true(filtered_data.length() <= processed_data.length())
 }
 
-// 测试2: 窗口化流处理测试
-test "窗口化流处理测试" {
-  // 创建窗口化流处理器
-  let windowed_processor = WindowedStreamProcessor::new()
-  
-  // 创建流源
-  let stream_source = TelemetryStreamSource::new("window-test-source")
-  
-  // 创建时间窗口聚合器
-  let time_window_aggregator = TimeWindowAggregator::new(TimeWindow::Tumbling(1000)) // 1秒滚动窗口
-  
-  // 添加聚合函数
-  TimeWindowAggregator::add_aggregation(time_window_aggregator, "avg", Average)
-  TimeWindowAggregator::add_aggregation(time_window_aggregator, "max", Max)
-  TimeWindowAggregator::add_aggregation(time_window_aggregator, "min", Min)
-  TimeWindowAggregator::add_aggregation(time_window_aggregator, "count", Count)
-  
-  // 创建计数窗口聚合器
-  let count_window_aggregator = CountWindowAggregator::new(CountWindow::Sliding(50, 10)) // 滑动窗口，大小50，滑动10
-  
-  // 添加聚合函数
-  CountWindowAggregator::add_aggregation(count_window_aggregator, "sum", Sum)
-  CountWindowAggregator::add_aggregation(count_window_aggregator, "avg", Average)
-  
-  // 创建流汇
-  let windowed_sink = WindowedStreamSink::new("window-test-sink")
-  
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source)
-  StreamPipeline::add_processor(pipeline, time_window_aggregator)
-  StreamPipeline::add_processor(pipeline, count_window_aggregator)
-  StreamPipeline::add_sink(pipeline, windowed_sink)
-  
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
-  
-  // 启动流处理
-  let start_result = WindowedStreamProcessor::start(windowed_processor, topology)
-  
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 生成测试数据流（2秒的数据，每50ms一个）
-  let test_data_stream = generate_test_data_stream_with_timestamp(40, 50) // 40个数据点，每50ms一个
-  let base_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
-  
-  // 发送数据到流源
-  let mut sent_count = 0
-  for data_point in test_data_stream {
-    let send_result = StreamSource::send_data(stream_source, data_point)
-    match send_result {
-      Success => sent_count = sent_count + 1
-      Failed(_) => assert_true(false)
+// Test 2: 窗口化流聚合
+test "windowed stream aggregation" {
+  // 创建窗口化聚合器
+  let window_aggregator = @azimuth.WindowAggregator::new(
+    @azimuth.WindowConfig {
+      window_type: "tumbling",  // 滚动窗口
+      window_size_ms: 10000,    // 10秒窗口
+      slide_interval_ms: 10000, // 滑动间隔等于窗口大小
+      allowed_lateness_ms: 5000, // 允许5秒延迟
+      aggregation_functions: ["avg", "min", "max", "count"]
     }
+  )
+  
+  // 创建时间序列流数据
+  let base_time = 1640995200000  // 基准时间
+  let time_series_data = []
+  
+  // 创建跨越多个窗口的数据点
+  for i = 0; i < 100; i = i + 1 {
+    let timestamp = base_time + i * 200  // 每200ms一个数据点
+    let window_index = i / 50  // 每50个数据点一个窗口
+    
+    let data_point = @azimuth.TimeSeriesDataPoint {
+      timestamp,
+      metric_name: "request.duration",
+      value: (100 + (i % 200)).to_double(),
+      attributes: [
+        ("service.name", @azimuth.StringValue("window-service")),
+        ("window.index", @azimuth.IntValue(window_index))
+      ]
+    }
+    time_series_data = time_series_data.push(data_point)
   }
   
-  // 验证所有数据都已发送
-  assert_eq(sent_count, 40)
+  // 添加数据到窗口聚合器
+  for data_point in time_series_data {
+    @azimuth.WindowAggregator::add_data_point(window_aggregator, data_point)
+  }
   
-  // 等待窗口处理完成
-  WindowedStreamProcessor::wait_for_window_completion(windowed_processor, 3000) // 最多等待3秒
+  // 触发窗口计算
+  let window_results = @azimuth.WindowAggregator::trigger_window_computation(window_aggregator)
   
-  // 验证时间窗口结果
-  let time_window_results = WindowedStreamSink::get_time_window_results(windowed_sink)
-  assert_eq(time_window_results.length(), 2) // 2秒的数据，每秒一个窗口
+  // 验证窗口结果
+  assert_eq(window_results.length(), 2)  // 应该有2个窗口
   
-  // 验证第一个时间窗口结果
-  let first_window = time_window_results[0]
-  assert_eq(first_window.window_start, base_timestamp)
-  assert_eq(first_window.window_end, base_timestamp + 1000L)
-  assert_eq(first_window.count, 20) // 第一秒20个数据点
+  // 验证第一个窗口 (0-50个数据点)
+  let first_window = window_results[0]
+  assert_eq(first_window.window_start_ms, base_time)
+  assert_eq(first_window.window_end_ms, base_time + 10000)
+  assert_eq(first_window.data_points_count, 50)
   
-  // 验证聚合结果
-  match first_window.aggregations.get("avg") {
-    Some(AvgValue(value)) => assert_true(value > 0.0)
+  // 验证第一个窗口的聚合结果
+  match @azimuth.WindowResult::get_aggregation_value(first_window, "avg") {
+    Some(@azimuth.FloatValue(avg)) => {
+      // 计算期望平均值
+      let sum = (0..50).reduce(fn(acc, i) { acc + (100 + (i % 200)).to_double() }, 0.0)
+      let expected_avg = sum / 50.0
+      assert_eq(avg, expected_avg)
+    }
     _ => assert_true(false)
   }
   
-  match first_window.aggregations.get("max") {
-    Some(MaxValue(value)) => assert_true(value > 0.0)
+  match @azimuth.WindowResult::get_aggregation_value(first_window, "min") {
+    Some(@azimuth.FloatValue(min)) => assert_eq(min, 100.0)
     _ => assert_true(false)
   }
   
-  match first_window.aggregations.get("min") {
-    Some(MinValue(value)) => assert_true(value >= 0.0)
+  match @azimuth.WindowResult::get_aggregation_value(first_window, "max") {
+    Some(@azimuth.FloatValue(max)) => assert_eq(max, 199.0)
     _ => assert_true(false)
   }
   
-  match first_window.aggregations.get("count") {
-    Some(CountValue(value)) => assert_eq(value, 20)
+  match @azimuth.WindowResult::get_aggregation_value(first_window, "count") {
+    Some(@azimuth.IntValue(count)) => assert_eq(count, 50)
     _ => assert_true(false)
   }
   
-  // 验证计数窗口结果
-  let count_window_results = WindowedStreamSink::get_count_window_results(windowed_sink)
-  assert_eq(count_window_results.length(), 31) // 40个数据点，窗口大小50，滑动10，应该有31个窗口
+  // 验证第二个窗口 (50-100个数据点)
+  let second_window = window_results[1]
+  assert_eq(second_window.window_start_ms, base_time + 10000)
+  assert_eq(second_window.window_end_ms, base_time + 20000)
+  assert_eq(second_window.data_points_count, 50)
   
-  // 验证第一个计数窗口结果
-  let first_count_window = count_window_results[0]
-  assert_eq(first_count_window.count, 10) // 第一个窗口包含前10个数据点
-  
-  // 验证聚合结果
-  match first_count_window.aggregations.get("sum") {
-    Some(SumValue(value)) => assert_true(value > 0.0)
-    _ => assert_true(false)
-  }
-  
-  match first_count_window.aggregations.get("avg") {
-    Some(AvgValue(value)) => assert_true(value > 0.0)
-    _ => assert_true(false)
-  }
-  
-  // 停止流处理
-  let stop_result = WindowedStreamProcessor::stop(windowed_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证窗口化流处理统计
-  let stats = WindowedStreamProcessor::get_stats(windowed_processor)
-  assert_eq(stats.total_processed, 40)
-  assert_eq(stats.time_windows_generated, 2)
-  assert_eq(stats.count_windows_generated, 31)
-  assert_true(stats.average_window_processing_time > 0)
+  // 验证窗口元数据
+  assert_true(first_window.processing_timestamp_ms > first_window.window_end_ms)
+  assert_true(second_window.processing_timestamp_ms > second_window.window_end_ms)
 }
 
-// 测试3: 流式连接测试
-test "流式连接测试" {
-  // 创建流式连接处理器
-  let join_processor = StreamJoinProcessor::new()
-  
-  // 创建两个流源
-  let stream_source_a = TelemetryStreamSource::new("join-test-source-a")
-  let stream_source_b = TelemetryStreamSource::new("join-test-source-b")
-  
-  // 创建流式连接器
-  let stream_joiner = StreamJoiner::new(JoinType::Inner, JoinWindow::Sliding(500)) // 500ms滑动窗口内连接
-  
-  // 设置连接键
-  StreamJoiner::set_left_key(stream_joiner, "user_id")
-  StreamJoiner::set_right_key(stream_joiner, "user_id")
-  
-  // 创建流汇
-  let join_sink = JoinStreamSink::new("join-test-sink")
-  
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source_a)
-  StreamPipeline::add_source(pipeline, stream_source_b)
-  StreamPipeline::add_processor(pipeline, stream_joiner)
-  StreamPipeline::add_sink(pipeline, join_sink)
-  
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
-  
-  // 启动流处理
-  let start_result = StreamJoinProcessor::start(join_processor, topology)
-  
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 生成测试数据流A（用户活动）
-  let user_activity_stream = generate_user_activity_stream(20, 100) // 20个用户活动，每100ms一个
-  
-  // 生成测试数据流B（用户会话）
-  let user_session_stream = generate_user_session_stream(15, 150) // 15个用户会话，每150ms一个
-  
-  // 发送数据到流源A
-  let mut sent_count_a = 0
-  for data_point in user_activity_stream {
-    let send_result = StreamSource::send_data(stream_source_a, data_point)
-    match send_result {
-      Success => sent_count_a = sent_count_a + 1
-      Failed(_) => assert_true(false)
+// Test 3: 流式异常检测
+test "streaming anomaly detection" {
+  // 创建异常检测器
+  let anomaly_detector = @azimuth.StreamAnomalyDetector::new(
+    @azimuth.AnomalyDetectionConfig {
+      algorithm: "isolation_forest",
+      training_window_size: 100,
+      detection_window_size: 10,
+      contamination_rate: 0.1,
+      features: ["response_time", "error_rate", "cpu_usage"]
     }
-  }
-  
-  // 发送数据到流源B
-  let mut sent_count_b = 0
-  for data_point in user_session_stream {
-    let send_result = StreamSource::send_data(stream_source_b, data_point)
-    match send_result {
-      Success => sent_count_b = sent_count_b + 1
-      Failed(_) => assert_true(false)
-    }
-  }
-  
-  // 验证所有数据都已发送
-  assert_eq(sent_count_a, 20)
-  assert_eq(sent_count_b, 15)
-  
-  // 等待连接处理完成
-  StreamJoinProcessor::wait_for_join_completion(join_processor, 5000) // 最多等待5秒
-  
-  // 验证连接结果
-  let join_results = JoinStreamSink::get_join_results(join_sink)
-  assert_true(join_results.length() > 0) // 应该有一些连接结果
-  
-  // 验证连接结果的正确性
-  for join_result in join_results {
-    // 验证连接键匹配
-    assert_eq(join_result.left_data.get("user_id"), join_result.right_data.get("user_id"))
-    
-    // 验证时间戳在连接窗口内
-    let time_diff = abs(join_result.left_data.get("timestamp").to_int64() - join_result.right_data.get("timestamp").to_int64())
-    assert_true(time_diff <= 500) // 在500ms窗口内
-  }
-  
-  // 停止流处理
-  let stop_result = StreamJoinProcessor::stop(join_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证流式连接统计
-  let stats = StreamJoinProcessor::get_stats(join_processor)
-  assert_eq(stats.left_processed, 20)
-  assert_eq(stats.right_processed, 15)
-  assert_eq(stats.joins_generated, join_results.length())
-  assert_true(stats.average_join_processing_time > 0)
-  assert_true(stats.join_efficiency > 0.0)
-}
-
-// 测试4: 流式聚合测试
-test "流式聚合测试" {
-  // 创建流式聚合处理器
-  let aggregation_processor = StreamAggregationProcessor::new()
-  
-  // 创建流源
-  let stream_source = TelemetryStreamSource::new("aggregation-test-source")
-  
-  // 创建流式聚合器
-  let stream_aggregator = StreamAggregator::new()
-  
-  // 添加聚合函数
-  StreamAggregator::add_aggregation(stream_aggregator, "response_time_avg", Avg("response_time"))
-  StreamAggregator::add_aggregation(stream_aggregator, "response_time_p95", Percentile("response_time", 95))
-  StreamAggregator::add_aggregation(stream_aggregator, "error_rate", Rate("error", "total"))
-  StreamAggregator::add_aggregation(stream_aggregator, "throughput", CountPerSecond("request"))
-  
-  // 创建分组键
-  StreamAggregator::add_grouping_key(stream_aggregator, "service")
-  StreamAggregator::add_grouping_key(stream_aggregator, "endpoint")
-  
-  // 创建流汇
-  let aggregation_sink = AggregationStreamSink::new("aggregation-test-sink")
-  
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source)
-  StreamPipeline::add_processor(pipeline, stream_aggregator)
-  StreamPipeline::add_sink(pipeline, aggregation_sink)
-  
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
-  
-  // 启动流处理
-  let start_result = StreamAggregationProcessor::start(aggregation_processor, topology)
-  
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 生成测试数据流（不同服务和端点的请求）
-  let request_stream = generate_request_stream(100, 50) // 100个请求，每50ms一个
-  
-  // 发送数据到流源
-  let mut sent_count = 0
-  for request in request_stream {
-    let send_result = StreamSource::send_data(stream_source, request)
-    match send_result {
-      Success => sent_count = sent_count + 1
-      Failed(_) => assert_true(false)
-    }
-  }
-  
-  // 验证所有数据都已发送
-  assert_eq(sent_count, 100)
-  
-  // 等待聚合处理完成
-  StreamAggregationProcessor::wait_for_aggregation_completion(aggregation_processor, 5000) // 最多等待5秒
-  
-  // 验证聚合结果
-  let aggregation_results = AggregationStreamSink::get_aggregation_results(aggregation_sink)
-  assert_true(aggregation_results.length() > 0) // 应该有一些聚合结果
-  
-  // 验证每个分组的聚合结果
-  for result in aggregation_results {
-    // 验证分组键存在
-    assert_true(result.grouping_keys.contains("service"))
-    assert_true(result.grouping_keys.contains("endpoint"))
-    
-    // 验证聚合值
-    match result.aggregations.get("response_time_avg") {
-      Some(AvgValue(value)) => assert_true(value > 0.0)
-      _ => assert_true(false)
-    }
-    
-    match result.aggregations.get("response_time_p95") {
-      Some(PercentileValue(value)) => assert_true(value > 0.0)
-      _ => assert_true(false)
-    }
-    
-    match result.aggregations.get("error_rate") {
-      Some(RateValue(value)) => assert_true(value >= 0.0 && value <= 1.0)
-      _ => assert_true(false)
-    }
-    
-    match result.aggregations.get("throughput") {
-      Some(CountPerSecondValue(value)) => assert_true(value > 0.0)
-      _ => assert_true(false)
-    }
-  }
-  
-  // 停止流处理
-  let stop_result = StreamAggregationProcessor::stop(aggregation_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证流式聚合统计
-  let stats = StreamAggregationProcessor::get_stats(aggregation_processor)
-  assert_eq(stats.total_processed, 100)
-  assert_eq(stats.groups_generated, aggregation_results.length())
-  assert_true(stats.average_aggregation_processing_time > 0)
-}
-
-// 测试5: 流式异常检测测试
-test "流式异常检测测试" {
-  // 创建流式异常检测处理器
-  let anomaly_processor = StreamAnomalyProcessor::new()
-  
-  // 创建流源
-  let stream_source = TelemetryStreamSource::new("anomaly-test-source")
-  
-  // 创建流式异常检测器
-  let anomaly_detector = StreamAnomalyDetector::new()
-  
-  // 添加异常检测规则
-  let spike_rule = SpikeDetectionRule::new("response_time", 3.0, 1000) // 响应时间超过3倍标准差，或超过1000ms
-  StreamAnomalyDetector::add_rule(anomaly_detector, spike_rule)
-  
-  let drop_rule = DropDetectionRule::new("success_rate", 0.95, 100) // 成功率低于95%，或100个样本内下降超过10%
-  StreamAnomalyDetector::add_rule(anomaly_detector, drop_rule)
-  
-  let pattern_rule = PatternAnomalyRule::new("error_pattern", ["timeout", "connection_refused"], 5) // 5个样本内出现特定错误模式
-  StreamAnomalyDetector::add_rule(anomaly_detector, pattern_rule)
-  
-  // 创建异常警报汇
-  let anomaly_sink = AnomalyStreamSink::new("anomaly-test-sink")
-  
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source)
-  StreamPipeline::add_processor(pipeline, anomaly_detector)
-  StreamPipeline::add_sink(pipeline, anomaly_sink)
-  
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
-  
-  // 启动流处理
-  let start_result = StreamAnomalyProcessor::start(anomaly_processor, topology)
-  
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 生成正常测试数据流
-  let normal_stream = generate_normal_metrics_stream(50, 100) // 50个正常指标，每100ms一个
-  
-  // 发送正常数据到流源
-  let mut normal_sent_count = 0
-  for metric in normal_stream {
-    let send_result = StreamSource::send_data(stream_source, metric)
-    match send_result {
-      Success => normal_sent_count = normal_sent_count + 1
-      Failed(_) => assert_true(false)
-    }
-  }
-  
-  // 验证所有正常数据都已发送
-  assert_eq(normal_sent_count, 50)
-  
-  // 等待处理完成
-  StreamAnomalyProcessor::wait_for_processing_completion(anomaly_processor, 2000)
-  
-  // 验证没有异常警报
-  let anomaly_results = AnomalyStreamSink::get_anomaly_results(anomaly_sink)
-  assert_eq(anomaly_results.length(), 0) // 正常数据不应该产生异常警报
-  
-  // 生成异常测试数据流
-  let anomaly_stream = generate_anomaly_metrics_stream(20, 100) // 20个异常指标，每100ms一个
-  
-  // 发送异常数据到流源
-  let mut anomaly_sent_count = 0
-  for metric in anomaly_stream {
-    let send_result = StreamSource::send_data(stream_source, metric)
-    match send_result {
-      Success => anomaly_sent_count = anomaly_sent_count + 1
-      Failed(_) => assert_true(false)
-    }
-  }
-  
-  // 验证所有异常数据都已发送
-  assert_eq(anomaly_sent_count, 20)
-  
-  // 等待异常检测完成
-  StreamAnomalyProcessor::wait_for_anomaly_completion(anomaly_processor, 3000)
-  
-  // 验证异常警报
-  let anomaly_results = AnomalyStreamSink::get_anomaly_results(anomaly_sink)
-  assert_true(anomaly_results.length() > 0) // 异常数据应该产生异常警报
-  
-  // 验证异常警报的正确性
-  for anomaly in anomaly_results {
-    // 验证异常类型
-    assert_true(anomaly.anomaly_type == Spike || anomaly.anomaly_type == Drop || anomaly.anomaly_type == Pattern)
-    
-    // 验证异常严重程度
-    assert_true(anomaly.severity == Low || anomaly.severity == Medium || anomaly.severity == High || anomaly.severity == Critical)
-    
-    // 验证异常描述
-    assert_true(anomaly.description.length() > 0)
-    
-    // 验证异常时间戳
-    assert_true(anomaly.timestamp > 0)
-  }
-  
-  // 停止流处理
-  let stop_result = StreamAnomalyProcessor::stop(anomaly_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证流式异常检测统计
-  let stats = StreamAnomalyProcessor::get_stats(anomaly_processor)
-  assert_eq(stats.total_processed, 70) // 50个正常 + 20个异常
-  assert_eq(stats.anomalies_detected, anomaly_results.length())
-  assert_true(stats.average_detection_time > 0)
-  assert_true(stats.detection_accuracy > 0.8) // 检测准确率应该大于80%
-}
-
-// 测试6: 流式状态机测试
-test "流式状态机测试" {
-  // 创建流式状态机处理器
-  let state_machine_processor = StreamStateMachineProcessor::new()
-  
-  // 创建流源
-  let stream_source = TelemetryStreamSource::new("state-machine-test-source")
-  
-  // 创建流式状态机
-  let state_machine = StreamStateMachine::new("request_state")
-  
-  // 添加状态
-  let initiated_state = State::new("initiated")
-  let processing_state = State::new("processing")
-  let completed_state = State::new("completed")
-  let failed_state = State::new("failed")
-  let timeout_state = State::new("timeout")
-  
-  StateMachine::add_state(state_machine, initiated_state)
-  StateMachine::add_state(state_machine, processing_state)
-  StateMachine::add_state(state_machine, completed_state)
-  StateMachine::add_state(state_machine, failed_state)
-  StateMachine::add_state(state_machine, timeout_state)
-  
-  // 设置初始状态
-  StateMachine::set_initial_state(state_machine, "initiated")
-  
-  // 添加状态转换
-  StateMachine::add_transition(state_machine, "initiated", "processing", "start_processing")
-  StateMachine::add_transition(state_machine, "processing", "completed", "complete")
-  StateMachine::add_transition(state_machine, "processing", "failed", "fail")
-  StateMachine::add_transition(state_machine, "processing", "timeout", "timeout")
-  StateMachine::add_transition(state_machine, "failed", "processing", "retry")
-  StateMachine::add_transition(state_machine, "timeout", "processing", "retry")
-  
-  // 添加状态超时
-  StateMachine::add_state_timeout(state_machine, "processing", 5000) // 处理状态5秒超时
-  
-  // 创建状态机汇
-  let state_machine_sink = StateMachineStreamSink::new("state-machine-test-sink")
-  
-  // 配置流处理管道
-  let pipeline = StreamPipeline::new()
-  StreamPipeline::add_source(pipeline, stream_source)
-  StreamPipeline::add_processor(pipeline, state_machine)
-  StreamPipeline::add_sink(pipeline, state_machine_sink)
-  
-  // 创建流处理拓扑
-  let topology = StreamTopology::new()
-  StreamTopology::add_pipeline(topology, pipeline)
-  
-  // 启动流处理
-  let start_result = StreamStateMachineProcessor::start(state_machine_processor, topology)
-  
-  // 验证流处理启动成功
-  match start_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 生成状态事件流
-  let state_event_stream = generate_state_event_stream(30, 200) // 30个状态事件，每200ms一个
-  
-  // 发送状态事件到流源
-  let mut sent_count = 0
-  for event in state_event_stream {
-    let send_result = StreamSource::send_data(stream_source, event)
-    match send_result {
-      Success => sent_count = sent_count + 1
-      Failed(_) => assert_true(false)
-    }
-  }
-  
-  // 验证所有状态事件都已发送
-  assert_eq(sent_count, 30)
-  
-  // 等待状态机处理完成
-  StreamStateMachineProcessor::wait_for_state_completion(state_machine_processor, 8000) // 最多等待8秒
-  
-  // 验证状态机结果
-  let state_machine_results = StateMachineStreamSink::get_state_results(state_machine_sink)
-  assert_true(state_machine_results.length() > 0) // 应该有一些状态机结果
-  
-  // 验证状态机结果的正确性
-  for result in state_machine_results {
-    // 验证状态机名称
-    assert_eq(result.state_machine_name, "request_state")
-    
-    // 验证实体ID
-    assert_true(result.entity_id.length() > 0)
-    
-    // 验证当前状态
-    assert_true(result.current_state == "initiated" || result.current_state == "processing" || 
-                   result.current_state == "completed" || result.current_state == "failed" || 
-                   result.current_state == "timeout")
-    
-    // 验证状态转换历史
-    assert_true(result.transition_history.length() > 0)
-    
-    // 验证状态持续时间
-    assert_true(result.state_duration >= 0)
-  }
-  
-  // 停止流处理
-  let stop_result = StreamStateMachineProcessor::stop(state_machine_processor)
-  
-  // 验证流处理停止成功
-  match stop_result {
-    Success => assert_true(true)
-    Failed(error) => assert_true(false)
-  }
-  
-  // 验证流式状态机统计
-  let stats = StreamStateMachineProcessor::get_stats(state_machine_processor)
-  assert_eq(stats.total_processed, 30)
-  assert_eq(stats.state_transitions, state_machine_results.fold_left(0, fn(acc, r) { acc + r.transition_history.length() }))
-  assert_true(stats.average_state_processing_time > 0)
-  assert_true(stats.state_completion_rate > 0.5) // 状态完成率应该大于50%
-}
-
-// 辅助函数
-fn generate_test_data_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let mut i = 0
-  while i < count {
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "test.metric." + i.to_string(),
-      value: (i * 1.5).to_double(),
-      tags: [("service", "test-service"), ("instance", "instance-" + (i % 5).to_string())]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_test_data_stream_with_timestamp(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let base_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
-  let mut i = 0
-  while i < count {
-    let data_point = TelemetryDataPoint {
-      timestamp: base_timestamp + (i * interval_ms).to_int64(),
-      metric_name: "test.metric." + i.to_string(),
-      value: (i * 1.5).to_double(),
-      tags: [("service", "test-service"), ("instance", "instance-" + (i % 5).to_string())]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_user_activity_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let mut i = 0
-  while i < count {
-    let user_id = "user-" + (i % 10).to_string() // 10个不同用户
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "user.activity",
-      value: 1.0,
-      tags: [
-        ("user_id", user_id),
-        ("activity_type", "click"),
-        ("page", "home")
-      ]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_user_session_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let mut i = 0
-  while i < count {
-    let user_id = "user-" + (i % 10).to_string() // 10个不同用户，与活动流相同
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "user.session",
-      value: 1.0,
-      tags: [
-        ("user_id", user_id),
-        ("session_id", "session-" + i.to_string()),
-        ("duration", (i * 60).to_string())
-      ]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_request_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let services = ["api-service", "web-service", "db-service"]
-  let endpoints = ["/api/users", "/api/orders", "/api/products", "/health", "/metrics"]
-  let mut i = 0
-  while i < count {
-    let service = services[i % services.length()]
-    let endpoint = endpoints[i % endpoints.length()]
-    let response_time = 50 + (i % 200).to_double() // 50-250ms响应时间
-    let is_error = i % 20 == 0 // 5%错误率
-    
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "http.request",
-      value: response_time,
-      tags: [
-        ("service", service),
-        ("endpoint", endpoint),
-        ("status", if is_error { "error" } else { "success" }),
-        ("method", "GET")
-      ]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_normal_metrics_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let mut i = 0
-  while i < count {
-    let response_time = 100.0 + (sin(i.to_double() * 0.1) * 20.0) // 正常波动的响应时间
-    let success_rate = 0.95 + (sin(i.to_double() * 0.05) * 0.03) // 正常波动的成功率
-    
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "service.metrics",
-      value: response_time,
-      tags: [
-        ("service", "api-service"),
-        ("success_rate", success_rate.to_string()),
-        ("error", "none")
-      ]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_anomaly_metrics_stream(count: Int, interval_ms: Int) -> Array[TelemetryDataPoint] {
-  let mut data_stream = []
-  let mut i = 0
-  while i < count {
-    let response_time = if i % 5 == 0 { 2000.0 } else { 120.0 } // 偶尔出现响应时间尖峰
-    let success_rate = if i % 7 == 0 { 0.85 } else { 0.97 } // 偶尔出现成功率下降
-    let error = if i % 3 == 0 { "timeout" } else if i % 4 == 0 { "connection_refused" } else { "none" }
-    
-    let data_point = TelemetryDataPoint {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      metric_name: "service.metrics",
-      value: response_time,
-      tags: [
-        ("service", "api-service"),
-        ("success_rate", success_rate.to_string()),
-        ("error", error)
-      ]
-    }
-    data_stream = data_stream + [data_point]
-    i = i + 1
-  }
-  data_stream
-}
-
-fn generate_state_event_stream(count: Int, interval_ms: Int) -> Array[StateEvent] {
-  let mut event_stream = []
-  let mut i = 0
-  while i < count {
-    let request_id = "request-" + (i % 10).to_string() // 10个不同请求
-    let event_type = match i % 6 {
-      0 => "start_processing"
-      1 => "complete"
-      2 => "fail"
-      3 => "timeout"
-      4 => "retry"
-      _ => "start_processing"
-    }
-    
-    let event = StateEvent {
-      timestamp: 1609459200000L + (i * interval_ms).to_int64(),
-      entity_id: request_id,
-      event_type: event_type,
-      data: [
-        ("service", "api-service"),
-        ("operation", "process_request")
-      ]
-    }
-    event_stream = event_stream + [event]
-    i = i + 1
-  }
-  event_stream
-}
-
-fn abs(x: Int64) -> Int64 {
-  if x < 0 { -x } else { x }
-}
-
-fn sin(x: Double) -> Double {
-  // 简化实现，实际应该使用数学库
-  if x < 1.0 { x } else { 1.0 / x }
-}
-
-// 类型定义
-type StreamProcessor
-
-type TelemetryStreamSource
-
-type TelemetryStreamSink
-
-type StreamPipeline
-
-type StreamTopology
-
-type WindowedStreamProcessor
-
-type TimeWindowAggregator
-
-type TimeWindow {
-  Tumbling(Int) // 滚动窗口，大小为毫秒
-  Sliding(Int)  // 滑动窗口，大小为毫秒
-  Session(Int)  // 会话窗口，超时为毫秒
-}
-
-type AggregationFunction {
-  Average
-  Max
-  Min
-  Count
-  Sum
-  Percentile(String, Int)
-  Rate(String, String)
-  CountPerSecond(String)
-}
-
-type CountWindow {
-  Tumbling(Int) // 滚动窗口，大小为计数
-  Sliding(Int, Int) // 滑动窗口，大小为计数，滑动为计数
-}
-
-type WindowedStreamSink
-
-type StreamJoinProcessor
-
-type StreamJoiner
-
-type JoinType {
-  Inner
-  Left
-  Right
-  Full
-}
-
-type JoinWindow {
-  Tumbling(Int) // 滚动窗口，大小为毫秒
-  Sliding(Int)  // 滑动窗口，大小为毫秒
-}
-
-type JoinStreamSink
-
-type StreamAggregationProcessor
-
-type StreamAggregator
-
-type AggregationStreamSink
-
-type StreamAnomalyProcessor
-
-type StreamAnomalyDetector
-
-type SpikeDetectionRule
-
-type DropDetectionRule
-
-type PatternAnomalyRule
-
-type AnomalyStreamSink
-
-type StreamStateMachineProcessor
-
-type StreamStateMachine
-
-type State
-
-type StateMachine
-
-type StateMachineStreamSink
-
-type TelemetryDataPoint {
-  timestamp: Int64
-  metric_name: String
-  value: Double
-  tags: Array[(String, String)]
-}
-
-type StateEvent {
-  timestamp: Int64
-  entity_id: String
-  event_type: String
-  data: Array[(String, String)]
-}
-
-// 函数实现（简化）
-fn StreamProcessor::new() -> StreamProcessor { StreamProcessor }
-
-fn TelemetryStreamSource::new(name: String) -> TelemetryStreamSource { TelemetryStreamSource }
-
-fn TelemetryStreamSink::new(name: String) -> TelemetryStreamSink { TelemetryStreamSink }
-
-fn StreamPipeline::new() -> StreamPipeline { StreamPipeline }
-
-fn StreamPipeline::add_source(pipeline: StreamPipeline, source: TelemetryStreamSource) -> Unit {
-  // 简化实现
-}
-
-fn StreamPipeline::add_sink(pipeline: StreamPipeline, sink: TelemetryStreamSink) -> Unit {
-  // 简化实现
-}
-
-fn StreamTopology::new() -> StreamTopology { StreamTopology }
-
-fn StreamTopology::add_pipeline(topology: StreamTopology, pipeline: StreamPipeline) -> Unit {
-  // 简化实现
-}
-
-fn StreamProcessor::start(processor: StreamProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamSource::send_data(source: TelemetryStreamSource, data: TelemetryDataPoint) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamProcessor::wait_for_completion(processor: StreamProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn StreamSink::get_received_data(sink: TelemetryStreamSink) -> Array[TelemetryDataPoint] {
-  // 简化实现
-  generate_test_data_stream(100, 10)
-}
-
-fn StreamProcessor::stop(processor: StreamProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamProcessor::get_stats(processor: StreamProcessor) -> StreamProcessorStats {
-  // 简化实现
-  StreamProcessorStats {
-    total_processed: 100,
-    successful_processed: 100,
-    failed_processed: 0,
-    average_processing_time: 5,
-    throughput: 10.0
-  }
-}
-
-type StreamProcessorStats {
-  total_processed: Int
-  successful_processed: Int
-  failed_processed: Int
-  average_processing_time: Int
-  throughput: Double
-}
-
-// 继续添加其他函数实现...
-fn WindowedStreamProcessor::new() -> WindowedStreamProcessor { WindowedStreamProcessor }
-
-fn TimeWindowAggregator::new(window: TimeWindow) -> TimeWindowAggregator { TimeWindowAggregator }
-
-fn TimeWindowAggregator::add_aggregation(aggregator: TimeWindowAggregator, name: String, function: AggregationFunction) -> Unit {
-  // 简化实现
-}
-
-fn CountWindowAggregator::new(window: CountWindow) -> CountWindowAggregator { CountWindowAggregator }
-
-fn CountWindowAggregator::add_aggregation(aggregator: CountWindowAggregator, name: String, function: AggregationFunction) -> Unit {
-  // 简化实现
-}
-
-fn WindowedStreamSink::new(name: String) -> WindowedStreamSink { WindowedStreamSink }
-
-fn StreamPipeline::add_processor(pipeline: StreamPipeline, processor: TimeWindowAggregator) -> Unit {
-  // 简化实现
-}
-
-fn StreamPipeline::add_processor(pipeline: StreamPipeline, processor: CountWindowAggregator) -> Unit {
-  // 简化实现
-}
-
-fn WindowedStreamProcessor::start(processor: WindowedStreamProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn WindowedStreamProcessor::wait_for_window_completion(processor: WindowedStreamProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn WindowedStreamSink::get_time_window_results(sink: WindowedStreamSink) -> Array[TimeWindowResult] {
-  // 简化实现
-  [
-    TimeWindowResult {
-      window_start: 1609459200000L,
-      window_end: 1609459201000L,
-      count: 20,
-      aggregations: [
-        ("avg", AvgValue(75.5)),
-        ("max", MaxValue(150.0)),
-        ("min", MinValue(0.0)),
-        ("count", CountValue(20))
-      ]
-    },
-    TimeWindowResult {
-      window_start: 1609459201000L,
-      window_end: 1609459202000L,
-      count: 20,
-      aggregations: [
-        ("avg", AvgValue(75.5)),
-        ("max", MaxValue(150.0)),
-        ("min", MinValue(0.0)),
-        ("count", CountValue(20))
-      ]
-    }
-  ]
-}
-
-type TimeWindowResult {
-  window_start: Int64
-  window_end: Int64
-  count: Int
-  aggregations: Array[(String, AggregationValue)]
-}
-
-type AggregationValue {
-  AvgValue(Double)
-  MaxValue(Double)
-  MinValue(Double)
-  CountValue(Int)
-  SumValue(Double)
-  PercentileValue(Double)
-  RateValue(Double)
-  CountPerSecondValue(Double)
-}
-
-fn WindowedStreamSink::get_count_window_results(sink: WindowedStreamSink) -> Array[CountWindowResult] {
-  // 简化实现
-  let mut results = []
-  let mut i = 0
-  while i < 31 {
-    let result = CountWindowResult {
-      window_start: i,
-      window_end: i + 10,
-      count: 10,
-      aggregations: [
-        ("sum", SumValue(500.0)),
-        ("avg", AvgValue(50.0))
-      ]
-    }
-    results = results + [result]
-    i = i + 1
-  }
-  results
-}
-
-type CountWindowResult {
-  window_start: Int
-  window_end: Int
-  count: Int
-  aggregations: Array[(String, AggregationValue)]
-}
-
-fn WindowedStreamProcessor::stop(processor: WindowedStreamProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn WindowedStreamProcessor::get_stats(processor: WindowedStreamProcessor) -> WindowedStreamProcessorStats {
-  // 简化实现
-  WindowedStreamProcessorStats {
-    total_processed: 40,
-    time_windows_generated: 2,
-    count_windows_generated: 31,
-    average_window_processing_time: 15
-  }
-}
-
-type WindowedStreamProcessorStats {
-  total_processed: Int
-  time_windows_generated: Int
-  count_windows_generated: Int
-  average_window_processing_time: Int
-}
-
-// 继续添加其他函数实现...
-fn StreamJoinProcessor::new() -> StreamJoinProcessor { StreamJoinProcessor }
-
-fn StreamJoiner::new(join_type: JoinType, window: JoinWindow) -> StreamJoiner { StreamJoiner }
-
-fn StreamJoiner::set_left_key(joiner: StreamJoiner, key: String) -> Unit {
-  // 简化实现
-}
-
-fn StreamJoiner::set_right_key(joiner: StreamJoiner, key: String) -> Unit {
-  // 简化实现
-}
-
-fn JoinStreamSink::new(name: String) -> JoinStreamSink { JoinStreamSink }
-
-fn StreamPipeline::add_source(pipeline: StreamPipeline, source: TelemetryStreamSource) -> Unit {
-  // 简化实现
-}
-
-fn StreamPipeline::add_processor(pipeline: StreamPipeline, processor: StreamJoiner) -> Unit {
-  // 简化实现
-}
-
-fn StreamJoinProcessor::start(processor: StreamJoinProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamJoinProcessor::wait_for_join_completion(processor: StreamJoinProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn JoinStreamSink::get_join_results(sink: JoinStreamSink) -> Array[JoinResult] {
-  // 简化实现
-  [
-    JoinResult {
-      left_data: [
-        ("user_id", "user-1"),
-        ("timestamp", "1609459200000")
+  )
+  
+  // 创建正常训练数据
+  let training_data = []
+  let base_timestamp = @azimuth.current_timestamp()
+  
+  for i = 0; i < 100; i = i + 1 {
+    let data_point = @azimuth.MultiMetricDataPoint {
+      timestamp: base_timestamp + i * 1000,
+      metrics: [
+        ("response_time", (50 + (i % 50)).to_double()),
+        ("error_rate", (0.01 + (i % 5) * 0.001).to_double()),
+        ("cpu_usage", (20 + (i % 30)).to_double())
       ],
-      right_data: [
-        ("user_id", "user-1"),
-        ("timestamp", "1609459200200")
+      attributes: [
+        ("service.name", @azimuth.StringValue("anomaly-detection-service"))
+      ]
+    }
+    training_data = training_data.push(data_point)
+  }
+  
+  // 训练异常检测模型
+  let training_result = @azimuth.StreamAnomalyDetector::train(anomaly_detector, training_data)
+  assert_true(training_result.success)
+  assert_eq(training_result.training_samples, 100)
+  
+  // 创建测试数据 (包含一些异常)
+  let test_data = []
+  
+  // 添加正常数据点
+  for i = 0; i < 20; i = i + 1 {
+    let data_point = @azimuth.MultiMetricDataPoint {
+      timestamp: base_timestamp + 100000 + i * 1000,
+      metrics: [
+        ("response_time", (50 + (i % 50)).to_double()),
+        ("error_rate", (0.01 + (i % 5) * 0.001).to_double()),
+        ("cpu_usage", (20 + (i % 30)).to_double())
       ],
-      join_timestamp: 1609459200100L
+      attributes: [
+        ("service.name", @azimuth.StringValue("anomaly-detection-service"))
+      ]
     }
-  ]
-}
-
-type JoinResult {
-  left_data: Array[(String, String)]
-  right_data: Array[(String, String)]
-  join_timestamp: Int64
-}
-
-fn StreamJoinProcessor::stop(processor: StreamJoinProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamJoinProcessor::get_stats(processor: StreamJoinProcessor) -> StreamJoinProcessorStats {
-  // 简化实现
-  StreamJoinProcessorStats {
-    left_processed: 20,
-    right_processed: 15,
-    joins_generated: 1,
-    average_join_processing_time: 10,
-    join_efficiency: 0.8
+    test_data = test_data.push(data_point)
   }
-}
-
-type StreamJoinProcessorStats {
-  left_processed: Int
-  right_processed: Int
-  joins_generated: Int
-  average_join_processing_time: Int
-  join_efficiency: Double
-}
-
-// 继续添加其他函数实现...
-fn StreamAggregationProcessor::new() -> StreamAggregationProcessor { StreamAggregationProcessor }
-
-fn StreamAggregator::new() -> StreamAggregator { StreamAggregator }
-
-fn StreamAggregator::add_aggregation(aggregator: StreamAggregator, name: String, function: AggregationFunction) -> Unit {
-  // 简化实现
-}
-
-fn StreamAggregator::add_grouping_key(aggregator: StreamAggregator, key: String) -> Unit {
-  // 简化实现
-}
-
-fn AggregationStreamSink::new(name: String) -> AggregationStreamSink { AggregationStreamSink }
-
-fn StreamAggregationProcessor::start(processor: StreamAggregationProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamAggregationProcessor::wait_for_aggregation_completion(processor: StreamAggregationProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn AggregationStreamSink::get_aggregation_results(sink: AggregationStreamSink) -> Array[AggregationResult] {
-  // 简化实现
-  [
-    AggregationResult {
-      grouping_keys: ["service", "endpoint"],
-      aggregations: [
-        ("response_time_avg", AvgValue(125.5)),
-        ("response_time_p95", PercentileValue(180.0)),
-        ("error_rate", RateValue(0.05)),
-        ("throughput", CountPerSecondValue(10.0))
+  
+  // 添加异常数据点
+  let anomaly_data_point = @azimuth.MultiMetricDataPoint {
+    timestamp: base_timestamp + 120000,
+    metrics: [
+      ("response_time", 500.0),  // 异常高的响应时间
+      ("error_rate", 0.5),       // 异常高的错误率
+      ("cpu_usage", 95.0)        // 异常高的CPU使用率
+    ],
+    attributes: [
+      ("service.name", @azimuth.StringValue("anomaly-detection-service"))
+    ]
+  }
+  test_data = test_data.push(anomaly_data_point)
+  
+  // 添加更多正常数据点
+  for i = 21; i < 30; i = i + 1 {
+    let data_point = @azimuth.MultiMetricDataPoint {
+      timestamp: base_timestamp + 100000 + i * 1000,
+      metrics: [
+        ("response_time", (50 + (i % 50)).to_double()),
+        ("error_rate", (0.01 + (i % 5) * 0.001).to_double()),
+        ("cpu_usage", (20 + (i % 30)).to_double())
       ],
-      timestamp: 1609459200000L
+      attributes: [
+        ("service.name", @azimuth.StringValue("anomaly-detection-service"))
+      ]
     }
-  ]
-}
-
-type AggregationResult {
-  grouping_keys: Array[String]
-  aggregations: Array[(String, AggregationValue)]
-  timestamp: Int64
-}
-
-fn StreamAggregationProcessor::stop(processor: StreamAggregationProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamAggregationProcessor::get_stats(processor: StreamAggregationProcessor) -> StreamAggregationProcessorStats {
-  // 简化实现
-  StreamAggregationProcessorStats {
-    total_processed: 100,
-    groups_generated: 1,
-    average_aggregation_processing_time: 20
+    test_data = test_data.push(data_point)
+  }
+  
+  // 执行异常检测
+  let detection_result = @azimuth.StreamAnomalyDetector::detect(anomaly_detector, test_data)
+  
+  // 验证检测结果
+  assert_eq(detection_result.total_samples, 31)
+  assert_eq(detection_result.anomaly_count, 1)
+  assert_eq(detection_result.normal_count, 30)
+  
+  // 验证异常详情
+  assert_eq(detection_result.anomalies.length(), 1)
+  let detected_anomaly = detection_result.anomalies[0]
+  
+  assert_eq(detected_anomaly.timestamp, base_timestamp + 120000)
+  assert_true(detected_anomaly.anomaly_score > 0.5)
+  assert_eq(detected_anomaly.reason, "multi_metric_deviation")
+  
+  // 验证异常指标值
+  match detected_anomaly.anomalous_metrics.find(fn(m) { m.name == "response_time" }) {
+    Some(metric) => assert_eq(metric.value, 500.0)
+    None => assert_true(false)
+  }
+  
+  match detected_anomaly.anomalous_metrics.find(fn(m) { m.name == "error_rate" }) {
+    Some(metric) => assert_eq(metric.value, 0.5)
+    None => assert_true(false)
+  }
+  
+  match detected_anomaly.anomalous_metrics.find(fn(m) { m.name == "cpu_usage" }) {
+    Some(metric) => assert_eq(metric.value, 95.0)
+    None => assert_true(false)
   }
 }
 
-type StreamAggregationProcessorStats {
-  total_processed: Int
-  groups_generated: Int
-  average_aggregation_processing_time: Int
-}
-
-// 继续添加其他函数实现...
-fn StreamAnomalyProcessor::new() -> StreamAnomalyProcessor { StreamAnomalyProcessor }
-
-fn StreamAnomalyDetector::new() -> StreamAnomalyDetector { StreamAnomalyDetector }
-
-fn SpikeDetectionRule::new(metric: String, std_dev_threshold: Double, absolute_threshold: Double) -> SpikeDetectionRule {
-  SpikeDetectionRule
-}
-
-fn DropDetectionRule::new(metric: String, threshold: Double, window_size: Int) -> DropDetectionRule {
-  DropDetectionRule
-}
-
-fn PatternAnomalyRule::new(pattern: Array[String], window_size: Int) -> PatternAnomalyRule {
-  PatternAnomalyRule
-}
-
-fn StreamAnomalyDetector::add_rule(detector: StreamAnomalyDetector, rule: SpikeDetectionRule) -> Unit {
-  // 简化实现
-}
-
-fn StreamAnomalyDetector::add_rule(detector: StreamAnomalyDetector, rule: DropDetectionRule) -> Unit {
-  // 简化实现
-}
-
-fn StreamAnomalyDetector::add_rule(detector: StreamAnomalyDetector, rule: PatternAnomalyRule) -> Unit {
-  // 简化实现
-}
-
-fn AnomalyStreamSink::new(name: String) -> AnomalyStreamSink { AnomalyStreamSink }
-
-fn StreamAnomalyProcessor::start(processor: StreamAnomalyProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamAnomalyProcessor::wait_for_processing_completion(processor: StreamAnomalyProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn AnomalyStreamSink::get_anomaly_results(sink: AnomalyStreamSink) -> Array[AnomalyResult] {
-  // 简化实现
-  [
-    AnomalyResult {
-      anomaly_type: Spike,
-      severity: High,
-      description: "Response time spike detected: 2000ms (threshold: 1000ms)",
-      timestamp: 1609459200000L,
-      metric_name: "response_time",
-      metric_value: 2000.0
-    },
-    AnomalyResult {
-      anomaly_type: Drop,
-      severity: Medium,
-      description: "Success rate drop detected: 85% (threshold: 95%)",
-      timestamp: 1609459201000L,
-      metric_name: "success_rate",
-      metric_value: 0.85
-    },
-    AnomalyResult {
-      anomaly_type: Pattern,
-      severity: Low,
-      description: "Error pattern detected: timeout, connection_refused",
-      timestamp: 1609459202000L,
-      metric_name: "error_pattern",
-      metric_value: 1.0
+// Test 4: 流式模式检测
+test "streaming pattern detection" {
+  // 创建模式检测器
+  let pattern_detector = @azimuth.StreamPatternDetector::new(
+    @azimuth.PatternDetectionConfig {
+      pattern_types: ["seasonal", "trend", "spike", "dip"],
+      min_pattern_length: 5,
+      max_pattern_length: 20,
+      confidence_threshold: 0.8
     }
-  ]
-}
-
-type AnomalyResult {
-  anomaly_type: AnomalyType
-  severity: Severity
-  description: String
-  timestamp: Int64
-  metric_name: String
-  metric_value: Double
-}
-
-type AnomalyType {
-  Spike
-  Drop
-  Pattern
-}
-
-type Severity {
-  Low
-  Medium
-  High
-  Critical
-}
-
-fn StreamAnomalyProcessor::wait_for_anomaly_completion(processor: StreamAnomalyProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn StreamAnomalyProcessor::stop(processor: StreamAnomalyProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamAnomalyProcessor::get_stats(processor: StreamAnomalyProcessor) -> StreamAnomalyProcessorStats {
-  // 简化实现
-  StreamAnomalyProcessorStats {
-    total_processed: 70,
-    anomalies_detected: 3,
-    average_detection_time: 15,
-    detection_accuracy: 0.9
+  )
+  
+  // 创建包含季节性模式的数据
+  let seasonal_data = []
+  let base_time = 1640995200000  // 基准时间
+  
+  // 创建24小时的季节性数据 (每小时一个数据点)
+  for hour = 0; hour < 24; hour = hour + 1 {
+    // 模拟日流量模式：工作时间高，夜间低
+    let base_value = if hour >= 8 and hour <= 18 {
+      100.0 + (10.0 * ((hour - 8) / 10.0).sin())  // 工作时间基线100，有波动
+    } else {
+      20.0 + (5.0 * ((hour - 18) / 6.0).sin())     // 夜间基线20，有波动
+    }
+    
+    let data_point = @azimuth.TimeSeriesDataPoint {
+      timestamp: base_time + hour * 3600000,  // 每小时
+      metric_name: "hourly.traffic",
+      value: base_value,
+      attributes: [
+        ("service.name", @azimuth.StringValue("pattern-detection-service")),
+        ("time.hour", @azimuth.IntValue(hour))
+      ]
+    }
+    seasonal_data = seasonal_data.push(data_point)
   }
+  
+  // 添加趋势数据
+  let trend_data = []
+  for day = 0; day < 30; day = day + 1 {
+    // 模拟30天的增长趋势
+    let trend_value = 50.0 + (day * 2.0)  // 每天增长2
+    
+    let data_point = @azimuth.TimeSeriesDataPoint {
+      timestamp: base_time + day * 86400000,  // 每天
+      metric_name: "daily.active.users",
+      value: trend_value,
+      attributes: [
+        ("service.name", @azimuth.StringValue("pattern-detection-service")),
+        ("time.day", @azimuth.IntValue(day))
+      ]
+    }
+    trend_data = trend_data.push(data_point)
+  }
+  
+  // 添加尖峰数据
+  let spike_data = []
+  for minute = 0; minute < 60; minute = minute + 1 {
+    // 正常基线
+    let base_value = 50.0
+    
+    // 在第30分钟添加一个尖峰
+    let value = if minute == 30 {
+      500.0  // 尖峰
+    } else {
+      base_value
+    }
+    
+    let data_point = @azimuth.TimeSeriesDataPoint {
+      timestamp: base_time + minute * 60000,  // 每分钟
+      metric_name: "minute.requests",
+      value,
+      attributes: [
+        ("service.name", @azimuth.StringValue("pattern-detection-service")),
+        ("time.minute", @azimuth.IntValue(minute))
+      ]
+    }
+    spike_data = spike_data.push(data_point)
+  }
+  
+  // 检测季节性模式
+  let seasonal_patterns = @azimuth.StreamPatternDetector::detect_patterns(pattern_detector, seasonal_data, "seasonal")
+  assert_eq(seasonal_patterns.length(), 1)
+  
+  let seasonal_pattern = seasonal_patterns[0]
+  assert_eq(seasonal_pattern.pattern_type, "seasonal")
+  assert_eq(seasonal_pattern.period_hours, 24)
+  assert_true(seasonal_pattern.confidence > 0.8)
+  
+  // 验证季节性模式的详细信息
+  assert_eq(seasonal_pattern.peak_hours.length(), 11)  // 8-18点，共11小时
+  assert_true(seasonal_pattern.peak_hours.contains(8))
+  assert_true(seasonal_pattern.peak_hours.contains(12))
+  assert_true(seasonal_pattern.peak_hours.contains(18))
+  
+  assert_eq(seasonal_pattern.low_hours.length(), 13)  // 其他13小时
+  assert_true(seasonal_pattern.low_hours.contains(0))
+  assert_true(seasonal_pattern.low_hours.contains(6))
+  assert_true(seasonal_pattern.low_hours.contains(23))
+  
+  // 检测趋势模式
+  let trend_patterns = @azimuth.StreamPatternDetector::detect_patterns(pattern_detector, trend_data, "trend")
+  assert_eq(trend_patterns.length(), 1)
+  
+  let trend_pattern = trend_patterns[0]
+  assert_eq(trend_pattern.pattern_type, "trend")
+  assert_eq(trend_pattern.trend_direction, "increasing")
+  assert_true(trend_pattern.trend_slope > 1.9)  // 接近2.0
+  assert_true(trend_pattern.confidence > 0.9)
+  
+  // 验证趋势模式的详细信息
+  assert_eq(trend_pattern.start_value, 50.0)   // 第1天
+  assert_eq(trend_pattern.end_value, 108.0)    // 第30天：50 + 29*2
+  assert_eq(trend_pattern.total_change, 58.0)  // 总变化量
+  assert_eq(trend_pattern.percent_change, 116.0) // 变化百分比
+  
+  // 检测尖峰模式
+  let spike_patterns = @azimuth.StreamPatternDetector::detect_patterns(pattern_detector, spike_data, "spike")
+  assert_eq(spike_patterns.length(), 1)
+  
+  let spike_pattern = spike_patterns[0]
+  assert_eq(spike_pattern.pattern_type, "spike")
+  assert_eq(spike_pattern.spike_timestamp, base_time + 30 * 60000)  // 第30分钟
+  assert_eq(spike_pattern.spike_value, 500.0)
+  assert_eq(spike_pattern.baseline_value, 50.0)
+  assert_eq(spike_pattern.spike_multiplier, 10.0)  // 500/50 = 10
+  assert_true(spike_pattern.confidence > 0.9)
 }
 
-type StreamAnomalyProcessorStats {
-  total_processed: Int
-  anomalies_detected: Int
-  average_detection_time: Int
-  detection_accuracy: Double
-}
-
-// 继续添加其他函数实现...
-fn StreamStateMachineProcessor::new() -> StreamStateMachineProcessor { StreamStateMachineProcessor }
-
-fn StreamStateMachine::new(name: String) -> StreamStateMachine { StreamStateMachine }
-
-fn State::new(name: String) -> State { State }
-
-fn StateMachine::add_state(machine: StreamStateMachine, state: State) -> Unit {
-  // 简化实现
-}
-
-fn StateMachine::set_initial_state(machine: StreamStateMachine, state_name: String) -> Unit {
-  // 简化实现
-}
-
-fn StateMachine::add_transition(machine: StreamStateMachine, from_state: String, to_state: String, event: String) -> Unit {
-  // 简化实现
-}
-
-fn StateMachine::add_state_timeout(machine: StreamStateMachine, state_name: String, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn StateMachineStreamSink::new(name: String) -> StateMachineStreamSink { StateMachineStreamSink }
-
-fn StreamStateMachineProcessor::start(processor: StreamStateMachineProcessor, topology: StreamTopology) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamStateMachineProcessor::wait_for_state_completion(processor: StreamStateMachineProcessor, timeout_ms: Int) -> Unit {
-  // 简化实现
-}
-
-fn StateMachineStreamSink::get_state_results(sink: StateMachineStreamSink) -> Array[StateMachineResult] {
-  // 简化实现
-  [
-    StateMachineResult {
-      state_machine_name: "request_state",
-      entity_id: "request-1",
-      current_state: "completed",
-      transition_history: [
-        StateTransition {
-          from_state: "initiated",
-          to_state: "processing",
-          event: "start_processing",
-          timestamp: 1609459200000L
-        },
-        StateTransition {
-          from_state: "processing",
-          to_state: "completed",
-          event: "complete",
-          timestamp: 1609459202000L
+// Test 5: 流式状态管理
+test "streaming state management" {
+  // 创建流状态管理器
+  let state_manager = @azimuth.StreamStateManager::new(
+    @azimuth.StateConfig {
+      state_store_type: "memory",
+      checkpoint_interval_ms: 10000,
+      max_state_size_mb: 100,
+      state_ttl_ms: 300000  // 5分钟TTL
+    }
+  )
+  
+  // 定义状态键
+  let counter_state_key = @azimuth.StateKey::new("request_counter")
+  let window_state_key = @azimuth.StateKey::new("sliding_window")
+  let alert_state_key = @azimuth.StateKey::new("alert_states")
+  
+  // 初始化状态
+  @azimuth.StreamStateManager::initialize_state(state_manager, counter_state_key, @azimuth.IntValue(0))
+  @azimuth.StreamStateManager::initialize_state(state_manager, window_state_key, @azimuth.ArrayValue([]))
+  @azimuth.StreamStateManager::initialize_state(state_manager, alert_state_key, @azimuth.MapValue([]))
+  
+  // 模拟流处理并更新状态
+  for i = 0; i < 100; i = i + 1 {
+    // 更新计数器状态
+    let current_counter = @azimuth.StreamStateManager::get_state(state_manager, counter_state_key)
+    match current_counter {
+      Some(@azimuth.IntValue(count)) => {
+        let new_count = count + 1
+        @azimuth.StreamStateManager::update_state(state_manager, counter_state_key, @azimuth.IntValue(new_count))
+      }
+      _ => assert_true(false)
+    }
+    
+    // 更新滑动窗口状态 (保留最近10个值)
+    let current_window = @azimuth.StreamStateManager::get_state(state_manager, window_state_key)
+    match current_window {
+      Some(@azimuth.ArrayValue(window)) => {
+        let new_window = window.push(i.to_double())
+        let trimmed_window = if new_window.length() > 10 {
+          new_window.slice(new_window.length() - 10, new_window.length())
+        } else {
+          new_window
         }
-      ],
-      state_duration: 2000
+        @azimuth.StreamStateManager::update_state(state_manager, window_state_key, @azimuth.ArrayValue(trimmed_window))
+      }
+      _ => assert_true(false)
     }
-  ]
-}
-
-type StateMachineResult {
-  state_machine_name: String
-  entity_id: String
-  current_state: String
-  transition_history: Array[StateTransition]
-  state_duration: Int
-}
-
-type StateTransition {
-  from_state: String
-  to_state: String
-  event: String
-  timestamp: Int64
-}
-
-fn StreamStateMachineProcessor::stop(processor: StreamStateMachineProcessor) -> Result[Unit, String] {
-  // 简化实现
-  Ok(())
-}
-
-fn StreamStateMachineProcessor::get_stats(processor: StreamStateMachineProcessor) -> StreamStateMachineProcessorStats {
-  // 简化实现
-  StreamStateMachineProcessorStats {
-    total_processed: 30,
-    state_transitions: 60,
-    average_state_processing_time: 25,
-    state_completion_rate: 0.8
+    
+    // 每10个值更新一次警报状态
+    if i % 10 == 0 and i > 0 {
+      let current_alerts = @azimuth.StreamStateManager::get_state(state_manager, alert_state_key)
+      match current_alerts {
+        Some(@azimuth.MapValue(alerts)) => {
+          let new_alerts = alerts.push(("alert-" + i.to_string(), @azimuth.StringValue("threshold_exceeded")))
+          @azimuth.StreamStateManager::update_state(state_manager, alert_state_key, @azimuth.MapValue(new_alerts))
+        }
+        _ => assert_true(false)
+      }
+    }
   }
+  
+  // 验证最终状态
+  let final_counter = @azimuth.StreamStateManager::get_state(state_manager, counter_state_key)
+  match final_counter {
+    Some(@azimuth.IntValue(count)) => assert_eq(count, 100)
+    _ => assert_true(false)
+  }
+  
+  let final_window = @azimuth.StreamStateManager::get_state(state_manager, window_state_key)
+  match final_window {
+    Some(@azimuth.ArrayValue(window)) => {
+      assert_eq(window.length(), 10)
+      // 验证窗口包含最后10个值
+      assert_eq(window[0], 90.0)
+      assert_eq(window[9], 99.0)
+    }
+    _ => assert_true(false)
+  }
+  
+  let final_alerts = @azimuth.StreamStateManager::get_state(state_manager, alert_state_key)
+  match final_alerts {
+    Some(@azimuth.MapValue(alerts)) => {
+      assert_eq(alerts.length(), 9)  // 10, 20, ..., 90
+      assert_true(alerts.contains(("alert-10", @azimuth.StringValue("threshold_exceeded"))))
+      assert_true(alerts.contains(("alert-90", @azimuth.StringValue("threshold_exceeded"))))
+    }
+    _ => assert_true(false)
+  }
+  
+  // 创建状态检查点
+  let checkpoint_result = @azimuth.StreamStateManager::create_checkpoint(state_manager, "test-checkpoint")
+  assert_true(checkpoint_result.success)
+  assert_eq(checkpoint_result.checkpoint_id, "test-checkpoint")
+  assert_true(checkpoint_result.state_size_bytes > 0)
+  
+  // 验证状态恢复
+  let new_state_manager = @azimuth.StreamStateManager::new(
+    @azimuth.StateConfig {
+      state_store_type: "memory",
+      checkpoint_interval_ms: 10000,
+      max_state_size_mb: 100,
+      state_ttl_ms: 300000
+    }
+  )
+  
+  let restore_result = @azimuth.StreamStateManager::restore_from_checkpoint(new_state_manager, "test-checkpoint")
+  assert_true(restore_result.success)
+  
+  // 验证恢复的状态
+  let restored_counter = @azimuth.StreamStateManager::get_state(new_state_manager, counter_state_key)
+  match restored_counter {
+    Some(@azimuth.IntValue(count)) => assert_eq(count, 100)
+    _ => assert_true(false)
+  }
+  
+  let restored_window = @azimuth.StreamStateManager::get_state(new_state_manager, window_state_key)
+  match restored_window {
+    Some(@azimuth.ArrayValue(window)) => assert_eq(window.length(), 10)
+    _ => assert_true(false)
+  }
+  
+  // 测试状态过期
+  let expired_state_key = @azimuth.StateKey::new("expired_state")
+  @azimuth.StreamStateManager::initialize_state(state_manager, expired_state_key, @azimuth.StringValue("test"))
+  
+  // 模拟时间流逝 (在实际环境中，这需要时间等待)
+  // 这里我们直接测试状态清理功能
+  let cleanup_result = @azimuth.StreamStateManager::cleanup_expired_states(state_manager)
+  assert_true(cleanup_result.success)
+  assert_eq(cleanup_result.cleaned_states_count, 0)  // 在这个简化的测试中，没有状态过期
 }
 
-type StreamStateMachineProcessorStats {
-  total_processed: Int
-  state_transitions: Int
-  average_state_processing_time: Int
-  state_completion_rate: Double
+// Test 6: 流式背压处理
+test "streaming backpressure handling" {
+  // 创建带背压处理的流处理器
+  let backpressure_processor = @azimuth.BackpressureStreamProcessor::new(
+    @azimuth.BackpressureConfig {
+      buffer_size: 100,
+      high_watermark_percent: 80,  // 80%时开始背压
+      low_watermark_percent: 40,   // 40%时停止背压
+      max_processing_delay_ms: 5000,
+      backpressure_strategy: "buffer_drop_oldest"
+    }
+  )
+  
+  // 添加慢处理阶段 (模拟处理瓶颈)
+  let slow_stage = @azimuth.SlowProcessingStage::new(100)  // 每个数据点处理100ms
+  @azimuth.BackpressureStreamProcessor::add_stage(backpressure_processor, slow_stage)
+  
+  // 创建快速数据流
+  let fast_stream = @azimuth.TelemetryStream::new()
+  let base_timestamp = @azimuth.current_timestamp()
+  
+  // 快速添加数据点 (每10ms一个，但处理每个需要100ms)
+  for i = 0; i < 50; i = i + 1 {
+    let data_point = @azimuth.TelemetryDataPoint {
+      trace_id: "backpressure-trace-" + i.to_string(),
+      span_id: "backpressure-span-" + i.to_string(),
+      timestamp: base_timestamp + i * 10,
+      metric_name: "fast.metric",
+      metric_value: i.to_double(),
+      attributes: [
+        ("service.name", @azimuth.StringValue("backpressure-service"))
+      ]
+    }
+    @azimuth.TelemetryStream::add_data_point(fast_stream, data_point)
+  }
+  
+  // 监控背压指标
+  let backpressure_monitor = @azimuth.BackpressureMonitor::new()
+  @azimuth.BackpressureStreamProcessor::set_monitor(backpressure_processor, backpressure_monitor)
+  
+  // 启动流处理
+  let processing_start = @azimuth.current_timestamp()
+  let processing_result = @azimuth.BackpressureStreamProcessor::process_stream(backpressure_processor, fast_stream)
+  let processing_end = @azimuth.current_timestamp()
+  
+  // 验证处理结果
+  assert_true(processing_result.success)
+  
+  // 由于处理速度慢于输入速度，一些数据可能会被丢弃
+  assert_true(processing_result.processed_count <= 50)
+  assert_true(processing_result.dropped_count >= 0)
+  
+  // 验证背压事件
+  let backpressure_events = @azimuth.BackpressureMonitor::get_events(backpressure_monitor)
+  assert_true(backpressure_events.length() > 0)
+  
+  // 验证背压触发事件
+  let trigger_events = backpressure_events.filter(fn(event) { event.event_type == "backpressure_triggered" })
+  assert_true(trigger_events.length() > 0)
+  
+  // 验证背压缓解事件
+  let relieve_events = backpressure_events.filter(fn(event) { event.event_type == "backpressure_relieved" })
+  assert_true(relieve_events.length() > 0)
+  
+  // 验证数据丢弃事件
+  let drop_events = backpressure_events.filter(fn(event) { event.event_type == "data_dropped" })
+  if processing_result.dropped_count > 0 {
+    assert_true(drop_events.length() > 0)
+  }
+  
+  // 验证缓冲区使用情况
+  let buffer_metrics = @azimuth.BackpressureMonitor::get_buffer_metrics(backpressure_monitor)
+  assert_true(buffer_metrics.max_buffer_usage > 0)
+  assert_true(buffer_metrics.max_buffer_usage <= 100)
+  assert_true(buffer_metrics.average_buffer_usage > 0)
+  
+  // 验证处理延迟
+  let processing_metrics = @azimuth.BackpressureMonitor::get_processing_metrics(backpressure_monitor)
+  assert_true(processing_metrics.average_processing_delay_ms >= 0)
+  assert_true(processing_metrics.max_processing_delay_ms >= 100)  // 至少包含慢处理阶段的时间
+  
+  // 验证背压策略效果
+  assert_true(processing_end - processing_start < 10000)  // 应该在10秒内完成，而不是50*100ms=5000ms
 }
