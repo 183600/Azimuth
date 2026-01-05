@@ -2293,6 +2293,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f7363616c6162696c6974795f6d6f64756c61726974795f74657374732e6d6274_3, ["API扩展性测试"]),
     4: (__test_617a696d7574685f7363616c6162696c6974795f6d6f64756c61726974795f74657374732e6d6274_4, ["配置扩展性测试"]),
   },
+  "azimuth_scalability_load_tests.mbt": {
+    0: (__test_617a696d7574685f7363616c6162696c6974795f6c6f61645f74657374732e6d6274_0, ["horizontal scaling with multiple nodes"]),
+    1: (__test_617a696d7574685f7363616c6162696c6974795f6c6f61645f74657374732e6d6274_1, ["vertical scaling with increased resources"]),
+    2: (__test_617a696d7574685f7363616c6162696c6974795f6c6f61645f74657374732e6d6274_2, ["data volume scaling"]),
+    3: (__test_617a696d7574685f7363616c6162696c6974795f6c6f61645f74657374732e6d6274_3, ["concurrent user scaling"]),
+    4: (__test_617a696d7574685f7363616c6162696c6974795f6c6f61645f74657374732e6d6274_4, ["geographic distribution scaling"]),
+  },
   "azimuth_sampling_strategy_tests.mbt": {
     0: (__test_617a696d7574685f73616d706c696e675f73747261746567795f74657374732e6d6274_0, ["always on sampling strategy"]),
     1: (__test_617a696d7574685f73616d706c696e675f73747261746567795f74657374732e6d6274_1, ["always off sampling strategy"]),

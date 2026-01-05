@@ -530,6 +530,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_scalability_modularity_tests.mbt": {
   },
+  "azimuth_scalability_load_tests.mbt": {
+  },
   "azimuth_sampling_strategy_tests.mbt": {
   },
   "azimuth_sampling_strategy_optimization_tests.mbt": {

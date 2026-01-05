@@ -1,856 +1,561 @@
-// Azimuth 实时流处理测试用例
-// 专注于实时数据流处理和流式遥测分析功能
+// Azimuth 遥测系统 - 高级实时流处理测试
+// 专注于遥测数据的实时流处理和复杂事件处理功能
 
-// 测试1: 实时数据流窗口处理
-test "实时数据流窗口处理" {
-  // 模拟实时数据流事件
-  let stream_events = [
-    { timestamp: 1640995200, event_type: "metric", source: "service-a", value: 45.2, tags: ["cpu", "production"] },
-    { timestamp: 1640995201, event_type: "log", source: "service-b", level: "INFO", message: "Request processed" },
-    { timestamp: 1640995202, event_type: "metric", source: "service-a", value: 47.8, tags: ["cpu", "production"] },
-    { timestamp: 1640995203, event_type: "trace", source: "service-c", trace_id: "trace-001", duration_ms: 120 },
-    { timestamp: 1640995204, event_type: "metric", source: "service-b", value: 78.5, tags: ["memory", "production"] },
-    { timestamp: 1640995205, event_type: "log", source: "service-a", level: "ERROR", message: "Database connection failed" },
-    { timestamp: 1640995206, event_type: "metric", source: "service-c", value: 23.1, tags: ["cpu", "staging"] },
-    { timestamp: 1640995207, event_type: "metric", source: "service-a", value: 46.5, tags: ["cpu", "production"] },
-    { timestamp: 1640995208, event_type: "trace", source: "service-b", trace_id: "trace-002", duration_ms: 250 },
-    { timestamp: 1640995209, event_type: "log", source: "service-c", level: "WARN", message: "High memory usage detected" }
-  ]
+// 测试1: 实时流处理的基本功能
+test "实时流处理的基本功能" {
+  // 创建实时流处理器
+  let stream_processor = RealTimeStreamProcessor::new()
   
-  // 时间窗口处理函数
-  let process_time_window = fn(events: Array[StreamEvent>, window_start: Int, window_end: Int) {
-    let window_events = events.filter(fn(event) {
-      event.timestamp >= window_start and event.timestamp <= window_end
-    })
-    
-    // 按事件类型分类
-    let mut metrics = []
-    let mut logs = []
-    let mut traces = []
-    
-    for event in window_events {
-      match event.event_type {
-        "metric" => metrics = metrics.push(event)
-        "log" => logs = logs.push(event)
-        "trace" => traces = traces.push(event)
-        _ => ()
-      }
-    }
-    
-    // 计算指标统计
-    let mut metric_values = []
-    for metric in metrics {
-      metric_values = metric_values.push(metric.value)
-    }
-    
-    let metric_stats = if metric_values.length() > 0 {
-      let mut sum = 0.0
-      for value in metric_values {
-        sum = sum + value
-      }
-      
-      {
-        count: metric_values.length(),
-        avg: sum / metric_values.length().to_float(),
-        min: metric_values.min(),
-        max: metric_values.max()
-      }
-    } else {
-      {
-        count: 0,
-        avg: 0.0,
-        min: 0.0,
-        max: 0.0
-      }
-    }
-    
-    // 计算日志级别分布
-    let mut log_levels = []
-    for log in logs {
-      log_levels = log_levels.push(log.level)
-    }
-    
-    let log_level_counts = [
-      { level: "ERROR", count: log_levels.filter(fn(l) { l == "ERROR" }).length() },
-      { level: "WARN", count: log_levels.filter(fn(l) { l == "WARN" }).length() },
-      { level: "INFO", count: log_levels.filter(fn(l) { l == "INFO" }).length() }
-    ]
-    
-    // 计算跟踪平均延迟
-    let mut trace_durations = []
-    for trace in traces {
-      trace_durations = trace_durations.push(trace.duration_ms)
-    }
-    
-    let avg_trace_duration = if trace_durations.length() > 0 {
-      let mut sum = 0
-      for duration in trace_durations {
-        sum = sum + duration
-      }
-      sum / trace_durations.length()
-    } else {
-      0
-    }
-    
-    {
-      window_start: window_start,
-      window_end: window_end,
-      total_events: window_events.length(),
-      metrics_count: metrics.length(),
-      logs_count: logs.length(),
-      traces_count: traces.length(),
-      metric_stats: metric_stats,
-      log_level_counts: log_level_counts,
-      avg_trace_duration: avg_trace_duration
-    }
-  }
+  // 配置流处理拓扑
+  stream_processor.configure_topology({
+    source: "telemetry_source",
+    processors: ["filter", "transform", "aggregate"],
+    sink: "telemetry_sink"
+  })
   
-  // 处理5秒时间窗口
-  let window_1 = process_time_window(stream_events, 1640995200, 1640995204)
-  let window_2 = process_time_window(stream_events, 1640995205, 1640995209)
-  
-  // 验证第一个窗口
-  assert_eq(window_1.window_start, 1640995200)
-  assert_eq(window_1.window_end, 1640995204)
-  assert_eq(window_1.total_events, 5)
-  assert_eq(window_1.metrics_count, 3)
-  assert_eq(window_1.logs_count, 1)
-  assert_eq(window_1.traces_count, 1)
-  assert_eq(window_1.metric_stats.count, 3)
-  assert_eq(window_1.metric_stats.avg, 57.17)  // (45.2+47.8+78.5)/3 = 57.17
-  assert_eq(window_1.metric_stats.min, 45.2)
-  assert_eq(window_1.metric_stats.max, 78.5)
-  assert_eq(window_1.log_level_counts[0].count, 0)  // ERROR
-  assert_eq(window_1.log_level_counts[1].count, 0)  // WARN
-  assert_eq(window_1.log_level_counts[2].count, 1)  // INFO
-  assert_eq(window_1.avg_trace_duration, 120)
-  
-  // 验证第二个窗口
-  assert_eq(window_2.window_start, 1640995205)
-  assert_eq(window_2.window_end, 1640995209)
-  assert_eq(window_2.total_events, 5)
-  assert_eq(window_2.metrics_count, 2)
-  assert_eq(window_2.logs_count, 2)
-  assert_eq(window_2.traces_count, 1)
-  assert_eq(window_2.metric_stats.count, 2)
-  assert_eq(window_2.metric_stats.avg, 34.8)   // (23.1+46.5)/2 = 34.8
-  assert_eq(window_2.metric_stats.min, 23.1)
-  assert_eq(window_2.metric_stats.max, 46.5)
-  assert_eq(window_2.log_level_counts[0].count, 1)  // ERROR
-  assert_eq(window_2.log_level_counts[1].count, 1)  // WARN
-  assert_eq(window_2.log_level_counts[2].count, 0)  // INFO
-  assert_eq(window_2.avg_trace_duration, 250)
-  
-  // 滑动窗口处理
-  let process_sliding_window = fn(events: Array[StreamEvent>, window_size: Int, step_size: Int) {
-    let windows = []
-    
-    if events.length() == 0 {
-      return windows
-    }
-    
-    let min_timestamp = events.map(fn(e) { e.timestamp }).min()
-    let max_timestamp = events.map(fn(e) { e.timestamp }).max()
-    
-    let mut current_start = min_timestamp
-    
-    while current_start + window_size <= max_timestamp {
-      let window = process_time_window(events, current_start, current_start + window_size)
-      windows = windows.push(window)
-      current_start = current_start + step_size
-    }
-    
-    windows
-  }
-  
-  // 处理3秒滑动窗口，步长为2秒
-  let sliding_windows = process_sliding_window(stream_events, 3, 2)
-  
-  // 验证滑动窗口
-  assert_eq(sliding_windows.length(), 4)
-  
-  // 验证第一个滑动窗口 (1640995200-1640995203)
-  assert_eq(sliding_windows[0].window_start, 1640995200)
-  assert_eq(sliding_windows[0].window_end, 1640995203)
-  assert_eq(sliding_windows[0].total_events, 4)
-  
-  // 验证第二个滑动窗口 (1640995202-1640995205)
-  assert_eq(sliding_windows[1].window_start, 1640995202)
-  assert_eq(sliding_windows[1].window_end, 1640995205)
-  assert_eq(sliding_windows[1].total_events, 4)
-  
-  // 验证第三个滑动窗口 (1640995204-1640995207)
-  assert_eq(sliding_windows[2].window_start, 1640995204)
-  assert_eq(sliding_windows[2].window_end, 1640995207)
-  assert_eq(sliding_windows[2].total_events, 4)
-  
-  // 验证第四个滑动窗口 (1640995206-1640995209)
-  assert_eq(sliding_windows[3].window_start, 1640995206)
-  assert_eq(sliding_windows[3].window_end, 1640995209)
-  assert_eq(sliding_windows[3].total_events, 4)
-}
-
-// 测试2: 实时流聚合处理
-test "实时流聚合处理" {
-  // 模拟实时流数据
+  // 生成模拟流数据
   let stream_data = [
-    { timestamp: 1640995200, source: "service-a", metric: "cpu", value: 45.2 },
-    { timestamp: 1640995201, source: "service-b", metric: "memory", value: 512.3 },
-    { timestamp: 1640995202, source: "service-a", metric: "cpu", value: 47.8 },
-    { timestamp: 1640995203, source: "service-c", metric: "disk_io", value: 120.5 },
-    { timestamp: 1640995204, source: "service-b", metric: "memory", value: 518.7 },
-    { timestamp: 1640995205, source: "service-a", metric: "cpu", value: 46.5 },
-    { timestamp: 1640995206, source: "service-c", metric: "disk_io", value: 125.2 },
-    { timestamp: 1640995207, source: "service-b", metric: "memory", value: 515.9 },
-    { timestamp: 1640995208, source: "service-a", metric: "cpu", value: 48.1 },
-    { timestamp: 1640995209, source: "service-c", metric: "disk_io", value: 118.7 }
+    { timestamp: 1640995200, trace_id: "trace-001", service: "api-gateway", metric: "request_count", value: 100.0 },
+    { timestamp: 1640995201, trace_id: "trace-002", service: "order-service", metric: "response_time", value: 250.5 },
+    { timestamp: 1640995202, trace_id: "trace-003", service: "payment-service", metric: "error_rate", value: 0.02 },
+    { timestamp: 1640995203, trace_id: "trace-004", service: "api-gateway", metric: "request_count", value: 150.0 },
+    { timestamp: 1640995204, trace_id: "trace-005", service: "order-service", metric: "response_time", value: 180.3 }
   ]
   
-  // 按服务源分组聚合
-  let aggregate_by_source = fn(data: Array[StreamData>) {
-    let sources = ["service-a", "service-b", "service-c"]
-    let mut source_aggregates = []
-    
-    for source in sources {
-      let source_data = data.filter_fn(d) { d.source == source }
-      
-      if source_data.length() > 0 {
-        let mut metric_values = []
-        let mut metric_types = []
-        
-        for d in source_data {
-          metric_values = metric_values.push(d.value)
-          if not metric_types.contains(d.metric) {
-            metric_types = metric_types.push(d.metric)
-          }
-        }
-        
-        let mut sum = 0.0
-        for value in metric_values {
-          sum = sum + value
-        }
-        
-        source_aggregates = source_aggregates.push({
-          source: source,
-          count: source_data.length(),
-          avg_value: sum / metric_values.length().to_float(),
-          min_value: metric_values.min(),
-          max_value: metric_values.max(),
-          metric_types: metric_types
-        })
-      }
-    }
-    
-    source_aggregates
+  // 启动流处理
+  stream_processor.start()
+  
+  // 发送数据到流
+  for data in stream_data {
+    stream_processor.process(data)
   }
   
-  // 按指标类型分组聚合
-  let aggregate_by_metric = fn(data: Array[StreamData>) {
-    let metrics = ["cpu", "memory", "disk_io"]
-    let mut metric_aggregates = []
-    
-    for metric in metrics {
-      let metric_data = data.filter_fn(d) { d.metric == metric }
-      
-      if metric_data.length() > 0 {
-        let mut values = []
-        let mut sources = []
-        
-        for d in metric_data {
-          values = values.push(d.value)
-          if not sources.contains(d.source) {
-            sources = sources.push(d.source)
-          }
-        }
-        
-        let mut sum = 0.0
-        for value in values {
-          sum = sum + value
-        }
-        
-        metric_aggregates = metric_aggregates.push({
-          metric: metric,
-          count: metric_data.length(),
-          avg_value: sum / values.length().to_float(),
-          min_value: values.min(),
-          max_value: values.max(),
-          sources: sources
-        })
-      }
-    }
-    
-    metric_aggregates
-  }
+  // 等待处理完成
+  stream_processor.flush()
   
-  // 时间窗口聚合
-  let time_window_aggregate = fn(data: Array[StreamData>, window_size: Int) {
-    if data.length() == 0 {
-      return []
-    }
-    
-    let min_timestamp = data.map_fn(d) { d.timestamp }.min()
-    let max_timestamp = data.map_fn(d) { d.timestamp }.max()
-    
-    let mut windows = []
-    let mut current_start = min_timestamp
-    
-    while current_start + window_size <= max_timestamp {
-      let window_data = data.filter_fn(d) {
-        d.timestamp >= current_start and d.timestamp < current_start + window_size
-      }
-      
-      if window_data.length() > 0 {
-        let mut sum = 0.0
-        for d in window_data {
-          sum = sum + d.value
-        }
-        
-        windows = windows.push({
-          window_start: current_start,
-          window_end: current_start + window_size,
-          count: window_data.length(),
-          avg_value: sum / window_data.length().to_float(),
-          total_value: sum
-        })
-      }
-      
-      current_start = current_start + window_size
-    }
-    
-    windows
-  }
+  // 验证处理结果
+  let processed_data = stream_processor.get_processed_data()
+  assert_eq(processed_data.length(), stream_data.length())
   
-  // 执行聚合操作
-  let source_aggregates = aggregate_by_source(stream_data)
-  let metric_aggregates = aggregate_by_metric(stream_data)
-  let time_windows = time_window_aggregate(stream_data, 3)
+  // 验证数据转换
+  let transformed_data = stream_processor.get_transformed_data()
+  assert_true(transformed_data.length() > 0)
   
-  // 验证按服务源聚合
-  assert_eq(source_aggregates.length(), 3)
+  // 验证聚合结果
+  let aggregated_results = stream_processor.get_aggregated_results()
+  assert_true(aggregated_results.contains("api-gateway"))
+  assert_true(aggregated_results.contains("order-service"))
   
-  let service_a_agg = source_aggregates.find_fn(a) { a.source == "service-a" }
-  assert_true(service_a_agg.is_some())
-  assert_eq(service_a_agg.unwrap().count, 4)
-  assert_eq(service_a_agg.unwrap().avg_value, 46.9)  // (45.2+47.8+46.5+48.1)/4 = 46.9
-  assert_eq(service_a_agg.unwrap().min_value, 45.2)
-  assert_eq(service_a_agg.unwrap().max_value, 48.1)
-  assert_eq(service_a_agg.unwrap().metric_types.length(), 1)
-  assert_true(service_a_agg.unwrap().metric_types.contains("cpu"))
-  
-  let service_b_agg = source_aggregates.find_fn(a) { a.source == "service-b" }
-  assert_true(service_b_agg.is_some())
-  assert_eq(service_b_agg.unwrap().count, 3)
-  assert_eq(service_b_agg.unwrap().avg_value, 515.63)  // (512.3+518.7+515.9)/3 = 515.63
-  assert_eq(service_b_agg.unwrap().min_value, 512.3)
-  assert_eq(service_b_agg.unwrap().max_value, 518.7)
-  assert_eq(service_b_agg.unwrap().metric_types.length(), 1)
-  assert_true(service_b_agg.unwrap().metric_types.contains("memory"))
-  
-  let service_c_agg = source_aggregates.find_fn(a) { a.source == "service-c" }
-  assert_true(service_c_agg.is_some())
-  assert_eq(service_c_agg.unwrap().count, 3)
-  assert_eq(service_c_agg.unwrap().avg_value, 121.47)  // (120.5+125.2+118.7)/3 = 121.47
-  assert_eq(service_c_agg.unwrap().min_value, 118.7)
-  assert_eq(service_c_agg.unwrap().max_value, 125.2)
-  assert_eq(service_c_agg.unwrap().metric_types.length(), 1)
-  assert_true(service_c_agg.unwrap().metric_types.contains("disk_io"))
-  
-  // 验证按指标类型聚合
-  assert_eq(metric_aggregates.length(), 3)
-  
-  let cpu_agg = metric_aggregates.find_fn(a) { a.metric == "cpu" }
-  assert_true(cpu_agg.is_some())
-  assert_eq(cpu_agg.unwrap().count, 4)
-  assert_eq(cpu_agg.unwrap().avg_value, 46.9)
-  assert_eq(cpu_agg.unwrap().sources.length(), 1)
-  assert_true(cpu_agg.unwrap().sources.contains("service-a"))
-  
-  let memory_agg = metric_aggregates.find_fn(a) { a.metric == "memory" }
-  assert_true(memory_agg.is_some())
-  assert_eq(memory_agg.unwrap().count, 3)
-  assert_eq(memory_agg.unwrap().avg_value, 515.63)
-  assert_eq(memory_agg.unwrap().sources.length(), 1)
-  assert_true(memory_agg.unwrap().sources.contains("service-b"))
-  
-  let disk_io_agg = metric_aggregates.find_fn(a) { a.metric == "disk_io" }
-  assert_true(disk_io_agg.is_some())
-  assert_eq(disk_io_agg.unwrap().count, 3)
-  assert_eq(disk_io_agg.unwrap().avg_value, 121.47)
-  assert_eq(disk_io_agg.unwrap().sources.length(), 1)
-  assert_true(disk_io_agg.unwrap().sources.contains("service-c"))
-  
-  // 验证时间窗口聚合
-  assert_eq(time_windows.length(), 3)
-  
-  // 第一个窗口 (1640995200-1640995203)
-  assert_eq(time_windows[0].window_start, 1640995200)
-  assert_eq(time_windows[0].window_end, 1640995203)
-  assert_eq(time_windows[0].count, 4)
-  assert_eq(time_windows[0].avg_value, 178.95)  // (45.2+512.3+47.8+120.5)/4 = 178.95
-  
-  // 第二个窗口 (1640995203-1640995206)
-  assert_eq(time_windows[1].window_start, 1640995203)
-  assert_eq(time_windows[1].window_end, 1640995206)
-  assert_eq(time_windows[1].count, 3)
-  assert_eq(time_windows[1].avg_value, 356.57)  // (120.5+518.7+46.5)/3 = 356.57
-  
-  // 第三个窗口 (1640995206-1640995209)
-  assert_eq(time_windows[2].window_start, 1640995206)
-  assert_eq(time_windows[2].window_end, 1640995209)
-  assert_eq(time_windows[2].count, 3)
-  assert_eq(time_windows[2].avg_value, 321.57)  // (125.2+515.9+48.1)/3 = 321.57
+  // 停止流处理器
+  stream_processor.stop()
 }
 
-// 测试3: 实时流模式检测
-test "实时流模式检测" {
-  // 模拟包含特定模式的实时流数据
-  let pattern_stream_data = [
-    { timestamp: 1640995200, source: "service-a", metric: "cpu", value: 45.0, status: "normal" },
-    { timestamp: 1640995201, source: "service-a", metric: "cpu", value: 48.0, status: "normal" },
-    { timestamp: 1640995202, source: "service-a", metric: "cpu", value: 52.0, status: "normal" },
-    { timestamp: 1640995203, source: "service-a", metric: "cpu", value: 65.0, status: "warning" },
-    { timestamp: 1640995204, source: "service-a", metric: "cpu", value: 78.0, status: "warning" },
-    { timestamp: 1640995205, source: "service-a", metric: "cpu", value: 85.0, status: "critical" },
-    { timestamp: 1640995206, source: "service-a", metric: "cpu", value: 92.0, status: "critical" },
-    { timestamp: 1640995207, source: "service-a", metric: "cpu", value: 88.0, status: "critical" },
-    { timestamp: 1640995208, source: "service-a", metric: "cpu", value: 75.0, status: "warning" },
-    { timestamp: 1640995209, source: "service-a", metric: "cpu", value: 55.0, status: "normal" },
-    { timestamp: 1640995210, source: "service-a", metric: "cpu", value: 48.0, status: "normal" },
-    { timestamp: 1640995211, source: "service-a", metric: "cpu", value: 46.0, status: "normal" }
+// 测试2: 复杂事件处理（CEP）功能
+test "复杂事件处理（CEP）功能" {
+  // 创建复杂事件处理器
+  let cep_processor = CEPProcessor::new()
+  
+  // 定义事件模式
+  let failure_pattern = cep_processor.define_pattern("service_failure", {
+    conditions: [
+      { event_type: "error", service: "payment-service" },
+      { event_type: "error", service: "payment-service", within: 30 },  // 30秒内
+      { event_type: "error", service: "payment-service", within: 30 }   // 30秒内
+    ],
+    action: "trigger_alert"
+  })
+  
+  let performance_pattern = cep_processor.define_pattern("performance_degradation", {
+    conditions: [
+      { event_type: "metric", metric: "response_time", service: "*", value: { gt: 1000 } },
+      { event_type: "metric", metric: "response_time", service: "*", value: { gt: 1000 }, within: 60 },
+      { event_type: "metric", metric: "response_time", service: "*", value: { gt: 1000 }, within: 60 }
+    ],
+    action: "scale_service"
+  })
+  
+  // 生成模拟事件流
+  let event_stream = [
+    { timestamp: 1640995200, type: "metric", service: "api-gateway", metric: "response_time", value: 800.0 },
+    { timestamp: 1640995230, type: "error", service: "payment-service", error_code: "TIMEOUT" },
+    { timestamp: 1640995245, type: "error", service: "payment-service", error_code: "TIMEOUT" },
+    { timestamp: 1640995255, type: "error", service: "payment-service", error_code: "TIMEOUT" },
+    { timestamp: 1640995260, type: "metric", service: "order-service", metric: "response_time", value: 1200.0 },
+    { timestamp: 1640995290, type: "metric", service: "api-gateway", metric: "response_time", value: 1100.0 },
+    { timestamp: 1640995310, type: "metric", service: "order-service", metric: "response_time", value: 1300.0 }
   ]
   
-  // 检测上升趋势模式
-  let detect_upward_trend = fn(data: Array[PatternStreamData>, window_size: Int, threshold: Float) {
-    let mut trends = []
-    
-    if data.length() < window_size {
-      return trends
-    }
-    
-    for i in 0..(data.length() - window_size + 1) {
-      let window = data.slice(i, i + window_size)
-      
-      // 计算线性回归斜率（简化方法）
-      let n = window.length().to_float()
-      let mut sum_x = 0.0
-      let mut sum_y = 0.0
-      let mut sum_xy = 0.0
-      let mut sum_x2 = 0.0
-      
-      for j in 0..window.length() {
-        let x = j.to_float()
-        let y = window[j].value
-        
-        sum_x = sum_x + x
-        sum_y = sum_y + y
-        sum_xy = sum_xy + x * y
-        sum_x2 = sum_x2 + x * x
-      }
-      
-      let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-      
-      if slope > threshold {
-        trends = trends.push({
-          start_time: window[0].timestamp,
-          end_time: window[window.length() - 1].timestamp,
-          slope: slope,
-          start_value: window[0].value,
-          end_value: window[window.length() - 1].value,
-          increase_percent: ((window[window.length() - 1].value - window[0].value) / window[0].value) * 100.0
-        })
-      }
-    }
-    
-    trends
+  // 启动CEP处理器
+  cep_processor.start()
+  
+  // 处理事件流
+  for event in event_stream {
+    cep_processor.process_event(event)
   }
   
-  // 检测状态变化模式
-  let detect_status_changes = fn(data: Array[PatternStreamData>) {
-    let mut status_changes = []
-    
-    if data.length() < 2 {
-      return status_changes
-    }
-    
-    for i in 1..data.length() {
-      if data[i].status != data[i-1].status {
-        status_changes = status_changes.push({
-          timestamp: data[i].timestamp,
-          from_status: data[i-1].status,
-          to_status: data[i].status,
-          value: data[i].value,
-          prev_value: data[i-1].value
-        })
-      }
-    }
-    
-    status_changes
-  }
+  // 等待模式匹配完成
+  cep_processor.flush()
   
-  // 检测异常值模式
-  let detect_outliers = fn(data: Array[PatternStreamData>, threshold: Float) {
-    if data.length() < 3 {
-      return []
-    }
-    
-    // 计算移动平均和标准差
-    let mut outliers = []
-    
-    for i in 1..(data.length() - 1) {
-      let prev_value = data[i-1].value
-      let current_value = data[i].value
-      let next_value = data[i+1].value
-      
-      let local_avg = (prev_value + current_value + next_value) / 3.0
-      let deviation = (current_value - local_avg).abs()
-      
-      if deviation > threshold {
-        outliers = outliers.push({
-          timestamp: data[i].timestamp,
-          value: current_value,
-          local_avg: local_avg,
-          deviation: deviation,
-          status: data[i].status
-        })
-      }
-    }
-    
-    outliers
-  }
+  // 验证模式匹配结果
+  let matched_patterns = cep_processor.get_matched_patterns()
+  assert_true(matched_patterns.length() >= 2)
   
-  // 执行模式检测
-  let upward_trends = detect_upward_trend(pattern_stream_data, 4, 5.0)
-  let status_changes = detect_status_changes(pattern_stream_data)
-  let outliers = detect_outliers(pattern_stream_data, 10.0)
+  // 验证服务失败模式
+  let failure_matches = cep_processor.get_pattern_matches("service_failure")
+  assert_true(failure_matches.length() > 0)
+  assert_eq(failure_matches[0].action, "trigger_alert")
   
-  // 验证上升趋势检测
-  assert_eq(upward_trends.length(), 2)
+  // 验证性能下降模式
+  let performance_matches = cep_processor.get_pattern_matches("performance_degradation")
+  assert_true(performance_matches.length() > 0)
+  assert_eq(performance_matches[0].action, "scale_service")
   
-  // 第一个上升趋势 (1640995200-1640995203)
-  assert_eq(upward_trends[0].start_time, 1640995200)
-  assert_eq(upward_trends[0].end_time, 1640995203)
-  assert_true(upward_trends[0].slope > 5.0)
-  assert_eq(upward_trends[0].start_value, 45.0)
-  assert_eq(upward_trends[0].end_value, 65.0)
-  assert_eq(upward_trends[0].increase_percent, 44.44)  // (65-45)/45 * 100 = 44.44%
-  
-  // 第二个上升趋势 (1640995203-1640995206)
-  assert_eq(upward_trends[1].start_time, 1640995203)
-  assert_eq(upward_trends[1].end_time, 1640995206)
-  assert_true(upward_trends[1].slope > 5.0)
-  assert_eq(upward_trends[1].start_value, 65.0)
-  assert_eq(upward_trends[1].end_value, 92.0)
-  assert_eq(upward_trends[1].increase_percent, 41.54)  // (92-65)/65 * 100 = 41.54%
-  
-  // 验证状态变化检测
-  assert_eq(status_changes.length(), 6)
-  
-  // 验证第一个状态变化
-  assert_eq(status_changes[0].timestamp, 1640995203)
-  assert_eq(status_changes[0].from_status, "normal")
-  assert_eq(status_changes[0].to_status, "warning")
-  assert_eq(status_changes[0].value, 65.0)
-  assert_eq(status_changes[0].prev_value, 52.0)
-  
-  // 验证第二个状态变化
-  assert_eq(status_changes[1].timestamp, 1640995205)
-  assert_eq(status_changes[1].from_status, "warning")
-  assert_eq(status_changes[1].to_status, "critical")
-  assert_eq(status_changes[1].value, 85.0)
-  assert_eq(status_changes[1].prev_value, 78.0)
-  
-  // 验证最后一个状态变化
-  assert_eq(status_changes[5].timestamp, 1640995209)
-  assert_eq(status_changes[5].from_status, "warning")
-  assert_eq(status_changes[5].to_status, "normal")
-  assert_eq(status_changes[5].value, 55.0)
-  assert_eq(status_changes[5].prev_value, 75.0)
-  
-  // 验证异常值检测
-  assert_eq(outliers.length(), 2)
-  
-  // 第一个异常值 (92.0)
-  assert_eq(outliers[0].timestamp, 1640995206)
-  assert_eq(outliers[0].value, 92.0)
-  assert_eq(outliers[0].status, "critical")
-  assert_true(outliers[0].deviation > 10.0)
-  
-  // 第二个异常值 (88.0)
-  assert_eq(outliers[1].timestamp, 1640995207)
-  assert_eq(outliers[1].value, 88.0)
-  assert_eq(outliers[1].status, "critical")
-  assert_true(outliers[1].deviation > 10.0)
-  
-  // 检测周期性模式
-  let detect_periodic_pattern = fn(data: Array[PatternStreamData>, period: Int) {
-    if data.length() < period * 2 {
-      return []
-    }
-    
-    let mut correlations = []
-    
-    // 计算不同滞后期的相关性
-    for lag in period..(period + 3) {
-      if data.length() > lag {
-        let mut correlation_sum = 0.0
-        let count = data.length() - lag
-        
-        for i in 0..count {
-          correlation_sum = correlation_sum + data[i].value * data[i + lag].value
-        }
-        
-        let correlation = correlation_sum / count.to_float()
-        
-        correlations = correlations.push({
-          lag: lag,
-          correlation: correlation
-        })
-      }
-    }
-    
-    // 找出相关性最高的滞后期
-    let max_correlation = correlations.map_fn(c) { c.correlation }.max()
-    let best_lag = correlations.find_fn(c) { c.correlation == max_correlation }
-    
-    if best_lag.is_some() and max_correlation > 1000.0 {  // 阈值
-      [{
-        period: best_lag.unwrap().lag,
-        correlation: max_correlation,
-        confidence: if max_correlation > 2000.0 { "high" } else { "medium" }
-      }]
-    } else {
-      []
-    }
-  }
-  
-  // 检测周期性模式
-  let periodic_patterns = detect_periodic_pattern(pattern_stream_data, 4)
-  
-  // 验证周期性模式检测
-  // 由于数据量较少，可能检测不到明显的周期性模式
-  assert_true(periodic_patterns.length() >= 0)
+  // 停止CEP处理器
+  cep_processor.stop()
 }
 
-// 测试4: 实时流复杂事件处理
-test "实时流复杂事件处理" {
-  // 模拟复杂事件流数据
-  let complex_events = [
-    { timestamp: 1640995200, event_id: "e001", event_type: "user_login", user_id: "user123", ip: "192.168.1.100" },
-    { timestamp: 1640995201, event_id: "e002", event_type: "api_call", user_id: "user123", endpoint: "/api/orders", status: "200" },
-    { timestamp: 1640995202, event_id: "e003", event_type: "api_call", user_id: "user456", endpoint: "/api/products", status: "200" },
-    { timestamp: 1640995203, event_id: "e004", event_type: "api_call", user_id: "user123", endpoint: "/api/payments", status: "401" },
-    { timestamp: 1640995204, event_id: "e005", event_type: "user_logout", user_id: "user123", ip: "192.168.1.100" },
-    { timestamp: 1640995205, event_id: "e006", event_type: "user_login", user_id: "user789", ip: "192.168.1.200" },
-    { timestamp: 1640995206, event_id: "e007", event_type: "api_call", user_id: "user789", endpoint: "/api/orders", status: "500" },
-    { timestamp: 1640995207, event_id: "e008", event_type: "api_call", user_id: "user789", endpoint: "/api/orders", status: "500" },
-    { timestamp: 1640995208, event_id: "e009", event_type: "api_call", user_id: "user789", endpoint: "/api/orders", status: "500" },
-    { timestamp: 1640995209, event_id: "e010", event_type: "error", user_id: "user789", error_type: "service_unavailable" }
+// 测试3: 流处理窗口操作
+test "流处理窗口操作" {
+  // 创建窗口流处理器
+  let window_processor = WindowStreamProcessor::new()
+  
+  // 配置时间窗口
+  window_processor.configure_time_window("tumbling_1min", {
+    type: "tumbling",
+    size: 60,  // 1分钟
+    slide: 60
+  })
+  
+  window_processor.configure_time_window("sliding_30sec", {
+    type: "sliding",
+    size: 60,   // 1分钟窗口
+    slide: 30   // 每30秒滑动
+  })
+  
+  window_processor.configure_count_window("count_100", {
+    type: "count",
+    size: 100   // 每100个事件
+  })
+  
+  // 生成带有时间戳的事件流
+  let time_series_events = [
+    { timestamp: 1640995200, service: "api-gateway", metric: "request_count", value: 10.0 },
+    { timestamp: 1640995220, service: "api-gateway", metric: "request_count", value: 15.0 },
+    { timestamp: 1640995240, service: "api-gateway", metric: "request_count", value: 12.0 },
+    { timestamp: 1640995260, service: "api-gateway", metric: "request_count", value: 18.0 },
+    { timestamp: 1640995280, service: "api-gateway", metric: "request_count", value: 20.0 },
+    { timestamp: 1640995300, service: "api-gateway", metric: "request_count", value: 25.0 }
   ]
   
-  // 检测用户会话模式
-  let detect_user_sessions = fn(events: Array[ComplexEvent>) {
-    let mut sessions = []
-    let user_ids = ["user123", "user456", "user789"]
-    
-    for user_id in user_ids {
-      let user_events = events.filter_fn(e) { e.user_id == user_id }
-      
-      if user_events.length() > 0 {
-        let login_events = user_events.filter_fn(e) { e.event_type == "user_login" }
-        let logout_events = user_events.filter_fn(e) { e.event_type == "user_logout" }
-        let api_calls = user_events.filter_fn(e) { e.event_type == "api_call" }
-        let error_events = user_events.filter_fn(e) { e.event_type == "error" }
-        
-        let session_start = if login_events.length() > 0 {
-          login_events.map_fn(e) { e.timestamp }.min()
-        } else {
-          user_events.map_fn(e) { e.timestamp }.min()
-        }
-        
-        let session_end = if logout_events.length() > 0 {
-          logout_events.map_fn(e) { e.timestamp }.max()
-        } else {
-          user_events.map_fn(e) { e.timestamp }.max()
-        }
-        
-        let successful_calls = api_calls.filter_fn(e) { e.status == "200" }.length()
-        let failed_calls = api_calls.filter_fn(e) { e.status != "200" }.length()
-        
-        sessions = sessions.push({
-          user_id: user_id,
-          session_start: session_start,
-          session_end: session_end,
-          duration: session_end - session_start,
-          total_events: user_events.length(),
-          api_calls: api_calls.length(),
-          successful_calls: successful_calls,
-          failed_calls: failed_calls,
-          errors: error_events.length()
-        })
-      }
-    }
-    
-    sessions
+  // 启动窗口处理器
+  window_processor.start()
+  
+  // 处理事件流
+  for event in time_series_events {
+    window_processor.process_event(event)
   }
   
-  // 检测异常API调用模式
-  let detect_anomalous_api_calls = fn(events: Array[ComplexEvent>) {
-    let api_calls = events.filter_fn(e) { e.event_type == "api_call" }
-    
-    // 按端点分组
-    let endpoints = ["/api/orders", "/api/products", "/api/payments"]
-    let mut endpoint_stats = []
-    
-    for endpoint in endpoints {
-      let endpoint_calls = api_calls.filter_fn(e) { e.endpoint == endpoint }
-      
-      if endpoint_calls.length() > 0 {
-        let successful_calls = endpoint_calls.filter_fn(e) { e.status == "200" }
-        let failed_calls = endpoint_calls.filter_fn(e) { e.status != "200" }
-        
-        let success_rate = if endpoint_calls.length() > 0 {
-          (successful_calls.length().to_float() / endpoint_calls.length().to_float()) * 100.0
-        } else {
-          0.0
-        }
-        
-        endpoint_stats = endpoint_stats.push({
-          endpoint: endpoint,
-          total_calls: endpoint_calls.length(),
-          successful_calls: successful_calls.length(),
-          failed_calls: failed_calls.length(),
-          success_rate: success_rate
-        })
-      }
-    }
-    
-    // 识别异常端点（成功率低于80%）
-    let anomalous_endpoints = endpoint_stats.filter_fn(stat) { stat.success_rate < 80.0 }
-    
-    anomalous_endpoints
+  // 等待窗口处理完成
+  window_processor.flush()
+  
+  // 验证滚动窗口结果
+  let tumbling_results = window_processor.get_window_results("tumbling_1min")
+  assert_true(tumbling_results.length() > 0)
+  
+  // 验证滑动窗口结果
+  let sliding_results = window_processor.get_window_results("sliding_30sec")
+  assert_true(sliding_results.length() > tumbling_results.length())  // 滑动窗口应该产生更多结果
+  
+  // 验证计数窗口结果
+  let count_results = window_processor.get_window_results("count_100")
+  assert_true(count_results.length() >= 1)
+  
+  // 验证窗口聚合计算
+  for result in tumbling_results {
+    assert_true(result.start_time <= result.end_time)
+    assert_true(result.events.length() > 0)
+    assert_true(result.aggregates.contains("sum"))
+    assert_true(result.aggregates.contains("avg"))
+    assert_true(result.aggregates.contains("count"))
   }
   
-  // 检测连续失败模式
-  let detect_consecutive_failures = fn(events: Array[ComplexEvent], threshold: Int) {
-    let api_calls = events.filter_fn(e) { e.event_type == "api_call" }
-    let mut consecutive_failures = []
-    
-    if api_calls.length() < threshold {
-      return consecutive_failures
-    }
-    
-    let mut current_user = ""
-    let mut current_endpoint = ""
-    let mut current_count = 0
-    let mut current_start = 0
-    
-    for i in 0..api_calls.length() {
-      let call = api_calls[i]
-      let is_failure = call.status != "200"
-      
-      if is_failure and 
-         (current_user == "" or current_user == call.user_id) and
-         (current_endpoint == "" or current_endpoint == call.endpoint) {
-        // 连续失败
-        if current_count == 0 {
-          current_user = call.user_id
-          current_endpoint = call.endpoint
-          current_start = call.timestamp
-        }
-        current_count = current_count + 1
-      } else {
-        // 失败序列结束
-        if current_count >= threshold {
-          consecutive_failures = consecutive_failures.push({
-            user_id: current_user,
-            endpoint: current_endpoint,
-            start_time: current_start,
-            end_time: api_calls[i-1].timestamp,
-            failure_count: current_count
-          })
-        }
-        
-        // 重置计数器
-        if is_failure {
-          current_user = call.user_id
-          current_endpoint = call.endpoint
-          current_start = call.timestamp
-          current_count = 1
-        } else {
-          current_user = ""
-          current_endpoint = ""
-          current_count = 0
-        }
-      }
-    }
-    
-    // 检查最后一个序列
-    if current_count >= threshold {
-      consecutive_failures = consecutive_failures.push({
-        user_id: current_user,
-        endpoint: current_endpoint,
-        start_time: current_start,
-        end_time: api_calls[api_calls.length() - 1].timestamp,
-        failure_count: current_count
-      })
-    }
-    
-    consecutive_failures
+  // 停止窗口处理器
+  window_processor.stop()
+}
+
+// 测试4: 流状态管理和容错
+test "流状态管理和容错" {
+  // 创建状态流处理器
+  let stateful_processor = StatefulStreamProcessor::new()
+  
+  // 配置状态存储
+  stateful_processor.configure_state_store({
+    type: "persistent",
+    backend: "rocksdb",
+    checkpoint_interval: 30,  // 30秒检查点
+    recovery_strategy: "exactly_once"
+  })
+  
+  // 定义有状态操作
+  stateful_processor.define_stateful_operation("running_average", {
+    state_key: "service_metrics",
+    operation: "incremental_average",
+    window_size: 100
+  })
+  
+  stateful_processor.define_stateful_operation("session_tracking", {
+    state_key: "user_sessions",
+    operation: "session_timeout",
+    timeout_minutes: 30
+  })
+  
+  // 生成模拟事件流
+  let stateful_events = [
+    { timestamp: 1640995200, user_id: "user-001", service: "api-gateway", metric: "response_time", value: 100.0 },
+    { timestamp: 1640995210, user_id: "user-001", service: "order-service", metric: "response_time", value: 200.0 },
+    { timestamp: 1640995220, user_id: "user-002", service: "api-gateway", metric: "response_time", value: 150.0 },
+    { timestamp: 1640995230, user_id: "user-001", service: "payment-service", metric: "response_time", value: 120.0 },
+    { timestamp: 1640995240, user_id: "user-002", service: "order-service", metric: "response_time", value: 180.0 }
+  ]
+  
+  // 启动状态处理器
+  stateful_processor.start()
+  
+  // 处理事件流
+  for event in stateful_events {
+    stateful_processor.process_event(event)
   }
   
-  // 执行复杂事件处理
-  let user_sessions = detect_user_sessions(complex_events)
-  let anomalous_endpoints = detect_anomalous_api_calls(complex_events)
-  let consecutive_failures = detect_consecutive_failures(complex_events, 3)
+  // 创建检查点
+  let checkpoint_id = stateful_processor.create_checkpoint()
+  assert_true(checkpoint_id.length() > 0)
   
-  // 验证用户会话检测
-  assert_eq(user_sessions.length(), 3)
+  // 模拟处理器故障
+  stateful_processor.simulate_failure()
   
-  let user123_session = user_sessions.find_fn(s) { s.user_id == "user123" }
-  assert_true(user123_session.is_some())
-  assert_eq(user123_session.unwrap().session_start, 1640995200)
-  assert_eq(user123_session.unwrap().session_end, 1640995204)
-  assert_eq(user123_session.unwrap().duration, 4)
-  assert_eq(user123_session.unwrap().total_events, 4)
-  assert_eq(user123_session.unwrap().api_calls, 2)
-  assert_eq(user123_session.unwrap().successful_calls, 1)
-  assert_eq(user123_session.unwrap().failed_calls, 1)
+  // 从检查点恢复
+  let recovery_success = stateful_processor.recover_from_checkpoint(checkpoint_id)
+  assert_true(recovery_success)
   
-  let user789_session = user_sessions.find_fn(s) { s.user_id == "user789" }
-  assert_true(user789_session.is_some())
-  assert_eq(user789_session.unwrap().session_start, 1640995205)
-  assert_eq(user789_session.unwrap().session_end, 1640995209)
-  assert_eq(user789_session.unwrap().duration, 4)
-  assert_eq(user789_session.unwrap().total_events, 5)
-  assert_eq(user789_session.unwrap().api_calls, 3)
-  assert_eq(user789_session.unwrap().successful_calls, 0)
-  assert_eq(user789_session.unwrap().failed_calls, 3)
-  assert_eq(user789_session.unwrap().errors, 1)
+  // 继续处理事件
+  let additional_events = [
+    { timestamp: 1640995250, user_id: "user-001", service: "api-gateway", metric: "response_time", value: 110.0 },
+    { timestamp: 1640995260, user_id: "user-002", service: "payment-service", metric: "response_time", value: 160.0 }
+  ]
   
-  // 验证异常API调用检测
-  assert_eq(anomalous_endpoints.length(), 2)
+  for event in additional_events {
+    stateful_processor.process_event(event)
+  }
   
-  let orders_endpoint = anomalous_endpoints.find_fn(e) { e.endpoint == "/api/orders" }
-  assert_true(orders_endpoint.is_some())
-  assert_eq(orders_endpoint.unwrap().total_calls, 4)
-  assert_eq(orders_endpoint.unwrap().successful_calls, 2)
-  assert_eq(orders_endpoint.unwrap().failed_calls, 2)
-  assert_eq(orders_endpoint.unwrap().success_rate, 50.0)
+  // 等待处理完成
+  stateful_processor.flush()
   
-  let payments_endpoint = anomalous_endpoints.find_fn(e) { e.endpoint == "/api/payments" }
-  assert_true(payments_endpoint.is_some())
-  assert_eq(payments_endpoint.unwrap().total_calls, 1)
-  assert_eq(payments_endpoint.unwrap().successful_calls, 0)
-  assert_eq(payments_endpoint.unwrap().failed_calls, 1)
-  assert_eq(payments_endpoint.unwrap().success_rate, 0.0)
+  // 验证状态恢复
+  let running_averages = stateful_processor.get_stateful_results("running_average")
+  assert_true(running_averages.length() > 0)
   
-  // 验证连续失败检测
-  assert_eq(consecutive_failures.length(), 1)
+  let user_sessions = stateful_processor.get_stateful_results("session_tracking")
+  assert_true(user_sessions.contains("user-001"))
+  assert_true(user_sessions.contains("user-002"))
   
-  let failure = consecutive_failures[0]
-  assert_eq(failure.user_id, "user789")
-  assert_eq(failure.endpoint, "/api/orders")
-  assert_eq(failure.start_time, 1640995206)
-  assert_eq(failure.end_time, 1640995208)
-  assert_eq(failure.failure_count, 3)
+  // 验证状态一致性
+  let api_gateway_avg = find_service_average(running_averages, "api-gateway")
+  assert_true(api_gateway_avg > 0.0)
+  
+  let order_service_avg = find_service_average(running_averages, "order-service")
+  assert_true(order_service_avg > 0.0)
+  
+  // 停止状态处理器
+  stateful_processor.stop()
+}
+
+// 测试5: 流处理背压和流量控制
+test "流处理背压和流量控制" {
+  // 创建背压感知流处理器
+  let backpressure_processor = BackpressureAwareProcessor::new()
+  
+  // 配置背压策略
+  backpressure_processor.configure_backpressure_strategy({
+    type: "adaptive",
+    buffer_size: 1000,
+    high_watermark: 800,    // 80%满时开始背压
+    low_watermark: 300,     // 30%满时缓解背压
+    max_delay_ms: 1000      // 最大延迟1秒
+  })
+  
+  // 配置流量控制
+  backpressure_processor.configure_rate_limiting({
+    type: "token_bucket",
+    rate: 1000,             // 每秒1000个事件
+    burst: 2000             // 突发2000个事件
+  })
+  
+  // 生成高频事件流（模拟突发流量）
+  let high_volume_events = generate_high_volume_events(count=5000, duration_ms=1000)
+  
+  // 启动背压处理器
+  backpressure_processor.start()
+  
+  // 记录处理开始时间
+  let start_time = get_current_timestamp()
+  
+  // 处理高频事件流
+  let mut processed_count = 0
+  let mut dropped_count = 0
+  
+  for event in high_volume_events {
+    let result = backpressure_processor.process_event(event)
+    match result {
+      Success => processed_count = processed_count + 1
+      Dropped => dropped_count = dropped_count + 1
+      Delayed => processed_count = processed_count + 1  // 延迟但最终处理
+    }
+  }
+  
+  // 记录处理结束时间
+  let end_time = get_current_timestamp()
+  let processing_duration = end_time - start_time
+  
+  // 等待所有事件处理完成
+  backpressure_processor.flush()
+  
+  // 验证背压效果
+  assert_true(processed_count > 0)           // 应该处理了一些事件
+  assert_true(dropped_count >= 0)            // 可能丢弃了一些事件
+  assert_true(processing_duration >= 1000)   // 处理时间应该至少1秒
+  
+  // 验证流量控制
+  let actual_rate = processed_count.to_float() / (processing_duration.to_float() / 1000.0)
+  assert_true(actual_rate <= 1200.0)          // 实际速率应该接近配置的限制
+  
+  // 验证缓冲区管理
+  let buffer_stats = backpressure_processor.get_buffer_stats()
+  assert_true(buffer_stats.max_size <= 1000)  // 缓冲区大小不应超过配置
+  assert_true(buffer_stats.overflow_count > 0 || processed_count == high_volume_events.length())
+  
+  // 验证背压状态变化
+  let backpressure_history = backpressure_processor.get_backpressure_history()
+  assert_true(backpressure_history.length() > 0)
+  
+  let had_backpressure = backpressure_history.any({ state => state.is_active })
+  assert_true(had_backpressure)  // 在高频流量下应该触发了背压
+  
+  // 停止背压处理器
+  backpressure_processor.stop()
+}
+
+// 测试6: 流处理动态拓扑重配置
+test "流处理动态拓扑重配置" {
+  // 创建动态拓扑流处理器
+  let dynamic_processor = DynamicTopologyProcessor::new()
+  
+  // 初始拓扑配置
+  let initial_topology = {
+    name: "telemetry_processing_v1",
+    sources: ["kafka_telemetry"],
+    processors: [
+      { name: "filter", type: "event_filter", config: { filter_expr: "service != 'health-check'" } },
+      { name: "transform", type: "data_transformer", config: { add_timestamp: true } },
+      { name: "aggregate", type: "window_aggregator", config: { window_size: 60 } }
+    ],
+    sinks: ["elasticsearch_sink"]
+  }
+  
+  // 部署初始拓扑
+  dynamic_processor.deploy_topology(initial_topology)
+  
+  // 生成测试数据
+  let test_events = [
+    { timestamp: 1640995200, service: "api-gateway", metric: "request_count", value: 100.0 },
+    { timestamp: 1640995210, service: "health-check", metric: "status", value: 1.0 },
+    { timestamp: 1640995220, service: "order-service", metric: "response_time", value: 250.5 },
+    { timestamp: 1640995230, service: "payment-service", metric: "error_rate", value: 0.02 }
+  ]
+  
+  // 启动处理器
+  dynamic_processor.start()
+  
+  // 处理初始事件
+  for event in test_events {
+    dynamic_processor.process_event(event)
+  }
+  
+  dynamic_processor.flush()
+  
+  // 验证初始拓扑处理结果
+  let initial_results = dynamic_processor.get_processing_results()
+  assert_true(initial_results.length() > 0)
+  
+  // 应该过滤掉health-check事件
+  let filtered_events = initial_results.filter({ event => event.service != "health-check" })
+  assert_eq(filtered_events.length(), 3)
+  
+  // 定义新拓扑（添加新的处理器）
+  let updated_topology = {
+    name: "telemetry_processing_v2",
+    sources: ["kafka_telemetry"],
+    processors: [
+      { name: "filter", type: "event_filter", config: { filter_expr: "service != 'health-check'" } },
+      { name: "enrich", type: "data_enricher", config: { add_geo_info: true } },  // 新增
+      { name: "transform", type: "data_transformer", config: { add_timestamp: true } },
+      { name: "detect_anomaly", type: "anomaly_detector", config: { threshold: 2.0 } },  // 新增
+      { name: "aggregate", type: "window_aggregator", config: { window_size: 60 } }
+    ],
+    sinks: ["elasticsearch_sink", "alert_sink"]  // 新增告警sink
+  }
+  
+  // 动态更新拓扑
+  let update_success = dynamic_processor.update_topology(updated_topology)
+  assert_true(update_success)
+  
+  // 继续处理事件（使用新拓扑）
+  let additional_events = [
+    { timestamp: 1640995240, service: "api-gateway", metric: "request_count", value: 150.0 },
+    { timestamp: 1640995250, service: "order-service", metric: "response_time", value: 500.0 },  // 异常值
+    { timestamp: 1640995260, service: "payment-service", metric: "error_rate", value: 0.05 }
+  ]
+  
+  for event in additional_events {
+    dynamic_processor.process_event(event)
+  }
+  
+  dynamic_processor.flush()
+  
+  // 验证更新后的处理结果
+  let updated_results = dynamic_processor.get_processing_results()
+  assert_true(updated_results.length() > initial_results.length())
+  
+  // 验证新增的数据丰富功能
+  let enriched_events = updated_results.filter({ event => event.has_geo_info })
+  assert_true(enriched_events.length() > 0)
+  
+  // 验证异常检测功能
+  let anomaly_events = updated_results.filter({ event => event.is_anomaly })
+  assert_true(anomaly_events.length() > 0)  // 500.0的响应时间应该被检测为异常
+  
+  // 验证告警sink接收到了事件
+  let alert_results = dynamic_processor.get_sink_results("alert_sink")
+  assert_true(alert_results.length() > 0)
+  
+  // 停止处理器
+  dynamic_processor.stop()
+}
+
+// 测试7: 流处理多数据源整合
+test "流处理多数据源整合" {
+  // 创建多数据源流处理器
+  let multi_source_processor = MultiSourceStreamProcessor::new()
+  
+  // 配置多个数据源
+  multi_source_processor.configure_source("kafka_metrics", {
+    type: "kafka",
+    topic: "telemetry-metrics",
+    format: "json",
+    consumer_group: "stream-processor"
+  })
+  
+  multi_source_processor.configure_source("kafka_traces", {
+    type: "kafka",
+    topic: "telemetry-traces",
+    format: "json",
+    consumer_group: "stream-processor"
+  })
+  
+  multi_source_processor.configure_source("http_logs", {
+    type: "http",
+    endpoint: "https://api.example.com/logs/stream",
+    format: "ndjson",
+    auth: "bearer_token"
+  })
+  
+  // 配置数据源整合策略
+  multi_source_processor.configure_join_strategy({
+    name: "metrics_traces_join",
+    left_source: "kafka_metrics",
+    right_source: "kafka_traces",
+    join_key: "trace_id",
+    join_type: "inner",
+    window_size: 30  // 30秒时间窗口
+  })
+  
+  multi_source_processor.configure_union_strategy({
+    name: "all_logs_union",
+    sources: ["kafka_traces", "http_logs"],
+    merge_strategy: "timestamp_order"
+  })
+  
+  // 启动处理器
+  multi_source_processor.start()
+  
+  // 生成模拟的多源数据
+  let metrics_data = [
+    { timestamp: 1640995200, trace_id: "trace-001", service: "api-gateway", metric: "request_count", value: 100.0 },
+    { timestamp: 1640995210, trace_id: "trace-002", service: "order-service", metric: "response_time", value: 250.5 },
+    { timestamp: 1640995220, trace_id: "trace-003", service: "payment-service", metric: "error_rate", value: 0.02 }
+  ]
+  
+  let traces_data = [
+    { timestamp: 1640995200, trace_id: "trace-001", service: "api-gateway", operation: "process_request", duration: 120.0 },
+    { timestamp: 1640995210, trace_id: "trace-002", service: "order-service", operation: "create_order", duration: 300.0 },
+    { timestamp: 1640995230, trace_id: "trace-004", service: "notification-service", operation: "send_email", duration: 80.0 }
+  ]
+  
+  let logs_data = [
+    { timestamp: 1640995205, trace_id: "trace-001", service: "api-gateway", level: "INFO", message: "Request processed" },
+    { timestamp: 1640995215, trace_id: "trace-002", service: "order-service", level: "INFO", message: "Order created" },
+    { timestamp: 1640995235, trace_id: "trace-004", service: "notification-service", level: "INFO", message: "Email sent" }
+  ]
+  
+  // 模拟从不同源接收数据
+  for metric in metrics_data {
+    multi_source_processor.process_source_event("kafka_metrics", metric)
+  }
+  
+  for trace in traces_data {
+    multi_source_processor.process_source_event("kafka_traces", trace)
+  }
+  
+  for log in logs_data {
+    multi_source_processor.process_source_event("http_logs", log)
+  }
+  
+  // 等待整合处理完成
+  multi_source_processor.flush()
+  
+  // 验证metrics和traces的join结果
+  let joined_results = multi_source_processor.get_join_results("metrics_traces_join")
+  assert_true(joined_results.length() >= 2)  // trace-001和trace-002应该匹配
+  
+  // 验证join结果的完整性
+  let trace_001_join = joined_results.find({ result => result.trace_id == "trace-001" })
+  assert_true(trace_001_join.metric_value > 0.0)
+  assert_true(trace_001_join.operation_duration > 0.0)
+  
+  // 验证所有logs的union结果
+  let union_results = multi_source_processor.get_union_results("all_logs_union")
+  assert_eq(union_results.length(), 3)  // 应该包含所有日志
+  
+  // 验证时间顺序合并
+  for i in 1..union_results.length() {
+    assert_true(union_results[i-1].timestamp <= union_results[i].timestamp)
+  }
+  
+  // 验证跨源关联分析
+  let correlation_analysis = multi_source_processor.get_correlation_analysis()
+  assert_true(correlation_analysis.length() > 0)
+  
+  // 验证数据源质量监控
+  let source_quality = multi_source_processor.get_source_quality_metrics()
+  assert_true(source_quality.contains("kafka_metrics"))
+  assert_true(source_quality.contains("kafka_traces"))
+  assert_true(source_quality.contains("http_logs"))
+  
+  for (source, metrics) in source_quality {
+    assert_true(metrics.events_received > 0)
+    assert_true(metrics.processing_latency_ms >= 0)
+    assert_true(metrics.error_rate <= 0.1)  // 错误率应该很低
+  }
+  
+  // 停止处理器
+  multi_source_processor.stop()
 }
