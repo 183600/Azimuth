@@ -4251,6 +4251,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f6e65775f6d6574726963735f696e737472756d656e745f74657374732e6d6274_6, ["instrument type conversions and operations"]),
     7: (__test_617a696d7574685f6e65775f6d6574726963735f696e737472756d656e745f74657374732e6d6274_7, ["instruments with complex attributes"]),
   },
+  "azimuth_new_metrics_collection_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_0, ["counter metrics collection operations"]),
+    1: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_1, ["gauge metrics collection operations"]),
+    2: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_2, ["histogram metrics collection operations"]),
+    3: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_3, ["metrics aggregation operations"]),
+    4: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_4, ["metrics rate calculation operations"]),
+  },
   "azimuth_new_log_record_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f6c6f675f7265636f72645f74657374732e6d6274_0, ["basic log record creation and properties"]),
     1: (__test_617a696d7574685f6e65775f6c6f675f7265636f72645f74657374732e6d6274_1, ["log record with full context"]),
