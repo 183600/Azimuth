@@ -2888,10 +2888,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_617a696d7574685f7265616c5f776f726c645f7363656e6172696f5f74657374732e6d6274_9, ["retail omnichannel customer experience scenario"]),
   },
   "azimuth_real_time_monitoring_tests.mbt": {
-    0: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_0, ["实时数据流处理"]),
-    1: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_1, ["实时告警系统"]),
-    2: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_2, ["实时性能监控"]),
-    3: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_3, ["实时拓扑监控"]),
+    0: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_0, ["real-time metrics collection and processing pipeline"]),
+    1: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_1, ["real-time anomaly detection algorithms"]),
+    2: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_2, ["real-time alerting and notification system"]),
+    3: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_3, ["real-time dashboard updates and data streaming"]),
+    4: (__test_617a696d7574685f7265616c5f74696d655f6d6f6e69746f72696e675f74657374732e6d6274_4, ["performance metrics and optimization for real-time monitoring"]),
   },
   "azimuth_real_time_alerting_tests.mbt": {
     0: (__test_617a696d7574685f7265616c5f74696d655f616c657274696e675f74657374732e6d6274_0, ["阈值告警系统"]),
@@ -4793,6 +4794,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_new_error_handling_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f6572726f725f68616e646c696e675f74657374732e6d6274_0, ["error boundary with exception recovery"]),
     1: (__test_617a696d7574685f6e65775f6572726f725f68616e646c696e675f74657374732e6d6274_1, ["resource exhaustion handling"]),
+  },
+  "azimuth_new_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_0, ["timestamp operations and time series data"]),
+    1: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_1, ["span links and events functionality"]),
+    2: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_2, ["composite propagator edge cases"]),
+    3: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_3, ["metrics concurrent safety"]),
+    4: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_4, ["resource attributes deep nesting"]),
+    5: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_5, ["context propagation edge cases"]),
+    6: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_6, ["serialization and deserialization"]),
+    7: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_7, ["error recovery mechanisms"]),
+    8: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_8, ["performance benchmarks"]),
+    9: (__test_617a696d7574685f6e65775f656e68616e6365645f74657374732e6d6274_9, ["cross-platform compatibility"]),
   },
   "azimuth_new_enhanced_test_cases.mbt": {
     0: (__test_617a696d7574685f6e65775f656e68616e6365645f746573745f63617365732e6d6274_0, ["advanced performance metrics collection"]),
