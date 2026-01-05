@@ -236,5 +236,6 @@
         "azimuth_enhanced_feature_tests.mbt",
         "../azimuth_high_quality_core_tests.mbt",
         "../azimuth_security_privacy_tests.mbt",
-        "../azimuth_monitoring_visualization_tests.mbt"]  }
+        "../azimuth_monitoring_visualization_tests.mbt",
+        "../azimuth_high_quality_comprehensive_test_suite.mbt"]  }
 }
