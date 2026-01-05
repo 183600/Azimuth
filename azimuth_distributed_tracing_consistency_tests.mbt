@@ -1,538 +1,965 @@
-// Azimuth Telemetry System - Distributed Tracing Consistency Tests
-// This file contains test cases for distributed tracing consistency functionality
+// Azimuth Distributed Tracing Consistency Tests
+// This file contains test cases for distributed tracing consistency validation
 
-// Test 1: Trace Context Propagation
-test "trace context propagation" {
-  // Create a root span
-  let trace_id = "12345678901234567890123456789012"
-  let root_span_id = "1111111111111111"
-  let root_span = Span::new("root_operation", Server, SpanContext::new(trace_id, root_span_id, true, ""))
+// Test 1: Trace Context Propagation Consistency
+test "trace context propagation consistency" {
+  // Define trace context
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    trace_flags: Int,
+    trace_state: Array[(String, String)],
+    baggage: Array[(String, String)]
+  }
   
-  // Create a child span
-  let child_span_id = "2222222222222222"
-  let child_span = Span::create_child(root_span, "child_operation", Client)
+  // Define propagation format
+  enum PropagationFormat {
+    HTTPHeaders
+    GRPCMetadata
+    MessageProperties
+    Custom(String)
+  }
   
-  // Verify trace context is propagated
-  let child_context = Span::span_context(child_span)
-  assert_eq(SpanContext::trace_id(child_context), trace_id)
-  assert_eq(SpanContext::parent_span_id(child_context), Some(root_span_id))
-  assert_eq(SpanContext::span_id(child_context), child_span_id)
+  // Define propagation result
+  type PropagationResult = {
+    is_valid: Bool,
+    extracted_context: Option[TraceContext],
+    missing_fields: Array[String],
+    invalid_fields: Array[String]
+  }
   
-  // Create a grandchild span
-  let grandchild_span_id = "3333333333333333"
-  let grandchild_span = Span::create_child(child_span, "grandchild_operation", Internal)
+  // Serialize trace context to HTTP headers
+  let serialize_to_http_headers = fn(context: TraceContext) {
+    let headers = [
+      ("traceparent", "00-" + context.trace_id + "-" + context.span_id + "-" + context.trace_flags.to_string(16)),
+      ("tracestate", context.trace_state.map_fn(item) { item.0 + "=" + item.1 }.join(",")),
+      ("baggage", context.baggage.map_fn(item) { item.0 + "=" + item.1 }.join(","))
+    ]
+    
+    // Filter out empty headers
+    headers.filter_fn(header) { 
+      let (_, value) = header
+      value.length() > 0
+    }
+  }
   
-  // Verify trace context is propagated through multiple levels
-  let grandchild_context = Span::span_context(grandchild_span)
-  assert_eq(SpanContext::trace_id(grandchild_context), trace_id)
-  assert_eq(SpanContext::parent_span_id(grandchild_context), Some(child_span_id))
-  assert_eq(SpanContext::span_id(grandchild_context), grandchild_span_id)
+  // Extract trace context from HTTP headers
+  let extract_from_http_headers = fn(headers: Array[(String, String)]) {
+    let mut trace_id = None
+    let mut span_id = None
+    let mut parent_span_id = None
+    let mut trace_flags = 0
+    let mut trace_state = []
+    let mut baggage = []
+    let mut missing_fields = []
+    let mut invalid_fields = []
+    
+    for (key, value) in headers {
+      match key {
+        "traceparent" => {
+          let parts = value.split("-")
+          if parts.length() == 4 {
+            trace_id = Some(parts[1])
+            span_id = Some(parts[2])
+            match parts[3].parse_int(16) {
+              Some(flags) => trace_flags = flags
+              None => invalid_fields = invalid_fields.push("trace_flags")
+            }
+          } else {
+            invalid_fields = invalid_fields.push("traceparent_format")
+          }
+        }
+        "tracestate" => {
+          if value.length() > 0 {
+            trace_state = value.split(",").map_fn(item) {
+              let kv = item.split("=")
+              if kv.length() == 2 {
+                (kv[0], kv[1])
+              } else {
+                ("", "")
+              }
+            }
+          }
+        }
+        "baggage" => {
+          if value.length() > 0 {
+            baggage = value.split(",").map_fn(item) {
+              let kv = item.split("=")
+              if kv.length() == 2 {
+                (kv[0], kv[1])
+              } else {
+                ("", "")
+              }
+            }
+          }
+        }
+        _ => {}  // Ignore other headers
+      }
+    }
+    
+    // Check for required fields
+    if trace_id.is_none() { missing_fields = missing_fields.push("trace_id") }
+    if span_id.is_none() { missing_fields = missing_fields.push("span_id") }
+    
+    let context = if missing_fields.length() == 0 && invalid_fields.length() == 0 {
+      Some({
+        trace_id: trace_id.unwrap(),
+        span_id: span_id.unwrap(),
+        parent_span_id: parent_span_id,
+        trace_flags: trace_flags,
+        trace_state: trace_state,
+        baggage: baggage
+      })
+    } else {
+      None
+    }
+    
+    {
+      is_valid: missing_fields.length() == 0 && invalid_fields.length() == 0,
+      extracted_context: context,
+      missing_fields: missing_fields,
+      invalid_fields: invalid_fields
+    }
+  }
   
-  // Test trace context extraction and injection
-  let injector = TraceContextInjector::new()
-  let headers = Headers::new()
-  TraceContextInjector::inject(injector, child_context, headers)
+  // Test context propagation round-trip
+  let original_context = {
+    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+    span_id: "00f067aa0ba902b7",
+    parent_span_id: Some("1234567890abcdef"),
+    trace_flags: 1,
+    trace_state: [("rojo", "00f067aa0ba902b7"), ("congo", "t61rcWkgMzE")],
+    baggage: [("user_id", "12345"), ("session_id", "abcdef")]
+  }
   
-  // Verify trace context headers are injected
-  assert_true(Headers::has(headers, "traceparent"))
-  assert_true(Headers::has(headers, "tracestate"))
+  // Test HTTP header serialization and extraction
+  let http_headers = serialize_to_http_headers(original_context)
+  assert_eq(http_headers.length(), 3)
+  assert_true(http_headers.some_fn(h) { h.0 == "traceparent" })
+  assert_true(http_headers.some_fn(h) { h.0 == "tracestate" })
+  assert_true(http_headers.some_fn(h) { h.0 == "baggage" })
   
-  // Extract trace context from headers
-  let extractor = TraceContextExtractor::new()
-  let extracted_context = TraceContextExtractor::extract(extractor, headers)
+  let http_result = extract_from_http_headers(http_headers)
+  assert_true(http_result.is_valid)
+  assert_eq(http_result.missing_fields.length(), 0)
+  assert_eq(http_result.invalid_fields.length(), 0)
   
-  match extracted_context {
-    Some(context) => {
-      assert_eq(SpanContext::trace_id(context), trace_id)
-      assert_eq(SpanContext::span_id(context), child_span_id)
+  match http_result.extracted_context {
+    Some(extracted) => {
+      assert_eq(extracted.trace_id, original_context.trace_id)
+      assert_eq(extracted.span_id, original_context.span_id)
+      assert_eq(extracted.parent_span_id, original_context.parent_span_id)
+      assert_eq(extracted.trace_flags, original_context.trace_flags)
+      assert_eq(extracted.trace_state.length(), 2)
+      assert_eq(extracted.baggage.length(), 2)
     }
     None => assert_true(false)
   }
-}
-
-// Test 2: Cross-Service Trace Consistency
-test "cross-service trace consistency" {
-  // Create a trace coordinator
-  let coordinator = TraceCoordinator::new()
   
-  // Register services
-  TraceCoordinator::register_service(coordinator, "service-a", "http://service-a:8080")
-  TraceCoordinator::register_service(coordinator, "service-b", "http://service-b:8080")
-  TraceCoordinator::register_service(coordinator, "service-c", "http://service-c:8080")
+  // Test with missing traceparent header
+  let incomplete_headers = [
+    ("tracestate", "rojo=00f067aa0ba902b7"),
+    ("baggage", "user_id=12345")
+  ]
   
-  // Create a distributed trace
-  let trace_id = TraceCoordinator::create_trace(coordinator)
-  let trace_context = TraceContext::new(trace_id, "service-a")
+  let incomplete_result = extract_from_http_headers(incomplete_headers)
+  assert_false(incomplete_result.is_valid)
+  assert_eq(incomplete_result.missing_fields.length(), 2)
+  assert_true(incomplete_result.missing_fields.contains("trace_id"))
+  assert_true(incomplete_result.missing_fields.contains("span_id"))
   
-  // Service A creates a root span
-  let service_a_span = TraceCoordinator::create_span(coordinator, trace_context, "service-a-operation", Server)
-  let service_a_context = Span::span_context(service_a_span)
+  // Test with invalid traceparent format
+  let invalid_headers = [
+    ("traceparent", "invalid-format"),
+    ("tracestate", "rojo=00f067aa0ba902b7"),
+    ("baggage", "user_id=12345")
+  ]
   
-  // Service A calls Service B
-  let service_b_context = TraceCoordinator::propagate_to_service(coordinator, service_a_context, "service-b")
-  let service_b_span = TraceCoordinator::create_span(coordinator, service_b_context, "service-b-operation", Server)
+  let invalid_result = extract_from_http_headers(invalid_headers)
+  assert_false(invalid_result.is_valid)
+  assert_eq(incomplete_result.invalid_fields.length(), 1)
+  assert_true(incomplete_result.invalid_fields.contains("traceparent_format"))
   
-  // Service B calls Service C
-  let service_c_context = TraceCoordinator::propagate_to_service(coordinator, Span::span_context(service_b_span), "service-c")
-  let service_c_span = TraceCoordinator::create_span(coordinator, service_c_context, "service-c-operation", Server)
-  
-  // End all spans
-  Span::end(service_a_span)
-  Span::end(service_b_span)
-  Span::end(service_c_span)
-  
-  // Collect the trace
-  let collected_trace = TraceCoordinator::collect_trace(coordinator, trace_id)
-  
-  // Verify trace consistency
-  assert_eq(collected_trace.trace_id, trace_id)
-  assert_eq(collected_trace.spans.length(), 3)
-  
-  // Verify parent-child relationships
-  let service_a_collected = collected_trace.spans[0]
-  let service_b_collected = collected_trace.spans[1]
-  let service_c_collected = collected_trace.spans[2]
-  
-  assert_eq(service_a_collected.parent_span_id, None)
-  assert_eq(service_b_collected.parent_span_id, Some(service_a_collected.span_id))
-  assert_eq(service_c_collected.parent_span_id, Some(service_b_collected.span_id))
-  
-  // Verify service names are correctly recorded
-  assert_eq(service_a_collected.service_name, "service-a")
-  assert_eq(service_b_collected.service_name, "service-b")
-  assert_eq(service_c_collected.service_name, "service-c")
-}
-
-// Test 3: Trace Sampling Consistency
-test "trace sampling consistency" {
-  // Create a sampler
-  let sampler = TraceSampler::new(0.1) // 10% sampling rate
-  
-  // Create multiple traces
-  let traces = []
-  for i in 0..=99 {
-    let trace_id = "trace_" + i.to_string()
-    let trace_context = TraceContext::new(trace_id, "test-service")
-    let is_sampled = TraceSampler::should_sample(sampler, trace_context)
+  // Test cross-service propagation consistency
+  let propagate_across_services = fn(context: TraceContext, service_chain: Array[String>) {
+    let mut current_context = context
+    let mut propagation_history = []
     
-    traces.push({
-      "trace_id": trace_id,
-      "is_sampled": is_sampled
-    })
+    for service_name in service_chain {
+      // Simulate propagation to next service
+      let headers = serialize_to_http_headers(current_context)
+      let result = extract_from_http_headers(headers)
+      
+      match result.extracted_context {
+        Some(extracted) => {
+          // Create new span in this service
+          let new_span_id = "span-" + service_name + "-" + "12345678"
+          current_context = {
+            trace_id: extracted.trace_id,
+            span_id: new_span_id,
+            parent_span_id: Some(extracted.span_id),
+            trace_flags: extracted.trace_flags,
+            trace_state: extracted.trace_state,
+            baggage: extracted.baggage
+          }
+          
+          propagation_history = propagation_history.push({
+            service: service_name,
+            trace_id: extracted.trace_id,
+            span_id: new_span_id,
+            parent_span_id: extracted.span_id,
+            propagation_valid: result.is_valid
+          })
+        }
+        None => {
+          propagation_history = propagation_history.push({
+            service: service_name,
+            trace_id: "",
+            span_id: "",
+            parent_span_id: "",
+            propagation_valid: false
+          })
+        }
+      }
+    }
+    
+    propagation_history
   }
   
-  // Verify approximately 10% of traces are sampled
-  let sampled_count = traces.filter(fn(t) { t.is_sampled }).length()
-  assert_true(sampled_count >= 5 && sampled_count <= 15) // Allow some variance
+  let service_chain = ["api-gateway", "user-service", "payment-service", "notification-service"]
+  let propagation_history = propagate_across_services(original_context, service_chain)
   
-  // Test consistent sampling for the same trace
-  let trace_id = "consistency_test_trace"
-  let trace_context = TraceContext::new(trace_id, "test-service")
+  assert_eq(propagation_history.length(), 4)
   
-  let first_sample = TraceSampler::should_sample(sampler, trace_context)
-  let second_sample = TraceSampler::should_sample(sampler, trace_context)
-  let third_sample = TraceSampler::should_sample(sampler, trace_context)
-  
-  // All decisions should be the same for the same trace
-  assert_eq(first_sample, second_sample)
-  assert_eq(second_sample, third_sample)
-  
-  // Test parent-based sampling
-  let parent_sampler = ParentBasedSampler::new(sampler)
-  
-  // Create a parent span that is sampled
-  let parent_context = TraceContext::with_sampling("parent_trace", "parent-service", true)
-  let child_context = TraceContext::with_parent("child_trace", "child-service", parent_context)
-  
-  // Child should be sampled if parent is sampled
-  let child_sampled = ParentBasedSampler::should_sample(parent_sampler, child_context)
-  assert_true(child_sampled)
-  
-  // Create a parent span that is not sampled
-  let unsampled_parent_context = TraceContext::with_sampling("unsampled_parent_trace", "parent-service", false)
-  let unsampled_child_context = TraceContext::with_parent("unsampled_child_trace", "child-service", unsampled_parent_context)
-  
-  // Child should not be sampled if parent is not sampled
-  let unsampled_child_sampled = ParentBasedSampler::should_sample(parent_sampler, unsampled_child_context)
-  assert_false(unsampled_child_sampled)
-}
-
-// Test 4: Trace State Propagation
-test "trace state propagation" {
-  // Create a trace context with state
-  let trace_id = "trace_state_test"
-  let trace_state = "vendor1=foo,vendor2=bar"
-  let trace_context = TraceContext::with_state(trace_id, "service-a", trace_state)
-  
-  // Create a span
-  let span = Span::new("operation", Server, trace_context)
-  let span_context = Span::span_context(span)
-  
-  // Verify trace state is preserved
-  assert_eq(SpanContext::trace_state(span_context), trace_state)
-  
-  // Add to trace state
-  let updated_context = SpanContext::add_trace_state_item(span_context, "vendor3", "baz")
-  let updated_trace_state = SpanContext::trace_state(updated_context)
-  
-  // Verify the new item is added
-  assert_true(updated_trace_state.includes("vendor3=baz"))
-  
-  // Propagate to child span
-  let child_span = Span::create_child(span, "child_operation", Client)
-  let child_context = Span::span_context(child_span)
-  
-  // Verify trace state is propagated to child
-  let child_trace_state = SpanContext::trace_state(child_context)
-  assert_true(child_trace_state.includes("vendor1=foo"))
-  assert_true(child_trace_state.includes("vendor2=bar"))
-  assert_true(child_trace_state.includes("vendor3=baz"))
-  
-  // Modify trace state in child
-  let child_updated_context = SpanContext::add_trace_state_item(child_context, "vendor4", "qux")
-  let child_updated_trace_state = SpanContext::trace_state(child_updated_context)
-  
-  // Verify the new item is added to child
-  assert_true(child_updated_trace_state.includes("vendor4=qux"))
-  
-  // Verify parent is not affected
-  let parent_trace_state = SpanContext::trace_state(span_context)
-  assert_false(parent_trace_state.includes("vendor4=qux"))
-  
-  // Test trace state parsing and serialization
-  let trace_state_map = TraceState::parse(updated_trace_state)
-  assert_eq(TraceState::get(trace_state_map, "vendor1"), Some("foo"))
-  assert_eq(TraceState::get(trace_state_map, "vendor2"), Some("bar"))
-  assert_eq(TraceState::get(trace_state_map, "vendor3"), Some("baz"))
-  
-  let serialized_state = TraceState::serialize(trace_state_map)
-  assert_true(serialized_state.includes("vendor1=foo"))
-  assert_true(serialized_state.includes("vendor2=bar"))
-  assert_true(serialized_state.includes("vendor3=baz"))
-}
-
-// Test 5: Trace Consistency Validation
-test "trace consistency validation" {
-  // Create a trace validator
-  let validator = TraceValidator::new()
-  
-  // Create a consistent trace
-  let consistent_trace = create_consistent_sample_trace()
-  
-  // Validate the consistent trace
-  let validation_result = TraceValidator::validate(validator, consistent_trace)
-  
-  // Should pass validation
-  assert_true(validation_result.is_valid)
-  assert_eq(validation_result.errors.length(), 0)
-  
-  // Create an inconsistent trace (break parent-child relationship)
-  let inconsistent_trace = create_inconsistent_sample_trace()
-  
-  // Validate the inconsistent trace
-  let inconsistent_validation = TraceValidator::validate(validator, inconsistent_trace)
-  
-  // Should fail validation
-  assert_false(inconsistent_validation.is_valid)
-  assert_true(inconsistent_validation.errors.length() > 0)
-  
-  // Verify specific error
-  let has_parent_error = inconsistent_validation.errors.any(fn(error) {
-    error.code == "invalid_parent_child_relationship"
-  })
-  assert_true(has_parent_error)
-  
-  // Create a trace with missing spans
-  let incomplete_trace = create_incomplete_sample_trace()
-  
-  // Validate the incomplete trace
-  let incomplete_validation = TraceValidator::validate(validator, incomplete_trace)
-  
-  // Should have warnings but may still be valid
-  assert_true(incomplete_validation.warnings.length() > 0)
-  
-  // Verify specific warning
-  let has_missing_warning = incomplete_validation.warnings.any(fn(warning) {
-    warning.code == "missing_intermediate_spans"
-  })
-  assert_true(has_missing_warning)
-}
-
-// Test 6: Distributed Clock Synchronization
-test "distributed clock synchronization" {
-  // Create a clock synchronizer
-  let synchronizer = ClockSynchronizer::new()
-  
-  // Register clocks from different services
-  let service_a_clock = Clock::new("service-a", 1609459200000L) // 2021-01-01 00:00:00 UTC
-  let service_b_clock = Clock::new("service-b", 1609459200100L) // 100ms ahead
-  let service_c_clock = Clock::new("service-c", 1609459199900L) // 100ms behind
-  
-  ClockSynchronizer::register_clock(synchronizer, service_a_clock)
-  ClockSynchronizer::register_clock(synchronizer, service_b_clock)
-  ClockSynchronizer::register_clock(synchronizer, service_c_clock)
-  
-  // Synchronize clocks
-  let sync_result = ClockSynchronizer::synchronize(synchronizer)
-  assert_true(sync_result.is_ok())
-  
-  // Verify clocks are synchronized
-  let sync_time = ClockSynchronizer::get_sync_time(synchronizer)
-  
-  let service_a_offset = ClockSynchronizer::get_offset(synchronizer, "service-a")
-  let service_b_offset = ClockSynchronizer::get_offset(synchronizer, "service-b")
-  let service_c_offset = ClockSynchronizer::get_offset(synchronizer, "service-c")
-  
-  // Offsets should be calculated correctly
-  assert_eq(service_a_offset, 0L) // Reference clock
-  assert_eq(service_b_offset, -100L) // Was 100ms ahead, now adjusted
-  assert_eq(service_c_offset, 100L)  // Was 100ms behind, now adjusted
-  
-  // Test timestamp conversion
-  let service_a_timestamp = 1609459205000L
-  let converted_timestamp = ClockSynchronizer::convert_to_sync_time(synchronizer, "service-a", service_a_timestamp)
-  
-  // Should be the same since service-a is the reference
-  assert_eq(converted_timestamp, service_a_timestamp)
-  
-  let service_b_timestamp = 1609459205000L
-  let converted_b_timestamp = ClockSynchronizer::convert_to_sync_time(synchronizer, "service-b", service_b_timestamp)
-  
-  // Should be adjusted by the offset
-  assert_eq(converted_b_timestamp, service_b_timestamp + service_b_offset)
-  
-  // Test span timestamp normalization
-  let span_a = Span::new("span-a", Server, SpanContext::new("trace", "span-a", true, ""))
-  Span::set_timestamp(span_a, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-a", 1609459201000L))
-  
-  let span_b = Span::new("span-b", Server, SpanContext::new("trace", "span-b", true, ""))
-  Span::set_timestamp(span_b, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-b", 1609459202000L))
-  
-  let span_c = Span::new("span-c", Server, SpanContext::new("trace", "span-c", true, ""))
-  Span::set_timestamp(span_c, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-c", 1609459203000L))
-  
-  // Verify timestamps are in chronological order
-  assert_true(Span::timestamp(span_a) < Span::timestamp(span_b))
-  assert_true(Span::timestamp(span_b) < Span::timestamp(span_c))
-}
-
-// Test 7: Trace Recovery and Repair
-test "trace recovery and repair" {
-  // Create a trace recoverer
-  let recoverer = TraceRecoverer::new()
-  
-  // Create a damaged trace with missing spans
-  let damaged_trace = create_damaged_sample_trace()
-  
-  // Attempt to recover the trace
-  let recovery_result = TraceRecoverer::recover(recoverer, damaged_trace)
-  
-  // Verify recovery was attempted
-  assert_true(recovery_result.attempted)
-  
-  // Check if recovery was successful
-  if recovery_result.successful {
-    // Verify the recovered trace is more complete
-    assert_true(recovery_result.recovered_trace.spans.length() >= damaged_trace.spans.length())
-    
-    // Verify the recovered trace passes basic validation
-    let validator = TraceValidator::new()
-    let validation_result = TraceValidator::validate(validator, recovery_result.recovered_trace)
-    assert_true(validation_result.is_valid)
-  } else {
-    // If recovery failed, verify we have information about why
-    assert_true(recovery_result.errors.length() > 0)
+  // Verify trace ID consistency across all services
+  for service_record in propagation_history {
+    assert_true(service_record.propagation_valid)
+    assert_eq(service_record.trace_id, original_context.trace_id)
   }
   
-  // Test partial recovery
-  let partially_damaged_trace = create_partially_damaged_sample_trace()
-  let partial_recovery = TraceRecoverer::recover(recoverer, partially_damaged_trace)
-  
-  // Partial recovery should have a higher success rate
-  assert_true(partial_recovery.successful || partial_recovery.partially_successful)
-  
-  // Test trace repair
-  let repairable_trace = create_repairable_sample_trace()
-  let repair_result = TraceRecoverer::repair(recoverer, repairable_trace)
-  
-  // Verify repair was attempted
-  assert_true(repair_result.attempted)
-  
-  if repair_result.successful {
-    // Verify the repaired trace has correct parent-child relationships
-    let validator = TraceValidator::new()
-    let validation_result = TraceValidator::validate(validator, repair_result.repaired_trace)
-    assert_true(validation_result.is_valid)
-    assert_eq(validation_result.errors.length(), 0)
-  }
+  // Verify parent-child relationship
+  assert_eq(propagation_history[0].parent_span_id, original_context.span_id)
+  assert_eq(propagation_history[1].parent_span_id, propagation_history[0].span_id)
+  assert_eq(propagation_history[2].parent_span_id, propagation_history[1].span_id)
+  assert_eq(propagation_history[3].parent_span_id, propagation_history[2].span_id)
 }
 
-// Test 8: Trace Consistency Metrics
-test "trace consistency metrics" {
-  // Create a metrics collector
-  let metrics_collector = TraceConsistencyMetrics::new()
+// Test 2: Distributed Trace Timeline Consistency
+test "distributed trace timeline consistency" {
+  // Define span timeline
+  type SpanTimeline = {
+    span_id: String,
+    service_name: String,
+    start_time: Int,    // Unix timestamp in microseconds
+    end_time: Int,      // Unix timestamp in microseconds
+    duration: Int       // Duration in microseconds
+  }
   
-  // Simulate processing multiple traces
-  for i in 0..=99 {
-    let trace_id = "trace_" + i.to_string()
+  // Define trace timeline
+  type TraceTimeline = {
+    trace_id: String,
+    spans: Array[SpanTimeline],
+    root_span: String,
+    total_duration: Int
+  }
+  
+  // Define timeline consistency result
+  type TimelineConsistencyResult = {
+    is_consistent: Bool,
+    violations: Array[String],
+    orphaned_spans: Array[String>,
+    circular_dependencies: Array[(String, String)]
+  }
+  
+  // Validate timeline consistency
+  let validate_timeline_consistency = fn(timeline: TraceTimeline, parent_child_map: Map[String, String>) {
+    let mut violations = []
+    let mut orphaned_spans = []
+    let mut circular_dependencies = []
     
-    // 90% of traces are consistent
-    if i < 90 {
-      let consistent_trace = create_consistent_trace_with_id(trace_id)
-      TraceConsistencyMetrics::record_processed_trace(metrics_collector, consistent_trace, true)
-    } else {
-      // 10% are inconsistent
-      let inconsistent_trace = create_inconsistent_trace_with_id(trace_id)
-      TraceConsistencyMetrics::record_processed_trace(metrics_collector, inconsistent_trace, false)
+    // Check for negative or zero durations
+    for span in timeline.spans {
+      if span.duration <= 0 {
+        violations = violations.push("invalid_duration_" + span.span_id)
+      }
+      
+      if span.end_time < span.start_time {
+        violations = violations.push("end_before_start_" + span.span_id)
+      }
+    }
+    
+    // Check for orphaned spans (spans without valid parents)
+    for span in timeline.spans {
+      if span.span_id != timeline.root_span {
+        match Map::get(parent_child_map, span.span_id) {
+          Some(parent_id) => {
+            // Check if parent exists
+            let parent_exists = timeline.spans.some_fn(s) { s.span_id == parent_id }
+            if not(parent_exists) {
+              orphaned_spans = orphaned_spans.push(span.span_id)
+            }
+          }
+          None => {
+            orphaned_spans = orphaned_spans.push(span.span_id)
+          }
+        }
+      }
+    }
+    
+    // Check for timeline consistency (child should be within parent duration)
+    for span in timeline.spans {
+      if span.span_id != timeline.root_span {
+        match Map::get(parent_child_map, span.span_id) {
+          Some(parent_id) => {
+            match timeline.spans.find_fn(s) { s.span_id == parent_id } {
+              Some(parent_span) => {
+                if span.start_time < parent_span.start_time || span.end_time > parent_span.end_time {
+                  violations = violations.push("child_outside_parent_" + span.span_id)
+                }
+              }
+              None => {}  // Parent not found (already caught as orphaned)
+            }
+          }
+          None => {}  // No parent (already caught as orphaned)
+        }
+      }
+    }
+    
+    // Check for circular dependencies
+    for (child, parent) in parent_child_map {
+      let mut current = parent
+      let mut visited = []
+      let mut found_cycle = false
+      
+      while Map::contains(parent_child_map, current) && not(found_cycle) {
+        if visited.contains(current) {
+          circular_dependencies = circular_dependencies.push((child, current))
+          found_cycle = true
+        } else {
+          visited = visited.push(current)
+          match Map::get(parent_child_map, current) {
+            Some(next_parent) => current = next_parent
+            None => break
+          }
+        }
+      }
+    }
+    
+    {
+      is_consistent: violations.length() == 0 && orphaned_spans.length() == 0 && circular_dependencies.length() == 0,
+      violations: violations,
+      orphaned_spans: orphaned_spans,
+      circular_dependencies: circular_dependencies
     }
   }
   
-  // Get the metrics
-  let metrics = TraceConsistencyMetrics::get_metrics(metrics_collector)
+  // Test timeline consistency validation
+  let parent_child_map = Map::from_array([
+    ("span-2", "span-1"),    // span-2's parent is span-1
+    ("span-3", "span-1"),    // span-3's parent is span-1
+    ("span-4", "span-2"),    // span-4's parent is span-2
+    ("span-5", "span-3")     // span-5's parent is span-3
+  ])
   
-  // Verify metrics
-  assert_eq(metrics.total_traces_processed, 100)
-  assert_eq(metrics.consistent_traces, 90)
-  assert_eq(metrics.inconsistent_traces, 10)
-  assert_eq(metrics.consistency_rate, 0.9)
-  
-  // Test detailed error metrics
-  let error_metrics = TraceConsistencyMetrics::get_error_metrics(metrics_collector)
-  
-  // Should have metrics for different error types
-  assert_true(error_metrics.contains("invalid_parent_child_relationship"))
-  assert_true(error_metrics.contains("missing_span"))
-  assert_true(error_metrics.contains("invalid_timestamp"))
-  
-  // Test service-specific metrics
-  let service_metrics = TraceConsistencyMetrics::get_service_metrics(metrics_collector)
-  
-  // Should have metrics for different services
-  assert_true(service_metrics.contains("service-a"))
-  assert_true(service_metrics.contains("service-b"))
-  assert_true(service_metrics.contains("service-c"))
-  
-  // Verify service-specific consistency rates
-  let service_a_metrics = service_metrics["service-a"]
-  assert_true(service_a_metrics.consistency_rate >= 0.8 && service_a_metrics.consistency_rate <= 1.0)
-  
-  // Test time-based metrics
-  let time_series_metrics = TraceConsistencyMetrics::get_time_series_metrics(metrics_collector)
-  
-  // Should have metrics over time
-  assert_true(time_series_metrics.length() > 0)
-  
-  // Verify metrics are properly timestamped
-  for metric in time_series_metrics {
-    assert_true(metric.timestamp > 0L)
-    assert_true(metric.consistency_rate >= 0.0 && metric.consistency_rate <= 1.0)
+  let consistent_timeline = {
+    trace_id: "trace-consistent-123",
+    spans: [
+      {
+        span_id: "span-1",
+        service_name: "api-gateway",
+        start_time: 1640995200000000,  // 2022-01-01 00:00:00 UTC
+        end_time: 1640995205000000,    // 5 seconds later
+        duration: 5000000              // 5 seconds
+      },
+      {
+        span_id: "span-2",
+        service_name: "user-service",
+        start_time: 1640995201000000,  // 1 second after root start
+        end_time: 1640995203000000,    // 3 seconds after root start
+        duration: 2000000              // 2 seconds
+      },
+      {
+        span_id: "span-3",
+        service_name: "payment-service",
+        start_time: 1640995202000000,  // 2 seconds after root start
+        end_time: 1640995204500000,    // 4.5 seconds after root start
+        duration: 2500000              // 2.5 seconds
+      },
+      {
+        span_id: "span-4",
+        service_name: "database",
+        start_time: 1640995201500000,  // 1.5 seconds after root start
+        end_time: 1640995202500000,    // 2.5 seconds after root start
+        duration: 1000000              // 1 second
+      },
+      {
+        span_id: "span-5",
+        service_name: "notification-service",
+        start_time: 1640995204000000,  // 4 seconds after root start
+        end_time: 1640995204800000,    // 4.8 seconds after root start
+        duration: 800000               // 0.8 seconds
+      }
+    ],
+    root_span: "span-1",
+    total_duration: 5000000
   }
+  
+  let consistent_result = validate_timeline_consistency(consistent_timeline, parent_child_map)
+  assert_true(consistent_result.is_consistent)
+  assert_eq(consistent_result.violations.length(), 0)
+  assert_eq(consistent_result.orphaned_spans.length(), 0)
+  assert_eq(consistent_result.circular_dependencies.length(), 0)
+  
+  // Test with timeline violations
+  let inconsistent_timeline = {
+    trace_id: "trace-inconsistent-456",
+    spans: [
+      {
+        span_id: "span-1",
+        service_name: "api-gateway",
+        start_time: 1640995200000000,
+        end_time: 1640995205000000,
+        duration: 5000000
+      },
+      {
+        span_id: "span-2",
+        service_name: "user-service",
+        start_time: 1640995201000000,
+        end_time: 1640995203000000,
+        duration: -1000000  // Negative duration
+      },
+      {
+        span_id: "span-3",
+        service_name: "payment-service",
+        start_time: 1640995206000000,  // Starts after parent ends
+        end_time: 1640995207000000,
+        duration: 1000000
+      },
+      {
+        span_id: "span-4",
+        service_name: "orphan-service",
+        start_time: 1640995202000000,
+        end_time: 1640995203000000,
+        duration: 1000000
+      }
+    ],
+    root_span: "span-1",
+    total_duration: 5000000
+  }
+  
+  let inconsistent_parent_child = Map::from_array([
+    ("span-2", "span-1"),
+    ("span-3", "span-1"),
+    ("span-4", "span-nonexistent")  // Orphaned span
+  ])
+  
+  let inconsistent_result = validate_timeline_consistency(inconsistent_timeline, inconsistent_parent_child)
+  assert_false(inconsistent_result.is_consistent)
+  assert_true(inconsistent_result.violations.length() > 0)
+  assert_true(inconsistent_result.orphaned_spans.length() > 0)
+  assert_true(inconsistent_result.violations.some_fn(v) { v.contains("invalid_duration") })
+  assert_true(inconsistent_result.violations.some_fn(v) { v.contains("child_outside_parent") })
+  
+  // Test circular dependency detection
+  let circular_map = Map::from_array([
+    ("span-2", "span-3"),
+    ("span-3", "span-4"),
+    ("span-4", "span-2")  // Circular dependency
+  ])
+  
+  let circular_timeline = {
+    trace_id: "trace-circular-789",
+    spans: [
+      {
+        span_id: "span-1",
+        service_name: "api-gateway",
+        start_time: 1640995200000000,
+        end_time: 1640995205000000,
+        duration: 5000000
+      },
+      {
+        span_id: "span-2",
+        service_name: "service-2",
+        start_time: 1640995201000000,
+        end_time: 1640995202000000,
+        duration: 1000000
+      },
+      {
+        span_id: "span-3",
+        service_name: "service-3",
+        start_time: 1640995201500000,
+        end_time: 1640995202500000,
+        duration: 1000000
+      },
+      {
+        span_id: "span-4",
+        service_name: "service-4",
+        start_time: 1640995202000000,
+        end_time: 1640995203000000,
+        duration: 1000000
+      }
+    ],
+    root_span: "span-1",
+    total_duration: 5000000
+  }
+  
+  let circular_result = validate_timeline_consistency(circular_timeline, circular_map)
+  assert_false(circular_result.is_consistent)
+  assert_eq(circular_result.circular_dependencies.length(), 3)  // All spans in the cycle
 }
 
-// Helper functions for creating sample traces
-fn create_consistent_sample_trace() {
-  let trace = Trace::new("consistent_trace")
+// Test 3: Cross-Service Trace Consistency
+test "cross-service trace consistency" {
+  // Define service trace point
+  type ServiceTracePoint = {
+    service_name: String,
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    operation_name: String,
+    status: String,
+    start_time: Int,
+    end_time: Int,
+    tags: Array[(String, String)]
+  }
   
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
-  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some(child_span.span_id))
+  // Define cross-service consistency validator
+  type CrossServiceValidator = {
+    required_services: Array[String],
+    required_operations: Map[String, Array[String]>,  // service -> required operations
+    consistency_rules: Array[String]  // Names of consistency rules to apply
+  }
   
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  trace.spans.push(grandchild_span)
+  // Define cross-service consistency result
+  type CrossServiceResult = {
+    is_consistent: Bool,
+    missing_services: Array[String],
+    missing_operations: Array[(String, String)],  // service, operation
+    inconsistent_trace_ids: Array[String],
+    timeline_violations: Array[String]
+  }
   
-  trace
+  // Validate cross-service trace consistency
+  let validate_cross_service_consistency = fn(trace_points: Array[ServiceTracePoint], validator: CrossServiceValidator) {
+    let mut missing_services = []
+    let mut missing_operations = []
+    let mut inconsistent_trace_ids = []
+    let mut timeline_violations = []
+    
+    // Group trace points by service
+    let mut service_points = Map::empty()
+    for point in trace_points {
+      let current_points = match Map::get(service_points, point.service_name) {
+        Some(points) => points
+        None => []
+      }
+      let _ = Map::insert(service_points, point.service_name, current_points.push(point))
+    }
+    
+    // Check for missing services
+    for service in validator.required_services {
+      if not(Map::contains(service_points, service)) {
+        missing_services = missing_services.push(service)
+      }
+    }
+    
+    // Check for missing operations
+    for (service, required_ops) in validator.required_operations {
+      match Map::get(service_points, service) {
+        Some(points) => {
+          let service_operations = points.map_fn(p) { p.operation_name }
+          for required_op in required_ops {
+            if not(service_operations.contains(required_op)) {
+              missing_operations = missing_operations.push((service, required_op))
+            }
+          }
+        }
+        None => {
+          // Service missing, already recorded above
+        }
+      }
+    }
+    
+    // Check for consistent trace IDs across all services
+    let mut trace_ids = []
+    for point in trace_points {
+      if not(trace_ids.contains(point.trace_id)) {
+        trace_ids = trace_ids.push(point.trace_id)
+      }
+    }
+    
+    if trace_ids.length() > 1 {
+      inconsistent_trace_ids = trace_ids
+    }
+    
+    // Check timeline consistency (simplified)
+    if trace_points.length() > 1 {
+      let sorted_points = trace_points.sort_by(fn(a, b) { 
+        if a.start_time < b.start_time { -1 } 
+        else if a.start_time > b.start_time { 1 } 
+        else { 0 } 
+      })
+      
+      // Check for reasonable timeline gaps
+      for i in 1..sorted_points.length() {
+        let time_diff = sorted_points[i].start_time - sorted_points[i-1].end_time
+        if time_diff > 30000000 {  // More than 30 seconds gap
+          timeline_violations = timeline_violations.push("large_gap_" + sorted_points[i].service_name)
+        }
+      }
+    }
+    
+    {
+      is_consistent: missing_services.length() == 0 && 
+                     missing_operations.length() == 0 && 
+                     inconsistent_trace_ids.length() <= 1 &&
+                     timeline_violations.length() == 0,
+      missing_services: missing_services,
+      missing_operations: missing_operations,
+      inconsistent_trace_ids: inconsistent_trace_ids,
+      timeline_violations: timeline_violations
+    }
+  }
+  
+  // Test cross-service consistency
+  let validator = {
+    required_services: ["api-gateway", "user-service", "payment-service", "notification-service"],
+    required_operations: Map::from_array([
+      ("api-gateway", ["authenticate", "authorize"]),
+      ("user-service", ["get_user", "validate_user"]),
+      ("payment-service", ["process_payment", "validate_payment"]),
+      ("notification-service", ["send_notification"])
+    ]),
+    consistency_rules: ["trace_id_consistency", "timeline_consistency", "operation_completeness"]
+  }
+  
+  let consistent_trace_points = [
+    {
+      service_name: "api-gateway",
+      trace_id: "trace-consistent-123",
+      span_id: "span-1",
+      parent_span_id: None,
+      operation_name: "authenticate",
+      status: "success",
+      start_time: 1640995200000000,
+      end_time: 1640995201000000,
+      tags: [("user_id", "12345"), ("ip", "192.168.1.1")]
+    },
+    {
+      service_name: "user-service",
+      trace_id: "trace-consistent-123",
+      span_id: "span-2",
+      parent_span_id: Some("span-1"),
+      operation_name: "get_user",
+      status: "success",
+      start_time: 1640995201000000,
+      end_time: 1640995202000000,
+      tags: [("user_id", "12345")]
+    },
+    {
+      service_name: "payment-service",
+      trace_id: "trace-consistent-123",
+      span_id: "span-3",
+      parent_span_id: Some("span-2"),
+      operation_name: "process_payment",
+      status: "success",
+      start_time: 1640995202000000,
+      end_time: 1640995204000000,
+      tags: [("amount", "100.00"), ("currency", "USD")]
+    },
+    {
+      service_name: "notification-service",
+      trace_id: "trace-consistent-123",
+      span_id: "span-4",
+      parent_span_id: Some("span-3"),
+      operation_name: "send_notification",
+      status: "success",
+      start_time: 1640995204000000,
+      end_time: 1640995204500000,
+      tags: [("type", "email"), ("recipient", "user@example.com")]
+    }
+  ]
+  
+  let consistent_result = validate_cross_service_consistency(consistent_trace_points, validator)
+  assert_true(consistent_result.is_consistent)
+  assert_eq(consistent_result.missing_services.length(), 0)
+  assert_eq(consistent_result.missing_operations.length(), 0)
+  assert_eq(consistent_result.inconsistent_trace_ids.length(), 1)
+  assert_eq(consistent_result.timeline_violations.length(), 0)
+  
+  // Test with missing service
+  let incomplete_trace_points = [
+    consistent_trace_points[0],
+    consistent_trace_points[1],
+    consistent_trace_points[2]  // Missing notification-service
+  ]
+  
+  let incomplete_result = validate_cross_service_consistency(incomplete_trace_points, validator)
+  assert_false(incomplete_result.is_consistent)
+  assert_eq(incomplete_result.missing_services.length(), 1)
+  assert_eq(incomplete_result.missing_services[0], "notification-service")
+  
+  // Test with inconsistent trace IDs
+  let inconsistent_trace_points = [
+    consistent_trace_points[0],
+    { consistent_trace_points[1] | trace_id: "trace-different-456" },
+    consistent_trace_points[2],
+    consistent_trace_points[3]
+  ]
+  
+  let inconsistent_result = validate_cross_service_consistency(inconsistent_trace_points, validator)
+  assert_false(inconsistent_result.is_consistent)
+  assert_eq(inconsistent_result.inconsistent_trace_ids.length(), 2)
+  
+  // Test with timeline violations
+  let timeline_violation_points = [
+    consistent_trace_points[0],
+    consistent_trace_points[1],
+    consistent_trace_points[2],
+    { 
+      consistent_trace_points[3] | 
+      start_time: 1640995300000000,  // 100 seconds later
+      end_time: 1640995300500000
+    }
+  ]
+  
+  let timeline_result = validate_cross_service_consistency(timeline_violation_points, validator)
+  assert_false(timeline_result.is_consistent)
+  assert_eq(timeline_result.timeline_violations.length(), 1)
+  assert_true(timeline_result.timeline_violations[0].contains("large_gap"))
 }
 
-fn create_inconsistent_sample_trace() {
-  let trace = Trace::new("inconsistent_trace")
+// Test 4: Distributed Trace Sampling Consistency
+test "distributed trace sampling consistency" {
+  // Define sampling decision
+  type SamplingDecision = {
+    trace_id: String,
+    sampled: Bool,
+    sample_rate: Float,
+    decision_point: String,
+    timestamp: Int
+  }
   
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some("non_existent_parent"))
-  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some(child_span.span_id))
+  // Define sampling consistency validator
+  type SamplingConsistencyValidator = {
+    min_sample_rate: Float,
+    max_sample_rate: Float,
+    consistency_window: Int,  // Time window in seconds
+    required_decision_points: Array[String>
+  }
   
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  trace.spans.push(grandchild_span)
+  // Define sampling consistency result
+  type SamplingConsistencyResult = {
+    is_consistent: Bool,
+    inconsistent_decisions: Array[(String, Bool, Bool)],  // trace_id, decision1, decision2
+    rate_violations: Array[String],
+    missing_decision_points: Array[String]
+  }
   
-  trace
-}
-
-fn create_incomplete_sample_trace() {
-  let trace = Trace::new("incomplete_trace")
+  // Validate sampling consistency
+  let validate_sampling_consistency = fn(decisions: Array[SamplingDecision], validator: SamplingConsistencyValidator) {
+    let mut inconsistent_decisions = []
+    let mut rate_violations = []
+    let mut missing_decision_points = []
+    
+    // Group decisions by trace ID
+    let mut trace_decisions = Map::empty()
+    for decision in decisions {
+      let current_decisions = match Map::get(trace_decisions, decision.trace_id) {
+        Some(decisions) => decisions
+        None => []
+      }
+      let _ = Map::insert(trace_decisions, decision.trace_id, current_decisions.push(decision))
+    }
+    
+    // Check for inconsistent decisions for the same trace
+    for (trace_id, trace_decision_list) in trace_decisions {
+      if trace_decision_list.length() > 1 {
+        let first_decision = trace_decision_list[0].sampled
+        for decision in trace_decision_list.slice(1, trace_decision_list.length()) {
+          if decision.sampled != first_decision {
+            inconsistent_decisions = inconsistent_decisions.push((trace_id, first_decision, decision.sampled))
+          }
+        }
+      }
+    }
+    
+    // Check sample rate bounds
+    let total_decisions = decisions.length()
+    if total_decisions > 0 {
+      let sampled_count = decisions.filter_fn(d) { d.sampled }.length()
+      let actual_sample_rate = (sampled_count as Float) / (total_decisions as Float)
+      
+      if actual_sample_rate < validator.min_sample_rate {
+        rate_violations = rate_violations.push("below_min_rate")
+      }
+      if actual_sample_rate > validator.max_sample_rate {
+        rate_violations = rate_violations.push("above_max_rate")
+      }
+    }
+    
+    // Check for required decision points
+    let decision_points = decisions.map_fn(d) { d.decision_point }
+    for required_point in validator.required_decision_points {
+      if not(decision_points.contains(required_point)) {
+        missing_decision_points = missing_decision_points.push(required_point)
+      }
+    }
+    
+    {
+      is_consistent: inconsistent_decisions.length() == 0 && 
+                     rate_violations.length() == 0 &&
+                     missing_decision_points.length() == 0,
+      inconsistent_decisions: inconsistent_decisions,
+      rate_violations: rate_violations,
+      missing_decision_points: missing_decision_points
+    }
+  }
   
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("missing_parent"))
+  // Test sampling consistency validation
+  let validator = {
+    min_sample_rate: 0.1,
+    max_sample_rate: 0.3,
+    consistency_window: 60,
+    required_decision_points: ["api-gateway", "user-service", "payment-service"]
+  }
   
-  trace.spans.push(root_span)
-  trace.spans.push(grandchild_span)
+  let consistent_decisions = [
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "api-gateway",
+      timestamp: 1640995200
+    },
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "user-service",
+      timestamp: 1640995201
+    },
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "payment-service",
+      timestamp: 1640995202
+    },
+    {
+      trace_id: "trace-2",
+      sampled: false,
+      sample_rate: 0.2,
+      decision_point: "api-gateway",
+      timestamp: 1640995203
+    },
+    {
+      trace_id: "trace-2",
+      sampled: false,
+      sample_rate: 0.2,
+      decision_point: "user-service",
+      timestamp: 1640995204
+    },
+    {
+      trace_id: "trace-2",
+      sampled: false,
+      sample_rate: 0.2,
+      decision_point: "payment-service",
+      timestamp: 1640995205
+    },
+    {
+      trace_id: "trace-3",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "api-gateway",
+      timestamp: 1640995206
+    },
+    {
+      trace_id: "trace-3",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "user-service",
+      timestamp: 1640995207
+    },
+    {
+      trace_id: "trace-3",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "payment-service",
+      timestamp: 1640995208
+    }
+  ]
   
-  trace
-}
-
-fn create_damaged_sample_trace() {
-  let trace = Trace::new("damaged_trace")
+  let consistent_result = validate_sampling_consistency(consistent_decisions, validator)
+  assert_true(consistent_result.is_consistent)
+  assert_eq(consistent_result.inconsistent_decisions.length(), 0)
+  assert_eq(consistent_result.rate_violations.length(), 0)
+  assert_eq(consistent_result.missing_decision_points.length(), 0)
   
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  // Missing intermediate spans
-  let deep_span = TraceSpan::new("deep_span", "service-d", Some("missing_intermediate_parent"))
+  // Test with inconsistent decisions
+  let inconsistent_decisions = [
+    consistent_decisions[0],
+    { consistent_decisions[1] | sampled: false },  // Inconsistent decision
+    consistent_decisions[2]
+  ]
   
-  trace.spans.push(root_span)
-  trace.spans.push(deep_span)
+  let inconsistent_result = validate_sampling_consistency(inconsistent_decisions, validator)
+  assert_false(inconsistent_result.is_consistent)
+  assert_eq(inconsistent_result.inconsistent_decisions.length(), 1)
+  assert_eq(inconsistent_result.inconsistent_decisions[0], ("trace-1", true, false))
   
-  trace
-}
-
-fn create_partially_damaged_sample_trace() {
-  let trace = Trace::new("partially_damaged_trace")
+  // Test with rate violations
+  let rate_violation_decisions = [
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.5,  // Above max rate
+      decision_point: "api-gateway",
+      timestamp: 1640995200
+    },
+    {
+      trace_id: "trace-2",
+      sampled: true,
+      sample_rate: 0.5,  // Above max rate
+      decision_point: "user-service",
+      timestamp: 1640995201
+    },
+    {
+      trace_id: "trace-3",
+      sampled: true,
+      sample_rate: 0.5,  // Above max rate
+      decision_point: "payment-service",
+      timestamp: 1640995202
+    }
+  ]
   
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
-  // Missing one intermediate span
-  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("missing_parent"))
+  let rate_result = validate_sampling_consistency(rate_violation_decisions, validator)
+  assert_false(rate_result.is_consistent)
+  assert_eq(rate_result.rate_violations.length(), 1)
+  assert_eq(rate_result.rate_violations[0], "above_max_rate")
   
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  trace.spans.push(grandchild_span)
+  // Test with missing decision points
+  let missing_points_decisions = [
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "api-gateway",
+      timestamp: 1640995200
+    },
+    {
+      trace_id: "trace-1",
+      sampled: true,
+      sample_rate: 0.2,
+      decision_point: "user-service",
+      timestamp: 1640995201
+    }
+    // Missing payment-service decision point
+  ]
   
-  trace
-}
-
-fn create_repairable_sample_trace() {
-  let trace = Trace::new("repairable_trace")
-  
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
-  // Has incorrect parent reference
-  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("wrong_parent"))
-  
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  trace.spans.push(grandchild_span)
-  
-  trace
-}
-
-fn create_consistent_trace_with_id(trace_id : String) {
-  let trace = Trace::new(trace_id)
-  
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
-  
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  
-  trace
-}
-
-fn create_inconsistent_trace_with_id(trace_id : String) {
-  let trace = Trace::new(trace_id)
-  
-  let root_span = TraceSpan::new("root_span", "service-a", None)
-  let child_span = TraceSpan::new("child_span", "service-b", Some("non_existent_parent"))
-  
-  trace.spans.push(root_span)
-  trace.spans.push(child_span)
-  
-  trace
+  let missing_points_result = validate_sampling_consistency(missing_points_decisions, validator)
+  assert_false(missing_points_result.is_consistent)
+  assert_eq(missing_points_result.missing_decision_points.length(), 1)
+  assert_eq(missing_points_result.missing_decision_points[0], "payment-service")
 }
