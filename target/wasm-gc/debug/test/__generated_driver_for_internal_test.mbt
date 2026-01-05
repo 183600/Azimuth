@@ -1630,6 +1630,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_3, ["基础上下文操作"]),
     4: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_4, ["基础直方图操作"]),
   },
+  "azimuth_service_mesh_integration_tests.mbt": {
+    0: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_0, ["istio service mesh telemetry integration"]),
+    1: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_1, ["linkerd service mesh telemetry integration"]),
+    2: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_2, ["consul connect service mesh telemetry integration"]),
+    3: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_3, ["service mesh traffic management telemetry"]),
+    4: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_4, ["service mesh security telemetry"]),
+    5: (__test_617a696d7574685f736572766963655f6d6573685f696e746567726174696f6e5f74657374732e6d6274_5, ["multi-mesh environment telemetry"]),
+  },
   "azimuth_serialization_tests.mbt": {
     0: (__test_617a696d7574685f73657269616c697a6174696f6e5f74657374732e6d6274_0, ["JSON序列化和反序列化基础功能"]),
     1: (__test_617a696d7574685f73657269616c697a6174696f6e5f74657374732e6d6274_1, ["Protocol Buffers序列化功能"]),
