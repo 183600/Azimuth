@@ -1,476 +1,587 @@
-// Azimuth 时间序列数据处理综合测试
-// 测试时间序列数据的处理、聚合和分析功能
+// Azimuth Telemetry System - Time Series Data Processing Tests
+// This file contains comprehensive test cases for time series data processing
 
-test "时间序列数据创建和基本操作" {
-  // 测试时间序列数据的创建和基本操作
+// Test 1: Basic Time Series Operations
+test "basic time series operations" {
+  // Test time series creation
+  let ts = TimeSeries::new("cpu.usage")
   
-  // 创建时间序列数据点
-  let base_timestamp = 1735689600000000000L  // 2025-01-02T00:00:00Z
-  let time_series = TimeSeries::new("cpu.usage", "percent")
+  // Test adding data points
+  TimeSeries::add_point(ts, 1609459200000, 25.5)  // 2021-01-01 00:00:00 UTC
+  TimeSeries::add_point(ts, 1609459260000, 30.2)  // 2021-01-01 00:01:00 UTC
+  TimeSeries::add_point(ts, 1609459320000, 27.8)  // 2021-01-01 00:02:00 UTC
+  TimeSeries::add_point(ts, 1609459380000, 32.1)  // 2021-01-01 00:03:00 UTC
+  TimeSeries::add_point(ts, 1609459440000, 29.6)  // 2021-01-01 00:04:00 UTC
   
-  // 添加数据点
-  for i in 0..=23 {
-    let timestamp = base_timestamp + (i * 3600000000000L)  // 每小时一个数据点
-    let value = 50.0 + (10.0 * (i / 6.0).sin())  // 模拟CPU使用率波动
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
-  }
+  // Test time series properties
+  assert_eq(TimeSeries::name(ts), "cpu.usage")
+  assert_eq(TimeSeries::size(ts), 5)
+  assert_eq(TimeSeries::start_time(ts), 1609459200000)
+  assert_eq(TimeSeries::end_time(ts), 1609459440000)
   
-  // 验证时间序列基本属性
-  assert_eq(TimeSeries::metric_name(time_series), "cpu.usage")
-  assert_eq(TimeSeries::unit(time_series), "percent")
-  assert_eq(TimeSeries::point_count(time_series), 24)
+  // Test getting data points
+  let points = TimeSeries::get_points(ts)
+  assert_eq(points.length(), 5)
+  assert_eq(points[0].timestamp, 1609459200000)
+  assert_eq(points[0].value, 25.5)
+  assert_eq(points[4].timestamp, 1609459440000)
+  assert_eq(points[4].value, 29.6)
   
-  // 验证数据点
-  let points = TimeSeries::get_points(time_series)
-  assert_eq(points.length(), 24)
-  
-  // 验证第一个和最后一个数据点
-  let first_point = TimeSeries::get_first_point(time_series)
-  let last_point = TimeSeries::get_last_point(time_series)
-  
-  match first_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), base_timestamp)
-      assert_eq(TimeSeriesDataPoint::value(point), 50.0)
-    }
+  // Test getting value at specific time
+  let value = TimeSeries::get_value_at(ts, 1609459320000)
+  match value {
+    Some(v) => assert_eq(v, 27.8),
     None => assert_true(false)
   }
   
-  match last_point {
-    Some(point) => {
-      let expected_timestamp = base_timestamp + (23 * 3600000000000L)
-      assert_eq(TimeSeriesDataPoint::timestamp(point), expected_timestamp)
-    }
-    None => assert_true(false)
+  // Test getting value at non-existent time
+  let non_existent = TimeSeries::get_value_at(ts, 1609459500000)
+  match non_existent {
+    Some(_) => assert_true(false),
+    None => assert_true(true)
   }
+  
+  // Test getting values in time range
+  let range_values = TimeSeries::get_values_in_range(ts, 1609459260000, 1609459380000)
+  assert_eq(range_values.length(), 3)
+  assert_eq(range_values[0].value, 30.2)
+  assert_eq(range_values[1].value, 27.8)
+  assert_eq(range_values[2].value, 32.1)
+  
+  // Test clearing time series
+  TimeSeries::clear(ts)
+  assert_eq(TimeSeries::size(ts), 0)
 }
 
-test "时间序列数据聚合操作" {
-  // 测试时间序列数据的聚合操作
+// Test 2: Time Series Aggregation
+test "time series aggregation" {
+  // Create time series with minute-level data
+  let ts = TimeSeries::new("response.time")
   
-  // 创建时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("request.count", "count")
-  
-  // 添加每分钟的数据点，持续24小时
-  for i in 0..=1439 {
-    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个数据点
-    let value = 100.0 + (50.0 * (i / 60.0).sin()) + (20.0 * Random::next_float())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Add data points for each minute of an hour
+  for i in 0..60 {
+    let timestamp = 1609459200000 + (i * 60000)  // Each minute
+    let value = 100.0 + (i % 10).to_float() * 10.0  // Values from 100 to 190
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 测试按小时聚合
-  let hourly_series = TimeSeries::aggregate_by_interval(time_series, 3600000000000L, AggregationType::Average)
-  assert_eq(TimeSeries::point_count(hourly_series), 24)
+  // Test sum aggregation
+  let sum_5min = TimeSeries::aggregate(ts, Sum, 5 * 60000)  // 5-minute windows
+  assert_eq(sum_5min.size(), 12)  // 60 minutes / 5 minutes = 12 windows
   
-  // 测试按天聚合
-  let daily_series = TimeSeries::aggregate_by_interval(time_series, 86400000000000L, AggregationType::Sum)
-  assert_eq(TimeSeries::point_count(daily_series), 1)
+  // Test average aggregation
+  let avg_5min = TimeSeries::aggregate(ts, Average, 5 * 60000)  // 5-minute windows
+  assert_eq(avg_5min.size(), 12)
   
-  // 测试最大值聚合
-  let max_series = TimeSeries::aggregate_by_interval(time_series, 3600000000000L, AggregationType::Max)
-  let max_points = TimeSeries::get_points(max_series)
+  // Verify first window average
+  let first_window = avg_5min.get_points()[0]
+  assert_eq(first_window.value, 145.0)  // Average of 100, 110, 120, 130, 140
   
-  // 测试最小值聚合
-  let min_series = TimeSeries::aggregate_by_interval(time_series, 3600000000000L, AggregationType::Min)
-  let min_points = TimeSeries::get_points(min_series)
+  // Test min aggregation
+  let min_5min = TimeSeries::aggregate(ts, Min, 5 * 60000)  // 5-minute windows
+  assert_eq(min_5min.size(), 12)
   
-  // 验证聚合结果
-  for i in 0..=23 {
-    let max_point = max_points[i]
-    let min_point = min_points[i]
-    
-    assert_true(TimeSeriesDataPoint::value(max_point) >= TimeSeriesDataPoint::value(min_point))
-  }
+  // Verify first window min
+  let first_min = min_5min.get_points()[0]
+  assert_eq(first_min.value, 100.0)  // Min of 100, 110, 120, 130, 140
   
-  // 测试计数聚合
-  let count_series = TimeSeries::aggregate_by_interval(time_series, 3600000000000L, AggregationType::Count)
-  let count_points = TimeSeries::get_points(count_series)
+  // Test max aggregation
+  let max_5min = TimeSeries::aggregate(ts, Max, 5 * 60000)  // 5-minute windows
+  assert_eq(max_5min.size(), 12)
   
-  for point in count_points {
-    assert_eq(TimeSeriesDataPoint::value(point), 60.0)  // 每小时60个数据点
-  }
+  // Verify first window max
+  let first_max = max_5min.get_points()[0]
+  assert_eq(first_max.value, 140.0)  // Max of 100, 110, 120, 130, 140
+  
+  // Test count aggregation
+  let count_5min = TimeSeries::aggregate(ts, Count, 5 * 60000)  // 5-minute windows
+  assert_eq(count_5min.size(), 12)
+  
+  // Verify first window count
+  let first_count = count_5min.get_points()[0]
+  assert_eq(first_count.value, 5.0)  // Count of 5 points
+  
+  // Test percentile aggregation
+  let p95_5min = TimeSeries::aggregate(ts, Percentile(95), 5 * 60000)  // 5-minute windows
+  assert_eq(p95_5min.size(), 12)
 }
 
-test "时间序列数据窗口操作" {
-  // 测试时间序列数据的窗口操作
+// Test 3: Time Series Resampling
+test "time series resampling" {
+  // Create time series with second-level data
+  let ts = TimeSeries::new("network.throughput")
   
-  // 创建时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("memory.usage", "percent")
-  
-  // 添加每分钟的数据点，持续4小时
-  for i in 0..=239 {
-    let timestamp = base_timestamp + (i * 60000000000L)
-    let value = 60.0 + (20.0 * (i / 30.0).sin())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Add data points for each second of a minute
+  for i in 0..60 {
+    let timestamp = 1609459200000 + (i * 1000)  // Each second
+    let value = 1000.0 + (i % 10).to_float() * 100.0  // Values from 1000 to 1900
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 测试滑动窗口平均
-  let window_size = 300000000000L  // 5分钟窗口
-  let smoothed_series = TimeSeries::sliding_window_average(time_series, window_size)
+  // Test upsampling (from seconds to milliseconds)
+  let upsampled = TimeSeries::resample(ts, 100)  // 100ms intervals
+  assert_eq(upsampled.size(), 600)  // 60 seconds * 10 points per second
   
-  assert_eq(TimeSeries::point_count(smoothed_series), TimeSeries::point_count(time_series))
+  // Test downsampling (from seconds to minutes)
+  let downsampled = TimeSeries::resample(ts, 60000)  // 1-minute intervals
+  assert_eq(downsampled.size(), 1)  // 60 seconds / 60 seconds = 1 minute
   
-  // 测试滑动窗口最大值
-  let max_window_series = TimeSeries::sliding_window_max(time_series, window_size)
+  // Verify downsampled value (average)
+  let downsampled_point = downsampled.get_points()[0]
+  assert_eq(downsampled_point.value, 1450.0)  // Average of all values
   
-  // 测试滑动窗口最小值
-  let min_window_series = TimeSeries::sliding_window_min(time_series, window_size)
+  // Test resampling with different interpolation methods
+  let linear_upsampled = TimeSeries::resample_with_interpolation(ts, 500, Linear)  // 500ms intervals
+  assert_eq(linear_upsampled.size(), 120)  // 60 seconds * 2 points per second
   
-  // 测试滑动窗口求和
-  let sum_window_series = TimeSeries::sliding_window_sum(time_series, window_size)
-  
-  // 验证窗口操作结果
-  let original_points = TimeSeries::get_points(time_series)
-  let smoothed_points = TimeSeries::get_points(smoothed_series)
-  let max_points = TimeSeries::get_points(max_window_series)
-  let min_points = TimeSeries::get_points(min_window_series)
-  let sum_points = TimeSeries::get_points(sum_window_series)
-  
-  for i in 0..=239 {
-    let original_value = TimeSeriesDataPoint::value(original_points[i])
-    let smoothed_value = TimeSeriesDataPoint::value(smoothed_points[i])
-    let max_value = TimeSeriesDataPoint::value(max_points[i])
-    let min_value = TimeSeriesDataPoint::value(min_points[i])
-    let sum_value = TimeSeriesDataPoint::value(sum_points[i])
-    
-    // 验证窗口操作的逻辑关系
-    assert_true(max_value >= smoothed_value)
-    assert_true(smoothed_value >= min_value)
-    assert_true(sum_value >= max_value)
-  }
+  let step_upsampled = TimeSeries::resample_with_interpolation(ts, 500, Step)  // 500ms intervals
+  assert_eq(step_upsampled.size(), 120)  // 60 seconds * 2 points per second
 }
 
-test "时间序列数据重采样" {
-  // 测试时间序列数据的重采样操作
+// Test 4: Time Series Windowing
+test "time series windowing" {
+  // Create time series with hourly data
+  let ts = TimeSeries::new("temperature")
   
-  // 创建高频时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let high_freq_series = TimeSeries::new("temperature", "celsius")
-  
-  // 添加每秒的数据点，持续1小时
-  for i in 0..=3599 {
-    let timestamp = base_timestamp + (i * 1000000000L)
-    let value = 20.0 + (5.0 * (i / 300.0).sin()) + (2.0 * Random::next_float())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(high_freq_series, data_point)
+  // Add data points for each hour of a day
+  for i in 0..24 {
+    let timestamp = 1609459200000 + (i * 3600000)  // Each hour
+    let value = 20.0 + (i - 12).to_float().abs() * 0.5  // Peak at noon
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 测试上采样（从秒到分钟）
-  let upsampled_series = TimeSeries::upsample(high_freq_series, 60000000000L, ResamplingMethod::Linear)
-  assert_eq(TimeSeries::point_count(upsampled_series), 60)
+  // Test tumbling window
+  let tumbling_windows = TimeSeries::tumbling_window(ts, 6 * 3600000)  // 6-hour windows
+  assert_eq(tumbling_windows.length(), 4)  // 24 hours / 6 hours = 4 windows
   
-  // 测试下采样（从秒到分钟）
-  let downsampled_series = TimeSeries::downsample(high_freq_series, 60000000000L, ResamplingMethod::Average)
-  assert_eq(TimeSeries::point_count(downsampled_series), 60)
+  // Verify first window (midnight to 6am)
+  let first_window = tumbling_windows[0]
+  assert_eq(first_window.size(), 6)
+  assert_eq(first_window.start_time(), 1609459200000)
+  assert_eq(first_window.end_time(), 1609480800000)
   
-  // 测试不同重采样方法
-  let max_downsampled = TimeSeries::downsample(high_freq_series, 60000000000L, ResamplingMethod::Max)
-  let min_downsampled = TimeSeries::downsample(high_freq_series, 60000000000L, ResamplingMethod::Min)
-  let first_downsampled = TimeSeries::downsample(high_freq_series, 60000000000L, ResamplingMethod::First)
-  let last_downsampled = TimeSeries::downsample(high_freq_series, 60000000000L, ResamplingMethod::Last)
+  // Test sliding window
+  let sliding_windows = TimeSeries::sliding_window(ts, 6 * 3600000, 3 * 3600000)  // 6-hour window, 3-hour slide
+  assert_eq(sliding_windows.length(), 7)  // (24-6)/3 + 1 = 7 windows
   
-  // 验证重采样结果
-  let downsampled_points = TimeSeries::get_points(downsampled_series)
-  let max_points = TimeSeries::get_points(max_downsampled)
-  let min_points = TimeSeries::get_points(min_downsampled)
+  // Verify first window (midnight to 6am)
+  let first_sliding = sliding_windows[0]
+  assert_eq(first_sliding.size(), 6)
+  assert_eq(first_sliding.start_time(), 1609459200000)
+  assert_eq(first_sliding.end_time(), 1609480800000)
   
-  for i in 0..=59 {
-    let avg_value = TimeSeriesDataPoint::value(downsampled_points[i])
-    let max_value = TimeSeriesDataPoint::value(max_points[i])
-    let min_value = TimeSeriesDataPoint::value(min_points[i])
-    
-    assert_true(max_value >= avg_value)
-    assert_true(avg_value >= min_value)
-  }
+  // Verify second window (3am to 9am)
+  let second_sliding = sliding_windows[1]
+  assert_eq(second_sliding.size(), 6)
+  assert_eq(second_sliding.start_time(), 1609470000000)
+  assert_eq(second_sliding.end_time(), 1609495200000)
+  
+  // Test session window (gap-based)
+  let session_ts = TimeSeries::new("user.activity")
+  
+  // Add data points with gaps
+  TimeSeries::add_point(session_ts, 1609459200000, 1.0)  // 00:00
+  TimeSeries::add_point(session_ts, 1609459260000, 1.0)  // 00:01
+  TimeSeries::add_point(session_ts, 1609459320000, 1.0)  // 00:02
+  TimeSeries::add_point(session_ts, 1609459800000, 1.0)  // 00:10 (8-minute gap)
+  TimeSeries::add_point(session_ts, 1609459860000, 1.0)  // 00:11
+  TimeSeries::add_point(session_ts, 1609460400000, 1.0)  // 00:20 (9-minute gap)
+  
+  // Session windows with 5-minute gap threshold
+  let session_windows = TimeSeries::session_window(session_ts, 5 * 60000)
+  assert_eq(session_windows.length(), 3)  // 3 sessions
+  
+  // Verify first session (00:00 to 00:02)
+  let first_session = session_windows[0]
+  assert_eq(first_session.size(), 3)
+  
+  // Verify second session (00:10 to 00:11)
+  let second_session = session_windows[1]
+  assert_eq(second_session.size(), 2)
+  
+  // Verify third session (00:20)
+  let third_session = session_windows[2]
+  assert_eq(third_session.size(), 1)
 }
 
-test "时间序列数据统计分析" {
-  // 测试时间序列数据的统计分析功能
+// Test 5: Time Series Analytics
+test "time series analytics" {
+  // Create time series with test data
+  let ts = TimeSeries::new("test.metric")
   
-  // 创建时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("response.time", "ms")
-  
-  // 添加具有统计特征的数据点
-  for i in 0..=999 {
-    let timestamp = base_timestamp + (i * 60000000000L)
-    // 生成正态分布的数据
-    let value = 100.0 + (20.0 * Random::normal())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Add data points with a trend
+  for i in 0..100 {
+    let timestamp = 1609459200000 + (i * 60000)  // Each minute
+    let value = 100.0 + i.to_float() * 0.5 + (i % 10).to_float() * 2.0  // Trend + noise
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 计算基本统计量
-  let stats = TimeSeries::calculate_statistics(time_series)
+  // Test trend analysis
+  let trend = TimeSeries::calculate_trend(ts)
+  assert_true(trend > 0.4 && trend < 0.6)  // Should be around 0.5
   
-  // 验证统计量
-  assert_true(stats.count == 1000)
-  assert_true(stats.mean > 80.0 && stats.mean < 120.0)  // 应该在100±20范围内
-  assert_true(stats.std_dev > 15.0 && stats.std_dev < 25.0)  // 标准差应该在20左右
-  assert_true(stats.min < stats.mean)
-  assert_true(stats.max > stats.mean)
-  assert_true(stats.median >= stats.min && stats.median <= stats.max)
+  // Test seasonality detection
+  let seasonality = TimeSeries::detect_seasonality(ts)
+  assert_true(seasonality.period > 0)  // Should detect some seasonality
   
-  // 计算百分位数
-  let p50 = TimeSeries::percentile(time_series, 0.5)
-  let p95 = TimeSeries::percentile(time_series, 0.95)
-  let p99 = TimeSeries::percentile(time_series, 0.99)
+  // Test moving average
+  let ma_10 = TimeSeries::moving_average(ts, 10)
+  assert_eq(ma_10.size(), 91)  // 100 - 10 + 1
   
-  // 验证百分位数关系
-  assert_true(p50 <= p95)
-  assert_true(p95 <= p99)
+  // Verify first moving average
+  let first_ma = ma_10.get_points()[0]
+  let expected_ma = (100.0 + 100.5 + 101.0 + 101.5 + 102.0 + 102.5 + 103.0 + 103.5 + 104.0 + 104.5) / 10.0
+  assert_true((first_ma.value - expected_ma).abs() < 0.001)
   
-  // 计算移动平均
-  let ma_10 = TimeSeries::moving_average(time_series, 10)
-  let ma_50 = TimeSeries::moving_average(time_series, 50)
-  let ma_100 = TimeSeries::moving_average(time_series, 100)
+  // Test exponential moving average
+  let ema_10 = TimeSeries::exponential_moving_average(ts, 10, 0.2)
+  assert_eq(ema_10.size(), 100)
   
-  assert_eq(TimeSeries::point_count(ma_10), 1000)
-  assert_eq(TimeSeries::point_count(ma_50), 1000)
-  assert_eq(TimeSeries::point_count(ma_100), 1000)
+  // Test rate of change
+  let roc = TimeSeries::rate_of_change(ts, 1)
+  assert_eq(roc.size(), 99)  // 100 - 1
   
-  // 计算指数移动平均
-  let ema_0_1 = TimeSeries::exponential_moving_average(time_series, 0.1)
-  let ema_0_3 = TimeSeries::exponential_moving_average(time_series, 0.3)
+  // Test volatility
+  let volatility = TimeSeries::calculate_volatility(ts, 10)
+  assert_eq(volatility.size(), 91)  // 100 - 10 + 1
   
-  assert_eq(TimeSeries::point_count(ema_0_1), 1000)
-  assert_eq(TimeSeries::point_count(ema_0_3), 1000)
+  // Test correlation with another time series
+  let ts2 = TimeSeries::new("test.metric2")
+  for i in 0..100 {
+    let timestamp = 1609459200000 + (i * 60000)
+    let value = 50.0 + i.to_float() * 0.3 + (i % 10).to_float() * 1.5  // Similar trend
+    TimeSeries::add_point(ts2, timestamp, value)
+  }
+  
+  let correlation = TimeSeries::calculate_correlation(ts, ts2)
+  assert_true(correlation > 0.8)  // Should be highly correlated
 }
 
-test "时间序列数据异常检测" {
-  // 测试时间序列数据的异常检测功能
+// Test 6: Time Series Anomaly Detection
+test "time series anomaly detection" {
+  // Create time series with normal data and some anomalies
+  let ts = TimeSeries::new("system.metrics")
   
-  // 创建包含异常的时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("network.traffic", "mbps")
-  
-  // 添加正常数据点
-  for i in 0..=199 {
-    let timestamp = base_timestamp + (i * 60000000000L)
-    let value = 50.0 + (10.0 * (i / 20.0).sin()) + (5.0 * Random::next_float())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Add normal data points
+  for i in 0..50 {
+    let timestamp = 1609459200000 + (i * 60000)
+    let value = 100.0 + (i % 10).to_float() * 2.0  // Values from 100 to 118
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 添加异常数据点
-  let anomaly_timestamp_1 = base_timestamp + (50 * 60000000000L)
-  let anomaly_1 = TimeSeriesDataPoint::new(anomaly_timestamp_1, 150.0)  // 异常高值
-  TimeSeries::add_point(time_series, anomaly_1)
+  // Add anomalies
+  TimeSeries::add_point(ts, 1609459200000 + 50 * 60000, 200.0)  // Spike
+  TimeSeries::add_point(ts, 1609459200000 + 51 * 60000, 105.0)  // Normal
+  TimeSeries::add_point(ts, 1609459200000 + 52 * 60000, 5.0)    // Dip
+  TimeSeries::add_point(ts, 1609459200000 + 53 * 60000, 110.0)  // Normal
+  TimeSeries::add_point(ts, 1609459200000 + 54 * 60000, 0.0)    // Zero
+  TimeSeries::add_point(ts, 1609459200000 + 55 * 60000, 108.0)  // Normal
   
-  let anomaly_timestamp_2 = base_timestamp + (120 * 60000000000L)
-  let anomaly_2 = TimeSeriesDataPoint::new(anomaly_timestamp_2, -10.0)  // 异常低值
-  TimeSeries::add_point(time_series, anomaly_2)
+  // Test statistical anomaly detection (z-score)
+  let zscore_anomalies = TimeSeries::detect_anomalies_zscore(ts, 2.0)  // 2 sigma threshold
+  assert_eq(zscore_anomalies.length(), 3)  // Should detect spike, dip, and zero
   
-  let anomaly_timestamp_3 = base_timestamp + (180 * 60000000000L)
-  let anomaly_3 = TimeSeriesDataPoint::new(anomaly_timestamp_3, 200.0)  // 极端高值
-  TimeSeries::add_point(time_series, anomaly_3)
+  // Verify spike anomaly
+  let spike_anomaly = zscore_anomalies[0]
+  assert_eq(spike_anomaly.timestamp, 1609459200000 + 50 * 60000)
+  assert_eq(spike_anomaly.value, 200.0)
+  assert_true(spike_anomaly.score > 2.0)
   
-  // 使用Z-score方法检测异常
-  let z_score_anomalies = TimeSeries::detect_anomalies_zscore(time_series, 2.0)
-  assert_true(z_score_anomalies.length() >= 3)
+  // Test IQR-based anomaly detection
+  let iqr_anomalies = TimeSeries::detect_anomalies_iqr(ts, 1.5)  // 1.5 IQR multiplier
+  assert_eq(iqr_anomalies.length(), 3)  // Should detect same anomalies
   
-  // 使用IQR方法检测异常
-  let iqr_anomalies = TimeSeries::detect_anomalies_iqr(time_series, 1.5)
-  assert_true(iqr_anomalies.length() >= 3)
+  // Test isolation forest anomaly detection
+  let isolation_anomalies = TimeSeries::detect_anomalies_isolation_forest(ts, 0.1)  // 10% contamination
+  assert_eq(isolation_anomalies.length(), 3)  // Should detect same anomalies
   
-  // 使用移动平均方法检测异常
-  let ma_anomalies = TimeSeries::detect_anomalies_moving_average(time_series, 10, 2.0)
-  assert_true(ma_anomalies.length() >= 3)
-  
-  // 验证检测到的异常包含我们插入的异常点
-  let anomaly_timestamps = [anomaly_timestamp_1, anomaly_timestamp_2, anomaly_timestamp_3]
-  
-  for anomaly_timestamp in anomaly_timestamps {
-    let z_score_found = z_score_anomalies.any(fn(a) { TimeSeriesDataPoint::timestamp(a) == anomaly_timestamp })
-    let iqr_found = iqr_anomalies.any(fn(a) { TimeSeriesDataPoint::timestamp(a) == anomaly_timestamp })
-    let ma_found = ma_anomalies.any(fn(a) { TimeSeriesDataPoint::timestamp(a) == anomaly_timestamp })
-    
-    // 至少有一种方法应该检测到异常
-    assert_true(z_score_found || iqr_found || ma_found)
-  }
+  // Test moving average-based anomaly detection
+  let ma_anomalies = TimeSeries::detect_anomalies_moving_average(ts, 5, 3.0)  // 5-point MA, 3 sigma
+  assert_eq(ma_anomalies.length(), 3)  // Should detect same anomalies
 }
 
-test "时间序列数据预测" {
-  // 测试时间序列数据的预测功能
+// Test 7: Time Series Forecasting
+test "time series forecasting" {
+  // Create time series with trend and seasonality
+  let ts = TimeSeries::new("sales.data")
   
-  // 创建具有趋势和季节性的时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("sales.revenue", "dollars")
-  
-  // 生成30天的数据
-  for i in 0..=29 {
-    let timestamp = base_timestamp + (i * 86400000000000L)
-    // 添加趋势（每天增长100）
-    let trend = 1000.0 + (i * 100.0)
-    // 添加季节性（7天周期）
-    let seasonal = 200.0 * (2.0 * 3.14159 * i / 7.0).sin()
-    // 添加噪声
-    let noise = 50.0 * Random::next_float()
-    let value = trend + seasonal + noise
-    
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Add data points for 30 days
+  for i in 0..30 {
+    let timestamp = 1609459200000 + (i * 86400000)  // Each day
+    let trend = 100.0 + i.to_float() * 2.0  // Linear trend
+    let seasonality = 20.0 * (2 * 3.14159 * i.to_float() / 7.0).sin()  // Weekly seasonality
+    let noise = (random_int(-5, 5)).to_float()  // Random noise
+    let value = trend + seasonality + noise
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 使用线性回归预测未来7天
-  let linear_forecast = TimeSeries::forecast_linear_regression(time_series, 7)
-  assert_eq(TimeSeries::point_count(linear_forecast), 7)
+  // Test linear regression forecasting
+  let linear_forecast = TimeSeries::forecast_linear_regression(ts, 7)  // 7 days ahead
+  assert_eq(linear_forecast.size(), 7)
   
-  // 使用移动平均预测未来7天
-  let ma_forecast = TimeSeries::forecast_moving_average(time_series, 7, 7)
-  assert_eq(TimeSeries::point_count(ma_forecast), 7)
+  // Verify first forecast point
+  let first_forecast = linear_forecast.get_points()[0]
+  assert_eq(first_forecast.timestamp, 1609459200000 + 30 * 86400000)  // Day 31
+  assert_true(first_forecast.value > 150.0)  // Should be higher than last actual value
   
-  // 使用指数平滑预测未来7天
-  let ets_forecast = TimeSeries::forecast_exponential_smoothing(time_series, 7, 0.3)
-  assert_eq(TimeSeries::point_count(ets_forecast), 7)
+  // Test moving average forecasting
+  let ma_forecast = TimeSeries::forecast_moving_average(ts, 7, 7)  // 7 days ahead, 7-day MA
+  assert_eq(ma_forecast.size(), 7)
   
-  // 验证预测时间戳
-  let last_timestamp = base_timestamp + (29 * 86400000000000L)
-  let linear_points = TimeSeries::get_points(linear_forecast)
+  // Test exponential smoothing forecasting
+  let es_forecast = TimeSeries::forecast_exponential_smoothing(ts, 7, 0.3)  // 7 days ahead, alpha=0.3
+  assert_eq(es_forecast.size(), 7)
   
-  for i in 0..=6 {
-    let expected_timestamp = last_timestamp + ((i + 1) * 86400000000000L)
-    let actual_timestamp = TimeSeriesDataPoint::timestamp(linear_points[i])
-    assert_eq(actual_timestamp, expected_timestamp)
-  }
+  // Test ARIMA forecasting
+  let arima_forecast = TimeSeries::forecast_arima(ts, 7, 1, 1, 1)  // 7 days ahead, ARIMA(1,1,1)
+  assert_eq(arima_forecast.size(), 7)
   
-  // 验证预测值的合理性
-  let last_value = TimeSeriesDataPoint::value(TimeSeries::get_last_point(time_series))
-  let first_forecast_value = TimeSeriesDataPoint::value(TimeSeries::get_first_point(linear_forecast))
+  // Test Prophet-like forecasting (trend + seasonality)
+  let prophet_forecast = TimeSeries::forecast_prophet(ts, 7)  // 7 days ahead
+  assert_eq(prophet_forecast.size(), 7)
   
-  // 预测值应该基于历史数据，不应该偏离太远
-  assert_true(first_forecast_value > last_value * 0.5 && first_forecast_value < last_value * 2.0)
+  // Verify Prophet forecast captures seasonality
+  let prophet_point1 = prophet_forecast.get_points()[0]
+  let prophet_point8 = prophet_forecast.get_points()[7 - 1]  // 7 days later
+  let seasonality_diff = prophet_point8.value - prophet_point1.value
+  assert_true(seasonality_diff.abs() > 10.0)  // Should show weekly seasonality
 }
 
-test "时间序列数据相关性分析" {
-  // 测试时间序列数据的相关性分析
+// Test 8: Time Series Compression
+test "time series compression" {
+  // Create time series with many data points
+  let ts = TimeSeries::new("high.frequency.data")
   
-  // 创建两个相关的的时间序列
-  let base_timestamp = 1735689600000000000L
-  let series_a = TimeSeries::new("cpu.usage", "percent")
-  let series_b = TimeSeries::new("memory.usage", "percent")
-  
-  // 生成相关的数据
-  for i in 0..=99 {
-    let timestamp = base_timestamp + (i * 60000000000L)
-    let base_value = 50.0 + (20.0 * (i / 10.0).sin())
-    
-    // 系列A
-    let value_a = base_value + (5.0 * Random::next_float())
-    let data_point_a = TimeSeriesDataPoint::new(timestamp, value_a)
-    TimeSeries::add_point(series_a, data_point_a)
-    
-    // 系列B（与A相关，但有一些噪声）
-    let value_b = base_value * 0.8 + (10.0 * Random::next_float())
-    let data_point_b = TimeSeriesDataPoint::new(timestamp, value_b)
-    TimeSeries::add_point(series_b, data_point_b)
+  // Add data points for each second of an hour
+  for i in 0..3600 {
+    let timestamp = 1609459200000 + (i * 1000)  // Each second
+    let value = 100.0 + (i % 60).to_float() * 0.5  // Minute-level pattern
+    TimeSeries::add_point(ts, timestamp, value)
   }
   
-  // 创建一个不相关的系列
-  let series_c = TimeSeries::new("network.latency", "ms")
-  for i in 0..=99 {
-    let timestamp = base_timestamp + (i * 60000000000L)
-    let value_c = 20.0 + (10.0 * Random::next_float())
-    let data_point_c = TimeSeriesDataPoint::new(timestamp, value_c)
-    TimeSeries::add_point(series_c, data_point_c)
-  }
+  // Test delta encoding compression
+  let delta_compressed = TimeSeries::compress_delta(ts)
+  assert_true(delta_compressed.size() < ts.size())  // Should be smaller
   
-  // 计算相关性
-  let correlation_ab = TimeSeries::correlation(series_a, series_b)
-  let correlation_ac = TimeSeries::correlation(series_a, series_c)
-  let correlation_bc = TimeSeries::correlation(series_b, series_c)
-  
-  // 验证相关性结果
-  assert_true(correlation_ab > 0.5)  // A和B应该有较强的正相关
-  assert_true(correlation_ac.abs() < 0.3)  // A和C应该相关性较弱
-  assert_true(correlation_bc.abs() < 0.3)  // B和C应该相关性较弱
-  
-  // 计算自相关
-  let autocorr_a_lag1 = TimeSeries::autocorrelation(series_a, 1)
-  let autocorr_a_lag5 = TimeSeries::autocorrelation(series_a, 5)
-  let autocorr_a_lag10 = TimeSeries::autocorrelation(series_a, 10)
-  
-  // 验证自相关性
-  assert_true(autocorr_a_lag1.abs() > autocorr_a_lag5.abs())
-  assert_true(autocorr_a_lag5.abs() > autocorr_a_lag10.abs())
-  
-  // 计算交叉相关
-  let cross_corr = TimeSeries::cross_correlation(series_a, series_b, 5)
-  assert_eq(cross_corr.length(), 11)  // 从-5到+5的滞后
-  
-  // 找到最大交叉相关的滞后
-  let max_lag = TimeSeries::max_cross_correlation_lag(series_a, series_b, 5)
-  assert_true(max_lag >= -5 && max_lag <= 5)
-}
-
-test "时间序列数据压缩和存储" {
-  // 测试时间序列数据的压缩和存储
-  
-  // 创建高频时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("sensor.data", "value")
-  
-  // 添加大量数据点
-  for i in 0..=9999 {
-    let timestamp = base_timestamp + (i * 1000000000L)
-    let value = 100.0 + (50.0 * (i / 1000.0).sin()) + (10.0 * Random::next_float())
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
-  }
-  
-  // 测试原始数据大小
-  let original_size = TimeSeries::serialize(time_series).length()
-  
-  // 测试不同压缩方法
-  let delta_compressed = TimeSeries::compress_delta(time_series)
-  let gorilla_compressed = TimeSeries::compress_gorilla(time_series)
-  let lzw_compressed = TimeSeries::compress_lzw(time_series)
-  
-  // 验证压缩效果
-  assert_true(delta_compressed.length() < original_size)
-  assert_true(gorilla_compressed.length() < original_size)
-  assert_true(lzw_compressed.length() < original_size)
-  
-  // 计算压缩比
-  let delta_ratio = delta_compressed.length().to_float() / original_size.to_float()
-  let gorilla_ratio = gorilla_compressed.length().to_float() / original_size.to_float()
-  let lzw_ratio = lzw_compressed.length().to_float() / original_size.to_float()
-  
-  // 验证压缩比
-  assert_true(delta_ratio < 0.9)
-  assert_true(gorilla_ratio < 0.8)
-  assert_true(lzw_ratio < 0.9)
-  
-  // 解压缩并验证数据完整性
+  // Test delta decompression
   let delta_decompressed = TimeSeries::decompress_delta(delta_compressed)
-  let gorilla_decompressed = TimeSeries::decompress_gorilla(gorilla_compressed)
-  let lzw_decompressed = TimeSeries::decompress_lzw(lzw_compressed)
+  assert_eq(delta_decompressed.size(), ts.size())
   
-  // 验证解压缩后的数据
-  assert_eq(TimeSeries::point_count(delta_decompressed), TimeSeries::point_count(time_series))
-  assert_eq(TimeSeries::point_count(gorilla_decompressed), TimeSeries::point_count(time_series))
-  assert_eq(TimeSeries::point_count(lzw_decompressed), TimeSeries::point_count(time_series))
-  
-  // 验证数据点值的一致性
-  let original_points = TimeSeries::get_points(time_series)
-  let delta_points = TimeSeries::get_points(delta_decompressed)
-  let gorilla_points = TimeSeries::get_points(gorilla_decompressed)
-  let lzw_points = TimeSeries::get_points(lzw_decompressed)
-  
-  for i in 0..=9999 {
-    let original_value = TimeSeriesDataPoint::value(original_points[i])
-    let delta_value = TimeSeriesDataPoint::value(delta_points[i])
-    let gorilla_value = TimeSeriesDataPoint::value(gorilla_points[i])
-    let lzw_value = TimeSeriesDataPoint::value(lzw_points[i])
-    
-    // 允许微小的浮点误差
-    assert_true((original_value - delta_value).abs() < 0.001)
-    assert_true((original_value - gorilla_value).abs() < 0.001)
-    assert_true((original_value - lzw_value).abs() < 0.001)
+  // Verify decompressed data matches original
+  for i in 0..ts.size() {
+    let original_point = ts.get_points()[i]
+    let decompressed_point = delta_decompressed.get_points()[i]
+    assert_eq(original_point.timestamp, decompressed_point.timestamp)
+    assert_eq(original_point.value, decompressed_point.value)
   }
+  
+  // Test Gorilla compression (float compression)
+  let gorilla_compressed = TimeSeries::compress_gorilla(ts)
+  assert_true(gorilla_compressed.size() < ts.size())  // Should be smaller
+  
+  // Test Gorilla decompression
+  let gorilla_decompressed = TimeSeries::decompress_gorilla(gorilla_compressed)
+  assert_eq(gorilla_decompressed.size(), ts.size())
+  
+  // Verify decompressed data matches original
+  for i in 0..ts.size() {
+    let original_point = ts.get_points()[i]
+    let decompressed_point = gorilla_decompressed.get_points()[i]
+    assert_eq(original_point.timestamp, decompressed_point.timestamp)
+    assert_eq(original_point.value, decompressed_point.value)
+  }
+  
+  // Test down-sampling compression
+  let downsampled_compressed = TimeSeries::compress_downsample(ts, 60000)  // Downsample to 1-minute intervals
+  assert_eq(downsampled_compressed.size(), 60)  // 3600 seconds / 60 seconds = 60 points
+  
+  // Test swing door compression (tolerance-based)
+  let swing_compressed = TimeSeries::compress_swing_door(ts, 0.1)  // 0.1 tolerance
+  assert_true(swing_compressed.size() < ts.size())  // Should be smaller
+  
+  // Test swing door decompression
+  let swing_decompressed = TimeSeries::decompress_swing_door(swing_compressed)
+  assert_eq(swing_decompressed.size(), ts.size())
+  
+  // Verify decompressed data is within tolerance
+  for i in 0..ts.size() {
+    let original_point = ts.get_points()[i]
+    let decompressed_point = swing_decompressed.get_points()[i]
+    assert_eq(original_point.timestamp, decompressed_point.timestamp)
+    assert_true((original_point.value - decompressed_point.value).abs() <= 0.1)
+  }
+}
+
+// Test 9: Time Series Storage and Retrieval
+test "time series storage and retrieval" {
+  // Test in-memory storage
+  let memory_store = TimeSeriesStore::new_memory()
+  
+  // Create and store time series
+  let ts1 = TimeSeries::new("metric1")
+  TimeSeries::add_point(ts1, 1609459200000, 25.5)
+  TimeSeries::add_point(ts1, 1609459260000, 30.2)
+  
+  let ts2 = TimeSeries::new("metric2")
+  TimeSeries::add_point(ts2, 1609459200000, 100.0)
+  TimeSeries::add_point(ts2, 1609459260000, 105.0)
+  
+  TimeSeriesStore::store(memory_store, ts1)
+  TimeSeriesStore::store(memory_store, ts2)
+  
+  // Test retrieval
+  let retrieved_ts1 = TimeSeriesStore::retrieve(memory_store, "metric1")
+  match retrieved_ts1 {
+    Some(ts) => {
+      assert_eq(TimeSeries::name(ts), "metric1")
+      assert_eq(TimeSeries::size(ts), 2)
+      assert_eq(TimeSeries::get_value_at(ts, 1609459200000), Some(25.5))
+    }
+    None => assert_true(false)
+  }
+  
+  let retrieved_ts2 = TimeSeriesStore::retrieve(memory_store, "metric2")
+  match retrieved_ts2 {
+    Some(ts) => {
+      assert_eq(TimeSeries::name(ts), "metric2")
+      assert_eq(TimeSeries::size(ts), 2)
+      assert_eq(TimeSeries::get_value_at(ts, 1609459260000), Some(105.0))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test file-based storage
+  let file_store = TimeSeriesStore::new_file("/tmp/timeseries_test.db")
+  
+  TimeSeriesStore::store(file_store, ts1)
+  TimeSeriesStore::store(file_store, ts2)
+  
+  let file_retrieved_ts1 = TimeSeriesStore::retrieve(file_store, "metric1")
+  match file_retrieved_ts1 {
+    Some(ts) => {
+      assert_eq(TimeSeries::name(ts), "metric1")
+      assert_eq(TimeSeries::size(ts), 2)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test time range query
+  let range_results = TimeSeriesStore::query_range(memory_store, "metric1", 1609459200000, 1609459260000)
+  assert_eq(range_results.length(), 2)
+  
+  // Test latest value query
+  let latest_value = TimeSeriesStore::get_latest(memory_store, "metric1")
+  match latest_value {
+    Some(point) => assert_eq(point.value, 30.2),
+    None => assert_true(false)
+  }
+  
+  // Test aggregation query
+  let aggregated = TimeSeriesStore::aggregate_query(memory_store, "metric1", Average, 60000)
+  assert_eq(aggregated.size(), 2)
+  
+  // Test deletion
+  TimeSeriesStore::delete(memory_store, "metric1")
+  let deleted_ts = TimeSeriesStore::retrieve(memory_store, "metric1")
+  match deleted_ts {
+    Some(_) => assert_true(false),
+    None => assert_true(true)
+  }
+}
+
+// Test 10: Comprehensive Time Series Processing Pipeline
+test "comprehensive time series processing pipeline" {
+  // Create a comprehensive time series processing pipeline
+  let pipeline = TimeSeriesPipeline::new()
+  
+  // Step 1: Data ingestion
+  let ingestion_stage = TimeSeriesIngestionStage::new()
+  pipeline.add_stage(ingestion_stage)
+  
+  // Step 2: Data validation
+  let validation_stage = TimeSeriesValidationStage::new()
+  validation_stage.add_rule(|point| point.value >= 0.0)  // Non-negative values
+  validation_stage.add_rule(|point| point.value <= 1000.0)  // Max value
+  pipeline.add_stage(validation_stage)
+  
+  // Step 3: Data cleaning
+  let cleaning_stage = TimeSeriesCleaningStage::new()
+  cleaning_stage.add_outlier_detector(|points| {
+    // Simple IQR-based outlier detection
+    let values = points.map(|p| p.value)
+    let q1 = percentile(values, 25)
+    let q3 = percentile(values, 75)
+    let iqr = q3 - q1
+    let lower_bound = q1 - 1.5 * iqr
+    let upper_bound = q3 + 1.5 * iqr
+    
+    return points.filter(|p| p.value >= lower_bound && p.value <= upper_bound)
+  })
+  pipeline.add_stage(cleaning_stage)
+  
+  // Step 4: Data transformation
+  let transformation_stage = TimeSeriesTransformationStage::new()
+  transformation_stage.add_transform(|point| {
+    // Normalize values to 0-1 range
+    return TimeSeriesPoint::new(point.timestamp, point.value / 1000.0)
+  })
+  pipeline.add_stage(transformation_stage)
+  
+  // Step 5: Data aggregation
+  let aggregation_stage = TimeSeriesAggregationStage::new(Average, 60000)  // 1-minute average
+  pipeline.add_stage(aggregation_stage)
+  
+  // Step 6: Anomaly detection
+  let anomaly_stage = TimeSeriesAnomalyDetectionStage::new(ZScore, 2.0)  // 2 sigma
+  pipeline.add_stage(anomaly_stage)
+  
+  // Step 7: Data storage
+  let storage_stage = TimeSeriesStorageStage::new(TimeSeriesStore::new_memory())
+  pipeline.add_stage(storage_stage)
+  
+  // Create test data
+  let test_data = []
+  for i in 0..100 {
+    let timestamp = 1609459200000 + (i * 60000)  // Each minute
+    let value = 500.0 + (i % 20).to_float() * 10.0  // Values from 500 to 690
+    test_data.push(TimeSeriesPoint::new(timestamp, value))
+  }
+  
+  // Add some anomalies
+  test_data.push(TimeSeriesPoint::new(1609459200000 + 50 * 60000, 100.0))  // Low outlier
+  test_data.push(TimeSeriesPoint::new(1609459200000 + 75 * 60000, 900.0))  // High outlier
+  
+  // Run pipeline
+  let results = pipeline.run("test.metric", test_data)
+  
+  // Verify results
+  assert_true(results.processed_points > 0)
+  assert_true(results.anomalies_detected > 0)
+  assert_true(results.storage_write_count > 0)
+  
+  // Get processed time series
+  let processed_ts = pipeline.get_output("test.metric")
+  match processed_ts {
+    Some(ts) => {
+      assert_eq(TimeSeries::name(ts), "test.metric")
+      assert_true(TimeSeries::size(ts) > 0)
+      
+      // Verify values are normalized (0-1 range)
+      for point in TimeSeries::get_points(ts) {
+        assert_true(point.value >= 0.0 && point.value <= 1.0)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Get detected anomalies
+  let anomalies = pipeline.get_anomalies("test.metric")
+  assert_true(anomalies.length() > 0)
+  
+  // Verify pipeline statistics
+  let stats = pipeline.get_statistics()
+  assert_eq(stats.total_processed, test_data.length())
+  assert_true(stats.validation_rejected >= 0)
+  assert_true(stats.outliers_removed >= 0)
+  assert_true(stats.anomalies_detected > 0)
 }
