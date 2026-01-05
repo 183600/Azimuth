@@ -1,498 +1,525 @@
-// Azimuth 多语言国际化支持测试用例
-// 专注于遥测系统的多语言支持和国际化功能
+// Azimuth Multi-language Internationalization Support Tests
+// This file contains test cases for internationalization and localization functionality
 
-// 测试1: 多语言错误消息本地化
-test "多语言错误消息本地化测试" {
-  // 定义多语言错误消息
-  let error_messages = [
-    ("en", "Database connection failed"),
-    ("zh", "数据库连接失败"),
-    ("ja", "データベース接続に失敗しました"),
-    ("es", "Error de conexión a la base de datos"),
-    ("fr", "Échec de la connexion à la base de données"),
-    ("de", "Datenbankverbindung fehlgeschlagen"),
-    ("ko", "데이터베이스 연결 실패"),
-    ("ru", "Не удалось подключиться к базе данных")
-  ]
+// Test 1: Basic Locale Detection and Configuration
+test "basic locale detection and configuration" {
+  // Test locale detection from system
+  let system_locale = LocaleDetector::detect_system_locale()
+  assert_eq(system_locale.language.length(), 2)  // Language code should be 2 characters
+  assert_eq(system_locale.language != "", true)
   
-  // 创建本地化资源
-  let mut resources = []
-  for (locale, message) in error_messages {
-    let resource_attrs = [
-      ("error.locale", StringValue(locale)),
-      ("error.message", StringValue(message)),
-      ("error.code", StringValue("DB_CONNECTION_ERROR"))
-    ]
-    let resource = Resource::with_attributes(Resource::new(), resource_attrs)
-    resources = resources.push(resource)
-  }
+  // Test locale parsing
+  let locale1 = Locale::parse("en-US")
+  assert_eq(locale1.language, "en")
+  assert_eq(locale1.region, Some("US"))
+  assert_eq(locale1.script, None)
   
-  // 验证所有本地化资源创建成功
-  assert_eq(resources.length(), 8)
+  let locale2 = Locale::parse("zh-Hans-CN")
+  assert_eq(locale2.language, "zh")
+  assert_eq(locale2.script, Some("Hans"))
+  assert_eq(locale2.region, Some("CN"))
   
-  // 验证每种语言的错误消息
-  for i in 0..=7 {
-    let (expected_locale, expected_message) = error_messages[i]
-    let resource = resources[i]
-    
-    assert_eq(Resource::get_attribute(resource, "error.locale"), Some(StringValue(expected_locale)))
-    assert_eq(Resource::get_attribute(resource, "error.message"), Some(StringValue(expected_message)))
-    assert_eq(Resource::get_attribute(resource, "error.code"), Some(StringValue("DB_CONNECTION_ERROR")))
-  }
+  let locale3 = Locale::parse("fr")
+  assert_eq(locale3.language, "fr")
+  assert_eq(locale3.region, None)
+  assert_eq(locale3.script, None)
+  
+  // Test locale configuration
+  let i18n = I18nManager::new()
+  I18nManager::set_locale(i18n, locale1)
+  assert_eq(I18nManager::current_locale(i18n).language, "en")
+  assert_eq(I18nManager::current_locale(i18n).region, Some("US"))
 }
 
-// 测试2: 多语言日志记录
-test "多语言日志记录测试" {
-  let logger_provider = LoggerProvider::default()
+// Test 2: Message Translation
+test "message translation" {
+  let i18n = I18nManager::new()
   
-  // 为不同语言创建日志记录器
-  let loggers = [
-    LoggerProvider::get_logger(logger_provider, "zh.logger"),
-    LoggerProvider::get_logger(logger_provider, "en.logger"),
-    LoggerProvider::get_logger(logger_provider, "ja.logger"),
-    LoggerProvider::get_logger(logger_provider, "es.logger")
+  // Load translation resources
+  let en_translations = [
+    ("welcome.message", "Welcome to Azimuth Telemetry"),
+    ("error.connection_failed", "Connection failed"),
+    ("status.active", "Active"),
+    ("status.inactive", "Inactive"),
+    ("button.save", "Save"),
+    ("button.cancel", "Cancel")
   ]
   
-  // 多语言日志消息
-  let log_messages = [
-    ("zh", [
-      ("用户认证成功", Info),
-      ("开始处理订单", Info),
-      ("数据库查询完成", Info),
-      ("支付处理失败", Error),
-      ("系统维护通知", Warn)
-    ]),
-    ("en", [
-      ("User authentication successful", Info),
-      ("Order processing started", Info),
-      ("Database query completed", Info),
-      ("Payment processing failed", Error),
-      ("System maintenance notification", Warn)
-    ]),
-    ("ja", [
-      ("ユーザー認証成功", Info),
-      ("注文処理開始", Info),
-      ("データベースクエリ完了", Info),
-      ("支払い処理失敗", Error),
-      ("システムメンテナンス通知", Warn)
-    ]),
-    ("es", [
-      ("Autenticación de usuario exitosa", Info),
-      ("Procesamiento de pedido iniciado", Info),
-      ("Consulta de base de datos completada", Info),
-      ("Error en el procesamiento de pago", Error),
-      ("Notificación de mantenimiento del sistema", Warn)
-    ])
+  let zh_translations = [
+    ("welcome.message", "欢迎使用 Azimuth 遥测系统"),
+    ("error.connection_failed", "连接失败"),
+    ("status.active", "活动"),
+    ("status.inactive", "非活动"),
+    ("button.save", "保存"),
+    ("button.cancel", "取消")
   ]
   
-  // 记录多语言日志
-  for i in 0..=3 {
-    let (locale, messages) = log_messages[i]
-    let logger = loggers[i]
-    
-    for (message, severity) in messages {
-      let log_record = LogRecord::new(severity, message)
-      Logger::emit(logger, log_record)
-      
-      // 验证日志记录
-      assert_eq(LogRecord::severity_number(log_record), severity)
-      assert_eq(LogRecord::body(log_record), Some(message))
-    }
-  }
+  let fr_translations = [
+    ("welcome.message", "Bienvenue dans Azimuth Télémétrie"),
+    ("error.connection_failed", "Échec de connexion"),
+    ("status.active", "Actif"),
+    ("status.inactive", "Inactif"),
+    ("button.save", "Enregistrer"),
+    ("button.cancel", "Annuler")
+  ]
+  
+  // Load translations for different locales
+  I18nManager::load_translations(i18n, Locale::parse("en-US"), en_translations)
+  I18nManager::load_translations(i18n, Locale::parse("zh-CN"), zh_translations)
+  I18nManager::load_translations(i18n, Locale::parse("fr-FR"), fr_translations)
+  
+  // Test English translations
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::translate(i18n, "welcome.message"), Some("Welcome to Azimuth Telemetry"))
+  assert_eq(I18nManager::translate(i18n, "error.connection_failed"), Some("Connection failed"))
+  assert_eq(I18nManager::translate(i18n, "status.active"), Some("Active"))
+  
+  // Test Chinese translations
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  assert_eq(I18nManager::translate(i18n, "welcome.message"), Some("欢迎使用 Azimuth 遥测系统"))
+  assert_eq(I18nManager::translate(i18n, "error.connection_failed"), Some("连接失败"))
+  assert_eq(I18nManager::translate(i18n, "status.active"), Some("活动"))
+  
+  // Test French translations
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))
+  assert_eq(I18nManager::translate(i18n, "welcome.message"), Some("Bienvenue dans Azimuth Télémétrie"))
+  assert_eq(I18nManager::translate(i18n, "error.connection_failed"), Some("Échec de connexion"))
+  assert_eq(I18nManager::translate(i18n, "status.active"), Some("Actif"))
+  
+  // Test fallback to default locale when translation is missing
+  I18nManager::set_locale(i18n, Locale::parse("es-ES"))  // Spanish not loaded
+  assert_eq(I18nManager::translate(i18n, "welcome.message"), Some("Welcome to Azimuth Telemetry"))  // Should fallback to English
+  
+  // Test missing key
+  assert_eq(I18nManager::translate(i18n, "nonexistent.key"), None)
 }
 
-// 测试3: 多语言Span属性和事件
-test "多语言Span属性和事件测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.tracer")
+// Test 3: Parameterized Translations
+test "parameterized translations" {
+  let i18n = I18nManager::new()
   
-  // 创建多语言Span
-  let span_names = [
-    ("zh", "用户注册流程"),
-    ("en", "User Registration Flow"),
-    ("ja", "ユーザー登録フロー"),
-    ("es", "Flujo de Registro de Usuario")
+  // Load parameterized translations
+  let en_translations = [
+    ("user.greeting", "Hello, {name}!"),
+    ("items.count", "You have {count, plural, one{# item} other{# items}}"),
+    ("memory.usage", "Memory usage: {percentage}%"),
+    ("time.elapsed", "Time elapsed: {hours, plural, one{# hour} other{# hours}} {minutes, plural, one{# minute} other{# minutes}}")
   ]
   
-  let mut spans = []
-  for (locale, name) in span_names {
-    let span = Tracer::start_span(tracer, name)
-    spans = spans.push((locale, span))
-  }
-  
-  // 为每个span添加多语言属性和事件
-  let span_attributes = [
-    ("zh", [
-      ("用户ID", StringValue("user-12345")),
-      ("用户类型", StringValue("premium")),
-      ("注册渠道", StringValue("mobile.app"))
-    ]),
-    ("en", [
-      ("User ID", StringValue("user-12345")),
-      ("User Type", StringValue("premium")),
-      ("Registration Channel", StringValue("mobile.app"))
-    ]),
-    ("ja", [
-      ("ユーザーID", StringValue("user-12345")),
-      ("ユーザータイプ", StringValue("premium")),
-      ("登録チャネル", StringValue("mobile.app"))
-    ]),
-    ("es", [
-      ("ID de Usuario", StringValue("user-12345")),
-      ("Tipo de Usuario", StringValue("premium")),
-      ("Canal de Registro", StringValue("mobile.app"))
-    ])
+  let zh_translations = [
+    ("user.greeting", "你好，{name}！"),
+    ("items.count", "你有 {count} 个项目"),
+    ("memory.usage", "内存使用率：{percentage}%"),
+    ("time.elapsed", "已用时间：{hours} 小时 {minutes} 分钟")
   ]
   
-  let span_events = [
-    ("zh", [
-      "开始用户验证",
-      "验证码发送成功",
-      "用户信息验证完成",
-      "账户创建成功",
-      "欢迎邮件发送"
-    ]),
-    ("en", [
-      "User verification started",
-      "Verification code sent successfully",
-      "User information verified",
-      "Account created successfully",
-      "Welcome email sent"
-    ]),
-    ("ja", [
-      "ユーザー認証開始",
-      "認証コード送信成功",
-      "ユーザー情報確認完了",
-      "アカウント作成成功",
-      "ようこそメール送信"
-    ]),
-    ("es", [
-      "Verificación de usuario iniciada",
-      "Código de verificación enviado exitosamente",
-      "Información de usuario verificada",
-      "Cuenta creada exitosamente",
-      "Correo de bienvenida enviado"
-    ])
-  ]
+  I18nManager::load_translations(i18n, Locale::parse("en-US"), en_translations)
+  I18nManager::load_translations(i18n, Locale::parse("zh-CN"), zh_translations)
   
-  // 添加属性和事件到span
-  for i in 0..=3 {
-    let (locale, span) = spans[i]
-    let attributes = span_attributes[i]
-    let events = span_events[i]
-    
-    // 添加属性（在实际实现中，这会调用Span::set_attribute）
-    for (key, value) in attributes {
-      // Span::set_attribute(span, key, value)
-      // 由于简化实现，这里只验证属性结构
-      assert_true(key.length() > 0)
-    }
-    
-    // 添加事件
-    for event in events {
-      Span::add_event(span, event, None)
-    }
-    
-    // 设置span状态
-    Span::set_status(span, Ok)
-    Span::end(span)
-    
-    // 验证span状态
-    assert_eq(Span::status(span), Ok)
-  }
+  // Test English parameterized translations
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  
+  let params1 = [("name", "Alice")]
+  assert_eq(I18nManager::translate_with_params(i18n, "user.greeting", params1), Some("Hello, Alice!"))
+  
+  let params2 = [("count", "1")]
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", params2), Some("You have 1 item"))
+  
+  let params3 = [("count", "5")]
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", params3), Some("You have 5 items"))
+  
+  let params4 = [("percentage", "75.5")]
+  assert_eq(I18nManager::translate_with_params(i18n, "memory.usage", params4), Some("Memory usage: 75.5%"))
+  
+  let params5 = [("hours", "1"), ("minutes", "30")]
+  assert_eq(I18nManager::translate_with_params(i18n, "time.elapsed", params5), Some("Time elapsed: 1 hour 30 minutes"))
+  
+  // Test Chinese parameterized translations
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  
+  assert_eq(I18nManager::translate_with_params(i18n, "user.greeting", params1), Some("你好，Alice！"))
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", params2), Some("你有 1 个项目"))
+  assert_eq(I18nManager::translate_with_params(i18n, "memory.usage", params4), Some("内存使用率：75.5%"))
+  assert_eq(I18nManager::translate_with_params(i18n, "time.elapsed", params5), Some("已用时间：1 小时 30 分钟"))
 }
 
-// 测试4: 多语言指标名称和描述
-test "多语言指标名称和描述测试" {
-  let provider = MeterProvider::default()
+// Test 4: Date and Time Formatting
+test "date and time formatting" {
+  let i18n = I18nManager::new()
   
-  // 创建多语言指标
-  let metric_definitions = [
-    ("zh", [
-      ("用户总数", "当前系统中的注册用户总数"),
-      ("订单数量", "在指定时间范围内创建的订单数量"),
-      ("支付成功率", "成功支付占总支付尝试的百分比"),
-      ("系统响应时间", "系统处理请求的平均响应时间")
-    ]),
-    ("en", [
-      ("Total Users", "Total number of registered users in the system"),
-      ("Order Count", "Number of orders created within the specified time range"),
-      ("Payment Success Rate", "Percentage of successful payments out of total payment attempts"),
-      ("System Response Time", "Average response time for system to process requests")
-    ]),
-    ("ja", [
-      ("総ユーザー数", "システムに登録されているユーザーの総数"),
-      ("注文数", "指定された時間範囲内で作成された注文の数"),
-      ("支払い成功率", "総支払い試行に対する成功した支払いの割合"),
-      ("システム応答時間", "リクエストを処理するためのシステムの平均応答時間")
-    ]),
-    ("es", [
-      ("Total de Usuarios", "Número total de usuarios registrados en el sistema"),
-      ("Cantidad de Pedidos", "Número de pedidos creados dentro del rango de tiempo especificado"),
-      ("Tasa de Éxito de Pago", "Porcentaje de pagos exitosos del total de intentos de pago"),
-      ("Tiempo de Respuesta del Sistema", "Tiempo de respuesta promedio del sistema para procesar solicitudes")
-    ])
-  ]
+  // Test date formatting for different locales
+  let timestamp = 1640995200000L  // Jan 1, 2022 00:00:00 UTC
   
-  // 创建多语言指标
-  for i in 0..=3 {
-    let (locale, definitions) = metric_definitions[i]
-    let meter = MeterProvider::get_meter(provider, locale + ".metrics")
-    
-    for (name, description) in definitions {
-      let counter = Meter::create_counter(meter, name)
-      // 在实际实现中，这里会设置指标的描述
-      // Counter::set_description(counter, description)
-      
-      // 记录指标值
-      Counter::add(counter, 1.0)
-      
-      // 验证指标创建
-      assert_eq(Instrument::name(counter), name)
-    }
-  }
+  // English (US) format
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let en_date = I18nManager::format_date(i18n, timestamp, DateFormat::Medium)
+  assert_eq(en_date.contains("2022"), true)
+  assert_eq(en_date.contains("Jan"), true)
+  assert_eq(en_date.contains("1"), true)
+  
+  let en_time = I18nManager::format_time(i18n, timestamp, TimeFormat::Medium)
+  assert_eq(en_time.contains("12"), true)  // 12-hour format
+  assert_eq(en_time.contains("AM") || en_time.contains("PM"), true)
+  
+  // Chinese format
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  let zh_date = I18nManager::format_date(i18n, timestamp, DateFormat::Medium)
+  assert_eq(zh_date.contains("2022"), true)
+  assert_eq(zh_date.contains("年"), true)
+  assert_eq(zh_date.contains("1"), true)
+  assert_eq(zh_date.contains("月"), true)
+  assert_eq(zh_date.contains("日"), true)
+  
+  let zh_time = I18nManager::format_time(i18n, timestamp, TimeFormat::Medium)
+  assert_eq(zh_time.contains("00"), true)  // 24-hour format
+  
+  // French format
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))
+  let fr_date = I18nManager::format_date(i18n, timestamp, DateFormat::Medium)
+  assert_eq(fr_date.contains("2022"), true)
+  assert_eq(fr_date.contains("janv"), true)  // "janvier" abbreviated
+  
+  // Test relative time formatting
+  let now = Clock::now()
+  let one_hour_ago = now - 3600000L
+  let one_day_ago = now - 86400000L
+  let one_week_ago = now - 604800000L
+  
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_hour_ago, now), Some("1 hour ago"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_day_ago, now), Some("1 day ago"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_week_ago, now), Some("1 week ago"))
+  
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_hour_ago, now), Some("1小时前"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_day_ago, now), Some("1天前"))
+  assert_eq(I18nManager::format_relative_time(i18n, one_week_ago, now), Some("1周前"))
 }
 
-// 测试5: 多语言上下文传播
-test "多语言上下文传播测试" {
-  // 创建多语言上下文键
-  let zh_keys = [
-    ContextKey::new("用户ID"),
-    ContextKey::new("会话ID"),
-    ContextKey::new("请求ID"),
-    ContextKey::new("租户ID")
-  ]
+// Test 5: Number and Currency Formatting
+test "number and currency formatting" {
+  let i18n = I18nManager::new()
   
-  let en_keys = [
-    ContextKey::new("user.id"),
-    ContextKey::new("session.id"),
-    ContextKey::new("request.id"),
-    ContextKey::new("tenant.id")
-  ]
+  // Test number formatting
+  let test_number = 1234567.89
   
-  // 创建中文上下文
-  let zh_ctx = Context::root()
-    |> Context::with_value(zh_keys[0], "用户-123")
-    |> Context::with_value(zh_keys[1], "会话-456")
-    |> Context::with_value(zh_keys[2], "请求-789")
-    |> Context::with_value(zh_keys[3], "租户-001")
+  // English (US) format
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let en_number = I18nManager::format_number(i18n, test_number, NumberFormat::Decimal)
+  assert_eq(en_number, "1,234,567.89")
   
-  // 创建英文上下文
-  let en_ctx = Context::root()
-    |> Context::with_value(en_keys[0], "user-123")
-    |> Context::with_value(en_keys[1], "session-456")
-    |> Context::with_value(en_keys[2], "request-789")
-    |> Context::with_value(en_keys[3], "tenant-001")
+  let en_currency = I18nManager::format_currency(i18n, test_number, "USD")
+  assert_eq(en_currency.contains("$"), true)
+  assert_eq(en_currency.contains("1,234,567.89"), true)
   
-  // 验证中文上下文
-  assert_eq(Context::get(zh_ctx, zh_keys[0]), Some("用户-123"))
-  assert_eq(Context::get(zh_ctx, zh_keys[1]), Some("会话-456"))
-  assert_eq(Context::get(zh_ctx, zh_keys[2]), Some("请求-789"))
-  assert_eq(Context::get(zh_ctx, zh_keys[3]), Some("租户-001"))
+  let en_percent = I18nManager::format_percent(i18n, 0.7542)
+  assert_eq(en_percent, "75%")
   
-  // 验证英文上下文
-  assert_eq(Context::get(en_ctx, en_keys[0]), Some("user-123"))
-  assert_eq(Context::get(en_ctx, en_keys[1]), Some("session-456"))
-  assert_eq(Context::get(en_ctx, en_keys[2]), Some("request-789"))
-  assert_eq(Context::get(en_ctx, en_keys[3]), Some("tenant-001"))
+  // Chinese format
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  let zh_number = I18nManager::format_number(i18n, test_number, NumberFormat::Decimal)
+  assert_eq(zh_number, "1,234,567.89")
   
-  // 创建传播器并测试跨语言上下文传播
-  let propagator = W3CTraceContextPropagator::new()
-  let carrier = TextMapCarrier::new()
+  let zh_currency = I18nManager::format_currency(i18n, test_number, "CNY")
+  assert_eq(zh_currency.contains("¥"), true)
+  assert_eq(zh_currency.contains("1,234,567.89"), true)
   
-  // 注入中文上下文
-  CompositePropagator::inject(CompositePropagator::new([propagator]), zh_ctx, carrier)
+  let zh_percent = I18nManager::format_percent(i18n, 0.7542)
+  assert_eq(zh_percent, "75%")
   
-  // 提取上下文
-  let extracted_ctx = CompositePropagator::extract(CompositePropagator::new([propagator]), carrier)
+  // French format
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))
+  let fr_number = I18nManager::format_number(i18n, test_number, NumberFormat::Decimal)
+  assert_eq(fr_number, "1 234 567,89")  // Space as thousands separator, comma as decimal
   
-  // 验证提取的上下文（在实际实现中，这里会正确处理多语言键）
-  let extracted_value = Context::get(extracted_ctx, zh_keys[0])
-  // 由于简化实现，这里只验证函数调用不出错
+  let fr_currency = I18nManager::format_currency(i18n, test_number, "EUR")
+  assert_eq(fr_currency.contains("€"), true)
+  
+  let fr_percent = I18nManager::format_percent(i18n, 0.7542)
+  assert_eq(fr_percent, "75 %")
+  
+  // Test compact number formatting
+  let large_number = 1500000
+  
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let en_compact = I18nManager::format_compact_number(i18n, large_number, CompactStyle::Short)
+  assert_eq(en_compact, "1.5M")
+  
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  let zh_compact = I18nManager::format_compact_number(i18n, large_number, CompactStyle::Short)
+  assert_eq(zh_compact, "150万")
 }
 
-// 测试6: 多语言资源管理
-test "多语言资源管理测试" {
-  // 创建多语言资源
-  let resource_definitions = [
-    ("zh", [
-      ("服务名称", StringValue("支付服务")),
-      ("服务版本", StringValue("2.1.0")),
-      ("部署环境", StringValue("生产环境")),
-      ("数据中心", StringValue("亚太区域"))
-    ]),
-    ("en", [
-      ("service.name", StringValue("Payment Service")),
-      ("service.version", StringValue("2.1.0")),
-      ("deployment.environment", StringValue("production")),
-      ("data.center", StringValue("Asia Pacific Region"))
-    ]),
-    ("ja", [
-      ("サービス名", StringValue("決済サービス")),
-      ("サービスバージョン", StringValue("2.1.0")),
-      ("デプロイ環境", StringValue("本番環境")),
-      ("データセンター", StringValue("アジア太平洋地域"))
-    ]),
-    ("es", [
-      ("nombre.servicio", StringValue("Servicio de Pago")),
-      ("version.servicio", StringValue("2.1.0")),
-      ("entorno.despliegue", StringValue("producción")),
-      ("centro.datos", StringValue("Región Asia Pacífico"))
-    ])
-  ]
+// Test 6: Text Direction and RTL Support
+test "text direction and rtl support" {
+  let i18n = I18nManager::new()
   
-  // 创建多语言资源
-  let mut resources = []
-  for (locale, attributes) in resource_definitions {
-    let resource = Resource::with_attributes(Resource::new(), attributes)
-    resources = resources.push((locale, resource))
-  }
+  // Test LTR locales
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::text_direction(i18n), TextDirection::LTR)
+  assert_eq(I18nManager::is_rtl(i18n), false)
   
-  // 验证所有资源创建成功
-  assert_eq(resources.length(), 4)
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  assert_eq(I18nManager::text_direction(i18n), TextDirection::LTR)
+  assert_eq(I18nManager::is_rtl(i18n), false)
   
-  // 验证每种语言的资源属性
-  for i in 0..=3 {
-    let (locale, resource) = resources[i]
-    let expected_attributes = resource_definitions[i]
-    
-    for (key, expected_value) in expected_attributes {
-      let actual_value = Resource::get_attribute(resource, key)
-      assert_eq(actual_value, Some(expected_value))
-    }
-  }
+  // Test RTL locales
+  I18nManager::set_locale(i18n, Locale::parse("ar-SA"))
+  assert_eq(I18nManager::text_direction(i18n), TextDirection::RTL)
+  assert_eq(I18nManager::is_rtl(i18n), true)
   
-  // 测试资源合并（跨语言）
-  let base_resource = Resource::with_attributes(Resource::new(), [
-    ("global.attribute", StringValue("global.value")),
-    ("service.type", StringValue("payment"))
-  ])
+  I18nManager::set_locale(i18n, Locale::parse("he-IL"))
+  assert_eq(I18nManager::text_direction(i18n), TextDirection::RTL)
+  assert_eq(I18nManager::is_rtl(i18n), true)
   
-  let mut merged_resources = []
-  for i in 0..=3 {
-    let (locale, resource) = resources[i]
-    let merged = Resource::merge(base_resource, resource)
-    merged_resources = merged.push((locale, merged))
-  }
+  // Test text alignment based on direction
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::default_text_align(i18n), TextAlign::Left)
   
-  // 验证合并后的资源包含全局属性
-  for i in 0..=3 {
-    let (locale, merged_resource) = merged_resources[i]
-    assert_eq(Resource::get_attribute(merged_resource, "global.attribute"), Some(StringValue("global.value")))
-    assert_eq(Resource::get_attribute(merged_resource, "service.type"), Some(StringValue("payment")))
-  }
+  I18nManager::set_locale(i18n, Locale::parse("ar-SA"))
+  assert_eq(I18nManager::default_text_align(i18n), TextAlign::Right)
+  
+  // Test layout mirroring
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::should_mirror_layout(i18n), false)
+  
+  I18nManager::set_locale(i18n, Locale::parse("ar-SA"))
+  assert_eq(I18nManager::should_mirror_layout(i18n), true)
 }
 
-// 测试7: 多语言时区和日期格式处理
-test "多语言时区和日期格式处理测试" {
-  let clock = Clock::system()
-  let base_timestamp = Clock::now_unix_nanos(clock)
+// Test 7: Pluralization Rules
+test "pluralization rules" {
+  let i18n = I18nManager::new()
   
-  // 定义多语言时区和日期格式
-  let timezone_formats = [
-    ("zh", "Asia/Shanghai", "2025-01-03 15:30:45 CST"),
-    ("en", "America/New_York", "01/03/2025 02:30:45 EST"),
-    ("ja", "Asia/Tokyo", "2025-01-03 16:30:45 JST"),
-    ("es", "Europe/Madrid", "03/01/2025 08:30:45 CET"),
-    ("de", "Europe/Berlin", "03.01.2025 08:30:45 CET"),
-    ("fr", "Europe/Paris", "03/01/2025 08:30:45 CET"),
-    ("ko", "Asia/Seoul", "2025-01-03 16:30:45 KST"),
-    ("ru", "Europe/Moscow", "03.01.2025 10:30:45 MSK")
+  // Load translations with plural forms
+  let en_translations = [
+    ("items.count", "{count, plural, one{# item} other{# items}}"),
+    ("messages.count", "{count, plural, =0{No messages} one{# message} other{# messages}}")
   ]
   
-  // 创建多语言日志记录器
-  let logger_provider = LoggerProvider::default()
+  let zh_translations = [
+    ("items.count", "{count} 个项目"),  // Chinese doesn't typically use plural forms
+    ("messages.count", "{count} 条消息")
+  ]
   
-  for (locale, timezone, formatted_time) in timezone_formats {
-    let logger = LoggerProvider::get_logger(logger_provider, locale + ".timezone.logger")
-    
-    // 创建带有时区信息的日志记录
-    let log_record = LogRecord::new_with_context(
-      Info,
-      Some("Localized timestamp: " + formatted_time),
-      None,
-      Some(base_timestamp),
-      Some(base_timestamp + 1000000L),  // 1ms later
-      Some("trace-" + locale),
-      Some("span-" + locale),
-      None
-    )
-    
-    // 添加时区属性
-    // 在实际实现中，这里会添加时区属性到日志记录
-    // LogRecord::set_attribute(log_record, "timezone", StringValue(timezone))
-    
-    Logger::emit(logger, log_record)
-    
-    // 验证日志记录
-    assert_eq(LogRecord::severity_number(log_record), Info)
-    assert_eq(LogRecord::body(log_record), Some("Localized timestamp: " + formatted_time))
-    assert_eq(LogRecord::timestamp(log_record), Some(base_timestamp))
-    assert_eq(LogRecord::trace_id(log_record), Some("trace-" + locale))
-    assert_eq(LogRecord::span_id(log_record), Some("span-" + locale))
-  }
+  let ar_translations = [
+    ("items.count", "{count, plural, zero{# عناصر} one{# عنصر} two{# عنصران} few{# عناصر} many{# عنصر} other{# عنصر}}")
+  ]
+  
+  I18nManager::load_translations(i18n, Locale::parse("en-US"), en_translations)
+  I18nManager::load_translations(i18n, Locale::parse("zh-CN"), zh_translations)
+  I18nManager::load_translations(i18n, Locale::parse("ar-SA"), ar_translations)
+  
+  // Test English pluralization (has multiple forms)
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  
+  let en_params1 = [("count", "0")]
+  assert_eq(I18nManager::translate_with_params(i18n, "messages.count", en_params1), Some("No messages"))
+  
+  let en_params2 = [("count", "1")]
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params2), Some("1 item"))
+  
+  let en_params3 = [("count", "2")]
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params3), Some("2 items"))
+  
+  let en_params4 = [("count", "10")]
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params4), Some("10 items"))
+  
+  // Test Chinese pluralization (typically no plural forms)
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params2), Some("1 个项目"))
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params3), Some("2 个项目"))
+  assert_eq(I18nManager::translate_with_params(i18n, "items.count", en_params4), Some("10 个项目"))
+  
+  // Test Arabic pluralization (has complex plural forms)
+  I18nManager::set_locale(i18n, Locale::parse("ar-SA"))
+  
+  let ar_params0 = [("count", "0")]
+  let ar_params1 = [("count", "1")]
+  let ar_params2 = [("count", "2")]
+  let ar_params3 = [("count", "5")]
+  
+  // Verify Arabic plural forms are different
+  let ar_result0 = I18nManager::translate_with_params(i18n, "items.count", ar_params0)
+  let ar_result1 = I18nManager::translate_with_params(i18n, "items.count", ar_params1)
+  let ar_result2 = I18nManager::translate_with_params(i18n, "items.count", ar_params2)
+  let ar_result3 = I18nManager::translate_with_params(i18n, "items.count", ar_params3)
+  
+  assert_eq(ar_result0 != ar_result1, true)
+  assert_eq(ar_result1 != ar_result2, true)
+  assert_eq(ar_result2 != ar_result3, true)
 }
 
-// 测试8: 多语言Unicode和特殊字符处理
-test "多语言Unicode和特殊字符处理测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "unicode.test.tracer")
+// Test 8: Locale-specific Formatting
+test "locale specific formatting" {
+  let i18n = I18nManager::new()
   
-  // 定义包含特殊字符的多语言文本
-  let unicode_texts = [
-    ("zh", "用户🏆张三🎉购买了📱iPhone🔋充电器💰"),
-    ("ja", "ユーザー🏆田中🎉が📱iPhone🔋充電器💰を購入"),
-    ("ar", "المستخدم🏆أحمد🎉اشترى📱آيفون🔋شاحن💰"),
-    ("hi", "उपयोगकर्ता🏆राज🎉ने📱आईफोन🔋चार्जर💰खरीदा"),
-    ("th", "ผู้ใช้🏆สมชาย🎉ซื้อ📱ไอโฟน🔋ชาร์จเจอร์💰"),
-    ("he", "משתמש🏆דוד🎉קנה📱אייפון🔋מטען💰"),
-    ("ru", "Пользователь🏆Иван🎉купил📱iPhone🔋зарядное устройство💰"),
-    ("ko", "사용자🏆김철수🎉가📱아이폰🔋충전기💰를 구매")
+  // Test address formatting
+  let address_components = [
+    ("street", "123 Main St"),
+    ("city", "New York"),
+    ("state", "NY"),
+    ("postal_code", "10001"),
+    ("country", "United States")
   ]
   
-  // 创建包含Unicode字符的span
-  for (locale, text) in unicode_texts {
-    let span = Tracer::start_span(tracer, "unicode.span." + locale)
-    
-    // 添加包含Unicode字符的属性
-    // Span::set_attribute(span, "unicode.message", StringValue(text))
-    // Span::set_attribute(span, "locale", StringValue(locale))
-    
-    // 添加包含Unicode字符的事件
-    Span::add_event(span, "Unicode event: " + text, None)
-    
-    // 设置状态并结束span
-    Span::set_status(span, Ok)
-    Span::end(span)
-    
-    // 验证span
-    assert_eq(Span::status(span), Ok)
+  // US address format
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let us_address = I18nManager::format_address(i18n, address_components)
+  assert_eq(us_address.contains("123 Main St"), true)
+  assert_eq(us_address.contains("New York, NY 10001"), true)
+  
+  // Chinese address format
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  let cn_address_components = [
+    ("country", "中国"),
+    ("state", "北京市"),
+    ("city", "北京市"),
+    ("district", "朝阳区"),
+    ("street", "建国路123号"),
+    ("postal_code", "100000")
+  ]
+  let cn_address = I18nManager::format_address(i18n, cn_address_components)
+  assert_eq(cn_address.contains("中国"), true)
+  assert_eq(cn_address.contains("北京市"), true)
+  assert_eq(cn_address.contains("建国路123号"), true)
+  
+  // Test name formatting
+  let name_components = [
+    ("first_name", "John"),
+    ("last_name", "Doe"),
+    ("middle_name", "William")
+  ]
+  
+  // Western name format
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let western_name = I18nManager::format_name(i18n, name_components)
+  assert_eq(western_name, "John William Doe")
+  
+  // Eastern name format
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  let eastern_name_components = [
+    ("family_name", "张"),
+    ("given_name", "伟")
+  ]
+  let eastern_name = I18nManager::format_name(i18n, eastern_name_components)
+  assert_eq(eastern_name, "张伟")
+  
+  // Test phone number formatting
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  let us_phone = I18nManager::format_phone_number(i18n, "+15551234567")
+  assert_eq(us_phone, "+1 (555) 123-4567")
+  
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))
+  let fr_phone = I18nManager::format_phone_number(i18n, "+33612345678")
+  assert_eq(fr_phone.contains("+33"), true)
+  assert_eq(fr_phone.contains("6 12 34 56 78"), true)
+}
+
+// Test 9: Dynamic Locale Switching
+test "dynamic locale switching" {
+  let i18n = I18nManager::new()
+  
+  // Load translations
+  let en_translations = [
+    ("welcome", "Welcome"),
+    ("goodbye", "Goodbye")
+  ]
+  
+  let zh_translations = [
+    ("welcome", "欢迎"),
+    ("goodbye", "再见")
+  ]
+  
+  I18nManager::load_translations(i18n, Locale::parse("en-US"), en_translations)
+  I18nManager::load_translations(i18n, Locale::parse("zh-CN"), zh_translations)
+  
+  // Test initial locale
+  I18nManager::set_locale(i18n, Locale::parse("en-US"))
+  assert_eq(I18nManager::translate(i18n, "welcome"), Some("Welcome"))
+  
+  // Test locale change
+  I18nManager::set_locale(i18n, Locale::parse("zh-CN"))
+  assert_eq(I18nManager::translate(i18n, "welcome"), Some("欢迎"))
+  
+  // Test locale change with callback
+  let mut callback_called = false
+  let locale_change_callback = fn(old_locale, new_locale) {
+    callback_called = true
+    assert_eq(old_locale.language, "zh")
+    assert_eq(new_locale.language, "fr")
   }
   
-  // 创建包含特殊字符的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "unicode.logger")
+  I18nManager::on_locale_change(i18n, locale_change_callback)
   
-  for (locale, text) in unicode_texts {
-    let log_record = LogRecord::new(Info, "Unicode log: " + text)
-    Logger::emit(logger, log_record)
-    
-    // 验证日志记录
-    assert_eq(LogRecord::severity_number(log_record), Info)
-    assert_eq(LogRecord::body(log_record), Some("Unicode log: " + text))
-  }
+  // Load French translations
+  let fr_translations = [
+    ("welcome", "Bienvenue"),
+    ("goodbye", "Au revoir")
+  ]
+  I18nManager::load_translations(i18n, Locale::parse("fr-FR"), fr_translations)
   
-  // 创建包含特殊字符的指标
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "unicode.metrics")
+  // Change locale to trigger callback
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))
+  assert_eq(callback_called, true)
+  assert_eq(I18nManager::translate(i18n, "welcome"), Some("Bienvenue"))
   
-  for (locale, text) in unicode_texts {
-    let counter = Meter::create_counter(meter, "unicode.counter." + locale)
-    // Counter::set_description(counter, "Unicode counter: " + text)
-    
-    Counter::add(counter, 1.0)
-    
-    // 验证指标
-    assert_eq(Instrument::name(counter), "unicode.counter." + locale)
-  }
+  // Test locale persistence
+  let saved_locale = I18nManager::current_locale(i18n)
+  assert_eq(saved_locale.language, "fr")
+  assert_eq(saved_locale.region, Some("FR"))
+}
+
+// Test 10: Translation Fallback Chain
+test "translation fallback chain" {
+  let i18n = I18nManager::new()
+  
+  // Configure fallback chain: zh-CN -> zh -> en
+  let fallback_chain = [
+    Locale::parse("zh-CN"),
+    Locale::parse("zh"),
+    Locale::parse("en-US")
+  ]
+  I18nManager::set_fallback_chain(i18n, fallback_chain)
+  
+  // Load translations for different levels
+  let zh_cn_translations = [
+    ("specific.zh.cn", "Specific to zh-CN"),
+    ("common.key", "Chinese common")
+  ]
+  
+  let zh_translations = [
+    ("common.key", "Chinese generic"),
+    ("zh.only", "Only in zh")
+  ]
+  
+  let en_translations = [
+    ("common.key", "English common"),
+    ("en.only", "Only in en")
+  ]
+  
+  I18nManager::load_translations(i18n, Locale::parse("zh-CN"), zh_cn_translations)
+  I18nManager::load_translations(i18n, Locale::parse("zh"), zh_translations)
+  I18nManager::load_translations(i18n, Locale::parse("en-US"), en_translations)
+  
+  // Set locale to zh-HK (not loaded, should use fallback chain)
+  I18nManager::set_locale(i18n, Locale::parse("zh-HK"))
+  
+  // Test fallback behavior
+  // zh-HK -> zh-CN -> zh -> en-US
+  assert_eq(I18nManager::translate(i18n, "specific.zh.cn"), Some("Specific to zh-CN"))  // Found in zh-CN
+  assert_eq(I18nManager::translate(i18n, "zh.only"), Some("Only in zh"))  // Found in zh
+  assert_eq(I18nManager::translate(i18n, "en.only"), Some("Only in en"))  // Found in en-US
+  assert_eq(I18nManager::translate(i18n, "common.key"), Some("Chinese common"))  // Found in zh-CN (first in chain)
+  assert_eq(I18nManager::translate(i18n, "nonexistent"), None)  // Not found anywhere
+  
+  // Test with different locale
+  I18nManager::set_locale(i18n, Locale::parse("fr-FR"))  // Not in chain, should use default fallback
+  assert_eq(I18nManager::translate(i18n, "en.only"), Some("Only in en"))  // Should fallback to en-US
+  
+  // Test fallback metrics
+  let metrics = I18nManager::get_fallback_metrics(i18n)
+  assert_eq(metrics.total_requests > 0, true)
+  assert_eq(metrics.direct_hits + metrics.fallback_hits == metrics.total_requests, true)
 }
