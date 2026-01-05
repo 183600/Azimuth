@@ -9,6 +9,6 @@
   },
   "test-import": ["azimuth/telemetry"],
   "test": {
-    "test": ["../azimuth_basic_moonbit_language_tests.mbt", "../azimuth_advanced_telemetry_feature_tests.mbt", "../azimuth_basic_telemetry_test_cases.mbt", "../azimuth_focused_telemetry_edge_cases.mbt", "../azimuth_new_telemetry_tests.mbt", "../azimuth_telemetry_aggregation_analysis_tests.mbt", "../azimuth_distributed_tracing_consistency_tests.mbt", "../azimuth_multi_tenant_isolation_security_tests.mbt", "../azimuth_realtime_streaming_telemetry_tests.mbt", "../azimuth_telemetry_configuration_management_tests.mbt", "../azimuth_new_feature_tests/azimuth_new_feature_tests.mbt", "../azimuth_focused_telemetry_tests.mbt", "../azimuth_new_moonbit_test_suite.mbt", "../azimuth_simplified_feature_tests.mbt"]
+    "test": ["../azimuth_basic_moonbit_language_tests.mbt", "../azimuth_advanced_telemetry_feature_tests.mbt", "../azimuth_basic_telemetry_test_cases.mbt", "../azimuth_focused_telemetry_edge_cases.mbt", "../azimuth_new_telemetry_tests.mbt", "../azimuth_telemetry_aggregation_analysis_tests.mbt", "../azimuth_distributed_tracing_consistency_tests.mbt", "../azimuth_multi_tenant_isolation_security_tests.mbt", "../azimuth_realtime_streaming_telemetry_tests.mbt", "../azimuth_telemetry_configuration_management_tests.mbt", "../azimuth_new_feature_tests/azimuth_new_feature_tests.mbt", "../azimuth_focused_telemetry_tests.mbt", "../azimuth_new_moonbit_test_suite.mbt", "../azimuth_simplified_feature_tests.mbt", "../azimuth_comprehensive_feature_tests.mbt"]
   }
 }
