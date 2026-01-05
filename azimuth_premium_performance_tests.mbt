@@ -1,677 +1,644 @@
 // Azimuth Premium Performance Tests
-// This file contains high-quality test cases for performance optimization
+// This file contains high-quality test cases for performance optimization and benchmarking
 
-// Test 1: Algorithm Complexity Optimization
-test "algorithm complexity optimization" {
-  // Test O(n²) vs O(n log n) sorting algorithms
+// Test 1: High-volume span creation and lifecycle management
+pub test "premium high volume span performance" {
+  // Test span creation performance
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance-test-tracer")
   
-  // Inefficient bubble sort (O(n²))
-  let bubble_sort = fn(arr : Array[Int]) -> Array[Int] {
-    let mut result = arr.clone()
-    let n = result.length()
-    
-    for i = 0; i < n; i = i + 1 {
-      for j = 0; j < n - i - 1; j = j + 1 {
-        if result[j] > result[j + 1] {
-          let temp = result[j]
-          result[j] = result[j + 1]
-          result[j + 1] = temp
-        }
-      }
-    }
-    
-    result
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  let active_spans = []
+  
+  // Create 1000 spans
+  for i in 0...1000 {
+    let span_name = "performance.span." + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
+    active_spans.push(span)
   }
   
-  // Efficient merge sort (O(n log n))
-  let merge_sort = fn(arr : Array[Int]) -> Array[Int] {
-    if arr.length() <= 1 {
-      return arr
-    }
-    
-    let mid = arr.length() / 2
-    let left = merge_sort(arr.slice(0, mid))
-    let right = merge_sort(arr.slice(mid, arr.length()))
-    
-    let merge = fn(left : Array[Int], right : Array[Int]) -> Array[Int] {
-      let mut result = []
-      let mut i = 0
-      let mut j = 0
-      
-      while i < left.length() && j < right.length() {
-        if left[i] <= right[j] {
-          result.push(left[i])
-          i = i + 1
-        } else {
-          result.push(right[j])
-          j = j + 1
-        }
-      }
-      
-      while i < left.length() {
-        result.push(left[i])
-        i = i + 1
-      }
-      
-      while j < right.length() {
-        result.push(right[j])
-        j = j + 1
-      }
-      
-      result
-    }
-    
-    merge(left, right)
+  let creation_time = Clock::now_unix_nanos(Clock::system()) - start_time
+  let creation_ms = creation_time as Double / 1000000.0
+  
+  // Verify span creation performance (should be reasonable)
+  assert_true(creation_ms < 1000.0)  // Should complete within 1 second
+  assert_eq(active_spans.length(), 1001)
+  
+  // Test span operations performance
+  let operation_start = Clock::now_unix_nanos(Clock::system())
+  
+  for i in 0...active_spans.length() - 1 {
+    let span = active_spans[i]
+    Span::set_status(span, Ok, Some("Performance test status"))
+    Span::add_event(span, "performance.event." + i.to_string())
   }
   
-  // Test with small array (performance difference minimal)
-  let small_array = [5, 2, 8, 1, 9, 3]
-  let bubble_small = bubble_sort(small_array)
-  let merge_small = merge_sort(small_array)
+  let operation_time = Clock::now_unix_nanos(Clock::system()) - operation_start
+  let operation_ms = operation_time as Double / 1000000.0
   
-  assert_eq(bubble_small, [1, 2, 3, 5, 8, 9])
-  assert_eq(merge_small, [1, 2, 3, 5, 8, 9])
+  // Verify span operations performance
+  assert_true(operation_ms < 500.0)  // Should complete within 500ms
   
-  // Test with larger array (performance difference significant)
-  let large_array = [42, 17, 23, 8, 16, 15, 4, 42, 23, 15]
-  let bubble_large = bubble_sort(large_array)
-  let merge_large = merge_sort(large_array)
+  // Test span ending performance
+  let end_start = Clock::now_unix_nanos(Clock::system())
   
-  assert_eq(bubble_large, [4, 8, 15, 15, 16, 17, 23, 23, 42, 42])
-  assert_eq(merge_large, [4, 8, 15, 15, 16, 17, 23, 23, 42, 42])
-  
-  // Test search algorithms
-  let linear_search = fn(arr : Array[Int], target : Int) -> Option[Int] {
-    for i = 0; i < arr.length(); i = i + 1 {
-      if arr[i] == target {
-        return Some(i)
-      }
-    }
-    None
+  for i in 0...active_spans.length() - 1 {
+    let span = active_spans[i]
+    Span::end(span)
   }
   
-  let binary_search = fn(arr : Array[Int], target : Int) -> Option[Int] {
-    let mut low = 0
-    let mut high = arr.length() - 1
-    
-    while low <= high {
-      let mid = (low + high) / 2
-      if arr[mid] == target {
-        return Some(mid)
-      } else if arr[mid] < target {
-        low = mid + 1
-      } else {
-        high = mid - 1
-      }
-    }
-    
-    None
+  let end_time = Clock::now_unix_nanos(Clock::system()) - end_start
+  let end_ms = end_time as Double / 1000000.0
+  
+  // Verify span ending performance
+  assert_true(end_ms < 500.0)  // Should complete within 500ms
+  
+  // Test parent-child span relationship performance
+  let parent_span = Tracer::start_span(tracer, "performance.parent")
+  let child_spans = []
+  
+  let child_creation_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Create 500 child spans
+  for i in 0...500 {
+    let child_name = "performance.child." + i.to_string()
+    let child_span = Tracer::start_span(tracer, child_name)
+    child_spans.push(child_span)
   }
   
-  let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
+  let child_creation_time = Clock::now_unix_nanos(Clock::system()) - child_creation_start
+  let child_creation_ms = child_creation_time as Double / 1000000.0
   
-  // Test linear search
-  let linear_result = linear_search(sorted_array, 15)
-  assert_eq(linear_result, Some(7))
+  // Verify child span creation performance
+  assert_true(child_creation_ms < 500.0)  // Should complete within 500ms
+  assert_eq(child_spans.length(), 501)
   
-  // Test binary search
-  let binary_result = binary_search(sorted_array, 15)
-  assert_eq(binary_result, Some(7))
+  // End all child spans
+  for i in 0...child_spans.length() - 1 {
+    Span::end(child_spans[i])
+  }
   
-  // Test not found cases
-  assert_eq(linear_search(sorted_array, 8), None)
-  assert_eq(binary_search(sorted_array, 8), None)
+  // End parent span
+  Span::end(parent_span)
 }
 
-// Test 2: Memory Access Patterns Optimization
-test "memory access patterns optimization" {
-  // Test cache-friendly vs cache-unfriendly operations
+// Test 2: High-volume metrics operations performance
+pub test "premium high volume metrics performance" {
+  // Test metrics creation performance
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance-test-meter")
   
-  // Cache-unfriendly: Column-major access in row-major array
-  let column_major_sum = fn(matrix : Array[Array[Int]]) -> Int {
-    let mut sum = 0
-    let cols = matrix[0].length()
-    let rows = matrix.length()
-    
-    for col = 0; col < cols; col = col + 1 {
-      for row = 0; row < rows; row = row + 1 {
-        sum = sum + matrix[row][col]
-      }
-    }
-    
-    sum
+  let creation_start = Clock::now_unix_nanos(Clock::system())
+  let metrics = []
+  
+  // Create 100 counters
+  for i in 0...100 {
+    let counter_name = "performance.counter." + i.to_string()
+    let counter = Meter::create_counter(meter, counter_name)
+    metrics.push(counter)
   }
   
-  // Cache-friendly: Row-major access in row-major array
-  let row_major_sum = fn(matrix : Array[Array[Int]]) -> Int {
-    let mut sum = 0
-    
-    for row = 0; row < matrix.length(); row = row + 1 {
-      for col = 0; col < matrix[row].length(); col = col + 1 {
-        sum = sum + matrix[row][col]
-      }
-    }
-    
-    sum
+  // Create 100 histograms
+  for i in 0...100 {
+    let histogram_name = "performance.histogram." + i.to_string()
+    let histogram = Meter::create_histogram(meter, histogram_name)
+    metrics.push(histogram)
   }
   
-  let test_matrix = [
-    [1, 2, 3, 4],
-    [5, 6, 7, 8],
-    [9, 10, 11, 12],
-    [13, 14, 15, 16],
-    [17, 18, 19, 20]
-  ]
-  
-  let column_sum = column_major_sum(test_matrix)
-  let row_sum = row_major_sum(test_matrix)
-  
-  // Both should give the same result
-  assert_eq(column_sum, row_sum)
-  assert_eq(column_sum, 210) // Sum of 1 to 20
-  
-  // Test memory locality with array operations
-  let sequential_access = fn(arr : Array[Int]) -> Int {
-    let mut sum = 0
-    for i = 0; i < arr.length(); i = i + 1 {
-      sum = sum + arr[i]
-    }
-    sum
+  // Create 100 up-down counters
+  for i in 0...100 {
+    let updown_name = "performance.updown." + i.to_string()
+    let updown = Meter::create_updown_counter(meter, updown_name)
+    metrics.push(updown)
   }
   
-  let random_access = fn(arr : Array[Int], indices : Array[Int]) -> Int {
-    let mut sum = 0
-    for index in indices {
-      if index >= 0 && index < arr.length() {
-        sum = sum + arr[index]
-      }
-    }
-    sum
+  // Create 100 gauges
+  for i in 0...100 {
+    let gauge_name = "performance.gauge." + i.to_string()
+    let gauge = Meter::create_gauge(meter, gauge_name)
+    metrics.push(gauge)
   }
   
-  let test_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-  let random_indices = [15, 2, 8, 11, 3, 14, 6, 9, 1, 12]
+  let creation_time = Clock::now_unix_nanos(Clock::system()) - creation_start
+  let creation_ms = creation_time as Double / 1000000.0
   
-  let sequential_result = sequential_access(test_array)
-  let random_result = random_access(test_array, random_indices)
+  // Verify metrics creation performance
+  assert_true(creation_ms < 1000.0)  // Should complete within 1 second
+  assert_eq(metrics.length(), 400)
   
-  assert_eq(sequential_result, 136) // Sum of 1 to 16
-  assert_eq(random_result, 81) // Sum of elements at random indices
+  // Test metrics operations performance
+  let operation_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Perform 10000 counter operations
+  for i in 0...10000 {
+    let counter_index = i % 100
+    let counter = metrics[counter_index] as Counter  // Type assertion in real implementation
+    Counter::add(counter, 1.0)
+  }
+  
+  // Perform 5000 histogram operations
+  for i in 0...5000 {
+    let histogram_index = (i % 100) + 100  // Histogram indices start at 100
+    let histogram = metrics[histogram_index] as Histogram  // Type assertion in real implementation
+    Histogram::record(histogram, i as Double)
+  }
+  
+  // Perform 5000 up-down counter operations
+  for i in 0...5000 {
+    let updown_index = (i % 100) + 200  // Up-down indices start at 200
+    let updown = metrics[updown_index] as UpDownCounter  // Type assertion in real implementation
+    let value = if i % 2 == 0 { 1.0 } else { -1.0 }
+    UpDownCounter::add(updown, value)
+  }
+  
+  let operation_time = Clock::now_unix_nanos(Clock::system()) - operation_start
+  let operation_ms = operation_time as Double / 1000000.0
+  
+  // Verify metrics operations performance
+  assert_true(operation_ms < 1000.0)  // Should complete within 1 second
+  
+  // Test metrics with attributes performance
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "operation.type", StringValue("performance"))
+  Attributes::set(attrs, "test.batch", StringValue("high.volume"))
+  
+  let attr_operation_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Perform 1000 operations with attributes
+  for i in 0...1000 {
+    let counter = metrics[0] as Counter  // Type assertion in real implementation
+    Counter::add(counter, 1.0, Some(attrs))
+  }
+  
+  let attr_operation_time = Clock::now_unix_nanos(Clock::system()) - attr_operation_start
+  let attr_operation_ms = attr_operation_time as Double / 1000000.0
+  
+  // Verify attribute operations performance
+  assert_true(attr_operation_ms < 500.0)  // Should complete within 500ms
 }
 
-// Test 3: Lazy Evaluation and Memoization
-test "lazy evaluation and memoization" {
-  // Test memoization for expensive calculations
-  type MemoCache {
-    cache : Array[(Int, Int)]
-    max_size : Int
-  }
+// Test 3: High-volume logging operations performance
+pub test "premium high volume logging performance" {
+  // Test log record creation performance
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "performance-test-logger")
   
-  let create_cache = fn(max_size : Int) -> MemoCache {
-    MemoCache { 
-      cache: [], 
-      max_size: max_size 
-    }
-  }
+  let creation_start = Clock::now_unix_nanos(Clock::system())
+  let log_records = []
   
-  let get_from_cache = fn(cache : MemoCache, key : Int) -> Option[Int] {
-    for (k, v) in cache.cache {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
-  }
-  
-  let add_to_cache = fn(cache : MemoCache, key : Int, value : Int) -> MemoCache {
-    let mut new_cache = cache.cache
-    
-    // Remove oldest entry if cache is full
-    if new_cache.length() >= cache.max_size {
-      new_cache.shift()
+  // Create 1000 log records
+  for i in 0...1000 {
+    let severity = match i % 6 {
+      0 => Trace
+      1 => Debug
+      2 => Info
+      3 => Warn
+      4 => Error
+      _ => Fatal
     }
     
-    new_cache.push((key, value))
-    MemoCache { 
-      cache: new_cache, 
-      max_size: cache.max_size 
-    }
+    let message = "Performance log message " + i.to_string()
+    let log_record = LogRecord::new(severity, message)
+    log_records.push(log_record)
   }
   
-  // Expensive function to memoize
-  let expensive_fibonacci = fn(n : Int, cache : MemoCache) -> (Int, MemoCache) {
-    let cached = get_from_cache(cache, n)
-    match cached {
-      Some(value) => return (value, cache)
-      None => ()
-    }
+  let creation_time = Clock::now_unix_nanos(Clock::system()) - creation_start
+  let creation_ms = creation_time as Double / 1000000.0
+  
+  // Verify log record creation performance
+  assert_true(creation_ms < 500.0)  // Should complete within 500ms
+  assert_eq(log_records.length(), 1001)
+  
+  // Test log emission performance
+  let emission_start = Clock::now_unix_nanos(Clock::system())
+  
+  for i in 0...log_records.length() - 1 {
+    let log_record = log_records[i]
+    Logger::emit(logger, log_record)
+  }
+  
+  let emission_time = Clock::now_unix_nanos(Clock::system()) - emission_start
+  let emission_ms = emission_time as Double / 1000000.0
+  
+  // Verify log emission performance
+  assert_true(emission_ms < 1000.0)  // Should complete within 1 second
+  
+  // Test detailed log record creation performance
+  let detailed_creation_start = Clock::now_unix_nanos(Clock::system())
+  let detailed_logs = []
+  
+  // Create 500 detailed log records
+  for i in 0...500 {
+    let trace_id = "performance.trace." + i.to_string()
+    let span_id = "performance.span." + i.to_string()
+    let timestamp = 1735689600000000000L + (i * 1000000L)
     
-    let result = if n <= 1 {
-      n
-    } else {
-      let (fib1, cache1) = expensive_fibonacci(n - 1, cache)
-      let (fib2, cache2) = expensive_fibonacci(n - 2, cache1)
-      fib1 + fib2
-    }
+    let detailed_log = LogRecord::new_with_context(
+      Error,
+      Some("Detailed performance log " + i.to_string()),
+      Some(Attributes::new()),
+      Some(timestamp),
+      Some(timestamp + 1000000L),
+      Some(trace_id),
+      Some(span_id),
+      Some(Context::root())
+    )
     
-    let new_cache = add_to_cache(cache, n, result)
-    (result, new_cache)
+    detailed_logs.push(detailed_log)
   }
   
-  // Test memoization
-  let cache = create_cache(100)
-  let (fib10, _) = expensive_fibonacci(10, cache)
-  assert_eq(fib10, 55)
+  let detailed_creation_time = Clock::now_unix_nanos(Clock::system()) - detailed_creation_start
+  let detailed_creation_ms = detailed_creation_time as Double / 1000000.0
   
-  // Test lazy evaluation with thunks
-  type LazyValue {
-    computed : Bool
-    value : Int
-    computation : () -> Int
+  // Verify detailed log record creation performance
+  assert_true(detailed_creation_ms < 500.0)  // Should complete within 500ms
+  assert_eq(detailed_logs.length(), 501)
+  
+  // Test detailed log emission performance
+  let detailed_emission_start = Clock::now_unix_nanos(Clock::system())
+  
+  for i in 0...detailed_logs.length() - 1 {
+    let detailed_log = detailed_logs[i]
+    Logger::emit(logger, detailed_log)
   }
   
-  let create_lazy = fn(computation : () -> Int) -> LazyValue {
-    LazyValue { 
-      computed: false, 
-      value: 0, 
-      computation: computation 
-    }
-  }
+  let detailed_emission_time = Clock::now_unix_nanos(Clock::system()) - detailed_emission_start
+  let detailed_emission_ms = detailed_emission_time as Double / 1000000.0
   
-  let force = fn(lazy : LazyValue) -> (Int, LazyValue) {
-    if lazy.computed {
-      (lazy.value, lazy)
-    } else {
-      let computed_value = lazy.computation()
-      let forced = LazyValue {
-        computed: true,
-        value: computed_value,
-        computation: lazy.computation
-      }
-      (computed_value, forced)
-    }
-  }
-  
-  // Test lazy evaluation
-  let expensive_computation = fn() -> Int {
-    // Simulate expensive computation
-    let mut sum = 0
-    for i = 0; i < 1000; i = i + 1 {
-      sum = sum + i
-    }
-    sum
-  }
-  
-  let lazy_value = create_lazy(expensive_computation)
-  assert_false(lazy_value.computed)
-  
-  let (value1, forced1) = force(lazy_value)
-  assert_eq(value1, 499500) // Sum of 0 to 999
-  assert_true(forced1.computed)
-  
-  // Second access should use cached value
-  let (value2, forced2) = force(forced1)
-  assert_eq(value2, 499500)
-  assert_true(forced2.computed)
+  // Verify detailed log emission performance
+  assert_true(detailed_emission_ms < 1000.0)  // Should complete within 1 second
 }
 
-// Test 4: String Operations Optimization
-test "string operations optimization" {
-  // Test string concatenation methods
-  let inefficient_concat = fn(strings : Array[String]) -> String {
-    let mut result = ""
-    for s in strings {
-      result = result + s
-    }
-    result
+// Test 4: High-volume attribute operations performance
+pub test "premium high volume attributes performance" {
+  // Test attribute setting performance
+  let attrs = Attributes::new()
+  
+  let setting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Set 1000 attributes
+  for i in 0...1000 {
+    let key = "performance.attr." + i.to_string()
+    let value = StringValue("performance.value." + i.to_string())
+    Attributes::set(attrs, key, value)
   }
   
-  let efficient_concat = fn(strings : Array[String]) -> String {
-    let mut result_parts = []
-    let mut total_length = 0
-    
-    for s in strings {
-      result_parts.push(s)
-      total_length = total_length + s.length()
-    }
-    
-    // Pre-allocate and join
-    let mut result = ""
-    for part in result_parts {
-      result = result + part
-    }
-    result
+  let setting_time = Clock::now_unix_nanos(Clock::system()) - setting_start
+  let setting_ms = setting_time as Double / 1000000.0
+  
+  // Verify attribute setting performance
+  assert_true(setting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test attribute getting performance
+  let getting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Get 1000 attributes
+  for i in 0...1000 {
+    let key = "performance.attr." + i.to_string()
+    let value = Attributes::get(attrs, key)
+    assert_true(value.is_some())
   }
   
-  let test_strings = ["Hello", " ", "World", "!", " ", "This", " ", "is", " ", "a", " ", "test"]
+  let getting_time = Clock::now_unix_nanos(Clock::system()) - getting_start
+  let getting_ms = getting_time as Double / 1000000.0
   
-  let inefficient_result = inefficient_concat(test_strings)
-  let efficient_result = efficient_concat(test_strings)
+  // Verify attribute getting performance
+  assert_true(getting_ms < 500.0)  // Should complete within 500ms
   
-  assert_eq(inefficient_result, "Hello World! This is a test")
-  assert_eq(efficient_result, "Hello World! This is a test")
+  // Test attribute operations with different value types
+  let type_attrs = Attributes::new()
+  let type_operation_start = Clock::now_unix_nanos(Clock::system())
   
-  // Test string searching algorithms
-  let naive_search = fn(text : String, pattern : String) -> Option[Int] {
-    let text_chars = text.to_char_array()
-    let pattern_chars = pattern.to_char_array()
+  // Set 250 attributes of each type
+  for i in 0...250 {
+    // String attributes
+    Attributes::set(type_attrs, "string.attr." + i.to_string(), StringValue("string.value." + i.to_string()))
     
-    for i = 0; i <= text_chars.length() - pattern_chars.length(); i = i + 1 {
-      let mut found = true
-      
-      for j = 0; j < pattern_chars.length(); j = j + 1 {
-        if text_chars[i + j] != pattern_chars[j] {
-          found = false
-          break
-        }
-      }
-      
-      if found {
-        return Some(i)
-      }
-    }
+    // Int attributes
+    Attributes::set(type_attrs, "int.attr." + i.to_string(), IntValue(i))
     
-    None
+    // Float attributes
+    Attributes::set(type_attrs, "float.attr." + i.to_string(), FloatValue(i as Double))
+    
+    // Bool attributes
+    Attributes::set(type_attrs, "bool.attr." + i.to_string(), BoolValue(i % 2 == 0))
   }
   
-  let kmp_search = fn(text : String, pattern : String) -> Option[Int] {
-    // Simplified KMP implementation
-    let text_chars = text.to_char_array()
-    let pattern_chars = pattern.to_char_array()
+  // Set 50 array attributes
+  for i in 0...50 {
+    let string_array = ArrayStringValue(["item1", "item2", "item3"])
+    let int_array = ArrayIntValue([1, 2, 3])
     
-    if pattern_chars.length() == 0 {
-      return Some(0)
-    }
-    
-    // Build failure function
-    let mut failure = [0; pattern_chars.length()]
-    let mut j = 0
-    
-    for i = 1; i < pattern_chars.length(); i = i + 1 {
-      while j > 0 && pattern_chars[j] != pattern_chars[i] {
-        j = failure[j - 1]
-      }
-      
-      if pattern_chars[j] == pattern_chars[i] {
-        j = j + 1
-        failure[i] = j
-      }
-    }
-    
-    // Search
-    j = 0
-    for i = 0; i < text_chars.length(); i = i + 1 {
-      while j > 0 && pattern_chars[j] != text_chars[i] {
-        j = failure[j - 1]
-      }
-      
-      if pattern_chars[j] == text_chars[i] {
-        j = j + 1
-        
-        if j == pattern_chars.length() {
-          return Some(i - j + 1)
-        }
-      }
-    }
-    
-    None
+    Attributes::set(type_attrs, "string.array.attr." + i.to_string(), string_array)
+    Attributes::set(type_attrs, "int.array.attr." + i.to_string(), int_array)
   }
   
-  let text = "abracadabra"
-  let pattern = "cad"
+  let type_operation_time = Clock::now_unix_nanos(Clock::system()) - type_operation_start
+  let type_operation_ms = type_operation_time as Double / 1000000.0
   
-  let naive_result = naive_search(text, pattern)
-  let kmp_result = kmp_search(text, pattern)
-  
-  assert_eq(naive_result, Some(4))
-  assert_eq(kmp_result, Some(4))
-  
-  // Test not found
-  assert_eq(naive_search(text, "xyz"), None)
-  assert_eq(kmp_search(text, "xyz"), None)
+  // Verify type operations performance
+  assert_true(type_operation_ms < 500.0)  // Should complete within 500ms
 }
 
-// Test 5: Data Structure Selection Optimization
-test "data structure selection optimization" {
-  // Test array vs linked list for different operations
-  type ListNode {
-    value : Int
-    next : Option[ListNode]
+// Test 5: High-volume context and baggage operations performance
+pub test "premium high volume context baggage performance" {
+  // Test context operations performance
+  let root_ctx = Context::root()
+  
+  let context_setting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Set 1000 context values
+  for i in 0...1000 {
+    let key = ContextKey::new("performance.ctx.key." + i.to_string())
+    let value = "performance.ctx.value." + i.to_string()
+    let ctx_with_value = Context::with_value(root_ctx, key, value)
   }
   
-  let create_linked_list = fn(values : Array[Int]) -> Option[ListNode] {
-    if values.length() == 0 {
-      return None
-    }
-    
-    let mut head = None
-    for i = values.length() - 1; i >= 0; i = i - 1 {
-      head = Some(ListNode { 
-        value: values[i], 
-        next: head 
-      })
-    }
-    
-    head
+  let context_setting_time = Clock::now_unix_nanos(Clock::system()) - context_setting_start
+  let context_setting_ms = context_setting_time as Double / 1000000.0
+  
+  // Verify context setting performance
+  assert_true(context_setting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test context getting performance
+  let ctx = Context::root()
+  let keys = []
+  
+  // Prepare context with values
+  for i in 0...1000 {
+    let key = ContextKey::new("performance.ctx.key." + i.to_string())
+    let value = "performance.ctx.value." + i.to_string()
+    ctx = Context::with_value(ctx, key, value)
+    keys.push(key)
   }
   
-  let linked_list_to_array = fn(head : Option[ListNode]) -> Array[Int] {
-    let mut result = []
-    let mut current = head
-    
-    while current.is_some() {
-      match current {
-        Some(node) => {
-          result.push(node.value)
-          current = node.next
-        }
-        None => break
-      }
-    }
-    
-    result
+  let context_getting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Get 1000 context values
+  for i in 0...1000 {
+    let key = keys[i]
+    let value = Context::get(ctx, key)
+    assert_true(value.is_some())
   }
   
-  // Test insertion at beginning (O(1) for linked list, O(n) for array)
-  let linked_list_insert = fn(head : Option[ListNode], value : Int) -> Option[ListNode] {
-    Some(ListNode { 
-      value: value, 
-      next: head 
-    })
+  let context_getting_time = Clock::now_unix_nanos(Clock::system()) - context_getting_start
+  let context_getting_ms = context_getting_time as Double / 1000000.0
+  
+  // Verify context getting performance
+  assert_true(context_getting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test baggage operations performance
+  let baggage = Baggage::new()
+  
+  let baggage_setting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Set 1000 baggage entries
+  for i in 0...1000 {
+    let key = "performance.baggage.key." + i.to_string()
+    let value = "performance.baggage.value." + i.to_string()
+    baggage = Baggage::set_entry(baggage, key, value)
   }
   
-  let array_insert_beginning = fn(arr : Array[Int], value : Int) -> Array[Int] {
-    let mut result = [value]
-    for v in arr {
-      result.push(v)
-    }
-    result
+  let baggage_setting_time = Clock::now_unix_nanos(Clock::system()) - baggage_setting_start
+  let baggage_setting_ms = baggage_setting_time as Double / 1000000.0
+  
+  // Verify baggage setting performance
+  assert_true(baggage_setting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test baggage getting performance
+  let baggage_getting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Get 1000 baggage entries
+  for i in 0...1000 {
+    let key = "performance.baggage.key." + i.to_string()
+    let value = Baggage::get_entry(baggage, key)
+    assert_true(value.is_some())
   }
   
-  let test_values = [1, 2, 3, 4, 5]
-  let linked_head = create_linked_list(test_values)
-  let array_values = test_values
+  let baggage_getting_time = Clock::now_unix_nanos(Clock::system()) - baggage_getting_start
+  let baggage_getting_ms = baggage_getting_time as Double / 1000000.0
   
-  // Insert at beginning
-  let new_linked_head = linked_list_insert(linked_head, 0)
-  let new_array = array_insert_beginning(array_values, 0)
-  
-  let linked_result = linked_list_to_array(new_linked_head)
-  
-  assert_eq(linked_result, [0, 1, 2, 3, 4, 5])
-  assert_eq(new_array, [0, 1, 2, 3, 4, 5])
-  
-  // Test random access (O(n) for linked list, O(1) for array)
-  let array_get = fn(arr : Array[Int], index : Int) -> Option[Int] {
-    if index >= 0 && index < arr.length() {
-      Some(arr[index])
-    } else {
-      None
-    }
-  }
-  
-  let linked_list_get = fn(head : Option[ListNode], index : Int) -> Option[Int] {
-    let mut current = head
-    let mut i = 0
-    
-    while current.is_some() && i < index {
-      match current {
-        Some(node) => {
-          current = node.next
-          i = i + 1
-        }
-        None => break
-      }
-    }
-    
-    match current {
-      Some(node) => Some(node.value)
-      None => None
-    }
-  }
-  
-  assert_eq(array_get(new_array, 3), Some(3))
-  assert_eq(linked_list_get(new_linked_head, 3), Some(3))
-  
-  // Test hash map vs array for lookups
-  type SimpleMap {
-    keys : Array[String]
-    values : Array[Int]
-  }
-  
-  let create_map = fn() -> SimpleMap {
-    SimpleMap { keys: [], values: [] }
-  }
-  
-  let map_set = fn(map : SimpleMap, key : String, value : Int) -> SimpleMap {
-    let mut new_keys = map.keys
-    let mut new_values = map.values
-    
-    new_keys.push(key)
-    new_values.push(value)
-    
-    SimpleMap { 
-      keys: new_keys, 
-      values: new_values 
-    }
-  }
-  
-  let map_get = fn(map : SimpleMap, key : String) -> Option[Int] {
-    for i = 0; i < map.keys.length(); i = i + 1 {
-      if map.keys[i] == key {
-        return Some(map.values[i])
-      }
-    }
-    None
-  }
-  
-  let array_lookup = fn(arr : Array[(String, Int)], key : String) -> Option[Int] {
-    for (k, v) in arr {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
-  }
-  
-  // Test map operations
-  let mut map = create_map()
-  map = map_set(map, "apple", 5)
-  map = map_set(map, "banana", 3)
-  map = map_set(map, "cherry", 7)
-  
-  let array_data = [("apple", 5), ("banana", 3), ("cherry", 7)]
-  
-  assert_eq(map_get(map, "banana"), Some(3))
-  assert_eq(array_lookup(array_data, "banana"), Some(3))
-  
-  assert_eq(map_get(map, "orange"), None)
-  assert_eq(array_lookup(array_data, "orange"), None)
+  // Verify baggage getting performance
+  assert_true(baggage_getting_ms < 500.0)  // Should complete within 500ms
 }
 
-// Test 6: Parallel Processing Optimization
-test "parallel processing optimization" {
-  // Test divide and conquer vs sequential processing
-  let sequential_sum = fn(arr : Array[Int]) -> Int {
-    let mut sum = 0
-    for v in arr {
-      sum = sum + v
-    }
-    sum
+// Test 6: High-volume propagator operations performance
+pub test "premium high volume propagator performance" {
+  // Test propagator injection performance
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let composite_propagator = CompositePropagator::new([trace_propagator])
+  
+  let injection_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Perform 1000 injection operations
+  for i in 0...1000 {
+    let carrier = TextMapCarrier::new()
+    let ctx = Context::root()
+    CompositePropagator::inject(composite_propagator, ctx, carrier)
   }
   
-  let parallel_sum = fn(arr : Array[Int]) -> Int {
-    if arr.length() <= 2 {
-      return sequential_sum(arr)
-    }
-    
-    let mid = arr.length() / 2
-    let left_sum = parallel_sum(arr.slice(0, mid))
-    let right_sum = parallel_sum(arr.slice(mid, arr.length()))
-    
-    left_sum + right_sum
+  let injection_time = Clock::now_unix_nanos(Clock::system()) - injection_start
+  let injection_ms = injection_time as Double / 1000000.0
+  
+  // Verify injection performance
+  assert_true(injection_ms < 1000.0)  // Should complete within 1 second
+  
+  // Test propagator extraction performance
+  let carrier = TextMapCarrier::new()
+  let ctx = Context::root()
+  CompositePropagator::inject(composite_propagator, ctx, carrier)
+  
+  let extraction_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Perform 1000 extraction operations
+  for i in 0...1000 {
+    let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   }
   
-  let test_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  let extraction_time = Clock::now_unix_nanos(Clock::system()) - extraction_start
+  let extraction_ms = extraction_time as Double / 1000000.0
   
-  let seq_result = sequential_sum(test_array)
-  let par_result = parallel_sum(test_array)
+  // Verify extraction performance
+  assert_true(extraction_ms < 1000.0)  // Should complete within 1 second
   
-  assert_eq(seq_result, 136) // Sum of 1 to 16
-  assert_eq(par_result, 136)
+  // Test carrier operations performance
+  let performance_carrier = TextMapCarrier::new()
   
-  // Test map-reduce pattern
-  let map_reduce = fn(arr : Array[Int], map_fn : Int -> Int, reduce_fn : (Int, Int) -> Int, initial : Int) -> Int {
-    let mut result = initial
-    
-    for v in arr {
-      let mapped = map_fn(v)
-      result = reduce_fn(result, mapped)
-    }
-    
-    result
+  let carrier_setting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Set 1000 carrier headers
+  for i in 0...1000 {
+    let key = "performance.header." + i.to_string()
+    let value = "performance.value." + i.to_string()
+    TextMapCarrier::set(performance_carrier, key, value)
   }
   
-  // Calculate sum of squares
-  let sum_of_squares = map_reduce(
-    test_array,
-    |x| x * x,
-    |acc, val| acc + val,
-    0
-  )
+  let carrier_setting_time = Clock::now_unix_nanos(Clock::system()) - carrier_setting_start
+  let carrier_setting_ms = carrier_setting_time as Double / 1000000.0
   
-  // Verify with sequential approach
-  let mut sequential_sq_sum = 0
-  for v in test_array {
-    sequential_sq_sum = sequential_sq_sum + v * v
+  // Verify carrier setting performance
+  assert_true(carrier_setting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test carrier getting performance
+  let carrier_getting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Get 1000 carrier headers
+  for i in 0...1000 {
+    let key = "performance.header." + i.to_string()
+    let value = TextMapCarrier::get(performance_carrier, key)
+    assert_true(value.is_some())
   }
   
-  assert_eq(sum_of_squares, sequential_sq_sum)
-  assert_eq(sum_of_squares, 1496) // Sum of squares of 1 to 16
+  let carrier_getting_time = Clock::now_unix_nanos(Clock::system()) - carrier_getting_start
+  let carrier_getting_ms = carrier_getting_time as Double / 1000000.0
   
-  // Test batch processing
-  let process_batch = fn(batch : Array[Int]) -> Array[Int] {
-    batch.map(|x| x * 2)
+  // Verify carrier getting performance
+  assert_true(carrier_getting_ms < 500.0)  // Should complete within 500ms
+}
+
+// Test 7: High-volume resource operations performance
+pub test "premium high volume resource performance" {
+  // Test resource creation performance
+  let creation_start = Clock::now_unix_nanos(Clock::system())
+  let resources = []
+  
+  // Create 100 resources
+  for i in 0...100 {
+    let resource = Resource::new()
+    resources.push(resource)
   }
   
-  let batch_process = fn(arr : Array[Int], batch_size : Int) -> Array[Int] {
-    let mut result = []
+  let creation_time = Clock::now_unix_nanos(Clock::system()) - creation_start
+  let creation_ms = creation_time as Double / 1000000.0
+  
+  // Verify resource creation performance
+  assert_true(creation_ms < 100.0)  // Should complete within 100ms
+  assert_eq(resources.length(), 101)
+  
+  // Test resource attribute setting performance
+  let resource = Resource::new()
+  let attr_setting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Set 1000 resource attributes
+  for i in 0...1000 {
+    let key = "performance.resource.attr." + i.to_string()
+    let value = StringValue("performance.resource.value." + i.to_string())
+    resource = Resource::with_attributes(resource, [(key, value)])
+  }
+  
+  let attr_setting_time = Clock::now_unix_nanos(Clock::system()) - attr_setting_start
+  let attr_setting_ms = attr_setting_time as Double / 1000000.0
+  
+  // Verify resource attribute setting performance
+  assert_true(attr_setting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test resource attribute getting performance
+  let attr_getting_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Get 1000 resource attributes
+  for i in 0...1000 {
+    let key = "performance.resource.attr." + i.to_string()
+    let value = Resource::get_attribute(resource, key)
+    assert_true(value.is_some())
+  }
+  
+  let attr_getting_time = Clock::now_unix_nanos(Clock::system()) - attr_getting_start
+  let attr_getting_ms = attr_getting_time as Double / 1000000.0
+  
+  // Verify resource attribute getting performance
+  assert_true(attr_getting_ms < 500.0)  // Should complete within 500ms
+  
+  // Test resource merging performance
+  let base_resource = Resource::new()
+  let override_resources = []
+  
+  // Create 100 override resources
+  for i in 0...100 {
+    let override_resource = Resource::with_attributes(Resource::new(), [
+      ("override.key." + i.to_string(), StringValue("override.value." + i.to_string()))
+    ])
+    override_resources.push(override_resource)
+  }
+  
+  let merge_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Merge 100 resources
+  for i in 0...100 {
+    base_resource = Resource::merge(base_resource, override_resources[i])
+  }
+  
+  let merge_time = Clock::now_unix_nanos(Clock::system()) - merge_start
+  let merge_ms = merge_time as Double / 1000000.0
+  
+  // Verify resource merging performance
+  assert_true(merge_ms < 500.0)  // Should complete within 500ms
+}
+
+// Test 8: Memory efficiency and garbage collection performance
+pub test "premium memory efficiency performance" {
+  // Test memory usage with high object creation and destruction
+  let memory_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Create and immediately destroy many objects
+  for i in 0...10000 {
+    // Create attributes
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "temp.key", StringValue("temp.value"))
     
-    for i = 0; i < arr.length(); i = i + batch_size {
-      let end = if i + batch_size > arr.length() { arr.length() } else { i + batch_size }
-      let batch = arr.slice(i, end)
-      let processed = process_batch(batch)
-      
-      for v in processed {
-        result.push(v)
-      }
-    }
+    // Create span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "temp.tracer")
+    let span = Tracer::start_span(tracer, "temp.span")
+    Span::end(span)
     
-    result
+    // Create log record
+    let logger_provider = LoggerProvider::default()
+    let logger = LoggerProvider::get_logger(logger_provider, "temp.logger")
+    let log_record = LogRecord::new(Info, "temp.message")
+    Logger::emit(logger, log_record)
+    
+    // Create context
+    let ctx = Context::root()
+    let key = ContextKey::new("temp.key")
+    let ctx_with_value = Context::with_value(ctx, key, "temp.value")
+    
+    // Create baggage
+    let baggage = Baggage::new()
+    baggage = Baggage::set_entry(baggage, "temp.key", "temp.value")
+    
+    // Create resource
+    let resource = Resource::new()
+    resource = Resource::with_attributes(resource, [("temp.key", StringValue("temp.value"))])
   }
   
-  let batched_result = batch_process(test_array, 4)
-  let expected = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+  let memory_time = Clock::now_unix_nanos(Clock::system()) - memory_start
+  let memory_ms = memory_time as Double / 1000000.0
   
-  assert_eq(batched_result, expected)
+  // Verify memory efficiency performance
+  assert_true(memory_ms < 5000.0)  // Should complete within 5 seconds
+  
+  // Test memory usage with large objects
+  let large_object_start = Clock::now_unix_nanos(Clock::system())
+  
+  // Create attributes with large values
+  let large_attrs = Attributes::new()
+  let large_string = "x".repeat(10000)
+  
+  for i in 0...100 {
+    let key = "large.attr." + i.to_string()
+    Attributes::set(large_attrs, key, StringValue(large_string))
+  }
+  
+  // Create array attributes with large arrays
+  let large_string_array = ArrayStringValue([large_string] * 100)
+  let large_int_array = ArrayIntValue([1] * 10000)
+  
+  Attributes::set(large_attrs, "large.string.array", large_string_array)
+  Attributes::set(large_attrs, "large.int.array", large_int_array)
+  
+  let large_object_time = Clock::now_unix_nanos(Clock::system()) - large_object_start
+  let large_object_ms = large_object_time as Double / 1000000.0
+  
+  // Verify large object performance
+  assert_true(large_object_ms < 1000.0)  // Should complete within 1 second
 }
