@@ -1,367 +1,358 @@
-// Azimuth Telemetry System - Advanced Network Communication Tests
-// This file contains comprehensive test cases for network communication and telemetry
+// Advanced Network Telemetry Tests for Azimuth Telemetry System
+// This file contains test cases for advanced network telemetry functionality
 
-// Test 1: HTTP Client Telemetry Integration
-test "http client telemetry integration" {
-  // Test HTTP request with telemetry
-  let telemetry_config = TelemetryConfig::new()
-  let http_client = HttpClient::with_telemetry("https://api.example.com", telemetry_config)
+test "network telemetry connection monitoring" {
+  let network_monitor = NetworkTelemetryMonitor::new()
   
-  // Create span for HTTP operation
-  let tracer = TracerProvider::get_tracer("http-client")
-  let span = Tracer::start_span(tracer, "http-request")
+  // Test connection establishment monitoring
+  let connection_id = NetworkTelemetryMonitor::start_connection_tracking(
+    network_monitor,
+    "https://api.example.com",
+    443
+  )
   
-  // Execute HTTP request with telemetry
-  let request = HttpRequest::new("GET", "/data")
-  let response = HttpClient::execute_with_telemetry(http_client, request, span)
+  assert_true(connection_id.length() > 0)
   
-  // Verify telemetry data was collected
-  assert_eq(HttpResponse::status(response), 200)
-  assert_true(Span::is_recording(span))
+  // Test connection state recording
+  NetworkTelemetryMonitor::record_state(
+    network_monitor,
+    connection_id,
+    "connecting"
+  )
   
-  // Check span attributes
-  let attributes = Span::attributes(span)
-  assert_eq(Attributes::get(attributes, "http.method"), Some(StringValue("GET")))
-  assert_eq(Attributes::get(attributes, "http.url"), Some(StringValue("https://api.example.com/data")))
-  assert_eq(Attributes::get(attributes, "http.status_code"), Some(IntValue(200)))
+  NetworkTelemetryMonitor::record_state(
+    network_monitor,
+    connection_id,
+    "connected"
+  )
   
-  span.end()
-}
-
-// Test 2: Network Latency Measurement
-test "network latency measurement" {
-  // Test network latency measurement with telemetry
-  let latency_tracker = NetworkLatencyTracker::new()
+  // Test connection completion
+  NetworkTelemetryMonitor::end_connection_tracking(
+    network_monitor,
+    connection_id,
+    "completed"
+  )
   
-  // Simulate network operations with different latencies
-  let operations = [
-    ("fast_operation", 10),
-    ("medium_operation", 100),
-    ("slow_operation", 500),
-    ("very_slow_operation", 1000)
-  ]
+  // Verify connection metrics
+  let metrics = NetworkTelemetryMonitor::get_connection_metrics(network_monitor)
+  assert_true(metrics.length() > 0)
   
-  for (operation_name, latency_ms) in operations {
-    let start_time = Clock::now()
-    
-    // Simulate network operation
-    Thread::sleep(latency_ms)
-    
-    let end_time = Clock::now()
-    let actual_latency = end_time - start_time
-    
-    // Record latency
-    LatencyTracker::record_operation(latency_tracker, operation_name, actual_latency)
-    
-    // Verify latency is within reasonable bounds
-    assert_true(actual_latency >= latency_ms)
-    assert_true(actual_latency <= latency_ms + 50) // Allow 50ms tolerance
-  }
+  let connection_metric = NetworkTelemetryMonitor::find_connection_metric(
+    metrics,
+    connection_id
+  )
   
-  // Verify latency statistics
-  let fast_stats = LatencyTracker::get_statistics(latency_tracker, "fast_operation")
-  assert_true(fast_stats.avg >= 10)
-  assert_true(fast_stats.avg <= 60)
-  
-  let slow_stats = LatencyTracker::get_statistics(latency_tracker, "very_slow_operation")
-  assert_true(slow_stats.avg >= 1000)
-  assert_true(slow_stats.avg <= 1050)
-}
-
-// Test 3: Network Error Handling and Recovery
-test "network error handling and recovery" {
-  // Test network error handling with telemetry
-  let retry_config = RetryConfig::new(3, 100) // 3 retries, 100ms delay
-  let http_client = HttpClient::with_retry("https://unreliable-api.example.com", retry_config)
-  
-  // Simulate network failures
-  let failure_scenarios = [
-    ("timeout_error", NetworkError::Timeout),
-    ("connection_error", NetworkError::ConnectionRefused),
-    ("dns_error", NetworkError::DNSResolutionFailed),
-    ("server_error", NetworkError::ServerError(500))
-  ]
-  
-  for (scenario_name, error) in failure_scenarios {
-    // Create span for error scenario
-    let tracer = TracerProvider::get_tracer("network-errors")
-    let span = Tracer::start_span(tracer, scenario_name)
-    
-    // Simulate network operation with failure
-    let request = HttpRequest::new("GET", "/test")
-    let response = HttpClient::execute_with_simulated_error(http_client, request, error)
-    
-    // Verify error was recorded in telemetry
-    assert_eq(HttpResponse::status(response), 500)
-    
-    let attributes = Span::attributes(span)
-    assert_eq(Attributes::get(attributes, "error.type"), Some(StringValue(scenario_name)))
-    assert_eq(Attributes::get(attributes, "error.retry_count"), Some(IntValue(3)))
-    
-    span.end()
+  match connection_metric {
+    Some(metric) => {
+      assert_eq(NetworkConnectionMetric::url(metric), "https://api.example.com")
+      assert_eq(NetworkConnectionMetric::port(metric), 443)
+      assert_eq(NetworkConnectionMetric::final_state(metric), "completed")
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 4: Network Bandwidth Monitoring
-test "network bandwidth monitoring" {
-  // Test network bandwidth monitoring with telemetry
+test "network telemetry bandwidth monitoring" {
   let bandwidth_monitor = NetworkBandwidthMonitor::new()
   
-  // Simulate data transfers of different sizes
-  let transfers = [
-    ("small_transfer", 1024),      // 1KB
-    ("medium_transfer", 102400),   // 100KB
-    ("large_transfer", 10485760),  // 10MB
-    ("huge_transfer", 104857600)   // 100MB
-  ]
+  // Start bandwidth tracking
+  let session_id = NetworkBandwidthMonitor::start_session(
+    bandwidth_monitor,
+    "download_session"
+  )
   
-  for (transfer_name, size_bytes) in transfers {
-    let start_time = Clock::now()
-    
-    // Simulate data transfer
-    let transfer_time = size_bytes / 1000000 // Simulate 1MB/s transfer rate
-    Thread::sleep(transfer_time)
-    
-    let end_time = Clock::now()
-    let duration_ms = end_time - start_time
-    
-    // Record bandwidth
-    BandwidthMonitor::record_transfer(bandwidth_monitor, transfer_name, size_bytes, duration_ms)
-    
-    // Verify bandwidth calculation
-    let bandwidth_bps = (size_bytes * 1000) / duration_ms
-    assert_true(bandwidth_bps > 0)
-    
-    let stats = BandwidthMonitor::get_statistics(bandwidth_monitor, transfer_name)
-    assert_eq(stats.total_bytes, size_bytes)
-    assert_eq(stats.transfer_count, 1)
+  // Record data transfer
+  NetworkBandwidthMonitor::record_bytes_sent(bandwidth_monitor, session_id, 1024)
+  NetworkBandwidthMonitor::record_bytes_received(bandwidth_monitor, session_id, 2048)
+  NetworkBandwidthMonitor::record_bytes_sent(bandwidth_monitor, session_id, 512)
+  NetworkBandwidthMonitor::record_bytes_received(bandwidth_monitor, session_id, 1024)
+  
+  // End session
+  NetworkBandwidthMonitor::end_session(bandwidth_monitor, session_id)
+  
+  // Verify bandwidth metrics
+  let metrics = NetworkBandwidthMonitor::get_session_metrics(bandwidth_monitor)
+  assert_true(metrics.length() > 0)
+  
+  let session_metric = NetworkBandwidthMonitor::find_session_metric(
+    metrics,
+    session_id
+  )
+  
+  match session_metric {
+    Some(metric) => {
+      assert_eq(NetworkBandwidthMetric::bytes_sent(metric), 1536)
+      assert_eq(NetworkBandwidthMetric::bytes_received(metric), 3072)
+      assert_true(NetworkBandwidthMetric::duration(metric) > 0)
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 5: Network Connection Pool Management
-test "network connection pool management" {
-  // Test connection pool with telemetry
-  let pool_config = ConnectionPoolConfig::new(10, 30) // min=10, max=30 connections
-  let connection_pool = ConnectionPool::new("https://api.example.com", pool_config)
+test "network telemetry latency measurement" {
+  let latency_monitor = NetworkLatencyMonitor::new()
   
-  // Create multiple concurrent connections
-  let mut connections = []
+  // Start latency measurement
+  let measurement_id = NetworkLatencyMonitor::start_measurement(
+    latency_monitor,
+    "api_call"
+  )
   
-  for i = 0; i < 15; i = i + 1 {
-    let tracer = TracerProvider::get_tracer("connection-pool")
-    let span = Tracer::start_span(tracer, "connection-" + i.to_string())
-    
-    let connection = ConnectionPool::get_connection(connection_pool, span)
-    connections.push((connection, span))
-  }
+  // Simulate network operation timing
+  NetworkLatencyMonitor::record_dns_lookup_time(latency_monitor, measurement_id, 50)
+  NetworkLatencyMonitor::record_connection_time(latency_monitor, measurement_id, 100)
+  NetworkLatencyMonitor::record_ssl_handshake_time(latency_monitor, measurement_id, 200)
+  NetworkLatencyMonitor::record_first_byte_time(latency_monitor, measurement_id, 300)
+  NetworkLatencyMonitor::record_total_time(latency_monitor, measurement_id, 400)
   
-  // Verify all connections were created
-  assert_eq(connections.length(), 15)
+  // End measurement
+  NetworkLatencyMonitor::end_measurement(latency_monitor, measurement_id)
   
-  // Verify pool metrics
-  let pool_metrics = ConnectionPool::get_metrics(connection_pool)
-  assert_true(pool_metrics.active_connections >= 10)
-  assert_true(pool_metrics.active_connections <= 30)
+  // Verify latency metrics
+  let metrics = NetworkLatencyMonitor::get_measurement_metrics(latency_monitor)
+  assert_true(metrics.length() > 0)
   
-  // Return connections to pool
-  for (connection, span) in connections {
-    ConnectionPool::return_connection(connection_pool, connection)
-    span.end()
-  }
+  let measurement_metric = NetworkLatencyMonitor::find_measurement_metric(
+    metrics,
+    measurement_id
+  )
   
-  // Verify connections were returned
-  let final_metrics = ConnectionPool::get_metrics(connection_pool)
-  assert_true(final_metrics.active_connections >= 10)
-  assert_true(final_metrics.active_connections <= 30)
-}
-
-// Test 6: Network Protocol Detection
-test "network protocol detection" {
-  // Test automatic protocol detection with telemetry
-  let protocol_detector = ProtocolDetector::new()
-  
-  // Test different protocol samples
-  let protocol_samples = [
-    ("http_sample", "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "HTTP/1.1"),
-    ("https_sample", "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "HTTPS"),
-    ("websocket_sample", "GET /ws HTTP/1.1\r\nUpgrade: websocket\r\n\r\n", "WebSocket"),
-    ("grpc_sample", binary_data_for_grpc(), "gRPC")
-  ]
-  
-  for (sample_name, sample_data, expected_protocol) in protocol_samples {
-    let tracer = TracerProvider::get_tracer("protocol-detection")
-    let span = Tracer::start_span(tracer, sample_name)
-    
-    let detected_protocol = ProtocolDetector::detect_protocol(protocol_detector, sample_data)
-    assert_eq(detected_protocol, expected_protocol)
-    
-    // Verify protocol was recorded in telemetry
-    let attributes = Span::attributes(span)
-    assert_eq(Attributes::get(attributes, "network.protocol"), Some(StringValue(expected_protocol)))
-    
-    span.end()
+  match measurement_metric {
+    Some(metric) => {
+      assert_eq(NetworkLatencyMetric::dns_lookup_time(metric), 50)
+      assert_eq(NetworkLatencyMetric::connection_time(metric), 100)
+      assert_eq(NetworkLatencyMetric::ssl_handshake_time(metric), 200)
+      assert_eq(NetworkLatencyMetric::first_byte_time(metric), 300)
+      assert_eq(NetworkLatencyMetric::total_time(metric), 400)
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 7: Network Security Telemetry
-test "network security telemetry" {
-  // Test network security monitoring with telemetry
+test "network telemetry error tracking" {
+  let error_tracker = NetworkErrorTracker::new()
+  
+  // Test error recording
+  let error_id = NetworkErrorTracker::record_error(
+    error_tracker,
+    "connection_timeout",
+    "Connection to api.example.com timed out after 30 seconds",
+    Some([
+      ("url", "https://api.example.com/data"),
+      ("timeout", "30000"),
+      ("retry_count", "3")
+    ])
+  )
+  
+  assert_true(error_id.length() > 0)
+  
+  // Test error categorization
+  let category = NetworkErrorTracker::categorize_error(error_tracker, error_id)
+  assert_eq(category, "timeout")
+  
+  // Test error severity assessment
+  let severity = NetworkErrorTracker::assess_severity(error_tracker, error_id)
+  assert_eq(severity, "high")
+  
+  // Verify error metrics
+  let metrics = NetworkErrorTracker::get_error_metrics(error_tracker)
+  assert_true(metrics.length() > 0)
+  
+  let timeout_errors = NetworkErrorTracker::filter_errors_by_category(
+    metrics,
+    "timeout"
+  )
+  assert_true(timeout_errors.length() > 0)
+}
+
+test "network telemetry protocol analysis" {
+  let protocol_analyzer = NetworkProtocolAnalyzer::new()
+  
+  // Test HTTP protocol analysis
+  let http_analysis = NetworkProtocolAnalyzer::analyze_http_request(
+    protocol_analyzer,
+    "GET",
+    "https://api.example.com/users",
+    [
+      ("Content-Type", "application/json"),
+      ("Authorization", "Bearer token123"),
+      ("User-Agent", "Azimuth/1.0")
+    ],
+    None
+  )
+  
+  assert_eq(NetworkProtocolAnalysis::protocol(http_analysis), "HTTP")
+  assert_eq(NetworkProtocolAnalysis::method(http_analysis), "GET")
+  assert_eq(NetworkProtocolAnalysis::endpoint(http_analysis), "/users")
+  assert_eq(NetworkProtocolAnalysis::header_count(http_analysis), 3)
+  
+  // Test WebSocket protocol analysis
+  let websocket_analysis = NetworkProtocolAnalyzer::analyze_websocket_connection(
+    protocol_analyzer,
+    "wss://ws.example.com/realtime",
+    [
+      ("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ=="),
+      ("Sec-WebSocket-Version", "13")
+    ]
+  )
+  
+  assert_eq(NetworkProtocolAnalysis::protocol(websocket_analysis), "WebSocket")
+  assert_eq(NetworkProtocolAnalysis::endpoint(websocket_analysis), "/realtime")
+  assert_true(NetworkProtocolAnalysis::is_secure(websocket_analysis))
+}
+
+test "network telemetry performance aggregation" {
+  let performance_aggregator = NetworkPerformanceAggregator::new()
+  
+  // Add multiple performance measurements
+  for i in 0..=10 {
+    NetworkPerformanceAggregator::add_measurement(
+      performance_aggregator,
+      "api_call",
+      100 + i * 10, // latency in ms
+      1024 + i * 100, // bytes sent
+      2048 + i * 200 // bytes received
+    )
+  }
+  
+  // Get aggregated statistics
+  let stats = NetworkPerformanceAggregator::get_statistics(
+    performance_aggregator,
+    "api_call"
+  )
+  
+  match stats {
+    Some(statistics) => {
+      assert_true(NetworkPerformanceStats::avg_latency(statistics) > 100)
+      assert_true(NetworkPerformanceStats::min_latency(statistics) >= 100)
+      assert_true(NetworkPerformanceStats::max_latency(statistics) <= 200)
+      assert_eq(NetworkPerformanceStats::measurement_count(statistics), 11)
+      assert_true(NetworkPerformanceStats::total_bytes_sent(statistics) > 0)
+      assert_true(NetworkPerformanceStats::total_bytes_received(statistics) > 0)
+    }
+    None => assert_true(false)
+  }
+}
+
+test "network telemetry real-time monitoring" {
+  let realtime_monitor = NetworkRealtimeMonitor::new()
+  
+  // Start real-time monitoring
+  let monitor_id = NetworkRealtimeMonitor::start_monitoring(
+    realtime_monitor,
+    "critical_api_endpoint"
+  )
+  
+  // Simulate real-time events
+  NetworkRealtimeMonitor::record_connection_event(
+    realtime_monitor,
+    monitor_id,
+    "connection_established",
+    Some([
+      ("remote_address", "192.168.1.100:8080"),
+      ("local_address", "192.168.1.1:54321")
+    ])
+  )
+  
+  NetworkRealtimeMonitor::record_data_transfer_event(
+    realtime_monitor,
+    monitor_id,
+    "data_sent",
+    1024,
+    Some([
+      ("content_type", "application/json"),
+      ("compression", "gzip")
+    ])
+  )
+  
+  NetworkRealtimeMonitor::record_data_transfer_event(
+    realtime_monitor,
+    monitor_id,
+    "data_received",
+    2048,
+    Some([
+      ("content_type", "application/json"),
+      ("response_time", "150")
+    ])
+  )
+  
+  // Get real-time status
+  let status = NetworkRealtimeMonitor::get_current_status(realtime_monitor, monitor_id)
+  match status {
+    Some(current_status) => {
+      assert_eq(NetworkRealtimeStatus::monitor_id(current_status), monitor_id)
+      assert_true(NetworkRealtimeStatus::is_active(current_status))
+      assert_true(NetworkRealtimeStatus::total_bytes_sent(current_status) > 0)
+      assert_true(NetworkRealtimeStatus::total_bytes_received(current_status) > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Stop monitoring
+  NetworkRealtimeMonitor::stop_monitoring(realtime_monitor, monitor_id)
+}
+
+test "network telemetry security monitoring" {
   let security_monitor = NetworkSecurityMonitor::new()
   
-  // Test different security scenarios
-  let security_scenarios = [
-    ("valid_certificate", SecurityEvent::ValidCertificate),
-    ("expired_certificate", SecurityEvent::ExpiredCertificate),
-    ("invalid_hostname", SecurityEvent::InvalidHostname),
-    ("self_signed_certificate", SecurityEvent::SelfSignedCertificate),
-    ("certificate_revoked", SecurityEvent::CertificateRevoked)
-  ]
+  // Test security event recording
+  let security_event_id = NetworkSecurityMonitor::record_security_event(
+    security_monitor,
+    "tls_handshake_failure",
+    "TLS handshake failed due to certificate validation error",
+    Some([
+      ("remote_host", "suspicious.example.com"),
+      ("certificate_issuer", "Unknown CA"),
+      ("error_code", "CERTIFICATE_INVALID")
+    ])
+  )
   
-  for (scenario_name, security_event) in security_scenarios {
-    let tracer = TracerProvider::get_tracer("network-security")
-    let span = Tracer::start_span(tracer, scenario_name)
-    
-    // Record security event
-    SecurityMonitor::record_event(security_monitor, security_event, span)
-    
-    // Verify security event was recorded
-    let attributes = Span::attributes(span)
-    assert_eq(Attributes::get(attributes, "security.event"), Some(StringValue(scenario_name)))
-    
-    span.end()
-  }
+  assert_true(security_event_id.length() > 0)
   
-  // Verify security statistics
-  let security_stats = SecurityMonitor::get_statistics(security_monitor)
-  assert_eq(security_stats.total_events, 5)
-  assert_eq(security_stats.certificate_issues, 4) // All except valid_certificate
-}
-
-// Test 8: Network Performance Optimization
-test "network performance optimization" {
-  // Test network performance optimization with telemetry
-  let optimizer = NetworkOptimizer::new()
+  // Test threat level assessment
+  let threat_level = NetworkSecurityMonitor::assess_threat_level(
+    security_monitor,
+    security_event_id
+  )
+  assert_eq(threat_level, "medium")
   
-  // Test optimization strategies
-  let optimization_strategies = [
-    ("compression", OptimizationStrategy::EnableCompression),
-    ("caching", OptimizationStrategy::EnableCaching),
-    ("keep_alive", OptimizationStrategy::EnableKeepAlive),
-    ("pipelining", OptimizationStrategy::EnablePipelining),
-    ("multiplexing", OptimizationStrategy::EnableMultiplexing)
-  ]
+  // Test security pattern detection
+  let patterns = NetworkSecurityMonitor::detect_security_patterns(security_monitor)
+  assert_true(patterns.length() > 0)
   
-  for (strategy_name, strategy) in optimization_strategies {
-    let tracer = TracerProvider::get_tracer("network-optimization")
-    let span = Tracer::start_span(tracer, strategy_name)
-    
-    // Apply optimization strategy
-    let optimized_client = NetworkOptimizer::apply_strategy(optimizer, strategy)
-    
-    // Measure performance before and after optimization
-    let baseline_time = measure_network_performance("https://api.example.com", None)
-    let optimized_time = measure_network_performance("https://api.example.com", Some(optimized_client))
-    
-    // Verify optimization improved performance
-    assert_true(optimized_time <= baseline_time)
-    
-    // Record optimization results
-    let improvement = ((baseline_time - optimized_time) * 100) / baseline_time
-    Span::add_event(span, "optimization.result", Some([
-      ("strategy", strategy_name),
-      ("improvement_percent", improvement.to_string())
-    ]))
-    
-    span.end()
+  // Check for specific patterns
+  let suspicious_pattern = NetworkSecurityMonitor::find_pattern(
+    patterns,
+    "certificate_validation_failure"
+  )
+  match suspicious_pattern {
+    Some(pattern) => {
+      assert_true(NetworkSecurityPattern::occurrence_count(pattern) > 0)
+      assert_eq(NetworkSecurityPattern::severity(pattern), "medium")
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 9: Network Resilience Testing
-test "network resilience testing" {
-  // Test network resilience with telemetry
-  let resilience_tester = NetworkResilienceTester::new()
+test "network telemetry configuration" {
+  let config = NetworkTelemetryConfig::new()
+    .with_enable_connection_monitoring(true)
+    .with_enable_bandwidth_monitoring(true)
+    .with_enable_latency_monitoring(true)
+    .with_enable_error_tracking(true)
+    .with_enable_protocol_analysis(true)
+    .with_enable_security_monitoring(true)
+    .with_sampling_rate(0.1) // 10% sampling
+    .with_retention_period(86400) // 24 hours
   
-  // Test resilience scenarios
-  let resilience_scenarios = [
-    ("packet_loss", ResilienceTest::PacketLoss(0.1)),      // 10% packet loss
-    ("high_latency", ResilienceTest::HighLatency(500)),     // 500ms latency
-    ("bandwidth_limit", ResilienceTest::BandwidthLimit(1000)), // 1KB/s limit
-    ("connection_churn", ResilienceTest::ConnectionChurn(5))    // 5 connections/min
-  ]
+  let network_telemetry = NetworkTelemetry::with_config(config)
   
-  for (scenario_name, test) in resilience_scenarios {
-    let tracer = TracerProvider::get_tracer("network-resilience")
-    let span = Tracer::start_span(tracer, scenario_name)
-    
-    // Execute resilience test
-    let test_result = ResilienceTester::execute_test(resilience_tester, test)
-    
-    // Verify system handled the resilience scenario
-    assert_true(test_result.success_rate >= 0.8) // At least 80% success rate
-    
-    // Record resilience metrics
-    let attributes = Span::attributes(span)
-    assert_eq(Attributes::get(attributes, "resilience.scenario"), Some(StringValue(scenario_name)))
-    assert_eq(Attributes::get(attributes, "resilience.success_rate"), Some(FloatValue(test_result.success_rate)))
-    
-    span.end()
-  }
-}
-
-// Test 10: Network Telemetry Aggregation
-test "network telemetry aggregation" {
-  // Test network telemetry data aggregation
-  let telemetry_aggregator = NetworkTelemetryAggregator::new()
-  
-  // Generate network telemetry data
-  for i = 0; i < 100; i = i + 1 {
-    let tracer = TracerProvider::get_tracer("network-aggregation")
-    let span = Tracer::start_span(tracer, "network-operation-" + i.to_string())
-    
-    // Simulate network operation with random metrics
-    let latency = 50 + (i * 10) % 500
-    let bandwidth = 1000 + (i * 100) % 10000
-    let error_rate = if i % 10 == 0 { 0.1 } else { 0.0 }
-    
-    // Record metrics
-    Span::set_attribute(span, "network.latency_ms", IntValue(latency))
-    Span::set_attribute(span, "network.bandwidth_bps", IntValue(bandwidth))
-    Span::set_attribute(span, "network.error_rate", FloatValue(error_rate))
-    
-    // Add span to aggregator
-    TelemetryAggregator::add_span(telemetry_aggregator, span)
-    
-    span.end()
-  }
-  
-  // Get aggregated metrics
-  let aggregated_metrics = TelemetryAggregator::get_metrics(telemetry_aggregator)
-  
-  // Verify aggregation results
-  assert_eq(aggregated_metrics.total_operations, 100)
-  assert_true(aggregated_metrics.avg_latency > 0)
-  assert_true(aggregated_metrics.avg_bandwidth > 0)
-  assert_true(aggregated_metrics.avg_error_rate >= 0.0)
-  assert_true(aggregated_metrics.avg_error_rate <= 0.1)
-}
-
-// Helper function to generate binary data for gRPC
-func binary_data_for_grpc() -> String {
-  // Generate binary data that resembles gRPC protocol
-  let mut binary_data = []
-  for i = 0; i < 100; i = i + 1 {
-    binary_data.push(i % 256)
-  }
-  binary_data.to_string()
-}
-
-// Helper function to measure network performance
-func measure_network_performance(url : String, optimized_client : Option[HttpClient]) -> Int {
-  // In a real implementation, this would measure actual network performance
-  let base_time = 100 // milliseconds
-  
-  match optimized_client {
-    Some(_) => base_time / 2, // Optimized client is twice as fast
-    None => base_time
-  }
+  assert_true(NetworkTelemetry::connection_monitoring_enabled(network_telemetry))
+  assert_true(NetworkTelemetry::bandwidth_monitoring_enabled(network_telemetry))
+  assert_true(NetworkTelemetry::latency_monitoring_enabled(network_telemetry))
+  assert_true(NetworkTelemetry::error_tracking_enabled(network_telemetry))
+  assert_true(NetworkTelemetry::protocol_analysis_enabled(network_telemetry))
+  assert_true(NetworkTelemetry::security_monitoring_enabled(network_telemetry))
+  assert_eq(NetworkTelemetry::sampling_rate(network_telemetry), 0.1)
+  assert_eq(NetworkTelemetry::retention_period(network_telemetry), 86400)
 }
