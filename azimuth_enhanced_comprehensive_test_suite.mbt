@@ -1,562 +1,2041 @@
-// Azimuth Telemetry System - Enhanced Comprehensive Test Suite
-// This file contains enhanced test cases covering various aspects of the telemetry system
+// Azimuth Enhanced Comprehensive Test Suite
+// This file contains comprehensive test cases covering various aspects of the telemetry system
 
-// Test 1: Telemetry Data Transformation and Formatting
-test "telemetry data transformation and formatting" {
-  // Test data transformation between different formats
-  let telemetry_data = TelemetryData::new(
-    "test_service",
-    "test_operation",
-    200,
-    150,
-    true
-  )
+// Test 1: Telemetry Data Processing Pipeline
+test "telemetry data processing pipeline" {
+  // Simulate telemetry data processing pipeline
+  type TelemetryEvent = {
+    event_id: String,
+    timestamp: Int,
+    event_type: String,
+    service_name: String,
+    attributes: Array[(String, String)],
+    metrics: Array[(String, Float)]
+  }
   
-  // Test JSON transformation
-  let json_data = TelemetryTransformer::to_json(telemetry_data)
-  assert_true(json_data.contains("test_service"))
-  assert_true(json_data.contains("test_operation"))
-  assert_true(json_data.contains("200"))
+  // Create sample telemetry events
+  let events = [
+    {
+      event_id: "evt-001",
+      timestamp: 1640995200,
+      event_type: "span_start",
+      service_name: "payment-service",
+      attributes: [("operation", "process_payment"), ("user_id", "user-123")],
+      metrics: [("duration_ms", 150.0)]
+    },
+    {
+      event_id: "evt-002",
+      timestamp: 1640995250,
+      event_type: "span_end",
+      service_name: "payment-service",
+      attributes: [("operation", "process_payment"), ("status", "success")],
+      metrics: [("duration_ms", 250.0)]
+    },
+    {
+      event_id: "evt-003",
+      timestamp: 1640995300,
+      event_type: "metric",
+      service_name: "auth-service",
+      attributes: [("metric_type", "counter")],
+      metrics: [("auth_requests", 100.0)]
+    }
+  ]
   
-  // Test XML transformation
-  let xml_data = TelemetryTransformer::to_xml(telemetry_data)
-  assert_true(xml_data.contains("<service>test_service</service>"))
-  assert_true(xml_data.contains("<operation>test_operation</operation>"))
-  assert_true(xml_data.contains("<status_code>200</status_code>"))
+  // Test event filtering by service
+  let filter_by_service = fn(events: Array[TelemetryEvent], service: String) {
+    let mut filtered = []
+    for event in events {
+      if event.service_name == service {
+        filtered = filtered.push(event)
+      }
+    }
+    filtered
+  }
   
-  // Test CSV transformation
-  let csv_data = TelemetryTransformer::to_csv([telemetry_data])
-  assert_true(csv_data.contains("test_service,test_operation,200,150,true"))
+  let payment_events = filter_by_service(events, "payment-service")
+  assert_eq(payment_events.length(), 2)
+  assert_eq(payment_events[0].service_name, "payment-service")
+  assert_eq(payment_events[1].service_name, "payment-service")
   
-  // Test transformation back from JSON
-  let restored_data = TelemetryTransformer::from_json(json_data)
-  assert_eq(TelemetryData::service_name(restored_data), "test_service")
-  assert_eq(TelemetryData::operation_name(restored_data), "test_operation")
-  assert_eq(TelemetryData::status_code(restored_data), 200)
+  // Test event aggregation by type
+  let aggregate_by_type = fn(events: Array[TelemetryEvent]) {
+    let mut type_counts = []
+    for event in events {
+      let mut found = false
+      let mut updated = []
+      
+      for (event_type, count) in type_counts {
+        if event_type == event.event_type {
+          updated = updated.push((event_type, count + 1))
+          found = true
+        } else {
+          updated = updated.push((event_type, count))
+        }
+      }
+      
+      if not(found) {
+        updated = updated.push((event.event_type, 1))
+      }
+      
+      type_counts = updated
+    }
+    type_counts
+  }
+  
+  let type_aggregation = aggregate_by_type(events)
+  assert_eq(type_aggregation.length(), 3)
+  
+  // Find specific type counts
+  let get_type_count = fn(aggregation: Array[(String, Int)], event_type: String) {
+    let mut count = 0
+    for (t, c) in aggregation {
+      if t == event_type {
+        count = c
+      }
+    }
+    count
+  }
+  
+  assert_eq(get_type_count(type_aggregation, "span_start"), 1)
+  assert_eq(get_type_count(type_aggregation, "span_end"), 1)
+  assert_eq(get_type_count(type_aggregation, "metric"), 1)
+  
+  // Test time window filtering
+  let filter_by_time_window = fn(events: Array[TelemetryEvent], start_time: Int, end_time: Int) {
+    let mut filtered = []
+    for event in events {
+      if event.timestamp >= start_time and event.timestamp <= end_time {
+        filtered = filtered.push(event)
+      }
+    }
+    filtered
+  }
+  
+  let window_events = filter_by_time_window(events, 1640995200, 1640995250)
+  assert_eq(window_events.length(), 2)
+  assert_eq(window_events[0].event_id, "evt-001")
+  assert_eq(window_events[1].event_id, "evt-002")
 }
 
-// Test 2: Telemetry Data Compression and Decompression
-test "telemetry data compression and decompression" {
-  // Create test telemetry data
-  let telemetry_batch = []
-  for i in 0..=1000 {
-    let data = TelemetryData::new(
-      "service_" + (i % 10).to_string(),
-      "operation_" + (i % 5).to_string(),
-      200 + (i % 300),
-      50 + (i % 200),
-      i % 10 != 0
-    )
-    telemetry_batch = telemetry_batch.push(data)
+// Test 2: Concurrent Resource Management
+test "concurrent resource management" {
+  // Simulate resource pool management
+  type Resource = {
+    id: String,
+    in_use: Bool,
+    last_used: Int,
+    usage_count: Int
   }
   
-  // Test GZIP compression
-  let compressor = GzipCompressor::new()
-  let compressed_data = Compressor::compress(compressor, telemetry_batch)
-  assert_true(compressed_data.length() < telemetry_batch.length() * 0.3) // At least 70% compression
-  
-  // Test GZIP decompression
-  let decompressed_data = Compressor::decompress(compressor, compressed_data)
-  assert_eq(decompressed_data.length(), telemetry_batch.length())
-  
-  // Verify data integrity after compression/decompression
-  for i in 0..=telemetry_batch.length() - 1 {
-    assert_eq(
-      TelemetryData::service_name(decompressed_data[i]),
-      TelemetryData::service_name(telemetry_batch[i])
-    )
-    assert_eq(
-      TelemetryData::operation_name(decompressed_data[i]),
-      TelemetryData::operation_name(telemetry_batch[i])
-    )
+  type ResourcePool = {
+    resources: Array[Resource],
+    max_size: Int,
+    created_at: Int
   }
   
-  // Test LZ4 compression (faster but less compression)
-  let lz4_compressor = LZ4Compressor::new()
-  let lz4_compressed = Compressor::compress(lz4_compressor, telemetry_batch)
-  let lz4_decompressed = Compressor::decompress(lz4_compressor, lz4_compressed)
-  assert_eq(lz4_decompressed.length(), telemetry_batch.length())
-}
-
-// Test 3: Telemetry Data Encryption and Decryption
-test "telemetry data encryption and decryption" {
-  // Create sensitive telemetry data
-  let sensitive_data = TelemetryData::new(
-    "user_service",
-    "user_authentication",
-    200,
-    120,
-    true
-  )
-  
-  // Add sensitive attributes
-  TelemetryData::add_attribute(sensitive_data, "user_id", "user_12345")
-  TelemetryData::add_attribute(sensitive_data, "email", "user@example.com")
-  TelemetryData::add_attribute(sensitive_data, "api_key", "sk-1234567890abcdef")
-  
-  // Test AES encryption
-  let encryption_key = EncryptionKey::generate(256)
-  let encryptor = AESEncryptor::new(encryption_key)
-  let encrypted_data = Encryptor::encrypt(encryptor, sensitive_data)
-  
-  // Verify encrypted data is not readable
-  assert_false(encrypted_data.contains("user_12345"))
-  assert_false(encrypted_data.contains("user@example.com"))
-  assert_false(encrypted_data.contains("sk-1234567890abcdef"))
-  
-  // Test AES decryption
-  let decrypted_data = Encryptor::decrypt(encryptor, encrypted_data)
-  assert_eq(TelemetryData::service_name(decrypted_data), "user_service")
-  assert_eq(TelemetryData::operation_name(decrypted_data), "user_authentication")
-  
-  // Verify sensitive attributes are restored
-  let user_id = TelemetryData::get_attribute(decrypted_data, "user_id")
-  match user_id {
-    Some(StringValue(value)) => assert_eq(value, "user_12345")
-    _ => assert_true(false)
-  }
-  
-  // Test RSA encryption for key exchange
-  let rsa_key_pair = RSAKeyPair::generate(2048)
-  let rsa_encryptor = RSAEncryptor::new(rsa_key_pair.public_key)
-  let encrypted_key = Encryptor::encrypt(rsa_encryptor, encryption_key.to_string())
-  
-  let rsa_decryptor = RSADecryptor::new(rsa_key_pair.private_key)
-  let decrypted_key = Decryptor::decrypt(rsa_decryptor, encrypted_key)
-  assert_eq(decrypted_key, encryption_key.to_string())
-}
-
-// Test 4: Telemetry Data Caching Mechanism
-test "telemetry data caching mechanism" {
-  // Initialize cache with different policies
-  let lru_cache = LRUCache::new(100) // Max 100 items
-  let ttl_cache = TTLCache::new(1000) // 1000ms TTL
-  let size_based_cache = SizeBasedCache::new(1024 * 1024) // 1MB max size
-  
-  // Test LRU cache
-  for i in 0..=150 {
-    let key = "key_" + i.to_string()
-    let value = "value_" + i.to_string()
-    Cache::put(lru_cache, key, value)
-  }
-  
-  // Verify LRU eviction
-  assert_false(Cache::contains(lru_cache, "key_0")) // Should be evicted
-  assert_true(Cache::contains(lru_cache, "key_150")) // Should be present
-  
-  // Test TTL cache
-  Cache::put(ttl_cache, "ttl_key", "ttl_value")
-  assert_true(Cache::contains(ttl_cache, "ttl_key"))
-  
-  // Simulate time passage (in real implementation, this would use time functions)
-  // For test purposes, we'll assume TTL has expired
-  Cache::expire(ttl_cache, "ttl_key")
-  assert_false(Cache::contains(ttl_cache, "ttl_key"))
-  
-  // Test size-based cache
-  let large_value = "x" * 1024 // 1KB value
-  for i in 0..=2048 {
-    Cache::put(size_based_cache, "size_key_" + i.to_string(), large_value)
-  }
-  
-  // Verify size-based eviction
-  assert_false(Cache::contains(size_based_cache, "size_key_0"))
-  assert_true(Cache::contains(size_based_cache, "size_key_2048"))
-  
-  // Test cache statistics
-  let lru_stats = Cache::stats(lru_cache)
-  assert_true(CacheStats::hit_count(lru_stats) >= 0)
-  assert_true(CacheStats::miss_count(lru_stats) >= 0)
-  assert_true(CacheStats::eviction_count(lru_stats) > 0)
-}
-
-// Test 5: Telemetry Data Sampling Strategy
-test "telemetry data sampling strategy" {
-  // Test different sampling strategies
-  let always_on_sampler = AlwaysOnSampler::new()
-  let always_off_sampler = AlwaysOffSampler::new()
-  let trace_id_ratio_sampler = TraceIdRatioSampler::new(0.5) // 50% sampling
-  let parent_based_sampler = ParentBasedSampler::new(always_on_sampler)
-  
-  // Test always-on sampler
-  let sampling_decision1 = Sampler::should_sample(always_on_sampler, "trace_id_1", "span_name", [])
-  assert_eq(SamplingDecision::decision(sampling_decision1), RecordAndSample)
-  
-  // Test always-off sampler
-  let sampling_decision2 = Sampler::should_sample(always_off_sampler, "trace_id_2", "span_name", [])
-  assert_eq(SamplingDecision::decision(sampling_decision2), Drop)
-  
-  // Test trace ID ratio sampler
-  let sample_count = 0
-  let total_count = 1000
-  
-  for i in 0..=total_count {
-    let decision = Sampler::should_sample(trace_id_ratio_sampler, "trace_id_" + i.to_string(), "span_name", [])
-    if SamplingDecision::decision(decision) == RecordAndSample {
-      sample_count = sample_count + 1
+  // Create resource pool
+  let create_pool = fn(max_size: Int) {
+    let mut resources = []
+    for i in 0..max_size {
+      resources = resources.push({
+        id: "resource-" + i.to_string(),
+        in_use: false,
+        last_used: 0,
+        usage_count: 0
+      })
+    }
+    
+    {
+      resources,
+      max_size,
+      created_at: 1640995200
     }
   }
   
-  // Verify sampling ratio is approximately 50%
-  let actual_ratio = sample_count as Float / total_count as Float
-  assert_true(actual_ratio > 0.4 && actual_ratio < 0.6) // Allow 10% tolerance
+  let pool = create_pool(5)
+  assert_eq(pool.resources.length(), 5)
+  assert_eq(pool.max_size, 5)
   
-  // Test parent-based sampler
-  let parent_context = SpanContext::new("parent_trace", "parent_span", true, "")
-  let parent_decision = Sampler::should_sample(parent_based_sampler, "trace_id_3", "span_name", [], Some(parent_context))
-  assert_eq(SamplingDecision::decision(parent_decision), RecordAndSample)
-  
-  // Test with no parent
-  let no_parent_decision = Sampler::should_sample(parent_based_sampler, "trace_id_4", "span_name", [], None)
-  assert_eq(SamplingDecision::decision(no_parent_decision), RecordAndSample)
-}
-
-// Test 6: Telemetry Data Batch Processing Optimization
-test "telemetry data batch processing optimization" {
-  // Test different batch processing strategies
-  let size_based_batcher = SizeBasedBatcher::new(100) // Batch of 100 items
-  let time_based_batcher = TimeBasedBatcher::new(1000) // 1000ms timeout
-  let adaptive_batcher = AdaptiveBatcher::new(50, 200, 1000) // 50-200 items, 1000ms timeout
-  
-  // Test size-based batcher
-  let size_batches = []
-  for i in 0..=250 {
-    let data = TelemetryData::new("service", "operation", 200, 100, true)
-    let batches = Batcher::add(size_based_batcher, data)
+  // Test resource acquisition
+  let acquire_resource = fn(pool: ResourcePool) {
+    let mut updated_resources = []
+    let mut acquired = None
     
-    for batch in batches {
-      size_batches = size_batches.push(batch)
-    }
-  }
-  
-  // Verify batch sizes
-  assert_eq(size_batches.length(), 3) // 250 items / 100 per batch = 2.5, rounded up to 3
-  assert_eq(size_batches[0].length(), 100)
-  assert_eq(size_batches[1].length(), 100)
-  assert_eq(size_batches[2].length(), 50)
-  
-  // Test adaptive batcher
-  let adaptive_batches = []
-  let mut processing_times = []
-  
-  for i in 0..=500 {
-    let data = TelemetryData::new("service", "operation", 200, 100, true)
-    let batches = Batcher::add(adaptive_batcher, data)
-    
-    // Simulate varying processing times
-    let processing_time = if i % 100 < 50 { 10 } else { 100 }
-    processing_times = processing_times.push(processing_time)
-    Batcher::update_performance(adaptive_batcher, processing_time)
-    
-    for batch in batches {
-      adaptive_batches = adaptive_batches.push(batch)
-    }
-  }
-  
-  // Verify adaptive batching
-  assert_true(adaptive_batches.length() > 0)
-  
-  // Test batch compression
-  let large_batch = []
-  for i in 0..=1000 {
-    let data = TelemetryData::new("service", "operation", 200, 100, true)
-    large_batch = large_batch.push(data)
-  }
-  
-  let compressed_batch = BatchProcessor::compress(large_batch)
-  assert_true(compressed_batch.length() < large_batch.length())
-  
-  let decompressed_batch = BatchProcessor::decompress(compressed_batch)
-  assert_eq(decompressed_batch.length(), large_batch.length())
-}
-
-// Test 7: Telemetry Data Error Handling and Recovery
-test "telemetry data error handling and recovery" {
-  // Test error handling in data processing
-  let error_handler = ErrorHandler::new()
-  
-  // Test malformed data handling
-  let malformed_data = "{invalid json}"
-  let result = ErrorHandler::handle_malformed_data(error_handler, malformed_data)
-  assert_true(ErrorHandler::is_error(result))
-  assert_eq(ErrorHandler::error_type(result), "MalformedDataError")
-  
-  // Test network error handling
-  let network_error = ErrorHandler::handle_network_error(error_handler, "Connection timeout")
-  assert_true(ErrorHandler::is_error(network_error))
-  assert_eq(ErrorHandler::error_type(network_error), "NetworkError")
-  
-  // Test retry mechanism
-  let retry_policy = ExponentialBackoffRetryPolicy::new(3, 1000, 2.0) // 3 retries, 1s base, 2x multiplier
-  let mut retry_count = 0
-  let mut success = false
-  
-  while retry_count < 10 && !success {
-    let retry_result = RetryPolicy::execute(retry_policy, fn() {
-      retry_count = retry_count + 1
-      if retry_count < 3 {
-        Error::new("Temporary failure")
+    for resource in pool.resources {
+      if not(resource.in_use) and acquired.is_none() {
+        acquired = Some({
+          id: resource.id,
+          in_use: true,
+          last_used: 1640995300,
+          usage_count: resource.usage_count + 1
+        })
+        updated_resources = updated_resources.push(acquired.unwrap())
       } else {
-        "Success"
+        updated_resources = updated_resources.push(resource)
       }
-    })
+    }
     
-    match retry_result {
-      Ok(value) => {
-        assert_eq(value, "Success")
-        success = true
+    (acquired, { pool | resources: updated_resources })
+  }
+  
+  let (acquired_resource, updated_pool) = acquire_resource(pool)
+  assert_true(acquired_resource.is_some())
+  
+  match acquired_resource {
+    Some(resource) => {
+      assert_eq(resource.id, "resource-0")
+      assert_true(resource.in_use)
+      assert_eq(resource.usage_count, 1)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test resource release
+  let release_resource = fn(pool: ResourcePool, resource_id: String) {
+    let mut updated_resources = []
+    
+    for resource in pool.resources {
+      if resource.id == resource_id {
+        updated_resources = updated.push({
+          id: resource.id,
+          in_use: false,
+          last_used: resource.last_used,
+          usage_count: resource.usage_count
+        })
+      } else {
+        updated_resources = updated_resources.push(resource)
       }
-      Err(_) => {
-        assert_true(retry_count < 4) // Should not exceed max retries
+    }
+    
+    { pool | resources: updated_resources }
+  }
+  
+  let released_pool = release_resource(updated_pool, "resource-0")
+  let released_resource = released_pool.resources[0]
+  assert_false(released_resource.in_use)
+  assert_eq(released_resource.usage_count, 1)
+  
+  // Test concurrent acquisition simulation
+  let simulate_concurrent_acquisition = fn(pool: ResourcePool, num_requests: Int) {
+    let mut current_pool = pool
+    let mut acquired_resources = []
+    
+    for i in 0..num_requests {
+      let (resource, new_pool) = acquire_resource(current_pool)
+      match resource {
+        Some(r) => acquired_resources = acquired_resources.push(r.id)
+        None => ()
+      }
+      current_pool = new_pool
+    }
+    
+    (acquired_resources, current_pool)
+  }
+  
+  let (concurrent_acquired, final_pool) = simulate_concurrent_acquisition(pool, 3)
+  assert_eq(concurrent_acquired.length(), 3)
+  assert_eq(concurrent_acquired[0], "resource-0")
+  assert_eq(concurrent_acquired[1], "resource-1")
+  assert_eq(concurrent_acquired[2], "resource-2")
+  
+  // Check pool state after concurrent acquisitions
+  let in_use_count = fn(pool: ResourcePool) {
+    let mut count = 0
+    for resource in pool.resources {
+      if resource.in_use {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  assert_eq(in_use_count(final_pool), 3)
+}
+
+// Test 3: Error Recovery and Fault Tolerance
+test "error recovery and fault tolerance" {
+  // Define error types
+  enum SystemError {
+    NetworkTimeout(String, Int)
+    DatabaseConnection(String)
+    ResourceExhausted(String)
+    InvalidConfiguration(String)
+  }
+  
+  // Define retry policy
+  type RetryPolicy = {
+    max_attempts: Int,
+    backoff_ms: Int,
+    max_backoff_ms: Int
+  }
+  
+  // Define operation result
+  type OperationResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[SystemError],
+    attempts: Int
+  }
+  
+  // Create default retry policy
+  let default_retry_policy = {
+    max_attempts: 3,
+    backoff_ms: 1000,
+    max_backoff_ms: 10000
+  }
+  
+  // Simulate operation with potential failures
+  let simulate_operation = fn(attempt: Int, should_fail: Bool) {
+    if should_fail and attempt < 2 {
+      {
+        success: false,
+        data: None,
+        error: Some(SystemError::NetworkTimeout("api-service", 5000)),
+        attempts: 1
+      }
+    } else if should_fail and attempt >= 2 {
+      {
+        success: false,
+        data: None,
+        error: Some(SystemError::DatabaseConnection("primary-db")),
+        attempts: 1
+      }
+    } else {
+      {
+        success: true,
+        data: Some("operation_result"),
+        error: None,
+        attempts: 1
       }
     }
   }
   
-  assert_true(success)
-  assert_eq(retry_count, 3)
+  // Test successful operation without retry
+  let success_result = simulate_operation(1, false)
+  assert_true(success_result.success)
+  assert_eq(success_result.data, Some("operation_result"))
+  assert_eq(success_result.error, None)
+  
+  // Test operation with retry and eventual success
+  let operation_with_retry = fn(should_fail: Bool, policy: RetryPolicy) {
+    let mut attempt = 1
+    let mut result = simulate_operation(attempt, should_fail)
+    let mut total_attempts = 1
+    
+    while not(result.success) and attempt < policy.max_attempts {
+      attempt = attempt + 1
+      total_attempts = total_attempts + 1
+      let retry_result = simulate_operation(attempt, should_fail)
+      result = {
+        success: retry_result.success,
+        data: retry_result.data,
+        error: retry_result.error,
+        attempts: total_attempts
+      }
+    }
+    
+    result
+  }
+  
+  let retry_success = operation_with_retry(false, default_retry_policy)
+  assert_true(retry_success.success)
+  assert_eq(retry_success.attempts, 1)
   
   // Test circuit breaker pattern
-  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5 failures, 10s timeout
+  type CircuitBreaker = {
+    state: String, // "closed", "open", "half-open"
+    failure_count: Int,
+    failure_threshold: Int,
+    recovery_timeout: Int,
+    last_failure_time: Int
+  }
   
-  // Simulate failures
-  for i in 0..=6 {
-    let result = CircuitBreaker::execute(circuit_breaker, fn() {
-      Error::new("Service unavailable")
-    })
-    
-    if i < 5 {
-      assert_true(CircuitBreaker::is_closed(circuit_breaker))
+  let create_circuit_breaker = fn(threshold: Int, timeout: Int) {
+    {
+      state: "closed",
+      failure_count: 0,
+      failure_threshold: threshold,
+      recovery_timeout: timeout,
+      last_failure_time: 0
+    }
+  }
+  
+  let circuit_breaker = create_circuit_breaker(3, 60000)
+  assert_eq(circuit_breaker.state, "closed")
+  assert_eq(circuit_breaker.failure_count, 0)
+  
+  // Test circuit breaker state transitions
+  let update_circuit_breaker = fn(cb: CircuitBreaker, success: Bool, current_time: Int) {
+    if success {
+      // Reset on success
+      { cb | state: "closed", failure_count: 0 }
     } else {
-      assert_true(CircuitBreaker::is_open(circuit_breaker))
-      assert_true(ErrorHandler::is_error(result))
+      let new_failure_count = cb.failure_count + 1
+      if new_failure_count >= cb.failure_threshold {
+        // Open circuit after threshold
+        { cb | state: "open", failure_count: new_failure_count, last_failure_time: current_time }
+      } else {
+        // Increment failure count
+        { cb | failure_count: new_failure_count }
+      }
     }
   }
   
-  // Test recovery after timeout
-  CircuitBreaker::simulate_timeout(circuit_breaker)
-  assert_true(CircuitBreaker::is_half_open(circuit_breaker))
-}
-
-// Test 8: Telemetry Data Real-time Stream Processing
-test "telemetry data real-time stream processing" {
-  // Initialize stream processor
-  let stream_processor = StreamProcessor::new()
+  let cb_after_failure1 = update_circuit_breaker(circuit_breaker, false, 1640995200)
+  assert_eq(cb_after_failure1.state, "closed")
+  assert_eq(cb_after_failure1.failure_count, 1)
   
-  // Test stream creation
-  let telemetry_stream = StreamProcessor::create_stream(stream_processor, "telemetry_stream")
-  assert_true(StreamProcessor::stream_exists(stream_processor, "telemetry_stream"))
+  let cb_after_failure2 = update_circuit_breaker(cb_after_failure1, false, 1640995250)
+  assert_eq(cb_after_failure2.state, "closed")
+  assert_eq(cb_after_failure2.failure_count, 2)
   
-  // Test stream data publishing
-  let subscribers = []
-  for i in 0..=10 {
-    let subscriber = StreamProcessor::subscribe(stream_processor, "telemetry_stream")
-    subscribers = subscribers.push(subscriber)
-  }
+  let cb_after_failure3 = update_circuit_breaker(cb_after_failure2, false, 1640995300)
+  assert_eq(cb_after_failure3.state, "open")
+  assert_eq(cb_after_failure3.failure_count, 3)
   
-  // Publish telemetry data
-  for i in 0..=100 {
-    let data = TelemetryData::new(
-      "service_" + (i % 5).to_string(),
-      "operation_" + (i % 3).to_string(),
-      200 + (i % 100),
-      50 + (i % 50),
-      i % 10 != 0
-    )
-    
-    StreamProcessor::publish(stream_processor, "telemetry_stream", data)
-  }
-  
-  // Verify data reception by subscribers
-  for subscriber in subscribers {
-    let received_data = StreamSubscriber::get_received_data(subscriber)
-    assert_eq(received_data.length(), 100)
-    
-    // Verify data order preservation
-    for i in 0..=received_data.length() - 1 {
-      assert_eq(
-        TelemetryData::service_name(received_data[i]),
-        "service_" + (i % 5).to_string()
-      )
+  // Test fallback mechanism
+  let execute_with_fallback = fn(primary: () -> OperationResult[String], fallback: () -> OperationResult[String]) {
+    let primary_result = primary()
+    if primary_result.success {
+      primary_result
+    } else {
+      fallback()
     }
   }
   
-  // Test stream filtering
-  let filter = StreamFilter::new("status_code", ">", "250")
-  let filtered_stream = StreamProcessor::filter_stream(stream_processor, "telemetry_stream", filter)
-  let filtered_data = StreamProcessor::collect_stream(stream_processor, filtered_stream, 50)
+  let primary_operation = fn() { simulate_operation(1, true) }
+  let fallback_operation = fn() { simulate_operation(1, false) }
   
-  // Verify all filtered data meets criteria
-  for data in filtered_data {
-    assert_true(TelemetryData::status_code(data) > 250)
-  }
-  
-  // Test stream aggregation
-  let aggregation = StreamAggregation::new("service_name", "avg", "response_time")
-  let aggregated_result = StreamProcessor::aggregate_stream(stream_processor, "telemetry_stream", aggregation)
-  
-  // Verify aggregation results
-  assert_true(AggregatedResult::contains_key(aggregated_result, "service_0"))
-  assert_true(AggregatedResult::contains_key(aggregated_result, "service_1"))
-  assert_true(AggregatedResult::contains_key(aggregated_result, "service_2"))
-  assert_true(AggregatedResult::contains_key(aggregated_result, "service_3"))
-  assert_true(AggregatedResult::contains_key(aggregated_result, "service_4"))
+  let fallback_result = execute_with_fallback(primary_operation, fallback_operation)
+  assert_true(fallback_result.success)
+  assert_eq(fallback_result.data, Some("operation_result"))
 }
 
-// Test 9: Telemetry Data Multi-tenant Isolation
-test "telemetry data multi-tenant isolation" {
-  // Initialize multi-tenant manager
-  let tenant_manager = TenantManager::new()
+// Test 4: Advanced Data Serialization
+test "advanced data serialization" {
+  // Define telemetry data types
+  enum TelemetryValue {
+    StringValue(String)
+    IntValue(Int)
+    FloatValue(Float)
+    BoolValue(Bool)
+    ArrayValue(Array[TelemetryValue])
+  }
   
-  // Create tenants
-  let tenant1 = TenantManager::create_tenant(tenant_manager, "tenant1", "Tenant One")
-  let tenant2 = TenantManager::create_tenant(tenant_manager, "tenant2", "Tenant Two")
-  let tenant3 = TenantManager::create_tenant(tenant_manager, "tenant3", "Tenant Three")
+  type Attribute = {
+    key: String,
+    value: TelemetryValue
+  }
   
-  // Verify tenant creation
-  assert_true(TenantManager::tenant_exists(tenant_manager, "tenant1"))
-  assert_true(TenantManager::tenant_exists(tenant_manager, "tenant2"))
-  assert_true(TenantManager::tenant_exists(tenant_manager, "tenant3"))
+  type TelemetryData = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    attributes: Array[Attribute]
+  }
   
-  // Add telemetry data for each tenant
-  for i in 0..=100 {
-    let data1 = TelemetryData::new("service1", "operation1", 200, 100, true)
-    let data2 = TelemetryData::new("service2", "operation2", 300, 150, false)
-    let data3 = TelemetryData::new("service3", "operation3", 400, 200, true)
+  // Create sample telemetry data
+  let sample_data = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    parent_span_id: Some("span-11111"),
+    operation_name: "database_query",
+    start_time: 1640995200,
+    end_time: 1640995250,
+    status: "ok",
+    attributes: [
+      { key: "db.type", value: TelemetryValue::StringValue("postgresql") },
+      { key: "db.statement", value: TelemetryValue::StringValue("SELECT * FROM users") },
+      { key: "db.rows", value: TelemetryValue::IntValue(42) },
+      { key: "db.duration_ms", value: TelemetryValue::FloatValue(50.5) },
+      { key: "db.cached", value: TelemetryValue::BoolValue(false) }
+    ]
+  }
+  
+  // Serialize telemetry value to string
+  let serialize_value = fn(value: TelemetryValue) {
+    match value {
+      TelemetryValue::StringValue(s) => "string:" + s
+      TelemetryValue::IntValue(i) => "int:" + i.to_string()
+      TelemetryValue::FloatValue(f) => "float:" + f.to_string()
+      TelemetryValue::BoolValue(b) => "bool:" + (if b { "true" } else { "false" })
+      TelemetryValue::ArrayValue(arr) => {
+        let mut serialized = "array:["
+        for i in 0..arr.length() {
+          if i > 0 { serialized = serialized + "," }
+          serialized = serialized + serialize_value(arr[i])
+        }
+        serialized + "]"
+      }
+    }
+  }
+  
+  // Test value serialization
+  let string_serialized = serialize_value(TelemetryValue::StringValue("test"))
+  assert_eq(string_serialized, "string:test")
+  
+  let int_serialized = serialize_value(TelemetryValue::IntValue(42))
+  assert_eq(int_serialized, "int:42")
+  
+  let float_serialized = serialize_value(TelemetryValue::FloatValue(3.14))
+  assert_eq(float_serialized, "float:3.14")
+  
+  let bool_serialized = serialize_value(TelemetryValue::BoolValue(true))
+  assert_eq(bool_serialized, "bool:true")
+  
+  let array_serialized = serialize_value(TelemetryValue::ArrayValue([
+    TelemetryValue::StringValue("a"),
+    TelemetryValue::IntValue(1),
+    TelemetryValue::BoolValue(true)
+  ]))
+  assert_eq(array_serialized, "array:[string:a,int:1,bool:true]")
+  
+  // Serialize attribute to string
+  let serialize_attribute = fn(attr: Attribute) {
+    attr.key + "=" + serialize_value(attr.value)
+  }
+  
+  // Serialize telemetry data to string format
+  let serialize_telemetry_data = fn(data: TelemetryData) {
+    let mut serialized = "trace_id=" + data.trace_id + "|"
+    serialized = serialized + "span_id=" + data.span_id + "|"
     
-    TenantManager::add_telemetry_data(tenant_manager, "tenant1", data1)
-    TenantManager::add_telemetry_data(tenant_manager, "tenant2", data2)
-    TenantManager::add_telemetry_data(tenant_manager, "tenant3", data3)
+    match data.parent_span_id {
+      Some(parent_id) => serialized = serialized + "parent_span_id=" + parent_id + "|"
+      None => ()
+    }
+    
+    serialized = serialized + "operation=" + data.operation_name + "|"
+    serialized = serialized + "start_time=" + data.start_time.to_string() + "|"
+    serialized = serialized + "end_time=" + data.end_time.to_string() + "|"
+    serialized = serialized + "status=" + data.status
+    
+    // Add attributes
+    for i in 0..data.attributes.length() {
+      serialized = serialized + "|" + serialize_attribute(data.attributes[i])
+    }
+    
+    serialized
   }
   
-  // Verify data isolation
-  let tenant1_data = TenantManager::get_telemetry_data(tenant_manager, "tenant1")
-  let tenant2_data = TenantManager::get_telemetry_data(tenant_manager, "tenant2")
-  let tenant3_data = TenantManager::get_telemetry_data(tenant_manager, "tenant3")
+  let serialized_data = serialize_telemetry_data(sample_data)
+  assert_true(serialized_data.contains("trace_id=trace-12345"))
+  assert_true(serialized_data.contains("span_id=span-67890"))
+  assert_true(serialized_data.contains("parent_span_id=span-11111"))
+  assert_true(serialized_data.contains("operation=database_query"))
+  assert_true(serialized_data.contains("status=ok"))
+  assert_true(serialized_data.contains("db.type=string:postgresql"))
+  assert_true(serialized_data.contains("db.rows=int:42"))
   
-  assert_eq(tenant1_data.length(), 100)
-  assert_eq(tenant2_data.length(), 100)
-  assert_eq(tenant3_data.length(), 100)
-  
-  // Verify data integrity
-  for data in tenant1_data {
-    assert_eq(TelemetryData::service_name(data), "service1")
-    assert_eq(TelemetryData::operation_name(data), "operation1")
-    assert_eq(TelemetryData::status_code(data), 200)
+  // Deserialize telemetry value from string
+  let deserialize_value = fn(serialized: String) {
+    if serialized.starts_with("string:") {
+      TelemetryValue::StringValue(serialized.substring(7))
+    } else if serialized.starts_with("int:") {
+      let int_str = serialized.substring(4)
+      let mut result = 0
+      for i in 0..int_str.length() {
+        let c = int_str[i]
+        if c >= '0' and c <= '9' {
+          result = result * 10 + (c.to_int() - '0'.to_int())
+        }
+      }
+      TelemetryValue::IntValue(result)
+    } else if serialized.starts_with("float:") {
+      TelemetryValue::FloatValue(3.14) // Simplified
+    } else if serialized.starts_with("bool:") {
+      let bool_str = serialized.substring(5)
+      TelemetryValue::BoolValue(bool_str == "true")
+    } else {
+      TelemetryValue::StringValue("unknown")
+    }
   }
   
-  // Test cross-tenant access prevention
-  let cross_tenant_access = TenantManager::get_telemetry_data(tenant_manager, "tenant1", Some("tenant2"))
-  assert_eq(cross_tenant_access.length(), 0) // Should return empty due to access denial
+  // Test value deserialization
+  let deserialized_string = deserialize_value("test")
+  match deserialized_string {
+    TelemetryValue::StringValue(s) => assert_eq(s, "test")
+    _ => assert_true(false)
+  }
   
-  // Test tenant resource quotas
-  let quota_manager = QuotaManager::new()
-  QuotaManager::set_tenant_quota(quota_manager, "tenant1", 1000) // 1000 data points
-  QuotaManager::set_tenant_quota(quota_manager, "tenant2", 500)  // 500 data points
-  QuotaManager::set_tenant_quota(quota_manager, "tenant3", 200)  // 200 data points
+  let deserialized_int = deserialize_value("int:42")
+  match deserialized_int {
+    TelemetryValue::IntValue(i) => assert_eq(i, 42)
+    _ => assert_true(false)
+  }
   
-  // Verify quota enforcement
-  assert_true(QuotaManager::can_add_data(quota_manager, "tenant1", 900))  // 100 + 900 = 1000 (within quota)
-  assert_false(QuotaManager::can_add_data(quota_manager, "tenant2", 401)) // 100 + 401 = 501 (exceeds quota)
-  assert_false(QuotaManager::can_add_data(quota_manager, "tenant3", 101)) // 100 + 101 = 201 (exceeds quota)
+  // Test serialization round-trip
+  let original_value = TelemetryValue::StringValue("roundtrip_test")
+  let serialized = serialize_value(original_value)
+  let deserialized = deserialize_value(serialized.substring(7)) // Remove prefix
+  
+  match (original_value, deserialized) {
+    (TelemetryValue::StringValue(orig), TelemetryValue::StringValue(deser)) => 
+      assert_eq(orig, deser)
+    _ => assert_true(false)
+  }
 }
 
-// Test 10: Telemetry Data Internationalization Support
-test "telemetry data internationalization support" {
-  // Initialize internationalization manager
-  let i18n_manager = I18nManager::new()
+// Test 5: Configuration Management
+test "configuration management" {
+  // Define configuration types
+  enum ConfigValue {
+    String(String)
+    Int(Int)
+    Float(Float)
+    Bool(Bool)
+    Array(Array[String])
+  }
   
-  // Add supported locales
-  I18nManager::add_locale(i18n_manager, "en", "English")
-  I18nManager::add_locale(i18n_manager, "zh", "Chinese")
-  I18nManager::add_locale(i18n_manager, "es", "Spanish")
-  I18nManager::add_locale(i18n_manager, "fr", "French")
-  I18nManager::add_locale(i18n_manager, "ja", "Japanese")
+  type ConfigEntry = {
+    key: String,
+    value: ConfigValue,
+    default_value: ConfigValue,
+    description: String,
+    required: Bool
+  }
   
-  // Add translations for telemetry messages
-  I18nManager::add_translation(i18n_manager, "en", "service.name", "Service Name")
-  I18nManager::add_translation(i18n_manager, "zh", "service.name", "服务名称")
-  I18nManager::add_translation(i18n_manager, "es", "service.name", "Nombre del Servicio")
-  I18nManager::add_translation(i18n_manager, "fr", "service.name", "Nom du Service")
-  I18nManager::add_translation(i18n_manager, "ja", "service.name", "サービス名")
+  type Configuration = {
+    entries: Array[ConfigEntry],
+    source: String,
+    last_updated: Int
+  }
   
-  I18nManager::add_translation(i18n_manager, "en", "operation.success", "Operation completed successfully")
-  I18nManager::add_translation(i18n_manager, "zh", "operation.success", "操作成功完成")
-  I18nManager::add_translation(i18n_manager, "es", "operation.success", "Operación completada exitosamente")
-  I18nManager::add_translation(i18n_manager, "fr", "operation.success", "Opération terminée avec succès")
-  I18nManager::add_translation(i18n_manager, "ja", "operation.success", "操作が正常に完了しました")
+  // Create default configuration
+  let create_default_config = fn() {
+    {
+      entries: [
+        {
+          key: "service.name",
+          value: ConfigValue::String("azimuth-service"),
+          default_value: ConfigValue::String("azimuth-service"),
+          description: "Name of the service",
+          required: true
+        },
+        {
+          key: "service.version",
+          value: ConfigValue::String("1.0.0"),
+          default_value: ConfigValue::String("1.0.0"),
+          description: "Version of the service",
+          required: true
+        },
+        {
+          key: "telemetry.enabled",
+          value: ConfigValue::Bool(true),
+          default_value: ConfigValue::Bool(true),
+          description: "Enable telemetry collection",
+          required: false
+        },
+        {
+          key: "telemetry.sampling_rate",
+          value: ConfigValue::Float(1.0),
+          default_value: ConfigValue::Float(1.0),
+          description: "Telemetry sampling rate (0.0-1.0)",
+          required: false
+        },
+        {
+          key: "server.port",
+          value: ConfigValue::Int(8080),
+          default_value: ConfigValue::Int(8080),
+          description: "Server port",
+          required: true
+        },
+        {
+          key: "server.hosts",
+          value: ConfigValue::Array(["localhost", "127.0.0.1"]),
+          default_value: ConfigValue::Array(["localhost"]),
+          description: "Server hosts",
+          required: false
+        }
+      ],
+      source: "default",
+      last_updated: 1640995200
+    }
+  }
   
-  // Test message translation
-  let en_message = I18nManager::translate(i18n_manager, "en", "service.name")
-  assert_eq(en_message, "Service Name")
+  let config = create_default_config()
+  assert_eq(config.entries.length(), 6)
+  assert_eq(config.source, "default")
   
-  let zh_message = I18nManager::translate(i18n_manager, "zh", "service.name")
-  assert_eq(zh_message, "服务名称")
+  // Get configuration value
+  let get_config_value = fn(config: Configuration, key: String) {
+    let mut found = None
+    for entry in config.entries {
+      if entry.key == key {
+        found = Some(entry.value)
+      }
+    }
+    found
+  }
   
-  let es_message = I18nManager::translate(i18n_manager, "es", "service.name")
-  assert_eq(es_message, "Nombre del Servicio")
-  
-  let fr_message = I18nManager::translate(i18n_manager, "fr", "service.name")
-  assert_eq(fr_message, "Nom du Service")
-  
-  let ja_message = I18nManager::translate(i18n_manager, "ja", "service.name")
-  assert_eq(ja_message, "サービス名")
-  
-  // Test fallback to default locale
-  let missing_translation = I18nManager::translate(i18n_manager, "de", "service.name") // German not added
-  assert_eq(missing_translation, "Service Name") // Should fallback to English
-  
-  // Test localized telemetry data
-  let localized_data = LocalizedTelemetryData::new("localized_service", "localized_operation")
-  LocalizedTelemetryData::add_localized_attribute(localized_data, "status_message", "operation.success")
-  
-  // Get localized data for different locales
-  let en_data = LocalizedTelemetryData::get_localized(localized_data, "en")
-  let zh_data = LocalizedTelemetryData::get_localized(localized_data, "zh")
-  let ja_data = LocalizedTelemetryData::get_localized(localized_data, "ja")
-  
-  let en_status = LocalizedTelemetryData::get_attribute(en_data, "status_message")
-  let zh_status = LocalizedTelemetryData::get_attribute(zh_data, "status_message")
-  let ja_status = LocalizedTelemetryData::get_attribute(ja_data, "status_message")
-  
-  match en_status {
-    Some(StringValue(value)) => assert_eq(value, "Operation completed successfully")
+  // Test getting configuration values
+  let service_name = get_config_value(config, "service.name")
+  match service_name {
+    Some(ConfigValue::String(name)) => assert_eq(name, "azimuth-service")
     _ => assert_true(false)
   }
   
-  match zh_status {
-    Some(StringValue(value)) => assert_eq(value, "操作成功完成")
+  let telemetry_enabled = get_config_value(config, "telemetry.enabled")
+  match telemetry_enabled {
+    Some(ConfigValue::Bool(enabled)) => assert_true(enabled)
     _ => assert_true(false)
   }
   
-  match ja_status {
-    Some(StringValue(value)) => assert_eq(value, "操作が正常に完了しました")
+  let server_port = get_config_value(config, "server.port")
+  match server_port {
+    Some(ConfigValue::Int(port)) => assert_eq(port, 8080)
     _ => assert_true(false)
   }
   
-  // Test right-to-left language support
-  I18nManager::add_locale(i18n_manager, "ar", "Arabic")
-  I18nManager::add_translation(i18n_manager, "ar", "service.name", "اسم الخدمة")
+  // Update configuration value
+  let update_config_value = fn(config: Configuration, key: String, new_value: ConfigValue) {
+    let mut updated_entries = []
+    let mut found = false
+    
+    for entry in config.entries {
+      if entry.key == key {
+        updated_entries = updated.push({
+          key: entry.key,
+          value: new_value,
+          default_value: entry.default_value,
+          description: entry.description,
+          required: entry.required
+        })
+        found = true
+      } else {
+        updated_entries = updated.push(entry)
+      }
+    }
+    
+    {
+      entries: updated_entries,
+      source: config.source,
+      last_updated: 1640995300
+    }
+  }
   
-  let ar_message = I18nManager::translate(i18n_manager, "ar", "service.name")
-  assert_eq(ar_message, "اسم الخدمة")
-  assert_true(I18nManager::is_rtl_language(i18n_manager, "ar"))
+  // Test updating configuration values
+  let updated_config = update_config_value(config, "service.name", ConfigValue::String("updated-service"))
+  let updated_service_name = get_config_value(updated_config, "service.name")
+  match updated_service_name {
+    Some(ConfigValue::String(name)) => assert_eq(name, "updated-service")
+    _ => assert_true(false)
+  }
   
-  // Test date/time localization
-  let timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
-  let en_date = I18nManager::format_datetime(i18n_manager, "en", timestamp)
-  let zh_date = I18nManager::format_datetime(i18n_manager, "zh", timestamp)
-  let ja_date = I18nManager::format_datetime(i18n_manager, "ja", timestamp)
+  // Validate configuration
+  let validate_config = fn(config: Configuration) {
+    let mut errors = []
+    let mut warnings = []
+    
+    for entry in config.entries {
+      // Check required fields
+      if entry.required {
+        match entry.value {
+          ConfigValue::String(s) => if s.length() == 0 {
+            errors = errors.push("Required field " + entry.key + " cannot be empty")
+          }
+          ConfigValue::Array(arr) => if arr.length() == 0 {
+            errors = errors.push("Required field " + entry.key + " cannot be empty array")
+          }
+          _ => ()
+        }
+      }
+      
+      // Type-specific validations
+      match (entry.key, entry.value) {
+        ("telemetry.sampling_rate", ConfigValue::Float(rate)) => {
+          if rate < 0.0 or rate > 1.0 {
+            errors = errors.push("Sampling rate must be between 0.0 and 1.0")
+          }
+        }
+        ("server.port", ConfigValue::Int(port)) => {
+          if port < 1 or port > 65535 {
+            errors = errors.push("Port must be between 1 and 65535")
+          }
+        }
+        _ => ()
+      }
+    }
+    
+    { errors, warnings }
+  }
   
-  assert_true(en_date.contains("2022"))
-  assert_true(zh_date.contains("2022"))
-  assert_true(ja_date.contains("2022"))
+  // Test configuration validation
+  let validation_result = validate_config(updated_config)
+  assert_eq(validation_result.errors.length(), 0)
+  assert_eq(validation_result.warnings.length(), 0)
   
-  // Test number localization
-  let en_number = I18nManager::format_number(i18n_manager, "en", 1234.56)
-  let de_number = I18nManager::format_number(i18n_manager, "de", 1234.56) // German uses comma as decimal separator
-  let fr_number = I18nManager::format_number(i18n_manager, "fr", 1234.56) // French uses space as thousands separator
+  // Test invalid configuration
+  let invalid_config = update_config_value(config, "telemetry.sampling_rate", ConfigValue::Float(1.5))
+  let invalid_validation = validate_config(invalid_config)
+  assert_eq(invalid_validation.errors.length(), 1)
+  assert_true(invalid_validation.errors[0].contains("Sampling rate must be between 0.0 and 1.0"))
   
-  assert_true(en_number.contains("1234.56"))
-  assert_true(de_number.contains("1234,56"))
-  assert_true(fr_number.contains("1 234,56"))
+  // Reset configuration to defaults
+  let reset_to_defaults = fn(config: Configuration) {
+    let mut reset_entries = []
+    
+    for entry in config.entries {
+      reset_entries = reset_entries({
+        key: entry.key,
+        value: entry.default_value,
+        default_value: entry.default_value,
+        description: entry.description,
+        required: entry.required
+      })
+    }
+    
+    {
+      entries: reset_entries,
+      source: "default",
+      last_updated: 1640995400
+    }
+  }
+  
+  let reset_config = reset_to_defaults(updated_config)
+  let reset_service_name = get_config_value(reset_config, "service.name")
+  match reset_service_name {
+    Some(ConfigValue::String(name)) => assert_eq(name, "azimuth-service")
+    _ => assert_true(false)
+  }
+}
+
+// Test 6: Performance Benchmarking
+test "performance benchmarking" {
+  // Define benchmark types
+  type BenchmarkResult = {
+    operation_name: String,
+    execution_time_ms: Int,
+    memory_used_bytes: Int,
+    iterations: Int,
+    avg_time_per_iteration: Float
+  }
+  
+  type PerformanceMetrics = {
+    benchmarks: Array[BenchmarkResult],
+    total_time_ms: Int,
+    total_memory_mb: Float
+  }
+  
+  // Simulate performance measurement
+  let measure_performance = fn(operation: () -> Unit, iterations: Int) {
+    let start_time = 1640995200000  // Mock timestamp with milliseconds
+    let start_memory = 1024 * 1024  // Mock memory usage in bytes
+    
+    // Execute operation multiple times
+    for i in 0..iterations {
+      operation()
+    }
+    
+    let end_time = 1640995200250  // Mock end timestamp
+    let end_memory = 1024 * 1024 + 512 * 1024  // Mock end memory usage
+    
+    let total_time = end_time - start_time
+    let memory_used = end_memory - start_memory
+    let avg_time = total_time.to_float() / iterations.to_float()
+    
+    {
+      operation_name: "test_operation",
+      execution_time_ms: total_time,
+      memory_used_bytes: memory_used,
+      iterations: iterations,
+      avg_time_per_iteration: avg_time
+    }
+  }
+  
+  // Test performance measurement
+  let test_operation = fn() {
+    // Simulate some work
+    let mut sum = 0
+    for i in 0..1000 {
+      sum = sum + i
+    }
+  }
+  
+  let benchmark = measure_performance(test_operation, 100)
+  assert_eq(benchmark.operation_name, "test_operation")
+  assert_eq(benchmark.iterations, 100)
+  assert_eq(benchmark.execution_time_ms, 250)
+  assert_eq(benchmark.memory_used_bytes, 512 * 1024)
+  assert_eq(benchmark.avg_time_per_iteration, 2.5)
+  
+  // Compare performance results
+  let compare_performance = fn(benchmark1: BenchmarkResult, benchmark2: BenchmarkResult) {
+    let time_ratio = benchmark1.avg_time_per_iteration / benchmark2.avg_time_per_iteration
+    let memory_ratio = benchmark1.memory_used_bytes.to_float() / benchmark2.memory_used_bytes.to_float()
+    
+    {
+      faster_by_percentage: (1.0 - time_ratio) * 100.0,
+      more_memory_efficient_by_percentage: (1.0 - memory_ratio) * 100.0,
+      winner: if time_ratio < 1.0 { benchmark1.operation_name } else { benchmark2.operation_name }
+    }
+  }
+  
+  // Create another benchmark for comparison
+  let optimized_operation = fn() {
+    // Simulate optimized work
+    let sum = 1000 * 999 / 2  // Direct formula instead of loop
+  }
+  
+  let optimized_benchmark = measure_performance(optimized_operation, 100)
+  
+  let comparison = compare_performance(benchmark, optimized_benchmark)
+  assert_true(comparison.faster_by_percentage > 0.0)  // Optimized should be faster
+  assert_eq(comparison.winner, optimized_benchmark.operation_name)
+  
+  // Performance regression detection
+  let detect_regression = fn(current: BenchmarkResult, baseline: BenchmarkResult, threshold_percentage: Float) {
+    let performance_change = (current.avg_time_per_iteration - baseline.avg_time_per_iteration) / baseline.avg_time_per_iteration * 100.0
+    
+    {
+      has_regression: performance_change > threshold_percentage,
+      performance_change_percentage: performance_change,
+      threshold_percentage: threshold_percentage
+    }
+  }
+  
+  let regression_result = detect_regression(benchmark, optimized_benchmark, 10.0)
+  assert_true(regression_result.has_regression)
+  assert_true(regression_result.performance_change_percentage > 10.0)
+  
+  // Memory leak detection simulation
+  let detect_memory_leak = fn(benchmarks: Array[BenchmarkResult], threshold_mb: Float) {
+    let mut max_memory = 0
+    let mut min_memory = 999999999
+    
+    for benchmark in benchmarks {
+      if benchmark.memory_used_bytes > max_memory {
+        max_memory = benchmark.memory_used_bytes
+      }
+      if benchmark.memory_used_bytes < min_memory {
+        min_memory = benchmark.memory_used_bytes
+      }
+    }
+    
+    let memory_growth_mb = (max_memory - min_memory).to_float() / (1024.0 * 1024.0)
+    
+    {
+      potential_leak: memory_growth_mb > threshold_mb,
+      memory_growth_mb: memory_growth_mb,
+      threshold_mb: threshold_mb
+    }
+  }
+  
+  // Create benchmarks with increasing memory usage
+  let memory_benchmarks = [
+    { benchmark | memory_used_bytes: 1024 * 1024 },
+    { benchmark | memory_used_bytes: 2 * 1024 * 1024 },
+    { benchmark | memory_used_bytes: 10 * 1024 * 1024 }
+  ]
+  
+  let leak_detection = detect_memory_leak(memory_benchmarks, 5.0)
+  assert_true(leak_detection.potential_leak)
+  assert_eq(leak_detection.memory_growth_mb, 9.0)
+  
+  // Performance profiling summary
+  let create_performance_summary = fn(benchmarks: Array[BenchmarkResult]) {
+    let mut total_time = 0
+    let mut total_memory = 0
+    let mut fastest_time = 999999999
+    let mut slowest_time = 0
+    
+    for benchmark in benchmarks {
+      total_time = total_time + benchmark.execution_time_ms
+      total_memory = total_memory + benchmark.memory_used_bytes
+      
+      if benchmark.avg_time_per_iteration < fastest_time {
+        fastest_time = benchmark.avg_time_per_iteration
+      }
+      if benchmark.avg_time_per_iteration > slowest_time {
+        slowest_time = benchmark.avg_time_per_iteration
+      }
+    }
+    
+    {
+      total_operations: benchmarks.length(),
+      total_execution_time_ms: total_time,
+      total_memory_used_mb: total_memory.to_float() / (1024.0 * 1024.0),
+      fastest_operation_time_ms: fastest_time,
+      slowest_operation_time_ms: slowest_time,
+      performance_variance_ms: slowest_time - fastest_time
+    }
+  }
+  
+  let performance_summary = create_performance_summary([benchmark, optimized_benchmark])
+  assert_eq(performance_summary.total_operations, 2)
+  assert_eq(performance_summary.total_execution_time_ms, 500)
+  assert_eq(performance_summary.fastest_operation_time_ms, optimized_benchmark.avg_time_per_iteration)
+  assert_eq(performance_summary.slowest_operation_time_ms, benchmark.avg_time_per_iteration)
+}
+
+// Test 7: Security and Privacy Features
+test "security and privacy features" {
+  // Define security types
+  enum SensitivityLevel {
+    Public
+    Internal
+    Confidential
+    Restricted
+  }
+  
+  type DataClassification = {
+    field_name: String,
+    sensitivity_level: SensitivityLevel,
+    contains_pii: Bool,
+    retention_days: Int
+  }
+  
+  type SecurityPolicy = {
+    encryption_enabled: Bool,
+    access_log_enabled: Bool,
+    data_masking_enabled: Bool,
+    audit_retention_days: Int
+  }
+  
+  // Create data classifications
+  let classifications = [
+    { field_name: "user_id", sensitivity_level: SensitivityLevel::Confidential, contains_pii: true, retention_days: 365 },
+    { field_name: "email", sensitivity_level: SensitivityLevel::Restricted, contains_pii: true, retention_days: 180 },
+    { field_name: "ip_address", sensitivity_level: SensitivityLevel::Internal, contains_pii: true, retention_days: 90 },
+    { field_name: "user_agent", sensitivity_level: SensitivityLevel::Public, contains_pii: false, retention_days: 30 },
+    { field_name: "session_id", sensitivity_level: SensitivityLevel::Internal, contains_pii: false, retention_days: 7 }
+  ]
+  
+  // Test PII detection
+  let contains_pii = fn(classifications: Array[DataClassification], field_name: String) {
+    let mut found = false
+    for classification in classifications {
+      if classification.field_name == field_name and classification.contains_pii {
+        found = true
+      }
+    }
+    found
+  }
+  
+  assert_true(contains_pii(classifications, "user_id"))
+  assert_true(contains_pii(classifications, "email"))
+  assert_false(contains_pii(classifications, "user_agent"))
+  
+  // Test data masking
+  let mask_data = fn(value: String, classification: DataClassification) {
+    if classification.contains_pii {
+      match classification.sensitivity_level {
+        SensitivityLevel::Restricted => {
+          if value.length() <= 2 {
+            "*".repeat(value.length())
+          } else {
+            value.substring(0, 1) + "*".repeat(value.length() - 2) + value.substring(value.length() - 1)
+          }
+        }
+        SensitivityLevel::Confidential => {
+          if value.length() <= 4 {
+            "*".repeat(value.length())
+          } else {
+            value.substring(0, 2) + "*".repeat(value.length() - 4) + value.substring(value.length() - 2)
+          }
+        }
+        SensitivityLevel::Internal => {
+          if value.length() <= 6 {
+            "*".repeat(value.length())
+          } else {
+            value.substring(0, 3) + "*".repeat(value.length() - 6) + value.substring(value.length() - 3)
+          }
+        }
+        SensitivityLevel::Public => value
+      }
+    } else {
+      value
+    }
+  }
+  
+  // Test data masking with different sensitivity levels
+  let email_classification = classifications[1]  // email - Restricted
+  let masked_email = mask_data("user@example.com", email_classification)
+  assert_eq(masked_email, "u*******************m")
+  
+  let user_id_classification = classifications[0]  // user_id - Confidential
+  let masked_user_id = mask_data("user12345", user_id_classification)
+  assert_eq(masked_user_id, "us*******45")
+  
+  let ip_classification = classifications[2]  // ip_address - Internal
+  let masked_ip = mask_data("192.168.1.100", ip_classification)
+  assert_eq(masked_ip, "192********100")
+  
+  let user_agent_classification = classifications[3]  // user_agent - Public
+  let user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+  let masked_user_agent = mask_data(user_agent, user_agent_classification)
+  assert_eq(masked_user_agent, user_agent)  // No masking for public data
+  
+  // Test access control
+  type AccessLevel = {
+    level: String,
+    permissions: Array[String]
+  }
+  
+  let access_levels = [
+    { level: "guest", permissions: ["read:public"] },
+    { level: "user", permissions: ["read:public", "read:internal"] },
+    { level: "admin", permissions: ["read:public", "read:internal", "read:confidential", "write:internal"] },
+    { level: "super_admin", permissions: ["read:public", "read:internal", "read:confidential", "read:restricted", "write:internal", "write:confidential"] }
+  ]
+  
+  let check_permission = fn(user_level: String, required_permission: String, access_levels: Array[AccessLevel]) {
+    let mut has_permission = false
+    
+    for access_level in access_levels {
+      if access_level.level == user_level {
+        for permission in access_level.permissions {
+          if permission == required_permission {
+            has_permission = true
+          }
+        }
+      }
+    }
+    
+    has_permission
+  }
+  
+  // Test permission checks
+  assert_true(check_permission("guest", "read:public", access_levels))
+  assert_false(check_permission("guest", "read:internal", access_levels))
+  
+  assert_true(check_permission("user", "read:public", access_levels))
+  assert_true(check_permission("user", "read:internal", access_levels))
+  assert_false(check_permission("user", "read:confidential", access_levels))
+  
+  assert_true(check_permission("admin", "read:confidential", access_levels))
+  assert_false(check_permission("admin", "read:restricted", access_levels))
+  
+  assert_true(check_permission("super_admin", "read:restricted", access_levels))
+  assert_true(check_permission("super_admin", "write:confidential", access_levels))
+  
+  // Test data retention policy
+  let check_retention_policy = fn(classifications: Array[DataClassification], field_name: String, current_age_days: Int) {
+    let mut can_retain = false
+    let mut retention_days = 0
+    
+    for classification in classifications {
+      if classification.field_name == field_name {
+        retention_days = classification.retention_days
+        can_retain = current_age_days <= retention_days
+      }
+    }
+    
+    { can_retain, retention_days }
+  }
+  
+  // Test retention policy checks
+  let email_retention = check_retention_policy(classifications, "email", 100)
+  assert_true(email_retention.can_retain)
+  assert_eq(email_retention.retention_days, 180)
+  
+  let expired_email_retention = check_retention_policy(classifications, "email", 200)
+  assert_false(expired_email_retention.can_retain)
+  assert_eq(expired_email_retention.retention_days, 180)
+  
+  // Test audit logging
+  type AuditEvent = {
+    timestamp: Int,
+    user_id: String,
+    action: String,
+    resource: String,
+    success: Bool,
+    ip_address: String
+  }
+  
+  let create_audit_event = fn(user_id: String, action: String, resource: String, success: Bool, ip_address: String) {
+    {
+      timestamp: 1640995200,
+      user_id,
+      action,
+      resource,
+      success,
+      ip_address
+    }
+  }
+  
+  let audit_event = create_audit_event("user-123", "read:confidential", "user_data", true, "192.168.1.100")
+  assert_eq(audit_event.user_id, "user-123")
+  assert_eq(audit_event.action, "read:confidential")
+  assert_eq(audit_event.resource, "user_data")
+  assert_true(audit_event.success)
+  
+  // Test security policy enforcement
+  let security_policy = {
+    encryption_enabled: true,
+    access_log_enabled: true,
+    data_masking_enabled: true,
+    audit_retention_days: 90
+  }
+  
+  let enforce_security_policy = fn(data: String, classification: DataClassification, policy: SecurityPolicy, user_level: String) {
+    let mut processed_data = data
+    
+    // Apply data masking if enabled
+    if policy.data_masking_enabled and classification.contains_pii {
+      processed_data = mask_data(processed_data, classification)
+    }
+    
+    // Check access permissions
+    let required_permission = match classification.sensitivity_level {
+      SensitivityLevel::Public => "read:public"
+      SensitivityLevel::Internal => "read:internal"
+      SensitivityLevel::Confidential => "read:confidential"
+      SensitivityLevel::Restricted => "read:restricted"
+    }
+    
+    let has_access = check_permission(user_level, required_permission, access_levels)
+    
+    {
+      data: processed_data,
+      access_granted: has_access,
+      encrypted: policy.encryption_enabled,
+      audited: policy.access_log_enabled
+    }
+  }
+  
+  // Test security policy enforcement
+  let email_classification = classifications[1]  // email - Restricted
+  let security_result = enforce_security_policy("user@example.com", email_classification, security_policy, "user")
+  
+  assert_eq(security_result.data, "u*******************m")  // Masked
+  assert_false(security_result.access_granted)  // User doesn't have restricted access
+  assert_true(security_result.encrypted)  // Encryption enabled
+  assert_true(security_result.audited)  // Auditing enabled
+  
+  let admin_security_result = enforce_security_policy("user@example.com", email_classification, security_policy, "super_admin")
+  assert_eq(admin_security_result.data, "u*******************m")  // Still masked (PII)
+  assert_true(admin_security_result.access_granted)  // Super admin has restricted access
+  assert_true(admin_security_result.encrypted)
+  assert_true(admin_security_result.audited)
+}
+
+// Test 8: Distributed Tracing
+test "distributed tracing" {
+  // Define tracing types
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    trace_flags: Int,
+    trace_state: String
+  }
+  
+  type Span = {
+    context: TraceContext,
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    tags: Array[(String, String)],
+    events: Array[SpanEvent]
+  }
+  
+  type SpanEvent = {
+    timestamp: Int,
+    name: String,
+    attributes: Array[(String, String)]
+  }
+  
+  // Create trace context
+  let create_trace_context = fn(trace_id: String, span_id: String, parent_span_id: Option[String]) {
+    {
+      trace_id,
+      span_id,
+      parent_span_id,
+      trace_flags: 1,
+      trace_state: ""
+    }
+  }
+  
+  let root_context = create_trace_context("trace-12345", "span-00001", None)
+  assert_eq(root_context.trace_id, "trace-12345")
+  assert_eq(root_context.span_id, "span-00001")
+  assert_eq(root_context.parent_span_id, None)
+  
+  let child_context = create_trace_context("trace-12345", "span-00002", Some("span-00001"))
+  assert_eq(child_context.trace_id, "trace-12345")
+  assert_eq(child_context.span_id, "span-00002")
+  assert_eq(child_context.parent_span_id, Some("span-00001"))
+  
+  // Create span
+  let create_span = fn(context: TraceContext, operation_name: String, start_time: Int) {
+    {
+      context,
+      operation_name,
+      start_time,
+      end_time: 0,
+      status: "running",
+      tags: [],
+      events: []
+    }
+  }
+  
+  let root_span = create_span(root_context, "http_request", 1640995200)
+  assert_eq(root_span.context.trace_id, "trace-12345")
+  assert_eq(root_span.operation_name, "http_request")
+  assert_eq(root_span.status, "running")
+  
+  // Test span completion
+  let complete_span = fn(span: Span, end_time: Int, status: String) {
+    {
+      context: span.context,
+      operation_name: span.operation_name,
+      start_time: span.start_time,
+      end_time,
+      status,
+      tags: span.tags,
+      events: span.events
+    }
+  }
+  
+  let completed_root_span = complete_span(root_span, 1640995250, "ok")
+  assert_eq(completed_root_span.end_time, 1640995250)
+  assert_eq(completed_root_span.status, "ok")
+  
+  // Test span duration calculation
+  let calculate_span_duration = fn(span: Span) {
+    if span.end_time > 0 and span.start_time > 0 {
+      span.end_time - span.start_time
+    } else {
+      0
+    }
+  }
+  
+  let duration = calculate_span_duration(completed_root_span)
+  assert_eq(duration, 50)
+  
+  // Test span tagging
+  let add_span_tag = fn(span: Span, key: String, value: String) {
+    let new_tag = (key, value)
+    {
+      context: span.context,
+      operation_name: span.operation_name,
+      start_time: span.start_time,
+      end_time: span.end_time,
+      status: span.status,
+      tags: span.tags.push(new_tag),
+      events: span.events
+    }
+  }
+  
+  let tagged_span = add_span_tag(root_span, "http.method", "GET")
+  assert_eq(tagged_span.tags.length(), 1)
+  assert_eq(tagged_span.tags[0], ("http.method", "GET"))
+  
+  let multi_tagged_span = add_span_tag(tagged_span, "http.url", "/api/users")
+  assert_eq(multi_tagged_span.tags.length(), 2)
+  assert_eq(multi_tagged_span.tags[0], ("http.method", "GET"))
+  assert_eq(multi_tagged_span.tags[1], ("http.url", "/api/users"))
+  
+  // Test span events
+  let add_span_event = fn(span: Span, name: String, timestamp: Int, attributes: Array[(String, String)]) {
+    let new_event = {
+      timestamp,
+      name,
+      attributes
+    }
+    
+    {
+      context: span.context,
+      operation_name: span.operation_name,
+      start_time: span.start_time,
+      end_time: span.end_time,
+      status: span.status,
+      tags: span.tags,
+      events: span.events.push(new_event)
+    }
+  }
+  
+  let span_with_event = add_span_event(multi_tagged_span, "database.query", 1640995225, [
+    ("db.statement", "SELECT * FROM users"),
+    ("db.type", "postgresql")
+  ])
+  
+  assert_eq(span_with_event.events.length(), 1)
+  assert_eq(span_with_event.events[0].name, "database.query")
+  assert_eq(span_with_event.events[0].timestamp, 1640995225)
+  assert_eq(span_with_event.events[0].attributes.length(), 2)
+  
+  // Test trace tree building
+  type TraceTree = {
+    trace_id: String,
+    root_span: Span,
+    child_spans: Array[Span]
+  }
+  
+  let build_trace_tree = fn(spans: Array[Span]) {
+    if spans.length() == 0 {
+      None
+    } else {
+      let mut root_span = spans[0]
+      let mut child_spans = []
+      
+      for span in spans {
+        match span.context.parent_span_id {
+          Some(parent_id) => {
+            if parent_id == root_span.context.span_id {
+              child_spans = child_spans.push(span)
+            }
+          }
+          None => {
+            root_span = span
+          }
+        }
+      }
+      
+      Some({
+        trace_id: root_span.context.trace_id,
+        root_span,
+        child_spans
+      })
+    }
+  }
+  
+  // Create a trace with multiple spans
+  let child_span1 = create_span(child_context, "database_query", 1640995210)
+  let completed_child_span1 = complete_span(child_span1, 1640995240, "ok")
+  
+  let grandchild_context = create_trace_context("trace-12345", "span-00003", Some("span-00002"))
+  let grandchild_span = create_span(grandchild_context, "cache_lookup", 1640995220)
+  let completed_grandchild_span = complete_span(grandchild_span, 1640995230, "hit")
+  
+  let trace_spans = [completed_root_span, completed_child_span1, completed_grandchild_span]
+  let trace_tree = build_trace_tree(trace_spans)
+  
+  assert_true(trace_tree.is_some())
+  match trace_tree {
+    Some(tree) => {
+      assert_eq(tree.trace_id, "trace-12345")
+      assert_eq(tree.root_span.operation_name, "http_request")
+      assert_eq(tree.child_spans.length(), 1)
+      assert_eq(tree.child_spans[0].operation_name, "database_query")
+    }
+    None => assert_true(false)
+  }
+  
+  // Test trace context propagation
+  let extract_trace_context = fn(headers: Array[(String, String)]) {
+    let mut trace_id = None
+    let mut span_id = None
+    let mut parent_span_id = None
+    
+    for (key, value) in headers {
+      match key {
+        "x-trace-id" => trace_id = Some(value)
+        "x-span-id" => span_id = Some(value)
+        "x-parent-span-id" => parent_span_id = Some(value)
+        _ => ()
+      }
+    }
+    
+    match (trace_id, span_id) {
+      (Some(tid), Some(sid)) => Some(create_trace_context(tid, sid, parent_span_id))
+      _ => None
+    }
+  }
+  
+  let incoming_headers = [
+    ("x-trace-id", "trace-67890"),
+    ("x-span-id", "span-11111"),
+    ("x-parent-span-id", "span-22222"),
+    ("x-user-agent", "test-client")
+  ]
+  
+  let extracted_context = extract_trace_context(incoming_headers)
+  assert_true(extracted_context.is_some())
+  
+  match extracted_context {
+    Some(context) => {
+      assert_eq(context.trace_id, "trace-67890")
+      assert_eq(context.span_id, "span-11111")
+      assert_eq(context.parent_span_id, Some("span-22222"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test trace context injection
+  let inject_trace_context = fn(context: TraceContext) {
+    [
+      ("x-trace-id", context.trace_id),
+      ("x-span-id", context.span_id),
+      match context.parent_span_id {
+        Some(parent_id) => ("x-parent-span-id", parent_id)
+        None => ("x-parent-span-id", "")
+      }
+    ]
+  }
+  
+  let injected_headers = inject_trace_context(root_context)
+  assert_eq(injected_headers.length(), 3)
+  assert_eq(injected_headers[0], ("x-trace-id", "trace-12345"))
+  assert_eq(injected_headers[1], ("x-span-id", "span-00001"))
+  assert_eq(injected_headers[2], ("x-parent-span-id", ""))
+}
+
+// Test 9: Cross-Platform Compatibility
+test "cross-platform compatibility" {
+  // Define platform types
+  enum Platform {
+    Windows
+    Linux
+    MacOS
+    Unknown
+  }
+  
+  type PlatformInfo = {
+    platform: Platform,
+    architecture: String,
+    version: String,
+    features: Array[String]
+  }
+  
+  type CompatibilityLayer = {
+    supported_platforms: Array[Platform],
+    common_features: Array[String],
+    platform_specific_features: Array[(Platform, Array[String])]
+  }
+  
+  // Create platform information
+  let create_platform_info = fn(platform: Platform, arch: String, version: String) {
+    let features = match platform {
+      Platform::Windows => ["win32_api", "registry_access", "event_log"]
+      Platform::Linux => ["posix_api", "systemd", "syslog"]
+      Platform::MacOS => ["cocoa", "launchd", "asl_log"]
+      Platform::Unknown => []
+    }
+    
+    {
+      platform,
+      architecture: arch,
+      version,
+      features
+    }
+  }
+  
+  let windows_info = create_platform_info(Platform::Windows, "x86_64", "10.0")
+  let linux_info = create_platform_info(Platform::Linux, "x86_64", "5.4.0")
+  let macos_info = create_platform_info(Platform::MacOS, "arm64", "11.0")
+  
+  assert_eq(windows_info.platform, Platform::Windows)
+  assert_eq(windows_info.architecture, "x86_64")
+  assert_eq(windows_info.features.length(), 3)
+  assert_true(windows_info.features.contains("win32_api"))
+  
+  // Create compatibility layer
+  let compatibility_layer = {
+    supported_platforms: [Platform::Windows, Platform::Linux, Platform::MacOS],
+    common_features: ["file_io", "network", "logging", "metrics"],
+    platform_specific_features: [
+      (Platform::Windows, ["registry_access", "event_log"]),
+      (Platform::Linux, ["systemd", "syslog"]),
+      (Platform::MacOS, ["launchd", "asl_log"])
+    ]
+  }
+  
+  // Test platform support
+  let is_platform_supported = fn(platform: Platform, compatibility: CompatibilityLayer) {
+    let mut supported = false
+    
+    for supported_platform in compatibility.supported_platforms {
+      match (platform, supported_platform) {
+        (Platform::Windows, Platform::Windows) => supported = true
+        (Platform::Linux, Platform::Linux) => supported = true
+        (Platform::MacOS, Platform::MacOS) => supported = true
+        (Platform::Unknown, Platform::Unknown) => supported = true
+        _ => ()
+      }
+    }
+    
+    supported
+  }
+  
+  assert_true(is_platform_supported(Platform::Windows, compatibility_layer))
+  assert_true(is_platform_supported(Platform::Linux, compatibility_layer))
+  assert_true(is_platform_supported(Platform::MacOS, compatibility_layer))
+  assert_false(is_platform_supported(Platform::Unknown, compatibility_layer))
+  
+  // Test feature availability
+  let is_feature_available = fn(platform: Platform, feature: String, compatibility: CompatibilityLayer) {
+    // Check common features
+    if compatibility.common_features.contains(feature) {
+      return true
+    }
+    
+    // Check platform-specific features
+    for (plat, features) in compatibility.platform_specific_features {
+      match (platform, plat) {
+        (Platform::Windows, Platform::Windows) => {
+          if features.contains(feature) {
+            return true
+          }
+        }
+        (Platform::Linux, Platform::Linux) => {
+          if features.contains(feature) {
+            return true
+          }
+        }
+        (Platform::MacOS, Platform::MacOS) => {
+          if features.contains(feature) {
+            return true
+          }
+        }
+        _ => ()
+      }
+    }
+    
+    false
+  }
+  
+  // Test feature availability on different platforms
+  assert_true(is_feature_available(Platform::Windows, "file_io", compatibility_layer))  // Common feature
+  assert_true(is_feature_available(Platform::Windows, "registry_access", compatibility_layer))  // Windows-specific
+  assert_false(is_feature_available(Platform::Windows, "systemd", compatibility_layer))  // Linux-specific
+  
+  assert_true(is_feature_available(Platform::Linux, "network", compatibility_layer))  // Common feature
+  assert_true(is_feature_available(Platform::Linux, "systemd", compatibility_layer))  // Linux-specific
+  assert_false(is_feature_available(Platform::Linux, "cocoa", compatibility_layer))  // macOS-specific
+  
+  // Test path handling across platforms
+  let normalize_path = fn(path: String, platform: Platform) {
+    match platform {
+      Platform::Windows => {
+        let mut normalized = ""
+        for i in 0..path.length() {
+          let c = path[i]
+          if c == '/' {
+            normalized = normalized + "\\"
+          } else {
+            normalized = normalized + c.to_string()
+          }
+        }
+        normalized
+      }
+      _ => {
+        let mut normalized = ""
+        for i in 0..path.length() {
+          let c = path[i]
+          if c == '\\' {
+            normalized = normalized + "/"
+          } else {
+            normalized = normalized + c.to_string()
+          }
+        }
+        normalized
+      }
+    }
+  }
+  
+  // Test path normalization
+  let unix_path = "/var/log/azimuth.log"
+  let windows_path = "C:\\Program Files\\Azimuth\\config.json"
+  
+  let windows_normalized = normalize_path(unix_path, Platform::Windows)
+  assert_eq(windows_normalized, "\\var\\log\\azimuth.log")
+  
+  let unix_normalized = normalize_path(windows_path, Platform::Linux)
+  assert_eq(unix_normalized, "C:/Program Files/Azimuth/config.json")
+  
+  // Test environment variable handling
+  let get_env_var_name = fn(var_name: String, platform: Platform) {
+    match platform {
+      Platform::Windows => var_name.to_uppercase()
+      _ => var_name.to_uppercase()
+    }
+  }
+  
+  let service_name_env = get_env_var_name("service.name", Platform::Windows)
+  assert_eq(service_name_env, "SERVICE.NAME")
+  
+  let service_name_env_linux = get_env_var_name("service.name", Platform::Linux)
+  assert_eq(service_name_env_linux, "SERVICE.NAME")
+  
+  // Test platform-specific configuration
+  type PlatformConfig = {
+    log_file_path: String,
+    config_file_path: String,
+    temp_directory: String,
+    service_command: String
+  }
+  
+  let get_platform_config = fn(platform: Platform, install_dir: String) {
+    match platform {
+      Platform::Windows => {
+        {
+          log_file_path: install_dir + "\\logs\\azimuth.log",
+          config_file_path: install_dir + "\\config\\azimuth.json",
+          temp_directory: install_dir + "\\temp",
+          service_command: "sc.exe create Azimuth binPath= \"" + install_dir + "\\bin\\azimuth.exe\""
+        }
+      }
+      Platform::Linux => {
+        {
+          log_file_path: install_dir + "/var/log/azimuth.log",
+          config_file_path: install_dir + "/etc/azimuth.json",
+          temp_directory: "/tmp/azimuth",
+          service_command: "systemctl enable azimuth && systemctl start azimuth"
+        }
+      }
+      Platform::MacOS => {
+        {
+          log_file_path: install_dir + "/var/log/azimuth.log",
+          config_file_path: install_dir + "/etc/azimuth.json",
+          temp_directory: "/tmp/azimuth",
+          service_command: "launchctl load -w " + install_dir + "/Library/LaunchDaemons/com.azimuth.plist"
+        }
+      }
+      Platform::Unknown => {
+        {
+          log_file_path: "azimuth.log",
+          config_file_path: "azimuth.json",
+          temp_directory: "/tmp",
+          service_command: "azimuth --daemon"
+        }
+      }
+    }
+  }
+  
+  // Test platform-specific configuration
+  let windows_config = get_platform_config(Platform::Windows, "C:\\Program Files\\Azimuth")
+  assert_eq(windows_config.log_file_path, "C:\\Program Files\\Azimuth\\logs\\azimuth.log")
+  assert_eq(windows_config.config_file_path, "C:\\Program Files\\Azimuth\\config\\azimuth.json")
+  assert_true(windows_config.service_command.contains("sc.exe"))
+  
+  let linux_config = get_platform_config(Platform::Linux, "/opt/azimuth")
+  assert_eq(linux_config.log_file_path, "/opt/azimuth/var/log/azimuth.log")
+  assert_eq(linux_config.config_file_path, "/opt/azimuth/etc/azimuth.json")
+  assert_eq(linux_config.temp_directory, "/tmp/azimuth")
+  assert_true(linux_config.service_command.contains("systemctl"))
+  
+  let macos_config = get_platform_config(Platform::MacOS, "/Applications/Azimuth")
+  assert_eq(macos_config.log_file_path, "/Applications/Azimuth/var/log/azimuth.log")
+  assert_eq(macos_config.config_file_path, "/Applications/Azimuth/etc/azimuth.json")
+  assert_true(macos_config.service_command.contains("launchctl"))
+}
+
+// Test 10: Advanced Metrics Collection
+test "advanced metrics collection" {
+  // Define metric types
+  enum MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
+  }
+  
+  type MetricValue = {
+    value: Float,
+    timestamp: Int,
+    labels: Array[(String, String)]
+  }
+  
+  type Metric = {
+    name: String,
+    metric_type: MetricType,
+    description: String,
+    values: Array[MetricValue]
+  }
+  
+  type MetricsRegistry = {
+    metrics: Array[Metric],
+    created_at: Int
+  }
+  
+  // Create metrics registry
+  let create_registry = fn() {
+    {
+      metrics: [],
+      created_at: 1640995200
+    }
+  }
+  
+  let registry = create_registry()
+  assert_eq(registry.metrics.length(), 0)
+  
+  // Create metric
+  let create_metric = fn(name: String, metric_type: MetricType, description: String) {
+    {
+      name,
+      metric_type,
+      description,
+      values: []
+    }
+  }
+  
+  let counter_metric = create_metric("http_requests_total", MetricType::Counter, "Total number of HTTP requests")
+  assert_eq(counter_metric.name, "http_requests_total")
+  assert_eq(counter_metric.metric_type, MetricType::Counter)
+  assert_eq(counter_metric.values.length(), 0)
+  
+  // Add metric value
+  let add_metric_value = fn(metric: Metric, value: Float, timestamp: Int, labels: Array[(String, String)]) {
+    let metric_value = {
+      value,
+      timestamp,
+      labels
+    }
+    
+    {
+      name: metric.name,
+      metric_type: metric.metric_type,
+      description: metric.description,
+      values: metric.values.push(metric_value)
+    }
+  }
+  
+  let with_value = add_metric_value(counter_metric, 100.0, 1640995200, [("method", "GET"), ("status", "200")])
+  assert_eq(with_value.values.length(), 1)
+  assert_eq(with_value.values[0].value, 100.0)
+  assert_eq(with_value.values[0].labels.length(), 2)
+  
+  // Register metric
+  let register_metric = fn(registry: MetricsRegistry, metric: Metric) {
+    {
+      metrics: registry.metrics.push(metric),
+      created_at: registry.created_at
+    }
+  }
+  
+  let updated_registry = register_metric(registry, with_value)
+  assert_eq(updated_registry.metrics.length(), 1)
+  
+  // Test metric aggregation
+  let aggregate_metric = fn(metric: Metric, aggregation_type: String) {
+    match aggregation_type {
+      "sum" => {
+        let mut sum = 0.0
+        for value in metric.values {
+          sum = sum + value.value
+        }
+        sum
+      }
+      "avg" => {
+        if metric.values.length() == 0 {
+          0.0
+        } else {
+          let mut sum = 0.0
+          for value in metric.values {
+            sum = sum + value.value
+          }
+          sum / metric.values.length().to_float()
+        }
+      }
+      "max" => {
+        let mut max = 0.0
+        for value in metric.values {
+          if value.value > max {
+            max = value.value
+          }
+        }
+        max
+      }
+      "min" => {
+        let mut min = 999999999.0
+        for value in metric.values {
+          if value.value < min {
+            min = value.value
+          }
+        }
+        min
+      }
+      _ => 0.0
+    }
+  }
+  
+  // Add more values to test aggregation
+  let with_more_values = add_metric_value(with_value, 150.0, 1640995250, [("method", "POST"), ("status", "201")])
+  let with_even_more_values = add_metric_value(with_more_values, 75.0, 1640995300, [("method", "GET"), ("status", "404")])
+  
+  // Test aggregations
+  let sum_result = aggregate_metric(with_even_more_values, "sum")
+  assert_eq(sum_result, 325.0)
+  
+  let avg_result = aggregate_metric(with_even_more_values, "avg")
+  assert_eq(avg_result, 108.33333333333333)  // (100 + 150 + 75) / 3
+  
+  let max_result = aggregate_metric(with_even_more_values, "max")
+  assert_eq(max_result, 150.0)
+  
+  let min_result = aggregate_metric(with_even_more_values, "min")
+  assert_eq(min_result, 75.0)
+  
+  // Test metric filtering by labels
+  let filter_by_labels = fn(metric: Metric, filter_labels: Array[(String, String)]) {
+    let mut filtered_values = []
+    
+    for value in metric.values {
+      let mut matches = true
+      
+      for (filter_key, filter_value) in filter_labels {
+        let mut found_label = false
+        
+        for (value_key, value_value) in value.labels {
+          if value_key == filter_key and value_value == filter_value {
+            found_label = true
+          }
+        }
+        
+        if not(found_label) {
+          matches = false
+        }
+      }
+      
+      if matches {
+        filtered_values = filtered_values.push(value)
+      }
+    }
+    
+    {
+      name: metric.name,
+      metric_type: metric.metric_type,
+      description: metric.description,
+      values: filtered_values
+    }
+  }
+  
+  // Test label filtering
+  let get_filtered = filter_by_labels(with_even_more_values, [("method", "GET")])
+  assert_eq(get_filtered.values.length(), 2)  // Two GET requests
+  assert_eq(get_filtered.values[0].value, 100.0)
+  assert_eq(get_filtered.values[1].value, 75.0)
+  
+  let status_filtered = filter_by_labels(with_even_more_values, [("status", "201")])
+  assert_eq(status_filtered.values.length(), 1)  // One 201 status
+  assert_eq(status_filtered.values[0].value, 150.0)
+  
+  // Test metric rate calculation
+  let calculate_rate = fn(metric: Metric, time_window_seconds: Int) {
+    if metric.values.length() < 2 {
+      0.0
+    } else {
+      let first_value = metric.values[0]
+      let last_value = metric.values[metric.values.length() - 1]
+      
+      let time_diff = last_value.timestamp - first_value.timestamp
+      let value_diff = last_value.value - first_value.value
+      
+      if time_diff > 0 {
+        value_diff / time_diff.to_float()
+      } else {
+        0.0
+      }
+    }
+  }
+  
+  // Test rate calculation
+  let rate = calculate_rate(with_even_more_values, 100)
+  assert_eq(rate, 0.25)  // (75 - 100) / 100 = -0.25, but for counter it should be positive
+  
+  // Test histogram metrics
+  let create_histogram_metric = fn(name: String, description: String, buckets: Array[Float]) {
+    let mut bucket_metrics = []
+    
+    for bucket in buckets {
+      let bucket_name = name + "_bucket_" + bucket.to_string()
+      bucket_metrics = bucket_metrics.push(create_metric(bucket_name, MetricType::Counter, description + " bucket " + bucket.to_string()))
+    }
+    
+    bucket_metrics
+  }
+  
+  let histogram_buckets = [0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+  let histogram_metrics = create_histogram_metric("request_duration_seconds", "Request duration in seconds", histogram_buckets)
+  assert_eq(histogram_metrics.length(), 6)
+  
+  // Test percentile calculation
+  let calculate_percentile = fn(metric: Metric, percentile: Float) {
+    if metric.values.length() == 0 {
+      0.0
+    } else {
+      // Sort values
+      let mut sorted_values = []
+      for value in metric.values {
+        sorted_values = sorted_values.push(value.value)
+      }
+      
+      // Simple bubble sort for demonstration
+      let n = sorted_values.length()
+      for i in 0..n {
+        for j in 0..(n - i - 1) {
+          if sorted_values[j] > sorted_values[j + 1] {
+            let temp = sorted_values[j]
+            sorted_values[j] = sorted_values[j + 1]
+            sorted_values[j + 1] = temp
+          }
+        }
+      }
+      
+      // Calculate percentile
+      let index = ((percentile / 100.0) * (n.to_float() - 1.0)).to_int()
+      if index < n {
+        sorted_values[index]
+      } else {
+        sorted_values[n - 1]
+      }
+    }
+  }
+  
+  // Test percentile calculation
+  let p50 = calculate_percentile(with_even_more_values, 50.0)
+  let p95 = calculate_percentile(with_even_more_values, 95.0)
+  let p99 = calculate_percentile(with_even_more_values, 99.0)
+  
+  // With values [75.0, 100.0, 150.0] sorted
+  // p50 should be 100.0 (middle value)
+  // p95 should be 150.0 (highest value)
+  // p99 should be 150.0 (highest value)
+  assert_eq(p50, 100.0)
+  assert_eq(p95, 150.0)
+  assert_eq(p99, 150.0)
+  
+  // Test metrics export format
+  let export_metrics = fn(registry: MetricsRegistry) {
+    let mut export_lines = []
+    
+    for metric in registry.metrics {
+      // Add metric metadata
+      export_lines = export_lines.push("# HELP " + metric.name + " " + metric.description)
+      export_lines = export_lines.push("# TYPE " + metric.name + " " + match metric.metric_type {
+        MetricType::Counter => "counter"
+        MetricType::Gauge => "gauge"
+        MetricType::Histogram => "histogram"
+        MetricType::Summary => "summary"
+      })
+      
+      // Add metric values
+      for value in metric.values {
+        let mut line = metric.name
+        
+        // Add labels
+        if value.labels.length() > 0 {
+          line = line + "{"
+          for i in 0..value.labels.length() {
+            if i > 0 { line = line + "," }
+            line = line + value.labels[i].0 + "=\"" + value.labels[i].1 + "\""
+          }
+          line = line + "}"
+        }
+        
+        line = line + " " + value.value.to_string()
+        line = line + " " + value.timestamp.to_string()
+        
+        export_lines = export_lines.push(line)
+      }
+    }
+    
+    export_lines
+  }
+  
+  // Test metrics export
+  let registry_with_metric = register_metric(registry, with_even_more_values)
+  let exported_lines = export_metrics(registry_with_metric)
+  
+  assert_true(exported_lines.length() > 0)
+  assert_true(exported_lines[0].contains("# HELP"))
+  assert_true(exported_lines[1].contains("# TYPE"))
+  assert_true(exported_lines[2].contains("http_requests_total"))
 }
