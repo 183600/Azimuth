@@ -240,6 +240,7 @@
         "../azimuth_high_quality_comprehensive_test_suite.mbt",
         "../azimuth_high_quality_premium_tests.mbt",
         "../azimuth_new_premium_comprehensive_tests.mbt",
-        "../azimuth_new_comprehensive_feature_tests.mbt"
+        "../azimuth_new_comprehensive_feature_tests.mbt",
+        "../azimuth_new_comprehensive_test_cases.mbt"
 ]  }
 }

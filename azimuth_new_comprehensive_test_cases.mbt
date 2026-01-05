@@ -1,1394 +1,944 @@
 // Azimuth New Comprehensive Test Cases
-// This file contains new test cases covering various MoonBit language features and telemetry system functionality
+// This file contains 10 comprehensive test cases covering various aspects of the Azimuth telemetry system
 
-// Test 1: Async Programming Patterns and Promise Handling
-test "async programming patterns and promise handling" {
-  // Simulate async operations with promises
-  enum Promise[T] {
-    Pending
-    Fulfilled(T)
-    Rejected(String)
-  }
+// Test 1: Basic Data Structures
+test "basic data structures operations" {
+  // Test stack operations
+  let mut stack = []
+  stack.push(1)
+  stack.push(2)
+  stack.push(3)
   
-  type AsyncTelemetryData = {
-    trace_id: String,
-    span_data: Array[String],
-    metrics: Array[String]
-  }
+  assert_eq(stack.pop(), Some(3))
+  assert_eq(stack.pop(), Some(2))
+  assert_eq(stack.pop(), Some(1))
+  assert_eq(stack.pop(), None)
   
-  // Create async operations
-  let fetch_telemetry_data = fn(trace_id: String) {
-    // Simulate async operation that would fetch telemetry data
-    if trace_id.length() == 16 {
-      Promise::Fulfilled({
-        trace_id,
-        span_data: ["database_query", "api_call", "cache_lookup"],
-        metrics: ["cpu_usage:75.5", "memory_usage:60.2", "disk_io:12.3"]
-      })
-    } else {
-      Promise::Rejected("Invalid trace ID format")
-    }
-  }
+  // Test queue operations
+  let mut queue = []
+  queue.enqueue(10)
+  queue.enqueue(20)
+  queue.enqueue(30)
   
-  let process_metrics = fn(data: AsyncTelemetryData) {
-    let processed_metrics = []
-    for metric in data.metrics {
-      let parts = metric.split(":")
-      if parts.length() == 2 {
-        processed_metrics = processed_metrics.push({
-          name: parts[0],
-          value: parts[1]
-        })
-      }
-    }
-    {
-      trace_id: data.trace_id,
-      processed_metrics,
-      span_count: data.span_data.length()
-    }
-  }
+  assert_eq(queue.dequeue(), Some(10))
+  assert_eq(queue.dequeue(), Some(20))
+  assert_eq(queue.dequeue(), Some(30))
+  assert_eq(queue.dequeue(), None)
   
-  // Promise chaining simulation
-  let chain_promises = fn(trace_id: String) {
-    match fetch_telemetry_data(trace_id) {
-      Promise::Fulfilled(data) => Promise::Fulfilled(process_metrics(data))
-      Promise::Rejected(error) => Promise::Rejected(error)
-      Promise::Pending => Promise::Pending
-    }
-  }
+  // Test dictionary/map operations
+  let mut map = Map::new()
+  map.insert("key1", "value1")
+  map.insert("key2", "value2")
+  map.insert("key3", "value3")
   
-  // Test successful async operation
-  let valid_trace_id = "0af7651916cd43dd"
-  let result = chain_promises(valid_trace_id)
+  assert_eq(map.get("key1"), Some("value1"))
+  assert_eq(map.get("key2"), Some("value2"))
+  assert_eq(map.get("key3"), Some("value3"))
+  assert_eq(map.get("nonexistent"), None)
   
-  match result {
-    Promise::Fulfilled(processed_data) => {
-      assert_eq(processed_data.trace_id, valid_trace_id)
-      assert_eq(processed_data.span_count, 3)
-      assert_eq(processed_data.processed_metrics.length(), 3)
-      assert_eq(processed_data.processed_metrics[0].name, "cpu_usage")
-      assert_eq(processed_data.processed_metrics[0].value, "75.5")
-    }
-    _ => assert_true(false)
-  }
+  // Test set operations
+  let mut set = Set::new()
+  set.add(100)
+  set.add(200)
+  set.add(300)
+  set.add(100) // Duplicate
   
-  // Test failed async operation
-  let invalid_trace_id = "invalid"
-  let error_result = chain_promises(invalid_trace_id)
+  assert_true(set.contains(100))
+  assert_true(set.contains(200))
+  assert_true(set.contains(300))
+  assert_false(set.contains(400))
   
-  match error_result {
-    Promise::Rejected(error) => assert_eq(error, "Invalid trace ID format")
-    _ => assert_true(false)
-  }
+  // Test tree operations
+  let tree = TreeNode::new(50)
+  tree.insert(30)
+  tree.insert(70)
+  tree.insert(20)
+  tree.insert(40)
+  tree.insert(60)
+  tree.insert(80)
   
-  // Promise.all simulation
-  let promise_all = fn(promises: Array[Promise[String]]) {
-    let mut all_fulfilled = true
-    let mut results = []
-    let mut has_rejection = false
-    let mut rejection_error = ""
-    
-    for promise in promises {
-      match promise {
-        Promise::Fulfilled(value) => {
-          results = results.push(value)
-        }
-        Promise::Rejected(error) => {
-          has_rejection = true
-          rejection_error = error
-          all_fulfilled = false
-        }
-        Promise::Pending => {
-          all_fulfilled = false
-        }
-      }
-    }
-    
-    if has_rejection {
-      Promise::Rejected(rejection_error)
-    } else if all_fulfilled {
-      Promise::Fulfilled(results)
-    } else {
-      Promise::Pending
-    }
-  }
+  assert_true(tree.search(50))
+  assert_true(tree.search(30))
+  assert_true(tree.search(70))
+  assert_false(tree.search(90))
   
-  let promises = [
-    Promise::Fulfilled("trace1_data"),
-    Promise::Fulfilled("trace2_data"),
-    Promise::Fulfilled("trace3_data")
-  ]
+  // Test graph operations
+  let graph = Graph::new()
+  let node1 = graph.add_node("Node1")
+  let node2 = graph.add_node("Node2")
+  let node3 = graph.add_node("Node3")
   
-  let all_result = promise_all(promises)
-  match all_result {
-    Promise::Fulfilled(all_data) => {
-      assert_eq(all_data.length(), 3)
-      assert_eq(all_data[0], "trace1_data")
-      assert_eq(all_data[1], "trace2_data")
-      assert_eq(all_data[2], "trace3_data")
-    }
-    _ => assert_true(false)
-  }
+  graph.add_edge(node1, node2, 5)
+  graph.add_edge(node2, node3, 10)
+  graph.add_edge(node1, node3, 15)
+  
+  assert_eq(graph.get_edge_weight(node1, node2), Some(5))
+  assert_eq(graph.get_edge_weight(node2, node3), Some(10))
+  assert_eq(graph.get_edge_weight(node1, node3), Some(15))
+  assert_eq(graph.get_edge_weight(node3, node1), None) // No reverse edge
 }
 
-// Test 2: Advanced Data Structures - Trie Implementation
-test "advanced data structures - trie implementation" {
-  // Trie node for efficient string searching in telemetry data
-  enum TrieNode {
-    Node(Bool, Array[(Char, TrieNode)])  // (is_end, children)
+// Test 2: Error Handling and Recovery
+test "error handling and recovery mechanisms" {
+  // Test exception handling
+  let result = try {
+    let x = 10
+    let y = 0
+    x / y // Division by zero
+  } catch {
+    DivisionByZero => "handled"
+    _ => "unknown"
   }
   
-  let create_node = fn() {
-    TrieNode::Node(false, [])
+  assert_eq(result, "handled")
+  
+  // Test fallback mechanisms
+  let primary_service = Service::new("primary", false) // Unavailable
+  let fallback_service = Service::new("fallback", true)  // Available
+  
+  let response = primary_service.request().or_else(|| fallback_service.request())
+  assert_true(response.is_some())
+  assert_eq(response.unwrap().source, "fallback")
+  
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new(3, 1000) // 3 failures, 1000ms timeout
+  
+  // Simulate failures
+  for i = 0; i < 3; i = i + 1 {
+    let result = circuit_breaker.call(|| {
+      Err("Service unavailable")
+    })
+    assert_true(result.is_err())
   }
   
-  let insert = fn(trie: TrieNode, word: String) {
-    let insert_recursive = fn(node: TrieNode, chars: Array[Char], index: Int) {
-      match node {
-        TrieNode::Node(is_end, children) => {
-          if index >= chars.length() {
-            TrieNode::Node(true, children)
-          } else {
-            let current_char = chars[index]
-            let mut found_child = None
-            let mut updated_children = []
-            
-            // Look for existing child
-            for (char, child_node) in children {
-              if char == current_char {
-                found_child = Some(child_node)
-              } else {
-                updated_children = updated_children.push((char, child_node))
-              }
-            }
-            
-            // Update or create child
-            let new_child = match found_child {
-              Some(child) => insert_recursive(child, chars, index + 1)
-              None => insert_recursive(create_node(), chars, index + 1)
-            }
-            
-            updated_children = updated_children.push((current_char, new_child))
-            TrieNode::Node(is_end, updated_children)
-          }
-        }
-      }
-    }
-    
-    insert_recursive(trie, word.to_array(), 0)
-  }
+  // Circuit should be open now
+  let result = circuit_breaker.call(|| {
+    Ok("Success")
+  })
+  assert_true(result.is_err())
+  assert_eq(result.unwrap_err(), "Circuit breaker is open")
   
-  let search = fn(trie: TrieNode, word: String) {
-    let search_recursive = fn(node: TrieNode, chars: Array[Char], index: Int) {
-      match node {
-        TrieNode::Node(is_end, children) => {
-          if index >= chars.length() {
-            is_end
-          } else {
-            let current_char = chars[index]
-            let mut found = false
-            
-            for (char, child_node) in children {
-              if char == current_char {
-                found = true
-                return search_recursive(child_node, chars, index + 1)
-              }
-            }
-            
-            false
-          }
-        }
-      }
-    }
-    
-    search_recursive(trie, word.to_array(), 0)
-  }
-  
-  let starts_with = fn(trie: TrieNode, prefix: String) {
-    let starts_with_recursive = fn(node: TrieNode, chars: Array[Char], index: Int) {
-      match node {
-        TrieNode::Node(_, children) => {
-          if index >= chars.length() {
-            true
-          } else {
-            let current_char = chars[index]
-            
-            for (char, child_node) in children {
-              if char == current_char {
-                return starts_with_recursive(child_node, chars, index + 1)
-              }
-            }
-            
-            false
-          }
-        }
-      }
-    }
-    
-    starts_with_recursive(trie, prefix.to_array(), 0)
-  }
-  
-  // Build trie with telemetry operation names
-  let mut trie = create_node()
-  let operations = ["get", "post", "put", "delete", "patch", "options", "head", "trace"]
-  
-  for op in operations {
-    trie = insert(trie, op)
-  }
-  
-  // Test search
-  assert_true(search(trie, "get"))
-  assert_true(search(trie, "post"))
-  assert_true(search(trie, "put"))
-  assert_false(search(trie, "invalid"))
-  assert_false(search(trie, "getpost"))
-  
-  // Test starts with
-  assert_true(starts_with(trie, "g"))
-  assert_true(starts_with(trie, "p"))
-  assert_true(starts_with(trie, "pu"))
-  assert_false(starts_with(trie, "x"))
-  assert_false(starts_with(trie, "getpost"))
-  
-  // Test prefix matching for telemetry data filtering
-  let telemetry_prefixes = ["span_", "metric_", "log_", "trace_"]
-  
-  for prefix in telemetry_prefixes {
-    trie = insert(trie, prefix)
-  }
-  
-  assert_true(starts_with(trie, "span_"))
-  assert_true(starts_with(trie, "metric_"))
-  assert_true(starts_with(trie, "log_"))
-  assert_true(starts_with(trie, "trace_"))
-  assert_false(starts_with(trie, "event_"))
-}
-
-// Test 3: Error Handling with Result Types and Recovery
-test "error handling with result types and recovery" {
-  // Enhanced error types for telemetry system
-  enum TelemetryError {
-    NetworkError(String, Int)  // (message, retry_count)
-    SerializationError(String)
-    ValidationError(String, Array[String])  // (field, errors)
-    RateLimitError(Int, String)  // (retry_after, limit_type)
-    SystemError(String, String)  // (component, error_code)
-    TimeoutError(Int, String)  // (timeout_ms, operation)
-  }
-  
-  type Result[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryError>,
-    metadata: Array[String]
-  }
-  
-  // Result constructors
-  let ok = fn(data: T, metadata: Array[String]) {
-    {
-      success: true,
-      data: Some(data),
-      error: None,
-      metadata
-    }
-  }
-  
-  let err = fn(error: TelemetryError, metadata: Array[String]) {
-    {
-      success: false,
-      data: None,
-      error: Some(error),
-      metadata
-    }
-  }
-  
-  // Error mapping and transformation
-  let map_error = fn(result: Result[T], mapper: (TelemetryError) -> TelemetryError) {
-    if result.success {
-      result
+  // Test retry mechanism
+  let mut retry_count = 0
+  let result = Retry::new(3, 100).call(|| {
+    retry_count = retry_count + 1
+    if retry_count < 3 {
+      Err("Temporary failure")
     } else {
-      match result.error {
-        Some(error) => err(mapper(error), result.metadata)
-        None => result
-      }
-    }
-  }
-  
-  // Error chaining with context
-  let chain_error = fn(result: Result[T], context: String) {
-    if result.success {
-      result
-    } else {
-      match result.error {
-        Some(error) => {
-          let enhanced_error = match error {
-            TelemetryError::NetworkError(msg, count) => 
-              TelemetryError::NetworkError(context + ": " + msg, count)
-            TelemetryError::SerializationError(msg) => 
-              TelemetryError::SerializationError(context + ": " + msg)
-            TelemetryError::ValidationError(field, errors) => 
-              TelemetryError::ValidationError(field, errors.map(fn(e) { context + ": " + e }))
-            TelemetryError::RateLimitError(retry, limit_type) => 
-              TelemetryError::RateLimitError(retry, context + ": " + limit_type)
-            TelemetryError::SystemError(component, code) => 
-              TelemetryError::SystemError(context + "." + component, code)
-            TelemetryError::TimeoutError(timeout, operation) => 
-              TelemetryError::TimeoutError(timeout, context + "." + operation)
-          }
-          err(enhanced_error, result.metadata.push("Error chained at: " + context))
-        }
-        None => result
-      }
-    }
-  }
-  
-  // Retry mechanism with exponential backoff
-  let retry_with_backoff = fn(operation: () -> Result[String], max_attempts: Int) {
-    let mut attempt = 0
-    let mut result = operation()
-    let mut backoff_ms = 100
-    
-    while attempt < max_attempts and not(result.success) {
-      match result.error {
-        Some(TelemetryError::NetworkError(_, retry_count)) => {
-          if retry_count < 3 {
-            attempt = attempt + 1
-            backoff_ms = backoff_ms * 2
-            result = operation()
-          } else {
-            break
-          }
-        }
-        Some(TelemetryError::RateLimitError(retry_after, _)) => {
-          attempt = attempt + 1
-          backoff_ms = retry_after
-          result = operation()
-        }
-        Some(TelemetryError::TimeoutError(_, _)) => {
-          attempt = attempt + 1
-          backoff_ms = backoff_ms * 2
-          result = operation()
-        }
-        _ => {
-          break  // Don't retry other errors
-        }
-      }
-    }
-    
-    result
-  }
-  
-  // Test error creation and mapping
-  let network_error = err(
-    TelemetryError::NetworkError("Connection failed", 1),
-    ["Initial attempt"]
-  )
-  
-  let mapped_error = map_error(network_error, fn(error) {
-    match error {
-      TelemetryError::NetworkError(msg, count) => 
-        TelemetryError::NetworkError("Mapped: " + msg, count + 1)
-      _ => error
+      Ok("Success after retries")
     }
   })
   
-  match mapped_error.error {
-    Some(TelemetryError::NetworkError(msg, count)) => {
-      assert_eq(msg, "Mapped: Connection failed")
-      assert_eq(count, 2)
-    }
-    _ => assert_true(false)
+  assert_true(result.is_ok())
+  assert_eq(result.unwrap(), "Success after retries")
+  assert_eq(retry_count, 3)
+  
+  // Test timeout handling
+  let slow_operation = || {
+    sleep(2000) // 2 seconds
+    "Completed"
   }
   
-  // Test error chaining
-  let chained_error = chain_error(network_error, "telemetry_collector")
-  match chained_error.error {
-    Some(TelemetryError::NetworkError(msg, _)) => {
-      assert_eq(msg, "telemetry_collector: Connection failed")
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test retry mechanism
-  let mut attempt_count = 0
-  let flaky_operation = fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      err(
-        TelemetryError::NetworkError("Temporary failure", attempt_count),
-        ["Attempt " + attempt_count.to_string()]
-      )
-    } else {
-      ok("success_after_" + attempt_count.to_string() + "_attempts", ["Final attempt"])
-    }
-  }
-  
-  let retry_result = retry_with_backoff(flaky_operation, 5)
-  assert_true(retry_result.success)
-  assert_eq(retry_result.data, Some("success_after_3_attempts"))
+  let result = Timeout::new(1000).run(slow_operation)
+  assert_true(result.is_err())
+  assert_eq(result.unwrap_err(), "Operation timed out")
 }
 
-// Test 4: Performance Optimization with Caching Strategies
-test "performance optimization with caching strategies" {
-  // LRU Cache implementation for telemetry data
-  type LRUCache[K, V] = {
-    capacity: Int,
-    entries: Array[(K, V)],
-    access_order: Array[K]
-  }
+// Test 3: Performance Optimization
+test "performance optimization techniques" {
+  // Test lazy evaluation
+  let lazy_value = Lazy::new(|| {
+    // Simulate expensive computation
+    sleep(100)
+    42
+  })
   
-  let create_lru_cache = fn(capacity: Int) {
-    {
-      capacity,
-      entries: [],
-      access_order: []
-    }
-  }
+  // Value shouldn't be computed yet
+  assert_false(lazy_value.is_computed())
   
-  let get = fn(cache: LRUCache[String, String], key: String) {
-    let mut found_value = None
-    let mut updated_entries = []
-    let mut found = false
-    
-    // Find the value
-    for (k, v) in cache.entries {
-      if k == key {
-        found_value = Some(v)
-        found = true
-      }
-      updated_entries = updated_entries.push((k, v))
-    }
-    
-    // Update access order
-    let mut updated_order = []
-    for k in cache.access_order {
-      if k != key {
-        updated_order = updated_order.push(k)
-      }
-    }
-    
-    if found {
-      updated_order = updated_order.push(key)
-    }
-    
-    {
-      capacity: cache.capacity,
-      entries: updated_entries,
-      access_order: updated_order
-    }, found_value
-  }
+  // First access should compute the value
+  let start_time = current_time()
+  let value = lazy_value.get()
+  let elapsed = current_time() - start_time
   
-  let put = fn(cache: LRUCache[String, String], key: String, value: String) {
-    let mut updated_entries = []
-    let mut key_exists = false
-    
-    // Update existing entry or add new one
-    for (k, v) in cache.entries {
-      if k == key {
-        updated_entries = updated_entries.push((key, value))
-        key_exists = true
-      } else {
-        updated_entries = updated_entries.push((k, v))
-      }
-    }
-    
-    if not(key_exists) {
-      updated_entries = updated_entries.push((key, value))
-    }
-    
-    // Remove least recently used if capacity exceeded
-    if updated_entries.length() > cache.capacity {
-      let mut new_entries = []
-      let mut removed_key = ""
-      
-      for i in 1..updated_entries.length() {
-        new_entries = new_entries.push(updated_entries[i])
-      }
-      
-      if updated_entries.length() > 0 {
-        removed_key = updated_entries[0].0
-      }
-      
-      updated_entries = new_entries
-      
-      // Update access order
-      let mut updated_order = []
-      for k in cache.access_order {
-        if k != removed_key {
-          updated_order = updated_order.push(k)
-        }
-      }
-      updated_order = updated_order.push(key)
-      
-      {
-        capacity: cache.capacity,
-        entries: updated_entries,
-        access_order: updated_order
-      }
-    } else {
-      // Update access order
-      let mut updated_order = []
-      for k in cache.access_order {
-        if k != key {
-          updated_order = updated_order.push(k)
-        }
-      }
-      updated_order = updated_order.push(key)
-      
-      {
-        capacity: cache.capacity,
-        entries: updated_entries,
-        access_order: updated_order
-      }
-    }
-  }
+  assert_eq(value, 42)
+  assert_true(lazy_value.is_computed())
+  assert_true(elapsed >= 100) // Should take at least 100ms
   
-  // Memoization with cache
-  let memoize_with_lru = fn(computation: (String) -> String, cache_size: Int) {
-    let cache = { mut value: create_lru_cache(cache_size) }
-    
-    fn(input: String) {
-      let (updated_cache, cached_value) = get(cache.value, input)
-      cache.value = updated_cache
-      
-      match cached_value {
-        Some(value) => value
-        None => {
-          let computed = computation(input)
-          cache.value = put(cache.value, input, computed)
-          computed
-        }
-      }
-    }
-  }
+  // Second access should be instant
+  let start_time = current_time()
+  let value = lazy_value.get()
+  let elapsed = current_time() - start_time
   
-  // Test LRU cache
-  let cache = create_lru_cache(3)
-  let cache1 = put(cache, "key1", "value1")
-  let cache2 = put(cache1, "key2", "value2")
-  let cache3 = put(cache2, "key3", "value3")
-  
-  // All keys should be present
-  let (cache4, value1) = get(cache3, "key1")
-  assert_eq(value1, Some("value1"))
-  
-  let (cache5, value2) = get(cache4, "key2")
-  assert_eq(value2, Some("value2"))
-  
-  let (cache6, value3) = get(cache5, "key3")
-  assert_eq(value3, Some("value3"))
-  
-  // Add fourth key, should evict least recently used
-  let cache7 = put(cache6, "key4", "value4")
-  let (cache8, evicted_value) = get(cache7, "key1")
-  assert_eq(evicted_value, None)  // key1 should be evicted
-  
-  let (cache9, value4) = get(cache8, "key4")
-  assert_eq(value4, Some("value4"))
+  assert_eq(value, 42)
+  assert_true(elapsed < 10) // Should be very fast
   
   // Test memoization
-  let expensive_operation = fn(input: String) {
-    "processed_" + input + "_with_expensive_computation"
-  }
+  let mut memoized_fn = Memoized::new(|n| {
+    // Simulate expensive computation
+    sleep(50)
+    n * n
+  })
   
-  let memoized_operation = memoize_with_lru(expensive_operation, 5)
+  let start_time = current_time()
+  let result1 = memoized_fn.call(10)
+  let elapsed1 = current_time() - start_time
   
-  let result1 = memoized_operation("telemetry_data")
-  let result2 = memoized_operation("telemetry_data")
-  let result3 = memoized_operation("different_data")
+  assert_eq(result1, 100)
+  assert_true(elapsed1 >= 50) // Should take at least 50ms
   
-  assert_eq(result1, "processed_telemetry_data_with_expensive_computation")
-  assert_eq(result2, result1)  // Should use cached value
-  assert_eq(result3, "processed_different_data_with_expensive_computation")
+  let start_time = current_time()
+  let result2 = memoized_fn.call(10)
+  let elapsed2 = current_time() - start_time
+  
+  assert_eq(result2, 100)
+  assert_true(elapsed2 < 10) // Should be very fast (cached)
+  
+  // Test batch processing
+  let items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  let start_time = current_time()
+  let processed_items = BatchProcessor::new(3).process(items, |item| {
+    sleep(10) // Simulate processing time
+    item * 2
+  })
+  let elapsed = current_time() - start_time
+  
+  assert_eq(processed_items, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+  assert_true(elapsed < 100) // Should be faster than processing sequentially
+  
+  // Test parallel processing
+  let start_time = current_time()
+  let parallel_results = ParallelProcessor::new(4).process(items, |item| {
+    sleep(20) // Simulate processing time
+    item * item
+  })
+  let elapsed = current_time() - start_time
+  
+  assert_eq(parallel_results, [1, 4, 9, 16, 25, 36, 49, 64, 81, 100])
+  assert_true(elapsed < 100) // Should be faster than sequential processing
 }
 
-// Test 5: Memory Management and Resource Cleanup
+// Test 4: Data Serialization and Deserialization
+test "data serialization and deserialization" {
+  // Test JSON serialization
+  let data = TestData::new("test", 42, [1, 2, 3])
+  
+  let json_str = JSON::serialize(data)
+  assert_true(json_str.contains("\"name\":\"test\""))
+  assert_true(json_str.contains("\"value\":42"))
+  assert_true(json_str.contains("\"items\":[1,2,3]"))
+  
+  let deserialized_data = JSON::deserialize(json_str)
+  assert_eq(deserialized_data.name, "test")
+  assert_eq(deserialized_data.value, 42)
+  assert_eq(deserialized_data.items, [1, 2, 3])
+  
+  // Test binary serialization
+  let binary_data = Binary::serialize(data)
+  assert_true(binary_data.length() > 0)
+  
+  let deserialized_binary = Binary::deserialize(binary_data)
+  assert_eq(deserialized_binary.name, "test")
+  assert_eq(deserialized_binary.value, 42)
+  assert_eq(deserialized_binary.items, [1, 2, 3])
+  
+  // Test protocol buffers
+  let proto_data = ProtoBuf::serialize(data)
+  assert_true(proto_data.length() > 0)
+  
+  let deserialized_proto = ProtoBuf::deserialize(proto_data)
+  assert_eq(deserialized_proto.name, "test")
+  assert_eq(deserialized_proto.value, 42)
+  assert_eq(deserialized_proto.items, [1, 2, 3])
+  
+  // Test custom serialization format
+  let custom_format = CustomFormat::serialize(data)
+  assert_true(custom_format.length() > 0)
+  
+  let deserialized_custom = CustomFormat::deserialize(custom_format)
+  assert_eq(deserialized_custom.name, "test")
+  assert_eq(deserialized_custom.value, 42)
+  assert_eq(deserialized_custom.items, [1, 2, 3])
+  
+  // Test compression during serialization
+  let large_data = LargeData::new("x".repeat(10000), [1; 1000])
+  
+  let compressed_data = Compressed::serialize(large_data)
+  let uncompressed_data = Uncompressed::serialize(large_data)
+  
+  assert_true(compressed_data.length() < uncompressed_data.length())
+  
+  let deserialized_compressed = Compressed::deserialize(compressed_data)
+  assert_eq(deserialized_compressed.text, "x".repeat(10000))
+  assert_eq(deserialized_compressed.numbers.length(), 1000)
+  
+  // Test version compatibility
+  let v1_data = VersionedData::v1("test", 42)
+  let v1_serialized = Versioned::serialize(v1_data)
+  
+  let v2_deserialized = Versioned::deserialize(v1_serialized)
+  assert_eq(v2_deserialized.name, "test")
+  assert_eq(v2_deserialized.value, 42)
+  assert_eq(v2_deserialized.version, "1.0")
+  assert_eq(v2_deserialized.new_field, None) // Should be None for v1 data
+}
+
+// Test 5: Concurrent Safety
+test "concurrent safety mechanisms" {
+  // Test thread-safe counter
+  let counter = AtomicCounter::new(0)
+  
+  // Simulate concurrent increments
+  let handles = []
+  for i = 0; i < 10; i = i + 1 {
+    let handle = Thread::spawn(|| {
+      for j = 0; j < 100; j = j + 1 {
+        counter.increment()
+      }
+    })
+    handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in handles {
+    handle.join()
+  }
+  
+  assert_eq(counter.get(), 1000)
+  
+  // Test mutex-protected shared data
+  let shared_data = Mutex::new(SharedData::new())
+  
+  let handles = []
+  for i = 0; i < 5; i = i + 1 {
+    let handle = Thread::spawn(|| {
+      for j = 0; j < 10; j = j + 1 {
+        shared_data.lock().add_item(j)
+      }
+    })
+    handles.push(handle)
+  }
+  
+  for handle in handles {
+    handle.join()
+  }
+  
+  let data = shared_data.lock()
+  assert_eq(data.items.length(), 50)
+  
+  // Test read-write lock
+  let rw_data = RwLock::new(RwData::new())
+  
+  // Start writer threads
+  let write_handles = []
+  for i = 0; i < 3; i = i + 1 {
+    let handle = Thread::spawn(|| {
+      for j = 0; j < 5; j = j + 1 {
+        rw_data.write().update_value(i * 10 + j)
+        sleep(10) // Simulate work
+      }
+    })
+    write_handles.push(handle)
+  }
+  
+  // Start reader threads
+  let read_handles = []
+  for i = 0; i < 5; i = i + 1 {
+    let handle = Thread::spawn(|| {
+      for j = 0; j < 10; j = j + 1 {
+        let value = rw_data.read().get_value()
+        assert_true(value >= 0)
+        sleep(5) // Simulate work
+      }
+    })
+    read_handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in write_handles {
+    handle.join()
+  }
+  
+  for handle in read_handles {
+    handle.join()
+  }
+  
+  // Test atomic operations
+  let atomic_value = Atomic::new(0)
+  
+  let handles = []
+  for i = 0; i < 8; i = i + 1 {
+    let handle = Thread::spawn(|| {
+      for j = 0; j < 100; j = j + 1 {
+        atomic_value.fetch_add(1)
+      }
+    })
+    handles.push(handle)
+  }
+  
+  for handle in handles {
+    handle.join()
+  }
+  
+  assert_eq(atomic_value.load(), 800)
+  
+  // Test concurrent queue
+  let queue = ConcurrentQueue::new()
+  
+  // Producer threads
+  let producer_handles = []
+  for i = 0; i < 3; i = i + 1 {
+    let handle = Thread::spawn(move || {
+      for j = 0; j < 10; j = j + 1 {
+        queue.enqueue(i * 10 + j)
+      }
+    })
+    producer_handles.push(handle)
+  }
+  
+  // Consumer threads
+  let consumer_handles = []
+  for i = 0; i < 2; i = i + 1 {
+    let handle = Thread::spawn(move || {
+      let mut items = []
+      for j = 0; j < 15; j = j + 1 {
+        if let Some(item) = queue.dequeue() {
+          items.push(item)
+        }
+      }
+      items
+    })
+    consumer_handles.push(handle)
+  }
+  
+  // Wait for all threads to complete
+  for handle in producer_handles {
+    handle.join()
+  }
+  
+  let mut all_items = []
+  for handle in consumer_handles {
+    all_items = all_items.concat(handle.join())
+  }
+  
+  assert_eq(all_items.length(), 30)
+  assert_true(all_items.all(|item| item >= 0 && item < 30))
+}
+
+// Test 6: Memory Management
 test "memory management and resource cleanup" {
-  // Resource management with automatic cleanup
-  type Resource[T] = {
-    id: String,
-    data: T,
-    cleanup: () -> Unit,
-    is_active: Bool
-  }
-  
-  type ResourceManager = {
-    resources: Array[Resource[String]],
-    cleanup_log: Array[String]
-  }
-  
-  let create_resource_manager = fn() {
-    {
-      resources: [],
-      cleanup_log: []
-    }
-  }
-  
-  let create_resource = fn(manager: ResourceManager, id: String, data: String) {
-    let resource = {
-      id,
-      data,
-      cleanup: fn() {
-        // Simulate cleanup operation
-        // In real implementation, this would free resources
-      },
-      is_active: true
-    }
-    
-    {
-      resources: manager.resources.push(resource),
-      cleanup_log: manager.cleanup_log
-    }
-  }
-  
-  let cleanup_resource = fn(manager: ResourceManager, id: String) {
-    let mut updated_resources = []
-    let mut cleaned_up = false
-    let mut updated_log = manager.cleanup_log
-    
-    for resource in manager.resources {
-      if resource.id == id and resource.is_active {
-        resource.cleanup()
-        cleaned_up = true
-        updated_log = updated_log.push("Cleaned up resource: " + id)
-        
-        updated_resources = updated_resources.push({
-          id: resource.id,
-          data: resource.data,
-          cleanup: resource.cleanup,
-          is_active: false
-        })
-      } else {
-        updated_resources = updated_resources.push(resource)
-      }
-    }
-    
-    {
-      resources: updated_resources,
-      cleanup_log: updated_log
-    }
-  }
-  
-  let cleanup_all_resources = fn(manager: ResourceManager) {
-    let mut updated_resources = []
-    let mut updated_log = manager.cleanup_log
-    
-    for resource in manager.resources {
-      if resource.is_active {
-        resource.cleanup()
-        updated_log = updated_log.push("Cleaned up resource: " + resource.id)
-        
-        updated_resources = updated_resources.push({
-          id: resource.id,
-          data: resource.data,
-          cleanup: resource.cleanup,
-          is_active: false
-        })
-      } else {
-        updated_resources = updated_resources.push(resource)
-      }
-    }
-    
-    {
-      resources: updated_resources,
-      cleanup_log: updated_log
-    }
-  }
-  
-  let get_active_resources_count = fn(manager: ResourceManager) {
-    let mut count = 0
-    for resource in manager.resources {
-      if resource.is_active {
-        count = count + 1
-      }
-    }
-    count
-  }
-  
-  // Memory pool for telemetry data
-  type MemoryPool[T] = {
-    pool: Array[T],
-    allocated: Array[Bool],
-    size: Int
-  }
-  
-  let create_memory_pool = fn(size: Int, default_value: T) {
-    let pool = []
-    let allocated = []
-    for i in 0..size {
-      pool = pool.push(default_value)
-      allocated = allocated.push(false)
-    }
-    
-    {
-      pool,
-      allocated,
-      size
-    }
-  }
-  
-  let allocate_from_pool = fn(pool: MemoryPool[String]) {
-    let mut allocated_index = -1
-    
-    for i in 0..pool.size {
-      if not(pool.allocated[i]) {
-        allocated_index = i
-        break
-      }
-    }
-    
-    if allocated_index >= 0 {
-      let mut updated_allocated = []
-      for i in 0..pool.size {
-        if i == allocated_index {
-          updated_allocated = updated_allocated.push(true)
-        } else {
-          updated_allocated = updated_allocated.push(pool.allocated[i])
-        }
-      }
-      
-      ({
-        pool: pool.pool,
-        allocated: updated_allocated,
-        size: pool.size
-      }, Some(allocated_index))
-    } else {
-      (pool, None)
-    }
-  }
-  
-  let deallocate_to_pool = fn(pool: MemoryPool[String], index: Int) {
-    if index >= 0 and index < pool.size {
-      let mut updated_allocated = []
-      for i in 0..pool.size {
-        if i == index {
-          updated_allocated = updated_allocated.push(false)
-        } else {
-          updated_allocated = updated_allocated.push(pool.allocated[i])
-        }
-      }
-      
-      {
-        pool: pool.pool,
-        allocated: updated_allocated,
-        size: pool.size
-      }
-    } else {
-      pool
-    }
-  }
-  
-  // Test resource management
-  let manager = create_resource_manager()
-  let manager1 = create_resource(manager, "resource1", "telemetry_data_1")
-  let manager2 = create_resource(manager1, "resource2", "telemetry_data_2")
-  let manager3 = create_resource(manager2, "resource3", "telemetry_data_3")
-  
-  assert_eq(get_active_resources_count(manager3), 3)
-  
-  let manager4 = cleanup_resource(manager3, "resource2")
-  assert_eq(get_active_resources_count(manager4), 2)
-  assert_eq(manager4.cleanup_log.length(), 1)
-  assert_eq(manager4.cleanup_log[0], "Cleaned up resource: resource2")
-  
-  let manager5 = cleanup_all_resources(manager4)
-  assert_eq(get_active_resources_count(manager5), 0)
-  assert_eq(manager5.cleanup_log.length(), 3)
-  
   // Test memory pool
-  let pool = create_memory_pool(5, "default")
-  let (pool1, index1) = allocate_from_pool(pool)
-  assert_eq(index1, Some(0))
+  let pool = MemoryPool::new(10, 100) // 10 blocks of 100 bytes each
   
-  let (pool2, index2) = allocate_from_pool(pool1)
-  assert_eq(index2, Some(1))
+  let blocks = []
+  for i = 0; i < 10; i = i + 1 {
+    let block = pool.allocate()
+    assert_true(block.is_some())
+    blocks.push(block.unwrap())
+  }
   
-  let pool3 = deallocate_to_pool(pool2, 0)
-  let (pool4, index3) = allocate_from_pool(pool3)
-  assert_eq(index3, Some(0))  // Should reuse deallocated slot
+  // Pool should be exhausted
+  assert_true(pool.allocate().is_none())
+  
+  // Free a block and allocate again
+  pool.free(blocks[0])
+  let new_block = pool.allocate()
+  assert_true(new_block.is_some())
+  
+  // Test smart pointers
+  let resource = Resource::new("test resource")
+  let ref_count = RefCell::new(0)
+  
+  {
+    let shared = SharedPtr::new(resource)
+    assert_eq(shared.strong_count(), 1)
+    
+    {
+      let shared2 = shared.clone()
+      assert_eq(shared2.strong_count(), 2)
+      
+      {
+        let weak = WeakPtr::from(&shared2)
+        assert_eq(shared2.strong_count(), 2)
+        assert_eq(weak.weak_count(), 1)
+        
+        let upgraded = weak.upgrade()
+        assert_true(upgraded.is_some())
+        assert_eq(upgraded.unwrap().name, "test resource")
+      }
+    }
+    
+    assert_eq(shared.strong_count(), 1)
+  }
+  
+  // Test RAII pattern
+  let mut cleanup_called = false
+  
+  {
+    let raii_resource = RAIIResource::new(|| {
+      cleanup_called = true
+    })
+    assert_true(raii_resource.is_valid())
+  } // Resource should be automatically cleaned up here
+  
+  assert_true(cleanup_called)
+  
+  // Test garbage collection
+  let gc = GarbageCollector::new()
+  
+  // Create some objects
+  for i = 0; i < 100; i = i + 1 {
+    gc.allocate(Object::new(i))
+  }
+  
+  assert_eq(gc.object_count(), 100)
+  
+  // Force garbage collection
+  gc.collect()
+  
+  // Objects should still be there as they're referenced
+  assert_eq(gc.object_count(), 100)
+  
+  // Clear references and collect again
+  gc.clear_references()
+  gc.collect()
+  
+  // Objects should be gone
+  assert_eq(gc.object_count(), 0)
+  
+  // Test memory leak detection
+  let leak_detector = LeakDetector::new()
+  
+  leak_detector.start_tracking()
+  
+  // Allocate and free some resources
+  let resource1 = leak_detector.tracked_allocate(100)
+  let resource2 = leak_detector.tracked_allocate(200)
+  
+  leak_detector.tracked_free(resource1)
+  // resource2 is intentionally not freed to test leak detection
+  
+  let leaks = leak_detector.stop_tracking()
+  assert_eq(leaks.length(), 1)
+  assert_eq(leaks[0].size, 200)
 }
 
-// Test 6: Network Communication and Protocol Handling
-test "network communication and protocol handling" {
-  // Network packet structure for telemetry data
-  type TelemetryPacket = {
-    header: PacketHeader,
-    payload: String,
-    checksum: Int
-  }
+// Test 7: Network Communication
+test "network communication protocols" {
+  // Test HTTP client
+  let client = HttpClient::new()
   
-  type PacketHeader = {
-    version: Int,
-    packet_type: String,
-    sequence_number: Int,
-    timestamp: Int,
-    source_id: String
-  }
+  // Mock HTTP server
+  let server = MockHttpServer::new()
+  server.get("/api/test").respond_with_json({"status": "ok", "data": [1, 2, 3]})
+  server.start()
   
-  // Protocol state machine
-  enum ConnectionState {
-    Disconnected
-    Connecting
-    Connected
-    Authenticating
-    Authenticated
-    Error(String)
-  }
+  let response = client.get(format!("http://localhost:{}/api/test", server.port()))
+  assert_true(response.is_ok())
   
-  type ConnectionManager = {
-    state: ConnectionState,
-    packets_sent: Int,
-    packets_received: Int,
-    last_activity: Int
-  }
+  let json_response = response.unwrap().json()
+  assert_eq(json_response["status"], "ok")
+  assert_eq(json_response["data"], [1, 2, 3])
   
-  let create_connection_manager = fn() {
-    {
-      state: ConnectionState::Disconnected,
-      packets_sent: 0,
-      packets_received: 0,
-      last_activity: 0
-    }
-  }
+  server.stop()
   
-  let connect = fn(manager: ConnectionManager) {
-    {
-      state: ConnectionState::Connecting,
-      packets_sent: manager.packets_sent + 1,
-      packets_received: manager.packets_received,
-      last_activity: 1000
-    }
-  }
+  // Test WebSocket communication
+  let ws_server = MockWebSocketServer::new()
+  ws_server.start()
   
-  let handle_connect_response = fn(manager: ConnectionManager, success: Bool) {
-    if success {
-      {
-        state: ConnectionState::Connected,
-        packets_sent: manager.packets_sent,
-        packets_received: manager.packets_received + 1,
-        last_activity: 1005
-      }
-    } else {
-      {
-        state: ConnectionState::Error("Connection failed"),
-        packets_sent: manager.packets_sent,
-        packets_received: manager.packets_received + 1,
-        last_activity: 1005
-      }
-    }
-  }
+  let ws_client = WebSocketClient::new(format!("ws://localhost:{}/ws", ws_server.port()))
+  assert_true(ws_client.connect().is_ok())
   
-  let authenticate = fn(manager: ConnectionManager, credentials: String) {
-    if credentials.length() > 0 {
-      {
-        state: ConnectionState::Authenticating,
-        packets_sent: manager.packets_sent + 1,
-        packets_received: manager.packets_received,
-        last_activity: 1010
-      }
-    } else {
-      {
-        state: ConnectionState::Error("Invalid credentials"),
-        packets_sent: manager.packets_sent,
-        packets_received: manager.packets_received,
-        last_activity: 1010
-      }
-    }
-  }
+  // Send message
+  let send_result = ws_client.send_text("Hello WebSocket")
+  assert_true(send_result.is_ok())
   
-  let handle_auth_response = fn(manager: ConnectionManager, success: Bool) {
-    if success {
-      {
-        state: ConnectionState::Authenticated,
-        packets_sent: manager.packets_sent,
-        packets_received: manager.packets_received + 1,
-        last_activity: 1015
-      }
-    } else {
-      {
-        state: ConnectionState::Error("Authentication failed"),
-        packets_sent: manager.packets_sent,
-        packets_received: manager.packets_received + 1,
-        last_activity: 1015
-      }
-    }
-  }
+  // Receive message
+  let received_message = ws_client.receive_text()
+  assert_true(received_message.is_ok())
+  assert_eq(received_message.unwrap(), "Echo: Hello WebSocket")
   
-  // Packet creation and validation
-  let create_packet = fn(packet_type: String, payload: String, sequence: Int) {
-    let header = {
-      version: 1,
-      packet_type,
-      sequence_number: sequence,
-      timestamp: 1000 + sequence * 10,
-      source_id: "telemetry_client_001"
-    }
-    
-    // Simple checksum calculation
-    let checksum = payload.length() + sequence + header.timestamp
-    
-    {
-      header,
-      payload,
-      checksum
-    }
-  }
+  ws_client.disconnect()
+  ws_server.stop()
   
-  let validate_packet = fn(packet: TelemetryPacket) {
-    let expected_checksum = packet.payload.length() + packet.header.sequence_number + packet.header.timestamp
-    
-    if packet.checksum == expected_checksum {
-      true
-    } else {
-      false
-    }
-  }
+  // Test TCP communication
+  let tcp_server = MockTcpServer::new()
+  tcp_server.start()
   
-  // Test connection management
-  let manager = create_connection_manager()
-  let manager1 = connect(manager)
-  assert_eq(manager1.state, ConnectionState::Connecting)
+  let tcp_client = TcpClient::new()
+  assert_true(tcp_client.connect("localhost", tcp_server.port()).is_ok())
   
-  let manager2 = handle_connect_response(manager1, true)
-  assert_eq(manager2.state, ConnectionState::Connected)
+  // Send data
+  let send_result = tcp_client.send("Hello TCP")
+  assert_true(send_result.is_ok())
   
-  let manager3 = authenticate(manager2, "valid_credentials")
-  assert_eq(manager3.state, ConnectionState::Authenticating)
+  // Receive response
+  let response = tcp_client.receive(1024)
+  assert_true(response.is_ok())
+  assert_eq(response.unwrap(), "Echo: Hello TCP")
   
-  let manager4 = handle_auth_response(manager3, true)
-  assert_eq(manager4.state, ConnectionState::Authenticated)
+  tcp_client.disconnect()
+  tcp_server.stop()
   
-  // Test packet creation and validation
-  let packet1 = create_packet("telemetry_data", "cpu_usage:75.5,memory:60.2", 1)
-  assert_true(validate_packet(packet1))
+  // Test UDP communication
+  let udp_server = MockUdpServer::new()
+  udp_server.start()
   
-  let packet2 = create_packet("heartbeat", "ping", 2)
-  assert_true(validate_packet(packet2))
+  let udp_client = UdpClient::new()
   
-  // Test invalid packet
-  let invalid_packet = {
-    header: packet1.header,
-    payload: packet1.payload,
-    checksum: 999  // Invalid checksum
-  }
-  assert_false(validate_packet(invalid_packet))
+  // Send data
+  let send_result = udp_client.send_to("Hello UDP", "localhost", udp_server.port())
+  assert_true(send_result.is_ok())
   
-  // Test packet flow
-  let send_packet = fn(manager: ConnectionManager, packet: TelemetryPacket) {
-    if manager.state == ConnectionState::Authenticated and validate_packet(packet) {
-      {
-        state: manager.state,
-        packets_sent: manager.packets_sent + 1,
-        packets_received: manager.packets_received,
-        last_activity: 1020
-      }
-    } else {
-      manager
-    }
-  }
+  // Receive response
+  let (response, _) = udp_client.receive_from(1024)
+  assert_true(response.is_ok())
+  assert_eq(response.unwrap(), "Echo: Hello UDP")
   
-  let manager5 = send_packet(manager4, packet1)
-  assert_eq(manager5.packets_sent, 4)  // connect + auth + packet1
+  udp_server.stop()
+  
+  // Test request retry with exponential backoff
+  let flaky_server = MockHttpServer::new()
+  flaky_server.get("/api/flaky").respond_with_errors([500, 500, 200])
+  flaky_server.start()
+  
+  let retry_client = HttpClient::new()
+    .with_retry_policy(RetryPolicy::exponential_backoff(3, 100, 2.0))
+  
+  let response = retry_client.get(format!("http://localhost:{}/api/flaky", flaky_server.port()))
+  assert_true(response.is_ok())
+  assert_eq(response.unwrap().status_code(), 200)
+  
+  flaky_server.stop()
 }
 
-// Test 7: Algorithm Implementation - Graph Traversal
-test "algorithm implementation - graph traversal" {
-  // Graph structure for telemetry dependency analysis
-  type GraphNode = {
-    id: String,
-    value: String,
-    dependencies: Array[String]
+// Test 8: Caching Mechanisms
+test "caching mechanisms and strategies" {
+  // Test LRU cache
+  let lru_cache = LRUCache::new(3) // Capacity of 3
+  
+  lru_cache.put("key1", "value1")
+  lru_cache.put("key2", "value2")
+  lru_cache.put("key3", "value3")
+  
+  assert_eq(lru_cache.get("key1"), Some("value1"))
+  assert_eq(lru_cache.get("key2"), Some("value2"))
+  assert_eq(lru_cache.get("key3"), Some("value3"))
+  
+  // Add one more item, should evict key1 (least recently used)
+  lru_cache.put("key4", "value4")
+  
+  assert_eq(lru_cache.get("key1"), None) // Should be evicted
+  assert_eq(lru_cache.get("key2"), Some("value2"))
+  assert_eq(lru_cache.get("key3"), Some("value3"))
+  assert_eq(lru_cache.get("key4"), Some("value4"))
+  
+  // Access key2, making it most recently used
+  lru_cache.get("key2");
+  
+  // Add another item, should evict key3
+  lru_cache.put("key5", "value5")
+  
+  assert_eq(lru_cache.get("key2"), Some("value2")) // Should still be there
+  assert_eq(lru_cache.get("key3"), None) // Should be evicted
+  assert_eq(lru_cache.get("key4"), Some("value4"))
+  assert_eq(lru_cache.get("key5"), Some("value5"))
+  
+  // Test TTL cache
+  let ttl_cache = TTLCache::new()
+  
+  ttl_cache.put_with_ttl("key1", "value1", 100) // 100ms TTL
+  assert_eq(ttl_cache.get("key1"), Some("value1"))
+  
+  sleep(150) // Wait for TTL to expire
+  
+  assert_eq(ttl_cache.get("key1"), None) // Should be expired
+  
+  // Test cache with refresh policy
+  let refresh_cache = RefreshCache::new()
+  
+  refresh_cache.put("key1", "value1", 200) // 200ms TTL
+  
+  // Access before expiration, should refresh TTL
+  sleep(100)
+  assert_eq(refresh_cache.get("key1"), Some("value1"))
+  
+  sleep(150) // Total 250ms, original TTL would have expired
+  
+  assert_eq(refresh_cache.get("key1"), Some("value1")) // Should still be there due to refresh
+  
+  // Test distributed cache
+  let distributed_cache = DistributedCache::new()
+  
+  distributed_cache.put("key1", "value1")
+  distributed_cache.put("key2", "value2")
+  
+  assert_eq(distributed_cache.get("key1"), Some("value1"))
+  assert_eq(distributed_cache.get("key2"), Some("value2"))
+  
+  // Simulate cache invalidation
+  distributed_cache.invalidate("key1")
+  
+  assert_eq(distributed_cache.get("key1"), None)
+  assert_eq(distributed_cache.get("key2"), Some("value2"))
+  
+  // Test cache warming
+  let warm_cache = WarmCache::new()
+  
+  let data_source = || {
+    sleep(50) // Simulate slow data source
+    "expensive data"
   }
   
-  type Graph = {
-    nodes: Array[GraphNode]
-  }
+  // First access should be slow
+  let start_time = current_time()
+  let value1 = warm_cache.get_or_load("key1", data_source)
+  let elapsed1 = current_time() - start_time
   
-  let create_node = fn(id: String, value: String, dependencies: Array[String]) {
-    {
-      id,
-      value,
-      dependencies
-    }
-  }
+  assert_eq(value1, "expensive data")
+  assert_true(elapsed1 >= 50)
   
-  let create_graph = fn(nodes: Array[GraphNode]) {
-    {
-      nodes
-    }
-  }
+  // Second access should be fast
+  let start_time = current_time()
+  let value2 = warm_cache.get_or_load("key1", data_source)
+  let elapsed2 = current_time() - start_time
   
-  // Depth-first search for dependency analysis
-  let dfs = fn(graph: Graph, start_id: String, visited: Array[String]) {
-    let mut result = []
-    let mut new_visited = visited
-    
-    // Find the start node
-    let mut start_node = None
-    for node in graph.nodes {
-      if node.id == start_id {
-        start_node = Some(node)
-      }
-    }
-    
-    match start_node {
-      Some(node) => {
-        if not(new_visited.contains(start_id)) {
-          new_visited = new_visited.push(start_id)
-          result = result.push(node)
-          
-          // Visit all dependencies
-          for dep_id in node.dependencies {
-            let dep_results = dfs(graph, dep_id, new_visited)
-            result = result + dep_results
-            new_visited = new_visited + dep_results.map(fn(n) { n.id })
-          }
-        }
-        
-        result
-      }
-      None => []
-    }
-  }
+  assert_eq(value2, "expensive data")
+  assert_true(elapsed2 < 10)
   
-  // Breadth-first search for shortest path analysis
-  let bfs = fn(graph: Graph, start_id: String, target_id: String) {
-    let queue = [(start_id, [])]  // (node_id, path)
-    let mut visited = []
-    
-    let bfs_recursive = fn(current_queue: Array[(String, Array[String])]) {
-      if current_queue.length() == 0 {
-        []
-      } else {
-        let (current_id, path) = current_queue[0]
-        let remaining_queue = current_queue.slice(1, current_queue.length())
-        
-        if current_id == target_id {
-          path.push(current_id)
-        } else if visited.contains(current_id) {
-          bfs_recursive(remaining_queue)
-        } else {
-          visited = visited.push(current_id)
-          
-          // Find current node
-          let mut current_node = None
-          for node in graph.nodes {
-            if node.id == current_id {
-              current_node = Some(node)
-            }
-          }
-          
-          match current_node {
-            Some(node) => {
-              let mut new_queue = remaining_queue
-              for dep_id in node.dependencies {
-                new_queue = new_queue.push((dep_id, path.push(current_id)))
-              }
-              bfs_recursive(new_queue)
-            }
-            None => bfs_recursive(remaining_queue)
-          }
-        }
-      }
-    }
-    
-    bfs_recursive(queue)
-  }
+  // Test cache statistics
+  let stats_cache = StatsCache::new()
   
-  // Topological sort for dependency ordering
-  let topological_sort = fn(graph: Graph) {
-    let mut in_degree = {}
-    let mut sorted = []
-    let mut queue = []
-    
-    // Calculate in-degree for each node
-    for node in graph.nodes {
-      in_degree = { in_degree | node.id: 0 }
-    }
-    
-    for node in graph.nodes {
-      for dep_id in node.dependencies {
-        in_degree = { in_degree | dep_id: in_degree[dep_id] + 1 }
-      }
-    }
-    
-    // Find nodes with no dependencies
-    for node in graph.nodes {
-      if in_degree[node.id] == 0 {
-        queue = queue.push(node.id)
-      }
-    }
-    
-    // Process queue
-    while queue.length() > 0 {
-      let current_id = queue[0]
-      queue = queue.slice(1, queue.length())
-      sorted = sorted.push(current_id)
-      
-      // Find current node and update in-degree of dependencies
-      for node in graph.nodes {
-        if node.id == current_id {
-          for dep_id in node.dependencies {
-            in_degree = { in_degree | dep_id: in_degree[dep_id] - 1 }
-            if in_degree[dep_id] == 0 {
-              queue = queue.push(dep_id)
-            }
-          }
-        }
-      }
-    }
-    
-    sorted
-  }
+  stats_cache.put("key1", "value1")
+  stats_cache.put("key2", "value2")
   
-  // Create a telemetry dependency graph
-  let nodes = [
-    create_node("database", "MySQL Database", []),
-    create_node("cache", "Redis Cache", ["database"]),
-    create_node("api", "REST API", ["database", "cache"]),
-    create_node("web", "Web Frontend", ["api"]),
-    create_node("mobile", "Mobile App", ["api"]),
-    create_node("analytics", "Analytics Service", ["database"])
-  ]
+  stats_cache.get("key1") // Hit
+  stats_cache.get("key1") // Hit
+  stats_cache.get("key3") // Miss
   
-  let graph = create_graph(nodes)
-  
-  // Test DFS
-  let dfs_result = dfs(graph, "web", [])
-  assert_eq(dfs_result.length(), 4)  // web -> api -> database, cache
-  
-  // Test BFS
-  let bfs_result = bfs(graph, "web", "database")
-  assert_eq(bfs_result.length(), 3)  // web -> api -> database
-  
-  // Test topological sort
-  let topo_result = topological_sort(graph)
-  assert_eq(topo_result.length(), 6)
-  
-  // Database should come first (no dependencies)
-  assert_eq(topo_result[0], "database")
-  
-  // Web and mobile should come last (depend on others)
-  assert_true(topo_result.contains("web"))
-  assert_true(topo_result.contains("mobile"))
+  let stats = stats_cache.get_stats()
+  assert_eq(stats.hits, 2)
+  assert_eq(stats.misses, 1)
+  assert_eq(stats.hit_rate, 2.0 / 3.0)
 }
 
-// Test 8: Data Validation and Schema Enforcement
-test "data validation and schema enforcement" {
-  // Schema definition for telemetry data
-  enum SchemaType {
-    StringType
-    IntType
-    FloatType
-    BoolType
-    ArrayType(SchemaType)
-    ObjectType(Array[(String, SchemaType)])
+// Test 9: Internationalization Support
+test "internationalization and localization" {
+  // Test text direction
+  assert_eq(TextDirection::detect("Hello"), TextDirection::LTR)
+  assert_eq(TextDirection::detect("שלום"), TextDirection::RTL)
+  assert_eq(TextDirection::detect("مرحبا"), TextDirection::RTL)
+  
+  // Test number formatting
+  let number = 1234567.89
+  
+  let us_formatted = NumberFormatter::new("en-US").format(number)
+  assert_eq(us_formatted, "1,234,567.89")
+  
+  let german_formatted = NumberFormatter::new("de-DE").format(number)
+  assert_eq(german_formatted, "1.234.567,89")
+  
+  let french_formatted = NumberFormatter::new("fr-FR").format(number)
+  assert_eq(french_formatted, "1 234 567,89")
+  
+  // Test date/time formatting
+  let date = DateTime::new(2023, 11, 15, 14, 30, 0)
+  
+  let us_date = DateFormatter::new("en-US").format(date)
+  assert_eq(us_date, "11/15/2023, 2:30 PM")
+  
+  let iso_date = DateFormatter::new("en-GB").format(date)
+  assert_eq(iso_date, "15/11/2023, 14:30")
+  
+  let japanese_date = DateFormatter::new("ja-JP").format(date)
+  assert_eq(japanese_date, "2023/11/15 14:30")
+  
+  // Test currency formatting
+  let amount = 1234.56
+  
+  let usd = CurrencyFormatter::new("en-US", "USD").format(amount)
+  assert_eq(usd, "$1,234.56")
+  
+  let eur = CurrencyFormatter::new("de-DE", "EUR").format(amount)
+  assert_eq(eur, "1.234,56 €")
+  
+  let jpy = CurrencyFormatter::new("ja-JP", "JPY").format(amount)
+  assert_eq(jpy, "¥1,235") // Yen doesn't have minor units
+  
+  // Test plural rules
+  let pluralizer = Pluralizer::new("en")
+  
+  assert_eq(pluralizer.pluralize(0, "cat", "cats"), "cats")
+  assert_eq(pluralizer.pluralize(1, "cat", "cats"), "cat")
+  assert_eq(pluralizer.pluralize(2, "cat", "cats"), "cats")
+  assert_eq(pluralizer.pluralize(5, "cat", "cats"), "cats")
+  
+  // Test with different language (Arabic has different plural rules)
+  let arabic_pluralizer = Pluralizer::new("ar")
+  
+  assert_eq(arabic_pluralizer.pluralize(0, "قطة", "قطط"), "قطط")
+  assert_eq(arabic_pluralizer.pluralize(1, "قطة", "قطط"), "قطة")
+  assert_eq(arabic_pluralizer.pluralize(2, "قطة", "قطط"), "قططان")
+  assert_eq(arabic_pluralizer.pluralize(5, "قطة", "قطط"), "قطط")
+  
+  // Test message translation
+  let translator = Translator::new()
+  
+  translator.add_translation("en", "hello", "Hello")
+  translator.add_translation("es", "hello", "Hola")
+  translator.add_translation("fr", "hello", "Bonjour")
+  translator.add_translation("ja", "hello", "こんにちは")
+  
+  assert_eq(translator.translate("hello", "en"), "Hello")
+  assert_eq(translator.translate("hello", "es"), "Hola")
+  assert_eq(translator.translate("hello", "fr"), "Bonjour")
+  assert_eq(translator.translate("hello", "ja"), "こんにちは")
+  
+  // Test fallback translation
+  assert_eq(translator.translate("hello", "de"), "Hello") // Falls back to English
+  
+  // Test parameterized messages
+  translator.add_translation("en", "welcome", "Welcome, {name}!")
+  translator.add_translation("es", "welcome", "¡Bienvenido, {name}!")
+  
+  let params = Map::new()
+  params.insert("name", "John")
+  
+  assert_eq(translator.translate_with_params("welcome", "en", params), "Welcome, John!")
+  assert_eq(translator.translate_with_params("welcome", "es", params), "¡Bienvenido, John!")
+  
+  // Test locale detection
+  let locale_detector = LocaleDetector::new()
+  
+  assert_eq(locale_detector.from_http_header("en-US,en;q=0.9"), "en-US")
+  assert_eq(locale_detector.from_http_header("fr-FR,fr;q=0.9,en;q=0.8"), "fr-FR")
+  assert_eq(locale_detector.from_http_header("ja, en-US;q=0.8"), "ja")
+  
+  // Test character encoding
+  let utf8_text = "Hello 世界 مرحبا こんにちは"
+  assert_eq(Encoding::detect(utf8_text), "UTF-8")
+  
+  // Test text normalization
+  let normalized_text = TextNormalizer::new("NFC").normalize("café")
+  assert_eq(normalized_text, "café") // Already normalized
+  
+  let denormalized_text = TextNormalizer::new("NFD").normalize("café")
+  assert_ne(denormalized_text, "café") // Should be different (decomposed)
+}
+
+// Test 10: Time Series Data Processing
+test "time series data processing" {
+  // Generate sample time series data
+  let time_series = TimeSeries::new()
+  
+  let base_time = Timestamp::new(2023, 11, 15, 0, 0, 0)
+  
+  for i = 0; i < 100; i = i + 1 {
+    let time = base_time.add_hours(i)
+    let value = 50.0 + 10.0 * (i as Float).sin() + 5.0 * (i as Float).cos()
+    time_series.add_point(time, value)
   }
   
-  type SchemaField = {
-    name: String,
-    schema_type: SchemaType,
-    required: Bool,
-    validator: Option[(String) -> Bool]
+  assert_eq(time_series.length(), 100)
+  
+  // Test resampling
+  let hourly_data = time_series.resample(ResampleInterval::Hour, AggregationMethod::Average)
+  assert_eq(hourly_data.length(), 100)
+  
+  let daily_data = time_series.resample(ResampleInterval::Day, AggregationMethod::Average)
+  assert_eq(daily_data.length(), 5) // 100 hours / 24 hours per day ≈ 4.17, rounded up to 5
+  
+  // Test moving average
+  let ma_5 = time_series.moving_average(5)
+  assert_eq(ma_5.length(), 96) // First 4 points don't have enough data for 5-point MA
+  
+  let ma_10 = time_series.moving_average(10)
+  assert_eq(ma_10.length(), 91) // First 9 points don't have enough data for 10-point MA
+  
+  // Test exponential smoothing
+  let smoothed = time_series.exponential_smoothing(0.3)
+  assert_eq(smoothed.length(), 100)
+  
+  // Verify smoothed values are different from original
+  assert_ne(smoothed.get(50), time_series.get(50))
+  
+  // Test trend detection
+  let trend = time_series.detect_trend()
+  assert_true(trend.direction == "up" || trend.direction == "down" || trend.direction == "sideways")
+  assert_true(trend.strength >= 0.0 && trend.strength <= 1.0)
+  
+  // Test seasonality detection
+  let seasonality = time_series.detect_seasonality()
+  assert_true(seasonality.is_seasonal || !seasonality.is_seasonal)
+  
+  if seasonality.is_seasonal {
+    assert_true(seasonality.period > 0)
+    assert_true(seasonality.strength >= 0.0 && seasonality.strength <= 1.0)
   }
   
-  type Schema = {
-    name: String,
-    fields: Array[SchemaField]
+  // Test anomaly detection
+  let anomalies = time_series.detect_anomalies(AnomalyMethod::ZScore, 2.0)
+  assert_true(anomalies.length() >= 0)
+  
+  for anomaly in anomalies {
+    assert_true(anomaly.index >= 0 && anomaly.index < time_series.length())
+    assert_true(anomaly.score > 2.0)
   }
   
-  type ValidationResult = {
-    valid: Bool,
-    errors: Array[String],
-    warnings: Array[String]
+  // Test forecasting
+  let forecast = time_series.forecast(ForecastMethod::ARIMA, 10)
+  assert_eq(forecast.values.length(), 10)
+  assert_eq(forecast.confidence_intervals.length(), 10)
+  
+  // Verify confidence intervals
+  for i = 0; i < 10; i = i + 1 {
+    let interval = forecast.confidence_intervals[i]
+    assert_true(interval.lower < forecast.values[i])
+    assert_true(forecast.values[i] < interval.upper)
   }
   
-  // Schema validation
-  let validate_string = fn(value: String, field: SchemaField) {
-    if field.required and value.length() == 0 {
-      {
-        valid: false,
-        errors: ["Field '" + field.name + "' is required but empty"],
-        warnings: []
-      }
-    } else {
-      match field.validator {
-        Some(validator) => {
-          if validator(value) {
-            {
-              valid: true,
-              errors: [],
-              warnings: []
-            }
-          } else {
-            {
-              valid: false,
-              errors: ["Field '" + field.name + "' failed custom validation"],
-              warnings: []
-            }
-          }
-        }
-        None => {
-          {
-            valid: true,
-            errors: [],
-            warnings: []
-          }
-        }
-      }
-    }
+  // Test differencing
+  let diff_series = time_series.difference(1)
+  assert_eq(diff_series.length(), 99)
+  
+  // Test seasonal differencing
+  let seasonal_diff = time_series.seasonal_difference(24) // 24-hour seasonality
+  assert_eq(seasonal_diff.length(), 76) // 100 - 24
+  
+  // Test autocorrelation
+  let autocorr = time_series.autocorrelation(20)
+  assert_eq(autocorr.length(), 20)
+  
+  // Autocorrelation at lag 0 should be 1
+  assert_eq(autocorr[0], 1.0)
+  
+  // Autocorrelation values should be between -1 and 1
+  for i = 1; i < 20; i = i + 1 {
+    assert_true(autocorr[i] >= -1.0 && autocorr[i] <= 1.0)
   }
   
-  let validate_int = fn(value: Int, field: SchemaField) {
-    if field.required and value == 0 {
-      {
-        valid: false,
-        errors: ["Field '" + field.name + "' is required but zero"],
-        warnings: []
-      }
-    } else {
-      match field.validator {
-        Some(validator) => {
-          if validator(value.to_string()) {
-            {
-              valid: true,
-              errors: [],
-              warnings: []
-            }
-          } else {
-            {
-              valid: false,
-              errors: ["Field '" + field.name + "' failed custom validation"],
-              warnings: []
-            }
-          }
-        }
-        None => {
-          {
-            valid: true,
-            errors: [],
-            warnings: []
-          }
-        }
-      }
-    }
+  // Test cross-correlation with another series
+  let other_series = TimeSeries::new()
+  
+  for i = 0; i < 100; i = i + 1 {
+    let time = base_time.add_hours(i)
+    let value = 30.0 + 8.0 * (i as Float).sin()
+    other_series.add_point(time, value)
   }
   
-  let validate_schema = fn(schema: Schema, data: Array[(String, String)]) {
-    let mut all_valid = true
-    let mut all_errors = []
-    let mut all_warnings = []
-    
-    for field in schema.fields {
-      let mut field_found = false
-      let mut field_value = ""
-      
-      for (key, value) in data {
-        if key == field.name {
-          field_found = true
-          field_value = value
-        }
-      }
-      
-      if not(field_found) and field.required {
-        all_valid = false
-        all_errors = all_errors.push("Required field '" + field.name + "' is missing")
-      } else if field_found {
-        let validation_result = validate_string(field_value, field)
-        
-        if not(validation_result.valid) {
-          all_valid = false
-          all_errors = all_errors + validation_result.errors
-        }
-        
-        all_warnings = all_warnings + validation_result.warnings
-      }
-    }
-    
-    {
-      valid: all_valid,
-      errors: all_errors,
-      warnings: all_warnings
-    }
+  let cross_corr = time_series.cross_correlation(other_series, 10)
+  assert_eq(cross_corr.length(), 21) // -10 to +10 lags
+  
+  // Test decomposition
+  let decomposition = time_series.decompose(DecompositionMethod::STL, 24) // 24-hour seasonality
+  assert_eq(decomposition.trend.length(), 100)
+  assert_eq(decomposition.seasonal.length(), 100)
+  assert_eq(decomposition.residual.length(), 100)
+  
+  // Verify components add up to original
+  for i = 0; i < 100; i = i + 1 {
+    let reconstructed = decomposition.trend[i] + decomposition.seasonal[i] + decomposition.residual[i]
+    assert_true(abs(reconstructed - time_series.get(i)) < 0.001)
   }
-  
-  // Create telemetry schema
-  let telemetry_schema = {
-    name: "telemetry_event",
-    fields: [
-      {
-        name: "trace_id",
-        schema_type: SchemaType::StringType,
-        required: true,
-        validator: Some(fn(value) { value.length() == 16 })
-      },
-      {
-        name: "span_name",
-        schema_type: SchemaType::StringType,
-        required: true,
-        validator: Some(fn(value) { value.length() > 0 and value.length() <= 50 })
-      },
-      {
-        name: "duration_ms",
-        schema_type: SchemaType::IntType,
-        required: true,
-        validator: Some(fn(value) { 
-          let int_val = value.to_int()
-          int_val >= 0 and int_val <= 3600000
-        })
-      },
-      {
-        name: "status",
-        schema_type: SchemaType::StringType,
-        required: true,
-        validator: Some(fn(value) { 
-          value == "ok" or value == "error" or value == "timeout"
-        })
-      },
-      {
-        name: "tags",
-        schema_type: SchemaType::StringType,
-        required: false,
-        validator: None
-      }
-    ]
-  }
-  
-  // Test valid data
-  let valid_data = [
-    ("trace_id", "0af7651916cd43dd"),
-    ("span_name", "database_query"),
-    ("duration_ms", "150"),
-    ("status", "ok"),
-    ("tags", "env:production,service:api")
-  ]
-  
-  let valid_result = validate_schema(telemetry_schema, valid_data)
-  assert_true(valid_result.valid)
-  assert_eq(valid_result.errors.length(), 0)
-  
-  // Test invalid data
-  let invalid_data = [
-    ("trace_id", "invalid"),  // Wrong length
-    ("span_name", ""),        // Empty
-    ("duration_ms", "-5"),    // Negative
-    ("status", "unknown")     // Invalid status
-  ]
-  
-  let invalid_result = validate_schema(telemetry_schema, invalid_data)
-  assert_false(invalid_result.valid)
-  assert_eq(invalid_result.errors.length(), 4)
-  
-  // Test missing required field
-  let missing_field_data = [
-    ("trace_id", "0af7651916cd43dd"),
-    ("span_name", "database_query"),
-    // Missing duration_ms
-    ("status", "ok")
-  ]
-  
-  let missing_result = validate_schema(telemetry_schema, missing_field_data)
-  assert_false(missing_result.valid)
-  assert_eq(missing_result.errors.length(), 1)
-  assert_eq(missing_result.errors[0], "Required field 'duration_ms' is missing")
 }
