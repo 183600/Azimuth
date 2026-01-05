@@ -7,6 +7,7 @@ import Control.Monad (replicateM_)
 import Data.Text (pack, unpack)
 
 import Azimuth.Telemetry
+import AdditionalSpec (spec)
 
 main :: IO ()
 main = hspec $ do
