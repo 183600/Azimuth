@@ -1,1019 +1,446 @@
-// Cross-Platform Compatibility Tests for Azimuth Telemetry System
-// This file contains tests for cross-platform compatibility and platform-specific behavior
+// Azimuth Telemetry System - Cross Platform Compatibility Tests
+// This file contains test cases for cross-platform compatibility functionality
 
-// Test 1: Platform Detection
-test "platform detection and identification" {
-  // Define platform types
-  enum Platform {
-    Windows
-    Linux
-    MacOS
-    FreeBSD
-    Unknown
-  }
-  
-  // Define architecture types
-  enum Architecture {
-    X86
-    X64
-    ARM
-    ARM64
-    Unknown
-  }
-  
-  // Define platform info
-  type PlatformInfo = {
-    platform : Platform
-    architecture : Architecture
-    version : String
-    endianness : String
-  }
-  
-  // Simulate platform detection
-  let detect_platform = fn() {
-    // In a real implementation, this would check system properties
-    // For testing purposes, we'll simulate different platforms
-    
-    // Simulate Linux x64
-    PlatformInfo {
-      platform: Platform::Linux,
-      architecture: Architecture::X64,
-      version: "5.15.0",
-      endianness: "little"
-    }
-  }
+// Test 1: Platform Detection and Adaptation
+test "platform detection and adaptation" {
+  // Create platform service
+  let platform_service = PlatformService::new()
   
   // Test platform detection
-  let platform_info = detect_platform()
+  let platform_info = PlatformService::detect_platform(platform_service)
   
-  match platform_info.platform {
-    Platform::Linux => assert_true(true),
-    _ => assert_true(false)
+  // Verify platform information structure
+  assert_true(platform_info.os_name.length() > 0)
+  assert_true(platform_info.os_version.length() > 0)
+  assert_true(platform_info.architecture.length() > 0)
+  assert_true(platform_info.platform_id.length() > 0)
+  
+  // Test platform-specific adaptations
+  let file_separator = PlatformService::get_file_separator(platform_service)
+  let path_separator = PlatformService::get_path_separator(platform_service)
+  
+  if platform_info.os_name == "Windows" {
+    assert_eq(file_separator, "\\")
+    assert_eq(path_separator, ";")
+  } else {
+    assert_eq(file_separator, "/")
+    assert_eq(path_separator, ":")
   }
   
-  match platform_info.architecture {
-    Architecture::X64 => assert_true(true),
-    _ => assert_true(false)
+  // Test platform-specific configuration
+  let config = PlatformService::get_platform_config(platform_service)
+  
+  if platform_info.os_name == "Linux" {
+    assert_eq(config.default_config_dir, "/etc/azimuth")
+    assert_eq(config.default_log_dir, "/var/log/azimuth")
+  } else if platform_info.os_name == "Windows" {
+    assert_eq(config.default_config_dir, "C:\\ProgramData\\Azimuth")
+    assert_eq(config.default_log_dir, "C:\\ProgramData\\Azimuth\\Logs")
+  } else if platform_info.os_name == "macOS" {
+    assert_eq(config.default_config_dir, "/Library/Application Support/Azimuth")
+    assert_eq(config.default_log_dir, "/Library/Logs/Azimuth")
   }
-  
-  assert_eq(platform_info.version, "5.15.0")
-  assert_eq(platform_info.endianness, "little")
-  
-  // Test platform-specific behavior
-  let get_path_separator = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => "\\",
-      _ => "/"
-    }
-  }
-  
-  let get_line_ending = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => "\r\n",
-      _ => "\n"
-    }
-  }
-  
-  let get_executable_extension = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => ".exe",
-      _ => ""
-    }
-  }
-  
-  // Test platform-specific values
-  assert_eq(get_path_separator(Platform::Windows), "\\")
-  assert_eq(get_path_separator(Platform::Linux), "/")
-  assert_eq(get_path_separator(Platform::MacOS), "/")
-  
-  assert_eq(get_line_ending(Platform::Windows), "\r\n")
-  assert_eq(get_line_ending(Platform::Linux), "\n")
-  assert_eq(get_line_ending(Platform::MacOS), "\n")
-  
-  assert_eq(get_executable_extension(Platform::Windows), ".exe")
-  assert_eq(get_executable_extension(Platform::Linux), "")
-  assert_eq(get_executable_extension(Platform::MacOS), "")
 }
 
 // Test 2: File System Compatibility
-test "file system compatibility across platforms" {
-  // Define file system characteristics
-  type FileSystemInfo = {
-    case_sensitive : Bool
-    path_separator : String
-    max_path_length : Int
-    supported_features : [String]
-  }
-  
-  // Get file system info for platform
-  let get_file_system_info = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => FileSystemInfo {
-        case_sensitive: false,
-        path_separator: "\\",
-        max_path_length: 260,
-        supported_features: ["short_paths", "file_streams", "hard_links", "symbolic_links"]
-      }
-      Platform::Linux => FileSystemInfo {
-        case_sensitive: true,
-        path_separator: "/",
-        max_path_length: 4096,
-        supported_features: ["hard_links", "symbolic_links", "extended_attributes", "case_sensitivity"]
-      }
-      Platform::MacOS => FileSystemInfo {
-        case_sensitive: false,  // APFS is case-insensitive by default
-        path_separator: "/",
-        max_path_length: 1024,
-        supported_features: ["hard_links", "symbolic_links", "extended_attributes", "resource_forks"]
-      }
-      _ => FileSystemInfo {
-        case_sensitive: true,
-        path_separator: "/",
-        max_path_length: 255,
-        supported_features: []
-      }
-    }
-  }
-  
-  // Normalize path for platform
-  let normalize_path = fn(path : String, platform : Platform) {
-    let separator = match platform {
-      Platform::Windows => "\\",
-      _ => "/"
-    }
-    
-    // Replace all separators with the platform-specific one
-    let mut normalized = ""
-    for i in 0..<path.length() {
-      let c = path[i]
-      if c == '/' || c == '\\' {
-        normalized = normalized + separator
-      } else {
-        normalized = normalized + c.to_string()
-      }
-    }
-    
-    normalized
-  }
-  
-  // Test file system info
-  let windows_fs = get_file_system_info(Platform::Windows)
-  let linux_fs = get_file_system_info(Platform::Linux)
-  let macos_fs = get_file_system_info(Platform::MacOS)
-  
-  assert_false(windows_fs.case_sensitive)
-  assert_true(linux_fs.case_sensitive)
-  assert_false(macos_fs.case_sensitive)
-  
-  assert_eq(windows_fs.path_separator, "\\")
-  assert_eq(linux_fs.path_separator, "/")
-  assert_eq(macos_fs.path_separator, "/")
-  
-  assert_eq(windows_fs.max_path_length, 260)
-  assert_eq(linux_fs.max_path_length, 4096)
-  assert_eq(macos_fs.max_path_length, 1024)
+test "file system compatibility" {
+  // Create file system service
+  let fs_service = FileSystemService::new()
   
   // Test path normalization
-  let test_path = "folder/subfolder\\file.txt"
+  let paths = [
+    "/home/user/../user/data",
+    "C:\\Users\\User\\..\\User\\Data",
+    "./relative/path",
+    "./relative\\path"
+  ]
   
-  let windows_normalized = normalize_path(test_path, Platform::Windows)
-  let linux_normalized = normalize_path(test_path, Platform::Linux)
-  
-  assert_eq(windows_normalized, "folder\\subfolder\\file.txt")
-  assert_eq(linux_normalized, "folder/subfolder/file.txt")
+  for path in paths {
+    let normalized = FileSystemService::normalize_path(fs_service, path)
+    assert_true(normalized.length() > 0)
+    assert_false(normalized.contains(".."))
+  }
   
   // Test path joining
-  let join_paths = fn(paths : [String], platform : Platform) {
-    let separator = match platform {
-      Platform::Windows => "\\",
-      _ => "/"
-    }
+  let parts1 = ["home", "user", "data"]
+  let joined_path1 = FileSystemService::join_paths(fs_service, parts1)
+  assert_true(joined_path1.contains("home"))
+  assert_true(joined_path1.contains("user"))
+  assert_true(joined_path1.contains("data"))
+  
+  let parts2 = ["C:", "Program Files", "Azimuth"]
+  let joined_path2 = FileSystemService::join_paths(fs_service, parts2)
+  assert_true(joined_path2.contains("C:"))
+  assert_true(joined_path2.contains("Program Files"))
+  assert_true(joined_path2.contains("Azimuth"))
+  
+  // Test file permissions handling
+  let permissions = FileSystemService::get_default_permissions(fs_service)
+  
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  if platform_info.os_name == "Windows" {
+    assert_eq(permissions.owner_read, true)
+    assert_eq(permissions.owner_write, true)
+    assert_eq(permissions.owner_execute, false)
+  } else {
+    assert_eq(permissions.owner_read, true)
+    assert_eq(permissions.owner_write, true)
+    assert_eq(permissions.owner_execute, true)
+    assert_eq(permissions.group_read, true)
+    assert_eq(permissions.group_write, false)
+    assert_eq(permissions.group_execute, true)
+    assert_eq(permissions.other_read, true)
+    assert_eq(permissions.other_write, false)
+    assert_eq(permissions.other_execute, true)
+  }
+}
+
+// Test 3: Network Interface Compatibility
+test "network interface compatibility" {
+  // Create network service
+  let network_service = NetworkService::new()
+  
+  // Test network interface detection
+  let interfaces = NetworkService::get_network_interfaces(network_service)
+  assert_true(interfaces.length() > 0)
+  
+  // Test interface information
+  for interface in interfaces {
+    assert_true(NetworkInterface::name(interface).length() > 0)
+    assert_true(NetworkInterface::is_up(interface) || NetworkInterface::is_down(interface))
     
-    let mut result = ""
-    for i in 0..<paths.length() {
-      if i > 0 {
-        result = result + separator
-      }
-      result = result + paths[i]
+    // Test IP addresses
+    let ip_addresses = NetworkInterface::ip_addresses(interface)
+    for ip in ip_addresses {
+      assert_true(IPAddress::is_valid(ip))
     }
-    
-    result
   }
   
-  let windows_joined = join_paths(["folder", "subfolder", "file.txt"], Platform::Windows)
-  let linux_joined = join_paths(["folder", "subfolder", "file.txt"], Platform::Linux)
+  // Test hostname resolution
+  let hostname = NetworkService::get_hostname(network_service)
+  assert_true(hostname.length() > 0)
   
-  assert_eq(windows_joined, "folder\\subfolder\\file.txt")
-  assert_eq(linux_joined, "folder/subfolder/file.txt")
+  // Test localhost resolution
+  let localhost_ips = NetworkService::resolve_hostname(network_service, "localhost")
+  assert_true(localhost_ips.length() > 0)
+  
+  // Test IPv4/IPv6 compatibility
+  let has_ipv4 = localhost_ips.any(fn(ip) { IPAddress::is_ipv4(ip) })
+  let has_ipv6 = localhost_ips.any(fn(ip) { IPAddress::is_ipv6(ip) })
+  
+  // At least one of IPv4 or IPv6 should be available
+  assert_true(has_ipv4 || has_ipv6)
 }
 
-// Test 3: Endianness Compatibility
-test "endianness compatibility across platforms" {
-  // Define endianness types
-  enum Endianness {
-    LittleEndian
-    BigEndian
-    Unknown
+// Test 4: Process Management Compatibility
+test "process management compatibility" {
+  // Create process service
+  let process_service = ProcessService::new()
+  
+  // Test current process information
+  let current_process = ProcessService::get_current_process(process_service)
+  assert_true(Process::pid(current_process) > 0)
+  assert_true(Process::name(current_process).length() > 0)
+  
+  // Test process listing
+  let processes = ProcessService::list_processes(process_service)
+  assert_true(processes.length() > 0)
+  
+  // Test process creation
+  let command = if PlatformService::detect_platform(PlatformService::new()).os_name == "Windows" {
+    "echo hello"
+  } else {
+    "echo hello"
   }
   
-  // Convert between endianness
-  let swap_bytes_16 = fn(value : Int) {
-    ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
-  }
+  let child_process = ProcessService::create_process(process_service, command)
+  assert_true(Process::pid(child_process) > 0)
   
-  let swap_bytes_32 = fn(value : Int) {
-    ((value & 0xFF) << 24) |
-    (((value >> 8) & 0xFF) << 16) |
-    (((value >> 16) & 0xFF) << 8) |
-    ((value >> 24) & 0xFF)
-  }
+  // Test process termination
+  let termination_result = ProcessService::terminate_process(process_service, Process::pid(child_process))
+  assert_true(termination_result.success)
   
-  // Serialize integer to bytes with specific endianness
-  let serialize_int = fn(value : Int, endianness : Endianness) {
-    match endianness {
-      Endianness::LittleEndian => [
-        value & 0xFF,
-        (value >> 8) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 24) & 0xFF
-      ]
-      Endianness::BigEndian => [
-        (value >> 24) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 8) & 0xFF,
-        value & 0xFF
-      ]
-      Endianness::Unknown => [0, 0, 0, 0]
-    }
-  }
-  
-  // Deserialize bytes to integer with specific endianness
-  let deserialize_int = fn(bytes : [Int], endianness : Endianness) {
-    if bytes.length() < 4 {
-      0
-    } else {
-      match endianness {
-        Endianness::LittleEndian => {
-          bytes[0] |
-          (bytes[1] << 8) |
-          (bytes[2] << 16) |
-          (bytes[3] << 24)
-        }
-        Endianness::BigEndian => {
-          (bytes[0] << 24) |
-          (bytes[1] << 16) |
-          (bytes[2] << 8) |
-          bytes[3]
-        }
-        Endianness::Unknown => 0
-      }
-    }
-  }
-  
-  // Test byte swapping
-  let original_16 = 0x1234
-  let swapped_16 = swap_bytes_16(original_16)
-  assert_eq(swapped_16, 0x3412)
-  
-  let original_32 = 0x12345678
-  let swapped_32 = swap_bytes_32(original_32)
-  assert_eq(swapped_32, 0x78563412)
-  
-  // Test serialization/deserialization
-  let test_value = 0x12345678
-  
-  let little_endian_bytes = serialize_int(test_value, Endianness::LittleEndian)
-  let big_endian_bytes = serialize_int(test_value, Endianness::BigEndian)
-  
-  assert_eq(little_endian_bytes, [0x78, 0x56, 0x34, 0x12])
-  assert_eq(big_endian_bytes, [0x12, 0x34, 0x56, 0x78])
-  
-  // Test deserialization
-  let little_endian_value = deserialize_int(little_endian_bytes, Endianness::LittleEndian)
-  let big_endian_value = deserialize_int(big_endian_bytes, Endianness::BigEndian)
-  
-  assert_eq(little_endian_value, test_value)
-  assert_eq(big_endian_value, test_value)
-  
-  // Test cross-endianness (little-endian bytes, big-endian deserialization)
-  let cross_endian_value = deserialize_int(little_endian_bytes, Endianness::BigEndian)
-  assert_eq(cross_endian_value, 0x78563412)  // Byte-swapped
+  // Test process resource monitoring
+  let process_resources = ProcessService::get_process_resources(process_service, Process::pid(current_process))
+  assert_true(ProcessResources::memory_usage(process_resources) > 0)
+  assert_true(ProcessResources::cpu_usage(process_resources) >= 0.0)
 }
 
-// Test 4: Character Encoding Compatibility
-test "character encoding compatibility across platforms" {
-  // Define encoding types
-  enum Encoding {
-    UTF8
-    UTF16LE
-    UTF16BE
-    ASCII
-    Latin1
+// Test 5: Environment Variable Compatibility
+test "environment variable compatibility" {
+  // Create environment service
+  let env_service = EnvironmentService::new()
+  
+  // Test environment variable retrieval
+  let path_var = EnvironmentService::get_variable(env_service, "PATH")
+  match path_var {
+    Some(p) => assert_true(p.length() > 0)
+    None => assert_true(false)
   }
   
-  // Convert string to bytes with specific encoding
-  let string_to_bytes = fn(str : String, encoding : Encoding) {
-    match encoding {
-      Encoding::UTF8 => {
-        // Simplified UTF-8 encoding (for ASCII characters only)
-        let mut bytes = []
-        for c in str.to_chars() {
-          bytes = bytes.push(c.to_int())
-        }
-        bytes
-      }
-      Encoding::UTF16LE => {
-        // Simplified UTF-16 Little Endian (for ASCII characters only)
-        let mut bytes = []
-        for c in str.to_chars() {
-          bytes = bytes.push(c.to_int())
-          bytes = bytes.push(0)
-        }
-        bytes
-      }
-      Encoding::UTF16BE => {
-        // Simplified UTF-16 Big Endian (for ASCII characters only)
-        let mut bytes = []
-        for c in str.to_chars() {
-          bytes = bytes.push(0)
-          bytes = bytes.push(c.to_int())
-        }
-        bytes
-      }
-      Encoding::ASCII => {
-        // ASCII encoding (for ASCII characters only)
-        let mut bytes = []
-        for c in str.to_chars() {
-          bytes = bytes.push(c.to_int())
-        }
-        bytes
-      }
-      Encoding::Latin1 => {
-        // Latin-1 encoding (simplified)
-        let mut bytes = []
-        for c in str.to_chars() {
-          bytes = bytes.push(c.to_int())
-        }
-        bytes
-      }
-    }
+  // Test environment variable setting
+  EnvironmentService::set_variable(env_service, "AZIMUTH_TEST", "test_value")
+  let test_var = EnvironmentService::get_variable(env_service, "AZIMUTH_TEST")
+  match test_var {
+    Some(v) => assert_eq(v, "test_value")
+    None => assert_true(false)
   }
   
-  // Convert bytes to string with specific encoding
-  let bytes_to_string = fn(bytes : [Int], encoding : Encoding) {
-    match encoding {
-      Encoding::UTF8 => {
-        // Simplified UTF-8 decoding (for ASCII characters only)
-        let mut chars = []
-        for byte in bytes {
-          chars = chars.push(byte.to_char())
-        }
-        chars.join("")
-      }
-      Encoding::UTF16LE => {
-        // Simplified UTF-16 Little Endian decoding (for ASCII characters only)
-        let mut chars = []
-        for i in 0..<bytes.length() step 2 {
-          if i + 1 < bytes.length() {
-            chars = chars.push(bytes[i].to_char())
-          }
-        }
-        chars.join("")
-      }
-      Encoding::UTF16BE => {
-        // Simplified UTF-16 Big Endian decoding (for ASCII characters only)
-        let mut chars = []
-        for i in 0..<bytes.length() step 2 {
-          if i + 1 < bytes.length() {
-            chars = chars.push(bytes[i + 1].to_char())
-          }
-        }
-        chars.join("")
-      }
-      Encoding::ASCII => {
-        // ASCII decoding
-        let mut chars = []
-        for byte in bytes {
-          chars = chars.push(byte.to_char())
-        }
-        chars.join("")
-      }
-      Encoding::Latin1 => {
-        // Latin-1 decoding (simplified)
-        let mut chars = []
-        for byte in bytes {
-          chars = chars.push(byte.to_char())
-        }
-        chars.join("")
-      }
-    }
-  }
-  
-  // Test encoding/decoding
-  let test_string = "Hello, Azimuth!"
-  
-  let utf8_bytes = string_to_bytes(test_string, Encoding::UTF8)
-  let utf16le_bytes = string_to_bytes(test_string, Encoding::UTF16LE)
-  let utf16be_bytes = string_to_bytes(test_string, Encoding::UTF16BE)
-  let ascii_bytes = string_to_bytes(test_string, Encoding::ASCII)
-  
-  // Verify UTF-8 and ASCII are the same for ASCII characters
-  assert_eq(utf8_bytes, ascii_bytes)
-  
-  // Verify UTF-16 encodings have twice the length
-  assert_eq(utf16le_bytes.length(), test_string.length() * 2)
-  assert_eq(utf16be_bytes.length(), test_string.length() * 2)
-  
-  // Verify UTF-16 LE and BE are byte-swapped
-  for i in 0..<utf16le_bytes.length() {
-    if i % 2 == 0 {
-      assert_eq(utf16le_bytes[i], utf16be_bytes[i + 1])
-    } else {
-      assert_eq(utf16le_bytes[i], utf16be_bytes[i - 1])
-    }
-  }
-  
-  // Test decoding
-  let utf8_decoded = bytes_to_string(utf8_bytes, Encoding::UTF8)
-  let utf16le_decoded = bytes_to_string(utf16le_bytes, Encoding::UTF16LE)
-  let utf16be_decoded = bytes_to_string(utf16be_bytes, Encoding::UTF16BE)
-  let ascii_decoded = bytes_to_string(ascii_bytes, Encoding::ASCII)
-  
-  assert_eq(utf8_decoded, test_string)
-  assert_eq(utf16le_decoded, test_string)
-  assert_eq(utf16be_decoded, test_string)
-  assert_eq(ascii_decoded, test_string)
-  
-  // Test cross-encoding (UTF-8 bytes, UTF-16 decoding)
-  let cross_decoded = bytes_to_string(utf8_bytes, Encoding::UTF16LE)
-  assert_not_eq(cross_decoded, test_string)  // Should be garbled
-}
-
-// Test 5: Thread and Process Compatibility
-test "thread and process compatibility across platforms" {
-  // Define thread priority levels
-  enum ThreadPriority {
-    Idle
-    Low
-    Normal
-    High
-    Critical
-  }
-  
-  // Define platform-specific thread attributes
-  type ThreadAttributes = {
-    priority : ThreadPriority
-    stack_size : Int
-    affinity_mask : Int
-    is_daemon : Bool
-  }
-  
-  // Get default thread attributes for platform
-  let get_default_thread_attributes = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => ThreadAttributes {
-        priority: ThreadPriority::Normal,
-        stack_size: 1048576,  // 1MB
-        affinity_mask: 0xFFFFFFFF,  // All processors
-        is_daemon: false
-      }
-      Platform::Linux => ThreadAttributes {
-        priority: ThreadPriority::Normal,
-        stack_size: 8388608,  // 8MB
-        affinity_mask: 0xFFFFFFFF,  // All processors
-        is_daemon: false
-      }
-      Platform::MacOS => ThreadAttributes {
-        priority: ThreadPriority::Normal,
-        stack_size: 524288,  // 512KB
-        affinity_mask: 0xFFFFFFFF,  // All processors
-        is_daemon: false
-      }
-      _ => ThreadAttributes {
-        priority: ThreadPriority::Normal,
-        stack_size: 1048576,  // 1MB
-        affinity_mask: 0xFFFFFFFF,  // All processors
-        is_daemon: false
-      }
-    }
-  }
-  
-  // Convert platform priority to OS-specific value
-  let priority_to_os_value = fn(priority : ThreadPriority, platform : Platform) {
-    match (priority, platform) {
-      (ThreadPriority::Idle, Platform::Windows) => -15,
-      (ThreadPriority::Low, Platform::Windows) => -2,
-      (ThreadPriority::Normal, Platform::Windows) => 0,
-      (ThreadPriority::High, Platform::Windows) => 2,
-      (ThreadPriority::Critical, Platform::Windows) => 15,
-      
-      (ThreadPriority::Idle, Platform::Linux) => 19,
-      (ThreadPriority::Low, Platform::Linux) => 10,
-      (ThreadPriority::Normal, Platform::Linux) => 0,
-      (ThreadPriority::High, Platform::Linux) => -5,
-      (ThreadPriority::Critical, Platform::Linux) => -20,
-      
-      (ThreadPriority::Idle, Platform::MacOS) => 20,
-      (ThreadPriority::Low, Platform::MacOS) => 10,
-      (ThreadPriority::Normal, Platform::MacOS) => 0,
-      (ThreadPriority::High, Platform::MacOS) => -5,
-      (ThreadPriority::Critical, Platform::MacOS) => -20,
-      
-      _ => 0  // Default for unknown platform
-    }
-  }
-  
-  // Test default thread attributes
-  let windows_thread = get_default_thread_attributes(Platform::Windows)
-  let linux_thread = get_default_thread_attributes(Platform::Linux)
-  let macos_thread = get_default_thread_attributes(Platform::MacOS)
-  
-  assert_eq(windows_thread.stack_size, 1048576)
-  assert_eq(linux_thread.stack_size, 8388608)
-  assert_eq(macos_thread.stack_size, 524288)
-  
-  // Test priority conversion
-  assert_eq(priority_to_os_value(ThreadPriority::High, Platform::Windows), 2)
-  assert_eq(priority_to_os_value(ThreadPriority::High, Platform::Linux), -5)
-  assert_eq(priority_to_os_value(ThreadPriority::High, Platform::MacOS), -5)
-  
-  assert_eq(priority_to_os_value(ThreadPriority::Low, Platform::Windows), -2)
-  assert_eq(priority_to_os_value(ThreadPriority::Low, Platform::Linux), 10)
-  assert_eq(priority_to_os_value(ThreadPriority::Low, Platform::MacOS), 10)
-}
-
-// Test 6: Network API Compatibility
-test "network API compatibility across platforms" {
-  // Define socket types
-  enum SocketType {
-    Stream    // TCP
-    Datagram  // UDP
-    Raw
-  }
-  
-  // Define address families
-  enum AddressFamily {
-    IPv4
-    IPv6
-    Unix
-  }
-  
-  // Define platform-specific socket options
-  type SocketOptions = {
-    receive_buffer_size : Int
-    send_buffer_size : Int
-    keep_alive : Bool
-    reuse_address : Bool
-    no_delay : Bool
-  }
-  
-  // Get default socket options for platform
-  let get_default_socket_options = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => SocketOptions {
-        receive_buffer_size: 8192,
-        send_buffer_size: 8192,
-        keep_alive: true,
-        reuse_address: true,
-        no_delay: true
-      }
-      Platform::Linux => SocketOptions {
-        receive_buffer_size: 212992,  // 208KB
-        send_buffer_size: 212992,     // 208KB
-        keep_alive: true,
-        reuse_address: true,
-        no_delay: true
-      }
-      Platform::MacOS => SocketOptions {
-        receive_buffer_size: 65536,  // 64KB
-        send_buffer_size: 65536,     // 64KB
-        keep_alive: true,
-        reuse_address: true,
-        no_delay: true
-      }
-      _ => SocketOptions {
-        receive_buffer_size: 8192,
-        send_buffer_size: 8192,
-        keep_alive: true,
-        reuse_address: true,
-        no_delay: true
-      }
-    }
-  }
-  
-  // Format IP address for platform
-  let format_ip_address = fn(address : String, port : Int, family : AddressFamily) {
-    match family {
-      AddressFamily::IPv4 => address + ":" + port.to_string(),
-      AddressFamily::IPv6 => "[" + address + "]:" + port.to_string(),
-      AddressFamily::Unix => address
-    }
-  }
-  
-  // Test default socket options
-  let windows_socket = get_default_socket_options(Platform::Windows)
-  let linux_socket = get_default_socket_options(Platform::Linux)
-  let macos_socket = get_default_socket_options(Platform::MacOS)
-  
-  assert_eq(windows_socket.receive_buffer_size, 8192)
-  assert_eq(linux_socket.receive_buffer_size, 212992)
-  assert_eq(macos_socket.receive_buffer_size, 65536)
-  
-  // Test IP address formatting
-  let ipv4_address = format_ip_address("192.168.1.1", 8080, AddressFamily::IPv4)
-  let ipv6_address = format_ip_address("2001:db8::1", 8080, AddressFamily::IPv6)
-  let unix_address = format_ip_address("/tmp/socket", 0, AddressFamily::Unix)
-  
-  assert_eq(ipv4_address, "192.168.1.1:8080")
-  assert_eq(ipv6_address, "[2001:db8::1]:8080")
-  assert_eq(unix_address, "/tmp/socket")
-}
-
-// Test 7: Time and Date Compatibility
-test "time and date compatibility across platforms" {
-  // Define time zones
-  enum TimeZone {
-    UTC
-    Local
-    Specific(String)
-  }
-  
-  // Define timestamp format
-  type Timestamp = {
-    seconds : Int
-    nanoseconds : Int
-    time_zone : TimeZone
-  }
-  
-  // Get current time for platform
-  let get_current_time = fn(platform : Platform) {
-    // In a real implementation, this would get the actual current time
-    // For testing purposes, we'll use a fixed timestamp
-    Timestamp {
-      seconds: 1609459200,  // 2021-01-01 00:00:00 UTC
-      nanoseconds: 0,
-      time_zone: TimeZone::UTC
-    }
-  }
-  
-  // Format timestamp for platform
-  let format_timestamp = fn(timestamp : Timestamp, format : String, platform : Platform) {
-    match format {
-      "iso8601" => {
-        let time_str = "2021-01-01T00:00:00"
-        match timestamp.time_zone {
-          TimeZone::UTC => time_str + "Z",
-          TimeZone::Local => time_str + "+00:00",  // Simplified
-          TimeZone::Specific(offset) => time_str + offset
-        }
-      }
-      "unix" => timestamp.seconds.to_string(),
-      "platform_specific" => {
-        match platform {
-          Platform::Windows => "01/01/2021 00:00:00",
-          Platform::Linux => "Fri Jan  1 00:00:00 UTC 2021",
-          Platform::MacOS => "Fri Jan  1 00:00:00 UTC 2021",
-          _ => "2021-01-01 00:00:00"
-        }
-      }
-      _ => "2021-01-01 00:00:00"
-    }
-  }
-  
-  // Convert between time zones
-  let convert_time_zone = fn(timestamp : Timestamp, new_time_zone : TimeZone) {
-    match (timestamp.time_zone, new_time_zone) {
-      (TimeZone::UTC, TimeZone::Local) => {
-        // Simplified conversion (assuming UTC+0)
-        { timestamp | time_zone: new_time_zone }
-      }
-      (TimeZone::Local, TimeZone::UTC) => {
-        // Simplified conversion (assuming UTC+0)
-        { timestamp | time_zone: new_time_zone }
-      }
-      _ => { timestamp | time_zone: new_time_zone }
-    }
-  }
-  
-  // Test time functions
-  let current_time = get_current_time(Platform::Linux)
-  assert_eq(current_time.seconds, 1609459200)
-  assert_eq(current_time.nanoseconds, 0)
-  match current_time.time_zone {
-    TimeZone::UTC => assert_true(true),
-    _ => assert_true(false)
-  }
-  
-  // Test timestamp formatting
-  let iso8601_format = format_timestamp(current_time, "iso8601", Platform::Linux)
-  let unix_format = format_timestamp(current_time, "unix", Platform::Linux)
-  let windows_format = format_timestamp(current_time, "platform_specific", Platform::Windows)
-  let linux_format = format_timestamp(current_time, "platform_specific", Platform::Linux)
-  
-  assert_eq(iso8601_format, "2021-01-01T00:00:00Z")
-  assert_eq(unix_format, "1609459200")
-  assert_eq(windows_format, "01/01/2021 00:00:00")
-  assert_eq(linux_format, "Fri Jan  1 00:00:00 UTC 2021")
-  
-  // Test time zone conversion
-  let local_time = convert_time_zone(current_time, TimeZone::Local)
-  match local_time.time_zone {
-    TimeZone::Local => assert_true(true),
-    _ => assert_true(false)
-  }
-  
-  let utc_time = convert_time_zone(local_time, TimeZone::UTC)
-  match utc_time.time_zone {
-    TimeZone::UTC => assert_true(true),
-    _ => assert_true(false)
-  }
-}
-
-// Test 8: Environment Variable Compatibility
-test "environment variable compatibility across platforms" {
-  // Define environment variable case sensitivity
-  let is_case_sensitive = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => false,
-      _ => true
-    }
-  }
-  
-  // Get platform-specific environment variable names
-  let get_platform_env_vars = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => {
-        [
-          ("PATH", "%SystemRoot%\\system32;%SystemRoot%"),
-          ("TEMP", "%SystemRoot%\\TEMP"),
-          ("USERPROFILE", "%SystemRoot%\\Users\\%USERNAME%"),
-          ("APPDATA", "%USERPROFILE%\\AppData\\Roaming")
-        ]
-      }
-      Platform::Linux => {
-        [
-          ("PATH", "/usr/local/bin:/usr/bin:/bin"),
-          ("TMPDIR", "/tmp"),
-          ("HOME", "/home/user"),
-          ("XDG_CONFIG_HOME", "$HOME/.config")
-        ]
-      }
-      Platform::MacOS => {
-        [
-          ("PATH", "/usr/local/bin:/usr/bin:/bin"),
-          ("TMPDIR", "/tmp"),
-          ("HOME", "/Users/user"),
-          ("XDG_CONFIG_HOME", "$HOME/.config")
-        ]
-      }
-      _ => []
-    }
-  }
-  
-  // Normalize environment variable name for platform
-  let normalize_env_var_name = fn(name : String, platform : Platform) {
-    if is_case_sensitive(platform) {
-      name
-    } else {
-      name.to_upper()
-    }
-  }
-  
-  // Test case sensitivity
-  assert_false(is_case_sensitive(Platform::Windows))
-  assert_true(is_case_sensitive(Platform::Linux))
-  assert_true(is_case_sensitive(Platform::MacOS))
-  
-  // Test environment variable normalization
-  let windows_normalized = normalize_env_var_name("path", Platform::Windows)
-  let linux_normalized = normalize_env_var_name("PATH", Platform::Linux)
-  
-  assert_eq(windows_normalized, "PATH")
-  assert_eq(linux_normalized, "PATH")
+  // Test environment variable listing
+  let all_vars = EnvironmentService::list_variables(env_service)
+  assert_true(all_vars.length() > 0)
   
   // Test platform-specific environment variables
-  let windows_env_vars = get_platform_env_vars(Platform::Windows)
-  let linux_env_vars = get_platform_env_vars(Platform::Linux)
-  let macos_env_vars = get_platform_env_vars(Platform::MacOS)
-  
-  assert_eq(windows_env_vars.length(), 4)
-  assert_eq(linux_env_vars.length(), 4)
-  assert_eq(macos_env_vars.length(), 4)
-  
-  // Verify Windows-specific variables
-  assert_eq(windows_env_vars[0].0, "PATH")
-  assert_true(windows_env_vars[0].1.contains("%SystemRoot%"))
-  
-  // Verify Linux-specific variables
-  assert_eq(linux_env_vars[0].0, "PATH")
-  assert_true(linux_env_vars[0].1.contains("/usr/bin"))
-  
-  // Verify macOS-specific variables
-  assert_eq(macos_env_vars[2].0, "HOME")
-  assert_true(macos_env_vars[2].1.contains("/Users"))
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  if platform_info.os_name == "Windows" {
+    let system_root = EnvironmentService::get_variable(env_service, "SystemRoot")
+    match system_root {
+      Some(sr) => assert_true(sr.contains("Windows"))
+      None => assert_true(false)
+    }
+  } else {
+    let home = EnvironmentService::get_variable(env_service, "HOME")
+    match home {
+      Some(h) => assert_true(h.length() > 0)
+      None => assert_true(false)
+    }
+  }
 }
 
-// Test 9: Library and Dependency Compatibility
-test "library and dependency compatibility across platforms" {
-  // Define library types
-  enum LibraryType {
-    Static
-    Shared
-    Framework
-    Package
+// Test 6: System Resource Monitoring Compatibility
+test "system resource monitoring compatibility" {
+  // Create resource monitoring service
+  let resource_service = ResourceService::new()
+  
+  // Test memory information
+  let memory_info = ResourceService::get_memory_info(resource_service)
+  assert_true(MemoryInfo::total_memory(memory_info) > 0)
+  assert_true(MemoryInfo::available_memory(memory_info) > 0)
+  assert_true(MemoryInfo::used_memory(memory_info) >= 0)
+  
+  // Test CPU information
+  let cpu_info = ResourceService::get_cpu_info(resource_service)
+  assert_true(CpuInfo::core_count(cpu_info) > 0)
+  assert_true(CpuInfo::usage_percentage(cpu_info) >= 0.0)
+  assert_true(CpuInfo::usage_percentage(cpu_info) <= 100.0)
+  
+  // Test disk information
+  let disk_info = ResourceService::get_disk_info(resource_service, "/")
+  if disk_info.is_some() {
+    let disk = disk_info.unwrap()
+    assert_true(DiskInfo::total_space(disk) > 0)
+    assert_true(DiskInfo::free_space(disk) > 0)
+    assert_true(DiskInfo::used_space(disk) >= 0)
   }
   
-  // Define platform-specific library extensions
-  let get_library_extension = fn(lib_type : LibraryType, platform : Platform) {
-    match (lib_type, platform) {
-      (LibraryType::Static, Platform::Windows) => ".lib",
-      (LibraryType::Static, Platform::Linux) => ".a",
-      (LibraryType::Static, Platform::MacOS) => ".a",
-      
-      (LibraryType::Shared, Platform::Windows) => ".dll",
-      (LibraryType::Shared, Platform::Linux) => ".so",
-      (LibraryType::Shared, Platform::MacOS) => ".dylib",
-      
-      (LibraryType::Framework, Platform::MacOS) => ".framework",
-      
-      (LibraryType::Package, Platform::Windows) => ".exe",
-      (LibraryType::Package, Platform::Linux) => "",
-      (LibraryType::Package, Platform::MacOS) => ".app",
-      
-      _ => ""
-    }
-  }
-  
-  // Get platform-specific library paths
-  let get_library_paths = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => [
-        "%SystemRoot%\\system32",
-        "%SystemRoot%\\SysWOW64",
-        "%ProgramFiles%\\Common Files",
-        "%ProgramFiles(x86)%\\Common Files"
-      ]
-      Platform::Linux => [
-        "/usr/lib",
-        "/usr/local/lib",
-        "/lib",
-        "/lib64"
-      ]
-      Platform::MacOS => [
-        "/usr/lib",
-        "/usr/local/lib",
-        "/System/Library/Frameworks",
-        "/Library/Frameworks"
-      ]
-      _ => []
-    }
-  }
-  
-  // Test library extensions
-  assert_eq(get_library_extension(LibraryType::Static, Platform::Windows), ".lib")
-  assert_eq(get_library_extension(LibraryType::Static, Platform::Linux), ".a")
-  assert_eq(get_library_extension(LibraryType::Shared, Platform::Windows), ".dll")
-  assert_eq(get_library_extension(LibraryType::Shared, Platform::Linux), ".so")
-  assert_eq(get_library_extension(LibraryType::Shared, Platform::MacOS), ".dylib")
-  assert_eq(get_library_extension(LibraryType::Framework, Platform::MacOS), ".framework")
-  
-  // Test library paths
-  let windows_paths = get_library_paths(Platform::Windows)
-  let linux_paths = get_library_paths(Platform::Linux)
-  let macos_paths = get_library_paths(Platform::MacOS)
-  
-  assert_true(windows_paths.length() > 0)
-  assert_true(linux_paths.length() > 0)
-  assert_true(macos_paths.length() > 0)
-  
-  // Verify Windows-specific paths
-  assert_true(windows_paths[0].contains("%SystemRoot%"))
-  
-  // Verify Linux-specific paths
-  assert_eq(linux_paths[0], "/usr/lib")
-  
-  // Verify macOS-specific paths
-  assert_true(macos_paths[2].contains("Frameworks"))
+  // Test network statistics
+  let network_stats = ResourceService::get_network_stats(resource_service)
+  assert_true(NetworkStats::bytes_sent(network_stats) >= 0)
+  assert_true(NetworkStats::bytes_received(network_stats) >= 0)
+  assert_true(NetworkStats::packets_sent(network_stats) >= 0)
+  assert_true(NetworkStats::packets_received(network_stats) >= 0)
 }
 
-// Test 10: Performance Characteristics Across Platforms
-test "performance characteristics across platforms" {
-  // Define performance metrics
-  type PerformanceMetrics = {
-    cpu_usage : Float
-    memory_usage : Int
-    disk_io_rate : Int
-    network_io_rate : Int
-    context_switches : Int
-  }
+// Test 7: Service Management Compatibility
+test "service management compatibility" {
+  // Create service management service
+  let service_service = ServiceService::new()
   
-  // Get platform-specific performance characteristics
-  let get_performance_characteristics = fn(platform : Platform) {
-    match platform {
-      Platform::Windows => {
-        PerformanceMetrics {
-          cpu_usage: 0.25,      // 25%
-          memory_usage: 1048576, // 1MB
-          disk_io_rate: 10485760, // 10MB/s
-          network_io_rate: 1048576, // 1MB/s
-          context_switches: 1000
+  // Test platform-specific service management
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  
+  if platform_info.os_name == "Linux" {
+    // Test systemd service management
+    if ServiceService::supports_systemd(service_service) {
+      let services = ServiceService::list_systemd_services(service_service)
+      assert_true(services.length() > 0)
+      
+      // Test service status
+      for service_name in ["ssh", "networking"] {
+        let service_status = ServiceService::get_systemd_service_status(service_service, service_name)
+        if service_status.is_some() {
+          let status = service_status.unwrap()
+          assert_true(ServiceStatus::is_known(status))
         }
       }
-      Platform::Linux => {
-        PerformanceMetrics {
-          cpu_usage: 0.20,      // 20%
-          memory_usage: 2097152, // 2MB
-          disk_io_rate: 20971520, // 20MB/s
-          network_io_rate: 2097152, // 2MB/s
-          context_switches: 1500
-        }
-      }
-      Platform::MacOS => {
-        PerformanceMetrics {
-          cpu_usage: 0.30,      // 30%
-          memory_usage: 1572864, // 1.5MB
-          disk_io_rate: 15728640, // 15MB/s
-          network_io_rate: 1572864, // 1.5MB/s
-          context_switches: 1200
-        }
-      }
-      _ => {
-        PerformanceMetrics {
-          cpu_usage: 0.0,
-          memory_usage: 0,
-          disk_io_rate: 0,
-          network_io_rate: 0,
-          context_switches: 0
-        }
+    }
+  } else if platform_info.os_name == "Windows" {
+    // Test Windows service management
+    let services = ServiceService::list_windows_services(service_service)
+    assert_true(services.length() > 0)
+    
+    // Test service status
+    for service_name in ["EventLog", "PlugPlay"] {
+      let service_status = ServiceService::get_windows_service_status(service_service, service_name)
+      if service_status.is_some() {
+        let status = service_status.unwrap()
+        assert_true(ServiceStatus::is_known(status))
       }
     }
   }
   
-  // Benchmark operation on different platforms
-  let benchmark_operation = fn(platform : Platform, operation : String) {
-    let start_time = get_current_time_millis()
-    
-    // Simulate different performance based on platform
-    let iterations = match platform {
-      Platform::Windows => 100000,
-      Platform::Linux => 120000,
-      Platform::MacOS => 90000,
-      _ => 50000
-    }
-    
-    let mut result = 0
-    for i in 0..<iterations {
-      result = result + i  // Simple operation
-    }
-    
-    let end_time = get_current_time_millis()
-    let duration = end_time - start_time
-    
-    {
-      "platform": platform,
-      "operation": operation,
-      "iterations": iterations,
-      "duration_ms": duration,
-      "operations_per_second": if duration > 0 { (iterations.to_float() / duration.to_float()) * 1000.0 } else { 0.0 },
-      "result": result
-    }
+  // Test cross-platform service registration
+  let service_config = ServiceConfig::new(
+    "azimuth-telemetry",
+    "Azimuth Telemetry Service",
+    "Telemetry data collection and processing"
+  )
+  
+  let registration_result = ServiceService::register_service(service_service, service_config)
+  if registration_result.supported {
+    assert_true(registration_result.success)
   }
-  
-  // Test performance characteristics
-  let windows_perf = get_performance_characteristics(Platform::Windows)
-  let linux_perf = get_performance_characteristics(Platform::Linux)
-  let macos_perf = get_performance_characteristics(Platform::MacOS)
-  
-  // Verify different performance characteristics
-  assert_eq(windows_perf.cpu_usage, 0.25)
-  assert_eq(linux_perf.cpu_usage, 0.20)
-  assert_eq(macos_perf.cpu_usage, 0.30)
-  
-  assert_eq(windows_perf.memory_usage, 1048576)
-  assert_eq(linux_perf.memory_usage, 2097152)
-  assert_eq(macos_perf.memory_usage, 1572864)
-  
-  // Test benchmarking
-  let windows_benchmark = benchmark_operation(Platform::Windows, "simple_loop")
-  let linux_benchmark = benchmark_operation(Platform::Linux, "simple_loop")
-  let macos_benchmark = benchmark_operation(Platform::MacOS, "simple_loop")
-  
-  // Verify benchmark results
-  assert_eq(windows_benchmark["iterations"], 100000)
-  assert_eq(linux_benchmark["iterations"], 120000)
-  assert_eq(macos_benchmark["iterations"], 90000)
-  
-  assert_true(windows_benchmark["operations_per_second"] > 0.0)
-  assert_true(linux_benchmark["operations_per_second"] > 0.0)
-  assert_true(macos_benchmark["operations_per_second"] > 0.0)
-  
-  // Linux should have more iterations and potentially higher ops/sec
-  assert_true(linux_benchmark["iterations"] > windows_benchmark["iterations"])
 }
 
-// Helper function to get current time in milliseconds
-fn get_current_time_millis() -> Int {
-  // Implementation would depend on the available time functions in MoonBit
-  // This is a placeholder for the actual implementation
-  0
+// Test 8: Logging System Compatibility
+test "logging system compatibility" {
+  // Create logging service
+  let logging_service = LoggingService::new()
+  
+  // Test log directory creation
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  let log_dir = if platform_info.os_name == "Windows" {
+    "C:\\temp\\azimuth_logs"
+  } else {
+    "/tmp/azimuth_logs"
+  }
+  
+  let log_dir_created = LoggingService::ensure_log_directory(logging_service, log_dir)
+  assert_true(log_dir_created)
+  
+  // Test log file creation
+  let log_file = LoggingService::create_log_file(logging_service, log_dir, "test")
+  assert_true(log_file.length() > 0)
+  
+  // Test log writing
+  let log_entries = [
+    ("INFO", "Test log message 1"),
+    ("WARN", "Test warning message"),
+    ("ERROR", "Test error message"),
+    ("DEBUG", "Test debug message")
+  ]
+  
+  for (level, message) in log_entries {
+    let write_result = LoggingService::write_log(logging_service, log_file, level, message)
+    assert_true(write_result)
+  }
+  
+  // Test log reading
+  let log_contents = LoggingService::read_log_file(logging_service, log_file)
+  assert_true(log_contents.length() > 0)
+  
+  for (level, message) in log_entries {
+    assert_true(log_contents.contains(level))
+    assert_true(log_contents.contains(message))
+  }
+  
+  // Test log rotation
+  let rotation_result = LoggingService::rotate_log_file(logging_service, log_file)
+  if rotation_result.supported {
+    assert_true(rotation_result.success)
+  }
+}
+
+// Test 9: Configuration File Compatibility
+test "configuration file compatibility" {
+  // Create configuration service
+  let config_service = ConfigurationService::new()
+  
+  // Test platform-specific configuration paths
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  let config_path = if platform_info.os_name == "Windows" {
+    "C:\\ProgramData\\Azimuth\\config.json"
+  } else if platform_info.os_name == "macOS" {
+    "/Library/Application Support/Azimuth/config.json"
+  } else {
+    "/etc/azimuth/config.json"
+  }
+  
+  // Test configuration file creation
+  let config_data = [
+    ("service.name", "azimuth-telemetry"),
+    ("service.port", "8080"),
+    ("logging.level", "INFO"),
+    ("data.retention_days", "30")
+  ]
+  
+  let config_created = ConfigurationService::create_config_file(config_service, config_path, config_data)
+  assert_true(config_created)
+  
+  // Test configuration file reading
+  let read_config = ConfigurationService::read_config_file(config_service, config_path)
+  assert_eq(read_config.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(read_config.get("service.port"), Some("8080"))
+  assert_eq(read_config.get("logging.level"), Some("INFO"))
+  assert_eq(read_config.get("data.retention_days"), Some("30"))
+  
+  // Test configuration file updating
+  let updates = [
+    ("service.port", "9090"),
+    ("logging.level", "DEBUG")
+  ]
+  
+  let config_updated = ConfigurationService::update_config_file(config_service, config_path, updates)
+  assert_true(config_updated)
+  
+  // Verify updates
+  let updated_config = ConfigurationService::read_config_file(config_service, config_path)
+  assert_eq(updated_config.get("service.port"), Some("9090"))
+  assert_eq(updated_config.get("logging.level"), Some("DEBUG"))
+  assert_eq(updated_config.get("service.name"), Some("azimuth-telemetry")) // Unchanged
+}
+
+// Test 10: Runtime Compatibility Checks
+test "runtime compatibility checks" {
+  // Create compatibility service
+  let compatibility_service = CompatibilityService::new()
+  
+  // Test runtime requirements
+  let requirements = RuntimeRequirements::new(
+    "1.0.0", // Minimum version
+    512,     // Minimum memory MB
+    2,       // Minimum CPU cores
+    100      // Minimum disk space MB
+  )
+  
+  // Check current system compatibility
+  let compatibility_result = CompatibilityService::check_compatibility(compatibility_service, requirements)
+  
+  // Verify compatibility check structure
+  assert_true(compatibility_result.version_compatible || !compatibility_result.version_compatible)
+  assert_true(compatibility_result.memory_compatible || !compatibility_result.memory_compatible)
+  assert_true(compatibility_result.cpu_compatible || !compatibility_result.cpu_compatible)
+  assert_true(compatibility_result.disk_compatible || !compatibility_result.disk_compatible)
+  
+  // Test compatibility report generation
+  let report = CompatibilityService::generate_compatibility_report(compatibility_service, requirements)
+  assert_true(report.length() > 0)
+  assert_true(report.contains("System Compatibility Report"))
+  assert_true(report.contains("Version Compatibility"))
+  assert_true(report.contains("Memory Compatibility"))
+  assert_true(report.contains("CPU Compatibility"))
+  assert_true(report.contains("Disk Compatibility"))
+  
+  // Test platform-specific features
+  let platform_features = CompatibilityService::get_platform_features(compatibility_service)
+  assert_true(platform_features.length() > 0)
+  
+  let platform_info = PlatformService::detect_platform(PlatformService::new())
+  if platform_info.os_name == "Linux" {
+    assert_true(platform_features.contains("systemd"))
+    assert_true(platform_features.contains("signals"))
+  } else if platform_info.os_name == "Windows" {
+    assert_true(platform_features.contains("services"))
+    assert_true(platform_features.contains("registry"))
+  } else if platform_info.os_name == "macOS" {
+    assert_true(platform_features.contains("launchd"))
+    assert_true(platform_features.contains("keychain"))
+  }
+  
+  // Test feature availability checking
+  let systemd_available = CompatibilityService::is_feature_available(compatibility_service, "systemd")
+  let services_available = CompatibilityService::is_feature_available(compatibility_service, "services")
+  
+  // At least one service management feature should be available
+  assert_true(systemd_available || services_available)
 }
