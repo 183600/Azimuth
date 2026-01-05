@@ -940,6 +940,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_new_resource_management_tests.mbt": {
   },
+  "azimuth_new_resource_management_optimization_tests.mbt": {
+  },
   "azimuth_new_moonbit_tests.mbt": {
   },
   "azimuth_new_moonbit_test_suite.mbt": {
@@ -977,6 +979,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_new_context_propagation_tests.mbt": {
   },
   "azimuth_new_context_propagation_boundary_tests.mbt": {
+  },
+  "azimuth_new_concurrent_safety_stress_tests.mbt": {
   },
   "azimuth_new_comprehensive_tests.mbt": {
   },
