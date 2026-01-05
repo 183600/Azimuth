@@ -5454,6 +5454,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f686967685f7175616c6974795f706572666f726d616e63655f62656e63686d61726b5f74657374732e6d6274_8, ["large payload performance benchmark"]),
     9: (__test_617a696d7574685f686967685f7175616c6974795f706572666f726d616e63655f62656e63686d61726b5f74657374732e6d6274_9, ["resource usage under load benchmark"]),
   },
+  "azimuth_high_quality_new_tests.mbt": {
+    0: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_0, ["advanced telemetry data processing pipeline"]),
+    1: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_1, ["distributed tracing context propagation with baggage"]),
+    2: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_2, ["telemetry metrics aggregation and statistical analysis"]),
+    3: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_3, ["telemetry data compression and optimization techniques"]),
+    4: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_4, ["telemetry error handling and recovery strategies"]),
+    5: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_5, ["telemetry sampling strategies and algorithms"]),
+    6: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_6, ["telemetry data validation and quality assurance"]),
+    7: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_7, ["telemetry performance optimization techniques"]),
+    8: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_8, ["telemetry security and privacy features"]),
+    9: (__test_617a696d7574685f686967685f7175616c6974795f6e65775f74657374732e6d6274_9, ["telemetry integration and interoperability features"]),
+  },
   "azimuth_high_quality_moonbit_tests.mbt": {
     0: (__test_617a696d7574685f686967685f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_0, ["span lifecycle management with proper state transitions"]),
     1: (__test_617a696d7574685f686967685f7175616c6974795f6d6f6f6e6269745f74657374732e6d6274_1, ["metrics aggregation operations with different instrument types"]),
@@ -10049,6 +10061,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_5, ["高级链表操作测试"]),
     6: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_6, ["高级栈操作测试"]),
     7: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f74657374732e6d6274_7, ["高级集合操作测试"]),
+  },
+  "azimuth_advanced_data_structures_quality_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_0, ["circular buffer for telemetry events"]),
+    1: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_1, ["priority queue for critical telemetry events"]),
+    2: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_2, ["trie for efficient telemetry attribute lookup"]),
+    3: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_3, ["bloom filter for telemetry event deduplication"]),
+    4: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_4, ["skip list for efficient telemetry metric storage"]),
+    5: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f7175616c6974795f74657374732e6d6274_5, ["lru cache for telemetry data"]),
   },
   "azimuth_advanced_data_structures_operations_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f646174615f737472756374757265735f6f7065726174696f6e735f74657374732e6d6274_0, ["trie-based attribute storage"]),
