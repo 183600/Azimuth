@@ -1956,6 +1956,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_concurrent_thread_safety_tests.mbt": {
   },
+  "azimuth_concurrent_thread_safety_new_tests.mbt": {
+  },
   "azimuth_concurrent_thread_safety_comprehensive_tests.mbt": {
   },
   "azimuth_concurrent_telemetry_processing_tests.mbt": {
