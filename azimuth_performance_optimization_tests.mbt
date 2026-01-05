@@ -1,618 +1,706 @@
-// Azimuth Performance Optimization Test Suite
-// This file contains comprehensive test cases for performance optimization scenarios
+// Azimuth Telemetry System - Performance Optimization Tests
+// This file contains comprehensive test cases for performance optimization functionality
 
-// Test 1: High-Volume Span Creation Performance
-test "high-volume span creation performance" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "performance_test_tracer")
-  let span_count = 10000
+// Test 1: Memory Usage Optimization Tests
+test "memory usage optimization operations" {
+  // Test object pooling
+  let pool = ObjectPool::new(() -> { TestObject::new() }, 10)
   
-  // Measure span creation performance
-  let start_time = Time::now()
+  // Acquire objects from pool
+  let obj1 = ObjectPool::acquire(pool)
+  let obj2 = ObjectPool::acquire(pool)
+  let obj3 = ObjectPool::acquire(pool)
   
-  let mut spans = []
-  for i in 0..span_count {
-    let span_name = "perf_span_" + i.to_string()
-    let span = Tracer::start_span(tracer, span_name)
-    spans = spans.push(span)
-  }
+  assert_true(obj1 != None)
+  assert_true(obj2 != None)
+  assert_true(obj3 != None)
   
-  let creation_time = Time::now() - start_time
+  // Release objects back to pool
+  ObjectPool::release(pool, obj1)
+  ObjectPool::release(pool, obj2)
+  ObjectPool::release(pool, obj3)
   
-  // Measure span ending performance
-  let end_start_time = Time::now()
+  // Verify pool has available objects
+  assert_eq(ObjectPool::available_count(pool), 3)
   
-  for span in spans {
-    Span::end(span)
-  }
+  // Test memory-efficient data structures
+  let large_array = ArrayUtil::create_sparse_array(1000, 0)
+  assert_eq(large_array.length(), 1000)
   
-  let end_time = Time::now() - end_start_time
+  // Only set non-default values
+  ArrayUtil::set_sparse(large_array, 100, 100)
+  ArrayUtil::set_sparse(large_array, 200, 200)
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  assert_eq(ArrayUtil::get_sparse(large_array, 100), 100)
+  assert_eq(ArrayUtil::get_sparse(large_array, 50), 0)  // Default value
   
-  // Verify all spans were created and exported
-  let collected_spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(collected_spans.length(), span_count)
+  // Test memory usage tracking
+  let memory_tracker = MemoryTracker::new()
+  let initial_memory = MemoryTracker::get_usage(memory_tracker)
   
-  // Performance assertions (adjust thresholds based on environment)
-  let creation_rate = span_count.to_float() / creation_time.to_seconds()
-  let end_rate = span_count.to_float() / end_time.to_seconds()
+  // Allocate memory
+  let large_data = ArrayUtil::create_with_capacity(10000)
+  let after_allocation = MemoryTracker::get_usage(memory_tracker)
   
-  // Should be able to create at least 1000 spans per second
-  assert_true(creation_rate > 1000.0)
-  assert_true(end_rate > 1000.0)
+  assert_true(after_allocation > initial_memory)
   
-  // Log performance metrics
-  let meter = TelemetryProvider::get_meter(provider, "performance_metrics")
-  let creation_rate_gauge = Meter::create_gauge(meter, "span_creation_rate")
-  let end_rate_gauge = Meter::create_gauge(meter, "span_end_rate")
+  // Free memory
+  ArrayUtil::clear(large_data)
+  MemoryTracker::force_gc()
+  let after_cleanup = MemoryTracker::get_usage(memory_tracker)
   
-  Gauge::set(creation_rate_gauge, creation_rate)
-  Gauge::set(end_rate_gauge, end_rate)
+  assert_true(after_cleanup < after_allocation)
 }
 
-// Test 2: Batch Processing Performance
-test "batch processing performance" {
-  // Configure batch processing with different sizes
-  let batch_sizes = [10, 50, 100, 500, 1000]
-  let operations_per_batch = 1000
+// Test 2: CPU Performance Optimization Tests
+test "cpu performance optimization operations" {
+  // Test parallel processing
+  let large_dataset = ArrayUtil::range(1, 10000)
   
-  for batch_size in batch_sizes {
-    let batch_config = {
-      max_batch_size: batch_size,
-      max_export_timeout_ms: 5000,
-      scheduled_delay_ms: 100
-    }
-    
-    let provider = TelemetryProvider::with_batch_config(batch_config)
-    let tracer = TelemetryProvider::get_tracer(provider, "batch_perf_tracer")
-    
-    // Measure batch processing performance
-    let start_time = Time::now()
-    
-    for i in 0..operations_per_batch {
-      let span = Tracer::start_span(tracer, "batch_span_" + i.to_string())
-      Span::end(span)
-    }
-    
-    // Force batch export
-    TelemetryProvider::force_flush(provider)
-    
-    let total_time = Time::now() - start_time
-    let throughput = operations_per_batch.to_float() / total_time.to_seconds()
-    
-    // Verify all spans were exported
-    let spans = TelemetryProvider::get_collected_spans(provider)
-    assert_eq(spans.length(), operations_per_batch)
-    
-    // Log performance metrics
-    let meter = TelemetryProvider::get_meter(provider, "batch_performance")
-    let throughput_gauge = Meter::create_gauge(meter, "batch_throughput")
-    Gauge::set(throughput_gauge, throughput)
-    
-    // Larger batch sizes should generally provide better throughput
-    if batch_size > 10 {
-      assert_true(throughput > 100.0) // At least 100 operations per second
-    }
+  // Sequential processing
+  let start_time = TimeUtil::current_time_millis()
+  let sequential_result = ArrayUtil::map(large_dataset, (x) -> { x * 2 })
+  let sequential_time = TimeUtil::current_time_millis() - start_time
+  
+  // Parallel processing
+  start_time = TimeUtil::current_time_millis()
+  let parallel_result = ParallelUtil::map(large_dataset, (x) -> { x * 2 })
+  let parallel_time = TimeUtil::current_time_millis() - start_time
+  
+  // Verify results are identical
+  assert_eq(sequential_result.length(), parallel_result.length())
+  for i in 0..sequential_result.length() {
+    assert_eq(sequential_result[i], parallel_result[i])
   }
+  
+  // Parallel should be faster for large datasets
+  assert_true(parallel_time <= sequential_time)
+  
+  // Test caching mechanisms
+  let cache = LRUCache::new(100)
+  
+  // Cache expensive computation
+  let computation_result = CacheUtil::get_or_compute(cache, "expensive_key", () -> {
+    // Simulate expensive computation
+    TimeUtil::sleep(10)
+    42
+  })
+  
+  assert_eq(computation_result, 42)
+  
+  // Second call should use cache (no sleep)
+  start_time = TimeUtil::current_time_millis()
+  let cached_result = CacheUtil::get_or_compute(cache, "expensive_key", () -> {
+    TimeUtil::sleep(10)
+    24
+  })
+  let cached_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_eq(cached_result, 42)  // Should return cached value
+  assert_true(cached_time < 10)  // Should be much faster
 }
 
-// Test 3: Memory Usage Optimization
-test "memory usage optimization" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "memory_test_tracer")
+// Test 3: I/O Performance Optimization Tests
+test "io performance optimization operations" {
+  // Test buffered I/O
+  let test_data = "Test data for buffered I/O operations. ".repeat(1000)
   
-  // Measure memory usage before creating spans
-  let initial_memory = Memory::get_usage()
+  // Unbuffered write
+  let start_time = TimeUtil::current_time_millis()
+  IOUtil::write_file("unbuffered_test.txt", test_data, false)
+  let unbuffered_time = TimeUtil::current_time_millis() - start_time
   
-  // Create a large number of spans
-  let span_count = 5000
-  let mut spans = []
+  // Buffered write
+  start_time = TimeUtil::current_time_millis()
+  IOUtil::write_file("buffered_test.txt", test_data, true)
+  let buffered_time = TimeUtil::current_time_millis() - start_time
   
-  for i in 0..span_count {
-    let span = Tracer::start_span(tracer, "memory_span_" + i.to_string())
-    
-    // Add some attributes to increase memory usage
-    Span::add_attribute(span, "iteration", i.to_string())
-    Span::add_attribute(span, "data", "x".repeat(100)) // 100 character string
-    
-    spans = spans.push(span)
+  // Buffered should be faster for large data
+  assert_true(buffered_time <= unbuffered_time)
+  
+  // Test batch operations
+  let batch_size = 100
+  let batch_data = ArrayUtil::range(1, 1000)
+  
+  // Individual operations
+  start_time = TimeUtil::current_time_millis()
+  for item in batch_data {
+    DatabaseUtil::insert("test_table", item)
+  }
+  let individual_time = TimeUtil::current_time_millis() - start_time
+  
+  // Batch operations
+  start_time = TimeUtil::current_time_millis()
+  DatabaseUtil::batch_insert("test_table", batch_data, batch_size)
+  let batch_time = TimeUtil::current_time_millis() - start_time
+  
+  // Batch should be significantly faster
+  assert_true(batch_time < individual_time)
+  
+  // Test async I/O
+  let async_tasks = []
+  for i in 0..10 {
+    let task = AsyncUtil::run(() -> {
+      IOUtil::read_file("test_file_" + i.to_string() + ".txt")
+    })
+    ArrayUtil::push(async_tasks, task)
   }
   
-  let peak_memory = Memory::get_usage()
+  start_time = TimeUtil::current_time_millis()
+  let async_results = AsyncUtil::wait_all(async_tasks)
+  let async_time = TimeUtil::current_time_millis() - start_time
   
-  // End all spans
-  for span in spans {
-    Span::end(span)
+  // Sequential reading
+  start_time = TimeUtil::current_time_millis()
+  let sequential_results = []
+  for i in 0..10 {
+    let result = IOUtil::read_file("test_file_" + i.to_string() + ".txt")
+    ArrayUtil::push(sequential_results, result)
   }
+  let sequential_time = TimeUtil::current_time_millis() - start_time
   
-  // Force export and cleanup
-  TelemetryProvider::force_flush(provider)
-  
-  // Measure memory after cleanup
-  let final_memory = Memory::get_usage()
-  
-  // Verify memory usage is reasonable
-  let memory_per_span = (peak_memory - initial_memory) / span_count
-  assert_true(memory_per_span < 10000) // Less than 10KB per span
-  
-  // Memory should be released after export
-  let memory_released = peak_memory - final_memory
-  let release_percentage = memory_released.to_float() / (peak_memory - initial_memory).to_float()
-  assert_true(release_percentage > 0.8) // At least 80% of memory should be released
-  
-  // Log memory metrics
-  let meter = TelemetryProvider::get_meter(provider, "memory_metrics")
-  let memory_gauge = Meter::create_gauge(meter, "memory_per_span")
-  let release_gauge = Meter::create_gauge(meter, "memory_release_percentage")
-  
-  Gauge::set(memory_gauge, memory_per_span.to_float())
-  Gauge::set(release_gauge, release_percentage * 100.0)
+  // Async should be faster for multiple I/O operations
+  assert_true(async_time < sequential_time)
 }
 
-// Test 4: Attribute Processing Performance
-test "attribute processing performance" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "attribute_test_tracer")
+// Test 4: Algorithm Performance Optimization Tests
+test "algorithm performance optimization operations" {
+  // Test efficient sorting
+  let large_array = ArrayUtil::shuffle(ArrayUtil::range(1, 10000))
   
-  // Test different attribute counts
-  let attribute_counts = [1, 5, 10, 25, 50, 100]
+  // Standard sort
+  let start_time = TimeUtil::current_time_millis()
+  let standard_sorted = ArrayUtil::sort(large_array)
+  let standard_time = TimeUtil::current_time_millis() - start_time
   
-  for attr_count in attribute_counts {
-    let span = Tracer::start_span(tracer, "attribute_test_span")
-    
-    // Measure attribute addition performance
-    let start_time = Time::now()
-    
-    for i in 0..attr_count {
-      let key = "attr_" + i.to_string()
-      let value = "value_" + i.to_string()
-      Span::add_attribute(span, key, value)
-    }
-    
-    let add_time = Time::now() - start_time
-    
-    // Measure attribute retrieval performance
-    let retrieval_start_time = Time::now()
-    
-    for i in 0..attr_count {
-      let key = "attr_" + i.to_string()
-      let _value = Span::get_attribute(span, key)
-    }
-    
-    let retrieval_time = Time::now() - retrieval_start_time
-    
-    Span::end(span)
-    
-    // Performance should be reasonable even with many attributes
-    let add_rate = attr_count.to_float() / add_time.to_seconds()
-    let retrieval_rate = attr_count.to_float() / retrieval_time.to_seconds()
-    
-    assert_true(add_rate > 1000.0) // At least 1000 attributes per second
-    assert_true(retrieval_rate > 5000.0) // At least 5000 attribute retrievals per second
-    
-    // Log performance metrics
-    let meter = TelemetryProvider::get_meter(provider, "attribute_performance")
-    let add_rate_gauge = Meter::create_gauge(meter, "attribute_add_rate")
-    let retrieval_rate_gauge = Meter::create_gauge(meter, "attribute_retrieval_rate")
-    
-    Gauge::set(add_rate_gauge, add_rate)
-    Gauge::set(retrieval_rate_gauge, retrieval_rate)
+  // Optimized sort
+  start_time = TimeUtil::current_time_millis()
+  let optimized_sorted = SortUtil::optimized_sort(large_array)
+  let optimized_time = TimeUtil::current_time_millis() - start_time
+  
+  // Verify both produce correct results
+  assert_eq(standard_sorted.length(), optimized_sorted.length())
+  for i in 0..standard_sorted.length() {
+    assert_eq(standard_sorted[i], optimized_sorted[i])
   }
+  
+  // Optimized should be faster
+  assert_true(optimized_time <= standard_time)
+  
+  // Test efficient search
+  let sorted_array = ArrayUtil::sort(ArrayUtil::range(1, 10000))
+  let target = 5000
+  
+  // Linear search
+  start_time = TimeUtil::current_time_millis()
+  let linear_result = SearchUtil::linear_search(sorted_array, target)
+  let linear_time = TimeUtil::current_time_millis() - start_time
+  
+  // Binary search
+  start_time = TimeUtil::current_time_millis()
+  let binary_result = SearchUtil::binary_search(sorted_array, target)
+  let binary_time = TimeUtil::current_time_millis() - start_time
+  
+  // Verify both find the target
+  match linear_result {
+    Some(index) => assert_eq(sorted_array[index], target)
+    None => assert_true(false)
+  }
+  
+  match binary_result {
+    Some(index) => assert_eq(sorted_array[index], target)
+    None => assert_true(false)
+  }
+  
+  // Binary search should be much faster
+  assert_true(binary_time < linear_time)
+  
+  // Test efficient data structure operations
+  let list_data = ArrayUtil::range(1, 1000)
+  
+  // List operations
+  start_time = TimeUtil::current_time_millis()
+  let list = ListUtil::from_array(list_data)
+  let list_result = ListUtil::find(list, 500)
+  let list_time = TimeUtil::current_time_millis() - start_time
+  
+  // Hash set operations
+  start_time = TimeUtil::current_time_millis()
+  let hash_set = HashSetUtil::from_array(list_data)
+  let hash_result = HashSetUtil::contains(hash_set, 500)
+  let hash_time = TimeUtil::current_time_millis() - start_time
+  
+  // Verify both find the element
+  match list_result {
+    Some(value) => assert_eq(value, 500)
+    None => assert_true(false)
+  }
+  
+  assert_true(hash_result)
+  
+  // Hash set should be faster for lookups
+  assert_true(hash_time < list_time)
 }
 
-// Test 5: Metric Aggregation Performance
-test "metric aggregation performance" {
-  let provider = TelemetryProvider::new()
-  let meter = TelemetryProvider::get_meter(provider, "aggregation_test_meter")
+// Test 5: Network Performance Optimization Tests
+test "network performance optimization operations" {
+  // Test connection pooling
+  let connection_pool = ConnectionPool::new("http://example.com", 10)
   
-  // Create metrics
-  let counter = Meter::create_counter(meter, "performance_counter")
-  let histogram = Meter::create_histogram(meter, "performance_histogram")
-  
-  // Test different data volumes
-  let data_volumes = [100, 1000, 5000, 10000]
-  
-  for volume in data_volumes {
-    // Measure counter performance
-    let counter_start_time = Time::now()
-    
-    for i in 0..volume {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "iteration", i.to_string())
-      Counter::add(counter, 1.0, Some(attrs))
-    }
-    
-    let counter_time = Time::now() - counter_start_time
-    
-    // Measure histogram performance
-    let histogram_start_time = Time::now()
-    
-    for i in 0..volume {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "iteration", i.to_string())
-      Histogram::record(histogram, i.to_float(), Some(attrs))
-    }
-    
-    let histogram_time = Time::now() - histogram_start_time
-    
-    // Force export
-    TelemetryProvider::force_flush(provider)
-    
-    // Verify metrics were recorded
-    let metrics = TelemetryProvider::get_collected_metrics(provider)
-    let counter_metrics = metrics.filter(fn(m) { m.name == "performance_counter" })
-    let histogram_metrics = metrics.filter(fn(m) { m.name == "performance_histogram" })
-    
-    assert_eq(counter_metrics.length(), volume)
-    assert_eq(histogram_metrics.length(), volume)
-    
-    // Performance assertions
-    let counter_rate = volume.to_float() / counter_time.to_seconds()
-    let histogram_rate = volume.to_float() / histogram_time.to_seconds()
-    
-    assert_true(counter_rate > 1000.0) // At least 1000 counter operations per second
-    assert_true(histogram_rate > 1000.0) // At least 1000 histogram operations per second
-    
-    // Log performance metrics
-    let perf_meter = TelemetryProvider::get_meter(provider, "performance_metrics")
-    let counter_rate_gauge = Meter::create_gauge(perf_meter, "counter_operation_rate")
-    let histogram_rate_gauge = Meter::create_gauge(perf_meter, "histogram_operation_rate")
-    
-    Gauge::set(counter_rate_gauge, counter_rate)
-    Gauge::set(histogram_rate_gauge, histogram_rate)
+  // Create multiple requests
+  let start_time = TimeUtil::current_time_millis()
+  let pooled_results = []
+  for i in 0..20 {
+    let connection = ConnectionPool::acquire(connection_pool)
+    let result = HttpClientUtil::get(connection, "/api/data/" + i.to_string())
+    ConnectionPool::release(connection_pool, connection)
+    ArrayUtil::push(pooled_results, result)
   }
-}
-
-// Test 6: Sampling Performance Impact
-test "sampling performance impact" {
-  // Test different sampling rates
-  let sampling_rates = [0.1, 0.5, 0.9, 1.0]
-  let operation_count = 1000
+  let pooled_time = TimeUtil::current_time_millis() - start_time
   
-  for rate in sampling_rates {
-    let sampling_config = {
-      sampling_enabled: true,
-      sampling_rate: rate,
-      max_spans_per_second: 10000
-    }
-    
-    let provider = TelemetryProvider::with_config(sampling_config)
-    let tracer = TelemetryProvider::get_tracer(provider, "sampling_test_tracer")
-    
-    // Measure performance with sampling
-    let start_time = Time::now()
-    
-    let mut sampled_count = 0
-    for i in 0..operation_count {
-      let span = Tracer::start_span(tracer, "sampling_span_" + i.to_string())
-      if Span::is_sampled(span) {
-        sampled_count = sampled_count + 1
-      }
-      Span::end(span)
-    }
-    
-    let total_time = Time::now() - start_time
-    let throughput = operation_count.to_float() / total_time.to_seconds()
-    
-    // Force export
-    TelemetryProvider::force_flush(provider)
-    
-    // Verify sampling worked correctly
-    let spans = TelemetryProvider::get_collected_spans(provider)
-    assert_eq(spans.length(), sampled_count)
-    
-    // Verify sampling rate is approximately correct
-    let actual_rate = sampled_count.to_float() / operation_count.to_float()
-    assert_true((actual_rate - rate).abs() < 0.1) // Within 10% of expected rate
-    
-    // Performance should not be significantly impacted by sampling
-    assert_true(throughput > 1000.0) // At least 1000 operations per second
-    
-    // Log performance metrics
-    let meter = TelemetryProvider::get_meter(provider, "sampling_performance")
-    let throughput_gauge = Meter::create_gauge(meter, "sampling_throughput")
-    let actual_rate_gauge = Meter::create_gauge(meter, "actual_sampling_rate")
-    
-    Gauge::set(throughput_gauge, throughput)
-    Gauge::set(actual_rate_gauge, actual_rate * 100.0)
+  // Direct connections
+  start_time = TimeUtil::current_time_millis()
+  let direct_results = []
+  for i in 0..20 {
+    let connection = HttpClientUtil::create_connection("http://example.com")
+    let result = HttpClientUtil::get(connection, "/api/data/" + i.to_string())
+    HttpClientUtil::close_connection(connection)
+    ArrayUtil::push(direct_results, result)
   }
-}
-
-// Test 7: Concurrent Processing Performance
-test "concurrent processing performance" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "concurrent_test_tracer")
-  let thread_counts = [1, 2, 4, 8, 16]
-  let operations_per_thread = 500
+  let direct_time = TimeUtil::current_time_millis() - start_time
   
-  for thread_count in thread_counts {
-    // Measure concurrent processing performance
-    let start_time = Time::now()
-    
-    // Simulate concurrent operations
-    let mut spans = []
-    for thread_id in 0..thread_count {
-      for op_id in 0..operations_per_thread {
-        let span_name = "concurrent_span_" + thread_id.to_string() + "_" + op_id.to_string()
-        let span = Tracer::start_span(tracer, span_name)
-        Span::add_attribute(span, "thread_id", thread_id.to_string())
-        Span::add_attribute(span, "operation_id", op_id.to_string())
-        spans = spans.push(span)
-      }
-    }
-    
-    // End all spans
-    for span in spans {
-      Span::end(span)
-    }
-    
-    let total_time = Time::now() - start_time
-    let total_operations = thread_count * operations_per_thread
-    let throughput = total_operations.to_float() / total_time.to_seconds()
-    
-    // Force export
-    TelemetryProvider::force_flush(provider)
-    
-    // Verify all spans were processed
-    let collected_spans = TelemetryProvider::get_collected_spans(provider)
-    assert_eq(collected_spans.length(), total_operations)
-    
-    // Performance should scale reasonably with thread count
-    assert_true(throughput > 500.0) // At least 500 operations per second
-    
-    // Log performance metrics
-    let meter = TelemetryProvider::get_meter(provider, "concurrent_performance")
-    let throughput_gauge = Meter::create_gauge(meter, "concurrent_throughput")
-    let thread_count_gauge = Meter::create_gauge(meter, "thread_count")
-    
-    Gauge::set(throughput_gauge, throughput)
-    Gauge::set(thread_count_gauge, thread_count.to_float())
-  }
-}
-
-// Test 8: Serialization Performance
-test "serialization performance" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "serialization_test_tracer")
+  // Connection pooling should be faster
+  assert_true(pooled_time < direct_time)
   
-  // Create spans with varying complexity
-  let span_complexities = [
-    { name: "simple_span", attr_count: 5, event_count: 0 },
-    { name: "medium_span", attr_count: 20, event_count: 5 },
-    { name: "complex_span", attr_count: 50, event_count: 20 }
+  // Test request batching
+  let batch_requests = [
+    "/api/data/1",
+    "/api/data/2",
+    "/api/data/3",
+    "/api/data/4",
+    "/api/data/5"
   ]
   
-  for complexity in span_complexities {
-    let span = Tracer::start_span(tracer, complexity.name)
-    
-    // Add attributes
-    for i in 0..complexity.attr_count {
-      let key = "attr_" + i.to_string()
-      let value = "value_" + i.to_string()
-      Span::add_attribute(span, key, value)
-    }
-    
-    // Add events
-    for i in 0..complexity.event_count {
-      let event_name = "event_" + i.to_string()
-      Span::add_event(span, event_name, Some([
-        ("event_attr", "event_value_" + i.to_string())
-      ]))
-    }
-    
-    // Measure serialization performance
-    let serialization_start_time = Time::now()
-    
-    let serialized = Span::serialize(span)
-    
-    let serialization_time = Time::now() - serialization_start_time
-    
-    // Measure deserialization performance
-    let deserialization_start_time = Time::now()
-    
-    let deserialized = Span::deserialize(serialized)
-    
-    let deserialization_time = Time::now() - deserialization_start_time
-    
-    Span::end(span)
-    
-    // Verify serialization/deserialization worked
-    assert_true(deserialized.is_some())
-    
-    // Performance assertions
-    let serialization_size = serialized.length()
-    let serialization_rate = serialization_size.to_float() / serialization_time.to_seconds()
-    let deserialization_rate = serialization_size.to_float() / deserialization_time.to_seconds()
-    
-    assert_true(serialization_rate > 1000.0) // At least 1KB per second
-    assert_true(deserialization_rate > 1000.0) // At least 1KB per second
-    
-    // Log performance metrics
-    let meter = TelemetryProvider::get_meter(provider, "serialization_performance")
-    let size_gauge = Meter::create_gauge(meter, "serialized_size")
-    let serialization_rate_gauge = Meter::create_gauge(meter, "serialization_rate")
-    let deserialization_rate_gauge = Meter::create_gauge(meter, "deserialization_rate")
-    
-    Gauge::set(size_gauge, serialization_size.to_float())
-    Gauge::set(serialization_rate_gauge, serialization_rate)
-    Gauge::set(deserialization_rate_gauge, deserialization_rate)
+  // Individual requests
+  start_time = TimeUtil::current_time_millis()
+  let individual_responses = []
+  for request in batch_requests {
+    let response = HttpClientUtil::get("http://example.com" + request)
+    ArrayUtil::push(individual_responses, response)
   }
+  let individual_time = TimeUtil::current_time_millis() - start_time
+  
+  // Batch request
+  start_time = TimeUtil::current_time_millis()
+  let batch_response = HttpClientUtil::batch_get("http://example.com", batch_requests)
+  let batch_time = TimeUtil::current_time_millis() - start_time
+  
+  // Batch should be faster
+  assert_true(batch_time < individual_time)
+  
+  // Test compression
+  let large_payload = "Large payload data for compression testing. ".repeat(1000)
+  
+  // Uncompressed request
+  start_time = TimeUtil::current_time_millis()
+  let uncompressed_response = HttpClientUtil::post("http://example.com/api/data", large_payload, false)
+  let uncompressed_time = TimeUtil::current_time_millis() - start_time
+  
+  // Compressed request
+  start_time = TimeUtil::current_time_millis()
+  let compressed_response = HttpClientUtil::post("http://example.com/api/data", large_payload, true)
+  let compressed_time = TimeUtil::current_time_millis() - start_time
+  
+  // Compressed should be faster for large payloads
+  assert_true(compressed_time < uncompressed_time)
 }
 
-// Test 9: Resource Cleanup Performance
-test "resource cleanup performance" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "cleanup_test_tracer")
+// Test 6: Database Performance Optimization Tests
+test "database performance optimization operations" {
+  // Test query optimization
+  let db_connection = DatabaseUtil::connect("test.db")
   
-  // Create a large number of spans
-  let span_count = 5000
-  let mut spans = []
+  // Create test table
+  DatabaseUtil::execute(db_connection, "CREATE TABLE test_data (id INTEGER, value TEXT, timestamp INTEGER)")
   
-  for i in 0..span_count {
-    let span = Tracer::start_span(tracer, "cleanup_span_" + i.to_string())
-    Span::add_attribute(span, "iteration", i.to_string())
-    spans = spans.push(span)
+  // Insert test data
+  let test_records = []
+  for i in 0..1000 {
+    ArrayUtil::push(test_records, (i, "value_" + i.to_string(), TimeUtil::current_time_millis() + i))
   }
   
-  // Measure memory usage before cleanup
-  let pre_cleanup_memory = Memory::get_usage()
+  // Batch insert
+  let start_time = TimeUtil::current_time_millis()
+  DatabaseUtil::batch_insert_records(db_connection, "test_data", test_records)
+  let batch_time = TimeUtil::current_time_millis() - start_time
   
-  // Measure cleanup performance
-  let cleanup_start_time = Time::now()
-  
-  // End all spans and force cleanup
-  for span in spans {
-    Span::end(span)
+  // Individual inserts
+  DatabaseUtil::execute(db_connection, "DELETE FROM test_data")
+  start_time = TimeUtil::current_time_millis()
+  for record in test_records {
+    DatabaseUtil::insert_record(db_connection, "test_data", record)
   }
+  let individual_time = TimeUtil::current_time_millis() - start_time
   
-  TelemetryProvider::force_flush(provider)
-  TelemetryProvider::cleanup(provider)
+  // Batch should be significantly faster
+  assert_true(batch_time < individual_time)
   
-  let cleanup_time = Time::now() - cleanup_start_time
+  // Test index optimization
+  // Query without index
+  start_time = TimeUtil::current_time_millis()
+  let no_index_results = DatabaseUtil::query(db_connection, "SELECT * FROM test_data WHERE value = 'value_500'")
+  let no_index_time = TimeUtil::current_time_millis() - start_time
   
-  // Measure memory usage after cleanup
-  let post_cleanup_memory = Memory::get_usage()
+  // Create index
+  DatabaseUtil::execute(db_connection, "CREATE INDEX idx_value ON test_data(value)")
   
-  // Verify cleanup performance
-  let cleanup_rate = span_count.to_float() / cleanup_time.to_seconds()
-  assert_true(cleanup_rate > 100.0) // At least 100 spans cleaned up per second
+  // Query with index
+  start_time = TimeUtil::current_time_millis()
+  let indexed_results = DatabaseUtil::query(db_connection, "SELECT * FROM test_data WHERE value = 'value_500'")
+  let indexed_time = TimeUtil::current_time_millis() - start_time
   
-  // Verify memory was released
-  let memory_released = pre_cleanup_memory - post_cleanup_memory
-  let release_percentage = memory_released.to_float() / pre_cleanup_memory.to_float()
-  assert_true(release_percentage > 0.7) // At least 70% of memory should be released
+  // Indexed query should be faster
+  assert_true(indexed_time < no_index_time)
   
-  // Log performance metrics
-  let meter = TelemetryProvider::get_meter(provider, "cleanup_performance")
-  let cleanup_rate_gauge = Meter::create_gauge(meter, "cleanup_rate")
-  let memory_release_gauge = Meter::create_gauge(meter, "memory_release_percentage")
+  // Verify results are identical
+  assert_eq(no_index_results.length(), indexed_results.length())
   
-  Gauge::set(cleanup_rate_gauge, cleanup_rate)
-  Gauge::set(memory_release_gauge, release_percentage * 100.0)
+  // Test prepared statements
+  let prepared_statement = DatabaseUtil::prepare(db_connection, "SELECT * FROM test_data WHERE id = ?")
+  
+  // Direct query
+  start_time = TimeUtil::current_time_millis()
+  for i in 0..100 {
+    DatabaseUtil::query(db_connection, "SELECT * FROM test_data WHERE id = " + i.to_string())
+  }
+  let direct_time = TimeUtil::current_time_millis() - start_time
+  
+  // Prepared statement
+  start_time = TimeUtil::current_time_millis()
+  for i in 0..100 {
+    DatabaseUtil::execute_prepared(prepared_statement, [i])
+  }
+  let prepared_time = TimeUtil::current_time_millis() - start_time
+  
+  // Prepared statement should be faster
+  assert_true(prepared_time < direct_time)
+  
+  DatabaseUtil::close(db_connection)
 }
 
-// Test 10: End-to-End Performance Benchmark
-test "end-to-end performance benchmark" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "benchmark_tracer")
-  let meter = TelemetryProvider::get_meter(provider, "benchmark_meter")
-  let logger = TelemetryProvider::get_logger(provider, "benchmark_logger")
+// Test 7: Caching Performance Optimization Tests
+test "caching performance optimization operations" {
+  // Test multi-level caching
+  let l1_cache = LRUCache::new(100)  // Memory cache
+  let l2_cache = DiskCache::new("/tmp/cache", 1000)  // Disk cache
+  let multi_cache = MultiLevelCache::new([l1_cache, l2_cache])
   
-  // Create metrics for benchmarking
-  let span_counter = Meter::create_counter(meter, "spans_created")
-  let metric_counter = Meter::create_counter(meter, "metrics_created")
-  let log_counter = Meter::create_counter(meter, "logs_created")
-  let end_to_end_timer = Meter::create_histogram(meter, "end_to_end_duration")
+  // Cache expensive computation
+  let computation_key = "expensive_computation"
+  let start_time = TimeUtil::current_time_millis()
+  let result1 = MultiLevelCache::get_or_compute(multi_cache, computation_key, () -> {
+    TimeUtil::sleep(100)  // Simulate expensive computation
+    "computed_value"
+  })
+  let first_time = TimeUtil::current_time_millis() - start_time
   
-  // Benchmark configuration
-  let benchmark_iterations = 100
-  let spans_per_iteration = 50
-  let metrics_per_iteration = 20
-  let logs_per_iteration = 10
+  // Second call should use L1 cache
+  start_time = TimeUtil::current_time_millis()
+  let result2 = MultiLevelCache::get_or_compute(multi_cache, computation_key, () -> {
+    TimeUtil::sleep(100)
+    "should_not_compute"
+  })
+  let second_time = TimeUtil::current_time_millis() - start_time
   
-  // Run benchmark
-  let benchmark_start_time = Time::now()
+  // Verify results and performance
+  assert_eq(result1, "computed_value")
+  assert_eq(result2, "computed_value")
+  assert_true(first_time > 100)  // Should include sleep time
+  assert_true(second_time < 10)   // Should be very fast from cache
   
-  for iteration in 0..benchmark_iterations {
-    let iteration_start_time = Time::now()
-    
-    // Create spans
-    for i in 0..spans_per_iteration {
-      let span = Tracer::start_span(tracer, "benchmark_span_" + i.to_string())
-      Span::add_attribute(span, "iteration", iteration.to_string())
-      Span::add_attribute(span, "span_index", i.to_string())
-      
-      // Add events to some spans
-      if i % 5 == 0 {
-        Span::add_event(span, "benchmark_event", Some([
-          ("event_iteration", iteration.to_string()),
-          ("event_span_index", i.to_string())
-        ]))
+  // Test cache warming
+  let cache = LRUCache::new(1000)
+  let warm_keys = ["key1", "key2", "key3", "key4", "key5"]
+  
+  // Cold cache
+  start_time = TimeUtil::current_time_millis()
+  for key in warm_keys {
+    CacheUtil::get_or_compute(cache, key, () -> {
+      TimeUtil::sleep(10)
+      "value_for_" + key
+    })
+  }
+  let cold_time = TimeUtil::current_time_millis() - start_time
+  
+  // Warm cache
+  start_time = TimeUtil::current_time_millis()
+  for key in warm_keys {
+    CacheUtil::get_or_compute(cache, key, () -> {
+      TimeUtil::sleep(10)
+      "should_not_compute"
+    })
+  }
+  let warm_time = TimeUtil::current_time_millis() - start_time
+  
+  // Warm cache should be much faster
+  assert_true(warm_time < cold_time)
+  
+  // Test cache eviction strategies
+  let fifo_cache = FIFOCache::new(5)
+  let lru_cache = LRUCache::new(5)
+  
+  // Fill both caches
+  for i in 0..5 {
+    CacheUtil::put(fifo_cache, "key" + i.to_string(), "value" + i.to_string())
+    CacheUtil::put(lru_cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  // Access some items in LRU cache to update their "recently used" status
+  CacheUtil::get(lru_cache, "key1")
+  CacheUtil::get(lru_cache, "key2")
+  
+  // Add one more item to trigger eviction
+  CacheUtil::put(fifo_cache, "key6", "value6")
+  CacheUtil::put(lru_cache, "key6", "value6")
+  
+  // FIFO should evict key0 (first inserted)
+  assert_false(CacheUtil::contains(fifo_cache, "key0"))
+  assert_true(CacheUtil::contains(fifo_cache, "key1"))
+  
+  // LRU should evict key3 (least recently used)
+  assert_true(CacheUtil::contains(lru_cache, "key1"))
+  assert_true(CacheUtil::contains(lru_cache, "key2"))
+  assert_false(CacheUtil::contains(lru_cache, "key3"))
+}
+
+// Test 8: Resource Pool Performance Optimization Tests
+test "resource pool performance optimization operations" {
+  // Test thread pool
+  let thread_pool = ThreadPool::new(4)
+  let tasks = []
+  
+  // Create CPU-intensive tasks
+  for i in 0..20 {
+    let task = ThreadPoolUtil::submit(thread_pool, () -> {
+      // Simulate CPU-intensive work
+      let mut result = 0
+      for j in 0..1000000 {
+        result = result + j
       }
-      
-      Span::end(span)
-      Counter::add(span_counter, 1.0)
+      result
+    })
+    ArrayUtil::push(tasks, task)
+  }
+  
+  // Wait for all tasks to complete
+  let start_time = TimeUtil::current_time_millis()
+  let results = []
+  for task in tasks {
+    let result = ThreadPoolUtil::get_result(task)
+    ArrayUtil::push(results, result)
+  }
+  let thread_pool_time = TimeUtil::current_time_millis() - start_time
+  
+  // Sequential execution
+  start_time = TimeUtil::current_time_millis()
+  let sequential_results = []
+  for i in 0..20 {
+    let mut result = 0
+    for j in 0..1000000 {
+      result = result + j
     }
-    
-    // Create metrics
-    for i in 0..metrics_per_iteration {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "iteration", iteration.to_string())
-      Attributes::set(attrs, "metric_index", i.to_string())
-      
-      Counter::add(span_counter, 1.0, Some(attrs))
-      Histogram::record(end_to_end_timer, (iteration * 10 + i).to_float(), Some(attrs))
-    }
-    
-    // Create logs
-    for i in 0..logs_per_iteration {
-      let severity = match i % 4 {
-        0 => Debug
-        1 => Info
-        2 => Warning
-        _ => Error
-      }
-      
-      let log_record = Logger::create_log_record(logger, severity, "Benchmark log " + i.to_string())
-      LogRecord::add_attribute(log_record, "iteration", iteration.to_string())
-      LogRecord::add_attribute(log_record, "log_index", i.to_string())
-      
-      Logger::emit(logger, log_record)
-      Counter::add(log_counter, 1.0)
-    }
-    
-    let iteration_time = Time::now() - iteration_start_time
-    Histogram::record(end_to_end_timer, iteration_time.to_milliseconds().to_float())
-    
-    // Force export every 10 iterations
-    if iteration % 10 == 0 {
-      TelemetryProvider::force_flush(provider)
+    ArrayUtil::push(sequential_results, result)
+  }
+  let sequential_time = TimeUtil::current_time_millis() - start_time
+  
+  // Thread pool should be faster for CPU-intensive tasks
+  assert_true(thread_pool_time < sequential_time)
+  
+  // Verify results are identical
+  assert_eq(results.length(), sequential_results.length())
+  for i in 0..results.length() {
+    assert_eq(results[i], sequential_results[i])
+  }
+  
+  // Test connection pool
+  let db_pool = ConnectionPool::new("database_url", 10)
+  
+  // Pool connections
+  start_time = TimeUtil::current_time_millis()
+  let pool_results = []
+  for i in 0..20 {
+    let connection = ConnectionPool::acquire(db_pool)
+    let result = DatabaseUtil::query(connection, "SELECT * FROM test_table WHERE id = " + i.to_string())
+    ConnectionPool::release(db_pool, connection)
+    ArrayUtil::push(pool_results, result)
+  }
+  let pool_time = TimeUtil::current_time_millis() - start_time
+  
+  // Direct connections
+  start_time = TimeUtil::current_time_millis()
+  let direct_results = []
+  for i in 0..20 {
+    let connection = DatabaseUtil::connect("database_url")
+    let result = DatabaseUtil::query(connection, "SELECT * FROM test_table WHERE id = " + i.to_string())
+    DatabaseUtil::close(connection)
+    ArrayUtil::push(direct_results, result)
+  }
+  let direct_time = TimeUtil::current_time_millis() - start_time
+  
+  // Connection pool should be faster
+  assert_true(pool_time < direct_time)
+}
+
+// Test 9: Lazy Loading Performance Optimization Tests
+test "lazy loading performance optimization operations" {
+  // Test lazy evaluation
+  let expensive_computation = LazyUtil::lazy(() -> {
+    // Simulate expensive computation
+    TimeUtil::sleep(100)
+    42
+  })
+  
+  // Lazy value should not be computed yet
+  assert_false(LazyUtil::is_computed(expensive_computation))
+  
+  // First access should trigger computation
+  let start_time = TimeUtil::current_time_millis()
+  let result1 = LazyUtil::get(expensive_computation)
+  let first_access_time = TimeUtil::current_time_millis() - start_time
+  
+  // Value should be computed now
+  assert_true(LazyUtil::is_computed(expensive_computation))
+  assert_eq(result1, 42)
+  assert_true(first_access_time >= 100)
+  
+  // Second access should be instant
+  start_time = TimeUtil::current_time_millis()
+  let result2 = LazyUtil::get(expensive_computation)
+  let second_access_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_eq(result2, 42)
+  assert_true(second_access_time < 10)
+  
+  // Test lazy collection
+  let lazy_collection = LazyCollectionUtil::create(() -> {
+    // Simulate expensive collection creation
+    TimeUtil::sleep(50)
+    ArrayUtil::range(1, 1000)
+  })
+  
+  // Collection should not be created yet
+  assert_false(LazyCollectionUtil::is_created(lazy_collection))
+  
+  // First access should trigger creation
+  start_time = TimeUtil::current_time_millis()
+  let length1 = LazyCollectionUtil::length(lazy_collection)
+  let first_access_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_true(LazyCollectionUtil::is_created(lazy_collection))
+  assert_eq(length1, 1000)
+  assert_true(first_access_time >= 50)
+  
+  // Second access should be instant
+  start_time = TimeUtil::current_time_millis()
+  let length2 = LazyCollectionUtil::length(lazy_collection)
+  let second_access_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_eq(length2, 1000)
+  assert_true(second_access_time < 10)
+  
+  // Test lazy property loading
+  let lazy_object = LazyObject::new()
+  
+  // Properties should not be loaded yet
+  assert_false(LazyObject::is_property_loaded(lazy_object, "expensive_property"))
+  
+  // First access should trigger loading
+  start_time = TimeUtil::current_time_millis()
+  let property1 = LazyObject::get_property(lazy_object, "expensive_property")
+  let first_property_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_true(LazyObject::is_property_loaded(lazy_object, "expensive_property"))
+  assert_eq(property1, "expensive_value")
+  assert_true(first_property_time >= 30)
+  
+  // Second access should be instant
+  start_time = TimeUtil::current_time_millis()
+  let property2 = LazyObject::get_property(lazy_object, "expensive_property")
+  let second_property_time = TimeUtil::current_time_millis() - start_time
+  
+  assert_eq(property2, "expensive_value")
+  assert_true(second_property_time < 10)
+}
+
+// Test 10: Profiling and Monitoring Performance Tests
+test "profiling and monitoring performance operations" {
+  // Test performance profiling
+  let profiler = Profiler::new()
+  
+  Profiler::start(profiler, "test_operation")
+  
+  // Simulate some work
+  TimeUtil::sleep(50)
+  
+  Profiler::end(profiler, "test_operation")
+  
+  let profile_data = Profiler::get_profile_data(profiler)
+  let operation_time = ProfileDataUtil::get_operation_time(profile_data, "test_operation")
+  
+  assert_true(operation_time >= 50)
+  
+  // Test performance counters
+  let counters = PerformanceCounters::new()
+  
+  // Increment counters
+  for i in 0..100 {
+    PerformanceCounters::increment(counters, "operation_count")
+    if i % 2 == 0 {
+      PerformanceCounters::increment(counters, "even_operation_count")
     }
   }
   
-  // Final export
-  TelemetryProvider::force_flush(provider)
+  assert_eq(PerformanceCounters::get(counters, "operation_count"), 100)
+  assert_eq(PerformanceCounters::get(counters, "even_operation_count"), 50)
   
-  let benchmark_total_time = Time::now() - benchmark_start_time
+  // Test performance monitoring
+  let monitor = PerformanceMonitor::new()
   
-  // Verify all telemetry data was created
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  let metrics = TelemetryProvider::get_collected_metrics(provider)
-  let logs = TelemetryProvider::get_collected_logs(provider)
+  PerformanceMonitor::start_monitoring(monitor)
   
-  assert_eq(spans.length(), benchmark_iterations * spans_per_iteration)
-  assert_true(metrics.length() >= benchmark_iterations * metrics_per_iteration) // May include internal metrics
-  assert_eq(logs.length(), benchmark_iterations * logs_per_iteration)
+  // Simulate monitored operations
+  for i in 0..10 {
+    PerformanceMonitor::record_operation(monitor, "test_operation", 10 + i)
+  }
   
-  // Calculate overall performance metrics
-  let total_operations = benchmark_iterations * (spans_per_iteration + metrics_per_iteration + logs_per_iteration)
-  let overall_throughput = total_operations.to_float() / benchmark_total_time.to_seconds()
+  PerformanceMonitor::stop_monitoring(monitor)
   
-  // Performance assertions
-  assert_true(overall_throughput > 100.0) // At least 100 operations per second overall
+  let metrics = PerformanceMonitor::get_metrics(monitor)
+  let avg_time = MetricsUtil::get_average(metrics, "test_operation")
+  let min_time = MetricsUtil::get_minimum(metrics, "test_operation")
+  let max_time = MetricsUtil::get_maximum(metrics, "test_operation")
   
-  // Log performance metrics
-  let perf_meter = TelemetryProvider::get_meter(provider, "benchmark_metrics")
-  let throughput_gauge = Meter::create_gauge(perf_meter, "overall_throughput")
-  let total_time_gauge = Meter::create_gauge(perf_meter, "total_benchmark_time")
-  let total_operations_gauge = Meter::create_gauge(perf_meter, "total_operations")
+  assert_eq(avg_time, 14.5)  // Average of 10-19
+  assert_eq(min_time, 10.0)
+  assert_eq(max_time, 19.0)
   
-  Gauge::set(throughput_gauge, overall_throughput)
-  Gauge::set(total_time_gauge, benchmark_total_time.to_milliseconds().to_float())
-  Gauge::set(total_operations_gauge, total_operations.to_float())
+  // Test performance alerts
+  let alert_manager = AlertManager::new()
   
-  // Calculate average times for each operation type
-  let avg_span_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * spans_per_iteration).to_float()
-  let avg_metric_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * metrics_per_iteration).to_float()
-  let avg_log_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * logs_per_iteration).to_float()
+  // Set up alert threshold
+  AlertManager::set_threshold(alert_manager, "response_time", 100.0)
   
-  let span_time_gauge = Meter::create_gauge(perf_meter, "avg_span_time_ms")
-  let metric_time_gauge = Meter::create_gauge(perf_meter, "avg_metric_time_ms")
-  let log_time_gauge = Meter::create_gauge(perf_meter, "avg_log_time_ms")
+  // Record normal operation
+  AlertManager::record_metric(alert_manager, "response_time", 50.0)
+  assert_false(AlertManager::has_alerts(alert_manager))
   
-  Gauge::set(span_time_gauge, avg_span_time)
-  Gauge::set(metric_time_gauge, avg_metric_time)
-  Gauge::set(log_time_gauge, avg_log_time)
+  // Record slow operation
+  AlertManager::record_metric(alert_manager, "response_time", 150.0)
+  assert_true(AlertManager::has_alerts(alert_manager))
+  
+  let alerts = AlertManager::get_alerts(alert_manager)
+  assert_eq(alerts.length(), 1)
+  assert_eq(alerts[0].metric_name, "response_time")
+  assert_eq(alerts[0].value, 150.0)
+  assert_eq(alerts[0].threshold, 100.0)
 }

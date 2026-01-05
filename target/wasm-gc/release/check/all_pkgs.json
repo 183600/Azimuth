@@ -17,6 +17,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "azimuth_high_quality_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth_high_quality_test/azimuth_high_quality_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "azimuth_new_feature_tests",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth_new_feature_tests/azimuth_new_feature_tests.mi"
     },

@@ -1,584 +1,1108 @@
 // Azimuth Telemetry System - Error Handling and Recovery Tests
 // This file contains comprehensive test cases for error handling and recovery functionality
 
-// Test 1: Basic Error Handling
-test "basic error handling" {
-  let error_handler = ErrorHandler::new()
-  
-  // Test handling different types of errors
-  let validation_error = ValidationError::new("Invalid input parameter", "parameter_name")
-  let network_error = NetworkError::new("Connection timeout", "http://example.com/api")
-  let database_error = DatabaseError::new("Query failed", "SELECT * FROM users")
-  
-  // Handle validation error
-  let validation_result = ErrorHandler::handle_error(error_handler, validation_error)
-  match validation_result {
-    HandledSuccess(recovery_action) => {
-      match recovery_action {
-        RetryWithDelay(delay) => assert_eq(delay, 1000L)
-        FailFast => assert_true(false)
-        ReturnDefaultValue => assert_true(false)
-      }
-    }
-    HandledFailure(error) => assert_true(false)
+// Test 1: Exception Handling Tests
+test "exception handling operations" {
+  // Test try-catch functionality
+  let result = try {
+    // Normal operation
+    10 / 2
+  } catch {
+    DivisionByZero => -1
+    _ => -2
   }
   
-  // Handle network error
-  let network_result = ErrorHandler::handle_error(error_handler, network_error)
-  match network_result {
-    HandledSuccess(recovery_action) => {
-      match recovery_action {
-        RetryWithDelay(delay) => assert_eq(delay, 5000L)
-        FailFast => assert_true(false)
-        ReturnDefaultValue => assert_true(false)
-      }
-    }
-    HandledFailure(error) => assert_true(false)
+  assert_eq(result, 5)
+  
+  // Test division by zero handling
+  let zero_result = try {
+    10 / 0
+  } catch {
+    DivisionByZero => -1
+    _ => -2
   }
   
-  // Handle database error
-  let database_result = ErrorHandler::handle_error(error_handler, database_error)
-  match database_result {
-    HandledSuccess(recovery_action) => {
-      match recovery_action {
-        RetryWithDelay(delay) => assert_eq(delay, 2000L)
-        FailFast => assert_true(false)
-        ReturnDefaultValue => assert_true(false)
-      }
+  assert_eq(zero_result, -1)
+  
+  // Test nested try-catch
+  let nested_result = try {
+    try {
+      10 / 0
+    } catch {
+      DivisionByZero => 5 / 0  // Another division by zero
     }
-    HandledFailure(error) => assert_true(false)
+  } catch {
+    DivisionByZero => -1
+    _ => -2
   }
+  
+  assert_eq(nested_result, -1)
+  
+  // Test custom exception types
+  enum CustomError {
+    NetworkError(String)
+    DatabaseError(String)
+    ValidationError(String)
+  }
+  
+  let custom_result = try {
+    // Simulate network error
+    raise NetworkError("Connection timeout")
+  } catch {
+    NetworkError(msg) => "Network error: " + msg
+    DatabaseError(msg) => "Database error: " + msg
+    ValidationError(msg) => "Validation error: " + msg
+  }
+  
+  assert_eq(custom_result, "Network error: Connection timeout")
+  
+  // Test exception chaining
+  let chained_result = try {
+    try {
+      raise NetworkError("Connection timeout")
+    } catch {
+      NetworkError(msg) => raise DatabaseError("Failed to connect to database due to: " + msg)
+    }
+  } catch {
+    DatabaseError(msg) => "Database error: " + msg
+    _ => "Unknown error"
+  }
+  
+  assert_eq(chained_result, "Database error: Failed to connect to database due to: Connection timeout")
+  
+  // Test finally block
+  let mut finally_executed = false
+  let finally_result = try {
+    10 / 2
+  } catch {
+    _ => -1
+  } finally {
+    finally_executed = true
+  }
+  
+  assert_eq(finally_result, 5)
+  assert_true(finally_executed)
+  
+  // Test finally with exception
+  let mut finally_executed_with_exception = false
+  let exception_result = try {
+    10 / 0
+  } catch {
+    DivisionByZero => -1
+    _ => -2
+  } finally {
+    finally_executed_with_exception = true
+  }
+  
+  assert_eq(exception_result, -1)
+  assert_true(finally_executed_with_exception)
 }
 
-// Test 2: Error Recovery Strategies
-test "error recovery strategies" {
-  let recovery_manager = RecoveryManager::new()
-  
-  // Test retry strategy with exponential backoff
-  let retry_config = RetryConfig::new(3, 1000L, 2.0) // 3 retries, 1s initial, 2x multiplier
-  let retry_strategy = RecoveryManager::create_retry_strategy(recovery_manager, retry_config)
-  
+// Test 2: Error Recovery Mechanisms Tests
+test "error recovery mechanisms operations" {
+  // Test retry mechanism
   let mut attempt_count = 0
-  let operation = || {
+  let retry_result = RetryUtil::execute_with_retry(() -> {
     attempt_count = attempt_count + 1
     if attempt_count < 3 {
-      Err("Operation failed")
+      raise NetworkError("Temporary failure")
     } else {
-      Ok("Success")
+      "Success after retries"
     }
-  }
+  }, 3, 100)  // 3 retries, 100ms delay
   
-  let result = RetryStrategy::execute_with_retry(retry_strategy, operation)
-  match result {
-    Ok(value) => assert_eq(value, "Success")
-    Err(error) => assert_true(false)
-  }
-  
+  assert_eq(retry_result, "Success after retries")
   assert_eq(attempt_count, 3)
   
-  // Test circuit breaker strategy
-  let circuit_breaker_config = CircuitBreakerConfig::new(5, 10000L, 30000L) // 5 failures, 10s timeout, 30s reset
-  let circuit_breaker = RecoveryManager::create_circuit_breaker(recovery_manager, circuit_breaker_config)
+  // Test retry with max attempts exceeded
+  let mut failed_attempts = 0
+  let retry_failure = RetryUtil::execute_with_retry(() -> {
+    failed_attempts = failed_attempts + 1
+    raise NetworkError("Persistent failure")
+  }, 3, 100)
   
-  // Simulate failures to open circuit
-  for i in 0..=6 {
-    let failing_operation = || { Err("Consistent failure") }
-    let result = CircuitBreaker::execute(circuit_breaker, failing_operation)
-    
-    if i < 5 {
-      match result {
-        Err(_) => assert_true(true)
-        Ok(_) => assert_true(false)
-      }
+  match retry_failure {
+    Error(err) => assert_eq(err, "Persistent failure")
+    _ => assert_true(false)
+  }
+  assert_eq(failed_attempts, 3)
+  
+  // Test exponential backoff
+  let mut backoff_attempts = 0
+  let backoff_start_time = TimeUtil::current_time_millis()
+  let backoff_result = RetryUtil::execute_with_exponential_backoff(() -> {
+    backoff_attempts = backoff_attempts + 1
+    if backoff_attempts < 3 {
+      raise NetworkError("Temporary failure")
     } else {
-      match result {
-        Err(CircuitBreakerOpen) => assert_true(true)
-        _ => assert_true(false)
-      }
+      "Success with exponential backoff"
     }
+  }, 3, 100, 2.0)  // Base delay 100ms, multiplier 2.0
+  
+  let backoff_end_time = TimeUtil::current_time_millis()
+  let backoff_total_time = backoff_end_time - backoff_start_time
+  
+  assert_eq(backoff_result, "Success with exponential backoff")
+  assert_eq(backoff_attempts, 3)
+  // Exponential backoff should take longer than regular retry
+  assert_true(backoff_total_time >= 300)  // 100 + 200 + minimal execution time
+  
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new(3, 5000)  // 3 failures, 5000ms timeout
+  
+  // Initial state should be closed
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
+  
+  // Successful operations should not affect state
+  let success1 = CircuitBreaker::execute(circuit_breaker, () -> { "Success" })
+  assert_eq(success1, "Success")
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
+  
+  // Failures should increase count
+  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 1") })
+  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 1)
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
+  
+  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 2") })
+  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 2)
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "closed")
+  
+  // Third failure should open the circuit
+  CircuitBreaker::execute(circuit_breaker, () -> { raise NetworkError("Failure 3") })
+  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 3)
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), "open")
+  
+  // Operations should fail immediately when circuit is open
+  let open_result = CircuitBreaker::execute(circuit_breaker, () -> { "Should not execute" })
+  match open_result {
+    Error(err) => assert_eq(err, "Circuit breaker is open")
+    _ => assert_true(false)
   }
   
-  // Verify circuit is open
-  assert_eq(CircuitBreaker::state(circuit_breaker), Open)
+  // Test fallback mechanism
+  let fallback_result = FallbackUtil::execute_with_fallback(
+    () -> { raise NetworkError("Primary failure") },
+    () -> { "Fallback result" }
+  )
+  
+  assert_eq(fallback_result, "Fallback result")
+  
+  // Test fallback chain
+  let chain_result = FallbackUtil::execute_with_fallback_chain([
+    () -> { raise NetworkError("Primary failure") },
+    () -> { raise DatabaseError("Secondary failure") },
+    () -> { "Tertiary success" }
+  ])
+  
+  assert_eq(chain_result, "Tertiary success")
 }
 
-// Test 3: Error Classification and Prioritization
-test "error classification and prioritization" {
-  let classifier = ErrorClassifier::new()
+// Test 3: Graceful Degradation Tests
+test "graceful degradation operations" {
+  // Test feature degradation
+  let feature_manager = FeatureManager::new()
   
-  // Classify different error types
-  let critical_error = CriticalError::new("System crash", "core_module")
-  let high_error = HighPriorityError::new("Database connection lost", "database")
-  let medium_error = MediumPriorityError::new("API rate limit exceeded", "external_api")
-  let low_error = LowPriorityError::new("Cache miss", "cache")
+  // Configure feature levels
+  FeatureManager::set_level(feature_manager, "full", 3)
+  FeatureManager::set_level(feature_manager, "reduced", 2)
+  FeatureManager::set_level(feature_manager, "minimal", 1)
+  FeatureManager::set_level(feature_manager, "offline", 0)
   
-  // Test classification
-  let critical_classification = ErrorClassifier::classify(classifier, critical_error)
-  match critical_classification {
-    ErrorClassification(level, category, priority) => {
-      assert_eq(level, Critical)
-      assert_eq(category, System)
-      assert_eq(priority, 1)
-    }
+  // Test full functionality
+  FeatureManager::set_current_level(feature_manager, 3)
+  let full_result = FeatureManager::execute(feature_manager, "full", () -> { "Full functionality" })
+  assert_eq(full_result, "Full functionality")
+  
+  // Test reduced functionality
+  FeatureManager::set_current_level(feature_manager, 2)
+  let reduced_result = FeatureManager::execute(feature_manager, "full", () -> { "Should not execute" }, () -> { "Reduced functionality" })
+  assert_eq(reduced_result, "Reduced functionality")
+  
+  // Test minimal functionality
+  FeatureManager::set_current_level(feature_manager, 1)
+  let minimal_result = FeatureManager::execute(feature_manager, "full", () -> { "Should not execute" }, () -> { "Reduced functionality" }, () -> { "Minimal functionality" })
+  assert_eq(minimal_result, "Minimal functionality")
+  
+  // Test service degradation
+  let service_manager = ServiceManager::new()
+  
+  // Register services with dependencies
+  ServiceManager::register(service_manager, "database", () -> { "Database service" }, [])
+  ServiceManager::register(service_manager, "cache", () -> { "Cache service" }, [])
+  ServiceManager::register(service_manager, "api", () -> { "API service" }, ["database", "cache"])
+  ServiceManager::register(service_manager, "ui", () -> { "UI service" }, ["api"])
+  
+  // All services available
+  let all_services_result = ServiceManager::execute(service_manager, "ui")
+  assert_eq(all_services_result, "UI service")
+  
+  // Simulate cache failure
+  ServiceManager::set_service_status(service_manager, "cache", "failed")
+  let degraded_result = ServiceManager::execute(service_manager, "ui", (degraded_services) -> {
+    "Degraded UI with services: " + StringUtil::join(degraded_services, ", ")
+  })
+  
+  assert_true(degraded_result.contains("Degraded UI"))
+  assert_true(degraded_result.contains("cache"))
+  
+  // Test data quality degradation
+  let data_quality_manager = DataQualityManager::new()
+  
+  // Configure quality levels
+  DataQualityManager::set_quality_threshold(data_quality_manager, "high", 95)
+  DataQualityManager::set_quality_threshold(data_quality_manager, "medium", 80)
+  DataQualityManager::set_quality_threshold(data_quality_manager, "low", 60)
+  
+  // Test high quality data processing
+  let high_quality_data = DataQualityManager::process(data_quality_manager, 97, () -> { "High quality processing" })
+  assert_eq(high_quality_data, "High quality processing")
+  
+  // Test medium quality data processing
+  let medium_quality_data = DataQualityManager::process(data_quality_manager, 85, 
+    () -> { "High quality processing" },
+    () -> { "Medium quality processing" }
+  )
+  assert_eq(medium_quality_data, "Medium quality processing")
+  
+  // Test low quality data processing
+  let low_quality_data = DataQualityManager::process(data_quality_manager, 70,
+    () -> { "High quality processing" },
+    () -> { "Medium quality processing" },
+    () -> { "Low quality processing" }
+  )
+  assert_eq(low_quality_data, "Low quality processing")
+  
+  // Test below minimum quality
+  let below_min_data = DataQualityManager::process(data_quality_manager, 50,
+    () -> { "High quality processing" },
+    () -> { "Medium quality processing" },
+    () -> { "Low quality processing" }
+  )
+  
+  match below_min_data {
+    Error(err) => assert_eq(err, "Data quality below minimum threshold")
     _ => assert_true(false)
   }
-  
-  let high_classification = ErrorClassifier::classify(classifier, high_error)
-  match high_classification {
-    ErrorClassification(level, category, priority) => {
-      assert_eq(level, High)
-      assert_eq(category, Infrastructure)
-      assert_eq(priority, 2)
-    }
-    _ => assert_true(false)
-  }
-  
-  let medium_classification = ErrorClassifier::classify(classifier, medium_error)
-  match medium_classification {
-    ErrorClassification(level, category, priority) => {
-      assert_eq(level, Medium)
-      assert_eq(category, External)
-      assert_eq(priority, 3)
-    }
-    _ => assert_true(false)
-  }
-  
-  let low_classification = ErrorClassifier::classify(classifier, low_error)
-  match low_classification {
-    ErrorClassification(level, category, priority) => {
-      assert_eq(level, Low)
-      assert_eq(category, Performance)
-      assert_eq(priority, 4)
-    }
-    _ => assert_true(false)
-  }
-  
-  // Test prioritization
-  let errors = [low_error, medium_error, critical_error, high_error]
-  let prioritized = ErrorClassifier::prioritize_errors(classifier, errors)
-  
-  assert_eq(prioritized[0], critical_error)
-  assert_eq(prioritized[1], high_error)
-  assert_eq(prioritized[2], medium_error)
-  assert_eq(prioritized[3], low_error)
 }
 
-// Test 4: Error Context and Correlation
-test "error context and correlation" {
-  let context_manager = ErrorContextManager::new()
+// Test 4: Error Logging and Monitoring Tests
+test "error logging and monitoring operations" {
+  // Test error logging
+  let error_logger = ErrorLogger::new()
   
-  // Create error context
-  let base_context = ErrorContext::new()
-  let context_with_request = ErrorContext::add_request_id(base_context, "req-12345")
-  let context_with_user = ErrorContext::add_user_id(context_with_request, "user-67890")
-  let context_with_trace = ErrorContext::add_trace_id(context_with_user, "trace-abcdef")
+  // Log different types of errors
+  ErrorLogger::log(error_logger, NetworkError("Connection timeout"))
+  ErrorLogger::log(error_logger, DatabaseError("Query failed"))
+  ErrorLogger::log(error_logger, ValidationError("Invalid input"))
   
-  // Create error with context
-  let error = BusinessLogicError::new("Invalid business rule", context_with_trace)
+  // Query error logs
+  let network_errors = ErrorLogger::query_by_type(error_logger, "NetworkError")
+  assert_eq(network_errors.length(), 1)
+  assert_eq(network_errors[0].message, "Connection timeout")
   
-  // Extract context from error
-  let extracted_context = ErrorContextManager::extract_context(context_manager, error)
+  let all_errors = ErrorLogger::get_all(error_logger)
+  assert_eq(all_errors.length(), 3)
   
-  match ErrorContext::get_request_id(extracted_context) {
-    Some(id) => assert_eq(id, "req-12345")
-    None => assert_true(false)
-  }
+  // Test error aggregation
+  let error_aggregator = ErrorAggregator::new()
   
-  match ErrorContext::get_user_id(extracted_context) {
-    Some(id) => assert_eq(id, "user-67890")
-    None => assert_true(false)
-  }
-  
-  match ErrorContext::get_trace_id(extracted_context) {
-    Some(id) => assert_eq(id, "trace-abcdef")
-    None => assert_true(false)
-  }
-  
-  // Test error correlation
-  let correlated_errors = [
-    error,
-    ValidationError::new("Invalid parameter", context_with_trace),
-    NetworkError::new("Connection failed", context_with_trace)
-  ]
-  
-  let correlation_id = ErrorContextManager::correlate_errors(context_manager, correlated_errors)
-  assert_true(correlation_id.length() > 0)
-  
-  // Get correlated errors
-  let retrieved_errors = ErrorContextManager::get_correlated_errors(context_manager, correlation_id)
-  assert_eq(retrieved_errors.length(), 3)
-}
-
-// Test 5: Error Aggregation and Analysis
-test "error aggregation and analysis" {
-  let aggregator = ErrorAggregator::new()
-  
-  // Add various errors over time
-  let base_time = 1609459200L // 2021-01-01 00:00:00
-  
-  for i in 0..=100 {
-    let timestamp = base_time + (i * 60L) // 1 minute intervals
-    
-    if i % 10 == 0 {
-      // Network errors every 10 minutes
-      let error = NetworkError::new("Connection timeout", "api.example.com")
-      ErrorAggregator::add_error(aggregator, error, timestamp)
-    } else if i % 5 == 0 {
-      // Database errors every 5 minutes
-      let error = DatabaseError::new("Query failed", "SELECT * FROM users")
-      ErrorAggregator::add_error(aggregator, error, timestamp)
-    } else {
-      // Validation errors frequently
-      let error = ValidationError::new("Invalid input", "parameter")
-      ErrorAggregator::add_error(aggregator, error, timestamp)
-    }
-  }
+  // Add errors for aggregation
+  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection timeout"))
+  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection refused"))
+  ErrorAggregator::add_error(error_aggregator, DatabaseError("Query failed"))
+  ErrorAggregator::add_error(error_aggregator, NetworkError("Connection timeout"))
+  ErrorAggregator::add_error(error_aggregator, ValidationError("Invalid input"))
   
   // Get error statistics
-  let stats = ErrorAggregator::get_statistics(aggregator)
+  let stats = ErrorAggregator::get_statistics(error_aggregator)
   
-  match stats {
-    ErrorStatistics(total_errors, error_types, error_rate, peak_error_time) => {
-      assert_eq(total_errors, 101)
-      assert_eq(error_types.length(), 3)
-      assert_true(error_rate > 0.0)
-      assert_true(peak_error_time >= base_time)
+  assert_eq(stats.total_errors, 5)
+  assert_eq(stats.error_counts["NetworkError"], 3)
+  assert_eq(stats.error_counts["DatabaseError"], 1)
+  assert_eq(stats.error_counts["ValidationError"], 1)
+  
+  // Test error rate monitoring
+  let error_monitor = ErrorMonitor::new()
+  
+  // Configure thresholds
+  ErrorMonitor::set_threshold(error_monitor, "error_rate", 0.1)  // 10% error rate
+  ErrorMonitor::set_threshold(error_monitor, "error_count", 100)  // 100 errors
+  
+  // Record operations and errors
+  for i in 0..1000 {
+    ErrorMonitor::record_operation(error_monitor)
+    if i % 20 == 0 {  // 5% error rate
+      ErrorMonitor::record_error(error_monitor)
     }
-    _ => assert_true(false)
   }
   
-  // Get error type breakdown
-  let network_stats = ErrorAggregator::get_type_statistics(aggregator, "NetworkError")
-  match network_stats {
-    TypeErrorStatistics(count, percentage, first_occurrence, last_occurrence) => {
-      assert_eq(count, 11) // Every 10th error + initial
-      assert_true(percentage > 10.0 && percentage < 12.0)
-    }
-    _ => assert_true(false)
+  let error_rate = ErrorMonitor::get_error_rate(error_monitor)
+  assert_eq(error_rate, 0.05)
+  
+  // Check if thresholds are exceeded
+  assert_false(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_rate"))
+  assert_false(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_count"))
+  
+  // Increase error rate
+  for i in 0..100 {
+    ErrorMonitor::record_operation(error_monitor)
+    ErrorMonitor::record_error(error_monitor)  // 100% error rate for these operations
   }
   
-  // Get error time series
-  let time_series = ErrorAggregator::get_time_series(aggregator, base_time, base_time + 6000L)
-  assert_eq(time_series.length(), 101)
+  let high_error_rate = ErrorMonitor::get_error_rate(error_monitor)
+  assert_true(high_error_rate > 0.1)
+  assert_true(ErrorMonitor::is_threshold_exceeded(error_monitor, "error_rate"))
   
-  // Get error patterns
-  let patterns = ErrorAggregator::detect_patterns(aggregator)
-  assert_true(patterns.length() > 0)
-  
-  let periodic_pattern = patterns.find(|p| Pattern::type(p) == Periodic)
-  match periodic_pattern {
-    Some(pattern) => {
-      assert_eq(Pattern::description(pattern), "Network errors occur every 10 minutes")
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 6: Error Notification and Alerting
-test "error notification and alerting" {
-  let notification_manager = ErrorNotificationManager::new()
-  
-  // Configure notification channels
-  let email_config = EmailNotificationConfig::new("admin@example.com", "Error Alert")
-  let slack_config = SlackNotificationConfig::new("#errors", "telemetry-bot")
-  let webhook_config = WebhookNotificationConfig::new("https://example.com/webhook")
-  
-  NotificationManager::add_channel(notification_manager, "email", EmailChannel(email_config))
-  NotificationManager::add_channel(notification_manager, "slack", SlackChannel(slack_config))
-  NotificationManager::add_channel(notification_manager, "webhook", WebhookChannel(webhook_config))
+  // Test error alerting
+  let error_alert_manager = ErrorAlertManager::new()
   
   // Configure alert rules
-  let critical_rule = AlertRule::new(Critical, "Critical errors require immediate notification")
-  let high_rule = AlertRule::new(High, "High priority errors send email and slack")
-  let medium_rule = AlertRule::new(Medium, "Medium priority errors send email")
+  ErrorAlertManager::add_rule(error_alert_manager, {
+    "name": "high_error_rate",
+    "condition": "error_rate > 0.1",
+    "severity": "warning",
+    "action": "notify_team"
+  })
   
-  NotificationManager::add_rule(notification_manager, critical_rule)
-  NotificationManager::add_rule(notification_manager, high_rule)
-  NotificationManager::add_rule(notification_manager, medium_rule)
+  ErrorAlertManager::add_rule(error_alert_manager, {
+    "name": "critical_error",
+    "condition": "error_type == 'DatabaseError'",
+    "severity": "critical",
+    "action": "page_on_call"
+  })
   
-  // Trigger notifications for different error levels
-  let critical_error = CriticalError::new("System crash", "core")
-  let high_error = HighPriorityError::new("Database down", "db")
-  let medium_error = MediumPriorityError::new("API slow", "api")
+  // Trigger alerts
+  ErrorAlertManager::check_and_alert(error_alert_manager, error_monitor)
   
-  let critical_notifications = NotificationManager::notify(notification_manager, critical_error)
-  assert_eq(critical_notifications.length(), 3) // All channels
+  let alerts = ErrorAlertManager::get_active_alerts(error_alert_manager)
+  assert_eq(alerts.length(), 1)
+  assert_eq(alerts[0].rule_name, "high_error_rate")
+  assert_eq(alerts[0].severity, "warning")
   
-  let high_notifications = NotificationManager::notify(notification_manager, high_error)
-  assert_eq(high_notifications.length(), 2) // Email and Slack
+  // Add a critical error
+  ErrorMonitor::record_error_type(error_monitor, "DatabaseError")
+  ErrorAlertManager::check_and_alert(error_alert_manager, error_monitor)
   
-  let medium_notifications = NotificationManager::notify(notification_manager, medium_error)
-  assert_eq(medium_notifications.length(), 1) // Email only
+  let critical_alerts = ErrorAlertManager::get_active_alerts(error_alert_manager)
+  assert_eq(critical_alerts.length(), 2)
+  assert_true(critical_alerts.any((alert) => alert.severity == "critical"))
+}
+
+// Test 5: State Recovery Tests
+test "state recovery operations" {
+  // Test checkpoint and restore
+  let state_manager = StateManager::new()
   
-  // Test notification rate limiting
-  let rate_limiter = NotificationRateLimiter::new(5, 60000L) // 5 notifications per minute
+  // Initialize state
+  StateManager::set(state_manager, "counter", 0)
+  StateManager::set(state_manager, "status", "initialized")
+  StateManager::set(state_manager, "data", [1, 2, 3])
   
-  for i in 0..=7 {
-    let error = ValidationError::new("Rate limit test", "param")
-    let allowed = NotificationRateLimiter::allow_notification(rate_limiter, error)
-    
-    if i < 5 {
-      assert_true(allowed)
-    } else {
-      assert_false(allowed)
-    }
+  // Create checkpoint
+  let checkpoint_id = StateManager::create_checkpoint(state_manager)
+  assert_true(checkpoint_id.length() > 0)
+  
+  // Modify state
+  StateManager::set(state_manager, "counter", 10)
+  StateManager::set(state_manager, "status", "modified")
+  StateManager::set(state_manager, "data", [4, 5, 6])
+  
+  // Verify state changed
+  assert_eq(StateManager::get(state_manager, "counter"), 10)
+  assert_eq(StateManager::get(state_manager, "status"), "modified")
+  assert_eq(StateManager::get(state_manager, "data"), [4, 5, 6])
+  
+  // Restore from checkpoint
+  StateManager::restore(state_manager, checkpoint_id)
+  
+  // Verify state restored
+  assert_eq(StateManager::get(state_manager, "counter"), 0)
+  assert_eq(StateManager::get(state_manager, "status"), "initialized")
+  assert_eq(StateManager::get(state_manager, "data"), [1, 2, 3])
+  
+  // Test transaction rollback
+  let transaction_manager = TransactionManager::new()
+  
+  // Begin transaction
+  TransactionManager::begin(transaction_manager)
+  
+  // Modify state within transaction
+  TransactionManager::set(transaction_manager, "value", 100)
+  TransactionManager::set(transaction_manager, "name", "test")
+  
+  // Verify state within transaction
+  assert_eq(TransactionManager::get(transaction_manager, "value"), 100)
+  assert_eq(TransactionManager::get(transaction_manager, "name"), "test")
+  
+  // Rollback transaction
+  TransactionManager::rollback(transaction_manager)
+  
+  // Verify state rolled back
+  match TransactionManager::get(transaction_manager, "value") {
+    Some(_) => assert_true(false)  // Should not exist after rollback
+    None => assert_true(true)
+  }
+  
+  // Test transaction commit
+  TransactionManager::begin(transaction_manager)
+  TransactionManager::set(transaction_manager, "value", 200)
+  TransactionManager::commit(transaction_manager)
+  
+  // Verify state committed
+  assert_eq(TransactionManager::get(transaction_manager, "value"), 200)
+  
+  // Test state persistence
+  let persistent_state = PersistentState::new("/tmp/test_state.json")
+  
+  // Save state
+  PersistentState::set(persistent_state, "session_id", "abc123")
+  PersistentState::set(persistent_state, "user_preferences", ["theme:dark", "lang:en"])
+  PersistentState::save(persistent_state)
+  
+  // Load state in new instance
+  let loaded_state = PersistentState::new("/tmp/test_state.json")
+  PersistentState::load(loaded_state)
+  
+  assert_eq(PersistentState::get(loaded_state, "session_id"), "abc123")
+  assert_eq(PersistentState::get(loaded_state, "user_preferences"), ["theme:dark", "lang:en"])
+  
+  // Test state recovery after crash
+  let crash_resistant_state = CrashResistantState::new("/tmp/crash_resistant_state")
+  
+  // Simulate crash during state update
+  CrashResistantState::begin_update(crash_resistant_state)
+  CrashResistantState::set(crash_resistant_state, "critical_data", "important_value")
+  // Simulate crash without commit
+  // CrashResistantState::commit_update(crash_resistant_state)  // Not called
+  
+  // Create new instance after "crash"
+  let recovered_state = CrashResistantState::new("/tmp/crash_resistant_state")
+  CrashResistantState::recover(recovered_state)
+  
+  // State should be in consistent state
+  match CrashResistantState::get(recovered_state, "critical_data") {
+    Some(_) => assert_true(false)  // Should not exist due to incomplete update
+    None => assert_true(true)
   }
 }
 
-// Test 7: Error Recovery Automation
-test "error recovery automation" {
-  let automation_engine = RecoveryAutomationEngine::new()
+// Test 6: Resource Recovery Tests
+test "resource recovery operations" {
+  // Test memory resource recovery
+  let memory_manager = MemoryManager::new()
   
-  // Define recovery actions
-  let restart_service_action = RestartServiceAction::new("auth-service", 30000L) // 30s timeout
-  let clear_cache_action = ClearCacheAction::new("user-cache")
-  let failover_action = FailoverAction::new("primary-db", "backup-db")
+  // Allocate memory
+  let large_allocation = MemoryManager::allocate(memory_manager, 1024 * 1024)  // 1MB
+  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1024 * 1024)
   
-  // Create recovery policies
-  let database_policy = RecoveryPolicy::new(
-    "database-errors",
-    [DatabaseError::new("", "")],
-    [restart_service_action, failover_action],
-    3 // Max 3 attempts
-  )
+  // Simulate memory leak
+  let leaked_allocation = MemoryManager::allocate(memory_manager, 512 * 1024)  // 512KB
+  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1536 * 1024)
   
-  let cache_policy = RecoveryPolicy::new(
-    "cache-errors",
-    [CacheError::new("", "")],
-    [clear_cache_action],
-    1 // Only 1 attempt
-  )
+  // Recover leaked memory
+  MemoryManager::recover_leaks(memory_manager)
+  assert_eq(MemoryManager::get_allocated_size(memory_manager), 1024 * 1024)
   
-  AutomationEngine::add_policy(automation_engine, database_policy)
-  AutomationEngine::add_policy(automation_engine, cache_policy)
+  // Test file handle recovery
+  let file_manager = FileManager::new()
   
-  // Trigger recovery for database error
-  let db_error = DatabaseError::new("Connection failed", "primary-db")
-  let db_recovery_result = AutomationEngine::handle_error(automation_engine, db_error)
+  // Open file handles
+  let file1 = FileManager::open(file_manager, "/tmp/test1.txt")
+  let file2 = FileManager::open(file_manager, "/tmp/test2.txt")
+  let file3 = FileManager::open(file_manager, "/tmp/test3.txt")
   
-  match db_recovery_result {
-    RecoverySuccess(actions_executed, recovery_time) => {
-      assert_eq(actions_executed.length(), 2)
-      assert_true(recovery_time > 0L)
-    }
-    RecoveryFailure(error) => assert_true(false)
-  }
+  assert_eq(FileManager::get_open_handle_count(file_manager), 3)
   
-  // Trigger recovery for cache error
-  let cache_error = CacheError::new("Cache miss", "user-cache")
-  let cache_recovery_result = AutomationEngine::handle_error(automation_engine, cache_error)
+  // Simulate unclosed handles
+  // file1 and file2 are not properly closed
   
-  match cache_recovery_result {
-    RecoverySuccess(actions_executed, recovery_time) => {
-      assert_eq(actions_executed.length(), 1)
-      assert_true(recovery_time > 0L)
-    }
-    RecoveryFailure(error) => assert_true(false)
-  }
+  // Recover unclosed handles
+  FileManager::recover_handles(file_manager)
+  assert_eq(FileManager::get_open_handle_count(file_manager), 0)
   
-  // Test recovery policy limits
-  for i in 0..=5 {
-    let persistent_db_error = DatabaseError::new("Persistent failure", "primary-db")
-    let result = AutomationEngine::handle_error(automation_engine, persistent_db_error)
-    
-    if i < 3 {
-      match result {
-        RecoverySuccess(_, _) => assert_true(true)
-        RecoveryFailure(_) => assert_true(false)
-      }
-    } else {
-      match result {
-        RecoverySuccess(_, _) => assert_true(false)
-        RecoveryFailure(PolicyLimitExceeded) => assert_true(true)
-        RecoveryFailure(_) => assert_true(false)
-      }
-    }
-  }
+  // Test database connection recovery
+  let connection_pool = ConnectionPool::new("database_url", 5)
+  
+  // Acquire connections
+  let conn1 = ConnectionPool::acquire(connection_pool)
+  let conn2 = ConnectionPool::acquire(connection_pool)
+  let conn3 = ConnectionPool::acquire(connection_pool)
+  
+  assert_eq(ConnectionPool::get_active_connections(connection_pool), 3)
+  
+  // Simulate abandoned connections
+  // conn1 and conn2 are not released
+  
+  // Recover abandoned connections
+  ConnectionPool::recover_abandoned(connection_pool)
+  assert_eq(ConnectionPool::get_active_connections(connection_pool), 1)
+  
+  // Test network socket recovery
+  let socket_manager = SocketManager::new()
+  
+  // Create sockets
+  let socket1 = SocketManager::create(socket_manager, "tcp", "example.com", 80)
+  let socket2 = SocketManager::create(socket_manager, "tcp", "example.com", 443)
+  let socket3 = SocketManager::create(socket_manager, "udp", "example.com", 53)
+  
+  assert_eq(SocketManager::get_active_socket_count(socket_manager), 3)
+  
+  // Simulate socket leaks
+  // socket1 and socket2 are not properly closed
+  
+  // Recover leaked sockets
+  SocketManager::recover_leaks(socket_manager)
+  assert_eq(SocketManager::get_active_socket_count(socket_manager), 0)
+  
+  // Test thread recovery
+  let thread_manager = ThreadManager::new()
+  
+  // Create threads
+  let thread1 = ThreadManager::create(thread_manager, () -> {
+    TimeUtil::sleep(1000)  // Simulate work
+    "Thread 1 result"
+  })
+  
+  let thread2 = ThreadManager::create(thread_manager, () -> {
+    TimeUtil::sleep(2000)  // Simulate work
+    "Thread 2 result"
+  })
+  
+  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 2)
+  
+  // Simulate hanging threads
+  // Force terminate threads that are taking too long
+  ThreadManager::recover_hanging_threads(thread_manager, 500)  // 500ms timeout
+  assert_eq(ThreadManager::get_active_thread_count(thread_manager), 0)
 }
 
-// Test 8: Error Resilience Testing
-test "error resilience testing" {
-  let resilience_tester = ResilienceTester::new()
+// Test 7: Data Consistency Recovery Tests
+test "data consistency recovery operations" {
+  // Test transaction log recovery
+  let transaction_log = TransactionLog::new("/tmp/transaction.log")
   
-  // Test system resilience to various error scenarios
-  let test_scenarios = [
-    ErrorScenario::new("network-partition", 0.2, 30000L), // 20% failure rate, 30s duration
-    ErrorScenario::new("database-overload", 0.5, 60000L), // 50% failure rate, 60s duration
-    ErrorScenario::new("memory-pressure", 0.3, 45000L), // 30% failure rate, 45s duration
-    ErrorScenario::new("cpu-overload", 0.4, 30000L) // 40% failure rate, 30s duration
+  // Record transactions
+  TransactionLog::record(transaction_log, {
+    "id": "tx1",
+    "operation": "insert",
+    "table": "users",
+    "data": {"id": 1, "name": "User 1"}
+  })
+  
+  TransactionLog::record(transaction_log, {
+    "id": "tx2",
+    "operation": "update",
+    "table": "users",
+    "data": {"id": 1, "name": "Updated User 1"}
+  })
+  
+  TransactionLog::record(transaction_log, {
+    "id": "tx3",
+    "operation": "insert",
+    "table": "users",
+    "data": {"id": 2, "name": "User 2"}
+  })
+  
+  // Simulate crash before tx3 is committed
+  TransactionLog::mark_committed(transaction_log, "tx1")
+  TransactionLog::mark_committed(transaction_log, "tx2")
+  // tx3 is not marked as committed
+  
+  // Recover from log
+  let recovery_log = TransactionLog::new("/tmp/transaction.log")
+  let committed_transactions = TransactionLog::recover(recovery_log)
+  
+  assert_eq(committed_transactions.length(), 2)
+  assert_true(committed_transactions.any((tx) => tx.id == "tx1"))
+  assert_true(committed_transactions.any((tx) => tx.id == "tx2"))
+  assert_false(committed_transactions.any((tx) => tx.id == "tx3"))
+  
+  // Test data validation and repair
+  let data_validator = DataValidator::new()
+  
+  // Define validation rules
+  DataValidator::add_rule(data_validator, "users", {
+    "required_fields": ["id", "name", "email"],
+    "field_types": {"id": "int", "name": "string", "email": "email"},
+    "constraints": {"id": "unique", "email": "unique"}
+  })
+  
+  // Test data with issues
+  let corrupted_data = [
+    {"id": 1, "name": "User 1", "email": "user1@example.com"},  // Valid
+    {"id": 2, "name": "User 2", "email": "invalid-email"},      // Invalid email
+    {"id": 1, "name": "Duplicate User", "email": "user3@example.com"},  // Duplicate ID
+    {"id": 3, "name": "User 3"}  // Missing email
   ]
   
-  for scenario in test_scenarios {
-    let resilience_metrics = ResilienceTester::run_test(resilience_tester, scenario)
-    
-    match resilience_metrics {
-      ResilienceMetrics(availability, error_rate, recovery_time, degradation) => {
-        assert_true(availability >= 0.0 && availability <= 1.0)
-        assert_true(error_rate >= 0.0 && error_rate <= 1.0)
-        assert_true(recovery_time > 0L)
-        assert_true(degradation >= 0.0 && degradation <= 1.0)
-      }
-      _ => assert_true(false)
-    }
-  }
+  let validation_results = DataValidator::validate(data_validator, "users", corrupted_data)
   
-  // Test resilience with different recovery strategies
-  let strategies = [
-    ("retry-only", RecoveryStrategy::RetryOnly),
-    ("circuit-breaker", RecoveryStrategy::CircuitBreaker),
-    ("hybrid", RecoveryStrategy::Hybrid)
+  assert_eq(validation_results.valid_records.length(), 1)
+  assert_eq(validation_results.invalid_records.length(), 3)
+  
+  // Repair data
+  let repaired_data = DataValidator::repair(data_validator, "users", corrupted_data)
+  
+  // Verify repaired data
+  let repaired_validation = DataValidator::validate(data_validator, "users", repaired_data)
+  assert_eq(repaired_validation.valid_records.length(), 4)
+  assert_eq(repaired_validation.invalid_records.length(), 0)
+  
+  // Test backup and restore
+  let backup_manager = BackupManager::new("/tmp/backups")
+  
+  // Create backup
+  let original_data = [
+    {"id": 1, "name": "User 1", "email": "user1@example.com"},
+    {"id": 2, "name": "User 2", "email": "user2@example.com"},
+    {"id": 3, "name": "User 3", "email": "user3@example.com"}
   ]
   
-  for (strategy_name, strategy) in strategies {
-    let scenario = ErrorScenario::new("test-scenario", 0.3, 30000L)
-    let strategy_metrics = ResilienceTester::test_with_strategy(resilience_tester, scenario, strategy)
-    
-    match strategy_metrics {
-      StrategyResilienceMetrics(availability, recovery_time, resource_usage) => {
-        assert_true(availability >= 0.0 && availability <= 1.0)
-        assert_true(recovery_time > 0L)
-        assert_true(resource_usage >= 0.0)
-      }
-      _ => assert_true(false)
-    }
-  }
+  let backup_id = BackupManager::create_backup(backup_manager, "users", original_data)
+  assert_true(backup_id.length() > 0)
+  
+  // Corrupt data
+  let corrupted_current_data = [
+    {"id": 1, "name": "Corrupted User 1", "email": "corrupted@example.com"}
+  ]
+  
+  // Restore from backup
+  let restored_data = BackupManager::restore(backup_manager, backup_id)
+  
+  assert_eq(restored_data.length(), 3)
+  assert_eq(restored_data[0]["name"], "User 1")
+  assert_eq(restored_data[1]["name"], "User 2")
+  assert_eq(restored_data[2]["name"], "User 3")
 }
 
-// Test 9: Error Learning and Adaptation
-test "error learning and adaptation" {
-  let learning_system = ErrorLearningSystem::new()
+// Test 8: Service Recovery Tests
+test "service recovery operations" {
+  // Test service health monitoring
+  let health_monitor = HealthMonitor::new()
   
-  // Train the system with historical error data
-  let training_data = [
-    ErrorTrainingData::new(
-      NetworkError::new("Connection timeout", "api.example.com"),
-      RetryWithDelay(5000L),
-      true // Successful recovery
-    ),
-    ErrorTrainingData::new(
-      DatabaseError::new("Connection lost", "primary-db"),
-      FailoverAction::new("primary-db", "backup-db"),
-      true
-    ),
-    ErrorTrainingData::new(
-      ValidationError::new("Invalid input", "user_id"),
-      ReturnDefaultValue,
-      true
-    ),
-    ErrorTrainingData::new(
-      NetworkError::new("Connection refused", "api.example.com"),
-      RetryWithDelay(1000L),
-      false // Unsuccessful recovery
-    )
-  ]
+  // Register services
+  HealthMonitor::register_service(health_monitor, "database", () -> {
+    // Simulate health check
+    DatabaseUtil::ping("database_url")
+  })
   
-  for data in training_data {
-    LearningSystem::add_training_data(learning_system, data)
-  }
+  HealthMonitor::register_service(health_monitor, "cache", () -> {
+    // Simulate health check
+    CacheUtil::ping("cache_url")
+  })
   
-  // Train the model
-  let training_result = LearningSystem::train(learning_system)
-  match training_result {
-    TrainingSuccess(accuracy, confidence) => {
-      assert_true(accuracy > 0.5)
-      assert_true(confidence > 0.0)
-    }
-    TrainingFailure(error) => assert_true(false)
-  }
+  HealthMonitor::register_service(health_monitor, "api", () -> {
+    // Simulate health check
+    HttpClientUtil::ping("api_url")
+  })
   
-  // Test prediction on new errors
-  let new_network_error = NetworkError::new("Connection timeout", "api.example.com")
-  let prediction = LearningSystem::predict_recovery_action(learning_system, new_network_error)
+  // Check service health
+  let health_status = HealthMonitor::check_all(health_monitor)
   
-  match prediction {
-    PredictionSuccess(action, confidence) => {
-      match action {
-        RetryWithDelay(delay) => assert_eq(delay, 5000L) // Should match training data
-        _ => assert_true(false)
-      }
-      assert_true(confidence > 0.0)
-    }
-    PredictionFailure(error) => assert_true(false)
-  }
+  assert_eq(health_status.length(), 3)
+  assert_true(health_status.contains(("database", "healthy")))
+  assert_true(health_status.contains(("cache", "healthy")))
+  assert_true(health_status.contains(("api", "healthy")))
   
-  // Test adaptation based on feedback
-  let feedback = RecoveryFeedback::new(new_network_error, RetryWithDelay(5000L), false)
-  LearningSystem::add_feedback(learning_system, feedback)
+  // Simulate service failure
+  HealthMonitor::simulate_failure(health_monitor, "database")
   
-  // Retrain with feedback
-  let retraining_result = LearningSystem::retrain(learning_system)
-  match retraining_result {
-    RetrainingSuccess(improved_accuracy) => assert_true(improved_accuracy > 0.0)
-    RetrainingFailure(error) => assert_true(false)
-  }
+  let failure_status = HealthMonitor::check_all(health_monitor)
+  assert_true(failure_status.contains(("database", "unhealthy")))
+  assert_true(failure_status.contains(("cache", "healthy")))
+  assert_true(failure_status.contains(("api", "healthy")))
+  
+  // Test service restart
+  let service_manager = ServiceManager::new()
+  
+  // Start services
+  ServiceManager::start(service_manager, "database")
+  ServiceManager::start(service_manager, "cache")
+  ServiceManager::start(service_manager, "api")
+  
+  assert_eq(ServiceManager::get_status(service_manager, "database"), "running")
+  assert_eq(ServiceManager::get_status(service_manager, "cache"), "running")
+  assert_eq(ServiceManager::get_status(service_manager, "api"), "running")
+  
+  // Simulate service crash
+  ServiceManager::simulate_crash(service_manager, "database")
+  
+  assert_eq(ServiceManager::get_status(service_manager, "database"), "stopped")
+  assert_eq(ServiceManager::get_status(service_manager, "cache"), "running")
+  assert_eq(ServiceManager::get_status(service_manager, "api"), "running")
+  
+  // Restart crashed service
+  ServiceManager::restart(service_manager, "database")
+  
+  assert_eq(ServiceManager::get_status(service_manager, "database"), "running")
+  
+  // Test service failover
+  let failover_manager = FailoverManager::new()
+  
+  // Configure primary and backup services
+  FailoverManager::configure(failover_manager, "database", [
+    {"url": "primary.db", "priority": 1},
+    {"url": "backup1.db", "priority": 2},
+    {"url": "backup2.db", "priority": 3}
+  ])
+  
+  // Connect to primary
+  let connection1 = FailoverManager::connect(failover_manager, "database")
+  assert_eq(connection1.url, "primary.db")
+  
+  // Simulate primary failure
+  FailoverManager::simulate_failure(failover_manager, "primary.db")
+  
+  // Should failover to backup1
+  let connection2 = FailoverManager::connect(failover_manager, "database")
+  assert_eq(connection2.url, "backup1.db")
+  
+  // Simulate backup1 failure
+  FailoverManager::simulate_failure(failover_manager, "backup1.db")
+  
+  // Should failover to backup2
+  let connection3 = FailoverManager::connect(failover_manager, "database")
+  assert_eq(connection3.url, "backup2.db")
+  
+  // Test service scaling
+  let scaling_manager = ScalingManager::new()
+  
+  // Configure auto-scaling
+  ScalingManager::configure(scaling_manager, "api", {
+    "min_instances": 2,
+    "max_instances": 10,
+    "cpu_threshold": 70,
+    "memory_threshold": 80,
+    "scale_up_cooldown": 300,
+    "scale_down_cooldown": 600
+  })
+  
+  // Start with minimum instances
+  ScalingManager::set_instances(scaling_manager, "api", 2)
+  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 2)
+  
+  // Simulate high load
+  ScalingManager::set_metrics(scaling_manager, "api", {
+    "cpu_usage": 80,
+    "memory_usage": 75
+  })
+  
+  // Should scale up
+  ScalingManager::check_and_scale(scaling_manager, "api")
+  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 3)
+  
+  // Simulate low load
+  ScalingManager::set_metrics(scaling_manager, "api", {
+    "cpu_usage": 30,
+    "memory_usage": 40
+  })
+  
+  // Wait for cooldown and scale down
+  TimeUtil::sleep(700)  // Exceed scale_down_cooldown
+  ScalingManager::check_and_scale(scaling_manager, "api")
+  assert_eq(ScalingManager::get_instance_count(scaling_manager, "api"), 2)
 }
 
-// Test 10: Error Reporting and Documentation
-test "error reporting and documentation" {
-  let reporting_system = ErrorReportingSystem::new()
+// Test 9: Disaster Recovery Tests
+test "disaster recovery operations" {
+  // Test data replication
+  let replication_manager = ReplicationManager::new()
   
-  // Generate comprehensive error report
-  let errors = [
-    CriticalError::new("System crash", "core_module"),
-    HighPriorityError::new("Database connection lost", "database"),
-    MediumPriorityError::new("API rate limit exceeded", "external_api"),
-    LowPriorityError::new("Cache miss", "cache")
+  // Configure replication
+  ReplicationManager::configure(replication_manager, {
+    "primary": "primary.example.com",
+    "secondaries": ["secondary1.example.com", "secondary2.example.com"],
+    "replication_factor": 3,
+    "consistency_level": "eventual"
+  })
+  
+  // Replicate data
+  let data_to_replicate = {"key": "value", "timestamp": TimeUtil::current_time_millis()}
+  let replication_result = ReplicationManager::replicate(replication_manager, data_to_replicate)
+  
+  assert_true(replication_result.success)
+  assert_eq(replication_result.replicated_nodes.length(), 3)
+  
+  // Simulate primary failure
+  ReplicationManager::simulate_node_failure(replication_manager, "primary.example.com")
+  
+  // Should promote secondary to primary
+  let promotion_result = ReplicationManager::promote_secondary(replication_manager)
+  assert_true(promotion_result.success)
+  assert_ne(promotion_result.new_primary, "primary.example.com")
+  
+  // Test geo-redundancy
+  let geo_manager = GeoRedundancyManager::new()
+  
+  // Configure geo-replication
+  GeoRedundancyManager::configure(geo_manager, {
+    "regions": [
+      {"name": "us-east", "endpoint": "us-east.example.com", "priority": 1},
+      {"name": "us-west", "endpoint": "us-west.example.com", "priority": 2},
+      {"name": "eu-west", "endpoint": "eu-west.example.com", "priority": 3}
+    ],
+    "replication_strategy": "multi_master"
+  })
+  
+  // Replicate to all regions
+  let geo_data = {"user_id": 123, "preferences": ["theme:dark", "lang:en"]}
+  let geo_replication_result = GeoRedundancyManager::replicate(geo_manager, geo_data)
+  
+  assert_true(geo_replication_result.success)
+  assert_eq(geo_replication_result.replicated_regions.length(), 3)
+  
+  // Simulate region failure
+  GeoRedundancyManager::simulate_region_failure(geo_manager, "us-east")
+  
+  // Should redirect traffic to other regions
+  let failover_result = GeoRedundancyManager::handle_region_failure(geo_manager, "us-east")
+  assert_true(failover_result.success)
+  assert_eq(failover_result.redirected_to, "us-west")
+  
+  // Test backup and restore procedures
+  let disaster_recovery = DisasterRecoveryManager::new()
+  
+  // Create recovery plan
+  DisasterRecoveryManager::create_plan(disaster_recovery, {
+    "name": "full_system_recovery",
+    "rto": 3600,  // 1 hour Recovery Time Objective
+    "rpo": 1800,  // 30 minutes Recovery Point Objective
+    "steps": [
+      {"name": "assess_damage", "estimated_time": 300},
+      {"name": "activate_backup_site", "estimated_time": 600},
+      {"name": "restore_data", "estimated_time": 1800},
+      {"name": "verify_services", "estimated_time": 600},
+      {"name": "switch_traffic", "estimated_time": 300}
+    ]
+  })
+  
+  // Execute recovery plan
+  let recovery_execution = DisasterRecoveryManager::execute_plan(disaster_recovery, "full_system_recovery")
+  
+  assert_true(recovery_execution.success)
+  assert_eq(recovery_execution.completed_steps.length(), 5)
+  assert_true(recovery_execution.total_time <= 3600)
+  
+  // Test disaster simulation
+  let disaster_simulator = DisasterSimulator::new()
+  
+  // Simulate data center failure
+  let disaster_scenario = DisasterSimulator::create_scenario(disaster_simulator, {
+    "type": "data_center_failure",
+    "location": "us-east",
+    "duration": 7200,  // 2 hours
+    "affected_services": ["database", "cache", "api"],
+    "impact_level": "critical"
+  })
+  
+  // Run simulation
+  let simulation_result = DisasterSimulator::run(disaster_simulator, disaster_scenario)
+  
+  assert_true(simulation_result.success)
+  assert_eq(simulation_result.activated_failover, true)
+  assert_eq(simulation_result.recovery_time, 1800)  // Within RTO
+  assert_eq(simulation_result.data_loss, 900)      // Within RPO
+  
+  // Test communication during disaster
+  let communication_manager = CommunicationManager::new()
+  
+  // Configure emergency communication
+  CommunicationManager::configure_emergency(communication_manager, {
+    "channels": ["sms", "email", "slack"],
+    "escalation_rules": [
+      {"condition": "severity == 'critical'", "channels": ["sms", "slack"]},
+      {"condition": "severity == 'high'", "channels": ["email", "slack"]},
+      {"condition": "severity == 'medium'", "channels": ["email"]}
+    ],
+    "templates": {
+      "disaster_declared": "Disaster declared: {disaster_type} at {location}. Response team activated.",
+      "recovery_complete": "Disaster recovery complete. All services restored."
+    }
+  })
+  
+  // Send disaster notification
+  let notification_result = CommunicationManager::send_emergency_notification(communication_manager, {
+    "template": "disaster_declared",
+    "severity": "critical",
+    "disaster_type": "data_center_failure",
+    "location": "us-east"
+  })
+  
+  assert_true(notification_result.success)
+  assert_eq(notification_result.sent_channels.length(), 2)
+  assert_true(notification_result.sent_channels.contains("sms"))
+  assert_true(notification_result.sent_channels.contains("slack"))
+}
+
+// Test 10: Self-Healing Tests
+test "self-healing operations" {
+  // Test automatic error detection
+  let self_healing_system = SelfHealingSystem::new()
+  
+  // Configure monitoring rules
+  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
+    "name": "high_error_rate",
+    "condition": "error_rate > 0.1",
+    "severity": "medium",
+    "check_interval": 60
+  })
+  
+  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
+    "name": "service_down",
+    "condition": "service_status == 'down'",
+    "severity": "high",
+    "check_interval": 30
+  })
+  
+  SelfHealingSystem::add_monitoring_rule(self_healing_system, {
+    "name": "memory_leak",
+    "condition": "memory_usage > 90",
+    "severity": "high",
+    "check_interval": 120
+  })
+  
+  // Simulate issues
+  SelfHealingSystem::simulate_issue(self_healing_system, "high_error_rate", {
+    "service": "api",
+    "error_rate": 0.15
+  })
+  
+  // Should detect issue automatically
+  let detected_issues = SelfHealingSystem::get_detected_issues(self_healing_system)
+  assert_eq(detected_issues.length(), 1)
+  assert_eq(detected_issues[0].rule_name, "high_error_rate")
+  
+  // Test automatic remediation
+  SelfHealingSystem::add_remediation_strategy(self_healing_system, {
+    "issue_type": "high_error_rate",
+    "strategies": [
+      {
+        "name": "restart_service",
+        "condition": "error_rate > 0.1 AND error_rate < 0.3",
+        "actions": ["restart_service", "clear_cache"]
+      },
+      {
+        "name": "scale_up",
+        "condition": "error_rate >= 0.3",
+        "actions": ["scale_up_service", "enable_circuit_breaker"]
+      }
+    ]
+  })
+  
+  // Execute remediation
+  let remediation_result = SelfHealingSystem::execute_remediation(self_healing_system, detected_issues[0])
+  
+  assert_true(remediation_result.success)
+  assert_eq(remediation_result.strategy_name, "restart_service")
+  assert_eq(remediation_result.executed_actions.length(), 2)
+  assert_true(remediation_result.executed_actions.contains("restart_service"))
+  assert_true(remediation_result.executed_actions.contains("clear_cache"))
+  
+  // Test learning from failures
+  let learning_system = LearningSystem::new()
+  
+  // Record failure patterns
+  LearningSystem::record_failure(learning_system, {
+    "issue_type": "high_error_rate",
+    "context": {"service": "api", "time_of_day": "morning", "load": "high"},
+    "remediation": "restart_service",
+    "success": true
+  })
+  
+  LearningSystem::record_failure(learning_system, {
+    "issue_type": "high_error_rate",
+    "context": {"service": "api", "time_of_day": "morning", "load": "high"},
+    "remediation": "scale_up",
+    "success": false
+  })
+  
+  LearningSystem::record_failure(learning_system, {
+    "issue_type": "service_down",
+    "context": {"service": "database", "time_of_day": "night", "load": "low"},
+    "remediation": "restart_service",
+    "success": true
+  })
+  
+  // Learn from patterns
+  LearningSystem::analyze_patterns(learning_system)
+  
+  // Get recommendation for similar issue
+  let recommendation = LearningSystem::get_recommendation(learning_system, {
+    "issue_type": "high_error_rate",
+    "context": {"service": "api", "time_of_day": "morning", "load": "high"}
+  })
+  
+  assert_eq(recommendation.remediation, "restart_service")
+  assert_eq(recommendation.confidence, 1.0)  // 100% success rate for this pattern
+  
+  // Test predictive failure detection
+  let predictive_system = PredictiveSystem::new()
+  
+  // Train model with historical data
+  let historical_data = [
+    {"timestamp": 1640995200, "cpu": 45, "memory": 60, "requests": 1000, "errors": 5, "failure": false},
+    {"timestamp": 1640995260, "cpu": 50, "memory": 65, "requests": 1100, "errors": 8, "failure": false},
+    {"timestamp": 1640995320, "cpu": 55, "memory": 70, "requests": 1200, "errors": 12, "failure": false},
+    {"timestamp": 1640995380, "cpu": 65, "memory": 80, "requests": 1400, "errors": 25, "failure": true},
+    {"timestamp": 1640995440, "cpu": 70, "memory": 85, "requests": 1500, "errors": 30, "failure": true}
   ]
   
-  for error in errors {
-    ErrorReportingSystem::record_error(reporting_system, error)
-  }
+  PredictiveSystem::train_model(predictive_system, historical_data)
   
-  // Generate different types of reports
-  let summary_report = ErrorReportingSystem::generate_summary_report(reporting_system)
-  match summary_report {
-    SummaryReport(total_errors, error_distribution, trends, recommendations) => {
-      assert_eq(total_errors, 4)
-      assert_eq(error_distribution.length(), 4)
-      assert_true(trends.length() > 0)
-      assert_true(recommendations.length() > 0)
-    }
-    _ => assert_true(false)
-  }
+  // Predict failure probability
+  let current_metrics = {"cpu": 60, "memory": 75, "requests": 1300, "errors": 20}
+  let prediction = PredictiveSystem::predict_failure(predictive_system, current_metrics)
   
-  let detailed_report = ErrorReportingSystem::generate_detailed_report(reporting_system)
-  match detailed_report {
-    DetailedReport(error_details, root_cause_analysis, impact_assessment, action_items) => {
-      assert_eq(error_details.length(), 4)
-      assert_true(root_cause_analysis.length() > 0)
-      assert_true(impact_assessment.length() > 0)
-      assert_true(action_items.length() > 0)
-    }
-    _ => assert_true(false)
-  }
+  assert_true(prediction.failure_probability > 0.5)
+  assert_eq(prediction.predicted_timeframe, "within_30_minutes")
   
-  let trend_report = ErrorReportingSystem::generate_trend_report(reporting_system, 7) // Last 7 days
-  match trend_report {
-    TrendReport(time_series_data, trend_analysis, predictions, alerts) => {
-      assert_true(time_series_data.length() > 0)
-      assert_true(trend_analysis.length() > 0)
-      assert_true(predictions.length() > 0)
-      assert_true(alerts.length() >= 0)
-    }
-    _ => assert_true(false)
-  }
+  // Test self-healing orchestration
+  let orchestrator = HealingOrchestrator::new()
   
-  // Export reports in different formats
-  let json_export = ErrorReportingSystem::export_report(reporting_system, JSON)
-  assert_true(json_export.length() > 0)
+  // Configure healing workflow
+  HealingOrchestrator::define_workflow(orchestrator, {
+    "name": "service_recovery",
+    "triggers": ["high_error_rate", "service_down"],
+    "steps": [
+      {
+        "name": "detect_issue",
+        "type": "monitoring",
+        "timeout": 60
+      },
+      {
+        "name": "assess_impact",
+        "type": "analysis",
+        "timeout": 120
+      },
+      {
+        "name": "execute_remediation",
+        "type": "remediation",
+        "timeout": 300
+      },
+      {
+        "name": "verify_recovery",
+        "type": "validation",
+        "timeout": 180
+      },
+      {
+        "name": "update_knowledge",
+        "type": "learning",
+        "timeout": 60
+      }
+    ]
+  })
   
-  let csv_export = ErrorReportingSystem::export_report(reporting_system, CSV)
-  assert_true(csv_export.length() > 0)
+  // Execute healing workflow
+  let workflow_result = HealingOrchestrator::execute_workflow(orchestrator, "service_recovery", {
+    "issue": {"type": "high_error_rate", "service": "api"},
+    "context": {"load": "high", "time": "morning"}
+  })
   
-  let html_export = ErrorReportingSystem::export_report(reporting_system, HTML)
-  assert_true(html_export.length() > 0)
+  assert_true(workflow_result.success)
+  assert_eq(workflow_result.completed_steps.length(), 5)
+  assert_true(workflow_result.total_time < 720)  // Total timeout
   
-  // Test report scheduling
-  let scheduler = ReportScheduler::new()
-  ReportScheduler::schedule_report(scheduler, Daily, "daily_error_summary", summary_report)
-  ReportScheduler::schedule_report(scheduler, Weekly, "weekly_error_trends", trend_report)
-  ReportScheduler::schedule_report(scheduler, Monthly, "monthly_error_analysis", detailed_report)
-  
-  let scheduled_reports = ReportScheduler::get_scheduled_reports(scheduler)
-  assert_eq(scheduled_reports.length(), 3)
+  // Verify recovery
+  assert_true(workflow_result.verification_passed)
+  assert_eq(workflow_result.post_recovery_status, "healthy")
 }

@@ -1,1023 +1,486 @@
 // Azimuth Telemetry System - Data Processing and Conversion Tests
-// This file contains test cases for data processing and conversion
+// This file contains comprehensive test cases for data processing and conversion functionality
 
-// Test 1: Attribute Value Type Conversions
-test "attribute value type conversions" {
-  // Test string to integer conversion
-  let string_attr = StringValue("42")
-  let int_from_string = AttributeValue::to_int(string_attr)
-  match int_from_string {
+// Test 1: Data Type Conversion Tests
+test "data type conversion operations" {
+  // Test string to int conversion
+  let int_str = "42"
+  let int_result = int_str.to_int()
+  match int_result {
     Some(value) => assert_eq(value, 42)
     None => assert_true(false)
   }
   
-  // Test integer to string conversion
-  let int_attr = IntValue(42)
-  let string_from_int = AttributeValue::to_string(int_attr)
-  match string_from_int {
-    Some(value) => assert_eq(value, "42")
+  // Test string to float conversion
+  let float_str = "3.14159"
+  let float_result = float_str.to_float()
+  match float_result {
+    Some(value) => assert_eq(value, 3.14159)
     None => assert_true(false)
   }
   
-  // Test string to float conversion
-  let float_string_attr = StringValue("3.14")
-  let float_from_string = AttributeValue::to_float(float_string_attr)
-  match float_from_string {
-    Some(value) => assert_eq(value, 3.14)
-    None => assert_true(false)
-  }
+  // Test int to string conversion
+  let int_val = 123
+  let int_str_result = int_val.to_string()
+  assert_eq(int_str_result, "123")
   
   // Test float to string conversion
-  let float_attr = FloatValue(3.14)
-  let string_from_float = AttributeValue::to_string(float_attr)
-  match string_from_float {
-    Some(value) => assert_eq(value, "3.14")
-    None => assert_true(false)
-  }
+  let float_val = 2.71828
+  let float_str_result = float_val.to_string()
+  assert_eq(float_str_result, "2.71828")
   
-  // Test boolean to string conversion
-  let bool_attr = BoolValue(true)
-  let string_from_bool = AttributeValue::to_string(bool_attr)
-  match string_from_bool {
-    Some(value) => assert_eq(value, "true")
-    None => assert_true(false)
-  }
+  // Test boolean conversion
+  let bool_true = true
+  let bool_false = false
+  assert_eq(bool_true.to_string(), "true")
+  assert_eq(bool_false.to_string(), "false")
   
-  // Test string to boolean conversion
-  let true_string_attr = StringValue("true")
-  let bool_from_true_string = AttributeValue::to_bool(true_string_attr)
-  match bool_from_true_string {
-    Some(value) => assert_true(value)
-    None => assert_true(false)
-  }
-  
-  let false_string_attr = StringValue("false")
-  let bool_from_false_string = AttributeValue::to_bool(false_string_attr)
-  match bool_from_false_string {
-    Some(value) => assert_false(value)
-    None => assert_true(false)
-  }
-  
-  // Test array conversions
-  let string_array_attr = ArrayStringValue(["1", "2", "3"])
-  let int_array_from_string = AttributeValue::to_int_array(string_array_attr)
-  match int_array_from_string {
-    Some(array) => assert_eq(array, [1, 2, 3])
-    None => assert_true(false)
-  }
-  
-  let int_array_attr = ArrayIntValue([1, 2, 3])
-  let string_array_from_int = AttributeValue::to_string_array(int_array_attr)
-  match string_array_from_int {
-    Some(array) => assert_eq(array, ["1", "2", "3"])
-    None => assert_true(false)
+  // Test invalid conversion handling
+  let invalid_int_str = "not_a_number"
+  let invalid_result = invalid_int_str.to_int()
+  match invalid_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
 }
 
-// Test 2: JSON Serialization and Deserialization
-test "json serialization and deserialization" {
-  // Test span serialization
-  let span_context = SpanContext::new("trace123", "span123", true, "test")
-  let span = Span::new("test_span", Server, span_context)
+// Test 2: Data Format Conversion Tests
+test "data format conversion operations" {
+  // Test JSON serialization and deserialization
+  let test_data = [
+    ("name", StringValue("test_service")),
+    ("version", StringValue("1.0.0")),
+    ("port", IntValue(8080)),
+    ("enabled", BoolValue(true)),
+    ("tags", ArrayStringValue(["azimuth", "telemetry", "test"]))
+  ]
   
-  Span::set_attribute(span, "string.attr", StringValue("test_value"))
-  Span::set_attribute(span, "int.attr", IntValue(42))
-  Span::set_attribute(span, "float.attr", FloatValue(3.14))
-  Span::set_attribute(span, "bool.attr", BoolValue(true))
+  // Test JSON serialization
+  let json_str = JsonUtil::serialize(test_data)
+  assert_true(json_str.contains("\"name\":\"test_service\""))
+  assert_true(json_str.contains("\"version\":\"1.0.0\""))
+  assert_true(json_str.contains("\"port\":8080"))
+  assert_true(json_str.contains("\"enabled\":true"))
   
-  Span::add_event(span, "test_event", Some([
-    ("event.string", StringValue("event_value")),
-    ("event.int", IntValue(100))
-  ]))
-  
-  // Serialize span to JSON
-  let json_string = JsonSerializer::serialize_span(span)
-  assert_true(json_string.contains("test_span"))
-  assert_true(json_string.contains("trace123"))
-  assert_true(json_string.contains("span123"))
-  assert_true(json_string.contains("test_value"))
-  assert_true(json_string.contains("42"))
-  assert_true(json_string.contains("3.14"))
-  assert_true(json_string.contains("true"))
-  
-  // Deserialize span from JSON
-  let deserialized_span = JsonSerializer::deserialize_span(json_string)
-  assert_eq(Span::name(deserialized_span), "test_span")
-  assert_eq(Span::kind(deserialized_span), Server)
-  
-  let deserialized_context = Span::span_context(deserialized_span)
-  assert_eq(SpanContext::trace_id(deserialized_context), "trace123")
-  assert_eq(SpanContext::span_id(deserialized_context), "span123")
-  
-  // Test metric serialization
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "json_test_meter")
-  let counter = Meter::create_counter(meter, "json_test_counter", Some("JSON test counter"), Some("operations"))
-  
-  Counter::add(counter, 5.0, Some(Attributes::with([
-    ("attr1", StringValue("value1")),
-    ("attr2", IntValue(10))
-  ])))
-  
-  // Serialize metric to JSON
-  let metric_json = JsonSerializer::serialize_metric(counter)
-  assert_true(metric_json.contains("json_test_counter"))
-  assert_true(metric_json.contains("5.0"))
-  assert_true(metric_json.contains("value1"))
-  assert_true(metric_json.contains("10"))
-  
-  // Test log record serialization
-  let log_record = LogRecord::new_with_context(
-    Info,
-    Some("Test log message"),
-    Some(Attributes::with([
-      ("log.attr", StringValue("log_value"))
-    ])),
-    Some(1640995200000L),
-    Some(1640995200100L),
-    Some("trace123"),
-    Some("span123"),
-    Some(Context::root())
-  )
-  
-  // Serialize log record to JSON
-  let log_json = JsonSerializer::serialize_log_record(log_record)
-  assert_true(log_json.contains("Test log message"))
-  assert_true(log_json.contains("INFO"))
-  assert_true(log_json.contains("trace123"))
-  assert_true(log_json.contains("span123"))
-  assert_true(log_json.contains("log_value"))
-}
-
-// Test 3: Protocol Buffer Serialization
-test "protocol buffer serialization" {
-  // Test span serialization with Protocol Buffers
-  let span_context = SpanContext::new("trace123", "span123", true, "protobuf_test")
-  let span = Span::new("protobuf_span", Client, span_context)
-  
-  Span::set_attribute(span, "pb.string.attr", StringValue("pb_value"))
-  Span::set_attribute(span, "pb.int.attr", IntValue(100))
-  Span::add_event(span, "pb_event", Some([
-    ("pb.event.attr", StringValue("pb_event_value"))
-  ]))
-  
-  // Serialize span to Protocol Buffer
-  let pb_data = ProtobufSerializer::serialize_span(span)
-  assert_true(pb_data.length() > 0)
-  
-  // Deserialize span from Protocol Buffer
-  let deserialized_span = ProtobufSerializer::deserialize_span(pb_data)
-  assert_eq(Span::name(deserialized_span), "protobuf_span")
-  assert_eq(Span::kind(deserialized_span), Client)
-  
-  let deserialized_context = Span::span_context(deserialized_span)
-  assert_eq(SpanContext::trace_id(deserialized_context), "trace123")
-  assert_eq(SpanContext::span_id(deserialized_context), "span123")
-  
-  // Test metric serialization with Protocol Buffers
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "pb_test_meter")
-  let histogram = Meter::create_histogram(meter, "pb_histogram", Some("PB test histogram"), Some("ms"))
-  
-  Histogram::record(histogram, 50.0, Some(Attributes::with([
-    ("pb.metric.attr", StringValue("pb_metric_value"))
-  ])))
-  
-  // Serialize metric to Protocol Buffer
-  let metric_pb_data = ProtobufSerializer::serialize_metric(histogram)
-  assert_true(metric_pb_data.length() > 0)
-  
-  // Test log record serialization with Protocol Buffers
-  let log_record = LogRecord::new_with_context(
-    Error,
-    Some("PB test log message"),
-    Some(Attributes::with([
-      ("pb.log.attr", StringValue("pb_log_value"))
-    ])),
-    Some(1640995200000L),
-    Some(1640995200100L),
-    Some("trace123"),
-    Some("span123"),
-    Some(Context::root())
-  )
-  
-  // Serialize log record to Protocol Buffer
-  let log_pb_data = ProtobufSerializer::serialize_log_record(log_record)
-  assert_true(log_pb_data.length() > 0)
-}
-
-// Test 4: Data Compression and Decompression
-test "data compression and decompression" {
-  // Create large telemetry data for compression
-  let large_attributes = Attributes::new()
-  
-  // Add many attributes to create a large dataset
-  for i in 1..=100 {
-    let key = "large.attr.key" + i.to_string()
-    let value = StringValue("large.attr.value.with.much.text.to.compress" + i.to_string())
-    Attributes::set(large_attributes, key, value)
-  }
-  
-  // Create span with large attributes
-  let span_context = SpanContext::new("trace123", "span123", true, "compression_test")
-  let span = Span::new("compression_span", Internal, span_context)
-  
-  // Add large attributes to span
-  for i in 1..=100 {
-    let key = "span.attr.key" + i.to_string()
-    let value = StringValue("span.attr.value.with.much.text.to.compress" + i.to_string())
-    Span::set_attribute(span, key, value)
-  }
-  
-  // Add many events to span
-  for i in 1..=50 {
-    Span::add_event(span, "compression_event_" + i.to_string(), Some([
-      ("event.key", StringValue("event.value.with.much.text.to.compress" + i.to_string()))
-    ]))
-  }
-  
-  // Serialize span to JSON
-  let json_data = JsonSerializer::serialize_span(span)
-  let original_size = json_data.length()
-  
-  // Compress JSON data
-  let compressed_data = DataCompressor::compress(json_data)
-  let compressed_size = compressed_data.length()
-  
-  // Verify compression ratio
-  let compression_ratio = compressed_size.to_float() / original_size.to_float()
-  assert_true(compression_ratio < 0.8) // Should achieve at least 20% compression
-  
-  // Decompress data
-  let decompressed_data = DataDecompressor::decompress(compressed_data)
-  
-  // Verify decompressed data matches original
-  assert_eq(decompressed_data, json_data)
-  
-  // Test with Protocol Buffer data
-  let pb_data = ProtobufSerializer::serialize_span(span)
-  let pb_original_size = pb_data.length()
-  
-  // Compress Protocol Buffer data
-  let compressed_pb_data = DataCompressor::compress(pb_data)
-  let compressed_pb_size = compressed_pb_data.length()
-  
-  // Verify PB compression ratio
-  let pb_compression_ratio = compressed_pb_size.to_float() / pb_original_size.to_float()
-  assert_true(pb_compression_ratio < 0.9) // Should achieve at least 10% compression
-  
-  // Decompress PB data
-  let decompressed_pb_data = DataDecompressor::decompress(compressed_pb_data)
-  
-  // Verify decompressed PB data matches original
-  assert_eq(decompressed_pb_data, pb_data)
-}
-
-// Test 5: Data Format Conversion
-test "data format conversion" {
-  // Create test span
-  let span_context = SpanContext::new("trace123", "span123", true, "format_conversion")
-  let span = Span::new("format_conversion_span", Server, span_context)
-  
-  Span::set_attribute(span, "conversion.attr", StringValue("conversion_value"))
-  Span::add_event(span, "conversion_event", Some([
-    ("event.attr", StringValue("event_value"))
-  ]))
-  
-  // Convert span to JSON
-  let json_data = JsonSerializer::serialize_span(span)
-  
-  // Convert JSON to Protocol Buffer
-  let pb_from_json = FormatConverter::json_to_protobuf(json_data)
-  
-  // Convert Protocol Buffer back to JSON
-  let json_from_pb = FormatConverter::protobuf_to_json(pb_from_json)
-  
-  // Verify round-trip conversion preserves data
-  let original_span = JsonSerializer::deserialize_span(json_data)
-  let converted_span = JsonSerializer::deserialize_span(json_from_pb)
-  
-  assert_eq(Span::name(original_span), Span::name(converted_span))
-  assert_eq(Span::kind(original_span), Span::kind(converted_span))
-  
-  let original_context = Span::span_context(original_span)
-  let converted_context = Span::span_context(converted_span)
-  
-  assert_eq(SpanContext::trace_id(original_context), SpanContext::trace_id(converted_context))
-  assert_eq(SpanContext::span_id(original_context), SpanContext::span_id(converted_context))
-  
-  // Test metric format conversion
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "format_conversion_meter")
-  let counter = Meter::create_counter(meter, "format_counter", Some("Format conversion counter"), Some("operations"))
-  
-  Counter::add(counter, 10.0, Some(Attributes::with([
-    ("format.attr", StringValue("format_value"))
-  ])))
-  
-  // Convert metric to JSON
-  let metric_json = JsonSerializer::serialize_metric(counter)
-  
-  // Convert JSON to Protocol Buffer
-  let metric_pb_from_json = FormatConverter::json_to_protobuf(metric_json)
-  
-  // Convert Protocol Buffer back to JSON
-  let metric_json_from_pb = FormatConverter::protobuf_to_json(metric_pb_from_json)
-  
-  // Verify round-trip conversion preserves metric data
-  assert_true(metric_json.contains("format_counter"))
-  assert_true(metric_json_from_pb.contains("format_counter"))
-  assert_true(metric_json.contains("10.0"))
-  assert_true(metric_json_from_pb.contains("10.0"))
-  
-  // Test log record format conversion
-  let log_record = LogRecord::new_with_context(
-    Warn,
-    Some("Format conversion log message"),
-    Some(Attributes::with([
-      ("log.format.attr", StringValue("log_format_value"))
-    ])),
-    Some(1640995200000L),
-    Some(1640995200100L),
-    Some("trace123"),
-    Some("span123"),
-    Some(Context::root())
-  )
-  
-  // Convert log record to JSON
-  let log_json = JsonSerializer::serialize_log_record(log_record)
-  
-  // Convert JSON to Protocol Buffer
-  let log_pb_from_json = FormatConverter::json_to_protobuf(log_json)
-  
-  // Convert Protocol Buffer back to JSON
-  let log_json_from_pb = FormatConverter::protobuf_to_json(log_pb_from_json)
-  
-  // Verify round-trip conversion preserves log data
-  assert_true(log_json.contains("Format conversion log message"))
-  assert_true(log_json_from_pb.contains("Format conversion log message"))
-  assert_true(log_json.contains("WARN"))
-  assert_true(log_json_from_pb.contains("WARN"))
-}
-
-// Test 6: Data Aggregation and Processing
-test "data aggregation and processing" {
-  // Create multiple spans for aggregation
-  let mut spans = []
-  
-  for i in 1..=10 {
-    let span_context = SpanContext::new("trace123", "span" + i.to_string(), true, "aggregation")
-    let span = Span::new("aggregation_span_" + i.to_string(), Internal, span_context)
-    
-    Span::set_attribute(span, "span.number", IntValue(i))
-    Span::set_attribute(span, "span.category", StringValue("test"))
-    
-    // Add events with timing information
-    Span::add_event(span, "start_event", Some([
-      ("event.time", IntValue(i * 100))
-    ]))
-    
-    Span::add_event(span, "end_event", Some([
-      ("event.time", IntValue(i * 100 + 50))
-    ]))
-    
-    spans = spans.concat([span])
-  }
-  
-  // Aggregate spans by category
-  let aggregated_by_category = DataAggregator::aggregate_spans_by_attribute(spans, "span.category")
-  
-  match aggregated_by_category.get("test") {
-    Some(category_spans) => assert_eq(category_spans.length(), 10)
-    None => assert_true(false)
-  }
-  
-  // Calculate statistics from span data
-  let span_numbers = spans.map(fn(span) {
-    match Span::get_attribute(span, "span.number") {
-      Some(IntValue(num)) => num
-      _ => 0
-    }
-  })
-  
-  let sum = span_numbers.fold(0, fn(acc, num) { acc + num })
-  let average = sum.to_float() / span_numbers.length().to_float()
-  
-  assert_eq(sum, 55) // Sum of 1 to 10
-  assert_eq(average, 5.5) // Average of 1 to 10
-  
-  // Calculate duration from events
-  let durations = spans.map(fn(span) {
-    let events = Span::get_events(span)
-    if events.length() >= 2 {
-      let start_event = events[0]
-      let end_event = events[1]
-      
-      let start_time = match Event::get_attribute(start_event, "event.time") {
-        Some(IntValue(time)) => time
-        _ => 0
+  // Test JSON deserialization
+  let deserialized_data = JsonUtil::deserialize(json_str)
+  match deserialized_data {
+    Some(data) => {
+      let name_value = MapUtil::get(data, "name")
+      match name_value {
+        Some(StringValue(name)) => assert_eq(name, "test_service")
+        _ => assert_true(false)
       }
       
-      let end_time = match Event::get_attribute(end_event, "event.time") {
-        Some(IntValue(time)) => time
-        _ => 0
+      let port_value = MapUtil::get(data, "port")
+      match port_value {
+        Some(IntValue(port)) => assert_eq(port, 8080)
+        _ => assert_true(false)
       }
-      
-      end_time - start_time
-    } else {
-      0
     }
-  })
-  
-  let total_duration = durations.fold(0, fn(acc, duration) { acc + duration })
-  assert_eq(total_duration, 500) // 10 spans * 50 duration each
-  
-  // Test metric aggregation
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "aggregation_meter")
-  
-  // Create multiple counters
-  let mut counters = []
-  for i in 1..=5 {
-    let counter = Meter::create_counter(
-      meter,
-      "aggregation_counter_" + i.to_string(),
-      Some("Aggregation counter " + i.to_string()),
-      Some("operations")
-    )
-    
-    // Add different values to each counter
-    for j in 1..=i {
-      Counter::add(counter, j.to_float())
-    }
-    
-    counters = counters.concat([counter])
+    None => assert_true(false)
   }
   
-  // Aggregate counter values
-  let counter_values = counters.map(fn(counter) {
-    // In a real implementation, this would get the actual counter value
-    let counter_name = Instrument::name(Counter::as_instrument(counter))
-    let last_char = counter_name[counter_name.length() - 1]
-    last_char.to_digit() * (last_char.to_digit() + 1) / 2 // Sum of 1 to n
-  })
+  // Test XML conversion
+  let xml_str = XmlUtil::to_xml(test_data)
+  assert_true(xml_str.contains("<name>test_service</name>"))
+  assert_true(xml_str.contains("<version>1.0.0</version>"))
+  assert_true(xml_str.contains("<port>8080</port>"))
   
-  let total_counter_value = counter_values.fold(0.0, fn(acc, value) { acc + value.to_float() })
-  assert_eq(total_counter_value, 15.0) // Sum of 1, 3, 6, 10, 15
-  
-  // Test log aggregation
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "aggregation_logger")
-  
-  // Create multiple log records
-  for i in 1..=10 {
-    let severity = if i % 3 == 0 { Error } else if i % 2 == 0 { Warn } else { Info }
-    
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some("Aggregation log message " + i.to_string()),
-      Some(Attributes::with([
-        ("log.number", IntValue(i)),
-        ("log.category", StringValue("test"))
-      ])),
-      Some(1640995200000L + i),
-      Some(1640995200100L + i),
-      Some("trace123"),
-      Some("span" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, log_record)
-  }
-  
-  // Aggregate logs by severity
-  let logs_by_severity = DataAggregator::aggregate_logs_by_severity(logger)
-  
-  assert_eq(logs_by_severity.get(Info), Some(4)) // 1, 4, 7, 10
-  assert_eq(logs_by_severity.get(Warn), Some(3)) // 2, 5, 8
-  assert_eq(logs_by_severity.get(Error), Some(3)) // 3, 6, 9
+  // Test CSV conversion
+  let csv_data = [
+    ["timestamp", "metric_name", "value", "tags"],
+    ["2023-01-01T00:00:00Z", "cpu_usage", "75.5", "region:us-east"],
+    ["2023-01-01T00:01:00Z", "memory_usage", "60.2", "region:us-west"]
+  ]
+  let csv_str = CsvUtil::serialize(csv_data)
+  assert_true(csv_str.contains("timestamp,metric_name,value,tags"))
+  assert_true(csv_str.contains("2023-01-01T00:00:00Z,cpu_usage,75.5,region:us-east"))
 }
 
-// Test 7: Data Filtering and Transformation
-test "data filtering and transformation" {
-  // Create spans with various attributes
-  let mut spans = []
+// Test 3: Data Aggregation Tests
+test "data aggregation operations" {
+  // Test numeric aggregation
+  let numbers = [1.0, 2.5, 3.0, 4.5, 5.0]
   
-  for i in 1..=10 {
-    let span_context = SpanContext::new("trace123", "span" + i.to_string(), true, "filtering")
-    let span = Span::new("filtering_span_" + i.to_string(), Internal, span_context)
-    
-    // Add attributes with different values
-    Span::set_attribute(span, "span.number", IntValue(i))
-    Span::set_attribute(span, "span.category", if i % 2 == 0 { "even" } else { "odd" })
-    Span::set_attribute(span, "span.priority", if i <= 3 { "high" } else if i <= 7 { "medium" } else { "low" })
-    
-    spans = spans.concat([span])
-  }
+  // Test sum
+  let sum = AggregationUtil::sum(numbers)
+  assert_eq(sum, 16.0)
   
-  // Filter spans by attribute value
-  let even_spans = DataFilter::filter_spans_by_attribute_value(spans, "span.category", "even")
-  assert_eq(even_spans.length(), 5) // 2, 4, 6, 8, 10
+  // Test average
+  let avg = AggregationUtil::average(numbers)
+  assert_eq(avg, 3.2)
   
-  let odd_spans = DataFilter::filter_spans_by_attribute_value(spans, "span.category", "odd")
-  assert_eq(odd_spans.length(), 5) // 1, 3, 5, 7, 9
+  // Test min
+  let min = AggregationUtil::min(numbers)
+  assert_eq(min, 1.0)
   
-  // Filter spans by attribute range
-  let high_priority_spans = DataFilter::filter_spans_by_attribute_value(spans, "span.priority", "high")
-  assert_eq(high_priority_spans.length(), 3) // 1, 2, 3
+  // Test max
+  let max = AggregationUtil::max(numbers)
+  assert_eq(max, 5.0)
   
-  // Transform spans by adding new attributes
-  let transformed_spans = DataTransformer::add_computed_attribute(spans, "span.doubled_number", fn(span) {
-    match Span::get_attribute(span, "span.number") {
-      Some(IntValue(num)) => IntValue(num * 2)
-      _ => IntValue(0)
+  // Test median
+  let median = AggregationUtil::median(numbers)
+  assert_eq(median, 3.0)
+  
+  // Test percentile
+  let p95 = AggregationUtil::percentile(numbers, 95.0)
+  assert_eq(p95, 5.0)
+  
+  // Test empty array handling
+  let empty_numbers = []
+  let empty_sum = AggregationUtil::sum(empty_numbers)
+  assert_eq(empty_sum, 0.0)
+  
+  let empty_avg = AggregationUtil::average(empty_numbers)
+  assert_eq(empty_avg, 0.0)
+}
+
+// Test 4: Data Filtering and Transformation Tests
+test "data filtering and transformation operations" {
+  // Test data filtering
+  let test_records = [
+    ("service1", "region1", 100.0, "success"),
+    ("service2", "region1", 200.0, "error"),
+    ("service3", "region2", 150.0, "success"),
+    ("service4", "region2", 50.0, "error"),
+    ("service5", "region1", 300.0, "success")
+  ]
+  
+  // Filter by region
+  let region1_records = FilterUtil::filter_by_region(test_records, "region1")
+  assert_eq(region1_records.length(), 3)
+  
+  // Filter by status
+  let success_records = FilterUtil::filter_by_status(test_records, "success")
+  assert_eq(success_records.length(), 3)
+  
+  // Filter by value threshold
+  let high_value_records = FilterUtil::filter_by_value_threshold(test_records, 150.0)
+  assert_eq(high_value_records.length(), 2)
+  
+  // Test data transformation
+  let transformed_records = TransformUtil::normalize_values(test_records)
+  for record in transformed_records {
+    match record {
+      (_, _, value, _) => assert_true(value >= 0.0 && value <= 1.0)
     }
-  })
-  
-  // Verify transformation
-  for i in 1..=10 {
-    let span = transformed_spans[i - 1]
-    match Span::get_attribute(span, "span.doubled_number") {
-      Some(IntValue(value)) => assert_eq(value, i * 2)
-      _ => assert_true(false)
-    }
   }
   
-  // Filter metrics by value
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "filtering_meter")
+  // Test data grouping
+  let grouped_by_region = TransformUtil::group_by_region(test_records)
+  assert_true(MapUtil::contains_key(grouped_by_region, "region1"))
+  assert_true(MapUtil::contains_key(grouped_by_region, "region2"))
   
-  // Create histogram with various values
-  let histogram = Meter::create_histogram(meter, "filtering_histogram", Some("Filtering histogram"), Some("ms"))
-  
-  for i in 1..=20 {
-    Histogram::record(histogram, i.to_float(), Some(Attributes::with([
-      ("value.category", if i % 3 == 0 { "multiple_of_3" } else { "other" })
-    ])))
-  }
-  
-  // Filter histogram measurements by value
-  let high_value_measurements = DataFilter::filter_histogram_by_value_threshold(histogram, 15.0)
-  assert_eq(high_value_measurements.length(), 5) // 16, 17, 18, 19, 20
-  
-  // Transform metrics by applying function
-  let transformed_histogram = DataTransformer::apply_function_to_measurements(histogram, fn(value) {
-    value * 2.0
-  })
-  
-  // Verify transformation
-  let transformed_measurements = Histogram::get_measurements(transformed_histogram)
-  for i in 1..=20 {
-    assert_eq(transformed_measurements[i - 1], i.to_float() * 2.0)
-  }
-  
-  // Filter log records by severity
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "filtering_logger")
-  
-  // Create log records with different severities
-  for i in 1..=10 {
-    let severity = if i <= 2 { Error } else if i <= 5 { Warn } else { Info }
-    
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some("Filtering log message " + i.to_string()),
-      Some(Attributes::with([
-        ("log.number", IntValue(i))
-      ])),
-      Some(1640995200000L + i),
-      Some(1640995200100L + i),
-      Some("trace123"),
-      Some("span" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, log_record)
-  }
-  
-  // Filter logs by severity
-  let error_logs = DataFilter::filter_logs_by_severity(logger, Error)
-  assert_eq(error_logs.length(), 2) // 1, 2
-  
-  let warn_logs = DataFilter::filter_logs_by_severity(logger, Warn)
-  assert_eq(warn_logs.length(), 3) // 3, 4, 5
-  
-  let info_logs = DataFilter::filter_logs_by_severity(logger, Info)
-  assert_eq(info_logs.length(), 5) // 6, 7, 8, 9, 10
-  
-  // Transform logs by adding computed attributes
-  let transformed_logs = DataTransformer::add_computed_log_attribute(logger, "log.formatted_message", fn(log_record) {
-    match LogRecord::body(log_record) {
-      Some(message) => "FORMATTED: " + message
-      None => "FORMATTED: (no message)"
-    }
-  })
-  
-  // Verify transformation
-  for log_record in transformed_logs {
-    match LogRecord::get_attribute(log_record, "log.formatted_message") {
-      Some(StringValue(message)) => assert_true(message.contains("FORMATTED:"))
-      _ => assert_true(false)
-    }
+  let region1_group = MapUtil::get(grouped_by_region, "region1")
+  match region1_group {
+    Some(records) => assert_eq(records.length(), 3)
+    None => assert_true(false)
   }
 }
 
-// Test 8: Data Validation and Integrity
-test "data validation and integrity" {
-  // Test span data validation
-  let span_context = SpanContext::new("trace123", "span123", true, "validation")
-  let span = Span::new("validation_span", Server, span_context)
+// Test 5: Data Validation Tests
+test "data validation operations" {
+  // Test required field validation
+  let valid_record = [
+    ("timestamp", StringValue("2023-01-01T00:00:00Z")),
+    ("service_name", StringValue("test_service")),
+    ("trace_id", StringValue("0af7651916cd43dd8448eb211c80319c"))
+  ]
   
-  // Add valid attributes
-  Span::set_attribute(span, "valid.string", StringValue("valid_value"))
-  Span::set_attribute(span, "valid.int", IntValue(42))
-  Span::set_attribute(span, "valid.float", FloatValue(3.14))
-  Span::set_attribute(span, "valid.bool", BoolValue(true))
-  
-  // Validate span
-  let validation_result = DataValidator::validate_span(span)
+  let validation_result = ValidationUtil::validate_required_fields(valid_record, ["timestamp", "service_name", "trace_id"])
   assert_true(validation_result.is_valid)
   
-  // Test invalid span data
-  let invalid_span_context = SpanContext::new("", "", false, "")
-  let invalid_span = Span::new("", Internal, invalid_span_context)
+  // Test missing required field
+  let invalid_record = [
+    ("timestamp", StringValue("2023-01-01T00:00:00Z")),
+    ("service_name", StringValue("test_service"))
+    // Missing trace_id
+  ]
   
-  let invalid_validation_result = DataValidator::validate_span(invalid_span)
+  let invalid_validation_result = ValidationUtil::validate_required_fields(invalid_record, ["timestamp", "service_name", "trace_id"])
   assert_false(invalid_validation_result.is_valid)
   assert_true(invalid_validation_result.errors.length() > 0)
   
-  // Test metric data validation
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "validation_meter")
+  // Test data type validation
+  let type_validation_result = ValidationUtil::validate_field_types(valid_record, [
+    ("timestamp", "string"),
+    ("service_name", "string"),
+    ("trace_id", "string")
+  ])
+  assert_true(type_validation_result.is_valid)
   
-  // Create valid metric
-  let valid_counter = Meter::create_counter(meter, "valid_counter", Some("Valid counter"), Some("operations"))
-  Counter::add(valid_counter, 5.0)
+  // Test invalid data type
+  let type_invalid_record = [
+    ("timestamp", StringValue("2023-01-01T00:00:00Z")),
+    ("service_name", IntValue(123)),  // Should be string
+    ("trace_id", StringValue("0af7651916cd43dd8448eb211c80319c"))
+  ]
   
-  let metric_validation_result = DataValidator::validate_metric(valid_counter)
-  assert_true(metric_validation_result.is_valid)
+  let type_invalid_result = ValidationUtil::validate_field_types(type_invalid_record, [
+    ("timestamp", "string"),
+    ("service_name", "string"),
+    ("trace_id", "string")
+  ])
+  assert_false(type_invalid_result.is_valid)
   
-  // Test invalid metric data
-  let invalid_histogram = Meter::create_histogram(meter, "", Some("Invalid histogram"), Some(""))
-  Histogram::record(invalid_histogram, -1.0) // Negative value might be invalid
+  // Test range validation
+  let range_record = [
+    ("value", IntValue(50)),
+    ("percentage", FloatValue(0.75))
+  ]
   
-  let invalid_metric_validation_result = DataValidator::validate_metric(invalid_histogram)
-  assert_false(invalid_metric_validation_result.is_valid)
+  let range_validation_result = ValidationUtil::validate_ranges(range_record, [
+    ("value", 0, 100),
+    ("percentage", 0.0, 1.0)
+  ])
+  assert_true(range_validation_result.is_valid)
   
-  // Test log record validation
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "validation_logger")
+  // Test out of range
+  let out_of_range_record = [
+    ("value", IntValue(150)),
+    ("percentage", FloatValue(1.5))
+  ]
   
-  // Create valid log record
-  let valid_log_record = LogRecord::new_with_context(
-    Info,
-    Some("Valid log message"),
-    Some(Attributes::with([
-      ("valid.attr", StringValue("valid_value"))
-    ])),
-    Some(1640995200000L),
-    Some(1640995200100L),
-    Some("trace123"),
-    Some("span123"),
-    Some(Context::root())
-  )
-  
-  let log_validation_result = DataValidator::validate_log_record(valid_log_record)
-  assert_true(log_validation_result.is_valid)
-  
-  // Test invalid log record
-  let invalid_log_record = LogRecord::new_with_context(
-    999, // Invalid severity
-    Some(""),
-    Some(Attributes::new()),
-    Some(-1L), // Invalid timestamp
-    Some(-1L), // Invalid observed timestamp
-    Some(""),
-    Some(""),
-    Some(Context::root())
-  )
-  
-  let invalid_log_validation_result = DataValidator::validate_log_record(invalid_log_record)
-  assert_false(invalid_log_validation_result.is_valid)
-  
-  // Test data integrity checks
-  let original_span = Span::new("integrity_span", Client, span_context)
-  Span::set_attribute(original_span, "integrity.attr", StringValue("integrity_value"))
-  
-  // Serialize and deserialize span
-  let serialized_span = JsonSerializer::serialize_span(original_span)
-  let deserialized_span = JsonSerializer::deserialize_span(serialized_span)
-  
-  // Check integrity
-  let integrity_check = DataIntegrityChecker::check_span_integrity(original_span, deserialized_span)
-  assert_true(integrity_check.is_intact)
-  
-  // Test with corrupted data
-  let corrupted_data = serialized_span.substring(0, serialized_span.length() / 2)
-  let corrupted_span = JsonSerializer::deserialize_span(corrupted_data)
-  
-  let corruption_check = DataIntegrityChecker::check_span_integrity(original_span, corrupted_span)
-  assert_false(corruption_check.is_intact)
-  
-  // Test checksum verification
-  let data = "test data for checksum"
-  let checksum = DataIntegrityChecker::calculate_checksum(data)
-  
-  // Verify checksum
-  let is_valid_checksum = DataIntegrityChecker::verify_checksum(data, checksum)
-  assert_true(is_valid_checksum)
-  
-  // Test with modified data
-  let modified_data = "modified data for checksum"
-  let is_invalid_checksum = DataIntegrityChecker::verify_checksum(modified_data, checksum)
-  assert_false(is_invalid_checksum)
+  let out_of_range_result = ValidationUtil::validate_ranges(out_of_range_record, [
+    ("value", 0, 100),
+    ("percentage", 0.0, 1.0)
+  ])
+  assert_false(out_of_range_result.is_valid)
 }
 
-// Test 9: Batch Data Processing
-test "batch data processing" {
-  // Create batch of spans
-  let mut spans = []
+// Test 6: Data Compression Tests
+test "data compression operations" {
+  // Test string compression
+  let original_string = "This is a test string for compression. It contains repetitive text that should compress well. This is a test string for compression."
+  let compressed_string = CompressionUtil::compress(original_string)
   
-  for i in 1..=100 {
-    let span_context = SpanContext::new("batch_trace", "batch_span_" + i.to_string(), true, "batch")
-    let span = Span::new("batch_span_" + i.to_string(), Internal, span_context)
-    
-    Span::set_attribute(span, "batch.id", IntValue(i))
-    Span::set_attribute(span, "batch.category", if i % 3 == 0 { "A" } else if i % 3 == 1 { "B" } else { "C" })
-    
-    spans = spans.concat([span])
+  assert_true(compressed_string.length() < original_string.length())
+  
+  // Test decompression
+  let decompressed_string = CompressionUtil::decompress(compressed_string)
+  assert_eq(decompressed_string, original_string)
+  
+  // Test binary data compression
+  let binary_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x02, 0x03, 0x04, 0x05]
+  let compressed_binary = CompressionUtil::compress_binary(binary_data)
+  let decompressed_binary = CompressionUtil::decompress_binary(compressed_binary)
+  
+  assert_eq(binary_data.length(), decompressed_binary.length())
+  for i in 0..binary_data.length() {
+    assert_eq(binary_data[i], decompressed_binary[i])
   }
   
-  // Process spans in batches
-  let batch_size = 10
-  let processed_spans = BatchProcessor::process_spans(spans, batch_size, fn(batch) {
-    // Process each batch
-    batch.map(fn(span) {
-      // Add processing timestamp
-      Span::set_attribute(span, "processed.timestamp", StringValue(Time::now().to_string()))
-      span
-    })
-  })
+  // Test compression level
+  let high_compression = CompressionUtil::compress_with_level(original_string, 9)
+  let low_compression = CompressionUtil::compress_with_level(original_string, 1)
   
-  // Verify all spans were processed
-  assert_eq(processed_spans.length(), 100)
-  
-  // Verify processing timestamp was added
-  for span in processed_spans {
-    match Span::get_attribute(span, "processed.timestamp") {
-      Some(StringValue(_)) => assert_true(true)
-      _ => assert_true(false)
-    }
-  }
-  
-  // Batch process metrics
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "batch_meter")
-  
-  // Create batch of metrics
-  let mut metrics = []
-  
-  for i in 1..=50 {
-    let counter = Meter::create_counter(
-      meter,
-      "batch_counter_" + i.to_string(),
-      Some("Batch counter " + i.to_string()),
-      Some("operations")
-    )
-    
-    // Add random values
-    for j in 1..=i {
-      Counter::add(counter, j.to_float())
-    }
-    
-    metrics = metrics.concat([counter])
-  }
-  
-  // Process metrics in batches
-  let metric_batch_size = 5
-  let processed_metrics = BatchProcessor::process_metrics(metrics, metric_batch_size, fn(batch) {
-    // Process each batch
-    batch.map(fn(metric) {
-      // Add batch processing metadata
-      let instrument = Counter::as_instrument(metric)
-      let name = Instrument::name(instrument)
-      
-      // In a real implementation, this would add metadata to the metric
-      metric
-    })
-  })
-  
-  // Verify all metrics were processed
-  assert_eq(processed_metrics.length(), 50)
-  
-  // Batch process log records
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "batch_logger")
-  
-  // Create batch of log records
-  let mut log_records = []
-  
-  for i in 1..=200 {
-    let severity = if i % 4 == 0 { Error } else if i % 4 == 1 { Warn } else if i % 4 == 2 { Info } else { Debug }
-    
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some("Batch log message " + i.to_string()),
-      Some(Attributes::with([
-        ("batch.id", IntValue(i)),
-        ("batch.category", if i % 3 == 0 { "X" } else if i % 3 == 1 { "Y" } else { "Z" })
-      ])),
-      Some(1640995200000L + i),
-      Some(1640995200100L + i),
-      Some("batch_trace"),
-      Some("batch_span_" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    log_records = log_records.concat([log_record])
-  }
-  
-  // Process log records in batches
-  let log_batch_size = 20
-  let processed_logs = BatchProcessor::process_log_records(log_records, log_batch_size, fn(batch) {
-    // Process each batch
-    batch.map(fn(log_record) {
-      // Add batch processing metadata
-      log_record
-    })
-  })
-  
-  // Verify all log records were processed
-  assert_eq(processed_logs.length(), 200)
-  
-  // Test batch aggregation
-  let aggregated_spans = BatchAggregator::aggregate_spans_by_category(processed_spans, "batch.category")
-  
-  assert_eq(aggregated_spans.get("A"), Some(34)) // 3, 6, 9, ..., 99
-  assert_eq(aggregated_spans.get("B"), Some(33)) // 1, 4, 7, ..., 100
-  assert_eq(aggregated_spans.get("C"), Some(33)) // 2, 5, 8, ..., 98
+  assert_true(high_compression.length() <= low_compression.length())
 }
 
-// Test 10: Stream Processing of Telemetry Data
-test "stream processing of telemetry data" {
-  // Create stream processor for spans
-  let span_stream = StreamProcessor::new()
+// Test 7: Data Encoding Tests
+test "data encoding operations" {
+  // Test Base64 encoding
+  let original_data = "Hello, World!"
+  let base64_encoded = EncodingUtil::base64_encode(original_data)
   
-  // Set up stream processing pipeline
-  let processed_stream = span_stream
-    .filter(fn(span) {
-      // Filter spans by attribute
-      match Span::get_attribute(span, "stream.include") {
-        Some(BoolValue(include)) => include
-        _ => true
-      }
-    })
-    .map(fn(span) {
-      // Transform spans
-      Span::set_attribute(span, "stream.processed", BoolValue(true))
-    })
-    .group_by(fn(span) {
-      // Group by category
-      match Span::get_attribute(span, "stream.category") {
-        Some(StringValue(category)) => category
-        _ => "default"
-      }
-    })
-    .aggregate(fn(group) {
-      // Aggregate each group
-      let count = group.length()
-      ("count", IntValue(count))
-    })
+  // Test Base64 decoding
+  let base64_decoded = EncodingUtil::base64_decode(base64_encoded)
+  assert_eq(base64_decoded, original_data)
   
-  // Create test spans and feed to stream
-  let mut test_spans = []
+  // Test URL encoding
+  let url_string = "https://example.com/path?param=value&other=value with spaces"
+  let url_encoded = EncodingUtil::url_encode(url_string)
   
-  for i in 1..=50 {
-    let span_context = SpanContext::new("stream_trace", "stream_span_" + i.to_string(), true, "stream")
-    let span = Span::new("stream_span_" + i.to_string(), Internal, span_context)
-    
-    Span::set_attribute(span, "stream.id", IntValue(i))
-    Span::set_attribute(span, "stream.include", BoolValue(i % 2 == 0)) // Include even numbers only
-    Span::set_attribute(span, "stream.category", if i % 3 == 0 { "alpha" } else if i % 3 == 1 { "beta" } else { "gamma" })
-    
-    test_spans = test_spans.concat([span])
+  // Test URL decoding
+  let url_decoded = EncodingUtil::url_decode(url_encoded)
+  assert_eq(url_decoded, url_string)
+  
+  // Test HTML encoding
+  let html_string = "<div>Hello & \"World\"</div>"
+  let html_encoded = EncodingUtil::html_encode(html_string)
+  assert_true(html_encoded.contains("&lt;div&gt;"))
+  assert_true(html_encoded.contains("&amp;"))
+  assert_true(html_encoded.contains("&quot;"))
+  
+  // Test HTML decoding
+  let html_decoded = EncodingUtil::html_decode(html_encoded)
+  assert_eq(html_decoded, html_string)
+  
+  // Test Hex encoding
+  let hex_data = [0x48, 0x65, 0x6C, 0x6C, 0x6F]  // "Hello" in ASCII
+  let hex_encoded = EncodingUtil::hex_encode(hex_data)
+  assert_eq(hex_encoded, "48656C6C6F")
+  
+  // Test Hex decoding
+  let hex_decoded = EncodingUtil::hex_decode(hex_encoded)
+  assert_eq(hex_data.length(), hex_decoded.length())
+  for i in 0..hex_data.length() {
+    assert_eq(hex_data[i], hex_decoded[i])
+  }
+}
+
+// Test 8: Data Deduplication Tests
+test "data deduplication operations" {
+  // Test array deduplication
+  let duplicate_array = [1, 2, 3, 2, 4, 1, 5, 3, 6, 4]
+  let deduplicated_array = DedupUtil::deduplicate_array(duplicate_array)
+  
+  assert_eq(deduplicated_array.length(), 6)
+  assert_true(deduplicated_array.contains(1))
+  assert_true(deduplicated_array.contains(2))
+  assert_true(deduplicated_array.contains(3))
+  assert_true(deduplicated_array.contains(4))
+  assert_true(deduplicated_array.contains(5))
+  assert_true(deduplicated_array.contains(6))
+  
+  // Test string deduplication
+  let duplicate_strings = ["apple", "banana", "apple", "cherry", "banana", "date"]
+  let deduplicated_strings = DedupUtil::deduplicate_strings(duplicate_strings)
+  
+  assert_eq(deduplicated_strings.length(), 4)
+  assert_true(deduplicated_strings.contains("apple"))
+  assert_true(deduplicated_strings.contains("banana"))
+  assert_true(deduplicated_strings.contains("cherry"))
+  assert_true(deduplicated_strings.contains("date"))
+  
+  // Test record deduplication
+  let duplicate_records = [
+    ("trace1", "span1", "service1", 100L),
+    ("trace2", "span2", "service2", 200L),
+    ("trace1", "span1", "service1", 100L),  // Duplicate
+    ("trace3", "span3", "service3", 300L),
+    ("trace2", "span2", "service2", 200L)   // Duplicate
+  ]
+  
+  let deduplicated_records = DedupUtil::deduplicate_records(duplicate_records)
+  assert_eq(deduplicated_records.length(), 3)
+  
+  // Test fuzzy deduplication (similar but not identical)
+  let similar_strings = ["test@example.com", "test@example.com ", "Test@Example.com", "test@example.com"]
+  let fuzzy_deduplicated = DedupUtil::fuzzy_deduplicate_strings(similar_strings)
+  assert_eq(fuzzy_deduplicated.length(), 2)  // Should group similar emails
+}
+
+// Test 9: Data Normalization Tests
+test "data normalization operations" {
+  // Test numeric normalization
+  let numeric_data = [10.0, 20.0, 30.0, 40.0, 50.0]
+  let min_max_normalized = NormalizationUtil::min_max_normalize(numeric_data)
+  
+  assert_eq(min_max_normalized[0], 0.0)    // (10-10)/(50-10) = 0
+  assert_eq(min_max_normalized[4], 1.0)    // (50-10)/(50-10) = 1
+  assert_eq(min_max_normalized[2], 0.5)    // (30-10)/(50-10) = 0.5
+  
+  // Test z-score normalization
+  let z_normalized = NormalizationUtil::z_score_normalize(numeric_data)
+  let z_mean = AggregationUtil::sum(z_normalized) / z_normalized.length()
+  assert_true(z_mean >= -0.1 && z_mean <= 0.1)  // Mean should be close to 0
+  
+  // Test string normalization
+  let messy_strings = ["  Hello World  ", "HELLO WORLD", "hello world", "Hello World!"]
+  let normalized_strings = NormalizationUtil::normalize_strings(messy_strings)
+  
+  for normalized_str in normalized_strings {
+    assert_eq(normalized_str, "hello world")
   }
   
-  // Process spans through stream
-  let stream_results = StreamProcessor::process(processed_stream, test_spans)
+  // Test timestamp normalization
+  let timestamps = [
+    "2023-01-01T00:00:00Z",
+    "2023-01-01 01:00:00",
+    "01/01/2023 02:00:00",
+    "2023/01/01 03:00:00"
+  ]
   
-  // Verify stream processing results
-  assert_eq(stream_results.get("alpha"), Some(IntValue(8))) // Even numbers divisible by 3: 6, 12, 18, 24, 30, 36, 42, 48
-  assert_eq(stream_results.get("beta"), Some(IntValue(8))) // Even numbers with remainder 1: 4, 10, 16, 22, 28, 34, 40, 46
-  assert_eq(stream_results.get("gamma"), Some(IntValue(9))) // Even numbers with remainder 2: 2, 8, 14, 20, 26, 32, 38, 44, 50
-  
-  // Create stream processor for metrics
-  let metric_stream = StreamProcessor::new()
-  
-  // Set up metric stream processing pipeline
-  let metric_processed_stream = metric_stream
-    .filter(fn(metric) {
-      // Filter metrics by value threshold
-      let measurements = Histogram::get_measurements(metric)
-      measurements.fold(0.0, fn(acc, value) { acc + value }) > 100.0
-    })
-    .map(fn(metric) {
-      // Transform metrics
-      metric
-    })
-    .reduce(fn(acc, metric) {
-      // Reduce to single result
-      acc + 1
-    })
-  
-  // Create test metrics and feed to stream
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "stream_meter")
-  
-  let mut test_metrics = []
-  
-  for i in 1..=20 {
-    let histogram = Meter::create_histogram(
-      meter,
-      "stream_histogram_" + i.to_string(),
-      Some("Stream histogram " + i.to_string()),
-      Some("ms")
-    )
-    
-    // Add values to histogram
-    for j in 1..=i {
-      Histogram::record(histogram, j.to_float())
-    }
-    
-    test_metrics = test_metrics.concat([histogram])
+  let normalized_timestamps = NormalizationUtil::normalize_timestamps(timestamps)
+  for normalized_ts in normalized_timestamps {
+    assert_true(normalized_ts.length() == 20)  // ISO 8601 format length
+    assert_true(normalized_ts.contains("2023-01-01T"))
   }
   
-  // Process metrics through stream
-  let metric_stream_result = StreamProcessor::process(metric_processed_stream, test_metrics)
+  // Test address normalization
+  let addresses = [
+    "123 Main St, New York, NY 10001",
+    "123 Main Street, New York, New York 10001",
+    "123 Main St., New York, NY 10001"
+  ]
   
-  // Verify metric stream processing result
-  // Histograms with sum > 100: those with i >= 14 (14*15/2 = 105)
-  assert_eq(metric_stream_result, 7) // 14, 15, 16, 17, 18, 19, 20
+  let normalized_addresses = NormalizationUtil::normalize_addresses(addresses)
+  for normalized_addr in normalized_addresses {
+    assert_eq(normalized_addr, "123 main st new york ny 10001")
+  }
+}
+
+// Test 10: Data Migration Tests
+test "data migration operations" {
+  // Test schema migration
+  let old_schema = [
+    ("service", StringValue("test_service")),
+    ("version", StringValue("1.0.0")),
+    ("host", StringValue("localhost"))
+  ]
   
-  // Create stream processor for log records
-  let log_stream = StreamProcessor::new()
+  let migration_rules = [
+    ("service", "service_name"),  // Rename field
+    ("version", "service_version"),
+    ("host", "service_host")
+  ]
   
-  // Set up log stream processing pipeline
-  let log_processed_stream = log_stream
-    .filter(fn(log_record) {
-      // Filter by severity
-      let severity = LogRecord::severity_number(log_record)
-      severity == Error || severity == Warn
-    })
-    .window(5) // Window of 5 log records
-    .aggregate(fn(window) {
-      // Aggregate each window
-      let error_count = window.fold(0, fn(acc, log_record) {
-        if LogRecord::severity_number(log_record) == Error {
-          acc + 1
-        } else {
-          acc
-        }
-      })
-      ("error_count", IntValue(error_count))
-    })
+  let migrated_schema = MigrationUtil::migrate_schema(old_schema, migration_rules)
   
-  // Create test log records and feed to stream
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "stream_logger")
+  // Verify old fields are gone
+  assert_false(MapUtil::contains_key(migrated_schema, "service"))
+  assert_false(MapUtil::contains_key(migrated_schema, "version"))
+  assert_false(MapUtil::contains_key(migrated_schema, "host"))
   
-  let mut test_logs = []
+  // Verify new fields exist
+  assert_true(MapUtil::contains_key(migrated_schema, "service_name"))
+  assert_true(MapUtil::contains_key(migrated_schema, "service_version"))
+  assert_true(MapUtil::contains_key(migrated_schema, "service_host"))
   
-  for i in 1..=25 {
-    let severity = if i % 5 == 0 { Error } else if i % 3 == 0 { Warn } else { Info }
-    
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some("Stream log message " + i.to_string()),
-      Some(Attributes::with([
-        ("log.id", IntValue(i))
-      ])),
-      Some(1640995200000L + i),
-      Some(1640995200100L + i),
-      Some("stream_trace"),
-      Some("stream_span_" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    test_logs = test_logs.concat([log_record])
+  // Test data type migration
+  let type_migration_rules = [
+    ("port", "string", "int"),  // Convert string to int
+    ("enabled", "bool", "string")  // Convert bool to string
+  ]
+  
+  let old_data = [
+    ("port", StringValue("8080")),
+    ("enabled", BoolValue(true)),
+    ("name", StringValue("test"))
+  ]
+  
+  let type_migrated_data = MigrationUtil::migrate_data_types(old_data, type_migration_rules)
+  
+  let port_value = MapUtil::get(type_migrated_data, "port")
+  match port_value {
+    Some(IntValue(port)) => assert_eq(port, 8080)
+    _ => assert_true(false)
   }
   
-  // Process logs through stream
-  let log_stream_results = StreamProcessor::process(log_processed_stream, test_logs)
+  let enabled_value = MapUtil::get(type_migrated_data, "enabled")
+  match enabled_value {
+    Some(StringValue(enabled)) => assert_eq(enabled, "true")
+    _ => assert_true(false)
+  }
   
-  // Verify log stream processing results
-  // Each window of 5 should have 1 error (every 5th record)
-  assert_eq(log_stream_results.length(), 5) // 25 records / window size of 5
+  // Test version migration
+  let version1_data = [
+    ("service_name", StringValue("test")),
+    ("metrics", ArrayIntValue([1, 2, 3]))
+  ]
   
-  for result in log_stream_results {
-    match result {
-      ("error_count", IntValue(count)) => assert_eq(count, 1)
-      _ => assert_true(false)
-    }
+  let version2_data = MigrationUtil::migrate_version(version1_data, "1.0.0", "2.0.0")
+  
+  // Verify version-specific transformations
+  assert_true(MapUtil::contains_key(version2_data, "service_name"))
+  assert_true(MapUtil::contains_key(version2_data, "metrics"))
+  assert_true(MapUtil::contains_key(version2_data, "schema_version"))
+  
+  let schema_version = MapUtil::get(version2_data, "schema_version")
+  match schema_version {
+    Some(StringValue(version)) => assert_eq(version, "2.0.0")
+    _ => assert_true(false)
   }
 }

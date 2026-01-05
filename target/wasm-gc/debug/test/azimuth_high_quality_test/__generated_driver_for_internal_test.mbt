@@ -57,9 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "test.mbt": {
-  },
   "azimuth_high_quality_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_0, ["Span生命周期管理测试"]),
+    1: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_1, ["上下文传播机制测试"]),
+    2: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_2, ["资源属性合并策略测试"]),
+    3: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_3, ["Baggage跨服务传播测试"]),
+    4: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_4, ["复合传播器注入和提取测试"]),
+    5: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_5, ["日志记录与追踪关联测试"]),
+    6: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_6, ["度量指标并发安全性测试"]),
+    7: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_7, ["HTTP客户端遥测集成测试"]),
+    8: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_8, ["时间序列数据处理测试"]),
+    9: (__test_617a696d7574685f686967685f7175616c6974795f74656c656d657472795f74657374732e6d6274_9, ["错误边界和恢复机制测试"]),
   },
   "azimuth.mbt": {
   },
@@ -139,7 +147,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth-test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/azimuth_high_quality_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
