@@ -10,6 +10,7 @@
   },
   "test": {
     "test": [
+        "../azimuth_premium_comprehensive_tests.mbt",
         "../azimuth_focused_enhanced_tests.mbt",
         "../azimuth_premium_advanced_quality_tests.mbt",
         "../azimuth_premium_comprehensive_tests.mbt",
