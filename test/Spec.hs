@@ -4,11 +4,13 @@
 import Test.Hspec
 import Test.QuickCheck
 import Control.Monad (replicateM_)
+import qualified Data.Text as Text
 import Data.Text (pack, unpack)
 
 import Azimuth.Telemetry
 import AdditionalSpec (spec)
 import ExtendedSpec (spec)
+import NewTestSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -101,8 +103,11 @@ main = hspec $ do
         it "should create a span with trace and span IDs" $ do
           span <- createSpan "test-span"
           spanName span `shouldBe` "test-span"
-          spanTraceId span `shouldBe` "trace-123"
-          spanSpanId span `shouldBe` "span-456"
+          -- Check that trace ID and span ID are non-empty
+          (not . Text.null) (spanTraceId span) `shouldBe` True
+          (not . Text.null) (spanSpanId span) `shouldBe` True
+          -- Check that trace ID and span ID are different
+          spanTraceId span `shouldNotBe` spanSpanId span
         
         it "should create spans with different names" $ do
           span1 <- createSpan "operation-1"
@@ -476,3 +481,6 @@ main = hspec $ do
   
   -- 添加ExtendedSpec的测试套件
   ExtendedSpec.spec
+  
+  -- 添加NewTestSpec的测试套件
+  NewTestSpec.spec

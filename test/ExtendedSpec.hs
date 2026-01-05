@@ -10,7 +10,7 @@ import Data.Text (pack, unpack)
 import qualified Data.Text as Text
 import Data.Maybe (isJust, isNothing)
 import Control.Concurrent (threadDelay, forkIO, MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (replicateM_, void, when)
+import Control.Monad (replicateM_, void, when, filterM)
 import Data.List (sort, nub)
 import System.Random (randomRIO)
 
@@ -315,13 +315,13 @@ spec = do
         sampledMetric <- createMetric "sampled-metric" "count"
         
         -- 模拟采样决策
-        let sampleRate = 0.1  -- 10%采样率
+        let sampleRate :: Double = 0.1  -- 10%采样率
             numOperations = 1000
             expectedSampled = round $ fromIntegral numOperations * sampleRate
         
         -- 模拟采样过程
         sampledCount <- fmap length $ filterM (\_ -> do
-          shouldSample <- (<= sampleRate) <$> randomRIO (0.0, 1.0)
+          shouldSample <- (<= sampleRate) <$> (randomRIO (0.0, 1.0) :: IO Double)
           when shouldSample $ recordMetric sampledMetric 1.0
           return shouldSample
           ) [1..numOperations]
@@ -345,7 +345,7 @@ spec = do
         
         -- 低优先级操作按较低比例采样
         sequence_ $ replicate 100 $ do
-          shouldSample <- (<= 0.2) <$> randomRIO (0.0, 1.0)
+          shouldSample <- (<= (0.2 :: Double)) <$> (randomRIO (0.0, 1.0) :: IO Double)
           when shouldSample $ recordMetric lowPriorityMetric 1.0
         
         shutdownTelemetry

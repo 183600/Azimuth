@@ -20,6 +20,26 @@
   (major1) == 4 && (major2) <  22 || \
   (major1) == 4 && (major2) == 22 && (minor) <= 0)
 #endif /* MIN_VERSION_base */
+/* package hashable-1.5.1.0 */
+#ifndef VERSION_hashable
+#define VERSION_hashable "1.5.1.0"
+#endif /* VERSION_hashable */
+#ifndef MIN_VERSION_hashable
+#define MIN_VERSION_hashable(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  5 || \
+  (major1) == 1 && (major2) == 5 && (minor) <= 1)
+#endif /* MIN_VERSION_hashable */
+/* package random-1.3.1 */
+#ifndef VERSION_random
+#define VERSION_random "1.3.1"
+#endif /* VERSION_random */
+#ifndef MIN_VERSION_random
+#define MIN_VERSION_random(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  3 || \
+  (major1) == 1 && (major2) == 3 && (minor) <= 1)
+#endif /* MIN_VERSION_random */
 /* package text-2.1.3 */
 #ifndef VERSION_text
 #define VERSION_text "2.1.3"

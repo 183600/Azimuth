@@ -23,7 +23,26 @@ module Azimuth.Telemetry
     , logMessage
     ) where
 
-import Data.Text (Text)
+import Data.Text (Text, pack)
+import System.IO.Unsafe (unsafePerformIO)
+import Data.IORef
+import System.Random (randomIO)
+import Data.Char (intToDigit)
+import Numeric (showHex)
+import Control.Concurrent.MVar
+import Control.Concurrent (myThreadId, ThreadId)
+import Data.Hashable (hash)
+import Prelude hiding (id)
+
+-- | Global trace context storage
+{-# NOINLINE traceContext #-}
+traceContext :: MVar (Maybe Text)
+traceContext = unsafePerformIO (newMVar Nothing)
+
+-- | Global span counter
+{-# NOINLINE spanCounter #-}
+spanCounter :: IORef Int
+spanCounter = unsafePerformIO (newIORef 0)
 
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
@@ -48,11 +67,40 @@ defaultConfig = TelemetryConfig
 initTelemetry :: TelemetryConfig -> IO ()
 initTelemetry config = do
     putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
+    -- Clear trace context on initialization
+    modifyMVar_ traceContext (\_ -> return Nothing)
+    -- Reset span counter
+    writeIORef spanCounter 0
     -- Implementation would go here
 
 -- | Shutdown telemetry system
 shutdownTelemetry :: IO ()
-shutdownTelemetry = putStrLn "Shutting down telemetry system"
+shutdownTelemetry = do
+    putStrLn "Shutting down telemetry system"
+    -- Clear trace context on shutdown
+    modifyMVar_ traceContext (\_ -> return Nothing)
+    -- Reset span counter
+    writeIORef spanCounter 0
+
+-- | Generate a random hex string
+generateRandomHex :: Int -> IO Text
+generateRandomHex len = do
+    let chars = ['0'..'9'] ++ ['a'..'f']
+    randomInts <- sequence $ replicate len $ randomIO :: IO [Int]
+    return $ pack $ map (\i -> chars !! (i `mod` 16)) randomInts
+
+-- | Helper function to hash thread ID
+hashThreadId :: ThreadId -> Int
+hashThreadId = hash
+
+-- | Generate a unique span ID
+generateSpanId :: IO Text
+generateSpanId = do
+    counter <- readIORef spanCounter
+    modifyIORef spanCounter (+1)
+    threadId <- myThreadId
+    let threadHash = hashThreadId threadId `mod` 10000
+    return $ pack $ showHex counter "" ++ showHex threadHash ""
 
 -- | Metric data type
 data Metric = Metric
@@ -80,7 +128,20 @@ data Span = Span
 
 -- | Create a new span
 createSpan :: Text -> IO Span
-createSpan name = return $ Span name "trace-123" "span-456"
+createSpan name = do
+    -- Get current trace context or create a new one
+    currentTraceId <- modifyMVar traceContext $ \maybeTraceId -> 
+        case maybeTraceId of
+            Just traceId -> return (maybeTraceId, traceId)
+            Nothing -> do
+                -- Generate a new trace ID for the first span in a trace
+                newTraceId <- generateRandomHex 8
+                return (Just newTraceId, newTraceId)
+    
+    -- Generate a unique span ID for each span
+    spanId <- generateSpanId
+    
+    return $ Span name currentTraceId spanId
 
 -- | Finish a span
 finishSpan :: Span -> IO ()
