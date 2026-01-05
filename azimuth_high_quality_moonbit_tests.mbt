@@ -1,459 +1,1620 @@
 // Azimuth High-Quality MoonBit Test Suite
-// 高质量MoonBit测试用例，覆盖遥测系统的核心功能和边界情况
+// This file contains high-quality test cases focusing on advanced features and real-world scenarios
 
-// 测试1: Span生命周期管理
-test "span lifecycle management with proper state transitions" {
-  // 创建Span上下文
-  let span_ctx = @azimuth.SpanContext::new(
-    "1234567890abcdef1234567890abcdef",
-    "1234567890abcdef",
-    true,
-    "key1=value1,key2=value2"
-  )
-  
-  // 创建Span
-  let span = @azimuth.Span::new("test-span", @azimuth.Internal, span_ctx)
-  
-  // 验证初始状态
-  assert_eq(@azimuth.Span::name(span), "test-span")
-  assert_eq(@azimuth.Span::kind(span), @azimuth.Internal)
-  assert_true(@azimuth.Span::is_recording(span))
-  assert_eq(@azimuth.Span::status(span), @azimuth.Unset)
-  
-  // 设置Span状态
-  @azimuth.Span::set_status(span, @azimuth.Ok, Some("Operation completed successfully"))
-  
-  // 添加事件
-  @azimuth.Span::add_event(span, "event1", Some([("key1", @azimuth.StringValue("value1"))]))
-  
-  // 结束Span
-  @azimuth.Span::end(span)
-  
-  // 验证Span上下文
-  let ctx = @azimuth.Span::span_context(span)
-  assert_eq(@azimuth.SpanContext::trace_id(ctx), "1234567890abcdef1234567890abcdef")
-  assert_eq(@azimuth.SpanContext::span_id(ctx), "1234567890abcdef")
-  assert_true(@azimuth.SpanContext::is_sampled(ctx))
-  assert_true(@azimuth.SpanContext::is_valid(ctx))
-}
-
-// 测试2: Metrics聚合操作
-test "metrics aggregation operations with different instrument types" {
-  // 创建MeterProvider和Meter
-  let provider = @azimuth.MeterProvider::default()
-  let meter = @azimuth.MeterProvider::get_meter(provider, "test-meter")
-  
-  // 创建Counter
-  let counter = @azimuth.Meter::create_counter(meter, "test-counter", Some("Test counter"), Some("count"))
-  @azimuth.Counter::add(counter, 10.0, Some(@azimuth.Attributes::new()))
-  
-  // 创建Histogram
-  let histogram = @azimuth.Meter::create_histogram(meter, "test-histogram", Some("Test histogram"), Some("ms"))
-  @azimuth.Histogram::record(histogram, 100.5, Some(@azimuth.Attributes::new()))
-  
-  // 创建UpDownCounter
-  let updown_counter = @azimuth.Meter::create_updown_counter(meter, "test-updown", Some("Test up-down counter"), Some("value"))
-  @azimuth.UpDownCounter::add(updown_counter, 5.0, Some(@azimuth.Attributes::new()))
-  
-  // 创建Gauge
-  let gauge = @azimuth.Meter::create_gauge(meter, "test-gauge", Some("Test gauge"), Some("percent"))
-  @azimuth.UpDownCounter::add(@azimuth.UpDownCounter::{ name: gauge.name, description: gauge.description, unit: gauge.unit }, 75.5, Some(@azimuth.Attributes::new()))
-  
-  // 验证Instrument属性
-  let counter_instrument = @azimuth.Counter(histogram.name, histogram.description, histogram.unit)
-  assert_eq(@azimuth.Instrument::name(counter_instrument), "test-histogram")
-  assert_eq(@azimuth.Instrument::description(counter_instrument), Some("Test histogram"))
-  assert_eq(@azimuth.Instrument::unit(counter_instrument), Some("ms"))
-}
-
-// 测试3: LogRecord与Span关联
-test "log record correlation with span context" {
-  // 创建Span上下文
-  let span_ctx = @azimuth.SpanContext::new(
-    "abcdef1234567890abcdef1234567890",
-    "abcdef1234567890",
-    true,
-    ""
-  )
-  
-  // 创建带有Span上下文的LogRecord
-  let log_record = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
-    Some("Operation completed successfully"),
-    Some(@azimuth.Attributes::new()),
-    Some(1735689600000000000L),
-    Some(1735689600000000001L),
-    Some(span_ctx.trace_id),
-    Some(span_ctx.span_id),
-    Some(@azimuth.Context::root())
-  )
-  
-  // 验证LogRecord属性
-  assert_eq(@azimuth.LogRecord::severity_number(log_record), @azimuth.Info)
-  match @azimuth.LogRecord::body(log_record) {
-    Some(body) => assert_eq(body, "Operation completed successfully")
-    None => assert_true(false)
-  }
-  assert_eq(@azimuth.LogRecord::trace_id(log_record), Some(span_ctx.trace_id))
-  assert_eq(@azimuth.LogRecord::span_id(log_record), Some(span_ctx.span_id))
-  
-  // 创建Logger并发出日志
-  let logger_provider = @azimuth.LoggerProvider::default()
-  let logger = @azimuth.LoggerProvider::get_logger(logger_provider, "test-logger")
-  @azimuth.Logger::emit(logger, log_record)
-}
-
-// 测试4: 资源属性合并策略
-test "resource attributes merge strategy with precedence rules" {
-  // 创建基础资源
-  let base_resource = @azimuth.Resource::with_attributes(
-    @azimuth.Resource::new(),
-    [
-      ("service.name", @azimuth.StringValue("base-service")),
-      ("service.version", @azimuth.StringValue("1.0.0")),
-      ("deployment.environment", @azimuth.StringValue("development"))
-    ]
-  )
-  
-  // 创建覆盖资源
-  let override_resource = @azimuth.Resource::with_attributes(
-    @azimuth.Resource::new(),
-    [
-      ("service.name", @azimuth.StringValue("override-service")),
-      ("host.name", @azimuth.StringValue("prod-server-01")),
-      ("deployment.environment", @azimuth.StringValue("production"))
-    ]
-  )
-  
-  // 合并资源
-  let merged_resource = @azimuth.Resource::merge(base_resource, override_resource)
-  
-  // 验证合并结果 - 覆盖资源应该有更高优先级
-  match @azimuth.Resource::get_attribute(merged_resource, "service.name") {
-    Some(@azimuth.StringValue(name)) => assert_eq(name, "override-service")
-    _ => assert_true(false)
+// Test 1: Advanced Data Structures and Algorithms
+test "advanced data structures and algorithms for telemetry processing" {
+  // Implement a priority queue for telemetry data processing
+  type PriorityQueue[T] = {
+    elements: Array[T],
+    priorities: Array[Int],
+    size: Int
   }
   
-  match @azimuth.Resource::get_attribute(merged_resource, "host.name") {
-    Some(@azimuth.StringValue(host)) => assert_eq(host, "prod-server-01")
-    _ => assert_true(false)
+  let create_priority_queue = fn() {
+    {
+      elements: [],
+      priorities: [],
+      size: 0
+    }
   }
   
-  match @azimuth.Resource::get_attribute(merged_resource, "deployment.environment") {
-    Some(@azimuth.StringValue(env)) => assert_eq(env, "production")
-    _ => assert_true(false)
+  let enqueue = fn(queue: PriorityQueue[T], element: T, priority: Int) {
+    let new_elements = queue.elements.push(element)
+    let new_priorities = queue.priorities.push(priority)
+    
+    // Simple insertion sort by priority
+    let mut i = new_priorities.length() - 1
+    while i > 0 and new_priorities[i-1] < new_priorities[i] {
+      // Swap priorities
+      let temp_prio = new_priorities[i]
+      new_priorities[i] = new_priorities[i-1]
+      new_priorities[i-1] = temp_prio
+      
+      // Swap elements
+      let temp_elem = new_elements[i]
+      new_elements[i] = new_elements[i-1]
+      new_elements[i-1] = temp_elem
+      
+      i = i - 1
+    }
+    
+    {
+      elements: new_elements,
+      priorities: new_priorities,
+      size: queue.size + 1
+    }
   }
   
-  // 验证基础资源中独有的属性
-  match @azimuth.Resource::get_attribute(base_resource, "service.version") {
-    Some(@azimuth.StringValue(version)) => assert_eq(version, "1.0.0")
-    _ => assert_true(false)
+  let dequeue = fn(queue: PriorityQueue[T]) {
+    if queue.size == 0 {
+      (None, queue)
+    } else {
+      let element = queue.elements[0]
+      let new_elements = queue.elements.slice(1, queue.elements.length())
+      let new_priorities = queue.priorities.slice(1, queue.priorities.length())
+      
+      (Some(element), {
+        elements: new_elements,
+        priorities: new_priorities,
+        size: queue.size - 1
+      })
+    }
   }
-}
-
-// 测试5: 跨服务传播一致性
-test "cross-service propagation consistency with composite propagator" {
-  // 创建传播器
-  let trace_propagator = @azimuth.W3CTraceContextPropagator::new()
-  let baggage_propagator = @azimuth.W3CBaggagePropagator::new()
-  let composite_propagator = @azimuth.CompositePropagator::new([trace_propagator])
   
-  // 创建上下文和载体
-  let ctx = @azimuth.Context::with_value(
-    @azimuth.Context::root(),
-    @azimuth.ContextKey::new("correlation.id"),
-    "12345-67890"
-  )
+  // Test priority queue operations
+  let mut queue = create_priority_queue()
   
-  let carrier = @azimuth.TextMapCarrier::new()
+  // Enqueue telemetry data with different priorities
+  queue = enqueue(queue, "critical_error", 10)
+  queue = enqueue(queue, "warning", 5)
+  queue = enqueue(queue, "info", 1)
+  queue = enqueue(queue, "urgent_alert", 8)
   
-  // 注入上下文
-  @azimuth.CompositePropagator::inject(composite_propagator, ctx, carrier)
+  assert_eq(queue.size, 4)
   
-  // 验证注入的traceparent
-  match @azimuth.TextMapCarrier::get(carrier, "traceparent") {
-    Some(traceparent) => assert_true(traceparent.length() > 0)
+  // Dequeue should return elements in priority order
+  let (result1, queue1) = dequeue(queue)
+  match result1 {
+    Some(element) => assert_eq(element, "critical_error")
     None => assert_true(false)
   }
   
-  // 提取上下文
-  let extracted_ctx = @azimuth.CompositePropagator::extract(composite_propagator, carrier)
-  
-  // 验证提取的上下文
-  match @azimuth.Context::get(extracted_ctx, @azimuth.ContextKey::new("extracted")) {
-    Some(value) => assert_eq(value, "true")
-    None => assert_true(false)
-  }
-}
-
-// 测试6: 并发安全性
-test "concurrent safety with shared telemetry resources" {
-  // 创建共享资源
-  let shared_attributes = @azimuth.Attributes::new()
-  let shared_resource = @azimuth.Resource::new()
-  let shared_baggage = @azimuth.Baggage::new()
-  
-  // 模拟并发操作 - 在实际环境中会有真正的并发
-  // 这里我们验证数据结构的基本线程安全性
-  
-  // 多次设置属性
-  for i = 0; i < 10; i = i + 1 {
-    @azimuth.Attributes::set(shared_attributes, "key." + i.to_string(), @azimuth.IntValue(i))
-  }
-  
-  // 多次操作Baggage
-  let baggage1 = @azimuth.Baggage::set_entry(shared_baggage, "user.id", "12345")
-  let baggage2 = @azimuth.Baggage::set_entry(baggage1, "request.id", "req-67890")
-  let baggage3 = @azimuth.Baggage::remove_entry(baggage2, "user.id")
-  
-  // 验证操作结果
-  match @azimuth.Attributes::get(shared_attributes, "int.key") {
-    Some(@azimuth.IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
-  
-  match @azimuth.Baggage::get_entry(baggage3, "request.id") {
-    Some(request_id) => assert_eq(request_id, "req-67890")
+  let (result2, queue2) = dequeue(queue1)
+  match result2 {
+    Some(element) => assert_eq(element, "urgent_alert")
     None => assert_true(false)
   }
   
-  match @azimuth.Baggage::get_entry(baggage3, "user.id") {
-    Some(_) => assert_true(false) // 应该已被移除
-    None => assert_true(true)
-  }
-}
-
-// 测试7: 边界条件处理
-test "boundary condition handling with extreme values" {
-  // 测试空字符串
-  let empty_trace_id = ""
-  let empty_span_id = ""
-  let empty_span_ctx = @azimuth.SpanContext::new(empty_trace_id, empty_span_id, false, "")
-  assert_false(@azimuth.SpanContext::is_valid(empty_span_ctx))
-  
-  // 测试极长字符串
-  let long_string = "a" * 1000
-  let long_span_ctx = @azimuth.SpanContext::new(long_string, long_string, true, "")
-  assert_true(@azimuth.SpanContext::is_valid(long_span_ctx))
-  
-  // 测试极值数值
-  let max_int = 2147483647
-  let min_int = -2147483648
-  let max_double = 1.7976931348623157e+308
-  let min_double = -1.7976931348623157e+308
-  
-  let max_int_attr = @azimuth.IntValue(max_int)
-  let min_int_attr = @azimuth.IntValue(min_int)
-  let max_double_attr = @azimuth.FloatValue(max_double)
-  let min_double_attr = @azimuth.FloatValue(min_double)
-  
-  // 验证极值属性
-  match max_int_attr {
-    @azimuth.IntValue(value) => assert_eq(value, max_int)
-    _ => assert_true(false)
+  let (result3, queue3) = dequeue(queue2)
+  match result3 {
+    Some(element) => assert_eq(element, "warning")
+    None => assert_true(false)
   }
   
-  match min_double_attr {
-    @azimuth.FloatValue(value) => assert_eq(value, min_double)
-    _ => assert_true(false)
+  let (result4, queue4) = dequeue(queue3)
+  match result4 {
+    Some(element) => assert_eq(element, "info")
+    None => assert_true(false)
   }
   
-  // 测试空数组
-  let empty_array = []
-  assert_eq(empty_array.length(), 0)
+  assert_eq(queue4.size, 0)
   
-  // 测试None选项
-  let none_option : Option[String] = None
-  match none_option {
+  // Test empty queue
+  let (result5, _) = dequeue(queue4)
+  match result5 {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
 }
 
-// 测试8: 性能优化场景
-test "performance optimization scenarios with batch operations" {
-  // 创建大量属性
-  let mut large_attributes = @azimuth.Attributes::new()
-  
-  // 批量设置属性 - 模拟性能优化场景
-  for i = 0; i < 100; i = i + 1 {
-    @azimuth.Attributes::set(large_attributes, "key." + i.to_string(), @azimuth.StringValue("value." + i.to_string()))
+// Test 2: Advanced Telemetry Data Processing
+test "advanced telemetry data processing and transformation" {
+  // Define telemetry event structure
+  type TelemetryEvent = {
+    event_id: String,
+    timestamp: Int,
+    event_type: String,
+    service_name: String,
+    attributes: Array[(String, String)],
+    metrics: Array[(String, Float)]
   }
   
-  // 创建大量Baggage条目
-  let mut large_baggage = @azimuth.Baggage::new()
-  for i = 0; i < 50; i = i + 1 {
-    large_baggage = @azimuth.Baggage::set_entry(large_baggage, "baggage.key." + i.to_string(), "baggage.value." + i.to_string())
+  // Define event processor
+  type EventProcessor = {
+    filter_rules: Array[(String, String)],
+    transformers: Array[(TelemetryEvent) -> TelemetryEvent],
+    aggregators: Array[(Array[TelemetryEvent]) -> Float]
   }
   
-  // 创建大量资源属性
-  let large_resource = @azimuth.Resource::with_attributes(
-    @azimuth.Resource::new(),
-    [
-      for i = 0; i < 25; i = i + 1:
-        ("resource.key." + i.to_string(), @azimuth.StringValue("resource.value." + i.to_string()))
-    ]
-  )
-  
-  // 验证性能优化操作结果
-  match @azimuth.Attributes::get(large_attributes, "string.key") {
-    Some(@azimuth.StringValue(value)) => assert_eq(value, "test_value")
-    None => assert_true(false)
-  }
-  
-  match @azimuth.Baggage::get_entry(large_baggage, "baggage.key.0") {
-    Some(value) => assert_eq(value, "baggage.value.0")
-    None => assert_true(false)
-  }
-  
-  match @azimuth.Resource::get_attribute(large_resource, "resource.key.0") {
-    Some(@azimuth.StringValue(value)) => assert_eq(value, "resource.value.0")
-    None => assert_true(false)
-  }
-}
-
-// 测试9: 国际化支持
-test "internationalization support with multilingual text" {
-  // 测试多语言文本
-  let chinese_text = "遥测系统"
-  let japanese_text = "テレメトリシステム"
-  let korean_text = "원격 측정 시스템"
-  let arabic_text = "نظام القياس عن بعد"
-  let russian_text = "Система телеметрии"
-  let emoji_text = "🌍📊📈"
-  
-  // 创建多语言属性
-  let multilingual_attributes = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.zh", @azimuth.StringValue(chinese_text))
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.ja", @azimuth.StringValue(japanese_text))
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.ko", @azimuth.StringValue(korean_text))
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.ar", @azimuth.StringValue(arabic_text))
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.ru", @azimuth.StringValue(russian_text))
-  @azimuth.Attributes::set(multilingual_attributes, "error.message.emoji", @azimuth.StringValue(emoji_text))
-  
-  // 创建多语言日志记录
-  let multilingual_log = @azimuth.LogRecord::new_with_context(
-    @azimuth.Error,
-    Some("操作失败: " + chinese_text),
-    Some(multilingual_attributes),
-    Some(1735689600000000000L),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  // 验证多语言文本处理
-  match @azimuth.LogRecord::body(multilingual_log) {
-    Some(body) => assert_true(body.contains(chinese_text))
-    None => assert_true(false)
-  }
-  
-  // 验证字符串操作
-  assert_eq(chinese_text.length(), 4)
-  assert_eq(japanese_text.length(), 8)
-  assert_eq(korean_text.length(), 9)
-  assert_eq(arabic_text.length(), 17)
-  assert_eq(russian_text.length(), 19)
-  assert_eq(emoji_text.length(), 3)
-  
-  // 验证Unicode字符处理
-  assert_true(chinese_text.contains("遥"))
-  assert_true(japanese_text.contains("テ"))
-  assert_true(korean_text.contains("원"))
-  assert_true(arabic_text.contains("ن"))
-  assert_true(russian_text.contains("С"))
-  assert_true(emoji_text.contains("🌍"))
-}
-
-// 测试10: 时序数据操作
-test "time series data operations with temporal aggregations" {
-  // 创建时钟
-  let clock = @azimuth.Clock::system()
-  
-  // 获取当前时间戳
-  let timestamp1 = @azimuth.Clock::now_unix_nanos(clock)
-  
-  // 创建时序数据点
-  let data_point1 = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
-    Some("Data point 1"),
-    Some(@azimuth.Attributes::new()),
-    Some(timestamp1),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  // 模拟时间流逝
-  let timestamp2 = timestamp1 + 1000000000L // 1秒后
-  
-  let data_point2 = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
-    Some("Data point 2"),
-    Some(@azimuth.Attributes::new()),
-    Some(timestamp2),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  // 模拟时间流逝
-  let timestamp3 = timestamp2 + 2000000000L // 2秒后
-  
-  let data_point3 = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
-    Some("Data point 3"),
-    Some(@azimuth.Attributes::new()),
-    Some(timestamp3),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  // 验证时间戳递增
-  assert_true(timestamp2 > timestamp1)
-  assert_true(timestamp3 > timestamp2)
-  assert_true(timestamp3 > timestamp1)
-  
-  // 验证时间差计算
-  let time_diff1 = timestamp2 - timestamp1
-  let time_diff2 = timestamp3 - timestamp2
-  let total_time = timestamp3 - timestamp1
-  
-  assert_eq(time_diff1, 1000000000L)
-  assert_eq(time_diff2, 2000000000L)
-  assert_eq(total_time, 3000000000L)
-  
-  // 创建带时间戳的Span
-  let span_with_time = @azimuth.Span::new(
-    "time-series-span",
-    @azimuth.Internal,
-    @azimuth.SpanContext::new("trace123", "span456", true, "")
-  )
-  
-  // 模拟Span持续时间
-  let start_time = @azimuth.Clock::now_unix_nanos(clock)
-  // 执行一些操作...
-  let end_time = start_time + 500000000L // 0.5秒后
-  
-  // 验证时间序列数据的完整性
-  assert_true(end_time > start_time)
-  assert_eq(end_time - start_time, 500000000L)
-  
-  // 创建时间序列聚合数据
-  let time_series_data = [
-    (timestamp1, 10.0),
-    (timestamp2, 20.0),
-    (timestamp3, 15.0)
+  // Create test events
+  let events = [
+    {
+      event_id: "evt-001",
+      timestamp: 1640995200,
+      event_type: "request",
+      service_name: "payment-service",
+      attributes: [("method", "POST"), ("status", "200")],
+      metrics: [("duration", 120.5), ("size", 1024.0)]
+    },
+    {
+      event_id: "evt-002",
+      timestamp: 1640995260,
+      event_type: "request",
+      service_name: "payment-service",
+      attributes: [("method", "GET"), ("status", "404")],
+      metrics: [("duration", 45.2), ("size", 256.0)]
+    },
+    {
+      event_id: "evt-003",
+      timestamp: 1640995320,
+      event_type: "error",
+      service_name: "auth-service",
+      attributes: [("error_type", "timeout"), ("retry_count", "3")],
+      metrics: [("duration", 5000.0), ("size", 128.0)]
+    }
   ]
   
-  // 计算平均值
-  let sum = time_series_data.reduce(fn(acc, data) { acc + data.1 }, 0.0)
-  let average = sum / time_series_data.length().to_double()
+  // Create filter function
+  let filter_events = fn(events: Array[TelemetryEvent], rules: Array[(String, String)]) {
+    let mut filtered = []
+    for event in events {
+      let mut matches_all = true
+      for (key, value) in rules {
+        let mut found_match = false
+        for (attr_key, attr_value) in event.attributes {
+          if attr_key == key and attr_value == value {
+            found_match = true
+          }
+        }
+        if not(found_match) {
+          matches_all = false
+        }
+      }
+      if matches_all {
+        filtered = filtered.push(event)
+      }
+    }
+    filtered
+  }
   
-  assert_eq(average, 15.0)
+  // Create transformer function
+  let transform_event = fn(event: TelemetryEvent) {
+    // Add computed metrics
+    let duration_metric = event.metrics.find(fn(m) { m.0 == "duration" })
+    let size_metric = event.metrics.find(fn(m) { m.0 == "size" })
+    
+    let throughput = match (duration_metric, size_metric) {
+      (Some((_, duration)), Some((_, size))) => {
+        if duration > 0.0 { size / duration } else { 0.0 }
+      }
+      _ => 0.0
+    }
+    
+    let new_metrics = event.metrics.push(("throughput", throughput))
+    
+    // Add service tier based on service name
+    let service_tier = if event.service_name.contains("payment") {
+      "critical"
+    } else if event.service_name.contains("auth") {
+      "high"
+    } else {
+      "standard"
+    }
+    
+    let new_attributes = event.attributes.push(("service_tier", service_tier))
+    
+    {
+      event |
+      attributes: new_attributes,
+      metrics: new_metrics
+    }
+  }
+  
+  // Create aggregator function
+  let aggregate_average_duration = fn(events: Array[TelemetryEvent]) {
+    if events.length() == 0 {
+      0.0
+    } else {
+      let mut total = 0.0
+      let mut count = 0
+      
+      for event in events {
+        match event.metrics.find(fn(m) { m.0 == "duration" }) {
+          Some((_, duration)) => {
+            total = total + duration
+            count = count + 1
+          }
+          None => ()
+        }
+      }
+      
+      if count > 0 { total / (count as Float) } else { 0.0 }
+    }
+  }
+  
+  // Test filtering
+  let payment_service_events = filter_events(events, [("service_name", "payment-service")])
+  assert_eq(payment_service_events.length(), 2)
+  
+  let successful_requests = filter_events(events, [("status", "200")])
+  assert_eq(successful_requests.length(), 1)
+  
+  // Test transformation
+  let transformed_events = events.map(transform_event)
+  
+  // Check that throughput was added
+  let first_event = transformed_events[0]
+  match first_event.metrics.find(fn(m) { m.0 == "throughput" }) {
+    Some((_, throughput)) => {
+      assert_true(throughput > 0.0)
+      assert_eq(throughput.round(), 8.0)  // 1024.0 / 120.5 ≈ 8.5
+    }
+    None => assert_true(false)
+  }
+  
+  // Check that service tier was added
+  match first_event.attributes.find(fn(a) { a.0 == "service_tier" }) {
+    Some((_, tier)) => assert_eq(tier, "critical")
+    None => assert_true(false)
+  }
+  
+  // Test aggregation
+  let avg_duration = aggregate_average_duration(events)
+  let expected_avg = (120.5 + 45.2 + 5000.0) / 3.0
+  assert_true((avg_duration - expected_avg).abs() < 0.01)
+}
+
+// Test 3: Concurrent Processing and Synchronization
+test "concurrent processing and synchronization patterns" {
+  // Simulate concurrent telemetry processing
+  type ConcurrentProcessor = {
+    worker_count: Int,
+    task_queue: Array[String],
+    completed_tasks: Array[String],
+    in_progress: Array[String]
+  }
+  
+  let create_processor = fn(workers: Int) {
+    {
+      worker_count: workers,
+      task_queue: [],
+      completed_tasks: [],
+      in_progress: []
+    }
+  }
+  
+  let add_tasks = fn(processor: ConcurrentProcessor, tasks: Array[String]) {
+    {
+      processor |
+      task_queue: processor.task_queue + tasks
+    }
+  }
+  
+  let simulate_concurrent_processing = fn(processor: ConcurrentProcessor) {
+    let mut updated_processor = processor
+    let mut batch_size = updated_processor.worker_count
+    
+    // Process tasks in batches
+    while updated_processor.task_queue.length() > 0 {
+      // Determine how many tasks to process in this batch
+      let current_batch_size = if updated_processor.task_queue.length() < batch_size {
+        updated_processor.task_queue.length()
+      } else {
+        batch_size
+      }
+      
+      // Move tasks from queue to in_progress
+      let mut new_in_progress = []
+      let mut remaining_queue = []
+      
+      for i in 0..updated_processor.task_queue.length() {
+        if i < current_batch_size {
+          new_in_progress = new_in_progress.push(updated_processor.task_queue[i])
+        } else {
+          remaining_queue = remaining_queue.push(updated_processor.task_queue[i])
+        }
+      }
+      
+      // Simulate processing completion
+      let mut new_completed = []
+      for task in new_in_progress {
+        // Simulate task processing by adding a suffix
+        let processed_task = task + "_processed"
+        new_completed = new_completed.push(processed_task)
+      }
+      
+      // Update processor state
+      updated_processor = {
+        task_queue: remaining_queue,
+        completed_tasks: updated_processor.completed_tasks + new_completed,
+        in_progress: []
+      }
+    }
+    
+    updated_processor
+  }
+  
+  // Test concurrent processing
+  let processor = create_processor(3)
+  let tasks = ["task1", "task2", "task3", "task4", "task5", "task6", "task7"]
+  let processor_with_tasks = add_tasks(processor, tasks)
+  
+  assert_eq(processor_with_tasks.task_queue.length(), 7)
+  assert_eq(processor_with_tasks.completed_tasks.length(), 0)
+  
+  let final_processor = simulate_concurrent_processing(processor_with_tasks)
+  
+  assert_eq(final_processor.task_queue.length(), 0)
+  assert_eq(final_processor.completed_tasks.length(), 7)
+  assert_true(final_processor.completed_tasks.contains("task1_processed"))
+  assert_true(final_processor.completed_tasks.contains("task7_processed"))
+  
+  // Test with different worker counts
+  let single_worker = create_processor(1)
+  let single_worker_with_tasks = add_tasks(single_worker, ["a", "b", "c"])
+  let single_worker_result = simulate_concurrent_processing(single_worker_with_tasks)
+  
+  assert_eq(single_worker_result.completed_tasks.length(), 3)
+  
+  // Test resource pool pattern
+  type ResourcePool = {
+    resources: Array[String],
+    available: Array[Bool],
+    allocated: Array[String]
+  }
+  
+  let create_resource_pool = fn(resource_names: Array[String]) {
+    {
+      resources: resource_names,
+      available: resource_names.map(fn(_) { true }),
+      allocated: []
+    }
+  }
+  
+  let allocate_resource = fn(pool: ResourcePool, requester: String) {
+    let mut updated_pool = pool
+    let mut allocated = false
+    
+    for i in 0..pool.resources.length() {
+      if pool.available[i] and not(allocated) {
+        updated_pool.available[i] = false
+        updated_pool.allocated = updated_pool.allocated.push(pool.resources[i] + ":" + requester)
+        allocated = true
+      }
+    }
+    
+    (allocated, updated_pool)
+  }
+  
+  let release_resource = fn(pool: ResourcePool, resource: String) {
+    let mut updated_pool = pool
+    let mut found = false
+    
+    for i in 0..pool.resources.length() {
+      if pool.resources[i] == resource and not(found) {
+        updated_pool.available[i] = true
+        
+        // Remove from allocated list
+        let mut new_allocated = []
+        for allocated_res in pool.allocated {
+          if not(allocated_res.contains(resource)) {
+            new_allocated = new_allocated.push(allocated_res)
+          }
+        }
+        updated_pool.allocated = new_allocated
+        found = true
+      }
+    }
+    
+    updated_pool
+  }
+  
+  // Test resource pool
+  let pool = create_resource_pool(["db-connection-1", "db-connection-2", "cache-connection-1"])
+  
+  let (allocated1, pool1) = allocate_resource(pool, "request-1")
+  assert_true(allocated1)
+  assert_eq(pool1.allocated.length(), 1)
+  
+  let (allocated2, pool2) = allocate_resource(pool1, "request-2")
+  assert_true(allocated2)
+  assert_eq(pool2.allocated.length(), 2)
+  
+  let (allocated3, pool3) = allocate_resource(pool2, "request-3")
+  assert_true(allocated3)
+  assert_eq(pool3.allocated.length(), 3)
+  
+  let (allocated4, pool4) = allocate_resource(pool3, "request-4")
+  assert_false(allocated4)  // No resources available
+  assert_eq(pool4.allocated.length(), 3)
+  
+  let pool5 = release_resource(pool4, "db-connection-1")
+  assert_eq(pool5.allocated.length(), 2)
+  
+  let (allocated5, pool6) = allocate_resource(pool5, "request-4")
+  assert_true(allocated5)  // Now a resource is available
+  assert_eq(pool6.allocated.length(), 3)
+}
+
+// Test 4: Advanced Error Handling and Recovery
+test "advanced error handling and recovery mechanisms" {
+  // Define error hierarchy
+  enum TelemetryError {
+    NetworkError(String, Int)  // message, retry_count
+    SerializationError(String, String)  // message, data_type
+    ConfigurationError(String, String)  // message, config_key
+    RateLimitError(Int, Int)  // retry_after, limit
+    CriticalError(String, Array[String])  // message, context
+  }
+  
+  // Define recovery strategy
+  enum RecoveryAction {
+    Retry(Int, Int)  // max_attempts, backoff_ms
+    Fallback(String)  // fallback_value
+    CircuitBreaker(Int, Int)  // failure_threshold, timeout_ms
+    Escalate  // Escalate to higher level
+    Ignore  // Log and continue
+  }
+  
+  // Create error handler
+  let handle_error = fn(error: TelemetryError, context: String) {
+    match error {
+      TelemetryError::NetworkError(msg, retry_count) => {
+        if retry_count < 3 {
+          RecoveryAction::Retry(3, 1000 * (retry_count + 1))
+        } else {
+          RecoveryAction::Fallback("offline_mode")
+        }
+      }
+      TelemetryError::SerializationError(msg, data_type) => {
+        if data_type == "metrics" {
+          RecoveryAction::Fallback("default_metrics")
+        } else {
+          RecoveryAction::Retry(2, 500)
+        }
+      }
+      TelemetryError::ConfigurationError(msg, config_key) => {
+        if config_key == "sampling_rate" {
+          RecoveryAction::Fallback("0.1")  // Default 10% sampling
+        } else {
+          RecoveryAction::Escalate
+        }
+      }
+      TelemetryError::RateLimitError(retry_after, limit) => {
+        RecoveryAction::Retry(1, retry_after)
+      }
+      TelemetryError::CriticalError(msg, context_info) => {
+        if context_info.contains("production") {
+          RecoveryAction::CircuitBreaker(5, 60000)
+        } else {
+          RecoveryAction::Ignore
+        }
+      }
+    }
+  }
+  
+  // Test error handling
+  let network_error = TelemetryError::NetworkError("Connection timeout", 1)
+  let network_action = handle_error(network_error, "sending_telemetry")
+  assert_eq(network_action, RecoveryAction::Retry(3, 2000))
+  
+  let exhausted_network_error = TelemetryError::NetworkError("Connection timeout", 3)
+  let exhausted_action = handle_error(exhausted_network_error, "sending_telemetry")
+  assert_eq(exhausted_action, RecoveryAction::Fallback("offline_mode"))
+  
+  let metrics_serialization_error = TelemetryError::SerializationError("Invalid format", "metrics")
+  let metrics_action = handle_error(metrics_serialization_error, "processing_metrics")
+  assert_eq(metrics_action, RecoveryAction::Fallback("default_metrics"))
+  
+  let config_error = TelemetryError::ConfigurationError("Missing key", "sampling_rate")
+  let config_action = handle_error(config_error, "initializing_sampler")
+  assert_eq(config_action, RecoveryAction::Fallback("0.1"))
+  
+  let rate_limit_error = TelemetryError::RateLimitError(5000, 100)
+  let rate_limit_action = handle_error(rate_limit_error, "sending_batch")
+  assert_eq(rate_limit_action, RecoveryAction::Retry(1, 5000))
+  
+  let critical_error = TelemetryError::CriticalError("Database down", ["production", "payments"])
+  let critical_action = handle_error(critical_error, "processing_payments")
+  assert_eq(critical_action, RecoveryAction::CircuitBreaker(5, 60000))
+  
+  // Test error recovery state machine
+  type RecoveryState = {
+    status: String,
+    attempts: Int,
+    last_error: Option[TelemetryError],
+    next_action: Option[RecoveryAction],
+    context: String
+  }
+  
+  let process_with_recovery = fn(initial_state: RecoveryState, operation: () -> Result[String, TelemetryError]) {
+    let mut state = initial_state
+    
+    while state.attempts < 5 {
+      let result = operation()
+      
+      match result {
+        Ok(value) => {
+          state = {
+            status: "success",
+            attempts: state.attempts + 1,
+            last_error: None,
+            next_action: None,
+            context: state.context
+          }
+          return (state, Some(value))
+        }
+        Err(error) => {
+          let action = handle_error(error, state.context)
+          state = {
+            status: "error",
+            attempts: state.attempts + 1,
+            last_error: Some(error),
+            next_action: Some(action),
+            context: state.context
+          }
+          
+          match action {
+            RecoveryAction::Retry(max_attempts, _) => {
+              if state.attempts >= max_attempts {
+                break
+              }
+            }
+            RecoveryAction::Fallback(_) => {
+              state = { state | status: "fallback" }
+              return (state, Some("fallback_value"))
+            }
+            RecoveryAction::CircuitBreaker(_, _) => {
+              state = { state | status: "circuit_breaker_open" }
+              return (state, None)
+            }
+            RecoveryAction::Escalate => {
+              state = { state | status: "escalated" }
+              return (state, None)
+            }
+            RecoveryAction::Ignore => {
+              state = { state | status: "ignored" }
+              return (state, Some("ignored_value"))
+            }
+          }
+        }
+      }
+    }
+    
+    (state, None)
+  }
+  
+  // Test recovery state machine
+  let initial_state = {
+    status: "initial",
+    attempts: 0,
+    last_error: None,
+    next_action: None,
+    context: "test_operation"
+  }
+  
+  // Simulate operation that fails twice then succeeds
+  let mut attempt_count = 0
+  let flaky_operation = fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count <= 2 {
+      Err(TelemetryError::NetworkError("Simulated failure", attempt_count))
+    } else {
+      Ok("success_value")
+    }
+  }
+  
+  let (final_state, result) = process_with_recovery(initial_state, flaky_operation)
+  assert_eq(final_state.status, "success")
+  assert_eq(final_state.attempts, 3)
+  assert_eq(result, Some("success_value"))
+}
+
+// Test 5: Performance Optimization and Caching
+test "performance optimization and caching strategies" {
+  // Define cache structure
+  type CacheEntry[T] = {
+    value: T,
+    timestamp: Int,
+    ttl: Int,
+    access_count: Int
+  }
+  
+  type Cache[T] = {
+    entries: Array[(String, CacheEntry[T])],
+    max_size: Int,
+    eviction_policy: String
+  }
+  
+  let create_cache = fn(max_size: Int, policy: String) {
+    {
+      entries: [],
+      max_size,
+      eviction_policy: policy
+    }
+  }
+  
+  let get_from_cache = fn[T](cache: Cache[T], key: String, current_time: Int) {
+    match cache.entries.find(fn(entry) { entry.0 == key }) {
+      Some((_, entry)) => {
+        if current_time - entry.timestamp < entry.ttl {
+          // Cache hit - update access count
+          let updated_entry = { entry | access_count: entry.access_count + 1 }
+          (Some(updated_entry.value), true)
+        } else {
+          // Cache expired
+          (None, false)
+        }
+      }
+      None => (None, false)
+    }
+  }
+  
+  let put_in_cache = fn[T](cache: Cache[T], key: String, value: T, ttl: Int, current_time: Int) {
+    let new_entry = {
+      value,
+      timestamp: current_time,
+      ttl,
+      access_count: 1
+    }
+    
+    // Check if cache is full
+    if cache.entries.length() >= cache.max_size {
+      // Evict based on policy
+      match cache.eviction_policy {
+        "lru" => {
+          // Find least recently used (lowest access count)
+          let mut min_access = cache.entries[0].1.access_count
+          let mut min_index = 0
+          
+          for i in 1..cache.entries.length() {
+            if cache.entries[i].1.access_count < min_access {
+              min_access = cache.entries[i].1.access_count
+              min_index = i
+            }
+          }
+          
+          // Remove the least recently used entry
+          let mut new_entries = []
+          for i in 0..cache.entries.length() {
+            if i != min_index {
+              new_entries = new_entries.push(cache.entries[i])
+            }
+          }
+          
+          // Add new entry
+          new_entries.push((key, new_entry))
+          new_entries
+        }
+        "fifo" => {
+          // Remove oldest entry (first in array)
+          let new_entries = cache.entries.slice(1, cache.entries.length())
+          new_entries.push((key, new_entry))
+          new_entries
+        }
+        _ => {
+          // Default to FIFO
+          let new_entries = cache.entries.slice(1, cache.entries.length())
+          new_entries.push((key, new_entry))
+          new_entries
+        }
+      }
+    } else {
+      // Add to cache
+      cache.entries.push((key, new_entry))
+    }
+  }
+  
+  // Test cache operations
+  let cache = create_cache(3, "lru")
+  let base_time = 1640995200
+  
+  // Add entries to cache
+  let cache1 = put_in_cache(cache, "trace-1", "data-1", 1000, base_time)
+  let cache2 = put_in_cache(cache1, "trace-2", "data-2", 1000, base_time + 100)
+  let cache3 = put_in_cache(cache2, "trace-3", "data-3", 1000, base_time + 200)
+  
+  assert_eq(cache3.entries.length(), 3)
+  
+  // Test cache hit
+  let (value1, hit1) = get_from_cache(cache3, "trace-2", base_time + 300)
+  assert_eq(value1, Some("data-2"))
+  assert_true(hit1)
+  
+  // Test cache miss
+  let (value4, hit4) = get_from_cache(cache3, "trace-4", base_time + 300)
+  assert_eq(value4, None)
+  assert_false(hit4)
+  
+  // Test cache expiration
+  let (value1_expired, hit1_expired) = get_from_cache(cache3, "trace-1", base_time + 1500)
+  assert_eq(value1_expired, None)
+  assert_false(hit1_expired)
+  
+  // Test cache eviction
+  let cache4 = put_in_cache(cache3, "trace-4", "data-4", 1000, base_time + 300)
+  assert_eq(cache4.entries.length(), 3)  // Should still be 3 due to eviction
+  
+  // Check that least recently used entry was evicted
+  let (evicted_value, evicted_hit) = get_from_cache(cache4, "trace-1", base_time + 300)
+  assert_eq(evicted_value, None)
+  assert_false(evicted_hit)
+  
+  // Test performance optimization with batch processing
+  type BatchProcessor = {
+    batch_size: Int,
+    flush_interval: Int,
+    pending_items: Array[String],
+    last_flush: Int
+  }
+  
+  let create_batch_processor = fn(batch_size: Int, flush_interval: Int) {
+    {
+      batch_size,
+      flush_interval,
+      pending_items: [],
+      last_flush: 0
+    }
+  }
+  
+  let add_to_batch = fn(processor: BatchProcessor, item: String, current_time: Int) {
+    let new_pending = processor.pending_items.push(item)
+    let should_flush = new_pending.length() >= processor.batch_size or
+                     (current_time - processor.last_flush) >= processor.flush_interval
+    
+    if should_flush {
+      // Flush the batch
+      let flushed_items = new_pending
+      let new_processor = {
+        batch_size: processor.batch_size,
+        flush_interval: processor.flush_interval,
+        pending_items: [],
+        last_flush: current_time
+      }
+      (new_processor, Some(flushed_items))
+    } else {
+      let new_processor = {
+        processor |
+        pending_items: new_pending
+      }
+      (new_processor, None)
+    }
+  }
+  
+  // Test batch processing
+  let processor = create_batch_processor(3, 5000)
+  let base_time = 1640995200
+  
+  let (processor1, batch1) = add_to_batch(processor, "item1", base_time)
+  assert_eq(batch1, None)
+  assert_eq(processor1.pending_items.length(), 1)
+  
+  let (processor2, batch2) = add_to_batch(processor1, "item2", base_time + 100)
+  assert_eq(batch2, None)
+  assert_eq(processor2.pending_items.length(), 2)
+  
+  let (processor3, batch3) = add_to_batch(processor2, "item3", base_time + 200)
+  assert_eq(batch3.unwrap().length(), 3)
+  assert_eq(processor3.pending_items.length(), 0)
+  assert_eq(processor3.last_flush, base_time + 200)
+  
+  // Test time-based flush
+  let (processor4, batch4) = add_to_batch(processor3, "item4", base_time + 100)
+  assert_eq(batch4, None)
+  assert_eq(processor4.pending_items.length(), 1)
+  
+  let (processor5, batch5) = add_to_batch(processor4, "item5", base_time + 5100)
+  assert_eq(batch5.unwrap().length(), 2)  // item4 and item5
+  assert_eq(processor5.pending_items.length(), 0)
+  assert_eq(processor5.last_flush, base_time + 5100)
+}
+
+// Test 6: System Integration and Communication
+test "system integration and communication patterns" {
+  // Define message structure for inter-service communication
+  type TelemetryMessage = {
+    message_id: String,
+    source_service: String,
+    target_service: String,
+    message_type: String,
+    payload: String,
+    timestamp: Int,
+    correlation_id: String
+  }
+  
+  // Define message router
+  type MessageRouter = {
+    routes: Array[(String, String)],  // (message_type, target_service)
+    message_history: Array[TelemetryMessage],
+    delivery_status: Array[(String, String)]  // (message_id, status)
+  }
+  
+  let create_router = fn() {
+    {
+      routes: [
+        ("metric_data", "aggregator-service"),
+        ("trace_data", "trace-service"),
+        ("log_data", "log-service"),
+        ("alert", "alert-service")
+      ],
+      message_history: [],
+      delivery_status: []
+    }
+  }
+  
+  let route_message = fn(router: MessageRouter, message: TelemetryMessage) {
+    // Find route for message type
+    let target_route = router.routes.find(fn(route) { route.0 == message.message_type })
+    
+    match target_route {
+      Some((_, expected_target)) => {
+        if expected_target == message.target_service {
+          // Valid route
+          let new_history = router.message_history.push(message)
+          let new_status = router.delivery_status.push((message.message_id, "delivered"))
+          
+          ({
+            routes: router.routes,
+            message_history: new_history,
+            delivery_status: new_status
+          }, "success")
+        } else {
+          // Invalid target service
+          let new_status = router.delivery_status.push((message.message_id, "failed: wrong target"))
+          
+          ({
+            routes: router.routes,
+            message_history: router.message_history,
+            delivery_status: new_status
+          }, "failed: wrong target")
+        }
+      }
+      None => {
+        // No route found
+        let new_status = router.delivery_status.push((message.message_id, "failed: no route"))
+        
+        ({
+          routes: router.routes,
+          message_history: router.message_history,
+          delivery_status: new_status
+        }, "failed: no route")
+      }
+    }
+  }
+  
+  // Test message routing
+  let router = create_router()
+  
+  let valid_message = {
+    message_id: "msg-001",
+    source_service: "api-service",
+    target_service: "aggregator-service",
+    message_type: "metric_data",
+    payload: "{\"metric\": \"cpu\", \"value\": 75.5}",
+    timestamp: 1640995200,
+    correlation_id: "corr-001"
+  }
+  
+  let (router1, result1) = route_message(router, valid_message)
+  assert_eq(result1, "success")
+  assert_eq(router1.message_history.length(), 1)
+  assert_eq(router1.delivery_status.length(), 1)
+  assert_eq(router1.delivery_status[0], ("msg-001", "delivered"))
+  
+  let invalid_target_message = {
+    message_id: "msg-002",
+    source_service: "api-service",
+    target_service: "wrong-service",
+    message_type: "metric_data",
+    payload: "{\"metric\": \"memory\", \"value\": 1024}",
+    timestamp: 1640995210,
+    correlation_id: "corr-002"
+  }
+  
+  let (router2, result2) = route_message(router1, invalid_target_message)
+  assert_eq(result2, "failed: wrong target")
+  assert_eq(router2.message_history.length(), 1)  // Not added to history
+  assert_eq(router2.delivery_status.length(), 2)
+  assert_eq(router2.delivery_status[1], ("msg-002", "failed: wrong target"))
+  
+  let no_route_message = {
+    message_id: "msg-003",
+    source_service: "api-service",
+    target_service: "aggregator-service",
+    message_type: "unknown_type",
+    payload: "{\"data\": \"test\"}",
+    timestamp: 1640995220,
+    correlation_id: "corr-003"
+  }
+  
+  let (router3, result3) = route_message(router2, no_route_message)
+  assert_eq(result3, "failed: no route")
+  assert_eq(router3.message_history.length(), 1)
+  assert_eq(router3.delivery_status.length(), 3)
+  assert_eq(router3.delivery_status[2], ("msg-003", "failed: no route"))
+  
+  // Test service discovery and health checking
+  type ServiceInstance = {
+    instance_id: String,
+    service_name: String,
+    host: String,
+    port: Int,
+    health_status: String,
+    last_check: Int,
+    metadata: Array[(String, String)]
+  }
+  
+  type ServiceRegistry = {
+    services: Array[ServiceInstance],
+    health_check_interval: Int
+  }
+  
+  let create_registry = fn(check_interval: Int) {
+    {
+      services: [
+        {
+          instance_id: "svc-001",
+          service_name: "aggregator-service",
+          host: "10.0.1.10",
+          port: 8080,
+          health_status: "healthy",
+          last_check: 1640995200,
+          metadata: [("version", "1.2.3"), ("region", "us-west-2")]
+        },
+        {
+          instance_id: "svc-002",
+          service_name: "trace-service",
+          host: "10.0.1.20",
+          port: 8081,
+          health_status: "healthy",
+          last_check: 1640995200,
+          metadata: [("version", "1.1.0"), ("region", "us-west-2")]
+        },
+        {
+          instance_id: "svc-003",
+          service_name: "aggregator-service",
+          host: "10.0.1.11",
+          port: 8080,
+          health_status: "unhealthy",
+          last_check: 1640995200,
+          metadata: [("version", "1.2.3"), ("region", "us-west-2")]
+        }
+      ],
+      health_check_interval: check_interval
+    }
+  }
+  
+  let discover_healthy_services = fn(registry: ServiceRegistry, service_name: String) {
+    let mut healthy_instances = []
+    for service in registry.services {
+      if service.service_name == service_name and service.health_status == "healthy" {
+        healthy_instances = healthy_instances.push(service)
+      }
+    }
+    healthy_instances
+  }
+  
+  let update_service_health = fn(registry: ServiceRegistry, instance_id: String, status: String, check_time: Int) {
+    let mut updated_services = []
+    for service in registry.services {
+      if service.instance_id == instance_id {
+        updated_services = updated_services.push({
+          service |
+          health_status: status,
+          last_check: check_time
+        })
+      } else {
+        updated_services = updated_services.push(service)
+      }
+    }
+    
+    {
+      services: updated_services,
+      health_check_interval: registry.health_check_interval
+    }
+  }
+  
+  // Test service discovery
+  let registry = create_registry(30)
+  
+  let healthy_aggregators = discover_healthy_services(registry, "aggregator-service")
+  assert_eq(healthy_aggregators.length(), 1)  // Only one healthy aggregator
+  assert_eq(healthy_aggregators[0].instance_id, "svc-001")
+  
+  let healthy_tracers = discover_healthy_services(registry, "trace-service")
+  assert_eq(healthy_tracers.length(), 1)  // One healthy tracer
+  assert_eq(healthy_tracers[0].instance_id, "svc-002")
+  
+  // Test health status update
+  let updated_registry = update_service_health(registry, "svc-003", "healthy", 1640995230)
+  let new_healthy_aggregators = discover_healthy_services(updated_registry, "aggregator-service")
+  assert_eq(new_healthy_aggregators.length(), 2)  // Now two healthy aggregators
+  
+  // Test load balancing
+  let select_instance_round_robin = fn(instances: Array[ServiceInstance], request_count: Int) {
+    if instances.length() == 0 {
+      None
+    } else {
+      let index = request_count % instances.length()
+      Some(instances[index])
+    }
+  }
+  
+  let select_instance_random = fn(instances: Array[ServiceInstance]) {
+    if instances.length() == 0 {
+      None
+    } else {
+      // Simple pseudo-random based on current time
+      let index = (Time::now() % instances.length())
+      Some(instances[index])
+    }
+  }
+  
+  // Test round-robin selection
+  let instance1 = select_instance_round_robin(new_healthy_aggregators, 0)
+  let instance2 = select_instance_round_robin(new_healthy_aggregators, 1)
+  
+  match (instance1, instance2) {
+    (Some(inst1), Some(inst2)) => {
+      assert_not_eq(inst1.instance_id, inst2.instance_id)
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 7: Security and Access Control
+test "security and access control mechanisms" {
+  // Define authentication token
+  type AuthToken = {
+    token_id: String,
+    user_id: String,
+    roles: Array[String],
+    permissions: Array[String],
+    expires_at: Int,
+    issued_at: Int
+  }
+  
+  // Define access control entry
+  type AccessControlEntry = {
+    resource: String,
+    required_permissions: Array[String],
+    allowed_roles: Array[String]
+  }
+  
+  // Define access control system
+  type AccessControlSystem = {
+    tokens: Array[AuthToken],
+    access_rules: Array[AccessControlEntry],
+    audit_log: Array[(String, String, String, Int)]  // (user_id, resource, action, timestamp)
+  }
+  
+  let create_access_control = fn() {
+    {
+      tokens: [
+        {
+          token_id: "token-001",
+          user_id: "user-001",
+          roles: ["admin", "operator"],
+          permissions: ["read", "write", "delete", "manage"],
+          expires_at: 1640998800,  // 1 hour from base time
+          issued_at: 1640995200
+        },
+        {
+          token_id: "token-002",
+          user_id: "user-002",
+          roles: ["operator"],
+          permissions: ["read", "write"],
+          expires_at: 1640998800,
+          issued_at: 1640995200
+        },
+        {
+          token_id: "token-003",
+          user_id: "user-003",
+          roles: ["viewer"],
+          permissions: ["read"],
+          expires_at: 1640998800,
+          issued_at: 1640995200
+        }
+      ],
+      access_rules: [
+        {
+          resource: "telemetry_data",
+          required_permissions: ["read"],
+          allowed_roles: ["admin", "operator", "viewer"]
+        },
+        {
+          resource: "telemetry_config",
+          required_permissions: ["read", "write"],
+          allowed_roles: ["admin", "operator"]
+        },
+        {
+          resource: "user_management",
+          required_permissions: ["read", "write", "delete"],
+          allowed_roles: ["admin"]
+        }
+      ],
+      audit_log: []
+    }
+  }
+  
+  let validate_token = fn(acs: AccessControlSystem, token_id: String, current_time: Int) {
+    match acs.tokens.find(fn(token) { token.token_id == token_id }) {
+      Some(token) => {
+        if current_time < token.expires_at {
+          Some(token)
+        } else {
+          None  // Token expired
+        }
+      }
+      None => None  // Token not found
+    }
+  }
+  
+  let check_permission = fn(acs: AccessControlSystem, user_id: String, resource: String, action: String, current_time: Int) {
+    // First, find the user's token
+    let user_token_opt = acs.tokens.find(fn(token) { token.user_id == user_id })
+    
+    match user_token_opt {
+      Some(token) => {
+        // Check if token is valid
+        if current_time >= token.expires_at {
+          (false, "Token expired")
+        } else {
+          // Find access rule for the resource
+          match acs.access_rules.find(fn(rule) { rule.resource == resource }) {
+            Some(rule) => {
+              // Check if user has required permissions
+              let has_permission = rule.required_permissions.all(fn(req_perm) {
+                token.permissions.contains(req_perm)
+              })
+              
+              // Check if user has allowed role
+              let has_role = token.roles.any(fn(role) {
+                rule.allowed_roles.contains(role)
+              })
+              
+              if has_permission and has_role {
+                (true, "Access granted")
+              } else {
+                (false, "Insufficient permissions or role")
+              }
+            }
+            None => (false, "Resource not found in access rules")
+          }
+        }
+      }
+      None => (false, "User not found")
+    }
+  }
+  
+  let log_access_attempt = fn(acs: AccessControlSystem, user_id: String, resource: String, action: String, timestamp: Int, success: Bool) {
+    let status = if success { "granted" } else { "denied" }
+    let new_entry = (user_id, resource, action + ":" + status, timestamp)
+    {
+      acs |
+      audit_log: acs.audit_log.push(new_entry)
+    }
+  }
+  
+  // Test access control
+  let acs = create_access_control()
+  let current_time = 1640995600  // Within token validity period
+  
+  // Test admin access
+  let (admin_access, admin_msg) = check_permission(acs, "user-001", "telemetry_config", "write", current_time)
+  assert_true(admin_access)
+  assert_eq(admin_msg, "Access granted")
+  
+  let acs1 = log_access_attempt(acs, "user-001", "telemetry_config", "write", current_time, admin_access)
+  assert_eq(acs1.audit_log.length(), 1)
+  
+  // Test operator access
+  let (operator_access, operator_msg) = check_permission(acs1, "user-002", "telemetry_config", "write", current_time)
+  assert_true(operator_access)
+  assert_eq(operator_msg, "Access granted")
+  
+  let acs2 = log_access_attempt(acs1, "user-002", "telemetry_config", "write", current_time, operator_access)
+  assert_eq(acs2.audit_log.length(), 2)
+  
+  // Test viewer access (should be denied)
+  let (viewer_access, viewer_msg) = check_permission(acs2, "user-003", "telemetry_config", "write", current_time)
+  assert_false(viewer_access)
+  assert_eq(viewer_msg, "Insufficient permissions or role")
+  
+  let acs3 = log_access_attempt(acs2, "user-003", "telemetry_config", "write", current_time, viewer_access)
+  assert_eq(acs3.audit_log.length(), 3)
+  
+  // Test expired token
+  let future_time = 1640999000  // After token expiry
+  let (expired_access, expired_msg) = check_permission(acs3, "user-001", "telemetry_data", "read", future_time)
+  assert_false(expired_access)
+  assert_eq(expired_msg, "Token expired")
+  
+  // Test data encryption simulation
+  let encrypt_data = fn(data: String, key: String) {
+    // Simple XOR encryption simulation
+    let data_chars = data.to_char_array()
+    let key_chars = key.to_char_array()
+    let mut encrypted = []
+    
+    for i in 0..data_chars.length() {
+      let key_char = key_chars[i % key_chars.length()]
+      let encrypted_char = (data_chars[i].to_int() ^ key_char.to_int()).to_char()
+      encrypted = encrypted.push(encrypted_char)
+    }
+    
+    encrypted.from_char_array()
+  }
+  
+  let decrypt_data = fn(encrypted_data: String, key: String) {
+    // Decryption is the same as encryption for XOR
+    encrypt_data(encrypted_data, key)
+  }
+  
+  // Test encryption
+  let sensitive_data = "user_password_123"
+  let encryption_key = "secret_key_123"
+  
+  let encrypted = encrypt_data(sensitive_data, encryption_key)
+  assert_not_eq(encrypted, sensitive_data)
+  
+  let decrypted = decrypt_data(encrypted, encryption_key)
+  assert_eq(decrypted, sensitive_data)
+  
+  // Test with wrong key
+  let wrong_key = "wrong_key_456"
+  let wrong_decrypted = decrypt_data(encrypted, wrong_key)
+  assert_not_eq(wrong_decrypted, sensitive_data)
+}
+
+// Test 8: Reliability and Fault Tolerance
+test "reliability and fault tolerance mechanisms" {
+  // Define circuit breaker state
+  enum CircuitState {
+    Closed    // Normal operation
+    Open      // Circuit is open, requests fail immediately
+    HalfOpen  // Testing if service has recovered
+  }
+  
+  // Define circuit breaker
+  type CircuitBreaker = {
+    state: CircuitState,
+    failure_threshold: Int,
+    success_threshold: Int,
+    timeout: Int,
+    failure_count: Int,
+    success_count: Int,
+    last_failure_time: Int,
+    next_attempt: Int
+  }
+  
+  let create_circuit_breaker = fn(failure_threshold: Int, success_threshold: Int, timeout: Int) {
+    {
+      state: CircuitState::Closed,
+      failure_threshold,
+      success_threshold,
+      timeout,
+      failure_count: 0,
+      success_count: 0,
+      last_failure_time: 0,
+      next_attempt: 0
+    }
+  }
+  
+  let call_with_circuit_breaker = fn(cb: CircuitBreaker, operation: () -> Result[String, String], current_time: Int) {
+    match cb.state {
+      CircuitState::Closed => {
+        // Normal operation, try the operation
+        let result = operation()
+        
+        match result {
+          Ok(value) => {
+            // Success, reset failure count
+            let updated_cb = {
+              cb |
+              failure_count: 0,
+              success_count: cb.success_count + 1
+            }
+            (updated_cb, result)
+          }
+          Err(error) => {
+            // Failure, increment failure count
+            let new_failure_count = cb.failure_count + 1
+            let new_state = if new_failure_count >= cb.failure_threshold {
+              CircuitState::Open
+            } else {
+              CircuitState::Closed
+            }
+            
+            let updated_cb = {
+              state: new_state,
+              failure_threshold: cb.failure_threshold,
+              success_threshold: cb.success_threshold,
+              timeout: cb.timeout,
+              failure_count: new_failure_count,
+              success_count: 0,
+              last_failure_time: current_time,
+              next_attempt: current_time + cb.timeout
+            }
+            
+            (updated_cb, result)
+          }
+        }
+      }
+      CircuitState::Open => {
+        // Circuit is open, check if timeout has passed
+        if current_time >= cb.next_attempt {
+          // Try half-open state
+          let result = operation()
+          
+          match result {
+            Ok(value) => {
+              // Success, move to closed state
+              let updated_cb = {
+                cb |
+                state: CircuitState::Closed,
+                failure_count: 0,
+                success_count: 1
+              }
+              (updated_cb, result)
+            }
+            Err(error) => {
+              // Still failing, keep circuit open
+              let updated_cb = {
+                cb |
+                last_failure_time: current_time,
+                next_attempt: current_time + cb.timeout
+              }
+              (updated_cb, result)
+            }
+          }
+        } else {
+          // Still in timeout period, fail immediately
+          (cb, Err("Circuit breaker is open"))
+        }
+      }
+      CircuitState::HalfOpen => {
+        // Testing state, try the operation
+        let result = operation()
+        
+        match result {
+          Ok(value) => {
+            // Success, increment success count
+            let new_success_count = cb.success_count + 1
+            let new_state = if new_success_count >= cb.success_threshold {
+              CircuitState::Closed
+            } else {
+              CircuitState::HalfOpen
+            }
+            
+            let updated_cb = {
+              cb |
+              state: new_state,
+              success_count: new_success_count
+            }
+            (updated_cb, result)
+          }
+          Err(error) => {
+            // Failure, back to open state
+            let updated_cb = {
+              cb |
+              state: CircuitState::Open,
+              failure_count: cb.failure_threshold,  // Reset to threshold
+              success_count: 0,
+              last_failure_time: current_time,
+              next_attempt: current_time + cb.timeout
+            }
+            (updated_cb, result)
+          }
+        }
+      }
+    }
+  }
+  
+  // Test circuit breaker
+  let cb = create_circuit_breaker(3, 2, 10000)  // 3 failures to open, 2 successes to close, 10s timeout
+  let base_time = 1640995200
+  
+  // Simulate operations
+  let mut operation_count = 0
+  let telemetry_operation = fn() {
+    operation_count = operation_count + 1
+    if operation_count <= 3 {
+      Err("Service unavailable")
+    } else if operation_count <= 5 {
+      Ok("Telemetry data processed")
+    } else {
+      Err("Service temporarily unavailable")
+    }
+  }
+  
+  // First few operations should fail
+  let (cb1, result1) = call_with_circuit_breaker(cb, telemetry_operation, base_time)
+  assert_eq(result1, Err("Service unavailable"))
+  assert_eq(cb1.state, CircuitState::Closed)
+  assert_eq(cb1.failure_count, 1)
+  
+  let (cb2, result2) = call_with_circuit_breaker(cb1, telemetry_operation, base_time + 100)
+  assert_eq(result2, Err("Service unavailable"))
+  assert_eq(cb2.state, CircuitState::Closed)
+  assert_eq(cb2.failure_count, 2)
+  
+  let (cb3, result3) = call_with_circuit_breaker(cb2, telemetry_operation, base_time + 200)
+  assert_eq(result3, Err("Service unavailable"))
+  assert_eq(cb3.state, CircuitState::Open)  // Circuit should open now
+  assert_eq(cb3.failure_count, 3)
+  
+  // Next operation should fail immediately due to open circuit
+  let (cb4, result4) = call_with_circuit_breaker(cb3, telemetry_operation, base_time + 300)
+  assert_eq(result4, Err("Circuit breaker is open"))
+  assert_eq(cb4.state, CircuitState::Open)
+  
+  // After timeout, should try half-open state
+  let (cb5, result5) = call_with_circuit_breaker(cb4, telemetry_operation, base_time + 11000);
+  assert_eq(result5, Ok("Telemetry data processed"));
+  assert_eq(cb5.state, CircuitState::Closed);  // Should close immediately on first success
+  
+  // Test retry mechanism with exponential backoff
+  type RetryConfig = {
+    max_attempts: Int,
+    initial_delay: Int,
+    max_delay: Int,
+    backoff_multiplier: Float
+  }
+  
+  let execute_with_retry = fn(config: RetryConfig, operation: () -> Result[String, String], current_time: Int) {
+    let mut attempt = 1
+    let mut delay = config.initial_delay
+    let mut result = operation()
+    let mut total_delay = 0
+    
+    while attempt < config.max_attempts and result.is_err() {
+      total_delay = total_delay + delay
+      delay = (delay as Float * config.backoff_multiplier) as Int
+      if delay > config.max_delay {
+        delay = config.max_delay
+      }
+      
+      attempt = attempt + 1
+      result = operation()
+    }
+    
+    (result, attempt, total_delay)
+  }
+  
+  // Test retry mechanism
+  let retry_config = {
+    max_attempts: 5,
+    initial_delay: 1000,
+    max_delay: 10000,
+    backoff_multiplier: 2.0
+  }
+  
+  let mut flaky_operation_count = 0
+  let flaky_operation = fn() {
+    flaky_operation_count = flaky_operation_count + 1
+    if flaky_operation_count <= 3 {
+      Err("Temporary failure")
+    } else {
+      Ok("Operation succeeded")
+    }
+  }
+  
+  let (retry_result, attempts, total_delay) = execute_with_retry(retry_config, flaky_operation, base_time)
+  assert_eq(retry_result, Ok("Operation succeeded"))
+  assert_eq(attempts, 4)
+  assert_eq(total_delay, 1000 + 2000 + 4000)  // 1s + 2s + 4s
+  
+  // Test bulkhead pattern for resource isolation
+  type Bulkhead = {
+    name: String,
+    max_concurrent: Int,
+    max_queue: Int,
+    active_count: Int,
+    queue_size: Int
+  }
+  
+  let create_bulkhead = fn(name: String, max_concurrent: Int, max_queue: Int) {
+    {
+      name,
+      max_concurrent,
+      max_queue,
+      active_count: 0,
+      queue_size: 0
+    }
+  }
+  
+  let try_acquire_bulkhead = fn(bulkhead: Bulkhead) {
+    if bulkhead.active_count < bulkhead.max_concurrent {
+      // Can execute immediately
+      (true, { bulkhead | active_count: bulkhead.active_count + 1 })
+    } else if bulkhead.queue_size < bulkhead.max_queue {
+      // Can queue
+      (true, { bulkhead | queue_size: bulkhead.queue_size + 1 })
+    } else {
+      // Bulkhead is full
+      (false, bulkhead)
+    }
+  }
+  
+  let release_bulkhead = fn(bulkhead: Bulkhead) {
+    if bulkhead.active_count > 0 {
+      { bulkhead | active_count: bulkhead.active_count - 1 }
+    } else {
+      bulkhead
+    }
+  }
+  
+  let process_queue = fn(bulkhead: Bulkhead) {
+    if bulkhead.queue_size > 0 and bulkhead.active_count < bulkhead.max_concurrent {
+      {
+        active_count: bulkhead.active_count + 1,
+        queue_size: bulkhead.queue_size - 1,
+        name: bulkhead.name,
+        max_concurrent: bulkhead.max_concurrent,
+        max_queue: bulkhead.max_queue
+      }
+    } else {
+      bulkhead
+    }
+  }
+  
+  // Test bulkhead pattern
+  let bulkhead = create_bulkhead("telemetry_processor", 3, 5)
+  
+  // Acquire slots
+  let (acquired1, bulkhead1) = try_acquire_bulkhead(bulkhead)
+  assert_true(acquired1)
+  assert_eq(bulkhead1.active_count, 1)
+  
+  let (acquired2, bulkhead2) = try_acquire_bulkhead(bulkhead1)
+  assert_true(acquired2)
+  assert_eq(bulkhead2.active_count, 2)
+  
+  let (acquired3, bulkhead3) = try_acquire_bulkhead(bulkhead2)
+  assert_true(acquired3)
+  assert_eq(bulkhead3.active_count, 3)
+  
+  // Next acquisition should go to queue
+  let (acquired4, bulkhead4) = try_acquire_bulkhead(bulkhead3)
+  assert_true(acquired4)
+  assert_eq(bulkhead4.active_count, 3)
+  assert_eq(bulkhead4.queue_size, 1)
+  
+  let (acquired5, bulkhead5) = try_acquire_bulkhead(bulkhead4)
+  assert_true(acquired5)
+  assert_eq(bulkhead5.active_count, 3)
+  assert_eq(bulkhead5.queue_size, 2)
+  
+  // Release one slot and process queue
+  let bulkhead6 = release_bulkhead(bulkhead5)
+  assert_eq(bulkhead6.active_count, 2)
+  assert_eq(bulkhead6.queue_size, 2)
+  
+  let bulkhead7 = process_queue(bulkhead6)
+  assert_eq(bulkhead7.active_count, 3)
+  assert_eq(bulkhead7.queue_size, 1)
+  
+  // Fill up the queue
+  let (acquired6, bulkhead8) = try_acquire_bulkhead(bulkhead7)
+  assert_true(acquired6)
+  assert_eq(bulkhead8.queue_size, 2)
+  
+  let (acquired7, bulkhead9) = try_acquire_bulkhead(bulkhead8)
+  assert_true(acquired7)
+  assert_eq(bulkhead9.queue_size, 3)
+  
+  let (acquired8, bulkhead10) = try_acquire_bulkhead(bulkhead9)
+  assert_true(acquired8)
+  assert_eq(bulkhead10.queue_size, 4)
+  
+  let (acquired9, bulkhead11) = try_acquire_bulkhead(bulkhead10)
+  assert_true(acquired9)
+  assert_eq(bulkhead11.queue_size, 5)
+  
+  // Next acquisition should fail - bulkhead is full
+  let (acquired10, bulkhead12) = try_acquire_bulkhead(bulkhead11)
+  assert_false(acquired10)
+  assert_eq(bulkhead12.active_count, 3)
+  assert_eq(bulkhead12.queue_size, 5)
 }

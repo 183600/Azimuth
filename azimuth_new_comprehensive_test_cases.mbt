@@ -1,66 +1,211 @@
 // Azimuth Telemetry System - New Comprehensive Test Cases
-// This file contains comprehensive test cases for various telemetry system features
+// This file contains new test cases covering various aspects of the telemetry system
 
-// Test 1: Telemetry Data Serialization
-test "telemetry data serialization" {
-  // Test span serialization
-  let span_ctx = SpanContext::new("trace_123", "span_456", true, "active")
-  let span = Span::new("test_operation", Server, span_ctx)
-  Span::add_event(span, "operation_start", Some([("component", StringValue("database"))]))
-  Span::set_status(span, Ok, Some("Operation completed successfully"))
+// Test 1: Telemetry Data Pipeline Integration
+test "telemetry data pipeline integration" {
+  // Create a telemetry pipeline
+  let pipeline = TelemetryPipeline::new()
   
-  // Serialize span to bytes
-  let serialized = Span::serialize(span)
-  assert_true(serialized.length() > 0)
+  // Configure pipeline with processors
+  let batch_processor = BatchProcessor::new(100, 5000) // batch_size, flush_interval_ms
+  TelemetryPipeline::add_processor(pipeline, batch_processor)
   
-  // Deserialize span from bytes
-  match Span::deserialize(serialized) {
-    Some(deserialized_span) => {
-      assert_eq(Span::name(deserialized_span), "test_operation")
-      assert_eq(SpanContext::trace_id(Span::span_context(deserialized_span)), "trace_123")
-      assert_eq(SpanContext::span_id(Span::span_context(deserialized_span)), "span_456")
-    }
-    None => assert_true(false)
-  }
+  // Create and configure exporter
+  let exporter = ConsoleExporter::new()
+  TelemetryPipeline::set_exporter(pipeline, exporter)
   
-  // Test metrics serialization
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "serialization_test")
-  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  Counter::add(counter, 42.5, Some(Attributes::new()))
+  // Initialize pipeline
+  TelemetryPipeline::initialize(pipeline)
   
-  let serialized_metrics = Meter::serialize_metrics(meter)
-  assert_true(serialized_metrics.length() > 0)
+  // Create test telemetry data
+  let span_data = SpanData::new(
+    "test_operation",
+    SpanContext::new("trace123", "span456", true, ""),
+    Timestamp::now(),
+    Attributes::new()
+  )
+  
+  // Process telemetry data
+  let result = TelemetryPipeline::process(pipeline, span_data)
+  assert_true(result)
+  
+  // Shutdown pipeline
+  TelemetryPipeline::shutdown(pipeline)
 }
 
-// Test 2: Cross-Service Telemetry Propagation
-test "cross-service telemetry propagation" {
-  // Create initial span context
-  let original_ctx = SpanContext::new("trace_789", "span_101", true, "active")
+// Test 2: Advanced Metrics Aggregation
+test "advanced metrics aggregation" {
+  let meter_provider = MeterProvider::new()
+  let meter = MeterProvider::get_meter(meter_provider, "aggregation_test")
   
-  // Test context propagation via headers
-  let headers = SpanContext::to_headers(original_ctx)
-  assert_true(headers.length() >= 2) // At least trace-id and span-id
+  // Create counter with aggregation
+  let counter = Meter::create_counter(
+    meter, 
+    "request_count", 
+    Some("Total number of requests"), 
+    Some("count")
+  )
   
-  // Test context extraction from headers
-  match SpanContext::from_headers(headers) {
-    Some(extracted_ctx) => {
-      assert_eq(SpanContext::trace_id(extracted_ctx), "trace_789")
-      assert_eq(SpanContext::span_id(extracted_ctx), "span_101")
-      assert_true(SpanContext::is_sampled(extracted_ctx))
+  // Add measurements with different attributes
+  let success_attrs = Attributes::from_array([("status", StringValue("success"))])
+  let error_attrs = Attributes::from_array([("status", StringValue("error"))])
+  
+  Counter::add(counter, 100.0, Some(success_attrs))
+  Counter::add(counter, 5.0, Some(error_attrs))
+  
+  // Create histogram with aggregation
+  let response_time = Meter::create_histogram(
+    meter,
+    "response_time",
+    Some("Request response time"),
+    Some("ms")
+  )
+  
+  // Record different response times
+  Histogram::record(response_time, 100.0, Some(success_attrs))
+  Histogram::record(response_time, 200.0, Some(success_attrs))
+  Histogram::record(response_time, 5000.0, Some(error_attrs))
+  
+  // Verify aggregation results
+  let metrics = MeterProvider::collect_metrics(meter_provider)
+  assert_true(metrics.length() > 0)
+  
+  // Find our counter metric
+  let counter_metric = @metrics.find(fn(m) { Metric::name(m) == "request_count" })
+  match counter_metric {
+    Some(metric) => {
+      match Metric::data(metric) {
+        SumData(points) => {
+          let total = @points.reduce(0.0, fn(acc, p) { acc + Point::value(p) })
+          assert_eq(total, 105.0)
+        }
+        _ => assert_true(false)
+      }
     }
     None => assert_true(false)
   }
+}
+
+// Test 3: Concurrent Telemetry Processing
+test "concurrent telemetry processing" {
+  let telemetry_service = TelemetryService::new()
+  TelemetryService::start(telemetry_service)
   
-  // Test baggage propagation
+  // Create multiple spans concurrently
+  let span_count = 10
+  let mut results = []
+  
+  for i in 0..<span_count {
+    let span_name = "concurrent_span_" + i.to_string()
+    let span_future = async {
+      let span = TelemetryService::create_span(telemetry_service, span_name)
+      Span::add_event(span, "start_event", None)
+      
+      // Simulate some work
+      await Async::sleep(10)
+      
+      Span::add_event(span, "end_event", None)
+      Span::end(span)
+      
+      return span_name
+    }
+    
+    results.push(span_future)
+  }
+  
+  // Wait for all operations to complete
+  let completed_results = Async::wait_all(results)
+  assert_eq(completed_results.length(), span_count)
+  
+  // Verify all spans were created and processed
+  let processed_spans = TelemetryService::get_processed_spans(telemetry_service)
+  assert_true(processed_spans.length() >= span_count)
+  
+  TelemetryService::stop(telemetry_service)
+}
+
+// Test 4: Error Recovery and Resilience
+test "error recovery and resilience" {
+  let resilient_processor = ResilientProcessor::new()
+  
+  // Configure retry policy
+  let retry_policy = RetryPolicy::exponential_backoff(3, 100, 2000) // max_retries, base_delay_ms, max_delay_ms
+  ResilientProcessor::set_retry_policy(resilient_processor, retry_policy)
+  
+  // Configure circuit breaker
+  let circuit_breaker = CircuitBreaker::new(5, 10000, 30000) // failure_threshold, recovery_timeout_ms, expected_recovery_time_ms
+  ResilientProcessor::set_circuit_breaker(resilient_processor, circuit_breaker)
+  
+  // Test successful processing
+  let success_data = TestData::new("success")
+  let result = ResilientProcessor::process(resilient_processor, success_data)
+  assert_true(result)
+  
+  // Test processing with failures that should be retried
+  let retry_data = TestData::with_failure("retry", 2) // Will fail 2 times then succeed
+  let retry_result = ResilientProcessor::process(resilient_processor, retry_data)
+  assert_true(retry_result)
+  
+  // Test processing with too many failures (circuit breaker should open)
+  let fail_data = TestData::with_failure("always_fail", 10) // Will always fail
+  let mut circuit_opened = false
+  
+  for i in 0..<10 {
+    let fail_result = ResilientProcessor::process(resilient_processor, fail_data)
+    if !fail_result {
+      // Check if circuit breaker is open
+      if CircuitBreaker::is_open(circuit_breaker) {
+        circuit_opened = true
+        break
+      }
+    }
+  }
+  
+  assert_true(circuit_opened)
+}
+
+// Test 5: Context Propagation Across Boundaries
+test "context propagation across boundaries" {
+  // Create initial context with trace information
+  let initial_context = Context::root()
+  let trace_context = TraceContext::new("trace123", "span456", true)
+  let context_with_trace = Context::with_value(
+    initial_context, 
+    ContextKey::trace(), 
+    trace_context
+  )
+  
+  // Add baggage to context
   let baggage = Baggage::new()
-  let updated_baggage = Baggage::set_entry(baggage, "user.id", "user_123")
-  let baggage_headers = Baggage::to_headers(updated_baggage)
+  let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "user123")
+  let context_with_baggage = Context::with_value(
+    context_with_trace,
+    ContextKey::baggage(),
+    baggage_with_entry
+  )
   
-  match Baggage::from_headers(baggage_headers) {
-    Some(extracted_baggage) => {
-      match Baggage::get_entry(extracted_baggage, "user.id") {
-        Some(value) => assert_eq(value, "user_123")
+  // Simulate cross-service context propagation
+  let propagated_context = ContextPropagator::inject(context_with_baggage)
+  let extracted_context = ContextPropagator::extract(propagated_context)
+  
+  // Verify trace context was propagated correctly
+  let extracted_trace = Context::get(extracted_context, ContextKey::trace())
+  match extracted_trace {
+    Some(TraceContext(trace_id, span_id, sampled)) => {
+      assert_eq(trace_id, "trace123")
+      assert_eq(span_id, "span456")
+      assert_true(sampled)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Verify baggage was propagated correctly
+  let extracted_baggage = Context::get(extracted_context, ContextKey::baggage())
+  match extracted_baggage {
+    Some(bag) => {
+      let user_id = Baggage::get_entry(bag, "user.id")
+      match user_id {
+        Some(value) => assert_eq(value, "user123")
         None => assert_true(false)
       }
     }
@@ -68,412 +213,267 @@ test "cross-service telemetry propagation" {
   }
 }
 
-// Test 3: Telemetry Data Aggregation
-test "telemetry data aggregation" {
-  let aggregator = TelemetryAggregator::new()
-  
-  // Add multiple span data points
-  for i in 1..=5 {
-    let span_ctx = SpanContext::new("agg_trace", "span_" + i.to_string(), true, "completed")
-    let span = Span::new("operation_" + i.to_string(), Client, span_ctx)
-    Span::set_status(span, Ok, None)
-    TelemetryAggregator::add_span(aggregator, span)
+// Test 6: Sampling Strategy Implementation
+test "sampling strategy implementation" {
+  // Test always-on sampler
+  let always_on_sampler = AlwaysOnSampler::new()
+  let sampling_decision = Sampler::should_sample(
+    always_on_sampler,
+    SpanContext::new("trace123", "span456", false, ""),
+    "test_operation",
+    Attributes::new()
+  )
+  match sampling_decision {
+    RecordAndSample => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // Test aggregation results
-  let metrics = TelemetryAggregator::get_metrics(aggregator)
-  assert_eq(metrics.total_spans, 5)
-  assert_eq(metrics.successful_operations, 5)
-  assert_eq(metrics.failed_operations, 0)
-  
-  // Add some failed operations
-  for i in 6..=8 {
-    let span_ctx = SpanContext::new("agg_trace", "span_" + i.to_string(), true, "completed")
-    let span = Span::new("operation_" + i.to_string(), Client, span_ctx)
-    Span::set_status(span, Error, Some("Operation failed"))
-    TelemetryAggregator::add_span(aggregator, span)
+  // Test always-off sampler
+  let always_off_sampler = AlwaysOffSampler::new()
+  let no_sampling_decision = Sampler::should_sample(
+    always_off_sampler,
+    SpanContext::new("trace123", "span456", false, ""),
+    "test_operation",
+    Attributes::new()
+  )
+  match no_sampling_decision {
+    Drop => assert_true(true)
+    _ => assert_true(false)
   }
   
-  let updated_metrics = TelemetryAggregator::get_metrics(aggregator)
-  assert_eq(updated_metrics.total_spans, 8)
-  assert_eq(updated_metrics.successful_operations, 5)
-  assert_eq(updated_metrics.failed_operations, 3)
-}
-
-// Test 4: Performance Metrics Collection
-test "performance metrics collection" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_test")
+  // Test trace ID ratio sampler (50% sampling)
+  let ratio_sampler = TraceIdRatioSampler::new(0.5)
+  let mut sampled_count = 0
+  let total_samples = 1000
   
-  // Test operation timer
-  let timer = Meter::create_histogram(meter, "operation_duration", Some("Operation duration"), Some("ms"))
-  
-  // Simulate operation with different durations
-  Histogram::record(timer, 100.0)
-  Histogram::record(timer, 150.0)
-  Histogram::record(timer, 200.0)
-  Histogram::record(timer, 120.0)
-  Histogram::record(timer, 180.0)
-  
-  // Test memory usage gauge
-  let memory_gauge = Meter::create_gauge(meter, "memory_usage", Some("Memory usage"), Some("bytes"))
-  Gauge::record(memory_gauge, 1024.0 * 1024.0 * 100.0) // 100MB
-  
-  // Test CPU usage counter
-  let cpu_counter = Meter::create_counter(meter, "cpu_time", Some("CPU time"), Some("seconds"))
-  Counter::add(cpu_counter, 5.5)
-  
-  // Test throughput counter
-  let throughput_counter = Meter::create_counter(meter, "operations_per_second", Some("Operations per second"), Some("ops"))
-  Counter::add(throughput_counter, 1000.0)
-  
-  // Verify metrics collection
-  let metrics = Meter::collect_metrics(meter)
-  assert_true(metrics.length() >= 4)
-  
-  // Test metric export
-  let exported = Meter::export_metrics(meter, ExportFormat::Json)
-  assert_true(exported.length() > 0)
-}
-
-// Test 5: Error Handling and Recovery
-test "error handling and recovery" {
-  let error_handler = ErrorHandler::new()
-  
-  // Test error recording
-  let error = Error::new(InternalError, "Test internal error", Some("Recovery action taken"))
-  ErrorHandler::record_error(error_handler, error)
-  
-  // Test error recovery strategy
-  let recovery_strategy = RecoveryStrategy::Retry(3, 100) // 3 retries with 100ms delay
-  let mut attempts = 0
-  let result = ErrorHandler::execute_with_recovery(error_handler, recovery_strategy, fn() {
-    attempts = attempts + 1
-    if attempts < 3 {
-      Error::new(TemporaryFailure, "Operation failed, will retry", None)
-    } else {
-      "success"
-    }
-  })
-  
-  match result {
-    Ok(value) => assert_eq(value, "success")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test circuit breaker pattern
-  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5 failures, 10s timeout
-  
-  // Simulate failures
-  for i in 1..=6 {
-    let result = CircuitBreaker::execute(circuit_breaker, fn() {
-      Error::new(ServiceUnavailable, "Service temporarily unavailable", None)
-    })
+  for i in 0..<total_samples {
+    let trace_id = "trace" + i.to_string()
+    let decision = Sampler::should_sample(
+      ratio_sampler,
+      SpanContext::new(trace_id, "span456", false, ""),
+      "test_operation",
+      Attributes::new()
+    )
     
-    if i <= 5 {
-      match result {
-        Err(ServiceUnavailable) => assert_true(true)
-        _ => assert_true(false)
-      }
-    } else {
-      // Circuit should be open now
-      match result {
-        Err(CircuitOpen) => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 6: Concurrent Safety
-test "concurrent safety" {
-  let shared_resource = ConcurrentResource::new()
-  let results = ConcurrentArray::new()
-  
-  // Test concurrent span creation
-  let mut handles = []
-  for i in 1..=10 {
-    let handle = Concurrent::spawn(fn() {
-      let span_ctx = SpanContext::new("concurrent_trace", "span_" + i.to_string(), true, "active")
-      let span = Span::new("concurrent_operation", Internal, span_ctx)
-      
-      // Simulate some work
-      Concurrent::sleep(10)
-      
-      // Add to shared resource
-      ConcurrentResource::add_span(shared_resource, span)
-      i
-    })
-    handles.push(handle)
-  }
-  
-  // Wait for all threads to complete
-  for handle in handles {
-    let result = Concurrent::join(handle)
-    ConcurrentArray::push(results, result)
-  }
-  
-  // Verify all operations completed
-  assert_eq(results.length(), 10)
-  
-  // Verify shared resource integrity
-  let spans = ConcurrentResource::get_spans(shared_resource)
-  assert_eq(spans.length(), 10)
-  
-  // Test concurrent metrics updates
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_test")
-  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent counter"), Some("count"))
-  
-  let mut counter_handles = []
-  for i in 1..=20 {
-    let handle = Concurrent::spawn(fn() {
-      Counter::add(counter, i.to_float())
-    })
-    counter_handles.push(handle)
-  }
-  
-  // Wait for all counter updates
-  for handle in counter_handles {
-    Concurrent::join(handle)
-  }
-  
-  // Verify final counter value
-  let metrics = Meter::collect_metrics(meter)
-  // Sum of 1..20 = 210
-  assert_true(metrics.exists(fn(m) { m.name == "concurrent_counter" && m.value == 210.0 }))
-}
-
-// Test 7: Resource Management Optimization
-test "resource management optimization" {
-  let resource_pool = ResourcePool::new(5) // Pool of 5 resources
-  
-  // Test resource acquisition and release
-  let mut resources = []
-  for i in 1..=5 {
-    match ResourcePool::acquire(resource_pool, 1000) { // 1s timeout
-      Some(resource) => {
-        resources.push(resource)
-        assert_true(true)
-      }
-      None => assert_true(false)
+    match decision {
+      RecordAndSample => sampled_count = sampled_count + 1
+      Drop => () // No action needed
+      _ => assert_true(false)
     }
   }
   
-  // Pool should be exhausted now
-  match ResourcePool::acquire(resource_pool, 100) { // Short timeout
-    Some(_) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Should fail as pool is exhausted
-  }
-  
-  // Release one resource
-  ResourcePool::release(resource_pool, resources[0])
-  
-  // Should be able to acquire again
-  match ResourcePool::acquire(resource_pool, 100) {
-    Some(_) => assert_true(true)
-    None => assert_true(false)
-  }
-  
-  // Release all resources
-  for resource in resources {
-    ResourcePool::release(resource_pool, resource)
-  }
-  
-  // Test memory cleanup
-  let memory_tracker = MemoryTracker::new()
-  let initial_memory = MemoryTracker::get_usage(memory_tracker)
-  
-  // Allocate some memory
-  let large_data = Array::new(1000)
-  for i in 0..1000 {
-    large_data[i] = StringValue("data_" + i.to_string())
-  }
-  
-  let allocated_memory = MemoryTracker::get_usage(memory_tracker)
-  assert_true(allocated_memory > initial_memory)
-  
-  // Explicit cleanup
-  MemoryTracker::cleanup(memory_tracker, large_data)
-  let final_memory = MemoryTracker::get_usage(memory_tracker)
-  assert_true(final_memory < allocated_memory)
+  // Verify approximately 50% were sampled (allowing for some variance)
+  let sampled_ratio = (sampled_count as Float) / (total_samples as Float)
+  assert_true(sampled_ratio > 0.4 && sampled_ratio < 0.6)
 }
 
-// Test 8: Dynamic Configuration Management
-test "dynamic configuration management" {
-  let config_manager = ConfigManager::new()
+// Test 7: Telemetry Data Quality Validation
+test "telemetry data quality validation" {
+  let validator = DataQualityValidator::new()
   
-  // Set initial configuration
-  ConfigManager::set(config_manager, "telemetry.sampling_rate", "0.1")
-  ConfigManager::set(config_manager, "telemetry.max_spans", "1000")
-  ConfigManager::set(config_manager, "telemetry.export_interval", "5000")
+  // Configure validation rules
+  Validator::add_required_attribute(validator, "service.name")
+  Validator::add_required_attribute(validator, "operation.name")
+  Validator::add_attribute_pattern(validator, "trace.id", "^[a-f0-9]{32}$")
+  Validator::add_attribute_range(validator, "duration.ms", 0, 3600000) // 0 to 1 hour
   
-  // Test configuration retrieval
-  match ConfigManager::get(config_manager, "telemetry.sampling_rate") {
-    Some(value) => assert_eq(value, "0.1")
-    None => assert_true(false)
-  }
+  // Test valid telemetry data
+  let valid_attrs = [
+    ("service.name", StringValue("test_service")),
+    ("operation.name", StringValue("test_operation")),
+    ("trace.id", StringValue("0af7651916cd43dd8448eb211c80319c")),
+    ("duration.ms", IntValue(100))
+  ]
+  let valid_data = TelemetryData::new(valid_attrs)
+  let valid_result = Validator::validate(validator, valid_data)
+  assert_true(valid_result)
   
-  // Test configuration with default value
-  let default_value = ConfigManager::get_with_default(config_manager, "telemetry.batch_size", "100")
-  assert_eq(default_value, "100")
+  // Test invalid telemetry data (missing required attribute)
+  let invalid_attrs_missing = [
+    ("service.name", StringValue("test_service")),
+    ("trace.id", StringValue("0af7651916cd43dd8448eb211c80319c")),
+    ("duration.ms", IntValue(100))
+  ]
+  let invalid_data_missing = TelemetryData::new(invalid_attrs_missing)
+  let invalid_result_missing = Validator::validate(validator, invalid_data_missing)
+  assert_false(invalid_result_missing)
   
-  // Test configuration update
-  ConfigManager::set(config_manager, "telemetry.sampling_rate", "0.5")
-  match ConfigManager::get(config_manager, "telemetry.sampling_rate") {
-    Some(value) => assert_eq(value, "0.5")
-    None => assert_true(false)
-  }
+  // Test invalid telemetry data (pattern mismatch)
+  let invalid_attrs_pattern = [
+    ("service.name", StringValue("test_service")),
+    ("operation.name", StringValue("test_operation")),
+    ("trace.id", StringValue("invalid_trace_id")),
+    ("duration.ms", IntValue(100))
+  ]
+  let invalid_data_pattern = TelemetryData::new(invalid_attrs_pattern)
+  let invalid_result_pattern = Validator::validate(validator, invalid_data_pattern)
+  assert_false(invalid_result_pattern)
   
-  // Test configuration subscription
-  let mut notification_received = false
-  let subscription_id = ConfigManager::subscribe(config_manager, "telemetry.sampling_rate", fn(old_value, new_value) {
-    notification_received = true
-    assert_eq(old_value, "0.5")
-    assert_eq(new_value, "0.8")
+  // Test invalid telemetry data (value out of range)
+  let invalid_attrs_range = [
+    ("service.name", StringValue("test_service")),
+    ("operation.name", StringValue("test_operation")),
+    ("trace.id", StringValue("0af7651916cd43dd8448eb211c80319c")),
+    ("duration.ms", IntValue(-10)) // Negative duration
+  ]
+  let invalid_data_range = TelemetryData::new(invalid_attrs_range)
+  let invalid_result_range = Validator::validate(validator, invalid_data_range)
+  assert_false(invalid_result_range)
+}
+
+// Test 8: Performance Benchmarking
+test "performance benchmarking" {
+  let benchmark = PerformanceBenchmark::new()
+  
+  // Benchmark span creation
+  let span_creation_time = Benchmark::measure(benchmark, 1000, fn() {
+    let span = Span::new("benchmark_span", Internal, SpanContext::new("trace", "span", true, ""))
+    Span::end(span)
   })
   
-  // Trigger notification
-  ConfigManager::set(config_manager, "telemetry.sampling_rate", "0.8")
+  // Benchmark attribute operations
+  let attrs = Attributes::new()
+  let attribute_time = Benchmark::measure(benchmark, 10000, fn() {
+    Attributes::set(attrs, "bench.key", StringValue("bench.value"))
+    Attributes::get(attrs, "bench.key")
+  })
   
-  // Allow time for notification (in real implementation)
-  // assert_true(notification_received)
+  // Benchmark context operations
+  let context = Context::root()
+  let key = ContextKey::new("bench.key")
+  let context_time = Benchmark::measure(benchmark, 10000, fn() {
+    let ctx_with_value = Context::with_value(context, key, "bench.value")
+    Context::get(ctx_with_value, key)
+  })
+  
+  // Verify performance is within acceptable bounds
+  // These are example thresholds - adjust based on actual requirements
+  assert_true(span_creation_time < 1000.0) // 1ms per span creation
+  assert_true(attribute_time < 100.0)   // 0.1ms per attribute operation
+  assert_true(context_time < 50.0)     // 0.05ms per context operation
+  
+  // Generate benchmark report
+  let report = Benchmark::generate_report(benchmark)
+  assert_true(report.contains("span_creation"))
+  assert_true(report.contains("attribute"))
+  assert_true(report.contains("context"))
+}
+
+// Test 9: Telemetry Storage and Retrieval
+test "telemetry storage and retrieval" {
+  let storage = TelemetryStorage::new()
+  
+  // Store different types of telemetry data
+  let span_data = SpanData::new(
+    "test_operation",
+    SpanContext::new("trace123", "span456", true, ""),
+    Timestamp::now(),
+    Attributes::from_array([("service", StringValue("test_service"))])
+  )
+  
+  let metric_data = MetricData::new(
+    "test_metric",
+    100.0,
+    Timestamp::now(),
+    Attributes::from_array([("service", StringValue("test_service"))])
+  )
+  
+  let log_data = LogData::new(
+    Info,
+    "Test log message",
+    Timestamp::now(),
+    Attributes::from_array([("service", StringValue("test_service"))])
+  )
+  
+  // Store telemetry data
+  Storage::store(storage, span_data)
+  Storage::store(storage, metric_data)
+  Storage::store(storage, log_data)
+  
+  // Query stored data
+  let all_data = Storage::query_all(storage)
+  assert_eq(all_data.length(), 3)
+  
+  // Query by time range
+  let now = Timestamp::now()
+  let time_range = TimeRange::new(now - 1000, now + 1000) // ±1 second
+  let data_in_range = Storage::query_by_time_range(storage, time_range)
+  assert_eq(data_in_range.length(), 3)
+  
+  // Query by attributes
+  let service_filter = [("service", StringValue("test_service"))]
+  let filtered_data = Storage::query_by_attributes(storage, service_filter)
+  assert_eq(filtered_data.length(), 3)
+  
+  // Query by type
+  let span_data_only = Storage::query_by_type(storage, SpanType)
+  assert_eq(span_data_only.length(), 1)
+  
+  let metric_data_only = Storage::query_by_type(storage, MetricType)
+  assert_eq(metric_data_only.length(), 1)
+  
+  let log_data_only = Storage::query_by_type(storage, LogType)
+  assert_eq(log_data_only.length(), 1)
+  
+  // Test data retention
+  Storage::set_retention_policy(storage, 86400000) // 24 hours
+  Storage::cleanup_expired_data(storage)
+  
+  // Verify data is still within retention period
+  let remaining_data = Storage::query_all(storage)
+  assert_eq(remaining_data.length(), 3)
+}
+
+// Test 10: Telemetry Configuration Management
+test "telemetry configuration management" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Load default configuration
+  let default_config = Configuration::default()
+  ConfigurationManager::load_config(config_manager, default_config)
+  
+  // Verify default values
+  assert_eq(ConfigurationManager::get_sampling_rate(config_manager), 1.0)
+  assert_eq(ConfigurationManager::get_batch_size(config_manager), 512)
+  assert_eq(ConfigurationManager::get_export_timeout_ms(config_manager), 30000)
+  
+  // Update configuration
+  let updated_config = Configuration::new()
+    .with_sampling_rate(0.5)
+    .with_batch_size(1024)
+    .with_export_timeout_ms(60000)
+    .with_enabled_attributes(["service.name", "operation.name"])
+  
+  ConfigurationManager::update_config(config_manager, updated_config)
+  
+  // Verify updated values
+  assert_eq(ConfigurationManager::get_sampling_rate(config_manager), 0.5)
+  assert_eq(ConfigurationManager::get_batch_size(config_manager), 1024)
+  assert_eq(ConfigurationManager::get_export_timeout_ms(config_manager), 60000)
+  
+  let enabled_attrs = ConfigurationManager::get_enabled_attributes(config_manager)
+  assert_eq(enabled_attrs.length(), 2)
+  assert_true(enabled_attrs.contains("service.name"))
+  assert_true(enabled_attrs.contains("operation.name"))
+  
+  // Test configuration validation
+  let invalid_config = Configuration::new()
+    .with_sampling_rate(1.5) // Invalid: > 1.0
+    .with_batch_size(0)      // Invalid: <= 0
+  
+  let validation_result = ConfigurationManager::validate_config(invalid_config)
+  assert_false(validation_result.is_valid)
+  assert_true(validation_result.errors.length() > 0)
   
   // Test configuration persistence
-  ConfigManager::save(config_manager, "test_config.json")
+  let temp_config_path = "/tmp/azimuth_test_config.json"
+  ConfigurationManager::save_to_file(config_manager, temp_config_path)
   
-  // Test configuration loading
-  let new_config_manager = ConfigManager::new()
-  ConfigManager::load(new_config_manager, "test_config.json")
+  let new_config_manager = ConfigurationManager::new()
+  ConfigurationManager::load_from_file(new_config_manager, temp_config_path)
   
-  match ConfigManager::get(new_config_manager, "telemetry.sampling_rate") {
-    Some(value) => assert_eq(value, "0.8")
-    None => assert_true(false)
-  }
-}
-
-// Test 9: Internationalization Support
-test "internationalization support" {
-  let i18n = I18n::new()
-  
-  // Test locale setting
-  I18n::set_locale(i18n, "zh-CN")
-  assert_eq(I18n::get_locale(i18n), "zh-CN")
-  
-  // Test message translation
-  I18n::add_message(i18n, "en", "operation.success", "Operation completed successfully")
-  I18n::add_message(i18n, "zh-CN", "operation.success", "操作成功完成")
-  I18n::add_message(i18n, "es", "operation.success", "Operación completada con éxito")
-  
-  // Test message retrieval in different locales
-  I18n::set_locale(i18n, "en")
-  assert_eq(I18n::get_message(i18n, "operation.success"), "Operation completed successfully")
-  
-  I18n::set_locale(i18n, "zh-CN")
-  assert_eq(I18n::get_message(i18n, "operation.success"), "操作成功完成")
-  
-  I18n::set_locale(i18n, "es")
-  assert_eq(I18n::get_message(i18n, "operation.success"), "Operación completada con éxito")
-  
-  // Test fallback to default locale
-  I18n::set_locale(i18n, "fr") // French not configured
-  assert_eq(I18n::get_message(i18n, "operation.success"), "Operation completed successfully") // Falls back to English
-  
-  // Test message formatting with parameters
-  I18n::add_message(i18n, "en", "operation.duration", "Operation completed in {0} ms")
-  I18n::add_message(i18n, "zh-CN", "operation.duration", "操作在 {0} 毫秒内完成")
-  
-  I18n::set_locale(i18n, "en")
-  let formatted_en = I18n::format_message(i18n, "operation.duration", ["250"])
-  assert_eq(formatted_en, "Operation completed in 250 ms")
-  
-  I18n::set_locale(i18n, "zh-CN")
-  let formatted_zh = I18n::format_message(i18n, "operation.duration", ["250"])
-  assert_eq(formatted_zh, "操作在 250 毫秒内完成")
-  
-  // Test RTL language support
-  I18n::add_message(i18n, "ar", "operation.success", "تمت العملية بنجاح")
-  I18n::set_locale(i18n, "ar")
-  assert_eq(I18n::get_message(i18n, "operation.success"), "تمت العملية بنجاح")
-  assert_true(I18n::is_rtl(i18n))
-}
-
-// Test 10: Boundary Conditions and Exception Handling
-test "boundary conditions and exception handling" {
-  // Test empty string handling
-  let empty_str = ""
-  assert_eq(empty_str.length(), 0)
-  assert_true(empty_str == "")
-  
-  // Test maximum values
-  let max_int = 2147483647
-  let min_int = -2147483648
-  assert_true(max_int > 0)
-  assert_true(min_int < 0)
-  
-  // Test array boundary conditions
-  let empty_array = []
-  assert_eq(empty_array.length(), 0)
-  
-  let single_element_array = [42]
-  assert_eq(single_element_array.length(), 1)
-  assert_eq(single_element_array[0], 42)
-  
-  // Test large array handling
-  let large_array = Array::new(10000)
-  for i in 0..10000 {
-    large_array[i] = i
-  }
-  assert_eq(large_array.length(), 10000)
-  assert_eq(large_array[0], 0)
-  assert_eq(large_array[9999], 9999)
-  
-  // Test numeric precision
-  let very_small_number = 0.0000001
-  let very_large_number = 1000000.0
-  assert_true(very_small_number > 0.0)
-  assert_true(very_large_number > 0.0)
-  
-  // Test exception handling with invalid operations
-  let divisor = 0
-  let dividend = 10
-  
-  // Safe division with check
-  let result = if divisor != 0 {
-    Some(dividend / divisor)
-  } else {
-    None
-  }
-  
-  match result {
-    Some(_) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Should fail gracefully
-  }
-  
-  // Test deep recursion limit
-  let mut recursion_depth = 0
-  let max_recursion = fn(n) {
-    recursion_depth = recursion_depth + 1
-    if n > 0 && recursion_depth < 1000 { // Prevent stack overflow
-      max_recursion(n - 1)
-    } else {
-      n
-    }
-  }
-  
-  let recursion_result = max_recursion(500)
-  assert_eq(recursion_result, 0)
-  assert_true(recursion_depth <= 1000)
-  
-  // Test memory allocation limits
-  let mut allocation_success = true
-  let very_large_allocation = Array::new(1000000) // 1 million elements
-  
-  // Check if allocation succeeded
-  for i in 0..100 {
-    very_large_allocation[i] = i
-  }
-  
-  assert_eq(very_large_allocation[0], 0)
-  assert_eq(very_large_allocation[99], 99)
+  // Verify configuration was loaded correctly
+  assert_eq(ConfigurationManager::get_sampling_rate(new_config_manager), 0.5)
+  assert_eq(ConfigurationManager::get_batch_size(new_config_manager), 1024)
+  assert_eq(ConfigurationManager::get_export_timeout_ms(new_config_manager), 60000)
 }
