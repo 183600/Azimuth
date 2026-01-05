@@ -1,935 +1,460 @@
-// Azimuth Security and Encryption Test Suite
-// This file contains comprehensive test cases for security and encryption scenarios
+// Azimuth Telemetry System - Security and Encryption Tests
+// This file contains test cases for security and encryption functionality
 
-// Test 1: Basic Data Encryption
-test "basic data encryption" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "encryption_tracer")
+// Test 1: Basic Encryption and Decryption
+test "basic encryption and decryption" {
+  // Create encryption service
+  let encryption_service = EncryptionService::new()
   
-  // Create encryption configuration
-  let encryption_config = {
-    algorithm: "AES-256-GCM",
-    key_derivation: "PBKDF2",
-    key_iterations: 10000,
-    salt_length: 16
-  }
+  // Generate encryption key
+  let key = EncryptionService::generate_key(encryption_service, "AES256")
+  assert_eq(Key::algorithm(key), "AES256")
+  assert_eq(Key::size(key), 256)
   
-  // Initialize encryption
-  let encryption = Encryption::new(encryption_config)
+  // Test string encryption
+  let plaintext = "sensitive telemetry data"
+  let encrypted_data = EncryptionService::encrypt(encryption_service, key, plaintext)
   
-  // Test data to encrypt
-  let test_data = "Sensitive telemetry data that should be encrypted"
-  let test_key = "test_encryption_key_12345"
+  assert_not_eq(encrypted_data, plaintext)
+  assert_true(encrypted_data.length() > plaintext.length())
   
-  // Encrypt data
-  let encrypted_data = Encryption::encrypt(encryption, test_data, test_key)
+  // Test string decryption
+  let decrypted_data = EncryptionService::decrypt(encryption_service, key, encrypted_data)
+  assert_eq(decrypted_data, plaintext)
   
-  // Verify encryption worked
-  assert_true(encrypted_data.length() > 0)
-  assert_true(encrypted_data != test_data)
+  // Test binary data encryption
+  let binary_data = [1, 2, 3, 4, 5, 6, 7, 8]
+  let encrypted_binary = EncryptionService::encrypt_binary(encryption_service, key, binary_data)
   
-  // Decrypt data
-  let decrypted_data = Encryption::decrypt(encryption, encrypted_data, test_key)
+  assert_not_eq(encrypted_binary, binary_data)
   
-  // Verify decryption worked
-  assert_true(decrypted_data.is_some())
-  
-  match decrypted_data {
-    Some(decrypted) => {
-      assert_eq(decrypted, test_data)
-    }
-    None => assert_true(false)
-  }
-  
-  // Create a span with encrypted attributes
-  let span = Tracer::start_span(tracer, "encrypted_span")
-  
-  // Add encrypted attribute
-  let encrypted_attr = Encryption::encrypt(encryption, "user_id_12345", test_key)
-  Span::add_attribute(span, "user.id", encrypted_attr)
-  
-  // Add regular attribute
-  Span::add_attribute(span, "operation", "test")
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Verify encrypted attribute
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
-  
-  let span = spans[0]
-  assert_true(span.attributes.contains(("operation", "test")))
-  
-  // Verify user.id is encrypted
-  match span.attributes.find(fn(a) { a.0 == "user.id" }) {
-    Some((_, encrypted_value)) => {
-      assert_true(encrypted_value != "user_id_12345")
-      
-      // Decrypt the attribute value
-      let decrypted_value = Encryption::decrypt(encryption, encrypted_value, test_key)
-      match decrypted_value {
-        Some(value) => assert_eq(value, "user_id_12345")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
+  // Test binary data decryption
+  let decrypted_binary = EncryptionService::decrypt_binary(encryption_service, key, encrypted_binary)
+  assert_eq(decrypted_binary, binary_data)
 }
 
-// Test 2: End-to-End Encryption for Telemetry Data
-test "end-to-end encryption for telemetry data" {
-  // Initialize providers for different services
-  let client_provider = TelemetryProvider::new()
-  let server_provider = TelemetryProvider::new()
+// Test 2: Hashing and Message Authentication
+test "hashing and message authentication" {
+  // Create hash service
+  let hash_service = HashService::new()
   
-  // Get tracers
-  let client_tracer = TelemetryProvider::get_tracer(client_provider, "client_tracer")
-  let server_tracer = TelemetryProvider::get_tracer(server_provider, "server_tracer")
+  // Test SHA-256 hashing
+  let data = "telemetry data to hash"
+  let sha256_hash = HashService::hash(hash_service, data, "SHA256")
   
-  // Create encryption configuration
-  let encryption_config = {
-    algorithm: "AES-256-GCM",
-    key_derivation: "PBKDF2",
-    key_iterations: 10000,
-    salt_length: 16
-  }
+  assert_eq(sha256_hash.length(), 64) // SHA-256 produces 64 hex characters
+  assert_not_eq(sha256_hash, data)
   
-  // Initialize encryption with shared key
-  let client_encryption = Encryption::new(encryption_config)
-  let server_encryption = Encryption::new(encryption_config)
-  let shared_key = "shared_encryption_key_12345"
+  // Test hash verification
+  let hash_verified = HashService::verify(hash_service, data, sha256_hash, "SHA256")
+  assert_true(hash_verified)
   
-  // Client creates a span with sensitive data
-  let client_span = Tracer::start_span(client_tracer, "client_request")
+  // Test hash verification with wrong data
+  let wrong_data = "wrong telemetry data"
+  let hash_not_verified = HashService::verify(hash_service, wrong_data, sha256_hash, "SHA256")
+  assert_false(hash_not_verified)
   
-  // Add sensitive attributes
-  let sensitive_data = [
-    ("user.id", "user123"),
-    ("credit_card", "4111-1111-1111-1111"),
-    ("ssn", "123-45-6789"),
-    ("api_key", "sk_test_123456789")
-  ]
+  // Test HMAC generation
+  let hmac_key = "secret_hmac_key"
+  let hmac = HashService::hmac(hash_service, data, hmac_key, "SHA256")
   
-  for (key, value) in sensitive_data {
-    let encrypted_value = Encryption::encrypt(client_encryption, value, shared_key)
-    Span::add_attribute(client_span, key, encrypted_value)
-  }
+  assert_eq(hmac.length(), 64) // HMAC-SHA256 produces 64 hex characters
+  assert_not_eq(hmac, sha256_hash)
   
-  // Add non-sensitive attributes
-  Span::add_attribute(client_span, "operation", "process_payment")
-  Span::add_attribute(client_span, "amount", "99.99")
+  // Test HMAC verification
+  let hmac_verified = HashService::verify_hmac(hash_service, data, hmac, hmac_key, "SHA256")
+  assert_true(hmac_verified)
   
-  // Add event with encrypted data
-  let event_data = [
-    ("transaction_id", "txn_12345"),
-    ("merchant_id", "merchant_67890")
-  ]
-  
-  let mut encrypted_event_data = []
-  for (key, value) in event_data {
-    let encrypted_value = Encryption::encrypt(client_encryption, value, shared_key)
-    encrypted_event_data = encrypted_event_data.push((key, encrypted_value))
-  }
-  
-  Span::add_event(client_span, "payment_processed", Some(encrypted_event_data))
-  
-  // Serialize and send span to server
-  let serialized_span = Span::serialize(client_span)
-  let encrypted_serialized = Encryption::encrypt(client_encryption, serialized_span, shared_key)
-  
-  // Server receives and decrypts span
-  let decrypted_serialized = Encryption::decrypt(server_encryption, encrypted_serialized, shared_key)
-  
-  assert_true(decrypted_serialized.is_some())
-  
-  match decrypted_serialized {
-    Some(serialized) => {
-      // Deserialize span
-      let server_span = Span::deserialize(serialized)
-      
-      assert_true(server_span.is_some())
-      
-      match server_span {
-        Some(span) => {
-          // Verify non-sensitive attributes
-          assert_true(span.attributes.contains(("operation", "process_payment")))
-          assert_true(span.attributes.contains(("amount", "99.99")))
-          
-          // Decrypt and verify sensitive attributes
-          for (key, expected_value) in sensitive_data {
-            match span.attributes.find(fn(a) { a.0 == key }) {
-              Some((_, encrypted_value)) => {
-                let decrypted_value = Encryption::decrypt(server_encryption, encrypted_value, shared_key);
-                match decrypted_value {
-                  Some(value) => assert_eq(value, expected_value)
-                  None => assert_true(false)
-                }
-              }
-              None => assert_true(false)
-            }
-          }
-          
-          // Verify event
-          assert_eq(span.events.length(), 1)
-          let event = span.events[0]
-          assert_eq(event.name, "payment_processed")
-          
-          // Decrypt and verify event data
-          for (key, expected_value) in event_data {
-            match event.attributes.find(fn(a) { a.0 == key }) {
-              Some((_, encrypted_value)) => {
-                let decrypted_value = Encryption::decrypt(server_encryption, encrypted_value, shared_key);
-                match decrypted_value {
-                  Some(value) => assert_eq(value, expected_value)
-                  None => assert_true(false)
-                }
-              }
-              None => assert_true(false)
-            }
-          }
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  Span::end(client_span)
+  // Test HMAC verification with wrong key
+  let wrong_key = "wrong_hmac_key"
+  let hmac_not_verified = HashService::verify_hmac(hash_service, data, hmac, wrong_key, "SHA256")
+  assert_false(hmac_not_verified)
 }
 
-// Test 3: Key Rotation and Management
-test "key rotation and management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "key_rotation_tracer")
+// Test 3: Digital Signatures
+test "digital signatures" {
+  // Create key pair for digital signatures
+  let key_pair = SignatureService::generate_key_pair("RSA2048")
+  let private_key = KeyPair::private_key(key_pair)
+  let public_key = KeyPair::public_key(key_pair)
   
+  // Test data signing
+  let data = "important telemetry data"
+  let signature = SignatureService::sign(private_key, data, "SHA256")
+  
+  assert_not_eq(signature, data)
+  assert_true(signature.length() > 0)
+  
+  // Test signature verification
+  let signature_valid = SignatureService::verify(public_key, data, signature, "SHA256")
+  assert_true(signature_valid)
+  
+  // Test signature verification with wrong data
+  let wrong_data = "tampered telemetry data"
+  let signature_invalid = SignatureService::verify(public_key, wrong_data, signature, "SHA256")
+  assert_false(signature_invalid)
+  
+  // Test signature verification with wrong public key
+  let wrong_key_pair = SignatureService::generate_key_pair("RSA2048")
+  let wrong_public_key = KeyPair::public_key(wrong_key_pair)
+  let signature_wrong_key = SignatureService::verify(wrong_public_key, data, signature, "SHA256")
+  assert_false(signature_wrong_key)
+}
+
+// Test 4: Secure Key Management
+test "secure key management" {
   // Create key manager
   let key_manager = KeyManager::new()
   
-  // Generate initial key
-  let initial_key_id = KeyManager::generate_key(key_manager, "AES-256")
+  // Generate and store keys
+  let key_id1 = KeyManager::generate_key(key_manager, "AES256", "encryption_key1")
+  let key_id2 = KeyManager::generate_key(key_manager, "RSA2048", "signing_key1")
   
-  // Create encryption with initial key
-  let encryption_config = {
-    algorithm: "AES-256-GCM",
-    key_derivation: "PBKDF2",
-    key_iterations: 10000,
-    salt_length: 16
-  }
-  
-  let encryption = Encryption::new_with_key_manager(encryption_config, key_manager)
-  
-  // Encrypt data with initial key
-  let test_data = "Data encrypted with initial key"
-  let encrypted_with_initial = Encryption::encrypt_with_key(encryption, test_data, initial_key_id)
-  
-  // Verify encryption works
-  assert_true(encrypted_with_initial.length() > 0)
-  
-  // Decrypt with initial key
-  let decrypted_with_initial = Encryption::decrypt_with_key(encryption, encrypted_with_initial, initial_key_id)
-  
-  match decrypted_with_initial {
-    Some(decrypted) => assert_eq(decrypted, test_data)
-    None => assert_true(false)
-  }
-  
-  // Rotate to new key
-  let new_key_id = KeyManager::rotate_key(key_manager, initial_key_id)
-  
-  // Verify key rotation
-  assert_true(new_key_id != initial_key_id)
-  
-  // Encrypt data with new key
-  let encrypted_with_new = Encryption::encrypt_with_key(encryption, test_data, new_key_id)
-  
-  // Decrypt with new key
-  let decrypted_with_new = Encryption::decrypt_with_key(encryption, encrypted_with_new, new_key_id)
-  
-  match decrypted_with_new {
-    Some(decrypted) => assert_eq(decrypted, test_data)
-    None => assert_true(false)
-  }
-  
-  // Try to decrypt new data with old key (should fail)
-  let failed_decryption = Encryption::decrypt_with_key(encryption, encrypted_with_new, initial_key_id)
-  assert_true(failed_decryption.is_none())
-  
-  // Create a span with data encrypted with different keys
-  let span = Tracer::start_span(tracer, "key_rotation_span")
-  
-  // Add attribute encrypted with initial key
-  let old_attr = Encryption::encrypt_with_key(encryption, "old_value", initial_key_id)
-  Span::add_attribute(span, "old_attribute", old_attr)
-  
-  // Add attribute encrypted with new key
-  let new_attr = Encryption::encrypt_with_key(encryption, "new_value", new_key_id)
-  Span::add_attribute(span, "new_attribute", new_attr)
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Verify attributes can be decrypted with correct keys
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
-  
-  let span = spans[0]
-  
-  // Decrypt old attribute with initial key
-  match span.attributes.find(fn(a) { a.0 == "old_attribute" }) {
-    Some((_, encrypted_value)) => {
-      let decrypted_value = Encryption::decrypt_with_key(encryption, encrypted_value, initial_key_id);
-      match decrypted_value {
-        Some(value) => assert_eq(value, "old_value")
-        None => assert_true(false)
-      }
+  // Test key retrieval
+  let retrieved_key1 = KeyManager::get_key(key_manager, key_id1)
+  match retrieved_key1 {
+    Some(k) => {
+      assert_eq(Key::algorithm(k), "AES256")
+      assert_eq(Key::name(k), "encryption_key1")
     }
     None => assert_true(false)
   }
   
-  // Decrypt new attribute with new key
-  match span.attributes.find(fn(a) { a.0 == "new_attribute" }) {
-    Some((_, encrypted_value)) => {
-      let decrypted_value = Encryption::decrypt_with_key(encryption, encrypted_value, new_key_id);
-      match decrypted_value {
-        Some(value) => assert_eq(value, "new_value")
-        None => assert_true(false)
-      }
+  let retrieved_key2 = KeyManager::get_key(key_manager, key_id2)
+  match retrieved_key2 {
+    Some(k) => {
+      assert_eq(Key::algorithm(k), "RSA2048")
+      assert_eq(Key::name(k), "signing_key1")
     }
+    None => assert_true(false)
+  }
+  
+  // Test key rotation
+  let rotated_key_id = KeyManager::rotate_key(key_manager, key_id1)
+  let rotated_key = KeyManager::get_key(key_manager, rotated_key_id)
+  match rotated_key {
+    Some(k) => assert_eq(Key::algorithm(k), "AES256")
+    None => assert_true(false)
+  }
+  
+  // Test old key deactivation
+  let old_key = KeyManager::get_key(key_manager, key_id1)
+  match old_key {
+    Some(k) => assert_false(Key::is_active(k))
+    None => assert_true(false)
+  }
+  
+  // Test key listing
+  let active_keys = KeyManager::list_active_keys(key_manager)
+  assert_eq(active_keys.length(), 2) // 1 rotated + 1 original
+  
+  // Test key revocation
+  KeyManager::revoke_key(key_manager, key_id2)
+  let revoked_key = KeyManager::get_key(key_manager, key_id2)
+  match revoked_key {
+    Some(k) => assert_false(Key::is_active(k))
     None => assert_true(false)
   }
 }
 
-// Test 4: Secure Data Transmission
-test "secure data transmission" {
-  // Initialize providers for client and server
-  let client_provider = TelemetryProvider::new()
-  let server_provider = TelemetryProvider::new()
+// Test 5: Secure Random Number Generation
+test "secure random number generation" {
+  // Create secure random service
+  let random_service = SecureRandom::new()
   
-  // Get tracers
-  let client_tracer = TelemetryProvider::get_tracer(client_provider, "client_tracer")
-  let server_tracer = TelemetryProvider::get_tracer(server_provider, "server_tracer")
+  // Test random byte generation
+  let random_bytes = SecureRandom::generate_bytes(random_service, 32)
+  assert_eq(random_bytes.length(), 32)
   
-  // Create TLS configuration
-  let tls_config = {
-    protocol_version: "TLSv1.3",
-    cipher_suites: ["TLS_AES_256_GCM_SHA384"],
-    certificate_validation: true
+  // Verify randomness (second generation should be different)
+  let random_bytes2 = SecureRandom::generate_bytes(random_service, 32)
+  assert_neq(random_bytes, random_bytes2)
+  
+  // Test random integer generation
+  let random_int = SecureRandom::generate_int(random_service, 1, 100)
+  assert_true(random_int >= 1 && random_int <= 100)
+  
+  // Test random string generation
+  let random_string = SecureRandom::generate_string(random_service, 16)
+  assert_eq(random_string.length(), 16)
+  
+  // Test random string generation with specific characters
+  let alphanumeric_string = SecureRandom::generate_string_with_chars(
+    random_service, 
+    20, 
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  )
+  assert_eq(alphanumeric_string.length(), 20)
+  
+  // Verify all characters are alphanumeric
+  for char in alphanumeric_string.to_char_array() {
+    assert_true(char.is_alphanumeric())
   }
-  
-  // Initialize secure channel
-  let client_channel = SecureChannel::new_client(tls_config)
-  let server_channel = SecureChannel::new_server(tls_config)
-  
-  // Perform TLS handshake
-  let handshake_result = SecureChannel::handshake(client_channel, server_channel)
-  assert_true(handshake_result)
-  
-  // Client creates a span with sensitive data
-  let client_span = Tracer::start_span(client_tracer, "secure_transmission")
-  
-  // Add sensitive attributes
-  Span::add_attribute(client_span, "user.id", "user123")
-  Span::add_attribute(client_span, "session.token", "token_abc123")
-  
-  // Serialize span
-  let serialized_span = Span::serialize(client_span)
-  
-  // Transmit securely
-  let transmitted_data = SecureChannel::transmit(client_channel, serialized_span)
-  
-  // Server receives data
-  let received_data = SecureChannel::receive(server_channel, transmitted_data)
-  
-  assert_true(received_data.is_some())
-  
-  match received_data {
-    Some(data) => {
-      // Deserialize span
-      let server_span = Span::deserialize(data)
-      
-      assert_true(server_span.is_some())
-      
-      match server_span {
-        Some(span) => {
-          // Verify attributes
-          assert_true(span.attributes.contains(("user.id", "user123")))
-          assert_true(span.attributes.contains(("session.token", "token_abc123")))
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  Span::end(client_span)
 }
 
-// Test 5: Access Control and Authorization
-test "access control and authorization" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "access_control_tracer")
+// Test 6: Token-based Authentication
+test "token based authentication" {
+  // Create token service
+  let token_service = TokenService::new("secret_key")
   
-  // Create access control manager
-  let access_manager = AccessControlManager::new()
+  // Test token generation
+  let user_id = "user123"
+  let claims = [
+    ("sub", user_id),
+    ("name", "Test User"),
+    ("role", "admin")
+  ]
+  let token = TokenService::generate_token(token_service, claims, 3600) // 1 hour expiration
+  
+  assert_true(token.length() > 0)
+  assert_true(token.contains("."))
+  
+  // Test token validation
+  let validation_result = TokenService::validate_token(token_service, token)
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.user_id, user_id)
+  assert_false(validation_result.is_expired)
+  
+  // Test token claims extraction
+  let extracted_claims = TokenService::extract_claims(token_service, token)
+  assert_eq(extracted_claims.get("sub"), Some(user_id))
+  assert_eq(extracted_claims.get("name"), Some("Test User"))
+  assert_eq(extracted_claims.get("role"), Some("admin"))
+  
+  // Test token refresh
+  let refreshed_token = TokenService::refresh_token(token_service, token, 7200) // 2 hours
+  let refresh_validation = TokenService::validate_token(token_service, refreshed_token)
+  assert_true(refresh_validation.is_valid)
+  
+  // Test invalid token validation
+  let invalid_token = "invalid.token.here"
+  let invalid_validation = TokenService::validate_token(token_service, invalid_token)
+  assert_false(invalid_validation.is_valid)
+}
+
+// Test 7: Data Masking and Anonymization
+test "data masking and anonymization" {
+  // Create data protection service
+  let data_protection = DataProtection::new()
+  
+  // Test email masking
+  let email = "user@example.com"
+  let masked_email = DataProtection::mask_email(data_protection, email)
+  assert_eq(masked_email, "u***@example.com")
+  
+  // Test phone number masking
+  let phone = "+1-555-123-4567"
+  let masked_phone = DataProtection::mask_phone(data_protection, phone)
+  assert_eq(masked_phone, "+1-555-***-4567")
+  
+  // Test credit card masking
+  let credit_card = "4111111111111111"
+  let masked_card = DataProtection::mask_credit_card(data_protection, credit_card)
+  assert_eq(masked_card, "************1111")
+  
+  // Test data anonymization
+  let personal_data = "John Doe, 123 Main St, New York, NY"
+  let anonymized_data = DataProtection::anonymize(data_protection, personal_data)
+  assert_not_eq(anonymized_data, personal_data)
+  assert_false(anonymized_data.contains("John Doe"))
+  assert_false(anonymized_data.contains("123 Main St"))
+  
+  // Test reversible anonymization with token
+  let anonymization_token = DataProtection::generate_anonymization_token(data_protection)
+  let reversible_anonymized = DataProtection::anonymize_with_token(
+    data_protection, 
+    personal_data, 
+    anonymization_token
+  )
+  
+  let deanonymized_data = DataProtection::deanonymize_with_token(
+    data_protection, 
+    reversible_anonymized, 
+    anonymization_token
+  )
+  assert_eq(deanonymized_data, personal_data)
+}
+
+// Test 8: Access Control and Permissions
+test "access control and permissions" {
+  // Create access control service
+  let access_control = AccessControl::new()
   
   // Define roles and permissions
-  AccessControlManager::define_role(access_manager, "admin", [
-    "telemetry.read",
-    "telemetry.write",
-    "telemetry.delete",
-    "user.manage"
-  ])
+  let admin_permissions = ["read", "write", "delete", "admin"]
+  let user_permissions = ["read", "write"]
+  let guest_permissions = ["read"]
   
-  AccessControlManager::define_role(access_manager, "analyst", [
-    "telemetry.read",
-    "telemetry.write"
-  ])
+  // Create roles
+  AccessControl::create_role(access_control, "admin", admin_permissions)
+  AccessControl::create_role(access_control, "user", user_permissions)
+  AccessControl::create_role(access_control, "guest", guest_permissions)
   
-  AccessControlManager::define_role(access_manager, "viewer", [
-    "telemetry.read"
-  ])
+  // Create users with roles
+  AccessControl::create_user(access_control, "admin_user", "admin")
+  AccessControl::create_user(access_control, "normal_user", "user")
+  AccessControl::create_user(access_control, "guest_user", "guest")
   
-  // Create users
-  let admin_user = AccessControlManager::create_user(access_manager, "admin_user", ["admin"])
-  let analyst_user = AccessControlManager::create_user(access_manager, "analyst_user", ["analyst"])
-  let viewer_user = AccessControlManager::create_user(access_manager, "viewer_user", ["viewer"])
+  // Test permission checking
+  let admin_can_delete = AccessControl::has_permission(access_control, "admin_user", "delete")
+  assert_true(admin_can_delete)
   
-  // Create a span with access control
-  let span = Tracer::start_span(tracer, "access_control_span")
+  let user_can_delete = AccessControl::has_permission(access_control, "normal_user", "delete")
+  assert_false(user_can_delete)
   
-  // Add attributes with different sensitivity levels
-  Span::add_attribute(span, "public.data", "public_value")
-  Span::add_attribute(span, "internal.data", "internal_value")
-  Span::add_attribute(span, "confidential.data", "confidential_value")
+  let user_can_read = AccessControl::has_permission(access_control, "normal_user", "read")
+  assert_true(user_can_read)
   
-  // Set access control on span
-  Span::set_access_control(span, [
-    ("public.data", ["viewer", "analyst", "admin"]),
-    ("internal.data", ["analyst", "admin"]),
-    ("confidential.data", ["admin"])
-  ])
+  let guest_can_write = AccessControl::has_permission(access_control, "guest_user", "write")
+  assert_false(guest_can_write)
   
-  Span::end(span)
+  // Test resource-based access control
+  AccessControl::create_resource(access_control, "telemetry_data", ["admin", "user"])
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  let admin_can_access = AccessControl::can_access_resource(
+    access_control, 
+    "admin_user", 
+    "telemetry_data"
+  )
+  assert_true(admin_can_access)
   
-  // Get spans
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
+  let guest_can_access = AccessControl::can_access_resource(
+    access_control, 
+    "guest_user", 
+    "telemetry_data"
+  )
+  assert_false(guest_can_access)
   
-  let span = spans[0]
+  // Test attribute-based access control (ABAC)
+  let user_attributes = [
+    ("department", "engineering"),
+    ("clearance_level", "3")
+  ]
+  AccessControl::set_user_attributes(access_control, "normal_user", user_attributes)
   
-  // Test access control for different users
-  // Admin should see all attributes
-  let admin_view = AccessControlManager::filter_attributes(access_manager, span.attributes, admin_user)
-  assert_eq(admin_view.length(), 3)
-  assert_true(admin_view.contains(("public.data", "public_value")))
-  assert_true(admin_view.contains(("internal.data", "internal_value")))
-  assert_true(admin_view.contains(("confidential.data", "confidential_value")))
+  let access_policy = AccessPolicy::new(
+    "engineering_data_access",
+    "resource.department == 'engineering' && user.clearance_level >= '2'"
+  )
+  AccessControl::add_policy(access_control, access_policy)
   
-  // Analyst should see public and internal attributes
-  let analyst_view = AccessControlManager::filter_attributes(access_manager, span.attributes, analyst_user)
-  assert_eq(analyst_view.length(), 2)
-  assert_true(analyst_view.contains(("public.data", "public_value")))
-  assert_true(analyst_view.contains(("internal.data", "internal_value")))
-  assert_false(analyst_view.contains(("confidential.data", "confidential_value")))
-  
-  // Viewer should only see public attributes
-  let viewer_view = AccessControlManager::filter_attributes(access_manager, span.attributes, viewer_user)
-  assert_eq(viewer_view.length(), 1)
-  assert_true(viewer_view.contains(("public.data", "public_value")))
-  assert_false(viewer_view.contains(("internal.data", "internal_value")))
-  assert_false(viewer_view.contains(("confidential.data", "confidential_value")))
+  let can_access_engineering = AccessControl::check_policy_access(
+    access_control, 
+    "normal_user", 
+    "engineering_data", 
+    [("department", "engineering")]
+  )
+  assert_true(can_access_engineering)
 }
 
-// Test 6: Data Anonymization
-test "data anonymization" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "anonymization_tracer")
+// Test 9: Security Audit and Logging
+test "security audit and logging" {
+  // Create security audit service
+  let audit_service = SecurityAudit::new()
   
-  // Create anonymizer
-  let anonymizer = DataAnonymizer::new()
+  // Test security event logging
+  let login_event = SecurityEvent::new(
+    "authentication",
+    "success",
+    "user123",
+    "Web login",
+    [("ip_address", "192.168.1.100"), ("user_agent", "Mozilla/5.0")]
+  )
   
-  // Define anonymization rules
-  DataAnonymizer::add_rule(anonymizer, "email", AnonymizationType::Hash)
-  DataAnonymizer::add_rule(anonymizer, "ip_address", AnonymizationType::Mask)
-  DataAnonymizer::add_rule(anonymizer, "phone", AnonymizationType::PartialMask)
-  DataAnonymizer::add_rule(anonymizer, "credit_card", AnonymizationType::Tokenize)
+  SecurityAudit::log_event(audit_service, login_event)
   
-  // Create a span with PII data
-  let span = Tracer::start_span(tracer, "anonymization_span")
+  // Test security event retrieval
+  let events = SecurityAudit::get_events(audit_service, "user123", 10)
+  assert_eq(events.length(), 1)
+  assert_eq(SecurityEvent::event_type(events[0]), "authentication")
+  assert_eq(SecurityEvent::outcome(events[0]), "success")
   
-  // Add PII attributes
-  Span::add_attribute(span, "email", "user@example.com")
-  Span::add_attribute(span, "ip_address", "192.168.1.100")
-  Span::add_attribute(span, "phone", "+1-555-123-4567")
-  Span::add_attribute(span, "credit_card", "4111-1111-1111-1111")
-  Span::add_attribute(span, "non_pii", "safe_data")
+  // Test failed authentication logging
+  let failed_login_event = SecurityEvent::new(
+    "authentication",
+    "failure",
+    "user123",
+    "Failed login attempt",
+    [("ip_address", "192.168.1.100"), ("reason", "invalid_password")]
+  )
   
-  // Anonymize the span
-  let anonymized_span = DataAnonymizer::anonymize_span(anonymizer, span)
+  SecurityAudit::log_event(audit_service, failed_login_event)
   
-  Span::end(span)
+  // Test security event filtering
+  let auth_events = SecurityAudit::get_events_by_type(audit_service, "authentication", 10)
+  assert_eq(auth_events.length(), 2)
   
-  // Force export
-  TelemetryProvider::force_flush(provider)
+  let failed_events = SecurityAudit::get_events_by_outcome(audit_service, "failure", 10)
+  assert_eq(failed_events.length(), 1)
   
-  // Get spans
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
+  // Test security metrics calculation
+  let auth_metrics = SecurityAudit::calculate_metrics(audit_service, "authentication")
+  assert_eq(auth_metrics.total_events, 2)
+  assert_eq(auth_metrics.successful_events, 1)
+  assert_eq(auth_metrics.failed_events, 1)
+  assert_eq(auth_metrics.success_rate, 0.5)
   
-  let span = spans[0]
-  
-  // Verify anonymization
-  // Email should be hashed
-  match span.attributes.find(fn(a) { a.0 == "email" }) {
-    Some((_, value)) => {
-      assert_true(value != "user@example.com")
-      assert_true(value.length() == 64) // SHA-256 hash length
-    }
-    None => assert_true(false)
-  }
-  
-  // IP address should be masked
-  match span.attributes.find(fn(a) { a.0 == "ip_address" }) {
-    Some((_, value)) => {
-      assert_true(value != "192.168.1.100")
-      assert_true(value.starts_with("192.168."))
-      assert_true(value.ends_with(".0"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Phone should be partially masked
-  match span.attributes.find(fn(a) { a.0 == "phone" }) {
-    Some((_, value)) => {
-      assert_true(value != "+1-555-123-4567")
-      assert_true(value.starts_with("+1-555-"))
-      assert_true(value.ends_with("-4567"))
-      assert_true(value.contains("***"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Credit card should be tokenized
-  match span.attributes.find(fn(a) { a.0 == "credit_card" }) {
-    Some((_, value)) => {
-      assert_true(value != "4111-1111-1111-1111")
-      assert_true(value.starts_with("tok_"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Non-PII data should be unchanged
-  assert_true(span.attributes.contains(("non_pii", "safe_data")))
+  // Test security alert generation
+  let alerts = SecurityAudit::generate_alerts(audit_service)
+  assert_eq(alerts.length(), 1) // One failed login should generate an alert
+  assert_eq(Alert::type_(alerts[0]), "multiple_failed_logins")
 }
 
-// Test 7: Audit Logging
-test "audit logging" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "audit_tracer")
-  
-  // Create audit logger
-  let audit_logger = AuditLogger::new()
-  
-  // Configure audit logging
-  AuditLogger::configure(audit_logger, {
-    log_access: true,
-    log_modifications: true,
-    log_data_access: true,
-    retention_days: 365
-  })
-  
-  // Create a span with audit logging
-  let span = Tracer::start_span(tracer, "audit_span")
-  
-  // Add sensitive attributes
-  Span::add_attribute(span, "user.id", "user123")
-  Span::add_attribute(span, "operation", "data_access")
-  
-  // Log access event
-  AuditLogger::log_access(audit_logger, "user123", "telemetry", "read", "audit_span")
-  
-  // Log modification event
-  Span::add_attribute(span, "status", "modified")
-  AuditLogger::log_modification(audit_logger, "user123", "telemetry", "update", "status", "modified")
-  
-  // Log data access event
-  AuditLogger::log_data_access(audit_logger, "user123", "telemetry", "user.id", "read")
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Get audit logs
-  let audit_logs = AuditLogger::get_logs(audit_logger)
-  
-  // Verify audit logs
-  assert_eq(audit_logs.length(), 3)
-  
-  // Verify access log
-  let access_log = audit_logs.find(fn(log) { log.event_type == "access" })
-  match access_log {
-    Some(log) => {
-      assert_eq(log.user_id, "user123")
-      assert_eq(log.resource, "telemetry")
-      assert_eq(log.action, "read")
-      assert_eq(log.details, "audit_span")
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify modification log
-  let modification_log = audit_logs.find(fn(log) { log.event_type == "modification" })
-  match modification_log {
-    Some(log) => {
-      assert_eq(log.user_id, "user123")
-      assert_eq(log.resource, "telemetry")
-      assert_eq(log.action, "update")
-      assert_eq(log.field, "status")
-      assert_eq(log.old_value, "")
-      assert_eq(log.new_value, "modified")
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify data access log
-  let data_access_log = audit_logs.find(fn(log) { log.event_type == "data_access" })
-  match data_access_log {
-    Some(log) => {
-      assert_eq(log.user_id, "user123")
-      assert_eq(log.resource, "telemetry")
-      assert_eq(log.field, "user.id")
-      assert_eq(log.action, "read")
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 8: Data Integrity Verification
-test "data integrity verification" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "integrity_tracer")
-  
-  // Create integrity verifier
-  let integrity_verifier = IntegrityVerifier::new()
-  
-  // Configure integrity verification
-  IntegrityVerifier::configure(integrity_verifier, {
-    algorithm: "SHA-256",
-    include_timestamp: true,
-    include_user_id: true,
-    sign_data: true
-  })
-  
-  // Create a span
-  let span = Tracer::start_span(tracer, "integrity_span")
-  
-  // Add attributes
-  Span::add_attribute(span, "user.id", "user123")
-  Span::add_attribute(span, "operation", "data_processing")
-  Span::add_attribute(span, "record_count", "1000")
-  
-  // Calculate integrity hash
-  let integrity_hash = IntegrityVerifier::calculate_hash(integrity_verifier, span)
-  
-  // Add integrity hash to span
-  Span::add_attribute(span, "integrity.hash", integrity_hash)
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Get spans
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
-  
-  let span = spans[0]
-  
-  // Verify integrity
-  let current_hash = IntegrityVerifier::calculate_hash(integrity_verifier, span)
-  match span.attributes.find(fn(a) { a.0 == "integrity.hash" }) {
-    Some((_, original_hash)) => {
-      assert_eq(current_hash, original_hash)
-    }
-    None => assert_true(false)
-  }
-  
-  // Simulate data tampering
-  let mut tampered_span = span
-  // Change an attribute
-  for i in 0..tampered_span.attributes.length() {
-    if tampered_span.attributes[i].0 == "record_count" {
-      tampered_span.attributes[i] = ("record_count", "2000")
-    }
-  }
-  
-  // Verify integrity should fail
-  let tampered_hash = IntegrityVerifier::calculate_hash(integrity_verifier, tampered_span)
-  match tampered_span.attributes.find(fn(a) { a.0 == "integrity.hash" }) {
-    Some((_, original_hash)) => {
-      assert_true(tampered_hash != original_hash)
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 9: Secure Configuration Management
-test "secure configuration management" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "config_tracer")
-  
-  // Create secure config manager
-  let config_manager = SecureConfigManager::new()
-  
-  // Add sensitive configuration
-  SecureConfigManager::set(config_manager, "database.password", "secret_password", true)
-  SecureConfigManager::set(config_manager, "api.key", "api_key_12345", true)
-  SecureConfigManager::set(config_manager, "encryption.key", "encryption_key_67890", true)
-  
-  // Add non-sensitive configuration
-  SecureConfigManager::set(config_manager, "service.name", "telemetry_service", false)
-  SecureConfigManager::set(config_manager, "service.port", "8080", false)
-  
-  // Create a span using secure configuration
-  let span = Tracer::start_span(tracer, "config_span")
-  
-  // Access non-sensitive config
-  match SecureConfigManager::get(config_manager, "service.name") {
-    Some(value) => Span::add_attribute(span, "service.name", value)
-    None => assert_true(false)
-  }
-  
-  match SecureConfigManager::get(config_manager, "service.port") {
-    Some(value) => Span::add_attribute(span, "service.port", value)
-    None => assert_true(false)
-  }
-  
-  // Access sensitive config (should be encrypted in attributes)
-  match SecureConfigManager::get(config_manager, "database.password") {
-    Some(value) => {
-      // Encrypt the sensitive value
-      let encryption_config = {
-        algorithm: "AES-256-GCM",
-        key_derivation: "PBKDF2",
-        key_iterations: 10000,
-        salt_length: 16
-      }
-      
-      let encryption = Encryption::new(encryption_config)
-      let encrypted_value = Encryption::encrypt(encryption, value, "config_key")
-      Span::add_attribute(span, "db.password", encrypted_value)
-    }
-    None => assert_true(false)
-  }
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Get spans
-  let spans = TelemetryProvider::get_collected_spans(provider)
-  assert_eq(spans.length(), 1)
-  
-  let span = spans[0]
-  
-  // Verify non-sensitive config is in plain text
-  assert_true(span.attributes.contains(("service.name", "telemetry_service")))
-  assert_true(span.attributes.contains(("service.port", "8080")))
-  
-  // Verify sensitive config is encrypted
-  match span.attributes.find(fn(a) { a.0 == "db.password" }) {
-    Some((_, encrypted_value)) => {
-      assert_true(encrypted_value != "secret_password")
-      
-      // Decrypt to verify
-      let encryption_config = {
-        algorithm: "AES-256-GCM",
-        key_derivation: "PBKDF2",
-        key_iterations: 10000,
-        salt_length: 16
-      }
-      
-      let encryption = Encryption::new(encryption_config)
-      let decrypted_value = Encryption::decrypt(encryption, encrypted_value, "config_key");
-      
-      match decrypted_value {
-        Some(value) => assert_eq(value, "secret_password")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify sensitive config is not directly accessible
-  assert_false(span.attributes.contains(("database.password", "secret_password")))
-  assert_false(span.attributes.contains(("api.key", "api_key_12345")))
-  assert_false(span.attributes.contains(("encryption.key", "encryption_key_67890")))
-}
-
-// Test 10: Security Metrics and Monitoring
-test "security metrics and monitoring" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "security_metrics_tracer")
-  let meter = TelemetryProvider::get_meter(provider, "security_meter")
-  
-  // Create security metrics
-  let encryption_operations_counter = Meter::create_counter(meter, "encryption_operations")
-  let decryption_operations_counter = Meter::create_counter(meter, "decryption_operations")
-  let key_rotations_counter = Meter::create_counter(meter, "key_rotations")
-  let access_denied_counter = Meter::create_counter(meter, "access_denied")
-  let data_breach_gauge = Meter::create_gauge(meter, "data_breach_count")
-  
-  // Create security monitor
-  let security_monitor = SecurityMonitor::new()
-  
-  // Configure security alerts
-  SecurityMonitor::add_alert_rule(security_monitor, {
-    name: "high_encryption_failures",
-    condition: "encryption_failures > 10",
-    severity: "warning",
-    action: "log"
-  })
-  
-  SecurityMonitor::add_alert_rule(security_monitor, {
-    name: "data_breach_detected",
-    condition: "data_breach_count > 0",
-    severity: "critical",
-    action: "alert"
-  })
-  
-  // Simulate security operations
-  let encryption_config = {
-    algorithm: "AES-256-GCM",
-    key_derivation: "PBKDF2",
-    key_iterations: 10000,
-    salt_length: 16
-  }
-  
-  let encryption = Encryption::new(encryption_config)
-  let test_key = "security_test_key"
-  
-  // Simulate encryption operations
-  let encryption_success_count = 15
-  let encryption_failure_count = 3
-  
-  for i in 0..encryption_success_count {
-    let test_data = "test_data_" + i.to_string()
-    let encrypted = Encryption::encrypt(encryption, test_data, test_key)
-    
-    if encrypted.length() > 0 {
-      Counter::add(encryption_operations_counter, 1.0)
-      SecurityMonitor::record_operation(security_monitor, "encryption_success")
-    }
-  }
-  
-  for i in 0..encryption_failure_count {
-    // Simulate encryption failure with invalid key
-    let test_data = "test_data_" + i.to_string()
-    let encrypted = Encryption::encrypt(encryption, test_data, "")
-    
-    if encrypted.length() == 0 {
-      SecurityMonitor::record_operation(security_monitor, "encryption_failure")
-    }
-  }
-  
-  // Simulate decryption operations
-  let decryption_success_count = 12
-  let decryption_failure_count = 2
-  
-  for i in 0..decryption_success_count {
-    let test_data = "test_data_" + i.to_string()
-    let encrypted = Encryption::encrypt(encryption, test_data, test_key)
-    let decrypted = Encryption::decrypt(encryption, encrypted, test_key)
-    
-    match decrypted {
-      Some(_) => {
-        Counter::add(decryption_operations_counter, 1.0)
-        SecurityMonitor::record_operation(security_monitor, "decryption_success")
-      }
-      None => SecurityMonitor::record_operation(security_monitor, "decryption_failure")
-    }
-  }
-  
-  // Simulate key rotation
-  let key_rotation_count = 2
-  for i in 0..key_rotation_count {
-    Counter::add(key_rotations_counter, 1.0)
-    SecurityMonitor::record_operation(security_monitor, "key_rotation")
-  }
-  
-  // Simulate access denied events
-  let access_denied_count = 5
-  for i in 0..access_denied_count {
-    Counter::add(access_denied_counter, 1.0)
-    SecurityMonitor::record_operation(security_monitor, "access_denied")
-  }
-  
-  // Simulate data breach (should trigger alert)
-  Gauge::set(data_breach_gauge, 1.0)
-  SecurityMonitor::record_operation(security_monitor, "data_breach")
-  
-  // Create a span with security monitoring
-  let span = Tracer::start_span(tracer, "security_monitoring_span")
-  
-  // Add security metrics as attributes
-  Span::add_attribute(span, "encryption_operations", encryption_success_count.to_string())
-  Span::add_attribute(span, "encryption_failures", encryption_failure_count.to_string())
-  Span::add_attribute(span, "decryption_operations", decryption_success_count.to_string())
-  Span::add_attribute(span, "decryption_failures", decryption_failure_count.to_string())
-  Span::add_attribute(span, "key_rotations", key_rotation_count.to_string())
-  Span::add_attribute(span, "access_denied", access_denied_count.to_string())
-  Span::add_attribute(span, "data_breach", "1")
-  
-  Span::end(span)
-  
-  // Force export
-  TelemetryProvider::force_flush(provider)
-  
-  // Get security alerts
-  let alerts = SecurityMonitor::get_alerts(security_monitor)
-  
-  // Verify alerts
-  assert_true(alerts.length() >= 1)
-  
-  // Should have data breach alert
-  let data_breach_alert = alerts.find(fn(alert) { alert.name == "data_breach_detected" })
-  match data_breach_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "critical")
-      assert_eq(alert.triggered, true)
-    }
-    None => assert_true(false)
-  }
-  
-  // Get security metrics
-  let metrics = TelemetryProvider::get_collected_metrics(provider)
-  
-  // Verify security metrics
-  let encryption_metrics = metrics.filter(fn(m) { m.name == "encryption_operations" })
-  let decryption_metrics = metrics.filter(fn(m) { m.name == "decryption_operations" })
-  let key_rotation_metrics = metrics.filter(fn(m) { m.name == "key_rotations" })
-  let access_denied_metrics = metrics.filter(fn(m) { m.name == "access_denied" })
-  let data_breach_metrics = metrics.filter(fn(m) { m.name == "data_breach_count" })
-  
-  assert_eq(encryption_metrics.length(), 1)
-  assert_eq(decryption_metrics.length(), 1)
-  assert_eq(key_rotation_metrics.length(), 1)
-  assert_eq(access_denied_metrics.length(), 1)
-  assert_eq(data_breach_metrics.length(), 1)
-  
-  assert_eq(encryption_metrics[0].value, encryption_success_count.to_float())
-  assert_eq(decryption_metrics[0].value, decryption_success_count.to_float())
-  assert_eq(key_rotation_metrics[0].value, key_rotation_count.to_float())
-  assert_eq(access_denied_metrics[0].value, access_denied_count.to_float())
-  assert_eq(data_breach_metrics[0].value, 1.0)
+// Test 10: Secure Telemetry Data Transmission
+test "secure telemetry data transmission" {
+  // Create secure transmitter
+  let transmitter = SecureTransmitter::new()
+  
+  // Create telemetry data
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_metric(telemetry_data, "cpu_usage", 75.5)
+  TelemetryData::add_metric(telemetry_data, "memory_usage", 60.2)
+  TelemetryData::add_tag(telemetry_data, "service", "web_server")
+  TelemetryData::add_tag(telemetry_data, "environment", "production")
+  
+  // Test data serialization
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  assert_true(serialized_data.length() > 0)
+  
+  // Test data encryption for transmission
+  let encryption_key = EncryptionService::generate_key(EncryptionService::new(), "AES256")
+  let encrypted_transmission = SecureTransmitter::encrypt_data(transmitter, serialized_data, encryption_key)
+  
+  assert_neq(encrypted_transmission, serialized_data)
+  
+  // Test data signing for integrity
+  let signing_key = KeyPair::private_key(SignatureService::generate_key_pair("RSA2048"))
+  let signed_transmission = SecureTransmitter::sign_data(transmitter, encrypted_transmission, signing_key)
+  
+  assert_neq(signed_transmission.data, encrypted_transmission)
+  assert_true(signed_transmission.signature.length() > 0)
+  
+  // Test secure transmission protocol
+  let transmission_result = SecureTransmitter::transmit(
+    transmitter, 
+    signed_transmission, 
+    "https://telemetry.example.com/api/data"
+  )
+  
+  assert_true(transmission_result.success)
+  assert_true(transmission_result.encrypted)
+  assert_true(transmission_result.signed)
+  
+  // Test secure data reception
+  let reception_result = SecureTransmitter::receive(
+    transmitter, 
+    signed_transmission, 
+    encryption_key,
+    KeyPair::public_key(SignatureService::generate_key_pair("RSA2048"))
+  )
+  
+  assert_true(reception_result.signature_valid)
+  assert_true(reception_result.decryption_successful)
+  
+  // Test received data integrity
+  let received_data = TelemetryData::deserialize(reception_result.data)
+  assert_eq(TelemetryData::get_metric(received_data, "cpu_usage"), 75.5)
+  assert_eq(TelemetryData::get_metric(received_data, "memory_usage"), 60.2)
+  assert_eq(TelemetryData::get_tag(received_data, "service"), "web_server")
+  assert_eq(TelemetryData::get_tag(received_data, "environment"), "production")
 }
