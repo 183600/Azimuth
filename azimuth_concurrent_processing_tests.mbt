@@ -1,677 +1,463 @@
-// Concurrent Processing Tests for Azimuth Telemetry System
-// This file contains test cases for concurrent processing and thread safety
+// Azimuth Telemetry System - Concurrent Processing Tests
+// This file contains comprehensive test cases for concurrent processing and thread safety
 
-// Test 1: Concurrent Span Processing
-test "concurrent span processing" {
-  let processor = ConcurrentSpanProcessor::new(1000, 2000) // 1000 batch size, 2s timeout
+// Test 1: Thread Pool Management
+test "thread pool management" {
+  let thread_pool = ThreadPool::new(4) // 4 worker threads
   
-  // Create concurrent tasks for span processing
-  let concurrent_tasks = 10
-  let spans_per_task = 500
+  // Test thread pool initialization
+  assert_eq(ThreadPool::worker_count(thread_pool), 4)
+  assert_true(ThreadPool::is_active(thread_pool))
   
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    for task_id in 1..=spans_per_task {
-      let span_ctx = SpanContext::new(
-        "concurrent_trace_" + ConcurrentTask::current_id().to_string(),
-        "concurrent_span_" + ConcurrentTask::current_id().to_string() + "_" + task_id.to_string(),
-        true,
-        "concurrent_state"
-      )
-      
-      let span = Span::new("concurrent_test", Server, span_ctx)
-      
-      // Add attributes
-      Span::set_attribute(span, "task_id", IntValue(ConcurrentTask::current_id()))
-      Span::set_attribute(span, "span_id", IntValue(task_id))
-      Span::set_attribute(span, "thread_id", StringValue(Thread::current_id().to_string()))
-      
-      // Process span concurrently
-      SpanProcessor::on_start_concurrent(processor, span)
-      
+  // Test task submission
+  let task1 = Task::new(fn() { 1 + 1 })
+  let task2 = Task::new(fn() { 2 * 3 })
+  let task3 = Task::new(fn() { 10 / 2 })
+  
+  let future1 = ThreadPool::submit(thread_pool, task1)
+  let future2 = ThreadPool::submit(thread_pool, task2)
+  let future3 = ThreadPool::submit(thread_pool, task3)
+  
+  // Test task completion
+  let result1 = Future::get(future1)
+  let result2 = Future::get(future2)
+  let result3 = Future::get(future3)
+  
+  assert_eq(result1, 2)
+  assert_eq(result2, 6)
+  assert_eq(result3, 5)
+  
+  // Test thread pool shutdown
+  ThreadPool::shutdown(thread_pool)
+  assert_false(ThreadPool::is_active(thread_pool))
+}
+
+// Test 2: Concurrent Counter Operations
+test "concurrent counter operations" {
+  let atomic_counter = AtomicCounter::new(0)
+  
+  // Test concurrent increments
+  let increment_tasks = []
+  for i = 0; i < 100; i = i + 1 {
+    let task = Task::new(fn(counter : AtomicCounter) {
+      for j = 0; j < 10; j = j + 1 {
+        AtomicCounter::increment(counter)
+      }
+    })
+    increment_tasks = increment_tasks @ [task]
+  }
+  
+  // Submit all tasks to thread pool
+  let thread_pool = ThreadPool::new(8)
+  let futures = []
+  
+  for task in increment_tasks {
+    let future = ThreadPool::submit(thread_pool, task)
+    futures = futures @ [future]
+  }
+  
+  // Wait for all tasks to complete
+  for future in futures {
+    Future::get(future)
+  }
+  
+  // Verify final count
+  assert_eq(AtomicCounter::value(atomic_counter), 1000)
+  
+  ThreadPool::shutdown(thread_pool)
+}
+
+// Test 3: Concurrent Map Operations
+test "concurrent map operations" {
+  let concurrent_map = ConcurrentMap::new()
+  
+  // Test concurrent insertions
+  let insertion_tasks = []
+  for i = 0; i < 50; i = i + 1 {
+    let task = Task::new(fn(map : ConcurrentMap, key : Int, value : String) {
+      ConcurrentMap::insert(map, key, value)
+    })
+    insertion_tasks = insertion_tasks @ [task]
+  }
+  
+  // Submit insertion tasks
+  let thread_pool = ThreadPool::new(8)
+  let futures = []
+  
+  for i = 0; i < insertion_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit(thread_pool, insertion_tasks[i], concurrent_map, i, "value_" + i.to_string())
+    futures = futures @ [future]
+  }
+  
+  // Wait for all insertions to complete
+  for future in futures {
+    Future::get(future)
+  }
+  
+  // Verify all values were inserted
+  assert_eq(ConcurrentMap::size(concurrent_map), 50)
+  
+  // Test concurrent reads
+  let read_tasks = []
+  for i = 0; i < 50; i = i + 1 {
+    let task = Task::new(fn(map : ConcurrentMap, key : Int) -> String {
+      match ConcurrentMap::get(map, key) {
+        Some(value) => value
+        None => "not_found"
+      }
+    })
+    read_tasks = read_tasks @ [task]
+  }
+  
+  // Submit read tasks
+  let read_futures = []
+  for i = 0; i < read_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit(thread_pool, read_tasks[i], concurrent_map, i)
+    read_futures = read_futures @ [future]
+  }
+  
+  // Verify all reads
+  for i = 0; i < read_futures.length(); i = i + 1 {
+    let result = Future::get(read_futures[i])
+    assert_eq(result, "value_" + i.to_string())
+  }
+  
+  ThreadPool::shutdown(thread_pool)
+}
+
+// Test 4: Concurrent Queue Operations
+test "concurrent queue operations" {
+  let concurrent_queue = ConcurrentQueue::new()
+  
+  // Test concurrent producers
+  let producer_tasks = []
+  for producer_id = 0; producer_id < 3; producer_id = producer_id + 1 {
+    let task = Task::new(fn(queue : ConcurrentQueue, id : Int) {
+      for i = 0; i < 20; i = i + 1 {
+        let item = "item_" + id.to_string() + "_" + i.to_string()
+        ConcurrentQueue::enqueue(queue, item)
+      }
+    })
+    producer_tasks = producer_tasks @ [task]
+  }
+  
+  // Test concurrent consumers
+  let consumer_tasks = []
+  for consumer_id = 0; consumer_id < 2; consumer_id = consumer_id + 1 {
+    let task = Task::new(fn(queue : ConcurrentQueue, id : Int) -> Array[String] {
+      let mut consumed_items = []
+      for i = 0; i < 30; i = i + 1 {
+        match ConcurrentQueue::dequeue(queue) {
+          Some(item) => consumed_items = consumed_items @ [item]
+          None => () // Queue might be empty
+        }
+      }
+      consumed_items
+    })
+    consumer_tasks = consumer_tasks @ [task]
+  }
+  
+  // Submit all tasks
+  let thread_pool = ThreadPool::new(8)
+  let all_futures = []
+  
+  // Submit producers
+  for task in producer_tasks {
+    let future = ThreadPool::submit(thread_pool, task, concurrent_queue, 0)
+    all_futures = all_futures @ [future]
+  }
+  
+  // Submit consumers
+  for i = 0; i < consumer_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit(thread_pool, consumer_tasks[i], concurrent_queue, i)
+    all_futures = all_futures @ [future]
+  }
+  
+  // Wait for all tasks to complete
+  let mut all_consumed_items = []
+  for i = producer_tasks.length(); i < all_futures.length(); i = i + 1 {
+    let consumed_items = Future::get(all_futures[i])
+    all_consumed_items = all_consumed_items @ consumed_items
+  }
+  
+  // Verify items were consumed
+  assert_eq(all_consumed_items.length(), 60) // 3 producers * 20 items each
+  
+  ThreadPool::shutdown(thread_pool)
+}
+
+// Test 5: Concurrent Lock Mechanisms
+test "concurrent lock mechanisms" {
+  let shared_resource = SharedResource::new(0)
+  let mutex = Mutex::new()
+  
+  // Test mutex-protected operations
+  let mutex_tasks = []
+  for i = 0; i < 10; i = i + 1 {
+    let task = Task::new_fn(resource : SharedResource, lock : Mutex) {
+      Mutex::acquire(lock)
+      let current_value = SharedResource::get_value(resource)
       // Simulate some work
-      Thread::sleep(1) // 1ms
-      
-      Span::end(span)
-      SpanProcessor::on_end_concurrent(processor, span)
+      for j = 0; j < 1000; j = j + 1 {
+        // Busy work
+      }
+      SharedResource::set_value(resource, current_value + 1)
+      Mutex::release(lock)
     }
-  })
+    mutex_tasks = mutex_tasks @ [task]
+  }
+  
+  // Submit mutex tasks
+  let thread_pool = ThreadPool::new(4)
+  let futures = []
+  
+  for task in mutex_tasks {
+    let future = ThreadPool::submit(thread_pool, task, shared_resource, mutex)
+    futures = futures @ [future]
+  }
   
   // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 10000) // 10s timeout
+  for future in futures {
+    Future::get(future)
+  }
   
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
+  // Verify final value
+  assert_eq(SharedResource::get_value(shared_resource), 10)
   
-  for result in results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
+  // Test read-write lock
+  let rw_lock = RwLock::new()
+  let shared_data = SharedData::new("initial_value")
+  
+  // Reader tasks
+  let reader_tasks = []
+  for i = 0; i < 5; i = i + 1 {
+    let task = Task::new_fn(data : SharedData, lock : RwLock) -> String {
+      RwLock::acquire_read(lock)
+      let value = SharedData::get_value(data)
+      RwLock::release_read(lock)
+      value
     }
+    reader_tasks = reader_tasks @ [task]
   }
   
-  // Force flush and verify no data loss
-  let flush_result = SpanProcessor::force_flush_concurrent(processor)
-  match flush_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Flush should succeed
+  // Writer task
+  let writer_task = Task::new_fn(data : SharedData, lock : RwLock) {
+    RwLock::acquire_write(lock)
+    SharedData::set_value(data, "modified_value")
+    RwLock::release_write(lock)
   }
   
-  // Verify total number of spans processed
-  let total_spans = concurrent_tasks * spans_per_task
-  let processed_spans = SpanProcessor::get_processed_count(processor)
-  assert_eq(processed_spans, total_spans)
+  // Submit reader tasks
+  let reader_futures = []
+  for task in reader_tasks {
+    let future = ThreadPool::submit(thread_pool, task, shared_data, rw_lock)
+    reader_futures = reader_futures @ [future]
+  }
+  
+  // Submit writer task
+  let writer_future = ThreadPool::submit(thread_pool, writer_task, shared_data, rw_lock)
+  
+  // Wait for writer to complete
+  Future::get(writer_future)
+  
+  // Wait for readers to complete
+  for future in reader_futures {
+    let result = Future::get(future)
+    // Readers should get either the initial or modified value
+    assert_true(result == "initial_value" || result == "modified_value")
+  }
+  
+  // Verify final value
+  assert_eq(SharedData::get_value(shared_data), "modified_value")
+  
+  ThreadPool::shutdown(thread_pool)
 }
 
-// Test 2: Thread-Safe Metrics Collection
-test "thread-safe metrics collection" {
-  let meter_provider = MeterProvider::new_concurrent()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent_metrics_test")
+// Test 6: Concurrent Data Structures
+test "concurrent data structures" {
+  // Test concurrent list
+  let concurrent_list = ConcurrentList::new()
   
-  // Create metrics
-  let counter = Meter::create_counter_concurrent(meter, "concurrent_counter", Some("Concurrent counter"), Some("operations"))
-  let histogram = Meter::create_histogram_concurrent(meter, "concurrent_histogram", Some("Concurrent histogram"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter_concurrent(meter, "concurrent_updown", Some("Concurrent updown counter"), Some("value"))
+  // Test concurrent additions
+  let list_tasks = []
+  for i = 0; i < 20; i = i + 1 {
+    let task = Task::new_fn(list : ConcurrentList, value : Int) {
+      ConcurrentList::add(list, value)
+    }
+    list_tasks = list_tasks @ [task]
+  }
   
-  // Create concurrent tasks for metrics collection
-  let concurrent_tasks = 20
-  let measurements_per_task = 100
+  // Submit list tasks
+  let thread_pool = ThreadPool::new(4)
+  let futures = []
   
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=measurements_per_task {
-      // Record counter measurements
-      Counter::add_concurrent(counter, 1.0)
-      
-      // Record histogram measurements with task-specific values
-      Histogram::record_concurrent(histogram, (task_id * 10.0 + i as Float))
-      
-      // Record updown counter measurements
-      if i % 2 == 0 {
-        UpDownCounter::add_concurrent(updown_counter, 1.0)
+  for i = 0; i < list_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit(thread_pool, list_tasks[i], concurrent_list, i)
+    futures = futures @ [future]
+  }
+  
+  // Wait for all additions to complete
+  for future in futures {
+    Future::get(future)
+  }
+  
+  // Verify list size
+  assert_eq(ConcurrentList::size(concurrent_list), 20)
+  
+  // Test concurrent set
+  let concurrent_set = ConcurrentSet::new()
+  
+  // Test concurrent additions (with potential duplicates)
+  let set_tasks = []
+  for i = 0; i < 10; i = i + 1 {
+    let task = Task::new_fn(set : ConcurrentSet, value : Int) {
+      ConcurrentSet::add(set, value)
+      ConcurrentSet::add(set, value) // Add duplicate
+    }
+    set_tasks = set_tasks @ [task]
+  }
+  
+  // Submit set tasks
+  let set_futures = []
+  for i = 0; i < set_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit(thread_pool, set_tasks[i], concurrent_set, i)
+    set_futures = set_futures @ [future]
+  }
+  
+  // Wait for all additions to complete
+  for future in set_futures {
+    Future::get(future)
+  }
+  
+  // Verify set size (should be 10, duplicates not counted)
+  assert_eq(ConcurrentSet::size(concurrent_set), 10)
+  
+  ThreadPool::shutdown(thread_pool)
+}
+
+// Test 7: Concurrent Pipeline Processing
+test "concurrent pipeline processing" {
+  let pipeline = ConcurrentPipeline::new(3) // 3 stages
+  
+  // Stage 1: Data generation
+  let stage1 = PipelineStage::new(
+    "generator",
+    fn(input : Int) -> Int {
+      input * 2
+    }
+  )
+  
+  // Stage 2: Data transformation
+  let stage2 = PipelineStage::new(
+    "transformer",
+    fn(input : Int) -> Int {
+      input + 10
+    }
+  )
+  
+  // Stage 3: Data validation
+  let stage3 = PipelineStage::new(
+    "validator",
+    fn(input : Int) -> Bool {
+      input > 15
+    }
+  )
+  
+  ConcurrentPipeline::add_stage(pipeline, stage1)
+  ConcurrentPipeline::add_stage(pipeline, stage2)
+  ConcurrentPipeline::add_stage(pipeline, stage3)
+  
+  // Test pipeline with multiple inputs
+  let input_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let pipeline_results = []
+  
+  for input in input_data {
+    let result = ConcurrentPipeline::process(pipeline, input)
+    pipeline_results = pipeline_results @ [result]
+  }
+  
+  // Verify pipeline results
+  assert_eq(pipeline_results.length(), 10)
+  
+  // Expected results:
+  // Input: 1 -> Stage1: 2 -> Stage2: 12 -> Stage3: false
+  // Input: 2 -> Stage1: 4 -> Stage2: 14 -> Stage3: false
+  // Input: 3 -> Stage1: 6 -> Stage2: 16 -> Stage3: true
+  // ...
+  let expected_results = [false, false, true, true, true, true, true, true, true, true]
+  
+  for i = 0; i < pipeline_results.length(); i = i + 1 {
+    assert_eq(pipeline_results[i], expected_results[i])
+  }
+  
+  // Test concurrent pipeline processing
+  let concurrent_results = ConcurrentPipeline::process_batch(pipeline, input_data)
+  assert_eq(concurrent_results.length(), 10)
+  
+  for i = 0; i < concurrent_results.length(); i = i + 1 {
+    assert_eq(concurrent_results[i], expected_results[i])
+  }
+}
+
+// Test 8: Concurrent Exception Handling
+test "concurrent exception handling" {
+  let exception_handler = ConcurrentExceptionHandler::new()
+  
+  // Test exception handling in concurrent tasks
+  let failing_tasks = []
+  for i = 0; i < 5; i = i + 1 {
+    let task = Task::new_fn(id : Int) -> Int {
+      if id % 2 == 0 {
+        // Even IDs succeed
+        id * 2
       } else {
-        UpDownCounter::add_concurrent(updown_counter, -1.0)
-      }
-      
-      // Add some attributes
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "task_id", IntValue(task_id))
-      Attributes::set(attrs, "measurement_id", IntValue(i))
-      
-      Counter::add_concurrent(counter, 0.5, Some(attrs))
-      
-      // Simulate some work
-      Thread::sleep(1) // 1ms
-    }
-  })
-  
-  // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 15000) // 15s timeout
-  
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
-  
-  for result in results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
-    }
-  }
-  
-  // Verify metrics values
-  let total_measurements = concurrent_tasks * measurements_per_task
-  let total_counter_value = total_measurements as Float * 1.5 // 1.0 + 0.5 per measurement
-  
-  let counter_value = Counter::get_value_concurrent(counter)
-  assert_eq(counter_value, total_counter_value)
-  
-  // Updown counter should be close to 0 (equal additions and subtractions)
-  let updown_value = UpDownCounter::get_value_concurrent(updown_counter)
-  assert_true(updown_value.abs() < 100.0) // Should be close to 0
-  
-  // Verify histogram has correct number of measurements
-  let histogram_count = Histogram::get_count_concurrent(histogram)
-  assert_eq(histogram_count, total_measurements as Int)
-  
-  // Verify histogram statistics
-  let histogram_sum = Histogram::get_sum_concurrent(histogram)
-  assert_true(histogram_sum > 0.0)
-  
-  let histogram_avg = histogram_sum / (histogram_count as Float)
-  assert_true(histogram_avg > 50.0) // Average should be reasonable
-}
-
-// Test 3: Concurrent Context Propagation
-test "concurrent context propagation" {
-  let propagator = TraceContextPropagator::new_concurrent()
-  
-  // Create concurrent tasks for context propagation
-  let concurrent_tasks = 15
-  let contexts_per_task = 50
-  
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=contexts_per_task {
-      // Create span context
-      let span_ctx = SpanContext::new(
-        "concurrent_trace_" + task_id.to_string(),
-        "concurrent_span_" + task_id.to_string() + "_" + i.to_string(),
-        true,
-        "concurrent_state"
-      )
-      
-      // Create context with span
-      let ctx = Context::with_value_concurrent(
-        Context::root(),
-        ContextKey::new("span_context"),
-        span_ctx
-      )
-      
-      // Add baggage
-      let baggage = Baggage::new()
-      let baggage_with_entry = Baggage::set_entry(baggage, "task_id", task_id.to_string())
-      let ctx_with_baggage = Context::with_value_concurrent(
-        ctx,
-        ContextKey::new("baggage"),
-        baggage_with_entry
-      )
-      
-      // Create carrier
-      let carrier = TextMapCarrier::new()
-      
-      // Inject context
-      Propagator::inject_concurrent(propagator, ctx_with_baggage, carrier)
-      
-      // Simulate some work
-      Thread::sleep(1) // 1ms
-      
-      // Extract context
-      let extracted_ctx = Propagator::extract_concurrent(propagator, carrier)
-      
-      // Verify extracted context
-      let extracted_span_ctx = Context::get_concurrent(extracted_ctx, ContextKey::new("span_context"))
-      match extracted_span_ctx {
-        Some(ctx) => {
-          assert_eq(SpanContext::trace_id(ctx), "concurrent_trace_" + task_id.to_string())
-          assert_eq(SpanContext::span_id(ctx), "concurrent_span_" + task_id.to_string() + "_" + i.to_string())
-        }
-        None => assert_true(false) // Span context should be found
-      }
-      
-      let extracted_baggage = Context::get_concurrent(extracted_ctx, ContextKey::new("baggage"))
-      match extracted_baggage {
-        Some(baggage) => {
-          let task_id_value = Baggage::get_entry(baggage, "task_id")
-          match task_id_value {
-            Some(value) => assert_eq(value, task_id.to_string())
-            None => assert_true(false) // Task ID should be found in baggage
-          }
-        }
-        None => assert_true(false) // Baggage should be found
+        // Odd IDs fail
+        raise ConcurrentException::new("Task failed for odd ID: " + id.to_string())
       }
     }
-  })
-  
-  // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 15000) // 15s timeout
-  
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
-  
-  for result in results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
-    }
+    failing_tasks = failing_tasks @ [task]
   }
-}
-
-// Test 4: Concurrent Resource Management
-test "concurrent resource management" {
-  let resource_manager = ConcurrentResourceManager::new()
   
-  // Create concurrent tasks for resource operations
-  let concurrent_tasks = 12
-  let operations_per_task = 100
+  // Submit tasks with exception handling
+  let thread_pool = ThreadPool::new(4)
+  let futures = []
   
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=operations_per_task {
-      // Acquire resource
-      let resource = ConcurrentResourceManager::acquire(resource_manager, "test_resource", 5000)
-      match resource {
-        Some(res) => {
-          // Use resource
-          let result = Resource::use_concurrent(res, {
-            // Simulate resource usage
-            Thread::sleep(2) // 2ms
-            
-            // Update resource state
-            Resource::set_attribute_concurrent(res, "task_id", IntValue(task_id))
-            Resource::set_attribute_concurrent(res, "operation_id", IntValue(i))
-            Resource::set_attribute_concurrent(res, "thread_id", StringValue(Thread::current_id().to_string()))
-            
-            // Return some value
-            task_id * 1000 + i
-          })
-          
-          match result {
-            Some(value) => assert_eq(value, task_id * 1000 + i)
-            None => assert_true(false) // Resource usage should succeed
-          }
-          
-          // Release resource
-          ConcurrentResourceManager::release(resource_manager, res)
-        }
-        None => assert_true(false) // Should be able to acquire resource
+  for i = 0; i < failing_tasks.length(); i = i + 1 {
+    let future = ThreadPool::submit_with_exception_handler(
+      thread_pool,
+      failing_tasks[i],
+      exception_handler,
+      i
+    )
+    futures = futures @ [future]
+  }
+  
+  // Process results and handle exceptions
+  let mut success_count = 0
+  let mut exception_count = 0
+  
+  for future in futures {
+    match Future::get_safe(future) {
+      Success(result) => {
+        success_count = success_count + 1
+        assert_eq(result % 2, 0) // Should be even
       }
-      
-      // Simulate some work between operations
-      Thread::sleep(1) // 1ms
-    }
-  })
-  
-  // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 20000) // 20s timeout
-  
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
-  
-  for result in results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
-    }
-  }
-  
-  // Verify resource manager statistics
-  let stats = ConcurrentResourceManager::get_statistics(resource_manager)
-  assert_eq(stats.total_acquisitions, concurrent_tasks * operations_per_task)
-  assert_eq(stats.total_releases, concurrent_tasks * operations_per_task)
-  assert_eq(stats.current_resources, 0) // All resources should be released
-  assert_eq(stats.max_concurrent_resources, concurrent_tasks) // Max concurrent resources used
-}
-
-// Test 5: Concurrent Data Processing Pipeline
-test "concurrent data processing pipeline" {
-  let pipeline = ConcurrentProcessingPipeline::new(4) // 4 processing stages
-  
-  // Create concurrent data source
-  let data_source = ConcurrentDataSource::new()
-  
-  // Create concurrent data sink
-  let data_sink = ConcurrentDataSink::new()
-  
-  // Configure pipeline stages
-  pipeline.add_stage(ConcurrentStage::new("validation", {
-    let data = ConcurrentStage::get_input()
-    DataValidator::validate_concurrent(data)
-  }))
-  
-  pipeline.add_stage(ConcurrentStage::new("transformation", {
-    let data = ConcurrentStage::get_input()
-    DataTransformer::transform_concurrent(data)
-  }))
-  
-  pipeline.add_stage(ConcurrentStage::new("aggregation", {
-    let data = ConcurrentStage::get_input()
-    DataAggregator::aggregate_concurrent(data)
-  }))
-  
-  pipeline.add_stage(ConcurrentStage::new("enrichment", {
-    let data = ConcurrentStage::get_input()
-    DataEnricher::enrich_concurrent(data)
-  }))
-  
-  // Create concurrent tasks for data generation
-  let concurrent_tasks = 8
-  let data_items_per_task = 200
-  
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=data_items_per_task {
-      // Create data item
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "task_id", IntValue(task_id))
-      Attributes::set(attrs, "item_id", IntValue(i))
-      Attributes::set(attrs, "timestamp", IntValue(1234567890 + task_id * 1000 + i))
-      
-      let data_item = TelemetryData::new(
-        (task_id * 100.0 + i as Float),
-        attrs,
-        1234567890L + (task_id * 1000L + i as Long)
-      )
-      
-      // Add data to source
-      ConcurrentDataSource::add(data_source, data_item)
-      
-      // Simulate data generation interval
-      Thread::sleep(1) // 1ms
-    }
-  })
-  
-  // Start pipeline processing
-  let pipeline_result = ConcurrentProcessingPipeline::start(pipeline, data_source, data_sink)
-  match pipeline_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Pipeline should start successfully
-  }
-  
-  // Wait for data generation to complete
-  let generation_results = ConcurrentTaskRunner::wait_all(task_results, 15000) // 15s timeout
-  
-  // Verify all generation tasks completed successfully
-  assert_eq(generation_results.length(), concurrent_tasks)
-  
-  for result in generation_results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
-    }
-  }
-  
-  // Wait for pipeline to process all data
-  Thread::sleep(5000) // 5s for processing
-  
-  // Stop pipeline
-  let stop_result = ConcurrentProcessingPipeline::stop(pipeline)
-  match stop_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Pipeline should stop successfully
-  }
-  
-  // Verify data processing results
-  let processed_data = ConcurrentDataSink::get_all(data_sink)
-  let expected_data_count = concurrent_tasks * data_items_per_task
-  
-  assert_eq(processed_data.length(), expected_data_count)
-  
-  // Verify data integrity
-  for data in processed_data {
-    let attrs = TelemetryData::attributes(data)
-    
-    // Check that required attributes exist
-    let task_id = Attributes::get(attrs, "task_id")
-    let item_id = Attributes::get(attrs, "item_id")
-    let timestamp = Attributes::get(attrs, "timestamp")
-    
-    assert_true(task_id.is_some())
-    assert_true(item_id.is_some())
-    assert_true(timestamp.is_some())
-    
-    // Check that processing stages added their attributes
-    let validation_status = Attributes::get(attrs, "validation_status")
-    let transformation_status = Attributes::get(attrs, "transformation_status")
-    let aggregation_status = Attributes::get(attrs, "aggregation_status")
-    let enrichment_status = Attributes::get(attrs, "enrichment_status")
-    
-    assert_true(validation_status.is_some())
-    assert_true(transformation_status.is_some())
-    assert_true(aggregation_status.is_some())
-    assert_true(enrichment_status.is_some())
-  }
-  
-  // Verify pipeline statistics
-  let pipeline_stats = ConcurrentProcessingPipeline::get_statistics(pipeline)
-  assert_eq(pipeline_stats.items_processed, expected_data_count)
-  assert_eq(pipeline_stats.items_dropped, 0) // No items should be dropped
-  assert_true(pipeline_stats.average_processing_time > 0.0)
-  assert_true(pipeline_stats.max_concurrent_items <= concurrent_tasks * 10) // Reasonable concurrency
-}
-
-// Test 6: Concurrent Batch Processing
-test "concurrent batch processing" {
-  let batch_processor = ConcurrentBatchProcessor::new(100, 1000) // 100 batch size, 1s timeout
-  
-  // Create concurrent tasks for data generation
-  let concurrent_tasks = 10
-  let data_items_per_task = 300
-  
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=data_items_per_task {
-      // Create data item
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "task_id", IntValue(task_id))
-      Attributes::set(attrs, "item_id", IntValue(i))
-      
-      let data_item = TelemetryData::new(
-        (task_id * 10.0 + i as Float),
-        attrs,
-        1234567890L + (task_id * 1000L + i as Long)
-      )
-      
-      // Add data to batch processor
-      ConcurrentBatchProcessor::add(batch_processor, data_item)
-      
-      // Simulate data generation interval
-      Thread::sleep(1) // 1ms
-    }
-  })
-  
-  // Wait for data generation to complete
-  let generation_results = ConcurrentTaskRunner::wait_all(task_results, 10000) // 10s timeout
-  
-  // Verify all generation tasks completed successfully
-  assert_eq(generation_results.length(), concurrent_tasks)
-  
-  for result in generation_results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
-    }
-  }
-  
-  // Wait for batch processing to complete
-  Thread::sleep(3000) // 3s for batch processing
-  
-  // Force flush remaining batches
-  let flush_result = ConcurrentBatchProcessor::flush(batch_processor)
-  match flush_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Flush should succeed
-  }
-  
-  // Verify batch processing results
-  let stats = ConcurrentBatchProcessor::get_statistics(batch_processor)
-  let expected_data_count = concurrent_tasks * data_items_per_task
-  
-  assert_eq(stats.items_added, expected_data_count)
-  assert_eq(stats.items_processed, expected_data_count)
-  assert_eq(stats.batches_processed, (expected_data_count + 99) / 100) // Ceiling division
-  assert_true(stats.average_batch_time > 0.0)
-  assert_true(stats.max_concurrent_batches > 0)
-  
-  // Verify no data was lost during processing
-  assert_eq(stats.items_dropped, 0)
-}
-
-// Test 7: Concurrent Error Handling
-test "concurrent error handling" {
-  let error_handler = ConcurrentErrorHandler::new()
-  
-  // Create concurrent tasks that may generate errors
-  let concurrent_tasks = 15
-  let operations_per_task = 50
-  
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    let error_count = 0
-    
-    for i in 1..=operations_per_task {
-      // Simulate operation that may fail
-      let operation_result = if i % 7 == 0 {
-        // Every 7th operation fails
-        Error(TelemetryError::new(InternalError, "Simulated error from task " + task_id.to_string() + " operation " + i.to_string()))
-      } else {
-        Success("operation_result_" + i.to_string())
+      Failure(exception) => {
+        exception_count = exception_count + 1
+        assert_true(ConcurrentException::message(exception).contains("odd ID"))
       }
-      
-      match operation_result {
-        Success(result) => {
-          // Handle successful operation
-          ConcurrentErrorHandler::handle_success(error_handler, result)
-        }
-        Error(error) => {
-          // Handle error
-          ConcurrentErrorHandler::handle_error(error_handler, error)
-          error_count = error_count + 1
-        }
-      }
-      
-      // Simulate operation time
-      Thread::sleep(2) // 2ms
-    }
-    
-    // Return error count for this task
-    error_count
-  })
-  
-  // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 15000) // 15s timeout
-  
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
-  
-  // Calculate total expected errors
-  let expected_total_errors = concurrent_tasks * (operations_per_task / 7)
-  
-  // Verify error handling statistics
-  let error_stats = ConcurrentErrorHandler::get_statistics(error_handler)
-  assert_eq(error_stats.total_operations, concurrent_tasks * operations_per_task)
-  assert_eq(error_stats.successful_operations, concurrent_tasks * operations_per_task - expected_total_errors)
-  assert_eq(error_stats.failed_operations, expected_total_errors)
-  
-  // Verify error details
-  let error_details = ConcurrentErrorHandler::get_error_details(error_handler)
-  assert_eq(error_details.length(), expected_total_errors)
-  
-  for error in error_details {
-    assert_eq(error.code, InternalError)
-    assert_true(error.message.contains("Simulated error from task"))
-    assert_true(error.message.contains("operation"))
-  }
-  
-  // Verify error recovery
-  let recovery_result = ConcurrentErrorHandler::attempt_recovery(error_handler)
-  match recovery_result {
-    Success(recovered_count) => {
-      assert_eq(recovered_count, expected_total_errors)
-    }
-    Error(_) => assert_true(false) // Recovery should succeed
-  }
-  
-  // Verify error statistics after recovery
-  let post_recovery_stats = ConcurrentErrorHandler::get_statistics(error_handler)
-  assert_eq(post_recovery_stats.recovered_errors, expected_total_errors)
-}
-
-// Test 8: Concurrent Resource Pool with Deadlock Prevention
-test "concurrent resource pool with deadlock prevention" {
-  let resource_pool = DeadlockSafeResourcePool::new(20) // 20 resources in pool
-  
-  // Create concurrent tasks that acquire multiple resources
-  let concurrent_tasks = 16
-  let operations_per_task = 30
-  
-  let task_results = ConcurrentTaskRunner::run(concurrent_tasks, {
-    let task_id = ConcurrentTask::current_id()
-    
-    for i in 1..=operations_per_task {
-      // Determine which resources to acquire (randomized to prevent lock ordering)
-      let resource_ids = []
-      
-      let resource1_id = (task_id + i) % 20
-      let resource2_id = (task_id + i * 2) % 20
-      
-      // Ensure different resource IDs
-      if resource1_id != resource2_id {
-        resource_ids.push(resource1_id)
-        resource_ids.push(resource2_id)
-      } else {
-        resource_ids.push(resource1_id)
-      }
-      
-      // Acquire resources with deadlock prevention
-      let acquired_resources = []
-      let acquisition_success = true
-      
-      for resource_id in resource_ids {
-        let resource = DeadlockSafeResourcePool::acquire_with_timeout(resource_pool, resource_id, 1000)
-        match resource {
-          Some(res) => acquired_resources.push(res)
-          None => {
-            acquisition_success = false
-            break
-          }
-        }
-      }
-      
-      if acquisition_success {
-        // Use resources
-        for res in acquired_resources {
-          let result = Resource::use_concurrent(res, {
-            // Simulate resource usage
-            Thread::sleep(3) // 3ms
-            
-            // Set resource-specific data
-            Resource::set_attribute_concurrent(res, "task_id", IntValue(task_id))
-            Resource::set_attribute_concurrent(res, "operation_id", IntValue(i))
-            
-            task_id * 1000 + i
-          })
-          
-          match result {
-            Some(value) => assert_eq(value, task_id * 1000 + i)
-            None => assert_true(false) // Resource usage should succeed
-          }
-        }
-        
-        // Release resources in reverse order (important for deadlock prevention)
-        for res in acquired_resources.reverse() {
-          DeadlockSafeResourcePool::release(resource_pool, res)
-        }
-      } else {
-        // Release any partially acquired resources
-        for res in acquired_resources {
-          DeadlockSafeResourcePool::release(resource_pool, res)
-        }
-      }
-      
-      // Simulate time between operations
-      Thread::sleep(1) // 1ms
-    }
-  })
-  
-  // Wait for all tasks to complete
-  let results = ConcurrentTaskRunner::wait_all(task_results, 30000) // 30s timeout
-  
-  // Verify all tasks completed successfully
-  assert_eq(results.length(), concurrent_tasks)
-  
-  for result in results {
-    match result {
-      Success => assert_true(true)
-      Error(_) => assert_true(false) // No task should fail
     }
   }
   
-  // Verify no deadlocks occurred
-  let deadlock_stats = DeadlockSafeResourcePool::get_deadlock_statistics(resource_pool)
-  assert_eq(deadlock_stats.deadlock_preventions, 0) // No deadlock prevention should be needed with proper usage
-  assert_eq(deadlock_stats.deadlock_detections, 0) // No deadlocks should be detected
-  assert_eq(deadlock_stats.timeout_acquisitions, 0) // No timeout acquisitions should occur
+  // Verify exception handling
+  assert_eq(success_count, 2) // Even IDs: 0, 2, 4
+  assert_eq(exception_count, 3) // Odd IDs: 1, 3
   
-  // Verify all resources are available
-  assert_eq(DeadlockSafeResourcePool::available_count(resource_pool), 20)
+  // Test exception statistics
+  let stats = ConcurrentExceptionHandler::get_statistics(exception_handler)
+  assert_eq(stats.total_exceptions, 3)
+  assert_eq(stats.handled_exceptions, 3)
+  assert_eq(stats.unhandled_exceptions, 0)
   
-  // Verify resource usage statistics
-  let usage_stats = DeadlockSafeResourcePool::get_usage_statistics(resource_pool)
-  assert_eq(usage_stats.total_acquisitions, concurrent_tasks * operations_per_task * 2) // 2 resources per operation
-  assert_eq(usage_stats.total_releases, concurrent_tasks * operations_per_task * 2)
-  assert_eq(usage_stats.max_concurrent_resources, concurrent_tasks * 2) // Max concurrent resources used
+  ThreadPool::shutdown(thread_pool)
 }
