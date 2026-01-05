@@ -1,1048 +1,856 @@
 // Azimuth New Telemetry Feature Tests
-// This file contains new test cases for advanced telemetry features
+// 新增遥测功能测试用例
 
-// Test 1: Telemetry Data Agmentation
-test "telemetry data aggregation and metrics calculation" {
-  // Simulate telemetry data points
-  let data_points = [
-    { timestamp: 1640995200, value: 100.0, tags: ["service:api", "env:prod"] },
-    { timestamp: 1640995260, value: 150.0, tags: ["service:api", "env:prod"] },
-    { timestamp: 1640995320, value: 120.0, tags: ["service:api", "env:prod"] },
-    { timestamp: 1640995380, value: 200.0, tags: ["service:web", "env:prod"] },
-    { timestamp: 1640995440, value: 180.0, tags: ["service:web", "env:prod"] }
-  ]
-  
-  // Calculate average value
-  let mut sum = 0.0
-  let mut count = 0
-  
-  for point in data_points {
-    sum = sum + point.value
-    count = count + 1
+test "adaptive sampling strategy with dynamic thresholds" {
+  // 测试自适应采样策略和动态阈值
+  let adaptive_sampler = @azimuth.AdaptiveSampler {
+    base_probability : 0.1,
+    max_probability : 0.5,
+    min_probability : 0.01,
+    error_rate_threshold : 0.05,
+    latency_threshold_ms : 1000,
+    throughput_threshold : 10000,
+    current_load : 7500,
+    current_error_rate : 0.03,
+    adjustment_factor : 0.1
   }
   
-  let average = sum / count.to_float()
-  assert_true(average > 140.0 and average < 150.0)
+  // 计算当前采样概率
+  let load_factor = adaptive_sampler.current_load as Float / adaptive_sampler.throughput_threshold as Float
+  let error_factor = adaptive_sampler.current_error_rate / adaptive_sampler.error_rate_threshold
   
-  // Filter by service tag
-  let api_data = data_points.filter(fn(point) {
-    point.tags.contains("service:api")
-  })
-  
-  assert_eq(api_data.length(), 3)
-  
-  // Calculate max value for API service
-  let mut api_max = 0.0
-  for point in api_data {
-    if point.value > api_max {
-      api_max = point.value
+  let adjusted_probability = if load_factor > 0.8 or error_factor > 1.0 {
+    // 高负载或高错误率时增加采样率
+    let new_prob = adaptive_sampler.base_probability + adaptive_sampler.adjustment_factor
+    if new_prob > adaptive_sampler.max_probability {
+      adaptive_sampler.max_probability
+    } else {
+      new_prob
     }
-  }
-  
-  assert_eq(api_max, 150.0)
-  
-  // Calculate time-weighted average
-  let mut weighted_sum = 0.0
-  let mut total_weight = 0.0
-  
-  for i in 1..api_data.length() {
-    let prev_point = api_data[i - 1]
-    let curr_point = api_data[i]
-    let time_diff = curr_point.timestamp - prev_point.timestamp
-    let avg_value = (prev_point.value + curr_point.value) / 2.0
-    
-    weighted_sum = weighted_sum + avg_value * time_diff.to_float()
-    total_weight = total_weight + time_diff.to_float()
-  }
-  
-  if total_weight > 0.0 {
-    let time_weighted_avg = weighted_sum / total_weight
-    assert_true(time_weighted_avg > 110.0 and time_weighted_avg < 140.0)
-  }
-}
-
-// Test 2: Performance Monitoring and Benchmarking
-test "performance monitoring and benchmarking utilities" {
-  // Simulate performance measurement utilities
-  let measure_operation = fn(operation: () -> Unit) {
-    let start_time = 1640995200  // Simulated timestamp
-    operation()
-    let end_time = 1640995250    // Simulated timestamp
-    end_time - start_time
-  }
-  
-  // Test operation timing
-  let fast_operation = fn() {
-    // Simulate fast operation
-    let mut result = 0
-    for i in 0..100 {
-      result = result + i
+  } else if load_factor < 0.3 and error_factor < 0.5 {
+    // 低负载和低错误率时减少采样率
+    let new_prob = adaptive_sampler.base_probability - adaptive_sampler.adjustment_factor
+    if new_prob < adaptive_sampler.min_probability {
+      adaptive_sampler.min_probability
+    } else {
+      new_prob
     }
-  }
-  
-  let slow_operation = fn() {
-    // Simulate slower operation
-    let mut result = 0
-    for i in 0..1000 {
-      result = result + i
-    }
-  }
-  
-  let fast_duration = measure_operation(fast_operation)
-  let slow_duration = measure_operation(slow_operation)
-  
-  assert_true(fast_duration > 0)
-  assert_true(slow_duration > 0)
-  assert_true(slow_duration >= fast_duration)
-  
-  // Test performance statistics calculation
-  let measurements = [10, 15, 12, 18, 14, 16, 13, 17, 11, 19]
-  
-  // Calculate mean
-  let mut sum = 0
-  for m in measurements {
-    sum = sum + m
-  }
-  let mean = sum / measurements.length()
-  assert_eq(mean, 14)
-  
-  // Calculate min and max
-  let mut min_val = measurements[0]
-  let mut max_val = measurements[0]
-  
-  for m in measurements {
-    if m < min_val {
-      min_val = m
-    }
-    if m > max_val {
-      max_val = m
-    }
-  }
-  
-  assert_eq(min_val, 10)
-  assert_eq(max_val, 19)
-  
-  // Calculate median
-  let sorted = measurements.sort(fn(a, b) { a <= b })
-  let median = if sorted.length() % 2 == 0 {
-    (sorted[sorted.length() / 2 - 1] + sorted[sorted.length() / 2]) / 2
   } else {
-    sorted[sorted.length() / 2]
+    adaptive_sampler.base_probability
   }
-  assert_eq(median, 14)
   
-  // Calculate percentile (95th percentile approximation)
-  let percentile_index = (sorted.length() * 95) / 100
-  let percentile_95 = if percentile_index >= sorted.length() {
-    sorted[sorted.length() - 1]
-  } else {
-    sorted[percentile_index]
-  }
-  assert_true(percentile_95 >= 17)
+  // 验证采样概率调整
+  assert_true(adjusted_probability >= adaptive_sampler.min_probability)
+  assert_true(adjusted_probability <= adaptive_sampler.max_probability)
+  assert_true(adjusted_probability > adaptive_sampler.base_probability) // 当前负载较高
+  
+  // 测试采样决策
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let sampling_decision = @azimuth.should_sample(adaptive_sampler, trace_id)
+  
+  // 基于调整后的概率进行采样决策
+  let hash_value = @azimuth.hash_trace_id(trace_id)
+  let normalized_hash = (hash_value as Float) / (@azimuth.MAX_HASH_VALUE as Float)
+  let should_sample = normalized_hash < adjusted_probability
+  
+  assert_eq(should_sample, sampling_decision)
 }
 
-// Test 3: Error Tracking and Exception Handling
-test "error tracking and exception handling in telemetry" {
-  // Define error types
-  enum TelemetryError {
-    NetworkError(String)
-    SerializationError(String)
-    ValidationFailed(String)
-    ResourceExhausted(String)
-  }
-  
-  // Define error tracking structure
-  type ErrorReport = {
-    error_type: String,
-    message: String,
-    timestamp: Int,
-    context: Array[(String, String)],
-    severity: String
-  }
-  
-  // Create error reports
-  let create_error_report = fn(error: TelemetryError, context: Array[(String, String)]) {
-    let (error_type, message) = match error {
-      TelemetryError::NetworkError(msg) => ("NetworkError", msg)
-      TelemetryError::SerializationError(msg) => ("SerializationError", msg)
-      TelemetryError::ValidationFailed(msg) => ("ValidationFailed", msg)
-      TelemetryError::ResourceExhausted(msg) => ("ResourceExhausted", msg)
-    }
-    
-    {
-      error_type,
-      message,
-      timestamp: 1640995200,
-      context,
-      severity: if error_type == "NetworkError" { "high" } else { "medium" }
-    }
-  }
-  
-  // Test error report creation
-  let network_error = TelemetryError::NetworkError("Connection timeout")
-  let context = [("service", "api"), "endpoint", "/users"]
-  let error_report = create_error_report(network_error, context)
-  
-  assert_eq(error_report.error_type, "NetworkError")
-  assert_eq(error_report.message, "Connection timeout")
-  assert_eq(error_report.severity, "high")
-  assert_eq(error_report.context.length(), 2)
-  
-  // Test error aggregation
-  let errors = [
-    create_error_report(TelemetryError::NetworkError("DNS resolution failed"), [("service", "auth")]),
-    create_error_report(TelemetryError::SerializationError("Invalid JSON format"), [("service", "api")]),
-    create_error_report(TelemetryError::NetworkError("Connection refused"), [("service", "db")]),
-    create_error_report(TelemetryError::ValidationFailed("Missing required field"), [("service", "api")])
-  ]
-  
-  // Count errors by type
-  let network_errors = errors.filter(fn(e) { e.error_type == "NetworkError" })
-  let serialization_errors = errors.filter(fn(e) { e.error_type == "SerializationError" })
-  let validation_errors = errors.filter(fn(e) { e.error_type == "ValidationFailed" })
-  
-  assert_eq(network_errors.length(), 2)
-  assert_eq(serialization_errors.length(), 1)
-  assert_eq(validation_errors.length(), 1)
-  
-  // Test error rate calculation
-  let total_requests = 1000
-  let error_count = errors.length()
-  let error_rate = (error_count * 100) / total_requests
-  assert_eq(error_rate, 0)  // 4 errors out of 1000 requests = 0.4%, rounded to 0%
-  
-  // Test error severity distribution
-  let high_severity_errors = errors.filter(fn(e) { e.severity == "high" })
-  let medium_severity_errors = errors.filter(fn(e) { e.severity == "medium" })
-  
-  assert_eq(high_severity_errors.length(), 2)
-  assert_eq(medium_severity_errors.length(), 2)
-}
-
-// Test 4: Resource Management and Cleanup
-test "resource management and cleanup tracking" {
-  // Define resource types
-  enum ResourceType {
-    DatabaseConnection
-    FileHandle
-    NetworkSocket
-    MemoryBlock
-  }
-  
-  // Define resource tracking structure
-  type ResourceRecord = {
-    id: String,
-    resource_type: ResourceType,
-    created_at: Int,
-    last_accessed: Int,
-    size_bytes: Int,
-    is_active: Bool
-  }
-  
-  // Create resource manager
-  let resource_manager = {
-    mut resources: [],
-    mut next_id: 1,
-    
-    allocate_resource: fn(resource_type: ResourceType, size_bytes: Int) {
-      let id = "resource-" + resource_manager.next_id.to_string()
-      resource_manager.next_id = resource_manager.next_id + 1
-      
-      let resource = {
-        id,
-        resource_type,
-        created_at: 1640995200,
-        last_accessed: 1640995200,
-        size_bytes,
-        is_active: true
-      }
-      
-      resource_manager.resources = resource_manager.resources.push(resource)
-      id
+test "distributed trace parent-child relationships" {
+  // 测试分布式追踪的父子关系
+  let root_span = @azimuth.Span {
+    context : @azimuth.SpanContext {
+      trace_id : "abcdef1234567890abcdef1234567890",
+      span_id : "root1234567890",
+      sampled : true,
+      trace_state : "sampling.decision=true"
     },
-    
-    access_resource: fn(id: String) {
-      let mut updated_resources = []
-      let mut found = false
-      
-      for resource in resource_manager.resources {
-        if resource.id == id and resource.is_active {
-          let updated = { resource | last_accessed: 1640995300 }
-          updated_resources = updated_resources.push(updated)
-          found = true
-        } else {
-          updated_resources = updated_resources.push(resource)
-        }
-      }
-      
-      if found {
-        resource_manager.resources = updated_resources
-      }
-      
-      found
-    },
-    
-    deallocate_resource: fn(id: String) {
-      let mut updated_resources = []
-      
-      for resource in resource_manager.resources {
-        if resource.id == id {
-          let deactivated = { resource | is_active: false }
-          updated_resources = updated_resources.push(deactivated)
-        } else {
-          updated_resources = updated_resources.push(resource)
-        }
-      }
-      
-      resource_manager.resources = updated_resources
-    },
-    
-    get_active_resources: fn() {
-      resource_manager.resources.filter(fn(r) { r.is_active })
-    },
-    
-    get_memory_usage: fn() {
-      let active = resource_manager.resources.filter(fn(r) { r.is_active })
-      let mut total = 0
-      for resource in active {
-        total = total + resource.size_bytes
-      }
-      total
-    }
-  }
-  
-  // Test resource allocation
-  let db_id = resource_manager.allocate_resource(ResourceType::DatabaseConnection, 1024)
-  let file_id = resource_manager.allocate_resource(ResourceType::FileHandle, 512)
-  let socket_id = resource_manager.allocate_resource(ResourceType::NetworkSocket, 2048)
-  
-  assert_eq(db_id, "resource-1")
-  assert_eq(file_id, "resource-2")
-  assert_eq(socket_id, "resource-3")
-  
-  // Test active resources count
-  let active_resources = resource_manager.get_active_resources()
-  assert_eq(active_resources.length(), 3)
-  
-  // Test memory usage calculation
-  let memory_usage = resource_manager.get_memory_usage()
-  assert_eq(memory_usage, 1024 + 512 + 2048)
-  
-  // Test resource access
-  let accessed = resource_manager.access_resource(file_id)
-  assert_true(accessed)
-  
-  let not_found = resource_manager.access_resource("non-existent")
-  assert_false(not_found)
-  
-  // Test resource deallocation
-  resource_manager.deallocate_resource(db_id)
-  let active_after_deallocation = resource_manager.get_active_resources()
-  assert_eq(active_after_deallocation.length(), 2)
-  
-  // Test memory usage after deallocation
-  let memory_after_deallocation = resource_manager.get_memory_usage()
-  assert_eq(memory_after_deallocation, 512 + 2048)
-  
-  // Test resource cleanup by age
-  let cleanup_old_resources = fn(max_age_seconds: Int) {
-    let current_time = 1640995400
-    let mut updated_resources = []
-    
-    for resource in resource_manager.resources {
-      let age = current_time - resource.last_accessed
-      if age > max_age_seconds {
-        let deactivated = { resource | is_active: false }
-        updated_resources = updated_resources.push(deactivated)
-      } else {
-        updated_resources = updated_resources.push(resource)
-      }
-    }
-    
-    resource_manager.resources = updated_resources
-  }
-  
-  // Clean up resources older than 100 seconds
-  cleanup_old_resources(100)
-  let active_after_cleanup = resource_manager.get_active_resources()
-  assert_eq(active_after_cleanup.length(), 0)
-}
-
-// Test 5: Configuration Management
-test "telemetry configuration management" {
-  // Define configuration structure
-  type TelemetryConfig = {
-    service_name: String,
-    service_version: String,
-    environment: String,
-    sampling_rate: Float,
-    batch_size: Int,
-    export_interval_seconds: Int,
-    enabled_features: Array[String],
-    custom_attributes: Array[(String, String)]
-  }
-  
-  // Create default configuration
-  let default_config = {
-    service_name: "unknown-service",
-    service_version: "1.0.0",
-    environment: "development",
-    sampling_rate: 1.0,
-    batch_size: 100,
-    export_interval_seconds: 60,
-    enabled_features: ["metrics", "tracing"],
-    custom_attributes: []
-  }
-  
-  // Test configuration validation
-  let validate_config = fn(config: TelemetryConfig) {
-    let mut errors = []
-    
-    if config.service_name == "" {
-      errors = errors.push("Service name cannot be empty")
-    }
-    
-    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
-      errors = errors.push("Sampling rate must be between 0.0 and 1.0")
-    }
-    
-    if config.batch_size <= 0 {
-      errors = errors.push("Batch size must be positive")
-    }
-    
-    if config.export_interval_seconds <= 0 {
-      errors = errors.push("Export interval must be positive")
-    }
-    
-    errors
-  }
-  
-  // Test valid configuration
-  let valid_config = { default_config | 
-    service_name: "payment-service",
-    sampling_rate: 0.5,
-    batch_size: 50
-  }
-  
-  let validation_errors = validate_config(valid_config)
-  assert_eq(validation_errors.length(), 0)
-  
-  // Test invalid configurations
-  let invalid_config1 = { default_config | service_name: "" }
-  let errors1 = validate_config(invalid_config1)
-  assert_eq(errors1.length(), 1)
-  assert_eq(errors1[0], "Service name cannot be empty")
-  
-  let invalid_config2 = { default_config | sampling_rate: 1.5 }
-  let errors2 = validate_config(invalid_config2)
-  assert_eq(errors2.length(), 1)
-  assert_eq(errors2[0], "Sampling rate must be between 0.0 and 1.0")
-  
-  // Test configuration merging
-  let merge_configs = fn(base: TelemetryConfig, override: TelemetryConfig) {
-    {
-      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
-      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
-      environment: if override.environment != "" { override.environment } else { base.environment },
-      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
-      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
-      export_interval_seconds: if override.export_interval_seconds > 0 { override.export_interval_seconds } else { base.export_interval_seconds },
-      enabled_features: if override.enabled_features.length() > 0 { override.enabled_features } else { base.enabled_features },
-      custom_attributes: base.custom_attributes + override.custom_attributes
-    }
-  }
-  
-  let override_config = {
-    service_name: "order-service",
-    sampling_rate: 0.1,
-    custom_attributes: [("region", "us-west-2"), ("datacenter", "dc1")]
-  }
-  
-  let merged_config = merge_configs(default_config, override_config)
-  assert_eq(merged_config.service_name, "order-service")
-  assert_eq(merged_config.sampling_rate, 0.1)
-  assert_eq(merged_config.service_version, "1.0.0")  // from base
-  assert_eq(merged_config.custom_attributes.length(), 2)
-  
-  // Test feature flag management
-  let is_feature_enabled = fn(config: TelemetryConfig, feature: String) {
-    config.enabled_features.contains(feature)
-  }
-  
-  assert_true(is_feature_enabled(merged_config, "metrics"))
-  assert_true(is_feature_enabled(merged_config, "tracing"))
-  assert_false(is_feature_enabled(merged_config, "logging"))
-  
-  // Test configuration updates
-  let update_config = fn(config: TelemetryConfig, updates: Array[(String, String)]) {
-    let mut updated = config
-    
-    for (key, value) in updates {
-      updated = match key {
-        "service_name" => { updated | service_name: value }
-        "service_version" => { updated | service_version: value }
-        "environment" => { updated | environment: value }
-        _ => updated
-      }
-    }
-    
-    updated
-  }
-  
-  let updates = [
-    ("service_name", "user-service"),
-    ("environment", "production"),
-    ("service_version", "2.1.0")
-  ]
-  
-  let updated_config = update_config(merged_config, updates)
-  assert_eq(updated_config.service_name, "user-service")
-  assert_eq(updated_config.environment, "production")
-  assert_eq(updated_config.service_version, "2.1.0")
-}
-
-// Test 6: Data Serialization and Deserialization
-test "telemetry data serialization and deserialization" {
-  // Define telemetry data structure
-  type TelemetryData = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    attributes: Array[(String, String)],
-    events: Array[(Int, String)]
-  }
-  
-  // Create sample telemetry data
-  let telemetry_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: Some("span-11111"),
-    operation_name: "database_query",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    status: "ok",
-    attributes: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM users"),
-      ("db.instance", "db-primary")
+    parent_span_id : None,
+    operation_name : "user.request",
+    start_time : 1640995200000L,
+    end_time : Some(1640995200500L),
+    status : @azimuth.SpanStatus::Ok,
+    attributes : [
+      ("user.id", @azimuth.StringValue("user123")),
+      ("request.path", @azimuth.StringValue("/api/profile"))
     ],
-    events: [
-      (1640995210, "query_start"),
-      (1640995230, "index_scan"),
-      (1640995250, "query_complete")
-    ]
+    events : []
   }
   
-  // Simulate JSON serialization
-  let serialize_to_json = fn(data: TelemetryData) {
-    let attributes_str = data.attributes
-      .map(fn(attr) { "\"" + attr.0 + "\":\"" + attr.1 + "\"" })
-      .join(",")
-    
-    let events_str = data.events
-      .map(fn(event) { "{\"timestamp\":" + event.0.to_string() + ",\"message\":\"" + event.1 + "\"}" })
-      .join(",")
-    
-    let parent_str = match data.parent_span_id {
-      Some(id) => "\"" + id + "\""
-      None => "null"
-    }
-    
-    "{" +
-      "\"trace_id\":\"" + data.trace_id + "\"," +
-      "\"span_id\":\"" + data.span_id + "\"," +
-      "\"parent_span_id\":" + parent_str + "," +
-      "\"operation_name\":\"" + data.operation_name + "\"," +
-      "\"start_time\":" + data.start_time.to_string() + "," +
-      "\"end_time\":" + data.end_time.to_string() + "," +
-      "\"status\":\"" + data.status + "\"," +
-      "\"attributes\":{" + attributes_str + "}," +
-      "\"events\":[" + events_str + "]" +
-    "}"
-  }
+  // 创建子span
+  let child_span1 = @azimuth.create_child_span(root_span, "database.query")
+  let child_span2 = @azimuth.create_child_span(root_span, "cache.lookup")
   
-  // Test serialization
-  let json_str = serialize_to_json(telemetry_data)
-  assert_true(json_str.contains("\"trace_id\":\"trace-12345\""))
-  assert_true(json_str.contains("\"span_id\":\"span-67890\""))
-  assert_true(json_str.contains("\"operation_name\":\"database_query\""))
-  assert_true(json_str.contains("\"db.type\":\"postgresql\""))
-  assert_true(json_str.contains("\"timestamp\":1640995210"))
+  // 验证父子关系
+  assert_eq(child_span1.context.trace_id, root_span.context.trace_id)
+  assert_eq(child_span2.context.trace_id, root_span.context.trace_id)
+  assert_not_eq(child_span1.context.span_id, root_span.context.span_id)
+  assert_not_eq(child_span2.context.span_id, root_span.context.span_id)
+  assert_not_eq(child_span1.context.span_id, child_span2.context.span_id)
   
-  // Simulate JSON deserialization
-  let parse_json_field = fn(json: String, field: String) {
-    let pattern = "\"" + field + "\":\""
-    let start_index = json.index_of(pattern)
-    
-    if start_index >= 0 {
-      let value_start = start_index + pattern.length()
-      let end_index = json.index_of("\"", value_start)
-      
-      if end_index >= value_start {
-        Some(json.substring(value_start, end_index - value_start))
-      } else {
-        None
-      }
-    } else {
-      None
-    }
-  }
-  
-  let parse_json_number = fn(json: String, field: String) {
-    let pattern = "\"" + field + "\":"
-    let start_index = json.index_of(pattern)
-    
-    if start_index >= 0 {
-      let value_start = start_index + pattern.length()
-      let mut end_index = value_start
-      
-      while end_index < json.length() and (
-        json[end_index] >= '0' and json[end_index] <= '9'
-      ) {
-        end_index = end_index + 1
-      }
-      
-      if end_index > value_start {
-        let num_str = json.substring(value_start, end_index - value_start)
-        Some(parse_int(num_str))
-      } else {
-        None
-      }
-    } else {
-      None
-    }
-  }
-  
-  // Test deserialization
-  let parsed_trace_id = parse_json_field(json_str, "trace_id")
-  let parsed_operation = parse_json_field(json_str, "operation_name")
-  let parsed_start_time = parse_json_number(json_str, "start_time")
-  
-  assert_eq(parsed_trace_id, Some("trace-12345"))
-  assert_eq(parsed_operation, Some("database_query"))
-  assert_eq(parsed_start_time, Some(1640995200))
-  
-  // Test serialization of batch data
-  let serialize_batch = fn(batch: Array[TelemetryData]) {
-    let items = batch.map(serialize_to_json)
-    "[" + items.join(",") + "]"
-  }
-  
-  let batch_data = [telemetry_data]
-  let batch_json = serialize_batch(batch_data)
-  assert_true(batch_json.starts_with("["))
-  assert_true(batch_json.ends_with("]"))
-  
-  // Test data compression simulation
-  let compress_data = fn(data: String) {
-    // Simulate compression by removing whitespace
-    let compressed = data.replace(" ", "").replace("\n", "").replace("\t", "")
-    {
-      compressed,
-      original_size: data.length(),
-      compressed_size: compressed.length(),
-      compression_ratio: compressed.length().to_float() / data.length().to_float()
-    }
-  }
-  
-  let compression_result = compress_data(json_str)
-  assert_true(compression_result.compressed_size < compression_result.original_size)
-  assert_true(compression_result.compression_ratio < 1.0)
-}
-
-// Test 7: Network Communication Simulation
-test "network communication for telemetry data transmission" {
-  // Define network packet structure
-  type NetworkPacket = {
-    id: String,
-    destination: String,
-    payload: String,
-    timestamp: Int,
-    retry_count: Int,
-    max_retries: Int
-  }
-  
-  // Define network response
-  type NetworkResponse = {
-    success: Bool,
-    message: String,
-    timestamp: Int,
-    packet_id: String
-  }
-  
-  // Simulate network client
-  let network_client = {
-    mut sent_packets: [],
-    mut received_responses: [],
-    
-    send_packet: fn(destination: String, payload: String) {
-      let packet = {
-        id: "packet-" + (network_client.sent_packets.length() + 1).to_string(),
-        destination,
-        payload,
-        timestamp: 1640995200,
-        retry_count: 0,
-        max_retries: 3
-      }
-      
-      network_client.sent_packets = network_client.sent_packets.push(packet)
-      packet.id
-    },
-    
-    simulate_response: fn(packet_id: String, success: Bool, message: String) {
-      let response = {
-        success,
-        message,
-        timestamp: 1640995250,
-        packet_id
-      }
-      
-      network_client.received_responses = network_client.received_responses.push(response)
-      response
-    },
-    
-    retry_failed_packets: fn() {
-      let mut updated_packets = []
-      let mut retried_ids = []
-      
-      for packet in network_client.sent_packets {
-        let has_response = network_client.received_responses
-          .exists(fn(resp) { resp.packet_id == packet.id })
-        
-        if not(has_response) and packet.retry_count < packet.max_retries {
-          let retried = { packet | 
-            retry_count: packet.retry_count + 1,
-            timestamp: 1640995300
-          }
-          
-          updated_packets = updated_packets.push(retried)
-          retried_ids = retried_ids.push(packet.id)
-        } else {
-          updated_packets = updated_packets.push(packet)
-        }
-      }
-      
-      network_client.sent_packets = updated_packets
-      retried_ids
-    },
-    
-    get_successful_packets: fn() {
-      network_client.sent_packets.filter(fn(packet) {
-        network_client.received_responses.exists(fn(resp) {
-          resp.packet_id == packet.id and resp.success
-        })
-      })
-    },
-    
-    get_failed_packets: fn() {
-      network_client.sent_packets.filter(fn(packet) {
-        packet.retry_count >= packet.max_retries and
-        not(network_client.received_responses.exists(fn(resp) {
-          resp.packet_id == packet.id and resp.success
-        }))
-      })
-    }
-  }
-  
-  // Test packet sending
-  let packet1_id = network_client.send_packet("collector.example.com", "telemetry_data_1")
-  let packet2_id = network_client.send_packet("backup.example.com", "telemetry_data_2")
-  
-  assert_eq(packet1_id, "packet-1")
-  assert_eq(packet2_id, "packet-2")
-  assert_eq(network_client.sent_packets.length(), 2)
-  
-  // Test successful responses
-  let response1 = network_client.simulate_response(packet1_id, true, "Data received successfully")
-  let response2 = network_client.simulate_response(packet2_id, true, "Data processed")
-  
-  assert_true(response1.success)
-  assert_true(response2.success)
-  assert_eq(response1.packet_id, packet1_id)
-  assert_eq(response2.packet_id, packet2_id)
-  
-  // Test packet status tracking
-  let successful_packets = network_client.get_successful_packets()
-  assert_eq(successful_packets.length(), 2)
-  
-  let failed_packets = network_client.get_failed_packets()
-  assert_eq(failed_packets.length(), 0)
-  
-  // Test retry mechanism
-  let packet3_id = network_client.send_packet("unreachable.example.com", "telemetry_data_3")
-  
-  // Simulate failed packet (no response)
-  let retried_ids = network_client.retry_failed_packets()
-  assert_eq(retried_ids.length(), 1)
-  assert_eq(retried_ids[0], packet3_id)
-  
-  // Check retry count
-  let retried_packet = network_client.sent_packets.find(fn(p) { p.id == packet3_id })
-  match retried_packet {
-    Some(packet) => assert_eq(packet.retry_count, 1)
+  match child_span1.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, root_span.context.span_id)
     None => assert_true(false)
   }
   
-  // Simulate max retries reached
-  for i in 0..3 {
-    network_client.retry_failed_packets()
+  match child_span2.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, root_span.context.span_id)
+    None => assert_true(false)
   }
   
-  let final_failed_packets = network_client.get_failed_packets()
-  assert_eq(final_failed_packets.length(), 1)
-  assert_eq(final_failed_packets[0].id, packet3_id)
-  assert_eq(final_failed_packets[0].retry_count, 3)
+  // 创建嵌套子span
+  let grandchild_span = @azimuth.create_child_span(child_span1, "sql.execute")
   
-  // Test network statistics
-  let total_packets = network_client.sent_packets.length()
-  let successful_count = network_client.get_successful_packets().length()
-  let failed_count = network_client.get_failed_packets().length()
+  // 验证嵌套关系
+  assert_eq(grandchild_span.context.trace_id, root_span.context.trace_id)
+  assert_not_eq(grandchild_span.context.span_id, child_span1.context.span_id)
   
-  assert_eq(total_packets, 3)
-  assert_eq(successful_count, 2)
-  assert_eq(failed_count, 1)
+  match grandchild_span.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, child_span1.context.span_id)
+    None => assert_true(false)
+  }
   
-  let success_rate = (successful_count * 100) / total_packets
-  assert_eq(success_rate, 66)  // 2 out of 3 = 66.67%, rounded to 66%
+  // 验证span层次结构
+  let span_tree = @azimuth.build_span_tree([root_span, child_span1, child_span2, grandchild_span])
+  assert_eq(span_tree.root.context.span_id, root_span.context.span_id)
+  assert_eq(span_tree.children.length(), 2)
+  assert_eq(span_tree.children[0].span.context.span_id, child_span1.context.span_id)
+  assert_eq(span_tree.children[1].span.context.span_id, child_span2.context.span_id)
+  assert_eq(span_tree.children[0].children.length(), 1)
+  assert_eq(span_tree.children[0].children[0].span.context.span_id, grandchild_span.context.span_id)
 }
 
-// Test 8: Caching Mechanisms
-test "telemetry data caching mechanisms" {
-  // Define cache entry structure
-  type CacheEntry[T] = {
-    key: String,
-    value: T,
-    created_at: Int,
-    last_accessed: Int,
-    access_count: Int,
-    ttl_seconds: Int
-  }
+test "metric data type conversion and aggregation" {
+  // 测试指标数据类型转换和聚合
+  let raw_metrics = [
+    ("cpu.usage", @azimuth.FloatValue(0.65)),
+    ("memory.available", @azimuth.IntValue(2147483648)),
+    ("request.count", @azimuth.IntValue(1250)),
+    ("response.time", @azimuth.FloatValue(125.5)),
+    ("error.rate", @azimuth.FloatValue(0.02)),
+    ("throughput", @azimuth.FloatValue(850.75))
+  ]
   
-  // Define cache statistics
-  type CacheStats = {
-    hits: Int,
-    misses: Int,
-    evictions: Int,
-    total_entries: Int
-  }
-  
-  // Create cache implementation
-  let create_cache = fn(max_size: Int, default_ttl: Int) {
-    {
-      mut entries: [],
-      mut stats: { hits: 0, misses: 0, evictions: 0, total_entries: 0 },
-      max_size,
-      default_ttl,
-      
-      get: fn(key: String) {
-        let current_time = 1640995200
-        
-        // Find entry by key
-        let mut found_entry = None
-        let mut updated_entries = []
-        
-        for entry in cache.entries {
-          if entry.key == key {
-            let is_expired = (current_time - entry.created_at) > entry.ttl_seconds
-            
-            if is_expired {
-              // Entry expired, don't include in updated entries
-              cache.stats.evictions = cache.stats.evictions + 1
-            } else {
-              // Update access information
-              let updated = { entry |
-                last_accessed: current_time,
-                access_count: entry.access_count + 1
-              }
-              updated_entries = updated_entries.push(updated)
-              found_entry = Some(updated.value)
-            }
-          } else {
-            updated_entries = updated_entries.push(entry)
-          }
-        }
-        
-        cache.entries = updated_entries
-        
-        match found_entry {
-          Some(value) => {
-            cache.stats.hits = cache.stats.hits + 1
-            Some(value)
-          }
-          None => {
-            cache.stats.misses = cache.stats.misses + 1
-            None
-          }
-        }
-      },
-      
-      put: fn(key: String, value: T, ttl_seconds: Option[Int]) {
-        let current_time = 1640995200
-        let ttl = match ttl_seconds {
-          Some(t) => t
-          None => cache.default_ttl
-        }
-        
-        // Check if entry already exists
-        let mut existing_found = false
-        let mut updated_entries = []
-        
-        for entry in cache.entries {
-          if entry.key == key {
-            let updated = { entry |
-              value,
-              created_at: current_time,
-              last_accessed: current_time,
-              access_count: 0,
-              ttl_seconds: ttl
-            }
-            updated_entries = updated_entries.push(updated)
-            existing_found = true
-          } else {
-            updated_entries = updated_entries.push(entry)
-          }
-        }
-        
-        if not(existing_found) {
-          // Check if cache is full
-          if updated_entries.length() >= cache.max_size {
-            // Evict least recently used entry
-            let mut lru_entry = updated_entries[0]
-            let mut lru_index = 0
-            
-            for i in 1..updated_entries.length() {
-              if updated_entries[i].last_accessed < lru_entry.last_accessed {
-                lru_entry = updated_entries[i]
-                lru_index = i
-              }
-            }
-            
-            // Remove LRU entry
-            let mut final_entries = []
-            for i in 0..updated_entries.length() {
-              if i != lru_index {
-                final_entries = final_entries.push(updated_entries[i])
-              }
-            }
-            
-            updated_entries = final_entries
-            cache.stats.evictions = cache.stats.evictions + 1
-          }
-          
-          // Add new entry
-          let new_entry = {
-            key,
-            value,
-            created_at: current_time,
-            last_accessed: current_time,
-            access_count: 0,
-            ttl_seconds: ttl
-          }
-          
-          updated_entries = updated_entries.push(new_entry)
-        }
-        
-        cache.entries = updated_entries
-        cache.stats.total_entries = cache.entries.length()
-      },
-      
-      remove: fn(key: String) {
-        let mut updated_entries = []
-        
-        for entry in cache.entries {
-          if entry.key != key {
-            updated_entries = updated_entries.push(entry)
-          }
-        }
-        
-        cache.entries = updated_entries
-        cache.stats.total_entries = cache.entries.length()
-      },
-      
-      clear: fn() {
-        cache.entries = []
-        cache.stats.total_entries = 0
-      },
-      
-      get_stats: fn() { cache.stats },
-      
-      get_keys: fn() {
-        cache.entries.map(fn(entry) { entry.key })
-      }
+  // 测试类型转换
+  let convert_to_double = fn(metric: @azimuth.MetricValue) {
+    match metric {
+      @azimuth.IntValue(v) => v as Float
+      @azimuth.FloatValue(v) => v
+      @azimuth.StringValue(_) => 0.0
+      @azimuth.BoolValue(v) => if v { 1.0 } else { 0.0 }
     }
   }
   
-  // Create cache instance
-  let cache = create_cache(3, 300)  // Max 3 entries, 5 minute TTL
+  let converted_metrics = raw_metrics.map(fn(item) {
+    (item.0, convert_to_double(item.1))
+  })
   
-  // Test cache put and get
-  cache.put("trace-123", "span_data_1", None)
-  cache.put("trace-456", "span_data_2", None)
+  // 验证转换结果
+  let cpu_usage = converted_metrics.filter(fn(m) { m.0 == "cpu.usage" })[0]
+  assert_eq(cpu_usage.1, 0.65)
   
-  let value1 = cache.get("trace-123")
-  let value2 = cache.get("trace-456")
-  let value3 = cache.get("trace-789")  // Non-existent
+  let memory_available = converted_metrics.filter(fn(m) { m.0 == "memory.available" })[0]
+  assert_eq(memory_available.1, 2147483648.0)
   
-  assert_eq(value1, Some("span_data_1"))
-  assert_eq(value2, Some("span_data_2"))
-  assert_eq(value3, None)
+  // 测试指标聚合
+  let numeric_metrics = converted_metrics.filter(fn(m) {
+    m.0 != "error.rate" // 排除错误率，它已经是百分比
+  })
   
-  // Test cache statistics
-  let stats_after_get = cache.get_stats()
-  assert_eq(stats_after_get.hits, 2)
-  assert_eq(stats_after_get.misses, 1)
-  assert_eq(stats_after_get.evictions, 0)
+  let sum_values = numeric_metrics.reduce(fn(acc, m) { acc + m.1 }, 0.0)
+  let avg_value = sum_values / (numeric_metrics.length() as Float)
+  let max_value = numeric_metrics.reduce(fn(acc, m) { if m.1 > acc { m.1 } else { acc } }, 0.0)
+  let min_value = numeric_metrics.reduce(fn(acc, m) { if m.1 < acc { m.1 } else { acc } }, 9999999999.0)
   
-  // Test cache update
-  cache.put("trace-123", "updated_span_data_1", None)
-  let updated_value = cache.get("trace-123")
-  assert_eq(updated_value, Some("updated_span_data_1"))
+  // 验证聚合结果
+  assert_true(sum_values > 0.0)
+  assert_true(avg_value > 0.0)
+  assert_true(max_value >= min_value)
+  assert_eq(max_value, 2147483648.0) // memory.available应该是最大值
   
-  // Test cache size limit and LRU eviction
-  cache.put("trace-789", "span_data_3", None)
-  cache.put("trace-999", "span_data_4", None)  // Should trigger eviction
+  // 测试时间窗口聚合
+  let time_series_metrics = [
+    (1640995200L, 100.0), // 0s
+    (1640995201L, 105.0), // 1s
+    (1640995202L, 98.0),  // 2s
+    (1640995203L, 110.0), // 3s
+    (1640995204L, 102.0)  // 4s
+  ]
   
-  let keys_after_eviction = cache.get_keys()
-  assert_eq(keys_after_eviction.length(), 3)  // Max size enforced
+  let windowed_avg = @azimuth.calculate_time_window_average(time_series_metrics, 1640995200L, 1640995204L)
+  let expected_avg = (100.0 + 105.0 + 98.0 + 110.0 + 102.0) / 5.0
+  assert_eq(windowed_avg, expected_avg)
+}
+
+test "log level filtering and structured parsing" {
+  // 测试日志级别过滤和结构化解析
+  let log_entries = [
+    @azimuth.LogEntry {
+      timestamp : 1640995200000L,
+      level : @azimuth.LogLevel::Debug,
+      message : "Initializing connection pool",
+      attributes : [
+        ("pool.size", @azimuth.IntValue(10)),
+        ("timeout", @azimuth.IntValue(5000))
+      ]
+    },
+    @azimuth.LogEntry {
+      timestamp : 1640995200100L,
+      level : @azimuth.LogLevel::Info,
+      message : "User authenticated successfully",
+      attributes : [
+        ("user.id", @azimuth.StringValue("user123")),
+        ("auth.method", @azimuth.StringValue("oauth2"))
+      ]
+    },
+    @azimuth.LogEntry {
+      timestamp : 1640995200200L,
+      level : @azimuth.LogLevel::Warn,
+      message : "High memory usage detected",
+      attributes : [
+        ("memory.usage", @azimuth.FloatValue(0.85)),
+        ("threshold", @azimuth.FloatValue(0.8))
+      ]
+    },
+    @azimuth.LogEntry {
+      timestamp : 1640995200300L,
+      level : @azimuth.LogLevel::Error,
+      message : "Database connection failed",
+      attributes : [
+        ("error.code", @azimuth.StringValue("CONN_TIMEOUT")),
+        ("retry.count", @azimuth.IntValue(3))
+      ]
+    }
+  ]
   
-  let stats_after_eviction = cache.get_stats()
-  assert_eq(stats_after_eviction.evictions, 1)
-  
-  // Test cache TTL expiration (simulation)
-  cache.put("temp-trace", "temp_data", Some(1))  // 1 second TTL
-  
-  // Simulate time passage and access
-  let expired_value = cache.get("temp-trace")  // Would be expired in real implementation
-  // In this simulation, we're not actually implementing time-based expiration
-  // assert_eq(expired_value, None)
-  
-  // Test cache removal
-  cache.remove("trace-456")
-  let removed_value = cache.get("trace-456")
-  assert_eq(removed_value, None)
-  
-  let keys_after_removal = cache.get_keys()
-  assert_false(keys_after_removal.contains("trace-456"))
-  
-  // Test cache clear
-  cache.clear()
-  let all_keys_after_clear = cache.get_keys()
-  assert_eq(all_keys_after_clear.length(), 0)
-  
-  let final_stats = cache.get_stats()
-  assert_eq(final_stats.total_entries, 0)
-  
-  // Test cache hit rate calculation
-  let total_requests = final_stats.hits + final_stats.misses
-  let hit_rate = if total_requests > 0 {
-    (final_stats.hits * 100) / total_requests
-  } else {
-    0
+  // 测试日志级别过滤
+  let filter_by_level = fn(entries: Array[@azimuth.LogEntry], min_level: @azimuth.LogLevel) {
+    entries.filter(fn(entry) {
+      @azimuth.compare_log_levels(entry.level, min_level) >= 0
+    })
   }
   
-  assert_true(hit_rate >= 0 and hit_rate <= 100)
+  let warn_and_above = filter_by_level(log_entries, @azimuth.LogLevel::Warn)
+  assert_eq(warn_and_above.length(), 2)
+  assert_eq(warn_and_above[0].level, @azimuth.LogLevel::Warn)
+  assert_eq(warn_and_above[1].level, @azimuth.LogLevel::Error)
+  
+  let info_and_above = filter_by_level(log_entries, @azimuth.LogLevel::Info)
+  assert_eq(info_and_above.length(), 3)
+  
+  // 测试结构化日志解析
+  let parse_json_log = fn(json_str: String) {
+    // 简化的JSON解析逻辑
+    let log_obj = @azimuth.parse_json_to_log(json_str)
+    log_obj
+  }
+  
+  let json_log = "{\"timestamp\":1640995200400,\"level\":\"INFO\",\"message\":\"Request processed\",\"attributes\":{\"duration\":150,\"status\":200}}"
+  let parsed_log = parse_json_log(json_log)
+  
+  assert_eq(parsed_log.level, @azimuth.LogLevel::Info)
+  assert_eq(parsed_log.message, "Request processed")
+  assert_true(parsed_log.attributes.length() > 0)
+  
+  // 测试日志模式匹配
+  let find_error_patterns = fn(entries: Array[@azimuth.LogEntry]) {
+    entries.filter(fn(entry) {
+      entry.level == @azimuth.LogLevel::Error or
+      entry.message.contains("failed") or
+      entry.message.contains("error") or
+      entry.attributes.any(fn(attr) {
+        match attr.0 {
+          "error.code" | "error.type" | "error.message" => true
+          _ => false
+        }
+      })
+    })
+  }
+  
+  let error_entries = find_error_patterns(log_entries)
+  assert_eq(error_entries.length(), 1)
+  assert_eq(error_entries[0].level, @azimuth.LogLevel::Error)
+  
+  // 测试日志聚合统计
+  let log_stats = @azimuth.calculate_log_statistics(log_entries)
+  assert_eq(log_stats.total_count, 4)
+  assert_eq(log_stats.debug_count, 1)
+  assert_eq(log_stats.info_count, 1)
+  assert_eq(log_stats.warn_count, 1)
+  assert_eq(log_stats.error_count, 1)
+  assert_true(log_stats.error_rate > 0.0)
+}
+
+test "resource monitoring and alerting thresholds" {
+  // 测试资源监控和告警阈值
+  let resource_monitor = @azimuth.ResourceMonitor {
+    metrics : [
+      ("cpu.usage", @azimuth.FloatValue(0.75)),
+      ("memory.usage", @azimuth.FloatValue(0.82)),
+      ("disk.usage", @azimuth.FloatValue(0.45)),
+      ("network.in", @azimuth.FloatValue(1024.5)),
+      ("network.out", @azimuth.FloatValue(2048.0)),
+      ("connection.count", @azimuth.IntValue(850)),
+      ("thread.active", @azimuth.IntValue(45))
+    ],
+    thresholds : [
+      ("cpu.usage", @azimuth.FloatValue(0.8)),
+      ("memory.usage", @azimuth.FloatValue(0.85)),
+      ("disk.usage", @azimuth.FloatValue(0.9)),
+      ("connection.count", @azimuth.IntValue(1000))
+    ],
+    alert_rules : [
+      @azimuth.AlertRule {
+        name : "high_cpu_usage",
+        condition : "cpu.usage > 0.8",
+        severity : @azimuth.AlertSeverity::Warning,
+        duration : 300000L // 5分钟
+      },
+      @azimuth.AlertRule {
+        name : "high_memory_usage",
+        condition : "memory.usage > 0.85",
+        severity : @azimuth.AlertSeverity::Critical,
+        duration : 120000L // 2分钟
+      }
+    ]
+  }
+  
+  // 测试阈值检查
+  let check_thresholds = fn(monitor: @azimuth.ResourceMonitor) {
+    let violations = []
+    for metric in monitor.metrics {
+      match monitor.thresholds.find(fn(threshold) { threshold.0 == metric.0 }) {
+        Some(threshold) => {
+          let metric_value = metric.1
+          let threshold_value = threshold.1
+          
+          let is_violation = match (metric_value, threshold_value) {
+            (@azimuth.FloatValue(m), @azimuth.FloatValue(t)) => m > t
+            (@azimuth.IntValue(m), @azimuth.IntValue(t)) => m > t
+            _ => false
+          }
+          
+          if is_violation {
+            violations.push((metric.0, metric_value, threshold_value))
+          }
+        }
+        None => {}
+      }
+    }
+    violations
+  }
+  
+  let threshold_violations = check_thresholds(resource_monitor)
+  assert_eq(threshold_violations.length(), 0) // 当前没有违反阈值
+  
+  // 模拟资源使用率增加
+  let updated_metrics = resource_monitor.metrics.map(fn(metric) {
+    match metric.0 {
+      "cpu.usage" => ("cpu.usage", @azimuth.FloatValue(0.85))
+      "memory.usage" => ("memory.usage", @azimuth.FloatValue(0.87))
+      _ => metric
+    }
+  })
+  
+  let updated_monitor = { resource_monitor | metrics: updated_metrics }
+  let new_violations = check_thresholds(updated_monitor)
+  assert_eq(new_violations.length(), 2) // CPU和内存都超过阈值
+  
+  // 测试告警规则评估
+  let evaluate_alert_rules = fn(monitor: @azimuth.ResourceMonitor) {
+    let active_alerts = []
+    for rule in monitor.alert_rules {
+      let condition_met = @azimuth.evaluate_condition(rule.condition, monitor.metrics)
+      if condition_met {
+        active_alerts.push(rule)
+      }
+    }
+    active_alerts
+  }
+  
+  let active_alerts = evaluate_alert_rules(updated_monitor)
+  assert_eq(active_alerts.length(), 2)
+  assert_true(active_alerts.any(fn(alert) { alert.name == "high_cpu_usage" }))
+  assert_true(active_alerts.any(fn(alert) { alert.name == "high_memory_usage" }))
+  
+  // 测试告警去重和聚合
+  let alert_history = [
+    @azimuth.Alert {
+      id : "alert-001",
+      rule_name : "high_cpu_usage",
+      severity : @azimuth.AlertSeverity::Warning,
+      start_time : 1640995200000L,
+      end_time : None,
+      message : "CPU usage is above 80%"
+    },
+    @azimuth.Alert {
+      id : "alert-002",
+      rule_name : "high_memory_usage",
+      severity : @azimuth.AlertSeverity::Critical,
+      start_time : 1640995200100L,
+      end_time : None,
+      message : "Memory usage is above 85%"
+    }
+  ]
+  
+  let deduplicated_alerts = @azimuth.deduplicate_alerts(alert_history ++ [
+    @azimuth.Alert {
+      id : "alert-003",
+      rule_name : "high_cpu_usage",
+      severity : @azimuth.AlertSeverity::Warning,
+      start_time : 1640995200200L,
+      end_time : None,
+      message : "CPU usage is above 80%"
+    }
+  ])
+  
+  assert_eq(deduplicated_alerts.length(), 2) // CPU告警应该被去重
+}
+
+test "service mesh telemetry collection" {
+  // 测试服务网格遥测收集
+  let mesh_telemetry = @azimuth.MeshTelemetry {
+    service_mesh : "istio",
+    namespace : "production",
+    services : [
+      @azimuth.MeshService {
+        name : "frontend",
+        version : "v1.2.3",
+        pods : 3,
+        replicas : 3,
+        endpoints : [
+          "10.0.1.10:8080",
+          "10.0.1.11:8080",
+          "10.0.1.12:8080"
+        ],
+        metrics : [
+          ("request.count", @azimuth.IntValue(15000)),
+          ("error.rate", @azimuth.FloatValue(0.02)),
+          ("latency.p95", @azimuth.FloatValue(150.0))
+        ]
+      },
+      @azimuth.MeshService {
+        name : "backend",
+        version : "v2.1.0",
+        pods : 5,
+        replicas : 5,
+        endpoints : [
+          "10.0.1.20:9090",
+          "10.0.1.21:9090",
+          "10.0.1.22:9090",
+          "10.0.1.23:9090",
+          "10.0.1.24:9090"
+        ],
+        metrics : [
+          ("request.count", @azimuth.IntValue(45000)),
+          ("error.rate", @azimuth.FloatValue(0.01)),
+          ("latency.p95", @azimuth.FloatValue(85.0))
+        ]
+      }
+    ],
+    traffic_policies : [
+      @azimuth.TrafficPolicy {
+        name : "frontend-to-backend",
+        source : "frontend",
+        destination : "backend",
+        protocol : "http",
+        port : 8080,
+        timeout : 30,
+        retries : 3,
+        circuit_breaker : @azimuth.CircuitBreakerConfig {
+          consecutive_errors : 5,
+          interval : 300,
+          base_ejection_time : 30
+        }
+      }
+    ]
+  }
+  
+  // 验证服务网格结构
+  assert_eq(mesh_telemetry.service_mesh, "istio")
+  assert_eq(mesh_telemetry.namespace, "production")
+  assert_eq(mesh_telemetry.services.length(), 2)
+  
+  // 验证服务指标
+  let frontend_service = mesh_telemetry.services[0]
+  assert_eq(frontend_service.name, "frontend")
+  assert_eq(frontend_service.pods, 3)
+  assert_eq(frontend_service.replicas, 3)
+  assert_eq(frontend_service.endpoints.length(), 3)
+  
+  let frontend_requests = frontend_service.metrics.filter(fn(m) { m.0 == "request.count" })[0]
+  match frontend_requests.1 {
+    @azimuth.IntValue(v) => assert_eq(v, 15000)
+    _ => assert_true(false)
+  }
+  
+  // 验证流量策略
+  assert_eq(mesh_telemetry.traffic_policies.length(), 1)
+  let traffic_policy = mesh_telemetry.traffic_policies[0]
+  assert_eq(traffic_policy.source, "frontend")
+  assert_eq(traffic_policy.destination, "backend")
+  assert_eq(traffic_policy.protocol, "http")
+  assert_eq(traffic_policy.port, 8080)
+  
+  // 测试服务依赖关系
+  let service_dependencies = @azimuth.extract_service_dependencies(mesh_telemetry)
+  assert_eq(service_dependencies.length(), 1)
+  assert_eq(service_dependencies[0].from, "frontend")
+  assert_eq(service_dependencies[0].to, "backend")
+  
+  // 测试网格级别的聚合指标
+  let total_requests = mesh_telemetry.services.reduce(fn(acc, service) {
+    let request_metric = service.metrics.find(fn(m) { m.0 == "request.count" })
+    match request_metric {
+      Some((_, @azimuth.IntValue(v))) => acc + v
+      _ => acc
+    }
+  }, 0)
+  
+  assert_eq(total_requests, 60000) // 15000 + 45000
+  
+  let avg_error_rate = mesh_telemetry.services.reduce(fn(acc, service) {
+    let error_metric = service.metrics.find(fn(m) { m.0 == "error.rate" })
+    match error_metric {
+      Some((_, @azimuth.FloatValue(v))) => acc + v
+      _ => acc
+    }
+  }, 0.0) / (mesh_telemetry.services.length() as Float)
+  
+  assert_eq(avg_error_rate, 0.015) // (0.02 + 0.01) / 2
+}
+
+test "custom event handling and correlation" {
+  // 测试自定义事件处理和关联
+  let event_processor = @azimuth.EventProcessor {
+    correlation_rules : [
+      @azimuth.CorrelationRule {
+        name : "user_journey",
+        condition : "event.type = 'user_action' AND user.id IS NOT NULL",
+        correlation_window : 1800000L, // 30分钟
+        correlation_attributes : ["user.id", "session.id"]
+      },
+      @azimuth.CorrelationRule {
+        name : "error_chain",
+        condition : "event.type = 'error'",
+        correlation_window : 600000L, // 10分钟
+        correlation_attributes : ["trace.id", "error.code"]
+      }
+    ],
+    event_handlers : [
+      @azimuth.EventHandler {
+        name : "security_analyzer",
+        event_types : ["login", "logout", "permission.denied"],
+        action : @azimuth.HandlerAction::Analyze
+      },
+      @azimuth.EventHandler {
+        name : "performance_tracker",
+        event_types : ["slow.query", "high.latency"],
+        action : @azimuth.HandlerAction::Track
+      }
+    ]
+  }
+  
+  // 创建测试事件
+  let events = [
+    @azimuth.CustomEvent {
+      id : "event-001",
+      timestamp : 1640995200000L,
+      event_type : "user_action",
+      attributes : [
+        ("user.id", @azimuth.StringValue("user123")),
+        ("session.id", @azimuth.StringValue("session-456")),
+        ("action", @azimuth.StringValue("login")),
+        ("ip.address", @azimuth.StringValue("192.168.1.100"))
+      ]
+    },
+    @azimuth.CustomEvent {
+      id : "event-002",
+      timestamp : 1640995200300L,
+      event_type : "page_view",
+      attributes : [
+        ("user.id", @azimuth.StringValue("user123")),
+        ("session.id", @azimuth.StringValue("session-456")),
+        ("page", @azimuth.StringValue("/dashboard"))
+      ]
+    },
+    @azimuth.CustomEvent {
+      id : "event-003",
+      timestamp : 1640995200600L,
+      event_type : "error",
+      attributes : [
+        ("trace.id", @azimuth.StringValue("trace-789")),
+        ("error.code", @azimuth.StringValue("DB_TIMEOUT")),
+        ("error.message", @azimuth.StringValue("Database connection timeout"))
+      ]
+    },
+    @azimuth.CustomEvent {
+      id : "event-004",
+      timestamp : 1640995200900L,
+      event_type : "error",
+      attributes : [
+        ("trace.id", @azimuth.StringValue("trace-789")),
+        ("error.code", @azimuth.StringValue("DB_TIMEOUT")),
+        ("retry.attempt", @azimuth.IntValue(1))
+      ]
+    }
+  ]
+  
+  // 测试事件关联
+  let correlate_events = fn(processor: @azimuth.EventProcessor, events: Array[@azimuth.CustomEvent]) {
+    let correlated_groups = []
+    
+    for rule in processor.correlation_rules {
+      let matching_events = events.filter(fn(event) {
+        @azimuth.evaluate_event_condition(rule.condition, event)
+      })
+      
+      if matching_events.length() > 1 {
+        let groups = @azimuth.group_events_by_attributes(matching_events, rule.correlation_attributes)
+        correlated_groups = correlated_groups + groups
+      }
+    }
+    
+    correlated_groups
+  }
+  
+  let correlated_groups = correlate_events(event_processor, events)
+  assert_eq(correlated_groups.length(), 2) // 用户旅程和错误链各一个组
+  
+  // 验证用户旅程关联
+  let user_journey = correlated_groups.filter(fn(group) { group.correlation_type == "user_journey" })[0]
+  assert_eq(user_journey.events.length(), 2) // login和page_view
+  assert_true(user_journey.events.any(fn(event) { event.event_type == "user_action" }))
+  assert_true(user_journey.events.any(fn(event) { event.event_type == "page_view" }))
+  
+  // 验证错误链关联
+  let error_chain = correlated_groups.filter(fn(group) { group.correlation_type == "error_chain" })[0]
+  assert_eq(error_chain.events.length(), 2) // 两个DB_TIMEOUT错误
+  assert_true(error_chain.events.all(fn(event) { event.event_type == "error" }))
+  
+  // 测试事件处理
+  let process_events = fn(processor: @azimuth.EventProcessor, events: Array[@azimuth.CustomEvent]) {
+    let processing_results = []
+    
+    for event in events {
+      let matching_handlers = processor.event_handlers.filter(fn(handler) {
+        handler.event_types.any(fn(event_type) { event_type == event.event_type })
+      })
+      
+      for handler in matching_handlers {
+        let result = @azimuth.apply_event_handler(handler, event)
+        processing_results.push((event.id, handler.name, result))
+      }
+    }
+    
+    processing_results
+  }
+  
+  let processing_results = process_events(event_processor, events)
+  assert_true(processing_results.length() > 0)
+  
+  // 测试事件序列模式检测
+  let detect_sequences = fn(events: Array[@azimuth.CustomEvent]) {
+    let sequences = []
+    
+    // 检测登录失败序列
+    let login_events = events.filter(fn(event) { event.event_type == "user_action" })
+    let error_events = events.filter(fn(event) { event.event_type == "error" })
+    
+    for login_event in login_events {
+      let subsequent_errors = error_events.filter(fn(error_event) {
+        error_event.timestamp > login_event.timestamp and
+        error_event.timestamp - login_event.timestamp < 60000L // 1分钟内
+      })
+      
+      if subsequent_errors.length() > 0 {
+        sequences.push({
+          pattern : "login_followed_by_error",
+          trigger_event : login_event.id,
+          related_events : subsequent_errors.map(fn(e) { e.id })
+        })
+      }
+    }
+    
+    sequences
+  }
+  
+  let detected_sequences = detect_sequences(events)
+  assert_eq(detected_sequences.length(), 1)
+  assert_eq(detected_sequences[0].pattern, "login_followed_by_error")
+}
+
+test "telemetry data persistence and retention" {
+  // 测试遥测数据持久化和保留策略
+  let retention_policy = @azimuth.RetentionPolicy {
+    trace_retention_days : 30,
+    metric_retention_days : 90,
+    log_retention_days : 7,
+    event_retention_days : 14,
+    max_storage_size_gb : 1000,
+    compression_enabled : true,
+    cold_storage_enabled : true,
+    cold_storage_threshold_days : 7
+  }
+  
+  // 创建测试数据
+  let telemetry_data = [
+    @azimuth.StorableTelemetry {
+      id : "data-001",
+      type : @azimuth.TelemetryType::Trace,
+      timestamp : 1640995200000L, // 2022-01-01
+      size_bytes : 1024,
+      data : @azimuth.TraceData {
+        trace_id : "trace-001",
+        spans : [
+          @azimuth.SpanSummary {
+            span_id : "span-001",
+            operation_name : "http.request",
+            duration_ms : 150L
+          }
+        ]
+      },
+      compressed : false,
+      storage_tier : @azimuth.StorageTier::Hot
+    },
+    @azimuth.StorableTelemetry {
+      id : "data-002",
+      type : @azimuth.TelemetryType::Metric,
+      timestamp : 1640995200000L, // 2022-01-01
+      size_bytes : 512,
+      data : @azimuth.MetricData {
+        name : "cpu.usage",
+        value : 0.65,
+        unit : "percent"
+      },
+      compressed : false,
+      storage_tier : @azimuth.StorageTier::Hot
+    },
+    @azimuth.StorableTelemetry {
+      id : "data-003",
+      type : @azimuth.TelemetryType::Log,
+      timestamp : 1640995200000L, // 2022-01-01
+      size_bytes : 256,
+      data : @azimuth.LogData {
+        level : "INFO",
+        message : "Application started"
+      },
+      compressed : false,
+      storage_tier : @azimuth.StorageTier::Hot
+    }
+  ]
+  
+  // 测试数据压缩
+  let compress_data = fn(data: @azimuth.StorableTelemetry) {
+    if retention_policy.compression_enabled and not(data.compressed) {
+      let compressed_size = (data.size_bytes as Float) * 0.7 // 假设压缩率为30%
+      {
+        data |
+        size_bytes: compressed_size as Int,
+        compressed: true
+      }
+    } else {
+      data
+    }
+  }
+  
+  let compressed_data = telemetry_data.map(compress_data)
+  assert_true(compressed_data.all(fn(data) { data.compressed }))
+  
+  // 验证压缩后的大小
+  let original_total_size = telemetry_data.reduce(fn(acc, data) { acc + data.size_bytes }, 0)
+  let compressed_total_size = compressed_data.reduce(fn(acc, data) { acc + data.size_bytes }, 0)
+  assert_true(compressed_total_size < original_total_size)
+  
+  // 测试存储分层
+  let current_timestamp = 1643673600L // 2022-02-01 (31天后)
+  let days_since_epoch = current_timestamp / 86400000L
+  
+  let assign_storage_tier = fn(data: @azimuth.StorableTelemetry) {
+    let data_age_days = (days_since_epoch - (data.timestamp / 86400000L))
+    
+    if retention_policy.cold_storage_enabled and data_age_days >= retention_policy.cold_storage_threshold_days {
+      { data | storage_tier: @azimuth.StorageTier::Cold }
+    } else {
+      data
+    }
+  }
+  
+  let tiered_data = compressed_data.map(assign_storage_tier)
+  
+  // 验证冷存储分配
+  let cold_storage_data = tiered_data.filter(fn(data) { data.storage_tier == @azimuth.StorageTier::Cold })
+  assert_eq(cold_storage_data.length(), 3) // 所有数据都超过7天阈值
+  
+  // 测试数据保留策略
+  let should_retain = fn(data: @azimuth.StorableTelemetry, policy: @azimuth.RetentionPolicy, current_time: Int) {
+    let data_age_days = (current_time / 86400000L) - (data.timestamp / 86400000L)
+    
+    match data.type {
+      @azimuth.TelemetryType::Trace => data_age_days <= policy.trace_retention_days
+      @azimuth.TelemetryType::Metric => data_age_days <= policy.metric_retention_days
+      @azimuth.TelemetryType::Log => data_age_days <= policy.log_retention_days
+      @azimuth.TelemetryType::Event => data_age_days <= policy.event_retention_days
+    }
+  }
+  
+  // 测试不同时间点的保留状态
+  let after_10_days = 1640995200000L + (10 * 86400000L)
+  let after_40_days = 1640995200000L + (40 * 86400000L)
+  let after_100_days = 1640995200000L + (100 * 86400000L)
+  
+  // 10天后，所有数据都应该保留
+  let retained_after_10 = tiered_data.filter(fn(data) { should_retain(data, retention_policy, after_10_days) })
+  assert_eq(retained_after_10.length(), 3)
+  
+  // 40天后，追踪数据应该被删除，但指标数据应该保留
+  let retained_after_40 = tiered_data.filter(fn(data) { should_retain(data, retention_policy, after_40_days) })
+  assert_eq(retained_after_40.length(), 1) // 只有指标数据
+  assert_eq(retained_after_40[0].type, @azimuth.TelemetryType::Metric)
+  
+  // 100天后，所有数据都应该被删除
+  let retained_after_100 = tiered_data.filter(fn(data) { should_retain(data, retention_policy, after_100_days) })
+  assert_eq(retained_after_100.length(), 0)
+  
+  // 测试存储容量管理
+  let total_storage_used = tiered_data.reduce(fn(acc, data) { acc + data.size_bytes }, 0)
+  let storage_usage_percentage = (total_storage_used as Float) / (retention_policy.max_storage_size_gb * 1024 * 1024 * 1024 as Float)
+  
+  assert_true(storage_usage_percentage < 1.0) // 当前使用量应该小于最大容量
+  
+  // 模拟存储空间不足时的清理策略
+  let cleanup_old_data = fn(data: Array[@azimuth.StorableTelemetry], policy: @azimuth.RetentionPolicy, current_time: Int) {
+    let sorted_by_age = data.sort(fn(a, b) { a.timestamp < b.timestamp })
+    let mut cleaned_data = []
+    let mut current_size = 0
+    let max_size = policy.max_storage_size_gb * 1024 * 1024 * 1024
+    
+    for item in sorted_by_age {
+      if should_retain(item, policy, current_time) and current_size + item.size_bytes <= max_size {
+        cleaned_data = cleaned_data.push(item)
+        current_size = current_size + item.size_bytes
+      }
+    }
+    
+    cleaned_data
+  }
+  
+  // 模拟大量数据占用存储空间
+  let large_dataset = Array.range(0, 1000).map(fn(i) {
+    @azimuth.StorableTelemetry {
+      id: "data-" + i.to_string(),
+      type: @azimuth.TelemetryType::Metric,
+      timestamp: 1640995200000L + (i as Int * 86400000L),
+      size_bytes: 1024 * 1024, // 1MB per item
+      data: @azimuth.MetricData { name: "metric-" + i.to_string(), value: 0.5, unit: "percent" },
+      compressed: true,
+      storage_tier: @azimuth.StorageTier::Hot
+    }
+  })
+  
+  let cleaned_dataset = cleanup_old_data(large_dataset, retention_policy, after_10_days)
+  assert_true(cleaned_dataset.length() < large_dataset.length())
+  
+  let cleaned_total_size = cleaned_dataset.reduce(fn(acc, data) { acc + data.size_bytes }, 0)
+  assert_true(cleaned_total_size <= retention_policy.max_storage_size_gb * 1024 * 1024 * 1024)
 }
