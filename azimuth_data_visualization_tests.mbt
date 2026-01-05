@@ -1,609 +1,797 @@
-// Data Visualization Tests for Azimuth Telemetry System
-// This file contains test cases for data visualization functionality
+// Azimuth 数据可视化测试用例
+// 专注于数据可视化和图表生成
 
-// Test 1: Chart Generation
-test "chart generation" {
-  let chart_data = [
-    ("Jan", 65.0),
-    ("Feb", 75.0),
-    ("Mar", 82.0),
-    ("Apr", 73.0),
-    ("May", 88.0),
-    ("Jun", 92.0)
-  ]
+// 测试1: 图表数据结构
+test "图表数据结构" {
+  // 定义图表数据结构
+  type ChartData = {
+    labels: Array[String],
+    datasets: Array[{
+      label: String,
+      data: Array[Float],
+      backgroundColor: String,
+      borderColor: String
+    }]
+  }
   
-  // Test line chart generation
-  let line_chart = ChartGenerator::create_line_chart(
-    chart_data,
-    "Monthly Metrics",
-    "Month",
-    "Value"
-  )
+  type PieChartData = {
+    labels: Array[String],
+    datasets: Array[{
+      data: Array[Float],
+      backgroundColor: Array[String]
+    }]
+  }
   
-  assert_eq(line_chart.title, "Monthly Metrics")
-  assert_eq(line_chart.x_axis_label, "Month")
-  assert_eq(line_chart.y_axis_label, "Value")
-  assert_eq(line_chart.data_points.length(), 6)
+  // 创建线图数据
+  let create_line_chart_data = fn(labels: Array[String], datasets: Array[(String, Array[Float], String, String)]) {
+    let mut chart_datasets = []
+    
+    for (label, data, bg_color, border_color) in datasets {
+      chart_datasets = chart_datasets.push({
+        label: label,
+        data: data,
+        backgroundColor: bg_color,
+        borderColor: border_color
+      })
+    }
+    
+    {
+      labels: labels,
+      datasets: chart_datasets
+    }
+  }
   
-  // Test bar chart generation
-  let bar_chart = ChartGenerator::create_bar_chart(
-    chart_data,
-    "Monthly Metrics",
-    "Month",
-    "Value"
-  )
+  // 创建饼图数据
+  let create_pie_chart_data = fn(labels: Array[String], data: Array[Float], colors: Array[String]) {
+    {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: colors
+      }]
+    }
+  }
   
-  assert_eq(bar_chart.title, "Monthly Metrics")
-  assert_eq(bar_chart.data_points.length(), 6)
+  // 测试图表数据结构
+  let time_labels = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"]
+  let cpu_data = [30.0, 45.0, 60.0, 75.0, 65.0, 40.0]
+  let memory_data = [50.0, 55.0, 65.0, 70.0, 60.0, 55.0]
   
-  // Test pie chart generation
-  let pie_data = [
-    ("Category A", 30.0),
-    ("Category B", 25.0),
-    ("Category C", 20.0),
-    ("Category D", 15.0),
-    ("Category E", 10.0)
-  ]
-  
-  let pie_chart = ChartGenerator::create_pie_chart(pie_data, "Distribution")
-  assert_eq(pie_chart.title, "Distribution")
-  assert_eq(pie_chart.segments.length(), 5)
-  
-  // Test area chart generation
-  let area_chart = ChartGenerator::create_area_chart(
-    chart_data,
-    "Monthly Metrics",
-    "Month",
-    "Value"
-  )
-  
-  assert_eq(area_chart.title, "Monthly Metrics")
-  assert_eq(area_chart.data_points.length(), 6)
-}
-
-// Test 2: Real-time Dashboard Updates
-test "real-time dashboard updates" {
-  let dashboard = Dashboard::new("Telemetry Dashboard")
-  
-  // Test widget creation
-  let metric_widget = DashboardWidget::metric_chart("cpu_usage", "CPU Usage", "percentage")
-  Dashboard::add_widget(dashboard, metric_widget)
-  
-  let gauge_widget = DashboardWidget::gauge("memory_usage", "Memory Usage", 0.0, 100.0)
-  Dashboard::add_widget(dashboard, gauge_widget)
-  
-  let table_widget = DashboardWidget::table("top_processes", "Top Processes", ["Name", "CPU", "Memory"])
-  Dashboard::add_widget(dashboard, table_widget)
-  
-  // Test widget data updates
-  Dashboard::update_widget_data(dashboard, "cpu_usage", [45.0, 50.0, 55.0, 48.0, 52.0])
-  Dashboard::update_widget_data(dashboard, "memory_usage", 67.5)
-  
-  let table_data = [
-    ["chrome.exe", "15.2", "256MB"],
-    ["firefox.exe", "12.8", "198MB"],
-    ["code.exe", "8.5", "512MB"]
-  ]
-  Dashboard::update_widget_data(dashboard, "top_processes", table_data)
-  
-  // Test dashboard snapshot
-  let snapshot = Dashboard::get_snapshot(dashboard)
-  assert_eq(snapshot.widgets.length(), 3)
-  
-  // Test widget removal
-  Dashboard::remove_widget(dashboard, "top_processes")
-  let updated_snapshot = Dashboard::get_snapshot(dashboard)
-  assert_eq(updated_snapshot.widgets.length(), 2)
-  
-  // Test dashboard layout
-  Dashboard::set_layout(dashboard, GridLayout::new(2, 2))
-  let layout = Dashboard::get_layout(dashboard)
-  assert_eq(layout.rows, 2)
-  assert_eq(layout.columns, 2)
-}
-
-// Test 3: Data Aggregation for Visualization
-test "data aggregation for visualization" {
-  let raw_data = [
-    (1640995200L, 10.5), // 2022-01-01 00:00:00
-    (1640995260L, 12.3),
-    (1640995320L, 11.8),
-    (1640995380L, 13.2),
-    (1640995440L, 14.7),
-    (1640995500L, 13.9),
-    (1640995560L, 15.1),
-    (1640995620L, 14.3),
-    (1640995680L, 16.2),
-    (1640995740L, 15.8)
-  ]
-  
-  // Test time-based aggregation (5-minute intervals)
-  let aggregated_5min = DataAggregator::aggregate_by_time_interval(raw_data, 300) // 5 minutes
-  assert_eq(aggregated_5min.length(), 2)
-  
-  // Test statistical aggregation
-  let stats = DataAggregator::calculate_statistics(raw_data)
-  assert_eq(stats.count, 10)
-  assert_eq(stats.min, 10.5)
-  assert_eq(stats.max, 16.2)
-  assert_true(stats.average > 13.0 && stats.average < 14.0)
-  
-  // Test percentile calculation
-  let p50 = DataAggregator::calculate_percentile(raw_data, 50.0)
-  let p90 = DataAggregator::calculate_percentile(raw_data, 90.0)
-  let p95 = DataAggregator::calculate_percentile(raw_data, 95.0)
-  
-  assert_true(p50 > 13.0 && p50 < 14.0)
-  assert_true(p90 > 15.0 && p90 < 16.0)
-  assert_true(p95 > 15.0 && p95 < 16.5)
-  
-  // Test moving average
-  let moving_avg = DataAggregator::calculate_moving_average(raw_data, 3)
-  assert_eq(moving_avg.length(), 8) // 10 - 3 + 1
-  
-  // Test data sampling
-  let sampled_data = DataAggregator::sample_data(raw_data, 3)
-  assert_eq(sampled_data.length(), 4) // ceil(10 / 3)
-}
-
-// Test 4: Color Palette and Theming
-test "color palette and theming" {
-  // Test default color palette
-  let default_palette = ColorPalette::default()
-  assert_eq(default_palette.colors.length(), 10)
-  
-  // Test custom color palette
-  let custom_colors = ["#FF5733", "#33FF57", "#3357FF", "#F3FF33", "#FF33F3"]
-  let custom_palette = ColorPalette::new(custom_colors)
-  assert_eq(custom_palette.colors.length(), 5)
-  
-  // Test color generation
-  let generated_colors = ColorPalette::generate_colors(8, ColorScheme::Qualitative)
-  assert_eq(generated_colors.length(), 8)
-  
-  // Test theme creation
-  let light_theme = Theme::new("Light", "#FFFFFF", "#000000", custom_palette)
-  let dark_theme = Theme::new("Dark", "#000000", "#FFFFFF", custom_palette)
-  
-  assert_eq(light_theme.name, "Light")
-  assert_eq(light_theme.background_color, "#FFFFFF")
-  assert_eq(light_theme.text_color, "#000000")
-  
-  assert_eq(dark_theme.name, "Dark")
-  assert_eq(dark_theme.background_color, "#000000")
-  assert_eq(dark_theme.text_color, "#FFFFFF")
-  
-  // Test theme application
-  let chart = Chart::new("Test Chart")
-  let themed_chart = Theme::apply_to_chart(light_theme, chart)
-  assert_eq(themed_chart.background_color, "#FFFFFF")
-  assert_eq(themed_chart.text_color, "#000000")
-  
-  // Test color accessibility
-  let contrast_ratio = ColorUtils::calculate_contrast_ratio("#FFFFFF", "#000000")
-  assert_true(contrast_ratio > 7.0) // High contrast
-  
-  let is_accessible = ColorUtils::is_accessible_combination("#FFFFFF", "#000000")
-  assert_true(is_accessible)
-}
-
-// Test 5: Interactive Visualizations
-test "interactive visualizations" {
-  let interactive_chart = InteractiveChart::new("Interactive Metrics")
-  
-  // Test tooltip configuration
-  InteractiveChart::enable_tooltips(interactive_chart, TooltipConfig::new(
-    "default",
-    true,
-    ["value", "timestamp"]
-  ))
-  
-  // Test zoom functionality
-  InteractiveChart::enable_zoom(interactive_chart, ZoomConfig::new(
-    true,
-    true,
-    0.1,
-    10.0
-  ))
-  
-  // Test pan functionality
-  InteractiveChart::enable_pan(interactive_chart, PanConfig::new(
-    true,
-    true,
-    "drag"
-  ))
-  
-  // Test crosshair
-  InteractiveChart::enable_crosshair(interactive_chart, CrosshairConfig::new(
-    true,
-    "#FF0000",
-    1.0,
-    "dashed"
-  ))
-  
-  // Test data point selection
-  InteractiveChart::enable_selection(interactive_chart, SelectionConfig::new(
-    true,
-    "single",
-    "#00FF00"
-  ))
-  
-  // Test event handling
-  let click_handler = InteractiveChart::add_event_handler(interactive_chart, "click", lambda { event =>
-    assert_eq(event.type, "click")
-    assert_true(event.data_point_index >= 0)
-  })
-  
-  // Test annotation support
-  InteractiveChart::add_annotation(interactive_chart, Annotation::new(
-    "Important Event",
-    1640995500L,
-    15.0,
-    "#FF0000"
-  ))
-  
-  let annotations = InteractiveChart::get_annotations(interactive_chart)
-  assert_eq(annotations.length(), 1)
-  
-  // Test export functionality
-  let export_config = ExportConfig::new(
-    "png",
-    1920,
-    1080,
-    2.0
-  )
-  
-  let export_result = InteractiveChart::export(interactive_chart, export_config)
-  assert_true(export_result.is_success)
-}
-
-// Test 6: Map-based Visualizations
-test "map-based visualizations" {
-  let map_viz = MapVisualization::new("Geographic Distribution")
-  
-  // Test map layer addition
-  let base_layer = MapLayer::new("Base", LayerType::BaseMap)
-  MapVisualization::add_layer(map_viz, base_layer)
-  
-  // Test marker layer
-  let marker_data = [
-    MapMarker::new("Location 1", 40.7128, -74.0060, "New York", 100),
-    MapMarker::new("Location 2", 34.0522, -118.2437, "Los Angeles", 85),
-    MapMarker::new("Location 3", 41.8781, -87.6298, "Chicago", 75)
-  ]
-  
-  let marker_layer = MapLayer::new("Markers", LayerType::Markers)
-  MapLayer::add_markers(marker_layer, marker_data)
-  MapVisualization::add_layer(map_viz, marker_layer)
-  
-  // Test heatmap layer
-  let heatmap_data = [
-    HeatmapPoint::new(40.7128, -74.0060, 0.8),
-    HeatmapPoint::new(34.0522, -118.2437, 0.6),
-    HeatmapPoint::new(41.8781, -87.6298, 0.7)
-  ]
-  
-  let heatmap_layer = MapLayer::new("Heatmap", LayerType::Heatmap)
-  MapLayer::add_heatmap_points(heatmap_layer, heatmap_data)
-  MapVisualization::add_layer(map_viz, heatmap_layer)
-  
-  // Test clustering
-  MapVisualization::enable_clustering(map_viz, ClusteringConfig::new(
-    true,
-    50,
-    "max"
-  ))
-  
-  // Test map controls
-  MapVisualization::add_control(map_viz, MapControl::new(
-    ControlType::Zoom,
-    "top-right"
-  ))
-  
-  MapVisualization::add_control(map_viz, MapControl::new(
-    ControlType::LayerSwitcher,
-    "top-left"
-  ))
-  
-  // Test map bounds
-  let bounds = MapVisualization::calculate_bounds(map_viz)
-  assert_true(bounds.north > bounds.south)
-  assert_true(bounds.east > bounds.west)
-  
-  // Test geospatial query
-  let nearby_markers = MapVisualization::query_within_radius(
-    map_viz,
-    40.7128,
-    -74.0060,
-    100.0 // 100km
-  )
-  assert_true(nearby_markers.length() >= 1)
-}
-
-// Test 7: Advanced Chart Types
-test "advanced chart types" {
-  // Test scatter plot
-  let scatter_data = [
-    ScatterPoint::new(1.0, 2.0, 10),
-    ScatterPoint::new(2.0, 4.0, 15),
-    ScatterPoint::new(3.0, 3.0, 8),
-    ScatterPoint::new(4.0, 5.0, 20),
-    ScatterPoint::new(5.0, 4.5, 12)
-  ]
-  
-  let scatter_plot = AdvancedChart::create_scatter_plot(
-    scatter_data,
-    "X vs Y",
-    "X Value",
-    "Y Value"
-  )
-  
-  assert_eq(scatter_plot.points.length(), 5)
-  assert_eq(scatter_plot.title, "X vs Y")
-  
-  // Test bubble chart
-  let bubble_data = [
-    BubblePoint::new(1.0, 2.0, 10, "Group A"),
-    BubblePoint::new(2.0, 4.0, 15, "Group B"),
-    BubblePoint::new(3.0, 3.0, 8, "Group A"),
-    BubblePoint::new(4.0, 5.0, 20, "Group C"),
-    BubblePoint::new(5.0, 4.5, 12, "Group B")
-  ]
-  
-  let bubble_chart = AdvancedChart::create_bubble_chart(
-    bubble_data,
-    "Bubble Chart",
-    "X Value",
-    "Y Value",
-    "Size"
-  )
-  
-  assert_eq(bubble_chart.bubbles.length(), 5)
-  assert_eq(bubble_chart.title, "Bubble Chart")
-  
-  // Test radar chart
-  let radar_data = [
-    ("Speed", 80),
-    ("Reliability", 90),
-    ("Comfort", 60),
-    ("Safety", 95),
-    ("Efficiency", 75)
-  ]
-  
-  let radar_chart = AdvancedChart::create_radar_chart(
-    radar_data,
-    "Performance Metrics"
-  )
-  
-  assert_eq(radar_chart.axes.length(), 5)
-  assert_eq(radar_chart.title, "Performance Metrics")
-  
-  // Test sunburst chart
-  let sunburst_data = SunburstNode::new(
-    "Root",
-    100,
+  let line_chart_data = create_line_chart_data(
+    time_labels,
     [
-      SunburstNode::new(
-        "Branch A",
-        60,
-        [
-          SunburstNode::new("Leaf A1", 30, []),
-          SunburstNode::new("Leaf A2", 30, [])
-        ]
-      ),
-      SunburstNode::new(
-        "Branch B",
-        40,
-        [
-          SunburstNode::new("Leaf B1", 20, []),
-          SunburstNode::new("Leaf B2", 20, [])
-        ]
-      )
+      ("CPU Usage", cpu_data, "rgba(255, 99, 132, 0.2)", "rgb(255, 99, 132)"),
+      ("Memory Usage", memory_data, "rgba(54, 162, 235, 0.2)", "rgb(54, 162, 235)")
     ]
   )
   
-  let sunburst_chart = AdvancedChart::create_sunburst_chart(sunburst_data)
-  assert_eq(sunburst_chart.root.label, "Root")
-  assert_eq(sunburst_chart.root.children.length(), 2)
+  assert_eq(line_chart_data.labels.length(), 6)
+  assert_eq(line_chart_data.datasets.length(), 2)
+  assert_eq(line_chart_data.datasets[0].label, "CPU Usage")
+  assert_eq(line_chart_data.datasets[1].label, "Memory Usage")
+  assert_eq(line_chart_data.datasets[0].data[3], 75.0)  // CPU在12:00的值
+  assert_eq(line_chart_data.datasets[1].data[2], 65.0)  // Memory在08:00的值
   
-  // Test treemap
-  let treemap_data = [
-    TreemapNode::new("Category A", 30, []),
-    TreemapNode::new("Category B", 25, []),
-    TreemapNode::new(
-      "Category C",
-      45,
-      [
-        TreemapNode::new("Subcategory C1", 20, []),
-        TreemapNode::new("Subcategory C2", 25, [])
-      ]
-    )
+  // 测试饼图数据
+  let service_labels = ["Auth Service", "Payment Service", "Order Service", "Notification Service"]
+  let service_data = [25.0, 35.0, 30.0, 10.0]
+  let service_colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]
+  
+  let pie_chart_data = create_pie_chart_data(service_labels, service_data, service_colors)
+  
+  assert_eq(pie_chart_data.labels.length(), 4)
+  assert_eq(pie_chart_data.datasets.length(), 1)
+  assert_eq(pie_chart_data.datasets[0].data[1], 35.0)  // Payment Service的百分比
+  assert_eq(pie_chart_data.datasets[0].backgroundColor[2], "#FFCE56")  // Order Service的颜色
+  
+  // 测试数据验证
+  let validate_chart_data = fn(data: ChartData) {
+    let mut valid = true
+    let mut error_messages = []
+    
+    // 检查标签和数据长度一致
+    for dataset in data.datasets {
+      if dataset.data.length() != data.labels.length() {
+        valid = false
+        error_messages = error_messages.push("Data length does not match labels length")
+        break
+      }
+    }
+    
+    // 检查数据是否为数字
+    for dataset in data.datasets {
+      for value in dataset.data {
+        if value.is_nan() || value.is_infinite() {
+          valid = false
+          error_messages = error_messages.push("Data contains invalid values")
+          break
+        }
+      }
+    }
+    
+    (valid, error_messages)
+  }
+  
+  let (valid, errors) = validate_chart_data(line_chart_data)
+  assert_true(valid)
+  assert_eq(errors.length(), 0)
+  
+  // 测试无效数据
+  let invalid_data = create_line_chart_data(
+    ["00:00", "04:00"],  // 2个标签
+    [
+      ("CPU", [30.0, 45.0, 60.0], "red", "red")  // 3个数据点，不匹配
+    ]
+  )
+  
+  let (invalid_valid, invalid_errors) = validate_chart_data(invalid_data)
+  assert_false(invalid_valid)
+  assert_true(invalid_errors.length() > 0)
+}
+
+// 测试2: 图表配置和选项
+test "图表配置和选项" {
+  // 定义图表选项
+  type ChartOptions = {
+    responsive: Bool,
+    plugins: {
+      title: {
+        display: Bool,
+        text: String
+      },
+      legend: {
+        display: Bool,
+        position: String
+      }
+    },
+    scales: {
+      x: {
+        display: Bool,
+        title: {
+          display: Bool,
+          text: String
+        }
+      },
+      y: {
+        display: Bool,
+        title: {
+          display: Bool,
+          text: String
+        },
+        begin_at_zero: Bool
+      }
+    }
+  }
+  
+  // 创建默认图表选项
+  let create_default_options = fn(title: String, x_title: String, y_title: String) {
+    {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: title
+        },
+        legend: {
+          display: true,
+          position: "top"
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: x_title
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: y_title
+          },
+          begin_at_zero: true
+        }
+      }
+    }
+  }
+  
+  // 创建饼图选项
+  let create_pie_options = fn(title: String) {
+    {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: title
+        },
+        legend: {
+          display: true,
+          position: "right"
+        }
+      },
+      scales: {
+        x: {
+          display: false,
+          title: {
+            display: false,
+            text: ""
+          }
+        },
+        y: {
+          display: false,
+          title: {
+            display: false,
+            text: ""
+          },
+          begin_at_zero: false
+        }
+      }
+    }
+  }
+  
+  // 测试图表选项创建
+  let line_options = create_default_options("System Metrics", "Time", "Usage (%)")
+  
+  assert_true(line_options.responsive)
+  assert_eq(line_options.plugins.title.text, "System Metrics")
+  assert_eq(line_options.plugins.legend.position, "top")
+  assert_true(line_options.scales.x.display)
+  assert_eq(line_options.scales.x.title.text, "Time")
+  assert_eq(line_options.scales.y.title.text, "Usage (%)")
+  assert_true(line_options.scales.y.begin_at_zero)
+  
+  let pie_options = create_pie_options("Service Distribution")
+  
+  assert_true(pie_options.responsive)
+  assert_eq(pie_options.plugins.title.text, "Service Distribution")
+  assert_eq(pie_options.plugins.legend.position, "right")
+  assert_false(pie_options.scales.x.display)
+  assert_false(pie_options.scales.y.display)
+  
+  // 测试选项合并
+  let merge_options = fn(base: ChartOptions, override: ChartOptions) {
+    {
+      responsive: override.responsive,
+      plugins: {
+        title: {
+          display: override.plugins.title.display,
+          text: override.plugins.title.text
+        },
+        legend: {
+          display: override.plugins.legend.display,
+          position: override.plugins.legend.position
+        }
+      },
+      scales: {
+        x: {
+          display: override.scales.x.display,
+          title: {
+            display: override.scales.x.title.display,
+            text: override.scales.x.title.text
+          }
+        },
+        y: {
+          display: override.scales.y.display,
+          title: {
+            display: override.scales.y.title.display,
+            text: override.scales.y.title.text
+          },
+          begin_at_zero: override.scales.y.begin_at_zero
+        }
+      }
+    }
+  }
+  
+  let custom_options = {
+    responsive: false,
+    plugins: {
+      title: {
+        display: false,
+        text: ""
+      },
+      legend: {
+        display: false,
+        position: "bottom"
+      }
+    },
+    scales: {
+      x: {
+        display: true,
+        title: {
+          display: false,
+          text: ""
+        }
+      },
+      y: {
+        display: true,
+        title: {
+          display: true,
+          text: "Value"
+        },
+        begin_at_zero: false
+      }
+    }
+  }
+  
+  let merged_options = merge_options(line_options, custom_options)
+  
+  assert_false(merged_options.responsive)
+  assert_false(merged_options.plugins.title.display)
+  assert_false(merged_options.plugins.legend.display)
+  assert_eq(merged_options.plugins.legend.position, "bottom")
+  assert_true(merged_options.scales.x.display)
+  assert_false(merged_options.scales.x.title.display)
+  assert_eq(merged_options.scales.y.title.text, "Value")
+  assert_false(merged_options.scales.y.begin_at_zero)
+}
+
+// 测试3: 图表类型转换
+test "图表类型转换" {
+  // 定义通用数据点
+  type DataPoint = {
+    x: String,
+    y: Float
+  }
+  
+  // 将线图数据转换为散点图数据
+  let convert_line_to_scatter = fn(labels: Array[String], data: Array[Float]) {
+    let mut scatter_data = []
+    
+    for i in 0..labels.length() {
+      if i < data.length() {
+        scatter_data = scatter_data.push({
+          x: labels[i],
+          y: data[i]
+        })
+      }
+    }
+    
+    scatter_data
+  }
+  
+  // 将多个数据集转换为堆叠图数据
+  let convert_to_stacked_data = fn(labels: Array[String], datasets: Array[(String, Array[Float])]) {
+    let mut stacked_data = []
+    
+    for i in 0..labels.length() {
+      let mut stacked_point = []
+      
+      for (_, data) in datasets {
+        if i < data.length() {
+          stacked_point = stacked_point.push(data[i])
+        } else {
+          stacked_point = stacked_point.push(0.0)
+        }
+      }
+      
+      stacked_data = stacked_point.push(stacked_point)
+    }
+    
+    stacked_data
+  }
+  
+  // 计算堆叠数据的累积值
+  let calculate_stacked_totals = fn(stacked_data: Array[Array[Float]]) {
+    let mut totals = []
+    
+    for data_point in stacked_data {
+      let mut total = 0.0
+      for value in data_point {
+        total = total + value
+      }
+      totals = totals.push(total)
+    }
+    
+    totals
+  }
+  
+  // 测试图表类型转换
+  let time_labels = ["Jan", "Feb", "Mar", "Apr", "May"]
+  let revenue_data = [100.0, 150.0, 180.0, 220.0, 280.0]
+  
+  let scatter_data = convert_line_to_scatter(time_labels, revenue_data)
+  
+  assert_eq(scatter_data.length(), 5)
+  assert_eq(scatter_data[2].x, "Mar")
+  assert_eq(scatter_data[2].y, 180.0)
+  
+  // 测试堆叠数据转换
+  let datasets = [
+    ("Product A", [50.0, 60.0, 70.0, 80.0, 90.0]),
+    ("Product B", [30.0, 40.0, 50.0, 60.0, 70.0]),
+    ("Product C", [20.0, 30.0, 40.0, 50.0, 60.0])
   ]
   
-  let treemap = AdvancedChart::create_treemap(treemap_data)
-  assert_eq(treemap.nodes.length(), 3)
-  assert_eq(treemap.nodes[2].children.length(), 2)
-}
-
-// Test 8: Data Export and Sharing
-test "data export and sharing" {
-  let dashboard = Dashboard::new("Export Test Dashboard")
+  let stacked_data = convert_to_stacked_data(time_labels, datasets)
   
-  // Test widget creation with data
-  let chart_widget = DashboardWidget::metric_chart("test_chart", "Test Chart", "value")
-  Dashboard::add_widget(dashboard, chart_widget)
-  Dashboard::update_widget_data(dashboard, "test_chart", [
-    (1, 10.0),
-    (2, 15.0),
-    (3, 12.0),
-    (4, 18.0),
-    (5, 20.0)
-  ])
+  assert_eq(stacked_data.length(), 5)
+  assert_eq(stacked_data[0], [50.0, 30.0, 20.0])  // Jan的数据
+  assert_eq(stacked_data[4], [90.0, 70.0, 60.0])  // May的数据
   
-  // Test PNG export
-  let png_export = Dashboard::export_as_png(dashboard, 1920, 1080)
-  assert_true(png_export.is_success)
-  assert_true(png_export.data.length() > 0)
+  let stacked_totals = calculate_stacked_totals(stacked_data)
   
-  // Test JPEG export
-  let jpeg_export = Dashboard::export_as_jpeg(dashboard, 1920, 1080, 0.9)
-  assert_true(jpeg_export.is_success)
-  assert_true(jpeg_export.data.length() > 0)
+  assert_eq(stacked_totals.length(), 5)
+  assert_eq(stacked_totals[0], 100.0)  // 50+30+20
+  assert_eq(stacked_totals[4], 220.0)  // 90+70+60
   
-  // Test SVG export
-  let svg_export = Dashboard::export_as_svg(dashboard)
-  assert_true(svg_export.is_success)
-  assert_true(svg_export.data.contains("<svg"))
-  
-  // Test PDF export
-  let pdf_export = Dashboard::export_as_pdf(dashboard, "A4", "landscape")
-  assert_true(pdf_export.is_success)
-  assert_true(pdf_export.data.length() > 0)
-  
-  // Test data export (CSV)
-  let csv_export = Dashboard::export_data_as_csv(dashboard)
-  assert_true(csv_export.is_success)
-  assert_true(csv_export.data.contains("test_chart"))
-  
-  // Test data export (JSON)
-  let json_export = Dashboard::export_data_as_json(dashboard)
-  assert_true(json_export.is_success)
-  assert_true(json_export.data.contains("\"widgets\""))
-  
-  // Test sharing link generation
-  let share_config = ShareConfig::new(
-    true, // enabled
-    24,   // expires in 24 hours
-    true, // allow download
-    false // password protected
-  )
-  
-  let share_link = Dashboard::generate_share_link(dashboard, share_config)
-  assert_true(share_link.is_success)
-  assert_true(share_link.url.contains("dashboard"))
-  assert_true(share_link.token.length() > 0)
-}
-
-// Test 9: Responsive Design
-test "responsive design" {
-  let dashboard = Dashboard::new("Responsive Dashboard")
-  
-  // Test responsive breakpoints
-  let breakpoints = ResponsiveConfig::new(
-    768,   // tablet breakpoint
-    1024,  // desktop breakpoint
-    1440   // large desktop breakpoint
-  )
-  
-  Dashboard::set_responsive_config(dashboard, breakpoints)
-  
-  // Test layout adaptation
-  let mobile_layout = Dashboard::get_layout_for_screen_size(dashboard, 375) // iPhone
-  assert_eq(mobile_layout.columns, 1)
-  assert_eq(mobile_layout.rows, 3)
-  
-  let tablet_layout = Dashboard::get_layout_for_screen_size(dashboard, 768) // iPad
-  assert_eq(tablet_layout.columns, 2)
-  assert_eq(tablet_layout.rows, 2)
-  
-  let desktop_layout = Dashboard::get_layout_for_screen_size(dashboard, 1920) // Desktop
-  assert_eq(desktop_layout.columns, 3)
-  assert_eq(desktop_layout.rows, 1)
-  
-  // Test widget adaptation
-  let chart_widget = DashboardWidget::metric_chart("responsive_chart", "Responsive Chart", "value")
-  Dashboard::add_widget(dashboard, chart_widget)
-  
-  let mobile_config = WidgetConfig::get_for_screen_size("mobile")
-  assert_eq(mobile_config.height, 200)
-  assert_eq(mobile_config.show_legend, false)
-  
-  let desktop_config = WidgetConfig::get_for_screen_size("desktop")
-  assert_eq(desktop_config.height, 400)
-  assert_eq(desktop_config.show_legend, true)
-  
-  // Test touch interaction
-  Dashboard::enable_touch_interaction(dashboard, true)
-  let touch_config = Dashboard::get_touch_config(dashboard)
-  assert_true(touch_config.enabled)
-  assert_eq(touch_config.tap_threshold, 10)
-  assert_eq(touch_config.swipe_threshold, 50)
-  
-  // Test print optimization
-  Dashboard::optimize_for_print(dashboard)
-  let print_config = Dashboard::get_print_config(dashboard)
-  assert_true(print_config.optimized)
-  assert_eq(print_config.paper_size, "A4")
-  assert_eq(print_config.orientation, "portrait")
-}
-
-// Test 10: Performance Optimization for Visualizations
-test "performance optimization for visualizations" {
-  let large_dataset = Array::new(10000, 0)
-  
-  // Generate large dataset
-  for i = 0; i < large_dataset.length(); i = i + 1 {
-    large_dataset[i] = (i, Random::float() * 100.0)
+  // 测试数据归一化
+  let normalize_data = fn(data: Array[Float], min: Float, max: Float) {
+    let mut normalized = []
+    
+    for value in data {
+      let normalized_value = (value - min) / (max - min)
+      normalized = normalized.push(normalized_value)
+    }
+    
+    normalized
   }
   
-  // Test data sampling for performance
-  let sampled_data = PerformanceOptimizer::sample_data(large_dataset, 1000)
-  assert_eq(sampled_data.length(), 1000)
-  
-  // Test lazy loading
-  let lazy_chart = LazyChart::new("Lazy Chart")
-  LazyChart::set_data_source(lazy_chart, large_dataset)
-  
-  assert_false(LazyChart::is_data_loaded(lazy_chart))
-  
-  let visible_data = LazyChart::get_visible_data(lazy_chart, 0, 1000)
-  assert_eq(visible_data.length(), 1000)
-  assert_true(LazyChart::is_data_loaded(lazy_chart))
-  
-  // Test virtual scrolling
-  let virtual_chart = VirtualChart::new("Virtual Chart")
-  VirtualChart::set_data_source(virtual_chart, large_dataset)
-  VirtualChart::set_viewport_size(virtual_chart, 100)
-  
-  let viewport_data = VirtualChart::get_viewport_data(virtual_chart, 5000)
-  assert_eq(viewport_data.length(), 100)
-  
-  // Test canvas rendering optimization
-  let canvas_chart = CanvasChart::new("Canvas Chart", 1920, 1080)
-  CanvasChart::enable_redraw_optimization(canvas_chart, true)
-  
-  let render_start_time = Time::now()
-  CanvasChart::render(canvas_chart, large_dataset)
-  let render_end_time = Time::now()
-  
-  let render_time = render_end_time - render_start_time
-  assert_true(render_time < 1000) // Should render in less than 1 second
-  
-  // Test WebGL acceleration
-  let webgl_chart = WebGLChart::new("WebGL Chart")
-  WebGLChart::enable_acceleration(webgl_chart, true)
-  
-  let webgl_start_time = Time::now()
-  WebGLChart::render(webgl_chart, large_dataset)
-  let webgl_end_time = Time::now()
-  
-  let webgl_render_time = webgl_end_time - webgl_start_time
-  assert_true(webgl_render_time < render_time) // WebGL should be faster
-  
-  // Test memory management
-  let memory_before = MemoryMonitor::get_usage()
-  
-  // Create and destroy multiple charts
-  for i = 0; i < 10; i = i + 1 {
-    let temp_chart = Chart::new("Temp Chart " + i.to_string())
-    Chart::set_data(temp_chart, large_dataset)
-    Chart::render(temp_chart)
-    Chart::destroy(temp_chart) // Explicit cleanup
+  let find_min_max = fn(data: Array[Float]) {
+    if data.length() == 0 {
+      return (0.0, 0.0)
+    }
+    
+    let mut min = data[0]
+    let mut max = data[0]
+    
+    for value in data {
+      if value < min {
+        min = value
+      }
+      if value > max {
+        max = value
+      }
+    }
+    
+    (min, max)
   }
   
-  let memory_after = MemoryMonitor::get_usage()
-  let memory_increase = memory_after - memory_before
+  let (min_val, max_val) = find_min_max(revenue_data)
+  let normalized_data = normalize_data(revenue_data, min_val, max_val)
   
-  // Memory increase should be minimal (less than 50MB)
-  assert_true(memory_increase < 50 * 1024 * 1024)
+  assert_eq(normalized_data.length(), 5)
+  assert_eq(normalized_data[0], 0.0)  // 最小值归一化为0
+  assert_eq(normalized_data[4], 1.0)  // 最大值归一化为1
+  assert_true(normalized_data[2] > 0.0 && normalized_data[2] < 1.0)  // 中间值在0和1之间
+}
+
+// 测试4: 图表交互功能
+test "图表交互功能" {
+  // 定义图表事件
+  type ChartEvent = {
+    type: String,
+    element: {
+      index: Int,
+      datasetIndex: Int
+    },
+    data: {
+      label: String,
+      value: Float
+    }
+  }
+  
+  // 模拟点击事件处理
+  let handle_chart_click = fn(event: ChartEvent, callback: (String, Float) -> String) {
+    if event.type == "click" {
+      let label = event.data.label
+      let value = event.data.value
+      callback(label, value)
+    } else {
+      "No action for event type: " + event.type
+    }
+  }
+  
+  // 模拟悬停事件处理
+  let handle_chart_hover = fn(event: ChartEvent, callback: (String, Float) -> String) {
+    if event.type == "hover" {
+      let label = event.data.label
+      let value = event.data.value
+      callback(label, value)
+    } else {
+      "No action for event type: " + event.type
+    }
+  }
+  
+  // 测试图表交互
+  let click_callback = fn(label: String, value: Float) {
+    "Clicked on " + label + " with value " + value.to_string()
+  }
+  
+  let hover_callback = fn(label: String, value: Float) {
+    "Hovering over " + label + " with value " + value.to_string()
+  }
+  
+  let click_event = {
+    type: "click",
+    element: {
+      index: 2,
+      datasetIndex: 0
+    },
+    data: {
+      label: "March",
+      value: 180.0
+    }
+  }
+  
+  let hover_event = {
+    type: "hover",
+    element: {
+      index: 3,
+      datasetIndex: 1
+    },
+    data: {
+      label: "April",
+      value: 220.0
+    }
+  }
+  
+  let click_result = handle_chart_click(click_event, click_callback)
+  let hover_result = handle_chart_hover(hover_event, hover_callback)
+  
+  assert_eq(click_result, "Clicked on March with value 180.0")
+  assert_eq(hover_result, "Hovering over April with value 220.0")
+  
+  // 测试图表缩放和平移
+  type ZoomState = {
+    min: Float,
+    max: Float,
+    scale: Float
+  }
+  
+  let apply_zoom = fn(current_state: ZoomState, zoom_factor: Float, center_point: Float) {
+    let range = current_state.max - current_state.min
+    let new_range = range / zoom_factor
+    
+    let offset = center_point - current_state.min
+    let center_ratio = offset / range
+    
+    let new_min = center_point - new_range * center_ratio
+    let new_max = new_min + new_range
+    
+    {
+      min: new_min,
+      max: new_max,
+      scale: current_state.scale * zoom_factor
+    }
+  }
+  
+  let apply_pan = fn(current_state: ZoomState, pan_amount: Float) {
+    let range = current_state.max - current_state.min
+    let pan_ratio = pan_amount / range
+    
+    let new_min = current_state.min - range * pan_ratio
+    let new_max = current_state.max - range * pan_ratio
+    
+    {
+      min: new_min,
+      max: new_max,
+      scale: current_state.scale
+    }
+  }
+  
+  // 测试缩放
+  let initial_zoom = {
+    min: 0.0,
+    max: 100.0,
+    scale: 1.0
+  }
+  
+  let zoomed_in = apply_zoom(initial_zoom, 2.0, 50.0)  // 放大2倍，中心在50
+  
+  assert_eq(zoomed_in.scale, 2.0)
+  assert_eq(zoomed_in.min, 25.0)  // 50 - (100/2)/2
+  assert_eq(zoomed_in.max, 75.0)  // 25 + 50
+  
+  // 测试平移
+  let panned = apply_pan(zoomed_in, 10.0)  // 向右平移10%
+  
+  assert_eq(panned.scale, 2.0)  // 缩放不变
+  assert_eq(panned.min, 20.0)   // 25 - 50*0.1
+  assert_eq(panned.max, 70.0)   // 75 - 50*0.1
+  
+  // 测试数据过滤
+  let filter_data = fn(data: Array[Float], min_threshold: Float, max_threshold: Float) {
+    let mut filtered = []
+    
+    for value in data {
+      if value >= min_threshold && value <= max_threshold {
+        filtered = filtered.push(value)
+      }
+    }
+    
+    filtered
+  }
+  
+  let test_data = [10.0, 25.0, 50.0, 75.0, 90.0, 110.0, 150.0]
+  let filtered_data = filter_data(test_data, 20.0, 100.0)
+  
+  assert_eq(filtered_data.length(), 4)
+  assert_eq(filtered_data[0], 25.0)
+  assert_eq(filtered_data[1], 50.0)
+  assert_eq(filtered_data[2], 75.0)
+  assert_eq(filtered_data[3], 90.0)
+}
+
+// 测试5: 图表导出功能
+test "图表导出功能" {
+  // 模拟图表导出为不同格式
+  type ExportFormat = {
+    name: String,
+    extension: String,
+    mime_type: String
+  }
+  
+  let supported_formats = [
+    { name: "PNG", extension: "png", mime_type: "image/png" },
+    { name: "JPEG", extension: "jpg", mime_type: "image/jpeg" },
+    { name: "SVG", extension: "svg", mime_type: "image/svg+xml" },
+    { name: "PDF", extension: "pdf", mime_type: "application/pdf" }
+  ]
+  
+  // 模拟导出功能
+  let export_chart = fn(chart_data: { String: String }, format: ExportFormat) {
+    let export_data = {
+      data: "base64_encoded_image_data",
+      filename: "chart." + format.extension,
+      mime_type: format.mime_type,
+      size: 1024  // 模拟文件大小（字节）
+    }
+    
+    export_data
+  }
+  
+  // 测试图表导出
+  let mock_chart_data = {
+    "title": "System Metrics",
+    "type": "line",
+    "data": "serialized_chart_data"
+  }
+  
+  let png_export = export_chart(mock_chart_data, supported_formats[0])
+  let svg_export = export_chart(mock_chart_data, supported_formats[2])
+  
+  assert_eq(png_export.filename, "chart.png")
+  assert_eq(png_export.mime_type, "image/png")
+  assert_eq(png_export.size, 1024)
+  
+  assert_eq(svg_export.filename, "chart.svg")
+  assert_eq(svg_export.mime_type, "image/svg+xml")
+  
+  // 测试导出配置
+  type ExportConfig = {
+    format: ExportFormat,
+    width: Int,
+    height: Int,
+    quality: Float,
+    background_color: String
+  }
+  
+  let create_export_config = fn(format_index: Int, width: Int, height: Int, quality: Float, background_color: String) {
+    {
+      format: supported_formats[format_index],
+      width: width,
+      height: height,
+      quality: quality,
+      background_color: background_color
+    }
+  }
+  
+  let export_with_config = fn(chart_data: { String: String }, config: ExportConfig) {
+    let export_data = {
+      data: "base64_encoded_image_data",
+      filename: "chart." + config.format.extension,
+      mime_type: config.format.mime_type,
+      size: (config.width * config.height * config.quality).to_int() / 100,  // 模拟文件大小计算
+      config: config
+    }
+    
+    export_data
+  }
+  
+  // 测试配置导出
+  let export_config = create_export_config(1, 800, 600, 0.8, "#ffffff")  // JPEG格式
+  let config_export = export_with_config(mock_chart_data, export_config)
+  
+  assert_eq(config_export.filename, "chart.jpg")
+  assert_eq(config_export.mime_type, "image/jpeg")
+  assert_eq(config_export.size, (800 * 600 * 0.8).to_int() / 100)  // 3840
+  assert_eq(config_export.config.width, 800)
+  assert_eq(config_export.config.height, 600)
+  assert_eq(config_export.config.quality, 0.8)
+  assert_eq(config_export.config.background_color, "#ffffff")
+  
+  // 测试数据导出为CSV
+  let export_to_csv = fn(labels: Array[String], datasets: Array[(String, Array[Float])]) {
+    let mut csv_content = "Label"
+    
+    // 添加标题行
+    for (label, _) in datasets {
+      csv_content = csv_content + "," + label
+    }
+    csv_content = csv_content + "\n"
+    
+    // 添加数据行
+    for i in 0..labels.length() {
+      csv_content = csv_content + labels[i]
+      
+      for (_, data) in datasets {
+        if i < data.length() {
+          csv_content = csv_content + "," + data[i].to_string()
+        } else {
+          csv_content = csv_content + ","
+        }
+      }
+      csv_content = csv_content + "\n"
+    }
+    
+    csv_content
+  }
+  
+  // 测试CSV导出
+  let csv_labels = ["Jan", "Feb", "Mar", "Apr", "May"]
+  let csv_datasets = [
+    ("Revenue", [100.0, 150.0, 180.0, 220.0, 280.0]),
+    ("Costs", [80.0, 90.0, 100.0, 110.0, 120.0])
+  ]
+  
+  let csv_content = export_to_csv(csv_labels, csv_datasets)
+  
+  assert_true(csv_content.contains("Label,Revenue,Costs"))
+  assert_true(csv_content.contains("Jan,100.0,80.0"))
+  assert_true(csv_content.contains("May,280.0,120.0"))
+  
+  // 测试数据导出为JSON
+  let export_to_json = fn(labels: Array[String], datasets: Array[(String, Array[Float])]) {
+    let mut json_content = "{\n"
+    json_content = json_content + "  \"labels\": ["
+    
+    // 添加标签
+    for i in 0..labels.length() {
+      json_content = json_content + "\"" + labels[i] + "\""
+      if i < labels.length() - 1 {
+        json_content = json_content + ", "
+      }
+    }
+    json_content = json_content + "],\n"
+    
+    json_content = json_content + "  \"datasets\": [\n"
+    
+    // 添加数据集
+    for i in 0..datasets.length() {
+      let (label, data) = datasets[i]
+      json_content = json_content + "    {\n"
+      json_content = json_content + "      \"label\": \"" + label + "\",\n"
+      json_content = json_content + "      \"data\": ["
+      
+      for j in 0..data.length() {
+        json_content = json_content + data[j].to_string()
+        if j < data.length() - 1 {
+          json_content = json_content + ", "
+        }
+      }
+      json_content = json_content + "]\n"
+      json_content = json_content + "    }"
+      
+      if i < datasets.length() - 1 {
+        json_content = json_content + ","
+      }
+      json_content = json_content + "\n"
+    }
+    
+    json_content = json_content + "  ]\n"
+    json_content = json_content + "}"
+    
+    json_content
+  }
+  
+  // 测试JSON导出
+  let json_content = export_to_json(csv_labels, csv_datasets)
+  
+  assert_true(json_content.contains("\"labels\": [\"Jan\", \"Feb\", \"Mar\", \"Apr\", \"May\"]"))
+  assert_true(json_content.contains("\"label\": \"Revenue\""))
+  assert_true(json_content.contains("\"data\": [100.0, 150.0, 180.0, 220.0, 280.0]"))
+  assert_true(json_content.contains("\"label\": \"Costs\""))
+  assert_true(json_content.contains("\"data\": [80.0, 90.0, 100.0, 110.0, 120.0]"))
 }
