@@ -2070,6 +2070,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_compression_performance_tests.mbt": {
   },
+  "azimuth_compression_network_tests.mbt": {
+  },
   "azimuth_compression_decompression_tests.mbt": {
   },
   "azimuth_comprehensive_test_suite.mbt": {
@@ -2231,6 +2233,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_algorithm_complexity_optimization_tests.mbt": {
   },
   "azimuth_ai_ml_telemetry_tests.mbt": {
+  },
+  "azimuth_ai_ml_integration_tests.mbt": {
   },
   "azimuth_advanced_type_conversion_tests.mbt": {
   },

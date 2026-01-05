@@ -1,590 +1,546 @@
-// Azimuth Telemetry System - Caching Mechanism Comprehensive Tests
+// Azimuth Telemetry System - Caching Mechanism Tests
 // This file contains comprehensive test cases for caching mechanisms
 
 // Test 1: Basic Cache Operations
 test "basic cache operations" {
-  // Create cache
-  let cache = Cache::new()
-  
-  // Test empty cache
-  assert_eq(Cache::size(cache), 0)
-  assert_true(Cache::is_empty(cache))
+  // Test LRU cache
+  let cache = LRUCache::new(3)
   
   // Test put and get
-  Cache::put(cache, "key1", "value1")
-  assert_eq(Cache::size(cache), 1)
-  assert_false(Cache::is_empty(cache))
+  LRUCache::put(cache, "key1", "value1")
+  LRUCache::put(cache, "key2", "value2")
+  LRUCache::put(cache, "key3", "value3")
   
-  let value1 = Cache::get(cache, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
+  assert_eq(LRUCache::get(cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(cache, "key2"), Some("value2"))
+  assert_eq(LRUCache::get(cache, "key3"), Some("value3"))
+  assert_eq(LRUCache::get(cache, "nonexistent"), None)
   
-  // Test get non-existent key
-  let non_existent = Cache::get(cache, "non_existent")
-  match non_existent {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // Test cache size
+  assert_eq(LRUCache::size(cache), 3)
+  assert_true(LRUCache::is_full(cache))
   
-  // Test put with existing key
-  Cache::put(cache, "key1", "new_value1")
-  let updated_value1 = Cache::get(cache, "key1")
-  match updated_value1 {
-    Some(v) => assert_eq(v, "new_value1")
-    None => assert_true(false)
-  }
+  // Test eviction (adding a 4th item should evict the least recently used)
+  LRUCache::put(cache, "key4", "value4")
+  assert_eq(LRUCache::size(cache), 3)
+  assert_eq(LRUCache::get(cache, "key1"), None)  // key1 should be evicted
+  assert_eq(LRUCache::get(cache, "key2"), Some("value2"))
+  assert_eq(LRUCache::get(cache, "key3"), Some("value3"))
+  assert_eq(LRUCache::get(cache, "key4"), Some("value4"))
   
-  // Test multiple keys
-  Cache::put(cache, "key2", "value2")
-  Cache::put(cache, "key3", "value3")
-  assert_eq(Cache::size(cache), 3)
-  
-  // Test contains key
-  assert_true(Cache::contains_key(cache, "key1"))
-  assert_true(Cache::contains_key(cache, "key2"))
-  assert_true(Cache::contains_key(cache, "key3"))
-  assert_false(Cache::contains_key(cache, "non_existent"))
+  // Test LRU order (accessing key2 should make it most recently used)
+  LRUCache::get(cache, "key2")
+  LRUCache::put(cache, "key5", "value5")
+  assert_eq(LRUCache::get(cache, "key2"), Some("value2"))  // key2 should not be evicted
+  assert_eq(LRUCache::get(cache, "key3"), None)  // key3 should be evicted
   
   // Test remove
-  let removed_value = Cache::remove(cache, "key2")
-  match removed_value {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
-  }
-  
-  assert_eq(Cache::size(cache), 2)
-  assert_false(Cache::contains_key(cache, "key2"))
+  LRUCache::remove(cache, "key2")
+  assert_eq(LRUCache::get(cache, "key2"), None)
+  assert_eq(LRUCache::size(cache), 2)
   
   // Test clear
-  Cache::clear(cache)
-  assert_eq(Cache::size(cache), 0)
-  assert_true(Cache::is_empty(cache))
+  LRUCache::clear(cache)
+  assert_eq(LRUCache::size(cache), 0)
+  assert_true(LRUCache::is_empty(cache))
 }
 
-// Test 2: LRU Cache Eviction
-test "lru cache eviction" {
-  // Create LRU cache with capacity of 3
-  let lru_cache = LruCache::new(3)
+// Test 2: TTL (Time To Live) Cache
+test "ttl cache operations" {
+  // Test TTL cache with 1 second expiration
+  let cache = TTLCache::new(100, 1000)  // 100 items, 1 second TTL
+  
+  // Test put and get
+  TTLCache::put(cache, "key1", "value1")
+  assert_eq(TTLCache::get(cache, "key1"), Some("value1"))
+  
+  // Test expiration
+  sleep(1100)  // Wait longer than TTL
+  assert_eq(TTLCache::get(cache, "key1"), None)  // Should be expired
+  
+  // Test refresh on access
+  TTLCache::put(cache, "key2", "value2")
+  sleep(500)  // Wait half of TTL
+  assert_eq(TTLCache::get(cache, "key2"), Some("value2"))  // Should refresh TTL
+  sleep(700)  // Wait remaining time
+  assert_eq(TTLCache::get(cache, "key2"), Some("value2"))  // Should still be valid
+  
+  // Test manual expiration
+  TTLCache::put(cache, "key3", "value3")
+  TTLCache::expire(cache, "key3")
+  assert_eq(TTLCache::get(cache, "key3"), None)  // Should be expired
+  
+  // Test cleanup of expired items
+  TTLCache::put(cache, "key4", "value4")
+  TTLCache::put(cache, "key5", "value5")
+  sleep(1100)  // Wait for expiration
+  TTLCache::cleanup(cache)  // Manually cleanup expired items
+  assert_eq(TTLCache::size(cache), 0)  // All items should be cleaned up
+  
+  // Test auto cleanup
+  TTLCache::put(cache, "key6", "value6")
+  TTLCache::put(cache, "key7", "value7")
+  sleep(1100)  // Wait for expiration
+  TTLCache::put(cache, "key8", "value8")  // Auto cleanup should happen
+  assert_eq(TTLCache::get(cache, "key6"), None)  // Should be cleaned up
+  assert_eq(TTLCache::get(cache, "key7"), None)  // Should be cleaned up
+  assert_eq(TTLCache::get(cache, "key8"), Some("value8"))  // Should be valid
+}
+
+// Test 3: LFU (Least Frequently Used) Cache
+test "lfu cache operations" {
+  // Test LFU cache with capacity 3
+  let cache = LFUCache::new(3)
+  
+  // Test put and get
+  LFUCache::put(cache, "key1", "value1")
+  LFUCache::put(cache, "key2", "value2")
+  LFUCache::put(cache, "key3", "value3")
+  
+  // Access key1 multiple times to increase its frequency
+  LFUCache::get(cache, "key1")
+  LFUCache::get(cache, "key1")
+  LFUCache::get(cache, "key1")
+  
+  // Access key2 once
+  LFUCache::get(cache, "key2")
+  
+  // key3 has frequency 1, key2 has frequency 2, key1 has frequency 3
+  
+  // Add a new item, should evict key3 (least frequently used)
+  LFUCache::put(cache, "key4", "value4")
+  assert_eq(LFUCache::get(cache, "key3"), None)  // key3 should be evicted
+  assert_eq(LFUCache::get(cache, "key1"), Some("value1"))  // key1 should remain
+  assert_eq(LFUCache::get(cache, "key2"), Some("value2"))  // key2 should remain
+  assert_eq(LFUCache::get(cache, "key4"), Some("value4"))  // key4 should be added
+  
+  // Test frequency update
+  LFUCache::get(cache, "key2")
+  LFUCache::get(cache, "key2")
+  // Now key2 has frequency 3, key1 has frequency 3, key4 has frequency 1
+  
+  // Add a new item, should evict key4 (least frequently used)
+  LFUCache::put(cache, "key5", "value5")
+  assert_eq(LFUCache::get(cache, "key4"), None)  // key4 should be evicted
+  assert_eq(LFUCache::get(cache, "key1"), Some("value1"))  // key1 should remain
+  assert_eq(LFUCache::get(cache, "key2"), Some("value2"))  // key2 should remain
+  assert_eq(LFUCache::get(cache, "key5"), Some("value5"))  // key5 should be added
+}
+
+// Test 4: Cache Statistics and Monitoring
+test "cache statistics and monitoring" {
+  // Test cache with statistics enabled
+  let cache = MonitoredCache::new(LRUCache::new(3))
+  
+  // Test hit/miss statistics
+  assert_eq(MonitoredCache::hit_count(cache), 0)
+  assert_eq(MonitoredCache::miss_count(cache), 0)
+  assert_eq(MonitoredCache::hit_rate(cache), 0.0)
+  
+  // Miss
+  MonitoredCache::get(cache, "nonexistent")
+  assert_eq(MonitoredCache::hit_count(cache), 0)
+  assert_eq(MonitoredCache::miss_count(cache), 1)
+  assert_eq(MonitoredCache::hit_rate(cache), 0.0)
+  
+  // Put and hit
+  MonitoredCache::put(cache, "key1", "value1")
+  MonitoredCache::get(cache, "key1")
+  assert_eq(MonitoredCache::hit_count(cache), 1)
+  assert_eq(MonitoredCache::miss_count(cache), 1)
+  assert_eq(MonitoredCache::hit_rate(cache), 0.5)
+  
+  // Another hit
+  MonitoredCache::get(cache, "key1")
+  assert_eq(MonitoredCache::hit_count(cache), 2)
+  assert_eq(MonitoredCache::miss_count(cache), 1)
+  assert_eq(MonitoredCache::hit_rate(cache), 2.0/3.0)
+  
+  // Another miss
+  MonitoredCache::get(cache, "nonexistent2")
+  assert_eq(MonitoredCache::hit_count(cache), 2)
+  assert_eq(MonitoredCache::miss_count(cache), 2)
+  assert_eq(MonitoredCache::hit_rate(cache), 0.5)
+  
+  // Test eviction statistics
+  assert_eq(MonitoredCache::eviction_count(cache), 0)
   
   // Fill cache to capacity
-  LruCache::put(lru_cache, "key1", "value1")
-  LruCache::put(lru_cache, "key2", "value2")
-  LruCache::put(lru_cache, "key3", "value3")
+  MonitoredCache::put(cache, "key2", "value2")
+  MonitoredCache::put(cache, "key3", "value3")
   
-  assert_eq(LruCache::size(lru_cache), 3)
+  // Add one more to trigger eviction
+  MonitoredCache::put(cache, "key4", "value4")
+  assert_eq(MonitoredCache::eviction_count(cache), 1)
   
-  // Access key1 to make it most recently used
-  let value1 = LruCache::get(lru_cache, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
+  // Test size statistics
+  assert_eq(MonitoredCache::size(cache), 3)
+  assert_eq(MonitoredCache::capacity(cache), 3)
+  assert_eq(MonitoredCache::utilization(cache), 1.0)
   
-  // Add new key, should evict key2 (least recently used)
-  LruCache::put(lru_cache, "key4", "value4")
-  assert_eq(LruCache::size(lru_cache), 3)
-  
-  // Verify key2 was evicted
-  let evicted_value = LruCache::get(lru_cache, "key2")
-  match evicted_value {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Verify other keys still exist
-  let value1_check = LruCache::get(lru_cache, "key1")
-  match value1_check {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  let value3_check = LruCache::get(lru_cache, "key3")
-  match value3_check {
-    Some(v) => assert_eq(v, "value3")
-    None => assert_true(false)
-  }
-  
-  let value4_check = LruCache::get(lru_cache, "key4")
-  match value4_check {
-    Some(v) => assert_eq(v, "value4")
-    None => assert_true(false)
-  }
+  // Reset statistics
+  MonitoredCache::reset_stats(cache)
+  assert_eq(MonitoredCache::hit_count(cache), 0)
+  assert_eq(MonitoredCache::miss_count(cache), 0)
+  assert_eq(MonitoredCache::eviction_count(cache), 0)
 }
 
-// Test 3: TTL Cache Expiration
-test "ttl cache expiration" {
-  // Create TTL cache with 2 second expiration
-  let ttl_cache = TtlCache::new(2000)  // 2000ms = 2 seconds
-  
-  // Add item to cache
-  TtlCache::put(ttl_cache, "key1", "value1")
-  
-  // Verify item exists immediately
-  let immediate_value = TtlCache::get(ttl_cache, "key1")
-  match immediate_value {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  // Wait for 1 second, item should still exist
-  Time::sleep(1000)
-  let after_1s_value = TtlCache::get(ttl_cache, "key1")
-  match after_1s_value {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  // Wait for another 2 seconds, item should be expired
-  Time::sleep(2000)
-  let expired_value = TtlCache::get(ttl_cache, "key1")
-  match expired_value {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Add new item and test manual expiration
-  TtlCache::put(ttl_cache, "key2", "value2")
-  
-  // Manually expire item
-  TtlCache::expire(ttl_cache, "key2")
-  let manually_expired = TtlCache::get(ttl_cache, "key2")
-  match manually_expired {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test expiration of all items
-  TtlCache::put(ttl_cache, "key3", "value3")
-  TtlCache::put(ttl_cache, "key4", "value4")
-  
-  TtlCache::expire_all(ttl_cache)
-  
-  let expired_all1 = TtlCache::get(ttl_cache, "key3")
-  let expired_all2 = TtlCache::get(ttl_cache, "key4")
-  
-  match expired_all1 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match expired_all2 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 4: Cache Statistics and Metrics
-test "cache statistics and metrics" {
-  // Create cache with statistics enabled
-  let stats_cache = Cache::with_stats()
-  
-  // Initial statistics
-  let initial_stats = Cache::stats(stats_cache)
-  assert_eq(initial_stats.hits, 0)
-  assert_eq(initial_stats.misses, 0)
-  assert_eq(initial_stats.puts, 0)
-  assert_eq(initial_stats.evictions, 0)
-  assert_eq(initial_stats.size, 0)
-  
-  // Test put operation
-  Cache::put(stats_cache, "key1", "value1")
-  Cache::put(stats_cache, "key2", "value2")
-  
-  let after_puts_stats = Cache::stats(stats_cache)
-  assert_eq(after_puts_stats.puts, 2)
-  assert_eq(after_puts_stats.size, 2)
-  
-  // Test hit operation
-  Cache::get(stats_cache, "key1")
-  Cache::get(stats_cache, "key2")
-  
-  let after_hits_stats = Cache::stats(stats_cache)
-  assert_eq(after_hits_stats.hits, 2)
-  assert_eq(after_hits_stats.misses, 0)
-  
-  // Test miss operation
-  Cache::get(stats_cache, "non_existent")
-  
-  let after_miss_stats = Cache::stats(stats_cache)
-  assert_eq(after_miss_stats.hits, 2)
-  assert_eq(after_miss_stats.misses, 1)
-  
-  // Test hit ratio calculation
-  let hit_ratio = Cache::hit_ratio(stats_cache)
-  assert_eq(hit_ratio, 2.0 / 3.0)  // 2 hits out of 3 total requests
-  
-  // Test reset statistics
-  Cache::reset_stats(stats_cache)
-  
-  let reset_stats = Cache::stats(stats_cache)
-  assert_eq(reset_stats.hits, 0)
-  assert_eq(reset_stats.misses, 0)
-  assert_eq(reset_stats.puts, 0)
-  assert_eq(reset_stats.size, 2)  // Size is not reset
-}
-
-// Test 5: Concurrent Cache Operations
-test "concurrent cache operations" {
-  // Create thread-safe cache
-  let concurrent_cache = ConcurrentCache::new()
-  
-  // Concurrent put operations
-  let put_threads = []
-  for i in 0..5 {
-    let thread = Thread::spawn(fn() {
-      for j in 0..20 {
-        let key = "key_" + i.to_string() + "_" + j.to_string()
-        let value = "value_" + i.to_string() + "_" + j.to_string()
-        ConcurrentCache::put(concurrent_cache, key, value)
-      }
-    })
-    put_threads.push(thread)
-  }
-  
-  // Wait for all put threads to complete
-  for thread in put_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all items were added
-  assert_eq(ConcurrentCache::size(concurrent_cache), 100)
-  
-  // Concurrent get operations
-  let get_threads = []
-  let hit_count = AtomicInt::new(0)
-  let miss_count = AtomicInt::new(0)
-  
-  for i in 0..5 {
-    let thread = Thread::spawn(fn() {
-      for j in 0..20 {
-        let key = "key_" + i.to_string() + "_" + j.to_string()
-        let value = ConcurrentCache::get(concurrent_cache, key)
-        match value {
-          Some(_) => AtomicInt::increment(hit_count)
-          None => AtomicInt::increment(miss_count)
-        }
-      }
-    })
-    get_threads.push(thread)
-  }
-  
-  // Wait for all get threads to complete
-  for thread in get_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all gets were hits
-  assert_eq(AtomicInt::load(hit_count), 100)
-  assert_eq(AtomicInt::load(miss_count), 0)
-  
-  // Concurrent remove operations
-  let remove_threads = []
-  for i in 0..5 {
-    let thread = Thread::spawn(fn() {
-      for j in 0..20 {
-        let key = "key_" + i.to_string() + "_" + j.to_string()
-        ConcurrentCache::remove(concurrent_cache, key)
-      }
-    })
-    remove_threads.push(thread)
-  }
-  
-  // Wait for all remove threads to complete
-  for thread in remove_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all items were removed
-  assert_eq(ConcurrentCache::size(concurrent_cache), 0)
-}
-
-// Test 6: Cache Persistence
+// Test 5: Cache Persistence
 test "cache persistence" {
-  // Create persistent cache
-  let temp_file = TempFile::create()
-  let persistent_cache = PersistentCache::new(temp_file.path)
+  // Test cache persistence to file
+  let cache1 = LRUCache::new(100)
   
-  // Add items to cache
-  PersistentCache::put(persistent_cache, "key1", "value1")
-  PersistentCache::put(persistent_cache, "key2", "value2")
-  PersistentCache::put(persistent_cache, "key3", "value3")
+  // Add some data
+  LRUCache::put(cache1, "key1", "value1")
+  LRUCache::put(cache1, "key2", "value2")
+  LRUCache::put(cache1, "key3", "value3")
   
-  // Verify items exist in memory
-  let value1 = PersistentCache::get(persistent_cache, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
+  // Save to file
+  let file_path = "/tmp/cache_test.dat"
+  CachePersistence::save_to_file(cache1, file_path)
   
-  // Save cache to disk
-  PersistentCache::save(persistent_cache)
+  // Load into new cache
+  let cache2 = LRUCache::new(100)
+  CachePersistence::load_from_file(cache2, file_path)
   
-  // Create new cache instance from same file
-  let loaded_cache = PersistentCache::load(temp_file.path)
-  
-  // Verify items were loaded from disk
-  let loaded_value1 = PersistentCache::get(loaded_cache, "key1")
-  match loaded_value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  let loaded_value2 = PersistentCache::get(loaded_cache, "key2")
-  match loaded_value2 {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
-  }
-  
-  let loaded_value3 = PersistentCache::get(loaded_cache, "key3")
-  match loaded_value3 {
-    Some(v) => assert_eq(v, "value3")
-    None => assert_true(false)
-  }
+  // Verify data was loaded
+  assert_eq(LRUCache::get(cache2, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(cache2, "key2"), Some("value2"))
+  assert_eq(LRUCache::get(cache2, "key3"), Some("value3"))
+  assert_eq(LRUCache::size(cache2), 3)
   
   // Clean up
-  TempFile::remove(temp_file)
+  delete_file(file_path)
+  
+  // Test cache persistence with TTL
+  let ttl_cache1 = TTLCache::new(100, 10000)  // 10 second TTL
+  
+  // Add some data
+  TTLCache::put(ttl_cache1, "key1", "value1")
+  TTLCache::put(ttl_cache1, "key2", "value2")
+  TTLCache::put(ttl_cache1, "key3", "value3")
+  
+  // Save to file
+  let ttl_file_path = "/tmp/ttl_cache_test.dat"
+  CachePersistence::save_to_file(ttl_cache1, ttl_file_path)
+  
+  // Load into new cache
+  let ttl_cache2 = TTLCache::new(100, 10000)
+  CachePersistence::load_from_file(ttl_cache2, ttl_file_path)
+  
+  // Verify data was loaded
+  assert_eq(TTLCache::get(ttl_cache2, "key1"), Some("value1"))
+  assert_eq(TTLCache::get(ttl_cache2, "key2"), Some("value2"))
+  assert_eq(TTLCache::get(ttl_cache2, "key3"), Some("value3"))
+  assert_eq(TTLCache::size(ttl_cache2), 3)
+  
+  // Clean up
+  delete_file(ttl_file_path)
+}
+
+// Test 6: Distributed Cache
+test "distributed cache operations" {
+  // Test distributed cache with multiple nodes
+  let node1 = DistributedCacheNode::new("node1", "localhost:8001")
+  let node2 = DistributedCacheNode::new("node2", "localhost:8002")
+  let node3 = DistributedCacheNode::new("node3", "localhost:8003")
+  
+  // Create distributed cache
+  let cache = DistributedCache::new([node1, node2, node3])
+  
+  // Test put and get
+  DistributedCache::put(cache, "key1", "value1")
+  assert_eq(DistributedCache::get(cache, "key1"), Some("value1"))
+  
+  // Test consistent hashing
+  let key1_node = DistributedCache::get_node_for_key(cache, "key1")
+  let key2_node = DistributedCache::get_node_for_key(cache, "key2")
+  let key3_node = DistributedCache::get_node_for_key(cache, "key3")
+  
+  // Keys should be distributed across nodes
+  let nodes = [key1_node.id, key2_node.id, key3_node.id]
+  assert_true(nodes.contains("node1"))
+  assert_true(nodes.contains("node2"))
+  assert_true(nodes.contains("node3"))
+  
+  // Test node failure handling
+  DistributedCache::simulate_node_failure(cache, "node2")
+  
+  // Should still be able to get data (replicated to other nodes)
+  assert_eq(DistributedCache::get(cache, "key1"), Some("value1"))
+  
+  // Test node recovery
+  DistributedCache::recover_node(cache, "node2")
+  
+  // Test cache invalidation across nodes
+  DistributedCache::put(cache, "key2", "value2")
+  DistributedCache::invalidate(cache, "key2")
+  assert_eq(DistributedCache::get(cache, "key2"), None)
+  
+  // Test cache update propagation
+  DistributedCache::put(cache, "key3", "initial_value")
+  DistributedCache::put(cache, "key3", "updated_value")
+  assert_eq(DistributedCache::get(cache, "key3"), Some("updated_value"))
 }
 
 // Test 7: Cache Hierarchies
 test "cache hierarchies" {
-  // Create L1 (memory) cache
-  let l1_cache = LruCache::new(3)
-  
-  // Create L2 (disk) cache
-  let temp_file = TempFile::create()
-  let l2_cache = PersistentCache::new(temp_file.path)
-  
-  // Create hierarchical cache
+  // Test L1 (in-memory) and L2 (disk) cache hierarchy
+  let l1_cache = LRUCache::new(10)  // Small in-memory cache
+  let l2_cache = LRUCache::new(100) // Larger disk cache
   let hierarchical_cache = HierarchicalCache::new(l1_cache, l2_cache)
   
-  // Add items to L1 cache
-  HierarchicalCache::put(hierarchical_cache, "l1_key1", "l1_value1")
-  HierarchicalCache::put(hierarchical_cache, "l1_key2", "l1_value2")
+  // Test put and get (should go to L1)
+  HierarchicalCache::put(hierarchical_cache, "key1", "value1")
+  assert_eq(HierarchicalCache::get(hierarchical_cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(l1_cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(l2_cache, "key1"), None)
   
-  // Add items to L2 cache directly
-  PersistentCache::put(l2_cache, "l2_key1", "l2_value1")
-  PersistentCache::put(l2_cache, "l2_key2", "l2_value2")
-  
-  // Test L1 cache hits
-  let l1_value1 = HierarchicalCache::get(hierarchical_cache, "l1_key1")
-  match l1_value1 {
-    Some(v) => assert_eq(v, "l1_value1")
-    None => assert_true(false)
+  // Fill L1 cache
+  for i in 0..10 {
+    HierarchicalCache::put(hierarchical_cache, "key" + i.to_string(), "value" + i.to_string())
   }
   
-  // Test L2 cache hits (not in L1)
-  let l2_value1 = HierarchicalCache::get(hierarchical_cache, "l2_key1")
-  match l2_value1 {
-    Some(v) => assert_eq(v, "l2_value1")
-    None => assert_true(false)
-  }
+  // L1 should be full, key1 should be evicted to L2
+  assert_eq(LRUCache::get(l1_cache, "key1"), None)
+  assert_eq(LRUCache::get(l2_cache, "key1"), Some("value1"))
   
-  // Verify L2 item was promoted to L1
-  let l1_stats = LruCache::stats(l1_cache)
-  assert_eq(l1_stats.size, 3)  // L1 is now full
+  // Get key1 (should promote from L2 to L1)
+  assert_eq(HierarchicalCache::get(hierarchical_cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(l1_cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(l2_cache, "key1"), None)
   
-  // Test L1 eviction to L2
-  HierarchicalCache::put(hierarchical_cache, "l1_key3", "l1_value3")
-  HierarchicalCache::put(hierarchical_cache, "l1_key4", "l1_value4")  // Should evict l1_key1
-  
-  // Verify evicted item is still accessible from L2
-  let evicted_value = HierarchicalCache::get(hierarchical_cache, "l1_key1")
-  match evicted_value {
-    Some(v) => assert_eq(v, "l1_value1")
-    None => assert_true(false)
-  }
-  
-  // Clean up
-  TempFile::remove(temp_file)
+  // Test cache statistics across hierarchy
+  let stats = HierarchicalCache::get_stats(hierarchical_cache)
+  assert_true(stats.l1_hit_count > 0)
+  assert_true(stats.l2_hit_count > 0)
+  assert_true(stats.promotion_count > 0)
+  assert_true(stats.demotion_count > 0)
 }
 
-// Test 8: Cache Performance Benchmarks
-test "cache performance benchmarks" {
-  // Create cache
-  let cache = LruCache::new(1000)
+// Test 8: Cache Warmer and Preloader
+test "cache warmer and preloader" {
+  // Test cache warmer
+  let cache = LRUCache::new(100)
+  let warmer = CacheWarmer::new(cache)
   
-  // Benchmark put operations
-  let put_start = Time::now()
-  for i in 0..10000 {
-    let key = "perf_key_" + i.to_string()
-    let value = "perf_value_" + i.to_string()
-    LruCache::put(cache, key, value)
-  }
-  let put_end = Time::now()
-  let put_duration = put_end - put_start
-  let puts_per_second = 10000.0 * 1000000000.0 / put_duration.to_float()
-  
-  assert_true(puts_per_second > 10000)  // At least 10,000 puts per second
-  
-  // Benchmark get operations
-  let get_start = Time::now()
-  for i in 0..10000 {
-    let key = "perf_key_" + i.to_string()
-    LruCache::get(cache, key)
-  }
-  let get_end = Time::now()
-  let get_duration = get_end - get_start
-  let gets_per_second = 10000.0 * 1000000000.0 / get_duration.to_float()
-  
-  assert_true(gets_per_second > 50000)  // At least 50,000 gets per second
-  
-  // Benchmark mixed operations
-  let mixed_start = Time::now()
-  for i in 0..10000 {
-    let key = "mixed_key_" + (i % 1000).to_string()
-    
-    if i % 3 == 0 {
-      // Put operation
-      let value = "mixed_value_" + i.to_string()
-      LruCache::put(cache, key, value)
-    } else {
-      // Get operation
-      LruCache::get(cache, key)
-    }
-  }
-  let mixed_end = Time::now()
-  let mixed_duration = mixed_end - mixed_start
-  let mixed_ops_per_second = 10000.0 * 1000000000.0 / mixed_duration.to_float()
-  
-  assert_true(mixed_ops_per_second > 20000)  // At least 20,000 mixed ops per second
-}
-
-// Test 9: Cache Memory Management
-test "cache memory management" {
-  // Create cache with memory limit
-  let memory_limit = 1024 * 1024  // 1MB
-  let memory_cache = MemoryConstrainedCache::new(memory_limit)
-  
-  // Add items until memory limit is reached
-  let items_added = 0
-  let large_value = "x".repeat(10240)  // 10KB per item
-  
-  while MemoryConstrainedCache::memory_usage(memory_cache) < memory_limit {
-    let key = "memory_key_" + items_added.to_string()
-    MemoryConstrainedCache::put(memory_cache, key, large_value)
-    items_added = items_added + 1
+  // Define data loader function
+  let data_loader = || {
+    [
+      ("key1", "value1"),
+      ("key2", "value2"),
+      ("key3", "value3"),
+      ("key4", "value4"),
+      ("key5", "value5")
+    ]
   }
   
-  // Verify memory usage is within limit
-  let memory_usage = MemoryConstrainedCache::memory_usage(memory_cache)
-  assert_true(memory_usage <= memory_limit)
+  // Warm cache with specific keys
+  CacheWarmer::warm_keys(warmer, ["key1", "key3", "key5"], data_loader)
   
-  // Verify eviction occurred when limit was reached
-  assert_true(MemoryConstrainedCache::evictions(memory_cache) > 0)
+  // Verify keys are in cache
+  assert_eq(LRUCache::get(cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(cache, "key3"), Some("value3"))
+  assert_eq(LRUCache::get(cache, "key5"), Some("value5"))
+  assert_eq(LRUCache::get(cache, "key2"), None)
+  assert_eq(LRUCache::get(cache, "key4"), None)
   
-  // Add one more item, should trigger eviction
-  MemoryConstrainedCache::put(memory_cache, "trigger_key", large_value)
+  // Clear cache
+  LRUCache::clear(cache)
   
-  // Verify memory usage is still within limit
-  let memory_usage_after = MemoryConstrainedCache::memory_usage(memory_cache)
-  assert_true(memory_usage_after <= memory_limit)
+  // Warm cache with all data
+  CacheWarmer::warm_all(warmer, data_loader)
   
-  // Test memory-efficient operations
-  let efficient_cache = MemoryEfficientCache::new()
+  // Verify all keys are in cache
+  assert_eq(LRUCache::get(cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(cache, "key2"), Some("value2"))
+  assert_eq(LRUCache::get(cache, "key3"), Some("value3"))
+  assert_eq(LRUCache::get(cache, "key4"), Some("value4"))
+  assert_eq(LRUCache::get(cache, "key5"), Some("value5"))
   
-  // Add many small items
-  for i in 0..10000 {
-    let key = "efficient_key_" + i.to_string()
-    let value = i.to_string()
-    MemoryEfficientCache::put(efficient_cache, key, value)
-  }
-  
-  // Verify memory usage is reasonable
-  let efficient_memory_usage = MemoryEfficientCache::memory_usage(efficient_cache)
-  assert_true(efficient_memory_usage < 5 * 1024 * 1024)  // Less than 5MB for 10,000 small items
-}
-
-// Test 10: Specialized Cache Implementations
-test "specialized cache implementations" {
-  // Test telemetry span cache
-  let span_cache = SpanCache::new()
-  
-  let trace_id = "trace_123456789"
-  let span_id = "span_123456789"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-  let span = Span::new("test_operation", Internal, span_ctx)
-  
-  // Add span to cache
-  SpanCache::put(span_cache, span_id, span)
-  
-  // Retrieve span from cache
-  let cached_span = SpanCache::get(span_cache, span_id)
-  match cached_span {
-    Some(s) => {
-      assert_eq(Span::name(s), "test_operation")
-      assert_eq(SpanContext::span_id(Span::span_context(s)), span_id)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test metric cache
-  let metric_cache = MetricCache::new()
-  
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "cache_test_meter")
-  let counter = Meter::create_counter(meter, "test_counter", None, None)
-  
-  // Add metric to cache
-  MetricCache::put(metric_cache, "test_counter", counter)
-  
-  // Retrieve metric from cache
-  let cached_counter = MetricCache::get(metric_cache, "test_counter")
-  match cached_counter {
-    Some(c) => {
-      Counter::add(c, 1.0)
-      let instrument = Counter::as_instrument(c)
-      assert_eq(Instrument::name(instrument), "test_counter")
-    }
-    None => assert_true(false)
-  }
-  
-  // Test log cache
-  let log_cache = LogCache::new()
-  
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "cache_test_logger")
-  
-  let log_record = LogRecord::new(Info, Some("Test log message"))
-  
-  // Add log to cache
-  LogCache::put(log_cache, "log_123", log_record)
-  
-  // Retrieve log from cache
-  let cached_log = LogCache::get(log_cache, "log_123")
-  match cached_log {
-    Some(log) => {
-      assert_eq(LogRecord::severity_number(log), Info)
-      match LogRecord::body(log) {
-        Some(body) => assert_eq(body, "Test log message")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // Test configuration cache
-  let config_cache = ConfigCache::new()
-  
-  let config_map = [
-    ("service.name", "cached-service"),
-    ("service.version", "1.0.0"),
-    ("environment", "test")
+  // Test cache preloader with priority
+  let preloader = CachePreloader::new(cache)
+  let priority_keys = [
+    ("key1", 10),  // Highest priority
+    ("key2", 8),
+    ("key3", 5),
+    ("key4", 3),
+    ("key5", 1)   // Lowest priority
   ]
   
-  let config = Configuration::from_map(config_map)
+  // Clear cache
+  LRUCache::clear(cache)
   
-  // Add config to cache
-  ConfigCache::put(config_cache, "test_config", config)
+  // Preload with priority (cache capacity is 100, but we'll simulate with 3 for testing)
+  let small_cache = LRUCache::new(3)
+  let small_preloader = CachePreloader::new(small_cache)
   
-  // Retrieve config from cache
-  let cached_config = ConfigCache::get(config_cache, "test_config")
-  match cached_config {
-    Some(c) => {
-      assert_eq(Configuration::get_service_name(c), "cached-service")
-      assert_eq(Configuration::get_environment(c), "test")
-    }
-    None => assert_true(false)
+  // Should load highest priority keys first
+  CachePreloader::preload_with_priority(small_preloader, priority_keys, data_loader)
+  
+  // Verify highest priority keys are in cache
+  assert_eq(LRUCache::get(small_cache, "key1"), Some("value1"))
+  assert_eq(LRUCache::get(small_cache, "key2"), Some("value2"))
+  assert_eq(LRUCache::get(small_cache, "key3"), Some("value3"))
+  assert_eq(LRUCache::get(small_cache, "key4"), None)  // Should not fit in cache
+  assert_eq(LRUCache::get(small_cache, "key5"), None)  // Should not fit in cache
+}
+
+// Test 9: Cache Invalidation Strategies
+test "cache invalidation strategies" {
+  // Test time-based invalidation
+  let cache = TTLCache::new(100, 1000)  // 1 second TTL
+  TTLCache::put(cache, "key1", "value1")
+  assert_eq(TTLCache::get(cache, "key1"), Some("value1"))
+  
+  sleep(1100)  // Wait for expiration
+  assert_eq(TTLCache::get(cache, "key1"), None)  // Should be invalidated
+  
+  // Test size-based invalidation
+  let lru_cache = LRUCache::new(3)
+  LRUCache::put(lru_cache, "key1", "value1")
+  LRUCache::put(lru_cache, "key2", "value2")
+  LRUCache::put(lru_cache, "key3", "value3")
+  
+  // Add one more to trigger eviction
+  LRUCache::put(lru_cache, "key4", "value4")
+  assert_eq(LRUCache::get(lru_cache, "key1"), None)  // Should be invalidated
+  
+  // Test manual invalidation
+  let manual_cache = LRUCache::new(100)
+  LRUCache::put(manual_cache, "key1", "value1")
+  LRUCache::put(manual_cache, "key2", "value2")
+  
+  // Invalidate specific key
+  LRUCache::remove(manual_cache, "key1")
+  assert_eq(LRUCache::get(manual_cache, "key1"), None)
+  assert_eq(LRUCache::get(manual_cache, "key2"), Some("value2"))
+  
+  // Invalidate by pattern
+  LRUCache::put(manual_cache, "user:1", "user1")
+  LRUCache::put(manual_cache, "user:2", "user2")
+  LRUCache::put(manual_cache, "product:1", "product1")
+  
+  LRUCache::invalidate_by_pattern(manual_cache, "user:*")
+  assert_eq(LRUCache::get(manual_cache, "user:1"), None)
+  assert_eq(LRUCache::get(manual_cache, "user:2"), None)
+  assert_eq(LRUCache::get(manual_cache, "product:1"), Some("product1"))
+  
+  // Test tag-based invalidation
+  let tagged_cache = TaggedCache::new(100)
+  TaggedCache::put_with_tags(tagged_cache, "key1", "value1", ["tag1", "tag2"])
+  TaggedCache::put_with_tags(tagged_cache, "key2", "value2", ["tag2", "tag3"])
+  TaggedCache::put_with_tags(tagged_cache, "key3", "value3", ["tag3", "tag4"])
+  
+  // Invalidate by tag
+  TaggedCache::invalidate_by_tag(tagged_cache, "tag2")
+  assert_eq(TaggedCache::get(tagged_cache, "key1"), None)  // Has tag2
+  assert_eq(TaggedCache::get(tagged_cache, "key2"), None)  // Has tag2
+  assert_eq(TaggedCache::get(tagged_cache, "key3"), Some("value3"))  // Doesn't have tag2
+}
+
+// Test 10: Cache Performance Optimization
+test "cache performance optimization" {
+  // Test bulk operations
+  let cache = LRUCache::new(1000)
+  
+  // Test bulk put
+  let items = []
+  for i in 0..100 {
+    items.push(("key" + i.to_string(), "value" + i.to_string()))
   }
+  
+  let bulk_put_time = benchmark(|| {
+    LRUCache::put_all(cache, items)
+  })
+  
+  // Test individual put
+  let individual_cache = LRUCache::new(1000)
+  let individual_put_time = benchmark(|| {
+    for i in 0..100 {
+      LRUCache::put(individual_cache, "key" + i.to_string(), "value" + i.to_string())
+    }
+  })
+  
+  // Bulk put should be faster
+  assert_true(bulk_put_time < individual_put_time)
+  
+  // Test bulk get
+  let keys = []
+  for i in 0..100 {
+    keys.push("key" + i.to_string())
+  }
+  
+  let bulk_get_time = benchmark(|| {
+    LRUCache::get_all(cache, keys)
+  })
+  
+  // Test individual get
+  let individual_get_time = benchmark(|| {
+    for i in 0..100 {
+      LRUCache::get(individual_cache, "key" + i.to_string())
+    }
+  })
+  
+  // Bulk get should be faster
+  assert_true(bulk_get_time < individual_get_time)
+  
+  // Test cache compression
+  let large_cache = CompressedCache::new(100)
+  let large_value = "x" * 1000  // 1KB string
+  
+  CompressedCache::put(large_cache, "large_key", large_value)
+  assert_eq(CompressedCache::get(large_cache, "large_key"), Some(large_value))
+  
+  // Verify compression ratio
+  let stats = CompressedCache::get_stats(large_cache)
+  assert_true(stats.compression_ratio < 1.0)  // Should be compressed
+  
+  // Test cache sharding
+  let sharded_cache = ShardedCache::new(4, 250)  // 4 shards, 250 items each
+  
+  // Put items across shards
+  for i in 0..1000 {
+    ShardedCache::put(sharded_cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  // Get items from shards
+  for i in 0..1000 {
+    assert_eq(ShardedCache::get(sharded_cache, "key" + i.to_string()), Some("value" + i.to_string()))
+  }
+  
+  // Test cache with async loading
+  let async_cache = AsyncLoadingCache::new(100)
+  
+  // Define async loader
+  let async_loader = || {
+    sleep(100)  // Simulate slow operation
+    "loaded_value"
+  }
+  
+  // First get should trigger async load
+  let future = AsyncLoadingCache::get_or_load(async_cache, "async_key", async_loader)
+  assert_eq(Future::get(future), "loaded_value")
+  
+  // Second get should return cached value
+  let future2 = AsyncLoadingCache::get_or_load(async_cache, "async_key", async_loader)
+  assert_eq(Future::get(future2), "loaded_value")
+  
+  // Test cache with write-through policy
+  let persistent_store = KeyValueStore::new()
+  let write_through_cache = WriteThroughCache::new(100, persistent_store)
+  
+  WriteThroughCache::put(write_through_cache, "wt_key", "wt_value")
+  assert_eq(WriteThroughCache::get(write_through_cache, "wt_key"), Some("wt_value"))
+  assert_eq(KeyValueStore::get(persistent_store, "wt_key"), Some("wt_value"))
+  
+  // Test cache with write-behind policy
+  let write_behind_cache = WriteBehindCache::new(100, persistent_store)
+  
+  WriteBehindCache::put(write_behind_cache, "wb_key", "wb_value")
+  assert_eq(WriteBehindCache::get(write_behind_cache, "wb_key"), Some("wb_value"))
+  
+  // Value should be in cache but not yet in persistent store
+  sleep(200)  // Wait for write-behind to complete
+  assert_eq(KeyValueStore::get(persistent_store, "wb_key"), Some("wb_value"))
 }
