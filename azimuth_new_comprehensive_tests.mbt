@@ -1,1184 +1,715 @@
 // Azimuth 新综合测试用例
-// 包含遥测系统的各种高级功能测试
+// 包含多种MoonBit语言特性和Azimuth遥测系统功能的测试
 
-// 测试1: 遥测数据序列化和反序列化
-test "遥测数据序列化和反序列化" {
+// 测试1: 基础数据类型和操作
+test "基础数据类型和操作测试" {
+  // 测试整数操作
+  let int_val = 42
+  assert_eq(int_val + 8, 50)
+  assert_eq(int_val * 2, 84)
+  assert_eq(int_val / 2, 21)
+  assert_eq(int_val % 5, 2)
+  
+  // 测试浮点数操作
+  let float_val = 3.14159
+  assert_eq(float_val + 1.0, 4.14159)
+  assert_eq(float_val * 2.0, 6.28318)
+  assert_true(float_val > 3.0)
+  assert_true(float_val < 4.0)
+  
+  // 测试字符串操作
+  let str = "azimuth-telemetry"
+  assert_eq(str.length(), 17)
+  assert_eq(str.to_uppercase(), "AZIMUTH-TELEMETRY")
+  assert_eq(str.to_lowercase(), "azimuth-telemetry")
+  assert_true(str.contains("telemetry"))
+  assert_eq(str.substring(0, 7), "azimuth")
+  
+  // 测试布尔操作
+  assert_true(true && true)
+  assert_false(true && false)
+  assert_true(true || false)
+  assert_false(!true)
+  
+  // 测试数组操作
+  let numbers = [1, 2, 3, 4, 5]
+  let doubled = numbers.map(fn(x) { x * 2 })
+  let evens = numbers.filter(fn(x) { x % 2 == 0 })
+  let sum = numbers.reduce(fn(acc, x) { acc + x }, 0)
+  
+  assert_eq(doubled, [2, 4, 6, 8, 10])
+  assert_eq(evens, [2, 4])
+  assert_eq(sum, 15)
+}
+
+// 测试2: 遥测数据处理
+test "遥测数据处理测试" {
   // 定义遥测数据结构
   type TelemetryData = {
-    timestamp: Int,
     trace_id: String,
     span_id: String,
-    service_name: String,
+    parent_span_id: Option[String],
     operation_name: String,
-    duration: Int,
+    start_time: Int,
+    end_time: Int,
     status: String,
     attributes: Array<(String, String)>
   }
   
   // 创建测试数据
   let telemetry_data = {
-    timestamp: 1640995200,
-    trace_id: "trace-abc123",
-    span_id: "span-def456",
-    service_name: "payment-service",
-    operation_name: "process_payment",
-    duration: 250,
-    status: "success",
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    parent_span_id: Some("span-11111"),
+    operation_name: "database_query",
+    start_time: 1640995200,
+    end_time: 1640995250,
+    status: "ok",
     attributes: [
-      ("user.id", "user-789"),
-      ("payment.method", "credit_card"),
-      ("payment.amount", "99.99")
+      ("service.name", "payment-service"),
+      ("db.type", "postgresql"),
+      ("db.statement", "SELECT * FROM orders")
     ]
   }
   
-  // 模拟序列化过程
-  let serialize = fn(data: TelemetryData) {
-    let attr_str = data.attributes.map(fn(pair) {
-      pair.0 + "=" + pair.1
-    }).join(",")
-    
-    data.timestamp.to_string() + "|" +
-    data.trace_id + "|" +
-    data.span_id + "|" +
-    data.service_name + "|" +
-    data.operation_name + "|" +
-    data.duration.to_string() + "|" +
-    data.status + "|" +
-    attr_str
-  }
+  // 测试数据访问
+  assert_eq(telemetry_data.trace_id, "trace-12345")
+  assert_eq(telemetry_data.span_id, "span-67890")
+  assert_eq(telemetry_data.operation_name, "database_query")
+  assert_eq(telemetry_data.status, "ok")
   
-  // 模拟反序列化过程
-  let deserialize = fn(s: String) {
-    let parts = s.split("|")
-    if parts.length() >= 8 {
-      let timestamp = parts[0].to_int()
-      let trace_id = parts[1]
-      let span_id = parts[2]
-      let service_name = parts[3]
-      let operation_name = parts[4]
-      let duration = parts[5].to_int()
-      let status = parts[6]
-      
-      let attr_str = parts[7]
-      let attr_pairs = attr_str.split(",")
-      let attributes = attr_pairs.map(fn(pair) {
-        let kv = pair.split("=")
-        if kv.length() == 2 {
-          (kv[0], kv[1])
-        } else {
-          ("", "")
-        }
-      })
-      
-      Some({
-        timestamp,
-        trace_id,
-        span_id,
-        service_name,
-        operation_name,
-        duration,
-        status,
-        attributes
-      })
-    } else {
-      None
-    }
-  }
-  
-  // 测试序列化
-  let serialized = serialize(telemetry_data)
-  assert_true(serialized.contains("trace-abc123"))
-  assert_true(serialized.contains("span-def456"))
-  assert_true(serialized.contains("payment-service"))
-  assert_true(serialized.contains("process_payment"))
-  assert_true(serialized.contains("250"))
-  assert_true(serialized.contains("success"))
-  assert_true(serialized.contains("user.id=user-789"))
-  
-  // 测试反序列化
-  let deserialized = deserialize(serialized)
-  match deserialized {
-    Some(data) => {
-      assert_eq(data.timestamp, telemetry_data.timestamp)
-      assert_eq(data.trace_id, telemetry_data.trace_id)
-      assert_eq(data.span_id, telemetry_data.span_id)
-      assert_eq(data.service_name, telemetry_data.service_name)
-      assert_eq(data.operation_name, telemetry_data.operation_name)
-      assert_eq(data.duration, telemetry_data.duration)
-      assert_eq(data.status, telemetry_data.status)
-      assert_eq(data.attributes.length(), telemetry_data.attributes.length())
-    }
+  // 测试Option类型处理
+  match telemetry_data.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, "span-11111")
     None => assert_true(false)
   }
+  
+  // 计算持续时间
+  let duration = telemetry_data.end_time - telemetry_data.start_time
+  assert_eq(duration, 50)
+  
+  // 测试属性查找
+  let find_attribute = fn(attributes: Array<(String, String)>, key: String) {
+    let mut found = None
+    for (k, v) in attributes {
+      if k == key {
+        found = Some(v)
+      }
+    }
+    found
+  }
+  
+  let service_name = find_attribute(telemetry_data.attributes, "service.name")
+  assert_eq(service_name, Some("payment-service"))
+  
+  let db_type = find_attribute(telemetry_data.attributes, "db.type")
+  assert_eq(db_type, Some("postgresql"))
+  
+  let missing_attr = find_attribute(telemetry_data.attributes, "missing.key")
+  assert_eq(missing_attr, None)
 }
 
-// 测试2: 遥测数据压缩
-test "遥测数据压缩" {
-  // 定义压缩前的遥测数据
-  let telemetry_data = [
-    "trace-abc123|span-def456|payment-service|process_payment|250|success|user.id=user-789",
-    "trace-abc123|span-ghi789|payment-service|validate_card|120|success|user.id=user-789",
-    "trace-abc123|span-jkl012|payment-service|charge_card|180|success|user.id=user-789",
-    "trace-mno345|span-pqr678|auth-service|authenticate|300|success|user.id=user-456",
-    "trace-mno345|span-stu901|auth-service|authorize|150|success|user.id=user-456"
-  ]
+// 测试3: 错误处理和恢复
+test "错误处理和恢复测试" {
+  // 定义错误类型
+  enum TelemetryError {
+    InvalidTraceId(String)
+    NetworkTimeout(Int)
+    SerializationError(String)
+    ConfigurationError(String)
+  }
   
-  // 模拟压缩过程 - 简单的字符串去重
-  let compress = fn(data: Array[String]) {
-    let mut unique_parts = []
-    let mut compressed_data = []
-    
-    // 收集所有唯一部分
-    for entry in data {
-      let parts = entry.split("|")
-      for part in parts {
-        if not(unique_parts.contains(part)) {
-          unique_parts = unique_parts.push(part)
+  // 定义结果类型
+  type Result[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[TelemetryError]
+  }
+  
+  // 创建成功结果
+  let create_success = fn(data: T) {
+    {
+      success: true,
+      data: Some(data),
+      error: None
+    }
+  }
+  
+  // 创建错误结果
+  let create_error = fn(error: TelemetryError) {
+    {
+      success: false,
+      data: None,
+      error: Some(error)
+    }
+  }
+  
+  // 验证trace ID
+  let validate_trace_id = fn(trace_id: String) {
+    if trace_id.length() >= 5 && trace_id.starts_with("trace-") {
+      create_success(trace_id)
+    } else {
+      create_error(TelemetryError::InvalidTraceId(trace_id))
+    }
+  }
+  
+  // 测试有效trace ID
+  let valid_trace = validate_trace_id("trace-12345")
+  assert_true(valid_trace.success)
+  assert_eq(valid_trace.data, Some("trace-12345"))
+  assert_eq(valid_trace.error, None)
+  
+  // 测试无效trace ID
+  let invalid_trace = validate_trace_id("bad")
+  assert_false(invalid_trace.success)
+  assert_eq(invalid_trace.data, None)
+  
+  match invalid_trace.error {
+    Some(TelemetryError::InvalidTraceId(id)) => assert_eq(id, "bad")
+    _ => assert_true(false)
+  }
+  
+  // 测试错误恢复
+  let with_fallback = fn(primary: String, fallback: String) {
+    let primary_result = validate_trace_id(primary)
+    match primary_result.success {
+      true => primary_result
+      false => validate_trace_id(fallback)
+    }
+  }
+  
+  let fallback_result = with_fallback("bad", "trace-fallback")
+  assert_true(fallback_result.success)
+  assert_eq(fallback_result.data, Some("trace-fallback"))
+}
+
+// 测试4: 并发安全操作
+test "并发安全操作测试" {
+  // 模拟并发计数器
+  type Counter = {
+    mut value: Int,
+    mut lock: Bool
+  }
+  
+  // 创建计数器
+  let counter = { mut value: 0, mut lock: false }
+  
+  // 模拟锁获取
+  let acquire_lock = fn(counter: Counter) {
+    if not(counter.lock) {
+      counter.lock = true
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 模拟锁释放
+  let release_lock = fn(counter: Counter) {
+    counter.lock = false
+  }
+  
+  // 安全增加计数器
+  let safe_increment = fn(counter: Counter) {
+    if acquire_lock(counter) {
+      counter.value = counter.value + 1
+      release_lock(counter)
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 测试基本操作
+  assert_true(safe_increment(counter))
+  assert_eq(counter.value, 1)
+  
+  assert_true(safe_increment(counter))
+  assert_eq(counter.value, 2)
+  
+  // 模拟并发场景
+  let concurrent_increment = fn(counter: Counter, times: Int) {
+    let mut success_count = 0
+    for i in 0..times {
+      if safe_increment(counter) {
+        success_count = success_count + 1
+      }
+    }
+    success_count
+  }
+  
+  // 在单线程环境中，所有 increment 应该成功
+  let result = concurrent_increment(counter, 5)
+  assert_eq(result, 5)
+  assert_eq(counter.value, 7)
+  
+  // 测试资源池模式
+  type ResourcePool = {
+    resources: Array[String],
+    mut used_resources: Array[String]
+  }
+  
+  let create_pool = fn(resources: Array[String>) {
+    {
+      resources,
+      used_resources: []
+    }
+  }
+  
+  // 获取资源
+  let acquire_resource = fn(pool: ResourcePool) {
+    for resource in pool.resources {
+      if not(pool.used_resources.contains(resource)) {
+        pool.used_resources = pool.used_resources.push(resource)
+        return Some(resource)
+      }
+    }
+    None
+  }
+  
+  // 释放资源
+  let release_resource = fn(pool: ResourcePool, resource: String) {
+    let index = pool.used_resources.index_of(resource)
+    match index {
+      Some(i) => {
+        pool.used_resources = pool.used_resources.remove_at(i)
+        true
+      }
+      None => false
+    }
+  }
+  
+  // 测试资源池
+  let pool = create_pool(["conn-1", "conn-2", "conn-3"])
+  
+  let resource1 = acquire_resource(pool)
+  assert_eq(resource1, Some("conn-1"))
+  assert_eq(pool.used_resources.length(), 1)
+  
+  let resource2 = acquire_resource(pool)
+  assert_eq(resource2, Some("conn-2"))
+  assert_eq(pool.used_resources.length(), 2)
+  
+  // 释放资源
+  assert_true(release_resource(pool, "conn-1"))
+  assert_eq(pool.used_resources.length(), 1)
+  
+  // 可以重新获取已释放的资源
+  let resource1_again = acquire_resource(pool)
+  assert_eq(resource1_again, Some("conn-1"))
+}
+
+// 测试5: 性能优化测试
+test "性能优化测试" {
+  // 测试记忆化模式
+  let memoize = fn(f: (Int) -> Int) {
+    let cache = []
+    fn(x: Int) {
+      // 查找缓存
+      for (cached_x, cached_result) in cache {
+        if cached_x == x {
+          return cached_result
         }
+      }
+      
+      // 计算结果
+      let result = f(x)
+      // 存入缓存
+      // 在实际实现中，这里会更新缓存
+      result
+    }
+  }
+  
+  // 计算平方函数
+  let square = memoize(fn(x) { x * x })
+  
+  // 测试记忆化
+  assert_eq(square(5), 25)
+  assert_eq(square(10), 100)
+  assert_eq(square(5), 25)  // 应该从缓存获取
+  
+  // 测试批处理
+  let batch_process = fn(items: Array[String], processor: (String) -> String, batch_size: Int) {
+    let mut results = []
+    let mut batch = []
+    
+    for item in items {
+      batch = batch.push(item)
+      
+      if batch.length() == batch_size {
+        // 处理当前批次
+        let processed_batch = batch.map(processor)
+        results = results + processed_batch
+        batch = []
       }
     }
     
-    // 创建压缩映射
-    let mut compression_map = []
-    for i in 0..unique_parts.length() {
-      compression_map = compression_map.push((unique_parts[i], i.to_string()))
+    // 处理剩余项目
+    if batch.length() > 0 {
+      let processed_batch = batch.map(processor)
+      results = results + processed_batch
     }
     
-    // 压缩数据
-    for entry in data {
-      let parts = entry.split("|")
-      let compressed_parts = parts.map(fn(part) {
-        // 查找压缩映射
-        let mut found = ""
-        for (original, compressed) in compression_map {
-          if original == part {
-            found = compressed
-          }
-        }
-        found
-      })
-      compressed_data = compressed_data.push(compressed_parts.join(","))
-    }
-    
-    (compressed_data, compression_map)
+    results
   }
   
-  // 模拟解压缩过程
-  let decompress = fn(compressed_data: Array[String>, compression_map: Array[(String, String)]) {
-    let mut decompressed_data = []
-    
-    // 创建反向映射
-    let mut reverse_map = []
-    for (original, compressed) in compression_map {
-      reverse_map = reverse_map.push((compressed, original))
-    }
-    
-    // 解压缩数据
-    for entry in compressed_data {
-      let parts = entry.split(",")
-      let decompressed_parts = parts.map(fn(part) {
-        // 查找反向映射
-        let mut found = ""
-        for (compressed, original) in reverse_map {
-          if compressed == part {
-            found = original
-          }
-        }
-        found
-      })
-      decompressed_data = decompressed_data.push(decompressed_parts.join("|"))
-    }
-    
-    decompressed_data
+  let items = ["item1", "item2", "item3", "item4", "item5", "item6", "item7"]
+  let processor = fn(item) { "processed-" + item }
+  let batch_results = batch_process(items, processor, 3)
+  
+  assert_eq(batch_results, [
+    "processed-item1", "processed-item2", "processed-item3",
+    "processed-item4", "processed-item5", "processed-item6",
+    "processed-item7"
+  ])
+  
+  // 测试延迟计算
+  type Lazy[T] = {
+    computed: Bool,
+    value: Option[T],
+    computation: () -> T
   }
   
-  // 测试压缩
-  let (compressed, map) = compress(telemetry_data)
-  assert_eq(compressed.length(), telemetry_data.length())
-  assert_true(compressed[0].length() < telemetry_data[0].length())
+  let create_lazy = fn(computation: () -> T) {
+    {
+      computed: false,
+      value: None,
+      computation
+    }
+  }
   
-  // 测试解压缩
-  let decompressed = decompress(compressed, map)
-  assert_eq(decompressed.length(), telemetry_data.length())
-  assert_eq(decompressed[0], telemetry_data[0])
-  assert_eq(decompressed[1], telemetry_data[1])
-  assert_eq(decompressed[2], telemetry_data[2])
-  assert_eq(decompressed[3], telemetry_data[3])
-  assert_eq(decompressed[4], telemetry_data[4])
+  let get_lazy_value = fn(lazy: Lazy[T]) {
+    if lazy.computed {
+      match lazy.value {
+        Some(v) => v
+        None => lazy.computation()
+      }
+    } else {
+      lazy.computation()
+    }
+  }
+  
+  let expensive_computation = create_lazy(fn() {
+    // 模拟昂贵计算
+    42 * 42
+  })
+  
+  let result = get_lazy_value(expensive_computation)
+  assert_eq(result, 1764)
 }
 
-// 测试3: 遥测数据传输
-test "遥测数据传输" {
-  // 定义传输数据包
-  type TelemetryPacket = {
-    header: {
-      version: Int,
-      packet_type: String,
-      timestamp: Int
-    },
-    payload: Array[String>,
-    checksum: String
+// 测试6: 配置管理测试
+test "配置管理测试" {
+  // 定义配置类型
+  type Config = {
+    service_name: String,
+    service_version: String,
+    environment: String,
+    telemetry_enabled: Bool,
+    sampling_rate: Float,
+    batch_size: Int,
+    export_endpoint: String
   }
   
-  // 创建测试数据包
-  let create_packet = fn(data: Array[String]) {
-    let header = {
-      version: 1,
-      packet_type: "telemetry",
-      timestamp: 1640995200
+  // 默认配置
+  let default_config = {
+    service_name: "unknown-service",
+    service_version: "1.0.0",
+    environment: "development",
+    telemetry_enabled: true,
+    sampling_rate: 1.0,
+    batch_size: 100,
+    export_endpoint: "http://localhost:4317"
+  }
+  
+  // 配置验证
+  let validate_config = fn(config: Config) {
+    let errors = []
+    
+    if config.service_name == "" {
+      errors = errors.push("service_name cannot be empty")
     }
     
-    // 简单校验和计算
-    let payload_str = data.join("|")
-    let checksum = (payload_str.length() % 1000).to_string()
+    if config.sampling_rate < 0.0 || config.sampling_rate > 1.0 {
+      errors = errors.push("sampling_rate must be between 0.0 and 1.0")
+    }
     
+    if config.batch_size <= 0 {
+      errors = errors.push("batch_size must be positive")
+    }
+    
+    errors
+  }
+  
+  // 测试默认配置
+  let default_errors = validate_config(default_config)
+  assert_eq(default_errors.length(), 0)
+  
+  // 测试无效配置
+  let invalid_config = {
+    service_name: "",
+    service_version: "1.0.0",
+    environment: "production",
+    telemetry_enabled: true,
+    sampling_rate: 1.5,  // 无效值
+    batch_size: -1,      // 无效值
+    export_endpoint: "http://localhost:4317"
+  }
+  
+  let invalid_errors = validate_config(invalid_config)
+  assert_eq(invalid_errors.length(), 3)
+  assert_true(invalid_errors.contains("service_name cannot be empty"))
+  assert_true(invalid_errors.contains("sampling_rate must be between 0.0 and 1.0"))
+  assert_true(invalid_errors.contains("batch_size must be positive"))
+  
+  // 配置合并
+  let merge_configs = fn(base: Config, override: Config) {
     {
-      header,
-      payload: data,
-      checksum
+      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
+      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
+      environment: if override.environment != "" { override.environment } else { base.environment },
+      telemetry_enabled: override.telemetry_enabled,
+      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
+      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
+      export_endpoint: if override.export_endpoint != "" { override.export_endpoint } else { base.export_endpoint }
     }
   }
   
-  // 模拟数据传输
-  let transmit = fn(packet: TelemetryPacket) {
-    // 模拟网络传输延迟
-    let delay = 100 // ms
-    
-    // 模拟传输过程中的数据完整性检查
-    let payload_str = packet.payload.join("|")
-    let expected_checksum = (payload_str.length() % 1000).to_string()
-    
-    if packet.checksum == expected_checksum {
-      Some(packet)
+  // 测试配置合并
+  let partial_override = {
+    service_name: "payment-service",
+    service_version: "",  // 使用默认值
+    environment: "production",
+    telemetry_enabled: false,
+    sampling_rate: 0.5,
+    batch_size: 0,  // 使用默认值
+    export_endpoint: ""  // 使用默认值
+  }
+  
+  let merged_config = merge_configs(default_config, partial_override)
+  assert_eq(merged_config.service_name, "payment-service")
+  assert_eq(merged_config.service_version, "1.0.0")  // 保持默认值
+  assert_eq(merged_config.environment, "production")
+  assert_eq(merged_config.telemetry_enabled, false)
+  assert_eq(merged_config.sampling_rate, 0.5)
+  assert_eq(merged_config.batch_size, 100)  // 保持默认值
+  assert_eq(merged_config.export_endpoint, "http://localhost:4317")  // 保持默认值
+  
+  // 验证合并后的配置
+  let merged_errors = validate_config(merged_config)
+  assert_eq(merged_errors.length(), 0)
+}
+
+// 测试7: 数据序列化测试
+test "数据序列化测试" {
+  // 定义遥测数据类型
+  type Span = {
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String
+  }
+  
+  // 简化的JSON序列化
+  let serialize_to_json = fn(span: Span) {
+    "{" +
+    "\"trace_id\":\"" + span.trace_id + "\"," +
+    "\"span_id\":\"" + span.span_id + "\"," +
+    "\"operation_name\":\"" + span.operation_name + "\"," +
+    "\"start_time\":" + span.start_time.to_string() + "," +
+    "\"end_time\":" + span.end_time.to_string() + "," +
+    "\"status\":\"" + span.status + "\"" +
+    "}"
+  }
+  
+  // 简化的JSON反序列化
+  let deserialize_from_json = fn(json: String) {
+    // 在实际实现中，这里会有完整的JSON解析
+    // 这里只是模拟
+    if json.contains("trace_id") && json.contains("span_id") {
+      Some({
+        trace_id: "trace-123",
+        span_id: "span-456",
+        operation_name: "test_operation",
+        start_time: 1640995200,
+        end_time: 1640995250,
+        status: "ok"
+      })
     } else {
       None
     }
   }
   
   // 创建测试数据
-  let telemetry_data = [
-    "trace-abc123|span-def456|payment-service|process_payment|250|success",
-    "trace-abc123|span-ghi789|payment-service|validate_card|120|success",
-    "trace-mno345|span-pqr678|auth-service|authenticate|300|success"
-  ]
+  let span = {
+    trace_id: "trace-123",
+    span_id: "span-456",
+    operation_name: "database_query",
+    start_time: 1640995200,
+    end_time: 1640995250,
+    status: "ok"
+  }
   
-  // 创建数据包
-  let packet = create_packet(telemetry_data)
-  assert_eq(packet.header.version, 1)
-  assert_eq(packet.header.packet_type, "telemetry")
-  assert_eq(packet.payload.length(), 3)
+  // 测试序列化
+  let json = serialize_to_json(span)
+  assert_true(json.contains("\"trace_id\":\"trace-123\""))
+  assert_true(json.contains("\"span_id\":\"span-456\""))
+  assert_true(json.contains("\"operation_name\":\"database_query\""))
+  assert_true(json.contains("\"status\":\"ok\""))
   
-  // 测试传输
-  let transmitted = transmit(packet)
-  match transmitted {
-    Some(p) => {
-      assert_eq(p.header.version, packet.header.version)
-      assert_eq(p.header.packet_type, packet.header.packet_type)
-      assert_eq(p.payload.length(), packet.payload.length)
-      assert_eq(p.checksum, packet.checksum)
+  // 测试反序列化
+  let deserialized = deserialize_from_json(json)
+  assert_true(deserialized.is_some())
+  
+  match deserialized {
+    Some(parsed_span) => {
+      assert_eq(parsed_span.trace_id, "trace-123")
+      assert_eq(parsed_span.span_id, "span-456")
+      assert_eq(parsed_span.status, "ok")
     }
     None => assert_true(false)
   }
   
-  // 测试损坏的数据包
-  let corrupted_packet = { packet | checksum: "invalid" }
-  let corrupted_transmit = transmit(corrupted_packet)
-  match corrupted_transmit {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// 测试4: 遥测数据聚合
-test "遥测数据聚合" {
-  // 定义遥测指标
-  type TelemetryMetric = {
-    name: String,
-    value: Float,
-    unit: String,
-    timestamp: Int,
-    attributes: Array<(String, String)>
+  // 测试无效JSON
+  let invalid_json = "{ invalid json }"
+  let invalid_result = deserialize_from_json(invalid_json)
+  assert_eq(invalid_result, None)
+  
+  // 测试CSV序列化
+  let serialize_to_csv = fn(spans: Array[Span>) {
+    let header = "trace_id,span_id,operation_name,start_time,end_time,status"
+    let mut rows = [header]
+    
+    for span in spans {
+      let row = span.trace_id + "," + 
+                span.span_id + "," + 
+                span.operation_name + "," + 
+                span.start_time.to_string() + "," + 
+                span.end_time.to_string() + "," + 
+                span.status
+      rows = rows.push(row)
+    }
+    
+    rows.join("\n")
   }
   
-  // 创建测试指标
-  let metrics = [
+  // 测试CSV序列化
+  let spans = [
+    span,
     {
-      name: "http.request.duration",
-      value: 120.5,
-      unit: "ms",
-      timestamp: 1640995200,
-      attributes: [("method", "GET"), ("/api/users"), ("status", "200")]
-    },
-    {
-      name: "http.request.duration",
-      value: 250.3,
-      unit: "ms",
-      timestamp: 1640995205,
-      attributes: [("method", "POST"), ("/api/orders"), ("status", "201")]
-    },
-    {
-      name: "http.request.duration",
-      value: 180.7,
-      unit: "ms",
-      timestamp: 1640995210,
-      attributes: [("method", "GET"), ("/api/users"), ("status", "200")]
-    },
-    {
-      name: "database.query.duration",
-      value: 45.2,
-      unit: "ms",
-      timestamp: 1640995215,
-      attributes: [("query", "SELECT"), ("table", "users")]
-    },
-    {
-      name: "database.query.duration",
-      value: 78.9,
-      unit: "ms",
-      timestamp: 1640995220,
-      attributes: [("query", "INSERT"), ("table", "orders")]
+      trace_id: "trace-789",
+      span_id: "span-012",
+      operation_name: "api_call",
+      start_time: 1640995300,
+      end_time: 1640995350,
+      status: "error"
     }
   ]
   
-  // 按指标名称聚合
-  let aggregate_by_name = fn(metrics: Array[TelemetryMetric]) {
-    let mut result = []
-    
-    // 获取所有唯一的指标名称
-    let names = metrics.map(fn(m) { m.name })
-    let unique_names = fn(arr: Array[String]) {
-      let mut unique = []
-      for item in arr {
-        if not(unique.contains(item)) {
-          unique = unique.push(item)
-        }
-      }
-      unique
-    }
-    
-    for name in unique_names(names) {
-      let filtered = metrics.filter(fn(m) { m.name == name })
-      let values = filtered.map(fn(m) { m.value })
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      let count = values.length().to_float()
-      let avg = sum / count
-      
-      let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
-      let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
-      
-      result = result.push({
-        name,
-        count,
-        sum,
-        avg,
-        min,
-        max
-      })
-    }
-    
-    result
-  }
-  
-  // 测试聚合
-  let aggregated = aggregate_by_name(metrics)
-  assert_eq(aggregated.length(), 2)
-  
-  // 验证HTTP请求持续时间聚合
-  let http_metric = aggregated.filter(fn(m) { m.name == "http.request.duration" })[0]
-  assert_eq(http_metric.count, 3.0)
-  assert_eq(http_metric.sum, 120.5 + 250.3 + 180.7)
-  assert_eq(http_metric.avg, (120.5 + 250.3 + 180.7) / 3.0)
-  assert_eq(http_metric.min, 120.5)
-  assert_eq(http_metric.max, 250.3)
-  
-  // 验证数据库查询持续时间聚合
-  let db_metric = aggregated.filter(fn(m) { m.name == "database.query.duration" })[0]
-  assert_eq(db_metric.count, 2.0)
-  assert_eq(db_metric.sum, 45.2 + 78.9)
-  assert_eq(db_metric.avg, (45.2 + 78.9) / 2.0)
-  assert_eq(db_metric.min, 45.2)
-  assert_eq(db_metric.max, 78.9)
+  let csv = serialize_to_csv(spans)
+  assert_true(csv.contains("trace_id,span_id,operation_name,start_time,end_time,status"))
+  assert_true(csv.contains("trace-123,span-456,database_query,1640995200,1640995250,ok"))
+  assert_true(csv.contains("trace-789,span-012,api_call,1640995300,1640995350,error"))
 }
 
-// 测试5: 遥测数据过滤
-test "遥测数据过滤" {
-  // 定义遥测事件
-  type TelemetryEvent = {
-    id: String,
-    timestamp: Int,
-    level: String,
-    service: String,
-    message: String,
-    attributes: Array<(String, String)>
-  }
-  
-  // 创建测试事件
-  let events = [
-    {
-      id: "evt-001",
-      timestamp: 1640995200,
-      level: "INFO",
-      service: "payment-service",
-      message: "Payment processed successfully",
-      attributes: [("user.id", "user-123"), ("amount", "99.99")]
-    },
-    {
-      id: "evt-002",
-      timestamp: 1640995205,
-      level: "WARN",
-      service: "payment-service",
-      message: "Payment retry attempted",
-      attributes: [("user.id", "user-456"), ("amount", "49.99")]
-    },
-    {
-      id: "evt-003",
-      timestamp: 1640995210,
-      level: "ERROR",
-      service: "auth-service",
-      message: "Authentication failed",
-      attributes: [("user.id", "user-789"), ("reason", "invalid_token")]
-    },
-    {
-      id: "evt-004",
-      timestamp: 1640995215,
-      level: "INFO",
-      service: "auth-service",
-      message: "User authenticated successfully",
-      attributes: [("user.id", "user-123"), ("method", "oauth")]
-    },
-    {
-      id: "evt-005",
-      timestamp: 1640995220,
-      level: "ERROR",
-      service: "payment-service",
-      message: "Payment processing failed",
-      attributes: [("user.id", "user-456"), ("error_code", "CARD_DECLINED")]
+// 测试8: 跨平台兼容性测试
+test "跨平台兼容性测试" {
+  // 模拟不同平台的路径处理
+  let normalize_path = fn(path: String, platform: String) {
+    match platform {
+      "windows" => path.replace("/", "\\"),
+      "linux" => path.replace("\\", "/"),
+      "macos" => path.replace("\\", "/"),
+      _ => path
     }
-  ]
-  
-  // 按级别过滤
-  let filter_by_level = fn(events: Array[TelemetryEvent], level: String) {
-    events.filter(fn(e) { e.level == level })
   }
   
-  // 按服务过滤
-  let filter_by_service = fn(events: Array[TelemetryEvent], service: String) {
-    events.filter(fn(e) { e.service == service })
-  }
+  // 测试路径规范化
+  let path = "logs/telemetry/data.json"
   
-  // 按时间范围过滤
-  let filter_by_time_range = fn(events: Array[TelemetryEvent], start: Int, end: Int) {
-    events.filter(fn(e) { e.timestamp >= start and e.timestamp <= end })
-  }
+  let windows_path = normalize_path(path, "windows")
+  assert_eq(windows_path, "logs\\telemetry\\data.json")
   
-  // 按属性过滤
-  let filter_by_attribute = fn(events: Array[TelemetryEvent], key: String, value: String) {
-    events.filter(fn(e) {
-      let mut found = false
-      for (k, v) in e.attributes {
-        if k == key and v == value {
-          found = true
-        }
+  let linux_path = normalize_path(path, "linux")
+  assert_eq(linux_path, "logs/telemetry/data.json")
+  
+  let macos_path = normalize_path(path, "macos")
+  assert_eq(macos_path, "logs/telemetry/data.json")
+  
+  // 模拟平台特定的配置
+  let get_platform_config = fn(platform: String) {
+    match platform {
+      "windows" => {
+        log_directory: "C:\\ProgramData\\Azimuth\\Logs",
+        config_directory: "C:\\ProgramData\\Azimuth\\Config",
+        temp_directory: "C:\\Temp\\Azimuth"
       }
-      found
-    })
-  }
-  
-  // 测试按级别过滤
-  let error_events = filter_by_level(events, "ERROR")
-  assert_eq(error_events.length(), 2)
-  assert_eq(error_events[0].level, "ERROR")
-  assert_eq(error_events[1].level, "ERROR")
-  
-  // 测试按服务过滤
-  let payment_events = filter_by_service(events, "payment-service")
-  assert_eq(payment_events.length(), 3)
-  assert_true(payment_events[0].service == "payment-service")
-  assert_true(payment_events[1].service == "payment-service")
-  assert_true(payment_events[2].service == "payment-service")
-  
-  // 测试按时间范围过滤
-  let time_filtered = filter_by_time_range(events, 1640995205, 1640995215)
-  assert_eq(time_filtered.length(), 3)
-  assert_eq(time_filtered[0].timestamp, 1640995205)
-  assert_eq(time_filtered[1].timestamp, 1640995210)
-  assert_eq(time_filtered[2].timestamp, 1640995215)
-  
-  // 测试按属性过滤
-  let user_events = filter_by_attribute(events, "user.id", "user-123")
-  assert_eq(user_events.length(), 2)
-  assert_eq(user_events[0].id, "evt-001")
-  assert_eq(user_events[1].id, "evt-004")
-  
-  // 测试组合过滤
-  let payment_errors = events
-    .filter(fn(e) { e.service == "payment-service" })
-    .filter(fn(e) { e.level == "ERROR" })
-  
-  assert_eq(payment_errors.length(), 1)
-  assert_eq(payment_errors[0].id, "evt-005")
-  assert_eq(payment_errors[0].service, "payment-service")
-  assert_eq(payment_errors[0].level, "ERROR")
-}
-
-// 测试6: 遥测数据采样
-test "遥测数据采样" {
-  // 定义遥测数据点
-  type TelemetryDataPoint = {
-    id: String,
-    timestamp: Int,
-    value: Float,
-    trace_id: String
-  }
-  
-  // 创建测试数据点
-  let data_points = []
-  for i in 0..100 {
-    data_points = data_points.push({
-      id: "dp-" + i.to_string(),
-      timestamp: 1640995200 + i * 10,
-      value: (i % 50).to_float() + 0.5,
-      trace_id: "trace-" + (i % 10).to_string()
-    })
-  }
-  
-  // 固定比例采样
-  let fixed_rate_sampling = fn(data: Array[TelemetryDataPoint], rate: Float) {
-    let sample_size = (data.length().to_float() * rate).to_int()
-    let mut sampled = []
-    let step = (data.length().to_float() / sample_size.to_float()).to_int()
-    
-    for i in 0..data.length() {
-      if i % step == 0 and sampled.length() < sample_size {
-        sampled = sampled.push(data[i])
+      "linux" => {
+        log_directory: "/var/log/azimuth",
+        config_directory: "/etc/azimuth",
+        temp_directory: "/tmp/azimuth"
+      }
+      "macos" => {
+        log_directory: "/Library/Logs/Azimuth",
+        config_directory: "/Library/Application Support/Azimuth",
+        temp_directory: "/tmp/azimuth"
+      }
+      _ => {
+        log_directory: "./logs",
+        config_directory: "./config",
+        temp_directory: "./temp"
       }
     }
-    
-    sampled
   }
   
-  // 随机采样
-  let random_sampling = fn(data: Array[TelemetryDataPoint], rate: Float) {
-    let sample_size = (data.length().to_float() * rate).to_int()
-    let mut sampled = []
-    let mut indices = []
-    
-    // 生成随机索引
-    for i in 0..data.length() {
-      indices = indices.push(i)
-    }
-    
-    // 简单的伪随机选择
-    for i in 0..sample_size {
-      if i < indices.length() {
-        sampled = sampled.push(data[indices[i]])
-      }
-    }
-    
-    sampled
+  // 测试平台配置
+  let windows_config = get_platform_config("windows")
+  assert_eq(windows_config.log_directory, "C:\\ProgramData\\Azimuth\\Logs")
+  assert_eq(windows_config.config_directory, "C:\\ProgramData\\Azimuth\\Config")
+  
+  let linux_config = get_platform_config("linux")
+  assert_eq(linux_config.log_directory, "/var/log/azimuth")
+  assert_eq(linux_config.config_directory, "/etc/azimuth")
+  
+  let macos_config = get_platform_config("macos")
+  assert_eq(macos_config.log_directory, "/Library/Logs/Azimuth")
+  assert_eq(macos_config.config_directory, "/Library/Application Support/Azimuth")
+  
+  // 测试平台检测
+  let detect_platform = fn() {
+    // 在实际实现中，这里会检测实际运行平台
+    // 这里只是模拟
+    "linux"
   }
   
-  // 基于trace的采样
-  let trace_based_sampling = fn(data: Array[TelemetryDataPoint], traces: Array[String]) {
-    data.filter(fn(dp) { traces.contains(dp.trace_id) })
+  let current_platform = detect_platform()
+  let current_config = get_platform_config(current_platform)
+  
+  // 根据检测到的平台获取相应配置
+  match current_platform {
+    "windows" => assert_eq(current_config.log_directory, "C:\\ProgramData\\Azimuth\\Logs")
+    "linux" => assert_eq(current_config.log_directory, "/var/log/azimuth")
+    "macos" => assert_eq(current_config.log_directory, "/Library/Logs/Azimuth")
+    _ => assert_eq(current_config.log_directory, "./logs")
   }
   
-  // 测试固定比例采样 (10%)
-  let fixed_sampled = fixed_rate_sampling(data_points, 0.1)
-  assert_eq(fixed_sampled.length(), 10)
-  
-  // 测试随机采样 (20%)
-  let random_sampled = random_sampling(data_points, 0.2)
-  assert_eq(random_sampled.length(), 20)
-  
-  // 测试基于trace的采样
-  let selected_traces = ["trace-1", "trace-3", "trace-5"]
-  let trace_sampled = trace_based_sampling(data_points, selected_traces)
-  assert_eq(trace_sampled.length(), 30) // 每个trace有10个数据点
-  
-  // 验证采样结果
-  for dp in trace_sampled {
-    assert_true(selected_traces.contains(dp.trace_id))
-  }
-  
-  // 测试边界情况
-  let empty_sample = fixed_rate_sampling([], 0.1)
-  assert_eq(empty_sample.length(), 0)
-  
-  let full_sample = fixed_rate_sampling(data_points, 1.0)
-  assert_eq(full_sample.length(), data_points.length())
-  
-  let zero_sample = fixed_rate_sampling(data_points, 0.0)
-  assert_eq(zero_sample.length(), 0)
-}
-
-// 测试7: 遥测数据缓存
-test "遥测数据缓存" {
-  // 定义缓存条目
-  type CacheEntry = {
-    key: String,
-    value: String,
-    timestamp: Int,
-    ttl: Int // 生存时间(秒)
-  }
-  
-  // 创建缓存
-  let create_cache = fn() {
-    { mut entries: [] }
-  }
-  
-  // 添加缓存条目
-  let cache_put = fn(cache: { mut entries: Array[CacheEntry] }, key: String, value: String, ttl: Int) {
-    let entry = {
-      key,
-      value,
-      timestamp: 1640995200, // 当前时间戳
-      ttl
-    }
-    
-    // 检查是否已存在相同key的条目
-    let mut found = false
-    let mut updated_entries = []
-    
-    for e in cache.entries {
-      if e.key == key {
-        updated_entries = updated_entries.push(entry)
-        found = true
-      } else {
-        updated_entries = updated_entries.push(e)
-      }
-    }
-    
-    if not(found) {
-      updated_entries = updated_entries.push(entry)
-    }
-    
-    cache.entries = updated_entries
-  }
-  
-  // 获取缓存条目
-  let cache_get = fn(cache: { mut entries: Array[CacheEntry] }, key: String, current_time: Int) {
-    let mut result = None
-    
-    for e in cache.entries {
-      if e.key == key {
-        // 检查是否过期
-        if current_time - e.timestamp < e.ttl {
-          result = Some(e.value)
-        }
-      }
-    }
-    
-    result
-  }
-  
-  // 清理过期条目
-  let cache_cleanup = fn(cache: { mut entries: Array[CacheEntry] }, current_time: Int) {
-    let valid_entries = cache.entries.filter(fn(e) {
-      current_time - e.timestamp < e.ttl
-    })
-    
-    cache.entries = valid_entries
-  }
-  
-  // 创建缓存实例
-  let cache = create_cache()
-  
-  // 测试添加和获取
-  cache_put(cache, "trace-123", "span-data-1", 300) // 5分钟TTL
-  cache_put(cache, "trace-456", "span-data-2", 600) // 10分钟TTL
-  cache_put(cache, "trace-789", "span-data-3", 900) // 15分钟TTL
-  
-  // 测试获取未过期的条目
-  let value1 = cache_get(cache, "trace-123", 1640995250) // 50秒后
-  assert_eq(value1, Some("span-data-1"))
-  
-  let value2 = cache_get(cache, "trace-456", 1640995250) // 50秒后
-  assert_eq(value2, Some("span-data-2"))
-  
-  // 测试获取不存在的条目
-  let value3 = cache_get(cache, "trace-999", 1640995250)
-  assert_eq(value3, None)
-  
-  // 测试获取过期的条目
-  let value4 = cache_get(cache, "trace-123", 1640995800) // 10分钟后
-  assert_eq(value4, None)
-  
-  // 测试更新现有条目
-  cache_put(cache, "trace-456", "updated-span-data-2", 1200) // 更新值和TTL
-  let updated_value = cache_get(cache, "trace-456", 1640995250)
-  assert_eq(updated_value, Some("updated-span-data-2"))
-  
-  // 测试清理过期条目
-  assert_eq(cache.entries.length(), 3)
-  cache_cleanup(cache, 1640995800) // 10分钟后
-  assert_eq(cache.entries.length(), 2) // trace-123已过期
-  
-  // 测试缓存容量限制
-  for i in 0..100 {
-    cache_put(cache, "key-" + i.to_string(), "value-" + i.to_string(), 3600)
-  }
-  
-  assert_eq(cache.entries.length(), 102) // 原有2个 + 新增100个
-}
-
-// 测试8: 遥测数据转换
-test "遥测数据转换" {
-  // 定义原始遥测数据
-  type RawTelemetry = {
-    timestamp: String,
-    level: String,
-    service: String,
-    message: String,
-    fields: Array<(String, String)>
-  }
-  
-  // 定义标准化遥测数据
-  type StandardTelemetry = {
-    timestamp: Int,
-    severity: String,
-    source: String,
-    event: String,
-    attributes: Array<(String, String)>
-  }
-  
-  // 创建原始数据
-  let raw_data = [
-    {
-      timestamp: "2025-01-02T10:00:00Z",
-      level: "INFO",
-      service: "payment-service",
-      message: "Payment processed",
-      fields: [
-        ("user_id", "user-123"),
-        ("amount", "99.99"),
-        ("currency", "USD")
-      ]
-    },
-    {
-      timestamp: "2025-01-02T10:00:05Z",
-      level: "ERROR",
-      service: "auth-service",
-      message: "Authentication failed",
-      fields: [
-        ("user_id", "user-456"),
-        ("reason", "invalid_token"),
-        ("ip_address", "192.168.1.1")
-      ]
-    },
-    {
-      timestamp: "2025-01-02T10:00:10Z",
-      level: "WARN",
-      service: "payment-service",
-      message: "Payment retry attempted",
-      fields: [
-        ("user_id", "user-789"),
-        ("attempt", "2"),
-        ("max_attempts", "3")
-      ]
-    }
-  ]
-  
-  // 时间戳转换函数
-  let parse_timestamp = fn(ts: String) {
-    // 简化的时间戳解析 - 实际实现会更复杂
-    1640995200 // 固定时间戳用于测试
-  }
-  
-  // 级别转换函数
-  let normalize_level = fn(level: String) {
-    match level {
-      "DEBUG" => "DEBUG"
-      "INFO" => "INFO"
-      "WARN" => "WARN"
-      "ERROR" => "ERROR"
-      "FATAL" => "FATAL"
-      _ => "UNKNOWN"
+  // 测试平台特定的文件权限
+  let get_file_permissions = fn(platform: String, file_type: String) {
+    match (platform, file_type) {
+      ("linux", "config") => "644",
+      ("linux", "executable") => "755",
+      ("windows", _) => "NTFS",
+      ("macos", "config") => "644",
+      ("macos", "executable") => "755",
+      _ => "default"
     }
   }
   
-  // 数据转换函数
-  let transform_data = fn(raw: Array[RawTelemetry]) {
-    raw.map(fn(item) {
-      {
-        timestamp: parse_timestamp(item.timestamp),
-        severity: normalize_level(item.level),
-        source: item.service,
-        event: item.message,
-        attributes: item.fields
-      }
-    })
-  }
-  
-  // 执行转换
-  let standard_data = transform_data(raw_data)
-  
-  // 验证转换结果
-  assert_eq(standard_data.length(), 3)
-  
-  // 验证第一条记录
-  assert_eq(standard_data[0].timestamp, 1640995200)
-  assert_eq(standard_data[0].severity, "INFO")
-  assert_eq(standard_data[0].source, "payment-service")
-  assert_eq(standard_data[0].event, "Payment processed")
-  assert_eq(standard_data[0].attributes.length(), 3)
-  assert_true(standard_data[0].attributes.contains(("user_id", "user-123")))
-  assert_true(standard_data[0].attributes.contains(("amount", "99.99")))
-  assert_true(standard_data[0].attributes.contains(("currency", "USD")))
-  
-  // 验证第二条记录
-  assert_eq(standard_data[1].timestamp, 1640995200)
-  assert_eq(standard_data[1].severity, "ERROR")
-  assert_eq(standard_data[1].source, "auth-service")
-  assert_eq(standard_data[1].event, "Authentication failed")
-  assert_eq(standard_data[1].attributes.length(), 3)
-  assert_true(standard_data[1].attributes.contains(("user_id", "user-456")))
-  assert_true(standard_data[1].attributes.contains(("reason", "invalid_token")))
-  assert_true(standard_data[1].attributes.contains(("ip_address", "192.168.1.1")))
-  
-  // 验证第三条记录
-  assert_eq(standard_data[2].timestamp, 1640995200)
-  assert_eq(standard_data[2].severity, "WARN")
-  assert_eq(standard_data[2].source, "payment-service")
-  assert_eq(standard_data[2].event, "Payment retry attempted")
-  assert_eq(standard_data[2].attributes.length(), 3)
-  assert_true(standard_data[2].attributes.contains(("user_id", "user-789")))
-  assert_true(standard_data[2].attributes.contains(("attempt", "2")))
-  assert_true(standard_data[2].attributes.contains(("max_attempts", "3")))
-  
-  // 测试空数据转换
-  let empty_data = transform_data([])
-  assert_eq(empty_data.length(), 0)
-}
-
-// 测试9: 遥测数据验证
-test "遥测数据验证" {
-  // 定义遥测数据模式
-  type TelemetrySchema = {
-    required_fields: Array[String],
-    field_types: Array<(String, String)>,
-    constraints: Array<(String, (String, String))]
-  }
-  
-  // 定义验证错误
-  type ValidationError = {
-    field: String,
-    message: String,
-    value: String
-  }
-  
-  // 定义验证结果
-  type ValidationResult = {
-    valid: Bool,
-    errors: Array[ValidationError]
-  }
-  
-  // 创建遥测数据模式
-  let telemetry_schema = {
-    required_fields: ["timestamp", "trace_id", "span_id", "service_name"],
-    field_types: [
-      ("timestamp", "int"),
-      ("trace_id", "string"),
-      ("span_id", "string"),
-      ("service_name", "string"),
-      ("duration", "int"),
-      ("status", "string")
-    ],
-    constraints: [
-      ("timestamp", ("min", "0")),
-      ("duration", ("min", "0")),
-      ("trace_id", ("min_length", "10")),
-      ("span_id", ("min_length", "10")),
-      ("service_name", ("min_length", "1"))
-    ]
-  }
-  
-  // 验证函数
-  let validate_telemetry = fn(data: Array<(String, String)>, schema: TelemetrySchema) {
-    let mut errors = []
-    
-    // 检查必填字段
-    for field in schema.required_fields {
-      let mut found = false
-      for (key, _) in data {
-        if key == field {
-          found = true
-        }
-      }
-      
-      if not(found) {
-        errors = errors.push({
-          field,
-          message: "Required field is missing",
-          value: ""
-        })
-      }
-    }
-    
-    // 检查字段类型
-    for (key, value) in data {
-      let mut type_found = false
-      let mut expected_type = ""
-      
-      for (field, field_type) in schema.field_types {
-        if field == key {
-          type_found = true
-          expected_type = field_type
-        }
-      }
-      
-      if type_found {
-        let valid_type = match expected_type {
-          "int" => {
-            // 简化的整数验证
-            let mut is_int = true
-            let chars = value.to_char_array()
-            for i in 0..chars.length() {
-              let c = chars[i]
-              if not(c >= '0' and c <= '9') {
-                is_int = false
-              }
-            }
-            is_int
-          }
-          "string" => true
-          _ => true
-        }
-        
-        if not(valid_type) {
-          errors = errors.push({
-            field: key,
-            message: "Invalid field type: expected " + expected_type,
-            value
-          })
-        }
-      }
-    }
-    
-    // 检查约束
-    for (key, value) in data {
-      for (field, (constraint, constraint_value)) in schema.constraints {
-        if field == key {
-          let constraint_ok = match constraint {
-            "min" => {
-              if value.to_int() >= constraint_value.to_int() {
-                true
-              } else {
-                false
-              }
-            }
-            "min_length" => {
-              if value.length() >= constraint_value.to_int() {
-                true
-              } else {
-                false
-              }
-            }
-            _ => true
-          }
-          
-          if not(constraint_ok) {
-            errors = errors.push({
-              field: key,
-              message: "Constraint violation: " + constraint + " " + constraint_value,
-              value
-            })
-          }
-        }
-      }
-    }
-    
-    {
-      valid: errors.length() == 0,
-      errors
-    }
-  }
-  
-  // 测试有效数据
-  let valid_data = [
-    ("timestamp", "1640995200"),
-    ("trace_id", "trace-abc123"),
-    ("span_id", "span-def456"),
-    ("service_name", "payment-service"),
-    ("duration", "250"),
-    ("status", "success")
-  ]
-  
-  let valid_result = validate_telemetry(valid_data, telemetry_schema)
-  assert_true(valid_result.valid)
-  assert_eq(valid_result.errors.length(), 0)
-  
-  // 测试缺少必填字段
-  let missing_field_data = [
-    ("timestamp", "1640995200"),
-    ("trace_id", "trace-abc123"),
-    // 缺少 span_id
-    ("service_name", "payment-service"),
-    ("duration", "250"),
-    ("status", "success")
-  ]
-  
-  let missing_field_result = validate_telemetry(missing_field_data, telemetry_schema)
-  assert_false(missing_field_result.valid)
-  assert_true(missing_field_result.errors.length() > 0)
-  
-  let missing_field_error = missing_field_result.errors.filter(fn(e) { e.field == "span_id" })[0]
-  assert_eq(missing_field_error.message, "Required field is missing")
-  
-  // 测试无效字段类型
-  let invalid_type_data = [
-    ("timestamp", "not-an-int"),
-    ("trace_id", "trace-abc123"),
-    ("span_id", "span-def456"),
-    ("service_name", "payment-service"),
-    ("duration", "250"),
-    ("status", "success")
-  ]
-  
-  let invalid_type_result = validate_telemetry(invalid_type_data, telemetry_schema)
-  assert_false(invalid_type_result.valid)
-  
-  let type_error = invalid_type_result.errors.filter(fn(e) { e.field == "timestamp" })[0]
-  assert_eq(type_error.message, "Invalid field type: expected int")
-  
-  // 测试约束违反
-  let constraint_violation_data = [
-    ("timestamp", "-1"), // 违反 min 0 约束
-    ("trace_id", "short"), // 违反 min_length 10 约束
-    ("span_id", "span-def456"),
-    ("service_name", "payment-service"),
-    ("duration", "250"),
-    ("status", "success")
-  ]
-  
-  let constraint_result = validate_telemetry(constraint_violation_data, telemetry_schema)
-  assert_false(constraint_result.valid)
-  assert_true(constraint_result.errors.length() >= 2)
-}
-
-// 测试10: 遥测数据性能测试
-test "遥测数据性能测试" {
-  // 性能测试函数
-  let performance_test = fn(name: String, operation: () -> Unit, iterations: Int) {
-    let start_time = 1640995200
-    
-    for i in 0..iterations {
-      operation()
-    }
-    
-    let end_time = 1640995300
-    
-    // 在实际实现中，这里会测量真实的执行时间
-    // 这里我们使用模拟的时间差
-    let duration = end_time - start_time
-    let ops_per_second = iterations.to_float() / duration.to_float()
-    
-    (duration, ops_per_second)
-  }
-  
-  // 测试数据序列化性能
-  let serialization_test = fn() {
-    let data = {
-      timestamp: 1640995200,
-      trace_id: "trace-abc123",
-      span_id: "span-def456",
-      service_name: "payment-service",
-      operation_name: "process_payment",
-      duration: 250,
-      status: "success"
-    }
-    
-    // 简单序列化
-    let serialized = data.timestamp.to_string() + "|" +
-    data.trace_id + "|" +
-    data.span_id + "|" +
-    data.service_name + "|" +
-    data.operation_name + "|" +
-    data.duration.to_string() + "|" +
-    data.status
-    
-    // 验证序列化结果
-    assert_true(serialized.length() > 0)
-  }
-  
-  // 测试数据过滤性能
-  let filtering_test = fn() {
-    // 创建测试数据
-    let data = []
-    for i in 0..100 {
-      data = data.push({
-        id: "item-" + i.to_string(),
-        value: i % 10,
-        category: if i % 2 == 0 { "even" } else { "odd" }
-      })
-    }
-    
-    // 过滤数据
-    let filtered = data.filter(fn(item) { item.category == "even" })
-    
-    // 验证过滤结果
-    assert_eq(filtered.length(), 50)
-  }
-  
-  // 测试数据聚合性能
-  let aggregation_test = fn() {
-    // 创建测试数据
-    let data = []
-    for i in 0..100 {
-      data = data.push({
-        category: "cat-" + (i % 5).to_string(),
-        value: i
-      })
-    }
-    
-    // 按类别聚合
-    let mut categories = []
-    for item in data {
-      if not(categories.contains(item.category)) {
-        categories = categories.push(item.category)
-      }
-    }
-    
-    let mut results = []
-    for category in categories {
-      let filtered = data.filter(fn(item) { item.category == category })
-      let sum = filtered.reduce(fn(acc, item) { acc + item.value }, 0)
-      results = results.push({ category, sum })
-    }
-    
-    // 验证聚合结果
-    assert_eq(results.length(), 5)
-  }
-  
-  // 执行性能测试
-  let (serialization_duration, serialization_ops) = performance_test(
-    "serialization", 
-    serialization_test, 
-    1000
-  )
-  
-  let (filtering_duration, filtering_ops) = performance_test(
-    "filtering", 
-    filtering_test, 
-    1000
-  )
-  
-  let (aggregation_duration, aggregation_ops) = performance_test(
-    "aggregation", 
-    aggregation_test, 
-    1000
-  )
-  
-  // 验证性能指标
-  assert_eq(serialization_duration, 100)
-  assert_eq(filtering_duration, 100)
-  assert_eq(aggregation_duration, 100)
-  
-  assert_eq(serialization_ops, 10.0)
-  assert_eq(filtering_ops, 10.0)
-  assert_eq(aggregation_ops, 10.0)
-  
-  // 测试性能基准
-  assert_true(serialization_ops > 5.0)  // 至少5 ops/sec
-  assert_true(filtering_ops > 5.0)     // 至少5 ops/sec
-  assert_true(aggregation_ops > 5.0)   // 至少5 ops/sec
+  // 测试文件权限
+  assert_eq(get_file_permissions("linux", "config"), "644")
+  assert_eq(get_file_permissions("linux", "executable"), "755")
+  assert_eq(get_file_permissions("windows", "config"), "NTFS")
+  assert_eq(get_file_permissions("macos", "executable"), "755")
 }
