@@ -4978,6 +4978,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f696e746567726174696f6e5f74657374732e6d6274_8, ["多格式数据转换集成测试"]),
     9: (__test_617a696d7574685f696e746567726174696f6e5f74657374732e6d6274_9, ["完整系统生命周期集成测试"]),
   },
+  "azimuth_integration_quality_tests.mbt": {
+    0: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_0, ["telemetry_end_to_end_workflow"]),
+    1: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_1, ["cross_service_telemetry_propagation"]),
+    2: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_2, ["telemetry_with_baggage_propagation"]),
+    3: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_3, ["telemetry_error_handling_integration"]),
+    4: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_4, ["telemetry_performance_monitoring"]),
+    5: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_5, ["telemetry_with_http_operations"]),
+    6: (__test_617a696d7574685f696e746567726174696f6e5f7175616c6974795f74657374732e6d6274_6, ["telemetry_resource_integration"]),
+  },
   "azimuth_integration_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f696e746567726174696f6e5f636f6d70726568656e736976655f74657374732e6d6274_0, ["end-to-end telemetry pipeline integration"]),
     1: (__test_617a696d7574685f696e746567726174696f6e5f636f6d70726568656e736976655f74657374732e6d6274_1, ["cross-service telemetry propagation integration"]),
