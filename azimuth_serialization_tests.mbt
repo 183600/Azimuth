@@ -1,1304 +1,355 @@
-// Azimuth Serialization and Deserialization Tests
-// This file contains test cases for serialization and deserialization functionality
+// Azimuth Telemetry System - Serialization/Deserialization Tests
+// This file contains test cases for telemetry data serialization and deserialization
 
-// Test 1: JSON Serialization and Deserialization
-test "JSON serialization and deserialization" {
-  // Define telemetry data structure
-  type TelemetryData = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    service_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    tags: Array[(String, String)]
-  }
+// Test 1: Span Serialization to JSON
+test "span serialization to json" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("test_span", Internal, span_ctx)
   
-  // Serialize to JSON (simplified implementation)
-  let serialize_to_json = fn(data: TelemetryData) {
-    let parent_span_json = match data.parent_span_id {
-      Some(id) => "\"" + id + "\""
-      None => "null"
-    }
-    
-    let tags_json = data.tags.map(fn(tag) {
-      "\"" + tag.0 + "\":\"" + tag.1 + "\""
-    }).reduce(fn(acc, tag_json) { 
-      if acc.length() > 0 { acc + "," + tag_json } else { tag_json }
-    }, "")
-    
-    "{"
-      + "\"trace_id\":\"" + data.trace_id + "\"," 
-      + "\"span_id\":\"" + data.span_id + "\"," 
-      + "\"parent_span_id\":" + parent_span_json + "," 
-      + "\"operation_name\":\"" + data.operation_name + "\"," 
-      + "\"service_name\":\"" + data.service_name + "\"," 
-      + "\"start_time\":" + data.start_time.to_string() + "," 
-      + "\"end_time\":" + data.end_time.to_string() + "," 
-      + "\"status\":\"" + data.status + "\"," 
-      + "\"tags\":{" + tags_json + "}"
-      + "}"
-  }
+  // Add some attributes and events
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "http.method", StringValue("GET"))
+  Attributes::set(attrs, "http.url", StringValue("https://example.com/api"))
+  Span::set_attributes(span, attrs)
   
-  // Parse JSON string (simplified implementation)
-  let parse_json_string = fn(json: String) {
-    if json.starts_with("\"") and json.ends_with("\"") {
-      json.substring(1, json.length() - 2)
-    } else {
-      json
-    }
-  }
+  Span::add_event(span, "start_event", Some([("event.type", StringValue("system"))]))
+  Span::set_status(span, Ok, Some("Operation completed"))
   
-  // Parse JSON number
-  let parse_json_number = fn(json: String) {
-    json.to_int()
-  }
-  
-  // Parse JSON object (simplified implementation)
-  let parse_json_object = fn(json: String) {
-    let trimmed = json.trim()
-    if trimmed.starts_with("{") and trimmed.ends_with("}") {
-      let content = trimmed.substring(1, trimmed.length() - 2)
-      let pairs = content.split(",")
-      
-      let mut result = []
-      for pair in pairs {
-        let key_value = pair.split(":")
-        if key_value.length() == 2 {
-          let key = parse_json_string(key_value[0].trim())
-          let value = parse_json_string(key_value[1].trim())
-          result = result.push((key, value))
-        }
-      }
-      result
-    } else {
-      []
-    }
-  }
-  
-  // Deserialize from JSON (simplified implementation)
-  let deserialize_from_json = fn(json: String) {
-    // This is a very simplified implementation
-    // In a real implementation, we would use a proper JSON parser
-    
-    // Extract trace_id
-    let trace_id_start = json.index_of("\"trace_id\":\"") + 12
-    let trace_id_end = json.index_of("\"", trace_id_start)
-    let trace_id = json.substring(trace_id_start, trace_id_end - trace_id_start)
-    
-    // Extract span_id
-    let span_id_start = json.index_of("\"span_id\":\"") + 11
-    let span_id_end = json.index_of("\"", span_id_start)
-    let span_id = json.substring(span_id_start, span_id_end - span_id_start)
-    
-    // Extract parent_span_id
-    let parent_span_start = json.index_of("\"parent_span_id\":") + 18
-    let parent_span_end = json.index_of(",", parent_span_start)
-    let parent_span_json = json.substring(parent_span_start, parent_span_end - parent_span_start)
-    let parent_span_id = if parent_span_json == "null" { None } else { Some(parse_json_string(parent_span_json)) }
-    
-    // Extract operation_name
-    let operation_start = json.index_of("\"operation_name\":\"") + 18
-    let operation_end = json.index_of("\"", operation_start)
-    let operation_name = json.substring(operation_start, operation_end - operation_start)
-    
-    // Extract service_name
-    let service_start = json.index_of("\"service_name\":\"") + 16
-    let service_end = json.index_of("\"", service_start)
-    let service_name = json.substring(service_start, service_end - service_start)
-    
-    // Extract start_time
-    let start_time_start = json.index_of("\"start_time\":") + 13
-    let start_time_end = json.index_of(",", start_time_start)
-    let start_time = parse_json_number(json.substring(start_time_start, start_time_end - start_time_start))
-    
-    // Extract end_time
-    let end_time_start = json.index_of("\"end_time\":") + 11
-    let end_time_end = json.index_of(",", end_time_start)
-    let end_time = parse_json_number(json.substring(end_time_start, end_time_end - end_time_start))
-    
-    // Extract status
-    let status_start = json.index_of("\"status\":\"") + 10
-    let status_end = json.index_of("\"", status_start)
-    let status = json.substring(status_start, status_end - status_start)
-    
-    // Extract tags
-    let tags_start = json.index_of("\"tags\":{") + 8
-    let tags_end = json.index_of("}", tags_start)
-    let tags_json = json.substring(tags_start, tags_end - tags_start)
-    let tags = parse_json_object("{" + tags_json + "}")
-    
-    {
-      trace_id,
-      span_id,
-      parent_span_id,
-      operation_name,
-      service_name,
-      start_time,
-      end_time,
-      status,
-      tags
-    }
-  }
-  
-  // Create test data
-  let telemetry_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: Some("span-11111"),
-    operation_name: "http.request",
-    service_name: "user-service",
-    start_time: 1640995200,
-    end_time: 1640995250,
-    status: "success",
-    tags: [
-      ("http.method", "GET"),
-      ("http.url", "/api/users/123"),
-      ("user.id", "123")
-    ]
-  }
-  
-  // Test serialization
-  let json = serialize_to_json(telemetry_data)
-  assert_true(json.contains("\"trace_id\":\"trace-12345\""))
-  assert_true(json.contains("\"span_id\":\"span-67890\""))
-  assert_true(json.contains("\"parent_span_id\":\"span-11111\""))
-  assert_true(json.contains("\"operation_name\":\"http.request\""))
-  assert_true(json.contains("\"service_name\":\"user-service\""))
-  assert_true(json.contains("\"start_time\":1640995200"))
-  assert_true(json.contains("\"end_time\":1640995250"))
-  assert_true(json.contains("\"status\":\"success\""))
-  assert_true(json.contains("\"tags\":{"))
-  assert_true(json.contains("\"http.method\":\"GET\""))
-  
-  // Test deserialization
-  let deserialized_data = deserialize_from_json(json)
-  assert_eq(deserialized_data.trace_id, telemetry_data.trace_id)
-  assert_eq(deserialized_data.span_id, telemetry_data.span_id)
-  assert_eq(deserialized_data.parent_span_id, telemetry_data.parent_span_id)
-  assert_eq(deserialized_data.operation_name, telemetry_data.operation_name)
-  assert_eq(deserialized_data.service_name, telemetry_data.service_name)
-  assert_eq(deserialized_data.start_time, telemetry_data.start_time)
-  assert_eq(deserialized_data.end_time, telemetry_data.end_time)
-  assert_eq(deserialized_data.status, telemetry_data.status)
-  
-  // Test data with null parent_span_id
-  let telemetry_data_no_parent = { telemetry_data | parent_span_id: None }
-  let json_no_parent = serialize_to_json(telemetry_data_no_parent)
-  assert_true(json_no_parent.contains("\"parent_span_id\":null"))
-  
-  let deserialized_no_parent = deserialize_from_json(json_no_parent)
-  assert_eq(deserialized_no_parent.parent_span_id, None)
-}
-
-// Test 2: Binary Serialization and Deserialization
-test "binary serialization and deserialization" {
-  // Define binary format types
-  enum BinaryType {
-    Int8
-    Int16
-    Int32
-    Int64
-    Float32
-    Float64
-    String
-    Bool
-    Array(BinaryType)
-    Object(Array[(String, BinaryType)])
-  }
-  
-  // Define binary value
-  type BinaryValue = 
-    Int8Value(Int)
-    | Int16Value(Int)
-    | Int32Value(Int)
-    | Int64Value(Int)
-    | Float32Value(Float)
-    | Float64Value(Float)
-    | StringValue(String)
-    | BoolValue(Bool)
-    | ArrayValue(Array[BinaryValue], BinaryType)
-    | ObjectValue(Array[(String, BinaryValue)], Array[(String, BinaryType)])
-  
-  // Define binary serializer state
-  type BinarySerializer = {
-    buffer: Array[Int],
-    position: Int
-  }
-  
-  // Create binary serializer
-  let create_serializer = fn() {
-    { buffer: [], position: 0 }
-  }
-  
-  // Write byte to buffer
-  let write_byte = fn(serializer: BinarySerializer, value: Int) {
-    { buffer: serializer.buffer.push(value), position: serializer.position + 1 }
-  }
-  
-  // Write 32-bit integer
-  let write_int32 = fn(serializer: BinarySerializer, value: Int) {
-    let bytes = [
-      (value >> 24) & 0xFF,
-      (value >> 16) & 0xFF,
-      (value >> 8) & 0xFF,
-      value & 0xFF
-    ]
-    
-    let mut updated_serializer = serializer
-    for byte in bytes {
-      updated_serializer = write_byte(updated_serializer, byte)
-    }
-    updated_serializer
-  }
-  
-  // Write string
-  let write_string = fn(serializer: BinarySerializer, value: String) {
-    // Write string length
-    let length_serializer = write_int32(serializer, value.length())
-    
-    // Write string bytes
-    let mut updated_serializer = length_serializer
-    for i in 0 .. value.length() {
-      updated_serializer = write_byte(updated_serializer, value.to_char_array()[i].to_int())
-    }
-    updated_serializer
-  }
-  
-  // Write boolean
-  let write_bool = fn(serializer: BinarySerializer, value: Bool) {
-    write_byte(serializer, if value { 1 } else { 0 })
-  }
-  
-  // Write array
-  let write_array = fn(serializer: BinarySerializer, array: Array[BinaryValue], element_type: BinaryType) {
-    // Write array length
-    let length_serializer = write_int32(serializer, array.length())
-    
-    // Write array elements
-    let mut updated_serializer = length_serializer
-    for element in array {
-      updated_serializer = write_binary_value(updated_serializer, element)
-    }
-    updated_serializer
-  }
-  
-  // Write object
-  let write_object = fn(
-    serializer: BinarySerializer, 
-    object: Array[(String, BinaryValue)], 
-    schema: Array[(String, BinaryType)]
-  ) {
-    // Write object length
-    let length_serializer = write_int32(serializer, object.length())
-    
-    // Write object properties
-    let mut updated_serializer = length_serializer
-    for (key, value) in object {
-      updated_serializer = write_string(updated_serializer, key)
-      updated_serializer = write_binary_value(updated_serializer, value)
-    }
-    updated_serializer
-  }
-  
-  // Write binary value
-  and write_binary_value = fn(serializer: BinarySerializer, value: BinaryValue) {
-    match value {
-      Int8Value(v) => write_byte(serializer, v & 0xFF)
-      Int16Value(v) => {
-        let bytes = [(v >> 8) & 0xFF, v & 0xFF]
-        let mut updated_serializer = serializer
-        for byte in bytes {
-          updated_serializer = write_byte(updated_serializer, byte)
-        }
-        updated_serializer
-      }
-      Int32Value(v) => write_int32(serializer, v)
-      Int64Value(v) => {
-        let bytes = [
-          (v >> 56) & 0xFF,
-          (v >> 48) & 0xFF,
-          (v >> 40) & 0xFF,
-          (v >> 32) & 0xFF,
-          (v >> 24) & 0xFF,
-          (v >> 16) & 0xFF,
-          (v >> 8) & 0xFF,
-          v & 0xFF
-        ]
-        let mut updated_serializer = serializer
-        for byte in bytes {
-          updated_serializer = write_byte(updated_serializer, byte)
-        }
-        updated_serializer
-      }
-      Float32Value(v) => {
-        // Simplified: just write as string
-        write_string(serializer, v.to_string())
-      }
-      Float64Value(v) => {
-        // Simplified: just write as string
-        write_string(serializer, v.to_string())
-      }
-      StringValue(v) => write_string(serializer, v)
-      BoolValue(v) => write_bool(serializer, v)
-      ArrayValue(arr, element_type) => write_array(serializer, arr, element_type)
-      ObjectValue(obj, schema) => write_object(serializer, obj, schema)
-    }
-  }
-  
-  // Define binary deserializer state
-  type BinaryDeserializer = {
-    buffer: Array[Int],
-    position: Int
-  }
-  
-  // Create binary deserializer
-  let create_deserializer = fn(buffer: Array[Int]) {
-    { buffer, position: 0 }
-  }
-  
-  // Read byte from buffer
-  let read_byte = fn(deserializer: BinaryDeserializer) {
-    if deserializer.position < deserializer.buffer.length() {
-      let value = deserializer.buffer[deserializer.position]
-      Some((value, { deserializer | position: deserializer.position + 1 }))
-    } else {
-      None
-    }
-  }
-  
-  // Read 32-bit integer
-  let read_int32 = fn(deserializer: BinaryDeserializer) {
-    match read_byte(deserializer) {
-      Some((b1, d1)) => {
-        match read_byte(d1) {
-          Some((b2, d2)) => {
-            match read_byte(d2) {
-              Some((b3, d3)) => {
-                match read_byte(d3) {
-                  Some((b4, d4)) => {
-                    let value = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
-                    Some((value, d4))
-                  }
-                  None => None
-                }
-              }
-              None => None
-            }
-          }
-          None => None
-        }
-      }
-      None => None
-    }
-  }
-  
-  // Read string
-  let read_string = fn(deserializer: BinaryDeserializer) {
-    match read_int32(deserializer) {
-      Some((length, d1)) => {
-        let mut chars = []
-        let mut current_deserializer = d1
-        let mut success = true
-        
-        for i in 0 .. length {
-          match read_byte(current_deserializer) {
-            Some((byte, d)) => {
-              chars = chars.push(byte.to_char())
-              current_deserializer = d
-            }
-            None => {
-              success = false
-              break
-            }
-          }
-        }
-        
-        if success {
-          Some((chars.reduce(fn(acc, c) { acc + c.to_string() }, ""), current_deserializer))
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  // Read boolean
-  let read_bool = fn(deserializer: BinaryDeserializer) {
-    match read_byte(deserializer) {
-      Some((value, d)) => Some((value == 1, d))
-      None => None
-    }
-  }
-  
-  // Read array
-  let read_array = fn(deserializer: BinaryDeserializer, element_type: BinaryType) {
-    match read_int32(deserializer) {
-      Some((length, d1)) => {
-        let mut elements = []
-        let mut current_deserializer = d1
-        let mut success = true
-        
-        for i in 0 .. length {
-          match read_binary_value(current_deserializer, element_type) {
-            Some((value, d)) => {
-              elements = elements.push(value)
-              current_deserializer = d
-            }
-            None => {
-              success = false
-              break
-            }
-          }
-        }
-        
-        if success {
-          Some((elements, current_deserializer))
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  // Read object
-  let read_object = fn(
-    deserializer: BinaryDeserializer, 
-    schema: Array[(String, BinaryType)]
-  ) {
-    match read_int32(deserializer) {
-      Some((length, d1)) => {
-        let mut properties = []
-        let mut current_deserializer = d1
-        let mut success = true
-        
-        for i in 0 .. length {
-          match read_string(current_deserializer) {
-            Some((key, d2)) => {
-              // Find the type for this key
-              let type_option = schema.find(fn(s) { s.0 == key })
-              match type_option {
-                Some((_, value_type)) => {
-                  match read_binary_value(d2, value_type) {
-                    Some((value, d3)) => {
-                      properties = properties.push((key, value))
-                      current_deserializer = d3
-                    }
-                    None => {
-                      success = false
-                      break
-                    }
-                  }
-                }
-                None => {
-                  success = false
-                  break
-                }
-              }
-            }
-            None => {
-              success = false
-              break
-            }
-          }
-        }
-        
-        if success {
-          Some((properties, current_deserializer))
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  // Read binary value
-  and read_binary_value = fn(deserializer: BinaryDeserializer, value_type: BinaryType) {
-    match value_type {
-      BinaryType::Int8 => {
-        match read_byte(deserializer) {
-          Some((value, d)) => Some((Int8Value(value), d))
-          None => None
-        }
-      }
-      BinaryType::Int16 => {
-        match read_byte(deserializer) {
-          Some((b1, d1)) => {
-            match read_byte(d1) {
-              Some((b2, d2)) => {
-                let value = (b1 << 8) | b2
-                Some((Int16Value(value), d2))
-              }
-              None => None
-            }
-          }
-          None => None
-        }
-      }
-      BinaryType::Int32 => {
-        match read_int32(deserializer) {
-          Some((value, d)) => Some((Int32Value(value), d))
-          None => None
-        }
-      }
-      BinaryType::Int64 => {
-        match read_byte(deserializer) {
-          Some((b1, d1)) => {
-            match read_byte(d1) {
-              Some((b2, d2)) => {
-                match read_byte(d2) {
-                  Some((b3, d3)) => {
-                    match read_byte(d3) {
-                      Some((b4, d4)) => {
-                        match read_byte(d4) {
-                          Some((b5, d5)) => {
-                            match read_byte(d5) {
-                              Some((b6, d6)) => {
-                                match read_byte(d6) {
-                                  Some((b7, d7)) => {
-                                    match read_byte(d7) {
-                                      Some((b8, d8)) => {
-                                        let value = 
-                                          (b1.to_int64() << 56) | 
-                                          (b2.to_int64() << 48) | 
-                                          (b3.to_int64() << 40) | 
-                                          (b4.to_int64() << 32) | 
-                                          (b5.to_int64() << 24) | 
-                                          (b6.to_int64() << 16) | 
-                                          (b7.to_int64() << 8) | 
-                                          b8.to_int64()
-                                        Some((Int64Value(value), d8))
-                                      }
-                                      None => None
-                                    }
-                                  }
-                                  None => None
-                                }
-                              }
-                              None => None
-                            }
-                          }
-                          None => None
-                        }
-                      }
-                      None => None
-                    }
-                  }
-                  None => None
-                }
-              }
-              None => None
-            }
-          }
-          None => None
-        }
-      }
-      BinaryType::Float32 => {
-        match read_string(deserializer) {
-          Some((value, d)) => Some((Float32Value(value.to_float()), d))
-          None => None
-        }
-      }
-      BinaryType::Float64 => {
-        match read_string(deserializer) {
-          Some((value, d)) => Some((Float64Value(value.to_float()), d))
-          None => None
-        }
-      }
-      BinaryType::String => {
-        match read_string(deserializer) {
-          Some((value, d)) => Some((StringValue(value), d))
-          None => None
-        }
-      }
-      BinaryType::Bool => {
-        match read_bool(deserializer) {
-          Some((value, d)) => Some((BoolValue(value), d))
-          None => None
-        }
-      }
-      BinaryType::Array(element_type) => {
-        match read_array(deserializer, element_type) {
-          Some((value, d)) => Some((ArrayValue(value, element_type), d))
-          None => None
-        }
-      }
-      BinaryType::Object(schema) => {
-        match read_object(deserializer, schema) {
-          Some((value, d)) => Some((ObjectValue(value, schema), d))
-          None => None
-        }
-      }
-    }
-  }
-  
-  // Test binary serialization and deserialization
-  let serializer = create_serializer()
-  
-  // Serialize a complex object
-  let test_object = [
-    ("trace_id", StringValue("trace-12345")),
-    ("span_id", StringValue("span-67890")),
-    ("parent_span_id", StringValue("span-11111")),
-    ("operation_name", StringValue("http.request")),
-    ("service_name", StringValue("user-service")),
-    ("start_time", Int32Value(1640995200)),
-    ("end_time", Int32Value(1640995250)),
-    ("success", BoolValue(true)),
-    ("tags", ArrayValue([
-      StringValue("http.method:GET"),
-      StringValue("http.url:/api/users/123"),
-      StringValue("user.id:123")
-    ], BinaryType::String))
-  ]
-  
-  let schema = [
-    ("trace_id", BinaryType::String),
-    ("span_id", BinaryType::String),
-    ("parent_span_id", BinaryType::String),
-    ("operation_name", BinaryType::String),
-    ("service_name", BinaryType::String),
-    ("start_time", BinaryType::Int32),
-    ("end_time", BinaryType::Int32),
-    ("success", BinaryType::Bool),
-    ("tags", BinaryType::Array(BinaryType::String))
-  ]
-  
-  let serialized_serializer = write_object(serializer, test_object, schema)
-  let buffer = serialized_serializer.buffer
-  
-  // Verify buffer is not empty
-  assert_true(buffer.length() > 0)
-  
-  // Test deserialization
-  let deserializer = create_deserializer(buffer)
-  match read_object(deserializer, schema) {
-    Some((deserialized_object, _)) => {
-      assert_eq(deserialized_object.length(), 9)
-      
-      // Check trace_id
-      match deserialized_object.filter(fn(p) { p.0 == "trace_id" })[0].1 {
-        StringValue(value) => assert_eq(value, "trace-12345")
-        _ => assert_true(false)
-      }
-      
-      // Check span_id
-      match deserialized_object.filter(fn(p) { p.0 == "span_id" })[0].1 {
-        StringValue(value) => assert_eq(value, "span-67890")
-        _ => assert_true(false)
-      }
-      
-      // Check start_time
-      match deserialized_object.filter(fn(p) { p.0 == "start_time" })[0].1 {
-        Int32Value(value) => assert_eq(value, 1640995200)
-        _ => assert_true(false)
-      }
-      
-      // Check success
-      match deserialized_object.filter(fn(p) { p.0 == "success" })[0].1 {
-        BoolValue(value) => assert_true(value)
-        _ => assert_true(false)
-      }
-      
-      // Check tags array
-      match deserialized_object.filter(fn(p) { p.0 == "tags" })[0].1 {
-        ArrayValue(tags, _) => {
-          assert_eq(tags.length(), 3)
-          match tags[0] {
-            StringValue(value) => assert_eq(value, "http.method:GET")
-            _ => assert_true(false)
-          }
-        }
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 3: Protocol Buffer Serialization
-test "protocol buffer serialization" {
-  // Define wire types
-  enum WireType {
-    Varint = 0
-    Fixed64 = 1
-    LengthDelimited = 2
-    StartGroup = 3
-    EndGroup = 4
-    Fixed32 = 5
-  }
-  
-  // Define field
-  type Field = {
-    field_number: Int,
-    wire_type: WireType,
-    value: String
-  }
-  
-  // Encode varint
-  let encode_varint = fn(value: Int) {
-    let mut bytes = []
-    let mut v = value
-    
-    while v >= 0x80 {
-      bytes = bytes.push((v & 0x7F) | 0x80)
-      v = v >> 7
-    }
-    
-    bytes = bytes.push(v & 0x7F)
-    bytes
-  }
-  
-  // Decode varint
-  let decode_varint = fn(bytes: Array[Int], position: Int) {
-    let mut result = 0
-    let mut shift = 0
-    let mut pos = position
-    let mut done = false
-    
-    while pos < bytes.length() and not(done) {
-      let byte = bytes[pos]
-      result = result | ((byte & 0x7F) << shift)
-      pos = pos + 1
-      
-      if (byte & 0x80) == 0 {
-        done = true
-      } else {
-        shift = shift + 7
-      }
-    }
-    
-    if done {
-      Some((result, pos))
-    } else {
-      None
-    }
-  }
-  
-  // Encode key
-  let encode_key = fn(field_number: Int, wire_type: WireType) {
-    let key = (field_number << 3) | wire_type as Int
-    encode_varint(key)
-  }
-  
-  // Encode string
-  let encode_string = fn(value: String) {
-    let length_bytes = encode_varint(value.length())
-    let mut value_bytes = []
-    
-    for i in 0 .. value.length() {
-      value_bytes = value_bytes.push(value.to_char_array()[i].to_int())
-    }
-    
-    length_bytes + value_bytes
-  }
-  
-  // Encode message
-  let encode_message = fn(fields: Array[Field]) {
-    let mut bytes = []
-    
-    for field in fields {
-      let key_bytes = encode_key(field.field_number, field.wire_type)
-      let value_bytes = match field.wire_type {
-        WireType::Varint => encode_varint(field.value.to_int())
-        WireType::LengthDelimited => encode_string(field.value)
-        _ => []  // Simplified
-      }
-      
-      bytes = bytes + key_bytes + value_bytes
-    }
-    
-    bytes
-  }
-  
-  // Decode string
-  let decode_string = fn(bytes: Array[Int], position: Int) {
-    match decode_varint(bytes, position) {
-      Some((length, pos)) => {
-        if pos + length <= bytes.length() {
-          let string_bytes = bytes.slice(pos, pos + length)
-          let mut chars = []
-          
-          for byte in string_bytes {
-            chars = chars.push(byte.to_char())
-          }
-          
-          let value = chars.reduce(fn(acc, c) { acc + c.to_string() }, "")
-          Some((value, pos + length))
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  // Decode message
-  let decode_message = fn(bytes: Array[Int], schema: Array[(Int, WireType)]) {
-    let mut position = 0
-    let mut fields = []
-    let mut success = true
-    
-    while position < bytes.length() and success {
-      match decode_varint(bytes, position) {
-        Some((key, pos)) => {
-          let field_number = key >> 3
-          let wire_type = key & 0x07
-          
-          match schema.find(fn(s) { s.0 == field_number && s.1 as Int == wire_type }) {
-            Some(_) => {
-              match wire_type {
-                0 => {  // Varint
-                  match decode_varint(bytes, pos) {
-                    Some((value, new_pos)) => {
-                      fields = fields.push({
-                        field_number,
-                        wire_type: WireType::Varint,
-                        value: value.to_string()
-                      })
-                      position = new_pos
-                    }
-                    None => {
-                      success = false
-                    }
-                  }
-                }
-                2 => {  // LengthDelimited
-                  match decode_string(bytes, pos) {
-                    Some((value, new_pos)) => {
-                      fields = fields.push({
-                        field_number,
-                        wire_type: WireType::LengthDelimited,
-                        value
-                      })
-                      position = new_pos
-                    }
-                    None => {
-                      success = false
-                    }
-                  }
-                }
-                _ => {
-                  // Unsupported wire type
-                  success = false
-                }
-              }
-            }
-            None => {
-              // Unknown field
-              success = false
-            }
-          }
-        }
-        None => {
-          success = false
-        }
-      }
-    }
-    
-    if success {
-      Some(fields)
-    } else {
-      None
-    }
-  }
-  
-  // Define telemetry message schema
-  let telemetry_schema = [
-    (1, WireType::LengthDelimited),  // trace_id
-    (2, WireType::LengthDelimited),  // span_id
-    (3, WireType::LengthDelimited),  // parent_span_id
-    (4, WireType::LengthDelimited),  // operation_name
-    (5, WireType::LengthDelimited),  // service_name
-    (6, WireType::Varint),           // start_time
-    (7, WireType::Varint),           // end_time
-    (8, WireType::LengthDelimited),  // status
-    (9, WireType::LengthDelimited)   // tags (simplified as string)
-  ]
-  
-  // Create telemetry message fields
-  let telemetry_fields = [
-    { field_number: 1, wire_type: WireType::LengthDelimited, value: "trace-12345" },
-    { field_number: 2, wire_type: WireType::LengthDelimited, value: "span-67890" },
-    { field_number: 3, wire_type: WireType::LengthDelimited, value: "span-11111" },
-    { field_number: 4, wire_type: WireType::LengthDelimited, value: "http.request" },
-    { field_number: 5, wire_type: WireType::LengthDelimited, value: "user-service" },
-    { field_number: 6, wire_type: WireType::Varint, value: "1640995200" },
-    { field_number: 7, wire_type: WireType::Varint, value: "1640995250" },
-    { field_number: 8, wire_type: WireType::LengthDelimited, value: "success" },
-    { field_number: 9, wire_type: WireType::LengthDelimited, value: "http.method:GET,http.url:/api/users" }
-  ]
-  
-  // Test encoding
-  let encoded_bytes = encode_message(telemetry_fields)
-  assert_true(encoded_bytes.length() > 0)
-  
-  // Test decoding
-  match decode_message(encoded_bytes, telemetry_schema) {
-    Some(decoded_fields) => {
-      assert_eq(decoded_fields.length(), 9)
-      
-      // Check trace_id
-      match decoded_fields.find(fn(f) { f.field_number == 1 }) {
-        Some(field) => assert_eq(field.value, "trace-12345")
-        None => assert_true(false)
-      }
-      
-      // Check span_id
-      match decoded_fields.find(fn(f) { f.field_number == 2 }) {
-        Some(field) => assert_eq(field.value, "span-67890")
-        None => assert_true(false)
-      }
-      
-      // Check start_time
-      match decoded_fields.find(fn(f) { f.field_number == 6 }) {
-        Some(field) => assert_eq(field.value, "1640995200")
-        None => assert_true(false)
-      }
-      
-      // Check status
-      match decoded_fields.find(fn(f) { f.field_number == 8 }) {
-        Some(field) => assert_eq(field.value, "success")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 4: Serialization Format Comparison
-test "serialization format comparison" {
-  // Define test data
-  type TestData = {
-    id: String,
-    name: String,
-    value: Int,
-    active: Bool,
-    tags: Array[String]
-  }
-  
-  let test_data = {
-    id: "test-12345",
-    name: "Test Object",
-    value: 42,
-    active: true,
-    tags: ["tag1", "tag2", "tag3"]
-  }
-  
-  // JSON serialization
-  let serialize_to_json = fn(data: TestData) {
-    let tags_json = data.tags.map(fn(tag) { "\"" + tag + "\"" }).reduce(fn(acc, tag) { 
-      if acc.length() > 0 { acc + "," + tag } else { tag }
-    }, "")
-    
-    "{"
-      + "\"id\":\"" + data.id + "\"," 
-      + "\"name\":\"" + data.name + "\"," 
-      + "\"value\":" + data.value.to_string() + "," 
-      + "\"active\":" + (if data.active { "true" } else { "false" }) + "," 
-      + "\"tags\":[" + tags_json + "]"
-      + "}"
-  }
-  
-  // Binary serialization (simplified)
-  let serialize_to_binary = fn(data: TestData) {
-    let mut bytes = []
-    
-    // Write id
-    let id_length = data.id.length()
-    bytes = bytes + [id_length >> 24 & 0xFF, id_length >> 16 & 0xFF, id_length >> 8 & 0xFF, id_length & 0xFF]
-    for i in 0 .. data.id.length() {
-      bytes = bytes.push(data.id.to_char_array()[i].to_int())
-    }
-    
-    // Write name
-    let name_length = data.name.length()
-    bytes = bytes + [name_length >> 24 & 0xFF, name_length >> 16 & 0xFF, name_length >> 8 & 0xFF, name_length & 0xFF]
-    for i in 0 .. data.name.length() {
-      bytes = bytes.push(data.name.to_char_array()[i].to_int())
-    }
-    
-    // Write value
-    bytes = bytes + [
-      data.value >> 24 & 0xFF,
-      data.value >> 16 & 0xFF,
-      data.value >> 8 & 0xFF,
-      data.value & 0xFF
-    ]
-    
-    // Write active
-    bytes = bytes.push(if data.active { 1 } else { 0 })
-    
-    // Write tags count
-    let tags_count = data.tags.length()
-    bytes = bytes + [tags_count >> 24 & 0xFF, tags_count >> 16 & 0xFF, tags_count >> 8 & 0xFF, tags_count & 0xFF]
-    
-    // Write tags
-    for tag in data.tags {
-      let tag_length = tag.length()
-      bytes = bytes + [tag_length >> 24 & 0xFF, tag_length >> 16 & 0xFF, tag_length >> 8 & 0xFF, tag_length & 0xFF]
-      for i in 0 .. tag.length() {
-        bytes = bytes.push(tag.to_char_array()[i].to_int())
-      }
-    }
-    
-    bytes
-  }
-  
-  // Protocol Buffers serialization (simplified)
-  let serialize_to_protobuf = fn(data: TestData) {
-    let mut bytes = []
-    
-    // Field 1: id (string)
-    let id_length = data.id.length()
-    bytes = bytes + [0x0A]  // Key (field 1, wire type 2)
-    bytes = bytes + encode_varint(id_length)
-    for i in 0 .. data.id.length() {
-      bytes = bytes.push(data.id.to_char_array()[i].to_int())
-    }
-    
-    // Field 2: name (string)
-    let name_length = data.name.length()
-    bytes = bytes + [0x12]  // Key (field 2, wire type 2)
-    bytes = bytes + encode_varint(name_length)
-    for i in 0 .. data.name.length() {
-      bytes = bytes.push(data.name.to_char_array()[i].to_int())
-    }
-    
-    // Field 3: value (int32)
-    bytes = bytes + [0x18]  // Key (field 3, wire type 0)
-    bytes = bytes + encode_varint(data.value)
-    
-    // Field 4: active (bool)
-    bytes = bytes + [0x20]  // Key (field 4, wire type 0)
-    bytes = bytes.push(if data.active { 0x01 } else { 0x00 })
-    
-    // Field 5: tags (repeated string)
-    for tag in data.tags {
-      let tag_length = tag.length()
-      bytes = bytes + [0x2A]  // Key (field 5, wire type 2)
-      bytes = bytes + encode_varint(tag_length)
-      for i in 0 .. tag.length() {
-        bytes = bytes.push(tag.to_char_array()[i].to_int())
-      }
-    }
-    
-    bytes
-  }
-  
-  and encode_varint = fn(value: Int) {
-    let mut bytes = []
-    let mut v = value
-    
-    while v >= 0x80 {
-      bytes = bytes.push((v & 0x7F) | 0x80)
-      v = v >> 7
-    }
-    
-    bytes = bytes.push(v & 0x7F)
-    bytes
-  }
-  
-  // Serialize using different formats
-  let json_data = serialize_to_json(test_data)
-  let binary_data = serialize_to_binary(test_data)
-  let protobuf_data = serialize_to_protobuf(test_data)
-  
-  // Compare sizes
-  let json_size = json_data.length()
-  let binary_size = binary_data.length()
-  let protobuf_size = protobuf_data.length()
-  
-  assert_true(json_size > 0)
-  assert_true(binary_size > 0)
-  assert_true(protobuf_size > 0)
-  
-  // Protocol Buffers should be more compact than JSON
-  assert_true(protobuf_size < json_size)
-  
-  // Binary format should be more compact than JSON
-  assert_true(binary_size < json_size)
-  
-  // Protocol Buffers should be reasonably compact
-  assert_true(protobuf_size <= binary_size + 10)  // Allow some overhead
+  // Serialize span to JSON
+  let json_str = SpanSerializer::to_json(span)
   
   // Verify JSON contains expected fields
-  assert_true(json_data.contains("\"id\":\"test-12345\""))
-  assert_true(json_data.contains("\"name\":\"Test Object\""))
-  assert_true(json_data.contains("\"value\":42"))
-  assert_true(json_data.contains("\"active\":true"))
-  assert_true(json_data.contains("\"tag1\""))
-  
-  // Verify binary format contains expected data (simplified checks)
-  assert_eq(binary_data[0], 11)  // Length of "test-12345"
-  assert_eq(binary_data[5], 116)  // 't'
-  assert_eq(binary_data[16], 11)  // Length of "Test Object"
-  assert_eq(binary_data[20], 84)  // 'T'
-  
-  // Verify Protocol Buffers contains expected data (simplified checks)
-  assert_eq(protobuf_data[0], 0x0A)  // Key for field 1
-  assert_eq(protobuf_data[1], 11)    // Length of "test-12345"
-  assert_eq(protobuf_data[2], 116)  // 't'
+  assert_true(json_str.contains("trace_id"))
+  assert_true(json_str.contains("span_id"))
+  assert_true(json_str.contains("test_span"))
+  assert_true(json_str.contains("attributes"))
+  assert_true(json_str.contains("events"))
+  assert_true(json_str.contains("status"))
+  assert_true(json_str.contains("http.method"))
+  assert_true(json_str.contains("GET"))
 }
 
-// Test 5: Serialization Error Handling
-test "serialization error handling" {
-  // Define serialization error types
-  enum SerializationError {
-    InvalidFormat(String)
-    BufferOverflow
-    TypeMismatch
-    MissingField(String)
-    InvalidValue(String)
+// Test 2: Span Deserialization from JSON
+test "span deserialization from json" {
+  let json_str = "{"
+    + "\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\","
+    + "\"span_id\":\"b7ad6b7169203331\","
+    + "\"name\":\"test_span\","
+    + "\"kind\":\"INTERNAL\","
+    + "\"status\":{\"code\":\"OK\",\"message\":\"Operation completed\"},"
+    + "\"attributes\":{\"http.method\":\"GET\",\"http.url\":\"https://example.com/api\"},"
+    + "\"events\":[{\"name\":\"start_event\",\"attributes\":{\"event.type\":\"system\"}}],"
+    + "\"start_time\":1234567890,"
+    + "\"end_time\":1234567895"
+    + "}"
+  
+  // Deserialize span from JSON
+  let span = SpanDeserializer::from_json(json_str)
+  
+  // Verify deserialized span
+  assert_eq(Span::name(span), "test_span")
+  match Span::kind(span) {
+    Internal => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // Define serialization result
-  type SerializationResult[T] = 
-    Success(T)
-    | Failure(SerializationError)
+  let retrieved_ctx = Span::span_context(span)
+  assert_eq(SpanContext::trace_id(retrieved_ctx), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(retrieved_ctx), "b7ad6b7169203331")
+}
+
+// Test 3: Metric Serialization to Binary
+test "metric serialization to binary" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test_meter")
+  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
   
-  // Safe JSON string serialization
-  let safe_serialize_string = fn(value: String) {
-    if value.length() > 1000 {
-      Failure(SerializationError::InvalidValue("String too long"))
-    } else {
-      Success("\"" + value + "\"")
+  // Add some measurements
+  Counter::add(counter, 1.0)
+  Counter::add(counter, 2.5, Some(Attributes::new()))
+  
+  // Serialize metric to binary
+  let binary_data = MetricSerializer::to_binary(counter)
+  
+  // Verify binary data is not empty
+  assert_true(binary_data.length() > 0)
+  
+  // Deserialize metric from binary
+  let deserialized_counter = MetricDeserializer::from_binary(binary_data)
+  
+  // Verify deserialized metric
+  let instrument = Counter::as_instrument(deserialized_counter)
+  assert_eq(Instrument::name(instrument), "test_counter")
+  assert_eq(Instrument::description(instrument), Some("Test counter"))
+  assert_eq(Instrument::unit(instrument), Some("count"))
+}
+
+// Test 4: LogRecord Serialization to Protobuf
+test "log record serialization to protobuf" {
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "log.level", StringValue("INFO"))
+  Attributes::set(attrs, "service.name", StringValue("test_service"))
+  
+  let log_record = LogRecord::new_with_context(
+    Info,
+    Some("Test log message"),
+    Some(attrs),
+    Some(1234567890L),
+    Some(1234567891L),
+    Some("trace_id"),
+    Some("span_id"),
+    Some(Context::root())
+  )
+  
+  // Serialize log record to protobuf
+  let protobuf_data = LogRecordSerializer::to_protobuf(log_record)
+  
+  // Verify protobuf data is not empty
+  assert_true(protobuf_data.length() > 0)
+  
+  // Deserialize log record from protobuf
+  let deserialized_log = LogRecordDeserializer::from_protobuf(protobuf_data)
+  
+  // Verify deserialized log record
+  assert_eq(LogRecord::severity_number(deserialized_log), Info)
+  match LogRecord::body(deserialized_log) {
+    Some(body) => assert_eq(body, "Test log message")
+    None => assert_true(false)
+  }
+  assert_eq(LogRecord::trace_id(deserialized_log), Some("trace_id"))
+  assert_eq(LogRecord::span_id(deserialized_log), Some("span_id"))
+}
+
+// Test 5: Resource Serialization to YAML
+test "resource serialization to yaml" {
+  let resource = Resource::new()
+  let attrs = [
+    ("service.name", StringValue("test_service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("deployment.environment", StringValue("production"))
+  ]
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  // Serialize resource to YAML
+  let yaml_str = ResourceSerializer::to_yaml(resource_with_attrs)
+  
+  // Verify YAML contains expected fields
+  assert_true(yaml_str.contains("service.name"))
+  assert_true(yaml_str.contains("test_service"))
+  assert_true(yaml_str.contains("service.version"))
+  assert_true(yaml_str.contains("1.0.0"))
+  assert_true(yaml_str.contains("deployment.environment"))
+  assert_true(yaml_str.contains("production"))
+}
+
+// Test 6: Resource Deserialization from YAML
+test "resource deserialization from yaml" {
+  let yaml_str = "attributes:\n"
+    + "  service.name: test_service\n"
+    + "  service.version: \"1.0.0\"\n"
+    + "  service.instance.id: instance-123\n"
+    + "  deployment.environment: production\n"
+  
+  // Deserialize resource from YAML
+  let resource = ResourceDeserializer::from_yaml(yaml_str)
+  
+  // Verify deserialized resource
+  let service_name = Resource::get_attribute(resource, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "test_service")
+    _ => assert_true(false)
+  }
+  
+  let service_version = Resource::get_attribute(resource, "service.version")
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "1.0.0")
+    _ => assert_true(false)
+  }
+  
+  let environment = Resource::get_attribute(resource, "deployment.environment")
+  match environment {
+    Some(StringValue(env)) => assert_eq(env, "production")
+    _ => assert_true(false)
+  }
+}
+
+// Test 7: Batch Serialization
+test "batch serialization" {
+  // Create multiple spans
+  let spans = []
+  
+  for i in 0..=5 {
+    let trace_id = "trace_" + i.to_string()
+    let span_id = "span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "batch.index", IntValue(i))
+    Span::set_attributes(span, attrs)
+    
+    spans.push(span)
+  }
+  
+  // Serialize spans to JSON array
+  let json_array = SpanSerializer::batch_to_json(spans)
+  
+  // Verify JSON array contains all spans
+  assert_true(json_array.contains("["))
+  assert_true(json_array.contains("]"))
+  assert_true(json_array.contains("trace_0"))
+  assert_true(json_array.contains("trace_5"))
+  assert_true(json_array.contains("batch.index"))
+  
+  // Deserialize spans from JSON array
+  let deserialized_spans = SpanDeserializer::batch_from_json(json_array)
+  
+  // Verify all spans were deserialized
+  assert_eq(deserialized_spans.length(), spans.length())
+  
+  for i in 0..=5 {
+    let span = deserialized_spans[i]
+    assert_eq(Span::name(span), "span_" + i.to_string())
+    
+    let attrs = Span::attributes(span)
+    let batch_index = Attributes::get(attrs, "batch.index")
+    match batch_index {
+      Some(IntValue(index)) => assert_eq(index, i)
+      _ => assert_true(false)
     }
   }
+}
+
+// Test 8: Compression Serialization
+test "compression serialization" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("large_test_span", Internal, span_ctx)
   
-  // Safe JSON number serialization
-  let safe_serialize_number = fn(value: Int) {
-    if value > 1000000 || value < -1000000 {
-      Failure(SerializationError::InvalidValue("Number out of range"))
-    } else {
-      Success(value.to_string())
-    }
+  // Add many attributes to create a large span
+  let attrs = Attributes::new()
+  for i in 0..=100 {
+    Attributes::set(attrs, "attr_" + i.to_string(), StringValue("value_" + i.to_string()))
+  }
+  Span::set_attributes(span, attrs)
+  
+  // Add many events
+  for i in 0..=50 {
+    Span::add_event(span, "event_" + i.to_string(), Some([("event.index", IntValue(i))]))
   }
   
-  // Safe JSON object serialization
-  let safe_serialize_object = fn(
-    id: String,
-    name: String,
-    value: Int,
-    active: Bool
-  ) {
-    match safe_serialize_string(id) {
-      Success(id_json) => {
-        match safe_serialize_string(name) {
-          Success(name_json) => {
-            match safe_serialize_number(value) {
-              Success(value_json) => {
-                let active_json = if active { "true" } else { "false" }
-                Success(
-                  "{"
-                  + "\"id\":" + id_json + "," 
-                  + "\"name\":" + name_json + "," 
-                  + "\"value\":" + value_json + "," 
-                  + "\"active\":" + active_json
-                  + "}"
-                )
-              }
-              Failure(error) => Failure(error)
-            }
-          }
-          Failure(error) => Failure(error)
-        }
-      }
-      Failure(error) => Failure(error)
-    }
+  // Serialize span to JSON
+  let json_str = SpanSerializer::to_json(span)
+  let original_size = json_str.length()
+  
+  // Compress the JSON
+  let compressed_data = CompressionUtil::compress(json_str)
+  let compressed_size = compressed_data.length()
+  
+  // Verify compression reduces size
+  assert_true(compressed_size < original_size)
+  
+  // Decompress the JSON
+  let decompressed_json = CompressionUtil::decompress(compressed_data)
+  
+  // Verify decompressed JSON matches original
+  assert_eq(decompressed_json, json_str)
+  
+  // Deserialize span from decompressed JSON
+  let deserialized_span = SpanDeserializer::from_json(decompressed_json)
+  
+  // Verify deserialized span
+  assert_eq(Span::name(deserialized_span), "large_test_span")
+  
+  let retrieved_attrs = Span::attributes(deserialized_span)
+  let attr_0 = Attributes::get(retrieved_attrs, "attr_0")
+  match attr_0 {
+    Some(StringValue(value)) => assert_eq(value, "value_0")
+    _ => assert_true(false)
   }
   
-  // Safe JSON deserialization
-  let safe_deserialize_string = fn(json: String) {
-    if json.length() < 2 or not(json.starts_with("\"") or json.ends_with("\"")) {
-      Failure(SerializationError::InvalidFormat("Not a valid JSON string"))
-    } else {
-      Success(json.substring(1, json.length() - 2))
-    }
+  let attr_100 = Attributes::get(retrieved_attrs, "attr_100")
+  match attr_100 {
+    Some(StringValue(value)) => assert_eq(value, "value_100")
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Cross-Format Serialization
+test "cross-format serialization" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("cross_format_test", Internal, span_ctx)
+  
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "test.attr", StringValue("test_value"))
+  Span::set_attributes(span, attrs)
+  
+  // Serialize to JSON
+  let json_str = SpanSerializer::to_json(span)
+  
+  // Convert JSON to YAML
+  let yaml_str = FormatConverter::json_to_yaml(json_str)
+  
+  // Convert YAML to binary
+  let binary_data = FormatConverter::yaml_to_binary(yaml_str)
+  
+  // Convert binary back to JSON
+  let final_json = FormatConverter::binary_to_json(binary_data)
+  
+  // Deserialize span from final JSON
+  let final_span = SpanDeserializer::from_json(final_json)
+  
+  // Verify final span matches original
+  assert_eq(Span::name(final_span), "cross_format_test")
+  
+  let final_attrs = Span::attributes(final_span)
+  let test_attr = Attributes::get(final_attrs, "test.attr")
+  match test_attr {
+    Some(StringValue(value)) => assert_eq(value, "test_value")
+    _ => assert_true(false)
+  }
+}
+
+// Test 10: Error Handling in Serialization
+test "error handling in serialization" {
+  // Test with invalid JSON
+  let invalid_json = "{ invalid json }"
+  
+  let result = SpanDeserializer::from_json(invalid_json)
+  match result {
+    Error(_) => assert_true(true)
+    _ => assert_true(false)
   }
   
-  let safe_deserialize_number = fn(json: String) {
-    if json.length() == 0 {
-      Failure(SerializationError::InvalidFormat("Empty number"))
-    } else {
-      let mut valid = true
-      for i in 0 .. json.length() {
-        let c = json.to_char_array()[i]
-        if not((c >= '0' and c <= '9') or c == '-') {
-          valid = false
-          break
-        }
-      }
-      
-      if valid {
-        Success(json.to_int())
-      } else {
-        Failure(SerializationError::InvalidFormat("Invalid number format"))
-      }
-    }
+  // Test with empty binary data
+  let empty_binary = []
+  let result2 = MetricDeserializer::from_binary(empty_binary)
+  match result2 {
+    Error(_) => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // Test successful serialization
-  match safe_serialize_object("test-123", "Test Object", 42, true) {
-    Success(json) => {
-      assert_true(json.contains("\"id\":\"test-123\""))
-      assert_true(json.contains("\"name\":\"Test Object\""))
-      assert_true(json.contains("\"value\":42"))
-      assert_true(json.contains("\"active\":true"))
-    }
-    Failure(_) => assert_true(false)
+  // Test with malformed YAML
+  let malformed_yaml = "invalid: yaml: content:\n  - missing\n    proper"
+  
+  let result3 = ResourceDeserializer::from_yaml(malformed_yaml)
+  match result3 {
+    Error(_) => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // Test serialization error - string too long
-  let long_string = "a".repeat(1001)
-  match safe_serialize_object(long_string, "Test Object", 42, true) {
-    Success(_) => assert_true(false)
-    Failure(SerializationError::InvalidValue(message)) => {
-      assert_eq(message, "String too long")
-    }
-    Failure(_) => assert_true(false)
-  }
+  // Test with corrupted protobuf data
+  let corrupted_protobuf = [0x80, 0x81, 0x82, 0x83] // Invalid protobuf
   
-  // Test serialization error - number out of range
-  match safe_serialize_object("test-123", "Test Object", 2000000, true) {
-    Success(_) => assert_true(false)
-    Failure(SerializationError::InvalidValue(message)) => {
-      assert_eq(message, "Number out of range")
-    }
-    Failure(_) => assert_true(false)
-  }
-  
-  // Test successful deserialization
-  match safe_deserialize_string("\"hello world\"") {
-    Success(value) => assert_eq(value, "hello world")
-    Failure(_) => assert_true(false)
-  }
-  
-  match safe_deserialize_number("12345") {
-    Success(value) => assert_eq(value, 12345)
-    Failure(_) => assert_true(false)
-  }
-  
-  // Test deserialization error - invalid string format
-  match safe_deserialize_string("hello world") {
-    Success(_) => assert_true(false)
-    Failure(SerializationError::InvalidFormat(message)) => {
-      assert_eq(message, "Not a valid JSON string")
-    }
-    Failure(_) => assert_true(false)
-  }
-  
-  // Test deserialization error - invalid number format
-  match safe_deserialize_number("12a45") {
-    Success(_) => assert_true(false)
-    Failure(SerializationError::InvalidFormat(message)) => {
-      assert_eq(message, "Invalid number format")
-    }
-    Failure(_) => assert_true(false)
+  let result4 = LogRecordDeserializer::from_protobuf(corrupted_protobuf)
+  match result4 {
+    Error(_) => assert_true(true)
+    _ => assert_true(false)
   }
 }
