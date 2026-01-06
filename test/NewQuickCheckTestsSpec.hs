@@ -229,6 +229,9 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numThreads ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
         in unsafePerformIO $ do
+          -- 禁用度量共享以确保测试隔离
+          writeIORef enableMetricSharing False
+          
           -- 创建共享组件
           metric <- createMetric "shared-metric" "count"
           logger <- createLogger "shared-logger" Info
@@ -262,6 +265,9 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * 10.0
           
+          -- 重新启用度量共享
+          writeIORef enableMetricSharing True
+          
           return (finalValue == expectedValue)
   
   -- 6. 测试大量数据处理的性能
@@ -270,6 +276,9 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOps ->
         let operations = max 10 (abs numOps `mod` 100 + 10)
         in unsafePerformIO $ do
+          -- 禁用度量共享以确保测试隔离
+          writeIORef enableMetricSharing False
+          
           metric <- createMetric "performance-metric" "ops"
           
           -- 执行大量操作
@@ -278,6 +287,10 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
+          
+          -- 重新启用度量共享
+          writeIORef enableMetricSharing True
+          
           return (finalValue == fromIntegral operations)
     
     it "should handle large number of span operations efficiently" $ property $
@@ -508,12 +521,16 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           -- 记录无效值
           recordMetric metric (0/0)  -- NaN
           
+          -- 验证系统能够处理NaN值
+          resultAfterNaN <- metricValue metric
+          isResultAfterNaN <- return (isNaN resultAfterNaN)
+          
           -- 记录更多有效值
           recordMetric metric (validVal + 2.0)
           
-          -- 验证系统能够处理
+          -- 验证系统能够从NaN恢复
           result <- metricValue metric
-          return (isNaN result)
+          return (isResultAfterNaN && result == validVal + 2.0)
     
     it "should handle operations without initialization" $ property $
       \name ->

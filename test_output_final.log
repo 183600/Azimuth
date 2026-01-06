@@ -1,213 +1,8 @@
 Build profile: -w ghc-9.14.1 -O1
 In order, the following will be built (use -v for more details):
- - azimuth-0.1.0 (test:azimuth-test) (file test/AdditionalQuickCheckTestSpec.hs changed)
+ - azimuth-0.1.0 (test:azimuth-test) (first run)
 Preprocessing test suite 'azimuth-test' for azimuth-0.1.0...
 Building test suite 'azimuth-test' for azimuth-0.1.0...
-[ 1 of 19] Compiling AdditionalCoverageSpec ( test/AdditionalCoverageSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdditionalCoverageSpec.o ) [Source file changed]
-test/AdditionalCoverageSpec.hs:9:47: warning: [GHC-38856] [-Wunused-imports]
-    The import of ‘evaluate’
-    from module ‘Control.Exception’ is redundant
-  |
-9 | import Control.Exception (try, SomeException, evaluate)
-  |                                               ^^^^^^^^
-
-test/AdditionalCoverageSpec.hs:11:1: warning: [GHC-66111] [-Wunused-imports]
-    The import of ‘Control.Monad’ is redundant
-      except perhaps to import instances from ‘Control.Monad’
-    To import instances alone, use: import Control.Monad()
-   |
-11 | import Control.Monad (replicateM_, when)
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-test/AdditionalCoverageSpec.hs:38:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:33:9
-   |
-38 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:46:9: warning: [GHC-40910] [-Wunused-matches]
-    Defined but not used: ‘value’
-   |
-46 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:53:9: warning: [GHC-40910] [-Wunused-matches]
-    Defined but not used: ‘value’
-   |
-53 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:53:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:46:9
-   |
-53 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:70:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:65:9
-   |
-70 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:75:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:70:9
-   |
-75 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:87:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:83:9
-   |
-87 |         value <- metricValue metric
-   |         ^^^^^
-
-test/AdditionalCoverageSpec.hs:163:9: warning: [GHC-40910] [-Wunused-matches]
-    Defined but not used: ‘metric1’
-    |
-163 |         metric1 <- createMetricWithInitialValue "initial-shared" "rate" 25.0
-    |         ^^^^^^^
-
-test/AdditionalCoverageSpec.hs:179:9: warning: [GHC-40910] [-Wunused-matches]
-    Defined but not used: ‘metrics’
-    |
-179 |         metrics <- sequence $ replicate 100 $ do
-    |         ^^^^^^^
-
-test/AdditionalCoverageSpec.hs:241:17: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:231:9
-    |
-241 |           Right value -> value `shouldBe` 30.0
-    |                 ^^^^^
-
-test/AdditionalCoverageSpec.hs:262:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value1’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:253:9
-    |
-262 |         value1 <- metricValue metric1
-    |         ^^^^^^
-
-test/AdditionalCoverageSpec.hs:263:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘value2’ shadows the existing binding
-      bound at test/AdditionalCoverageSpec.hs:254:9
-    |
-263 |         value2 <- metricValue metric2
-    |         ^^^^^^
-
-test/AdditionalCoverageSpec.hs:297:9: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalCoverageSpec.hs:5:8-29
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-297 |         span <- createSpan "maximal-span"
-    |         ^^^^
-
-test/AdditionalCoverageSpec.hs:371:11: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalCoverageSpec.hs:5:8-29
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-371 |           span <- createSpan "performance-span"
-    |           ^^^^
-
-test/AdditionalCoverageSpec.hs:401:15: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalCoverageSpec.hs:5:8-29
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-401 |           let span = unsafePerformIO $ createSpan (pack name)
-    |               ^^^^
-
-[ 2 of 19] Compiling AdditionalQuickCheckTestSpec ( test/AdditionalQuickCheckTestSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdditionalQuickCheckTestSpec.o ) [Source file changed]
-test/AdditionalQuickCheckTestSpec.hs:8:1: warning: [GHC-66111] [-Wunused-imports]
-    The import of ‘Control.Exception’ is redundant
-      except perhaps to import instances from ‘Control.Exception’
-    To import instances alone, use: import Control.Exception()
-  |
-8 | import Control.Exception (try, SomeException)
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:9:1: warning: [GHC-66111] [-Wunused-imports]
-    The import of ‘Control.Monad’ is redundant
-      except perhaps to import instances from ‘Control.Monad’
-    To import instances alone, use: import Control.Monad()
-  |
-9 | import Control.Monad (replicateM_)
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:13:1: warning: [GHC-66111] [-Wunused-imports]
-    The import of ‘Data.Char’ is redundant
-      except perhaps to import instances from ‘Data.Char’
-    To import instances alone, use: import Data.Char()
-   |
-13 | import Data.Char (isAscii, isLetter, isDigit)
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:14:1: warning: [GHC-66111] [-Wunused-imports]
-    The import of ‘Data.List’ is redundant
-      except perhaps to import instances from ‘Data.List’
-    To import instances alone, use: import Data.List()
-   |
-14 | import Data.List (isInfixOf)
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:24:1: warning: [GHC-90177] [-Worphans]
-    Orphan class instance: instance Arbitrary LogLevel
-    Suggested fix:
-      Move the instance declaration to the module of the class or of the type, or
-      wrap the type with a newtype and declare the instance on the new type.
-   |
-24 | instance Arbitrary LogLevel where
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...
-
-test/AdditionalQuickCheckTestSpec.hs:119:13: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalQuickCheckTestSpec.hs:4:8-35
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-119 |         let span = Span (pack name) (pack traceId) (pack spanId)
-    |             ^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:126:13: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalQuickCheckTestSpec.hs:4:8-35
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-126 |         let span = unsafePerformIO $ createSpan (pack name)
-    |             ^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:194:13: warning: [GHC-63397] [-Wname-shadowing]
-    This binding for ‘span’ shadows the existing binding
-      imported from ‘Prelude’ at test/AdditionalQuickCheckTestSpec.hs:4:8-35
-      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
-    |
-194 |             span = unsafePerformIO $ createSpan unicodeText
-    |             ^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:301:11: warning: [GHC-40910] [-Wunused-local-binds]
-    Defined but not used: ‘infValue’
-    |
-301 |           infValue = unsafePerformIO $ metricValue infMetric
-    |           ^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:307:11: warning: [GHC-40910] [-Wunused-local-binds]
-    Defined but not used: ‘negInfValue’
-    |
-307 |           negInfValue = unsafePerformIO $ metricValue negInfMetric
-    |           ^^^^^^^^^^^
-
-test/AdditionalQuickCheckTestSpec.hs:313:11: warning: [GHC-40910] [-Wunused-local-binds]
-    Defined but not used: ‘nanValueAfter’
-    |
-313 |           nanValueAfter = unsafePerformIO $ metricValue nanMetric
-    |           ^^^^^^^^^^^^^
-
-[20 of 20] Linking dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test [Objects changed]
 Running 1 test suites...
 Test suite azimuth-test: RUNNING...
 
@@ -1603,8 +1398,6 @@ Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
 Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
-Initializing telemetry for service: "azimuth-service"
-Shutting down telemetry system
     should handle multiple initialization cycles [[32m✔[0m]
       +++ OK, passed 100 tests.
 Enhanced Telemetry Tests
@@ -2393,10 +2186,6 @@ QuickCheck-based Telemetry Tests
   Span ID Uniqueness
     should generate unique span IDs [[32m✔[0m]
       +++ OK, passed 100 tests.
-Shutting down telemetry system
-Initializing telemetry for service: "azimuth-service"
-Shutting down telemetry system
-Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
 Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
@@ -3639,163 +3428,157 @@ Shutting down telemetry system
     should handle span creation in rapid succession [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Hot Updates
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "qW-updated"
+Initializing telemetry for service: "G-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "j-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "vwBW-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "w\SOH-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\t\54843\SO\1098708"
-Initializing telemetry for service: "9@={`\ETX>f"
-Initializing telemetry for service: "\DLE}\FS\CAN\SOH\1026352wY;-updated"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: "A\bT\1013298@\NUL\22466\ETX\DLE5?-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "k\SI\DC3Q\t\61131\bQ"
-Initializing telemetry for service: "T\77718N\FS5\1033638\ENQ%f\ACK\DC4"
-Initializing telemetry for service: "3\ETBaBC\94817\143869*"
-Initializing telemetry for service: "\165542\n2\1035917A-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1082916\49416+\131598\&1\1033466\38380Y\b'd\166603bs"
-Initializing telemetry for service: "/au\25962\SOH-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "E\SOH1"
-Initializing telemetry for service: "\DC3n\53594\54319n77b/k~\bP-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\a"
-Initializing telemetry for service: "Lm\ENQ"
-Initializing telemetry for service: "d\ESC\100234[N\52571\1071430\80788)]xS-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1045559G\EMd@\96554,wo\rYy^\1099383p-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "={\37614\a\"6 6J-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "rC\61399-\1093359\FS CUA\167381}\1108825\1081908\1069814\187384\1002997^\992154-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\EM\1038269I\EMq!\1087783\1153\SOH\DC1\n?v\206086\150061\195081B\a\ACK\n\ENQ\1021317\NAK;\a"
-Initializing telemetry for service: "7He\a\94671\DLE-\136236c\1042118W\1096316hP\DC4\1065631_-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "Me*%;\1014131\1092811\9420@\SUB(\"\US\143267\DEL\31381\DC1\1027357m\ETX0\992491\2192\SO\t\1068174-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC\21807~-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\80662\&2\NAK>N\1104735A\119623B\1079496\SUB\119163"
-Initializing telemetry for service: "~\ETXY%r=v\999461\RS\ETX\172280\1021251\185591<x\1032503\&7\ETX0"
-Initializing telemetry for service: "\17229\DC2d\DEL\rk"
-Initializing telemetry for service: "C\51124\1090919\&6\f-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "D8k?\141994\34092F\1094883\v3}>@-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\146590`\GSLZ\DC2\a.b\ETXLr\64673\ACKS\137148\1097716\\\19881A!UWA\DC35q^-updated"
+Initializing telemetry for service: "WO"
+Initializing telemetry for service: ")(-updated"
 Shutting down telemetry system
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\DLE\1006293T-updated"
+Initializing telemetry for service: "\1104391\1069956x\STX"
+Initializing telemetry for service: "m\1050550\a\1071628j"
+Initializing telemetry for service: "\EM-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\US:MY\1023078C\1021566uiB\vi\NUL\US\169555oDag\SO\984435;&s\\XQ\1099480\DLE_"
-Initializing telemetry for service: "\152776lZ\131153\"$o\6237\ETX\1016422\SOHg\ETX\SOH1ZD-updated"
+Initializing telemetry for service: "r"
+Initializing telemetry for service: "\NUL,FDK-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "&T\DC2\171154\RS\120241.y\1068807\&5J\51353\1918k\DC2[\94891\1018215\1040959\1111502\SOH\1046153'\205210:\1018466(\1042081;5"
-Initializing telemetry for service: "\vt\bwx\18207Y\RS\1102515\186864\1040475zn{2\1005789\21577"
-Initializing telemetry for service: "\b\1058564i%:7L\42148\GS,\RSZj\EOT+A@R\1074975\&4<\1059756Y\SOH,\f\DC1\1081712\DC3\ENQ)WJD+Yk2-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "vr\175314Z\ETXZyTq\1113224M%\157678\\\RS2\204466\&7\EOTG\1100471{\DC2b\169597\137783-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\159247x^\GS\ETB\174890yq\1076922!\SYN EQO\171144\&05<`M\10511<(\160081\SUBaNC(\145655ax\DC2U !\DC2'Z-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "WBox#KS\t\1013152=\v\1105473\&7]\"][}qv\168914\1047476U\5784\DC3\a\FSWz\DC2dIk\1035439\139482.\183543\DC1\SYNl-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "M\133532 4y&TzZY\1019572vK\FSt@E\24224N\ETB>C\DC2*An\1096030\148715cE{\177844\985997?\1067566:-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "&\ETX|\r\1085783\FS\SO\119068+\21749+)eG\99627\SI}a \nU\1104989\&4\1000772\989158\202551k"
-Initializing telemetry for service: "\NAKzFS\US`\nsA\ETBAXU\9642+\139189?ZF[\147075*}ON\GS\1077381\39288"
-Initializing telemetry for service: "0h\1077170\EOT\1075817\GS\1112030\CANb\ETX\1070976,\DC2\27484$\DC3\119538,w_\139733\aQ\RSo8]l\"N1\STX?\GS\f1-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\15104*wD\199616\1092756\NAKn\US\ETB0\SOHJ\1086836=\ACKN2^\1068010,7\161294\NUL\1110285E]\1011748\186487\38919cHF,.\79456\SI-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "{I\DC1\184461\"\NAK!\80504hG\168545\161076\ETX\4224\r\DC45\1004048l.+\159817."
-Initializing telemetry for service: "8\45130x\f\SO\"\DEL:w\SYNR\ah7\6670\1075609M3U\a`\SI\\U\140184\200275H\1035928\DLE\201582\158366\rD\992573' \EM\1082004\EOT\DC3\NAK\1009076\n"
-Initializing telemetry for service: "^\ETB\14298\tui\148567\200061\1036396\SOHJb\1073581\\\1081346\121141\FS\179851\1091390uh\ETXm\123186\DC1/b\68860NF\GS\CANl\208550m\154997\1103648\992445+\EOT4\14022\43518\42626+\t#c,0-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "_lU,\1099189<\\\v0X\141441X{)\ESC\161489B\1109161&\185487\thH\8573s&\181867\n\ETB[ti\1025917\\-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\NULK\DC3\a\r\DELA\DC33J\1083925\80943m\\xe\ETX\145612+_\SUBZ7\b^r\1028503hH\147995-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "S\SUB\STX\173342\NULm\1083439^(?Qc0\SYN\GS\SO/E"
-Initializing telemetry for service: "E\NUL-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\301\DLE\DC36[\148778v\1041478\168951\FSy+\SUB\1108922\&2w\GS@\GS\tsUe*,~.\GS\EM\1013835}ZY\138035Z\1071813\EM\1082527\&3\1106789Nh?$-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "VU\b&N\SONLn\1045138\\\ACKG\1031544<TlP#\985070\1018618r\42903yu#\168695E*\1065497\176747\SYN\DC4\151689\209935'^\1079926D\aY\111147'E\1023937c\987756z\\u4+"
-Initializing telemetry for service: "V\EOT\ACK?\ETB/\1014122\1050505u\1079759\1065631"
-Initializing telemetry for service: "\1031799S\ETX2-\t\t-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\RS^z`^\SOH+\DC2\1034109\NUL\aQi\CANY9d@X\n.LbjW@Y\1012625\1113641\DC3f/v6\1036343D\DC2\64300\985169u1"
-Initializing telemetry for service: "\SOH\"]\1085657\1021635T\CANL|KH\28326-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "N\183448\134065\1009643\USW\FS\987252E(\CAN\EOT\172947\NAK\1057099\73674e\SIk\RSR\DC2CXdEdKg'eGEG\ENQ\fb\ETB9\fe\CANRG\tzR\SUB\SUB/[r+S\1039301\1111709P3cCc\1110688-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "<\DC1\NAK|t\CANWi\ENQ\ETBuP&\44999\NUL\SYN5|TuJP)\NULQvTvx\1004368G\58145\136744\176841Bg\ETB\DEL-U\EOTq\RS\11345TX{\992784\1082832\DELUB"
-Initializing telemetry for service: "\DC1\145543U\FS\1061460@qB\1086042N\24964\CAN\92359o\SO*7t;YP\SUB\39034XA\r\140006\77957\SYN%\11988_\25412\&6\RSe\204743\CAN6y9\199857j\1012929\&0wd\1014298lJ9\a\1047923\v\ACK\SYN\111053\194631-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "`G\STX\SYN\r\ESC\\y\190698F\GS\58780L\29735\a\175225\2797\NUL=K\DC4\DC1eI\26665\1105196\198999^\NULMT{k*7\DC4n5"
-Initializing telemetry for service: "\NUL\t0\DLE5\tI\DLE\b4\161144u?6\1095691\1056812!-iX\1068641\1035033\173873\984254%\58325\1106201=5\1053083-updated"
-Shutting down telemetry system
-Initializing telemetry for service: ";EF\36546\&7C-2l\DC1g#^\SYN\1011245\990018u\1087705\169173FK\SO\63189\1005352p\173170\1078712\158430\"l\RStk\NAK\EOT\ESC9u<\1017756S\1082172SP-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1110285q\159865c^/\1017483le\998791VVq\GS\136975\SO\r%.]b\1071715\EOT<\168255o4\200308!\1056598^\EM)0\STXE\1029835*\1042802YV\987141\NAKEX\EOTd\CAN\ACK=\SI$\EMU\FS\DC4Qwi*\8920s"
 Initializing telemetry for service: ""
-Initializing telemetry for service: "\1084599\145332\DC1Qi\1036209~e\18306\154429\"= \DC2tJ-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "dm7\SUB\62096\\\CANV\GSGC)D\"\a)a\1021891\1068175\153419|R+\vdQ\vl\1078242U[#\ETB\ng\DC4\80906\35048\992243.\SOEN\\O\FS\30674\ESC\78338V\SOH:\12464\US52FB0zhj\RS\1074997+\1072706\1082546"
-Initializing telemetry for service: "bV\t\50999\18161\DLE\CAN\SOH1\\\GS\"\ETX`v:}\936\EM1\SUBK\ETXx\1057569\1095634h-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\f K\SOHY\f"
-Initializing telemetry for service: "\DC1\82803\&3\ETX\"\188415\SIb'\1038442O:V\DEL\54555\DC1.R\101775\"V\1052824@\1013357<&u/_3l\ACKr>\CAN\1105185\ACK\47172P\DC1\158130nY\SO\991362%O3F0RK-2\FS\1082291)9'\t.,U\ACK-updated"
-Shutting down telemetry system
-Initializing telemetry for service: ";ca\48281w\191330m^,2#B\ACK\\\CANqY\DC4K\182600\1013210\73961R78\23424\&6\127106;\SUB[GilRh\DLEJzZ\168295'-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "Sv[`\1114033\&2B\51446b8\DC1`'"
-Initializing telemetry for service: "~\139357\989982k\EM\1037393\208025\CANYKT[|+r5\ACKW7\bO\137370\184517\178234\SOHH.m\\*\DEL"
-Initializing telemetry for service: "i\r8-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\190818v|\1060841\&1\995729,\1062307I@._%\SIky\984735b\CAN\US\STX25D\nxv\DC2\1067786J\83290\1018442\\\DC4719]\DC2S\36083A=\\j5\SUB"
-Initializing telemetry for service: "\1029486\&2\r\148517\&3'\1004685\990739\1065457E\1016497]wW[vq\NAK8\1103175A\SOH#\142137\&3\1083525\93010\25317!T\DC3$x\988019\19212K\NAK-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\EMRN9m\198871R\23950\137711\41984~y\n\rCY\f%\SYN\DEL0v\ETB\999987\1055822e+1\94533\1001142|X\198152zXTv\SO<-\ETB\95388?oz\991987\\ESUoE>\EMW1#"
-Initializing telemetry for service: ":`\1001518\162301=P\143641\DC3\SOH\175602\72201Sk\DC3;x9d\SI\DC4\20877/3\97368px\EM\DC4R\"pY\142720\1104692|M7S\SUB[h\ENQb\146072\1031825\209795*\1060385d+~"
-Initializing telemetry for service: "\47371\&4(\ak\f\1064857\135188\1005172D\1045908\EOT-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "|\1099018\nd\182341;\1064316\&7b\GS-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC3\EMh{\204090\74894r\168592\1055842n`^\1057878\1060473Yl>h; \157994\37216\&8>kOu\SOV\\"
-Initializing telemetry for service: "\24873\t@\207407\r{\SUBc<M1\1038431jn\US8v\990674\98365W\66360\ESC0W\DLE\DC4\190055\176244\1076792E\1029223\NAK\ETX\38274EW\SOo`P\DC4\1002177c`\ETXw%\60128\EM\1003267\SI\CAN\1045236\ACK%"
-Initializing telemetry for service: "\202809]\1100521`\STXN\tj83d-@G\993382M\181412i\ETX(r\SOH8(5O\1061184\STX\32815\a?\NAKdPJB\1021579\1017642\&0LDP\128402\346F~\1041140\"#\SO~lk\NAKK-*6\996754\1010453()V@E7a-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "&d\50690&\ACK}\CANYg\r\ETXU2\997748(\21560-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "8\1044728\149161\189393,\1051922\SI1(^\DC4\1106181ar\DEL';?wQ\35723k\CANNG\1077836\NULu|H\1013409c\b\DC2>3\1097091Jc\DC1\1067105N@uetD\n\1023964y\f<\DEL\1098576\n\153260\RS\178572\1046258@\1036400-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "8l\EOT\ETB\ETB\US\v6r\201203CbN\1107314\82697\1056929dc\ACK\tt']\168300\49514o-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "nF\13113gd@\12660Y\SUB\1100709\ESC\992395C\140047\DLEiB\197811&\8609\1047406uq0\157506\1078028\1032712\35342Kc\138320i\133955UqRF\983281\82795K\EM_t+\SOH\208737v\ENQBld\DC1K,uwpfUG\27071\179551\1108830\208026\&0-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\DLE'2\GS\35332\1083616\n!\120841\ENQ|\\\1022234\132139?L\SO+,d\1034991\&3]U\132596\v\144372\24874\&6^\1095576t\92631.^m\94666\&2~Q-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\SI\FS?2"
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1065883t\DLEM\f\120729+\162947Y\139656e\145372\&8`\208470jS\26901g~)\171615'\993678:q,\a\134148.@K\180304h\1072156\DLE\1027842\&0U\NULY\ENQoN\1107078\156025d\127585\&9"
-Initializing telemetry for service: "\14701o\147767\NUL|Q@\179303+\96341\986828\DC2XB\SUBie\1048114-updated"
+Initializing telemetry for service: "\ETB\204149vs\v\9409_\1016342"
+Initializing telemetry for service: "\ETB[j.\SUB~\GS\190938&P\1002825C"
+Initializing telemetry for service: "\SUB-Qt\SUB-X"
+Initializing telemetry for service: "\SYNi\128438\117786\151934\tRA>`\GS"
+Initializing telemetry for service: "b\SOH\SOH\1038179ULM\145060Qq[CP\1103498\1010060"
+Initializing telemetry for service: "\39145\156242O1YWY\v\EM[\1088651 \FS-updated"
 Shutting down telemetry system
+Initializing telemetry for service: "\1005080\1058067\996974~S\205388\157409\68313:6(D"
+Initializing telemetry for service: "vi5"
+Initializing telemetry for service: "N^/\182645G\1054280"
+Initializing telemetry for service: "\150731\139848-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\1020166-zEB\ACKa\207581\n+G"
+Initializing telemetry for service: "\SO\v\ETX\DC1N\US-o\FS#M@\STX"
 Initializing telemetry for service: ""
+Initializing telemetry for service: "\DEL#\1086957\&2\203079\182867\"f\199384W\a\az]\1062417fR\SI\ETX87m^\45044-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\RS\1060646\v\1085838\1017918\13966"
+Initializing telemetry for service: "d~:#\DC1?>b^l\43384v\157963{*Ise-\DC3!\1072192\206775-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "q\EMH~\995138`j.nN<\DC4\n,B\ETB6\5716uf+Z\NAKx"
+Initializing telemetry for service: "8\fB\SOn\206111ZA\EM\68664*\31319T\182929r\SUB\SYN\27738\NAKQB\1086418\SIeW)-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\DEL\DEL"
+Initializing telemetry for service: "R\ENQY|^(0s\141236\1099918\201219\&4BL\51363P\GSd\f\r-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "d\ESCz.]\28534"
+Initializing telemetry for service: "p\162265M\ENQ\aw@P\ENQ\SYN\NAK\f\ENQc\1018746\aW\4217z;{-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\47660Y\173631\21785\NAK\SO\SOH\\W#KE\12103}\12382_~h:\1102000|\a\DC3r\185936C{ -updated"
+Shutting down telemetry system
+Initializing telemetry for service: "H\59915\1106084bYW~\1017186Lk$q\DC4z5\1031684\4531w\154977\37746P\1095341T\1013743\58520#v\32279\1066151\1052773\984682\n\82690"
+Initializing telemetry for service: "\78368\80285n\t\EOT\174670\1041457\1035407\164468\1110991\"\ENQ\1102369V\ETB\4961,\1087196$0\1047420\RS\146195\129109\51599\3627\DC4-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\ACK\ESCPv&t:R\1090774o$-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "z\126605e\ETB\203458,G\71317d=\1032364kI\US\209113\1893]\"7og\149416I\SOH\NUL9tz^"
+Initializing telemetry for service: "x\ACK\ENQ\41393ew\174215\NUL\FS!Mg\DC1\1000661}eo\1012169\r\6474\&4E*=<B\152922\146433`c\1001331\\"
+Initializing telemetry for service: "Nt~@\SUB\n\NAK\FS-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\NAK\DC3 \1109554K\CANx-qm'\t\SO4>L7-\160703L\160756/\"G\GS\ACK\SUB"
+Initializing telemetry for service: "/G|\DC2\1095564{-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\NAK\143765h^"
+Initializing telemetry for service: "=q\RS\\j6\DC1,f\164456qf\1039089|^3!\17648IOP\182925R-3_e4-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "o%@Rz\SUB\1238zzq7`\1028990r\SUB@\1063063\ESC\1020781#\1055695*U#@z"
+Initializing telemetry for service: "\RS\STX}\SUB\80850\1019617d`J=\987953\30532\\J:\tPb\GS5;\SUBM\78048'L\82629$)\f\NAKP\\h\STX\1069230\1090531\49487\NUL8'\SOx\38298\1030235"
+Initializing telemetry for service: "\1099148MN\CANSG|8-updated"
+Shutting down telemetry system
+Initializing telemetry for service: " t\36233;\62481+M\DC22}Z>AO\USdD\a\1039922&f\STXp\EOT-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\120482\SUB\168280N\a\1075109D\NULeK3\203332w\NAKE=\rbV\1023808\&2\1088964\EOTd\11008\200383-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\1019930\SYN\1070686K\166689\184558Y\SIs\207680\1037875x\a\1109530o\1037437\136328PT\156465\1103354\1023901US@\192040\CAN?\141084qc*N.\1013723\DLE5\1072676O3\CAN\95449\b\ACK\1087746w\DC3i-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "L7\ACK\\B\59098i\SIWF\DC2b9a\177753\1031865n(\SUBn"
+Initializing telemetry for service: ";]\1058249=\ETX{\SOHX\ENQ,[p\1101830d<\196716\&9\1008063LU1\1064635\RS\EOT=\78732U,z\199868\&9#\n\185755by\48456l{\NAK,\1049695t;;qI\174949R\ESC-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\1025483z\1073106\STX&\1101016;{\1079022@<\SIOj\52660\v\FS\ESC\184940\996210\174408Qsl\nk\99943\3074${'x\f<2\43888<K\1015895$\154174>$M\202348v\SYNh27"
+Initializing telemetry for service: "'k\175589]CD\b\vl);\ACKV\RSk\160129ue3q \DC1\24238\95699\1069775h3\NUL\aD{\DC47\145140\&9\45285\US\n$2;\1042566L[]\1010395C\166669vw*\1015212\1037300-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "<-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\NUL3\1087706<R\48951D\EOT\95067)\DC3\NUL\n\GS6\1030156d\1076364\164922;br?\ETX\1079239\134609[~\US\1072074\&0)\"D\tF6O\STXe\ACK\EM\33039K\DEL\b\b({O1\\HI-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\98596H;eT[\SO\SUB\1039757Yscq9k\999157\994295^\1035700#\50900\80722\ETB\f\ESC\1055965\NUL\157172UctOS>h\180016\55132\SOH "
+Initializing telemetry for service: "\1079452\983797N\148745\EOT\1008917X/-X\1076155\DC3>\ESCU*zl{AP\"Q\185590Q\179639Y\26435y\153769\DEL\1075562\1096752@\163123j\1076115x`9\69328n1~\174445Q\1051533\197459v\1075380f\205709K\SUB\"-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "$L\131442\DEL \DC1\SI_QOYc;-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC1\5096\DC2Z\207503\157173+\ETX\r\23427\132707a\204371\NAKM\1065572^\SUB\144909zc+\136980x\160368\b\137350\134400Fj\DC1V[&5>\987616T(Z\SOH\45965\ETBHo\ETX1m\139598\33881m_@\DEL7#l\176982S("
+Initializing telemetry for service: "\SYNa(X-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "O`s#=\176945\"LRyK?W\154537EjHA\1076031\ENQL\ESCP-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "!\SOH\46805N[\140722\STX\RS$\65871!r\199296\CAN`EA\1043536\22401{|\DC1\82071>C\US\EMw]\EM-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\US%m\DC2eE\tSQ\190318\&2 \198468/2\176186\47456\NUL\SOH\1067801_8JD\DC1\1004073\RSX\STX\163541\53862W\1075488\44316=\f:*^{\"\1010430\DC2z\204816='\DEL\CAN\209377\165558\16948>:UKEb\1027326\b\ENQ@-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\191100b\vGLu\1057947\ESC\163064S_\1092129\175937I\SI\32648\1013576O3t\SYNbeCSm!\1074343\RSs-,;qc\30561\26340F\ACK|\CANVB\DC2\SYN0u\1052406\tB\v\ETX-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\985123"
+Initializing telemetry for service: "-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\155940\1035515\&3\61474\28823$\30908\147408\5537 `>/\14408\a\174787\60578,Au\CAN\1050624\1069571\&6>\ACK\1021413\SI\991079E=\DC4d\1079747\178456-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "Um\ETX|E9M\SOHZ\DC2\RS:$9\DC4:\ENQ\993969!jb|\US\985435\n\155873oM+Og\DC1\1009457\137200I\1083292{\96383|\43145b`gN<o\nhCX#h\996651_S\18825\\c%\NAK#\f\28201S\1048118\65155I"
+Initializing telemetry for service: "\9370\SUB\46512\GS\\\v)\DLE\r\149230^\EOT\DLE\DC4AScZ*s&I\DC1\1017621<]\SI!:\t~\NUL\STX:\EM}6-m\136434\ve\71686\GS0w9NO1\43393\175485\CANN"
+Initializing telemetry for service: ")\180939sOy\DC1\170980\n%\CAN`\987155C\1111680\b9\1101049\NAK\167795m\78816T\EOT\ETB\GS\17131\&9\"C><\174712\CANp\DC3K/D5q\nR3A\1095762\38610"
+Initializing telemetry for service: "\SO`\DC49\t4|\172499}*NH\ACKBB:RItimv\71875T\EOT\1048107\175214BO\DC1\1112451O\"\fO\136499\EOT}&W-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\1057122[Pq3\f\\^\1009497T\RSfd(\1087630\ACK\DLEAqY\GS\GS\136474\EOT\124145\61324\&9\1091709Y\NULS\1057875\1100222\98459\EM\nj\989908EPK(\1057316\ETX\SIx7\137442\182762\fk\ETX\1042469\"s:r\143309\RSnT\n\9510L[\SOC\fL\185324"
+Initializing telemetry for service: "\6570\SYN1u\1019876Y\b\SOH4\FS(6=\148146!s\1111126"
+Initializing telemetry for service: "/+>>/\157388YD\1885\999460&Y\8383\80697).l\EOTJ3-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "+\185086\22213\ETX\1002659\nL{c\18004UTM\SOHx\1081017\NUL\SYN\1009469\1088319\SI;\1063717\63985\1068022\1042699~\r7W\f`'\DC4 6Yt\1035784TvtD\7970{\EMQ7\DLEs\190994<\161428LE\SYN\173165\&9\1055274`\bWl-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "z\r5+CQk>_\GS?\1098096ocQ\ETBb\51164 MM\1091821\1036031\1105109M\51770-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "9\175947\r\DC3\ETB\998046/\1001001nNP@+9m\132/nP\DC2$"
+Initializing telemetry for service: "_d<j\NAK=r \161115'\SUB\ETX\SI\DC2\30427bm\1026213Ns\STXp\FSZy\ESCy{\SO\1073256\197811J\19141\1035697\SUB=S|W`\ETX\1111490bpz\ENQ\CAN\27679\21563i\120108\bu\SI\ETXd)\199612\64077\1042#lP"
+Initializing telemetry for service: "\1060280(3d4\160927\US\144665y\n$\1002107+@V\DC2r\\\985228i&3\1066025-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "o0P<\DC4\SUBpYJ\1087219z4@\DC1o\ACKc\EOT \128629\1035350Q\DEL\ETXT\162575\ACKr\SUBM\1059415(A\EOT \19121X(d\EMQ\152334[*\1100169\NUL):2\DC3\1072041\1066620\DC4o\ESC_N\ETX\"\"\142588\rL\t\161998$\989273\1093221fX"
+Initializing telemetry for service: "-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\NUL\CANC.&/)p-\DEL\45011\EM-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\STX2b\29176\139194\1081553S\174877\b\180249\SO\SUBj\DC4\GSfcW0\EOT7Dg?i\FS\SYN\NUL^W|uO\SO\1081602c\1040948\992140\73802+XKd\1048280-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "N\1075188*6$\DC2\SYN<\79757\"\DC46!\27629\SOHT[Hz\156322'j$4sA\v\1078993\RS\ACK\RS\132695=O\EMX\RS{\1086967S*l\1034573w\EM\2623\f\"z\EOT\187140\1021772\998056\&82\t\DEL"
+Initializing telemetry for service: "\ETBR]\1084380\&6'\1038536<\DC4\1070091\DEL\47458\&7\1017296c\DC3YmV\32591\1063242V\\Y1\168782\70154g\1075495\1054333\DC2(\154205\b\1013986\14538j\162880J\94100yn\1006927\1061385\1067646Fwn\151793\DC4\1006233\145380\142712A\SYNW\1000458p\SO\ESCi\GS\FS\36478\17369&\ETXih-\SUB"
+Initializing telemetry for service: "(l\2856\b\f;\1074192g\194792==7U\67106\&4l8XBG\100398\11519\1082471Cb7P?[w\1066784AL&Nhy.\DELioG=2&9\1113024\US\STX\1003160e\tL[\ETX80\19966$\1021489\1089346TWw~%Ao\1015205:\SYN"
+Initializing telemetry for service: "\1022930gQU\186767\&7\EOT-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\t\SUB\ENQ\RSlovq\1072869J&\f\25535]\1024877B\RS\NULF"
+Initializing telemetry for service: "LL\DC3?\n\139686H3\FS$I_"
+Initializing telemetry for service: "\CAN\SOH6sG("
+Initializing telemetry for service: "\181158\SOk Q\8954\DEL\79587\&4\1064082\1092820!\127773]\DC3\991770#JM\1098890>^\1112342\1017508\1106510\"P2l%"
+Initializing telemetry for service: "~icgt-g!\987206\SOr\RSH^k\1022702\94722\&3_\52247]}C\32668\&7;\986505\NAKXT7\1069448k3\a\33130\EM\48603Cs\98371\v\1065650$`\CANr\STX\ACK{6([UA*\EOTRI]|\63118!{\EOT\5676Y\1083660N\NUL*\t<-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "!/\DC48.\996956\194640hiK1\53820\NAK\DC4\n\NAK\SIg|,E~OY}c\DC2\a]p9D\EOT\DEL\58739\64892\178217\afYimg\173368~\DEL\1051352G\SYN`t8\GS\\b\STX\DC2H\SYNr8}\aI6\1005949$Y\191448\n\22024\1112374b\143770hghf4Q\1057487\1062484\24520dK2E"
+Initializing telemetry for service: "FT;X@/\190774\26599\1008705#\SYN\ENQ\ESC\994222\1004035\118202\n\ACKU`C;\DC2\SOH'\1004391t?\48019-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\CAN\1099043\SOVK\176348oU\RS\154849H\SYN?\161136\&3u1\189988\1038329\18077\SOB\"\148479A\1008441\123628E\1079421\179157\1005787\&67U_^65-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\48320p\1096342\&5\ESC\33318\156580\65446sX\NULr3E\SOH\DC4\v\1081797:\1096132\NUL\993730\&7\98931\FSy#q\1072290\1066553\1076870c\be|\DC3`*\1601)^@\179387k\1055414r(\1050544gb\ENQT\SUB%\1033753=\60295A\DC4~ui`I\CAN\ESC\EM1\EM\1054703\FS\1108486\&1\US\9257\159337\&8Ky\137653x\1015261\"\1001859g%r\17256\a\1110136;-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "xcs(Jw\1099362:}o\CAN(\13056q\GSi\1038703\200781}VD\DC1\fvD\992374\101202\ESC20T\rf\148145Z\EOT}?\f>\NAKF{\1011534\1070971d Q\1039062|l\120592\DEL2\1111389\54980\f\136072\FS\ENQ,\1068647/\152003Hx\GS\163994<X2*\SYN\95367rf}\CANjr\RS?\ETB\1099787;\1004697\DC4\164817\FS\FS5\a2/"
+Initializing telemetry for service: "\CAN|b\1033536\1093615T\1004286U-updated"
+Shutting down telemetry system
     should handle configuration changes without affecting operations [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Recovery Mechanisms
@@ -4621,19 +4404,19 @@ Initializing telemetry for service: "azimuth-service"
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 19 discarded.
+      +++ OK, passed 100 tests; 18 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 19 discarded.
+      +++ OK, passed 100 tests; 18 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 19 discarded.
+      +++ OK, passed 100 tests; 18 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 19 discarded.
+      +++ OK, passed 100 tests; 18 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -4655,7 +4438,7 @@ Shutting down telemetry system
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 19 discarded.
+      +++ OK, passed 100 tests; 18 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -4665,8 +4448,10 @@ Shutting down telemetry system
     should maintain trace consistency [[32m✔[0m]
 Additional QuickCheck Test Suite
   Metric Creation and Recording Properties
-    should preserve metric identity after recording values [[31m✘[0m]
-    should handle metric recording with any reasonable double [[31m✘[0m]
+    should preserve metric identity after recording values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle metric recording with any reasonable double [[32m✔[0m]
+      +++ OK, passed 100 tests.
   SimpleMetric Properties
     should maintain commutative property for value recording [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -4810,36 +4595,2851 @@ Shutting down telemetry system
       +++ OK, passed 100 tests.
     should handle span creation with arbitrary names [[32m✔[0m]
       +++ OK, passed 100 tests.
+New QuickCheck-based Telemetry Tests
+  Metric NaN and Infinity Handling
+    should handle NaN values correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle positive infinity correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle negative infinity correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle mixed infinity operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span ID Format Validation
+    should generate span IDs with only hexadecimal characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate span IDs with consistent length [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should generate trace IDs with only hexadecimal characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Log Level Enumeration Properties
+    should maintain correct ordering of log levels [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle log level comparisons correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle all log levels consistently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Field Persistence
+Initializing telemetry for service: ");"
+Shutting down telemetry system
+Initializing telemetry for service: "\134744\1052014"
+Shutting down telemetry system
+Initializing telemetry for service: "U\ACK\1083618\GS4"
+Shutting down telemetry system
+Initializing telemetry for service: "<$?\1079851\992779\&3b"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4\152267RT\ETX-2O\2375"
+Shutting down telemetry system
+Initializing telemetry for service: "2\1068690p\917980\ETXS"
+Shutting down telemetry system
+Initializing telemetry for service: "pxQ\RS\1022070NGl9"
+Shutting down telemetry system
+Initializing telemetry for service: "<2\1053554"
+Shutting down telemetry system
+Initializing telemetry for service: "Y{\"\1024524\v"
+Shutting down telemetry system
+Initializing telemetry for service: "\52318wd\7053\RS$"
+Shutting down telemetry system
+Initializing telemetry for service: "p\STXrZ3\1107197U~"
+Shutting down telemetry system
+Initializing telemetry for service: "\149662\32046\32474ttm\22975\&1-\ACK)\62598\&2\1084832\1113998\72732{"
+Shutting down telemetry system
+Initializing telemetry for service: "\SI\21977%\CANb\1005992_"
+Shutting down telemetry system
+Initializing telemetry for service: "=\996296\SOHIsA~\vw"
+Shutting down telemetry system
+Initializing telemetry for service: "{\1004009:\46140\f\ETB4[u\DC3;"
+Shutting down telemetry system
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: "\1000475#^\1050518\149696"
+Shutting down telemetry system
+Initializing telemetry for service: "\7155\aM\"\ETB\RS\rX0b\53315\SOH"
+Shutting down telemetry system
+Initializing telemetry for service: " K\22935\135770\ACK\1060473\SI\1009159%\1049771W:\FSC@\DC3WNG\r \22249\1092511\&7"
+Shutting down telemetry system
+Initializing telemetry for service: "T\ACK\NUL\33386"
+Shutting down telemetry system
+Initializing telemetry for service: "\r\FS\185817\DC1\n:\99151q%W\986472_K./d"
+Shutting down telemetry system
+Initializing telemetry for service: "0\"?\143425@\\?\1097581z\47856\57967\100521.o\20783(\48812}\ETX\NAKn9"
+Shutting down telemetry system
+Initializing telemetry for service: "R\53698CX~VBX;q\139677\6451dugH%-Ue\DLEJw&r\1058975\8862\79870!?w\DC4u\177189E\44759\1099413I"
+Shutting down telemetry system
+Initializing telemetry for service: "\1102500\1058563I\NULer*^?n|]`G,`d\"1y.A\EOTj\bf"
+Shutting down telemetry system
+Initializing telemetry for service: "?\1069911\ESC"
+Shutting down telemetry system
+Initializing telemetry for service: "1\ESCn"
+Shutting down telemetry system
+Initializing telemetry for service: "\1022034\1107931\990570\GS\137639]1}m\\[\FSnb\1070759[Y\1075924\179048L"
+Shutting down telemetry system
+Initializing telemetry for service: "\f\RS\996977n3:\1010137\NAK~]\1039882_noF\150459-!\r\FSq**\27876r\7107"
+Shutting down telemetry system
+Initializing telemetry for service: "\1065835sz#\STXUm}l00Lp\EOT\187507g\DEL\CANG\ESCx\181243k{\n\6156\SUBdS0\EM\1069375T|\10571\178012L\SIl\US\184493S}"
+Shutting down telemetry system
+Initializing telemetry for service: "u\\(M\131955\CAN"
+Shutting down telemetry system
+Initializing telemetry for service: "H;Gc<?i)dy\STX\177201\&2\65224CL\148306XL!\11004 Z;\996378#\DC2RM,ly\138087m{\1041195\1022831\155298\&2z\155715\133449.\"\153783\1068039"
+Shutting down telemetry system
+Initializing telemetry for service: "\1067597\&1Y\24129{\1048283\ETX`\r,\1041228ET\DEL\11790\b|*\DC2\DC2WR\200953\DLE\ENQ\17419\tYP\ACK\ESC"
+Shutting down telemetry system
+Initializing telemetry for service: "_4\1050869\1087611\&8\DC3r\ETX5Omq\35197\vx\1079828\r\184693-\1002130I\a\1101198\134755\&3.\81131w\1031817\ENQ\72295\124621?\ETBs(\1060264*"
+Shutting down telemetry system
+Initializing telemetry for service: "\bnP\170772p\ENQ\57923\&7'bF\n\150540\CAN\ENQ\140187<2\182423\NAK\EOT<Wk6sP+.cBZG\1092312BT>p\1074097%on\DC2D\72830\US\144213]\DC4n=}ux\14668\t"
+Shutting down telemetry system
+Initializing telemetry for service: "\153662\EOTK\tl\1101258w\DLEifU\1055403\1045798\SUBB\ACK\ETXsX7M\SYN'\1066340=\1027600P\120627\USe\NAK%,\1089387\29755$_"
+Shutting down telemetry system
+Initializing telemetry for service: "\1039458\DC2\133466\79773-\DC2Bx\138345\SO_\147963CVi0;>\992355\161987\SUBuq\1106260~\a\1018431TFt}\NUL\59246\n2<\161420bL\1037252\53574IA\27605#\16401Ttd\174271@tb&w\203925\65016y\SUB-vkeDs\1052431"
+Shutting down telemetry system
+Initializing telemetry for service: "P\NAK\DC2wqeaA\CAN4J\DEL\"\DELT\1093711#\34618\t\1079823\208068By\ESCqQ+\EMh\\\DC2\22235\9375E\1046134%)\1018704*^r\ETBK"
+Shutting down telemetry system
+Initializing telemetry for service: "G\DC4X$1}\1097493\992127\1105053\135061\1052429\ACK\1018682\b<dT\203988\v7j\DLEU\SUB"
+Shutting down telemetry system
+Initializing telemetry for service: "\1107230Kp<pB/\68448\aPNv\nu-\1040956 +)\131110(B\1022560\28226,SY\26443\\KK\1073704$t)]yFS\11041~L2\DLE\190320\1083851B\22533M\a&\FS\50147z\USa\3886\1022048|0Z\ACK\1065769\110778x\RS\DC2\163210"
+Shutting down telemetry system
+Initializing telemetry for service: "\"\1039518\136249B\5623ij\SOH\40528\26109!^{\1059290\207312p\vb+\EM\SOHp\166376\fgV\SOv\46802C"
+Shutting down telemetry system
+Initializing telemetry for service: ";,\1070742\60733\&1\fgg\aK\151249VW\SUB\DC3)\1090874\1006166F!\ETB.5\1030415\1038733R\1080311\1058448~%Q){YCWH'\EM\ETB\v5j\DC2s\60249\1112833\&0\a\1010182,\SI\n\CAN\DC2\1072241\98651P@\DEL?.\169592\EMAl\a}V"
+Shutting down telemetry system
+Initializing telemetry for service: "3zL\1078998#A\GS|\n{\60250?Y\DC2Jh\83355\SIpjM\140162X\1039896\137398w\141500\21886"
+Shutting down telemetry system
+Initializing telemetry for service: ".\GS\1078563\136078#P#mc<!\181364\&4i\DC4\STXK\n\57865\GS8{!\1078528\&6z\174558\EOTXC\42614O\"\US\127308+\CAN\139045<\1109946\&9pm\79079"
+Shutting down telemetry system
+Initializing telemetry for service: "~p\150613'X:N:!!}\GS\1047146i\DC3'e[\1041347g\FS\1005050O\f\US\fl\vLTw\1063041X\15039\t\154336\SO~-<~\152915k\1107414\GS\1091360I8\148341\DC2Gw{"
+Shutting down telemetry system
+Initializing telemetry for service: "\n\SUBB\182720\&0`\1016222yCT{koL\59035d\1077343\DEL\FSl\\D\STX\1055995*W[\1017962\STX\1040941\132337\1096739\1099472\SOH\nI\RSG8\1007179\198153x\1051180M\1088928\SO4\1074588_\26692\1092595t\ACK\1066446w"
+Shutting down telemetry system
+Initializing telemetry for service: "\n\156919MqN7\f:\992297\185902,5E[7!D{r12@!\1113965qp\ETB\186743\t\NUL\70504\DC1vDlv>}\95070\96314;&\57557Thy\159424}\51489z\n\61648\137704$U8\99387l\ACK?\180162\ETB*&\US"
+Shutting down telemetry system
+Initializing telemetry for service: "mfj\50204\fZsN7\99213k\1080776w\STX\EOT\36828G)u\ESC@h\1083324\DLE"
+Shutting down telemetry system
+Initializing telemetry for service: "V\77957\ENQP !hV<\CAN]8\r%\24272\SOH\59962\1081415\NAKO\1053227*7]P`\38763\STX\1061112\&3\ETX\170591^\81655q\23171:\61881\r,\1054942-J)\CAN\SUBfjph0\FS\ETXJ\1113135N\990430\47487'\989050$vf\1089884\DC3Y\1095945\USNr\1101344&\ACKL$G\\\121023\tX\SYNV[\1064598\&6\137467"
+Shutting down telemetry system
+Initializing telemetry for service: "\186965\vb\SYN1\ENQC\42885\162504\1108624\&9\CAN.5pC\1017219j\US|L\SI\ENQ>\1082187\190238R\RS\ETB\1004586\NAKX :y.J\ENQ\98901'`\DLEvIJU\SI6\166885\ENQ-KmXBi4;@\7234"
+Shutting down telemetry system
+    should preserve configuration fields across operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: ");"
+Initializing telemetry for service: ");"
+Shutting down telemetry system
+Initializing telemetry for service: "\134744\1052014"
+Initializing telemetry for service: "\134744\1052014"
+Shutting down telemetry system
+Initializing telemetry for service: "U\ACK\1083618\GS4"
+Initializing telemetry for service: "U\ACK\1083618\GS4"
+Shutting down telemetry system
+Initializing telemetry for service: "<$?\1079851\992779\&3b"
+Initializing telemetry for service: "<$?\1079851\992779\&3b"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4\152267RT\ETX-2O\2375"
+Initializing telemetry for service: "\DC4\152267RT\ETX-2O\2375"
+Shutting down telemetry system
+Initializing telemetry for service: "2\1068690p\917980\ETXS"
+Initializing telemetry for service: "2\1068690p\917980\ETXS"
+Shutting down telemetry system
+Initializing telemetry for service: "pxQ\RS\1022070NGl9"
+Initializing telemetry for service: "pxQ\RS\1022070NGl9"
+Shutting down telemetry system
+Initializing telemetry for service: "<2\1053554"
+Initializing telemetry for service: "<2\1053554"
+Shutting down telemetry system
+Initializing telemetry for service: "Y{\"\1024524\v"
+Initializing telemetry for service: "Y{\"\1024524\v"
+Shutting down telemetry system
+Initializing telemetry for service: "\52318wd\7053\RS$"
+Initializing telemetry for service: "\52318wd\7053\RS$"
+Shutting down telemetry system
+Initializing telemetry for service: "p\STXrZ3\1107197U~"
+Initializing telemetry for service: "p\STXrZ3\1107197U~"
+Shutting down telemetry system
+Initializing telemetry for service: "\149662\32046\32474ttm\22975\&1-\ACK)\62598\&2\1084832\1113998\72732{"
+Initializing telemetry for service: "\149662\32046\32474ttm\22975\&1-\ACK)\62598\&2\1084832\1113998\72732{"
+Shutting down telemetry system
+Initializing telemetry for service: "\SI\21977%\CANb\1005992_"
+Initializing telemetry for service: "\SI\21977%\CANb\1005992_"
+Shutting down telemetry system
+Initializing telemetry for service: "=\996296\SOHIsA~\vw"
+Initializing telemetry for service: "=\996296\SOHIsA~\vw"
+Shutting down telemetry system
+Initializing telemetry for service: "{\1004009:\46140\f\ETB4[u\DC3;"
+Initializing telemetry for service: "{\1004009:\46140\f\ETB4[u\DC3;"
+Shutting down telemetry system
+Initializing telemetry for service: ""
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: "\1000475#^\1050518\149696"
+Initializing telemetry for service: "\1000475#^\1050518\149696"
+Shutting down telemetry system
+Initializing telemetry for service: "\7155\aM\"\ETB\RS\rX0b\53315\SOH"
+Initializing telemetry for service: "\7155\aM\"\ETB\RS\rX0b\53315\SOH"
+Shutting down telemetry system
+Initializing telemetry for service: " K\22935\135770\ACK\1060473\SI\1009159%\1049771W:\FSC@\DC3WNG\r \22249\1092511\&7"
+Initializing telemetry for service: " K\22935\135770\ACK\1060473\SI\1009159%\1049771W:\FSC@\DC3WNG\r \22249\1092511\&7"
+Shutting down telemetry system
+Initializing telemetry for service: "T\ACK\NUL\33386"
+Initializing telemetry for service: "T\ACK\NUL\33386"
+Shutting down telemetry system
+Initializing telemetry for service: "\r\FS\185817\DC1\n:\99151q%W\986472_K./d"
+Initializing telemetry for service: "\r\FS\185817\DC1\n:\99151q%W\986472_K./d"
+Shutting down telemetry system
+Initializing telemetry for service: "0\"?\143425@\\?\1097581z\47856\57967\100521.o\20783(\48812}\ETX\NAKn9"
+Initializing telemetry for service: "0\"?\143425@\\?\1097581z\47856\57967\100521.o\20783(\48812}\ETX\NAKn9"
+Shutting down telemetry system
+Initializing telemetry for service: "R\53698CX~VBX;q\139677\6451dugH%-Ue\DLEJw&r\1058975\8862\79870!?w\DC4u\177189E\44759\1099413I"
+Initializing telemetry for service: "R\53698CX~VBX;q\139677\6451dugH%-Ue\DLEJw&r\1058975\8862\79870!?w\DC4u\177189E\44759\1099413I"
+Shutting down telemetry system
+Initializing telemetry for service: "\1102500\1058563I\NULer*^?n|]`G,`d\"1y.A\EOTj\bf"
+Initializing telemetry for service: "\1102500\1058563I\NULer*^?n|]`G,`d\"1y.A\EOTj\bf"
+Shutting down telemetry system
+Initializing telemetry for service: "?\1069911\ESC"
+Initializing telemetry for service: "?\1069911\ESC"
+Shutting down telemetry system
+Initializing telemetry for service: "1\ESCn"
+Initializing telemetry for service: "1\ESCn"
+Shutting down telemetry system
+Initializing telemetry for service: "\1022034\1107931\990570\GS\137639]1}m\\[\FSnb\1070759[Y\1075924\179048L"
+Initializing telemetry for service: "\1022034\1107931\990570\GS\137639]1}m\\[\FSnb\1070759[Y\1075924\179048L"
+Shutting down telemetry system
+Initializing telemetry for service: "\f\RS\996977n3:\1010137\NAK~]\1039882_noF\150459-!\r\FSq**\27876r\7107"
+Initializing telemetry for service: "\f\RS\996977n3:\1010137\NAK~]\1039882_noF\150459-!\r\FSq**\27876r\7107"
+Shutting down telemetry system
+Initializing telemetry for service: "\1065835sz#\STXUm}l00Lp\EOT\187507g\DEL\CANG\ESCx\181243k{\n\6156\SUBdS0\EM\1069375T|\10571\178012L\SIl\US\184493S}"
+Initializing telemetry for service: "\1065835sz#\STXUm}l00Lp\EOT\187507g\DEL\CANG\ESCx\181243k{\n\6156\SUBdS0\EM\1069375T|\10571\178012L\SIl\US\184493S}"
+Shutting down telemetry system
+Initializing telemetry for service: "u\\(M\131955\CAN"
+Initializing telemetry for service: "u\\(M\131955\CAN"
+Shutting down telemetry system
+Initializing telemetry for service: "H;Gc<?i)dy\STX\177201\&2\65224CL\148306XL!\11004 Z;\996378#\DC2RM,ly\138087m{\1041195\1022831\155298\&2z\155715\133449.\"\153783\1068039"
+Initializing telemetry for service: "H;Gc<?i)dy\STX\177201\&2\65224CL\148306XL!\11004 Z;\996378#\DC2RM,ly\138087m{\1041195\1022831\155298\&2z\155715\133449.\"\153783\1068039"
+Shutting down telemetry system
+Initializing telemetry for service: "\1067597\&1Y\24129{\1048283\ETX`\r,\1041228ET\DEL\11790\b|*\DC2\DC2WR\200953\DLE\ENQ\17419\tYP\ACK\ESC"
+Initializing telemetry for service: "\1067597\&1Y\24129{\1048283\ETX`\r,\1041228ET\DEL\11790\b|*\DC2\DC2WR\200953\DLE\ENQ\17419\tYP\ACK\ESC"
+Shutting down telemetry system
+Initializing telemetry for service: "_4\1050869\1087611\&8\DC3r\ETX5Omq\35197\vx\1079828\r\184693-\1002130I\a\1101198\134755\&3.\81131w\1031817\ENQ\72295\124621?\ETBs(\1060264*"
+Initializing telemetry for service: "_4\1050869\1087611\&8\DC3r\ETX5Omq\35197\vx\1079828\r\184693-\1002130I\a\1101198\134755\&3.\81131w\1031817\ENQ\72295\124621?\ETBs(\1060264*"
+Shutting down telemetry system
+Initializing telemetry for service: "\bnP\170772p\ENQ\57923\&7'bF\n\150540\CAN\ENQ\140187<2\182423\NAK\EOT<Wk6sP+.cBZG\1092312BT>p\1074097%on\DC2D\72830\US\144213]\DC4n=}ux\14668\t"
+Initializing telemetry for service: "\bnP\170772p\ENQ\57923\&7'bF\n\150540\CAN\ENQ\140187<2\182423\NAK\EOT<Wk6sP+.cBZG\1092312BT>p\1074097%on\DC2D\72830\US\144213]\DC4n=}ux\14668\t"
+Shutting down telemetry system
+Initializing telemetry for service: "\153662\EOTK\tl\1101258w\DLEifU\1055403\1045798\SUBB\ACK\ETXsX7M\SYN'\1066340=\1027600P\120627\USe\NAK%,\1089387\29755$_"
+Initializing telemetry for service: "\153662\EOTK\tl\1101258w\DLEifU\1055403\1045798\SUBB\ACK\ETXsX7M\SYN'\1066340=\1027600P\120627\USe\NAK%,\1089387\29755$_"
+Shutting down telemetry system
+Initializing telemetry for service: "\1039458\DC2\133466\79773-\DC2Bx\138345\SO_\147963CVi0;>\992355\161987\SUBuq\1106260~\a\1018431TFt}\NUL\59246\n2<\161420bL\1037252\53574IA\27605#\16401Ttd\174271@tb&w\203925\65016y\SUB-vkeDs\1052431"
+Initializing telemetry for service: "\1039458\DC2\133466\79773-\DC2Bx\138345\SO_\147963CVi0;>\992355\161987\SUBuq\1106260~\a\1018431TFt}\NUL\59246\n2<\161420bL\1037252\53574IA\27605#\16401Ttd\174271@tb&w\203925\65016y\SUB-vkeDs\1052431"
+Shutting down telemetry system
+Initializing telemetry for service: "P\NAK\DC2wqeaA\CAN4J\DEL\"\DELT\1093711#\34618\t\1079823\208068By\ESCqQ+\EMh\\\DC2\22235\9375E\1046134%)\1018704*^r\ETBK"
+Initializing telemetry for service: "P\NAK\DC2wqeaA\CAN4J\DEL\"\DELT\1093711#\34618\t\1079823\208068By\ESCqQ+\EMh\\\DC2\22235\9375E\1046134%)\1018704*^r\ETBK"
+Shutting down telemetry system
+Initializing telemetry for service: "G\DC4X$1}\1097493\992127\1105053\135061\1052429\ACK\1018682\b<dT\203988\v7j\DLEU\SUB"
+Initializing telemetry for service: "G\DC4X$1}\1097493\992127\1105053\135061\1052429\ACK\1018682\b<dT\203988\v7j\DLEU\SUB"
+Shutting down telemetry system
+Initializing telemetry for service: "\1107230Kp<pB/\68448\aPNv\nu-\1040956 +)\131110(B\1022560\28226,SY\26443\\KK\1073704$t)]yFS\11041~L2\DLE\190320\1083851B\22533M\a&\FS\50147z\USa\3886\1022048|0Z\ACK\1065769\110778x\RS\DC2\163210"
+Initializing telemetry for service: "\1107230Kp<pB/\68448\aPNv\nu-\1040956 +)\131110(B\1022560\28226,SY\26443\\KK\1073704$t)]yFS\11041~L2\DLE\190320\1083851B\22533M\a&\FS\50147z\USa\3886\1022048|0Z\ACK\1065769\110778x\RS\DC2\163210"
+Shutting down telemetry system
+Initializing telemetry for service: "\"\1039518\136249B\5623ij\SOH\40528\26109!^{\1059290\207312p\vb+\EM\SOHp\166376\fgV\SOv\46802C"
+Initializing telemetry for service: "\"\1039518\136249B\5623ij\SOH\40528\26109!^{\1059290\207312p\vb+\EM\SOHp\166376\fgV\SOv\46802C"
+Shutting down telemetry system
+Initializing telemetry for service: ";,\1070742\60733\&1\fgg\aK\151249VW\SUB\DC3)\1090874\1006166F!\ETB.5\1030415\1038733R\1080311\1058448~%Q){YCWH'\EM\ETB\v5j\DC2s\60249\1112833\&0\a\1010182,\SI\n\CAN\DC2\1072241\98651P@\DEL?.\169592\EMAl\a}V"
+Initializing telemetry for service: ";,\1070742\60733\&1\fgg\aK\151249VW\SUB\DC3)\1090874\1006166F!\ETB.5\1030415\1038733R\1080311\1058448~%Q){YCWH'\EM\ETB\v5j\DC2s\60249\1112833\&0\a\1010182,\SI\n\CAN\DC2\1072241\98651P@\DEL?.\169592\EMAl\a}V"
+Shutting down telemetry system
+Initializing telemetry for service: "3zL\1078998#A\GS|\n{\60250?Y\DC2Jh\83355\SIpjM\140162X\1039896\137398w\141500\21886"
+Initializing telemetry for service: "3zL\1078998#A\GS|\n{\60250?Y\DC2Jh\83355\SIpjM\140162X\1039896\137398w\141500\21886"
+Shutting down telemetry system
+Initializing telemetry for service: ".\GS\1078563\136078#P#mc<!\181364\&4i\DC4\STXK\n\57865\GS8{!\1078528\&6z\174558\EOTXC\42614O\"\US\127308+\CAN\139045<\1109946\&9pm\79079"
+Initializing telemetry for service: ".\GS\1078563\136078#P#mc<!\181364\&4i\DC4\STXK\n\57865\GS8{!\1078528\&6z\174558\EOTXC\42614O\"\US\127308+\CAN\139045<\1109946\&9pm\79079"
+Shutting down telemetry system
+Initializing telemetry for service: "~p\150613'X:N:!!}\GS\1047146i\DC3'e[\1041347g\FS\1005050O\f\US\fl\vLTw\1063041X\15039\t\154336\SO~-<~\152915k\1107414\GS\1091360I8\148341\DC2Gw{"
+Initializing telemetry for service: "~p\150613'X:N:!!}\GS\1047146i\DC3'e[\1041347g\FS\1005050O\f\US\fl\vLTw\1063041X\15039\t\154336\SO~-<~\152915k\1107414\GS\1091360I8\148341\DC2Gw{"
+Shutting down telemetry system
+Initializing telemetry for service: "\n\SUBB\182720\&0`\1016222yCT{koL\59035d\1077343\DEL\FSl\\D\STX\1055995*W[\1017962\STX\1040941\132337\1096739\1099472\SOH\nI\RSG8\1007179\198153x\1051180M\1088928\SO4\1074588_\26692\1092595t\ACK\1066446w"
+Initializing telemetry for service: "\n\SUBB\182720\&0`\1016222yCT{koL\59035d\1077343\DEL\FSl\\D\STX\1055995*W[\1017962\STX\1040941\132337\1096739\1099472\SOH\nI\RSG8\1007179\198153x\1051180M\1088928\SO4\1074588_\26692\1092595t\ACK\1066446w"
+Shutting down telemetry system
+Initializing telemetry for service: "\n\156919MqN7\f:\992297\185902,5E[7!D{r12@!\1113965qp\ETB\186743\t\NUL\70504\DC1vDlv>}\95070\96314;&\57557Thy\159424}\51489z\n\61648\137704$U8\99387l\ACK?\180162\ETB*&\US"
+Initializing telemetry for service: "\n\156919MqN7\f:\992297\185902,5E[7!D{r12@!\1113965qp\ETB\186743\t\NUL\70504\DC1vDlv>}\95070\96314;&\57557Thy\159424}\51489z\n\61648\137704$U8\99387l\ACK?\180162\ETB*&\US"
+Shutting down telemetry system
+Initializing telemetry for service: "mfj\50204\fZsN7\99213k\1080776w\STX\EOT\36828G)u\ESC@h\1083324\DLE"
+Initializing telemetry for service: "mfj\50204\fZsN7\99213k\1080776w\STX\EOT\36828G)u\ESC@h\1083324\DLE"
+Shutting down telemetry system
+Initializing telemetry for service: "V\77957\ENQP !hV<\CAN]8\r%\24272\SOH\59962\1081415\NAKO\1053227*7]P`\38763\STX\1061112\&3\ETX\170591^\81655q\23171:\61881\r,\1054942-J)\CAN\SUBfjph0\FS\ETXJ\1113135N\990430\47487'\989050$vf\1089884\DC3Y\1095945\USNr\1101344&\ACKL$G\\\121023\tX\SYNV[\1064598\&6\137467"
+Initializing telemetry for service: "V\77957\ENQP !hV<\CAN]8\r%\24272\SOH\59962\1081415\NAKO\1053227*7]P`\38763\STX\1061112\&3\ETX\170591^\81655q\23171:\61881\r,\1054942-J)\CAN\SUBfjph0\FS\ETXJ\1113135N\990430\47487'\989050$vf\1089884\DC3Y\1095945\USNr\1101344&\ACKL$G\\\121023\tX\SYNV[\1064598\&6\137467"
+Shutting down telemetry system
+Initializing telemetry for service: "\186965\vb\SYN1\ENQC\42885\162504\1108624\&9\CAN.5pC\1017219j\US|L\SI\ENQ>\1082187\190238R\RS\ETB\1004586\NAKX :y.J\ENQ\98901'`\DLEvIJU\SI6\166885\ENQ-KmXBi4;@\7234"
+Initializing telemetry for service: "\186965\vb\SYN1\ENQC\42885\162504\1108624\&9\CAN.5pC\1017219j\US|L\SI\ENQ>\1082187\190238R\RS\ETB\1004586\NAKX :y.J\ENQ\98901'`\DLEvIJU\SI6\166885\ENQ-KmXBi4;@\7234"
+Shutting down telemetry system
+    should handle configuration changes correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Component Creation
+    should handle concurrent creation of different component types [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent operations on shared components [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Large Data Processing Performance
+    should handle large number of metric operations efficiently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle large number of span operations efficiently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle large number of logging operations efficiently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Boundary Conditions with Special Strings
+    should handle empty strings in component names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in component names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very long strings in component names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle unicode characters in component names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Resource Cleanup and Memory Leaks
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should clean up resources properly after shutdown [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should handle multiple init/shutdown cycles [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Component Interactions
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should handle interactions between metrics and spans [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should handle interactions between logging and spans [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should handle interactions between all three component types [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Error Recovery Mechanisms
+    should recover from invalid metric values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+    should handle operations without initialization [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
+Shutting down telemetry system
+    should handle multiple shutdown calls gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
 
-Failures:
-
-[36m  test/AdditionalQuickCheckTestSpec.hs:32:5: [0m
-  1) Additional QuickCheck Test Suite, Metric Creation and Recording Properties, should preserve metric identity after recording values
-[31m       Falsified (after 2 tests and 5 shrinks):[0m
-[31m         "a"[0m
-[31m         "a"[0m
-[31m         0.0[0m
-[31m         0.1[0m
-
-  To rerun use: --match "/Additional QuickCheck Test Suite/Metric Creation and Recording Properties/should preserve metric identity after recording values/" --seed 939753952
-
-[36m  test/AdditionalQuickCheckTestSpec.hs:51:5: [0m
-  2) Additional QuickCheck Test Suite, Metric Creation and Recording Properties, should handle metric recording with any reasonable double
-[31m       Falsified (after 2 tests and 5 shrinks):[0m
-[31m         "a"[0m
-[31m         "a"[0m
-[31m         0.1[0m
-
-  To rerun use: --match "/Additional QuickCheck Test Suite/Metric Creation and Recording Properties/should handle metric recording with any reasonable double/" --seed 939753952
-
-Randomized with seed 939753952
-
-Finished in 117.0211 seconds
-[31m341 examples, 2 failures[0m
-Test suite azimuth-test: FAIL
+Finished in 117.0579 seconds
+[32m370 examples, 0 failures[0m
+Test suite azimuth-test: PASS
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log
-0 of 1 test suites (0 of 1 test cases) passed.
-Error: [Cabal-7125]
-Tests failed for test:azimuth-test from azimuth-0.1.0.
-
+1 of 1 test suites (1 of 1 test cases) passed.
