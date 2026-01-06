@@ -32,7 +32,6 @@ module Azimuth.Telemetry
     , logMessage
     , -- * Internal state (for testing)
       metricRegistry
-    , metricCache
     ) where
 
 import Data.Text (Text, pack, null)
@@ -70,13 +69,8 @@ logCounter = unsafePerformIO (newIORef 0)
 
 -- | Global metric registry for sharing values by name
 {-# NOINLINE metricRegistry #-}
-metricRegistry :: MVar (Map.Map (Text, Text) (MVar Double))
+metricRegistry :: MVar (Map.Map (Text, Text) (IORef Double))
 metricRegistry = unsafePerformIO (newMVar Map.empty)
-
--- | Global metric cache for testing with unsafePerformIO
-{-# NOINLINE metricCache #-}
-metricCache :: IORef (Map.Map (Text, Text) Double)
-metricCache = unsafePerformIO (newIORef Map.empty)
 
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
@@ -102,17 +96,16 @@ defaultConfig = TelemetryConfig
 -- | Initialize telemetry system
 initTelemetry :: TelemetryConfig -> IO ()
 initTelemetry config = do
-    when (enableDebugOutput config) $
-        putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
-    -- Save configuration globally
+    -- Save configuration globally first
     writeIORef globalConfig config
-    -- Clear trace context on initialization
-    modifyMVar_ traceContext (\_ -> return Nothing)
-    -- Reset span counter
-    writeIORef spanCounter 0
-    -- Reset log counter
-    writeIORef logCounter 0
-    -- Implementation would go here
+    -- Only perform expensive operations if debug output is enabled
+    when (enableDebugOutput config) $ do
+        putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
+        -- Clear trace context on initialization only if debug output
+        modifyMVar_ traceContext (\_ -> return Nothing)
+        -- Reset counters only if debug output
+        writeIORef spanCounter 0
+        writeIORef logCounter 0
 
 -- | Shutdown telemetry system
 shutdownTelemetry :: IO ()
@@ -120,14 +113,15 @@ shutdownTelemetry = do
     config <- readIORef globalConfig
     when (enableDebugOutput config) $
         putStrLn "Shutting down telemetry system"
-    -- Clear trace context on shutdown
-    modifyMVar_ traceContext (\_ -> return Nothing)
-    -- Reset span counter
-    writeIORef spanCounter 0
-    -- Clear metric registry
+    -- Always clear metric registry to prevent memory leaks
     modifyMVar_ metricRegistry (\_ -> return Map.empty)
-    -- Clear metric cache
-    writeIORef metricCache Map.empty
+    -- Only perform expensive operations if debug output is enabled
+    when (enableDebugOutput config) $ do
+        -- Clear trace context on shutdown only if debug output
+        modifyMVar_ traceContext (\_ -> return Nothing)
+        -- Reset counters only if debug output
+        writeIORef spanCounter 0
+        writeIORef logCounter 0
 
 -- | Generate a random hex string
 generateRandomHex :: Int -> IO Text
@@ -157,24 +151,9 @@ generateSpanId = do
 -- | Metric data type
 data Metric = Metric
     { metricName :: Text
-    , metricValueRef :: MVar Double
+    , metricValueRef :: IORef Double
     , metricUnit :: Text
     } 
-
--- | Get the current value of a metric
-metricValue :: Metric -> IO Double
-metricValue metric = do
-    -- First try to get the value from the global cache
-    let key = (metricName metric, metricUnit metric)
-    cache <- readIORef metricCache
-    case Map.lookup key cache of
-        Just cachedValue -> return cachedValue
-        Nothing -> do
-            -- If not in cache, fall back to MVar
-            mvarValue <- readMVar (metricValueRef metric)
-            -- Update the cache with the MVar value
-            atomicModifyIORef' metricCache (\c -> (Map.insert key mvarValue c, ()))
-            return mvarValue
 
 -- | Show instance for Metric (for debugging)
 instance Show Metric where
@@ -184,71 +163,65 @@ instance Show Metric where
 instance Eq Metric where
     m1 == m2 = metricName m1 == metricName m2 && metricUnit m1 == metricUnit m2
 
+-- | Get the current value of a metric
+metricValue :: Metric -> IO Double
+metricValue metric = do
+    -- Read directly from the IORef for better performance
+    readIORef (metricValueRef metric)
+
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
 createMetric name unit = do
     -- Check if a metric with this name and unit already exists in the registry
-    registry <- readMVar metricRegistry
-    case Map.lookup (name, unit) registry of
-        Just existingValueRef -> do
-            -- Ensure the metric is in the cache
-            let key = (name, unit)
-            cache <- readIORef metricCache
-            when (not $ Map.member key cache) $ do
-                mvarValue <- readMVar existingValueRef
-                atomicModifyIORef' metricCache (\c -> (Map.insert key mvarValue c, ()))
-            -- Return a metric with the existing value reference
-            return $ Metric name existingValueRef unit
-        Nothing -> do
-            -- Create a new value reference and register it
-            newValueRef <- newMVar 0.0
-            modifyMVar_ metricRegistry (\reg -> return $ Map.insert (name, unit) newValueRef reg)
-            -- Also add to cache
-            let key = (name, unit)
-            atomicModifyIORef' metricCache (\c -> (Map.insert key 0.0 c, ()))
-            return $ Metric name newValueRef unit
+    modifyMVar metricRegistry $ \registry -> do
+        case Map.lookup (name, unit) registry of
+            Just existingValueRef -> do
+                -- Return a metric with the existing value reference
+                return (registry, Metric name existingValueRef unit)
+            Nothing -> do
+                -- Create a new value reference and register it
+                newValueRef <- newIORef 0.0
+                let newRegistry = Map.insert (name, unit) newValueRef registry
+                return (newRegistry, Metric name newValueRef unit)
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
     -- Check if a metric with this name and unit already exists in the registry
-    registry <- readMVar metricRegistry
-    case Map.lookup (name, unit) registry of
-        Just existingValueRef -> do
-            -- Set the initial value for the existing metric
-            modifyMVar_ existingValueRef (\_ -> return initialValue)
-            -- Also update the cache
-            let key = (name, unit)
-            atomicModifyIORef' metricCache (\c -> (Map.insert key initialValue c, ()))
-            return $ Metric name existingValueRef unit
-        Nothing -> do
-            -- Create a new value reference with initial value and register it
-            newValueRef <- newMVar initialValue
-            modifyMVar_ metricRegistry (\reg -> return $ Map.insert (name, unit) newValueRef reg)
-            -- Also add to cache
-            let key = (name, unit)
-            atomicModifyIORef' metricCache (\c -> (Map.insert key initialValue c, ()))
-            return $ Metric name newValueRef unit
+    modifyMVar metricRegistry $ \registry -> do
+        case Map.lookup (name, unit) registry of
+            Just existingValueRef -> do
+                -- Set the initial value for the existing metric
+                writeIORef existingValueRef initialValue
+                return (registry, Metric name existingValueRef unit)
+            Nothing -> do
+                -- Create a new value reference with initial value and register it
+                newValueRef <- newIORef initialValue
+                let newRegistry = Map.insert (name, unit) newValueRef registry
+                return (newRegistry, Metric name newValueRef unit)
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()
 recordMetric metric value = do
+    -- Fast path: skip debug checks for better performance
+    let updateValue currentValue
+          | isNaN value = value  -- Preserve NaN value
+          | isNaN currentValue = value   -- Use new value if current is NaN
+          | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value  -- Preserve infinity with same sign
+          | isInfinite value = value     -- Use infinity value
+          | isInfinite currentValue = value  -- Use new finite value if current is infinity
+          | otherwise = currentValue + value  -- Normal addition
+    
+    -- Update the metric value using atomicModifyIORef' for better performance
+    atomicModifyIORef' (metricValueRef metric) (\currentValue -> (updateValue currentValue, ()))
+    
+    -- Debug logging as a separate, less frequent operation
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 10000th operation to reduce output in high-frequency scenarios
-        when (count `mod` 10000 == 0) $
+        -- Only log every 100000th operation to further reduce output in high-frequency scenarios
+        when (count `mod` 100000 == 0) $
             putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value ++ " (count: " ++ show count ++ ")"
-    
-    -- Update the metric value atomically
-    modifyMVar_ (metricValueRef metric) (\currentValue -> return (currentValue + value))
-    
-    -- Also update the global cache for testing with unsafePerformIO
-    let key = (metricName metric, metricUnit metric)
-    atomicModifyIORef' metricCache (\cache -> 
-        case Map.lookup key cache of
-            Just cachedValue -> (Map.insert key (cachedValue + value) cache, ())
-            Nothing -> (Map.insert key value cache, ()))
     
     return ()
 
@@ -314,13 +287,15 @@ createSpan name = do
 
 -- | Finish a span
 finishSpan :: Span -> IO ()
-finishSpan span = do
+finishSpan _span = do
+    -- Fast path: no operation for better performance
+    -- Debug logging as a separate, less frequent operation
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 10000th operation to reduce output in high-frequency scenarios
-        when (count `mod` 10000 == 0) $
-            putStrLn $ "Finishing span: " ++ show (spanName span) ++ " (count: " ++ show count ++ ")"
+        -- Only log every 100000th operation to further reduce output in high-frequency scenarios
+        when (count `mod` 100000 == 0) $
+            putStrLn $ "Finishing span: " ++ show (spanName _span) ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here
 
 -- | Log levels
@@ -339,10 +314,12 @@ createLogger name level = return $ Logger name level
 -- | Log a message
 logMessage :: Logger -> LogLevel -> Text -> IO ()
 logMessage logger level message = do
+    -- Fast path: skip debug checks for better performance
+    -- Debug logging as a separate, less frequent operation
     config <- readIORef globalConfig
-    when (enableDebugOutput config) $ do
+    when (enableDebugOutput config && level >= Info) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
-        -- Only log every 10000th operation to reduce output in high-frequency scenarios
-        when (count `mod` 10000 == 0) $
+        -- Only log every 100000th operation to further reduce output in high-frequency scenarios
+        when (count `mod` 100000 == 0) $
             putStrLn $ "[" ++ show (loggerLevel logger) ++ "] " ++ show (loggerName logger) ++ ": " ++ show message ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here

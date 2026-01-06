@@ -17,7 +17,7 @@ import Data.Char (isAscii, isControl)
 import qualified Data.Map as Map
 import Prelude hiding (id)
 
-import Azimuth.Telemetry (metricRegistry, metricCache, createMetric, recordMetric, metricValue, 
+import Azimuth.Telemetry (metricRegistry, createMetric, recordMetric, metricValue, 
                             createMetricWithInitialValue, createLogger, logMessage, LogLevel(..), 
                             createSpan, finishSpan, spanName, spanTraceId, spanSpanId,
                             initTelemetry, shutdownTelemetry, defaultConfig, TelemetryConfig(..))
@@ -54,7 +54,6 @@ spec = describe "Comprehensive Telemetry Tests" $ do
            then unsafePerformIO $ do
              -- 清理之前的度量注册表以确保测试隔离
              modifyMVar_ metricRegistry (\_ -> return Map.empty)
-             writeIORef metricCache Map.empty
              
              metric1 <- createMetric nameText unit1Text
              metric2 <- createMetric nameText unit2Text

@@ -1,0 +1,12 @@
+Build profile: -w ghc-9.14.1 -O1
+In order, the following will be built (use -v for more details):
+ - azimuth-0.1.0 (test:azimuth-test) (file test/AdditionalQuickCheckTestSpec.hs changed)
+Preprocessing test suite 'azimuth-test' for azimuth-0.1.0...
+Building test suite 'azimuth-test' for azimuth-0.1.0...
+[ 1 of 15] Compiling AdditionalQuickCheckTestSpec ( test/AdditionalQuickCheckTestSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdditionalQuickCheckTestSpec.o ) [Source file changed]
+test/AdditionalQuickCheckTestSpec.hs:229:7: error: [GHC-58481]
+    parse error (possibly incorrect indentation or mismatched brackets)
+    |
+229 |       isInfinite infValue && isInfinite negInfValue &&
+    |       ^
+
