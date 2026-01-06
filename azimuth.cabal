@@ -46,6 +46,7 @@ test-suite azimuth-test
     , AdditionalTestSpec2
     , AdditionalTestSpec3
     , AdditionalCoverageSpec
+    , AdditionalCabalTestSpec
     , AdvancedTestSpec
     , AdvancedQuickCheckSpec
     , AdvancedTelemetrySpec

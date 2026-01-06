@@ -1,12 +1,303 @@
 Build profile: -w ghc-9.14.1 -O1
 In order, the following will be built (use -v for more details):
- - azimuth-0.1.0 (test:azimuth-test) (file test/AdditionalQuickCheckTestSpec.hs changed)
+ - azimuth-0.1.0 (test:azimuth-test) (file test/AdvancedTelemetrySpec.hs changed)
 Preprocessing test suite 'azimuth-test' for azimuth-0.1.0...
 Building test suite 'azimuth-test' for azimuth-0.1.0...
-[ 1 of 15] Compiling AdditionalQuickCheckTestSpec ( test/AdditionalQuickCheckTestSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdditionalQuickCheckTestSpec.o ) [Source file changed]
-test/AdditionalQuickCheckTestSpec.hs:249:7: error: [GHC-58481]
-    parse error (possibly incorrect indentation or mismatched brackets)
+[ 8 of 21] Compiling AdvancedTelemetrySpec ( test/AdvancedTelemetrySpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdvancedTelemetrySpec.o ) [Source file changed]
+test/AdvancedTelemetrySpec.hs:8:47: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘evaluate’
+    from module ‘Control.Exception’ is redundant
+  |
+8 | import Control.Exception (try, SomeException, evaluate)
+  |                                               ^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:9:25: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘unpack’ from module ‘Data.Text’ is redundant
+  |
+9 | import Data.Text (pack, unpack)
+  |                         ^^^^^^
+
+test/AdvancedTelemetrySpec.hs:10:1: warning: [GHC-66111] [-Wunused-imports]
+    The qualified import of ‘Data.Text’ is redundant
+      except perhaps to import instances from ‘Data.Text’
+    To import instances alone, use: import Data.Text()
+   |
+10 | import qualified Data.Text as Text
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:11:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Data.Char’ is redundant
+      except perhaps to import instances from ‘Data.Char’
+    To import instances alone, use: import Data.Char()
+   |
+11 | import Data.Char (isHexDigit, isControl, isAscii, isLetter, isDigit)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:12:24: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘find, group, sort’
+    from module ‘Data.List’ is redundant
+   |
+12 | import Data.List (nub, sort, group, find)
+   |                        ^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:13:36: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘MVar, threadDelay’
+    from module ‘Control.Concurrent’ is redundant
+   |
+13 | import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar, threadDelay)
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:14:35: warning: [GHC-38856] [-Wunused-imports]
+    The import of ‘forever, replicateM_, void, when’
+    from module ‘Control.Monad’ is redundant
+   |
+14 | import Control.Monad (replicateM, replicateM_, when, void, forever)
+   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:18:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Data.Maybe’ is redundant
+      except perhaps to import instances from ‘Data.Maybe’
+    To import instances alone, use: import Data.Maybe()
+   |
+18 | import Data.Maybe (isJust, isNothing, fromMaybe)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:19:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Data.Word’ is redundant
+      except perhaps to import instances from ‘Data.Word’
+    To import instances alone, use: import Data.Word()
+   |
+19 | import Data.Word (Word8)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:20:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘Data.Bits’ is redundant
+      except perhaps to import instances from ‘Data.Bits’
+    To import instances alone, use: import Data.Bits()
+   |
+20 | import Data.Bits (Bits(shiftR, (.&.)))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:21:1: warning: [GHC-66111] [-Wunused-imports]
+    The qualified import of ‘Data.Map’ is redundant
+      except perhaps to import instances from ‘Data.Map’
+    To import instances alone, use: import Data.Map()
+   |
+21 | import qualified Data.Map as Map
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:23:1: warning: [GHC-66111] [-Wunused-imports]
+    The import of ‘System.Random’ is redundant
+      except perhaps to import instances from ‘System.Random’
+    To import instances alone, use: import System.Random()
+   |
+23 | import System.Random (randomRIO)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:51:15: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘tolerance’ shadows the existing binding
+      imported from ‘Test.QuickCheck’ at test/AdvancedTelemetrySpec.hs:7:1-22
+      (and originally defined in ‘Test.QuickCheck.State’)
+   |
+51 |           let tolerance = 0.0001
+   |               ^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:82:15: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘tolerance’ shadows the existing binding
+      imported from ‘Test.QuickCheck’ at test/AdvancedTelemetrySpec.hs:7:1-22
+      (and originally defined in ‘Test.QuickCheck.State’)
+   |
+82 |           let tolerance = 0.0001
+   |               ^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:104:15: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘tolerance’ shadows the existing binding
+      imported from ‘Test.QuickCheck’ at test/AdvancedTelemetrySpec.hs:7:1-22
+      (and originally defined in ‘Test.QuickCheck.State’)
     |
-249 |       isInfinite infValue && isInfinite negInfValue &&
-    |       ^
+104 |           let tolerance = 0.0001
+    |               ^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:121:40: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    "This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use "Data.List.NonEmpty"."
+    |
+121 |               allSameTraceId = all (== head traceIds) (tail traceIds)
+    |                                        ^^^^
+
+test/AdvancedTelemetrySpec.hs:121:56: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘tail’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    "This is a partial function, it throws an error on empty lists. Replace it with 'drop' 1, or use pattern matching or 'GHC.Internal.Data.List.uncons' instead. Consider refactoring to use "Data.List.NonEmpty"."
+    |
+121 |               allSameTraceId = all (== head traceIds) (tail traceIds)
+    |                                                        ^^^^
+
+test/AdvancedTelemetrySpec.hs:148:11: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘span’ shadows the existing binding
+      imported from ‘Prelude’ at test/AdvancedTelemetrySpec.hs:17:1-26
+      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
+    |
+148 |           span <- createSpan testName
+    |           ^^^^
+
+test/AdvancedTelemetrySpec.hs:192:8: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘length’ shadows the existing binding
+      imported from ‘Prelude’ at test/AdvancedTelemetrySpec.hs:17:1-26
+      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.Data.Foldable’)
+    |
+192 |       \length ->
+    |        ^^^^^^
+
+test/AdvancedTelemetrySpec.hs:207:13: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘serviceName’ shadows the existing binding
+      imported from ‘Azimuth.Telemetry’ at test/AdvancedTelemetrySpec.hs:25:1-24
+    |
+207 |         let serviceName = pack $ "dynamic-test-" ++ show (name :: Int)
+    |             ^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:208:13: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘serviceVersion’ shadows the existing binding
+      imported from ‘Azimuth.Telemetry’ at test/AdvancedTelemetrySpec.hs:25:1-24
+    |
+208 |             serviceVersion = pack $ show (version :: Int)
+    |             ^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:231:13: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘serviceName’ shadows the existing binding
+      imported from ‘Azimuth.Telemetry’ at test/AdvancedTelemetrySpec.hs:25:1-24
+    |
+231 |         let serviceName = pack $ "identity-test-" ++ show (name :: Int)
+    |             ^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:232:13: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘serviceVersion’ shadows the existing binding
+      imported from ‘Azimuth.Telemetry’ at test/AdvancedTelemetrySpec.hs:25:1-24
+    |
+232 |             serviceVersion = pack $ show (version :: Int)
+    |             ^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:278:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar ready’
+    |
+278 |           replicateM threadCount $ takeMVar ready
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:281:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar done’
+    |
+281 |           replicateM threadCount $ takeMVar done
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:312:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar ready’
+    |
+312 |           replicateM threadCount $ takeMVar ready
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:315:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar done’
+    |
+315 |           replicateM threadCount $ takeMVar done
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:343:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar ready’
+    |
+343 |           replicateM threadCount $ takeMVar ready
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:346:11: warning: [GHC-81995] [-Wunused-do-bind]
+    A do-notation statement discarded a result of type ‘[()]’
+    Suggested fix:
+      Suppress this warning by saying
+        ‘_ <- replicateM threadCount $ takeMVar done’
+    |
+346 |           replicateM threadCount $ takeMVar done
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:459:15: warning: [GHC-40910] [-Wunused-local-binds]
+    Defined but not used: ‘duration’
+    |
+459 |           let duration = diffUTCTime endTime startTime
+    |               ^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:464:15: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘tolerance’ shadows the existing binding
+      imported from ‘Test.QuickCheck’ at test/AdvancedTelemetrySpec.hs:7:1-22
+      (and originally defined in ‘Test.QuickCheck.State’)
+    |
+464 |               tolerance = 0.0001
+    |               ^^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:482:15: warning: [GHC-40910] [-Wunused-local-binds]
+    Defined but not used: ‘duration’
+    |
+482 |           let duration = diffUTCTime endTime startTime
+    |               ^^^^^^^^
+
+test/AdvancedTelemetrySpec.hs:524:11: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘span’ shadows the existing binding
+      imported from ‘Prelude’ at test/AdvancedTelemetrySpec.hs:17:1-26
+      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
+    |
+524 |           span <- createSpan unicodeName
+    |           ^^^^
+
+test/AdvancedTelemetrySpec.hs:548:13: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘span’ shadows the existing binding
+      imported from ‘Prelude’ at test/AdvancedTelemetrySpec.hs:17:1-26
+      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
+    |
+548 |             span <- createSpan "mixed-span"
+    |             ^^^^
+
+test/AdvancedTelemetrySpec.hs:577:17: warning: [GHC-63397] [-Wname-shadowing]
+    This binding for ‘span’ shadows the existing binding
+      imported from ‘Prelude’ at test/AdvancedTelemetrySpec.hs:17:1-26
+      (and originally defined in ‘ghc-internal-9.1401.0:GHC.Internal.List’)
+    |
+577 |                 span <- createSpan (pack $ "lifecycle-span-" ++ show cycleNum)
+    |                 ^^^^
+
+[ 9 of 21] Compiling AdvancedTestSpec ( test/AdvancedTestSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdvancedTestSpec.o ) [Source file changed]
+test/AdvancedTestSpec.hs:225:12: error: [GHC-88464]
+    Variable not in scope: unsafePerformIO :: IO Bool -> t0
+    |
+225 |         in unsafePerformIO $ do
+    |            ^^^^^^^^^^^^^^^
+
+test/AdvancedTestSpec.hs:227:9: error: [GHC-88464]
+    Variable not in scope:
+      writeIORef
+        :: ghc-internal-9.1401.0:GHC.Internal.IORef.IORef Bool
+           -> Bool -> IO a1
+    |
+227 |         writeIORef enableMetricSharing False
+    |         ^^^^^^^^^^
+
+test/AdvancedTestSpec.hs:239:9: error: [GHC-88464]
+    Variable not in scope:
+      writeIORef
+        :: ghc-internal-9.1401.0:GHC.Internal.IORef.IORef Bool
+           -> Bool -> IO a0
+    |
+239 |         writeIORef enableMetricSharing True
+    |         ^^^^^^^^^^
 

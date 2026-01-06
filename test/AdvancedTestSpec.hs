@@ -13,6 +13,8 @@ import Data.List (sort, nub)
 import Numeric (showHex)
 import Data.Time (getCurrentTime, diffUTCTime)
 import Data.Hashable (hash)
+import System.IO.Unsafe (unsafePerformIO)
+import Data.IORef (writeIORef)
 
 import Azimuth.Telemetry
 
@@ -222,7 +224,10 @@ spec = describe "Advanced Telemetry Tests" $ do
             isInfinite x = abs x > 1e100  -- Simple infinity check
             -- Use a unique metric name based on the operations to ensure uniqueness
             uniqueName = "invariants-test-" ++ show (hash operations)
-        in do
+        in unsafePerformIO $ do
+        -- Disable metric sharing for test isolation
+        writeIORef enableMetricSharing False
+        
         metric <- createMetric (pack uniqueName) (pack "count")
         
         -- Apply arbitrary operations
@@ -231,7 +236,11 @@ spec = describe "Advanced Telemetry Tests" $ do
         -- Verify metric value is sum of all operations
         finalValue <- metricValue metric
         let expectedValue = sum metricOps
-        finalValue `shouldBe` expectedValue
+        
+        -- Re-enable metric sharing
+        writeIORef enableMetricSharing True
+        
+        return (finalValue == expectedValue)
     
     it "should preserve span properties under arbitrary names" $ property $
       \spanNameStr -> do
