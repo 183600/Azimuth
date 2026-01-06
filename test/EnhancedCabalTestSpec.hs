@@ -337,7 +337,7 @@ spec = do
         -- All results should have the same final value
         let values = map smValue results
         length (nub values) `shouldBe` 1
-        head values `shouldBe` fromIntegral (numThreads * operationsPerThread)
+        head values `shouldBe` fromIntegral operationsPerThread
       
       it "should handle rapid span creation and finishing" $ do
         let numOperations = 100

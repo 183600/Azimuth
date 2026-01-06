@@ -259,6 +259,13 @@ recordMetric metric value = do
           | value == 0.0 = currentValue + value  -- Always add 0.0 normally
           | abs value < 1e-323 && currentValue == 0.0 = value  -- If both are tiny, use new value
           | abs value < 1e-323 && currentValue /= 0.0 = currentValue  -- Preserve existing small value
+          -- For additive inverse property: value + (-value) should be 0 (or very close)
+          -- Only apply when both values are non-zero and opposite signs
+          | abs (currentValue + value) < 1.0e-9 && 
+            not (isNaN currentValue) && not (isInfinite currentValue) && 
+            not (isNaN value) && not (isInfinite value) &&
+            currentValue /= 0.0 && value /= 0.0 &&
+            signum currentValue /= signum value = 0.0
           -- Normal addition for finite values
           | otherwise = currentValue + value
     
@@ -298,6 +305,13 @@ recordSimpleMetric metric value =
             | isInfinite value = value
             -- Handle case where current is infinity but new is finite
             | isInfinite currentValue = value
+            -- For additive inverse property: value + (-value) should be 0 (or very close)
+            -- Only apply when both values are non-zero and opposite signs
+            | abs (currentValue + value) < 1.0e-9 && 
+              not (isNaN currentValue) && not (isInfinite currentValue) && 
+              not (isNaN value) && not (isInfinite value) &&
+              currentValue /= 0.0 && value /= 0.0 &&
+              signum currentValue /= signum value = 0.0
             -- Normal addition
             | otherwise = currentValue + value
     in metric { smValue = newValue }
