@@ -255,6 +255,10 @@ recordMetric metric value = do
           | isInfinite value = value
           -- Handle case where current is infinity but new is finite: use new value
           | isInfinite currentValue = value
+          -- Handle very small values that might underflow when added
+          | value == 0.0 = currentValue + value  -- Always add 0.0 normally
+          | abs value < 1e-323 && currentValue == 0.0 = value  -- If both are tiny, use new value
+          | abs value < 1e-323 && currentValue /= 0.0 = currentValue  -- Preserve existing small value
           -- Normal addition for finite values
           | otherwise = currentValue + value
     

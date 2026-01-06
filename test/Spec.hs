@@ -35,6 +35,7 @@ import NewQuickCheckTestsSpec (spec)
 import EnhancedQuickCheckTestSpec (spec)
 import AzimuthCabalTestSpec (spec)
 import NewCabalTestSpec (spec)
+import EnhancedCabalTestSpec (spec)
 
 main :: IO ()
 main = do
@@ -577,3 +578,6 @@ main = do
     
     -- 添加NewCabalTestSpec的测试套件
     NewCabalTestSpec.spec
+    
+    -- 添加EnhancedCabalTestSpec的测试套件
+    EnhancedCabalTestSpec.spec
