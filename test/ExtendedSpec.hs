@@ -24,7 +24,7 @@ spec = do
     -- 1. 跨服务遥测数据传播测试
     describe "Cross-Service Telemetry Data Propagation" $ do
       it "should propagate trace context across service boundaries" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 服务A创建根span
         serviceASpan <- createSpan "service-a-operation"
@@ -50,7 +50,7 @@ spec = do
         shutdownTelemetry
       
       it "should maintain baggage across service calls" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建带有baggage的span
         parentSpan <- createSpan "parent-with-baggage"
@@ -79,7 +79,7 @@ spec = do
     -- 2. 遥测数据压缩和存储测试
     describe "Telemetry Data Compression and Storage" $ do
       it "should handle large telemetry datasets efficiently" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建大量度量数据
         metrics <- sequence $ replicate 100 $ do
@@ -97,7 +97,7 @@ spec = do
         shutdownTelemetry
       
       it "should compress telemetry data without loss" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建具有不同名称和单位的度量
         metricTypes <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
@@ -121,7 +121,7 @@ spec = do
     -- 3. 分布式追踪复杂场景测试
     describe "Distributed Tracing Complex Scenarios" $ do
       it "should handle complex distributed transaction flows" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 模拟复杂的分布式事务流程
         rootSpan <- createSpan "distributed-transaction"
@@ -155,7 +155,7 @@ spec = do
         shutdownTelemetry
       
       it "should handle async operations in distributed tracing" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建用于同步的MVar
         done <- newEmptyMVar
@@ -163,11 +163,11 @@ spec = do
         -- 启动异步操作
         forkIO $ do
           asyncSpan1 <- createSpan "async-operation-1"
-          threadDelay 100000  -- 0.1秒
+          threadDelay 10000  -- 10毫秒
           finishSpan asyncSpan1
           
           asyncSpan2 <- createSpan "async-operation-2"
-          threadDelay 100000  -- 0.1秒
+          threadDelay 10000  -- 10毫秒
           finishSpan asyncSpan2
           
           putMVar done ()
@@ -186,7 +186,7 @@ spec = do
     describe "Telemetry Configuration Hot Reload" $ do
       it "should handle configuration changes without restart" $ do
         -- 初始配置
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建初始资源
         metric <- createMetric "hot-reload-test" "count"
@@ -231,7 +231,7 @@ spec = do
     -- 5. 遥测系统健康检查测试
     describe "Telemetry System Health Check" $ do
       it "should perform comprehensive health checks" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建各种资源
         metric <- createMetric "health-check-metric" "count"
@@ -251,7 +251,7 @@ spec = do
         shutdownTelemetry
       
       it "should detect and report system issues" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建健康检查度量
         healthMetric <- createMetric "system-health" "status"
@@ -270,7 +270,7 @@ spec = do
     -- 6. 实时流处理性能测试
     describe "Real-time Stream Processing Performance" $ do
       it "should handle high-volume telemetry streams" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建流处理度量
         throughputMetric <- createMetric "stream-throughput" "events/sec"
@@ -289,7 +289,7 @@ spec = do
         shutdownTelemetry
       
       it "should maintain performance under load" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建性能监控度量
         cpuMetric <- createMetric "cpu-usage" "percent"
@@ -310,7 +310,7 @@ spec = do
     -- 7. 遥测数据采样策略测试
     describe "Telemetry Data Sampling Strategies" $ do
       it "should implement random sampling correctly" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建采样度量
         sampledMetric <- createMetric "sampled-metric" "count"
@@ -334,7 +334,7 @@ spec = do
         shutdownTelemetry
       
       it "should implement priority sampling" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建不同优先级的度量
         highPriorityMetric <- createMetric "high-priority" "count"
@@ -354,7 +354,7 @@ spec = do
     -- 8. 遥测数据质量验证测试
     describe "Telemetry Data Quality Validation" $ do
       it "should validate metric data integrity" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建质量检查度量
         qualityMetric <- createMetric "quality-check" "score"
@@ -370,7 +370,7 @@ spec = do
         shutdownTelemetry
       
       it "should detect and handle anomalies" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建异常检测度量
         anomalyMetric <- createMetric "anomaly-detection" "value"
@@ -391,7 +391,7 @@ spec = do
     describe "Telemetry System Lifecycle Management" $ do
       it "should handle complete lifecycle gracefully" $ do
         -- 初始化
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建资源
         metric <- createMetric "lifecycle-metric" "count"
@@ -414,7 +414,7 @@ spec = do
       it "should handle multiple lifecycle cycles" $ do
         -- 执行多个完整的生命周期
         replicateM_ 3 $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           metric <- createMetric "multi-lifecycle" "count"
           recordMetric metric 1.0

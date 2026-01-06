@@ -18,6 +18,7 @@ import Prelude hiding (id)
 import Data.Maybe (isJust, isNothing)
 
 import Azimuth.Telemetry
+import Data.IORef (writeIORef)
 
 spec :: Spec
 spec = describe "Basic Telemetry Property Tests" $ do
@@ -75,7 +76,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
       \name ->
         let spanName = pack $ "trace-consistency-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建多个span，它们应该有相同的trace ID
           spans <- replicateM 5 $ createSpan spanName
@@ -90,7 +91,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
       \name ->
         let spanName = pack $ "span-uniqueness-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建多个span，它们应该有不同的span ID
           spans <- replicateM 5 $ createSpan spanName
@@ -295,7 +296,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
           replicateM_ actualThreads $ takeMVar ready
           
           -- 等待所有线程完成
-          threadDelay 100000  -- 100ms
+          threadDelay 10000  -- 10毫秒
           
           -- 清理线程
           sequence_ $ map killThread threads
@@ -315,7 +316,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
       \name ->
         let componentName = pack $ "lifecycle-test-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建组件
           metric <- createMetric componentName "count"
@@ -348,7 +349,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
         let actualCycles = max 1 (abs cycles `mod` 3 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry defaultConfig
+                initTelemetry productionConfig
                 
                 -- 创建和使用组件
                 metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"

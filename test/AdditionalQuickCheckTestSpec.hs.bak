@@ -13,7 +13,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.Char (isAscii, isLetter, isDigit)
 import Data.List (isInfixOf)
 
-import Azimuth.Telemetry
+import Azimuth.Telemetry (productionConfig)
 
 -- | Arbitrary instance for LogLevel
 instance Arbitrary LogLevel where

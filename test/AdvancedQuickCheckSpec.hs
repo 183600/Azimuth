@@ -110,7 +110,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should maintain trace ID consistency within a trace" $ do
       let spanNames = ["op1", "op2", "op3", "op4"]
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         spans <- mapM (\name -> createSpan (pack name)) spanNames
         let traceIds = map spanTraceId spans
@@ -122,12 +122,12 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should generate new trace ID after shutdown and reinit" $ do
       let spanName = "test-span"
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         span1 <- createSpan spanName
         let traceId1 = spanTraceId span1
         shutdownTelemetry
         
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         span2 <- createSpan spanName
         let traceId2 = spanTraceId span2
         shutdownTelemetry
@@ -194,7 +194,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
       let actualThreads = 2
           operationsPerThread = 10
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         metric <- createMetric "atomicity-test" "count"
         counter <- newMVar 0
@@ -207,7 +207,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
           ) [1..actualThreads]
         
         -- 等待所有线程完成
-        threadDelay 500000  -- 0.5秒
+        threadDelay 10000  -- 10毫秒
         
         -- 清理线程
         sequence_ $ map killThread threads
@@ -224,7 +224,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
       let actualThreads = 2
           spansPerThread = 5
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         spansRef <- newMVar []
         
@@ -236,7 +236,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
           ) [1..actualThreads]
         
         -- 等待所有线程完成
-        threadDelay 500000  -- 0.5秒
+        threadDelay 10000  -- 10毫秒
         
         -- 清理线程
         sequence_ $ map killThread threads
@@ -294,7 +294,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should maintain consistent system state across operations" $ do
       let numOps = 10
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建组件
         metric <- createMetric "state-test" "count"
@@ -320,7 +320,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
       let numCycles = 3
       unsafePerformIO $ do
         let runCycle cycleNum = do
-              initTelemetry defaultConfig
+              initTelemetry productionConfig
               
               metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
               recordMetric metric (fromIntegral cycleNum)

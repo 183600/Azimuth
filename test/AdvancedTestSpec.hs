@@ -158,7 +158,7 @@ spec = describe "Advanced Telemetry Tests" $ do
   describe "Cross-Module Integration" $ do
     it "should work with all telemetry components" $ do
       -- Initialize telemetry
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create metric
       metric <- createMetric (pack "integration-test") (pack "count")
@@ -183,7 +183,7 @@ spec = describe "Advanced Telemetry Tests" $ do
   describe "End-to-End Business Flow" $ do
     it "should handle complete request lifecycle" $ do
       -- Initialize telemetry
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create components for request processing
       requestMetric <- createMetric (pack "requests") (pack "count")

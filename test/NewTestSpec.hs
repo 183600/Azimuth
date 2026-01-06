@@ -28,7 +28,7 @@ spec = do
     -- 1. 度量聚合窗口测试
     describe "Metric Aggregation Window" $ do
       it "should aggregate metrics within time windows" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建度量
         metric <- createMetric "window-test" "ms"
@@ -52,7 +52,7 @@ spec = do
           in avgValue >= minimum nonEmptyValues && avgValue <= maximum nonEmptyValues
       
       it "should maintain window boundaries" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建多个度量用于不同窗口
         metrics <- mapM (\index -> createMetric (pack $ "window-" ++ show index) "ms") [1..5]
@@ -70,7 +70,7 @@ spec = do
     -- 2. 遥测数据压缩测试
     describe "Telemetry Data Compression" $ do
       it "should compress telemetry data efficiently" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建大量度量数据
         metrics <- sequence $ replicate 1000 $ do
@@ -93,7 +93,7 @@ spec = do
           in compressionRatio >= 0.0 && compressionRatio <= 1.0
       
       it "should decompress data without loss" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建具有重复模式的度量
         metric <- createMetric "pattern-test" "count"
@@ -111,7 +111,7 @@ spec = do
     -- 3. 多租户隔离测试
     describe "Multi-Tenant Isolation" $ do
       it "should isolate telemetry data by tenant" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 为不同租户创建度量
         tenant1Metrics <- mapM (\index -> createMetric (pack $ "tenant1-metric-" ++ show index) "count") [1..5]
@@ -170,7 +170,7 @@ spec = do
           substrings _ [] = ([] :: [String])
           substrings needle s = take (length needle) s : substrings needle (drop 1 s)
       it "should export metrics in different formats" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建测试度量
         metrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
@@ -204,7 +204,7 @@ spec = do
              all (\(name, unit) -> name `elem` actualNames && unit `elem` actualUnits) exportData
       
       it "should filter data during export" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建不同类型的度量
         allMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
@@ -230,7 +230,7 @@ spec = do
     -- 5. 自定义扩展插件测试
     describe "Custom Extension Plugin" $ do
       it "should support custom metric types" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建自定义度量类型
         customMetric <- createMetric "custom-histogram" "ms"
@@ -246,7 +246,7 @@ spec = do
         shutdownTelemetry
       
       it "should handle plugin lifecycle" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 模拟插件初始化
         pluginMetric <- createMetric "plugin-metric" "plugin-unit"
@@ -270,7 +270,7 @@ spec = do
     -- 6. 遥测数据备份恢复测试
     describe "Telemetry Data Backup and Recovery" $ do
       it "should backup telemetry data" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建需要备份的数据
         metrics <- sequence $ replicate 100 $ do
@@ -290,7 +290,7 @@ spec = do
         shutdownTelemetry
       
       it "should recover telemetry data" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 模拟恢复数据
         let recoveredData = [("recovered-metric", 42.0, "recovered-unit")]
@@ -318,7 +318,7 @@ spec = do
     -- 7. 跨API集成测试
     describe "Cross-API Integration" $ do
       it "should integrate with external monitoring APIs" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建用于外部API的度量
         apiMetrics <- mapM (\apiName -> createMetric (pack $ "api-" ++ apiName) "ms")
@@ -343,7 +343,7 @@ spec = do
           in authValid == (validKey && validSecret)
       
       it "should manage API rate limiting" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建速率限制度量
         rateLimitMetric <- createMetric "api-rate-limit" "req/s"
@@ -364,7 +364,7 @@ spec = do
     -- 8. 遥测系统健康监控测试
     describe "Telemetry System Health Monitoring" $ do
       it "should monitor system health indicators" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建健康监控度量
         healthMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
@@ -398,7 +398,7 @@ spec = do
              else all (<= anomalyThreshold) nonEmptyValues
       
       it "should generate health reports" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建报告生成度量
         reportMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))

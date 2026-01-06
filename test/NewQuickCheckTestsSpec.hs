@@ -90,7 +90,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \name ->
         let spanName = pack $ "trace-hex-validation-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           span <- createSpan spanName
           let traceIdStr = unpack (spanTraceId span)
               isHexChar c = isHexDigit c
@@ -381,7 +381,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numResources ->
         let resources = max 1 (abs numResources `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建大量资源
           metrics <- sequence $ replicate resources $ do
@@ -403,7 +403,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           shutdownTelemetry
           
           -- 重新初始化并验证系统仍然工作
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           newMetric <- createMetric "after-cleanup" "count"
           recordMetric newMetric 42.0
@@ -418,7 +418,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
         let cycles = max 1 (abs numCycles `mod` 5 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry defaultConfig
+                initTelemetry productionConfig
                 
                 -- 创建和使用组件
                 metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
@@ -444,7 +444,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建度量和span
           metric <- createMetric "interaction-metric" "count"
@@ -466,7 +466,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建日志器
           logger <- createLogger "interaction-logger" Info
@@ -486,7 +486,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建所有组件类型
           metric <- createMetric "triple-interaction-metric" "count"
@@ -554,7 +554,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numShutdowns ->
         let shutdowns = max 1 (abs numShutdowns `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建一些组件
           metric <- createMetric "multi-shutdown-test" "count"
@@ -564,7 +564,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           sequence_ $ replicate shutdowns shutdownTelemetry
           
           -- 验证系统仍然可以重新初始化
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           newMetric <- createMetric "after-multi-shutdown" "count"
           recordMetric newMetric 42.0

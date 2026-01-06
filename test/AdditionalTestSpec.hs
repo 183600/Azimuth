@@ -69,7 +69,7 @@ spec = describe "Additional Telemetry Tests" $ do
   describe "Span Hierarchy" $ do
     it "should maintain trace context across related spans" $ do
       -- 使用bracket管理遥测系统生命周期
-      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+      bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
         -- 创建父Span
         parentSpan <- createSpan "parent-operation"
         let parentTraceId = spanTraceId parentSpan
@@ -93,7 +93,7 @@ spec = describe "Additional Telemetry Tests" $ do
         finishSpan childSpan2
     
     it "should generate valid hex trace IDs" $ do
-      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+      bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
         -- 创建多个Span
         spans <- replicateM 10 $ createSpan "hex-test"
         
@@ -149,7 +149,7 @@ spec = describe "Additional Telemetry Tests" $ do
   describe "Configuration Hot Reload" $ do
     it "should handle configuration changes" $ do
       -- 使用bracket管理遥测系统生命周期
-      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+      bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
         -- 创建一些遥测组件
         metric <- createMetric "config-test" "count"
         logger <- createLogger "config-test" Info
@@ -172,7 +172,7 @@ spec = describe "Additional Telemetry Tests" $ do
   describe "Resource Leak Detection" $ do
     it "should properly clean up resources on shutdown" $ do
       -- 使用bracket管理遥测系统生命周期
-      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+      bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
         -- 创建适量资源进行测试
         initialMetrics <- replicateM 20 $ createMetric "leak-test" "count"
         initialLoggers <- replicateM 10 $ createLogger "leak-test" Info
@@ -185,7 +185,7 @@ spec = describe "Additional Telemetry Tests" $ do
         sequence_ $ map finishSpan initialSpans
       
       -- 使用bracket管理第二次初始化
-      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+      bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
         -- 创建新资源（如果资源泄漏，这可能会失败或表现异常）
         newMetrics <- replicateM 20 $ createMetric "new-leak-test" "count"
         newLoggers <- replicateM 10 $ createLogger "new-leak-test" Info
@@ -254,7 +254,7 @@ spec = describe "Additional Telemetry Tests" $ do
   -- 7. 测试大数据量处理
   describe "Large Data Volume Handling" $ do
     it "should handle large numbers of metrics efficiently" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       let numMetrics = 100
           operationsPerMetric = 10
@@ -359,7 +359,7 @@ spec = describe "Additional Telemetry Tests" $ do
       \(names :: [String]) ->
         let spanNames = take 10 (map show names)
         in unsafePerformIO $ 
-          bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+          bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
             spans <- mapM (\name -> createSpan (pack name)) spanNames
             let spanIds = map spanSpanId spans
                 uniqueSpanIds = nub spanIds
@@ -369,7 +369,7 @@ spec = describe "Additional Telemetry Tests" $ do
       \(names :: [String]) ->
         let spanNames = take 5 (map show names)
         in unsafePerformIO $ 
-          bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+          bracket (initTelemetry productionConfig) (\_ -> shutdownTelemetry) $ \_ -> do
             spans <- mapM (\name -> createSpan (pack name)) spanNames
             let spanIds = map spanSpanId spans
                 allValidHex = all (all isHexDigit . unpack) spanIds

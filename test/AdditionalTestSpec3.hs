@@ -60,7 +60,7 @@ spec = describe "Additional Test Suite 3" $ do
   describe "Cross-Module Data Consistency" $ do
     it "should maintain consistency across different operations" $ do
       -- Initialize telemetry system
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create metrics, spans, and loggers
       metric <- createMetric "consistency-test" "count"
@@ -83,7 +83,7 @@ spec = describe "Additional Test Suite 3" $ do
   describe "Configuration Hot Reload" $ do
     it "should handle configuration changes" $ do
       -- Initialize with default configuration
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create components
       metric <- createMetric "hot-reload-test" "count"
@@ -164,7 +164,7 @@ spec = describe "Additional Test Suite 3" $ do
   describe "Telemetry Data Backup and Recovery" $ do
     it "should backup and restore metric data" $ do
       -- Initialize system
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create metric and record data
       metric <- createMetric "backup-test" "count"
@@ -176,7 +176,7 @@ spec = describe "Additional Test Suite 3" $ do
       -- Note: In current implementation, shutdownTelemetry clears all metrics
       -- This test verifies that the system can recover and create new metrics
       shutdownTelemetry
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create new metric after system restart
       restoredMetric <- createMetric "backup-test" "count"
@@ -192,7 +192,7 @@ spec = describe "Additional Test Suite 3" $ do
   describe "Telemetry System Health Check" $ do
     it "should perform basic health checks" $ do
       -- Initialize system
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Perform health check operations
       metric <- createMetric "health-check" "count"

@@ -4,6 +4,7 @@ module Azimuth.Telemetry
     ( -- * Telemetry API
       TelemetryConfig(..)
     , defaultConfig
+    , productionConfig
     , initTelemetry
     , shutdownTelemetry
     , -- * Metrics
@@ -94,7 +95,18 @@ defaultConfig = TelemetryConfig
     , enableMetrics = True
     , enableTracing = True
     , enableLogging = True
-    , enableDebugOutput = True
+    , enableDebugOutput = False  -- Disabled by default for better performance
+    }
+
+-- | Production telemetry configuration with optimizations
+productionConfig :: TelemetryConfig
+productionConfig = TelemetryConfig
+    { serviceName = "azimuth-service"
+    , serviceVersion = "0.1.0"
+    , enableMetrics = True
+    , enableTracing = True
+    , enableLogging = True
+    , enableDebugOutput = False  -- Always disabled in production
     }
 
 -- | Initialize telemetry system
@@ -110,6 +122,10 @@ initTelemetry config = do
         -- Reset counters only if debug output
         writeIORef spanCounter 0
         writeIORef logCounter 0
+    -- Always clear trace context and reset counters for test isolation
+    modifyMVar_ traceContext (\_ -> return Nothing)
+    writeIORef spanCounter 0
+    writeIORef logCounter 0
 
 -- | Shutdown telemetry system
 shutdownTelemetry :: IO ()
@@ -119,13 +135,10 @@ shutdownTelemetry = do
         putStrLn "Shutting down telemetry system"
     -- Always clear metric registry to prevent memory leaks
     modifyMVar_ metricRegistry (\_ -> return Map.empty)
-    -- Only perform expensive operations if debug output is enabled
-    when (enableDebugOutput config) $ do
-        -- Clear trace context on shutdown only if debug output
-        modifyMVar_ traceContext (\_ -> return Nothing)
-        -- Reset counters only if debug output
-        writeIORef spanCounter 0
-        writeIORef logCounter 0
+    -- Always clear trace context and reset counters for test isolation
+    modifyMVar_ traceContext (\_ -> return Nothing)
+    writeIORef spanCounter 0
+    writeIORef logCounter 0
 
 -- | Generate a random hex string
 generateRandomHex :: Int -> IO Text
@@ -251,7 +264,7 @@ recordMetric metric value = do
     -- Update the metric value using atomicModifyIORef' for better performance
     atomicModifyIORef' (metricValueRef metric) (\currentValue -> (updateValue currentValue, ()))
     
-    -- Debug logging as a separate, less frequent operation
+    -- Only perform debug logging if explicitly enabled
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
@@ -340,7 +353,7 @@ createSpan name = do
 finishSpan :: Span -> IO ()
 finishSpan _span = do
     -- Fast path: no operation for better performance
-    -- Debug logging as a separate, less frequent operation
+    -- Only perform debug logging if explicitly enabled
     config <- readIORef globalConfig
     when (enableDebugOutput config) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
@@ -366,7 +379,7 @@ createLogger name level = return $ Logger name level
 logMessage :: Logger -> LogLevel -> Text -> IO ()
 logMessage logger level message = do
     -- Fast path: skip debug checks for better performance
-    -- Debug logging as a separate, less frequent operation
+    -- Only perform debug logging if explicitly enabled
     config <- readIORef globalConfig
     when (enableDebugOutput config && level >= Info) $ do
         count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))

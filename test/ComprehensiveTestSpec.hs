@@ -17,10 +17,7 @@ import Data.Char (isAscii, isControl)
 import qualified Data.Map as Map
 import Prelude hiding (id)
 
-import Azimuth.Telemetry (metricRegistry, createMetric, recordMetric, metricValue, 
-                            createMetricWithInitialValue, createLogger, logMessage, LogLevel(..), 
-                            createSpan, finishSpan, spanName, spanTraceId, spanSpanId,
-                            initTelemetry, shutdownTelemetry, defaultConfig, TelemetryConfig(..))
+import Azimuth.Telemetry
 
 spec :: Spec
 spec = describe "Comprehensive Telemetry Tests" $ do
@@ -75,7 +72,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(spanName :: String) ->
         let nameText = pack spanName
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 在主线程创建span
           mainSpan <- createSpan nameText
@@ -102,7 +99,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(spanName :: String) ->
         let nameText = pack spanName
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建根span
           rootSpan <- createSpan nameText
@@ -122,7 +119,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
               childSpan2 <- createSpan (nameText <> "-child2")
               putMVar traceIdVar2 (spanTraceId childSpan2)
             
-            threadDelay 100000
+            threadDelay 10000
             killThread threadId2
           
           -- 等待所有线程完成
@@ -341,7 +338,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(iterations :: Int) ->
         let actualIterations = max 1 (abs iterations `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 执行大量操作
           sequence_ $ replicate actualIterations $ do
@@ -368,7 +365,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(resourceCount :: Int) ->
         let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建大量资源
           metrics <- sequence $ replicate actualCount $ do
@@ -390,7 +387,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           shutdownTelemetry
           
           -- 重新初始化并验证系统正常工作
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           testMetric <- createMetric "post-cleanup-test" "count"
           recordMetric testMetric 100.0
@@ -407,7 +404,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(stressLevel :: Int) ->
         let operations = max 10 (abs stressLevel `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建健康检查指标
           healthMetric <- createMetric "health-check" "ops"
@@ -435,7 +432,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
             loggerOps = max 1 $ round (fromIntegral operations * loggerRatio)
             spanOps = max 1 $ operations - metricOps - loggerOps
         
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 执行混合工作负载
         metrics <- sequence $ zipWith (\index _ -> do

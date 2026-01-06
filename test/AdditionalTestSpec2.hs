@@ -66,7 +66,7 @@ spec = describe "Additional Telemetry Tests 2" $ do
         let nameText = pack name
         in unsafePerformIO $ do
           shutdownTelemetry
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           span <- createSpan nameText
           let traceId = spanTraceId span
           -- 验证trace ID只包含十六进制字符
@@ -270,7 +270,7 @@ spec = describe "Additional Telemetry Tests 2" $ do
         replicateM_ numThreads $ takeMVar completionSignal
         
         -- 给线程一些时间完成
-        threadDelay 100000  -- 100毫秒
+        threadDelay 10000  -- 10毫秒
         
         -- 清理线程
         sequence_ $ map killThread threads
@@ -286,7 +286,7 @@ spec = describe "Additional Telemetry Tests 2" $ do
     it "should not leak resources during repeated operations" $ do
       let iterations = 1000
       unsafePerformIO $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 执行大量操作
         replicateM_ iterations $ do

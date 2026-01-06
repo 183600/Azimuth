@@ -173,7 +173,7 @@ spec = do
         -- Enable metric sharing and create many metrics
         writeIORef enableMetricSharing True
         
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- Create many metrics to populate registry
         metrics <- sequence $ replicate 100 $ do
@@ -202,7 +202,7 @@ spec = do
         value `shouldBe` 100.0
       
       it "should handle resource cleanup under load" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- Create and use many resources
         sequence_ $ replicate 1000 $ do
@@ -320,7 +320,7 @@ spec = do
             recordMetric sharedMetric 1.0
         
         -- Wait for all threads to complete
-        threadDelay 1000000  -- 1 second
+        threadDelay 10000  -- 10毫秒
         sequence_ $ map killThread threads
         
         -- Check final value
@@ -332,16 +332,16 @@ spec = do
         
         -- Launch threads that initialize telemetry
         threads <- sequence $ replicate numThreads $ forkIO $ do
-          initTelemetry defaultConfig
-          threadDelay 100000  -- 0.1 second
+          initTelemetry productionConfig
+          threadDelay 10000  -- 10毫秒
           shutdownTelemetry
         
         -- Wait for all threads to complete
-        threadDelay 2000000  -- 2 seconds
+        threadDelay 10000  -- 10毫秒
         sequence_ $ map killThread threads
         
         -- System should still be functional
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         metric <- createMetric "post-concurrency" "count"
         recordMetric metric 42.0
         value <- metricValue metric

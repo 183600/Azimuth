@@ -60,7 +60,7 @@ spec = do
     -- 测试3: 跨遥测组件的交互
     describe "Cross-Component Interaction" $ do
       it "should handle interactions between metrics, spans, and logs" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- Create components
         metric <- createMetric "interaction-metric" "ms"
@@ -110,7 +110,7 @@ spec = do
     -- 测试5: 资源清理和内存管理
     describe "Resource Management" $ do
       it "should properly clean up resources on shutdown" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- Create resources
         metric <- createMetric "resource-test" "count"
@@ -127,7 +127,7 @@ spec = do
         return ()
       
       it "should handle resource cleanup with multiple components" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- Create many resources
         metrics <- sequence $ replicate 100 $ do

@@ -110,7 +110,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numSpans ->
         let spanCount = max 1 (abs numSpans `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建多个span
           spans <- sequence $ replicate spanCount $ do
@@ -386,7 +386,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numComponents ->
         let componentCount = max 5 (abs numComponents `mod` 20 + 5)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建大量组件
           metrics <- sequence $ replicate componentCount $ do
@@ -399,7 +399,7 @@ spec = describe "Advanced Telemetry Tests" $ do
           shutdownTelemetry
           
           -- 重新初始化
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 验证系统仍然工作
           newMetric <- createMetric "after-cleanup" "count"
@@ -522,7 +522,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numOperations ->
         let operationCount = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建所有组件类型
           metric <- createMetric "mixed-test" "count"
@@ -549,7 +549,7 @@ spec = describe "Advanced Telemetry Tests" $ do
         let cycleCount = max 1 (abs numCycles `mod` 5 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry defaultConfig
+                initTelemetry productionConfig
                 
                 -- 创建组件
                 metric <- createMetric (pack $ "lifecycle-" ++ show cycleNum) "count"

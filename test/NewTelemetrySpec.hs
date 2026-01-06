@@ -31,14 +31,14 @@ spec = describe "New Telemetry Tests" $ do
     
     it "should handle multiple configuration updates" $ do
       -- Initialize with default config
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create metric with first config
       metric1 <- createMetric "config-test-1" "count"
       recordMetric metric1 10.0
       
       -- Update config (simulate hot reload)
-      let newConfig = defaultConfig { enableDebugOutput = False }
+      let newConfig = productionConfig { enableDebugOutput = False }
       initTelemetry newConfig
       
       -- Create another metric with new config
@@ -189,7 +189,7 @@ spec = describe "New Telemetry Tests" $ do
   -- 测试8: 资源清理测试
   describe "Resource Cleanup" $ do
     it "should clean up resources on shutdown" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create resources
       metric <- createMetric "cleanup-metric" "count"
@@ -204,7 +204,7 @@ spec = describe "New Telemetry Tests" $ do
       shutdownTelemetry
       
       -- Reinitialize and verify clean state
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       newMetric <- createMetric "cleanup-metric" "count"
       newValue <- metricValue newMetric
@@ -259,7 +259,7 @@ spec = describe "New Telemetry Tests" $ do
         in nestingValid
     
     it "should maintain trace consistency" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- Create multiple spans in sequence
       spans <- replicateM 5 $ createSpan "sequential-span"

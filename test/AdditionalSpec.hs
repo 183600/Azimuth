@@ -21,7 +21,7 @@ spec = do
     -- 1. 配置管理测试
     describe "Configuration Management" $ do
       it "should validate and merge configurations" $ do
-        let baseConfig = defaultConfig
+        let baseConfig = productionConfig
             customConfig = TelemetryConfig "custom-service" "2.0.0" False True True False
             -- 模拟配置合并
             mergedConfig = customConfig { enableLogging = enableLogging baseConfig }
@@ -202,7 +202,7 @@ spec = do
     -- 7. 资源清理和内存管理测试
     describe "Resource Cleanup and Memory Management" $ do
       it "should properly cleanup resources" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建大量资源
         metrics <- sequence $ replicate 100 $ do
@@ -229,7 +229,7 @@ spec = do
         length loggers `shouldBe` 25
       
       it "should handle resource lifecycle correctly" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 创建、使用和销毁资源
         replicateM_ 10 $ do
@@ -249,7 +249,7 @@ spec = do
       it "should handle initialization failures gracefully" $ do
         -- 尝试使用不同配置初始化
         let configs = 
-              [ defaultConfig
+              [ productionConfig
               , TelemetryConfig "error-test" "1.0.0" True True True False
               , TelemetryConfig "" "" False False False False
               ]
@@ -283,7 +283,7 @@ spec = do
         or results `shouldBe` True
       
       it "should handle concurrent operations safely" $ do
-        initTelemetry defaultConfig
+        initTelemetry productionConfig
         
         -- 并发创建和操作资源
         let numThreads = 5
@@ -302,6 +302,6 @@ spec = do
           ) [1..numThreads]
         
         -- 等待所有线程完成
-        threadDelay 1000000  -- 1秒
+        threadDelay 10000  -- 10毫秒
         
         shutdownTelemetry

@@ -185,7 +185,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
   describe "Configuration Hot Reload" $ do
     it "should handle configuration changes without restart" $ do
       -- 初始化初始配置
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- 创建一些遥测组件
       metric <- createMetric "hot-reload-metric" "count"
@@ -217,7 +217,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
   describe "Resource Limits and Cleanup" $ do
     it "should properly clean up resources on shutdown" $ do
       -- 初始化遥测系统
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- 创建大量资源
       metrics <- sequence $ replicate 100 $ do
@@ -242,7 +242,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       return ()
     
     it "should handle resource exhaustion gracefully" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- 尝试创建大量指标，测试系统如何处理资源限制
       let numMetrics = 10000
@@ -266,7 +266,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       length (show localTime) `shouldSatisfy` (> 0)
       
       -- 验证时间差计算
-      threadDelay 1000000  -- 等待1秒
+      threadDelay 10000  -- 等待10毫秒
       laterTime <- getCurrentTime
       let timeDiff = diffUTCTime laterTime currentTime
       timeDiff `shouldSatisfy` (> 0)
@@ -276,9 +276,9 @@ spec = describe "Enhanced Telemetry Tests" $ do
       
       -- 在不同时间点记录指标
       recordMetric metric 10.0
-      threadDelay 100000  -- 等待100ms
+      threadDelay 10000  -- 等待10毫秒
       recordMetric metric 20.0
-      threadDelay 100000  -- 等待100ms
+      threadDelay 10000  -- 等待10毫秒
       recordMetric metric 30.0
       
       -- 验证最终值是所有记录值的总和
@@ -404,7 +404,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
           logMessage logger Info "concurrent error test"
       
       -- 等待所有线程完成
-      threadDelay 1000000  -- 等待1秒
+      threadDelay 10000  -- 等待10毫秒
       
       -- 清理线程
       sequence_ $ map killThread threads
@@ -414,7 +414,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       finalValue `shouldSatisfy` (>= 0)
     
     it "should maintain system stability under stress" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- 创建大量资源并执行操作
       metrics <- sequence $ replicate 100 $ do

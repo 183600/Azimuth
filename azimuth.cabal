@@ -61,6 +61,7 @@ test-suite azimuth-test
     , DebugMetricSpec
     , EnhancedTelemetrySpec
     , NewQuickCheckTestsSpec
+    , EnhancedQuickCheckTestSpec
   hs-source-dirs:
       test
   default-language: Haskell2010

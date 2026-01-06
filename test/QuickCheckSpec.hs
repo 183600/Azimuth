@@ -63,7 +63,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
            then unsafePerformIO $ do
              -- 关闭当前追踪上下文
              shutdownTelemetry
-             initTelemetry defaultConfig
+             initTelemetry productionConfig
              
              spans <- mapM (\name -> createSpan (pack name)) spanNames
              let traceIds = map spanTraceId spans
@@ -78,7 +78,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         let spanNames = if null names then ["parent", "child1", "child2"] else take 3 (map show names)
         in unsafePerformIO $ do
           -- 初始化追踪上下文
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 创建第一个span（建立trace context）
           parentSpan <- createSpan (pack (head spanNames))
@@ -146,7 +146,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = 10
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           metric <- createMetric "concurrent-test" "count"
           
@@ -157,7 +157,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
             ) [1..actualThreads]
           
           -- 等待所有线程完成
-          threadDelay 1000000  -- 1秒
+          threadDelay 10000  -- 10毫秒
           
           -- 清理线程
           sequence_ $ map killThread threads
@@ -211,7 +211,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
   -- 8. 测试资源清理
   describe "Resource Cleanup" $ do
     it "should clean up resources properly after shutdown" $ do
-      initTelemetry defaultConfig
+      initTelemetry productionConfig
       
       -- 创建资源
       metrics <- sequence $ replicate 10 $ do
@@ -277,7 +277,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
       \(numOps :: Int) ->
         let operations = max 10 (abs numOps `mod` 100 + 10)
         in unsafePerformIO $ do
-          initTelemetry defaultConfig
+          initTelemetry productionConfig
           
           -- 测试度量操作性能
           metric <- createMetric "performance-test" "ops"

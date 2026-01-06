@@ -4,6 +4,7 @@ module DebugMetricSpec where
 
 import Test.Hspec
 import Azimuth.Telemetry
+import Data.IORef (writeIORef)
 import Data.IORef
 
 spec :: Spec
