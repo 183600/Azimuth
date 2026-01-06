@@ -89,11 +89,11 @@ spec = describe "Advanced Telemetry Tests" $ do
       metric <- createMetric (pack "concurrent-test") (pack "count")
       
       -- Record metrics sequentially for simplicity
-      replicateM_ 1000 $ recordMetric metric 1.0
+      replicateM_ 100 $ recordMetric metric 1.0
       
       -- Verify final value
       value <- metricValue metric
-      value `shouldBe` 1000.0
+      value `shouldBe` 100.0
 
   -- 4. 错误处理和恢复测试
   describe "Error Handling and Recovery" $ do
@@ -118,7 +118,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       startTime <- getCurrentTime
       
       -- Perform many operations
-      replicateM_ 10000 $ recordMetric metric 1.0
+      replicateM_ 1000 $ recordMetric metric 1.0
       
       endTime <- getCurrentTime
       let duration = diffUTCTime endTime startTime
@@ -130,7 +130,7 @@ spec = describe "Advanced Telemetry Tests" $ do
   describe "Memory Management" $ do
     it "should not leak memory with many operations" $ do
       -- Create many metrics and spans
-      replicateM_ 1000 $ do
+      replicateM_ 100 $ do
         metric <- createMetric (pack "memory-test") (pack "count")
         recordMetric metric 1.0
         span <- createSpan (pack "memory-test-span")

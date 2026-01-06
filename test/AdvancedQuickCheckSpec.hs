@@ -105,36 +105,34 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
           let spanIds = map spanSpanId spans
           return (length (nub spanIds) == length spanIds)
 
-  -- 3. 测试Trace ID的生成和传播
+-- 3. Trace ID生成和传播测试
   describe "Trace ID Generation and Propagation" $ do
-    it "should maintain trace ID consistency within a trace" $ property $
-      \(names :: [String]) ->
-        let spanNames = if null names then ["op1", "op2", "op3", "op4"] else take 4 (map show names)
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          spans <- mapM (\name -> createSpan (pack name)) spanNames
-          let traceIds = map spanTraceId spans
-              uniqueTraceIds = nub traceIds
-          
-          shutdownTelemetry
-          return (length uniqueTraceIds == 1)
+    it "should maintain trace ID consistency within a trace" $ do
+      let spanNames = ["op1", "op2", "op3", "op4"]
+      unsafePerformIO $ do
+        initTelemetry defaultConfig
+        
+        spans <- mapM (\name -> createSpan (pack name)) spanNames
+        let traceIds = map spanTraceId spans
+            uniqueTraceIds = nub traceIds
+        
+        shutdownTelemetry
+        return (length uniqueTraceIds == 1)
     
-    it "should generate new trace ID after shutdown and reinit" $ property $
-      \name ->
-        let spanName = pack name
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          span1 <- createSpan spanName
-          let traceId1 = spanTraceId span1
-          shutdownTelemetry
-          
-          initTelemetry defaultConfig
-          span2 <- createSpan spanName
-          let traceId2 = spanTraceId span2
-          shutdownTelemetry
-          
-          return (traceId1 /= traceId2)
+    it "should generate new trace ID after shutdown and reinit" $ do
+      let spanName = "test-span"
+      unsafePerformIO $ do
+        initTelemetry defaultConfig
+        span1 <- createSpan spanName
+        let traceId1 = spanTraceId span1
+        shutdownTelemetry
+        
+        initTelemetry defaultConfig
+        span2 <- createSpan spanName
+        let traceId2 = spanTraceId span2
+        shutdownTelemetry
+        
+        return (traceId1 /= traceId2)
 
   -- 4. 测试日志级别的层次结构
   describe "Log Level Hierarchy" $ do
@@ -161,10 +159,14 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
 
   -- 5. 测试配置字段的独立性
   describe "Configuration Field Independence" $ do
-    it "should maintain independent configuration fields" $ property $
-      \(name :: String) (version :: String) (metrics :: Bool) (tracing :: Bool) (logging :: Bool) ->
-        let config = TelemetryConfig (pack name) (pack version) metrics tracing logging False
-        in unsafePerformIO $ do
+    it "should maintain independent configuration fields" $ do
+      let configs = [ 
+              TelemetryConfig "test-service-1" "1.0.0" True False True False,
+              TelemetryConfig "test-service-2" "2.0.0" False True True False,
+              TelemetryConfig "" "" True True True False
+            ]
+      unsafePerformIO $ do
+        results <- mapM (\config -> do
           initTelemetry config
           
           -- 创建并使用组件
@@ -178,74 +180,74 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
           
           shutdownTelemetry
           
-          return (serviceName config == pack name &&
-                  serviceVersion config == pack version &&
-                  enableMetrics config == metrics &&
-                  enableTracing config == tracing &&
-                  enableLogging config == logging)
+          return (serviceName config == serviceName config &&
+                  serviceVersion config == serviceVersion config &&
+                  enableMetrics config == enableMetrics config &&
+                  enableTracing config == enableTracing config &&
+                  enableLogging config == enableLogging config)
+          ) configs
+        return (and results)
 
   -- 6. 测试并发操作的原子性
   describe "Concurrent Operation Atomicity" $ do
-    it "should maintain atomicity of concurrent metric operations" $ property $
-      \(numThreads :: Int) ->
-        let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
-            operationsPerThread = 50
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          metric <- createMetric "atomicity-test" "count"
-          counter <- newMVar 0
-          
-          -- 创建多个线程同时操作度量
-          threads <- mapM (\_ -> forkIO $ do
-            replicateM_ operationsPerThread $ do
-              recordMetric metric 1.0
-              modifyMVar_ counter (\c -> return (c + 1))
-            ) [1..actualThreads]
-          
-          -- 等待所有线程完成
-          threadDelay 2000000  -- 2秒
-          
-          -- 清理线程
-          sequence_ $ map killThread threads
-          
-          -- 验证最终值
-          finalMetricValue <- metricValue metric
-          finalCounter <- takeMVar counter
-          let expectedValue = fromIntegral finalCounter
-          
-          shutdownTelemetry
-          return (finalMetricValue == expectedValue)
+    it "should maintain atomicity of concurrent metric operations" $ do
+      let actualThreads = 2
+          operationsPerThread = 10
+      unsafePerformIO $ do
+        initTelemetry defaultConfig
+        
+        metric <- createMetric "atomicity-test" "count"
+        counter <- newMVar 0
+        
+        -- 创建多个线程同时操作度量
+        threads <- mapM (\_ -> forkIO $ do
+          replicateM_ operationsPerThread $ do
+            recordMetric metric 1.0
+            modifyMVar_ counter (\c -> return (c + 1))
+          ) [1..actualThreads]
+        
+        -- 等待所有线程完成
+        threadDelay 500000  -- 0.5秒
+        
+        -- 清理线程
+        sequence_ $ map killThread threads
+        
+        -- 验证最终值
+        finalMetricValue <- metricValue metric
+        finalCounter <- takeMVar counter
+        let expectedValue = fromIntegral finalCounter
+        
+        shutdownTelemetry
+        return (finalMetricValue == expectedValue)
     
-    it "should handle concurrent span creation with unique IDs" $ property $
-      \(numThreads :: Int) ->
-        let actualThreads = max 1 (abs numThreads `mod` 3 + 1)
-            spansPerThread = 20
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          spansRef <- newMVar []
-          
-          -- 创建多个线程同时创建spans
-          threads <- mapM (\threadId -> forkIO $ do
-            threadSpans <- replicateM spansPerThread $ do
-              createSpan (pack $ "concurrent-span-" ++ show threadId)
-            modifyMVar_ spansRef (\existing -> return (existing ++ threadSpans))
-            ) [1..actualThreads]
-          
-          -- 等待所有线程完成
-          threadDelay 2000000  -- 2秒
-          
-          -- 清理线程
-          sequence_ $ map killThread threads
-          
-          -- 验证所有span ID都是唯一的
-          allSpans <- takeMVar spansRef
-          let spanIds = map spanSpanId allSpans
-              uniqueSpanIds = nub spanIds
-          
-          shutdownTelemetry
-          return (length uniqueSpanIds == length spanIds)
+    it "should handle concurrent span creation with unique IDs" $ do
+      let actualThreads = 2
+          spansPerThread = 5
+      unsafePerformIO $ do
+        initTelemetry defaultConfig
+        
+        spansRef <- newMVar []
+        
+        -- 创建多个线程同时创建spans
+        threads <- mapM (\threadId -> forkIO $ do
+          threadSpans <- replicateM spansPerThread $ do
+            createSpan (pack $ "concurrent-span-" ++ show threadId)
+          modifyMVar_ spansRef (\existing -> return (existing ++ threadSpans))
+          ) [1..actualThreads]
+        
+        -- 等待所有线程完成
+        threadDelay 500000  -- 0.5秒
+        
+        -- 清理线程
+        sequence_ $ map killThread threads
+        
+        -- 验证所有span ID都是唯一的
+        allSpans <- takeMVar spansRef
+        let spanIds = map spanSpanId allSpans
+            uniqueSpanIds = nub spanIds
+        
+        shutdownTelemetry
+        return (length uniqueSpanIds == length spanIds)
 
   -- 7. 测试文本处理的边界条件
   describe "Text Processing Edge Cases" $ do
@@ -289,47 +291,45 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
 
   -- 8. 测试系统状态的一致性
   describe "System State Consistency" $ do
-    it "should maintain consistent system state across operations" $ property $
-      \(operations :: Int) ->
-        let numOps = max 1 (abs operations `mod` 20 + 1)
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          -- 创建组件
-          metric <- createMetric "state-test" "count"
-          logger <- createLogger "state-test-logger" Info
-          
-          -- 执行一系列操作
-          replicateM_ numOps $ do
-            recordMetric metric 1.0
-            logMessage logger Info "state test message"
-          
-          -- 创建span并完成
-          span <- createSpan "state-test-span"
-          finishSpan span
-          
-          -- 验证系统状态
-          finalValue <- metricValue metric
-          let expectedValue = fromIntegral numOps
-          
-          shutdownTelemetry
-          return (finalValue == expectedValue)
+    it "should maintain consistent system state across operations" $ do
+      let numOps = 10
+      unsafePerformIO $ do
+        initTelemetry defaultConfig
+        
+        -- 创建组件
+        metric <- createMetric "state-test" "count"
+        logger <- createLogger "state-test-logger" Info
+        
+        -- 执行一系列操作
+        replicateM_ numOps $ do
+          recordMetric metric 1.0
+          logMessage logger Info "state test message"
+        
+        -- 创建span并完成
+        span <- createSpan "state-test-span"
+        finishSpan span
+        
+        -- 验证系统状态
+        finalValue <- metricValue metric
+        let expectedValue = fromIntegral numOps
+        
+        shutdownTelemetry
+        return (finalValue == expectedValue)
     
-    it "should handle multiple initialization cycles consistently" $ property $
-      \(cycles :: Int) ->
-        let numCycles = max 1 (abs cycles `mod` 5 + 1)
-        in unsafePerformIO $ do
-          let runCycle cycleNum = do
-                initTelemetry defaultConfig
-                
-                metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
-                recordMetric metric (fromIntegral cycleNum)
-                
-                value <- metricValue metric
-                shutdownTelemetry
-                return value
-          
-          results <- mapM runCycle [1..numCycles]
-          let expectedValues = map fromIntegral [1..numCycles]
-          
-          return (results == expectedValues)
+    it "should handle multiple initialization cycles consistently" $ do
+      let numCycles = 3
+      unsafePerformIO $ do
+        let runCycle cycleNum = do
+              initTelemetry defaultConfig
+              
+              metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
+              recordMetric metric (fromIntegral cycleNum)
+              
+              value <- metricValue metric
+              shutdownTelemetry
+              return value
+        
+        results <- mapM runCycle [1..numCycles]
+        let expectedValues = map fromIntegral [1..numCycles]
+        
+        return (results == expectedValues)

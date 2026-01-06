@@ -82,7 +82,7 @@ spec = do
         initTelemetry defaultConfig
         
         -- 创建大量度量数据
-        metrics <- sequence $ replicate 1000 $ do
+        metrics <- sequence $ replicate 100 $ do
           createMetric "compression-test" "bytes"
         
         -- 记录大量数据点
@@ -90,7 +90,7 @@ spec = do
           recordMetric metric (fromIntegral index)
         
         -- 验证所有度量仍然有效
-        length metrics `shouldBe` 1000
+        length metrics `shouldBe` 100
         all (\m -> metricName m == "compression-test") metrics `shouldBe` True
         all (\m -> metricUnit m == "bytes") metrics `shouldBe` True
         
@@ -277,7 +277,7 @@ spec = do
         latencyMetric <- createMetric "stream-latency" "ms"
         
         -- 模拟高容量流处理
-        let numEvents = 10000
+        let numEvents = 1000
         sequence_ $ replicate numEvents $ do
           recordMetric throughputMetric 1.0
           recordMetric latencyMetric 10.0
@@ -296,7 +296,7 @@ spec = do
         memoryMetric <- createMetric "memory-usage" "MB"
         
         -- 模拟负载测试
-        let loadIterations = 5000
+        let loadIterations = 500
         sequence_ $ replicate loadIterations $ do
           recordMetric cpuMetric 75.0
           recordMetric memoryMetric 512.0

@@ -1,0 +1,3 @@
+Test suite azimuth-test: RUNNING...
+Test suite azimuth-test: FAIL
+Test suite logged to: /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log

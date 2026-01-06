@@ -131,8 +131,12 @@ generateSpanId = do
     modifyIORef spanCounter (+1)
     threadId <- myThreadId
     let threadHash = hashThreadId threadId `mod` 65536  -- Use larger range for better uniqueness
-        spanId = showHex counter "" ++ showHex threadHash ""
+        -- Pad counter to 8 hex digits and threadHash to 4 hex digits for consistent length
+        spanId = padHex 8 counter ++ padHex 4 threadHash
     return $ pack spanId
+  where
+    padHex n value = let hex = showHex value ""
+                        in replicate (n - length hex) '0' ++ hex
 
 -- | Metric data type
 data Metric = Metric

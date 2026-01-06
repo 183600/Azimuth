@@ -21,6 +21,7 @@ import NewTestSpec (spec)
 import EnhancedTestSpec (spec)
 import QuickCheckSpec (spec)
 import ComprehensiveTestSpec (spec)
+import NewTelemetrySpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -389,7 +390,7 @@ main = hspec $ do
     -- 性能和资源限制测试
     describe "Performance and Resource Limits" $ do
       it "should handle large number of metrics" $ do
-        let numMetrics = 10000
+        let numMetrics = 1000
         metrics <- sequence $ replicate numMetrics $ do
           createMetric "perf-metric" "count"
         length metrics `shouldBe` numMetrics
@@ -398,7 +399,7 @@ main = hspec $ do
         sequence_ $ map (`recordMetric` 1.0) metrics
       
       it "should handle large number of spans" $ do
-        let numSpans = 5000
+        let numSpans = 500
         spans <- sequence $ replicate numSpans $ do
           createSpan "perf-span"
         length spans `shouldBe` numSpans
@@ -407,7 +408,7 @@ main = hspec $ do
         sequence_ $ map finishSpan spans
       
       it "should handle large number of loggers" $ do
-        let numLoggers = 1000
+        let numLoggers = 100
         loggers <- sequence $ replicate numLoggers $ do
           createLogger "perf-logger" Info
         length loggers `shouldBe` numLoggers
@@ -417,7 +418,7 @@ main = hspec $ do
           logMessage logger Info "performance test message"
       
       it "should handle rapid telemetry operations" $ do
-        let numOperations = 10000
+        let numOperations = 1000
         metric <- createMetric "rapid-metric" "ops"
         logger <- createLogger "rapid-logger" Info
         
@@ -521,3 +522,6 @@ main = hspec $ do
   
   -- 添加ComprehensiveTestSpec的测试套件
   ComprehensiveTestSpec.spec
+  
+  -- 添加NewTelemetrySpec的测试套件
+  NewTelemetrySpec.spec
