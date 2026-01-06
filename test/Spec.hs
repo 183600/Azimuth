@@ -47,6 +47,16 @@ import TextHandlingSpec (spec)
 import NumericBoundarySpec (spec)
 -- import ResourceLifecycleSpec (spec)  -- Temporarily disabled due to parsing issues
 import TelemetryIntegrationSpec (spec)
+import AdvancedCabalTestSpec (spec)
+import EnhancedCabalQuickCheckSpec (spec)
+import BoundaryConditionCabalSpec (spec)
+import ConcurrentCabalTestSpec (spec)
+import PerformanceCabalTestSpec (spec)
+import IntegrationCabalTestSpec (spec)
+import DomainCabalTestSpec (spec)
+import RegressionCabalTestSpec (spec)
+import EdgeCaseCabalTestSpec (spec)
+import RealWorldCabalTestSpec (spec)
 
 main :: IO ()
 main = do
@@ -607,3 +617,15 @@ main = do
     NumericBoundarySpec.spec
     -- ResourceLifecycleSpec.spec  -- Temporarily disabled due to parsing issues
     TelemetryIntegrationSpec.spec
+
+  -- 添加新的测试套件
+    AdvancedCabalTestSpec.spec
+    EnhancedCabalQuickCheckSpec.spec
+    BoundaryConditionCabalSpec.spec
+    ConcurrentCabalTestSpec.spec
+    PerformanceCabalTestSpec.spec
+    IntegrationCabalTestSpec.spec
+    DomainCabalTestSpec.spec
+    RegressionCabalTestSpec.spec
+    EdgeCaseCabalTestSpec.spec
+    RealWorldCabalTestSpec.spec

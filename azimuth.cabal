@@ -76,6 +76,16 @@ test-suite azimuth-test
     , NumericBoundarySpec
     -- , ResourceLifecycleSpec  -- Temporarily disabled due to parsing issues
     , TelemetryIntegrationSpec
+    , AdvancedCabalTestSpec
+    , EnhancedCabalQuickCheckSpec
+    , BoundaryConditionCabalSpec
+    , ConcurrentCabalTestSpec
+    , PerformanceCabalTestSpec
+    , IntegrationCabalTestSpec
+    , DomainCabalTestSpec
+    , RegressionCabalTestSpec
+    , EdgeCaseCabalTestSpec
+    , RealWorldCabalTestSpec
   hs-source-dirs:
       test
   default-language: Haskell2010
