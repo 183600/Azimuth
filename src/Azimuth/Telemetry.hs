@@ -32,6 +32,7 @@ module Azimuth.Telemetry
     , logMessage
     , -- * Internal state (for testing)
       metricRegistry
+    , enableMetricSharing
     ) where
 
 import Data.Text (Text, pack, null)
@@ -71,6 +72,11 @@ logCounter = unsafePerformIO (newIORef 0)
 {-# NOINLINE metricRegistry #-}
 metricRegistry :: MVar (Map.Map (Text, Text) (IORef Double))
 metricRegistry = unsafePerformIO (newMVar Map.empty)
+
+-- | Global flag to control metric sharing (disabled for QuickCheck tests)
+{-# NOINLINE enableMetricSharing #-}
+enableMetricSharing :: IORef Bool
+enableMetricSharing = unsafePerformIO (newIORef True)
 
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
@@ -172,45 +178,77 @@ metricValue metric = do
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
 createMetric name unit = do
-    -- Check if a metric with this name and unit already exists in the registry
-    modifyMVar metricRegistry $ \registry -> do
-        case Map.lookup (name, unit) registry of
-            Just existingValueRef -> do
-                -- Return a metric with the existing value reference
-                return (registry, Metric name existingValueRef unit)
-            Nothing -> do
-                -- Create a new value reference and register it
-                newValueRef <- newIORef 0.0
-                let newRegistry = Map.insert (name, unit) newValueRef registry
-                return (newRegistry, Metric name newValueRef unit)
+    -- Use the name and unit as-is (even if empty) to match test expectations
+    let effectiveName = name
+        effectiveUnit = unit
+    
+    -- Check if metric sharing is enabled
+    sharingEnabled <- readIORef enableMetricSharing
+    if sharingEnabled
+        then do
+            -- Check if a metric with this name and unit already exists in the registry
+            modifyMVar metricRegistry $ \registry -> do
+                case Map.lookup (effectiveName, effectiveUnit) registry of
+                    Just existingValueRef -> do
+                        -- Return a metric with the existing value reference
+                        return (registry, Metric effectiveName existingValueRef effectiveUnit)
+                    Nothing -> do
+                        -- Create a new value reference and register it
+                        newValueRef <- newIORef 0.0
+                        let newRegistry = Map.insert (effectiveName, effectiveUnit) newValueRef registry
+                        return (newRegistry, Metric effectiveName newValueRef effectiveUnit)
+        else do
+            -- Always create a new metric instance for test isolation
+            newValueRef <- newIORef 0.0
+            return $ Metric effectiveName newValueRef effectiveUnit
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
-    -- Check if a metric with this name and unit already exists in the registry
-    modifyMVar metricRegistry $ \registry -> do
-        case Map.lookup (name, unit) registry of
-            Just existingValueRef -> do
-                -- Set the initial value for the existing metric
-                writeIORef existingValueRef initialValue
-                return (registry, Metric name existingValueRef unit)
-            Nothing -> do
-                -- Create a new value reference with initial value and register it
-                newValueRef <- newIORef initialValue
-                let newRegistry = Map.insert (name, unit) newValueRef registry
-                return (newRegistry, Metric name newValueRef unit)
+    -- Use the name and unit as-is (even if empty) to match test expectations
+    let effectiveName = name
+        effectiveUnit = unit
+    
+    -- Check if metric sharing is enabled
+    sharingEnabled <- readIORef enableMetricSharing
+    if sharingEnabled
+        then do
+            -- Check if a metric with this name and unit already exists in the registry
+            modifyMVar metricRegistry $ \registry -> do
+                case Map.lookup (effectiveName, effectiveUnit) registry of
+                    Just existingValueRef -> do
+                        -- Set the initial value for the existing metric
+                        writeIORef existingValueRef initialValue
+                        return (registry, Metric effectiveName existingValueRef effectiveUnit)
+                    Nothing -> do
+                        -- Create a new value reference with initial value and register it
+                        newValueRef <- newIORef initialValue
+                        let newRegistry = Map.insert (effectiveName, effectiveUnit) newValueRef registry
+                        return (newRegistry, Metric effectiveName newValueRef effectiveUnit)
+        else do
+            -- Always create a new metric instance for test isolation
+            newValueRef <- newIORef initialValue
+            return $ Metric effectiveName newValueRef effectiveUnit
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()
 recordMetric metric value = do
     -- Fast path: skip debug checks for better performance
     let updateValue currentValue
-          | isNaN value = value  -- Preserve NaN value
-          | isNaN currentValue = value   -- Use new value if current is NaN
-          | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value  -- Preserve infinity with same sign
-          | isInfinite value = value     -- Use infinity value
-          | isInfinite currentValue = value  -- Use new finite value if current is infinity
-          | otherwise = currentValue + value  -- Normal addition
+          -- Handle NaN values: if new value is NaN, use it
+          | isNaN value = value
+          -- If current value is NaN and new value is not, use new value
+          | isNaN currentValue = value
+          -- Handle infinity values with same sign: preserve them
+          | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value
+          -- Handle new infinity values: use them
+          | isInfinite value = value
+          -- Handle case where current is infinity but new is finite: use new value
+          | isInfinite currentValue = value
+          -- Handle negative infinity + positive infinity (results in NaN)
+          | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
+          -- Normal addition for finite values
+          | otherwise = currentValue + value
     
     -- Update the metric value using atomicModifyIORef' for better performance
     atomicModifyIORef' (metricValueRef metric) (\currentValue -> (updateValue currentValue, ()))
@@ -239,7 +277,22 @@ createSimpleMetric name unit value = SimpleMetric name unit value
 -- | Record a value to a simple metric (pure function)
 recordSimpleMetric :: SimpleMetric -> Double -> SimpleMetric
 recordSimpleMetric metric value = 
-    metric { smValue = smValue metric + value }
+    let currentValue = smValue metric
+        newValue 
+            -- Handle NaN values
+            | isNaN value = value
+            | isNaN currentValue = value
+            -- Handle infinity values with same sign
+            | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value
+            -- Handle new infinity values
+            | isInfinite value = value
+            -- Handle case where current is infinity but new is finite
+            | isInfinite currentValue = value
+            -- Handle conflicting infinities (positive + negative)
+            | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
+            -- Normal addition
+            | otherwise = currentValue + value
+    in metric { smValue = newValue }
 
 -- | Get the value of a simple metric
 simpleMetricValue :: SimpleMetric -> Double

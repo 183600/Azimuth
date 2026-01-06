@@ -24,6 +24,8 @@ import QuickCheckSpec (spec)
 import ComprehensiveTestSpec (spec)
 import NewTelemetrySpec (spec)
 import AdditionalQuickCheckTestSpec (spec)
+import DebugMetricSpec (spec)
+import EnhancedTelemetrySpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -533,3 +535,9 @@ main = hspec $ do
   
   -- 添加AdditionalQuickCheckTestSpec的测试套件
   AdditionalQuickCheckTestSpec.spec
+  
+  -- 添加DebugMetricSpec的测试套件
+  DebugMetricSpec.spec
+  
+  -- 添加EnhancedTelemetrySpec的测试套件
+  EnhancedTelemetrySpec.spec
