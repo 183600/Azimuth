@@ -33,6 +33,7 @@ import DebugMetricSpec (spec)
 import EnhancedTelemetrySpec (spec)
 import NewQuickCheckTestsSpec (spec)
 import EnhancedQuickCheckTestSpec (spec)
+import AzimuthCabalTestSpec (spec)
 
 main :: IO ()
 main = do
@@ -569,3 +570,6 @@ main = do
     
     -- 添加EnhancedQuickCheckTestSpec的测试套件
     EnhancedQuickCheckTestSpec.spec
+    
+    -- 添加AzimuthCabalTestSpec的测试套件
+    AzimuthCabalTestSpec.spec
