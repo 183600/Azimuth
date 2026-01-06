@@ -6,7 +6,7 @@ module ComprehensiveTestSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate, bracket)
-import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
+import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar, modifyMVar_)
 import Control.Monad (replicateM, when, void, foldM)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
@@ -14,9 +14,13 @@ import Data.Text (pack, unpack)
 import qualified Data.Text as Text
 import Data.List (nub, sort, group)
 import Data.Char (isAscii, isControl)
+import qualified Data.Map as Map
 import Prelude hiding (id)
 
-import Azimuth.Telemetry
+import Azimuth.Telemetry (metricRegistry, metricCache, createMetric, recordMetric, metricValue, 
+                            createMetricWithInitialValue, createLogger, logMessage, LogLevel(..), 
+                            createSpan, finishSpan, spanName, spanTraceId, spanSpanId,
+                            initTelemetry, shutdownTelemetry, defaultConfig, TelemetryConfig(..))
 
 spec :: Spec
 spec = describe "Comprehensive Telemetry Tests" $ do
@@ -46,8 +50,12 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         let nameText = pack name
             unit1Text = pack unit1
             unit2Text = pack unit2
-        in if unit1 /= unit2
+        in if unit1 /= unit2 && not (null name)
            then unsafePerformIO $ do
+             -- 清理之前的度量注册表以确保测试隔离
+             modifyMVar_ metricRegistry (\_ -> return Map.empty)
+             writeIORef metricCache Map.empty
+             
              metric1 <- createMetric nameText unit1Text
              metric2 <- createMetric nameText unit2Text
              
@@ -319,7 +327,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           -- 如果成功，验证span属性
           if allSuccess
             then do
-              let spans = map (\(Right span) -> span) results
+              let spans = map (\result -> case result of
+                    Right span -> span
+                    Left _ -> error "Impossible: allSuccess is True") results
               let allHaveValidIds = all (\span -> 
                     not (Text.null (spanTraceId span)) && 
                     not (Text.null (spanSpanId span))) spans

@@ -30,6 +30,9 @@ module Azimuth.Telemetry
     , loggerLevel
     , createLogger
     , logMessage
+    , -- * Internal state (for testing)
+      metricRegistry
+    , metricCache
     ) where
 
 import Data.Text (Text, pack, null)
