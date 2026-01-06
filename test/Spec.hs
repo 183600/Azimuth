@@ -17,6 +17,7 @@ import AdditionalTestSpec2 (spec)
 import AdditionalTestSpec3 (spec)
 import AdvancedTestSpec (spec)
 import AdvancedQuickCheckSpec (spec)
+import BasicTelemetrySpec (spec)
 import ExtendedSpec (spec)
 import NewTestSpec (spec)
 import EnhancedTestSpec (spec)
@@ -511,6 +512,9 @@ main = hspec $ do
   
   -- 添加AdvancedQuickCheckSpec的测试套件
   AdvancedQuickCheckSpec.spec
+  
+  -- 添加BasicTelemetrySpec的测试套件
+  BasicTelemetrySpec.spec
   
   -- 添加EnhancedTestSpec的测试套件
   EnhancedTestSpec.spec

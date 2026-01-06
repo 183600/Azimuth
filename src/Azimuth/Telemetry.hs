@@ -26,8 +26,6 @@ module Azimuth.Telemetry
     , -- * Logging
       LogLevel(..)
     , Logger(..)
-    , loggerName
-    , loggerLevel
     , createLogger
     , logMessage
     , -- * Internal state (for testing)
@@ -239,14 +237,14 @@ recordMetric metric value = do
           | isNaN value = value
           -- If current value is NaN and new value is not, use new value
           | isNaN currentValue = value
+          -- Handle negative infinity + positive infinity (results in NaN)
+          | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
           -- Handle infinity values with same sign: preserve them
           | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value
           -- Handle new infinity values: use them
           | isInfinite value = value
           -- Handle case where current is infinity but new is finite: use new value
           | isInfinite currentValue = value
-          -- Handle negative infinity + positive infinity (results in NaN)
-          | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
           -- Normal addition for finite values
           | otherwise = currentValue + value
     

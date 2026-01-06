@@ -47,6 +47,7 @@ test-suite azimuth-test
     , AdditionalTestSpec3
     , AdvancedTestSpec
     , AdvancedQuickCheckSpec
+    , BasicTelemetrySpec
     , ExtendedSpec
     , NewTestSpec
     , EnhancedTestSpec

@@ -217,8 +217,8 @@ spec = describe "Enhanced Telemetry Tests" $ do
     it "should handle extreme values in all telemetry components" $ do
       -- Test metrics
       extremeMetric <- createMetric "extreme" "test"
-      recordMetric extremeMetric 1000.0 `shouldReturn`  -- Large value
-      recordMetric extremeMetric 500.0 `shouldReturn`   -- Small value
+      recordMetric extremeMetric 1000.0 `shouldReturn` ()  -- Large value
+      recordMetric extremeMetric 500.0 `shouldReturn` ()   -- Small value
       
       -- Test span
       extremeSpan <- createSpan $ pack $ replicate 100 'x'  -- Long name
