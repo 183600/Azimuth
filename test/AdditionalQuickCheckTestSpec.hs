@@ -41,8 +41,10 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
               _ = unsafePerformIO $ recordMetric metric value1
               _ = unsafePerformIO $ recordMetric metric value2
               actualValue = unsafePerformIO $ metricValue metric
-          in -- Basic check that the metric was created and can record values
-             unpack (metricName metric) == name && unpack (metricUnit metric) == unit
+          in -- Check that the metric was created and can record values
+             unpack (metricName metric) == name && unpack (metricUnit metric) == unit &&
+             -- Just verify that operations completed without errors
+             not (isNaN actualValue)  -- Ensure we get a valid number, not NaN
     
     it "should handle metric recording with any reasonable double" $ property $
       \name unit value ->
@@ -55,8 +57,10 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
                 createMetricWithInitialValue (pack name) (pack unit) 0.0
               _ = unsafePerformIO $ recordMetric metric value
               actualValue = unsafePerformIO $ metricValue metric
-          in -- Basic check that the metric was created and can record values
-             unpack (metricName metric) == name && unpack (metricUnit metric) == unit
+          in -- Check that the metric was created and can record values
+             unpack (metricName metric) == name && unpack (metricUnit metric) == unit &&
+             -- Just verify that operations completed without errors
+             not (isNaN actualValue)  -- Ensure we get a valid number, not NaN
 
   -- 测试2: SimpleMetric的属性
   describe "SimpleMetric Properties" $ do
@@ -152,11 +156,15 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
           let metric = unsafePerformIO $ do
                 writeIORef enableMetricSharing False
                 createMetricWithInitialValue (pack name) (pack unit) 0.0
-              negativeValue = abs value * (-1)
+              negativeValue = if value == 0 then -1.0 else -abs value
               _ = unsafePerformIO $ recordMetric metric negativeValue
               actualValue = unsafePerformIO $ metricValue metric
-          in -- Basic check that the metric was created and can record values
-             unpack (metricName metric) == name && unpack (metricUnit metric) == unit
+          in -- Check that the metric was created and can record negative values
+             unpack (metricName metric) == name && unpack (metricUnit metric) == unit &&
+             -- Verify that negative values are handled correctly
+             (if isNaN negativeValue 
+              then isNaN actualValue 
+              else actualValue <= 0)  -- Should be negative or zero
 
   -- 测试7: 字符串处理的属性
   describe "String Handling Properties" $ do
@@ -167,9 +175,10 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
               createMetricWithInitialValue "" "" 0.0
             _ = unsafePerformIO $ recordMetric metric value
             actualValue = unsafePerformIO $ metricValue metric
-        in metricName metric == "" && metricUnit metric == "" && 
-           -- For empty strings, we just check that the metric is created and has the right name/unit
-           True  -- We don't enforce specific value behavior for empty strings
+        in -- Check that metric was created with empty name and unit
+           metricName metric == "" && metricUnit metric == "" && 
+           -- Check that value recording works (either the value is recorded or some default behavior)
+           not (isNaN actualValue)  -- Ensure we get a valid number, not NaN
     
     it "should handle unicode strings in all text fields" $ property $
       \asciiValue ->
@@ -201,11 +210,16 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
         else 
           let metric = unsafePerformIO $ do
                 writeIORef enableMetricSharing False
-                createMetricWithInitialValue (pack name) (pack unit) value
+                createMetricWithInitialValue (pack name) (pack unit) 0.0
+              _ = unsafePerformIO $ recordMetric metric value
               _ = unsafePerformIO $ recordMetric metric (-value)
               actualValue = unsafePerformIO $ metricValue metric
-          in -- Basic check that the metric was created and can record values
-             unpack (metricName metric) == name && unpack (metricUnit metric) == unit
+          in -- Check that the metric was created and can record values
+             unpack (metricName metric) == name && unpack (metricUnit metric) == unit &&
+             -- Verify additive inverse property (value + (-value) should be 0 or close to it)
+             (if isNaN value || isInfinite value
+              then True  -- Skip verification for special values
+              else abs actualValue < 1.0e-9)
 
   -- 测试9: 复合操作的属性
   describe "Composite Operation Properties" $ do
@@ -223,8 +237,10 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
                 recordMetric metric value2
                 recordMetric metric value3
               actualValue = unsafePerformIO $ metricValue metric
-          in -- Basic check that the metric was created and can record values
-             unpack (metricName metric) == name && unpack (metricUnit metric) == unit
+          in -- Check that the metric was created and can record values
+             unpack (metricName metric) == name && unpack (metricUnit metric) == unit &&
+             -- For this test, we just verify that the metric was created and operations completed
+             not (isNaN actualValue)  -- Ensure we get a valid number, not NaN
     
     it "should handle metric recreation with same name and unit" $ property $
       \name unit value1 value2 ->
@@ -240,9 +256,16 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
                 createMetricWithInitialValue (pack name) (pack unit) value2
               value1After = unsafePerformIO $ metricValue metric1
               value2After = unsafePerformIO $ metricValue metric2
-          in -- Basic check that the metrics were created and have the right names/units
+          in -- Check that the metrics were created and have the right names/units
              unpack (metricName metric1) == name && unpack (metricUnit metric1) == unit &&
-             unpack (metricName metric2) == name && unpack (metricUnit metric2) == unit
+             unpack (metricName metric2) == name && unpack (metricUnit metric2) == unit &&
+             -- Verify that metrics maintain their initial values
+             (if isNaN value1 || isInfinite value1
+              then True  -- Skip verification for special values
+              else abs (value1After - value1) < 1.0e-9) &&
+             (if isNaN value2 || isInfinite value2
+              then True  -- Skip verification for special values
+              else abs (value2After - value2) < 1.0e-9)
 
   -- 测试10: 错误处理的属性
   describe "Error Handling Properties" $ do
@@ -254,13 +277,16 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
                   createMetricWithInitialValue "extreme-test" "count" 0.0
                 _ = unsafePerformIO $ recordMetric metric value
                 actualValue = unsafePerformIO $ metricValue metric
-            in -- Basic check that the metric was created and can record values
-               unpack (metricName metric) == "extreme-test" && unpack (metricUnit metric) == "count"
+            in -- Check that the metric was created and can record values
+               unpack (metricName metric) == "extreme-test" && unpack (metricUnit metric) == "count" &&
+               -- For extreme values, just check that the metric was created and operations completed
+               not (isNaN actualValue)  -- Ensure we get a valid number, not NaN
       all testValue extremeValues `shouldBe` True
     
     it "should handle special double values" $ do
       let positiveInfinity = 1/0 :: Double
           negativeInfinity = -1/0 :: Double
+          nanValue = 0/0 :: Double
       -- Test that infinity values are handled
       let infMetric = unsafePerformIO $ do
             writeIORef enableMetricSharing False
@@ -274,7 +300,14 @@ spec = beforeAll disableMetricSharing $ describe "Additional QuickCheck Test Sui
           _ = unsafePerformIO $ recordMetric negInfMetric negativeInfinity
           negInfValue = unsafePerformIO $ metricValue negInfMetric
       
-      -- Basic check that the metrics were created and can record values
+      let nanMetric = unsafePerformIO $ do
+            writeIORef enableMetricSharing False
+            createMetricWithInitialValue "nan-test" "count" 0.0
+          _ = unsafePerformIO $ recordMetric nanMetric nanValue
+          nanValueAfter = unsafePerformIO $ metricValue nanMetric
+      
+      -- Check that the metrics were created and operations completed
       let infValid = unpack (metricName infMetric) == "infinity-test" && unpack (metricUnit infMetric) == "count"
           negInfValid = unpack (metricName negInfMetric) == "neg-infinity-test" && unpack (metricUnit negInfMetric) == "count"
-      infValid && negInfValid `shouldBe` True
+          nanValid = unpack (metricName nanMetric) == "nan-test" && unpack (metricUnit nanMetric) == "count"
+      infValid && negInfValid && nanValid `shouldBe` True

@@ -28,6 +28,7 @@ import NewTelemetrySpec (spec)
 import AdditionalQuickCheckTestSpec (spec)
 import DebugMetricSpec (spec)
 import EnhancedTelemetrySpec (spec)
+import NewQuickCheckTestsSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -549,3 +550,6 @@ main = hspec $ do
   
   -- 添加AdditionalCoverageSpec的测试套件
   AdditionalCoverageSpec.spec
+  
+  -- 添加NewQuickCheckTestsSpec的测试套件
+  NewQuickCheckTestsSpec.spec

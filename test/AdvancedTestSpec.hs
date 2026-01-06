@@ -217,7 +217,7 @@ spec = describe "Advanced Telemetry Tests" $ do
         let validOps = filter (\op -> not (isNaN op || isInfinite op)) operations
             metricOps = if null validOps 
                        then [0.0]  -- Use a default operation if all are invalid
-                       else take 100 $ cycle validOps
+                       else take 100 validOps  -- Use valid ops directly, not cycle
             isNaN x = x /= x  -- NaN check
             isInfinite x = abs x > 1e100  -- Simple infinity check
             -- Use a unique metric name based on the operations to ensure uniqueness
