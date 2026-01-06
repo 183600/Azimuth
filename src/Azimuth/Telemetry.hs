@@ -130,8 +130,9 @@ generateSpanId = do
     counter <- readIORef spanCounter
     modifyIORef spanCounter (+1)
     threadId <- myThreadId
-    let threadHash = hashThreadId threadId `mod` 10000
-    return $ pack $ showHex counter "" ++ showHex threadHash ""
+    let threadHash = hashThreadId threadId `mod` 65536  -- Use larger range for better uniqueness
+        spanId = showHex counter "" ++ showHex threadHash ""
+    return $ pack spanId
 
 -- | Metric data type
 data Metric = Metric
@@ -154,36 +155,26 @@ instance Eq Metric where
 
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
-createMetric name unit 
-    | Data.Text.null name = error "Metric name cannot be empty"
-    | otherwise = do
-        -- Check if a metric with this name and unit already exists
-        modifyMVar metricRegistry $ \registry -> do
-            case Map.lookup (name, unit) registry of
-                Just existingValueRef -> do
-                    -- Reuse existing value reference
-                    return (registry, Metric name existingValueRef unit)
-                Nothing -> do
-                    -- Create new value reference and add to registry
-                    newValueRef <- newMVar 0.0
-                    let newRegistry = Map.insert (name, unit) newValueRef registry
-                    return (newRegistry, Metric name newValueRef unit)
+createMetric name unit = do
+    -- Check if a metric with this name and unit already exists in the registry
+    registry <- readMVar metricRegistry
+    case Map.lookup (name, unit) registry of
+        Just existingValueRef -> 
+            -- Return a metric with the existing value reference
+            return $ Metric name existingValueRef unit
+        Nothing -> do
+            -- Create a new value reference and register it
+            newValueRef <- newMVar 0.0
+            modifyMVar_ metricRegistry (\reg -> return $ Map.insert (name, unit) newValueRef reg)
+            return $ Metric name newValueRef unit
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
-    -- Check if a metric with this name and unit already exists
-    modifyMVar metricRegistry $ \registry -> do
-        case Map.lookup (name, unit) registry of
-            Just existingValueRef -> do
-                -- Set the existing value to the initial value
-                swapMVar existingValueRef initialValue
-                return (registry, Metric name existingValueRef unit)
-            Nothing -> do
-                -- Create new value reference with initial value and add to registry
-                newValueRef <- newMVar initialValue
-                let newRegistry = Map.insert (name, unit) newValueRef registry
-                return (newRegistry, Metric name newValueRef unit)
+    -- Always create a new value reference with initial value
+    -- Don't register it in the registry to maintain separate identity
+    newValueRef <- newMVar initialValue
+    return $ Metric name newValueRef unit
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()

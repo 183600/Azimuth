@@ -172,10 +172,11 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
   -- 7. 测试边界值处理
   describe "Boundary Value Handling" $ do
     it "should handle special floating point values" $ do
-      let specialValues = [0.0, -0.0, 1.0, -1.0, 1.0/0.0, -1.0/0.0, 0.0/0.0]
+      let specialValues = [(0.0, "zero"), (-0.0, "negative-zero"), (1.0, "one"), (-1.0, "negative-one"), 
+                           (1.0/0.0, "positive-infinity"), (-1.0/0.0, "negative-infinity"), (0.0/0.0, "nan")]
       
-      mapM_ (\value -> do
-        metric <- createMetric "boundary-test" "special"
+      mapM_ (\(value, name) -> do
+        metric <- createMetric (pack $ "boundary-test-" ++ name) "special"
         recordMetric metric value
         finalValue <- metricValue metric
         

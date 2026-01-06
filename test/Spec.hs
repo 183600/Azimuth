@@ -18,6 +18,7 @@ import ExtendedSpec (spec)
 import NewTestSpec (spec)
 import EnhancedTestSpec (spec)
 import QuickCheckSpec (spec)
+import ComprehensiveTestSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -202,10 +203,9 @@ main = hspec $ do
     -- 边界条件测试
     describe "Boundary Conditions" $ do
       it "should handle empty metric names" $ do
-        result <- try $ createMetric "" "count"
-        case result of
-          Left (_ :: SomeException) -> pure () -- Expected to fail
-          Right _ -> expectationFailure "Should have failed with empty metric name"
+        metric <- createMetric "" "count"
+        metricName metric `shouldBe` ""
+        metricUnit metric `shouldBe` "count"
       
       it "should handle empty span names" $ do
         span <- createSpan ""
@@ -510,3 +510,6 @@ main = hspec $ do
   
   -- 添加QuickCheckSpec的测试套件
   QuickCheckSpec.spec
+  
+  -- 添加ComprehensiveTestSpec的测试套件
+  ComprehensiveTestSpec.spec

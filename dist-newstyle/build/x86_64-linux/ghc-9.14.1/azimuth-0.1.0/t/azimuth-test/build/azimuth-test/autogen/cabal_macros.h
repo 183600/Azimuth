@@ -50,6 +50,16 @@
   (major1) == 0 && (major2) <  8 || \
   (major1) == 0 && (major2) == 8 && (minor) <= 0)
 #endif /* MIN_VERSION_containers */
+/* package hashable-1.5.1.0 */
+#ifndef VERSION_hashable
+#define VERSION_hashable "1.5.1.0"
+#endif /* VERSION_hashable */
+#ifndef MIN_VERSION_hashable
+#define MIN_VERSION_hashable(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  5 || \
+  (major1) == 1 && (major2) == 5 && (minor) <= 1)
+#endif /* MIN_VERSION_hashable */
 /* package hspec-2.11.16 */
 #ifndef VERSION_hspec
 #define VERSION_hspec "2.11.16"

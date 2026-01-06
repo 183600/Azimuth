@@ -259,8 +259,8 @@ spec = describe "Additional Telemetry Tests" $ do
       let numMetrics = 100
           operationsPerMetric = 10
       
-      -- 创建大量度量
-      metrics <- replicateM numMetrics $ createMetric "volume-test" "count"
+      -- 创建大量度量，每个都有唯一的名称
+      metrics <- sequence $ map (\i -> createMetric (pack $ "volume-test-" ++ show i) "count") [1..numMetrics]
       
       -- 对每个度量执行多次操作
       sequence_ $ flip map metrics $ \metric -> do
