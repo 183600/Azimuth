@@ -61,7 +61,7 @@ spec = describe "Text Handling Tests" $ do
             asciiText = pack filteredString
             result = unsafePerformIO $ do
               logger <- createLogger "ascii-logger" Info
-              result <- try $ logMessage logger Info asciiText
+              result <- (try $ logMessage logger Info asciiText) :: IO (Either SomeException ())
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -106,7 +106,7 @@ spec = describe "Text Handling Tests" $ do
         let unicodeText = pack (take 200 unicodeString)
             result = unsafePerformIO $ do
               logger <- createLogger "unicode-logger" Info
-              result <- try $ logMessage logger Info unicodeText
+              result <- (try $ logMessage logger Info unicodeText) :: IO (Either SomeException ())
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -151,7 +151,7 @@ spec = describe "Text Handling Tests" $ do
         let controlText = pack (take 200 controlString)
             result = unsafePerformIO $ do
               logger <- createLogger "control-logger" Info
-              result <- try $ logMessage logger Info controlText
+              result <- (try $ logMessage logger Info controlText) :: IO (Either SomeException ())
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -185,12 +185,11 @@ spec = describe "Text Handling Tests" $ do
     
     it "should handle empty log messages" $ do
       let isSuccess (Right _) = True
-            isSuccess (Left _) = False
-        in let result = unsafePerformIO $ do
-              logger <- createLogger "empty-logger" Info
-              result <- try $ logMessage logger Info ""
-              return (isSuccess result)
-           in result `shouldBe` True
+          isSuccess (Left _) = False
+          result = unsafePerformIO $ do
+            logger <- createLogger "empty-logger" Info
+            result <- (try $ logMessage logger Info "") :: IO (Either SomeException ())
+            return (isSuccess result)
       result `shouldBe` True
   
   -- 测试长字符串处理
@@ -237,7 +236,7 @@ spec = describe "Text Handling Tests" $ do
             longText = pack longString
             result = unsafePerformIO $ do
               logger <- createLogger "long-logger" Info
-              result <- try $ logMessage logger Info longText
+              result <- (try $ logMessage logger Info longText) :: IO (Either SomeException ())
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -275,12 +274,12 @@ spec = describe "Text Handling Tests" $ do
     
     it "should handle special characters in log messages" $ do
       let specialChars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+          isSuccess (Right _) = True
+          isSuccess (Left _) = False
           result = unsafePerformIO $ do
             logger <- createLogger "special-logger" Info
-            result <- try $ logMessage logger Info (pack specialChars)
+            result <- (try $ logMessage logger Info (pack specialChars)) :: IO (Either SomeException ())
             return (isSuccess result)
-            isSuccess (Right _) = True
-            isSuccess (Left _) = False
       result `shouldBe` True
   
   -- 测试空格和制表符处理
@@ -327,7 +326,7 @@ spec = describe "Text Handling Tests" $ do
             whitespaceText = pack whitespaceString
             result = unsafePerformIO $ do
               logger <- createLogger "whitespace-logger" Info
-              result <- try $ logMessage logger Info whitespaceText
+              result <- (try $ logMessage logger Info whitespaceText) :: IO (Either SomeException ())
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False

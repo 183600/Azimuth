@@ -25,6 +25,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
   -- 1. 测试度量注册表的共享机制
   describe "Metric Registry Sharing" $ do
     it "should share metrics with same name and unit" $ do
+        -- Enable metric sharing for this test
+        writeIORef enableMetricSharing True
+        
         let nameText = pack "test-metric"
             unitText = pack "count"
         

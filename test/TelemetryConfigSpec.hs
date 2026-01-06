@@ -6,6 +6,7 @@ module TelemetryConfigSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException)
+import Control.Monad (forM_)
 import Data.Text (pack, unpack)
 import System.IO.Unsafe (unsafePerformIO)
 import Prelude hiding (id)
@@ -40,7 +41,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
         in result
     
     it "should preserve feature flags after initialization" $ property $
-      \flags ->
+      \(flags :: Int) ->
         let (metrics, tracing, logging, debug) = 
               if even flags then (True, True, True, False) else (False, True, False, True)
             config = TelemetryConfig "test-service" "1.0.0" metrics tracing logging debug
@@ -62,7 +63,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
       enableDebugOutput config `shouldBe` False
     
     it "should handle operations with default configuration" $ property $
-      \operations ->
+      \(operations :: Int) ->
         let numOps = max 1 (abs operations `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry defaultConfig
@@ -93,7 +94,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
       enableDebugOutput config `shouldBe` False
     
     it "should handle operations with production configuration" $ property $
-      \operations ->
+      \(operations :: Int) ->
         let numOps = max 1 (abs operations `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -208,10 +209,9 @@ spec = describe "TelemetryConfig Properties Tests" $ do
                 TelemetryConfig "service3" "3.0.0" True True True False
               ]
             result = unsafePerformIO $ do
-              sequence_ $ map (\config -> do
+              forM_ configs $ \config -> do
                 initTelemetry config
                 shutdownTelemetry
-              ) configs
               return True
         in result
   
@@ -243,13 +243,13 @@ spec = describe "TelemetryConfig Properties Tests" $ do
   -- 测试配置的功能标志
   describe "Configuration Feature Flags" $ do
     it "should respect metrics flag" $ property $
-      \enabled ->
+      \(enabled :: Int) ->
         let metricsEnabled = even enabled
             config = TelemetryConfig "test-service" "1.0.0" metricsEnabled True True False
             result = unsafePerformIO $ do
               initTelemetry config
               -- 尝试创建度量
-              result <- try $ do
+              result <- (try :: IO a -> IO (Either SomeException a)) $ do
                 metric <- createMetric "flag-test" "count"
                 recordMetric metric 1.0
               shutdownTelemetry
@@ -259,13 +259,13 @@ spec = describe "TelemetryConfig Properties Tests" $ do
         in result
     
     it "should respect tracing flag" $ property $
-      \enabled ->
+      \(enabled :: Int) ->
         let tracingEnabled = even enabled
             config = TelemetryConfig "test-service" "1.0.0" True tracingEnabled True False
             result = unsafePerformIO $ do
               initTelemetry config
               -- 尝试创建span
-              result <- try $ do
+              result <- (try :: IO a -> IO (Either SomeException a)) $ do
                 span <- createSpan "flag-test"
                 finishSpan span
               shutdownTelemetry
@@ -275,7 +275,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
         in result
     
     it "should respect logging flag" $ property $
-      \enabled ->
+      \(enabled :: Int) ->
         let loggingEnabled = even enabled
             config = TelemetryConfig "test-service" "1.0.0" True True loggingEnabled False
             result = unsafePerformIO $ do
@@ -284,6 +284,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
               result <- try $ do
                 logger <- createLogger "flag-test" Info
                 logMessage logger Info "flag test"
+              let _ = result :: Either SomeException ()
               shutdownTelemetry
               return (isSuccess result)
             isSuccess (Right _) = True
@@ -291,7 +292,7 @@ spec = describe "TelemetryConfig Properties Tests" $ do
         in result
     
     it "should respect debug flag" $ property $
-      \enabled ->
+      \(enabled :: Int) ->
         let debugEnabled = even enabled
             config = TelemetryConfig "test-service" "1.0.0" True True True debugEnabled
             result = unsafePerformIO $ do

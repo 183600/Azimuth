@@ -529,9 +529,9 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           -- 记录更多有效值
           recordMetric metric (validVal + 2.0)
           
-          -- 验证系统能够从NaN恢复
+          -- 验证NaN值会保持（NaN propagation）
           result <- metricValue metric
-          return (isResultAfterNaN && result == validVal + 2.0)
+          return (isResultAfterNaN && isNaN result)
     
     it "should handle operations without initialization" $ property $
       \name ->

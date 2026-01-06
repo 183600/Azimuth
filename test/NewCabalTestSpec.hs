@@ -353,7 +353,9 @@ spec = describe "New Cabal Test Suite" $ do
             Left (_ :: SomeException) -> return False
             Right _ -> do
               finalValue <- metricValue metric
-              return (not (isNaN finalValue))
+              -- If testValue was NaN, finalValue will be NaN (NaN propagation)
+              -- If testValue was not NaN, finalValue should not be NaN
+              return (if isNaN value then isNaN finalValue else not (isNaN finalValue))
     
     it "should handle telemetry system restart" $ property $
     

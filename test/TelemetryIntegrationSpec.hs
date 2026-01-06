@@ -7,6 +7,7 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException)
 import Control.Concurrent (threadDelay, forkIO)
+import Control.Monad (when)
 import Data.Text (pack)
 import System.IO.Unsafe (unsafePerformIO)
 import Prelude hiding (id)
@@ -19,7 +20,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试完整的遥测工作流
   describe "Complete Telemetry Workflow" $ do
     it "should handle complete workflow with metrics, spans, and logging" $ property $
-      \operations ->
+      \(operations :: Int) ->
         let numOps = max 1 (abs operations `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -27,35 +28,35 @@ spec = describe "Telemetry Integration Tests" $ do
               -- 创建度量
               metrics <- sequence $ map (\i -> 
                 createMetric (pack $ "workflow-metric-" ++ show i) "count"
-              ) [1..numOps]
+                            ) [1..numOps]
               
               -- 创建span
               spans <- sequence $ map (\i -> 
                 createSpan (pack $ "workflow-span-" ++ show i)
-              ) [1..numOps]
+                            ) [1..numOps]
               
               -- 创建日志记录器
               loggers <- sequence $ map (\i -> 
                 createLogger (pack $ "workflow-logger-" ++ show i) Info
-              ) [1..numOps]
+                            ) [1..numOps]
               
               -- 执行操作
               sequence_ $ zipWith (\metric i -> do
                 recordMetric metric (fromIntegral i)
-              ) metrics [1..numOps]
+                            ) metrics [1..numOps]
               
               sequence_ $ map finishSpan spans
               
               sequence_ $ zipWith (\logger i -> do
                 logMessage logger Info (pack $ "workflow message " ++ show i)
-              ) loggers [1..numOps]
+                            ) loggers [1..numOps]
               
               shutdownTelemetry
               return True
         in result
     
     it "should handle nested workflow operations" $ property $
-      \depth ->
+      \(depth :: Int) ->
         let actualDepth = max 1 (abs depth `mod` 5 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -83,7 +84,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试跨组件的数据流
   describe "Cross-Component Data Flow" $ do
     it "should handle data flow from metrics to logging" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 10 values :: [Double]
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -104,7 +105,7 @@ spec = describe "Telemetry Integration Tests" $ do
         in result
     
     it "should handle data flow from spans to metrics" $ property $
-      \numSpans ->
+      \(numSpans :: Int) ->
         let actualSpans = max 1 (abs numSpans `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -127,7 +128,7 @@ spec = describe "Telemetry Integration Tests" $ do
         in result
     
     it "should handle data flow from logging to metrics" $ property $
-      \numMessages ->
+      \(numMessages :: Int) ->
         let actualMessages = max 1 (abs numMessages `mod` 20 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -149,7 +150,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试配置驱动的集成
   describe "Configuration-Driven Integration" $ do
     it "should integrate components based on configuration flags" $ property $
-      \flags ->
+      \(flags :: Int) ->
         let (metrics, tracing, logging, debug) = 
               if even flags then (True, True, True, False) else (False, True, False, True)
             config = TelemetryConfig "integration-test" "1.0.0" metrics tracing logging debug
@@ -157,27 +158,30 @@ spec = describe "Telemetry Integration Tests" $ do
               initTelemetry config
               
               -- 尝试创建组件
-              metricResult <- try $ do
+              metricResult <- try (do
                 when metrics $ do
                   metric <- createMetric "config-metric" "count"
                   recordMetric metric 1.0
+                ) :: IO (Either SomeException ())
               
-              spanResult <- try $ do
+              spanResult <- try (do
                 when tracing $ do
                   span <- createSpan "config-span"
                   finishSpan span
+                ) :: IO (Either SomeException ())
               
-              loggerResult <- try $ do
+              loggerResult <- try (do
                 when logging $ do
                   logger <- createLogger "config-logger" Info
                   logMessage logger Info "config test"
+                ) :: IO (Either SomeException ())
               
               shutdownTelemetry
               return True
         in result
     
     it "should handle configuration changes during runtime" $ property $
-      \changes ->
+      \(changes :: Int) ->
         let numChanges = max 1 (abs changes `mod` 3 + 1)
             configs = take numChanges $ cycle [
                 TelemetryConfig "service-1" "1.0.0" True True True False,
@@ -202,14 +206,14 @@ spec = describe "Telemetry Integration Tests" $ do
                   logMessage logger Info "runtime config test"
                 
                 shutdownTelemetry
-              ) configs
+                            ) configs
               return True
         in result
   
   -- 测试错误恢复集成
   describe "Error Recovery Integration" $ do
     it "should handle errors in one component without affecting others" $ property $
-      \componentType ->
+      \(componentType :: Int) ->
         let component = abs componentType `mod` 3
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -255,7 +259,7 @@ spec = describe "Telemetry Integration Tests" $ do
         in result
     
     it "should recover from initialization errors" $ property $
-      \serviceName ->
+      \(serviceName :: String) ->
         let config = TelemetryConfig (pack $ take 50 serviceName) "1.0.0" True True True False
             result = unsafePerformIO $ do
               -- 尝试初始化
@@ -279,7 +283,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试性能集成
   describe "Performance Integration" $ do
     it "should handle high-volume integrated operations" $ property $
-      \operations ->
+      \(operations :: Int) ->
         let numOps = max 10 (abs operations `mod` 100 + 10)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -302,7 +306,7 @@ spec = describe "Telemetry Integration Tests" $ do
         in result
     
     it "should handle resource-efficient operations" $ property $
-      \operations ->
+      \(operations :: Int) ->
         let numOps = max 10 (abs operations `mod` 50 + 10)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -330,7 +334,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试并发集成
   describe "Concurrent Integration" $ do
     it "should handle concurrent operations across components" $ property $
-      \threads ->
+      \(threads :: Int) ->
         let numThreads = max 1 (abs threads `mod` 5 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -340,7 +344,7 @@ spec = describe "Telemetry Integration Tests" $ do
               logger <- createLogger "concurrent-integration-logger" Info
               
               -- 并发操作
-              threadResults <- sequence $ replicate numThreads $ \i -> do
+              threadResults <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ replicate 10 $ do
                     recordMetric metric 1.0
@@ -349,6 +353,7 @@ spec = describe "Telemetry Integration Tests" $ do
                     finishSpan span
                     
                     logMessage logger Info (pack $ "concurrent message " ++ show i)
+                ) [1..numThreads]
               
               -- 等待线程完成
               threadDelay 500000  -- 500ms
@@ -364,7 +369,7 @@ spec = describe "Telemetry Integration Tests" $ do
   -- 测试端到端集成
   describe "End-to-End Integration" $ do
     it "should handle complete end-to-end telemetry scenario" $ property $
-      \scenario ->
+      \(scenario :: Int) ->
         let scenarioType = abs scenario `mod` 3
             result = unsafePerformIO $ do
               initTelemetry productionConfig

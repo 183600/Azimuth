@@ -27,6 +27,7 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
         let testValues = if null values then [0.0, 1.0, 0.0/0.0] else take 5 values :: [Double]
             hasNaN = any isNaN testValues
         in unsafePerformIO $ do
+          writeIORef enableMetricSharing False  -- Disable sharing for test isolation
           metric <- createMetric "nan-test" "special"
           sequence_ $ map (recordMetric metric) testValues
           finalValue <- metricValue metric

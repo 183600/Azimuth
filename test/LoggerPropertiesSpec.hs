@@ -51,7 +51,7 @@ spec = describe "Logger Properties Tests" $ do
         let loggerNameText = pack (take 100 name)  -- 限制名称长度
             result = unsafePerformIO $ do
               logger <- createLogger loggerNameText Info
-              return (loggerName logger == pack "level-test")
+              return (loggerName logger == loggerNameText)
         in result
     
     it "should handle empty logger names" $ do
@@ -90,18 +90,18 @@ spec = describe "Logger Properties Tests" $ do
   -- 测试Logger操作的安全性
   describe "Logger Operation Safety" $ do
     it "should handle logging operations safely" $ property $
-      \messages ->
+      \(messages :: [Int]) ->
         let testMessages = take 10 (map (pack . take 200 . show) ([1..] :: [Int]))
             result = unsafePerformIO $ do
               logger <- createLogger "safety-test" Info
-              results <- mapM (\msg -> try $ logMessage logger Info msg) testMessages
+              results <- mapM (\msg -> (try :: IO a -> IO (Either SomeException a)) $ logMessage logger Info msg) testMessages
               return (all isSuccess results)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
         in result
     
     it "should handle logging at different levels" $ property $
-      \messages ->
+      \(messages :: [Int]) ->
         let testMessages = take 5 (map (pack . take 200 . show) ([1..] :: [Int]))
             levels = [Debug, Info, Warn, Error]
             result = unsafePerformIO $ do
@@ -109,19 +109,19 @@ spec = describe "Logger Properties Tests" $ do
               results <- sequence $ do
                 msg <- testMessages
                 level <- levels
-                return $ try $ logMessage logger level msg
+                return $ (try :: IO a -> IO (Either SomeException a)) $ logMessage logger level msg
               return (all isSuccess results)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
         in result
     
     it "should handle empty log messages" $ property $
-      \levelInt ->
+      \(levelInt :: Int) ->
         let levels = [Debug, Info, Warn, Error]
             level = levels !! (abs levelInt `mod` 4)
             result = unsafePerformIO $ do
               logger <- createLogger "empty-message-test" level
-              result <- try $ logMessage logger level ""
+              result <- (try :: IO a -> IO (Either SomeException a)) $ logMessage logger level ""
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -179,11 +179,11 @@ spec = describe "Logger Properties Tests" $ do
         in result
     
     it "should handle very long log messages" $ property $
-      \name ->
+      \(name :: String) ->
         let longMessage = pack $ replicate 10000 'b'
             result = unsafePerformIO $ do
               logger <- createLogger "long-message-test" Info
-              result <- try $ logMessage logger Info longMessage
+              result <- (try :: IO a -> IO (Either SomeException a)) $ logMessage logger Info longMessage
               return (isSuccess result)
             isSuccess (Right _) = True
             isSuccess (Left _) = False
@@ -223,12 +223,12 @@ spec = describe "Logger Properties Tests" $ do
         in result
     
     it "should handle concurrent logging operations" $ property $
-      \num ->
+      \(num :: Int) ->
         let numOperations = max 1 (abs num `mod` 20 + 1)
             result = unsafePerformIO $ do
               logger <- createLogger "concurrent-logging" Info
               results <- sequence $ replicate numOperations $ do
-                try $ logMessage logger Info "concurrent message"
+                (try :: IO a -> IO (Either SomeException a)) $ logMessage logger Info "concurrent message"
               return (all isSuccess results)
             isSuccess (Right _) = True
             isSuccess (Left _) = False

@@ -250,24 +250,25 @@ recordMetric :: Metric -> Double -> IO ()
 recordMetric metric value = do
     -- Fast path: skip debug checks for better performance
     let updateValue currentValue
-          -- Handle NaN values: if new value is NaN, use it
+          -- Handle NaN values: if current value is NaN, it stays NaN (NaN propagation)
+          | isNaN currentValue = currentValue
+          -- If new value is NaN, use it (NaN propagation)
           | isNaN value = value
-          -- If current value is NaN and new value is not, use new value
-          | isNaN currentValue = value
-          -- Handle infinity values: simply replace with new value (test expectation)
+          -- Handle infinity values: if current is infinity and new is finite, keep infinity
+          | isInfinite currentValue && not (isInfinite value) = currentValue
+          -- Handle infinity values: if new value is infinity, use it (test expectation)
           | isInfinite value = value
-          -- Handle case where current is infinity but new is finite: use new value
-          | isInfinite currentValue = value
           -- Handle very small values - just add them normally
           -- The previous logic was causing issues with QuickCheck tests
           | abs value < 1e-323 = currentValue + value
           -- For additive inverse property: value + (-value) should be 0 (or very close)
-          -- Only apply when both values are non-zero and opposite signs
+          -- Only apply when both values are non-zero and opposite signs and magnitudes are equal
           | abs (currentValue + value) < 1.0e-9 && 
             not (isNaN currentValue) && not (isInfinite currentValue) && 
             not (isNaN value) && not (isInfinite value) &&
             currentValue /= 0.0 && value /= 0.0 &&
-            signum currentValue /= signum value = 0.0
+            signum currentValue /= signum value &&
+            abs currentValue == abs value = 0.0
           -- Normal addition for finite values
           | otherwise = currentValue + value
     

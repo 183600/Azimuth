@@ -181,23 +181,46 @@ spec = describe "Additional Cabal Test Suite" $ do
   -- 测试5: 错误恢复机制
   describe "Error Recovery Mechanisms" $ do
     it "should recover from invalid metric values" $ do
-      metric <- createMetric "error-recovery" "test"
+      -- 为每个特殊值创建单独的指标进行测试
+      posInfMetric <- createMetric "pos-inf-recovery" "test"
+      negInfMetric <- createMetric "neg-inf-recovery" "test"
+      nanMetric <- createMetric "nan-recovery" "test"
       
-      -- 测试特殊值
-      let specialValues = [1/0, -1/0, 0/0]  -- 正无穷、负无穷、NaN
+      -- 测试正无穷
+      result1 <- try $ recordMetric posInfMetric (1/0)
+      case result1 of
+        Left (_ :: SomeException) -> return ()  -- 预期中的异常
+        Right _ -> return ()  -- 正常处理
       
-      sequence_ $ map (\value -> do
-        result <- try $ recordMetric metric value
-        case result of
-          Left (_ :: SomeException) -> return ()  -- 预期中的异常
-          Right _ -> return ()  -- 正常处理
-        ) specialValues
+      -- 验证正无穷指标仍然可用
+      recordMetric posInfMetric 42.0 `shouldReturn` ()
+      posInfValue <- metricValue posInfMetric
+      -- 正无穷值会保持
+      isInfinite posInfValue `shouldBe` True
       
-      -- 验证指标仍然可用
-      recordMetric metric 42.0 `shouldReturn` ()
-      value <- metricValue metric
-      -- 值应该是可计算的（不应该是未定义的）
-      evaluate value `shouldReturn` value
+      -- 测试负无穷
+      result2 <- try $ recordMetric negInfMetric (-1/0)
+      case result2 of
+        Left (_ :: SomeException) -> return ()  -- 预期中的异常
+        Right _ -> return ()  -- 正常处理
+      
+      -- 验证负无穷指标仍然可用
+      recordMetric negInfMetric 42.0 `shouldReturn` ()
+      negInfValue <- metricValue negInfMetric
+      -- 负无穷值会保持
+      isInfinite negInfValue `shouldBe` True
+      
+      -- 测试NaN
+      result3 <- try $ recordMetric nanMetric (0/0)
+      case result3 of
+        Left (_ :: SomeException) -> return ()  -- 预期中的异常
+        Right _ -> return ()  -- 正常处理
+      
+      -- 验证NaN指标仍然可用
+      recordMetric nanMetric 42.0 `shouldReturn` ()
+      nanValue <- metricValue nanMetric
+      -- NaN值会保持
+      isNaN nanValue `shouldBe` True
 
     it "should handle telemetry lifecycle errors gracefully" $ do
       -- 多次初始化和关闭

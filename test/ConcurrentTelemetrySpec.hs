@@ -20,17 +20,18 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的度量创建
   describe "Concurrent Metric Creation" $ do
     it "should handle concurrent metric creation safely" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
               
               -- 创建多个线程同时创建度量
-              results <- sequence $ replicate actualThreads $ do
+              results <- mapM (\_ -> 
                 forkIO $ do
                   metric <- createMetric "concurrent-metric" "count"
                   recordMetric metric 1.0
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 100000  -- 100毫秒
@@ -43,17 +44,18 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should handle concurrent metric creation with unique names" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
               
               -- 创建多个线程同时创建具有唯一名称的度量
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   metric <- createMetric (pack $ "concurrent-metric-" ++ show i) "count"
                   recordMetric metric (fromIntegral i)
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 100000  -- 100毫秒
@@ -68,7 +70,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的度量记录
   describe "Concurrent Metric Recording" $ do
     it "should handle concurrent metric recording safely" $ property $
-      \numThreads numOperations ->
+      \(numThreads :: Int) (numOperations :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = max 1 (abs numOperations `mod` 20 + 1)
             expectedTotal = fromIntegral actualThreads * fromIntegral operationsPerThread
@@ -78,11 +80,12 @@ spec = describe "Concurrent Telemetry Tests" $ do
               metric <- createMetric "concurrent-recording" "count"
               
               -- 创建多个线程同时记录度量
-              results <- sequence $ replicate actualThreads $ do
+              results <- mapM (\_ -> 
                 forkIO $ do
                   sequence_ $ replicate operationsPerThread $ do
                     recordMetric metric 1.0
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -98,7 +101,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should handle concurrent metric recording with different values" $ property $
-      \numThreads numOperations ->
+      \(numThreads :: Int) (numOperations :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = max 1 (abs numOperations `mod` 10 + 1)
             result = unsafePerformIO $ do
@@ -107,11 +110,12 @@ spec = describe "Concurrent Telemetry Tests" $ do
               metric <- createMetric "concurrent-different-values" "count"
               
               -- 创建多个线程同时记录不同的度量值
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ replicate operationsPerThread $ do
                     recordMetric metric (fromIntegral i)
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -132,17 +136,18 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的Span创建
   describe "Concurrent Span Creation" $ do
     it "should handle concurrent span creation safely" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
               
               -- 创建多个线程同时创建span
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   span <- createSpan (pack $ "concurrent-span-" ++ show i)
                   finishSpan span
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 100000  -- 100毫秒
@@ -155,7 +160,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should maintain trace context across concurrent span creation" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -166,12 +171,13 @@ spec = describe "Concurrent Telemetry Tests" $ do
               
               -- 创建多个线程同时创建子span
               traceIds <- newEmptyMVar
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   childSpan <- createSpan (pack $ "concurrent-child-" ++ show i)
                   putMVar traceIds (spanTraceId childSpan)
                   finishSpan childSpan
                   return ()
+                ) [1..actualThreads]
               
               -- 收集所有trace ID
               childTraceIds <- sequence $ replicate actualThreads $ takeMVar traceIds
@@ -189,7 +195,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的日志记录
   describe "Concurrent Logging" $ do
     it "should handle concurrent logging safely" $ property $
-      \numThreads numOperations ->
+      \(numThreads :: Int) (numOperations :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = max 1 (abs numOperations `mod` 20 + 1)
             result = unsafePerformIO $ do
@@ -198,11 +204,12 @@ spec = describe "Concurrent Telemetry Tests" $ do
               logger <- createLogger "concurrent-logger" Info
               
               -- 创建多个线程同时记录日志
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ replicate operationsPerThread $ do
                     logMessage logger Info (pack $ "concurrent message " ++ show i)
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -215,7 +222,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should handle concurrent logging at different levels" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             levels = [Debug, Info, Warn, Error]
             result = unsafePerformIO $ do
@@ -223,15 +230,16 @@ spec = describe "Concurrent Telemetry Tests" $ do
               
               loggers <- sequence $ map (\level -> 
                 createLogger (pack $ "concurrent-logger-" ++ show level) level
-              ) levels
+                            ) levels
               
               -- 创建多个线程同时记录不同级别的日志
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ zipWith (\logger level -> do
                     logMessage logger level (pack $ "concurrent message " ++ show i ++ " at " ++ show level)
-                  ) loggers levels
+                                    ) loggers levels
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -246,7 +254,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试混合并发操作
   describe "Mixed Concurrent Operations" $ do
     it "should handle mixed concurrent telemetry operations" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
@@ -256,7 +264,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
               logger <- createLogger "mixed-logger" Info
               
               -- 创建多个线程执行混合操作
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   -- 度量操作
                   recordMetric metric (fromIntegral i)
@@ -269,6 +277,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
                   finishSpan span
                   
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -286,7 +295,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的初始化和关闭
   describe "Concurrent Initialization and Shutdown" $ do
     it "should handle concurrent initialization safely" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 3 + 1)
             result = unsafePerformIO $ do
               -- 创建多个线程同时初始化
@@ -307,7 +316,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should handle concurrent shutdown safely" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 3 + 1)
             result = unsafePerformIO $ do
               -- 初始化系统
@@ -331,7 +340,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的资源访问
   describe "Concurrent Resource Access" $ do
     it "should handle concurrent access to shared metrics" $ property $
-      \numThreads numOperations ->
+      \(numThreads :: Int) (numOperations :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = max 1 (abs numOperations `mod` 10 + 1)
             result = unsafePerformIO $ do
@@ -340,16 +349,17 @@ spec = describe "Concurrent Telemetry Tests" $ do
               -- 创建多个共享度量
               metrics <- sequence $ map (\i -> 
                 createMetric (pack $ "shared-metric-" ++ show i) "count"
-              ) [1..5]
+                            ) [1..5]
               
               -- 创建多个线程同时访问共享度量
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ replicate operationsPerThread $ do
                     sequence_ $ zipWith (\metric j -> do
                       recordMetric metric (fromIntegral (i + j))
-                    ) metrics [1..5]
+                                        ) metrics [1..5]
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -365,7 +375,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
         in result
     
     it "should handle concurrent access to shared loggers" $ property $
-      \numThreads numOperations ->
+      \(numThreads :: Int) (numOperations :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = max 1 (abs numOperations `mod` 10 + 1)
             result = unsafePerformIO $ do
@@ -374,16 +384,17 @@ spec = describe "Concurrent Telemetry Tests" $ do
               -- 创建多个共享日志记录器
               loggers <- sequence $ map (\level -> 
                 createLogger (pack $ "shared-logger-" ++ show level) level
-              ) [Debug, Info, Warn, Error]
+                            ) [Debug, Info, Warn, Error]
               
               -- 创建多个线程同时访问共享日志记录器
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   sequence_ $ replicate operationsPerThread $ do
                     sequence_ $ zipWith (\logger level -> do
                       logMessage logger level (pack $ "shared message " ++ show i ++ " at " ++ show level)
-                    ) loggers [Debug, Info, Warn, Error]
+                                        ) loggers [Debug, Info, Warn, Error]
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒
@@ -398,13 +409,13 @@ spec = describe "Concurrent Telemetry Tests" $ do
   -- 测试并发的错误处理
   describe "Concurrent Error Handling" $ do
     it "should handle errors in concurrent operations gracefully" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             result = unsafePerformIO $ do
               initTelemetry productionConfig
               
               -- 创建多个线程，其中一些可能会产生错误
-              results <- sequence $ replicate actualThreads $ \i -> do
+              results <- mapM (\i -> 
                 forkIO $ do
                   -- 正常操作
                   metric <- createMetric (pack $ "error-test-" ++ show i) "count"
@@ -415,6 +426,7 @@ spec = describe "Concurrent Telemetry Tests" $ do
                   recordMetric metric (0.0/0.0)  -- NaN
                   
                   return ()
+                ) [1..actualThreads]
               
               -- 等待所有线程完成
               threadDelay 200000  -- 200毫秒

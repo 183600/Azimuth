@@ -113,22 +113,23 @@ spec = do
     -- Test 5: Special values handling with QuickCheck
     describe "Special Values Handling" $ do
       it "should handle NaN and infinity values" $ do
-        metric <- createMetric "special-values" "test"
-        
         -- Test NaN
-        recordMetric metric (0/0)  -- NaN
-        nanValue <- metricValue metric
+        metric1 <- createMetric "special-values-nan" "test"
+        recordMetric metric1 (0/0)  -- NaN
+        nanValue <- metricValue metric1
         isNaN nanValue `shouldBe` True
         
         -- Test positive infinity
-        recordMetric metric (1/0)  -- +Infinity
-        infValue <- metricValue metric
+        metric2 <- createMetric "special-values-pos-inf" "test"
+        recordMetric metric2 (1/0)  -- +Infinity
+        infValue <- metricValue metric2
         isInfinite infValue `shouldBe` True
         infValue > 0 `shouldBe` True
         
         -- Test negative infinity
-        recordMetric metric (-1/0)  -- -Infinity
-        negInfValue <- metricValue metric
+        metric3 <- createMetric "special-values-neg-inf" "test"
+        recordMetric metric3 (-1/0)  -- -Infinity
+        negInfValue <- metricValue metric3
         isInfinite negInfValue `shouldBe` True
         negInfValue < 0 `shouldBe` True
       

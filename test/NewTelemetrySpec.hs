@@ -8,6 +8,7 @@ import Test.QuickCheck
 import Control.Exception (try, SomeException)
 import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad (replicateM, replicateM_, when)
+import Data.IORef
 import qualified Data.Text as Text
 import Data.Text (pack, unpack)
 import System.IO.Unsafe (unsafePerformIO)
@@ -76,6 +77,9 @@ spec = describe "New Telemetry Tests" $ do
   -- 测试3: 跨模块数据共享
   describe "Cross-Module Data Sharing" $ do
     it "should share metrics by name and unit" $ do
+      -- Enable metric sharing for this test
+      writeIORef enableMetricSharing True
+      
       -- Create metrics with same name and unit
       metric1 <- createMetric "shared-metric" "count"
       metric2 <- createMetric "shared-metric" "count"

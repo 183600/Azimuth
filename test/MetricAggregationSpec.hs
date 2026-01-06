@@ -6,6 +6,7 @@ module MetricAggregationSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException)
+import Control.Monad (foldM)
 import Data.Text (pack)
 import Data.List (sort, group)
 import System.IO.Unsafe (unsafePerformIO)
@@ -19,7 +20,7 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量累加的聚合
   describe "Metric Sum Aggregation" $ do
     it "should correctly aggregate sum of values" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 100 values :: [Double]
             expectedSum = sum testValues
             result = unsafePerformIO $ do
@@ -35,7 +36,7 @@ spec = describe "Metric Aggregation Tests" $ do
       result `shouldBe` 0.0
     
     it "should handle single value aggregation" $ property $
-      \value ->
+      \(value :: Double) ->
         let result = unsafePerformIO $ do
               metric <- createMetricWithInitialValue "single-sum" "count" 0.0
               recordMetric metric value
@@ -43,19 +44,21 @@ spec = describe "Metric Aggregation Tests" $ do
         in result == value
     
     it "should handle aggregation of identical values" $ property $
-      \value count ->
+      \(value :: Double) (count :: Int) ->
         let numValues = max 1 (abs count `mod` 20 + 1)
             expectedValue = value * fromIntegral numValues
             result = unsafePerformIO $ do
               metric <- createMetricWithInitialValue "identical-sum" "count" 0.0
               sequence_ $ replicate numValues $ recordMetric metric value
               metricValue metric
-        in result == expectedValue || isNaN result || isInfinite result
+            -- Allow for floating point precision errors
+            tolerance = abs expectedValue * 1.0e-9 + 1.0e-9
+        in abs (result - expectedValue) < tolerance || isNaN result || isInfinite result
   
   -- 测试度量平均值的计算
   describe "Metric Average Aggregation" $ do
     it "should correctly calculate average of values" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let nonEmptyValues = if null values then [1.0, 2.0, 3.0] else take 100 values :: [Double]
             expectedAverage = sum nonEmptyValues / fromIntegral (length nonEmptyValues)
             result = unsafePerformIO $ do
@@ -66,7 +69,7 @@ spec = describe "Metric Aggregation Tests" $ do
         in result == expectedAverage || isNaN result || isInfinite result
     
     it "should handle average of identical values" $ property $
-      \value count ->
+      \(value :: Double) (count :: Int) ->
         let numValues = max 1 (abs count `mod` 20 + 1)
             expectedAverage = value
             result = unsafePerformIO $ do
@@ -74,28 +77,52 @@ spec = describe "Metric Aggregation Tests" $ do
               sequence_ $ replicate numValues $ recordMetric metric value
               total <- metricValue metric
               return (total / fromIntegral numValues)
-        in result == expectedAverage || isNaN result || isInfinite result
+            -- Allow for floating point precision errors
+            tolerance = abs expectedAverage * 1.0e-9 + 1.0e-9
+        in abs (result - expectedAverage) < tolerance || isNaN result || isInfinite result
   
   -- 测试度量最大值的跟踪
-  describe "Metric Maximum Tracking" $ do
-    it "should track maximum value in aggregation" $ property $
-      \values ->
-        let nonEmptyValues = if null values then [1.0, 2.0, 3.0] else take 100 values :: [Double]
-            expectedMax = maximum nonEmptyValues
-            result = unsafePerformIO $ do
-              -- 使用多个度量来跟踪最大值
-              maxMetric <- createMetricWithInitialValue "max-tracking" "count" (head nonEmptyValues)
-              sequence_ $ map (\v -> do
-                currentMax <- metricValue maxMetric
-                if v > currentMax then recordMetric maxMetric (v - currentMax) else return ()
-              ) (tail nonEmptyValues)
-              metricValue maxMetric
-        in result == expectedMax || isNaN result || isInfinite result
+  
+    describe "Metric Maximum Tracking" $ do
+  
+      it "should track maximum value in aggregation" $ property $
+  
+        \(values :: [Double]) ->
+  
+          let nonEmptyValues = if null values then [1.0, 2.0, 3.0] else take 100 values :: [Double]
+  
+              expectedMax = maximum nonEmptyValues
+  
+              result = unsafePerformIO $ do
+  
+                -- 使用多个度量来跟踪最大值
+  
+                maxMetric <- createMetricWithInitialValue "max-tracking" "count" (head nonEmptyValues)
+  
+                sequence_ $ map (\v -> do
+  
+                  currentMax <- metricValue maxMetric
+  
+                  if v > currentMax then do
+  
+                    -- 更新最大值：先重置为0，然后设置为新的最大值
+  
+                    recordMetric maxMetric (-currentMax)
+  
+                    recordMetric maxMetric v
+  
+                  else return ()
+  
+                              ) (tail nonEmptyValues)
+  
+                metricValue maxMetric
+  
+          in result == expectedMax || isNaN result || isInfinite result
   
   -- 测试度量最小值的跟踪
   describe "Metric Minimum Tracking" $ do
     it "should track minimum value in aggregation" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let nonEmptyValues = if null values then [1.0, 2.0, 3.0] else take 100 values :: [Double]
             expectedMin = minimum nonEmptyValues
             result = unsafePerformIO $ do
@@ -104,16 +131,18 @@ spec = describe "Metric Aggregation Tests" $ do
               sequence_ $ map (\v -> do
                 currentMin <- metricValue minMetric
                 if v < currentMin then do
-                  recordMetric minMetric (v - currentMin)
+                  -- 更新最小值：先重置为0，然后设置为新的最小值
+                  recordMetric minMetric (-currentMin)
+                  recordMetric minMetric v
                 else return ()
-              ) (tail nonEmptyValues)
+                            ) (tail nonEmptyValues)
               metricValue minMetric
         in result == expectedMin || isNaN result || isInfinite result
   
   -- 测试度量计数
   describe "Metric Count Aggregation" $ do
     it "should correctly count number of values" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 100 values :: [Double]
             expectedCount = length testValues
             result = unsafePerformIO $ do
@@ -131,7 +160,7 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量的分组聚合
   describe "Metric Grouped Aggregation" $ do
     it "should handle aggregation of grouped values" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 50 values :: [Double]
             groups = group $ sort testValues
             groupSums = map sum groups
@@ -143,7 +172,7 @@ spec = describe "Metric Aggregation Tests" $ do
         in result == expectedTotalSum || isNaN result || isInfinite result
     
     it "should handle aggregation of positive and negative groups" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 50 values :: [Double]
             positiveValues = filter (> 0) testValues
             negativeValues = filter (< 0) testValues
@@ -169,25 +198,25 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量的时间序列聚合
   describe "Metric Time Series Aggregation" $ do
     it "should handle time-based aggregation" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 20 values :: [Double]
             result = unsafePerformIO $ do
               -- 模拟时间序列数据
               timeMetrics <- sequence $ map (\i -> 
                 createMetricWithInitialValue (pack $ "time-series-" ++ show i) "count" 0.0
-              ) [1..length testValues]
+                            ) [1..length testValues]
               
               -- 记录每个时间点的值
               sequence_ $ zipWith (\metric value -> 
                 recordMetric metric value
-              ) timeMetrics testValues
+                            ) timeMetrics testValues
               
               -- 聚合所有时间点的值
               totalMetric <- createMetricWithInitialValue "time-series-total" "count" 0.0
               sequence_ $ map (\metric -> do
                 value <- metricValue metric
                 recordMetric totalMetric value
-              ) timeMetrics
+                            ) timeMetrics
               
               metricValue totalMetric
             expectedTotal = sum testValues
@@ -196,7 +225,7 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量的层级聚合
   describe "Metric Hierarchical Aggregation" $ do
     it "should handle hierarchical aggregation" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 30 values :: [Double]
             -- 将值分成三个层级
             level1Values = take 10 testValues
@@ -233,14 +262,14 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量的滑动窗口聚合
   describe "Metric Sliding Window Aggregation" $ do
     it "should handle sliding window aggregation" $ property $
-      \values ->
+      \(values :: [Double]) ->
         let testValues = take 20 values :: [Double]
             windowSize = 5
             result = unsafePerformIO $ do
               -- 创建滑动窗口度量
               windowMetrics <- sequence $ map (\i -> 
                 createMetricWithInitialValue (pack $ "window-" ++ show i) "count" 0.0
-              ) [1..windowSize]
+                            ) [1..windowSize]
               
               -- 模拟滑动窗口
               finalValue <- foldM (\_ (index, value) -> do
@@ -258,10 +287,10 @@ spec = describe "Metric Aggregation Tests" $ do
                 windowSum <- foldM (\acc metric -> do
                   value <- metricValue metric
                   return (acc + value)
-                ) 0.0 windowMetrics
+                                ) 0.0 windowMetrics
                 
                 return windowSum
-              ) 0.0 (zip [0..] testValues)
+                            ) 0.0 (zip [0..] testValues)
               
               return finalValue
         in not (isNaN result) && not (isInfinite result)
@@ -269,14 +298,14 @@ spec = describe "Metric Aggregation Tests" $ do
   -- 测试度量的加权聚合
   describe "Metric Weighted Aggregation" $ do
     it "should handle weighted aggregation" $ property $
-      \values weights ->
+      \(values :: [Double]) (weights :: [Int]) ->
         let testValues = take 10 values :: [Double]
-            testWeights = take 10 $ map (\w -> max 0.1 (abs w `mod` 10 + 1)) weights :: [Double]
+            testWeights = take 10 $ map (\w -> max 0.1 (fromIntegral (abs w `mod` 10) + 1)) weights :: [Double]
             weightedSum = sum $ zipWith (*) testValues testWeights
             result = unsafePerformIO $ do
               weightedMetric <- createMetricWithInitialValue "weighted-aggregation" "count" 0.0
               sequence_ $ zipWith (\value weight -> 
                 recordMetric weightedMetric (value * weight)
-              ) testValues testWeights
+                            ) testValues testWeights
               metricValue weightedMetric
         in result == weightedSum || isNaN result || isInfinite result
