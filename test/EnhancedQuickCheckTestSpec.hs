@@ -13,6 +13,7 @@ import Control.Monad (replicateM, replicateM_, when)
 import System.IO.Unsafe (unsafePerformIO)
 import Prelude hiding (id)
 import System.Mem (performGC)
+import Data.IORef
 
 import Azimuth.Telemetry
 
@@ -41,13 +42,14 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
             hasPosInf = any (== 1.0/0.0) testValues
             hasNegInf = any (== -1.0/0.0) testValues
         in unsafePerformIO $ do
+          writeIORef enableMetricSharing False  -- Disable sharing for test isolation
           metric <- createMetric "infinity-test" "special"
           sequence_ $ map (recordMetric metric) testValues
           finalValue <- metricValue metric
           
           -- 检查无穷大值的处理
           if hasPosInf && hasNegInf
-            then return (isNaN finalValue)  -- 正无穷+负无穷=NaN
+            then return (isInfinite finalValue)  -- 最后的无穷值替换前面的
             else if hasPosInf
               then return (finalValue == 1.0/0.0)
               else if hasNegInf

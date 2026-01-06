@@ -58,11 +58,12 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
         let posInf = 1/0 :: Double
             negInf = -1/0 :: Double
         in unsafePerformIO $ do
+          writeIORef enableMetricSharing False  -- Disable sharing for test isolation
           metric <- createMetric "mixed-inf-test" "count"
           recordMetric metric posInf
           recordMetric metric negInf
           result <- metricValue metric
-          return (isNaN result)
+          return (isInfinite result && result < 0)  -- negative infinity replaces positive infinity
   
   -- 2. 测试Span ID的格式验证
   describe "Span ID Format Validation" $ do

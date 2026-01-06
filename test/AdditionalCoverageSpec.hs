@@ -314,14 +314,29 @@ spec = do
         -- Create shared metric
         sharedMetric <- createMetric "concurrent-shared" "count"
         
-        -- Launch threads that all use the same metric
-        threads <- sequence $ replicate numThreads $ forkIO $ do
-          sequence_ $ replicate operationsPerThread $ do
-            recordMetric sharedMetric 1.0
+        -- Create synchronization barriers
+        barrier <- newMVar ()
+        completion <- newIORef 0
         
-        -- Wait for all threads to complete
-        threadDelay 10000  -- 10毫秒
-        sequence_ $ map killThread threads
+        -- Launch threads that will all increment the same metric
+        threads <- sequence $ replicate numThreads $ forkIO $ do
+          takeMVar barrier  -- Wait for all threads to be ready
+          sequence_ $ replicate operationsPerThread $ recordMetric sharedMetric 1.0
+          atomicModifyIORef' completion (\c -> (c + 1, ()))  -- Signal completion
+        
+        -- Release all threads
+        replicateM_ numThreads $ putMVar barrier ()
+        
+        -- Wait for all threads to complete by checking completion counter
+        let waitForCompletion = do
+              count <- readIORef completion
+              if count == numThreads 
+                then return ()
+                else do
+                  threadDelay 1000  -- 1ms
+                  waitForCompletion
+        
+        waitForCompletion
         
         -- Check final value
         value <- metricValue sharedMetric

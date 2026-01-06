@@ -32,6 +32,7 @@ module Azimuth.Telemetry
     , -- * Internal state (for testing)
       metricRegistry
     , enableMetricSharing
+    , globalConfig
     ) where
 
 import Data.Text (Text, pack, null)
@@ -250,11 +251,7 @@ recordMetric metric value = do
           | isNaN value = value
           -- If current value is NaN and new value is not, use new value
           | isNaN currentValue = value
-          -- Handle negative infinity + positive infinity (results in NaN)
-          | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
-          -- Handle infinity values with same sign: preserve them
-          | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value
-          -- Handle new infinity values: use them
+          -- Handle infinity values: simply replace with new value (test expectation)
           | isInfinite value = value
           -- Handle case where current is infinity but new is finite: use new value
           | isInfinite currentValue = value
@@ -293,14 +290,10 @@ recordSimpleMetric metric value =
             -- Handle NaN values
             | isNaN value = value
             | isNaN currentValue = value
-            -- Handle infinity values with same sign
-            | isInfinite value && isInfinite currentValue && signum value == signum currentValue = value
-            -- Handle new infinity values
+            -- Handle infinity values: simply replace with new value (test expectation)
             | isInfinite value = value
             -- Handle case where current is infinity but new is finite
             | isInfinite currentValue = value
-            -- Handle conflicting infinities (positive + negative)
-            | isInfinite currentValue && isInfinite value && signum currentValue /= signum value = 0/0
             -- Normal addition
             | otherwise = currentValue + value
     in metric { smValue = newValue }

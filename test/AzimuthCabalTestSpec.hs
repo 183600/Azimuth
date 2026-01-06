@@ -22,6 +22,7 @@ import Azimuth.Telemetry
 -- | Test metric with special values
 testSpecialValues :: IO ()
 testSpecialValues = do
+  writeIORef enableMetricSharing False  -- Disable sharing for test isolation
   let positiveInfinity = 1/0 :: Double
       negativeInfinity = -1/0 :: Double
       nan = 0/0 :: Double

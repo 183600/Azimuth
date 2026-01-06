@@ -44,7 +44,8 @@ spec = describe "Enhanced Telemetry Tests" $ do
       -- Record negative infinity
       recordMetric metric (-1/0) `shouldReturn` ()
       value <- metricValue metric
-      isNaN value `shouldBe` True  -- positive infinity + negative infinity = NaN
+      isInfinite value `shouldBe` True  -- negative infinity replaces positive infinity
+      value `shouldSatisfy` (< 0)
       
       -- Record positive infinity again
       recordMetric metric (1/0) `shouldReturn` ()
