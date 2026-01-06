@@ -1,14 +1,38 @@
 Build profile: -w ghc-9.14.1 -O1
 In order, the following will be built (use -v for more details):
- - azimuth-0.1.0 (test:azimuth-test) (file test/AdvancedTelemetrySpec.hs changed)
+ - azimuth-0.1.0 (test:azimuth-test) (file test/ComprehensiveIntegrationSpec.hs changed)
 Preprocessing test suite 'azimuth-test' for azimuth-0.1.0...
 Building test suite 'azimuth-test' for azimuth-0.1.0...
-[ 8 of 21] Compiling AdvancedTelemetrySpec ( test/AdvancedTelemetrySpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/AdvancedTelemetrySpec.o ) [Source file changed]
-test/AdvancedTelemetrySpec.hs:24:1: error: [GHC-61948]
-    Could not find module ‘Data.Float’.
-    Perhaps you meant Data.Format
-    Use -v to see a list of the files searched for.
-   |
-24 | import Data.Float (isNaN, isInfinite)
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[13 of 27] Compiling ComprehensiveIntegrationSpec ( test/ComprehensiveIntegrationSpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/build/azimuth-test/azimuth-test-tmp/ComprehensiveIntegrationSpec.o ) [Source file changed]
+test/ComprehensiveIntegrationSpec.hs:135:56: error: [GHC-39999]
+    • Ambiguous type variable ‘t0’ arising from a use of ‘property’
+      prevents the constraint ‘(Arbitrary t0)’ from being solved.
+      Probable fix: use a type annotation to specify what ‘t0’ should be.
+      Potentially matching instances:
+        instance (Arbitrary a, Arbitrary b) => Arbitrary (Either a b)
+          -- Defined in ‘Test.QuickCheck.Arbitrary’
+        instance Arbitrary Ordering
+          -- Defined in ‘Test.QuickCheck.Arbitrary’
+        ...plus 21 others
+        ...plus 94 instances involving out-of-scope types
+        (use -fprint-potential-instances to see them all)
+    • In the first argument of ‘($)’, namely ‘property’
+      In the second argument of ‘($)’, namely
+        ‘property
+           $ \ seed (value :: Double)
+               -> unsafePerformIO
+                    $ do writeIORef enableMetricSharing False
+                         metric <- createMetric "extreme-values" "test"
+                         ....’
+      In a stmt of a 'do' block:
+        it "should handle very small and large values"
+          $ property
+              $ \ seed (value :: Double)
+                  -> unsafePerformIO
+                       $ do writeIORef enableMetricSharing False
+                            metric <- createMetric "extreme-values" "test"
+                            ....
+    |
+135 |       it "should handle very small and large values" $ property $
+    |                                                        ^^^^^^^^
 

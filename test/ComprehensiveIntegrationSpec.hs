@@ -12,6 +12,9 @@ import Data.Text (pack, unpack)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.IORef
 import Azimuth.Telemetry
+import Prelude hiding (id)
+-- Import internal state for testing
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | Test metric aggregation functionality
 spec :: Spec
@@ -21,20 +24,26 @@ spec = do
     -- Test 1: Metric aggregation with QuickCheck
     describe "Metric Aggregation" $ do
       it "should aggregate multiple metric values correctly" $ property $
-        \(values :: [Double]) ->
-          let metric = unsafePerformIO $ createMetric "aggregation-test" "count"
-              _ = unsafePerformIO $ mapM (recordMetric metric) values
-              finalValue = unsafePerformIO $ metricValue metric
-              expectedValue = sum values
-          in finalValue `shouldBe` expectedValue
+        \(values :: [Double]) -> unsafePerformIO $ do
+          -- Disable metric sharing for test isolation
+          writeIORef enableMetricSharing False
+          
+          metric <- createMetric "aggregation-test" "count"
+          mapM_ (recordMetric metric) values
+          finalValue <- metricValue metric
+          let expectedValue = sum values
+          return $ finalValue `shouldBe` expectedValue
       
       it "should handle mixed positive and negative values" $ property $
-        \(values :: [Double]) ->
-          let metric = unsafePerformIO $ createMetric "mixed-values" "count"
-              _ = unsafePerformIO $ mapM (recordMetric metric) values
-              finalValue = unsafePerformIO $ metricValue metric
-              expectedValue = sum values
-          in finalValue `shouldBe` expectedValue
+        \(values :: [Double]) -> unsafePerformIO $ do
+          -- Disable metric sharing for test isolation
+          writeIORef enableMetricSharing False
+          
+          metric <- createMetric "mixed-values" "count"
+          mapM_ (recordMetric metric) values
+          finalValue <- metricValue metric
+          let expectedValue = sum values
+          return $ finalValue `shouldBe` expectedValue
 
     -- Test 2: Span trace context propagation
     describe "Trace Context Propagation" $ do
@@ -54,11 +63,13 @@ spec = do
         spanSpanId span2 `shouldNotBe` spanSpanId span3
         spanSpanId span1 `shouldNotBe` spanSpanId span3
       
-      it "should generate unique span IDs" $ property $
-        \(_ :: Int) ->
-          let span1 = unsafePerformIO $ createSpan "test-span"
-              span2 = unsafePerformIO $ createSpan "test-span"
-          in spanSpanId span1 /= spanSpanId span2
+      it "should generate unique span IDs" $ do
+        -- Reset telemetry for test isolation
+        initTelemetry productionConfig
+        span1 <- createSpan "test-span"
+        span2 <- createSpan "test-span"
+        spanSpanId span1 `shouldNotBe` spanSpanId span2
+        shutdownTelemetry
 
     -- Test 3: Logger level filtering with QuickCheck
     describe "Logger Level Filtering" $ do
@@ -122,13 +133,16 @@ spec = do
         negInfValue < 0 `shouldBe` True
       
       it "should handle very small and large values" $ property $
-        \(value :: Double) ->
-          let metric = unsafePerformIO $ createMetric "extreme-values" "test"
-              _ = unsafePerformIO $ recordMetric metric value
-              result = unsafePerformIO $ metricValue metric
-          in if isNaN value || isInfinite value
-             then isNaN result || isInfinite result
-             else result == value
+        \(value :: Double) -> unsafePerformIO $ do
+          -- Disable metric sharing for test isolation
+          writeIORef enableMetricSharing False
+          
+          metric <- createMetric "extreme-values" "test"
+          recordMetric metric value
+          result <- metricValue metric
+          return $ if isNaN value || isInfinite value
+                   then isNaN result || isInfinite result
+                   else result == value
 
     -- Test 6: Concurrent operations with QuickCheck
     describe "Concurrent Operations" $ do
@@ -207,12 +221,15 @@ spec = do
     -- Test 9: Performance characteristics with QuickCheck
     describe "Performance Characteristics" $ do
       it "should handle rapid metric updates" $ property $
-        \(numOps :: Int) ->
+        \(numOps :: Int) -> unsafePerformIO $ do
+          -- Disable metric sharing for test isolation
+          writeIORef enableMetricSharing False
+          
           let limitedOps = abs numOps `mod` 100 + 1  -- Limit to 1-100 operations
-              metric = unsafePerformIO $ createMetric "performance-test" "ops"
-              _ = unsafePerformIO $ sequence_ $ replicate limitedOps $ recordMetric metric 1.0
-              result = unsafePerformIO $ metricValue metric
-          in result == fromIntegral limitedOps
+          metric <- createMetric "performance-test" "ops"
+          sequence_ $ replicate limitedOps $ recordMetric metric 1.0
+          result <- metricValue metric
+          return $ result == fromIntegral limitedOps
       
       it "should handle metric operations efficiently" $ do
         metric <- createMetric "efficiency-test" "count"

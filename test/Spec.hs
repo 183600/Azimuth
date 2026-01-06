@@ -37,6 +37,16 @@ import AzimuthCabalTestSpec (spec)
 import NewCabalTestSpec (spec)
 import EnhancedCabalTestSpec (spec)
 import ComprehensiveIntegrationSpec (spec)
+import MetricPropertiesSpec (spec)
+import SpanPropertiesSpec (spec)
+import LoggerPropertiesSpec (spec)
+import TelemetryConfigSpec (spec)
+import MetricAggregationSpec (spec)
+import ConcurrentTelemetrySpec (spec)
+import TextHandlingSpec (spec)
+import NumericBoundarySpec (spec)
+import ResourceLifecycleSpec (spec)
+import TelemetryIntegrationSpec (spec)
 
 main :: IO ()
 main = do
@@ -585,3 +595,15 @@ main = do
     
     -- 添加ComprehensiveIntegrationSpec的测试套件
     ComprehensiveIntegrationSpec.spec
+    
+    -- 添加新测试模块的测试套件
+    MetricPropertiesSpec.spec
+    SpanPropertiesSpec.spec
+    LoggerPropertiesSpec.spec
+    TelemetryConfigSpec.spec
+    MetricAggregationSpec.spec
+    ConcurrentTelemetrySpec.spec
+    TextHandlingSpec.spec
+    NumericBoundarySpec.spec
+    ResourceLifecycleSpec.spec
+    TelemetryIntegrationSpec.spec

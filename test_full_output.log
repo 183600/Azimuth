@@ -404,7 +404,7 @@ Additional Telemetry Tests 2
       +++ OK, passed 100 tests.
   Metric Registry Sharing Behavior
     should share metrics with same name and unit [[32m✔[0m]
-      +++ OK, passed 100 tests; 11 discarded.
+      +++ OK, passed 100 tests; 10 discarded.
     should not share metrics with different units [[32m✔[0m]
   Text Encoding Integrity
     should preserve ASCII characters exactly [[32m✔[0m]
@@ -509,158 +509,155 @@ Comprehensive Telemetry Tests
     should handle span creation in rapid succession [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Hot Updates
+Initializing telemetry for service: ""
+Initializing telemetry for service: "\RS"
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
 Initializing telemetry for service: ""
-Initializing telemetry for service: "-updated"
+Initializing telemetry for service: "^)c;-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1085588\&9]-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "5-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\EM\1676\&5"
-Initializing telemetry for service: "\ETX-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "I-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1053131"
-Initializing telemetry for service: "n-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "r\ENQ\999909\&4"
-Initializing telemetry for service: "r\1091175\EOT"
 Initializing telemetry for service: ""
-Initializing telemetry for service: "\11216KK\54490:=\".\v"
-Initializing telemetry for service: "\DC2)$\\j\1003436"
-Initializing telemetry for service: "\ESC}_s\12396\DC2kY-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "ZL\DEL%I\DELP\SOHG\1096523=dAJN=\n-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "@XEr/YWp\32357\GS"
-Initializing telemetry for service: "e\DELnoKU\DC2x\t"
-Initializing telemetry for service: "\191652Jl\FSH\1623,'X\1039117\a"
-Initializing telemetry for service: "\ry\"\1024015\1079097\r\CAN6\SOHe\199796?^]\110835-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1039025,\EM-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "W$ h"
-Initializing telemetry for service: "}\1074247y\RS\155154 \DLE"
-Initializing telemetry for service: "-updated"
+Initializing telemetry for service: "O"
+Initializing telemetry for service: "lm\DC2-updated"
 Shutting down telemetry system
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\993222)@\1003201\1048788\ENQv\1034733"
-Initializing telemetry for service: "\1022235\NAKX\167177k7\176633k\t\147821R\NULE9\FS58.\18889-updated"
+Initializing telemetry for service: "\1025148\&6\RSy\ETXw,-updated"
 Shutting down telemetry system
-Initializing telemetry for service: ">\US\1076104\187778z\SO\52435/\n9\SOH=<\45422%\154368)\f"
-Initializing telemetry for service: "s^9_\1003686\48544\ENQ\n~\1050729xO\1096598\1057216KW_-updated"
+Initializing telemetry for service: "\CANO\35240\1093072\n"
+Initializing telemetry for service: "L\ETB$DqFT\ETB\SUB\f\995595"
+Initializing telemetry for service: "E&\202576WS\DLE-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "g\139829\1073967Z2%\1004627s\SYN-r2E\168162\r\1034855\49446_{v"
-Initializing telemetry for service: "\ESC\1112219\1078731xvM\1037241\1094714Df-0\203199\r"
-Initializing telemetry for service: "+w~pm\EM\13310]\49786\&5CJ0_0UU:bD9"
-Initializing telemetry for service: "I<zOy?\994547m\GS\SI$t\n\ENQSx\36388}\DC3\RS\ETB&W\208092\993010\EM"
-Initializing telemetry for service: "\1111068"
-Initializing telemetry for service: "r\ENQ\vdg^'M\"S8\ETB6/$IdOgt\1043943{I-updated"
+Initializing telemetry for service: "\CANF-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1101179PMlkc\CAN\US\92736.\1097793+\993862&\DC2TZ7\21677\28412m\198490\1034288\&7\184605\NAK\1082200\DC3\37494\990418&-updated"
+Initializing telemetry for service: "\1023405f\1079990 u\1075882\12716 \\-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "u,\41371Y\181313\2469\121124\&9\CAN(5\USl\"6\"-updated"
+Initializing telemetry for service: "\ACK\43554k}\SYN\138401\&0\992060\FS\EOTx\15506"
+Initializing telemetry for service: "<\DC2\1061248\EOTW-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "$Nq\US7"
-Initializing telemetry for service: "\180473\205181\184515Z\FS/\1103094\178321{q\20801I\NAKk\a\1073665\SOH\b\1107108-updated"
+Initializing telemetry for service: "\1067670@:\f?&\ETB"
+Initializing telemetry for service: "wed\DC3`\180625\67290-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "YI>\1023384&eEZz\r/\181166K\ENQ\SOp\1015993\206704\SI\1027124\ESC0\SOH\DC2\2411\1000049]\1075938?K\80337Zm\r\172884<\29275-updated"
+Initializing telemetry for service: "f4e\191072.\SI\146428\1036711=\FS9\203700\DEL\ACK"
+Initializing telemetry for service: "N\n;\201072\a=Cu\40378l\rvg\1063160-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\DC4Z\145857GD|\SO\139009BE=Q/\162674\20142\1107214I*\1100399\DC4Q\36733{;\1024550\1067815\STXg6|\bU\NAKe(\NAK\45612"
-Initializing telemetry for service: "\36014Ag"
-Initializing telemetry for service: "J&u\1111137h~)(\US\55266\990844\1033655\DEL-updated"
+Initializing telemetry for service: "3?l\1098867\&2dJ\13946T\42467\1039693\1014642:\206206\9735j\161500\1101435\139519w"
+Initializing telemetry for service: "\80264.\ESC5\1099478\SOHV\41917\&0w<bv$"
+Initializing telemetry for service: "on\nx\1028868`\171575;-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\ETXdYf(\7166~\207478\ETX\f(Lj8\DEL\RS~>v\2493;-H\DLE\1047397J\173383\1085842=b\ETX\STX*@"
-Initializing telemetry for service: "7\STXJ\NAK>\28737\NAK\177678E\NAK./A\1032235X\1056115\bE\GS\41579\GS\tM\17201\&1-updated"
+Initializing telemetry for service: "3\140663\1088236\132361\1068407~!Z\EM\100027\13143X\98170"
+Initializing telemetry for service: "\DC4/'\51464\DEL|jV\r\1005521t[@\140637[\b"
+Initializing telemetry for service: "\32444FV\173554\t\137510\ESC2O\13896-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\EOT$Uw\987938/\1071020\1029322\EMGA,Z\STXUIA]"
-Initializing telemetry for service: "_\163920%;?u\1093654\1106700\120197o`g\n\DC2\1002262\42175Go\46916\a\SYN\52457\\X\1099641\NAK,\SI \1034997od\DLE8cVAj\1110201-updated"
+Initializing telemetry for service: "\1111884\SOH\EM\166620>1\RSl\196974\EOTQ?j5\ENQs-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "}\98506\1109983}z\96110$nK\DC3<H]v~\EM\183622L1h\204841^\54249\SIY\aTy"
+Initializing telemetry for service: "%/lU2`\32991*`;\120805\1649\74467 \EOT"
+Initializing telemetry for service: ";FC\184517,\SO\n\146334!\60602\998596\80718\146852\984243;O\\\81103"
+Initializing telemetry for service: "\73815\GSM\64356&rR\t\1105791T5XIy-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\113679(\DC4P}\a\1083834#;t\1112756"
+Initializing telemetry for service: "z\USk)\tF[C\47194H\985036#[\1111165p\63808\US`\SO}d\STX-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "Bu\1024900\&7\1083240S-updated"
+Shutting down telemetry system
+Initializing telemetry for service: ":\DLE}\20400f\7847/[r\7926\32831\1015331\DC3"
+Initializing telemetry for service: "cIy\FSUV\SOHV\a\208716Xh\1059577X\FS\1041594\141978\&2u\1093571\\\1072445\&3\988493-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\EMND\1029370C\134868n-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "G-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "7\n\DLE\1076154z]9\136821\52225\51117:\81861o9\NUL\1066041\1066040\DC4%\EOT\SIX9\SOH@\28093\&8R\201066\1451\\T.u\UScT\ACK-updated"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC1\NAK\GSJ\1093310\137349\179647s\178789f\205691\186348\FS\987230`\3366gj\1093770\DC4MC\STX\1094358"
+Initializing telemetry for service: "\NULGKG\198524}=\55185\15222_|2\\X\DC4\DC24\137970\178403\1043663H1\DC3\RS\985385\STX\GS\185946KFl+\153979\DC3"
+Initializing telemetry for service: "\98620\SUBT\SO-updated"
 Shutting down telemetry system
 Initializing telemetry for service: "-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1087320qhD?4u \157798\49418\CAN\DC3-updated"
+Initializing telemetry for service: "X\204471\1104390\&1&)2%\1013596.w\67703\NAK\187174\1063061\70730Op\41877K\EOT-4\1060287\SOH[_"
+Initializing telemetry for service: "1\1004356{\151230K5\RS\b\CAN)\1080285f\17782-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "#x,\1012942z\EM-updated"
+Initializing telemetry for service: "\39103nr&\US|\CANW\162970\SUBtI?\156352"
+Initializing telemetry for service: "\DLE\t<\175576\1022528\ETBi^"
+Initializing telemetry for service: "\190446$t\209873d\1096589F^J\186075lC\185507h[2\38423!-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "v-updated"
+Initializing telemetry for service: "\NUL\EOT\158768\200300\&1z\DC3\37526\174363i&4Jw-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\175281\21608C\145307m!\fRx\1005455b6GC\ACKLI\10578(\b|\54260i%G\nA\STX\FSV\207012x5o6\1052290-updated"
+Initializing telemetry for service: "g-z\1074332-\1032848\187262Zn\DC2#\ETX\167782\b#E\160530\1083411GvI\ENQ\SI\b\SOH<-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "vq6\b%\ENQ\n9)-n\DC4y?\27346.\10662(..\tgd\2319-updated"
+Initializing telemetry for service: "L)!>u)3\2893E~=yVq\100452\ty\DC2x5VH_\GS"
+Initializing telemetry for service: "CV\1032995\DC4\ETXX%j\CAN\EOT]\1112372\157091.\209735^-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "6"
-Initializing telemetry for service: "KeA\157988V\US\r\EOT<0\DC4\GSnl\1040199h,\1006305,u>xSg\187447\8291z>\1062258As-updated"
+Initializing telemetry for service: "._\ACK_\EM\SUB4\74892\203693Q\ETBT\a!\989154Iks\SYN01\117976Ug^\1061120vAO.@jcV)S\ENQ\79196\DC3G\1059378"
+Initializing telemetry for service: "aJOtU\1051480\"(\DLEXV:\209142}\EOT\46288=\DLEV\991480Q\ETX\DC4Z>\140651\DLEUT9'^"
+Initializing telemetry for service: "\a\ESC;\184876\187913\ETB~1?s\82164J\b)\SO\61400:\STX@\CAN\1003117r'qI\188507`K}\11422+f\1031558\DEL\156682"
+Initializing telemetry for service: "(DqM/T\DEL#=E\ACK\SI\1085610\30449\1008592f\185768"
+Initializing telemetry for service: "Rxm\68033\&3\tn3p\166830DyQ6N}\aRe+\EOT\148903<\27914rSqe\STX\SUB\59674\41863k\1044515\DEL\"D"
+Initializing telemetry for service: "v3\EM&\b\EOT+*\1094495\SUBz\a\146438HH\SIm\EOT\\N\184536y\CAN\1066669Z\STXq\119658F(\1011209\EM\fyx\DC1b$\CANPB\74248K\NAK)\v?8\985371J\71870\1057106\1097549\110996B\153394O-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "W}\ACK\DC41\147625\DC2:L\74518\t\176382w\1059852eQqZB-updated"
+Initializing telemetry for service: "\1070625j\1061736\&7unE\1048089\SYNU\1084213y?&\r\22708\NUL\1107762\999277U\nt\161340\DC1'\998032\1107629\EM-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "=\1010316&\EOTK\169103\1039879FX9Gs\r\1044211\113787(\1016618Al\1107748.:}\SUB\RS\1090308\22844A\1096653\147388\RS\1039421\DC4x-updated"
+Initializing telemetry for service: "8Z\"\ESC\1070902\SIBR\CAN\ETB/\r]!{nF]j\ACKXh\1087171\80172MZB\ETBp]\CAN\1012923\1065094\FS[\1089093:\1063899\a\1086601e\r.\1057633v`yy"
+Initializing telemetry for service: "n9c\177817r\94340V\1048307#+\185789\&5"
+Initializing telemetry for service: "\1024169*W\f\f\184610\RS\FS\7080\CAN>?R\983264W+H~\992482:{3\11320\&8:\DC2;\145938A\187932>\r-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1086750\r\1959\RSM\209040\179502\&88z\GSs\60714\n\989992U\155063@"
-Initializing telemetry for service: "\SO\NULJ@*a\DLE\DEL\n\DLE&\1025352\ETBA2_\203917`\994444mn-!\DC3>\SIG?4L^UZ\67326-H\1108122:\1079626-updated"
+Initializing telemetry for service: "l9\1015489\SI\1004804*\176841C\1018139_d\v^$\1087208!SW\STX_\1013970w'#\DEL9fD\NULR@\1057760\1077574tY\a'W#\153877\DC1\95984\DEL\169946\1038496`\45845\&5=\1075213\&2\DC3\157727X\1097052#\123141\RS\ETB\\j\38137"
+Initializing telemetry for service: "\GS\DC110\133621{_\13602\1112006H\vWM\74044&\SOE6d0\151002I\32545J8{\rF\a\1063038UE^\SIr\1051069=N\1109490\ETX\ENQ;wz\1051015"
+Initializing telemetry for service: "i{q-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\151954\27591xt\GSr{\1072910\SOE4x\82115f\1491\1015228S-\207362P\1065431\42004-updated"
+Initializing telemetry for service: "x?\FSZ%y\1047569\1105915e\141047/3\8607_\148704S\1026046:\ETXt/\f\f\ETXU\ENQ2\990266/y\197060\n\FS\203443)G\1087959\34093\164535|\156426u(\ETX1\188995\1044372@,@}\80936\169378)\1076361x<\22351<]\ETX\184635\\\1069257-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\1015151WcxX9D\US\69973f@l\80577\1056054D\46950K\DC2\191266h\ETB$l5D`}9\1085193$z\146703jHS\1063266\&6H]{'{\t;\aY\27796\NULus\164125\1041257g-updated"
+Initializing telemetry for service: "Zc\NUL\148189\1027703|\1107681\120736p\142805\DC4 \174888"
+Initializing telemetry for service: "_*\81850\1044987*\1085102`\f\99292>j\73740Ix\r\136660\v[2\46147>\77794C|RX\f*m\DELkh[\134363\2145\b\111270B\EM\SO\GS\186416^\165384"
+Initializing telemetry for service: "&9\EMh\1063685]\1078001\r\GS\ESCd[\991053\51334f\1016595^\SUB\DC1_,\US\1107471I|\27865\1040510e$+E\1009374\&9\DC2?7\EOTD\ESC\r{RS\1048706\"F\US?rf(\79740K25\DC3Un\ESCT \26051\SOH"
+Initializing telemetry for service: "\120528|"
+Initializing telemetry for service: "&v\1030106\1043765\SOHP}pq\SUB\1097325\1036341f\52364:';\1081981\&3u\STX\STXar\1085311\1060022{\1091296\&9i\169218\10895G-\DC2\DLEa<;).\DC3y\168877-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "X\157748\118835\NUL\1021950FQj4\STX\SOr\EOT\DC1o\996256\40053(\30467!\177585\&2S\RSTY\SYN,zX\1004308\991290\"s"
-Initializing telemetry for service: "\FS[[L\CAN\23958\1006597\NAK\ETB\DC3\vd\74571n\159975\1028827m)\ESC\1037846P\DC2\1020163+;\1103228B:0\FS\35978y=\1057221\16327g-updated"
+Initializing telemetry for service: "8\SUB"
+Initializing telemetry for service: "G\4834\986315\1080623\1074302\120468\&9\1113601E^\60410\r`\1087796D\EOT$e]\NAKs\1054194<0\988579\1067205\ACK|UJ\132696\63084\82842\1011263\ETBz\203420\&9\ACK\60740\144410\&2\EOT-updated"
 Shutting down telemetry system
-Initializing telemetry for service: ";/\45320\&8Egi@]\986874(_384jX\209775\ACK\f7\18682K\RS`\DEL\181565\133127#L\26563\1003551<\EM\DEL\GSTZz\1016130j\1087516w\NULIMUK\1012471\SO8\SUB-\1033192\ACKHa"
-Initializing telemetry for service: "\121078\983774\&3\1081501iJ\DC45K\"9J#nHX\NULZ"
-Initializing telemetry for service: "|s\DC3\1013176K>"
-Initializing telemetry for service: "'+\DC1\SYNM'\GSk\1043001\1023186\ESC\DC3\206336\SUBN)g\ETXz\DLE\f;7|/\146871\DELM\58103ndj\1101138kv\ETXSE0l<y\"*Ut\STX\1030547\1090818\988801\1062240\205665\&4\185072-updated"
+Initializing telemetry for service: "P\CAN\DC3?v\GS\36060\1078394&\17950\DC4\v\1080534&\70051\&5,P~+\289\DC1sW\1081001`O\RS%\n\DELjYE6\1082878[>\GS\209773\145700\ACKk'Z\207814\1082592#\1009866cP(\110666\&4*[|]\ENQ\STX~\22204R\995129{\1106995\NAK~~T\1031003\1052700"
+Initializing telemetry for service: "@\t|Hn.\1054900L\3955km\CAN\ENQL\1065326\993248\&7-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\46760 \22032*[)NPOr[\1015309N\187920\FS;BzZ(x1P\1035394\&4&\1014866\FSA#"
-Initializing telemetry for service: "\149183w%\US\1070558\bM\96288\179695{O\1026807\1072107-\US{\999483\t\1017061\167588\FS\101095\n(\ESC\208432\NAKY\ETB\26933"
-Initializing telemetry for service: "\195065;TL\30657*<\1004658\&2\95654v\138216K_s"
-Initializing telemetry for service: "$\n\\"
-Initializing telemetry for service: "5Gn\30176giX\NAK\DEL\ETBtn^\1058593gF5\SI\DC4U6t\159950\NULJ\SI\67278+j\1003000\NAK O\1080984p\EOTf*4\120309m\1042650i\\\1101623D\DELeld"
-Initializing telemetry for service: "(\1032179\DLER\9699\&0Z\aS$\STX/g\SOo?\1035611F"
-Initializing telemetry for service: "2*y\CAN\DC4KCO\t\197713&A\ENQ{*\1100973\&6\RS\n~\152754\SO\DC4\1110931\RSB\180061S_!b_<I5\ETB\NAK%k6\b-updated"
+Initializing telemetry for service: "M:\194727q\\\b\ACK\990185<\RS\1080355\1078579k\1078031_\SO\1088532\DC2\tn\NUL0bn\SI1_+eq\1070393\1089633\SOH\aAv-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "H\NULv\157722b\RSg3\1085923Z\175783\38646h\1062128\GSuj\188816Hcy\16658\1005366X\DC2_n\1040621%jhD/d]k-updated"
+Initializing telemetry for service: "s9 P\1032712\US\47406r$\1077733I\40596,\146522\GS3\NAK\EOTZ\DEL\40902?\157426;8\129924\41657\993073\1061040L\988495k\SO\1069139\SI7O'1Bl\DC1p?\38784\&8\22441\NULt9;\27289O\206156z\181644\1091368L\176591\DC28\135175R\FSo\b"
+Initializing telemetry for service: "\DC2\SYN\ENQ\68016F\986120i\136899\182868ZE^\FS\ETBkb-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "KI\CANe\NUL\vE7\RSR\ACKfU0\69986\1018304\DC1\EM\SUB\SOH9\155107\190714u[\1043270\190348b&tp\46043\FS\EM\203921\57878\GS\156148\987776n|\SI\1003545Rd\GS\1050558qR\202043A^\DC2Q/\"{e-updated"
+Initializing telemetry for service: "vmS\1038459\1096866fH\182427\153355M,\1106221\13492bD\"\STX\ESCVfv*\79011\&3P\RS\79236t&N\1033785xmZ{\SIwkA.+\1056314\SI$*na4\NULJT\1082157b"
+Initializing telemetry for service: "x\ENQye\65373\1113254\1060783`\1113611\&7\1047319\bs4\49698|y>u^\163531n\57812\986244\998684\1076981\94555z!\14429X%\DC3v\21982P\49906v=\b8\61854sq\DEL,^"
+Initializing telemetry for service: "bgB.\GSY\SUB3\DEL\81886\1101868*\CAN0c&'\1065090\STXWH'\984919Cq\r'IH\ENQ<\SO3\997729\101118\1039497\1028002qp=\1017918*\DC2uI\1110118"
+Initializing telemetry for service: "\1071163%\1036502\SOHt\SI\1072302T.%\1049165ig\ENQ\1105365\tC/\GS]\SIc\1013835\1079837|\US\31709}\RS}k4x{\SI\NAKS[3y"
+Initializing telemetry for service: "\51924\RS\b\180937\&9\NAK\SUB/i\157048AM\f75\DC2\1021186\&9iAy\SO\\\185645\1017618\ESCL+\1086638\US\1102779B\1099497\&5B"
+Initializing telemetry for service: "w \93769/|\CAN,\1113140\FS\1078545-\1029977`\SO\21436[\1005959\203360Wr\SO\a\1024180x\USMF\SOH\26797\ACKB7\EM7\f\ETB\34426b5G\ETXO-\SYN\1028529n(\1009659\ENQg\59838L\1088711v\DELA@\1037014\&8\SOb\39068\n(\190683\166289,4So&\991897\18904__\ETB,\GSD<T\1026877-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "@\EOT\1033998\&9\SOV\RS\v\SUB\t \74854\157298\&6\42129\120484\ESC|.\SUBk0U\1093958=Xt_x\NAK\SOHkAF6?/b\DC4\1107124_S\ESCe\1065527\vI"
-Initializing telemetry for service: "\DLE\1105698B.\RSv\ENQ9k%\183333'(\1003680\98331\1053120{_\144250|\RS\1080230\1012873NK\GS|\20862#LQd} \GS\98197Q\NAKiy\101341>/\DC3\DC4RA6[\STX({'\1034370\82688Z\1005767\185301a\ETB\1082463ZC-updated"
+Initializing telemetry for service: "\EOT\192049'\DC1\30619\94232\SOGT\SI\v\EM"
+Initializing telemetry for service: "$w95C\SOH-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "=\f\ACK\24018\&1\1056826q\1043227\fF\72416d^\a@]{\1046073&I3`a\142181V-updated"
+Initializing telemetry for service: "\\\ENQ!o\DC1=x\985292$\ENQ\161583uU<c\1087012\DC3IZ\31701\NUL\1106395\60159\CAN\SOJz~f\1052034!*fk'3\SOHgCP<\1040636\&7/\DEL\31758\&3\59587\1048339'*\1035074FB`6\f\1098199\&2\6455j\167997\82464\1076926\\\NAKp\1037800#|\1024367Z\\g|-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "@LzFX\FS{\RS\139407\129902M\ah-updated"
+Initializing telemetry for service: "p'7CB\144404\&08pp\81226\46319+\1068512Js\1086500\200649\65325\SYN\ETX\NAK\DC41B\b\992961WC\12921\994813,\30024xZ]\CAN\EOT8Jl\1090372)\165805\n\1100147TDdT\17885/S\"9\SOH-EB\DC3\ETX\r\ETX\EOTc\DC3\23592`Sd\ETBcN\STXIg@%\1040134B\207589R \66915-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\24573\39666!B\CAN\EOTl\1085763\79826\DELF\1087584\\\rrM\SYN)\SYN\STX(m\DC1,\US\1042281\n"
-Initializing telemetry for service: "\NAK=n?o\190237\12785\157031]\54731\164404\48826\1064165\5306\70869\f\1019238&\10694\" =\1102171c\167248\SOn\GSo\ETX\b\DEL\t\1052254\SOHC\989579B`W\186044N\ACK-updated"
+Initializing telemetry for service: "\997185\DC1?\ETX\1049952`\DC1(d2z\EOTM\1052952\&7I\NUL+TS\ACK$\vw\1015607M\1045893\ESC\NAKl\1113815\955a.R\SYN\173060\1111979\1066776#bsj\1037607\SOH#\SO\1050651l-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "Z\b$\vR\69776\1048017\78888}Cdk.\USXjs\79423~C/`k\EM%\986929\t\1019780\STX[@I`q.k\NUL#C\ETXA\151015K\991306W\1015935W\v"
-Initializing telemetry for service: "s;R\CAN?\ETX\1098468 B\168712p_(\v\SOH\187476\r\FS\168287c\DEL\990549d\ACK\SYN$IY\17299\ESC\1029393P7\993785\163319LA\DC1ooI"
-Initializing telemetry for service: "\EOTG\1040504\1074571y<\205400n\STX\989257\&0\9967\EM\ETX\NAK}v\n_Lz"
-Initializing telemetry for service: "\DELr4\NUL@\SOH\37974\&5\SOuY\ESC\bWOC5 L\n<d#x\DC2\DC4\95178\&1-updated"
+Initializing telemetry for service: "\DC3-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "#|^OL\SYN\1104440|\vi\984371rF\1070549T1\1079404jP|DI\1083873`PCv?Q%`v\FSR\1000841\SO\f\1089435jJF$4g)+\NAK\EM\DC3/\t\1106390\1079731\1016851`,\79280\165799qn:\10210\"~j-updated"
+Initializing telemetry for service: "\52398UP\1091821:\73494wNQ\64486O0FA\STX\171609?H\DC4\"P\NULQ\"l\ETB\42743\&1F\ACK\1055489WO\986834\ENQ\SOPs;\1104337\&6K\v\\s\1022934\187296-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\16097#(\168529\NULm\1037775\167533\DEL\ENQB\EOTl"
-Initializing telemetry for service: "P\STX`\"_\1064645\f[\EM\183096xFm\DLE\134364\24110\136156\203724QD\SOHq\USS\SYN\RS)R>O\95566\DC4\201560\1012151oM\tk\f\DC1FQ1-updated"
+Initializing telemetry for service: "\139852\197565\EOT\SO=\ESC\182947\RS96\1035486"
+Initializing telemetry for service: "V\65040\1052294e\DLE\1065528&^q\US|g1>\162977 \1071017\"\RS*=*@P\988931\1010865J^\r\1050849Y]\997123\989533i\1029749$\29901XIR\SI\1054770W\1018899?IW\51180\RS\ACKE\1053551\143150y3+*P\1072489\1056604\190097\STXJf\ACK\CAN-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "g`~\1018165\&1\ESCW5&43\139902aSFzY\NAK\47677\DC1\SOH\USNF\1039995rT\DC3\141504\49297c\138854I\1092624GH/\USHtbH\13714\ETB\1106424C\ETX\26735\1026590\197677\147423\EOTIuW\129412A\72414t\1031200u|f"
-Initializing telemetry for service: "O4\ENQ!\992645\SOH@:B9\53403lM\NULC\DLEFZ1~!W*Yn1)0\61955a\US;:w\1090631\38372\986296^>o\aE~2\FS\1077180n\137822W\ESC\SO4\DLE\32560.\t\ENQ5:c\tAd\DC4-updated"
+Initializing telemetry for service: "\SO\97195b{\1057018IA\SOHZ\54505.X\42394E\14631\&6)\n\160832\1074272\CAN~aqq|ysk}\ETX\128158h\1073123\v=f,"
+Initializing telemetry for service: "a\RSa/\ACK\1672@&*\DC1;.\1003424\DC25q]\1005317W\v\aCUWt\14301T9\1079838\1081938DI\vC7^\DC3\ESC\1011843\1008420o\ESC~\1066154jkRzD?fQ\DC2Q\169578\"H\SOHjY\vQ\1055755\&9h-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\34290\1027590a\67739\NAK\190786\r5\14288\ENQE\SUBv\152689\183486K\1088875O\189249\1053873Yp\NAK\tO}WGn\24332[~hT\DEL\RSud%i\1023609|mY{ZUM\n\151654|\1052319\SOH\46855\DC4'3\1060675\139364<w`\30252Adi|\NAKV\ENQ*d*\49214\&1`\1041198\989596\999813\1020825e\NULSy\1105234\2999"
-Initializing telemetry for service: "\149597\8811\ETB7G\a\1089470X\nIW]\1018384F#\1096213\1077523zL\23199\&2/\118448.\EOTY$\SUB#\DC2yN\ENQ\1075127\6052?\988027\1026817\1106033\1003727\DC2\1005184)\f\1095760\NAK\991375\DC4\38409w$\a\EOT\t\118412`AK~=\200904GqD\1020363\\\190457j\DC2\1103626I\ETX\v\DELTJJ&\DC2w\ACK2\1031267 \623\79416o\EM"
-Initializing telemetry for service: "vQeP\1071489(f\USI\ENQw/9m\SUB\98840\117851\GS9?z&~\DC2w\ETB\1044308m>\"Y8M-updated"
+Initializing telemetry for service: "#K[\7438Ko\\5\v\95133\b%7O\1018968\20531\NULI\984199\NAK7i\145369v\1052113s\SOHzr\SO#\aw4\SYNIj\b49\1082812\&0\78908j3aS\1036907Ya\1026450\SI\DELJ6\987245\198715-\STX\205974}w\5373\156572=f\STX\DEL\DEL\176469-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "\SO`o\FS\DC48)b{\81148\1026418;h_\171416b\1112494\985460\21809#0&\RSyy\1102147\1064603\1045197R\1081155\68648}qLpk\DC4\36305\SYN\SO\DC2\161994<z:?\51144\ETXs\GSq&-eC\1100903\FSD\1109631\SUB\201693\1106476htB!\v\156560K8\186718\22265\38102>\NUL\1013703\148051\28022B\US\991793L\DC4\NAK\1003603W\ENQK\150021\t&\1035726@\205757"
-Initializing telemetry for service: "!\SUB\a(\ACK\36164\1008756\207199t\SUB[:~\STXx\199781yd\RS\162028C\FS&n>b\DEL\51100\SOH9O`\DLE\1003169z\60526\EOTs\t\1028024 d\127988}Xc\SYN\985527O\1000326\ETX\ETX\SI\44154\207493%q\57635Gv\1088280\1032812\96973O\ACK\80016!T\ETX\5591o\ntq-updated"
+Initializing telemetry for service: "n\SI\ESC\DC2\EM\SYN+ #\22509AN\151591}\SUB\ENQ!\DC35M4{-updated"
 Shutting down telemetry system
-Initializing telemetry for service: "|\47500\DLENB\187152\11377|d\FS\DC1\STX\DC2?OBew\1079397'c\8726\1057051fb;\164331i\1032810~m\b\1090630\NAK\n2\153674\1024835 \17682\EOTw_\1111468\aTl\SO\54168\SI{\rF}v<'Q\92274\97716h-g<81\RSJ6\1034554~\t\DEL\SUB\f\993244(Ic0'h\153310Q\197565\SUBy@^\120201\1026643-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "~\171098\1380\1073097=5/\1087729}T9I-\ETBw\ENQ\1091896V\992830z\r}h\178026`X\\z?\ENQMj\1060886\199563\1034801\168036d\n]\US\1095658<z\SYNtn\1033479\152522u\b|\ETB\31152\5494\&7\STX\98351\ETXk\1020392\1061770T\ETB\65703\1017251\1095271g\99387i3\1028397\1059194 tc\98665\985587\f\NAK\992810R\162496\SO|oK,@@\b\185025\DC2\196890q\1008041-updated"
+Initializing telemetry for service: "\DC1oUNt-Q\tM\62571\\\ESChpmA\FS\DC3"
+Initializing telemetry for service: "&\t\34086\48120(K\987283w6\60342M(oD\43253,GYl\16864SV2\ETBfU LE\ESC+DYB\70173\154817\63779Cg`\1024285j \fQ\1072198-\1109330nx\bsx3-updated"
 Shutting down telemetry system
     should handle configuration changes without affecting operations [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -684,19 +681,19 @@ New Telemetry Tests
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 16 discarded.
+      +++ OK, passed 100 tests; 20 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 16 discarded.
+      +++ OK, passed 100 tests; 20 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 16 discarded.
+      +++ OK, passed 100 tests; 20 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 16 discarded.
+      +++ OK, passed 100 tests; 20 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -714,7 +711,7 @@ New Telemetry Tests
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 16 discarded.
+      +++ OK, passed 100 tests; 20 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -969,240 +966,255 @@ New QuickCheck-based Telemetry Tests
   Configuration Field Persistence
 Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "3\\\1019195"
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: "|\1080069\1090611"
+Shutting down telemetry system
+Initializing telemetry for service: "U\GSk\RS"
+Shutting down telemetry system
+Initializing telemetry for service: "D"
+Shutting down telemetry system
+Initializing telemetry for service: "\30407\1022294Md%("
+Shutting down telemetry system
+Initializing telemetry for service: "7QE\EM\82165\&5$\RS\1000065"
+Shutting down telemetry system
+Initializing telemetry for service: "+\1065370k\1005956\152042\FS'P+\205404\34506"
+Shutting down telemetry system
+Initializing telemetry for service: "g"
+Shutting down telemetry system
+Initializing telemetry for service: "'i\989200aW\1057086\10052f\67887{\1005061"
+Shutting down telemetry system
+Initializing telemetry for service: "5U\n\1067186\1011401`Q\21080a\173328\43622\1025858P2\18461c"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4PU2n_\1781~\NUL\161152~\ETX:\US\SOHDVBB\1043446|"
+Shutting down telemetry system
+Initializing telemetry for service: "\EM3\9815\62682c\1042776\1013670\144416<vq\\X"
+Shutting down telemetry system
+Initializing telemetry for service: "u4\987805\1017431I\47170u"
+Shutting down telemetry system
+Initializing telemetry for service: "3A\SO_\b3\ETX"
+Shutting down telemetry system
+Initializing telemetry for service: "\SOH2"
 Shutting down telemetry system
 Initializing telemetry for service: "]"
 Shutting down telemetry system
-Initializing telemetry for service: "\209010cV\1081702\1100240"
+Initializing telemetry for service: "dB\ACKQ \1002282@mp\1058393ER"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "\b\9325\186713\n\CANh<\b5\1079279\179941\&1"
 Shutting down telemetry system
-Initializing telemetry for service: "\47909\994439\1024866vk\1091559"
+Initializing telemetry for service: "\120634\1015622m\fXm3Z\8807\32201^\1087700\1091382\NUL#p\v`\t\EMEJ_\34613\SOl"
 Shutting down telemetry system
-Initializing telemetry for service: "\94816\US$GB\1043894"
+Initializing telemetry for service: "\1001853\1067592$\SUBH1au!\ENQt\DC3E\NAK"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "5m\DC2w\DC2g~6R\DEL\SO\SUBv\ACK8\t-g\48771\FSx0\53393P\48155ajpI*6Y\95186\SOHQ\1021812"
 Shutting down telemetry system
-Initializing telemetry for service: "COc/ iD\RS6\ESCZ"
+Initializing telemetry for service: "\1069933P&3C|\94967mhrf;\1002399H\1039358z\182571+\\\1073347\t.\1018240\&3cP,\37136*"
 Shutting down telemetry system
-Initializing telemetry for service: "#b\30825"
+Initializing telemetry for service: "\1077715|\1013760t\137090\ENQi-\FSW3_5\DC3\SOHf\1062586\RS\SYNzs3 #_8\1092770\"<0l\DC2bI=#\1004932\&7%\b:"
 Shutting down telemetry system
-Initializing telemetry for service: "\179193\RS+tA\ACK9O\31695?\bRDe"
+Initializing telemetry for service: "\NUL\148417\NAKx2\f_lA\r\49304\151531\SUBh6kl\122922\"<\DEL\DC4Sf(\136591\DC3g\992121\FS|#\92687"
 Shutting down telemetry system
-Initializing telemetry for service: "5\170544*\51215ppTQq"
+Initializing telemetry for service: "\179025\140540\ETB\59314\20044c}\1111508;\1027965o\125210.\1055691\ETB\1073966\ETB0\1031145\DC3g\35280\NULA\USnB\207502\1072364\vN\183528m\27759uhsr\202143\\\CANl\1068417"
 Shutting down telemetry system
-Initializing telemetry for service: "x\118842\SUBr"
+Initializing telemetry for service: ";A\8262o<\133343#}9]\81133\191418iX"
 Shutting down telemetry system
-Initializing telemetry for service: "C\990203\23493\1002857}\1067912<\204769n\SYN"
+Initializing telemetry for service: "\134160x\ETB\ENQ\"@-{{f5|}\DC2%GM7W.\1099945R>\b\DC32\1078744\69729I0P\30566\1105495#!ez:+e\1088622\&1\STX\152223\FS;[n\155988\"BtV\203839\998773"
 Shutting down telemetry system
-Initializing telemetry for service: "C!"
+Initializing telemetry for service: "\32353\ENQy\1068925\&7\":\1040815"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL=\1074483\1012759r"
+Initializing telemetry for service: "\DELD\ETX|\ENQ\1093018\v\DELy\44694&q\176356-\CAN\94242.i\178405x\1039407xZ\1088557Si+#\1099899\24915!\a_"
 Shutting down telemetry system
-Initializing telemetry for service: "\t\v\CANd\DC4IFa9\1006259"
+Initializing telemetry for service: "\v\152732\1010677\DC4(D\NUL\30578\23250ofK|\172892b{{+Rv]pYd=\26046Z\33471Fh\1057487"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL\32643\SOHZ\136732S3gX"
+Initializing telemetry for service: "\FS\a?\ESC5iP;\201899$q\SOH\NUL\180593"
 Shutting down telemetry system
-Initializing telemetry for service: "'N\1024419"
+Initializing telemetry for service: "J\1061895xtL\65325\ETB \1106364fUC5<lM\24189\FS\DC1H\1086844\&4d\189688jk\1079810b\1035068On\176878\1002109/\1095163AN\58130\ACK\1096493FX`4\36719\1010383\&4J"
 Shutting down telemetry system
-Initializing telemetry for service: "4\68950\1032826TO2O\137232=\33530\1099178[a"
+Initializing telemetry for service: "O\\\SUB47\bZ\"\DC2Z\113690#^d-\US"
 Shutting down telemetry system
-Initializing telemetry for service: "\63261\ENQ\NUL\FS$\67227\&4\147692\127584\&0J\62220\ACK\t"
+Initializing telemetry for service: "XW\1004819\a\nA>\DEL\61671\DC1(eX\SUB6\1106228\1105158\RS+\989255\EOT\fQKj2A=X\4406\40988A1\a\163679\&8\1040389A(\1001250\ENQ"
 Shutting down telemetry system
-Initializing telemetry for service: "6T\DC32.V\DC42\1052072\167538mfOUn\33610\1006516\SUB\998416\131751E5(\SIFI.~i|"
+Initializing telemetry for service: ",2Gi\SOH$z+"
 Shutting down telemetry system
-Initializing telemetry for service: "<}\ESC\67130\1111491\192040\&0Iw6\203145r:\157828\DC2QR}66\ACK.(\1002719\16138\SI\SOUC&\DC4\EM\151623h\1108463\169590a(\1011616"
+Initializing telemetry for service: "\ETX]\SUB#_\29411\&2\SUB^\44563+\n\USv1?K\1025862\&8b\155245\FS\81295Lt\SUB\EM\ACK\btsi\1003847?Y&\ACKc4CUHM\33018\&6\NUL9\"w\1013890\EM;\RS}aVA\tz\43891\rA\181268t\SYNG0\1080297"
 Shutting down telemetry system
-Initializing telemetry for service: "\1098580\ACKue\GS\22126\5036\991591\1045274!_E\174551x\5692\198132\&6{hlnW\14529D\163564\1061036\166739@uSa\1031083\a\1050216D\1026186\1011074Vt$U]\v8\7825"
+Initializing telemetry for service: "\EOT.\1048704\n~\49664X\n4J\f\SIWTHV\1065732\16302\1105842\CAN\6076EzY\1016189\1073335&\1062679L\r\1005204\97431a\16149:\1038620P\1079442"
 Shutting down telemetry system
-Initializing telemetry for service: "\1081457|4\ENQ\ESC%!|O\ESC'\1102219\&7\198402="
+Initializing telemetry for service: "\1090436\131545x\1064974U|'\ACK\53941:VD@E\tuJ\10177%'\r\DLEYP`\SO5?\1079434\158858\&5\EM"
 Shutting down telemetry system
-Initializing telemetry for service: "*H6J\NULdXt+\172176\aFP7H\DC1D*\NAK\1007162\197934bF\156583\DLE\1024708\EM}\DC1(\5040\57514>k~esp\100285e\SOHo-g"
+Initializing telemetry for service: "\184856\NUL6\ACK\83301\1057757z\DLE@&\ETX9\160014\129142\82018\a` 1\v3\1003363C\ESCV\DLE.F\EOT\1098847}D\7066["
 Shutting down telemetry system
-Initializing telemetry for service: "\164603\DC1"
+Initializing telemetry for service: "\7078\tL`\ENQsw;\168165I\USjDq;\CAN\FSn\SOH\1048360\95417#0\SOHA\nb;h\"}\SO\1088371)8\1084798\984183y\CAN)c4d\201565\EM\ACKR\29988:gk\SUBn\44007\ACKe\144670\&8\ACKeW\1101475\b\ENQe"
 Shutting down telemetry system
-Initializing telemetry for service: "6Y\1094036\60685\1042616\172623ll1\58746\182713W\206484\148909\1010395w\1113643_\1092978<c\SUB\1012086\n\1091798\200633FU\94998M\DC2\993696\&9_P)\30354\20352UU%\1074116b}\1075074\994358a\ETB\DC2\v\190824~O\1037126"
+Initializing telemetry for service: "\127123H\SO&cX\1109791\SUB\81343\133343\1022577\177244-j\ENQS$\156897g\DC4I*y\15551\1055213\DC1(0j\nUv\170402P3@\t61=\ENQ\58151\989111\158978B\120946\DC2r\1004453\175229GTd#\1093901RKU\150045\165425\SYNDX\143984xpJ\1093665\57905\t:+"
 Shutting down telemetry system
-Initializing telemetry for service: "c\73000B\EM!nFE\DELgKKOU?\SI\994692\201338'@V\61580\RSZ-\438"
+Initializing telemetry for service: "\CAN\CAN\201471?38|\1028023\995501\&2v?\203629\SIFT|\1095075\ACK\181631p\CAN\1099562\b\CANd+\EOT=\1017961A`6\\h\97001\1077831\CAN\1052354:}\FS\CAN\1060833\CANGN\1076118\63609\SI\182519th\"/b>M~"
 Shutting down telemetry system
-Initializing telemetry for service: ">a^8V\EM\DELV\138315]`&\CAN%\FS\DC2\156946\1021038\&9\158284\198537\1097227ku\1108135i\99197G\1072042/\SUB\ACKt\\O\65462s\a1p+\134940\1094591\135318\DC1R\41095(J3\nu\138544-I.S7uP\b4\12000"
+Initializing telemetry for service: "\ETB4`j\1185G 1\\\55018S\58289z*q\ESC\fzv\DLE@\b\SUB8\1077286l"
 Shutting down telemetry system
-Initializing telemetry for service: "\1019654F6xQ4\1024527}&\67652]|\53861\&7\202537\EM\b\18356/g\NULNU/\DC1D!\1065544@\USk\ve\47824c`\47194<DU\GS\t\206365X\EOTg\167722"
+Initializing telemetry for service: "1\1076779#a\SOH\1039\STX\118964"
 Shutting down telemetry system
-Initializing telemetry for service: "\ETX\ESC}x\164234\&9\ESC&w.\1103730\t\1002601\DLE\988238x+7hXR*\1065798\43492\DC4}It_G\1038364**1\995812\SO\ENQ\990617\1007119["
+Initializing telemetry for service: "be{\SUB\STXDRN5w\1080986%\166466\133441N7\GS\v)\DC2\n'J\12392P\FSX<wk\1024133\&90L\1002651H\146482\1077990=\1026884=}V\171293\SYN5\"\1064431\SO\132524\206423_,e\US\71381\aod\1081762\132827\78418}L\ACK,"
 Shutting down telemetry system
-Initializing telemetry for service: ">\b\1046660\NUL:\1000590\a\SYN\STX\1064132~-A\RSd\NULy\60039\FSj`|Sab~~BS5\148868}.ncs)\53598\SI\1103159\GS\FS,\1022167\&9\EOTG\ETBk\NAK\r\184085*"
+Initializing telemetry for service: "\1060108\1056133N\DC3*s\1081702?/\v(R3\SUB\185574\DC3.L\170218\DC4\RSgi\DC2qd\1052374\&6\27885\FS\CAN\66362r\2128\1009666\ACKc6\EOTa\57376.#A\EOT\1017443\1004759`G\1026715xoW\"\1023561B\acQ;\83373V\1098949\ENQjqF\19100\&0\1090043\1108207\rC"
 Shutting down telemetry system
-Initializing telemetry for service: "\136360lJZ\1083585h\vEA\ACK\1098058%\1073967"
+Initializing telemetry for service: "\1057695\983589\aw\96624-\vP\NUL\ETBJ@9 \160829Z)\STX\ETB\1097661;i(Tss\FS\SO\ETB\986381\FSV\159470nG\NULQ\US\24883V\990753b\ENQ\RS\DC3\r\1093469A(/\1038149z\DC4\SYN\1059838\1083300\RSU5\1079139{)w\FS\ENQ:\1097238j"
 Shutting down telemetry system
-Initializing telemetry for service: "\GSq\ACKsT\147322\45514\1112526\987377\99536\&7-~\1035735\164028vx~\NUL\USv`(eF*{5._8Y#g?qG.\n#YR\1113594P\39860`FJ\rkG\20299,\ACK\SYNx,0['1"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYNM~\81320\161892QX];\SO^`\174675f`\ENQ\1053744\164607\995945\ETBhd\ENQj\ETBI4i9I\180605Z_"
-Shutting down telemetry system
-Initializing telemetry for service: "\EOTo\US\EOT\SYN\26197x\DLE\177415\ETB2,KNa)bm\1024635\US\173672yU\110771#\58866\67257t\35552Pz\ACK\1030719$$-\165489U~$\69722\33344}r\1112077yO\b+\984624\t"
-Shutting down telemetry system
-Initializing telemetry for service: "IH\1113511\&1\RS#\94664.\SO\\e\1078771\1003143\&2Js\nk>\1023977\&2"
-Shutting down telemetry system
-Initializing telemetry for service: "\194603zM]o,D\134703\r\8594K,\1007637&\\\150309\SYN\59365\162908"
-Shutting down telemetry system
-Initializing telemetry for service: "J\DEL\133001\985027Y\DEL\120755},S\1101192\15405\&9\1015571\DC27\USS\DC2\81624\1026948\986748\NAK\SOH\1063580\DLEY\RSQq9\138810\CAN\a<\GSM&\1063535\NULp\47578^\ENQ\31801aE=\177928\DLE\1083307\SI*]\DC4\ESCSPjPP{9\121403\1071710\179166b\b\CAN|;^<c\137855\171133\&2r\DC4"
-Shutting down telemetry system
-Initializing telemetry for service: "2\1050322\\\94589>T\22496\7103a\1096990_\SUBv\202598\USC\RS;\41289\&4MYm"
-Shutting down telemetry system
-Initializing telemetry for service: "N\1037837K\31235\189441\131571\73957|P~~7\SUB\985330\CAN\FSUm}\1050779\110998u\DC1\1042571\n\ESCHhS\r\1069238\207023EA\rwQX$\993372&\1071949G3T7!\f}m\98671\127163\DEL\205013\USi{J)7RoyS7'"
-Shutting down telemetry system
-Initializing telemetry for service: "|\67347\&6?\ETBMm!\172135\60777E.ZC(:\990350:\GSR5\US"
-Shutting down telemetry system
-Initializing telemetry for service: "\""
-Shutting down telemetry system
-Initializing telemetry for service: "=v=/\NAK;\127911\&7S}%\1072125\994680}\996428\DC4\10035T\1080641\r"
-Shutting down telemetry system
-Initializing telemetry for service: "\SI\b\bAO\v\1052031l\ESC\RSf`z}|\5234\33031\ENQ,\USu]/"
-Shutting down telemetry system
-Initializing telemetry for service: "?,\66628\bg\n\n4\DLEwd\EOTok@dk\1055696(j\DLE\DC2d\1059702t\SO! q\1068915\137475\SYN"
+Initializing telemetry for service: "\1034696\78417\&8p\DC10+r\39428\CAN\r\1068100\ENQs[;GL\a\990192ZVd\23092%:M\RS\1017299\CAN\1069952\1098424lGX\141067C)eLf*`\44801Pg\127296\rKT^Q\136853\&5\"(u\f\EMd/f\"Yx"
 Shutting down telemetry system
     should preserve configuration fields across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
 Initializing telemetry for service: ""
 Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "3\\\1019195"
-Initializing telemetry for service: "3\\\1019195"
+Initializing telemetry for service: ""
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: ""
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: "|\1080069\1090611"
+Initializing telemetry for service: "|\1080069\1090611"
+Shutting down telemetry system
+Initializing telemetry for service: "U\GSk\RS"
+Initializing telemetry for service: "U\GSk\RS"
+Shutting down telemetry system
+Initializing telemetry for service: "D"
+Initializing telemetry for service: "D"
+Shutting down telemetry system
+Initializing telemetry for service: "\30407\1022294Md%("
+Initializing telemetry for service: "\30407\1022294Md%("
+Shutting down telemetry system
+Initializing telemetry for service: "7QE\EM\82165\&5$\RS\1000065"
+Initializing telemetry for service: "7QE\EM\82165\&5$\RS\1000065"
+Shutting down telemetry system
+Initializing telemetry for service: "+\1065370k\1005956\152042\FS'P+\205404\34506"
+Initializing telemetry for service: "+\1065370k\1005956\152042\FS'P+\205404\34506"
+Shutting down telemetry system
+Initializing telemetry for service: "g"
+Initializing telemetry for service: "g"
+Shutting down telemetry system
+Initializing telemetry for service: "'i\989200aW\1057086\10052f\67887{\1005061"
+Initializing telemetry for service: "'i\989200aW\1057086\10052f\67887{\1005061"
+Shutting down telemetry system
+Initializing telemetry for service: "5U\n\1067186\1011401`Q\21080a\173328\43622\1025858P2\18461c"
+Initializing telemetry for service: "5U\n\1067186\1011401`Q\21080a\173328\43622\1025858P2\18461c"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4PU2n_\1781~\NUL\161152~\ETX:\US\SOHDVBB\1043446|"
+Initializing telemetry for service: "\DC4PU2n_\1781~\NUL\161152~\ETX:\US\SOHDVBB\1043446|"
+Shutting down telemetry system
+Initializing telemetry for service: "\EM3\9815\62682c\1042776\1013670\144416<vq\\X"
+Initializing telemetry for service: "\EM3\9815\62682c\1042776\1013670\144416<vq\\X"
+Shutting down telemetry system
+Initializing telemetry for service: "u4\987805\1017431I\47170u"
+Initializing telemetry for service: "u4\987805\1017431I\47170u"
+Shutting down telemetry system
+Initializing telemetry for service: "3A\SO_\b3\ETX"
+Initializing telemetry for service: "3A\SO_\b3\ETX"
+Shutting down telemetry system
+Initializing telemetry for service: "\SOH2"
+Initializing telemetry for service: "\SOH2"
 Shutting down telemetry system
 Initializing telemetry for service: "]"
 Initializing telemetry for service: "]"
 Shutting down telemetry system
-Initializing telemetry for service: "\209010cV\1081702\1100240"
-Initializing telemetry for service: "\209010cV\1081702\1100240"
+Initializing telemetry for service: "dB\ACKQ \1002282@mp\1058393ER"
+Initializing telemetry for service: "dB\ACKQ \1002282@mp\1058393ER"
 Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
+Initializing telemetry for service: "\b\9325\186713\n\CANh<\b5\1079279\179941\&1"
+Initializing telemetry for service: "\b\9325\186713\n\CANh<\b5\1079279\179941\&1"
 Shutting down telemetry system
-Initializing telemetry for service: "\47909\994439\1024866vk\1091559"
-Initializing telemetry for service: "\47909\994439\1024866vk\1091559"
+Initializing telemetry for service: "\120634\1015622m\fXm3Z\8807\32201^\1087700\1091382\NUL#p\v`\t\EMEJ_\34613\SOl"
+Initializing telemetry for service: "\120634\1015622m\fXm3Z\8807\32201^\1087700\1091382\NUL#p\v`\t\EMEJ_\34613\SOl"
 Shutting down telemetry system
-Initializing telemetry for service: "\94816\US$GB\1043894"
-Initializing telemetry for service: "\94816\US$GB\1043894"
+Initializing telemetry for service: "\1001853\1067592$\SUBH1au!\ENQt\DC3E\NAK"
+Initializing telemetry for service: "\1001853\1067592$\SUBH1au!\ENQt\DC3E\NAK"
 Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
+Initializing telemetry for service: "5m\DC2w\DC2g~6R\DEL\SO\SUBv\ACK8\t-g\48771\FSx0\53393P\48155ajpI*6Y\95186\SOHQ\1021812"
+Initializing telemetry for service: "5m\DC2w\DC2g~6R\DEL\SO\SUBv\ACK8\t-g\48771\FSx0\53393P\48155ajpI*6Y\95186\SOHQ\1021812"
 Shutting down telemetry system
-Initializing telemetry for service: "COc/ iD\RS6\ESCZ"
-Initializing telemetry for service: "COc/ iD\RS6\ESCZ"
+Initializing telemetry for service: "\1069933P&3C|\94967mhrf;\1002399H\1039358z\182571+\\\1073347\t.\1018240\&3cP,\37136*"
+Initializing telemetry for service: "\1069933P&3C|\94967mhrf;\1002399H\1039358z\182571+\\\1073347\t.\1018240\&3cP,\37136*"
 Shutting down telemetry system
-Initializing telemetry for service: "#b\30825"
-Initializing telemetry for service: "#b\30825"
+Initializing telemetry for service: "\1077715|\1013760t\137090\ENQi-\FSW3_5\DC3\SOHf\1062586\RS\SYNzs3 #_8\1092770\"<0l\DC2bI=#\1004932\&7%\b:"
+Initializing telemetry for service: "\1077715|\1013760t\137090\ENQi-\FSW3_5\DC3\SOHf\1062586\RS\SYNzs3 #_8\1092770\"<0l\DC2bI=#\1004932\&7%\b:"
 Shutting down telemetry system
-Initializing telemetry for service: "\179193\RS+tA\ACK9O\31695?\bRDe"
-Initializing telemetry for service: "\179193\RS+tA\ACK9O\31695?\bRDe"
+Initializing telemetry for service: "\NUL\148417\NAKx2\f_lA\r\49304\151531\SUBh6kl\122922\"<\DEL\DC4Sf(\136591\DC3g\992121\FS|#\92687"
+Initializing telemetry for service: "\NUL\148417\NAKx2\f_lA\r\49304\151531\SUBh6kl\122922\"<\DEL\DC4Sf(\136591\DC3g\992121\FS|#\92687"
 Shutting down telemetry system
-Initializing telemetry for service: "5\170544*\51215ppTQq"
-Initializing telemetry for service: "5\170544*\51215ppTQq"
+Initializing telemetry for service: "\179025\140540\ETB\59314\20044c}\1111508;\1027965o\125210.\1055691\ETB\1073966\ETB0\1031145\DC3g\35280\NULA\USnB\207502\1072364\vN\183528m\27759uhsr\202143\\\CANl\1068417"
+Initializing telemetry for service: "\179025\140540\ETB\59314\20044c}\1111508;\1027965o\125210.\1055691\ETB\1073966\ETB0\1031145\DC3g\35280\NULA\USnB\207502\1072364\vN\183528m\27759uhsr\202143\\\CANl\1068417"
 Shutting down telemetry system
-Initializing telemetry for service: "x\118842\SUBr"
-Initializing telemetry for service: "x\118842\SUBr"
+Initializing telemetry for service: ";A\8262o<\133343#}9]\81133\191418iX"
+Initializing telemetry for service: ";A\8262o<\133343#}9]\81133\191418iX"
 Shutting down telemetry system
-Initializing telemetry for service: "C\990203\23493\1002857}\1067912<\204769n\SYN"
-Initializing telemetry for service: "C\990203\23493\1002857}\1067912<\204769n\SYN"
+Initializing telemetry for service: "\134160x\ETB\ENQ\"@-{{f5|}\DC2%GM7W.\1099945R>\b\DC32\1078744\69729I0P\30566\1105495#!ez:+e\1088622\&1\STX\152223\FS;[n\155988\"BtV\203839\998773"
+Initializing telemetry for service: "\134160x\ETB\ENQ\"@-{{f5|}\DC2%GM7W.\1099945R>\b\DC32\1078744\69729I0P\30566\1105495#!ez:+e\1088622\&1\STX\152223\FS;[n\155988\"BtV\203839\998773"
 Shutting down telemetry system
-Initializing telemetry for service: "C!"
-Initializing telemetry for service: "C!"
+Initializing telemetry for service: "\32353\ENQy\1068925\&7\":\1040815"
+Initializing telemetry for service: "\32353\ENQy\1068925\&7\":\1040815"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL=\1074483\1012759r"
-Initializing telemetry for service: "\NUL=\1074483\1012759r"
+Initializing telemetry for service: "\DELD\ETX|\ENQ\1093018\v\DELy\44694&q\176356-\CAN\94242.i\178405x\1039407xZ\1088557Si+#\1099899\24915!\a_"
+Initializing telemetry for service: "\DELD\ETX|\ENQ\1093018\v\DELy\44694&q\176356-\CAN\94242.i\178405x\1039407xZ\1088557Si+#\1099899\24915!\a_"
 Shutting down telemetry system
-Initializing telemetry for service: "\t\v\CANd\DC4IFa9\1006259"
-Initializing telemetry for service: "\t\v\CANd\DC4IFa9\1006259"
+Initializing telemetry for service: "\v\152732\1010677\DC4(D\NUL\30578\23250ofK|\172892b{{+Rv]pYd=\26046Z\33471Fh\1057487"
+Initializing telemetry for service: "\v\152732\1010677\DC4(D\NUL\30578\23250ofK|\172892b{{+Rv]pYd=\26046Z\33471Fh\1057487"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL\32643\SOHZ\136732S3gX"
-Initializing telemetry for service: "\NUL\32643\SOHZ\136732S3gX"
+Initializing telemetry for service: "\FS\a?\ESC5iP;\201899$q\SOH\NUL\180593"
+Initializing telemetry for service: "\FS\a?\ESC5iP;\201899$q\SOH\NUL\180593"
 Shutting down telemetry system
-Initializing telemetry for service: "'N\1024419"
-Initializing telemetry for service: "'N\1024419"
+Initializing telemetry for service: "J\1061895xtL\65325\ETB \1106364fUC5<lM\24189\FS\DC1H\1086844\&4d\189688jk\1079810b\1035068On\176878\1002109/\1095163AN\58130\ACK\1096493FX`4\36719\1010383\&4J"
+Initializing telemetry for service: "J\1061895xtL\65325\ETB \1106364fUC5<lM\24189\FS\DC1H\1086844\&4d\189688jk\1079810b\1035068On\176878\1002109/\1095163AN\58130\ACK\1096493FX`4\36719\1010383\&4J"
 Shutting down telemetry system
-Initializing telemetry for service: "4\68950\1032826TO2O\137232=\33530\1099178[a"
-Initializing telemetry for service: "4\68950\1032826TO2O\137232=\33530\1099178[a"
+Initializing telemetry for service: "O\\\SUB47\bZ\"\DC2Z\113690#^d-\US"
+Initializing telemetry for service: "O\\\SUB47\bZ\"\DC2Z\113690#^d-\US"
 Shutting down telemetry system
-Initializing telemetry for service: "\63261\ENQ\NUL\FS$\67227\&4\147692\127584\&0J\62220\ACK\t"
-Initializing telemetry for service: "\63261\ENQ\NUL\FS$\67227\&4\147692\127584\&0J\62220\ACK\t"
+Initializing telemetry for service: "XW\1004819\a\nA>\DEL\61671\DC1(eX\SUB6\1106228\1105158\RS+\989255\EOT\fQKj2A=X\4406\40988A1\a\163679\&8\1040389A(\1001250\ENQ"
+Initializing telemetry for service: "XW\1004819\a\nA>\DEL\61671\DC1(eX\SUB6\1106228\1105158\RS+\989255\EOT\fQKj2A=X\4406\40988A1\a\163679\&8\1040389A(\1001250\ENQ"
 Shutting down telemetry system
-Initializing telemetry for service: "6T\DC32.V\DC42\1052072\167538mfOUn\33610\1006516\SUB\998416\131751E5(\SIFI.~i|"
-Initializing telemetry for service: "6T\DC32.V\DC42\1052072\167538mfOUn\33610\1006516\SUB\998416\131751E5(\SIFI.~i|"
+Initializing telemetry for service: ",2Gi\SOH$z+"
+Initializing telemetry for service: ",2Gi\SOH$z+"
 Shutting down telemetry system
-Initializing telemetry for service: "<}\ESC\67130\1111491\192040\&0Iw6\203145r:\157828\DC2QR}66\ACK.(\1002719\16138\SI\SOUC&\DC4\EM\151623h\1108463\169590a(\1011616"
-Initializing telemetry for service: "<}\ESC\67130\1111491\192040\&0Iw6\203145r:\157828\DC2QR}66\ACK.(\1002719\16138\SI\SOUC&\DC4\EM\151623h\1108463\169590a(\1011616"
+Initializing telemetry for service: "\ETX]\SUB#_\29411\&2\SUB^\44563+\n\USv1?K\1025862\&8b\155245\FS\81295Lt\SUB\EM\ACK\btsi\1003847?Y&\ACKc4CUHM\33018\&6\NUL9\"w\1013890\EM;\RS}aVA\tz\43891\rA\181268t\SYNG0\1080297"
+Initializing telemetry for service: "\ETX]\SUB#_\29411\&2\SUB^\44563+\n\USv1?K\1025862\&8b\155245\FS\81295Lt\SUB\EM\ACK\btsi\1003847?Y&\ACKc4CUHM\33018\&6\NUL9\"w\1013890\EM;\RS}aVA\tz\43891\rA\181268t\SYNG0\1080297"
 Shutting down telemetry system
-Initializing telemetry for service: "\1098580\ACKue\GS\22126\5036\991591\1045274!_E\174551x\5692\198132\&6{hlnW\14529D\163564\1061036\166739@uSa\1031083\a\1050216D\1026186\1011074Vt$U]\v8\7825"
-Initializing telemetry for service: "\1098580\ACKue\GS\22126\5036\991591\1045274!_E\174551x\5692\198132\&6{hlnW\14529D\163564\1061036\166739@uSa\1031083\a\1050216D\1026186\1011074Vt$U]\v8\7825"
+Initializing telemetry for service: "\EOT.\1048704\n~\49664X\n4J\f\SIWTHV\1065732\16302\1105842\CAN\6076EzY\1016189\1073335&\1062679L\r\1005204\97431a\16149:\1038620P\1079442"
+Initializing telemetry for service: "\EOT.\1048704\n~\49664X\n4J\f\SIWTHV\1065732\16302\1105842\CAN\6076EzY\1016189\1073335&\1062679L\r\1005204\97431a\16149:\1038620P\1079442"
 Shutting down telemetry system
-Initializing telemetry for service: "\1081457|4\ENQ\ESC%!|O\ESC'\1102219\&7\198402="
-Initializing telemetry for service: "\1081457|4\ENQ\ESC%!|O\ESC'\1102219\&7\198402="
+Initializing telemetry for service: "\1090436\131545x\1064974U|'\ACK\53941:VD@E\tuJ\10177%'\r\DLEYP`\SO5?\1079434\158858\&5\EM"
+Initializing telemetry for service: "\1090436\131545x\1064974U|'\ACK\53941:VD@E\tuJ\10177%'\r\DLEYP`\SO5?\1079434\158858\&5\EM"
 Shutting down telemetry system
-Initializing telemetry for service: "*H6J\NULdXt+\172176\aFP7H\DC1D*\NAK\1007162\197934bF\156583\DLE\1024708\EM}\DC1(\5040\57514>k~esp\100285e\SOHo-g"
-Initializing telemetry for service: "*H6J\NULdXt+\172176\aFP7H\DC1D*\NAK\1007162\197934bF\156583\DLE\1024708\EM}\DC1(\5040\57514>k~esp\100285e\SOHo-g"
+Initializing telemetry for service: "\184856\NUL6\ACK\83301\1057757z\DLE@&\ETX9\160014\129142\82018\a` 1\v3\1003363C\ESCV\DLE.F\EOT\1098847}D\7066["
+Initializing telemetry for service: "\184856\NUL6\ACK\83301\1057757z\DLE@&\ETX9\160014\129142\82018\a` 1\v3\1003363C\ESCV\DLE.F\EOT\1098847}D\7066["
 Shutting down telemetry system
-Initializing telemetry for service: "\164603\DC1"
-Initializing telemetry for service: "\164603\DC1"
+Initializing telemetry for service: "\7078\tL`\ENQsw;\168165I\USjDq;\CAN\FSn\SOH\1048360\95417#0\SOHA\nb;h\"}\SO\1088371)8\1084798\984183y\CAN)c4d\201565\EM\ACKR\29988:gk\SUBn\44007\ACKe\144670\&8\ACKeW\1101475\b\ENQe"
+Initializing telemetry for service: "\7078\tL`\ENQsw;\168165I\USjDq;\CAN\FSn\SOH\1048360\95417#0\SOHA\nb;h\"}\SO\1088371)8\1084798\984183y\CAN)c4d\201565\EM\ACKR\29988:gk\SUBn\44007\ACKe\144670\&8\ACKeW\1101475\b\ENQe"
 Shutting down telemetry system
-Initializing telemetry for service: "6Y\1094036\60685\1042616\172623ll1\58746\182713W\206484\148909\1010395w\1113643_\1092978<c\SUB\1012086\n\1091798\200633FU\94998M\DC2\993696\&9_P)\30354\20352UU%\1074116b}\1075074\994358a\ETB\DC2\v\190824~O\1037126"
-Initializing telemetry for service: "6Y\1094036\60685\1042616\172623ll1\58746\182713W\206484\148909\1010395w\1113643_\1092978<c\SUB\1012086\n\1091798\200633FU\94998M\DC2\993696\&9_P)\30354\20352UU%\1074116b}\1075074\994358a\ETB\DC2\v\190824~O\1037126"
+Initializing telemetry for service: "\127123H\SO&cX\1109791\SUB\81343\133343\1022577\177244-j\ENQS$\156897g\DC4I*y\15551\1055213\DC1(0j\nUv\170402P3@\t61=\ENQ\58151\989111\158978B\120946\DC2r\1004453\175229GTd#\1093901RKU\150045\165425\SYNDX\143984xpJ\1093665\57905\t:+"
+Initializing telemetry for service: "\127123H\SO&cX\1109791\SUB\81343\133343\1022577\177244-j\ENQS$\156897g\DC4I*y\15551\1055213\DC1(0j\nUv\170402P3@\t61=\ENQ\58151\989111\158978B\120946\DC2r\1004453\175229GTd#\1093901RKU\150045\165425\SYNDX\143984xpJ\1093665\57905\t:+"
 Shutting down telemetry system
-Initializing telemetry for service: "c\73000B\EM!nFE\DELgKKOU?\SI\994692\201338'@V\61580\RSZ-\438"
-Initializing telemetry for service: "c\73000B\EM!nFE\DELgKKOU?\SI\994692\201338'@V\61580\RSZ-\438"
+Initializing telemetry for service: "\CAN\CAN\201471?38|\1028023\995501\&2v?\203629\SIFT|\1095075\ACK\181631p\CAN\1099562\b\CANd+\EOT=\1017961A`6\\h\97001\1077831\CAN\1052354:}\FS\CAN\1060833\CANGN\1076118\63609\SI\182519th\"/b>M~"
+Initializing telemetry for service: "\CAN\CAN\201471?38|\1028023\995501\&2v?\203629\SIFT|\1095075\ACK\181631p\CAN\1099562\b\CANd+\EOT=\1017961A`6\\h\97001\1077831\CAN\1052354:}\FS\CAN\1060833\CANGN\1076118\63609\SI\182519th\"/b>M~"
 Shutting down telemetry system
-Initializing telemetry for service: ">a^8V\EM\DELV\138315]`&\CAN%\FS\DC2\156946\1021038\&9\158284\198537\1097227ku\1108135i\99197G\1072042/\SUB\ACKt\\O\65462s\a1p+\134940\1094591\135318\DC1R\41095(J3\nu\138544-I.S7uP\b4\12000"
-Initializing telemetry for service: ">a^8V\EM\DELV\138315]`&\CAN%\FS\DC2\156946\1021038\&9\158284\198537\1097227ku\1108135i\99197G\1072042/\SUB\ACKt\\O\65462s\a1p+\134940\1094591\135318\DC1R\41095(J3\nu\138544-I.S7uP\b4\12000"
+Initializing telemetry for service: "\ETB4`j\1185G 1\\\55018S\58289z*q\ESC\fzv\DLE@\b\SUB8\1077286l"
+Initializing telemetry for service: "\ETB4`j\1185G 1\\\55018S\58289z*q\ESC\fzv\DLE@\b\SUB8\1077286l"
 Shutting down telemetry system
-Initializing telemetry for service: "\1019654F6xQ4\1024527}&\67652]|\53861\&7\202537\EM\b\18356/g\NULNU/\DC1D!\1065544@\USk\ve\47824c`\47194<DU\GS\t\206365X\EOTg\167722"
-Initializing telemetry for service: "\1019654F6xQ4\1024527}&\67652]|\53861\&7\202537\EM\b\18356/g\NULNU/\DC1D!\1065544@\USk\ve\47824c`\47194<DU\GS\t\206365X\EOTg\167722"
+Initializing telemetry for service: "1\1076779#a\SOH\1039\STX\118964"
+Initializing telemetry for service: "1\1076779#a\SOH\1039\STX\118964"
 Shutting down telemetry system
-Initializing telemetry for service: "\ETX\ESC}x\164234\&9\ESC&w.\1103730\t\1002601\DLE\988238x+7hXR*\1065798\43492\DC4}It_G\1038364**1\995812\SO\ENQ\990617\1007119["
-Initializing telemetry for service: "\ETX\ESC}x\164234\&9\ESC&w.\1103730\t\1002601\DLE\988238x+7hXR*\1065798\43492\DC4}It_G\1038364**1\995812\SO\ENQ\990617\1007119["
+Initializing telemetry for service: "be{\SUB\STXDRN5w\1080986%\166466\133441N7\GS\v)\DC2\n'J\12392P\FSX<wk\1024133\&90L\1002651H\146482\1077990=\1026884=}V\171293\SYN5\"\1064431\SO\132524\206423_,e\US\71381\aod\1081762\132827\78418}L\ACK,"
+Initializing telemetry for service: "be{\SUB\STXDRN5w\1080986%\166466\133441N7\GS\v)\DC2\n'J\12392P\FSX<wk\1024133\&90L\1002651H\146482\1077990=\1026884=}V\171293\SYN5\"\1064431\SO\132524\206423_,e\US\71381\aod\1081762\132827\78418}L\ACK,"
 Shutting down telemetry system
-Initializing telemetry for service: ">\b\1046660\NUL:\1000590\a\SYN\STX\1064132~-A\RSd\NULy\60039\FSj`|Sab~~BS5\148868}.ncs)\53598\SI\1103159\GS\FS,\1022167\&9\EOTG\ETBk\NAK\r\184085*"
-Initializing telemetry for service: ">\b\1046660\NUL:\1000590\a\SYN\STX\1064132~-A\RSd\NULy\60039\FSj`|Sab~~BS5\148868}.ncs)\53598\SI\1103159\GS\FS,\1022167\&9\EOTG\ETBk\NAK\r\184085*"
+Initializing telemetry for service: "\1060108\1056133N\DC3*s\1081702?/\v(R3\SUB\185574\DC3.L\170218\DC4\RSgi\DC2qd\1052374\&6\27885\FS\CAN\66362r\2128\1009666\ACKc6\EOTa\57376.#A\EOT\1017443\1004759`G\1026715xoW\"\1023561B\acQ;\83373V\1098949\ENQjqF\19100\&0\1090043\1108207\rC"
+Initializing telemetry for service: "\1060108\1056133N\DC3*s\1081702?/\v(R3\SUB\185574\DC3.L\170218\DC4\RSgi\DC2qd\1052374\&6\27885\FS\CAN\66362r\2128\1009666\ACKc6\EOTa\57376.#A\EOT\1017443\1004759`G\1026715xoW\"\1023561B\acQ;\83373V\1098949\ENQjqF\19100\&0\1090043\1108207\rC"
 Shutting down telemetry system
-Initializing telemetry for service: "\136360lJZ\1083585h\vEA\ACK\1098058%\1073967"
-Initializing telemetry for service: "\136360lJZ\1083585h\vEA\ACK\1098058%\1073967"
+Initializing telemetry for service: "\1057695\983589\aw\96624-\vP\NUL\ETBJ@9 \160829Z)\STX\ETB\1097661;i(Tss\FS\SO\ETB\986381\FSV\159470nG\NULQ\US\24883V\990753b\ENQ\RS\DC3\r\1093469A(/\1038149z\DC4\SYN\1059838\1083300\RSU5\1079139{)w\FS\ENQ:\1097238j"
+Initializing telemetry for service: "\1057695\983589\aw\96624-\vP\NUL\ETBJ@9 \160829Z)\STX\ETB\1097661;i(Tss\FS\SO\ETB\986381\FSV\159470nG\NULQ\US\24883V\990753b\ENQ\RS\DC3\r\1093469A(/\1038149z\DC4\SYN\1059838\1083300\RSU5\1079139{)w\FS\ENQ:\1097238j"
 Shutting down telemetry system
-Initializing telemetry for service: "\GSq\ACKsT\147322\45514\1112526\987377\99536\&7-~\1035735\164028vx~\NUL\USv`(eF*{5._8Y#g?qG.\n#YR\1113594P\39860`FJ\rkG\20299,\ACK\SYNx,0['1"
-Initializing telemetry for service: "\GSq\ACKsT\147322\45514\1112526\987377\99536\&7-~\1035735\164028vx~\NUL\USv`(eF*{5._8Y#g?qG.\n#YR\1113594P\39860`FJ\rkG\20299,\ACK\SYNx,0['1"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYNM~\81320\161892QX];\SO^`\174675f`\ENQ\1053744\164607\995945\ETBhd\ENQj\ETBI4i9I\180605Z_"
-Initializing telemetry for service: "\SYNM~\81320\161892QX];\SO^`\174675f`\ENQ\1053744\164607\995945\ETBhd\ENQj\ETBI4i9I\180605Z_"
-Shutting down telemetry system
-Initializing telemetry for service: "\EOTo\US\EOT\SYN\26197x\DLE\177415\ETB2,KNa)bm\1024635\US\173672yU\110771#\58866\67257t\35552Pz\ACK\1030719$$-\165489U~$\69722\33344}r\1112077yO\b+\984624\t"
-Initializing telemetry for service: "\EOTo\US\EOT\SYN\26197x\DLE\177415\ETB2,KNa)bm\1024635\US\173672yU\110771#\58866\67257t\35552Pz\ACK\1030719$$-\165489U~$\69722\33344}r\1112077yO\b+\984624\t"
-Shutting down telemetry system
-Initializing telemetry for service: "IH\1113511\&1\RS#\94664.\SO\\e\1078771\1003143\&2Js\nk>\1023977\&2"
-Initializing telemetry for service: "IH\1113511\&1\RS#\94664.\SO\\e\1078771\1003143\&2Js\nk>\1023977\&2"
-Shutting down telemetry system
-Initializing telemetry for service: "\194603zM]o,D\134703\r\8594K,\1007637&\\\150309\SYN\59365\162908"
-Initializing telemetry for service: "\194603zM]o,D\134703\r\8594K,\1007637&\\\150309\SYN\59365\162908"
-Shutting down telemetry system
-Initializing telemetry for service: "J\DEL\133001\985027Y\DEL\120755},S\1101192\15405\&9\1015571\DC27\USS\DC2\81624\1026948\986748\NAK\SOH\1063580\DLEY\RSQq9\138810\CAN\a<\GSM&\1063535\NULp\47578^\ENQ\31801aE=\177928\DLE\1083307\SI*]\DC4\ESCSPjPP{9\121403\1071710\179166b\b\CAN|;^<c\137855\171133\&2r\DC4"
-Initializing telemetry for service: "J\DEL\133001\985027Y\DEL\120755},S\1101192\15405\&9\1015571\DC27\USS\DC2\81624\1026948\986748\NAK\SOH\1063580\DLEY\RSQq9\138810\CAN\a<\GSM&\1063535\NULp\47578^\ENQ\31801aE=\177928\DLE\1083307\SI*]\DC4\ESCSPjPP{9\121403\1071710\179166b\b\CAN|;^<c\137855\171133\&2r\DC4"
-Shutting down telemetry system
-Initializing telemetry for service: "2\1050322\\\94589>T\22496\7103a\1096990_\SUBv\202598\USC\RS;\41289\&4MYm"
-Initializing telemetry for service: "2\1050322\\\94589>T\22496\7103a\1096990_\SUBv\202598\USC\RS;\41289\&4MYm"
-Shutting down telemetry system
-Initializing telemetry for service: "N\1037837K\31235\189441\131571\73957|P~~7\SUB\985330\CAN\FSUm}\1050779\110998u\DC1\1042571\n\ESCHhS\r\1069238\207023EA\rwQX$\993372&\1071949G3T7!\f}m\98671\127163\DEL\205013\USi{J)7RoyS7'"
-Initializing telemetry for service: "N\1037837K\31235\189441\131571\73957|P~~7\SUB\985330\CAN\FSUm}\1050779\110998u\DC1\1042571\n\ESCHhS\r\1069238\207023EA\rwQX$\993372&\1071949G3T7!\f}m\98671\127163\DEL\205013\USi{J)7RoyS7'"
-Shutting down telemetry system
-Initializing telemetry for service: "|\67347\&6?\ETBMm!\172135\60777E.ZC(:\990350:\GSR5\US"
-Initializing telemetry for service: "|\67347\&6?\ETBMm!\172135\60777E.ZC(:\990350:\GSR5\US"
-Shutting down telemetry system
-Initializing telemetry for service: "\""
-Initializing telemetry for service: "\""
-Shutting down telemetry system
-Initializing telemetry for service: "=v=/\NAK;\127911\&7S}%\1072125\994680}\996428\DC4\10035T\1080641\r"
-Initializing telemetry for service: "=v=/\NAK;\127911\&7S}%\1072125\994680}\996428\DC4\10035T\1080641\r"
-Shutting down telemetry system
-Initializing telemetry for service: "\SI\b\bAO\v\1052031l\ESC\RSf`z}|\5234\33031\ENQ,\USu]/"
-Initializing telemetry for service: "\SI\b\bAO\v\1052031l\ESC\RSf`z}|\5234\33031\ENQ,\USu]/"
-Shutting down telemetry system
-Initializing telemetry for service: "?,\66628\bg\n\n4\DLEwd\EOTok@dk\1055696(j\DLE\DC2d\1059702t\SO! q\1068915\137475\SYN"
-Initializing telemetry for service: "?,\66628\bg\n\n4\DLEwd\EOTok@dk\1055696(j\DLE\DC2d\1059702t\SO! q\1068915\137475\SYN"
+Initializing telemetry for service: "\1034696\78417\&8p\DC10+r\39428\CAN\r\1068100\ENQs[;GL\a\990192ZVd\23092%:M\RS\1017299\CAN\1069952\1098424lGX\141067C)eLf*`\44801Pg\127296\rKT^Q\136853\&5\"(u\f\EMd/f\"Yx"
+Initializing telemetry for service: "\1034696\78417\&8p\DC10+r\39428\CAN\r\1068100\ENQs[;GL\a\990192ZVd\23092%:M\RS\1017299\CAN\1069952\1098424lGX\141067C)eLf*`\44801Pg\127296\rKT^Q\136853\&5\"(u\f\EMd/f\"Yx"
 Shutting down telemetry system
     should handle configuration changes correctly [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -1258,205 +1270,205 @@ Enhanced QuickCheck-based Telemetry Tests
     should handle Unicode characters in log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Transformation and Validation
-Initializing telemetry for service: "-modified"
+Initializing telemetry for service: ""
 Shutting down telemetry system
 Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "-modified"
+Initializing telemetry for service: "\1029056|-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "-modified"
+Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "A\1017181G-modified"
+Initializing telemetry for service: "a-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\RS\ENQ\35248-modified"
+Initializing telemetry for service: "|\1080069\1090611"
 Shutting down telemetry system
-Initializing telemetry for service: "3\\\1019195"
+Initializing telemetry for service: "U\GSk\RS"
 Shutting down telemetry system
-Initializing telemetry for service: "AA\\d\r\1109361-modified"
+Initializing telemetry for service: "{z-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "$1\94943+d-\172942\\-modified"
+Initializing telemetry for service: "(\993953h\SI)-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "\NAK\1054693Kd\US-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "D"
+Shutting down telemetry system
+Initializing telemetry for service: "\30407\1022294Md%("
+Shutting down telemetry system
+Initializing telemetry for service: "\STXi\140524\999538-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "\1039888\DELB%\DC4\69893\59028ki/e\1096113+-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "\156447\48942Q-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "7QE\EM\82165\&5$\RS\1000065"
+Shutting down telemetry system
+Initializing telemetry for service: "/'P\121096z\FS\DC4\EM\60825,-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "+\1065370k\1005956\152042\FS'P+\205404\34506"
+Shutting down telemetry system
+Initializing telemetry for service: "\ENQp\1052154\&2:-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "g"
+Shutting down telemetry system
+Initializing telemetry for service: "A88-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "'i\989200aW\1057086\10052f\67887{\1005061"
+Shutting down telemetry system
+Initializing telemetry for service: "5U\n\1067186\1011401`Q\21080a\173328\43622\1025858P2\18461c"
+Shutting down telemetry system
+Initializing telemetry for service: "<\f=X0_G\163942\148555-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4PU2n_\1781~\NUL\161152~\ETX:\US\SOHDVBB\1043446|"
+Shutting down telemetry system
+Initializing telemetry for service: "\EM3\9815\62682c\1042776\1013670\144416<vq\\X"
+Shutting down telemetry system
+Initializing telemetry for service: "\183004v\1104885a\DC1\DC3\62152\DEL-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "oP$-modified"
+Shutting down telemetry system
+Initializing telemetry for service: "u4\987805\1017431I\47170u"
+Shutting down telemetry system
+Initializing telemetry for service: "3A\SO_\b3\ETX"
+Shutting down telemetry system
+Initializing telemetry for service: "\SOH2"
+Shutting down telemetry system
+Initializing telemetry for service: "w\SOHiLn*\fc\1022878\STXQ \DEL\1082196\125047Q\1018301IGs>\SIjB@Y|8Q-modified"
 Shutting down telemetry system
 Initializing telemetry for service: "]"
 Shutting down telemetry system
-Initializing telemetry for service: "]\983542z;-modified"
+Initializing telemetry for service: "[#h\DELL7\128252\81686\101855\ESC\SIR%\196791\t\97195Y\1065737\&2-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\209010cV\1081702\1100240"
+Initializing telemetry for service: "\151839;\27366)\19901\1030703\STX\SYN\51017=~x\GS\USS\81574W\996528f\NUL\1097151\209023\54769\7490\FS\132362\1007409\1085011*0?\202526\1009762F-modified"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "dB\ACKQ \1002282@mp\1058393ER"
 Shutting down telemetry system
-Initializing telemetry for service: "\47909\994439\1024866vk\1091559"
+Initializing telemetry for service: "\\eo'\1095410\170705\"iIDkd<)JY\STX(O\1016595je-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\94816\US$GB\1043894"
+Initializing telemetry for service: "-modified"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "a\79681\ESCC\\y\EOT_\191186\44384\1068161\1107184\DEL-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\SOH\SI\79980BH/\151030\97958L-modified"
+Initializing telemetry for service: "\1056396^b:h\141631\25967\&2\31519\11536F\1024324\26934]\DC3\DELR\fuJ'd\48150\984797\ETX\SOH[\183591\SUBQ\129749\1040530\"\1028815U\110708\166932-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "t\1030819r_d\ba-modified"
+Initializing telemetry for service: "\b\9325\186713\n\CANh<\b5\1079279\179941\&1"
 Shutting down telemetry system
-Initializing telemetry for service: "COc/ iD\RS6\ESCZ"
+Initializing telemetry for service: "\120634\1015622m\fXm3Z\8807\32201^\1087700\1091382\NUL#p\v`\t\EMEJ_\34613\SOl"
 Shutting down telemetry system
-Initializing telemetry for service: "#b\30825"
+Initializing telemetry for service: "xn\1043281\1004545\988865-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\179193\RS+tA\ACK9O\31695?\bRDe"
+Initializing telemetry for service: "89\1106424\SUB\133258y-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\1000130\1103663\USi_+X\FS\64328E\118669x\990757NV\1033700\&2\190056\47740-modified"
+Initializing telemetry for service: "\1001853\1067592$\SUBH1au!\ENQt\DC3E\NAK"
 Shutting down telemetry system
-Initializing telemetry for service: "|\60417\1028040d\15615c\FS\1033642]\32005U\1029429\EM|E\40196A\ACK-\NAK1--modified"
+Initializing telemetry for service: "\144796\181153b\EOT_\18575\&6\1074089Mn~\1099208@\82908*w8ujH\149170N\1103593(]\DEL\US\NULs\DC3-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "5\170544*\51215ppTQq"
+Initializing telemetry for service: "5m\DC2w\DC2g~6R\DEL\SO\SUBv\ACK8\t-g\48771\FSx0\53393P\48155ajpI*6Y\95186\SOHQ\1021812"
 Shutting down telemetry system
-Initializing telemetry for service: "x\118842\SUBr"
+Initializing telemetry for service: "\1069933P&3C|\94967mhrf;\1002399H\1039358z\182571+\\\1073347\t.\1018240\&3cP,\37136*"
 Shutting down telemetry system
-Initializing telemetry for service: "g\25000-bWc\1103065pStJ|W\FS\1047574z-modified"
+Initializing telemetry for service: "\1036927\24801(\SI'Dw\1113117@\SOH\GSn\GSJ\165001\&6:\1068671\SOH\ETX\ETXp\36030-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "%^T\985011Q4\ETBW04\1100385k\137648=\ACK%\aFP\ACK\1047100n\b\f-modified"
+Initializing telemetry for service: "-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "C\990203\23493\1002857}\1067912<\204769n\SYN"
+Initializing telemetry for service: "\ETXc$onay-\1107102y\992219\SYN\1004237\146648\EMF~Z\DEL;\25831$uCZ\CANC\1068818;\DC1\f-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "F[LUf\FSu}\163391\1083711:';YeEn\ACK\64051\205190S[\134210`\DC3\170145-modified"
+Initializing telemetry for service: "\1077715|\1013760t\137090\ENQi-\FSW3_5\DC3\SOHf\1062586\RS\SYNzs3 #_8\1092770\"<0l\DC2bI=#\1004932\&7%\b:"
 Shutting down telemetry system
-Initializing telemetry for service: "C!"
+Initializing telemetry for service: "\f \1077629NYB\990967%\DC4;\CANvv%we&-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "?j\DLEy8h\1044339\1043358\ACK~n.\1065956j\1089694-modified"
+Initializing telemetry for service: "\NUL\148417\NAKx2\f_lA\r\49304\151531\SUBh6kl\122922\"<\DEL\DC4Sf(\136591\DC3g\992121\FS|#\92687"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL=\1074483\1012759r"
+Initializing telemetry for service: "\179025\140540\ETB\59314\20044c}\1111508;\1027965o\125210.\1055691\ETB\1073966\ETB0\1031145\DC3g\35280\NULA\USnB\207502\1072364\vN\183528m\27759uhsr\202143\\\CANl\1068417"
 Shutting down telemetry system
-Initializing telemetry for service: "\t\v\CANd\DC4IFa9\1006259"
+Initializing telemetry for service: ";A\8262o<\133343#}9]\81133\191418iX"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL\32643\SOHZ\136732S3gX"
+Initializing telemetry for service: "\134160x\ETB\ENQ\"@-{{f5|}\DC2%GM7W.\1099945R>\b\DC32\1078744\69729I0P\30566\1105495#!ez:+e\1088622\&1\STX\152223\FS;[n\155988\"BtV\203839\998773"
 Shutting down telemetry system
-Initializing telemetry for service: "'N\1024419"
+Initializing telemetry for service: "\32353\ENQy\1068925\&7\":\1040815"
 Shutting down telemetry system
-Initializing telemetry for service: "4\68950\1032826TO2O\137232=\33530\1099178[a"
+Initializing telemetry for service: "yMwB\1057375P47OL\GS-]\USnj\52862MC$\ETXT[8\1000805\74063^:C\1105239\EOT\95578Uivl$^\118660Si|=\v\b-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\DEL[1|\46883|-modified"
+Initializing telemetry for service: "&\t\991718\1064105@(Nx_Fg\51686,\166040\DC1?\1049638-|\997114sT\EOT\1080972\FS_v\1112343\ny\EM\1007809\USU_\1081906\US4(4\181986$-\ESC\5205\48190\9128-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\123161T\DLEgb\DLEO\50332-modified"
+Initializing telemetry for service: "\DELD\ETX|\ENQ\1093018\v\DELy\44694&q\176356-\CAN\94242.i\178405x\1039407xZ\1088557Si+#\1099899\24915!\a_"
 Shutting down telemetry system
-Initializing telemetry for service: "BWg\NAK\SOx\183224\984229$\1040910n-modified"
+Initializing telemetry for service: "\v\152732\1010677\DC4(D\NUL\30578\23250ofK|\172892b{{+Rv]pYd=\26046Z\33471Fh\1057487"
 Shutting down telemetry system
-Initializing telemetry for service: "\63261\ENQ\NUL\FS$\67227\&4\147692\127584\&0J\62220\ACK\t"
+Initializing telemetry for service: "\983214-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "W\135400-modified"
+Initializing telemetry for service: "\FS\a?\ESC5iP;\201899$q\SOH\NUL\180593"
 Shutting down telemetry system
-Initializing telemetry for service: "\66618\67319<I\3294\188540\NAK}K_NLqT\ETBR\182954\GS\80307Qyw~\ENQ\SUB\SOHF\DC1Vy-modified"
+Initializing telemetry for service: "J\1061895xtL\65325\ETB \1106364fUC5<lM\24189\FS\DC1H\1086844\&4d\189688jk\1079810b\1035068On\176878\1002109/\1095163AN\58130\ACK\1096493FX`4\36719\1010383\&4J"
 Shutting down telemetry system
-Initializing telemetry for service: "6T\DC32.V\DC42\1052072\167538mfOUn\33610\1006516\SUB\998416\131751E5(\SIFI.~i|"
+Initializing telemetry for service: "\5710\1015568=q\202362-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "<}\ESC\67130\1111491\192040\&0Iw6\203145r:\157828\DC2QR}66\ACK.(\1002719\16138\SI\SOUC&\DC4\EM\151623h\1108463\169590a(\1011616"
+Initializing telemetry for service: "ZpP>D$\ACK\RS<{M\SIG'\f\EM\1041697\202664I,\1098244!Y-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\SO}\SUB\134211-modified"
+Initializing telemetry for service: "O\\\SUB47\bZ\"\DC2Z\113690#^d-\US"
 Shutting down telemetry system
-Initializing telemetry for service: "\1098580\ACKue\GS\22126\5036\991591\1045274!_E\174551x\5692\198132\&6{hlnW\14529D\163564\1061036\166739@uSa\1031083\a\1050216D\1026186\1011074Vt$U]\v8\7825"
+Initializing telemetry for service: "XW\1004819\a\nA>\DEL\61671\DC1(eX\SUB6\1106228\1105158\RS+\989255\EOT\fQKj2A=X\4406\40988A1\a\163679\&8\1040389A(\1001250\ENQ"
 Shutting down telemetry system
-Initializing telemetry for service: "?\r\ETX(j\1091438\&9<\194868VY\EOTL?<iQ\f\ESC&\9043\68785\EM\SUB*\EM\998370\n#-modified"
+Initializing telemetry for service: ",2Gi\SOH$z+"
 Shutting down telemetry system
-Initializing telemetry for service: "\1081457|4\ENQ\ESC%!|O\ESC'\1102219\&7\198402="
+Initializing telemetry for service: "\ETX]\SUB#_\29411\&2\SUB^\44563+\n\USv1?K\1025862\&8b\155245\FS\81295Lt\SUB\EM\ACK\btsi\1003847?Y&\ACKc4CUHM\33018\&6\NUL9\"w\1013890\EM;\RS}aVA\tz\43891\rA\181268t\SYNG0\1080297"
 Shutting down telemetry system
-Initializing telemetry for service: "\ENQ'\v\1101649ql\207637-modified"
+Initializing telemetry for service: "z\62251\STX\16488Q\986340\10843wN%AHyn\1029271b-modified"
 Shutting down telemetry system
-Initializing telemetry for service: ";\1004779H\13523;b\156901\170604%\1051437\54062\US<:\1053661\998819\21420\44609eD4Vv\58505-modified"
+Initializing telemetry for service: "\EOT.\1048704\n~\49664X\n4J\f\SIWTHV\1065732\16302\1105842\CAN\6076EzY\1016189\1073335&\1062679L\r\1005204\97431a\16149:\1038620P\1079442"
 Shutting down telemetry system
-Initializing telemetry for service: "l\1108131F\61233x'\182202\NAK! \EOT}!W\1105476E\1009212\185569\f\FS\60170(\SI\CANq-modified"
+Initializing telemetry for service: "k{\NAK\DLE?t9GW\STXh\GS\RS\1096060\NAK\NUL\rb\CAN\DC2%\v:mQl='(\122652f\158548\DLE\SYN.\66369co4'\30184PR\1002701\185480r\1029577!j-modified"
 Shutting down telemetry system
-Initializing telemetry for service: ";T\42508\1016999=\60624\n\24736\DC4\1071828z\a\1103605c-modified"
+Initializing telemetry for service: "\1090436\131545x\1064974U|'\ACK\53941:VD@E\tuJ\10177%'\r\DLEYP`\SO5?\1079434\158858\&5\EM"
 Shutting down telemetry system
-Initializing telemetry for service: "X\149002k-modified"
+Initializing telemetry for service: "\166067\1028301W\1011608x\996138foz\181274N\ENQ\204152Te\CANjVo5.\fpN]ON-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "#\CANFeC|\1075834^\STX]\SOO|h8YaW_\63378q<\67036\t-modified"
+Initializing telemetry for service: "ej^id7\1109940\1102735ak.\SYN(aM_\"`\DC4\RS+\SON\82823\&5\SOHp?[\45194\169575vP4b'\13839\\wz\986893Y[\r6-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "f57\DELo-modified"
+Initializing telemetry for service: "\184856\NUL6\ACK\83301\1057757z\DLE@&\ETX9\160014\129142\82018\a` 1\v3\1003363C\ESCV\DLE.F\EOT\1098847}D\7066["
 Shutting down telemetry system
-Initializing telemetry for service: "*H6J\NULdXt+\172176\aFP7H\DC1D*\NAK\1007162\197934bF\156583\DLE\1024708\EM}\DC1(\5040\57514>k~esp\100285e\SOHo-g"
+Initializing telemetry for service: "d\ETXH]4b\1024530\207242s\48505 \1029744\1005058H,\ESCK\DC1\DC4\1058175+OW\t^\\d\1016921-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "BkZhh'\41695\&5QR\1082362&Vhh&=\SII-modified"
+Initializing telemetry for service: "\7078\tL`\ENQsw;\168165I\USjDq;\CAN\FSn\SOH\1048360\95417#0\SOHA\nb;h\"}\SO\1088371)8\1084798\984183y\CAN)c4d\201565\EM\ACKR\29988:gk\SUBn\44007\ACKe\144670\&8\ACKeW\1101475\b\ENQe"
 Shutting down telemetry system
-Initializing telemetry for service: "\18661-modified"
+Initializing telemetry for service: "\127123H\SO&cX\1109791\SUB\81343\133343\1022577\177244-j\ENQS$\156897g\DC4I*y\15551\1055213\DC1(0j\nUv\170402P3@\t61=\ENQ\58151\989111\158978B\120946\DC2r\1004453\175229GTd#\1093901RKU\150045\165425\SYNDX\143984xpJ\1093665\57905\t:+"
 Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\DC1@/\n\ENQB!;)L\1043543H\37949\ENQ4 $\1059357ul\17683-modified"
+Initializing telemetry for service: "\CAN\CAN\201471?38|\1028023\995501\&2v?\203629\SIFT|\1095075\ACK\181631p\CAN\1099562\b\CANd+\EOT=\1017961A`6\\h\97001\1077831\CAN\1052354:}\FS\CAN\1060833\CANGN\1076118\63609\SI\182519th\"/b>M~"
 Shutting down telemetry system
-Initializing telemetry for service: "\164603\DC1"
+Initializing telemetry for service: "\ETB4`j\1185G 1\\\55018S\58289z*q\ESC\fzv\DLE@\b\SUB8\1077286l"
 Shutting down telemetry system
-Initializing telemetry for service: "|[Cyi\np4d\b_5;|d\1049756u\\-modified"
+Initializing telemetry for service: "1\1076779#a\SOH\1039\STX\118964"
 Shutting down telemetry system
-Initializing telemetry for service: "Wfi\1092547c\1020802T-modified"
+Initializing telemetry for service: "_FV\41103^\1070205{_b\b\53622F\1023673_\ESCF\97902\&2V!\"^2\STXI\DC1\138060\1002957\ETB\DLE\USb\SOH-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "fhZ`\EOT\\n.\1006166Y+M\1004939-modified"
+Initializing telemetry for service: "be{\SUB\STXDRN5w\1080986%\166466\133441N7\GS\v)\DC2\n'J\12392P\FSX<wk\1024133\&90L\1002651H\146482\1077990=\1026884=}V\171293\SYN5\"\1064431\SO\132524\206423_,e\US\71381\aod\1081762\132827\78418}L\ACK,"
 Shutting down telemetry system
-Initializing telemetry for service: "6Y\1094036\60685\1042616\172623ll1\58746\182713W\206484\148909\1010395w\1113643_\1092978<c\SUB\1012086\n\1091798\200633FU\94998M\DC2\993696\&9_P)\30354\20352UU%\1074116b}\1075074\994358a\ETB\DC2\v\190824~O\1037126"
+Initializing telemetry for service: "\FSsny\DLEd-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\1063209\1018843TYi\ENQl{\198153j R\DC3\1046557\1100312'\DC2\186316\8423\CAN9E\9706N\RS-modified"
+Initializing telemetry for service: "7\1036481\bf\US;\fhe\ENQ l\3841G -modified"
 Shutting down telemetry system
-Initializing telemetry for service: "c\73000B\EM!nFE\DELgKKOU?\SI\994692\201338'@V\61580\RSZ-\438"
+Initializing telemetry for service: "rW}.|S\175638\63429\DC40g\1104668d\26741\&4eg\53294\165877\998171\1023884\1097749\v\1092731F%xI~N\DC4<\1033164\58942\SYNP\b!\1083668\DC1l\28515|\1021232\DC1u\DC4Hh\73691\1099793o\17528t\\{\1057017\994467-modified"
 Shutting down telemetry system
-Initializing telemetry for service: ">a^8V\EM\DELV\138315]`&\CAN%\FS\DC2\156946\1021038\&9\158284\198537\1097227ku\1108135i\99197G\1072042/\SUB\ACKt\\O\65462s\a1p+\134940\1094591\135318\DC1R\41095(J3\nu\138544-I.S7uP\b4\12000"
+Initializing telemetry for service: "ac\26067>V\179204\va\DC3]$x\1012282\1052229\995081\FS\SI)EDb:ru\1045098o\n\997678l\208832\&0\DEL\123202\997283^\ACKHwx`wV6\ACK\208764{\NUL\1073264\&8\1015646\1055903&\1068366\n\201475\STX&S\USyE\4718$\1453\&9-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\1019654F6xQ4\1024527}&\67652]|\53861\&7\202537\EM\b\18356/g\NULNU/\DC1D!\1065544@\USk\ve\47824c`\47194<DU\GS\t\206365X\EOTg\167722"
+Initializing telemetry for service: "\r\1113060\1041370\DC12f}#a1\1049979\DLE\1052653\DC19\1029782Z%\1100600\1000685\t\24936xU\DC2\ACK4\1029035o*|5\55105\24056\101396\1027112q\141514-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "t@#G\FS\27117\&8\EOT\54870zB\CAN\STXcIlv\b\54855F\53036\&4n^m\63755 \1029064yz\17447\rI\ENQ}I\182360d\163854|3\NUL\DC2z\54413H|]\14099\199950/\1090011U>O!-modified"
+Initializing telemetry for service: "\RSM\100899a\1081531n\992046\v\GSj\997425\SYN\t\nn\FS[m8zq6H0\EM\ACK\SIM]}\194674\CAN\NUL\150464g\99402I\f4e\CAN\1009462-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\ETX\ESC}x\164234\&9\ESC&w.\1103730\t\1002601\DLE\988238x+7hXR*\1065798\43492\DC4}It_G\1038364**1\995812\SO\ENQ\990617\1007119["
+Initializing telemetry for service: "\1060108\1056133N\DC3*s\1081702?/\v(R3\SUB\185574\DC3.L\170218\DC4\RSgi\DC2qd\1052374\&6\27885\FS\CAN\66362r\2128\1009666\ACKc6\EOTa\57376.#A\EOT\1017443\1004759`G\1026715xoW\"\1023561B\acQ;\83373V\1098949\ENQjqF\19100\&0\1090043\1108207\rC"
 Shutting down telemetry system
-Initializing telemetry for service: ">\b\1046660\NUL:\1000590\a\SYN\STX\1064132~-A\RSd\NULy\60039\FSj`|Sab~~BS5\148868}.ncs)\53598\SI\1103159\GS\FS,\1022167\&9\EOTG\ETBk\NAK\r\184085*"
+Initializing telemetry for service: "qq\184569Ac\1024126A\35919L\ETXSmB\47219{h\SUBv\\\69801\1020939\EOTz#\1113578\&6\DC3\160837s\51279\ETBr3epcW\97612>:IH\t\131914\1051396V\ETBNG5kOnY+yYniz<@\1048430-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\136360lJZ\1083585h\vEA\ACK\1098058%\1073967"
+Initializing telemetry for service: "\1057695\983589\aw\96624-\vP\NUL\ETBJ@9 \160829Z)\STX\ETB\1097661;i(Tss\FS\SO\ETB\986381\FSV\159470nG\NULQ\US\24883V\990753b\ENQ\RS\DC3\r\1093469A(/\1038149z\DC4\SYN\1059838\1083300\RSU5\1079139{)w\FS\ENQ:\1097238j"
 Shutting down telemetry system
-Initializing telemetry for service: "\GSq\ACKsT\147322\45514\1112526\987377\99536\&7-~\1035735\164028vx~\NUL\USv`(eF*{5._8Y#g?qG.\n#YR\1113594P\39860`FJ\rkG\20299,\ACK\SYNx,0['1"
+Initializing telemetry for service: "L\ni7\DC1U\50740\167789q\DC1{\13497}(\SIq\vk@\SO\n1-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\SYNM~\81320\161892QX];\SO^`\174675f`\ENQ\1053744\164607\995945\ETBhd\ENQj\ETBI4i9I\180605Z_"
+Initializing telemetry for service: "GE\197573Rf6NP\EOT\aX\SYNt[\USm'QP\NAK\1062551u9-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\EOTo\US\EOT\SYN\26197x\DLE\177415\ETB2,KNa)bm\1024635\US\173672yU\110771#\58866\67257t\35552Pz\ACK\1030719$$-\165489U~$\69722\33344}r\1112077yO\b+\984624\t"
+Initializing telemetry for service: "\163194H\57939\140126\984659C&\EM\1020822R1&\EMs[\SOH\33021C\STX\96387\SOHj\1017625w\120547f\7940N=4\f\51624i\1092975\"WRp=Mq#+\30779-modified"
 Shutting down telemetry system
-Initializing telemetry for service: "\t77\f\99839\SUB2@j]\rLO\DELI[ \4568,3\997782\NUL\145755Wc(zZk\ETB\66905-modified"
+Initializing telemetry for service: "\1034696\78417\&8p\DC10+r\39428\CAN\r\1068100\ENQs[;GL\a\990192ZVd\23092%:M\RS\1017299\CAN\1069952\1098424lGX\141067C)eLf*`\44801Pg\127296\rKT^Q\136853\&5\"(u\f\EMd/f\"Yx"
 Shutting down telemetry system
-Initializing telemetry for service: "dt\bVB\b\SUB\1020393\DEL+\10810\1067217~\RS\t8\1070217W-}tP\FS\206631ziQO\1045636-p[\995049O-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC1[T\\d\1056416\&0\SIp\5440(8\43401Z\t7R\SO\1044573\17658\b\1042077\986194\&1\EM\SUB#\63310\DLEhX-\DC1-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "IH\1113511\&1\RS#\94664.\SO\\e\1078771\1003143\&2Js\nk>\1023977\&2"
-Shutting down telemetry system
-Initializing telemetry for service: ";8\119143\FS\128352hp\b 2-\1070774AR4\EOT'@v,!x\a=\1012326I\168363<\1036478\DC4B\FS\tf\STXqQ#\SUB\1066569(\184335\1006878\1010436U\1002068\&7\EOT[\ETXc.;]\152535\1098243\46389\DC4\997399}qL\43988k\60079GX\ESC\DELz-2\1067245\131989\f\v2M-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "|K^k\36672\&7\ETB\1020377%YW@tx\SOH|\7634\CANF\1068172A\165895=\DC4\ETX\DC4/\r\18410\3144\f\1107191\59670)48d\161222\&1\159999|\200108Z\ESC\1059109\1042336-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "q\1088738|x\DC1?-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\194603zM]o,D\134703\r\8594K,\1007637&\\\150309\SYN\59365\162908"
-Shutting down telemetry system
-Initializing telemetry for service: "5S\81282!\1009869\SOH\19573f\FSO\STX\1064023\191487\81057\1014385-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "J\DEL\133001\985027Y\DEL\120755},S\1101192\15405\&9\1015571\DC27\USS\DC2\81624\1026948\986748\NAK\SOH\1063580\DLEY\RSQq9\138810\CAN\a<\GSM&\1063535\NULp\47578^\ENQ\31801aE=\177928\DLE\1083307\SI*]\DC4\ESCSPjPP{9\121403\1071710\179166b\b\CAN|;^<c\137855\171133\&2r\DC4"
-Shutting down telemetry system
-Initializing telemetry for service: "2\1050322\\\94589>T\22496\7103a\1096990_\SUBv\202598\USC\RS;\41289\&4MYm"
-Shutting down telemetry system
-Initializing telemetry for service: "N\1037837K\31235\189441\131571\73957|P~~7\SUB\985330\CAN\FSUm}\1050779\110998u\DC1\1042571\n\ESCHhS\r\1069238\207023EA\rwQX$\993372&\1071949G3T7!\f}m\98671\127163\DEL\205013\USi{J)7RoyS7'"
-Shutting down telemetry system
-Initializing telemetry for service: "\1076215\49595!\NUL-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\\\DC1\1037328\176258\67496\n'\58858lF\\-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "|\67347\&6?\ETBMm!\172135\60777E.ZC(:\990350:\GSR5\US"
-Shutting down telemetry system
-Initializing telemetry for service: "$\1061568\SOHE\1034650M[7e\989627w)\v\176371\RS\ns\ENQx[\1033402|\NUL\DLEz\1030794f\1015722~@\ETX\1085275\EMX\38506V\1073139\ETB1\97118\FSC'\DLE\DC3V6?\100137\1080202\&8$\80230%iU<\81874A\49925\164577\ESC_'`K\16083\b:\CAN@\80537 d\EOTX\20274!\DC2a\DLE\82065\48801.\ETB4o<\DLE-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\""
-Shutting down telemetry system
-Initializing telemetry for service: "k\1063373Q3i\SO,\127107!%\1081033\139463s\4036(\187347\RS\EM30\SOH\199889Qr\NUL&)t\SOu'\STX\nb\SOH)\NUL\184080S,\RSo\n\6700\143511\GS\81412A>z#Q\137561\80024 \990015\173525l\172467*-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "=v=/\NAK;\127911\&7S}%\1072125\994680}\996428\DC4\10035T\1080641\r"
-Shutting down telemetry system
-Initializing telemetry for service: "\SI\b\bAO\v\1052031l\ESC\RSf`z}|\5234\33031\ENQ,\USu]/"
-Shutting down telemetry system
-Initializing telemetry for service: "\174377E\1066959\1003823-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "?,\66628\bg\n\n4\DLEwd\EOTok@dk\1055696(j\DLE\DC2d\1059702t\SO! q\1068915\137475\SYN"
-Shutting down telemetry system
-Initializing telemetry for service: "\1076938\&5)=%v\203079{j\NAK,\164641\147598\fh\995517;)-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\1079199zscWW\118853[m\1082579W\74260;<\CAN9$\19109\1113368'o Rf\"\9751\161897\NULzeze9\1042075.\1059933\165058$\1070428]\190878\97264=t\205428-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "uj\991451*\167728\&4VL\987066CrvgR*Cfwm\63768\11938s\FSr\1113698\985561\&1\28257[u0m \CAND\ETXI2\4625\166493M\1047339\&4<\DC3x\NAK\1092679\USf\ACK\SO\fH\SO\DC4\1101041\&8\GSl\61197*<\1087814\61635A{R\149005\11458-\NAKb\1030651\SUB\n\1015484+\SI3\ETX\DLE%~9o^\NUL$\1004564$\ETXV=\DC3-modified"
+Initializing telemetry for service: "\CAN2\199510*\172429\ETB\156138\1019555|\137621\t.b\1111960\1113881\187837|\73782\DC3\32509Rt$1\DC2Y\DC1f\STXT\b xY=\141671\1003521fJ\DC1R>ap\EMQ*-2b\1038195y\SOH\t\43999-modified"
 Shutting down telemetry system
     should handle configuration transformations [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -1520,97 +1532,103 @@ New Cabal Test Suite
   Configuration Properties
 Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "3\\\1019195"
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: ""
+Shutting down telemetry system
+Initializing telemetry for service: "|\1080069\1090611"
+Shutting down telemetry system
+Initializing telemetry for service: "U\GSk\RS"
+Shutting down telemetry system
+Initializing telemetry for service: "D"
+Shutting down telemetry system
+Initializing telemetry for service: "\30407\1022294Md%("
+Shutting down telemetry system
+Initializing telemetry for service: "7QE\EM\82165\&5$\RS\1000065"
+Shutting down telemetry system
+Initializing telemetry for service: "+\1065370k\1005956\152042\FS'P+\205404\34506"
+Shutting down telemetry system
+Initializing telemetry for service: "g"
+Shutting down telemetry system
+Initializing telemetry for service: "'i\989200aW\1057086\10052f\67887{\1005061"
+Shutting down telemetry system
+Initializing telemetry for service: "5U\n\1067186\1011401`Q\21080a\173328\43622\1025858P2\18461c"
+Shutting down telemetry system
+Initializing telemetry for service: "\DC4PU2n_\1781~\NUL\161152~\ETX:\US\SOHDVBB\1043446|"
+Shutting down telemetry system
+Initializing telemetry for service: "\EM3\9815\62682c\1042776\1013670\144416<vq\\X"
+Shutting down telemetry system
+Initializing telemetry for service: "u4\987805\1017431I\47170u"
+Shutting down telemetry system
+Initializing telemetry for service: "3A\SO_\b3\ETX"
+Shutting down telemetry system
+Initializing telemetry for service: "\SOH2"
 Shutting down telemetry system
 Initializing telemetry for service: "]"
 Shutting down telemetry system
-Initializing telemetry for service: "\209010cV\1081702\1100240"
+Initializing telemetry for service: "dB\ACKQ \1002282@mp\1058393ER"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "\b\9325\186713\n\CANh<\b5\1079279\179941\&1"
 Shutting down telemetry system
-Initializing telemetry for service: "\47909\994439\1024866vk\1091559"
+Initializing telemetry for service: "\120634\1015622m\fXm3Z\8807\32201^\1087700\1091382\NUL#p\v`\t\EMEJ_\34613\SOl"
 Shutting down telemetry system
-Initializing telemetry for service: "\94816\US$GB\1043894"
+Initializing telemetry for service: "\1001853\1067592$\SUBH1au!\ENQt\DC3E\NAK"
 Shutting down telemetry system
-Initializing telemetry for service: ""
+Initializing telemetry for service: "5m\DC2w\DC2g~6R\DEL\SO\SUBv\ACK8\t-g\48771\FSx0\53393P\48155ajpI*6Y\95186\SOHQ\1021812"
 Shutting down telemetry system
-Initializing telemetry for service: "COc/ iD\RS6\ESCZ"
+Initializing telemetry for service: "\1069933P&3C|\94967mhrf;\1002399H\1039358z\182571+\\\1073347\t.\1018240\&3cP,\37136*"
 Shutting down telemetry system
-Initializing telemetry for service: "#b\30825"
+Initializing telemetry for service: "\1077715|\1013760t\137090\ENQi-\FSW3_5\DC3\SOHf\1062586\RS\SYNzs3 #_8\1092770\"<0l\DC2bI=#\1004932\&7%\b:"
 Shutting down telemetry system
-Initializing telemetry for service: "\179193\RS+tA\ACK9O\31695?\bRDe"
+Initializing telemetry for service: "\NUL\148417\NAKx2\f_lA\r\49304\151531\SUBh6kl\122922\"<\DEL\DC4Sf(\136591\DC3g\992121\FS|#\92687"
 Shutting down telemetry system
-Initializing telemetry for service: "5\170544*\51215ppTQq"
+Initializing telemetry for service: "\179025\140540\ETB\59314\20044c}\1111508;\1027965o\125210.\1055691\ETB\1073966\ETB0\1031145\DC3g\35280\NULA\USnB\207502\1072364\vN\183528m\27759uhsr\202143\\\CANl\1068417"
 Shutting down telemetry system
-Initializing telemetry for service: "x\118842\SUBr"
+Initializing telemetry for service: ";A\8262o<\133343#}9]\81133\191418iX"
 Shutting down telemetry system
-Initializing telemetry for service: "C\990203\23493\1002857}\1067912<\204769n\SYN"
+Initializing telemetry for service: "\134160x\ETB\ENQ\"@-{{f5|}\DC2%GM7W.\1099945R>\b\DC32\1078744\69729I0P\30566\1105495#!ez:+e\1088622\&1\STX\152223\FS;[n\155988\"BtV\203839\998773"
 Shutting down telemetry system
-Initializing telemetry for service: "C!"
+Initializing telemetry for service: "\32353\ENQy\1068925\&7\":\1040815"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL=\1074483\1012759r"
+Initializing telemetry for service: "\DELD\ETX|\ENQ\1093018\v\DELy\44694&q\176356-\CAN\94242.i\178405x\1039407xZ\1088557Si+#\1099899\24915!\a_"
 Shutting down telemetry system
-Initializing telemetry for service: "\t\v\CANd\DC4IFa9\1006259"
+Initializing telemetry for service: "\v\152732\1010677\DC4(D\NUL\30578\23250ofK|\172892b{{+Rv]pYd=\26046Z\33471Fh\1057487"
 Shutting down telemetry system
-Initializing telemetry for service: "\NUL\32643\SOHZ\136732S3gX"
+Initializing telemetry for service: "\FS\a?\ESC5iP;\201899$q\SOH\NUL\180593"
 Shutting down telemetry system
-Initializing telemetry for service: "'N\1024419"
+Initializing telemetry for service: "J\1061895xtL\65325\ETB \1106364fUC5<lM\24189\FS\DC1H\1086844\&4d\189688jk\1079810b\1035068On\176878\1002109/\1095163AN\58130\ACK\1096493FX`4\36719\1010383\&4J"
 Shutting down telemetry system
-Initializing telemetry for service: "4\68950\1032826TO2O\137232=\33530\1099178[a"
+Initializing telemetry for service: "O\\\SUB47\bZ\"\DC2Z\113690#^d-\US"
 Shutting down telemetry system
-Initializing telemetry for service: "\63261\ENQ\NUL\FS$\67227\&4\147692\127584\&0J\62220\ACK\t"
+Initializing telemetry for service: "XW\1004819\a\nA>\DEL\61671\DC1(eX\SUB6\1106228\1105158\RS+\989255\EOT\fQKj2A=X\4406\40988A1\a\163679\&8\1040389A(\1001250\ENQ"
 Shutting down telemetry system
-Initializing telemetry for service: "6T\DC32.V\DC42\1052072\167538mfOUn\33610\1006516\SUB\998416\131751E5(\SIFI.~i|"
+Initializing telemetry for service: ",2Gi\SOH$z+"
 Shutting down telemetry system
-Initializing telemetry for service: "<}\ESC\67130\1111491\192040\&0Iw6\203145r:\157828\DC2QR}66\ACK.(\1002719\16138\SI\SOUC&\DC4\EM\151623h\1108463\169590a(\1011616"
+Initializing telemetry for service: "\ETX]\SUB#_\29411\&2\SUB^\44563+\n\USv1?K\1025862\&8b\155245\FS\81295Lt\SUB\EM\ACK\btsi\1003847?Y&\ACKc4CUHM\33018\&6\NUL9\"w\1013890\EM;\RS}aVA\tz\43891\rA\181268t\SYNG0\1080297"
 Shutting down telemetry system
-Initializing telemetry for service: "\1098580\ACKue\GS\22126\5036\991591\1045274!_E\174551x\5692\198132\&6{hlnW\14529D\163564\1061036\166739@uSa\1031083\a\1050216D\1026186\1011074Vt$U]\v8\7825"
+Initializing telemetry for service: "\EOT.\1048704\n~\49664X\n4J\f\SIWTHV\1065732\16302\1105842\CAN\6076EzY\1016189\1073335&\1062679L\r\1005204\97431a\16149:\1038620P\1079442"
 Shutting down telemetry system
-Initializing telemetry for service: "\1081457|4\ENQ\ESC%!|O\ESC'\1102219\&7\198402="
+Initializing telemetry for service: "\1090436\131545x\1064974U|'\ACK\53941:VD@E\tuJ\10177%'\r\DLEYP`\SO5?\1079434\158858\&5\EM"
 Shutting down telemetry system
-Initializing telemetry for service: "*H6J\NULdXt+\172176\aFP7H\DC1D*\NAK\1007162\197934bF\156583\DLE\1024708\EM}\DC1(\5040\57514>k~esp\100285e\SOHo-g"
+Initializing telemetry for service: "\184856\NUL6\ACK\83301\1057757z\DLE@&\ETX9\160014\129142\82018\a` 1\v3\1003363C\ESCV\DLE.F\EOT\1098847}D\7066["
 Shutting down telemetry system
-Initializing telemetry for service: "\164603\DC1"
+Initializing telemetry for service: "\7078\tL`\ENQsw;\168165I\USjDq;\CAN\FSn\SOH\1048360\95417#0\SOHA\nb;h\"}\SO\1088371)8\1084798\984183y\CAN)c4d\201565\EM\ACKR\29988:gk\SUBn\44007\ACKe\144670\&8\ACKeW\1101475\b\ENQe"
 Shutting down telemetry system
-Initializing telemetry for service: "6Y\1094036\60685\1042616\172623ll1\58746\182713W\206484\148909\1010395w\1113643_\1092978<c\SUB\1012086\n\1091798\200633FU\94998M\DC2\993696\&9_P)\30354\20352UU%\1074116b}\1075074\994358a\ETB\DC2\v\190824~O\1037126"
+Initializing telemetry for service: "\127123H\SO&cX\1109791\SUB\81343\133343\1022577\177244-j\ENQS$\156897g\DC4I*y\15551\1055213\DC1(0j\nUv\170402P3@\t61=\ENQ\58151\989111\158978B\120946\DC2r\1004453\175229GTd#\1093901RKU\150045\165425\SYNDX\143984xpJ\1093665\57905\t:+"
 Shutting down telemetry system
-Initializing telemetry for service: "c\73000B\EM!nFE\DELgKKOU?\SI\994692\201338'@V\61580\RSZ-\438"
+Initializing telemetry for service: "\CAN\CAN\201471?38|\1028023\995501\&2v?\203629\SIFT|\1095075\ACK\181631p\CAN\1099562\b\CANd+\EOT=\1017961A`6\\h\97001\1077831\CAN\1052354:}\FS\CAN\1060833\CANGN\1076118\63609\SI\182519th\"/b>M~"
 Shutting down telemetry system
-Initializing telemetry for service: ">a^8V\EM\DELV\138315]`&\CAN%\FS\DC2\156946\1021038\&9\158284\198537\1097227ku\1108135i\99197G\1072042/\SUB\ACKt\\O\65462s\a1p+\134940\1094591\135318\DC1R\41095(J3\nu\138544-I.S7uP\b4\12000"
+Initializing telemetry for service: "\ETB4`j\1185G 1\\\55018S\58289z*q\ESC\fzv\DLE@\b\SUB8\1077286l"
 Shutting down telemetry system
-Initializing telemetry for service: "\1019654F6xQ4\1024527}&\67652]|\53861\&7\202537\EM\b\18356/g\NULNU/\DC1D!\1065544@\USk\ve\47824c`\47194<DU\GS\t\206365X\EOTg\167722"
+Initializing telemetry for service: "1\1076779#a\SOH\1039\STX\118964"
 Shutting down telemetry system
-Initializing telemetry for service: "\ETX\ESC}x\164234\&9\ESC&w.\1103730\t\1002601\DLE\988238x+7hXR*\1065798\43492\DC4}It_G\1038364**1\995812\SO\ENQ\990617\1007119["
+Initializing telemetry for service: "be{\SUB\STXDRN5w\1080986%\166466\133441N7\GS\v)\DC2\n'J\12392P\FSX<wk\1024133\&90L\1002651H\146482\1077990=\1026884=}V\171293\SYN5\"\1064431\SO\132524\206423_,e\US\71381\aod\1081762\132827\78418}L\ACK,"
 Shutting down telemetry system
-Initializing telemetry for service: ">\b\1046660\NUL:\1000590\a\SYN\STX\1064132~-A\RSd\NULy\60039\FSj`|Sab~~BS5\148868}.ncs)\53598\SI\1103159\GS\FS,\1022167\&9\EOTG\ETBk\NAK\r\184085*"
+Initializing telemetry for service: "\1060108\1056133N\DC3*s\1081702?/\v(R3\SUB\185574\DC3.L\170218\DC4\RSgi\DC2qd\1052374\&6\27885\FS\CAN\66362r\2128\1009666\ACKc6\EOTa\57376.#A\EOT\1017443\1004759`G\1026715xoW\"\1023561B\acQ;\83373V\1098949\ENQjqF\19100\&0\1090043\1108207\rC"
 Shutting down telemetry system
-Initializing telemetry for service: "\136360lJZ\1083585h\vEA\ACK\1098058%\1073967"
+Initializing telemetry for service: "\1057695\983589\aw\96624-\vP\NUL\ETBJ@9 \160829Z)\STX\ETB\1097661;i(Tss\FS\SO\ETB\986381\FSV\159470nG\NULQ\US\24883V\990753b\ENQ\RS\DC3\r\1093469A(/\1038149z\DC4\SYN\1059838\1083300\RSU5\1079139{)w\FS\ENQ:\1097238j"
 Shutting down telemetry system
-Initializing telemetry for service: "\GSq\ACKsT\147322\45514\1112526\987377\99536\&7-~\1035735\164028vx~\NUL\USv`(eF*{5._8Y#g?qG.\n#YR\1113594P\39860`FJ\rkG\20299,\ACK\SYNx,0['1"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYNM~\81320\161892QX];\SO^`\174675f`\ENQ\1053744\164607\995945\ETBhd\ENQj\ETBI4i9I\180605Z_"
-Shutting down telemetry system
-Initializing telemetry for service: "\EOTo\US\EOT\SYN\26197x\DLE\177415\ETB2,KNa)bm\1024635\US\173672yU\110771#\58866\67257t\35552Pz\ACK\1030719$$-\165489U~$\69722\33344}r\1112077yO\b+\984624\t"
-Shutting down telemetry system
-Initializing telemetry for service: "IH\1113511\&1\RS#\94664.\SO\\e\1078771\1003143\&2Js\nk>\1023977\&2"
-Shutting down telemetry system
-Initializing telemetry for service: "\194603zM]o,D\134703\r\8594K,\1007637&\\\150309\SYN\59365\162908"
-Shutting down telemetry system
-Initializing telemetry for service: "J\DEL\133001\985027Y\DEL\120755},S\1101192\15405\&9\1015571\DC27\USS\DC2\81624\1026948\986748\NAK\SOH\1063580\DLEY\RSQq9\138810\CAN\a<\GSM&\1063535\NULp\47578^\ENQ\31801aE=\177928\DLE\1083307\SI*]\DC4\ESCSPjPP{9\121403\1071710\179166b\b\CAN|;^<c\137855\171133\&2r\DC4"
-Shutting down telemetry system
-Initializing telemetry for service: "2\1050322\\\94589>T\22496\7103a\1096990_\SUBv\202598\USC\RS;\41289\&4MYm"
-Shutting down telemetry system
-Initializing telemetry for service: "N\1037837K\31235\189441\131571\73957|P~~7\SUB\985330\CAN\FSUm}\1050779\110998u\DC1\1042571\n\ESCHhS\r\1069238\207023EA\rwQX$\993372&\1071949G3T7!\f}m\98671\127163\DEL\205013\USi{J)7RoyS7'"
-Shutting down telemetry system
-Initializing telemetry for service: "|\67347\&6?\ETBMm!\172135\60777E.ZC(:\990350:\GSR5\US"
-Shutting down telemetry system
-Initializing telemetry for service: "\""
-Shutting down telemetry system
-Initializing telemetry for service: "=v=/\NAK;\127911\&7S}%\1072125\994680}\996428\DC4\10035T\1080641\r"
-Shutting down telemetry system
-Initializing telemetry for service: "\SI\b\bAO\v\1052031l\ESC\RSf`z}|\5234\33031\ENQ,\USu]/"
-Shutting down telemetry system
-Initializing telemetry for service: "?,\66628\bg\n\n4\DLEwd\EOTok@dk\1055696(j\DLE\DC2d\1059702t\SO! q\1068915\137475\SYN"
+Initializing telemetry for service: "\1034696\78417\&8p\DC10+r\39428\CAN\r\1068100\ENQs[;GL\a\990192ZVd\23092%:M\RS\1017299\CAN\1069952\1098424lGX\141067C)eLf*`\44801Pg\127296\rKT^Q\136853\&5\"(u\f\EMd/f\"Yx"
 Shutting down telemetry system
     should maintain configuration invariants [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -1629,48 +1647,148 @@ Shutting down telemetry system
   Boundary and Special Value Handling
     should handle infinity values [[32m✔[0m]
     should handle NaN values [[32m✔[0m]
-    should handle very small values [[31m✘[0m]
+    should handle very small values [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Resource Management and Memory Leak Prevention
     should clean up resources on shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle metric registry cleanup [[32m✔[0m]
       +++ OK, passed 100 tests.
   Telemetry System Performance Characteristics
-    should handle high-frequency metric operations [[31m✘[0m]
-    should maintain performance with large metric names [[31m✘[0m]
+    should handle high-frequency metric operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain performance with large metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Error Recovery and Exception Handling
     should recover from invalid metric values [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle telemetry system restart [[32m✔[0m]
       +++ OK, passed 100 tests.
+Enhanced Cabal Tests
+  SimpleMetric Comprehensive Tests
+    should create simple metric with initial value [[32m✔[0m]
+    should record values to simple metric [[32m✔[0m]
+    should handle negative values in simple metric [[32m✔[0m]
+    should handle zero values in simple metric [[32m✔[0m]
+    should convert simple metric to regular metric [[32m✔[0m]
+  Special Values Handling
+    should handle NaN values in metrics [[32m✔[0m]
+    should handle positive infinity in metrics [[32m✔[0m]
+    should handle negative infinity in metrics [[32m✔[0m]
+    should handle NaN values in simple metrics [[32m✔[0m]
+    should handle infinity values in simple metrics [[32m✔[0m]
+    should handle transition from NaN to finite values [[32m✔[0m]
+    should handle transition from infinity to finite values [[32m✔[0m]
+  Metric Sharing Tests
+    should share metrics with same name and unit when enabled [[32m✔[0m]
+    should create separate metrics when sharing is disabled [[32m✔[0m]
+    should not share metrics with different units [[32m✔[0m]
+    should handle metric sharing with initial values [[32m✔[0m]
+  Trace Context Tests
+    should maintain trace context across spans [[32m✔[0m]
+    should generate different trace IDs for new traces [[32m✔[0m]
+  Span ID Uniqueness Tests
+    should generate unique span IDs [[32m✔[0m]
+    should generate span IDs with consistent length [[32m✔[0m]
+  Log Level Filtering Tests
+    should create loggers with different levels [[32m✔[0m]
+    should handle all log levels without errors [[32m✔[0m]
+  QuickCheck Property Tests
+    should preserve simple metric properties [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle any double value in simple metric [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain metric identity with same name and unit [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty strings in simple metrics [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Boundary Conditions and Error Handling
+    should handle very small values [[32m✔[0m]
+    should handle very large values [[32m✔[0m]
+    should handle alternating NaN and finite values [[32m✔[0m]
+    should handle alternating infinity and finite values [[32m✔[0m]
+  Performance and Concurrency Tests
+    should handle concurrent simple metric operations [[32m✔[0m]
+    should handle rapid span creation and finishing [[32m✔[0m]
+  Resource Cleanup and Memory Leak Tests
+    should properly clean up resources on shutdown [[32m✔[0m]
+Comprehensive Integration Tests
+  Metric Aggregation
+    should aggregate multiple metric values correctly [[31m✘[0m]
+    should handle mixed positive and negative values [[31m✘[0m]
+  Trace Context Propagation
+    should maintain trace context across multiple spans [[32m✔[0m]
+    should generate unique span IDs [[31m✘[0m]
+  Logger Level Filtering
+    should handle all log levels consistently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should create loggers with different levels [[32m✔[0m]
+  Configuration Validation
+    should create valid configurations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty configuration fields [[32m✔[0m]
+  Special Values Handling
+    should handle NaN and infinity values [[32m✔[0m]
+    should handle very small and large values [[31m✘[0m]
+  Concurrent Operations
+    should handle concurrent metric operations [[32m✔[0m]
+    should handle concurrent span operations [[32m✔[0m]
+  Resource Management
+    should handle resource cleanup properly [[32m✔[0m]
+  Error Handling and Edge Cases
+    should handle empty metric and span names [[32m✔[0m]
+    should handle very long names [[32m✔[0m]
+  Performance Characteristics
+    should handle rapid metric updates [[31m✘[0m]
+    should handle metric operations efficiently [[32m✔[0m]
+  Integration Workflow
+    should handle complete telemetry workflow [[32m✔[0m]
 
 Failures:
 
-[36m  test/NewCabalTestSpec.hs:221:5: [0m
-  1) New Cabal Test Suite, Boundary and Special Value Handling, should handle very small values
-[31m       Falsified (after 2 tests and 1 shrink):[0m
+[36m  test/ComprehensiveIntegrationSpec.hs:29:25: [0m
+  1) Comprehensive Integration Tests, Metric Aggregation, should aggregate multiple metric values correctly
+       Falsifiable (after 3 tests and 2 shrinks):
+         [1.0]
+[31m       expected: [0m[31m1[0m.0
+[31m        but got: [0m[32m0[0m.0
+
+  To rerun use: --match "/Comprehensive Integration Tests/Metric Aggregation/should aggregate multiple metric values correctly/" --seed 1727289352
+
+[36m  test/ComprehensiveIntegrationSpec.hs:37:25: [0m
+  2) Comprehensive Integration Tests, Metric Aggregation, should handle mixed positive and negative values
+       Falsifiable (after 3 tests and 2 shrinks):
+         [1.0]
+[31m       expected: [0m[31m1[0m.0
+[31m        but got: [0m[32m0[0m.0
+
+  To rerun use: --match "/Comprehensive Integration Tests/Metric Aggregation/should handle mixed positive and negative values/" --seed 1727289352
+
+[36m  test/ComprehensiveIntegrationSpec.hs:57:7: [0m
+  3) Comprehensive Integration Tests, Trace Context Propagation, should generate unique span IDs
+[31m       Falsified (after 1 test):[0m
 [31m         0[0m
 
-  To rerun use: --match "/New Cabal Test Suite/Boundary and Special Value Handling/should handle very small values/" --seed 85792293
+  To rerun use: --match "/Comprehensive Integration Tests/Trace Context Propagation/should generate unique span IDs/" --seed 1727289352
 
-[36m  test/NewCabalTestSpec.hs:283:5: [0m
-  2) New Cabal Test Suite, Telemetry System Performance Characteristics, should handle high-frequency metric operations
-[31m       Falsified (after 2 tests and 1 shrink):[0m
+[36m  test/ComprehensiveIntegrationSpec.hs:124:7: [0m
+  4) Comprehensive Integration Tests, Special Values Handling, should handle very small and large values
+[31m       Falsified (after 2 tests and 5 shrinks):[0m
+[31m         0.1[0m
+
+  To rerun use: --match "/Comprehensive Integration Tests/Special Values Handling/should handle very small and large values/" --seed 1727289352
+
+[36m  test/ComprehensiveIntegrationSpec.hs:209:7: [0m
+  5) Comprehensive Integration Tests, Performance Characteristics, should handle rapid metric updates
+[31m       Falsified (after 1 test):[0m
 [31m         0[0m
 
-  To rerun use: --match "/New Cabal Test Suite/Telemetry System Performance Characteristics/should handle high-frequency metric operations/" --seed 85792293
+  To rerun use: --match "/Comprehensive Integration Tests/Performance Characteristics/should handle rapid metric updates/" --seed 1727289352
 
-[36m  test/NewCabalTestSpec.hs:296:5: [0m
-  3) New Cabal Test Suite, Telemetry System Performance Characteristics, should maintain performance with large metric names
-[31m       Falsified (after 4 tests and 2 shrinks):[0m
-[31m         0[0m
+Randomized with seed 1727289352
 
-  To rerun use: --match "/New Cabal Test Suite/Telemetry System Performance Characteristics/should maintain performance with large metric names/" --seed 85792293
-
-Randomized with seed 85792293
-
-Finished in 2.7955 seconds
-[31m457 examples, 3 failures[0m
+Finished in 3.1394 seconds
+[31m508 examples, 5 failures[0m
 Test suite azimuth-test: FAIL
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log

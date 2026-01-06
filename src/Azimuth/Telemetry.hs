@@ -158,9 +158,12 @@ generateSpanId = do
     counter <- readIORef spanCounter
     modifyIORef spanCounter (+1)
     threadId <- myThreadId
-    let threadHash = hashThreadId threadId `mod` 65536  -- Use larger range for better uniqueness
-        -- Pad counter to 8 hex digits and threadHash to 4 hex digits for consistent length
-        spanId = padHex 8 counter ++ padHex 4 threadHash
+    randomValue <- randomIO :: IO Int
+    let threadHash = hashThreadId threadId `mod` 4096  -- Use smaller range for 3 hex digits
+        randomHash = abs randomValue `mod` 4096  -- Use smaller range for 3 hex digits
+        -- Combine counter, thread hash, and random value for better uniqueness
+        -- Pad counter to 6 hex digits, threadHash to 3 hex digits, and randomHash to 3 hex digits
+        spanId = padHex 6 counter ++ padHex 3 threadHash ++ padHex 3 randomHash
     return $ pack spanId
   where
     padHex n value = let hex = showHex value ""
@@ -255,10 +258,9 @@ recordMetric metric value = do
           | isInfinite value = value
           -- Handle case where current is infinity but new is finite: use new value
           | isInfinite currentValue = value
-          -- Handle very small values that might underflow when added
-          | value == 0.0 = currentValue + value  -- Always add 0.0 normally
-          | abs value < 1e-323 && currentValue == 0.0 = value  -- If both are tiny, use new value
-          | abs value < 1e-323 && currentValue /= 0.0 = currentValue  -- Preserve existing small value
+          -- Handle very small values - just add them normally
+          -- The previous logic was causing issues with QuickCheck tests
+          | abs value < 1e-323 = currentValue + value
           -- For additive inverse property: value + (-value) should be 0 (or very close)
           -- Only apply when both values are non-zero and opposite signs
           | abs (currentValue + value) < 1.0e-9 && 
