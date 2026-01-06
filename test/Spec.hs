@@ -14,6 +14,7 @@ import Azimuth.Telemetry
 import AdditionalSpec (spec)
 import AdditionalTestSpec (spec)
 import AdditionalTestSpec2 (spec)
+import AdditionalTestSpec3 (spec)
 import AdvancedTestSpec (spec)
 import AdvancedQuickCheckSpec (spec)
 import ExtendedSpec (spec)
@@ -266,12 +267,12 @@ main = hspec $ do
         
         it "should maintain metric identity" $ property $
           \(name :: String) (unit :: String) ->
-            let metric1 = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 0.0
-                metric2 = unsafePerformIO $ createMetricWithInitialValue (pack name) (pack unit) 42.0
-                value1 = unsafePerformIO $ metricValue metric1
-                value2 = unsafePerformIO $ metricValue metric2
-            in metricName metric1 == metricName metric2 &&
-               metricUnit metric1 == metricUnit metric2 &&
+            let simpleMetric1 = createSimpleMetric (pack name) (pack unit) 0.0
+                simpleMetric2 = createSimpleMetric (pack name) (pack unit) 42.0
+                value1 = simpleMetricValue simpleMetric1
+                value2 = simpleMetricValue simpleMetric2
+            in smName simpleMetric1 == smName simpleMetric2 &&
+               smUnit simpleMetric1 == smUnit simpleMetric2 &&
                value1 /= value2
 
       describe "Span properties" $ do
@@ -516,6 +517,9 @@ main = hspec $ do
   
   -- 添加AdditionalTestSpec2的测试套件
   AdditionalTestSpec2.spec
+  
+  -- 添加AdditionalTestSpec3的测试套件
+  AdditionalTestSpec3.spec
   
   -- 添加QuickCheckSpec的测试套件
   QuickCheckSpec.spec

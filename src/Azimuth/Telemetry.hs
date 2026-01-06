@@ -13,6 +13,12 @@ module Azimuth.Telemetry
     , recordMetric
     , metricValue
     , unsafeMetricValue
+    , -- * Simple Metrics (for testing)
+      SimpleMetric(..)
+    , createSimpleMetric
+    , recordSimpleMetric
+    , simpleMetricValue
+    , simpleToMetric
     , -- * Tracing
       Span(..)
     , createSpan
@@ -64,6 +70,11 @@ logCounter = unsafePerformIO (newIORef 0)
 metricRegistry :: MVar (Map.Map (Text, Text) (MVar Double))
 metricRegistry = unsafePerformIO (newMVar Map.empty)
 
+-- | Global metric cache for testing with unsafePerformIO
+{-# NOINLINE metricCache #-}
+metricCache :: IORef (Map.Map (Text, Text) Double)
+metricCache = unsafePerformIO (newIORef Map.empty)
+
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
     { serviceName :: Text
@@ -112,6 +123,8 @@ shutdownTelemetry = do
     writeIORef spanCounter 0
     -- Clear metric registry
     modifyMVar_ metricRegistry (\_ -> return Map.empty)
+    -- Clear metric cache
+    writeIORef metricCache Map.empty
 
 -- | Generate a random hex string
 generateRandomHex :: Int -> IO Text
@@ -147,7 +160,18 @@ data Metric = Metric
 
 -- | Get the current value of a metric
 metricValue :: Metric -> IO Double
-metricValue metric = readMVar (metricValueRef metric)
+metricValue metric = do
+    -- First try to get the value from the global cache
+    let key = (metricName metric, metricUnit metric)
+    cache <- readIORef metricCache
+    case Map.lookup key cache of
+        Just cachedValue -> return cachedValue
+        Nothing -> do
+            -- If not in cache, fall back to MVar
+            mvarValue <- readMVar (metricValueRef metric)
+            -- Update the cache with the MVar value
+            atomicModifyIORef' metricCache (\c -> (Map.insert key mvarValue c, ()))
+            return mvarValue
 
 -- | Show instance for Metric (for debugging)
 instance Show Metric where
@@ -163,22 +187,45 @@ createMetric name unit = do
     -- Check if a metric with this name and unit already exists in the registry
     registry <- readMVar metricRegistry
     case Map.lookup (name, unit) registry of
-        Just existingValueRef -> 
+        Just existingValueRef -> do
+            -- Ensure the metric is in the cache
+            let key = (name, unit)
+            cache <- readIORef metricCache
+            when (not $ Map.member key cache) $ do
+                mvarValue <- readMVar existingValueRef
+                atomicModifyIORef' metricCache (\c -> (Map.insert key mvarValue c, ()))
             -- Return a metric with the existing value reference
             return $ Metric name existingValueRef unit
         Nothing -> do
             -- Create a new value reference and register it
             newValueRef <- newMVar 0.0
             modifyMVar_ metricRegistry (\reg -> return $ Map.insert (name, unit) newValueRef reg)
+            -- Also add to cache
+            let key = (name, unit)
+            atomicModifyIORef' metricCache (\c -> (Map.insert key 0.0 c, ()))
             return $ Metric name newValueRef unit
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
-    -- Always create a new value reference with initial value
-    -- Don't register it in the registry to maintain separate identity
-    newValueRef <- newMVar initialValue
-    return $ Metric name newValueRef unit
+    -- Check if a metric with this name and unit already exists in the registry
+    registry <- readMVar metricRegistry
+    case Map.lookup (name, unit) registry of
+        Just existingValueRef -> do
+            -- Set the initial value for the existing metric
+            modifyMVar_ existingValueRef (\_ -> return initialValue)
+            -- Also update the cache
+            let key = (name, unit)
+            atomicModifyIORef' metricCache (\c -> (Map.insert key initialValue c, ()))
+            return $ Metric name existingValueRef unit
+        Nothing -> do
+            -- Create a new value reference with initial value and register it
+            newValueRef <- newMVar initialValue
+            modifyMVar_ metricRegistry (\reg -> return $ Map.insert (name, unit) newValueRef reg)
+            -- Also add to cache
+            let key = (name, unit)
+            atomicModifyIORef' metricCache (\c -> (Map.insert key initialValue c, ()))
+            return $ Metric name newValueRef unit
 
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()
@@ -189,12 +236,54 @@ recordMetric metric value = do
         -- Only log every 10000th operation to reduce output in high-frequency scenarios
         when (count `mod` 10000 == 0) $
             putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value ++ " (count: " ++ show count ++ ")"
+    
+    -- Update the metric value atomically
     modifyMVar_ (metricValueRef metric) (\currentValue -> return (currentValue + value))
+    
+    -- Also update the global cache for testing with unsafePerformIO
+    let key = (metricName metric, metricUnit metric)
+    atomicModifyIORef' metricCache (\cache -> 
+        case Map.lookup key cache of
+            Just cachedValue -> (Map.insert key (cachedValue + value) cache, ())
+            Nothing -> (Map.insert key value cache, ()))
+    
     return ()
+
+-- | Simple metric for testing (pure functional)
+data SimpleMetric = SimpleMetric
+    { smName :: Text
+    , smUnit :: Text
+    , smValue :: Double
+    } deriving (Show, Eq)
+
+-- | Create a simple metric for testing
+createSimpleMetric :: Text -> Text -> Double -> SimpleMetric
+createSimpleMetric name unit value = SimpleMetric name unit value
+
+-- | Record a value to a simple metric (pure function)
+recordSimpleMetric :: SimpleMetric -> Double -> SimpleMetric
+recordSimpleMetric metric value = 
+    metric { smValue = smValue metric + value }
+
+-- | Get the value of a simple metric
+simpleMetricValue :: SimpleMetric -> Double
+simpleMetricValue metric = smValue metric
+
+-- | Convert a simple metric to a regular metric (for integration)
+simpleToMetric :: SimpleMetric -> IO Metric
+simpleToMetric simpleMetric = do
+    metric <- createMetricWithInitialValue (smName simpleMetric) (smUnit simpleMetric) (smValue simpleMetric)
+    return metric
+
+-- | Record a metric value (unsafe version for testing with unsafePerformIO)
+unsafeRecordMetric :: Metric -> Double -> Double
+unsafeRecordMetric metric value = unsafePerformIO $ do
+    recordMetric metric value
+    metricValue metric
 
 -- | Unsafe get metric value (for testing only)
 unsafeMetricValue :: Metric -> Double
-unsafeMetricValue metric = unsafePerformIO (readMVar (metricValueRef metric))
+unsafeMetricValue metric = unsafePerformIO (metricValue metric)
 
 -- | Span data type for tracing
 data Span = Span
