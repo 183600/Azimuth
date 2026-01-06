@@ -15,6 +15,7 @@ import AdditionalSpec (spec)
 import AdditionalTestSpec (spec)
 import AdditionalTestSpec2 (spec)
 import AdvancedTestSpec (spec)
+import AdvancedQuickCheckSpec (spec)
 import ExtendedSpec (spec)
 import NewTestSpec (spec)
 import EnhancedTestSpec (spec)
@@ -502,6 +503,9 @@ main = hspec $ do
   
   -- 添加AdvancedTestSpec的测试套件
   AdvancedTestSpec.spec
+  
+  -- 添加AdvancedQuickCheckSpec的测试套件
+  AdvancedQuickCheckSpec.spec
   
   -- 添加EnhancedTestSpec的测试套件
   EnhancedTestSpec.spec
