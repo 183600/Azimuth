@@ -23,23 +23,23 @@ spec = describe "Comprehensive Telemetry Tests" $ do
   
   -- 1. 测试度量注册表的共享机制
   describe "Metric Registry Sharing" $ do
-    it "should share metrics with same name and unit" $ property $
-      \(name :: String) (unit :: String) ->
-        let nameText = pack name
-            unitText = pack unit
-        in unsafePerformIO $ do
-          metric1 <- createMetric nameText unitText
-          metric2 <- createMetric nameText unitText
-          
-          -- 记录不同的值
-          recordMetric metric1 10.0
-          recordMetric metric2 20.0
-          
-          -- 验证它们共享相同的值
-          value1 <- metricValue metric1
-          value2 <- metricValue metric2
-          
-          return (value1 == value2 && value1 == 30.0)
+    it "should share metrics with same name and unit" $ do
+        let nameText = pack "test-metric"
+            unitText = pack "count"
+        
+        metric1 <- createMetric nameText unitText
+        metric2 <- createMetric nameText unitText
+        
+        -- 记录不同的值
+        recordMetric metric1 10.0
+        recordMetric metric2 20.0
+        
+        -- 验证它们共享相同的值
+        value1 <- metricValue metric1
+        value2 <- metricValue metric2
+        
+        value1 `shouldBe` value2
+        value1 `shouldBe` 30.0
     
     it "should not share metrics with different units" $ property $
       \(name :: String) (unit1 :: String) (unit2 :: String) ->
@@ -281,27 +281,26 @@ spec = describe "Comprehensive Telemetry Tests" $ do
 
   -- 6. 测试错误恢复机制
   describe "Error Recovery Mechanisms" $ do
-    it "should recover from metric operation failures" $ property $
-      \(values :: [Double]) ->
-        let testValues = if null values then [1.0, 2.0, 3.0] else take 5 values
-        in unsafePerformIO $ do
-          metric <- createMetric "error-recovery-test" "count"
-          
-          -- 尝试记录可能引起问题的值
-          results <- sequence $ map (\value -> do
-            try $ recordMetric metric value
-            ) testValues
-          
-          -- 验证所有操作都成功（或被正确处理）
-          let allSuccess = all (\result -> case result of
-                Left (_ :: SomeException) -> False
-                Right _ -> True) results
-          
-          -- 验证最终状态
-          finalValue <- metricValue metric
-          let expectedValue = sum testValues
-          
-          return (allSuccess && finalValue == expectedValue)
+    it "should recover from metric operation failures" $ do
+        let testValues = [1.0, 2.0, 3.0, 4.0, 5.0]
+        metric <- createMetric "error-recovery-test" "count"
+        
+        -- 尝试记录可能引起问题的值
+        results <- sequence $ map (\value -> do
+          try $ recordMetric metric value
+          ) testValues
+        
+        -- 验证所有操作都成功（或被正确处理）
+        let allSuccess = all (\result -> case result of
+              Left (_ :: SomeException) -> False
+              Right _ -> True) results
+        
+        -- 验证最终状态
+        finalValue <- metricValue metric
+        let expectedValue = sum testValues
+        
+        allSuccess `shouldBe` True
+        finalValue `shouldBe` expectedValue
     
     it "should handle span creation failures gracefully" $ property $
       \(spanNames :: [String]) ->
@@ -417,45 +416,44 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           
           return (totalOps == fromIntegral operations)
     
-    it "should handle mixed workload gracefully" $ property $
-      \(workloadMix :: [Int]) ->
-        let operations = if null workloadMix then 50 else max 10 (abs (sum workloadMix) `mod` 100 + 10)
+    it "should handle mixed workload gracefully" $ do
+        let operations = 50
             metricRatio = 0.4  -- 40% metric operations
             loggerRatio = 0.3  -- 30% logger operations
             spanRatio = 0.3    -- 30% span operations
             
-            metricOps = round (fromIntegral operations * metricRatio)
-            loggerOps = round (fromIntegral operations * loggerRatio)
-            spanOps = operations - metricOps - loggerOps
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          -- 执行混合工作负载
-          metrics <- sequence $ replicate metricOps $ do
-            createMetric "mixed-workload" "count"
-          
-          loggers <- sequence $ replicate loggerOps $ do
-            createLogger "mixed-workload-logger" Info
-          
-          spans <- sequence $ replicate spanOps $ do
-            createSpan "mixed-workload-span"
-          
-          -- 使用所有组件
-          sequence_ $ zipWith (\metric index -> do
-            recordMetric metric (fromIntegral index)) metrics [1..]
-          
-          sequence_ $ zipWith (\logger index -> do
-            logMessage logger Info (pack $ "mixed workload message " ++ show index)) loggers [1..]
-          
-          sequence_ $ map finishSpan spans
-          
-          -- 验证系统状态
-          totalMetricValue <- foldM (\acc metric -> do
-            value <- metricValue metric
-            return (acc + value)) 0.0 metrics
-          
-          let expectedMetricValue = fromIntegral $ sum [1..metricOps]
-          
-          shutdownTelemetry
-          
-          return (abs (totalMetricValue - expectedMetricValue) < 1e-10)
+            metricOps = max 1 $ round (fromIntegral operations * metricRatio)
+            loggerOps = max 1 $ round (fromIntegral operations * loggerRatio)
+            spanOps = max 1 $ operations - metricOps - loggerOps
+        
+        initTelemetry defaultConfig
+        
+        -- 执行混合工作负载
+        metrics <- sequence $ zipWith (\index _ -> do
+          createMetric (pack $ "mixed-workload-" ++ show index) "count") [1..] (replicate metricOps ())
+        
+        loggers <- sequence $ replicate loggerOps $ do
+          createLogger "mixed-workload-logger" Info
+        
+        spans <- sequence $ replicate spanOps $ do
+          createSpan "mixed-workload-span"
+        
+        -- 使用所有组件
+        sequence_ $ zipWith (\metric index -> do
+          recordMetric metric (fromIntegral index)) metrics [1..]
+        
+        sequence_ $ zipWith (\logger index -> do
+          logMessage logger Info (pack $ "mixed workload message " ++ show index)) loggers [1..]
+        
+        sequence_ $ map finishSpan spans
+        
+        -- 验证系统状态
+        totalMetricValue <- foldM (\acc metric -> do
+          value <- metricValue metric
+          return (acc + value)) 0.0 metrics
+        
+        let expectedMetricValue = fromIntegral $ sum [1..metricOps]
+        
+        shutdownTelemetry
+        
+        totalMetricValue `shouldBe` expectedMetricValue

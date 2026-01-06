@@ -13,6 +13,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Azimuth.Telemetry
 import AdditionalSpec (spec)
 import AdditionalTestSpec (spec)
+import AdditionalTestSpec2 (spec)
 import AdvancedTestSpec (spec)
 import ExtendedSpec (spec)
 import NewTestSpec (spec)
@@ -507,6 +508,9 @@ main = hspec $ do
   
   -- 添加AdditionalTestSpec的测试套件
   AdditionalTestSpec.spec
+  
+  -- 添加AdditionalTestSpec2的测试套件
+  AdditionalTestSpec2.spec
   
   -- 添加QuickCheckSpec的测试套件
   QuickCheckSpec.spec
