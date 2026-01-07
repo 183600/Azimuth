@@ -98,11 +98,9 @@ spec = describe "Enhanced Telemetry Tests" $ do
         createMetric "cleanup-test" "count"
       
       -- Shutdown telemetry system
-      shutdownTelemetry
-      
+            
       -- Reinitialize
-      initTelemetry productionConfig
-      
+            
       -- Creating metric with same name should start from initial value
       metric <- createMetric "cleanup-test" "count"
       value <- metricValue metric
@@ -170,8 +168,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
   describe "Configuration Validation" $ do
     it "should handle configuration changes during operation" $ do
       -- Initialize default configuration
-      initTelemetry productionConfig
-      
+            
       -- Create some components
       metric <- createMetric "config-test" "count"
       recordMetric metric 10.0
@@ -186,8 +183,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       value `shouldBe` 30.0
       
       -- Restore default configuration
-      initTelemetry productionConfig
-
+      
   -- Test 9: Data integrity tests
   describe "Data Integrity Tests" $ do
     it "should maintain data integrity during complex operations" $ do

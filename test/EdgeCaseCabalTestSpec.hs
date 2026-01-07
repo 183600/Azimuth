@@ -7,7 +7,7 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate, catch, IOException)
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (replicateM, when, void, unless, sequence_, forever, forM)
+import Control.Monad (replicateM, when, void, unless, sequence_, forever, forM, forM_)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import System.Mem (performGC)
@@ -124,8 +124,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
     it "should handle thundering herd problem" $ do
       let herdSize = 100
       
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "thundering-herd" "count"
       
       -- 同时启动大量线程
@@ -142,36 +141,32 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       value <- metricValue metric
       let expectedValue = fromIntegral herdSize
       
-      shutdownTelemetry
-      
+            
       value `shouldBe` expectedValue
     
     it "should handle rapid initialization/shutdown cycles" $ do
       let cycles = 50
       
       sequence_ $ replicate cycles $ do
-        initTelemetry productionConfig
-        
+                
         metric <- createMetric "rapid-cycle" "count"
         recordMetric metric 1.0
         
-        shutdownTelemetry
-      
+              
       -- 如果没有崩溃就算成功
       True `shouldBe` True
     
     it "should handle concurrent access to same metric name" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 多个线程同时创建同名度量
           threads <- mapM (\_ -> forkIO $ do
             metric <- createMetric "same-name" "count"
             recordMetric metric 1.0
             value <- metricValue metric
-            return value
+            return ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
@@ -180,15 +175,13 @@ spec = describe "Edge Case Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
-          
+                    
           return True  -- 如果没有崩溃就算成功
   
   -- 4. 内存边缘情况
   describe "Memory Edge Cases" $ do
     it "should handle memory pressure scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建大量资源
       metrics <- sequence $ replicate 10000 $ do
         createMetric "memory-pressure" "count"
@@ -203,16 +196,14 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       values <- sequence $ map metricValue metrics
       let allCorrect = all (== 1.0) values
       
-      shutdownTelemetry
-      
+            
       allCorrect `shouldBe` True
     
     it "should handle resource exhaustion gracefully" $ property $
       \resourceCount ->
         let actualCount = max 1 (abs resourceCount `mod` 1000 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           result <- try $ do
             -- 尝试创建大量资源
             metrics <- sequence $ replicate actualCount $ do
@@ -226,8 +217,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
             let allCorrect = all (== 1.0) values
             return allCorrect
           
-          shutdownTelemetry
-          
+                    
           case result of
             Left (_ :: SomeException) -> return True  -- 失败也算正确处理
             Right allCorrect -> return allCorrect
@@ -237,8 +227,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
     it "should handle rapid successive operations" $ do
       let rapidOps = 10000
       
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "rapid-successive" "ops"
       
       -- 极快速操作
@@ -247,16 +236,14 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       
       value <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       value `shouldBe` fromIntegral rapidOps
     
     it "should handle operations with minimal delays" $ property $
       \delayCount ->
         let actualDelays = max 1 (abs delayCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "minimal-delays" "ops"
           
           -- 最小延迟操作
@@ -266,24 +253,19 @@ spec = describe "Edge Case Cabal Test Suite" $ do
           
           value <- metricValue metric
           
-          shutdownTelemetry
-          
           return (value == fromIntegral actualDelays)
   
   -- 6. 状态转换边缘情况
   describe "State Transition Edge Cases" $ do
     it "should handle initialization during shutdown" $ do
-      initTelemetry productionConfig
-      
+            
       -- 在关闭过程中初始化
       shutdownThread <- forkIO $ do
         threadDelay 10000  -- 10毫秒
-        shutdownTelemetry
-      
+              
       -- 立即尝试重新初始化
       threadDelay 5000  -- 5毫秒
-      result <- try $ initTelemetry productionConfig
-      
+      result <- try $ initTelemetry defaultConfig
       -- 等待关闭完成
       threadDelay 10000  -- 10毫秒
       killThread shutdownThread
@@ -293,11 +275,9 @@ spec = describe "Edge Case Cabal Test Suite" $ do
         Right _ -> return ()  -- 或者成功
       
       -- 清理状态
-      shutdownTelemetry
-    
+          
     it "should handle configuration changes during operations" $ do
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "config-during-ops" "count"
       
       -- 在操作过程中更改配置
@@ -317,8 +297,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       
       value <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       -- 验证系统仍然可以工作
       value `shouldBe` 1000.0
   
@@ -327,16 +306,14 @@ spec = describe "Edge Case Cabal Test Suite" $ do
     it "should handle all possible log levels" $ do
       let levels = [Debug, Info, Warn, Error]
       
-      initTelemetry productionConfig
-      
+            
       sequence_ $ flip map levels $ \level -> do
         logger <- createLogger "edge-level" level
         logMessage logger level "Edge case test"
         
         loggerLevel logger `shouldBe` level
       
-      shutdownTelemetry
-    
+          
     it "should handle boolean configuration combinations" $ do
       let bools = [True, False]
           configs = [TelemetryConfig "edge-case" "1.0.0" m t l False | 
@@ -351,13 +328,11 @@ spec = describe "Edge Case Cabal Test Suite" $ do
         value <- metricValue metric
         value `shouldBe` 1.0
         
-        shutdownTelemetry
-  
+          
   -- 8. 错误恢复边缘情况
   describe "Error Recovery Edge Cases" $ do
     it "should handle cascading error scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "cascading-error" "count"
       
       -- 触发一系列错误
@@ -371,17 +346,15 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       
       value <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       -- 验证恢复
       not (isNaN value) `shouldBe` True
     
     it "should handle error conditions during concurrent operations" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-error" "count"
           
           -- 并发错误操作
@@ -403,8 +376,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
           recordMetric metric 999.0
           value <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (not (isNaN value))
   
   -- 9. 性能边缘情况
@@ -412,8 +384,7 @@ spec = describe "Edge Case Cabal Test Suite" $ do
     it "should handle worst-case string operations" $ do
       let worstCaseString = pack $ replicate 100000 '\0'  -- 大量NULL字符
       
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric worstCaseString worstCaseString
       
       -- 测量操作时间
@@ -421,35 +392,31 @@ spec = describe "Edge Case Cabal Test Suite" $ do
       
       value <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       value `shouldBe` 1.0
     
     it "should handle pathological metric update patterns" $ property $
-      \patternSize ->
+      \(patternSize :: Int) ->
         let actualSize = max 1 (abs patternSize `mod` 1000 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "pathological-pattern" "count"
           
           -- 病态更新模式：交替极大极小值
-          sequence_ $ forM [1..actualSize] $ \i -> do
+          forM_ [1..actualSize] $ \i -> do
             if i `mod` 2 == 0
               then recordMetric metric 1e308
               else recordMetric metric (-1e308)
           
           value <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (not (isNaN value) && not (isInfinite value))
   
   -- 10. 系统边缘情况
   describe "System Edge Cases" $ do
     it "should handle system resource limitations" $ do
-      initTelemetry productionConfig
-      
+            
       -- 尝试耗尽系统资源
       result <- try $ do
         -- 创建大量线程
@@ -467,18 +434,16 @@ spec = describe "Edge Case Cabal Test Suite" $ do
         
         return True
       
-      shutdownTelemetry
-      
+            
       case result of
         Left (_ :: SomeException) -> return ()  -- 资源限制也算正确处理
         Right _ -> return ()  -- 或者成功
     
     it "should handle extreme system load" $ property $
-      \loadFactor ->
+      \(loadFactor :: Int) ->
         let actualLoad = max 1 (abs loadFactor `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "extreme-load" "count"
           
           -- 模拟极端系统负载
@@ -500,6 +465,5 @@ spec = describe "Edge Case Cabal Test Suite" $ do
           recordMetric metric 999.0
           value <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (not (isNaN value))

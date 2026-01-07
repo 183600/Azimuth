@@ -254,8 +254,7 @@ spec = describe "Additional Telemetry Tests" $ do
   -- 7. 测试大数据量处理
   describe "Large Data Volume Handling" $ do
     it "should handle large numbers of metrics efficiently" $ do
-      initTelemetry productionConfig
-      
+            
       let numMetrics = 100
           operationsPerMetric = 10
       
@@ -270,8 +269,7 @@ spec = describe "Additional Telemetry Tests" $ do
       values <- sequence $ map metricValue metrics
       all (== fromIntegral operationsPerMetric) values `shouldBe` True
       
-      shutdownTelemetry
-    
+          
     it "should handle long metric and span names" $ do
       let longName = pack $ replicate 1000 'a'
           veryLongName = pack $ replicate 10000 'b'

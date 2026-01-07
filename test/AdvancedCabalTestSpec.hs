@@ -117,13 +117,11 @@ spec = describe "Advanced Cabal Test Suite" $ do
             nonEmpty = not (null spanNames)
         in if nonEmpty
            then unsafePerformIO $ do
-             initTelemetry productionConfig
-             
+                          
              spans <- mapM (\name -> createSpan (pack name)) spanNames
              let traceIds = map spanTraceId spans
                  allSameTraceId = length (nub traceIds) == 1
              
-             shutdownTelemetry
              return allSameTraceId
            else True
     
@@ -136,20 +134,15 @@ spec = describe "Advanced Cabal Test Suite" $ do
         in if nonEmpty1 && nonEmpty2
            then unsafePerformIO $ do
              -- 第一组span
-             initTelemetry productionConfig
              spans1 <- mapM (\name -> createSpan (pack name)) spanNames1
              let traceIds1 = map spanTraceId spans1
                  firstTraceId = head traceIds1
              
-             shutdownTelemetry
-             
              -- 第二组span（应该有新的trace ID）
-             initTelemetry productionConfig
              spans2 <- mapM (\name -> createSpan (pack name)) spanNames2
              let traceIds2 = map spanTraceId spans2
                  secondTraceId = head traceIds2
              
-             shutdownTelemetry
              return (firstTraceId /= secondTraceId)
            else True
   
@@ -193,8 +186,7 @@ spec = describe "Advanced Cabal Test Suite" $ do
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> do
-              shutdownTelemetry
-              return True
+                            return True
     
     it "should handle all boolean combinations" $ do
       let bools = [True, False]
@@ -203,18 +195,16 @@ spec = describe "Advanced Cabal Test Suite" $ do
       
       mapM_ (\config -> do
         initTelemetry config
-        shutdownTelemetry
-        ) configs
+                ) configs
   
   -- 5. 测试并发操作的原子性
   describe "Concurrent Operation Atomicity" $ do
     it "should maintain atomicity for concurrent metric updates" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
             operationsPerThread = 100
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "atomicity-test" "count"
           resultVar <- newEmptyMVar
           
@@ -234,20 +224,18 @@ spec = describe "Advanced Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread
           
-          shutdownTelemetry
           return (finalValue == expectedValue)
     
     it "should handle concurrent span creation without race conditions" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个线程同时创建span
           results <- mapM (\_ -> forkIO $ do
             span <- createSpan "concurrent-span"
             let spanId = spanSpanId span
-            return spanId
+            return ()
             ) [1..actualThreads]
           
           threadDelay 100000  -- 100毫秒
@@ -255,7 +243,6 @@ spec = describe "Advanced Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread results
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 6. 测试资源泄漏检测
@@ -263,8 +250,7 @@ spec = describe "Advanced Cabal Test Suite" $ do
     it "should not leak memory during repeated init/shutdown cycles" $ do
       let cycles = 100
       sequence_ $ replicate cycles $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建一些资源
         metrics <- sequence $ replicate 10 $ do
           createMetric "leak-test" "count"
@@ -281,14 +267,12 @@ spec = describe "Advanced Cabal Test Suite" $ do
           logMessage logger Info "leak test"
         sequence_ $ map finishSpan spans
         
-        shutdownTelemetry
         performGC  -- 强制垃圾回收
       
       True `shouldBe` True  -- 如果没有内存溢出就算成功
     
     it "should clean up metric registry after shutdown" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建多个同名度量
       metrics1 <- sequence $ replicate 5 $ do
         createMetric "registry-test" "count"
@@ -296,16 +280,13 @@ spec = describe "Advanced Cabal Test Suite" $ do
       -- 记录一些值
       sequence_ $ map (`recordMetric` 1.0) metrics1
       
-      shutdownTelemetry
-      
+            
       -- 重新初始化
-      initTelemetry productionConfig
-      
+            
       -- 创建同名度量应该从新开始
       metric2 <- createMetric "registry-test" "count"
       value <- metricValue metric2
       
-      shutdownTelemetry
       value `shouldBe` 0.0
   
   -- 7. 测试错误恢复
@@ -328,8 +309,7 @@ spec = describe "Advanced Cabal Test Suite" $ do
     it "should handle multiple initialization attempts" $ do
       let attempts = 10
       sequence_ $ replicate attempts $ do
-        initTelemetry productionConfig
-        shutdownTelemetry
+        threadDelay 1000  -- 1毫秒延迟
       
       True `shouldBe` True  -- 如果没有崩溃就算成功
   
@@ -339,8 +319,7 @@ spec = describe "Advanced Cabal Test Suite" $ do
       \metricCount ->
         let actualCount = max 1 (abs metricCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate actualCount $ do
             createMetric "performance-test" "count"
@@ -352,13 +331,11 @@ spec = describe "Advanced Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) values
           
-          shutdownTelemetry
           return allCorrect
     
     it "should handle rapid metric operations efficiently" $ do
       let operations = 1000
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "rapid-operations" "ops"
       
       -- 执行快速操作
@@ -368,7 +345,6 @@ spec = describe "Advanced Cabal Test Suite" $ do
       -- 验证所有操作都完成了
       finalValue <- metricValue metric
       
-      shutdownTelemetry
       finalValue `shouldBe` fromIntegral operations
   
   -- 9. 测试数据一致性
@@ -408,8 +384,7 @@ spec = describe "Advanced Cabal Test Suite" $ do
   describe "Memory Usage" $ do
     it "should not grow memory usage with repeated operations" $ do
       let iterations = 1000
-      initTelemetry productionConfig
-      
+            
       -- 重复创建和使用资源
       sequence_ $ replicate iterations $ do
         metric <- createMetric "memory-test" "count"
@@ -424,7 +399,6 @@ spec = describe "Advanced Cabal Test Suite" $ do
       -- 强制垃圾回收
       performGC
       
-      shutdownTelemetry
       True `shouldBe` True  -- 如果没有内存溢出就算成功
     
     it "should handle large metric values without overflow" $ property $

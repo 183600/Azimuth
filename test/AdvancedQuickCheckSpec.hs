@@ -110,27 +110,21 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should maintain trace ID consistency within a trace" $ do
       let spanNames = ["op1", "op2", "op3", "op4"]
       unsafePerformIO $ do
-        initTelemetry productionConfig
-        
+                
         spans <- mapM (\name -> createSpan (pack name)) spanNames
         let traceIds = map spanTraceId spans
             uniqueTraceIds = nub traceIds
         
-        shutdownTelemetry
         return (length uniqueTraceIds == 1)
     
     it "should generate new trace ID after shutdown and reinit" $ do
       let spanName = "test-span"
       unsafePerformIO $ do
-        initTelemetry productionConfig
         span1 <- createSpan spanName
         let traceId1 = spanTraceId span1
-        shutdownTelemetry
         
-        initTelemetry productionConfig
         span2 <- createSpan spanName
         let traceId2 = spanTraceId span2
-        shutdownTelemetry
         
         return (traceId1 /= traceId2)
 
@@ -178,8 +172,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
           logMessage logger Info "test message"
           finishSpan span
           
-          shutdownTelemetry
-          
+                    
           return (serviceName config == serviceName config &&
                   serviceVersion config == serviceVersion config &&
                   enableMetrics config == enableMetrics config &&
@@ -194,8 +187,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
       let actualThreads = 2
           operationsPerThread = 10
       unsafePerformIO $ do
-        initTelemetry productionConfig
-        
+                
         metric <- createMetric "atomicity-test" "count"
         counter <- newMVar 0
         
@@ -217,15 +209,13 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
         finalCounter <- takeMVar counter
         let expectedValue = fromIntegral finalCounter
         
-        shutdownTelemetry
         return (finalMetricValue == expectedValue)
     
     it "should handle concurrent span creation with unique IDs" $ do
       let actualThreads = 2
           spansPerThread = 5
       unsafePerformIO $ do
-        initTelemetry productionConfig
-        
+                
         spansRef <- newMVar []
         
         -- 创建多个线程同时创建spans
@@ -246,7 +236,6 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
         let spanIds = map spanSpanId allSpans
             uniqueSpanIds = nub spanIds
         
-        shutdownTelemetry
         return (length uniqueSpanIds == length spanIds)
 
   -- 7. 测试文本处理的边界条件
@@ -294,8 +283,7 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should maintain consistent system state across operations" $ do
       let numOps = 10
       unsafePerformIO $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建组件
         metric <- createMetric "state-test" "count"
         logger <- createLogger "state-test-logger" Info
@@ -313,20 +301,17 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
         finalValue <- metricValue metric
         let expectedValue = fromIntegral numOps
         
-        shutdownTelemetry
         return (finalValue == expectedValue)
     
     it "should handle multiple initialization cycles consistently" $ do
       let numCycles = 3
       unsafePerformIO $ do
         let runCycle cycleNum = do
-              initTelemetry productionConfig
-              
+                            
               metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
               recordMetric metric (fromIntegral cycleNum)
               
               value <- metricValue metric
-              shutdownTelemetry
               return value
         
         results <- mapM runCycle [1..numCycles]

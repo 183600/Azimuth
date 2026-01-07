@@ -42,8 +42,7 @@ spec = do
         -- 验证所有配置都是有效的
         mapM_ (\config -> do
           initTelemetry config `shouldReturn` ()
-          shutdownTelemetry
-          ) validConfigs
+                    ) validConfigs
 
     -- 2. 度量聚合和统计功能测试
     describe "Metric Aggregation and Statistics" $ do
@@ -202,8 +201,7 @@ spec = do
     -- 7. 资源清理和内存管理测试
     describe "Resource Cleanup and Memory Management" $ do
       it "should properly cleanup resources" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建大量资源
         metrics <- sequence $ replicate 100 $ do
           createMetric "cleanup-test" "count"
@@ -221,16 +219,14 @@ spec = do
           logMessage logger Info "cleanup test"
         
         -- 清理资源
-        shutdownTelemetry
-        
+                
         -- 验证资源数量
         length metrics `shouldBe` 100
         length spans `shouldBe` 50
         length loggers `shouldBe` 25
       
       it "should handle resource lifecycle correctly" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建、使用和销毁资源
         replicateM_ 10 $ do
           metric <- createMetric "lifecycle-test" "temp"
@@ -242,8 +238,7 @@ spec = do
           logger <- createLogger "lifecycle-logger" Info
           logMessage logger Info "lifecycle test"
         
-        shutdownTelemetry
-
+        
     -- 8. 错误恢复和容错性测试
     describe "Error Recovery and Fault Tolerance" $ do
       it "should handle initialization failures gracefully" $ do
@@ -259,8 +254,7 @@ spec = do
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> do
-              shutdownTelemetry
-              return True
+                            return True
           ) configs
         
         -- 至少应该有一个配置成功
@@ -283,8 +277,7 @@ spec = do
         or results `shouldBe` True
       
       it "should handle concurrent operations safely" $ do
-        initTelemetry productionConfig
-        
+                
         -- 并发创建和操作资源
         let numThreads = 5
             operationsPerThread = 20

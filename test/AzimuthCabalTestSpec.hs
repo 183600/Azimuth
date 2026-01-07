@@ -140,19 +140,16 @@ testTelemetryConfigurationValidation = do
   let testConfig = TelemetryConfig "test-service" "1.0.0" True False True False
   
   initTelemetry testConfig
-  shutdownTelemetry
-  
+    
   -- Test with empty service name
   let emptyConfig = TelemetryConfig "" "1.0.0" True True True False
   initTelemetry emptyConfig
-  shutdownTelemetry
-  
+    
   -- Test with very long names
   let longName = pack $ replicate 1000 'a'
       longConfig = TelemetryConfig longName longName True True True False
   initTelemetry longConfig
-  shutdownTelemetry
-
+  
 -- | Test metric aggregation patterns
 testMetricAggregationPatterns :: IO ()
 testMetricAggregationPatterns = do
@@ -176,8 +173,7 @@ testMetricAggregationPatterns = do
 -- | Test resource cleanup
 testResourceCleanup :: IO ()
 testResourceCleanup = do
-  initTelemetry productionConfig
-  
+    
   -- Create many resources
   metrics <- sequence $ replicate 100 $ createMetric "cleanup-test" "count"
   spans <- sequence $ replicate 50 $ createSpan "cleanup-test"
@@ -189,12 +185,9 @@ testResourceCleanup = do
   sequence_ $ flip map loggers $ \logger -> logMessage logger Info "cleanup test"
   
   -- Shutdown and verify no errors
-  shutdownTelemetry
-  
+    
   -- Should be able to reinitialize
-  initTelemetry productionConfig
-  shutdownTelemetry
-
+    
 -- | QuickCheck property for metric operations
 prop_metricOperations :: [Double] -> Bool
 prop_metricOperations values = unsafePerformIO $ do

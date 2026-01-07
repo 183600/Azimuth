@@ -99,15 +99,13 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
           metric1 <- createMetric "config-test-1" "count"
           recordMetric metric1 1.0
           value1 <- metricValue metric1
-          shutdownTelemetry
-          
+                    
           -- 测试配置2
           initTelemetry config2
           metric2 <- createMetric "config-test-2" "count"
           recordMetric metric2 2.0
           value2 <- metricValue metric2
-          shutdownTelemetry
-          
+                    
           return (value1 == 1.0 && value2 == 2.0)
 
   -- 4. 资源泄漏检测测试
@@ -116,8 +114,7 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
       \iterations ->
         let numIterations = max 1 (abs iterations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 执行重复操作
           replicateM_ numIterations $ do
             metric <- createMetric "leak-test" "count"
@@ -135,7 +132,6 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
           recordMetric finalMetric 42.0
           finalValue <- metricValue finalMetric
           
-          shutdownTelemetry
           return (finalValue == 42.0)
 
   -- 5. 错误恢复和容错性测试
@@ -144,8 +140,7 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
       \values ->
         let testValues = take 5 $ values ++ [1.0, 2.0, 3.0] :: [Double]
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 记录值，包括可能的特殊值
           metric <- createMetric "recovery-test" "count"
           results <- mapM (\value -> (try $ recordMetric metric value) :: IO (Either SomeException ())) testValues
@@ -154,7 +149,6 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
           let successCount = length $ filter (either (const False) (const True)) results
           finalValue <- metricValue metric
           
-          shutdownTelemetry
           return (successCount > 0)
 
   -- 6. 性能回归测试
@@ -163,8 +157,7 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
       \operations ->
         let numOps = max 10 (abs operations `mod` 100 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 测试度量操作性能
           metric <- createMetric "performance-test" "ops"
           
@@ -176,7 +169,6 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral numOps
           
-          shutdownTelemetry
           return (either (const False) (const True) startResult && 
                   finalValue == expectedValue)
 
@@ -186,8 +178,7 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
       \values ->
         let testValues = take 5 $ values ++ [1.0, 2.0, 3.0] :: [Double]
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- replicateM 3 $ createMetric "consistency-test" "count"
           
@@ -200,7 +191,6 @@ spec = describe "Enhanced QuickCheck-based Telemetry Tests" $ do
           values <- mapM metricValue metrics
           let allEqual = all (== head values) (tail values)
           
-          shutdownTelemetry
           return allEqual
 
   -- 8. 边界值和异常情况测试

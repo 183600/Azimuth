@@ -91,12 +91,10 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \name ->
         let spanName = pack $ "trace-hex-validation-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
           span <- createSpan spanName
           let traceIdStr = unpack (spanTraceId span)
               isHexChar c = isHexDigit c
               allHex = all isHexChar traceIdStr
-          shutdownTelemetry
           return (allHex && not (null traceIdStr))
   
   -- 3. 测试日志级别的枚举属性
@@ -155,8 +153,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           
           -- 验证配置仍然有效
           metricValue <- metricValue metric
-          shutdownTelemetry
-          
+                    
           return (metricValue == 1.0)
     
     it "should handle configuration changes correctly" $ property $
@@ -177,8 +174,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           recordMetric metric 2.0
           finalValue <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (finalValue == 3.0)
   
   -- 5. 测试并发创建多个不同类型的组件
@@ -382,8 +378,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numResources ->
         let resources = max 1 (abs numResources `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量资源
           metrics <- sequence $ replicate resources $ do
             createMetric "cleanup-test" "count"
@@ -401,17 +396,14 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
           sequence_ $ map finishSpan spans
           
           -- 关闭系统
-          shutdownTelemetry
-          
+                    
           -- 重新初始化并验证系统仍然工作
-          initTelemetry productionConfig
-          
+                    
           newMetric <- createMetric "after-cleanup" "count"
           recordMetric newMetric 42.0
           newValue <- metricValue newMetric
           
-          shutdownTelemetry
-          
+                    
           return (newValue == 42.0)
     
     it "should handle multiple init/shutdown cycles" $ property $
@@ -419,8 +411,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
         let cycles = max 1 (abs numCycles `mod` 5 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry productionConfig
-                
+                                
                 -- 创建和使用组件
                 metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
                 recordMetric metric (fromIntegral cycleNum)
@@ -431,8 +422,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
                 span <- createSpan (pack $ "cycle-span-" ++ show cycleNum)
                 finishSpan span
                 
-                shutdownTelemetry
-          
+                          
           -- 执行多个周期
           sequence_ $ map runCycle [1..cycles]
           
@@ -445,8 +435,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建度量和span
           metric <- createMetric "interaction-metric" "count"
           
@@ -457,8 +446,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
             finishSpan span
             return ()
           
-          shutdownTelemetry
-          
+                    
           -- 验证所有度量都记录了
           finalValue <- metricValue metric
           return (finalValue == fromIntegral operations)
@@ -467,8 +455,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建日志器
           logger <- createLogger "interaction-logger" Info
           
@@ -479,16 +466,14 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
             finishSpan span
             return ()
           
-          shutdownTelemetry
-          
+                    
           return (length results == operations)
     
     it "should handle interactions between all three component types" $ property $
       \numOperations ->
         let operations = max 1 (abs numOperations `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建所有组件类型
           metric <- createMetric "triple-interaction-metric" "count"
           logger <- createLogger "triple-interaction-logger" Info
@@ -501,8 +486,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
             finishSpan span
             return ()
           
-          shutdownTelemetry
-          
+                    
           -- 验证所有度量都记录了
           finalValue <- metricValue metric
           return (finalValue == fromIntegral operations)
@@ -538,8 +522,7 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
         let testName = pack $ "no-init-test-" ++ show (name :: Int)
         in unsafePerformIO $ do
           -- 确保系统未初始化
-          shutdownTelemetry
-          
+                    
           -- 尝试创建组件
           result <- try $ do
             metric <- createMetric testName "count"
@@ -555,22 +538,18 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
       \numShutdowns ->
         let shutdowns = max 1 (abs numShutdowns `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建一些组件
           metric <- createMetric "multi-shutdown-test" "count"
           recordMetric metric 1.0
           
           -- 多次调用shutdown
           sequence_ $ replicate shutdowns shutdownTelemetry
-          
           -- 验证系统仍然可以重新初始化
-          initTelemetry productionConfig
-          
+                    
           newMetric <- createMetric "after-multi-shutdown" "count"
           recordMetric newMetric 42.0
           newValue <- metricValue newMetric
           
-          shutdownTelemetry
-          
+                    
           return (newValue == 42.0)

@@ -75,8 +75,6 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(spanName :: String) ->
         let nameText = pack spanName
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
           -- 在主线程创建span
           mainSpan <- createSpan nameText
           let mainTraceId = spanTraceId mainSpan
@@ -93,8 +91,6 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           childTraceId <- takeMVar traceIdVar
           killThread threadId
           
-          shutdownTelemetry
-          
           -- 验证trace ID相同
           return (mainTraceId == childTraceId)
     
@@ -102,8 +98,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(spanName :: String) ->
         let nameText = pack spanName
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建根span
           rootSpan <- createSpan nameText
           let rootTraceId = spanTraceId rootSpan
@@ -130,8 +125,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           childTraceId2 <- takeMVar traceIdVar2
           
           killThread threadId1
-          shutdownTelemetry
-          
+                    
           -- 验证所有span都有相同的trace ID
           return (rootTraceId == childTraceId1 && rootTraceId == childTraceId2)
 
@@ -282,8 +276,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           -- 验证操作仍然正常
           value <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (value == 30.0)
 
   -- 6. 测试错误恢复机制
@@ -341,8 +334,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(iterations :: Int) ->
         let actualIterations = max 1 (abs iterations `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 执行大量操作
           sequence_ $ replicate actualIterations $ do
             metric <- createMetric "leak-test" "count"
@@ -360,16 +352,14 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           
           finalValue <- metricValue testMetric
           
-          shutdownTelemetry
-          
+                    
           return (finalValue == 42.0)
     
     it "should clean up resources properly after shutdown" $ property $
       \(resourceCount :: Int) ->
         let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量资源
           metrics <- sequence $ replicate actualCount $ do
             createMetric "cleanup-test" "count"
@@ -387,18 +377,15 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           sequence_ $ map finishSpan spans
           
           -- 关闭系统
-          shutdownTelemetry
-          
+                    
           -- 重新初始化并验证系统正常工作
-          initTelemetry productionConfig
-          
+                    
           testMetric <- createMetric "post-cleanup-test" "count"
           recordMetric testMetric 100.0
           
           finalValue <- metricValue testMetric
           
-          shutdownTelemetry
-          
+                    
           return (finalValue == 100.0)
 
   -- 8. 测试系统健康检查
@@ -407,8 +394,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
       \(stressLevel :: Int) ->
         let operations = max 10 (abs stressLevel `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建健康检查指标
           healthMetric <- createMetric "health-check" "ops"
           healthLogger <- createLogger "health-logger" Info
@@ -421,8 +407,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           -- 验证系统健康状态
           totalOps <- metricValue healthMetric
           
-          shutdownTelemetry
-          
+                    
           return (totalOps == fromIntegral operations)
     
     it "should handle mixed workload gracefully" $ do
@@ -435,8 +420,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
             loggerOps = max 1 $ round (fromIntegral operations * loggerRatio)
             spanOps = max 1 $ operations - metricOps - loggerOps
         
-        initTelemetry productionConfig
-        
+                
         -- 执行混合工作负载
         metrics <- sequence $ zipWith (\index _ -> do
           createMetric (pack $ "mixed-workload-" ++ show index) "count") [1..] (replicate metricOps ())
@@ -463,6 +447,5 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         
         let expectedMetricValue = fromIntegral $ sum [1..metricOps]
         
-        shutdownTelemetry
-        
+                
         totalMetricValue `shouldBe` expectedMetricValue

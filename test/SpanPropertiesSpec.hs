@@ -25,9 +25,7 @@ spec = describe "Span Properties Tests" $ do
         let spanNames = take 10 (map (pack . take 50 . show) ([1..] :: [Int]))  -- 生成10个唯一名称
             result = unsafePerformIO $ do
               -- 重置追踪上下文以确保唯一性
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               spans <- mapM createSpan spanNames
               let spanIds = map spanSpanId spans
               return (length (nub spanIds) == length spanIds)
@@ -39,9 +37,7 @@ spec = describe "Span Properties Tests" $ do
             numSpans = 10
             result = unsafePerformIO $ do
               -- 重置追踪上下文
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               spans <- sequence $ replicate numSpans $ createSpan spanName
               let spanIds = map spanSpanId spans
               return (length (nub spanIds) == length spanIds)
@@ -54,9 +50,7 @@ spec = describe "Span Properties Tests" $ do
         let spanNames = take 5 (map (pack . take 50 . show) ([1..] :: [Int]))
             result = unsafePerformIO $ do
               -- 重置追踪上下文
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               -- 创建第一个span以建立trace context
               parentSpan <- createSpan (head spanNames)
               let parentTraceId = spanTraceId parentSpan
@@ -74,9 +68,7 @@ spec = describe "Span Properties Tests" $ do
             result = unsafePerformIO $ do
               traceIds <- sequence $ map (\_ -> do
                 -- 重置追踪上下文以创建新的trace
-                shutdownTelemetry
-                initTelemetry productionConfig
-                
+                                                
                 -- 创建span以建立trace context
                 span <- createSpan "trace-test"
                 return (spanTraceId span)
@@ -167,9 +159,7 @@ spec = describe "Span Properties Tests" $ do
         let spanNames = take 5 (map (pack . take 50 . show) ([1..] :: [Int]))
             result = unsafePerformIO $ do
               -- 重置追踪上下文
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               -- 创建第一个span
               firstSpan <- createSpan (head spanNames)
               let firstTraceId = spanTraceId firstSpan
@@ -187,9 +177,7 @@ spec = describe "Span Properties Tests" $ do
         let numSpans = max 1 (abs num `mod` 20 + 1)
             result = unsafePerformIO $ do
               -- 重置追踪上下文
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               -- 快速创建多个span
               spans <- sequence $ replicate numSpans $ createSpan "rapid-span"
               let spanIds = map spanSpanId spans
@@ -206,9 +194,7 @@ spec = describe "Span Properties Tests" $ do
         let numThreads = max 1 (abs num `mod` 5 + 1)
             result = unsafePerformIO $ do
               -- 重置追踪上下文
-              shutdownTelemetry
-              initTelemetry productionConfig
-              
+                                          
               -- 创建第一个span以建立trace context
               parentSpan <- createSpan "concurrent-parent"
               let parentTraceId = spanTraceId parentSpan

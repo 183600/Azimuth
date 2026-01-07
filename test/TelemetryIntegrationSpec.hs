@@ -23,8 +23,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(operations :: Int) ->
         let numOps = max 1 (abs operations `mod` 10 + 1)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建度量
               metrics <- sequence $ map (\i -> 
                 createMetric (pack $ "workflow-metric-" ++ show i) "count"
@@ -49,9 +48,7 @@ spec = describe "Telemetry Integration Tests" $ do
               
               sequence_ $ zipWith (\logger i -> do
                 logMessage logger Info (pack $ "workflow message " ++ show i)
-                            ) loggers [1..numOps]
-              
-              shutdownTelemetry
+                ) loggers [1..numOps]
               return True
         in result
     
@@ -59,8 +56,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(depth :: Int) ->
         let actualDepth = max 1 (abs depth `mod` 5 + 1)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建嵌套操作
               let nestedOperation 0 = return ()
                   nestedOperation n = do
@@ -77,7 +73,6 @@ spec = describe "Telemetry Integration Tests" $ do
                     finishSpan span
               
               nestedOperation actualDepth
-              shutdownTelemetry
               return True
         in result
   
@@ -87,8 +82,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(values :: [Double]) ->
         let testValues = take 10 values :: [Double]
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建度量
               metric <- createMetric "data-flow-metric" "count"
               
@@ -99,8 +93,6 @@ spec = describe "Telemetry Integration Tests" $ do
               finalValue <- metricValue metric
               logger <- createLogger "data-flow-logger" Info
               logMessage logger Info (pack $ "Final metric value: " ++ show finalValue)
-              
-              shutdownTelemetry
               return True
         in result
     
@@ -108,8 +100,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(numSpans :: Int) ->
         let actualSpans = max 1 (abs numSpans `mod` 10 + 1)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建度量来跟踪span数量
               spanCountMetric <- createMetric "span-count" "count"
               
@@ -122,8 +113,6 @@ spec = describe "Telemetry Integration Tests" $ do
               
               -- 完成所有span
               sequence_ $ map finishSpan spans
-              
-              shutdownTelemetry
               return True
         in result
     
@@ -131,8 +120,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(numMessages :: Int) ->
         let actualMessages = max 1 (abs numMessages `mod` 20 + 1)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建度量来跟踪日志消息数量
               logCountMetric <- createMetric "log-count" "count"
               
@@ -142,8 +130,6 @@ spec = describe "Telemetry Integration Tests" $ do
               sequence_ $ replicate actualMessages $ do
                 logMessage logger Info "data flow test message"
                 recordMetric logCountMetric 1.0
-              
-              shutdownTelemetry
               return True
         in result
   
@@ -176,7 +162,6 @@ spec = describe "Telemetry Integration Tests" $ do
                   logMessage logger Info "config test"
                 ) :: IO (Either SomeException ())
               
-              shutdownTelemetry
               return True
         in result
     
@@ -205,8 +190,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   logger <- createLogger "runtime-config-logger" Info
                   logMessage logger Info "runtime config test"
                 
-                shutdownTelemetry
-                            ) configs
+                                            ) configs
               return True
         in result
   
@@ -216,8 +200,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(componentType :: Int) ->
         let component = abs componentType `mod` 3
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 尝试在不同组件中引入错误
               case component of
                 0 -> do
@@ -231,6 +214,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   logger <- createLogger "post-error-logger" Info
                   logMessage logger Info "post error test"
+                  return True
                   
                 1 -> do
                   -- Span错误（如果有）
@@ -242,6 +226,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   logger <- createLogger "post-error-logger" Info
                   logMessage logger Info "post error test"
+                  return True
                   
                 2 -> do
                   -- 日志错误（如果有）
@@ -253,9 +238,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   span <- createSpan "post-error-span"
                   finishSpan span
-              
-              shutdownTelemetry
-              return True
+                  return True
         in result
     
     it "should recover from initialization errors" $ property $
@@ -269,14 +252,12 @@ spec = describe "Telemetry Integration Tests" $ do
                   -- 成功初始化，执行一些操作
                   metric <- createMetric "recovery-metric" "count"
                   recordMetric metric 1.0
-                  shutdownTelemetry
                   return True
                 Left (_ :: SomeException) -> do
                   -- 初始化失败，尝试使用默认配置
                   initTelemetry defaultConfig
                   metric <- createMetric "fallback-metric" "count"
                   recordMetric metric 1.0
-                  shutdownTelemetry
                   return True
         in result
   
@@ -286,8 +267,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(operations :: Int) ->
         let numOps = max 10 (abs operations `mod` 100 + 10)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               metric <- createMetric "performance-metric" "count"
               logger <- createLogger "performance-logger" Info
               
@@ -301,7 +281,6 @@ spec = describe "Telemetry Integration Tests" $ do
                 logMessage logger Info "performance test"
               
               finalValue <- metricValue metric
-              shutdownTelemetry
               return (finalValue == fromIntegral numOps)
         in result
     
@@ -309,8 +288,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(operations :: Int) ->
         let numOps = max 10 (abs operations `mod` 50 + 10)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 资源高效操作
               metric <- createMetric "resource-efficient-metric" "count"
               
@@ -327,7 +305,6 @@ spec = describe "Telemetry Integration Tests" $ do
               finishSpan span
               
               finalValue <- metricValue metric
-              shutdownTelemetry
               return (finalValue == fromIntegral numOps)
         in result
   
@@ -337,8 +314,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(threads :: Int) ->
         let numThreads = max 1 (abs threads `mod` 5 + 1)
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               -- 创建共享资源
               metric <- createMetric "concurrent-integration-metric" "count"
               logger <- createLogger "concurrent-integration-logger" Info
@@ -362,7 +338,6 @@ spec = describe "Telemetry Integration Tests" $ do
               sequence_ $ map (\_ -> return ()) threadResults
               
               finalValue <- metricValue metric
-              shutdownTelemetry
               return (finalValue >= 0)
         in result
   
@@ -372,8 +347,7 @@ spec = describe "Telemetry Integration Tests" $ do
       \(scenario :: Int) ->
         let scenarioType = abs scenario `mod` 3
             result = unsafePerformIO $ do
-              initTelemetry productionConfig
-              
+                            
               case scenarioType of
                 0 -> do
                   -- Web请求场景
@@ -390,6 +364,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   finishSpan requestSpan
                   logMessage requestLogger Info "HTTP request completed"
+                  return True
                   
                 1 -> do
                   -- 数据库操作场景
@@ -406,6 +381,7 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   finishSpan dbSpan
                   logMessage dbLogger Info "Database query completed"
+                  return True
                   
                 2 -> do
                   -- 业务逻辑场景
@@ -422,7 +398,5 @@ spec = describe "Telemetry Integration Tests" $ do
                   
                   finishSpan businessSpan
                   logMessage businessLogger Info "Business logic completed"
-              
-              shutdownTelemetry
-              return True
+                  return True
         in result

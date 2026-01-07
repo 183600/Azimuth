@@ -185,8 +185,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
   describe "Configuration Hot Reload" $ do
     it "should handle configuration changes without restart" $ do
       -- 初始化初始配置
-      initTelemetry productionConfig
-      
+            
       -- 创建一些遥测组件
       metric <- createMetric "hot-reload-metric" "count"
       logger <- createLogger "hot-reload-logger" Info
@@ -197,8 +196,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       logMessage logger Info "hot reload test"
       
       -- 关闭当前遥测系统
-      shutdownTelemetry
-      
+            
       -- 使用新配置重新初始化
       let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True False
       initTelemetry newConfig
@@ -211,14 +209,12 @@ spec = describe "Enhanced Telemetry Tests" $ do
       enableLogging newConfig `shouldBe` True
       
       -- 清理
-      shutdownTelemetry
-
+      
   -- 6. 资源限制和清理测试
   describe "Resource Limits and Cleanup" $ do
     it "should properly clean up resources on shutdown" $ do
       -- 初始化遥测系统
-      initTelemetry productionConfig
-      
+            
       -- 创建大量资源
       metrics <- sequence $ replicate 100 $ do
         createMetric "cleanup-metric" "count"
@@ -236,14 +232,12 @@ spec = describe "Enhanced Telemetry Tests" $ do
         logMessage logger Info "cleanup test"
       
       -- 关闭系统，应该清理所有资源
-      shutdownTelemetry
-      
+            
       -- 验证资源已清理（在实际实现中，这里会检查资源计数）
       return ()
     
     it "should handle resource exhaustion gracefully" $ do
-      initTelemetry productionConfig
-      
+            
       -- 尝试创建大量指标，测试系统如何处理资源限制
       let numMetrics = 10000
       metrics <- sequence $ replicate numMetrics $ do
@@ -252,8 +246,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       -- 验证系统能够处理大量资源
       length metrics `shouldBe` numMetrics
       
-      shutdownTelemetry
-
+      
   -- 7. 时间同步和时区处理测试
   describe "Time Synchronization and Timezone Handling" $ do
     it "should handle timestamps in different timezones" $ do
@@ -414,8 +407,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       finalValue `shouldSatisfy` (>= 0)
     
     it "should maintain system stability under stress" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建大量资源并执行操作
       metrics <- sequence $ replicate 100 $ do
         createMetric "stress-metric" "count"

@@ -28,8 +28,7 @@ spec = do
     -- 1. 度量聚合窗口测试
     describe "Metric Aggregation Window" $ do
       it "should aggregate metrics within time windows" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建度量
         metric <- createMetric "window-test" "ms"
         
@@ -41,8 +40,7 @@ spec = do
         metricName metric `shouldBe` "window-test"
         metricUnit metric `shouldBe` "ms"
         
-        shutdownTelemetry
-      
+              
       it "should handle sliding window aggregation" $ property $
         \(values :: [Double]) ->
           let nonEmptyValues = if null values then [1.0] else values
@@ -52,8 +50,7 @@ spec = do
           in avgValue >= minimum nonEmptyValues && avgValue <= maximum nonEmptyValues
       
       it "should maintain window boundaries" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建多个度量用于不同窗口
         metrics <- mapM (\index -> createMetric (pack $ "window-" ++ show index) "ms") [1..5]
         
@@ -65,13 +62,11 @@ spec = do
         let metricNames = map (unpack . metricName) metrics
         sort metricNames `shouldBe` ["window-1", "window-2", "window-3", "window-4", "window-5"]
         
-        shutdownTelemetry
-
+        
     -- 2. 遥测数据压缩测试
     describe "Telemetry Data Compression" $ do
       it "should compress telemetry data efficiently" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建大量度量数据
         metrics <- sequence $ replicate 1000 $ do
           createMetric "compression-test" "bytes"
@@ -84,8 +79,7 @@ spec = do
         length metrics `shouldBe` 1000
         all (\m -> metricName m == "compression-test") metrics `shouldBe` True
         
-        shutdownTelemetry
-      
+              
       it "should handle compression ratio optimization" $ property $
         \(values :: [Double]) ->
           let uniqueValues = nub values
@@ -93,8 +87,7 @@ spec = do
           in compressionRatio >= 0.0 && compressionRatio <= 1.0
       
       it "should decompress data without loss" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建具有重复模式的度量
         metric <- createMetric "pattern-test" "count"
         
@@ -106,13 +99,11 @@ spec = do
         metricName metric `shouldBe` "pattern-test"
         metricUnit metric `shouldBe` "count"
         
-        shutdownTelemetry
-
+        
     -- 3. 多租户隔离测试
     describe "Multi-Tenant Isolation" $ do
       it "should isolate telemetry data by tenant" $ do
-        initTelemetry productionConfig
-        
+                
         -- 为不同租户创建度量
         tenant1Metrics <- mapM (\index -> createMetric (pack $ "tenant1-metric-" ++ show index) "count") [1..5]
         tenant2Metrics <- mapM (\index -> createMetric (pack $ "tenant2-metric-" ++ show index) "count") [1..5]
@@ -129,8 +120,7 @@ spec = do
         all (isPrefixOf "tenant2-") tenant2Names `shouldBe` True
         length (filter (`elem` tenant1Names) tenant2Names) `shouldBe` 0
         
-        shutdownTelemetry
-      
+              
       let isPrefixOf prefix str = take (length prefix) str == prefix
       
       prop "should maintain tenant context isolation" $ \(tenantId :: Int) (metricCount :: Int) ->
@@ -150,14 +140,12 @@ spec = do
         initTelemetry tenant1Config
         metric1 <- createMetric "tenant1-exclusive" "count"
         recordMetric metric1 1.0
-        shutdownTelemetry
-        
+                
         -- 测试租户2配置
         initTelemetry tenant2Config
         metric2 <- createMetric "tenant2-exclusive" "count"
         recordMetric metric2 2.0
-        shutdownTelemetry
-        
+                
         -- 验证配置隔离
         serviceName tenant1Config `shouldBe` "tenant1-service"
         serviceName tenant2Config `shouldBe` "tenant2-service"
@@ -170,8 +158,7 @@ spec = do
           substrings _ [] = ([] :: [String])
           substrings needle s = take (length needle) s : substrings needle (drop 1 s)
       it "should export metrics in different formats" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建测试度量
         metrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
           [ ("export-test-1", "ms"), ("export-test-2", "bytes"), ("export-test-3", "count") ]
@@ -192,8 +179,7 @@ spec = do
         let metricNames = ["export-test-1", "export-test-2", "export-test-3"]
         all (\name -> name `isInfixOf` jsonFormat) metricNames `shouldBe` True
         
-        shutdownTelemetry
-      
+              
       it "should handle export data validation" $ property $
         \(names :: [String]) (units :: [String]) ->
           let minLen = min (length names) (length units)
@@ -204,8 +190,7 @@ spec = do
              all (\(name, unit) -> name `elem` actualNames && unit `elem` actualUnits) exportData
       
       it "should filter data during export" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建不同类型的度量
         allMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
           [ ("latency-metric-1", "ms")
@@ -225,13 +210,11 @@ spec = do
         length latencyMetrics `shouldBe` 1
         length throughputMetrics `shouldBe` 1
         
-        shutdownTelemetry
-
+        
     -- 5. 自定义扩展插件测试
     describe "Custom Extension Plugin" $ do
       it "should support custom metric types" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建自定义度量类型
         customMetric <- createMetric "custom-histogram" "ms"
         
@@ -243,11 +226,9 @@ spec = do
         metricName customMetric `shouldBe` "custom-histogram"
         metricUnit customMetric `shouldBe` "ms"
         
-        shutdownTelemetry
-      
+              
       it "should handle plugin lifecycle" $ do
-        initTelemetry productionConfig
-        
+                
         -- 模拟插件初始化
         pluginMetric <- createMetric "plugin-metric" "plugin-unit"
         
@@ -258,8 +239,7 @@ spec = do
         metricName pluginMetric `shouldBe` "plugin-metric"
         metricUnit pluginMetric `shouldBe` "plugin-unit"
         
-        shutdownTelemetry
-      
+              
       it "should validate plugin configuration" $ property $
         \(pluginName :: String) (pluginType :: String) ->
           let validName = not (null pluginName)
@@ -270,8 +250,7 @@ spec = do
     -- 6. 遥测数据备份恢复测试
     describe "Telemetry Data Backup and Recovery" $ do
       it "should backup telemetry data" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建需要备份的数据
         metrics <- sequence $ replicate 100 $ do
           createMetric "backup-test" "count"
@@ -287,11 +266,9 @@ spec = do
         length backupData `shouldBe` 100
         all (\(name, _, unit) -> name == "backup-test" && unit == "count") backupData `shouldBe` True
         
-        shutdownTelemetry
-      
+              
       it "should recover telemetry data" $ do
-        initTelemetry productionConfig
-        
+                
         -- 模拟恢复数据
         let recoveredData = [("recovered-metric", 42.0, "recovered-unit")]
         
@@ -306,8 +283,7 @@ spec = do
         metricName (head recoveredMetrics) `shouldBe` "recovered-metric"
         metricUnit (head recoveredMetrics) `shouldBe` "recovered-unit"
         
-        shutdownTelemetry
-      
+              
       it "should validate data integrity after recovery" $ property $
         \(originalData :: [(String, Double, String)]) ->
           let nonEmptyData = if null originalData then [("default", 1.0, "default")] else originalData
@@ -318,8 +294,7 @@ spec = do
     -- 7. 跨API集成测试
     describe "Cross-API Integration" $ do
       it "should integrate with external monitoring APIs" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建用于外部API的度量
         apiMetrics <- mapM (\apiName -> createMetric (pack $ "api-" ++ apiName) "ms")
           ["prometheus", "grafana", "datadog", "newrelic"]
@@ -333,8 +308,7 @@ spec = do
         let apiNames = map (unpack . metricName) apiMetrics
         sort apiNames `shouldBe` ["api-datadog", "api-grafana", "api-newrelic", "api-prometheus"]
         
-        shutdownTelemetry
-      
+              
       it "should handle API authentication" $ property $
         \(apiKey :: String) (apiSecret :: String) ->
           let validKey = length apiKey >= 10
@@ -343,8 +317,7 @@ spec = do
           in authValid == (validKey && validSecret)
       
       it "should manage API rate limiting" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建速率限制度量
         rateLimitMetric <- createMetric "api-rate-limit" "req/s"
         
@@ -359,13 +332,11 @@ spec = do
         metricName rateLimitMetric `shouldBe` "api-rate-limit"
         metricUnit rateLimitMetric `shouldBe` "req/s"
         
-        shutdownTelemetry
-
+        
     -- 8. 遥测系统健康监控测试
     describe "Telemetry System Health Monitoring" $ do
       it "should monitor system health indicators" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建健康监控度量
         healthMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
           [ ("system-cpu", "percent")
@@ -383,8 +354,7 @@ spec = do
         let metricNames = map (unpack . metricName) healthMetrics
         sort metricNames `shouldBe` ["system-cpu", "system-disk", "system-memory", "system-network"]
         
-        shutdownTelemetry
-      
+              
       it "should detect system anomalies" $ property $
         \(values :: [Double]) ->
           let nonEmptyValues = if null values then [50.0] else values
@@ -398,8 +368,7 @@ spec = do
              else all (<= anomalyThreshold) nonEmptyValues
       
       it "should generate health reports" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建报告生成度量
         reportMetrics <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
           [ ("uptime", "seconds")

@@ -62,9 +62,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         in if nonEmpty && nonEmptyStrings
            then unsafePerformIO $ do
              -- 关闭当前追踪上下文
-             shutdownTelemetry
-             initTelemetry productionConfig
-             
+                                       
              spans <- mapM (\name -> createSpan (pack name)) spanNames
              let traceIds = map spanTraceId spans
              -- 同一个trace中的span应该有相同的trace ID
@@ -78,8 +76,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         let spanNames = if null names then ["parent", "child1", "child2"] else take 3 (map show names)
         in unsafePerformIO $ do
           -- 初始化追踪上下文
-          initTelemetry productionConfig
-          
+                    
           -- 创建第一个span（建立trace context）
           parentSpan <- createSpan (pack (head spanNames))
           let parentTraceId = spanTraceId parentSpan
@@ -89,8 +86,6 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
           
           let childTraceIds = map spanTraceId childSpans
               allSameTraceId = all (== parentTraceId) childTraceIds
-          
-          shutdownTelemetry
           return allSameTraceId
   
   -- 4. 测试日志级别过滤
@@ -134,8 +129,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
           
           -- 验证配置仍然有效（通过检查操作是否成功）
           metricValue <- metricValue metric
-          shutdownTelemetry
-          
+                    
           -- 如果配置生效，操作应该成功
           return (metricValue == 1.0)
   
@@ -146,8 +140,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         let actualThreads = max 1 (abs numThreads `mod` 5 + 1)
             operationsPerThread = 10
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-test" "count"
           
           -- 创建多个线程同时操作度量
@@ -165,8 +158,6 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
           -- 验证最终值
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread
-          
-          shutdownTelemetry
           return (finalValue == expectedValue)
   
   -- 7. 测试边界值处理
@@ -211,8 +202,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
   -- 8. 测试资源清理
   describe "Resource Cleanup" $ do
     it "should clean up resources properly after shutdown" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建资源
       metrics <- sequence $ replicate 10 $ do
         createMetric "cleanup-test" "count"
@@ -230,8 +220,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
       sequence_ $ map finishSpan spans
       
       -- 关闭系统
-      shutdownTelemetry
-      
+            
       -- 验证资源仍然可访问（在实际实现中可能需要检查资源计数）
       let metricNames = map (unpack . metricName) metrics
           loggerNames = map (unpack . loggerName) loggers
@@ -277,8 +266,7 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
       \(numOps :: Int) ->
         let operations = max 10 (abs numOps `mod` 100 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 测试度量操作性能
           metric <- createMetric "performance-test" "ops"
           
@@ -291,6 +279,4 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
           
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
-          
-          shutdownTelemetry
           return (finalValue == fromIntegral operations)

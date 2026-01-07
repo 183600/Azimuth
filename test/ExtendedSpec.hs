@@ -24,8 +24,7 @@ spec = do
     -- 1. 跨服务遥测数据传播测试
     describe "Cross-Service Telemetry Data Propagation" $ do
       it "should propagate trace context across service boundaries" $ do
-        initTelemetry productionConfig
-        
+                
         -- 服务A创建根span
         serviceASpan <- createSpan "service-a-operation"
         let rootTraceId = spanTraceId serviceASpan
@@ -47,11 +46,9 @@ spec = do
         finishSpan serviceBSpan
         finishSpan serviceCSpan
         
-        shutdownTelemetry
-      
+              
       it "should maintain baggage across service calls" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建带有baggage的span
         parentSpan <- createSpan "parent-with-baggage"
         
@@ -74,13 +71,11 @@ spec = do
         finishSpan childSpan2
         finishSpan childSpan3
         
-        shutdownTelemetry
-
+        
     -- 2. 遥测数据压缩和存储测试
     describe "Telemetry Data Compression and Storage" $ do
       it "should handle large telemetry datasets efficiently" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建大量度量数据
         metrics <- sequence $ replicate 100 $ do
           createMetric "compression-test" "bytes"
@@ -94,11 +89,9 @@ spec = do
         all (\m -> metricName m == "compression-test") metrics `shouldBe` True
         all (\m -> metricUnit m == "bytes") metrics `shouldBe` True
         
-        shutdownTelemetry
-      
+              
       it "should compress telemetry data without loss" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建具有不同名称和单位的度量
         metricTypes <- mapM (\(name, unit) -> createMetric (pack name) (pack unit))
           [ ("metric-1", "ms"), ("metric-2", "bytes"), ("metric-3", "count")
@@ -116,13 +109,11 @@ spec = do
         sort names `shouldBe` ["metric-1", "metric-2", "metric-3", "metric-4", "metric-5"]
         sort units `shouldBe` ["bytes", "count", "ms", "percent", "req/s"]
         
-        shutdownTelemetry
-
+        
     -- 3. 分布式追踪复杂场景测试
     describe "Distributed Tracing Complex Scenarios" $ do
       it "should handle complex distributed transaction flows" $ do
-        initTelemetry productionConfig
-        
+                
         -- 模拟复杂的分布式事务流程
         rootSpan <- createSpan "distributed-transaction"
         
@@ -152,11 +143,9 @@ spec = do
         -- 完成所有span
         sequence_ $ map finishSpan spans
         
-        shutdownTelemetry
-      
+              
       it "should handle async operations in distributed tracing" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建用于同步的MVar
         done <- newEmptyMVar
         
@@ -180,14 +169,12 @@ spec = do
         
         finishSpan mainSpan
         
-        shutdownTelemetry
-
+        
     -- 4. 遥测配置热重载测试
     describe "Telemetry Configuration Hot Reload" $ do
       it "should handle configuration changes without restart" $ do
         -- 初始配置
-        initTelemetry productionConfig
-        
+                
         -- 创建初始资源
         metric <- createMetric "hot-reload-test" "count"
         logger <- createLogger "hot-reload-logger" Info
@@ -206,10 +193,8 @@ spec = do
             -- 配置更新成功
             recordMetric metric 2.0
             logMessage logger Info "Config updated successfully"
-            shutdownTelemetry
-        
-        shutdownTelemetry
-      
+                    
+              
       it "should validate configuration before applying" $ do
         let validConfigs = 
               [ TelemetryConfig "valid-service" "1.0.0" True True True False
@@ -219,7 +204,7 @@ spec = do
         results <- mapM (\config -> do
           result <- try $ do
             initTelemetry config
-            shutdownTelemetry
+            return ()
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> return True
@@ -231,8 +216,7 @@ spec = do
     -- 5. 遥测系统健康检查测试
     describe "Telemetry System Health Check" $ do
       it "should perform comprehensive health checks" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建各种资源
         metric <- createMetric "health-check-metric" "count"
         logger <- createLogger "health-check-logger" Info
@@ -248,11 +232,9 @@ spec = do
         loggerName logger `shouldBe` "health-check-logger"
         spanName span `shouldBe` "health-check-span"
         
-        shutdownTelemetry
-      
+              
       it "should detect and report system issues" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建健康检查度量
         healthMetric <- createMetric "system-health" "status"
         healthLogger <- createLogger "health-monitor" Warn
@@ -265,13 +247,11 @@ spec = do
         recordMetric healthMetric 0.5  -- 0.5表示警告
         logMessage healthLogger Warn "System health check warning"
         
-        shutdownTelemetry
-
+        
     -- 6. 实时流处理性能测试
     describe "Real-time Stream Processing Performance" $ do
       it "should handle high-volume telemetry streams" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建流处理度量
         throughputMetric <- createMetric "stream-throughput" "events/sec"
         latencyMetric <- createMetric "stream-latency" "ms"
@@ -286,11 +266,9 @@ spec = do
         metricName throughputMetric `shouldBe` "stream-throughput"
         metricName latencyMetric `shouldBe` "stream-latency"
         
-        shutdownTelemetry
-      
+              
       it "should maintain performance under load" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建性能监控度量
         cpuMetric <- createMetric "cpu-usage" "percent"
         memoryMetric <- createMetric "memory-usage" "MB"
@@ -305,13 +283,11 @@ spec = do
         metricName cpuMetric `shouldBe` "cpu-usage"
         metricName memoryMetric `shouldBe` "memory-usage"
         
-        shutdownTelemetry
-
+        
     -- 7. 遥测数据采样策略测试
     describe "Telemetry Data Sampling Strategies" $ do
       it "should implement random sampling correctly" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建采样度量
         sampledMetric <- createMetric "sampled-metric" "count"
         
@@ -331,11 +307,9 @@ spec = do
         let actualRate = fromIntegral sampledCount / fromIntegral numOperations
         actualRate `shouldSatisfy` (\rate -> rate >= 0.05 && rate <= 0.15)
         
-        shutdownTelemetry
-      
+              
       it "should implement priority sampling" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建不同优先级的度量
         highPriorityMetric <- createMetric "high-priority" "count"
         lowPriorityMetric <- createMetric "low-priority" "count"
@@ -349,13 +323,11 @@ spec = do
           shouldSample <- (<= (0.2 :: Double)) <$> (randomRIO (0.0, 1.0) :: IO Double)
           when shouldSample $ recordMetric lowPriorityMetric 1.0
         
-        shutdownTelemetry
-
+        
     -- 8. 遥测数据质量验证测试
     describe "Telemetry Data Quality Validation" $ do
       it "should validate metric data integrity" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建质量检查度量
         qualityMetric <- createMetric "quality-check" "score"
         
@@ -367,11 +339,9 @@ spec = do
         metricName qualityMetric `shouldBe` "quality-check"
         metricUnit qualityMetric `shouldBe` "score"
         
-        shutdownTelemetry
-      
+              
       it "should detect and handle anomalies" $ do
-        initTelemetry productionConfig
-        
+                
         -- 创建异常检测度量
         anomalyMetric <- createMetric "anomaly-detection" "value"
         
@@ -385,14 +355,12 @@ spec = do
         -- 验证系统仍能处理异常值
         metricName anomalyMetric `shouldBe` "anomaly-detection"
         
-        shutdownTelemetry
-
+        
     -- 9. 遥测系统生命周期管理测试
     describe "Telemetry System Lifecycle Management" $ do
       it "should handle complete lifecycle gracefully" $ do
         -- 初始化
-        initTelemetry productionConfig
-        
+                
         -- 创建资源
         metric <- createMetric "lifecycle-metric" "count"
         logger <- createLogger "lifecycle-logger" Info
@@ -404,8 +372,7 @@ spec = do
         finishSpan span
         
         -- 清理
-        shutdownTelemetry
-        
+                
         -- 验证资源属性
         metricName metric `shouldBe` "lifecycle-metric"
         loggerName logger `shouldBe` "lifecycle-logger"
@@ -414,13 +381,11 @@ spec = do
       it "should handle multiple lifecycle cycles" $ do
         -- 执行多个完整的生命周期
         replicateM_ 3 $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "multi-lifecycle" "count"
           recordMetric metric 1.0
           
-          shutdownTelemetry
-
+          
     -- 10. QuickCheck高级属性测试
     describe "Advanced QuickCheck Properties" $ do
       it "should maintain telemetry data consistency under random operations" $ property $

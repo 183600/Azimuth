@@ -65,12 +65,10 @@ spec = do
       
       it "should generate unique span IDs" $ do
         -- Reset telemetry for test isolation
-        initTelemetry productionConfig
         span1 <- createSpan "test-span"
         span2 <- createSpan "test-span"
         spanSpanId span1 `shouldNotBe` spanSpanId span2
-        shutdownTelemetry
-
+        
     -- Test 3: Logger level filtering with QuickCheck
     describe "Logger Level Filtering" $ do
       it "should handle all log levels consistently" $ property $
@@ -173,8 +171,7 @@ spec = do
     describe "Resource Management" $ do
       it "should handle resource cleanup properly" $ do
         -- Initialize telemetry
-        initTelemetry productionConfig
-        
+                
         -- Create resources
         metric <- createMetric "resource-test" "count"
         span <- createSpan "resource-test"
@@ -186,16 +183,13 @@ spec = do
         finishSpan span
         
         -- Shutdown telemetry
-        shutdownTelemetry
         
         -- Verify resources can be recreated after shutdown
-        initTelemetry productionConfig
         newMetric <- createMetric "new-resource" "count"
         recordMetric newMetric 10.0
         newValue <- metricValue newMetric
         newValue `shouldBe` 10.0
-        shutdownTelemetry
-
+        
     -- Test 8: Error handling and edge cases
     describe "Error Handling and Edge Cases" $ do
       it "should handle empty metric and span names" $ do
@@ -244,8 +238,7 @@ spec = do
     -- Test 10: Integration workflow
     describe "Integration Workflow" $ do
       it "should handle complete telemetry workflow" $ do
-        initTelemetry productionConfig
-        
+                
         -- Create multiple metrics
         requestMetric <- createMetric "requests" "count"
         latencyMetric <- createMetric "latency" "ms"

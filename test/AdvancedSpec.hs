@@ -60,8 +60,7 @@ spec = do
     -- 测试3: 跨遥测组件的交互
     describe "Cross-Component Interaction" $ do
       it "should handle interactions between metrics, spans, and logs" $ do
-        initTelemetry productionConfig
-        
+                
         -- Create components
         metric <- createMetric "interaction-metric" "ms"
         span <- createSpan "interaction-span"
@@ -73,8 +72,7 @@ spec = do
         finishSpan span
         logMessage logger Info "Operation completed"
         
-        shutdownTelemetry
-        return ()
+                return ()
       
       it "should maintain consistency across component interactions" $ property $
         \(name :: String) ->
@@ -110,8 +108,7 @@ spec = do
     -- 测试5: 资源清理和内存管理
     describe "Resource Management" $ do
       it "should properly clean up resources on shutdown" $ do
-        initTelemetry productionConfig
-        
+                
         -- Create resources
         metric <- createMetric "resource-test" "count"
         span <- createSpan "resource-span"
@@ -123,12 +120,10 @@ spec = do
         logMessage logger Info "Resource test"
         
         -- Shutdown and verify no errors
-        shutdownTelemetry
-        return ()
+                return ()
       
       it "should handle resource cleanup with multiple components" $ do
-        initTelemetry productionConfig
-        
+                
         -- Create many resources
         metrics <- sequence $ replicate 100 $ do
           createMetric "batch-metric" "count"
@@ -146,8 +141,7 @@ spec = do
           logMessage logger Info "Batch test"
         
         -- Clean up
-        shutdownTelemetry
-        return ()
+                return ()
     
     -- 测试6: 遥测系统的热重载配置
     describe "Configuration Hot Reload" $ do
@@ -165,8 +159,7 @@ spec = do
         serviceName updatedConfig `shouldBe` "updated-service"
         serviceVersion updatedConfig `shouldBe` "1.1.0"
         
-        shutdownTelemetry
-        return ()
+                return ()
       
       it "should validate configuration changes" $ property $
         \(name :: String) (version :: String) ->

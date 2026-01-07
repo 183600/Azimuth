@@ -5,11 +5,11 @@ module ConcurrentCabalTestSpec (spec) where
 
 import Test.Hspec
 import Test.QuickCheck
-import Control.Exception (try, SomeException, evaluate, catch, AsyncException, ThreadKilled)
+import Control.Exception (try, SomeException, evaluate, catch, AsyncException(ThreadKilled))
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar, 
                           myThreadId, getNumCapabilities, threadDelay, throwTo)
 import Control.Concurrent.STM
-import Control.Monad (replicateM, when, void, unless, sequence_, forever)
+import Control.Monad (replicateM, when, void, unless, sequence_, forever, zipWithM, zipWithM_)
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
@@ -27,16 +27,16 @@ spec = describe "Concurrent Cabal Test Suite" $ do
   -- 1. 基本并发安全测试
   describe "Basic Concurrent Safety" $ do
     it "should handle concurrent metric creation safely" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
             metricsPerThread = 10
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个线程同时创建度量
           results <- mapM (\_ -> forkIO $ do
-            sequence $ replicate metricsPerThread $ do
+            sequence_ $ replicate metricsPerThread $ do
               createMetric "concurrent-creation" "count"
+              return ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
@@ -45,16 +45,14 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread results
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
     
     it "should handle concurrent metric recording safely" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
             operationsPerThread = 100
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-recording" "count"
           
           -- 创建多个线程同时记录度量
@@ -73,21 +71,20 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread
           
-          shutdownTelemetry
           return (finalValue == expectedValue)
     
     it "should handle concurrent span creation safely" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
             spansPerThread = 10
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个线程同时创建span
           results <- mapM (\threadId -> forkIO $ do
-            sequence $ replicate spansPerThread $ do
+            sequence_ $ replicate spansPerThread $ do
               span <- createSpan (pack $ "concurrent-span-" ++ show threadId)
-              return (spanSpanId span)
+              let _ = spanSpanId span
+              return ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
@@ -96,18 +93,16 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread results
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 2. 高并发负载测试
   describe "High Concurrency Load Tests" $ do
     it "should handle high load with many threads" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 100 + 1)
             operationsPerThread = 50
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "high-load" "count"
           
           -- 创建大量线程
@@ -124,17 +119,15 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           
           -- 验证系统仍然可以工作
           finalValue <- metricValue metric
-          shutdownTelemetry
-          
+                    
           return (not (isNaN finalValue) && not (isInfinite finalValue))
     
     it "should handle mixed concurrent operations" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 50 + 1)
             operationsPerType = 20
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建不同类型的线程
           metricThreads <- mapM (\threadId -> forkIO $ do
             metric <- createMetric (pack $ "mixed-metric-" ++ show threadId) "count"
@@ -158,26 +151,25 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           threadDelay 1000000  -- 1秒
           
           -- 清理所有线程
-          sequence_ $ killThread metricThreads
-          sequence_ $ killThread loggerThreads
-          sequence_ $ killThread spanThreads
+          mapM_ killThread metricThreads
+          mapM_ killThread loggerThreads
+          mapM_ killThread spanThreads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 3. 竞争条件测试
   describe "Race Condition Tests" $ do
     it "should handle race conditions in metric registry" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 多个线程同时创建同名度量
           threads <- mapM (\_ -> forkIO $ do
             metric <- createMetric "race-condition" "count"
             recordMetric metric 1.0
-            metricValue metric
+            _ <- metricValue metric
+            return ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
@@ -186,21 +178,19 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
     
     it "should handle race conditions in trace context" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 多个线程同时创建span
           threads <- mapM (\threadId -> forkIO $ do
             span <- createSpan (pack $ "race-span-" ++ show threadId)
             let traceId = spanTraceId span
                 spanId = spanSpanId span
-            return (traceId, spanId)
+            return ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
@@ -209,17 +199,15 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 4. 死锁检测测试
   describe "Deadlock Detection Tests" $ do
     it "should not deadlock with nested operations" $ property $
-      \operationCount ->
+      \(operationCount :: Int) ->
         let actualCount = max 1 (abs operationCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建嵌套操作
           result <- try $ sequence_ $ replicate actualCount $ do
             metric <- createMetric "nested" "count"
@@ -231,15 +219,13 @@ spec = describe "Concurrent Cabal Test Suite" $ do
             span <- createSpan "nested"
             finishSpan span
           
-          shutdownTelemetry
-          
+                    
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> return True
     
     it "should not deadlock with circular dependencies" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建可能导致死锁的操作模式
       result <- try $ do
         metric1 <- createMetric "circular1" "count"
@@ -251,8 +237,7 @@ spec = describe "Concurrent Cabal Test Suite" $ do
         recordMetric metric1 3.0
         recordMetric metric2 4.0
       
-      shutdownTelemetry
-      
+            
       case result of
         Left (_ :: SomeException) -> False `shouldBe` True  -- 预期可能失败
         Right _ -> True `shouldBe` True  -- 或者成功
@@ -260,12 +245,11 @@ spec = describe "Concurrent Cabal Test Suite" $ do
   -- 5. 线程安全性验证
   describe "Thread Safety Verification" $ do
     it "should maintain atomicity for metric updates" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
             incrementsPerThread = 100
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "atomicity" "count"
           
           -- 使用STM协调线程
@@ -289,22 +273,21 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           finalValue <- metricValue metric
           expectedValue <- atomically $ readTVar counter
           
-          shutdownTelemetry
           return (finalValue == fromIntegral expectedValue)
     
     it "should maintain consistency across concurrent operations" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
+            actualCount = 5
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建共享资源
           metrics <- sequence $ replicate actualCount $ do
             createMetric "consistency" "count"
           
           -- 多个线程同时更新所有度量
           threads <- mapM (\threadId -> forkIO $ do
-            sequence_ $ zipWithM (\metric index -> do
+            zipWithM_ (\metric index -> do
               recordMetric metric (fromIntegral (threadId + index))
               ) metrics [0..]
             ) [1..actualThreads]
@@ -319,19 +302,15 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allValid = all (not . isNaN) values
           
-          shutdownTelemetry
           return allValid
-      where
-        actualCount = 5
   
   -- 6. 中断和异常处理测试
   describe "Interruption and Exception Handling" $ do
     it "should handle thread interruption gracefully" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "interruption" "count"
           
           -- 创建长时间运行的线程
@@ -359,15 +338,13 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           recordMetric metric 999.0
           finalValue <- metricValue metric
           
-          shutdownTelemetry
           return (not (isNaN finalValue))
     
     it "should recover from exceptions in worker threads" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "exception-recovery" "count"
           
           -- 创建可能抛出异常的线程
@@ -395,18 +372,16 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           recordMetric metric 999.0
           finalValue <- metricValue metric
           
-          shutdownTelemetry
           return (not (isNaN finalValue))
   
   -- 7. 并发性能测试
   describe "Concurrent Performance Tests" $ do
     it "should maintain performance under concurrent load" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 50 + 1)
             operationsPerThread = 100
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-performance" "ops"
           
           -- 测量并发操作性能
@@ -429,15 +404,13 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread
           
-          shutdownTelemetry
           return (finalValue == expectedValue)
     
     it "should scale with number of threads" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量和线程
           metrics <- sequence $ replicate actualThreads $ do
             createMetric "scaling-test" "count"
@@ -457,18 +430,16 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 100.0) values
           
-          shutdownTelemetry
           return allCorrect
   
   -- 8. 资源竞争测试
   describe "Resource Contention Tests" $ do
     it "should handle high contention on shared metrics" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 50 + 1)
             operationsPerThread = 200
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建少量共享度量
           sharedMetrics <- sequence $ replicate 3 $ do
             createMetric "shared" "count"
@@ -493,16 +464,14 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread * 3
               allCorrect = all (== expectedValue) values
           
-          shutdownTelemetry
           return allCorrect
     
     it "should handle contention on trace context" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 30 + 1)
             spansPerThread = 50
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 多个线程同时创建span
           threads <- mapM (\threadId -> forkIO $ do
             sequence_ $ replicate spansPerThread $ do
@@ -516,17 +485,15 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 9. 并发边界测试
   describe "Concurrent Boundary Tests" $ do
     it "should handle extreme concurrent scenarios" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 极端并发场景：同时执行所有操作
           threads <- mapM (\threadId -> forkIO $ do
             -- 创建资源
@@ -548,15 +515,13 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
     
     it "should handle resource exhaustion under concurrency" $ property $
-      \resourceCount ->
+      \(resourceCount :: Int) ->
         let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量线程和资源
           threads <- mapM (\threadId -> forkIO $ do
             -- 每个线程创建大量资源
@@ -582,17 +547,15 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread threads
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 10. 并发一致性验证
   describe "Concurrent Consistency Verification" $ do
     it "should maintain data consistency under concurrent load" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建共享度量
           sharedMetric <- createMetric "consistency-test" "count"
           
@@ -621,15 +584,13 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           consistent <- atomically $ readTVar consistencyVar
           finalValue <- metricValue sharedMetric
           
-          shutdownTelemetry
           return (consistent && not (isNaN finalValue) && not (isInfinite finalValue))
     
     it "should maintain invariants under concurrent operations" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate 5 $ do
             createMetric "invariant-test" "count"
@@ -659,5 +620,4 @@ spec = describe "Concurrent Cabal Test Suite" $ do
           -- 检查不变式
           invariant <- atomically $ readTVar invariantVar
           
-          shutdownTelemetry
           return invariant

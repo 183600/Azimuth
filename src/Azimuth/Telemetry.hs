@@ -10,6 +10,7 @@ module Azimuth.Telemetry
     , -- * Metrics
       Metric(..)
     , createMetric
+    , createMetricUnit
     , createMetricWithInitialValue
     , recordMetric
     , metricValue
@@ -24,6 +25,7 @@ module Azimuth.Telemetry
       Span(..)
     , createSpan
     , finishSpan
+    , createSpanWithIds
     , -- * Logging
       LogLevel(..)
     , Logger(..)
@@ -33,6 +35,16 @@ module Azimuth.Telemetry
       metricRegistry
     , enableMetricSharing
     , globalConfig
+    , -- * Utility functions
+      killThreads
+    , replicateAction
+    , replicateAction_
+    , replicateWith
+    , zipWithRecordMetric
+    , mapSpanTraceId
+    , mapSpanTraceIdM
+    , mapSpanSpanId
+    , mapSpanSpanIdM
     ) where
 
 import Data.Text (Text, pack, null)
@@ -42,7 +54,7 @@ import System.Random (randomIO)
 import Data.Char (intToDigit)
 import Numeric (showHex)
 import Control.Concurrent.MVar
-import Control.Concurrent (myThreadId, ThreadId)
+import Control.Concurrent (myThreadId, ThreadId, killThread)
 import Data.Hashable (hash)
 import Control.Monad (when)
 import qualified Data.Map as Map
@@ -118,11 +130,6 @@ initTelemetry config = do
     -- Only perform expensive operations if debug output is enabled
     when (enableDebugOutput config) $ do
         putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
-        -- Clear trace context on initialization only if debug output
-        modifyMVar_ traceContext (\_ -> return Nothing)
-        -- Reset counters only if debug output
-        writeIORef spanCounter 0
-        writeIORef logCounter 0
     -- Always clear trace context and reset counters for test isolation
     modifyMVar_ traceContext (\_ -> return Nothing)
     writeIORef spanCounter 0
@@ -190,6 +197,10 @@ metricValue metric = do
     -- Read directly from the IORef for better performance
     readIORef (metricValueRef metric)
 
+-- | Get the current value of a metric (pure version, for testing)
+metricValuePure :: Metric -> Double
+metricValuePure metric = unsafePerformIO (metricValue metric)
+
 -- | Create a new metric
 createMetric :: Text -> Text -> IO Metric
 createMetric name unit = do
@@ -216,6 +227,30 @@ createMetric name unit = do
             -- Always create a new metric instance for test isolation
             newValueRef <- newIORef 0.0
             return $ Metric effectiveName newValueRef effectiveUnit
+
+-- | Create a new metric and return () (for sequence operations)
+createMetricUnit :: Text -> Text -> IO ()
+createMetricUnit name unit = do
+    _ <- createMetric name unit
+    return ()
+
+-- | Create a new metric, ignoring the result (for use in sequence)
+createMetric_ :: Text -> Text -> IO ()
+createMetric_ name unit = do
+    _ <- createMetric name unit
+    return ()
+
+-- | Kill multiple threads
+killThreads :: [ThreadId] -> IO ()
+killThreads = mapM_ killThread
+
+-- | Replicate an action with indices
+replicateAction :: Int -> (Int -> IO a) -> IO [a]
+replicateAction n action = mapM action [0..n-1]
+
+-- | Replicate an action with indices, ignoring results
+replicateAction_ :: Int -> (Int -> IO a) -> IO ()
+replicateAction_ n action = mapM_ action [0..n-1]
 
 -- | Create a new metric with initial value (for testing)
 createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
@@ -362,6 +397,52 @@ createSpan name = do
     spanId <- generateSpanId
     
     return $ Span name currentTraceId spanId
+
+-- | Get the trace ID of a span (IO version for compatibility)
+getSpanTraceId :: Span -> IO Text
+getSpanTraceId span = return (spanTraceId span)
+
+-- | Get the span ID of a span (IO version for compatibility)
+getSpanSpanId :: Span -> IO Text
+getSpanSpanId span = return (spanSpanId span)
+
+-- | Create multiple metrics (for test convenience)
+createMetrics :: Int -> Text -> Text -> IO [Metric]
+createMetrics n name unit = sequence $ replicate n $ createMetric name unit
+
+-- | Record metrics in sequence (ignoring results)
+sequenceRecordMetric :: [Metric] -> Double -> IO ()
+sequenceRecordMetric metrics value = sequence_ $ map (`recordMetric` value) metrics
+
+-- | Map a function over a list of spans
+mapSpanTraceId :: [Span] -> [Text]
+mapSpanTraceId = map spanTraceId
+
+-- | Map a function over a list of spans (IO version)
+mapSpanTraceIdM :: [Span] -> IO [Text]
+mapSpanTraceIdM spans = return $ map spanTraceId spans
+
+-- | Map a function over a list of spans
+mapSpanSpanId :: [Span] -> [Text]
+mapSpanSpanId = map spanSpanId
+
+-- | Map a function over a list of spans (IO version)
+mapSpanSpanIdM :: [Span] -> IO [Text]
+mapSpanSpanIdM spans = return $ map spanSpanId spans
+
+-- | Replicate an action with a function argument (for test compatibility)
+replicateWith :: Int -> (Int -> IO a) -> IO ()
+replicateWith n action = sequence_ $ map action [0..n-1]
+
+-- | ZipWithM for test compatibility
+zipWithRecordMetric :: [Metric] -> [Double] -> IO ()
+zipWithRecordMetric metrics values = sequence_ $ zipWith recordMetric metrics values
+
+-- | Create a span and return its trace ID and span ID
+createSpanWithIds :: Text -> IO (Text, Text)
+createSpanWithIds name = do
+    span <- createSpan name
+    return (spanTraceId span, spanSpanId span)
 
 -- | Finish a span
 finishSpan :: Span -> IO ()

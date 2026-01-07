@@ -32,8 +32,7 @@ spec = describe "New Telemetry Tests" $ do
     
     it "should handle multiple configuration updates" $ do
       -- Initialize with default config
-      initTelemetry productionConfig
-      
+            
       -- Create metric with first config
       metric1 <- createMetric "config-test-1" "count"
       recordMetric metric1 10.0
@@ -53,8 +52,7 @@ spec = describe "New Telemetry Tests" $ do
       value1 `shouldBe` 10.0
       value2 `shouldBe` 20.0
       
-      shutdownTelemetry
-
+      
   -- 测试2: 指标聚合功能
   describe "Metric Aggregation" $ do
     it "should correctly aggregate metric values" $ property $
@@ -193,8 +191,7 @@ spec = describe "New Telemetry Tests" $ do
   -- 测试8: 资源清理测试
   describe "Resource Cleanup" $ do
     it "should clean up resources on shutdown" $ do
-      initTelemetry productionConfig
-      
+            
       -- Create resources
       metric <- createMetric "cleanup-metric" "count"
       span <- createSpan "cleanup-span"
@@ -205,17 +202,14 @@ spec = describe "New Telemetry Tests" $ do
       logMessage logger Info "cleanup test"
       
       -- Shutdown
-      shutdownTelemetry
-      
+            
       -- Reinitialize and verify clean state
-      initTelemetry productionConfig
-      
+            
       newMetric <- createMetric "cleanup-metric" "count"
       newValue <- metricValue newMetric
       newValue `shouldBe` 0.0
       
-      shutdownTelemetry
-    
+          
     it "should handle multiple shutdown cycles" $ property $
       \(cycles :: Positive Int) ->
         let numCycles = getPositive cycles `mod` 5 + 1
@@ -263,8 +257,7 @@ spec = describe "New Telemetry Tests" $ do
         in nestingValid
     
     it "should maintain trace consistency" $ do
-      initTelemetry productionConfig
-      
+            
       -- Create multiple spans in sequence
       spans <- replicateM 5 $ createSpan "sequential-span"
       

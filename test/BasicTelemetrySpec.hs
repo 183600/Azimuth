@@ -76,30 +76,26 @@ spec = describe "Basic Telemetry Property Tests" $ do
       \name ->
         let spanName = pack $ "trace-consistency-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个span，它们应该有相同的trace ID
           spans <- replicateM 5 $ createSpan spanName
           let traceIds = map spanTraceId spans
               uniqueTraceIds = nub traceIds
           
-          shutdownTelemetry
-          -- 所有span应该有相同的trace ID
+                    -- 所有span应该有相同的trace ID
           return (length uniqueTraceIds == 1)
     
     it "should generate unique span IDs within the same trace" $ property $
       \name ->
         let spanName = pack $ "span-uniqueness-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个span，它们应该有不同的span ID
           spans <- replicateM 5 $ createSpan spanName
           let spanIds = map spanSpanId spans
               uniqueSpanIds = nub spanIds
           
-          shutdownTelemetry
-          -- 所有span应该有不同的span ID
+                    -- 所有span应该有不同的span ID
           return (length uniqueSpanIds == 5)
   
   -- 3. 测试日志级别的顺序属性
@@ -316,8 +312,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
       \name ->
         let componentName = pack $ "lifecycle-test-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建组件
           metric <- createMetric componentName "count"
           logger <- createLogger componentName Info
@@ -338,8 +333,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
           finalLoggerName <- return $ loggerName logger
           finalSpanName <- return $ spanName span
           
-          shutdownTelemetry
-          
+                    
           return (initialMetricName == finalMetricName &&
                   initialLoggerName == finalLoggerName &&
                   initialSpanName == finalSpanName)
@@ -349,8 +343,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
         let actualCycles = max 1 (abs cycles `mod` 3 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry productionConfig
-                
+                                
                 -- 创建和使用组件
                 metric <- createMetric (pack $ "cycle-" ++ show cycleNum) "count"
                 recordMetric metric (fromIntegral cycleNum)
@@ -361,8 +354,7 @@ spec = describe "Basic Telemetry Property Tests" $ do
                 span <- createSpan (pack $ "cycle-span-" ++ show cycleNum)
                 finishSpan span
                 
-                shutdownTelemetry
-          
+                          
           -- 执行多个周期
           sequence_ $ map runCycle [1..actualCycles]
           

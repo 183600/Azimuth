@@ -7,7 +7,7 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
 import Control.Concurrent (forkIO, threadDelay, killThread, getNumCapabilities)
-import Control.Monad (replicateM, when, void, unless, sequence_, forM)
+import Control.Monad (replicateM, when, void, unless, sequence_, forM, forM_)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import System.Mem (performGC)
@@ -29,8 +29,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \operationCount ->
         let actualCount = max 100 (abs operationCount `mod` 10000 + 100)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "performance-metric" "ops"
           
           -- 测量操作时间
@@ -46,8 +45,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：至少每秒10000次操作
           return (finalValue == fromIntegral actualCount && opsPerSecond > 10000)
     
@@ -55,8 +53,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \operationCount ->
         let actualCount = max 50 (abs operationCount `mod` 1000 + 50)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 测量span创建时间
           startTime <- getCurrentTime
           
@@ -70,8 +67,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           -- 完成所有span
           sequence_ $ map finishSpan spans
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：至少每秒1000次span创建
           return (opsPerSecond > 1000)
     
@@ -79,8 +75,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \operationCount ->
         let actualCount = max 100 (abs operationCount `mod` 10000 + 100)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           logger <- createLogger "performance-logger" Info
           
           -- 测量日志时间
@@ -93,8 +88,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           let duration = diffUTCTime endTime startTime
               opsPerSecond = fromIntegral actualCount / realToFrac duration
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：至少每秒5000次日志操作
           return (opsPerSecond > 5000)
   
@@ -104,8 +98,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \metricCount ->
         let actualCount = max 10 (abs metricCount `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate actualCount $ do
             createMetric "scalability-test" "count"
@@ -123,8 +116,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) values
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：至少每秒1000次度量更新
           return (allCorrect && opsPerSecond > 1000)
     
@@ -134,8 +126,7 @@ spec = describe "Performance Cabal Test Suite" $ do
             baseOperations = 1000
             operations = baseOperations * actualLoad
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "load-test" "ops"
           
           -- 测量不同负载下的性能
@@ -151,8 +142,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：性能不应线性下降
           return (finalValue == fromIntegral operations && opsPerSecond > 5000)
   
@@ -163,8 +153,7 @@ spec = describe "Performance Cabal Test Suite" $ do
         let actualCycles = max 1 (abs cycleCount `mod` 100 + 1)
             operationsPerCycle = 100
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 重复创建和使用资源
           sequence_ $ replicate actualCycles $ do
             metrics <- sequence $ replicate 10 $ do
@@ -175,17 +164,13 @@ spec = describe "Performance Cabal Test Suite" $ do
             -- 强制垃圾回收
             performGC
           
-          shutdownTelemetry
-          performGC
-          
           return True  -- 如果没有内存泄漏就算成功
     
     it "should handle large numbers of resources efficiently" $ property $
       \resourceCount ->
         let actualCount = max 10 (abs resourceCount `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量资源
           metrics <- sequence $ replicate actualCount $ do
             createMetric "memory-efficiency" "count"
@@ -206,7 +191,6 @@ spec = describe "Performance Cabal Test Suite" $ do
           metricValues <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) metricValues
           
-          shutdownTelemetry
           performGC
           
           return allCorrect
@@ -214,12 +198,11 @@ spec = describe "Performance Cabal Test Suite" $ do
   -- 4. 并发性能测试
   describe "Concurrent Performance Tests" $ do
     it "should maintain performance under concurrent load" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 20 + 1)
             operationsPerThread = 500
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-performance" "ops"
           
           -- 测量并发操作性能
@@ -245,16 +228,14 @@ spec = describe "Performance Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = totalOperations
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：并发性能不应显著下降
           return (finalValue == expectedValue && opsPerSecond > 10000)
     
     it "should scale with number of cores" $ do
       numCores <- getNumCapabilities
       
-      initTelemetry productionConfig
-      
+            
       -- 创建与核心数相等的线程
       metric <- createMetric "core-scaling" "ops"
       
@@ -279,8 +260,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       -- 验证所有操作都完成了
       finalValue <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       -- 性能要求：应该能够利用多核
       finalValue `shouldBe` totalOperations
       opsPerSecond `shouldSatisfy` (> 5000)
@@ -291,8 +271,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \frequency ->
         let actualFrequency = max 1000 (abs frequency `mod` 50000 + 1000)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "high-frequency" "ops"
           
           -- 执行高频操作
@@ -308,8 +287,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：应该能够处理高频操作
           return (finalValue == fromIntegral actualFrequency && opsPerSecond > 20000)
     
@@ -318,8 +296,7 @@ spec = describe "Performance Cabal Test Suite" $ do
         let actualBursts = max 1 (abs burstCount `mod` 10 + 1)
             operationsPerBurst = 1000
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "burst-operations" "ops"
           
           -- 执行突发操作
@@ -339,16 +316,14 @@ spec = describe "Performance Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = totalOperations
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：应该能够处理突发负载
           return (finalValue == expectedValue && opsPerSecond > 10000)
   
   -- 6. 资源使用效率测试
   describe "Resource Usage Efficiency" $ do
     it "should minimize CPU usage during idle periods" $ do
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "idle-efficiency" "count"
       
       -- 记录一些初始操作
@@ -366,16 +341,14 @@ spec = describe "Performance Cabal Test Suite" $ do
       finalValue <- metricValue metric
       let expectedValue = 200.0
       
-      shutdownTelemetry
-      
+            
       finalValue `shouldBe` expectedValue
     
     it "should handle resource pooling efficiently" $ property $
       \poolSize ->
         let actualSize = max 1 (abs poolSize `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建资源池
           metrics <- sequence $ replicate actualSize $ do
             createMetric "resource-pool" "count"
@@ -388,8 +361,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 10.0) values
           
-          shutdownTelemetry
-          
+                    
           return allCorrect
   
   -- 7. 长期运行稳定性测试
@@ -398,8 +370,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \duration ->
         let actualDuration = max 1 (abs duration `mod` 10 + 1)  -- 秒
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "stability-test" "ops"
           
           -- 长期运行测试
@@ -418,8 +389,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           -- 性能要求：长期运行性能不应显著下降
           return (finalValue == fromIntegral totalOperations && opsPerSecond > 500)
     
@@ -427,8 +397,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \iterationCount ->
         let actualIterations = max 1 (abs iterationCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 长期迭代测试
           sequence_ $ replicate actualIterations $ do
             -- 创建和使用资源
@@ -444,9 +413,6 @@ spec = describe "Performance Cabal Test Suite" $ do
             when (actualIterations `mod` 10 == 0) $ do
               performGC
           
-          shutdownTelemetry
-          performGC
-          
           return True  -- 如果没有内存问题就算成功
   
   -- 8. 性能回归测试
@@ -454,8 +420,7 @@ spec = describe "Performance Cabal Test Suite" $ do
     it "should not regress in metric operation performance" $ do
       let baselineOpsPerSecond = 10000  -- 基准性能
       
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "regression-test" "ops"
       
       -- 测量当前性能
@@ -471,16 +436,14 @@ spec = describe "Performance Cabal Test Suite" $ do
       -- 验证性能没有回归
       finalValue <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       finalValue `shouldBe` 5000.0
       currentOpsPerSecond `shouldSatisfy` (>= baselineOpsPerSecond)
     
     it "should not regress in span operation performance" $ do
       let baselineOpsPerSecond = 1000  -- 基准性能
       
-      initTelemetry productionConfig
-      
+            
       -- 测量span创建性能
       startTime <- getCurrentTime
       
@@ -494,8 +457,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       -- 完成所有span
       sequence_ $ map finishSpan spans
       
-      shutdownTelemetry
-      
+            
       -- 验证性能没有回归
       currentOpsPerSecond `shouldSatisfy` (>= baselineOpsPerSecond)
   
@@ -505,14 +467,13 @@ spec = describe "Performance Cabal Test Suite" $ do
       \metricCount ->
         let actualCount = max 2 (abs metricCount `mod` 10 + 2)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate actualCount $ do
             createMetric "load-balance" "count"
           
           -- 均匀分布负载
-          sequence_ $ forM [1..fromIntegral actualCount * 100] $ \i -> do
+          forM_ [1..fromIntegral actualCount * 100] $ \i -> do
             let metricIndex = i `mod` actualCount
             recordMetric (metrics !! metricIndex) 1.0
           
@@ -521,8 +482,7 @@ spec = describe "Performance Cabal Test Suite" $ do
           let expectedValue = 100.0
               allCorrect = all (== expectedValue) values
           
-          shutdownTelemetry
-          
+                    
           return allCorrect
     
     it "should handle uneven load efficiently" $ property $
@@ -530,14 +490,13 @@ spec = describe "Performance Cabal Test Suite" $ do
         let actualSkew = max 1 (abs skewFactor `mod` 5 + 1)
             metricCount = 5
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate metricCount $ do
             createMetric "uneven-load" "count"
           
           -- 不均匀分布负载
-          sequence_ $ forM [1..1000] $ \i -> do
+          forM_ [1..1000] $ \i -> do
             let metricIndex = if i `mod` actualSkew == 0 then 0 else 1 + (i `mod` (metricCount - 1))
             recordMetric (metrics !! metricIndex) 1.0
           
@@ -545,15 +504,13 @@ spec = describe "Performance Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allValid = all (not . isNaN) values
           
-          shutdownTelemetry
-          
+                    
           return allValid
   
   -- 10. 极限性能测试
   describe "Extreme Performance Tests" $ do
     it "should handle maximum sustainable load" $ do
-      initTelemetry productionConfig
-      
+            
       metric <- createMetric "extreme-load" "ops"
       
       -- 尝试找到最大可持续负载
@@ -586,8 +543,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       -- 验证系统仍然可以工作
       finalValue <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       -- 验证性能
       not (isNaN finalValue) `shouldBe` True
       realToFrac actualDuration `shouldSatisfy` (< fromIntegral testDuration * 2)  -- 不应超过2倍预期时间
@@ -596,8 +552,7 @@ spec = describe "Performance Cabal Test Suite" $ do
       \degradationLevel ->
         let actualLevel = max 1 (abs degradationLevel `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "recovery-test" "ops"
           
           -- 正常操作
@@ -617,6 +572,5 @@ spec = describe "Performance Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral (1000 + actualLevel * 1000 + 1000)
           
-          shutdownTelemetry
-          
+                    
           return (finalValue == expectedValue && not (isNaN finalValue))

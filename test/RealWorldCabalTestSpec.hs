@@ -7,7 +7,7 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (replicateM, when, void, unless, sequence_, forM)
+import Control.Monad (replicateM, when, void, unless, sequence_, forM, forM_)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import System.Mem (performGC)
@@ -24,8 +24,7 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 1. Web应用监控场景
   describe "Web Application Monitoring" $ do
     it "should handle typical web application metrics" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建Web应用度量
       httpRequests <- createMetric "http_requests_total" "count"
       responseTime <- createMetric "http_response_time_seconds" "seconds"
@@ -64,19 +63,17 @@ spec = describe "Real World Cabal Test Suite" $ do
       activeConns <- metricValue activeConnections
       errors <- metricValue errorRate
       
-      shutdownTelemetry
-      
+            
       totalRequests `shouldBe` 5.0
       avgResponseTime `shouldBe` 2.9  -- 0.12 + 0.25 + 0.08 + 0.15 + 2.3
       activeConns `shouldBe` 0.0
       errors `shouldBe` 2.0  -- 404和500错误
     
     it "should handle user session tracking" $ property $
-      \sessionCount ->
+      \(sessionCount :: Int) ->
         let actualSessions = max 1 (abs sessionCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           activeSessions <- createMetric "active_sessions" "count"
           sessionDuration <- createMetric "session_duration_seconds" "seconds"
           pageViews <- createMetric "page_views_total" "count"
@@ -84,12 +81,12 @@ spec = describe "Real World Cabal Test Suite" $ do
           userLogger <- createLogger "user_activity" Info
           
           -- 模拟用户会话
-          sequence_ $ forM [1..fromIntegral actualSessions] $ \sessionId -> do
+          forM_ [1..fromIntegral actualSessions] $ \sessionId -> do
             recordMetric activeSessions 1.0
             logMessage userLogger Info (pack $ "Session " ++ show sessionId ++ " started")
             
             -- 模拟页面浏览
-            sequence_ $ forM [1..5] $ \pageId -> do
+            forM_ [1..5] $ \pageId -> do
               recordMetric pageViews 1.0
               logMessage userLogger Info (pack $ "Session " ++ show sessionId ++ " viewed page " ++ show pageId)
             
@@ -102,8 +99,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalDuration <- metricValue sessionDuration
           totalPageViews <- metricValue pageViews
           
-          shutdownTelemetry
-          
+                    
           totalSessions `shouldBe` 0.0  -- 所有会话都已结束
           totalDuration `shouldBe` fromIntegral actualSessions * 300.0
           totalPageViews `shouldBe` fromIntegral actualSessions * 5.0
@@ -111,8 +107,7 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 2. 微服务架构监控
   describe "Microservices Architecture Monitoring" $ do
     it "should handle distributed tracing across services" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建服务度量
       apiGatewayRequests <- createMetric "api_gateway_requests" "count"
       userServiceRequests <- createMetric "user_service_requests" "count"
@@ -152,19 +147,17 @@ spec = describe "Real World Cabal Test Suite" $ do
       productServiceCount <- metricValue productServiceRequests
       orderServiceCount <- metricValue orderServiceRequests
       
-      shutdownTelemetry
-      
+            
       apiGatewayCount `shouldBe` 1.0
       userServiceCount `shouldBe` 1.0
       productServiceCount `shouldBe` 1.0
       orderServiceCount `shouldBe` 1.0
     
     it "should handle service mesh communication" $ property $
-      \serviceCount ->
+      \(serviceCount :: Int) ->
         let actualServices = max 2 (abs serviceCount `mod` 5 + 2)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建服务网格度量
           interServiceCalls <- createMetric "inter_service_calls" "count"
           serviceLatency <- createMetric "service_latency_ms" "ms"
@@ -173,10 +166,10 @@ spec = describe "Real World Cabal Test Suite" $ do
           meshLogger <- createLogger "service_mesh" Info
           
           -- 模拟服务间通信
-          sequence_ $ forM [1..fromIntegral actualServices] $ \serviceId -> do
+          forM_ [1..fromIntegral actualServices] $ \serviceId -> do
             entrySpan <- createSpan (pack $ "service_" ++ show serviceId ++ "_entry")
             
-            sequence_ $ forM [1..3] $ \callId -> do
+            forM_ [1..3] $ \callId -> do
               callSpan <- createSpan (pack $ "call_" ++ show callId)
               recordMetric interServiceCalls 1.0
               recordMetric serviceLatency (50.0 + fromIntegral callId * 10.0)
@@ -195,8 +188,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalLatency <- metricValue serviceLatency
           totalTrips <- metricValue circuitBreakerTrips
           
-          shutdownTelemetry
-          
+                    
           let expectedCalls = fromIntegral actualServices * 3
               expectedLatency = sum [50.0 + fromIntegral callId * 10.0 | 
                                    _ <- [1..actualServices], callId <- [0..2]]
@@ -209,8 +201,7 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 3. 数据库性能监控
   describe "Database Performance Monitoring" $ do
     it "should handle database operation metrics" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建数据库度量
       dbConnections <- createMetric "db_connections" "count"
       queryTime <- createMetric "query_time_ms" "ms"
@@ -251,8 +242,7 @@ spec = describe "Real World Cabal Test Suite" $ do
       totalSlowQueries <- metricValue slowQueries
       totalErrors <- metricValue dbErrors
       
-      shutdownTelemetry
-      
+            
       activeConnections `shouldBe` 0.0
       totalQueryTime `shouldBe` 1000.0  -- 25 + 150 + 45 + 80 + 200 + 500
       totalSlowQueries `shouldBe` 2.0
@@ -261,11 +251,10 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 4. 缓存性能监控
   describe "Cache Performance Monitoring" $ do
     it "should handle cache hit/miss metrics" $ property $
-      \requestCount ->
+      \(requestCount :: Int) ->
         let actualRequests = max 10 (abs requestCount `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           cacheHits <- createMetric "cache_hits" "count"
           cacheMisses <- createMetric "cache_misses" "count"
           cacheEvictions <- createMetric "cache_evictions" "count"
@@ -274,7 +263,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           cacheLogger <- createLogger "cache" Debug
           
           -- 模拟缓存操作
-          sequence_ $ forM [1..fromIntegral actualRequests] $ \requestId -> do
+          forM_ [1..fromIntegral actualRequests] $ \requestId -> do
             let isHit = requestId `mod` 3 /= 0  -- 约67%命中率
                 isEviction = requestId `mod` 20 == 0
             
@@ -299,8 +288,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalEvictions <- metricValue cacheEvictions
           finalCacheSize <- metricValue cacheSize
           
-          shutdownTelemetry
-          
+                    
           let expectedHits = fromIntegral (actualRequests - actualRequests `div` 3)
               expectedMisses = fromIntegral (actualRequests `div` 3)
               expectedEvictions = fromIntegral (actualRequests `div` 20)
@@ -314,8 +302,7 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 5. 消息队列监控
   describe "Message Queue Monitoring" $ do
     it "should handle message queue metrics" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建消息队列度量
       messagesPublished <- createMetric "messages_published" "count"
       messagesConsumed <- createMetric "messages_consumed" "count"
@@ -352,8 +339,7 @@ spec = describe "Real World Cabal Test Suite" $ do
       finalQueueDepth <- metricValue queueDepth
       totalProcessingTime <- metricValue processingTime
       
-      shutdownTelemetry
-      
+            
       totalPublished `shouldBe` 5.0
       totalConsumed `shouldBe` 5.0
       finalQueueDepth `shouldBe` 0.0
@@ -362,8 +348,7 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 6. API网关监控
   describe "API Gateway Monitoring" $ do
     it "should handle API gateway routing metrics" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建API网关度量
       gatewayRequests <- createMetric "gateway_requests" "count"
       routeLatency <- createMetric "route_latency_ms" "ms"
@@ -401,8 +386,7 @@ spec = describe "Real World Cabal Test Suite" $ do
       totalAuthFailures <- metricValue authenticationFailures
       totalRateLimitHits <- metricValue rateLimitHits
       
-      shutdownTelemetry
-      
+            
       totalRequests `shouldBe` 5.0
       totalLatency `shouldBe` 380.0  -- 50 + 80 + 120 + 60 + 70
       totalAuthFailures `shouldBe` 1.0
@@ -411,11 +395,10 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 7. 容器化应用监控
   describe "Containerized Application Monitoring" $ do
     it "should handle container resource metrics" $ property $
-      \containerCount ->
+      \(containerCount :: Int) ->
         let actualContainers = max 1 (abs containerCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建容器资源度量
           cpuUsage <- createMetric "container_cpu_usage_percent" "percent"
           memoryUsage <- createMetric "container_memory_usage_mb" "mb"
@@ -425,7 +408,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           containerLogger <- createLogger "containers" Info
           
           -- 模拟容器资源使用
-          sequence_ $ forM [1..fromIntegral actualContainers] $ \containerId -> do
+          forM_ [1..fromIntegral actualContainers] $ \containerId -> do
             let cpu = 25.0 + fromIntegral (containerId `mod` 75)  -- 25-100% CPU
                 memory = 128.0 + fromIntegral (containerId `mod` 512)  -- 128-640MB 内存
                 network = 10.0 + fromIntegral (containerId `mod` 100)  -- 10-110MB 网络
@@ -446,8 +429,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalNetwork <- metricValue networkIO
           totalDisk <- metricValue diskIO
           
-          shutdownTelemetry
-          
+                    
           let expectedCpu = sum [25.0 + fromIntegral (i `mod` 75) | i <- [0..actualContainers-1]]
               expectedMemory = sum [128.0 + fromIntegral (i `mod` 512) | i <- [0..actualContainers-1]]
               expectedNetwork = sum [10.0 + fromIntegral (i `mod` 100) | i <- [0..actualContainers-1]]
@@ -461,11 +443,10 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 8. 移动应用监控
   describe "Mobile Application Monitoring" $ do
     it "should handle mobile app metrics" $ property $
-      \userCount ->
+      \(userCount :: Int) ->
         let actualUsers = max 1 (abs userCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建移动应用度量
           appLaunches <- createMetric "app_launches" "count"
           screenViews <- createMetric "screen_views" "count"
@@ -475,17 +456,17 @@ spec = describe "Real World Cabal Test Suite" $ do
           mobileLogger <- createLogger "mobile_app" Info
           
           -- 模拟移动应用使用
-          sequence_ $ forM [1..fromIntegral actualUsers] $ \userId -> do
+          forM_ [1..fromIntegral actualUsers] $ \userId -> do
             recordMetric appLaunches 1.0
             logMessage mobileLogger Info (pack $ "User " ++ show userId ++ " launched app")
             
             -- 模拟屏幕浏览
-            sequence_ $ forM [1..5] $ \screenId -> do
+            forM_ [1..5] $ \screenId -> do
               recordMetric screenViews 1.0
               logMessage mobileLogger Debug (pack $ "User " ++ show userId ++ " viewed screen " ++ show screenId)
             
             -- 模拟用户操作
-            sequence_ $ forM [1..10] $ \actionId -> do
+            forM_ [1..10] $ \actionId -> do
               recordMetric userActions 1.0
               logMessage mobileLogger Debug (pack $ "User " ++ show userId ++ " performed action " ++ show actionId)
             
@@ -500,8 +481,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalActions <- metricValue userActions
           totalCrashes <- metricValue crashes
           
-          shutdownTelemetry
-          
+                    
           let expectedLaunches = fromIntegral actualUsers
               expectedScreenViews = fromIntegral actualUsers * 5
               expectedActions = fromIntegral actualUsers * 10
@@ -515,11 +495,10 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 9. IoT设备监控
   describe "IoT Device Monitoring" $ do
     it "should handle IoT device telemetry" $ property $
-      \deviceCount ->
+      \(deviceCount :: Int) ->
         let actualDevices = max 1 (abs deviceCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建IoT设备度量
           deviceMessages <- createMetric "device_messages" "count"
           sensorReadings <- createMetric "sensor_readings" "count"
@@ -529,7 +508,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           iotLogger <- createLogger "iot_devices" Info
           
           -- 模拟IoT设备遥测
-          sequence_ $ forM [1..fromIntegral actualDevices] $ \deviceId -> do
+          forM_ [1..fromIntegral actualDevices] $ \deviceId -> do
             let messages = 10 + deviceId `mod` 20
                 readings = 50 + deviceId `mod` 100
                 errors = if deviceId `mod` 10 == 0 then 1 else 0
@@ -554,8 +533,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalErrors <- metricValue deviceErrors
           avgBattery <- metricValue batteryLevel
           
-          shutdownTelemetry
-          
+                    
           let expectedMessages = sum [fromIntegral (10 + i `mod` 20) | i <- [0..actualDevices-1]]
               expectedReadings = sum [fromIntegral (50 + i `mod` 100) | i <- [0..actualDevices-1]]
               expectedErrors = fromIntegral (actualDevices `div` 10)
@@ -569,11 +547,10 @@ spec = describe "Real World Cabal Test Suite" $ do
   -- 10. 游戏服务器监控
   describe "Game Server Monitoring" $ do
     it "should handle game server metrics" $ property $
-      \playerCount ->
+      \(playerCount :: Int) ->
         let actualPlayers = max 1 (abs playerCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建游戏服务器度量
           activePlayers <- createMetric "active_players" "count"
           gameSessions <- createMetric "game_sessions" "count"
@@ -583,14 +560,14 @@ spec = describe "Real World Cabal Test Suite" $ do
           gameLogger <- createLogger "game_server" Info
           
           -- 模拟游戏服务器活动
-          sequence_ $ forM [1..fromIntegral actualPlayers] $ \playerId -> do
+          forM_ [1..fromIntegral actualPlayers] $ \playerId -> do
             recordMetric activePlayers 1.0
             recordMetric gameSessions 1.0
             
             logMessage gameLogger Info (pack $ "Player " ++ show playerId ++ " joined game")
             
             -- 模拟玩家操作
-            sequence_ $ forM [1..20] $ \actionId -> do
+            forM_ [1..20] $ \actionId -> do
               recordMetric playerActions 1.0
               recordMetric serverLatency (10.0 + fromIntegral (actionId `mod` 50))
             
@@ -603,8 +580,7 @@ spec = describe "Real World Cabal Test Suite" $ do
           totalActions <- metricValue playerActions
           avgLatency <- metricValue serverLatency
           
-          shutdownTelemetry
-          
+                    
           finalActivePlayers `shouldBe` 0.0  -- 所有玩家都已离开
           totalSessions `shouldBe` fromIntegral actualPlayers
           totalActions `shouldBe` fromIntegral actualPlayers * 20

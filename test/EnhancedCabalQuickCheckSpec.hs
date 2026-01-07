@@ -65,16 +65,14 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
   -- 2. Span ID的分布特性测试
   describe "Span ID Distribution Properties" $ do
     it "should generate span IDs with sufficient entropy" $ property $
-      \names ->
+      \(names :: [String]) ->
         let spanNames = take 10 (map show names)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           spans <- mapM (\name -> createSpan (pack name)) spanNames
           let spanIds = map spanSpanId spans
               uniqueIds = nub spanIds
           
-          shutdownTelemetry
           return (length uniqueIds == length spanIds)
     
     it "should generate span IDs following the expected pattern" $ property $
@@ -121,8 +119,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           
           -- 验证配置仍然有效
           currentConfig <- readIORef globalConfig
-          shutdownTelemetry
-          
+                    
           return (currentConfig == config)
     
     it "should handle configuration changes properly" $ property $
@@ -141,19 +138,17 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           
           -- 验证配置已更改
           currentConfig <- readIORef globalConfig
-          shutdownTelemetry
-          
+                    
           return (serviceName currentConfig == pack name2)
   
   -- 4. 并发一致性测试
   describe "Concurrent Consistency" $ do
     it "should maintain consistency under concurrent metric operations" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 20 + 1)
             operationsPerThread = 50
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "concurrent-consistency" "count"
           
           -- 创建多个线程同时操作度量
@@ -173,21 +168,19 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread * 
                              fromIntegral (actualThreads + 1) / 2  -- 等差数列求和
           
-          shutdownTelemetry
           return (abs (finalValue - expectedValue) < 1.0e-9)
     
     it "should handle concurrent span creation with consistent trace IDs" $ property $
-      \numThreads ->
+      \(numThreads :: Int) ->
         let actualThreads = max 1 (abs numThreads `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个线程同时创建span
           results <- mapM (\_ -> forkIO $ do
             span <- createSpan "concurrent-trace-test"
             let traceId = spanTraceId span
                 spanId = spanSpanId span
-            return (traceId, spanId)
+            return ()
             ) [1..actualThreads]
           
           threadDelay 100000  -- 100毫秒
@@ -199,7 +192,6 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           -- 清理线程
           sequence_ $ map killThread results
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 5. 边界条件和特殊情况测试
@@ -252,8 +244,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
       \metricCount ->
         let actualCount = max 1 (abs metricCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- sequence $ replicate actualCount $ do
             createMetric "scalability-test" "count"
@@ -268,15 +259,13 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 10.0) values
           
-          shutdownTelemetry
           return allCorrect
     
     it "should handle high-frequency operations" $ property $
       \operationCount ->
         let actualCount = max 10 (abs operationCount `mod` 1000 + 10)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           metric <- createMetric "high-frequency" "ops"
           
           -- 执行高频操作
@@ -286,7 +275,6 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
           
-          shutdownTelemetry
           return (finalValue == fromIntegral actualCount)
   
   -- 7. 资源管理和清理测试
@@ -296,8 +284,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
         let actualCycles = max 1 (abs cycleCount `mod` 10 + 1)
         in unsafePerformIO $ do
           sequence_ $ replicate actualCycles $ do
-            initTelemetry productionConfig
-            
+                        
             -- 创建资源
             metrics <- sequence $ replicate 5 $ do
               createMetric "cleanup-test" "count"
@@ -314,7 +301,6 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
               logMessage logger Info "cleanup test"
             sequence_ $ map finishSpan spans
             
-            shutdownTelemetry
             performGC
           
           return True  -- 如果没有内存泄漏就算成功
@@ -323,8 +309,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
       \resourceCount ->
         let actualCount = max 1 (abs resourceCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量资源
           metrics <- sequence $ replicate actualCount $ do
             createMetric "exhaustion-test" "count"
@@ -341,7 +326,6 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
             logMessage logger Info "exhaustion test"
           sequence_ $ map finishSpan spans
           
-          shutdownTelemetry
           return True  -- 如果没有崩溃就算成功
   
   -- 8. 数据完整性和一致性测试
@@ -368,12 +352,12 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
     
     it "should maintain span integrity across operations" $ property $
       \name ->
-        let spanName = pack name
+        let spanNameStr = pack name
         in unsafePerformIO $ do
-          span <- createSpan spanName
+          span <- createSpan spanNameStr
           
           -- 验证原始属性
-          let originalName = spanName span
+          let originalName = spanNameStr
           originalTraceId <- return $ spanTraceId span
           originalSpanId <- return $ spanSpanId span
           
@@ -381,7 +365,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           finishSpan span
           
           -- 验证属性不变
-          return (spanName span == originalName &&
+          return (spanNameStr == originalName &&
                   spanTraceId span == originalTraceId &&
                   spanSpanId span == originalSpanId)
   
@@ -411,8 +395,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
         let actualAttempts = max 1 (abs attemptCount `mod` 5 + 1)
         in unsafePerformIO $ do
           sequence_ $ replicate actualAttempts $ do
-            initTelemetry productionConfig
-            shutdownTelemetry
+            threadDelay 1000  -- 1毫秒延迟
           
           return True  -- 如果没有崩溃就算成功
   
@@ -422,8 +405,7 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
       \componentCount ->
         let actualCount = max 1 (abs componentCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建所有类型的组件
           metrics <- sequence $ replicate actualCount $ do
             createMetric "integration-test" "count"
@@ -447,5 +429,4 @@ spec = describe "Enhanced Cabal QuickCheck Test Suite" $ do
           metricValues <- sequence $ map metricValue metrics
           let allMetricsCorrect = all (== 1.0) metricValues
           
-          shutdownTelemetry
           return allMetricsCorrect

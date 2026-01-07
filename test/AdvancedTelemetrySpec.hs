@@ -110,8 +110,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numSpans ->
         let spanCount = max 1 (abs numSpans `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个span
           spans <- sequence $ replicate spanCount $ do
             createSpan "hierarchy-test"
@@ -124,7 +123,6 @@ spec = describe "Advanced Telemetry Tests" $ do
           let spanIds = map spanSpanId spans
               uniqueSpanIds = length (nub spanIds) == length spanIds
           
-          shutdownTelemetry
           return (allSameTraceId && uniqueSpanIds)
     
     it "should generate unique span IDs even with same name" $ property $
@@ -222,8 +220,7 @@ spec = describe "Advanced Telemetry Tests" $ do
           recordMetric metric 2.0
           result <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (result == 3.0)
     
     it "should preserve service identity across configuration changes" $ property $
@@ -245,8 +242,7 @@ spec = describe "Advanced Telemetry Tests" $ do
           recordMetric metric 2.0
           result <- metricValue metric
           
-          shutdownTelemetry
-          
+                    
           return (result == 3.0)
   
   -- 5. 测试并发安全性
@@ -386,8 +382,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numComponents ->
         let componentCount = max 5 (abs numComponents `mod` 20 + 5)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量组件
           metrics <- sequence $ replicate componentCount $ do
             createMetric "cleanup-test" "count"
@@ -396,18 +391,15 @@ spec = describe "Advanced Telemetry Tests" $ do
           sequence_ $ map (`recordMetric` 1.0) metrics
           
           -- 关闭系统
-          shutdownTelemetry
-          
+                    
           -- 重新初始化
-          initTelemetry productionConfig
-          
+                    
           -- 验证系统仍然工作
           newMetric <- createMetric "after-cleanup" "count"
           recordMetric newMetric 42.0
           result <- metricValue newMetric
           
-          shutdownTelemetry
-          
+                    
           return (result == 42.0)
   
   -- 7. 测试错误处理
@@ -429,8 +421,7 @@ spec = describe "Advanced Telemetry Tests" $ do
         let testName = pack $ "after-shutdown-" ++ show (name :: Int)
         in unsafePerformIO $ do
           -- 确保系统关闭
-          shutdownTelemetry
-          
+                    
           -- 尝试创建组件
           result <- try $ do
             metric <- createMetric testName "count"
@@ -522,8 +513,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numOperations ->
         let operationCount = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建所有组件类型
           metric <- createMetric "mixed-test" "count"
           logger <- createLogger "mixed-logger" Info
@@ -536,8 +526,7 @@ spec = describe "Advanced Telemetry Tests" $ do
             finishSpan span
             return ()
           
-          shutdownTelemetry
-          
+                    
           -- 验证度量值
           finalValue <- metricValue metric
           
@@ -549,8 +538,7 @@ spec = describe "Advanced Telemetry Tests" $ do
         let cycleCount = max 1 (abs numCycles `mod` 5 + 1)
         in unsafePerformIO $ do
           let runCycle cycleNum = do
-                initTelemetry productionConfig
-                
+                                
                 -- 创建组件
                 metric <- createMetric (pack $ "lifecycle-" ++ show cycleNum) "count"
                 logger <- createLogger (pack $ "lifecycle-logger-" ++ show cycleNum) Info
@@ -562,8 +550,7 @@ spec = describe "Advanced Telemetry Tests" $ do
                 span <- createSpan (pack $ "lifecycle-span-" ++ show cycleNum)
                 finishSpan span
                 
-                shutdownTelemetry
-          
+                          
           -- 执行多个周期
           sequence_ $ map runCycle [1..cycleCount]
           

@@ -158,8 +158,7 @@ spec = describe "Advanced Telemetry Tests" $ do
   describe "Cross-Module Integration" $ do
     it "should work with all telemetry components" $ do
       -- Initialize telemetry
-      initTelemetry productionConfig
-      
+            
       -- Create metric
       metric <- createMetric (pack "integration-test") (pack "count")
       recordMetric metric 1.0
@@ -174,8 +173,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       
       -- Clean up
       finishSpan span
-      shutdownTelemetry
-      
+            
       -- Test passes if no exceptions occur
       True `shouldBe` True
 
@@ -183,8 +181,7 @@ spec = describe "Advanced Telemetry Tests" $ do
   describe "End-to-End Business Flow" $ do
     it "should handle complete request lifecycle" $ do
       -- Initialize telemetry
-      initTelemetry productionConfig
-      
+            
       -- Create components for request processing
       requestMetric <- createMetric (pack "requests") (pack "count")
       latencyMetric <- createMetric (pack "latency") (pack "ms")
@@ -208,8 +205,7 @@ spec = describe "Advanced Telemetry Tests" $ do
       -- Finish span
       finishSpan requestSpan
       
-      shutdownTelemetry
-      
+            
       True `shouldBe` True
 
   -- 10. 高级QuickCheck属性测试

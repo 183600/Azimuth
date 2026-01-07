@@ -7,7 +7,7 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (replicateM, when, void, unless, sequence_)
+import Control.Monad (replicateM, when, void, unless, sequence_, forM_, zipWithM, zipWithM_)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import System.Mem (performGC)
@@ -26,8 +26,7 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 1. 度量领域特定测试
   describe "Domain-Specific Metric Tests" $ do
     it "should handle HTTP metrics correctly" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建HTTP相关度量
       requestCount <- createMetric "http_requests_total" "count"
       requestDuration <- createMetric "http_request_duration_seconds" "seconds"
@@ -42,12 +41,12 @@ spec = describe "Domain Cabal Test Suite" $ do
             (200, 0.8, 256, 512)
             ]
       
-      sequence_ $ map (\(status, duration, reqSize, respSize) -> do
+      forM_ requests $ \request -> do
+        let (status, duration, reqSize, respSize) = request
         recordMetric requestCount 1.0
         recordMetric requestDuration duration
         recordMetric requestSize (fromIntegral reqSize)
         recordMetric responseSize (fromIntegral respSize)
-      requests
       
       -- 验证度量值
       totalRequests <- metricValue requestCount
@@ -55,8 +54,7 @@ spec = describe "Domain Cabal Test Suite" $ do
       totalRequestSize <- metricValue requestSize
       totalResponseSize <- metricValue responseSize
       
-      shutdownTelemetry
-      
+            
       totalRequests `shouldBe` 4.0
       totalDuration `shouldBe` 4.5  -- 1.2 + 0.5 + 2.0 + 0.8
       totalRequestSize `shouldBe` 3840.0  -- 1024 + 512 + 2048 + 256
@@ -66,15 +64,14 @@ spec = describe "Domain Cabal Test Suite" $ do
       \values ->
         let businessValues = take 20 (values :: [Double])
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建业务度量
           revenue <- createMetric "revenue_total" "dollars"
           orders <- createMetric "orders_total" "count"
           customers <- createMetric "customers_total" "count"
           
           -- 模拟业务交易
-          sequence_ $ zipWithM (\revenueValue customerCount -> do
+          zipWithM_ (\revenueValue customerCount -> do
             recordMetric revenue revenueValue
             recordMetric orders 1.0
             recordMetric customers (fromIntegral customerCount)
@@ -85,8 +82,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           totalOrders <- metricValue orders
           totalCustomers <- metricValue customers
           
-          shutdownTelemetry
-          
+                    
           let expectedRevenue = sum businessValues
               expectedOrders = fromIntegral (length businessValues)
               expectedCustomers = fromIntegral (sum [1..length businessValues])
@@ -98,8 +94,7 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 2. 跟踪领域特定测试
   describe "Domain-Specific Tracing Tests" $ do
     it "should handle distributed tracing scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 模拟分布式追踪场景
       apiGatewaySpan <- createSpan "api_gateway_request"
       let apiTraceId = spanTraceId apiGatewaySpan
@@ -122,8 +117,7 @@ spec = describe "Domain Cabal Test Suite" $ do
       finishSpan serviceASpan
       finishSpan apiGatewaySpan
       
-      shutdownTelemetry
-      
+            
       -- 验证所有span都有相同的trace ID
       True `shouldBe` True  -- 如果没有异常就算成功
     
@@ -131,8 +125,7 @@ spec = describe "Domain Cabal Test Suite" $ do
       \serviceCount ->
         let actualServices = max 1 (abs serviceCount `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 模拟微服务调用链
           entrySpan <- createSpan "entry_point"
           let entryTraceId = spanTraceId entrySpan
@@ -142,22 +135,20 @@ spec = describe "Domain Cabal Test Suite" $ do
             createSpan "service_call"
           
           -- 验证trace ID传播
-          traceIds <- map spanTraceId serviceSpans
-          let allSameTraceId = all (== entryTraceId) traceIds
+          let traceIds = map spanTraceId serviceSpans
+              allSameTraceId = all (== entryTraceId) traceIds
           
           -- 完成所有span
           sequence_ $ map finishSpan serviceSpans
           finishSpan entrySpan
           
-          shutdownTelemetry
-          
+                    
           return allSameTraceId
   
   -- 3. 日志领域特定测试
   describe "Domain-Specific Logging Tests" $ do
     it "should handle structured logging scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建不同级别的日志器
       auditLogger <- createLogger "audit" Info
       securityLogger <- createLogger "security" Warn
@@ -176,15 +167,13 @@ spec = describe "Domain Cabal Test Suite" $ do
       performanceLogger `shouldSatisfy` (\l -> loggerName l == "performance" && loggerLevel l == Debug)
       businessLogger `shouldSatisfy` (\l -> loggerName l == "business" && loggerLevel l == Info)
       
-      shutdownTelemetry
-    
+          
     it "should handle log level filtering correctly" $ property $
       \logLevel ->
         let levels = [Debug, Info, Warn, Error]
             testLevel = levels !! (abs logLevel `mod` 4)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           logger <- createLogger "level-test" testLevel
           
           -- 记录不同级别的日志
@@ -196,15 +185,13 @@ spec = describe "Domain Cabal Test Suite" $ do
           -- 验证日志器级别
           loggerLevel logger `shouldBe` testLevel
           
-          shutdownTelemetry
-          
+                    
           return True  -- 如果没有异常就算成功
   
   -- 4. 应用程序场景测试
   describe "Application Scenario Tests" $ do
     it "should handle e-commerce application scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建电商应用度量
       productViews <- createMetric "product_views_total" "count"
       cartAdditions <- createMetric "cart_additions_total" "count"
@@ -235,19 +222,17 @@ spec = describe "Domain Cabal Test Suite" $ do
       totalOrders <- metricValue orders
       totalRevenue <- metricValue revenue
       
-      shutdownTelemetry
-      
+            
       totalViews `shouldBe` 1.0
       totalCartAdditions `shouldBe` 1.0
       totalOrders `shouldBe` 1.0
       totalRevenue `shouldBe` 99.99
     
     it "should handle financial application scenarios" $ property $
-      \transactionCount ->
+      \(transactionCount :: Int) ->
         let actualTransactions = max 1 (abs transactionCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建金融应用度量
           transactions <- createMetric "transactions_total" "count"
           transactionAmount <- createMetric "transaction_amount_total" "dollars"
@@ -258,7 +243,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           auditLogger <- createLogger "audit" Info
           
           -- 模拟金融交易
-          sequence_ $ replicate actualTransactions $ \i -> do
+          mapM_ (\i -> do
             let amount = 100.0 + fromIntegral i * 10.0
                 fee = amount * 0.02
             
@@ -268,14 +253,14 @@ spec = describe "Domain Cabal Test Suite" $ do
             
             logMessage transactionLogger Info (pack $ "Transaction #" ++ show i ++ " for $" ++ show amount)
             logMessage auditLogger Info (pack $ "Audit: Transaction #" ++ show i ++ " processed")
+            ) [1..actualTransactions]
           
           -- 验证金融指标
           totalTransactions <- metricValue transactions
           totalAmount <- metricValue transactionAmount
           totalFees <- metricValue fees
           
-          shutdownTelemetry
-          
+                    
           let expectedTransactions = fromIntegral actualTransactions
               expectedAmount = sum [100.0 + fromIntegral i * 10.0 | i <- [0..actualTransactions-1]]
               expectedFees = expectedAmount * 0.02
@@ -287,8 +272,7 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 5. 监控场景测试
   describe "Monitoring Scenario Tests" $ do
     it "should handle infrastructure monitoring scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建基础设施监控度量
       cpuUsage <- createMetric "cpu_usage_percent" "percent"
       memoryUsage <- createMetric "memory_usage_bytes" "bytes"
@@ -318,19 +302,17 @@ spec = describe "Domain Cabal Test Suite" $ do
       disk <- metricValue diskUsage
       network <- metricValue networkIO
       
-      shutdownTelemetry
-      
+            
       cpu `shouldBe` 75.5
       memory `shouldBe` 8589934592.0
       disk `shouldBe` 107374182400.0
       network `shouldBe` 104857600.0
     
     it "should handle application performance monitoring" $ property $
-      \requestCount ->
+      \(requestCount :: Int) ->
         let actualRequests = max 1 (abs requestCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建APM度量
           responseTime <- createMetric "response_time_ms" "ms"
           throughput <- createMetric "requests_per_second" "rps"
@@ -341,7 +323,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           errorLogger <- createLogger "errors" Error
           
           -- 模拟APM监控
-          sequence_ $ replicate actualRequests $ \i -> do
+          mapM_ (\i -> do
             let responseTimeValue = 100.0 + fromIntegral (i `mod` 200)
                 isError = i `mod` 20 == 0  -- 5%错误率
             
@@ -350,6 +332,7 @@ spec = describe "Domain Cabal Test Suite" $ do
             when isError $ do
               recordMetric errorRate 1.0
               logMessage errorLogger Error (pack $ "Request #" ++ show i ++ " failed")
+            ) [1..actualRequests]
           
           recordMetric throughput (fromIntegral actualRequests)
           
@@ -358,8 +341,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           totalRequests <- metricValue throughput
           errors <- metricValue errorRate
           
-          shutdownTelemetry
-          
+                    
           let expectedErrors = fromIntegral (actualRequests `div` 20)
           
           return (totalRequests == fromIntegral actualRequests &&
@@ -368,8 +350,7 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 6. 安全场景测试
   describe "Security Scenario Tests" $ do
     it "should handle security monitoring scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建安全监控度量
       loginAttempts <- createMetric "login_attempts_total" "count"
       failedLogins <- createMetric "failed_logins_total" "count"
@@ -395,18 +376,16 @@ spec = describe "Domain Cabal Test Suite" $ do
       totalFailedLogins <- metricValue failedLogins
       totalSecurityEvents <- metricValue securityEvents
       
-      shutdownTelemetry
-      
+            
       totalLogins `shouldBe` 2.0
       totalFailedLogins `shouldBe` 1.0
       totalSecurityEvents `shouldBe` 1.0
     
     it "should handle compliance logging scenarios" $ property $
-      \eventCount ->
+      \(eventCount :: Int) ->
         let actualEvents = max 1 (abs eventCount `mod` 20 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建合规性度量
           dataAccess <- createMetric "data_access_total" "count"
           dataModification <- createMetric "data_modification_total" "count"
@@ -417,7 +396,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           auditLogger <- createLogger "audit" Info
           
           -- 模拟合规性事件
-          sequence_ $ replicate actualEvents $ \i -> do
+          mapM_ (\i -> do
             let isAdminAction = i `mod` 5 == 0
                 isDataModification = i `mod` 3 == 0
             
@@ -430,14 +409,14 @@ spec = describe "Domain Cabal Test Suite" $ do
             when isAdminAction $ do
               recordMetric adminActions 1.0
               logMessage auditLogger Info (pack $ "Admin action performed by user " ++ show i)
+            ) [1..actualEvents]
           
           -- 验证合规性指标
           totalDataAccess <- metricValue dataAccess
           totalDataModification <- metricValue dataModification
           totalAdminActions <- metricValue adminActions
           
-          shutdownTelemetry
-          
+                    
           let expectedDataAccess = fromIntegral actualEvents
               expectedDataModification = fromIntegral (actualEvents `div` 3)
               expectedAdminActions = fromIntegral (actualEvents `div` 5)
@@ -449,11 +428,10 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 7. IoT场景测试
   describe "IoT Scenario Tests" $ do
     it "should handle IoT device telemetry" $ property $
-      \deviceCount ->
+      \(deviceCount :: Int) ->
         let actualDevices = max 1 (abs deviceCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建IoT度量
           deviceMessages <- createMetric "device_messages_total" "count"
           sensorReadings <- createMetric "sensor_readings_total" "count"
@@ -464,7 +442,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           alertLogger <- createLogger "device_alerts" Warn
           
           -- 模拟IoT设备遥测
-          sequence_ $ replicate actualDevices $ \deviceId -> do
+          mapM_ (\deviceId -> do
             let deviceName = pack $ "device_" ++ show deviceId
             
             -- 设备发送消息
@@ -477,14 +455,14 @@ spec = describe "Domain Cabal Test Suite" $ do
             when (deviceId `mod` 3 == 0) $ do
               recordMetric deviceErrors 1.0
               logMessage alertLogger Warn (deviceName <> " reported error")
+            ) [1..actualDevices]
           
           -- 验证IoT指标
           totalMessages <- metricValue deviceMessages
           totalReadings <- metricValue sensorReadings
           totalErrors <- metricValue deviceErrors
           
-          shutdownTelemetry
-          
+                    
           let expectedMessages = fromIntegral actualDevices * 10.0
               expectedReadings = fromIntegral actualDevices * 50.0
               expectedErrors = fromIntegral (actualDevices `div` 3)
@@ -496,11 +474,10 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 8. 游戏场景测试
   describe "Gaming Scenario Tests" $ do
     it "should handle gaming analytics scenarios" $ property $
-      \playerCount ->
+      \(playerCount :: Int) ->
         let actualPlayers = max 1 (abs playerCount `mod` 100 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建游戏分析度量
           activePlayers <- createMetric "active_players_total" "count"
           gameSessions <- createMetric "game_sessions_total" "count"
@@ -512,7 +489,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           revenueLogger <- createLogger "revenue" Info
           
           -- 模拟游戏事件
-          sequence_ $ replicate actualPlayers $ \playerId -> do
+          mapM_ (\playerId -> do
             let playerName = pack $ "player_" ++ show playerId
             
             -- 玩家登录
@@ -527,6 +504,7 @@ spec = describe "Domain Cabal Test Suite" $ do
               recordMetric revenue 4.99
               
               logMessage revenueLogger Info (playerName <> " made purchase for $4.99")
+            ) [1..actualPlayers]
           
           -- 验证游戏指标
           totalActivePlayers <- metricValue activePlayers
@@ -534,8 +512,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           totalPurchases <- metricValue inGamePurchases
           totalRevenue <- metricValue revenue
           
-          shutdownTelemetry
-          
+                    
           let expectedPlayers = fromIntegral actualPlayers
               expectedSessions = fromIntegral actualPlayers
               expectedPurchases = fromIntegral (actualPlayers `div` 4)
@@ -549,8 +526,7 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 9. 医疗保健场景测试
   describe "Healthcare Scenario Tests" $ do
     it "should handle healthcare application scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建医疗保健度量
       patientRecords <- createMetric "patient_records_accessed" "count"
       prescriptions <- createMetric "prescriptions_issued" "count"
@@ -575,8 +551,7 @@ spec = describe "Domain Cabal Test Suite" $ do
       totalPrescriptions <- metricValue prescriptions
       totalAppointments <- metricValue appointments
       
-      shutdownTelemetry
-      
+            
       totalRecords `shouldBe` 1.0
       totalPrescriptions `shouldBe` 1.0
       totalAppointments `shouldBe` 1.0
@@ -584,11 +559,10 @@ spec = describe "Domain Cabal Test Suite" $ do
   -- 10. 教育场景测试
   describe "Education Scenario Tests" $ do
     it "should handle education platform scenarios" $ property $
-      \studentCount ->
+      \(studentCount :: Int) ->
         let actualStudents = max 1 (abs studentCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建教育平台度量
           courseEnrollments <- createMetric "course_enrollments_total" "count"
           lessonCompletions <- createMetric "lesson_completions_total" "count"
@@ -599,7 +573,7 @@ spec = describe "Domain Cabal Test Suite" $ do
           engagementLogger <- createLogger "student_engagement" Debug
           
           -- 模拟教育平台事件
-          sequence_ $ replicate actualStudents $ \studentId -> do
+          mapM_ (\studentId -> do
             let studentName = pack $ "student_" ++ show studentId
             
             -- 学生注册课程
@@ -615,14 +589,14 @@ spec = describe "Domain Cabal Test Suite" $ do
             when (studentId `mod` 3 == 0) $ do
               recordMetric quizAttempts 3.0
               logMessage learningLogger Info (studentName <> " attempted 3 quizzes")
+            ) [1..actualStudents]
           
           -- 验证教育指标
           totalEnrollments <- metricValue courseEnrollments
           totalCompletions <- metricValue lessonCompletions
           totalAttempts <- metricValue quizAttempts
           
-          shutdownTelemetry
-          
+                    
           let expectedEnrollments = fromIntegral actualStudents
               expectedCompletions = fromIntegral (actualStudents `div` 2) * 5.0
               expectedAttempts = fromIntegral (actualStudents `div` 3) * 3.0

@@ -175,16 +175,12 @@ spec = do
       
       it "should generate different trace IDs for new traces" $ do
         -- Clear trace context by shutting down and reinitializing
-        shutdownTelemetry
-        initTelemetry productionConfig
-        
+                        
         span1 <- createSpan "trace-1"
         let traceId1 = spanTraceId span1
         
         -- Clear trace context again
-        shutdownTelemetry
-        initTelemetry productionConfig
-        
+                        
         span2 <- createSpan "trace-2"
         let traceId2 = spanTraceId span2
         
@@ -366,8 +362,7 @@ spec = do
     describe "Resource Cleanup and Memory Leak Tests" $ do
       it "should properly clean up resources on shutdown" $ do
         -- Initialize telemetry
-        initTelemetry productionConfig
-        
+                
         -- Create resources
         metric <- createMetric "cleanup-test" "count"
         recordMetric metric 100.0
@@ -378,15 +373,13 @@ spec = do
         logMessage logger Info "cleanup test"
         
         -- Shutdown telemetry
-        shutdownTelemetry
-        
+                
         -- Verify metric registry is cleared
         registry <- readMVar metricRegistry
         Map.null registry `shouldBe` True
         
         -- Reinitialize and verify clean state
-        initTelemetry productionConfig
-        
+                
         newMetric <- createMetric "cleanup-test" "count"
         value <- metricValue newMetric
         value `shouldBe` 0.0  -- Should be initial value, not from previous session

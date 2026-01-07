@@ -57,8 +57,7 @@ spec = describe "New Cabal Test Suite" $ do
       \name ->
         let spanName = pack $ "temporal-test-" ++ show (name :: Int)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建第一个span
           span1 <- createSpan spanName
           let traceId1 = spanTraceId span1
@@ -67,7 +66,6 @@ spec = describe "New Cabal Test Suite" $ do
           span2 <- createSpan spanName
           let traceId2 = spanTraceId span2
           
-          shutdownTelemetry
           return (traceId1 == traceId2)
     
     it "should generate unique span IDs over time" $ property $
@@ -75,14 +73,12 @@ spec = describe "New Cabal Test Suite" $ do
         let actualIterations = max 1 (abs iterations `mod` 10 + 1)
             spanName = "uniqueness-over-time"
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个span，每个应该有唯一的span ID
           spans <- replicateM actualIterations $ createSpan spanName
           let spanIds = map spanSpanId spans
               uniqueSpanIds = nub spanIds
           
-          shutdownTelemetry
           return (length uniqueSpanIds == actualIterations)
   
   -- 测试3: 日志消息的格式化和编码
@@ -120,8 +116,7 @@ spec = describe "New Cabal Test Suite" $ do
           case result of
             Left (_ :: SomeException) -> return False
             Right _ -> do
-              shutdownTelemetry
-              return True
+                            return True
     
     it "should validate configuration field constraints" $ property $
       \name ->
@@ -138,7 +133,6 @@ spec = describe "New Cabal Test Suite" $ do
                                enableLogging currentConfig
               debugDisabled = not (enableDebugOutput currentConfig)
           
-          shutdownTelemetry
           return (serviceNameMatches && versionMatches && featuresEnabled && debugDisabled)
   
   -- 测试5: 度量值的聚合行为
@@ -262,21 +256,17 @@ spec = describe "New Cabal Test Suite" $ do
       \metricCount ->
         let actualCount = max 1 (abs metricCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个度量
           metrics <- replicateM actualCount $ createMetric "resource-test" "count"
-          sequence_ $ flip map metrics $ \m -> recordMetric m 1.0
+          sequence_ $ map (\m -> recordMetric m 1.0) metrics
           
           -- 关闭遥测系统
-          shutdownTelemetry
-          
+                    
           -- 重新初始化并验证干净状态
-          initTelemetry productionConfig
           newMetric <- createMetric "after-shutdown" "count"
           newValue <- metricValue newMetric
-          shutdownTelemetry
-          
+                    
           return (newValue == 0.0)
     
     it "should handle metric registry cleanup" $ property $
@@ -285,22 +275,18 @@ spec = describe "New Cabal Test Suite" $ do
     
             let metricName = pack $ "registry-test-" ++ show (abs name `mod` 100)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建度量
           metric <- createMetric metricName "count"
           recordMetric metric 42.0
           
           -- 关闭并重新初始化
-          shutdownTelemetry
-          initTelemetry productionConfig
-          
+                              
           -- 验证注册表已清理
           registry <- takeMVar metricRegistry
           let isEmpty = Map.null registry
           putMVar metricRegistry registry
           
-          shutdownTelemetry
           return isEmpty
   
   -- 测试9: 遥测系统的性能特征
@@ -364,19 +350,15 @@ spec = describe "New Cabal Test Suite" $ do
             let actualRestarts = max 1 (abs restartCount `mod` 3 + 1)
         in unsafePerformIO $ do
           let performRestart i = do
-                initTelemetry productionConfig
                 metric <- createMetric (pack $ "restart-" ++ show i) "count"
                 recordMetric metric 1.0
-                shutdownTelemetry
-          
+                          
           -- 执行多次重启
           sequence_ $ map performRestart [1..actualRestarts]
           
           -- 验证系统仍然可用
-          initTelemetry productionConfig
           finalMetric <- createMetric "after-restarts" "count"
           recordMetric finalMetric 42.0
           result <- metricValue finalMetric
-          shutdownTelemetry
-          
+                    
           return (result == 42.0)

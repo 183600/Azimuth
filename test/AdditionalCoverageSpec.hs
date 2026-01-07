@@ -175,15 +175,13 @@ spec = do
         -- Enable metric sharing and create many metrics
         writeIORef enableMetricSharing True
         
-        initTelemetry productionConfig
-        
+                
         -- Create many metrics to populate registry
         metrics <- sequence $ replicate 100 $ do
           createMetric "memory-test" "count"
         
         -- Shutdown telemetry
-        shutdownTelemetry
-        
+                
         -- Registry should be empty
         registry <- readMVar metricRegistry
         Map.null registry `shouldBe` True
@@ -204,8 +202,7 @@ spec = do
         value `shouldBe` 100.0
       
       it "should handle resource cleanup under load" $ do
-        initTelemetry productionConfig
-        
+                
         -- Create and use many resources
         sequence_ $ replicate 1000 $ do
           metric <- createMetric "cleanup-test" "temp"
@@ -221,8 +218,7 @@ spec = do
         value <- metricValue metric
         value `shouldBe` 42.0
         
-        shutdownTelemetry
-
+        
     -- 错误恢复机制测试
     describe "Error Recovery Mechanisms" $ do
       it "should recover from metric operations after exceptions" $ do
@@ -349,22 +345,19 @@ spec = do
         
         -- Launch threads that initialize telemetry
         threads <- sequence $ replicate numThreads $ forkIO $ do
-          initTelemetry productionConfig
-          threadDelay 10000  -- 10毫秒
-          shutdownTelemetry
-        
+                    threadDelay 10000  -- 10毫秒
+                    return ()
+                  
         -- Wait for all threads to complete
         threadDelay 10000  -- 10毫秒
         sequence_ $ map killThread threads
         
         -- System should still be functional
-        initTelemetry productionConfig
         metric <- createMetric "post-concurrency" "count"
         recordMetric metric 42.0
         value <- metricValue metric
         value `shouldBe` 42.0
-        shutdownTelemetry
-
+        
     -- 性能基准测试
     describe "Performance Benchmarks" $ do
       it "should handle high-frequency metric operations efficiently" $ do

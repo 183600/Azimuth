@@ -7,13 +7,13 @@ import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (replicateM, when, void, unless, sequence_, zipWith)
+import Control.Monad (replicateM, when, void, unless, sequence_, zipWithM_)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import System.Mem (performGC)
 import Data.Text (pack, unpack)
 import qualified Data.Text as Text
-import Data.List (nub, sort, group, intercalate, take, drop, replicate)
+import Data.List (nub, sort, group, intercalate, take, drop, replicate, zipWith)
 import Prelude hiding (id)
 
 import Azimuth.Telemetry
@@ -24,8 +24,7 @@ spec = describe "Integration Cabal Test Suite" $ do
   -- 1. 端到端遥测流程测试
   describe "End-to-End Telemetry Flow" $ do
     it "should complete full telemetry workflow" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建度量
       requestCount <- createMetric "http_requests_total" "count"
       requestDuration <- createMetric "http_request_duration_ms" "ms"
@@ -54,14 +53,12 @@ spec = describe "Integration Cabal Test Suite" $ do
       countValue <- metricValue requestCount
       durationValue <- metricValue requestDuration
       
-      shutdownTelemetry
-      
+            
       countValue `shouldBe` 2.0
       durationValue `shouldBe` 350.8  -- 150.5 + 200.3
     
     it "should handle complex multi-component scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建多个组件
       dbMetrics <- sequence $ replicate 3 $ do
         createMetric "db_operations" "count"
@@ -91,15 +88,13 @@ spec = describe "Integration Cabal Test Suite" $ do
       metricValues <- sequence $ map metricValue (dbMetrics ++ cacheMetrics)
       let allCorrect = all (== 1.0) metricValues
       
-      shutdownTelemetry
-      
+            
       allCorrect `shouldBe` True
   
   -- 2. 组件间交互测试
   describe "Component Interaction Tests" $ do
     it "should coordinate metrics and spans correctly" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建度量
       operationMetric <- createMetric "operations" "count"
       
@@ -124,13 +119,11 @@ spec = describe "Integration Cabal Test Suite" $ do
       -- 验证度量值
       finalValue <- metricValue operationMetric
       
-      shutdownTelemetry
-      
+            
       finalValue `shouldBe` 3.0
     
     it "should integrate logging with metrics and spans" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建组件
       errorMetric <- createMetric "errors" "count"
       logger <- createLogger "service" Error
@@ -144,8 +137,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       -- 验证组件协调工作
       errorCount <- metricValue errorMetric
       
-      shutdownTelemetry
-      
+            
       errorCount `shouldBe` 1.0
   
   -- 3. 配置集成测试
@@ -168,14 +160,12 @@ spec = describe "Integration Cabal Test Suite" $ do
       -- 验证操作成功
       metricValue <- metricValue metric
       
-      shutdownTelemetry
-      
+            
       metricValue `shouldBe` 1.0
     
     it "should handle configuration changes dynamically" $ do
       -- 初始配置
-      initTelemetry productionConfig
-      
+            
       metric1 <- createMetric "dynamic-config" "count"
       recordMetric metric1 1.0
       
@@ -190,16 +180,14 @@ spec = describe "Integration Cabal Test Suite" $ do
       value1 <- metricValue metric1
       value2 <- metricValue metric2
       
-      shutdownTelemetry
-      
+            
       value1 `shouldBe` 1.0
       value2 `shouldBe` 2.0
   
   -- 4. 数据流集成测试
   describe "Data Flow Integration" $ do
     it "should maintain data consistency across components" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建数据流
       inputMetric <- createMetric "input_data" "bytes"
       processedMetric <- createMetric "processed_data" "bytes"
@@ -228,8 +216,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       processedValue <- metricValue processedMetric
       outputValue <- metricValue outputMetric
       
-      shutdownTelemetry
-      
+            
       inputValue `shouldBe` inputData
       processedValue `shouldBe` processedData
       outputValue `shouldBe` outputData
@@ -238,8 +225,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       \values ->
         let testValues = take 10 (values :: [Double])
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建变换管道
           inputMetric <- createMetric "input" "count"
           intermediateMetric <- createMetric "intermediate" "count"
@@ -261,8 +247,7 @@ spec = describe "Integration Cabal Test Suite" $ do
               expectedIntermediate = sum (map (*2) testValues)
               expectedOutput = sum (map (*3) testValues)
           
-          shutdownTelemetry
-          
+                    
           return (inputValue == expectedInput &&
                   intermediateValue == expectedIntermediate &&
                   outputValue == expectedOutput)
@@ -270,8 +255,7 @@ spec = describe "Integration Cabal Test Suite" $ do
   -- 5. 错误处理集成测试
   describe "Error Handling Integration" $ do
     it "should handle errors gracefully across all components" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建错误处理组件
       errorMetric <- createMetric "errors" "count"
       recoveryMetric <- createMetric "recoveries" "count"
@@ -289,8 +273,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       errorCount <- metricValue errorMetric
       recoveryCount <- metricValue recoveryMetric
       
-      shutdownTelemetry
-      
+            
       errorCount `shouldBe` 1.0
       recoveryCount `shouldBe` 1.0
     
@@ -298,8 +281,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       \errorCount ->
         let actualErrors = max 1 (abs errorCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           errorMetric <- createMetric "stability_errors" "count"
           normalMetric <- createMetric "normal_operations" "count"
           logger <- createLogger "stability" Error
@@ -316,8 +298,7 @@ spec = describe "Integration Cabal Test Suite" $ do
           errorValue <- metricValue errorMetric
           normalValue <- metricValue normalMetric
           
-          shutdownTelemetry
-          
+                    
           return (errorValue == fromIntegral actualErrors &&
                   normalValue == fromIntegral actualErrors)
   
@@ -327,8 +308,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       \componentCount ->
         let actualComponents = max 1 (abs componentCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个组件
           metrics <- sequence $ replicate actualComponents $ do
             createMetric "performance" "ops"
@@ -352,8 +332,7 @@ spec = describe "Integration Cabal Test Suite" $ do
           metricValues <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) metricValues
           
-          shutdownTelemetry
-          
+                    
           return allCorrect
     
     it "should scale performance with component count" $ property $
@@ -362,8 +341,7 @@ spec = describe "Integration Cabal Test Suite" $ do
             baseComponents = 2
             totalComponents = baseComponents * actualScale
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建可扩展数量的组件
           metrics <- sequence $ replicate totalComponents $ do
             createMetric "scalability" "count"
@@ -375,16 +353,14 @@ spec = describe "Integration Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) values
           
-          shutdownTelemetry
-          
+                    
           return allCorrect
   
   -- 7. 生命周期集成测试
   describe "Lifecycle Integration" $ do
     it "should manage component lifecycle correctly" $ do
       -- 初始化系统
-      initTelemetry productionConfig
-      
+            
       -- 创建组件
       metric <- createMetric "lifecycle" "count"
       logger <- createLogger "lifecycle" Info
@@ -396,14 +372,12 @@ spec = describe "Integration Cabal Test Suite" $ do
       finishSpan span
       
       -- 验证组件状态
-      metricValue <- metricValue metric
+      metricVal <- metricValue metric
       
       -- 关闭系统
-      shutdownTelemetry
-      
+            
       -- 重新初始化
-      initTelemetry productionConfig
-      
+            
       -- 创建新组件
       newMetric <- createMetric "lifecycle" "count"
       recordMetric newMetric 2.0
@@ -411,9 +385,8 @@ spec = describe "Integration Cabal Test Suite" $ do
       -- 验证新组件从初始状态开始
       newMetricValue <- metricValue newMetric
       
-      shutdownTelemetry
-      
-      metricValue `shouldBe` 1.0
+            
+      metricVal `shouldBe` 1.0
       newMetricValue `shouldBe` 2.0
     
     it "should handle complex lifecycle scenarios" $ property $
@@ -421,8 +394,7 @@ spec = describe "Integration Cabal Test Suite" $ do
         let actualCycles = max 1 (abs cycleCount `mod` 5 + 1)
         in unsafePerformIO $ do
           sequence_ $ replicate actualCycles $ do
-            initTelemetry productionConfig
-            
+                        
             -- 创建和使用组件
             metric <- createMetric "complex-lifecycle" "count"
             recordMetric metric 1.0
@@ -433,8 +405,7 @@ spec = describe "Integration Cabal Test Suite" $ do
             span <- createSpan "complex-lifecycle"
             finishSpan span
             
-            shutdownTelemetry
-          
+                      
           return True  -- 如果没有崩溃就算成功
   
   -- 8. 资源管理集成测试
@@ -443,8 +414,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       \resourceCount ->
         let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建大量资源
           metrics <- sequence $ replicate actualCount $ do
             createMetric "resource-management" "count"
@@ -465,14 +435,12 @@ spec = describe "Integration Cabal Test Suite" $ do
           metricValues <- sequence $ map metricValue metrics
           let allCorrect = all (== 1.0) metricValues
           
-          shutdownTelemetry
           performGC
           
           return allCorrect
     
     it "should clean up resources properly" $ do
-      initTelemetry productionConfig
-      
+            
       -- 创建资源
       metrics <- sequence $ replicate 100 $ do
         createMetric "cleanup" "count"
@@ -490,31 +458,27 @@ spec = describe "Integration Cabal Test Suite" $ do
       sequence_ $ map finishSpan spans
       
       -- 关闭系统
-      shutdownTelemetry
-      
+            
       -- 强制垃圾回收
       performGC
       
       -- 重新初始化应该从干净状态开始
-      initTelemetry productionConfig
-      
+            
       cleanupMetric <- createMetric "cleanup" "count"
       recordMetric cleanupMetric 1.0
       
       cleanupValue <- metricValue cleanupMetric
       
-      shutdownTelemetry
-      
+            
       cleanupValue `shouldBe` 1.0
   
   -- 9. 并发集成测试
   describe "Concurrent Integration" $ do
     it "should handle concurrent access to all components" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 10 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建共享组件
           metric <- createMetric "concurrent-integration" "count"
           logger <- createLogger "concurrent-integration" Info
@@ -539,25 +503,22 @@ spec = describe "Integration Cabal Test Suite" $ do
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * 50.0
           
-          shutdownTelemetry
-          
+                    
           return (finalValue == expectedValue)
     
     it "should maintain consistency under concurrent load" $ property $
-      \threadCount ->
+      \(threadCount :: Int) ->
         let actualThreads = max 1 (abs threadCount `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建多个共享度量
           metrics <- sequence $ replicate 3 $ do
             createMetric "concurrent-consistency" "count"
           
           -- 创建多个线程更新所有度量
           threads <- mapM (\threadId -> forkIO $ do
-            sequence_ $ zipWith (\metric index -> do
+            zipWithM_ (\metric index -> do
               recordMetric metric (fromIntegral (threadId + index))
-            return ()
               ) metrics [0..]
             ) [1..actualThreads]
           
@@ -571,15 +532,13 @@ spec = describe "Integration Cabal Test Suite" $ do
           values <- sequence $ map metricValue metrics
           let allValid = all (not . isNaN) values
           
-          shutdownTelemetry
-          
+                    
           return allValid
   
   -- 10. 系统级集成测试
   describe "System-Level Integration" $ do
     it "should handle realistic system scenarios" $ do
-      initTelemetry productionConfig
-      
+            
       -- 模拟Web服务器的遥测
       requestCount <- createMetric "http_requests_total" "count"
       requestDuration <- createMetric "http_request_duration_ms" "ms"
@@ -589,7 +548,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       dbLogger <- createLogger "database" Debug
       
       -- 模拟请求处理
-      sequence_ $ replicate 10 $ \requestId -> do
+      mapM_ (\requestId -> do
         -- 记录请求开始
         recordMetric activeConnections 1.0
         requestSpan <- createSpan (pack $ "http_request_" ++ show requestId)
@@ -609,14 +568,14 @@ spec = describe "Integration Cabal Test Suite" $ do
         finishSpan requestSpan
         
         logMessage httpLogger Info (pack $ "Completed request " ++ show requestId)
+        ) [1..10]
       
       -- 验证系统状态
       totalRequests <- metricValue requestCount
       totalDuration <- metricValue requestDuration
       activeConns <- metricValue activeConnections
       
-      shutdownTelemetry
-      
+            
       totalRequests `shouldBe` 10.0
       totalDuration `shouldBe` 1500.0  -- 10 * (50 + 100)
       activeConns `shouldBe` 0.0  -- 所有连接都已关闭
@@ -625,8 +584,7 @@ spec = describe "Integration Cabal Test Suite" $ do
       \complexityFactor ->
         let actualComplexity = max 1 (abs complexityFactor `mod` 5 + 1)
         in unsafePerformIO $ do
-          initTelemetry productionConfig
-          
+                    
           -- 创建系统组件
           metrics <- sequence $ replicate actualComplexity $ do
             createMetric "system_metric" "count"
@@ -635,7 +593,7 @@ spec = describe "Integration Cabal Test Suite" $ do
             createLogger "system_component" Info
           
           -- 模拟复杂系统交互
-          sequence_ $ replicate (actualComplexity * 10) $ \step -> do
+          mapM_ (\step -> do
             let metricIndex = step `mod` actualComplexity
                 loggerIndex = (step + 1) `mod` actualComplexity
             
@@ -644,11 +602,11 @@ spec = describe "Integration Cabal Test Suite" $ do
             
             span <- createSpan (pack $ "system_step_" ++ show step)
             finishSpan span
+            ) [1..(actualComplexity * 10)]
           
           -- 验证系统状态
           metricValues <- sequence $ map metricValue metrics
           let allValid = all (not . isNaN) metricValues
           
-          shutdownTelemetry
-          
+                    
           return allValid

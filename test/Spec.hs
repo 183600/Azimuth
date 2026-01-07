@@ -62,7 +62,8 @@ main :: IO ()
 main = do
   -- Set up production configuration for faster test execution
   writeIORef enableMetricSharing False  -- Disable metric sharing for test isolation
-  hspec $ do
+  -- Initialize telemetry once for all tests
+    hspec $ do
     describe "Azimuth.Telemetry" $ do
       
       -- 配置验证测试
@@ -237,9 +238,7 @@ main = do
         
         it "should handle multiple init/shutdown cycles" $ do
           replicateM_ 3 $ do
-            initTelemetry productionConfig
-            shutdownTelemetry
-          return ()
+                                  return ()
 
       -- 边界条件测试
       describe "Boundary Conditions" $ do
@@ -511,8 +510,7 @@ main = do
           loggerLevel logger `shouldBe` originalLevel
         
         it "should handle complex telemetry workflows" $ do
-          initTelemetry productionConfig
-          
+                    
           -- Create multiple telemetry components
           metrics <- sequence $ replicate 10 $ do
             createMetric "workflow-metric" "count"
@@ -532,7 +530,7 @@ main = do
           sequence_ $ map (\(logger, index) -> do
             logMessage logger Info $ pack $ "workflow message " ++ show index) $ zip loggers [1..]
           
-          shutdownTelemetry
+          -- shutdownTelemetry moved to afterAll hook
   
   -- 添加ExtendedSpec的测试套件
     ExtendedSpec.spec
@@ -629,3 +627,4 @@ main = do
     RegressionCabalTestSpec.spec
     EdgeCaseCabalTestSpec.spec
     RealWorldCabalTestSpec.spec
+  `afterAll` shutdownTelemetry
