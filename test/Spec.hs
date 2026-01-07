@@ -59,6 +59,15 @@ import RegressionCabalTestSpec (spec)
 import EdgeCaseCabalTestSpec (spec)
 import RealWorldCabalTestSpec (spec)
 import EnhancedTelemetrySuiteSpec (spec)
+import MetricAggregationCabalTestSpec (spec)
+import TimeSeriesCabalTestSpec (spec)
+import ErrorRecoveryCabalTestSpec (spec)
+import ConfigHotReloadCabalTestSpec (spec)
+import ResourceLimitCabalTestSpec (spec)
+import DataIntegrityCabalTestSpec (spec)
+import PerformanceRegressionCabalTestSpec (spec)
+import CompatibilityCabalTestSpec (spec)
+import SecurityCabalTestSpec (spec)
 
 main :: IO ()
 main = do
@@ -640,6 +649,17 @@ main = do
 
     -- 添加新的增强测试套件
     EnhancedTelemetrySuiteSpec.spec
+    
+    -- 添加新的cabal测试套件
+    MetricAggregationCabalTestSpec.spec
+    TimeSeriesCabalTestSpec.spec
+    ErrorRecoveryCabalTestSpec.spec
+    ConfigHotReloadCabalTestSpec.spec
+    ResourceLimitCabalTestSpec.spec
+    DataIntegrityCabalTestSpec.spec
+    PerformanceRegressionCabalTestSpec.spec
+    CompatibilityCabalTestSpec.spec
+    SecurityCabalTestSpec.spec
     
     -- 添加验证测试
     describe "Validation Tests" $ do
