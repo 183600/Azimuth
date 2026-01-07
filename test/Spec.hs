@@ -69,6 +69,7 @@ import PerformanceRegressionCabalTestSpec (spec)
 import CompatibilityCabalTestSpec (spec)
 import SecurityCabalTestSpec (spec)
 import NewComprehensiveTestSpec (spec)
+import AdvancedCabalTestSpec2 (spec)
 
 main :: IO ()
 main = do
@@ -664,6 +665,9 @@ main = do
     
     -- 添加新的综合测试套件
     NewComprehensiveTestSpec.spec
+    
+    -- 添加新的高级测试套件
+    AdvancedCabalTestSpec2.spec
     
     -- 添加验证测试
     describe "Validation Tests" $ do

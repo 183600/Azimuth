@@ -401,7 +401,7 @@ Additional Telemetry Tests 2
       +++ OK, passed 100 tests.
   Metric Registry Sharing Behavior
     should share metrics with same name and unit [[32m✔[0m]
-      +++ OK, passed 100 tests; 12 discarded.
+      +++ OK, passed 100 tests; 11 discarded.
     should not share metrics with different units [[32m✔[0m]
   Text Encoding Integrity
     should preserve ASCII characters exactly [[32m✔[0m]
@@ -515,7 +515,6 @@ Comprehensive Telemetry Tests
   Resource Leak Detection
     should not leak resources during repeated operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-Shutting down telemetry system
     should clean up resources properly after shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
   System Health Checks
@@ -529,19 +528,19 @@ New Telemetry Tests
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 14 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 14 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 14 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 14 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -559,7 +558,7 @@ New Telemetry Tests
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 14 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -713,17 +712,18 @@ Enhanced Telemetry Suite Tests
     should handle multiple telemetry components [[32m✔[0m]
 Metric Aggregation Tests
   Basic Metric Aggregation
-    should aggregate multiple metrics with same name [[31m✘[0m]
+    should aggregate multiple metrics with same name [[32m✔[0m]
     should handle aggregation with different units [[32m✔[0m]
   Metric Aggregation Properties
-    should satisfy commutative property [[31m✘[0m]
+    should satisfy commutative property [[32m✔[0m]
+      +++ OK, passed 100 tests.
     should satisfy associative property [[32m✔[0m]
       +++ OK, passed 100 tests.
   Concurrent Aggregation
     should handle concurrent aggregation correctly [[32m✔[0m]
   Aggregation Statistics
     should calculate average correctly [[32m✔[0m]
-    should find min and max values [[31m✘[0m]
+    should find min and max values [[32m✔[0m]
   Aggregation Windows
     should handle time-based aggregation windows [[32m✔[0m]
     should reset aggregation in different windows [[32m✔[0m]
@@ -827,8 +827,28 @@ Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
     should be idempotent for identical configurations [[32m✔[0m]
       +++ OK, passed 100 tests.
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
@@ -935,7 +955,7 @@ Data Integrity Tests
     should handle concurrent access without corruption [[32m✔[0m]
   Data Consistency
     should maintain metric consistency across reads [[32m✔[0m]
-    should maintain consistency across shared metrics [[31m✘[0m]
+    should maintain consistency across shared metrics [[32m✔[0m]
   Data Integrity Boundary Conditions
     should handle empty data gracefully [[32m✔[0m]
     should handle extremely long data [[32m✔[0m]
@@ -952,7 +972,7 @@ Performance Regression Tests
       +++ OK, passed 100 tests.
   Concurrent Performance
     should handle concurrent metric operations efficiently [[32m✔[0m]
-    should scale with number of threads [[31m✘[0m]
+    should scale with number of threads [[32m✔[0m]
   Memory Performance
     should handle large numbers of metrics without memory leaks [[32m✔[0m]
     should maintain performance under memory pressure [[32m✔[0m]
@@ -968,21 +988,11 @@ Shutting down telemetry system
     should verify optimization effectiveness [[32m✔[0m]
 Compatibility Tests
   Version Compatibility
-    should handle version string parsing [[33m‐[0m]
-[33m      # PENDING: Could not parse version: 0.1.0[0m
+    should handle version string parsing [[32m✔[0m]
     should maintain backward compatibility [[32m✔[0m]
 Shutting down telemetry system
     should handle forward compatibility [[32m✔[0m]
   Configuration Compatibility Properties
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
-Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
 Shutting down telemetry system
@@ -1030,10 +1040,10 @@ Shutting down telemetry system
     should handle resource constraint compatibility [[32m✔[0m]
   Backward Compatibility Guarantees
     should guarantee API stability [[32m✔[0m]
-    should maintain data format stability [[31m✘[0m]
+    should maintain data format stability [[32m✔[0m]
 Security Tests
   Input Validation Security
-    should reject malicious input [[31m✘[0m]
+    should reject malicious input [[32m✔[0m]
     should sanitize input properly [[32m✔[0m]
   Security Consistency Properties
     should maintain security across operations [[32m✔[0m]
@@ -1059,70 +1069,76 @@ Security Tests
     should handle empty input securely [[32m✔[0m]
     should handle extremely long input securely [[32m✔[0m]
     should handle unicode security issues [[32m✔[0m]
+New Comprehensive Tests
+  Metric Arithmetic Properties
+    should satisfy additive property for positive numbers [[31m✘[0m]
+    should handle zero correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should preserve NaN values [[32m✔[0m]
+    should handle infinity correctly [[32m✔[0m]
+  Span ID Uniqueness
+    should generate unique span IDs [[32m✔[0m]
+    should maintain trace ID consistency within a trace [[32m✔[0m]
+    should generate valid hex strings for IDs [[32m✔[0m]
+  Logger Level Filtering
+    should handle all log levels correctly [[32m✔[0m]
+    should maintain logger properties after logging [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Properties
+    should handle configuration transitions gracefully [[32m✔[0m]
+    should preserve config fields after initialization [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Text Handling Properties
+    should handle unicode characters correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty strings [[32m✔[0m]
+    should handle control characters [[32m✔[0m]
+  Numeric Boundary Properties
+    should handle extreme values [[31m✘[0m]
+    should handle special floating point values [[32m✔[0m]
+  Resource Lifecycle Properties
+    should handle multiple init/shutdown cycles [[32m✔[0m]
+    should maintain isolation between test runs [[32m✔[0m]
+  SimpleMetric Algebraic Properties
+    should satisfy commutative property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy associative property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy identity property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Security Validator Properties
+    should detect malicious patterns [[32m✔[0m]
+    should allow safe inputs [[32m✔[0m]
+      +++ OK, passed 100 tests; 23 discarded.
+    should sanitize malicious inputs [[32m✔[0m]
+  Performance and Stress Properties
+    should handle high-frequency operations [[32m✔[0m]
+    should handle memory pressure [[32m✔[0m]
 Validation Tests
-  should share metrics with same name and unit [[31m✘[0m]
+  should share metrics with same name and unit [[32m✔[0m]
   should handle configuration changes without affecting operations [[32m✔[0m]
 
 Failures:
 
-[36m  test/MetricAggregationCabalTestSpec.hs:41:37: [0m
-  1) Metric Aggregation Tests, Basic Metric Aggregation, should aggregate multiple metrics with same name
+[36m  test/NewComprehensiveTestSpec.hs:25:5: [0m
+  1) New Comprehensive Tests, Metric Arithmetic Properties, should satisfy additive property for positive numbers
+[31m       Falsified (after 2 tests and 1 shrink):[0m
+[31m         1.0[0m
+[31m         0.0[0m
+
+  To rerun use: --match "/New Comprehensive Tests/Metric Arithmetic Properties/should satisfy additive property for positive numbers/" --seed 1931115135
+
+[36m  test/NewComprehensiveTestSpec.hs:179:25: [0m
+  2) New Comprehensive Tests, Numeric Boundary Properties, should handle extreme values
 [31m       expected: [0m[31mTrue[0m
 [31m        but got: [0m[32mFalse[0m
 
-  To rerun use: --match "/Metric Aggregation Tests/Basic Metric Aggregation/should aggregate multiple metrics with same name/" --seed 1173698842
+  To rerun use: --match "/New Comprehensive Tests/Numeric Boundary Properties/should handle extreme values/" --seed 1931115135
 
-[36m  test/MetricAggregationCabalTestSpec.hs:63:5: [0m
-  2) Metric Aggregation Tests, Metric Aggregation Properties, should satisfy commutative property
-[31m       Falsified (after 6 tests and 14 shrinks):[0m
-[31m         [1.0e-2][0m
-[31m         [1.0,-1.0][0m
+Randomized with seed 1931115135
 
-  To rerun use: --match "/Metric Aggregation Tests/Metric Aggregation Properties/should satisfy commutative property/" --seed 1173698842
-
-[36m  test/MetricAggregationCabalTestSpec.hs:174:35: [0m
-  3) Metric Aggregation Tests, Aggregation Statistics, should find min and max values
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Metric Aggregation Tests/Aggregation Statistics/should find min and max values/" --seed 1173698842
-
-[36m  test/DataIntegrityCabalTestSpec.hs:465:14: [0m
-  4) Data Integrity Tests, Data Consistency, should maintain consistency across shared metrics
-[31m       expected: [0m[31m0[0m.0
-[31m        but got: [0m[32m10[0m.0
-
-  To rerun use: --match "/Data Integrity Tests/Data Consistency/should maintain consistency across shared metrics/" --seed 1173698842
-
-[36m  test/PerformanceRegressionCabalTestSpec.hs:234:22: [0m
-  5) Performance Regression Tests, Concurrent Performance, should scale with number of threads
-[31m       predicate failed on: 9799358.142041696[0m
-
-  To rerun use: --match "/Performance Regression Tests/Concurrent Performance/should scale with number of threads/" --seed 1173698842
-
-[36m  test/CompatibilityCabalTestSpec.hs:499:19: [0m
-  6) Compatibility Tests, Backward Compatibility Guarantees, should maintain data format stability
-[31m       predicate failed on: 0.0[0m
-
-  To rerun use: --match "/Compatibility Tests/Backward Compatibility Guarantees/should maintain data format stability/" --seed 1173698842
-
-[36m  test/SecurityCabalTestSpec.hs:140:33: [0m
-  7) Security Tests, Input Validation Security, should reject malicious input
-[31m       predicate failed on: 7[0m
-
-  To rerun use: --match "/Security Tests/Input Validation Security/should reject malicious input/" --seed 1173698842
-
-[36m  test/Spec.hs:682:15: [0m
-  8) Validation Tests should share metrics with same name and unit
-[31m       expected: [0m[31m10[0m.0
-[31m        but got: [0m[32m0[0m.0
-
-  To rerun use: --match "/Validation Tests/should share metrics with same name and unit/" --seed 1173698842
-
-Randomized with seed 1173698842
-
-Finished in 5.1131 seconds
-[31m498 examples, 8 failures, 1 pending[0m
+Finished in 5.0982 seconds
+[31m524 examples, 2 failures[0m
 Test suite azimuth-test: FAIL
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log
