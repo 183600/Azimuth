@@ -31,9 +31,14 @@ module Azimuth.Telemetry
     , Logger(..)
     , createLogger
     , logMessage
+    , -- * Security
+      SecurityValidator(..)
+    , createSecurityValidator
+    , isControlChar
     , -- * Internal state (for testing)
       metricRegistry
     , enableMetricSharing
+    , enableMetricAggregation
     , globalConfig
     , testMode
     , productionTestMode
@@ -50,7 +55,7 @@ module Azimuth.Telemetry
     , mapSpanSpanIdM
     ) where
 
-import Data.Text (Text, pack, null)
+import qualified Data.Text as Text
 import System.IO.Unsafe (unsafePerformIO)
 import Data.IORef
 import System.Random (randomIO)
@@ -65,7 +70,7 @@ import Prelude hiding (id)
 
 -- | Global trace context storage
 {-# NOINLINE traceContext #-}
-traceContext :: MVar (Maybe Text)
+traceContext :: MVar (Maybe Text.Text)
 traceContext = unsafePerformIO (newMVar Nothing)
 
 -- | Global span counter
@@ -90,13 +95,18 @@ logCounter = unsafePerformIO (newIORef 0)
 
 -- | Global metric registry for sharing values by name
 {-# NOINLINE metricRegistry #-}
-metricRegistry :: MVar (Map.Map (Text, Text) (IORef Double))
+metricRegistry :: MVar (Map.Map (Text.Text, Text.Text) (IORef Double))
 metricRegistry = unsafePerformIO (newMVar Map.empty)
 
 -- | Global flag to control metric sharing (disabled for QuickCheck tests)
 {-# NOINLINE enableMetricSharing #-}
 enableMetricSharing :: IORef Bool
 enableMetricSharing = unsafePerformIO (newIORef True)
+
+-- | Global flag to control metric aggregation (for specific test scenarios)
+{-# NOINLINE enableMetricAggregation #-}
+enableMetricAggregation :: IORef Bool
+enableMetricAggregation = unsafePerformIO (newIORef True)
 
 -- | Global flag to control test mode (for performance optimization)
 {-# NOINLINE testMode #-}
@@ -115,8 +125,8 @@ ultraFastTestMode = unsafePerformIO (newIORef False)
 
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
-    { serviceName :: Text
-    , serviceVersion :: Text
+    { serviceName :: Text.Text
+    , serviceVersion :: Text.Text
     , enableMetrics :: Bool
     , enableTracing :: Bool
     , enableLogging :: Bool
@@ -171,13 +181,17 @@ initTelemetry config = do
             modifyMVar_ traceContext (\_ -> return Nothing)
             writeIORef spanCounter 0
             writeIORef logCounter 0
-            -- Set up metric sharing for tests
-            writeIORef enableMetricSharing True
+            -- Don't override metric sharing settings in test mode
+            -- Tests should control these settings
         else do
             -- In production mode, don't clear metric registry for hot updates
             modifyMVar_ traceContext (\_ -> return Nothing)
             writeIORef spanCounter 0
             writeIORef logCounter 0
+            -- Enable metric sharing in production for performance
+            writeIORef enableMetricSharing True
+            -- Enable metric aggregation in production for performance
+            writeIORef enableMetricAggregation True
 
 -- | Shutdown telemetry system
 shutdownTelemetry :: IO ()
@@ -199,7 +213,7 @@ shutdownTelemetry = do
     when isTestMode $ modifyIORef traceCounter (+1)
 
 -- | Generate a random hex string
-generateRandomHex :: Int -> IO Text
+generateRandomHex :: Int -> IO Text.Text
 generateRandomHex len = do
     -- Check if we're in test mode
     isTestMode <- readIORef testMode
@@ -214,11 +228,11 @@ generateRandomHex len = do
                 finalHex = if length paddedHex > len 
                            then drop (length paddedHex - len) paddedHex 
                            else paddedHex
-            return $ pack finalHex
+            return $ Text.pack finalHex
         else do
             let chars = ['0'..'9'] ++ ['a'..'f']
             randomInts <- sequence $ replicate len $ randomIO :: IO [Int]
-            return $ pack $ map (\i -> chars !! (i `mod` 16)) randomInts
+            return $ Text.pack $ map (\i -> chars !! (i `mod` 16)) randomInts
   where
     intToHex :: Int -> String
     intToHex 0 = "0"
@@ -236,7 +250,7 @@ hashThreadId :: ThreadId -> Int
 hashThreadId = hash
 
 -- | Generate a unique span ID
-generateSpanId :: IO Text
+generateSpanId :: IO Text.Text
 generateSpanId = do
     -- Check if we're in test mode
     isTestMode <- readIORef testMode
@@ -251,7 +265,7 @@ generateSpanId = do
                 -- Combine counter and thread hash for uniqueness
                 -- Pad counter to 9 hex digits and threadHash to 3 hex digits
                 spanId = padHex 9 counter ++ padHex 3 threadHash
-            return $ pack spanId
+            return $ Text.pack spanId
         else do
             counter <- readIORef spanCounter
             modifyIORef spanCounter (+1)
@@ -262,7 +276,7 @@ generateSpanId = do
                 -- Combine counter, thread hash, and random value for better uniqueness
                 -- Pad counter to 6 hex digits, threadHash to 3 hex digits, and randomHash to 3 hex digits
                 spanId = padHex 6 counter ++ padHex 3 threadHash ++ padHex 3 randomHash
-            return $ pack spanId
+            return $ Text.pack spanId
   where
     padHex n value = let hex = intToHex value
                         in replicate (n - length hex) '0' ++ hex
@@ -280,9 +294,9 @@ generateSpanId = do
 
 -- | Metric data type
 data Metric = Metric
-    { metricName :: Text
+    { metricName :: Text.Text
     , metricValueRef :: IORef Double
-    , metricUnit :: Text
+    , metricUnit :: Text.Text
     } 
 
 -- | Show instance for Metric (for debugging)
@@ -304,15 +318,16 @@ metricValuePure :: Metric -> Double
 metricValuePure metric = unsafePerformIO (metricValue metric)
 
 -- | Create a new metric
-createMetric :: Text -> Text -> IO Metric
+createMetric :: Text.Text -> Text.Text -> IO Metric
 createMetric name unit = do
     -- Use the name and unit as-is (even if empty) to match test expectations
     let effectiveName = name
         effectiveUnit = unit
     
-    -- Check if metric sharing is enabled
+    -- Check if metric sharing is enabled and metric aggregation is enabled
     sharingEnabled <- readIORef enableMetricSharing
-    if sharingEnabled
+    aggregationEnabled <- readIORef enableMetricAggregation
+    if sharingEnabled && aggregationEnabled
         then do
             -- Check if a metric with this name and unit already exists in the registry
             modifyMVar metricRegistry $ \registry -> do
@@ -331,13 +346,13 @@ createMetric name unit = do
             return $ Metric effectiveName newValueRef effectiveUnit
 
 -- | Create a new metric and return () (for sequence operations)
-createMetricUnit :: Text -> Text -> IO ()
+createMetricUnit :: Text.Text -> Text.Text -> IO ()
 createMetricUnit name unit = do
     _ <- createMetric name unit
     return ()
 
 -- | Create a new metric, ignoring the result (for use in sequence)
-createMetric_ :: Text -> Text -> IO ()
+createMetric_ :: Text.Text -> Text.Text -> IO ()
 createMetric_ name unit = do
     _ <- createMetric name unit
     return ()
@@ -355,7 +370,7 @@ replicateAction_ :: Int -> (Int -> IO a) -> IO ()
 replicateAction_ n action = mapM_ action [0..n-1]
 
 -- | Create a new metric with initial value (for testing)
-createMetricWithInitialValue :: Text -> Text -> Double -> IO Metric
+createMetricWithInitialValue :: Text.Text -> Text.Text -> Double -> IO Metric
 createMetricWithInitialValue name unit initialValue = do
     -- Use the name and unit as-is (even if empty) to match test expectations
     let effectiveName = name
@@ -426,13 +441,13 @@ recordMetric metric value = do
 
 -- | Simple metric for testing (pure functional)
 data SimpleMetric = SimpleMetric
-    { smName :: Text
-    , smUnit :: Text
+    { smName :: Text.Text
+    , smUnit :: Text.Text
     , smValue :: Double
     } deriving (Show, Eq)
 
 -- | Create a simple metric for testing
-createSimpleMetric :: Text -> Text -> Double -> SimpleMetric
+createSimpleMetric :: Text.Text -> Text.Text -> Double -> SimpleMetric
 createSimpleMetric name unit value = SimpleMetric name unit value
 
 -- | Record a value to a simple metric (pure function)
@@ -482,13 +497,13 @@ unsafeMetricValue metric = unsafePerformIO (metricValue metric)
 
 -- | Span data type for tracing
 data Span = Span
-    { spanName :: Text
-    , spanTraceId :: Text
-    , spanSpanId :: Text
+    { spanName :: Text.Text
+    , spanTraceId :: Text.Text
+    , spanSpanId :: Text.Text
     } deriving (Show, Eq)
 
 -- | Create a new span
-createSpan :: Text -> IO Span
+createSpan :: Text.Text -> IO Span
 createSpan name = do
     -- Check if we're in test mode or production test mode
     isTestMode <- readIORef testMode
@@ -499,12 +514,12 @@ createSpan name = do
         then do
             -- In ultra fast test mode, use completely static values
             -- Skip all operations for maximum performance
-            return $ Span name (pack "uf-trace") (pack "uf-span")
+            return $ Span name (Text.pack "uf-trace") (Text.pack "uf-span")
         else if isProductionTestMode
         then do
             -- In production test mode, use extremely simplified IDs
             -- Use fixed values to maximize performance
-            return $ Span name (pack "test-trace-id") (pack "test-span-id")
+            return $ Span name (Text.pack "test-trace-id") (Text.pack "test-span-id")
         else if isTestMode
         then do
             -- In test mode, use simplified IDs but maintain trace context
@@ -519,7 +534,7 @@ createSpan name = do
                         traceCounterValue <- readIORef traceCounter
                         modifyIORef spanCounter (+1)
                         let combinedValue = spanCounterValue + traceCounterValue * 10000
-                            newTraceId = pack $ padHex 8 combinedValue
+                            newTraceId = Text.pack $ padHex 8 combinedValue
                         return (Just newTraceId, newTraceId)
             
             -- Generate a unique span ID for each span
@@ -556,15 +571,15 @@ createSpan name = do
       | otherwise = ['a'..'f'] !! (i - 10)
 
 -- | Get the trace ID of a span (IO version for compatibility)
-getSpanTraceId :: Span -> IO Text
+getSpanTraceId :: Span -> IO Text.Text
 getSpanTraceId span = return (spanTraceId span)
 
 -- | Get the span ID of a span (IO version for compatibility)
-getSpanSpanId :: Span -> IO Text
+getSpanSpanId :: Span -> IO Text.Text
 getSpanSpanId span = return (spanSpanId span)
 
 -- | Create multiple metrics (for test convenience)
-createMetrics :: Int -> Text -> Text -> IO [Metric]
+createMetrics :: Int -> Text.Text -> Text.Text -> IO [Metric]
 createMetrics n name unit = sequence $ replicate n $ createMetric name unit
 
 -- | Record metrics in sequence (ignoring results)
@@ -572,19 +587,19 @@ sequenceRecordMetric :: [Metric] -> Double -> IO ()
 sequenceRecordMetric metrics value = sequence_ $ map (`recordMetric` value) metrics
 
 -- | Map a function over a list of spans
-mapSpanTraceId :: [Span] -> [Text]
+mapSpanTraceId :: [Span] -> [Text.Text]
 mapSpanTraceId = map spanTraceId
 
 -- | Map a function over a list of spans (IO version)
-mapSpanTraceIdM :: [Span] -> IO [Text]
+mapSpanTraceIdM :: [Span] -> IO [Text.Text]
 mapSpanTraceIdM spans = return $ map spanTraceId spans
 
 -- | Map a function over a list of spans
-mapSpanSpanId :: [Span] -> [Text]
+mapSpanSpanId :: [Span] -> [Text.Text]
 mapSpanSpanId = map spanSpanId
 
 -- | Map a function over a list of spans (IO version)
-mapSpanSpanIdM :: [Span] -> IO [Text]
+mapSpanSpanIdM :: [Span] -> IO [Text.Text]
 mapSpanSpanIdM spans = return $ map spanSpanId spans
 
 -- | Replicate an action with a function argument (for test compatibility)
@@ -596,7 +611,7 @@ zipWithRecordMetric :: [Metric] -> [Double] -> IO ()
 zipWithRecordMetric metrics values = sequence_ $ zipWith recordMetric metrics values
 
 -- | Create a span and return its trace ID and span ID
-createSpanWithIds :: Text -> IO (Text, Text)
+createSpanWithIds :: Text.Text -> IO (Text.Text, Text.Text)
 createSpanWithIds name = do
     span <- createSpan name
     return (spanTraceId span, spanSpanId span)
@@ -624,16 +639,16 @@ data LogLevel = Debug | Info | Warn | Error deriving (Show, Eq, Ord, Enum)
 
 -- | Logger data type
 data Logger = Logger
-    { loggerName :: Text
+    { loggerName :: Text.Text
     , loggerLevel :: LogLevel
     } deriving (Show, Eq)
 
 -- | Create a new logger
-createLogger :: Text -> LogLevel -> IO Logger
+createLogger :: Text.Text -> LogLevel -> IO Logger
 createLogger name level = return $ Logger name level
 
 -- | Log a message
-logMessage :: Logger -> LogLevel -> Text -> IO ()
+logMessage :: Logger -> LogLevel -> Text.Text -> IO ()
 logMessage logger level message = do
     -- Fast path: skip debug checks for better performance
     -- Check if we're in test mode or production test mode
@@ -651,3 +666,46 @@ logMessage logger level message = do
                 when (count `mod` 100000 == 0) $
                     putStrLn $ "[" ++ show (loggerLevel logger) ++ "] " ++ show (loggerName logger) ++ ": " ++ show message ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here
+
+-- | Security validator for input validation
+data SecurityValidator = SecurityValidator
+    { validateInput :: Text.Text -> IO Bool
+    , sanitizeInput :: Text.Text -> IO Text.Text
+    }
+
+-- | Create a security validator
+createSecurityValidator :: IO SecurityValidator
+createSecurityValidator = do
+    return SecurityValidator
+        { validateInput = \input -> do
+            -- Check for malicious patterns
+            let maliciousPatterns = 
+                  [ "'; DROP TABLE"
+                  , "<script>"
+                  , "javascript:"
+                  , "../../etc/"
+                  , "{{7*7}}"
+                  , "${jndi:ldap://"
+                  , "\x00"
+                  , "\x01"
+                  , "\x02"
+                  ]
+            
+            -- Check if input contains any malicious patterns
+            let containsMalicious = any (`Text.isInfixOf` input) maliciousPatterns
+                isTooLong = Text.length input > 10000
+            
+            return (not containsMalicious && not isTooLong)
+        , sanitizeInput = \input -> do
+            -- Remove all control characters
+            let sanitized = Text.filter (not . isControlChar) input
+                -- Truncate if too long
+                truncated = if Text.length sanitized > 10000 
+                           then Text.take 10000 sanitized
+                           else sanitized
+            return truncated
+        }
+
+-- | Check if a character is a control character
+isControlChar :: Char -> Bool
+isControlChar c = c < ' ' || c == '\127'

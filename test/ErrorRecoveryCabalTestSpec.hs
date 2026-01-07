@@ -6,7 +6,7 @@ module ErrorRecoveryCabalTestSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate, ErrorCall(..), throwIO, catch)
-import Data.Text (pack, unpack)
+import Data.Text (pack, unpack, Text)
 import qualified Data.Text as Text
 import Data.List (nub, sort, group, sortBy)
 import Data.Ord (comparing)
@@ -313,16 +313,16 @@ spec = describe "Error Recovery Tests" $ do
         -- 每个线程执行不同的操作
         case i `mod` 4 of
           0 -> do
-            metric <- createMetric ("concurrent-error-" ++ show i) "count"
+            metric <- createMetric (pack $ "concurrent-error-" ++ show i) "count"
             recordMetric metric (fromIntegral i)
           1 -> do
-            span <- createSpan ("concurrent-span-" ++ show i)
+            span <- createSpan (pack $ "concurrent-span-" ++ show i)
             finishSpan span
           2 -> do
-            logger <- createLogger ("concurrent-logger-" ++ show i) Info
+            logger <- createLogger (pack $ "concurrent-logger-" ++ show i) Info
             logMessage logger Info (pack $ "message " ++ show i)
           3 -> do
-            metric <- createMetric ("error-metric-" ++ show i) "count"
+            metric <- createMetric (pack $ "error-metric-" ++ show i) "count"
             recordMetric metric (1.0/0.0)  -- 记录特殊值
         putMVar done ()
         ) [1..numThreads]

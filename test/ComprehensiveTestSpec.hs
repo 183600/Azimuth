@@ -30,6 +30,7 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         
         -- Enable metric sharing for this test
         writeIORef enableMetricSharing True
+        writeIORef enableMetricAggregation True
         
         let nameText = pack "test-metric"
             unitText = pack "count"

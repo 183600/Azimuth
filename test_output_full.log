@@ -401,7 +401,7 @@ Additional Telemetry Tests 2
       +++ OK, passed 100 tests.
   Metric Registry Sharing Behavior
     should share metrics with same name and unit [[32m✔[0m]
-      +++ OK, passed 100 tests; 10 discarded.
+      +++ OK, passed 100 tests; 12 discarded.
     should not share metrics with different units [[32m✔[0m]
   Text Encoding Integrity
     should preserve ASCII characters exactly [[32m✔[0m]
@@ -529,19 +529,19 @@ New Telemetry Tests
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 13 discarded.
+      +++ OK, passed 100 tests; 14 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 13 discarded.
+      +++ OK, passed 100 tests; 14 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 13 discarded.
+      +++ OK, passed 100 tests; 14 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 13 discarded.
+      +++ OK, passed 100 tests; 14 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -559,7 +559,7 @@ New Telemetry Tests
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 13 discarded.
+      +++ OK, passed 100 tests; 14 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -642,397 +642,6 @@ Enhanced Telemetry Tests
     should maintain data integrity during complex operations [[32m✔[0m]
   Boundary Conditions and Exception Handling
     should handle extreme values in all telemetry components [[32m✔[0m]
-Additional Coverage Tests
-  Special Value Handling
-    should handle NaN values in metrics [[32m✔[0m]
-    should handle infinity values in metrics [[32m✔[0m]
-    should handle mixed special values [[32m✔[0m]
-    should handle very small values [[32m✔[0m]
-    should handle very large values [[32m✔[0m]
-  Metric Sharing Mechanism
-    should share metrics with same name and unit [[32m✔[0m]
-    should not share metrics with different units [[32m✔[0m]
-    should not share metrics when sharing is disabled [[32m✔[0m]
-    should handle metric sharing with initial values [[32m✔[0m]
-  Memory Leak Protection
-    should clear metric registry on shutdown [[32m✔[0m]
-    should handle garbage collection properly [[32m✔[0m]
-    should handle resource cleanup under load [[32m✔[0m]
-  Error Recovery Mechanisms
-    should recover from metric operations after exceptions [[32m✔[0m]
-    should maintain system stability after invalid operations [[32m✔[0m]
-  Configuration Boundary Tests
-Shutting down telemetry system
-    should handle extreme configuration values [[32m✔[0m]
-    should handle configuration with all features disabled [[32m✔[0m]
-Shutting down telemetry system
-    should handle configuration with all features enabled [[32m✔[0m]
-  High Concurrency Scenarios
-    should handle concurrent metric sharing [[32m✔[0m]
-    should handle concurrent telemetry initialization [[32m✔[0m]
-  Performance Benchmarks
-    should handle high-frequency metric operations efficiently [[32m✔[0m]
-    should handle high-frequency span operations efficiently [[32m✔[0m]
-    should handle high-frequency logging efficiently [[32m✔[0m]
-  Advanced QuickCheck Properties
-    should handle arbitrary double values in metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should preserve metric identity under operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle span creation with arbitrary names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Advanced Telemetry Tests
-  Metric Statistical Properties
-    should maintain additive property across multiple recordings [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle zero values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle negative values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle fractional values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span Hierarchy Properties
-    should maintain trace ID consistency across related spans [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate unique span IDs even with same name [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain span properties after finishing [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Message Filtering
-    should handle all log levels consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle empty log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very long log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Dynamic Configuration Updates
-    should handle configuration changes during operation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should preserve service identity across configuration changes [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Safety
-    should handle concurrent metric creation and recording [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent span operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent logging operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Management
-    should handle large numbers of components efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should clean up resources properly after shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Handling
-    should handle special floating point values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle operations after shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance Characteristics
-    should handle rapid metric operations [[32m✔[0m]
-    should handle rapid span operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Conditions
-    should handle extreme metric values [[32m✔[0m]
-    should handle Unicode text in all components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Component Interactions
-    should handle mixed operations across all components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain consistency across component lifecycles [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Additional Cabal Test Suite
-  TelemetryConfig Properties
-    should maintain consistency across config updates [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Shutting down telemetry system
-Shutting down telemetry system
-    should handle extreme config combinations [[32m✔[0m]
-  Metric Mathematical Properties
-    should satisfy commutative property for addition [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle associative property with multiple recordings [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle identity element (zero) correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Cross-Module Data Consistency
-    should maintain metric consistency across multiple instances [[32m✔[0m]
-    should maintain span identity across operations [[32m✔[0m]
-  Resource Limit Behavior
-    should handle large number of concurrent operations [[32m✔[0m]
-    should handle memory pressure gracefully [[32m✔[0m]
-  Error Recovery Mechanisms
-    should recover from invalid metric values [[31m✘[0m]
-    should handle telemetry lifecycle errors gracefully [[32m✔[0m]
-  Concurrent Data Race Prevention
-    should prevent data races in metric registry [[32m✔[0m]
-  Memory Usage Efficiency
-    should reuse metric references when sharing is enabled [[32m✔[0m]
-    should handle string memory efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Time-Related Telemetry Operations
-    should handle time-based operations consistently [[32m✔[0m]
-    should handle high-frequency operations [[32m✔[0m]
-  Configuration Hot Reload
-    should handle configuration changes [[32m✔[0m]
-  Telemetry Data Export Formats
-    should maintain data integrity for export [[32m✔[0m]
-    should handle export format conversion [[32m✔[0m]
-      +++ OK, passed 100 tests.
-New QuickCheck-based Telemetry Tests
-  Metric NaN and Infinity Handling
-    should handle NaN values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle positive infinity correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle negative infinity correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle mixed infinity operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span ID Format Validation
-    should generate span IDs with only hexadecimal characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate span IDs with consistent length [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate trace IDs with only hexadecimal characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Log Level Enumeration Properties
-    should maintain correct ordering of log levels [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle log level comparisons correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle all log levels consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Field Persistence
-    should preserve configuration fields across operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle configuration changes correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Component Creation
-    should handle concurrent creation of different component types [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent operations on shared components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Large Data Processing Performance
-    should handle large number of metric operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle large number of span operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle large number of logging operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Conditions with Special Strings
-    should handle empty strings in component names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in component names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very long strings in component names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle unicode characters in component names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Cleanup and Memory Leaks
-    should clean up resources properly after shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle multiple init/shutdown cycles [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Component Interactions
-    should handle interactions between metrics and spans [[31m✘[0m]
-    should handle interactions between logging and spans [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle interactions between all three component types [[31m✘[0m]
-  Error Recovery Mechanisms
-    should recover from invalid metric values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle operations without initialization [[31m✘[0m]
-    should handle multiple shutdown calls gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Enhanced QuickCheck-based Telemetry Tests
-  Special Value Handling in Metrics
-    should handle NaN values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle infinity values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Log Message Processing
-    should handle all log levels with property-based testing [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode characters in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Transformation and Validation
-    should handle configuration transformations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Leak Detection
-    should not leak resources during repeated operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Recovery and Fault Tolerance
-    should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance Regression Tests
-    should maintain performance characteristics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Data Consistency Tests
-    should maintain metric consistency across operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Value and Exception Tests
-    should handle empty and null inputs [[32m✔[0m]
-      +++ OK, passed 100 tests.
-AzimuthCabalTestSpec
-  Special Values Handling
-    should handle infinity and NaN values correctly [[32m✔[0m]
-  Metric Registry Isolation
-    should isolate metrics when sharing is disabled [[32m✔[0m]
-  Concurrent Operations
-    should handle concurrent metric operations safely [[32m✔[0m]
-  Span ID Uniqueness
-    should generate unique span IDs [[32m✔[0m]
-  Trace Context Propagation
-    should propagate trace context between spans [[32m✔[0m]
-  Logger Level Filtering
-    should handle all log levels without errors [[32m✔[0m]
-  Telemetry Configuration Validation
-    should validate various configuration scenarios [[32m✔[0m]
-  Metric Aggregation Patterns
-    should support counter and gauge patterns [[32m✔[0m]
-  Resource Cleanup
-    should clean up resources properly [[32m✔[0m]
-  QuickCheck Properties
-    should satisfy metric operations property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should satisfy span creation property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should satisfy logger creation property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-New Cabal Test Suite
-  Metric Precision and Rounding
-    should handle floating point precision correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle cumulative precision loss [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span and Trace Temporal Relationships
-    should maintain trace context across span creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate unique span IDs over time [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Log Message Formatting and Encoding
-    should handle unicode characters in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very long log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Properties
-    should maintain configuration invariants [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should validate configuration field constraints [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Aggregation Behavior
-    should correctly aggregate positive and negative values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle zero values in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Component Isolation
-    should isolate metrics between threads [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent logger creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary and Special Value Handling
-    should handle infinity values [[32m✔[0m]
-    should handle NaN values [[32m✔[0m]
-    should handle very small values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Management and Memory Leak Prevention
-    should clean up resources on shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle metric registry cleanup [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Telemetry System Performance Characteristics
-    should handle high-frequency metric operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain performance with large metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Recovery and Exception Handling
-    should recover from invalid metric values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle telemetry system restart [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Enhanced Cabal Tests
-  SimpleMetric Comprehensive Tests
-    should create simple metric with initial value [[32m✔[0m]
-    should record values to simple metric [[32m✔[0m]
-    should handle negative values in simple metric [[32m✔[0m]
-    should handle zero values in simple metric [[32m✔[0m]
-    should convert simple metric to regular metric [[32m✔[0m]
-  Special Values Handling
-    should handle NaN values in metrics [[32m✔[0m]
-    should handle positive infinity in metrics [[32m✔[0m]
-    should handle negative infinity in metrics [[32m✔[0m]
-    should handle NaN values in simple metrics [[32m✔[0m]
-    should handle infinity values in simple metrics [[32m✔[0m]
-    should handle transition from NaN to finite values [[32m✔[0m]
-    should handle transition from infinity to finite values [[31m✘[0m]
-  Metric Sharing Tests
-    should share metrics with same name and unit when enabled [[32m✔[0m]
-    should create separate metrics when sharing is disabled [[32m✔[0m]
-    should not share metrics with different units [[32m✔[0m]
-    should handle metric sharing with initial values [[32m✔[0m]
-  Trace Context Tests
-    should maintain trace context across spans [[32m✔[0m]
-    should generate different trace IDs for new traces [[32m✔[0m]
-  Span ID Uniqueness Tests
-    should generate unique span IDs [[32m✔[0m]
-    should generate span IDs with consistent length [[32m✔[0m]
-  Log Level Filtering Tests
-    should create loggers with different levels [[32m✔[0m]
-    should handle all log levels without errors [[32m✔[0m]
-  QuickCheck Property Tests
-    should preserve simple metric properties [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle any double value in simple metric [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain metric identity with same name and unit [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle empty strings in simple metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Conditions and Error Handling
-    should handle very small values [[32m✔[0m]
-    should handle very large values [[32m✔[0m]
-    should handle alternating NaN and finite values [[32m✔[0m]
-    should handle alternating infinity and finite values [[31m✘[0m]
-  Performance and Concurrency Tests
-    should handle concurrent simple metric operations [[32m✔[0m]
-    should handle rapid span creation and finishing [[32m✔[0m]
-  Resource Cleanup and Memory Leak Tests
-    should properly clean up resources on shutdown [[32m✔[0m]
-Comprehensive Integration Tests
-  Metric Aggregation
-    should aggregate multiple metric values correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle mixed positive and negative values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Trace Context Propagation
-    should maintain trace context across multiple spans [[32m✔[0m]
-    should generate unique span IDs [[32m✔[0m]
-  Logger Level Filtering
-    should handle all log levels consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should create loggers with different levels [[32m✔[0m]
-  Configuration Validation
-    should create valid configurations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle empty configuration fields [[32m✔[0m]
-  Special Values Handling
-    should handle NaN and infinity values [[32m✔[0m]
-    should handle very small and large values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Operations
-    should handle concurrent metric operations [[32m✔[0m]
-    should handle concurrent span operations [[32m✔[0m]
-  Resource Management
-    should handle resource cleanup properly [[32m✔[0m]
-  Error Handling and Edge Cases
-    should handle empty metric and span names [[32m✔[0m]
-    should handle very long names [[32m✔[0m]
-  Performance Characteristics
-    should handle rapid metric updates [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle metric operations efficiently [[32m✔[0m]
-  Integration Workflow
-    should handle complete telemetry workflow [[32m✔[0m]
 Metric Properties Tests
   Metric Addition Commutativity
     should satisfy commutative property: a + b = b + a [[32m✔[0m]
@@ -1069,617 +678,451 @@ Metric Properties Tests
       +++ OK, passed 100 tests.
     should handle alternating positive and negative values [[32m✔[0m]
       +++ OK, passed 100 tests.
-Span Properties Tests
-  Span ID Uniqueness
-    should generate unique span IDs for different spans [[32m✔[0m]
+Enhanced Telemetry Suite Tests
+  Metrics Properties
+    should handle NaN values correctly [[32m✔[0m]
+    should handle infinity values correctly [[32m✔[0m]
+    should handle NaN values correctly [[32m✔[0m]
+    should handle infinity values correctly [[32m✔[0m]
+  SimpleMetric Properties
+    should satisfy commutative property [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should maintain unique span IDs even with same name [[32m✔[0m]
+    should preserve zero element [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Trace ID Consistency
-    should maintain consistent trace ID within same trace [[32m✔[0m]
+  Span Properties
+    should generate span IDs with valid hex format [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should generate different trace IDs for different traces [[31m✘[0m]
-  Span Name Persistence
-    should preserve span name after creation [[32m✔[0m]
+    should preserve span name [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain trace ID consistency [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle empty span names [[32m✔[0m]
     should handle special characters in span names [[32m✔[0m]
+  Logger Properties
+    should preserve logger properties [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Span ID Format
-    should generate span IDs with consistent length [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate span IDs with valid hex characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span Operation Safety
-    should handle span creation and finishing safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle multiple finish operations on same span [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span Temporal Properties
-    should maintain trace context over time [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle rapid span creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span Concurrency Safety
-    should handle concurrent span creation safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span Boundary Conditions
-    should handle very long span names [[32m✔[0m]
-    should handle unicode characters in span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle span names with control characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Logger Properties Tests
-  Log Level Ordering
-    should maintain correct ordering of log levels [[32m✔[0m]
-    should satisfy transitive property: if a <= b and b <= c then a <= c [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should satisfy antisymmetric property: if a <= b and b <= a then a = b [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Name Persistence
-    should preserve logger name after creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle all log levels [[32m✔[0m]
     should handle empty logger names [[32m✔[0m]
-    should handle special characters in logger names [[32m✔[0m]
+  TelemetryConfig Properties
+    should preserve config properties [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Logger Level Persistence
-    should preserve logger level after creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should create loggers with all different levels [[32m✔[0m]
-  Logger Operation Safety
-    should handle logging operations safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle logging at different levels [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle empty log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Identity
-    should distinguish loggers with different names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should distinguish loggers with different levels [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Boundary Conditions
-    should handle very long logger names [[32m✔[0m]
-    should handle unicode characters in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very long log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Level Filtering
-    should create loggers with appropriate level hierarchy [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain level ordering consistency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Logger Concurrency Safety
-    should handle concurrent logger creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent logging operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-TelemetryConfig Properties Tests
-  Configuration Field Persistence
-    should preserve service name after initialization [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should preserve service version after initialization [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should preserve feature flags after initialization [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Default Configuration
-    should have reasonable default values [[32m✔[0m]
-    should handle operations with default config [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Production Configuration
-    should optimize for performance [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Equality
-    should identify identical configurations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should distinguish different configurations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle transitive property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Boundary Conditions
-    should handle empty service name [[32m✔[0m]
-    should handle empty service version [[32m✔[0m]
-    should handle extremely long service name [[32m✔[0m]
-    should handle unicode characters in service name [[32m✔[0m]
-  Configuration Lifecycle
-    should handle multiple initialization cycles [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle configuration changes [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Error Handling
-    should handle initialization errors gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle invalid configuration values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Feature Flags
-    should respect metrics flag [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should respect tracing flag [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should respect logging flag [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should respect debug flag [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle default config correctly [[32m✔[0m]
+    should handle production config correctly [[32m✔[0m]
+  Integration Tests
+    should handle complete telemetry workflow [[32m✔[0m]
+    should handle multiple telemetry components [[32m✔[0m]
 Metric Aggregation Tests
-  Metric Sum Aggregation
-    should correctly aggregate sum of values [[32m✔[0m]
+  Basic Metric Aggregation
+    should aggregate multiple metrics with same name [[31m✘[0m]
+    should handle aggregation with different units [[32m✔[0m]
+  Metric Aggregation Properties
+    should satisfy commutative property [[31m✘[0m]
+    should satisfy associative property [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle empty list aggregation [[32m✔[0m]
+  Concurrent Aggregation
+    should handle concurrent aggregation correctly [[32m✔[0m]
+  Aggregation Statistics
+    should calculate average correctly [[32m✔[0m]
+    should find min and max values [[31m✘[0m]
+  Aggregation Windows
+    should handle time-based aggregation windows [[32m✔[0m]
+    should reset aggregation in different windows [[32m✔[0m]
+  Aggregation Performance
+    should handle large-scale aggregation efficiently [[32m✔[0m]
+  Aggregation Boundary Conditions
+    should handle empty aggregation [[32m✔[0m]
     should handle single value aggregation [[32m✔[0m]
+    should handle special values in aggregation [[32m✔[0m]
+  Aggregation Consistency
+    should maintain consistency across multiple reads [[32m✔[0m]
+    should handle mixed aggregation patterns [[32m✔[0m]
+Time Series Tests
+  Basic Time Series Functionality
+    should record metrics with time context [[32m✔[0m]
+    should handle time-based metric creation [[32m✔[0m]
+  Time Series Properties
+    should maintain chronological order of operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle aggregation of identical values [[32m✔[0m]
+    should handle concurrent time series operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Metric Average Aggregation
-    should correctly calculate average of values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle average of identical values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    Metric Maximum Tracking
-      should track maximum value in aggregation [[32m✔[0m]
-        +++ OK, passed 100 tests.
-  Metric Minimum Tracking
-    should track minimum value in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Count Aggregation
-    should correctly count number of values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle count of empty list [[32m✔[0m]
-  Metric Grouped Aggregation
-    should handle aggregation of grouped values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle aggregation of positive and negative groups [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Time Series Aggregation
-    should handle time-based aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Hierarchical Aggregation
-    should handle hierarchical aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Sliding Window Aggregation
+  Time Series Windows
     should handle sliding window aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Metric Weighted Aggregation
-    should handle weighted aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Concurrent Telemetry Tests
-  Concurrent Metric Creation
-    should handle concurrent metric creation safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent metric creation with unique names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Metric Recording
-    should handle concurrent metric recording safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent metric recording with different values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Span Creation
-    should handle concurrent span creation safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain trace context across concurrent span creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Logging
-    should handle concurrent logging safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent logging at different levels [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Mixed Concurrent Operations
-    should handle mixed concurrent telemetry operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Initialization and Shutdown
-    should handle concurrent initialization safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent shutdown safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Resource Access
-    should handle concurrent access to shared metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent access to shared loggers [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Error Handling
-    should handle errors in concurrent operations gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Text Handling Tests
-  ASCII Character Handling
-    should handle ASCII characters in metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle ASCII characters in metric units [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle ASCII characters in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle ASCII characters in span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle ASCII characters in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Unicode Character Handling
-    should handle Unicode characters in metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode characters in metric units [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode characters in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode characters in span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode characters in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Control Character Handling
-    should handle control characters in metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in metric units [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle control characters in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Empty String Handling
-    should handle empty metric names [[32m✔[0m]
-    should handle empty metric units [[32m✔[0m]
-    should handle empty logger names [[32m✔[0m]
-    should handle empty span names [[32m✔[0m]
-    should handle empty log messages [[32m✔[0m]
-  Long String Handling
-    should handle long metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle long metric units [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle long logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle long span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle long log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Special Character Handling
-    should handle special characters in metric names [[32m✔[0m]
-    should handle special characters in metric units [[32m✔[0m]
-    should handle special characters in logger names [[32m✔[0m]
-    should handle special characters in span names [[32m✔[0m]
-    should handle special characters in log messages [[32m✔[0m]
-  Whitespace Handling
-    should handle whitespace in metric names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle whitespace in metric units [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle whitespace in logger names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle whitespace in span names [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle whitespace in log messages [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Text Encoding Consistency
-    should maintain text encoding consistency across operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle text round-trip consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Numeric Boundary Tests
-  Zero Value Handling
-    should handle positive zero [[32m✔[0m]
-    should handle negative zero [[32m✔[0m]
-    should handle zero addition [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle zero subtraction [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Extreme Value Handling
-    should handle maximum finite double value [[32m✔[0m]
-    should handle minimum finite double value [[32m✔[0m]
-    should handle smallest positive non-zero double [[32m✔[0m]
-    should handle largest negative non-zero double [[32m✔[0m]
-  Infinity Value Handling
-    should handle positive infinity [[32m✔[0m]
-    should handle negative infinity [[32m✔[0m]
-    should handle infinity addition [[31m✘[0m]
-    should handle infinity subtraction [[31m✘[0m]
-    should handle infinity with infinity [[32m✔[0m]
-  NaN Value Handling
-    should handle NaN [[32m✔[0m]
-    should handle NaN propagation [[32m✔[0m]
-    should handle NaN with finite values [[32m✔[0m]
-    should handle NaN with infinity [[32m✔[0m]
-  Numeric Precision Boundaries
-    should handle very small positive numbers [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very small negative numbers [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very large positive numbers [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very large negative numbers [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Numeric Overflow Handling
-    should handle overflow in addition [[32m✔[0m]
-    should handle underflow in addition [[32m✔[0m]
-    should handle overflow in subtraction [[32m✔[0m]
-  Numeric Precision Loss
-    should handle precision loss with large numbers [[32m✔[0m]
-    should handle precision loss with very small numbers [[32m✔[0m]
-  Special Numeric Combinations
-    should handle alternating sign values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle geometric progression [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle arithmetic progression [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary and Special Value Interactions
-    should handle zero with infinity [[31m✘[0m]
-    should handle zero with NaN [[32m✔[0m]
-    should handle infinity with NaN [[32m✔[0m]
-Telemetry Integration Tests
-  Complete Telemetry Workflow
-    should handle complete workflow with metrics, spans, and logging [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle nested workflow operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Cross-Component Data Flow
-    should handle data flow from metrics to logging [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle data flow from spans to metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle data flow from logging to metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration-Driven Integration
-    should integrate components based on configuration flags [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle configuration changes during runtime [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Recovery Integration
-    should handle errors in one component without affecting others [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should recover from initialization errors [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance Integration
-    should handle high-volume integrated operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle resource-efficient operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Integration
-    should handle concurrent operations across components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  End-to-End Integration
-    should handle complete end-to-end telemetry scenario [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Advanced Cabal Test Suite
-  Metric Mathematical Properties
-    should satisfy commutative property of addition [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should satisfy associative property of addition [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle additive identity property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle additive inverse property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span and Trace ID Generation Rules
-    should generate span IDs with consistent length [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate span IDs with valid hex characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain trace context across multiple spans [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should reset trace context after shutdown [[31m✘[0m]
-  Log Level Hierarchy
-    should maintain correct log level ordering [[32m✔[0m]
-    should compare log levels correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should create loggers with all levels [[32m✔[0m]
-  Configuration Boundary Values
-    should handle empty string configuration [[32m✔[0m]
-    should handle very long configuration strings [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle all boolean combinations [[32m✔[0m]
-  Concurrent Operation Atomicity
-    should maintain atomicity for concurrent metric updates [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent span creation without race conditions [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Leak Detection
-    should not leak memory during repeated init/shutdown cycles [[32m✔[0m]
-    should clean up metric registry after shutdown [[32m✔[0m]
-  Error Recovery
-    should recover from invalid metric values [[32m✔[0m]
-    should handle multiple initialization attempts [[32m✔[0m]
-  Performance Regression
-    should maintain performance with increasing metric count [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle rapid metric operations efficiently [[32m✔[0m]
-  Data Consistency
-    should maintain metric name consistency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain logger level consistency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Memory Usage
-    should not grow memory usage with repeated operations [[32m✔[0m]
-    should handle large metric values without overflow [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Enhanced Cabal QuickCheck Test Suite
-  Precise Arithmetic Properties
-    should maintain precision with small fractional values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle very large values without overflow [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should preserve zero regardless of operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Span ID Distribution Properties
-    should generate span IDs with sufficient entropy [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate span IDs following the expected pattern [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should generate different span IDs for the same span name [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Configuration Immutability
-    should preserve configuration values after operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle configuration changes properly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Consistency
-    should maintain consistency under concurrent metric operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent span creation with consistent trace IDs [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Conditions and Edge Cases
-    should handle extreme floating point values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle empty and whitespace-only strings [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle Unicode and special characters [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance and Scalability
-    should scale linearly with metric count [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle high-frequency operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Management and Cleanup
-    should properly clean up after shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle tumbling window reset [[32m✔[0m]
+  Time Series Statistics
+    should calculate time series statistics [[32m✔[0m]
+    should handle time series with missing data [[32m✔[0m]
+  Time Series Performance
+    should handle high-frequency time series data [[32m✔[0m]
+    should handle multiple concurrent time series [[32m✔[0m]
+  Time Series Boundary Conditions
+    should handle empty time series [[32m✔[0m]
+    should handle single point time series [[32m✔[0m]
+    should handle time series with special values [[32m✔[0m]
+  Time Series Consistency
+    should maintain consistency across time series operations [[32m✔[0m]
+    should handle time series with different sampling rates [[32m✔[0m]
+  Time Series Persistence
+    should maintain time series across restarts [[32m✔[0m]
+    should handle time series with configuration changes [[32m✔[0m]
+Error Recovery Tests
+  Metric Error Recovery
+    should recover from metric creation errors [[32m✔[0m]
+    should recover from metric recording errors [[32m✔[0m]
+  Span Error Recovery
+    should recover from span creation errors [[32m✔[0m]
+    should handle span operation failures gracefully [[32m✔[0m]
+  Logger Error Recovery
+    should recover from logger creation errors [[32m✔[0m]
+    should handle logging errors gracefully [[32m✔[0m]
+  Error Recovery Properties
+    should maintain consistency after errors [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent error conditions [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Error Recovery
+Shutting down telemetry system
+    should recover from configuration errors [[32m✔[0m]
+    should handle configuration hot updates with errors [[32m✔[0m]
+  Resource Exhaustion Recovery
     should handle resource exhaustion gracefully [[32m✔[0m]
+    should recover from memory pressure [[32m✔[0m]
+  Concurrent Error Recovery
+    should handle concurrent errors across components [[32m✔[0m]
+    should recover from cascading errors [[32m✔[0m]
+  System-Level Error Recovery
+    should recover from complete system restart [[32m✔[0m]
+    should maintain error state across restarts when appropriate [[32m✔[0m]
+Configuration Hot Reload Tests
+  Basic Configuration Hot Reload
+    should update configuration without losing data [[32m✔[0m]
+    should handle configuration field changes [[32m✔[0m]
+  Configuration Hot Reload Properties
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+    should be idempotent for identical configurations [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Data Integrity and Consistency
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+    should preserve data across configuration changes [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle rapid configuration changes [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Configuration Hot Reload
+    should handle concurrent configuration updates [[32m✔[0m]
+    should maintain consistency during concurrent operations [[32m✔[0m]
+  Configuration Hot Reload Performance
+    should handle frequent configuration updates efficiently [[32m✔[0m]
+    should minimize overhead during configuration changes [[32m✔[0m]
+  Configuration Hot Reload Boundary Conditions
+    should handle empty configuration gracefully [[32m✔[0m]
+Shutting down telemetry system
+    should handle extreme configuration values [[32m✔[0m]
+  Configuration Hot Reload Persistence
+    should maintain configuration state across restarts [[32m✔[0m]
+    should handle configuration rollback [[32m✔[0m]
+Resource Limit Tests
+  Metric Resource Limits
+    should handle large number of metrics gracefully [[32m✔[0m]
+    should limit metric creation when resources are constrained [[32m✔[0m]
+  Resource Usage Properties
+    should maintain consistent resource usage [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent resource allocation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Memory Limits
+    should handle memory pressure gracefully [[32m✔[0m]
+    should recover from out-of-memory conditions [[32m✔[0m]
+  Thread Limits
+    should handle thread pool exhaustion [[32m✔[0m]
+    should limit concurrent operations [[32m✔[0m]
+  File Descriptor Limits
+    should handle file descriptor exhaustion [[32m✔[0m]
+  Dynamic Resource Limit Adjustment
+    should adapt to changing resource constraints [[32m✔[0m]
+    should prioritize critical operations under resource pressure [[32m✔[0m]
+  Resource Monitoring
+    should track resource usage [[32m✔[0m]
+    should detect resource leaks [[32m✔[0m]
+  Resource Limit Boundary Conditions
+    should handle zero resource limits [[32m✔[0m]
+    should handle negative resource requests [[32m✔[0m]
+    should handle extreme resource requests [[32m✔[0m]
+Data Integrity Tests
+  Metric Data Integrity
+    should maintain metric name integrity [[32m✔[0m]
+    should preserve metric value integrity [[32m✔[0m]
+    should handle special values correctly [[32m✔[0m]
+  Data Integrity Properties
     should maintain metric integrity across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should maintain span integrity across operations [[32m✔[0m]
+    should preserve span integrity across creation and finishing [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Error Handling and Recovery
-    should recover from invalid operations gracefully [[32m✔[0m]
+    should maintain logger integrity across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle multiple initialization attempts [[32m✔[0m]
+  Concurrent Data Integrity
+    should maintain integrity under concurrent modifications [[32m✔[0m]
+    should preserve data integrity across concurrent component creation [[32m✔[0m]
+  Data Serialization Integrity
+    should handle text encoding correctly [[32m✔[0m]
+    should preserve data across restarts [[32m✔[0m]
+  Data Validation
+    should validate metric data [[32m✔[0m]
+    should validate span data [[32m✔[0m]
+    should validate logger data [[32m✔[0m]
+  Data Corruption Detection
+    should detect metric value corruption [[32m✔[0m]
+    should handle concurrent access without corruption [[32m✔[0m]
+  Data Consistency
+    should maintain metric consistency across reads [[32m✔[0m]
+    should maintain consistency across shared metrics [[31m✘[0m]
+  Data Integrity Boundary Conditions
+    should handle empty data gracefully [[32m✔[0m]
+    should handle extremely long data [[32m✔[0m]
+    should handle unicode and special characters [[32m✔[0m]
+Performance Regression Tests
+  Metric Operation Performance
+    should maintain metric creation performance [[32m✔[0m]
+    should maintain metric recording performance [[32m✔[0m]
+    should handle high-frequency metric operations [[32m✔[0m]
+  Performance Consistency Properties
+    should maintain consistent performance across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-  System Integration
-    should work correctly with all components combined [[32m✔[0m]
+    should scale linearly with operation count [[32m✔[0m]
       +++ OK, passed 100 tests.
-Boundary Condition Cabal Test Suite
-  Extreme Values
-    should handle maximum finite double values [[32m✔[0m]
-    should handle minimum finite double values [[32m✔[0m]
-    should handle very small positive values [[32m✔[0m]
+  Concurrent Performance
+    should handle concurrent metric operations efficiently [[32m✔[0m]
+    should scale with number of threads [[31m✘[0m]
+  Memory Performance
+    should handle large numbers of metrics without memory leaks [[32m✔[0m]
+    should maintain performance under memory pressure [[32m✔[0m]
+  Long-running Performance
+    should maintain performance over extended periods [[32m✔[0m]
+    should not degrade performance with accumulated data [[32m✔[0m]
+  Component Performance Comparison
+    should compare performance of different operations [[32m✔[0m]
+  Performance Regression Detection
+    should detect performance regressions [[32m✔[0m]
+  Performance Optimization Verification
+Shutting down telemetry system
+    should verify optimization effectiveness [[32m✔[0m]
+Compatibility Tests
+  Version Compatibility
+    should handle version string parsing [[33m‐[0m]
+[33m      # PENDING: Could not parse version: 0.1.0[0m
+    should maintain backward compatibility [[32m✔[0m]
+Shutting down telemetry system
+    should handle forward compatibility [[32m✔[0m]
+  Configuration Compatibility Properties
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+Shutting down telemetry system
+    should maintain compatibility across configuration changes [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle very small negative values [[32m✔[0m]
+Shutting down telemetry system
+    should handle configuration field additions [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Special Floating Point Values
-    should handle NaN values correctly [[32m✔[0m]
-    should handle positive infinity correctly [[32m✔[0m]
-    should handle negative infinity correctly [[32m✔[0m]
-    should handle mixed special values [[32m✔[0m]
-  String Boundary Tests
-    should handle empty strings [[32m✔[0m]
-    should handle very long strings [[32m✔[0m]
+  API Compatibility
+    should maintain metric API compatibility [[32m✔[0m]
+    should maintain span API compatibility [[32m✔[0m]
+    should maintain logger API compatibility [[32m✔[0m]
+  Data Format Compatibility
+    should handle text encoding compatibility [[32m✔[0m]
+    should handle numeric format compatibility [[32m✔[0m]
+  Cross-Version Data Migration
+    should preserve data across version upgrades [[32m✔[0m]
+    should handle configuration migration [[32m✔[0m]
+  Third-Party Integration Compatibility
+    should maintain compatibility with external systems [[32m✔[0m]
+    should handle protocol compatibility [[32m✔[0m]
+  Platform Compatibility
+Shutting down telemetry system
+    should handle different runtime environments [[32m✔[0m]
+Shutting down telemetry system
+    should handle resource constraint compatibility [[32m✔[0m]
+  Backward Compatibility Guarantees
+    should guarantee API stability [[32m✔[0m]
+    should maintain data format stability [[31m✘[0m]
+Security Tests
+  Input Validation Security
+    should reject malicious input [[31m✘[0m]
+    should sanitize input properly [[32m✔[0m]
+  Security Consistency Properties
+    should maintain security across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle strings with control characters [[32m✔[0m]
-    should handle strings with whitespace only [[32m✔[0m]
+    should handle concurrent security operations safely [[32m✔[0m]
       +++ OK, passed 100 tests.
-  Unicode and Encoding Tests
-    should handle multibyte Unicode characters [[32m✔[0m]
-    should handle zero-width characters [[32m✔[0m]
-    should handle right-to-left text [[32m✔[0m]
-  Numerical Precision Boundary Tests
-    should handle denormalized numbers [[32m✔[0m]
-    should handle machine epsilon [[32m✔[0m]
-    should handle cumulative precision loss [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrency Boundary Tests
-    should handle extreme concurrent load [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle rapid initialization and shutdown [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Memory Limit Tests
-    should handle large number of metrics without memory issues [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle memory pressure gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Recovery Boundary Tests
-    should recover from sequence of invalid operations [[32m✔[0m]
-    should handle cascading failures [[32m✔[0m]
-  Time-Related Boundary Tests
-    should handle rapid successive operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle operations with delays [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  System Resource Boundary Tests
-    should handle resource exhaustion scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
+  Access Control Security
+    should enforce access permissions [[32m✔[0m]
+    should handle privilege escalation attempts [[32m✔[0m]
+  Data Protection Security
+    should protect sensitive data [[32m✔[0m]
+    should handle data encryption requirements [[32m✔[0m]
+  Concurrent Security
+    should handle concurrent security threats [[32m✔[0m]
+    should prevent race conditions in security checks [[32m✔[0m]
+  Resource Protection Security
+    should prevent resource exhaustion attacks [[32m✔[0m]
+    should limit resource allocation [[32m✔[0m]
+  Audit Security
+    should maintain security audit trail [[32m✔[0m]
+    should detect suspicious activities [[32m✔[0m]
+  Security Boundary Conditions
+    should handle empty input securely [[32m✔[0m]
+    should handle extremely long input securely [[32m✔[0m]
+    should handle unicode security issues [[32m✔[0m]
 Validation Tests
-  should share metrics with same name and unit [[32m✔[0m]
+  should share metrics with same name and unit [[31m✘[0m]
   should handle configuration changes without affecting operations [[32m✔[0m]
 
 Failures:
 
-[36m  test/AdditionalCabalTestSpec.hs:197:30: [0m
-  1) Additional Cabal Test Suite, Error Recovery Mechanisms, should recover from invalid metric values
+[36m  test/MetricAggregationCabalTestSpec.hs:41:37: [0m
+  1) Metric Aggregation Tests, Basic Metric Aggregation, should aggregate multiple metrics with same name
 [31m       expected: [0m[31mTrue[0m
 [31m        but got: [0m[32mFalse[0m
 
-  To rerun use: --match "/Additional Cabal Test Suite/Error Recovery Mechanisms/should recover from invalid metric values/" --seed 1070252942
+  To rerun use: --match "/Metric Aggregation Tests/Basic Metric Aggregation/should aggregate multiple metrics with same name/" --seed 1173698842
 
-[36m  test/NewQuickCheckTestsSpec.hs:435:5: [0m
-  2) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between metrics and spans
-[31m       Falsified (after 2 tests and 1 shrink):[0m
-[31m         0[0m
+[36m  test/MetricAggregationCabalTestSpec.hs:63:5: [0m
+  2) Metric Aggregation Tests, Metric Aggregation Properties, should satisfy commutative property
+[31m       Falsified (after 6 tests and 14 shrinks):[0m
+[31m         [1.0e-2][0m
+[31m         [1.0,-1.0][0m
 
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between metrics and spans/" --seed 1070252942
+  To rerun use: --match "/Metric Aggregation Tests/Metric Aggregation Properties/should satisfy commutative property/" --seed 1173698842
 
-[36m  test/NewQuickCheckTestsSpec.hs:473:5: [0m
-  3) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between all three component types
-[31m       Falsified (after 2 tests and 1 shrink):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between all three component types/" --seed 1070252942
-
-[36m  test/NewQuickCheckTestsSpec.hs:521:5: [0m
-  4) New QuickCheck-based Telemetry Tests, Error Recovery Mechanisms, should handle operations without initialization
-[31m       Falsified (after 4 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Error Recovery Mechanisms/should handle operations without initialization/" --seed 1070252942
-
-[36m  test/EnhancedCabalTestSpec.hs:104:26: [0m
-  5) Enhanced Cabal Tests, Special Values Handling, should handle transition from infinity to finite values
+[36m  test/MetricAggregationCabalTestSpec.hs:174:35: [0m
+  3) Metric Aggregation Tests, Aggregation Statistics, should find min and max values
 [31m       expected: [0m[31mTrue[0m
 [31m        but got: [0m[32mFalse[0m
 
-  To rerun use: --match "/Enhanced Cabal Tests/Special Values Handling/should handle transition from infinity to finite values/" --seed 1070252942
+  To rerun use: --match "/Metric Aggregation Tests/Aggregation Statistics/should find min and max values/" --seed 1173698842
 
-[36m  test/EnhancedCabalTestSpec.hs:322:26: [0m
-  6) Enhanced Cabal Tests, Boundary Conditions and Error Handling, should handle alternating infinity and finite values
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
+[36m  test/DataIntegrityCabalTestSpec.hs:465:14: [0m
+  4) Data Integrity Tests, Data Consistency, should maintain consistency across shared metrics
+[31m       expected: [0m[31m0[0m.0
+[31m        but got: [0m[32m10[0m.0
 
-  To rerun use: --match "/Enhanced Cabal Tests/Boundary Conditions and Error Handling/should handle alternating infinity and finite values/" --seed 1070252942
+  To rerun use: --match "/Data Integrity Tests/Data Consistency/should maintain consistency across shared metrics/" --seed 1173698842
 
-[36m  test/SpanPropertiesSpec.hs:65:5: [0m
-  7) Span Properties Tests, Trace ID Consistency, should generate different trace IDs for different traces
-[31m       Falsified (after 1 test):[0m
-[31m         [][0m
+[36m  test/PerformanceRegressionCabalTestSpec.hs:234:22: [0m
+  5) Performance Regression Tests, Concurrent Performance, should scale with number of threads
+[31m       predicate failed on: 9799358.142041696[0m
 
-  To rerun use: --match "/Span Properties Tests/Trace ID Consistency/should generate different trace IDs for different traces/" --seed 1070252942
+  To rerun use: --match "/Performance Regression Tests/Concurrent Performance/should scale with number of threads/" --seed 1173698842
 
-[36m  test/NumericBoundarySpec.hs:111:14: [0m
-  8) Numeric Boundary Tests, Infinity Value Handling, should handle infinity addition
-[31m       predicate failed on: 1.0[0m
-
-  To rerun use: --match "/Numeric Boundary Tests/Infinity Value Handling/should handle infinity addition/" --seed 1070252942
-
-[36m  test/NumericBoundarySpec.hs:120:14: [0m
-  9) Numeric Boundary Tests, Infinity Value Handling, should handle infinity subtraction
-[31m       predicate failed on: -1.0[0m
-
-  To rerun use: --match "/Numeric Boundary Tests/Infinity Value Handling/should handle infinity subtraction/" --seed 1070252942
-
-[36m  test/NumericBoundarySpec.hs:318:14: [0m
-  10) Numeric Boundary Tests, Boundary and Special Value Interactions, should handle zero with infinity
+[36m  test/CompatibilityCabalTestSpec.hs:499:19: [0m
+  6) Compatibility Tests, Backward Compatibility Guarantees, should maintain data format stability
 [31m       predicate failed on: 0.0[0m
 
-  To rerun use: --match "/Numeric Boundary Tests/Boundary and Special Value Interactions/should handle zero with infinity/" --seed 1070252942
+  To rerun use: --match "/Compatibility Tests/Backward Compatibility Guarantees/should maintain data format stability/" --seed 1173698842
 
-[36m  test/AdvancedCabalTestSpec.hs:128:5: [0m
-  11) Advanced Cabal Test Suite, Span and Trace ID Generation Rules, should reset trace context after shutdown
-[31m       Falsified (after 3 tests and 2 shrinks):[0m
-[31m         [""][0m
-[31m         [""][0m
+[36m  test/SecurityCabalTestSpec.hs:140:33: [0m
+  7) Security Tests, Input Validation Security, should reject malicious input
+[31m       predicate failed on: 7[0m
 
-  To rerun use: --match "/Advanced Cabal Test Suite/Span and Trace ID Generation Rules/should reset trace context after shutdown/" --seed 1070252942
+  To rerun use: --match "/Security Tests/Input Validation Security/should reject malicious input/" --seed 1173698842
 
-Randomized with seed 1070252942
+[36m  test/Spec.hs:682:15: [0m
+  8) Validation Tests should share metrics with same name and unit
+[31m       expected: [0m[31m10[0m.0
+[31m        but got: [0m[32m0[0m.0
 
-Finished in 345.7235 seconds
-[31m771 examples, 11 failures[0m
+  To rerun use: --match "/Validation Tests/should share metrics with same name and unit/" --seed 1173698842
+
+Randomized with seed 1173698842
+
+Finished in 5.1131 seconds
+[31m498 examples, 8 failures, 1 pending[0m
 Test suite azimuth-test: FAIL
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log

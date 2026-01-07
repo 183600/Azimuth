@@ -11,7 +11,7 @@ import qualified Data.Text as Text
 import Data.List (nub, sort, group, sortBy)
 import Data.Ord (comparing)
 import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar, getNumCapabilities)
-import Control.Monad (replicateM, when, forM_, void, unless)
+import Control.Monad (replicateM, replicateM_, when, forM_, void, unless, foldM)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Function (on)
@@ -124,21 +124,19 @@ spec = describe "Resource Limit Tests" $ do
           
           -- 并发分配资源
           done <- newEmptyMVar
-          results <- replicateM threads $ do
-            forkIO $ do
-              result <- try $ do
-                metrics <- replicateM resources $ createMetric ("concurrent-" ++ show resources) "count"
-                sequence_ $ map (`recordMetric` 1.0) metrics
-                return $ length metrics
-              putMVar result
-          
+          replicateM_ threads $ forkIO $ do
+            result <- (try $ do
+              metrics <- replicateM resources $ createMetric (pack $ "concurrent-" ++ show resources) "count"
+              sequence_ $ map (`recordMetric` 1.0) metrics
+              return $ length metrics) :: IO (Either SomeException Int)
+            putMVar done result          
           -- 等待所有线程完成
           threadResults <- sequence $ replicate threads $ takeMVar done
           
           -- 验证至少有一些操作成功
           let successfulCount = length $ filter (\r -> case r of
-            Left _ -> False
-            Right count -> count > 0) threadResults
+                                                Left _ -> False
+                                                Right count -> count > 0) threadResults
           
           shutdownTelemetry
           return (successfulCount > 0)
@@ -178,7 +176,7 @@ spec = describe "Resource Limit Tests" $ do
       
       finalResult <- foldM (\_ step -> do
         result <- try $ do
-          metrics <- replicateM stepSize $ createMetric ("memory-step-" ++ show step) "count"
+          metrics <- replicateM stepSize $ createMetric (pack $ "memory-step-" ++ show step) "count"
           sequence_ $ map (`recordMetric` 1.0) metrics
           return True
         
@@ -242,14 +240,17 @@ spec = describe "Resource Limit Tests" $ do
       metric <- createMetric "concurrent-limit-test" "count"
       
       -- 分批执行并发操作
-      let batches = [1..numOperations] `chunksOf` maxConcurrent
+      let chunksOf :: Int -> [a] -> [[a]]
+          chunksOf _ [] = []
+          chunksOf n xs = take n xs : chunksOf n (drop n xs)
+          batches = chunksOf maxConcurrent [1..numOperations]
       
       forM_ batches $ \batch -> do
         done <- newEmptyMVar
-        threads <- mapM (\_ -> forkIO $ do
-          recordMetric metric 1.0
-          putMVar done ()
-          ) batch
+        let createThread = forkIO $ do
+              recordMetric metric 1.0
+              putMVar done ()
+        threads <- mapM (\_ -> createThread) batch
         
         sequence_ $ replicate (length batch) $ takeMVar done
       
@@ -257,10 +258,6 @@ spec = describe "Resource Limit Tests" $ do
       finalValue `shouldBe` fromIntegral numOperations
       
       shutdownTelemetry
-      where
-        chunksOf :: Int -> [a] -> [[a]]
-        chunksOf _ [] = []
-        chunksOf n xs = take n xs : chunksOf n (drop n xs)
   
   -- 5. 测试文件描述符限制
   describe "File Descriptor Limits" $ do
@@ -296,14 +293,14 @@ spec = describe "Resource Limit Tests" $ do
       
       forM_ phases $ \(phase, limit) -> do
         result <- try $ do
-          metrics <- replicateM limit $ createMetric (phase ++ "-phase") "count"
+          metrics <- replicateM limit $ createMetric (pack $ phase ++ "-phase") "count"
           sequence_ $ map (`recordMetric` 1.0) metrics
           return $ length metrics
         
         case result of
           Left (_ :: SomeException) -> do
             -- 资源限制，创建一个测试度量验证系统可用性
-            metric <- createMetric (phase ++ "-recovery") "count"
+            metric <- createMetric (pack $ phase ++ "-recovery") "count"
             recordMetric metric 1.0
           Right count -> do
             count `shouldBe` limit

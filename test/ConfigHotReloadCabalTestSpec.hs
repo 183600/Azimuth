@@ -6,7 +6,7 @@ module ConfigHotReloadCabalTestSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
-import Data.Text (pack, unpack)
+import Data.Text (pack, unpack, Text)
 import qualified Data.Text as Text
 import Data.List (nub, sort, group, sortBy)
 import Data.Ord (comparing)
@@ -185,7 +185,7 @@ spec = describe "Configuration Hot Reload Tests" $ do
       done <- newEmptyMVar
       threads <- mapM (\i -> forkIO $ do
         sequence_ $ replicate updatesPerThread $ do
-          let config = TelemetryConfig ("concurrent-" ++ show i) "1.0.0" True True True False
+          let config = TelemetryConfig (pack $ "concurrent-" ++ show i) "1.0.0" True True True False
           initTelemetry config
           recordMetric metric 1.0
           threadDelay 100
@@ -253,12 +253,10 @@ spec = describe "Configuration Hot Reload Tests" $ do
       let numUpdates = 1000
       
       -- 大量配置更新
-      startTime <- unsafePerformIO $ do
-        sequence_ $ replicate numUpdates $ do
-          let config = TelemetryConfig "performance-test" "1.0.0" True True True False
-          initTelemetry config
-          recordMetric metric 1.0
-        return undefined
+      sequence_ $ replicate numUpdates $ do
+        let config = TelemetryConfig "performance-test" "1.0.0" True True True False
+        initTelemetry config
+        recordMetric metric 1.0
       
       finalValue <- metricValue metric
       finalValue `shouldBe` fromIntegral numUpdates
@@ -274,9 +272,9 @@ spec = describe "Configuration Hot Reload Tests" $ do
       metric <- createMetric "overhead-test" "count"
       
       -- 定期更改配置
-      sequence_ $ [1..numOperations] >>= \i -> do
+      forM_ [1..numOperations] $ \i -> do
         when (i `mod` configChangeInterval == 0) $ do
-          let config = TelemetryConfig ("overhead-" ++ show i) "1.0.0" True True True False
+          let config = TelemetryConfig (pack $ "overhead-" ++ show i) "1.0.0" True True True False
           initTelemetry config
         recordMetric metric 1.0
       

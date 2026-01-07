@@ -59,6 +59,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
     it "should share metrics with same name and unit when enabled" $ do
       -- Enable metric sharing
       writeIORef enableMetricSharing True
+      writeIORef enableMetricAggregation True
       
       -- Create two metrics with same name and unit
       metric1 <- createMetric "shared-metric" "count"

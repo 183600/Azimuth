@@ -1,12 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeStrings #-}
 
 module DataIntegrityCabalTestSpec (spec) where
 
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
-import Data.Text (pack, unpack)
+import Data.Text (pack, unpack, Text)
 import qualified Data.Text as Text
 import Data.List (nub, sort, group, sortBy, find)
 import Data.Ord (comparing)
@@ -153,23 +152,19 @@ spec = describe "Data Integrity Tests" $ do
                  not (Text.null currentName))
     
     it "should preserve span integrity across creation and finishing" $ property $
-      \name ->
+      \(name :: String) ->
         let spanName = pack $ take 20 (show name)
         in unsafePerformIO $ do
           initTelemetry defaultConfig
           
           span <- createSpan spanName
-          originalName <- return $ spanName span
-          originalTraceId <- return $ spanTraceId span
-          originalSpanId <- return $ spanSpanId span
+          let Span { spanName = originalName, spanTraceId = originalTraceId, spanSpanId = originalSpanId } = span
           
           -- 完成span
           finishSpan span
           
           -- 验证完整性
-          finalName <- return $ spanName span
-          finalTraceId <- return $ spanTraceId span
-          finalSpanId <- return $ spanSpanId span
+          let Span { spanName = finalName, spanTraceId = finalTraceId, spanSpanId = finalSpanId } = span
           
           shutdownTelemetry
           return (originalName == finalName && 
@@ -179,7 +174,7 @@ spec = describe "Data Integrity Tests" $ do
                  not (Text.null finalSpanId))
     
     it "should maintain logger integrity across operations" $ property $
-      \name level ->
+      \(name :: String) (level :: Int) ->
         let loggerName = pack $ take 15 (show name)
             levels = [Debug, Info, Warn, Error]
             loggerLevel = levels !! (abs level `mod` 4)
@@ -187,15 +182,13 @@ spec = describe "Data Integrity Tests" $ do
           initTelemetry defaultConfig
           
           logger <- createLogger loggerName loggerLevel
-          originalName <- return $ loggerName logger
-          originalLevel <- return $ loggerLevel logger
+          let Logger { loggerName = originalName, loggerLevel = originalLevel } = logger
           
           -- 记录消息
           logMessage logger Info (pack "integrity test")
           
           -- 验证完整性
-          finalName <- return $ loggerName logger
-          finalLevel <- return $ loggerLevel logger
+          let Logger { loggerName = finalName, loggerLevel = finalLevel } = logger
           
           shutdownTelemetry
           return (originalName == finalName && 
@@ -241,13 +234,13 @@ spec = describe "Data Integrity Tests" $ do
       threads <- mapM (\i -> forkIO $ do
         case i `mod` 3 of
           0 -> do
-            metric <- createMetric ("concurrent-metric-" ++ show i) "count"
+            metric <- createMetric (pack $ "concurrent-metric-" ++ show i) "count"
             recordMetric metric (fromIntegral i)
           1 -> do
-            span <- createSpan ("concurrent-span-" ++ show i)
+            span <- createSpan (pack $ "concurrent-span-" ++ show i)
             finishSpan span
           2 -> do
-            logger <- createLogger ("concurrent-logger-" ++ show i) Info
+            logger <- createLogger (pack $ "concurrent-logger-" ++ show i) Info
             logMessage logger Info (pack $ "message " ++ show i)
         putMVar done ()
         ) [1..numComponents]
@@ -459,6 +452,8 @@ spec = describe "Data Integrity Tests" $ do
       shutdownTelemetry
     
     it "should maintain consistency across shared metrics" $ do
+      writeIORef enableMetricAggregation True
+      writeIORef enableMetricSharing True
       initTelemetry defaultConfig
       
       -- 创建共享度量

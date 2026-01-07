@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeStrings #-}
 
 module CompatibilityCabalTestSpec (spec) where
 
@@ -18,6 +17,7 @@ import Data.Function (on)
 import Prelude hiding (id)
 import Data.Version (Version, showVersion, parseVersion, makeVersion)
 import Text.Read (readMaybe)
+import Text.ParserCombinators.ReadP (readP_to_S)
 
 import Azimuth.Telemetry
 
@@ -82,11 +82,11 @@ spec = describe "Compatibility Tests" $ do
             ]
       
       forM_ versionStrings $ \versionStr -> do
-        case readMaybe versionStr of
-          Just version -> do
+        case [v | (v, "") <- readP_to_S parseVersion versionStr] of
+          (version:_) -> do
             -- 验证版本字符串可以解析
             version `shouldSatisfy` (\v -> showVersion v == versionStr)
-          Nothing -> do
+          [] -> do
             -- 如果解析失败，应该有明确的错误
             pendingWith $ "Could not parse version: " ++ versionStr
     
@@ -160,7 +160,7 @@ spec = describe "Compatibility Tests" $ do
           return (value1 == 5.0 && value2 == 8.0)
     
     it "should handle configuration field additions" $ property $
-      \seed ->
+      \(seed :: Int) ->
         let baseConfig = TelemetryConfig "test" "1.0.0" True True True False
             -- 模拟添加新字段（在实际系统中，这可能是新版本的功能）
             enhancedConfig = TelemetryConfig "test" "2.0.0" True True True True
@@ -201,7 +201,7 @@ spec = describe "Compatibility Tests" $ do
       value2 `shouldBe` 20.0
       
       -- 测试安全API
-      unsafeValue <- unsafeMetricValue metric1
+      let unsafeValue = unsafeMetricValue metric1
       unsafeValue `shouldBe` 10.0
       
       shutdownTelemetry
@@ -211,14 +211,17 @@ spec = describe "Compatibility Tests" $ do
       
       -- 测试所有span API
       span1 <- createSpan "api-span-1"
-      span2 <- createSpanWithIds "api-span-2"
+      spanIds <- createSpanWithIds "api-span-2"
       
       finishSpan span1
-      finishSpan span2
       
       -- 验证span属性
       spanName span1 `shouldBe` "api-span-1"
-      spanName span2 `shouldBe` "api-span-2"
+      
+      -- createSpanWithIds返回ID对，而不是Span
+      let (traceId, spanId) = spanIds
+      not (Text.null traceId) `shouldBe` True
+      not (Text.null spanId) `shouldBe` True
       
       -- 验证ID格式
       not (Text.null (spanTraceId span1)) `shouldBe` True
@@ -481,6 +484,8 @@ spec = describe "Compatibility Tests" $ do
       shutdownTelemetry
     
     it "should maintain data format stability" $ do
+      writeIORef enableMetricAggregation False
+      writeIORef enableMetricSharing False
       initTelemetry defaultConfig
       
       -- 验证数据格式稳定性
@@ -488,9 +493,12 @@ spec = describe "Compatibility Tests" $ do
       
       let testValues = [1.0, -1.0, 0.0, 3.14159, 1.0e6]
       
-      forM_ testValues $ \value -> do
-        recordMetric metric value
-        current <- metricValue metric
+      -- Create separate metrics for each value to avoid aggregation
+      metrics <- mapM (\_ -> createMetric "format-stability" "count") testValues
+      
+      forM_ (zip testValues metrics) $ \(value, m) -> do
+        recordMetric m value
+        current <- metricValue m
         
         -- 验证数值精度
         when (not (isNaN value) && not (isInfinite value)) $ do

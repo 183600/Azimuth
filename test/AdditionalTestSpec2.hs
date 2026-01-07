@@ -185,6 +185,7 @@ spec = describe "Additional Telemetry Tests 2" $ do
           
           -- Enable metric sharing for this test
           writeIORef enableMetricSharing True
+          writeIORef enableMetricAggregation True
           
           -- 创建两个同名同单位的度量
           metric1 <- createMetric nameText unitText

@@ -6,7 +6,7 @@ module TimeSeriesCabalTestSpec (spec) where
 import Test.Hspec
 import Test.QuickCheck
 import Control.Exception (try, SomeException, evaluate)
-import Data.Text (pack, unpack)
+import Data.Text (pack, unpack, Text)
 import qualified Data.Text as Text
 import Data.List (nub, sort, group, sortBy, find)
 import Data.Ord (comparing)
@@ -155,7 +155,7 @@ spec = describe "Time Series Tests" $ do
           numWindows = 3
       
       forM_ [1..numWindows] $ \windowIndex -> do
-        metric <- createMetric ("tumbling-window-" ++ show windowIndex) "count"
+        metric <- createMetric (pack $ "tumbling-window-" ++ show windowIndex) "count"
         
         -- 在窗口内记录值
         forM_ [1..windowSize] $ \_ -> do
@@ -220,10 +220,10 @@ spec = describe "Time Series Tests" $ do
       let numOperations = 10000
       
       -- 高频记录
-      startTime <- unsafePerformIO getCurrentTime
+      startTime <- getCurrentTime
       sequence_ $ replicate numOperations $ do
         recordMetric metric 1.0
-      endTime <- unsafePerformIO getCurrentTime
+      endTime <- getCurrentTime
       
       let duration = diffUTCTime endTime startTime
       

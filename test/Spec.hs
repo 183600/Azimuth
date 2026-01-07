@@ -68,6 +68,7 @@ import DataIntegrityCabalTestSpec (spec)
 import PerformanceRegressionCabalTestSpec (spec)
 import CompatibilityCabalTestSpec (spec)
 import SecurityCabalTestSpec (spec)
+import NewComprehensiveTestSpec (spec)
 
 main :: IO ()
 main = do
@@ -661,14 +662,19 @@ main = do
     CompatibilityCabalTestSpec.spec
     SecurityCabalTestSpec.spec
     
+    -- 添加新的综合测试套件
+    NewComprehensiveTestSpec.spec
+    
     -- 添加验证测试
     describe "Validation Tests" $ do
       it "should share metrics with same name and unit" $ do
         -- Save current sharing setting
         originalSharing <- readIORef enableMetricSharing
+        originalAggregation <- readIORef enableMetricAggregation
         
-        -- Enable metric sharing
+        -- Enable metric sharing and aggregation
         writeIORef enableMetricSharing True
+        writeIORef enableMetricAggregation True
         
         -- Initialize telemetry to ensure clean state
         initTelemetry defaultConfig
@@ -688,8 +694,9 @@ main = do
         value1 `shouldBe` 15.0
         value2 `shouldBe` 15.0
         
-        -- Restore original sharing setting
+        -- Restore original settings
         writeIORef enableMetricSharing originalSharing
+        writeIORef enableMetricAggregation originalAggregation
         
         shutdownTelemetry
         
