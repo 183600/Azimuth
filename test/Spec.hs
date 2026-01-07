@@ -58,6 +58,7 @@ import DomainCabalTestSpec (spec)
 import RegressionCabalTestSpec (spec)
 import EdgeCaseCabalTestSpec (spec)
 import RealWorldCabalTestSpec (spec)
+import EnhancedTelemetrySuiteSpec (spec)
 
 main :: IO ()
 main = do
@@ -637,6 +638,9 @@ main = do
     -- EdgeCaseCabalTestSpec.spec  -- 在测试模式下跳过边界测试
     -- RealWorldCabalTestSpec.spec  -- 在测试模式下跳过真实世界测试
 
+    -- 添加新的增强测试套件
+    EnhancedTelemetrySuiteSpec.spec
+    
     -- 添加验证测试
     describe "Validation Tests" $ do
       it "should share metrics with same name and unit" $ do
