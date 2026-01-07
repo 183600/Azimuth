@@ -109,7 +109,6 @@ Extended Azimuth.Telemetry Tests
     should handle complex distributed transaction flows [[32m✔[0m]
     should handle async operations in distributed tracing [[32m✔[0m]
   Telemetry Configuration Hot Reload
-Initializing telemetry for service: "updated-service"
     should handle configuration changes without restart [[32m✔[0m]
     should validate configuration before applying [[32m✔[0m]
   Telemetry System Health Check
@@ -402,7 +401,7 @@ Additional Telemetry Tests 2
       +++ OK, passed 100 tests.
   Metric Registry Sharing Behavior
     should share metrics with same name and unit [[32m✔[0m]
-      +++ OK, passed 100 tests; 12 discarded.
+      +++ OK, passed 100 tests; 10 discarded.
     should not share metrics with different units [[32m✔[0m]
   Text Encoding Integrity
     should preserve ASCII characters exactly [[32m✔[0m]
@@ -507,106 +506,6 @@ Comprehensive Telemetry Tests
     should handle span creation in rapid succession [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Hot Updates
-Initializing telemetry for service: "-updated"
-Initializing telemetry for service: " -updated"
-Initializing telemetry for service: "=\47062-updated"
-Initializing telemetry for service: "\1102151-updated"
-Initializing telemetry for service: "\1099280\STX\a"
-Initializing telemetry for service: "\NAK"
-Initializing telemetry for service: "\205537\30999\1055128O\26679"
-Initializing telemetry for service: "Y\1050213\&5+\\x"
-Initializing telemetry for service: "\78636\999718z\1023793V\1010911-updated"
-Initializing telemetry for service: "\1075650Eo-updated"
-Initializing telemetry for service: "-updated"
-Initializing telemetry for service: "c\FS\175620#\1078299`rug-updated"
-Initializing telemetry for service: "-updated"
-Initializing telemetry for service: "\SYN9\rop1\US-"
-Initializing telemetry for service: "\202988+\1007102\DC1im\SOH\145124?v#\986662"
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Initializing telemetry for service: "B\1070128\rq{L\1009881v\ENQ-updated"
-Initializing telemetry for service: "u$u\RSL#7/\RS\"}\29456\b\EOT\SIt\1028423-updated"
-Initializing telemetry for service: "\1110279\US>4S\1060979k\RS\1082028\n&>J."
-Initializing telemetry for service: "lGr\10213\1016236`"
-Initializing telemetry for service: "\DC3\ACK\rEF"
-Initializing telemetry for service: "\v\170418\1043889sO\1077612\tC-updated"
-Initializing telemetry for service: "R^x\118539!\STX\134077?\GS.z3\RSqI-updated"
-Initializing telemetry for service: "*lX=]_\na\164078\ETB\DC2\1067104I I-updated"
-Initializing telemetry for service: "\FS2"
-Initializing telemetry for service: "\n-{B\1088234\31061\&6\RS'FEw\EOTnb\98270\&34\1012274wN\157639\&5-updated"
-Initializing telemetry for service: "Q%|\1102261\158016\t!\SOH\93064w)\DC4E\SOH\1058308`\US\DC4\1003702Q-updated"
-Initializing telemetry for service: "M\"1\46966\1113857\990405\1060163\1008869\19875\1083161\1104771\RS\142946p\ENQ\v\ESC\ENQ5\DC1\EOT2\SI-updated"
-Initializing telemetry for service: "Q\101440H~\1102709_\1058007+7m\42048Z!$\1100496\1060261\74083gFKrfM"
-Initializing telemetry for service: "2\1036745B\1061628\DC1B\DLEIK!-updated"
-Initializing telemetry for service: "\61618@@\82330v\FS\DELT\983318E\1028275q5\SI\94597\DC2\1059193\1054170\1102793\196695\40920\77784\&3-updated"
-Initializing telemetry for service: "5}\60661P\GS\f[\tt\1019628"
-Initializing telemetry for service: "\1051894@]\174264"
-Initializing telemetry for service: "u\v"
-Initializing telemetry for service: "lt\986667*j\140797\DLEnm(*O\142918\SI\DEL\RS\1024252 d-updated"
-Initializing telemetry for service: "\DLEDa\ETB\205092;"
-Initializing telemetry for service: ",\FSt\1076351\185953*\1083433&UHr\1024622Jq7+.36@\SO?\nGlI\152556\EMFu\1053475\vH\a\1060493"
-Initializing telemetry for service: "s\ty\1061823=\989464h51<\1000724W\1041080\&4:\RS\1011997\DC2"
-Initializing telemetry for service: "\239`\EM:\DC4_x\167485Kp-updated"
-Initializing telemetry for service: "t\45515h\1061818\ACK\39193~r-updated"
-Initializing telemetry for service: "=U=\27290\SOj\205594\5776wj\1064041\ACK\186046\188507\DLE!qx+6`\npI7\STX\129310\190755\FSU\1062491\177530\28828U/8)\ETX\1100482-updated"
-Initializing telemetry for service: "S\12188\119125\35156M@wn\111170(AVdS<\984032]/\DEL\RS\SYN"
-Initializing telemetry for service: "&\tOU*\fi-aTQ\ESCI9n/!$9n\DC2b\59691\&5\FSB\94365-updated"
-Initializing telemetry for service: "\STX\1073280U;]W\GS+\NAKI\CAN\185285-updated"
-Initializing telemetry for service: "aM&Z^/M\f\32077?ho\17893sQ,@c\1058154HA"
-Initializing telemetry for service: "joL\f^\209600/\1038958D\ACKq_-updated"
-Initializing telemetry for service: "\1028600!A-updated"
-Initializing telemetry for service: "]\133375\1001913\STXvq@uQ\DC2jp6`]\988655\1095117\fwg\154824Qt-9\984117\NAK`i\SI{ \DC3=\FS\1091600_u"
-Initializing telemetry for service: "TD#\180888j\DC32\50481<\DC1\27886\ENQp\142681\150702\&4[I:\984538$\39252cK\1017465C\f\ACKPx\r\992397e\1097043-updated"
-Initializing telemetry for service: "0)n8\DELa\SOE\v\78784\985936\127538;6?\62799\RS#\1015838LcQ3\RS)ma\\\1096064\&5\40769\b=\v\ACK\41731l\1101656#F\187303\182035"
-Initializing telemetry for service: "\161515xn-updated"
-Initializing telemetry for service: "K\998594|^\1084114tL\FS\1021713]GJO\DC3\CAN\205907\95756\GSb\DC4\GS\NAK\1048253\1005193&\136038{)T\FSg"
-Initializing telemetry for service: "tCW=\v\DC2L}\CANi\\\1014886\DELh\GS\NAK`TKTv|\78421[\ACK\DC3}b\1045992q\1062527p\FSx\SI\SIq\DELA\t\1063975\DC4@-updated"
-Initializing telemetry for service: "\1088020\118569\68306\r\51051\&5\US\\v~\GS{\ESC\35371\f>"
-Initializing telemetry for service: "\ndP\DEL\EM\1035482\1073137\&79E\64552\&7\1041257-updated"
-Initializing telemetry for service: "\168381\199531\ACK\ETXI\1045206\&7/\nZ2\NULgk\170585\22909\1044\190310P\68666s\SUB\67314\\\133804J\24585\172776h\DC3\ETX\1089088W\EM\1031442\153911nc\9874\NUL.,8\70095j_583\EM2\1099398\&5\EOT\ETX"
-Initializing telemetry for service: "'\ETBY\STX\SI\1025847X\DC4\ETB/`\USbG\185945\DLEA\188125\&2om^\SUB\DC4\33797]ig\1072728="
-Initializing telemetry for service: "\DEL!g\999977\1088894\GSf\SI\97938@\33763\t\1004894\&1\1032152~\ESCsP\t\1108029\STX\1089191S 6c\ETB"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "1\70836My-updated"
-Initializing telemetry for service: "\CAN\SO}/)HK\27776\"*l\STXp\1014457B\DC1\53086\&17Ht\127807\SI\EM\1021967\22328Mg\1097676x-3/\96873\FS\CAN\25019\SO\145108\142296:\49171\39667XMHeL\1065232\&7|x\16037?\156892Y"
-Initializing telemetry for service: "J\142999\993471\138528e\v\200993\NAK\186094n_\FS\ENQq"
-Initializing telemetry for service: "h\167761\SOH\158970+TloMWCH\SYNA\f\RS\156913tA\DC4%vGCB\SOH\US4\DELs\199643\vW\185164\RS4}O\rA\92613\&9Q\124992\DLEB\f\81585 _\1042612=g\181567ff}W\v-updated"
-Initializing telemetry for service: "\1052217jn\208828K/\ENQw~RkMw\ACKJ\STXEY\29469\1016927T*"
-Initializing telemetry for service: "h><O\DC3#blNb\1094650\&8\1082653\FSE\1071357p_"
-Initializing telemetry for service: "\SOH+\1005815\US\ENQ;\DC1Y8I\ETX\SIzq\82916\&2|\1084757\92526\ESC}\41683K\SUBS\FS\205977nyJ!eknv(|mB4\81822U-updated"
-Initializing telemetry for service: "\\\a\35643\190493\&2N\ETXp3v8\1091721zG\EM"
-Initializing telemetry for service: "\b}C\1077868V]\1054095\DC4\GSR,\1038044\DC2\185498\DC1$`OS\24755\SUB\n\178549_\1024474\DEL_E??S\1036644X)g\187687/\987115\ACK\145051\DC4\991104\1036953m\DC4|W!0\\g\60802\1093095>\157482\&2\62327q\203874*\204738Wk-updated"
-Initializing telemetry for service: "X)\1088771\1060940)L\37296\101413 1\143208\1020675\ACKYV\vU6{\1075644~1\1032397v\SI\NUL\1020365\&9\1040749Q@\1100385\b\US\ENQV\RS{\DLEqW\FS\DLE\151138\&1r\1011931'.\134983\1004047\52674T\24149-updated"
-Initializing telemetry for service: "(\SI\137310g\ACKv"
-Initializing telemetry for service: "\1063938]\1039496\ETBS\51309\993371DP\STX/\SUB$\1099580\US3p!n;~w\155296\1037223yn\1020268\DC2G<-updated"
-Initializing telemetry for service: "t\6282A\1026415\CANb\FShH\1009994@?\DC1\98819\142447\b\70429\26806f\1058025@0`\1000089\98887\"-updated"
-Initializing telemetry for service: "\1096220j\EMo(H\\\1035518B\FSG7\DC3\129412KS\53086,q\1099611\188210hvnph'q\1006751\EM\1043012\1017858K\SOH\EOT\1006548B:B\SOH6``\EMVC\175718\SO]i(\\\1110689cY?n\94838*4NIlt\"Q\44800(\1061922\EM+"
-Initializing telemetry for service: "\DC1nY\2409\1015225~E\SUBT\ETX\US\US\21104"
-Initializing telemetry for service: "x\DEL\30449\58059DVsQQ\STX4\DLE\1037218H-6\152198X,\ETX}\DC29\187153\15649\ETB\41003s\EOT\CAN5\142068\1072755;\1058577&\10956\NAKr\133824[\59361eY-updated"
-Initializing telemetry for service: "\STX/k\137207\1102013\1080429iWsy'!\41331\nw\DC4\EM\ETB\78416\1080853\SObU#&}S\1087178\1103754\&6aq`g0\997701Wcp\136705\139590\SOH\52222\&5\80464W}!o\997888|6?S\1014\r\1073743w\1082531W>\1061182H\DC3r\1059324\187027\79150W"
-Initializing telemetry for service: "\FS\FSd\v\23738\92838'\1059058fx\STXRv\EMW\191258\DEL\4654\98938\98839\"L\SI\208347\118443\DC3\157472H\203408\&4yJ\1060129v\USC\SOHsFR\CAN\1035707ROny"
-Initializing telemetry for service: "\1048023\DC4?\1027456*\\\SOHai\r~Iq=\1046006N\SOH\SUB\1044861jYky\DC3\ENQwac\ENQHIH\NUL"
-Initializing telemetry for service: "\1053260y\SUB-\ESCw\8822\DC4\SYN\1010234/&1\1016169\2386\1067178i\b]J\1112879\DLE\fOv\\\1061900\ng\\\1096304\8414#\DLE\RSn\STX\118989\\\US3\ACK\11380,Ub(-"
-Initializing telemetry for service: "~\SUBb\t\1065603fD f;Q\"\198201D\1033250.q7\DLE\1050968/V\\\1025754\177651x\995540N.\CAN\STX)'>=9\995515\198515\&2'\1062572:\177494\r0\158625"
-Initializing telemetry for service: "O\ACK|\ETB\1034944\&1\1098551V?;\r\FS\RSt\1049595]\GS_pm\147885\SOeI\1039271}\SYN."
-Initializing telemetry for service: "u\DC3b\DC4\162694<D\vY\1074680\rHjQ\1111773\79686\US\984816\&803?\DEL{\129159%lqD\37773x\DC1(r\NUL\1084521l\45504\NAK|\1027546"
-Initializing telemetry for service: "!C5g*r1gw~>\101448\1019707\51839+X\NUL\r\FS\187524\1077677\FS9\SOH-updated"
-Initializing telemetry for service: "\1020459\tO\FS"
-Initializing telemetry for service: "5\1083914\"o\STX\1079124\97657\48726Ad\998297\DC1@B\EM\29918\152527`\DLEf\RSi5a5/d4tXXo\1017818v\GS"
-Initializing telemetry for service: "Ec\FS \1055708Pf4\CAN9\60231G\NAKc\1006435\160983\5128\161484}?\GSZiU\168355!\162313 \ETB\221\184946O\24047\&7\1108713e"
-Initializing telemetry for service: "m\1065173\1000482/\983701\174371A+\9784NG\RS6VB\SO\1033740E\EM\NUL\204422p\49500\&2x\RS!\SO\t\t\1001678\99535$hb\NUL\165553\1006762\171296\NUL\CAN\FS"
-Initializing telemetry for service: "\NAKA^!\a\993040\986390\&4\1046776g\n\GSo@m\34354\SUBw\1020324B$\1080358|\205430\EOT:[@\52792\188807\DEL\203289\CANxl\33109"
-Initializing telemetry for service: "uUJx\1048392Q#\93907\129800\128847F\ACKD\1008153j,\1101524d-updated"
-Initializing telemetry for service: "9=\NAK\ETB<p{\3347C\991391G\38142\&4\EOTiUv\14242\1044101u|\147731\US\208909\nHq\195101d@NT\SUBU\\y&8\NAKb\ENQ\ENQZ\RSU3\92174N<\DLE\v_\SIZ[\NUL2\NUL\14402b?v/ZC^>-Q72\NULR\ETX\1017566zx\GS\SOH\EM]W>R\35388\ACK\140162"
-Initializing telemetry for service: "]8\10538PQn\1061820FP\28132\DLE\f\fg\SO\t\118795\178243d\12356\ETX\98894\117987\174177\SO/\ETX/!v\146892Ttc>z\1006638\"\1031338\1040972Ha^\169759\a\43327z\147856\134341)\24398\198946:\\\43881\1032894\99497R\ESC/B\162221\ETX&\162552O\22239-\SYNx\98958\\\ESC:T\DC4\ACK\1080418TqzdO\SYN\EOT\DLE7Z\20098-updated"
-Initializing telemetry for service: "\n\t\20370\ACK)z\1102235\26302;\42170\10846\132064\184267\ACK\141599^Onz\1083332\994430\189714/\STXF\52729M.<}\FS}s0\1081803BR\1029885o\DC1\DC4G\94575j2|'\SYN\ETX\134804T\10550\197554gZ)\v\bz\CANO#k{\135015\t6\ETXr\CAN4\ETB\1007773\1070572\DC2\\\1051248\&0\DLEu\f"
-Initializing telemetry for service: "dwY-r\ESCM\1023407D\EM\67053U\"\NUL\60499\CAN_\NULZ#\1057634{\140700\36242A*N\48946\&8J+q5|\GS"
-Initializing telemetry for service: "$\60952\199159v=,\1078219Ye&p\SII\DLE6*@"
-Initializing telemetry for service: "XU$$\1053529>\CAN3MC\EM\162210;E\ESC'\EM\US\a;\54069-\1055390\DC4e'\35125X\24084:0\DC4\1077087>\1072370XsK\NAK:\FS.\a\SOHGd\97086eQ\CANL\\\1104326\RS$\92808~J]\70728B\DEL#\CAN\1004820\ETXF\a{\1006536"
-Initializing telemetry for service: "\43065ScIv#.\137794U\44319\1004341<\ETX\RShisH\120261DH\SYN\1031040odv\1047712\47379\b \50892"
-Initializing telemetry for service: "/2j\SYN\ESC\DEL\28086R\t\994471\1054312\1081191\5705\207120\1086777\1048585\134994WCI\DC1X\10273\SOH_\28356\CAN\nN^x\1033968Pa,J\USd\RSS\148079mQ\NUL\177224"
-Initializing telemetry for service: "\n\40867n6,$\54710\31039\986398a\57493$T\1012537B1O\28705d\ESCw?t`@`R2\DLE\1034370\124135Y\77912\DC4\96533\176720\DEL\ENQ4\1078670\13364\985539\135562|(@\STXW%"
-Initializing telemetry for service: "|fwNgAehu1u\DLE\1041426n\1109064"
     should handle configuration changes without affecting operations [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Recovery Mechanisms
@@ -616,6 +515,7 @@ Initializing telemetry for service: "|fwNgAehu1u\DLE\1041426n\1109064"
   Resource Leak Detection
     should not leak resources during repeated operations [[32m✔[0m]
       +++ OK, passed 100 tests.
+Shutting down telemetry system
     should clean up resources properly after shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
   System Health Checks
@@ -629,19 +529,19 @@ New Telemetry Tests
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 18 discarded.
+      +++ OK, passed 100 tests; 13 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 18 discarded.
+      +++ OK, passed 100 tests; 13 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 18 discarded.
+      +++ OK, passed 100 tests; 13 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 18 discarded.
+      +++ OK, passed 100 tests; 13 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -659,7 +559,7 @@ New Telemetry Tests
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 18 discarded.
+      +++ OK, passed 100 tests; 13 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -708,7 +608,6 @@ Additional QuickCheck Test Suite
       +++ OK, passed 100 tests.
   Composite Operation Properties
     should handle multiple metric operations consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
     should handle metric recreation with same name and unit [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Handling Properties
@@ -751,7 +650,7 @@ Additional Coverage Tests
     should handle very small values [[32m✔[0m]
     should handle very large values [[32m✔[0m]
   Metric Sharing Mechanism
-    should share metrics with same name and unit [[31m✘[0m]
+    should share metrics with same name and unit [[32m✔[0m]
     should not share metrics with different units [[32m✔[0m]
     should not share metrics when sharing is disabled [[32m✔[0m]
     should handle metric sharing with initial values [[32m✔[0m]
@@ -763,11 +662,9 @@ Additional Coverage Tests
     should recover from metric operations after exceptions [[32m✔[0m]
     should maintain system stability after invalid operations [[32m✔[0m]
   Configuration Boundary Tests
-Initializing telemetry for service: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 Shutting down telemetry system
     should handle extreme configuration values [[32m✔[0m]
     should handle configuration with all features disabled [[32m✔[0m]
-Initializing telemetry for service: "maximal-service"
 Shutting down telemetry system
     should handle configuration with all features enabled [[32m✔[0m]
   High Concurrency Scenarios
@@ -809,8 +706,10 @@ Advanced Telemetry Tests
     should handle very long log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Dynamic Configuration Updates
-    should handle configuration changes during operation [[31m✘[0m]
-    should preserve service identity across configuration changes [[31m✘[0m]
+    should handle configuration changes during operation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should preserve service identity across configuration changes [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Concurrent Safety
     should handle concurrent metric creation and recording [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -837,16 +736,15 @@ Advanced Telemetry Tests
     should handle Unicode text in all components [[32m✔[0m]
       +++ OK, passed 100 tests.
   Component Interactions
-    should handle mixed operations across all components [[31m✘[0m]
+    should handle mixed operations across all components [[32m✔[0m]
+      +++ OK, passed 100 tests.
     should maintain consistency across component lifecycles [[32m✔[0m]
       +++ OK, passed 100 tests.
 Additional Cabal Test Suite
   TelemetryConfig Properties
     should maintain consistency across config updates [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "service"
 Shutting down telemetry system
     should handle extreme config combinations [[32m✔[0m]
   Metric Mathematical Properties
@@ -863,7 +761,7 @@ Shutting down telemetry system
     should handle large number of concurrent operations [[32m✔[0m]
     should handle memory pressure gracefully [[32m✔[0m]
   Error Recovery Mechanisms
-    should recover from invalid metric values [[32m✔[0m]
+    should recover from invalid metric values [[31m✘[0m]
     should handle telemetry lifecycle errors gracefully [[32m✔[0m]
   Concurrent Data Race Prevention
     should prevent data races in metric registry [[32m✔[0m]
@@ -875,8 +773,6 @@ Shutting down telemetry system
     should handle time-based operations consistently [[32m✔[0m]
     should handle high-frequency operations [[32m✔[0m]
   Configuration Hot Reload
-Initializing telemetry for service: "hot-reload-test"
-Initializing telemetry for service: "hot-reload-test"
     should handle configuration changes [[32m✔[0m]
   Telemetry Data Export Formats
     should maintain data integrity for export [[32m✔[0m]
@@ -907,182 +803,8 @@ New QuickCheck-based Telemetry Tests
     should handle all log levels consistently [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Field Persistence
-Initializing telemetry for service: "1\ESC\1025"
-Initializing telemetry for service: "uU"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "T(|"
-Initializing telemetry for service: "e\42504X\SI\\W-t"
-Initializing telemetry for service: "\1046237\143624\137803$\SYN\30239c\180300\1109351\SUB"
-Initializing telemetry for service: "c\FS\118817"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "1\f\82093Q\81143s\118275v$;"
-Initializing telemetry for service: "|5l\124136Nt\10925(d_"
-Initializing telemetry for service: "-\b"
-Initializing telemetry for service: "\ESCia\NUL\FS\1107870\GS\a6\f)\SO*\r*/\199398O"
-Initializing telemetry for service: "Q.\208106h\ENQ\180077xA[W\bf4r\3627\1040790\134767P"
-Initializing telemetry for service: "\154504\DC4GV\"\1112611m "
-Initializing telemetry for service: "..\EOTW\160193\ETB$\b\1056347\165929yr\ESCWO;B]\NULG\998473G\CAN\1810(K^_I"
-Initializing telemetry for service: "\1090150E\DEL\1100334o\1024966D\ETB>\ACKQ\1081792\207975\28480\191569\RSYk\US[\GS\1084703y\189347r2\SUB.\43562dN"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "\"y7\ETB\49927l2}\1101198O\182385\16231\DC1"
-Initializing telemetry for service: "U wL\170794'\128890uO\8932N\SOH\1061615\SI}%v\1096195"
-Initializing telemetry for service: "OvY\"\ESC\DC4,\42583@\45355\3240\1039371\1040767\1017583\DEL\"\47620m!NNjG\a5uV\128586\tz"
-Initializing telemetry for service: "H\138818\ENQ"
-Initializing telemetry for service: "+yfo%7\995381S_GqN)[fdogk\\"
-Initializing telemetry for service: "l\1046763C\95174"
-Initializing telemetry for service: "z\EOT\1056668%5\ACK\1379\&2\GS]aD"
-Initializing telemetry for service: "\ESC\20307\STX\1053490\&0\986777\136599\EOT-1?]\3430w\1096515"
-Initializing telemetry for service: "@A@\37835:p&\204670\&9+1O~h7q"
-Initializing telemetry for service: "Z#\tv*"
-Initializing telemetry for service: "\178976`~\1025831\1041136\43096NU\SIu\1111730\159468}\1048103\138205U\STX\990962f\6869\njVZK\181183;\1020761m\1051620Cg\"\SYN\NUL3"
-Initializing telemetry for service: "\ACKL\GSA0\\hDz\68087\180034\&1l\1089540\DELN'\998194M\186834\1055763,\5276\1006089\1009380\53576d\29686\ACKGXE^u"
-Initializing telemetry for service: "D\1021559\25176\ETB\1022237\DC34\96764(.\v\ETX.iBgd\b\198465/\GS\SOEVf\NAK\t\74427q<\NULi>\n\65078?{J\CANU\1074341y\1046337\71473\1101446\1082482"
-Initializing telemetry for service: "\aA\30431\200062\DC46CH\ENQ'\n~\208939_2Pi]\151252\&3vhn\17613\1000235&NHNM\ETX`\1066517f^\DC3\nTk\\U0\9162+"
-Initializing telemetry for service: "\GS\"C\DC2\988797\1065951\79363\48341ry#S$\33186f\DC2=\ETB!rlPj\997901"
-Initializing telemetry for service: "wdG\1005444\158351\SI\1105685\1064523"
-Initializing telemetry for service: ":0? EKo\US\49632) \f\vp\ETXmYf<P^\DELV?d\1026961<tv<\176695"
-Initializing telemetry for service: "~\EM\50526\n\1101994\997929F\DLE\DC4I,_\1103659\1010312uP\144974.R\vt%\1095962\DLE\81501^W\ENQ\1066736\1068365Ma\138948\1103733cE\\\186789\SOHJo+\DC288\53438\NAK\1105576\132065@"
-Initializing telemetry for service: "\DC3\177506-\rmvZ\69400\170535\DC3i?:R5l\1014057/d\2636u0S\127890\171549].\1013027\SIf>[\18821L\NAKE`Y6\168891\NUL\131380T\1091075\1056565vQ+WM5"
-Initializing telemetry for service: "\ENQ\SUBu\180923'XD%\ACK:\1087846q\33998\ESC\149990\&7\1061352u\1017276\15877\b~&\EMNe\f\STX=rg\997055\1036102\1087477b!\STXf\NULk"
-Initializing telemetry for service: "\SI\26026*>Y,\1108683\1055273]Ie\GS\1056414H\DLEI[C~C(\18375\1059423\1002170\1007574\1015086W\ETB=\SUBxN4b\1066405aT;\EM|p\197049mM\1012879\1113266\1094295b\b\DC4"
-Initializing telemetry for service: "Y\tV2$\NAKs\b)/\1054273\54680\43748ptx\\\bT&\bS@\1028241\&9bSoc\1070881#`=.!4\SId(#\985580\&5\EM\DEL\a6?#"
-Initializing telemetry for service: ":O\ENQDHD\159194\SIt{1.\\|\46715\137531\1061283?\136384\US\1057978\&4\GS4"
-Initializing telemetry for service: "\DEL\35227\a\DEL\1040521\34784X\ENQ\ACK~\164487,a:\NUL\DEL\FSA6\NULpQB\1000210\201093\1113115/aX\DC1*\1099749[\RSU(\1110529\999447O\1103022<3\DC2Kw\f\180938\160598KVmAR/B\ACKe\b\SO9v6\1054083f\1075445*6\\\GS\39634[r1\155743Q\174718\1113977$v"
-Initializing telemetry for service: "e}\NAK\US<L\14471\ETX\92654\DC3-\rp!\178594\EOTDf\74311\FS \STX\DC25\209740n~a\SOHp\NAK"
-Initializing telemetry for service: "D@'\1099869\SOZo\DC1\SYN\992215;8-i$<\US\b\1100996v%\18403-yn\SUBW?H\1028859\ENQT\1071144P1\49991\CANI\181502\NUL\1695n!"
-Initializing telemetry for service: "\61698;U6\44678p\DC3f4rj&\40586\121213&\v\992027\&3\1017271|_,0Q\FS-\DC4G\60845\r\1036665\168522\32382o\ETX3].0"
-Initializing telemetry for service: "9\CANx\r09'\1034308q=}yJ^[b8\FS*x44qTz\171804\ETB\995389&LP;\163320v#\1029829\SI\"R\198665\1005304\DEL\ESC7\ETX\ESC\1062989\&5\1047146;zs\984957B<z'\DEL"
-Initializing telemetry for service: "h\984734\1089892|"
-Initializing telemetry for service: "z\FS\988880w(\153283\n\ACKq\SYNV\140438\121163\187486\EOT^~\DC3B\DC3M\1048814j\rT\RS8~y\1023864\"|Tj2\1088392\&0\47632\66904\1047184\nM\194858\1077951iA\EM1#|\160971\FS1\4494v\30661\994314\64564\206315\55148/&2\36624\156147\145363\57796\ETBl.\1012880{i\EM\DLEO]D?d\a\ETXzA"
-Initializing telemetry for service: "\CAN\a]\NUL\NAKOX<T5\DLE-\1017481\ETB\EM\15536\988232xe\ACK\12209\NAK\f\96596]q\RS\r\49303bWW~\DC4\1024029N\200123&lL\SO\"2o\1066648u=1\94667\\m"
-Initializing telemetry for service: "\\\197736\158319\22015K0\FScZ\79628\&1\18579\DLE\EM^\DC3&\11988qqiB\29936P_\\e\1027827\188153(\ETB7)t\ETXfQ\1002292\vF\EM\ETB\38490R\NAK\1001641\&2\1010812\207085\r\SI\27103iCn\177874\9214B\1000255\143649\191897"
-Initializing telemetry for service: "M\EMEFo\STX\187413Tpt>\10679\1062353q\79721\EOT\189177\191836\120986B\1052923\&4\202604\140600f)-B\18690Z\81136a\80950\11313\f\1106503\&59D\49354\1103107$;\bQ~Gv\1023811\101284\ETX\1079718F6\EOT\11771\74083\CAN\81228\SO"
-Initializing telemetry for service: "6\RSx\DLEq\134998\1006950\EM\US"
-Initializing telemetry for service: "\SOH*.\1012970\118295o\1013605mBq=\vPju\39330)\166975X!\8022'Cz\989080EC<m\SOH9\1031018fE\FS>"
-Initializing telemetry for service: "\DC3,\GS\1041586 \1030635VD\US\DLE\143257\GSl\1081024\EOTzF26xT9\146200\128807\1095624y\DC2\NUL\DELv>\n\FS\DELe\159514\SYN}.\8995\SOB\1057774\63748\983385?\1002320}\1058930\131424R@<b'\ETX\ETBJv\157597\t\RSj;3\DC1\t"
-Initializing telemetry for service: "KM\18722W\989215Y\1004410:\"jE\1072229ES=\137350\1101348\GS\NULB!~\RSH(\DC1lQ$_\CANF\1037012Ft_\177417GS\"bp\DC2L;`\r5)\1074179VZB\DC2\ETX\ACK\EOT'E\985726%L#"
-Initializing telemetry for service: "\143569\1002636\NAK\EM\1102732('\ESC\994087\EM\201708$I\47802C\USa"
-Initializing telemetry for service: "\27626Z\bN\RS\DELm*NPCyd;\196934\\\a\ACK\1042719\n\1073453\US\139224\ACK\1012735\NUL) \ETBK\1069876\164302.\RS!$G\1058177+\1004924\&2wlF\983329\ACK\29797\1083735\39536\1023373O\ENQ\1007448\ACK_9 -\207634s~D\183711m\GS<\1012931z\DC1\59708&,\1025127iQpI/\986899Yiw\1091235L)\SUB\\m\1023032"
-Initializing telemetry for service: "Ux.\1070501\&4BTR\129365\NAK(o^\ETXQ]-\1913_\RS8RFD\1078786\1078391\ENQKf\av_\SO\SO\1095195CG2\985918\1098029\137514G\202928\ENQ#L\31436\&8W\983601\1024680a\1035372\an&$ioj&5N&\1068173\FScd\111034\a"
-Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\157547GN}\RSm\95052\78040\79098\1050095\113692\1094123zx,Rh nU3snl\27079\&7G'u\ETB\1026077RWw\1042308\STX\CAN`\ENQ6#Z\"w\NULs\1066456;k7\1052724lNhs3h*\40531/|sCtk%U\1102102\158657[%D\1028646L\1092493B\31242\a\ENQ\1037202{\DC2m\98495o\SI"
     should preserve configuration fields across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: "1\ESC\1025"
-Initializing telemetry for service: "1\ESC\1025"
-Initializing telemetry for service: "uU"
-Initializing telemetry for service: "uU"
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Initializing telemetry for service: "T(|"
-Initializing telemetry for service: "T(|"
-Initializing telemetry for service: "e\42504X\SI\\W-t"
-Initializing telemetry for service: "e\42504X\SI\\W-t"
-Initializing telemetry for service: "\1046237\143624\137803$\SYN\30239c\180300\1109351\SUB"
-Initializing telemetry for service: "\1046237\143624\137803$\SYN\30239c\180300\1109351\SUB"
-Initializing telemetry for service: "c\FS\118817"
-Initializing telemetry for service: "c\FS\118817"
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Initializing telemetry for service: "1\f\82093Q\81143s\118275v$;"
-Initializing telemetry for service: "1\f\82093Q\81143s\118275v$;"
-Initializing telemetry for service: "|5l\124136Nt\10925(d_"
-Initializing telemetry for service: "|5l\124136Nt\10925(d_"
-Initializing telemetry for service: "-\b"
-Initializing telemetry for service: "-\b"
-Initializing telemetry for service: "\ESCia\NUL\FS\1107870\GS\a6\f)\SO*\r*/\199398O"
-Initializing telemetry for service: "\ESCia\NUL\FS\1107870\GS\a6\f)\SO*\r*/\199398O"
-Initializing telemetry for service: "Q.\208106h\ENQ\180077xA[W\bf4r\3627\1040790\134767P"
-Initializing telemetry for service: "Q.\208106h\ENQ\180077xA[W\bf4r\3627\1040790\134767P"
-Initializing telemetry for service: "\154504\DC4GV\"\1112611m "
-Initializing telemetry for service: "\154504\DC4GV\"\1112611m "
-Initializing telemetry for service: "..\EOTW\160193\ETB$\b\1056347\165929yr\ESCWO;B]\NULG\998473G\CAN\1810(K^_I"
-Initializing telemetry for service: "..\EOTW\160193\ETB$\b\1056347\165929yr\ESCWO;B]\NULG\998473G\CAN\1810(K^_I"
-Initializing telemetry for service: "\1090150E\DEL\1100334o\1024966D\ETB>\ACKQ\1081792\207975\28480\191569\RSYk\US[\GS\1084703y\189347r2\SUB.\43562dN"
-Initializing telemetry for service: "\1090150E\DEL\1100334o\1024966D\ETB>\ACKQ\1081792\207975\28480\191569\RSYk\US[\GS\1084703y\189347r2\SUB.\43562dN"
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Initializing telemetry for service: "\"y7\ETB\49927l2}\1101198O\182385\16231\DC1"
-Initializing telemetry for service: "\"y7\ETB\49927l2}\1101198O\182385\16231\DC1"
-Initializing telemetry for service: "U wL\170794'\128890uO\8932N\SOH\1061615\SI}%v\1096195"
-Initializing telemetry for service: "U wL\170794'\128890uO\8932N\SOH\1061615\SI}%v\1096195"
-Initializing telemetry for service: "OvY\"\ESC\DC4,\42583@\45355\3240\1039371\1040767\1017583\DEL\"\47620m!NNjG\a5uV\128586\tz"
-Initializing telemetry for service: "OvY\"\ESC\DC4,\42583@\45355\3240\1039371\1040767\1017583\DEL\"\47620m!NNjG\a5uV\128586\tz"
-Initializing telemetry for service: "H\138818\ENQ"
-Initializing telemetry for service: "H\138818\ENQ"
-Initializing telemetry for service: "+yfo%7\995381S_GqN)[fdogk\\"
-Initializing telemetry for service: "+yfo%7\995381S_GqN)[fdogk\\"
-Initializing telemetry for service: "l\1046763C\95174"
-Initializing telemetry for service: "l\1046763C\95174"
-Initializing telemetry for service: "z\EOT\1056668%5\ACK\1379\&2\GS]aD"
-Initializing telemetry for service: "z\EOT\1056668%5\ACK\1379\&2\GS]aD"
-Initializing telemetry for service: "\ESC\20307\STX\1053490\&0\986777\136599\EOT-1?]\3430w\1096515"
-Initializing telemetry for service: "\ESC\20307\STX\1053490\&0\986777\136599\EOT-1?]\3430w\1096515"
-Initializing telemetry for service: "@A@\37835:p&\204670\&9+1O~h7q"
-Initializing telemetry for service: "@A@\37835:p&\204670\&9+1O~h7q"
-Initializing telemetry for service: "Z#\tv*"
-Initializing telemetry for service: "Z#\tv*"
-Initializing telemetry for service: "\178976`~\1025831\1041136\43096NU\SIu\1111730\159468}\1048103\138205U\STX\990962f\6869\njVZK\181183;\1020761m\1051620Cg\"\SYN\NUL3"
-Initializing telemetry for service: "\178976`~\1025831\1041136\43096NU\SIu\1111730\159468}\1048103\138205U\STX\990962f\6869\njVZK\181183;\1020761m\1051620Cg\"\SYN\NUL3"
-Initializing telemetry for service: "\ACKL\GSA0\\hDz\68087\180034\&1l\1089540\DELN'\998194M\186834\1055763,\5276\1006089\1009380\53576d\29686\ACKGXE^u"
-Initializing telemetry for service: "\ACKL\GSA0\\hDz\68087\180034\&1l\1089540\DELN'\998194M\186834\1055763,\5276\1006089\1009380\53576d\29686\ACKGXE^u"
-Initializing telemetry for service: "D\1021559\25176\ETB\1022237\DC34\96764(.\v\ETX.iBgd\b\198465/\GS\SOEVf\NAK\t\74427q<\NULi>\n\65078?{J\CANU\1074341y\1046337\71473\1101446\1082482"
-Initializing telemetry for service: "D\1021559\25176\ETB\1022237\DC34\96764(.\v\ETX.iBgd\b\198465/\GS\SOEVf\NAK\t\74427q<\NULi>\n\65078?{J\CANU\1074341y\1046337\71473\1101446\1082482"
-Initializing telemetry for service: "\aA\30431\200062\DC46CH\ENQ'\n~\208939_2Pi]\151252\&3vhn\17613\1000235&NHNM\ETX`\1066517f^\DC3\nTk\\U0\9162+"
-Initializing telemetry for service: "\aA\30431\200062\DC46CH\ENQ'\n~\208939_2Pi]\151252\&3vhn\17613\1000235&NHNM\ETX`\1066517f^\DC3\nTk\\U0\9162+"
-Initializing telemetry for service: "\GS\"C\DC2\988797\1065951\79363\48341ry#S$\33186f\DC2=\ETB!rlPj\997901"
-Initializing telemetry for service: "\GS\"C\DC2\988797\1065951\79363\48341ry#S$\33186f\DC2=\ETB!rlPj\997901"
-Initializing telemetry for service: "wdG\1005444\158351\SI\1105685\1064523"
-Initializing telemetry for service: "wdG\1005444\158351\SI\1105685\1064523"
-Initializing telemetry for service: ":0? EKo\US\49632) \f\vp\ETXmYf<P^\DELV?d\1026961<tv<\176695"
-Initializing telemetry for service: ":0? EKo\US\49632) \f\vp\ETXmYf<P^\DELV?d\1026961<tv<\176695"
-Initializing telemetry for service: "~\EM\50526\n\1101994\997929F\DLE\DC4I,_\1103659\1010312uP\144974.R\vt%\1095962\DLE\81501^W\ENQ\1066736\1068365Ma\138948\1103733cE\\\186789\SOHJo+\DC288\53438\NAK\1105576\132065@"
-Initializing telemetry for service: "~\EM\50526\n\1101994\997929F\DLE\DC4I,_\1103659\1010312uP\144974.R\vt%\1095962\DLE\81501^W\ENQ\1066736\1068365Ma\138948\1103733cE\\\186789\SOHJo+\DC288\53438\NAK\1105576\132065@"
-Initializing telemetry for service: "\DC3\177506-\rmvZ\69400\170535\DC3i?:R5l\1014057/d\2636u0S\127890\171549].\1013027\SIf>[\18821L\NAKE`Y6\168891\NUL\131380T\1091075\1056565vQ+WM5"
-Initializing telemetry for service: "\DC3\177506-\rmvZ\69400\170535\DC3i?:R5l\1014057/d\2636u0S\127890\171549].\1013027\SIf>[\18821L\NAKE`Y6\168891\NUL\131380T\1091075\1056565vQ+WM5"
-Initializing telemetry for service: "\ENQ\SUBu\180923'XD%\ACK:\1087846q\33998\ESC\149990\&7\1061352u\1017276\15877\b~&\EMNe\f\STX=rg\997055\1036102\1087477b!\STXf\NULk"
-Initializing telemetry for service: "\ENQ\SUBu\180923'XD%\ACK:\1087846q\33998\ESC\149990\&7\1061352u\1017276\15877\b~&\EMNe\f\STX=rg\997055\1036102\1087477b!\STXf\NULk"
-Initializing telemetry for service: "\SI\26026*>Y,\1108683\1055273]Ie\GS\1056414H\DLEI[C~C(\18375\1059423\1002170\1007574\1015086W\ETB=\SUBxN4b\1066405aT;\EM|p\197049mM\1012879\1113266\1094295b\b\DC4"
-Initializing telemetry for service: "\SI\26026*>Y,\1108683\1055273]Ie\GS\1056414H\DLEI[C~C(\18375\1059423\1002170\1007574\1015086W\ETB=\SUBxN4b\1066405aT;\EM|p\197049mM\1012879\1113266\1094295b\b\DC4"
-Initializing telemetry for service: "Y\tV2$\NAKs\b)/\1054273\54680\43748ptx\\\bT&\bS@\1028241\&9bSoc\1070881#`=.!4\SId(#\985580\&5\EM\DEL\a6?#"
-Initializing telemetry for service: "Y\tV2$\NAKs\b)/\1054273\54680\43748ptx\\\bT&\bS@\1028241\&9bSoc\1070881#`=.!4\SId(#\985580\&5\EM\DEL\a6?#"
-Initializing telemetry for service: ":O\ENQDHD\159194\SIt{1.\\|\46715\137531\1061283?\136384\US\1057978\&4\GS4"
-Initializing telemetry for service: ":O\ENQDHD\159194\SIt{1.\\|\46715\137531\1061283?\136384\US\1057978\&4\GS4"
-Initializing telemetry for service: "\DEL\35227\a\DEL\1040521\34784X\ENQ\ACK~\164487,a:\NUL\DEL\FSA6\NULpQB\1000210\201093\1113115/aX\DC1*\1099749[\RSU(\1110529\999447O\1103022<3\DC2Kw\f\180938\160598KVmAR/B\ACKe\b\SO9v6\1054083f\1075445*6\\\GS\39634[r1\155743Q\174718\1113977$v"
-Initializing telemetry for service: "\DEL\35227\a\DEL\1040521\34784X\ENQ\ACK~\164487,a:\NUL\DEL\FSA6\NULpQB\1000210\201093\1113115/aX\DC1*\1099749[\RSU(\1110529\999447O\1103022<3\DC2Kw\f\180938\160598KVmAR/B\ACKe\b\SO9v6\1054083f\1075445*6\\\GS\39634[r1\155743Q\174718\1113977$v"
-Initializing telemetry for service: "e}\NAK\US<L\14471\ETX\92654\DC3-\rp!\178594\EOTDf\74311\FS \STX\DC25\209740n~a\SOHp\NAK"
-Initializing telemetry for service: "e}\NAK\US<L\14471\ETX\92654\DC3-\rp!\178594\EOTDf\74311\FS \STX\DC25\209740n~a\SOHp\NAK"
-Initializing telemetry for service: "D@'\1099869\SOZo\DC1\SYN\992215;8-i$<\US\b\1100996v%\18403-yn\SUBW?H\1028859\ENQT\1071144P1\49991\CANI\181502\NUL\1695n!"
-Initializing telemetry for service: "D@'\1099869\SOZo\DC1\SYN\992215;8-i$<\US\b\1100996v%\18403-yn\SUBW?H\1028859\ENQT\1071144P1\49991\CANI\181502\NUL\1695n!"
-Initializing telemetry for service: "\61698;U6\44678p\DC3f4rj&\40586\121213&\v\992027\&3\1017271|_,0Q\FS-\DC4G\60845\r\1036665\168522\32382o\ETX3].0"
-Initializing telemetry for service: "\61698;U6\44678p\DC3f4rj&\40586\121213&\v\992027\&3\1017271|_,0Q\FS-\DC4G\60845\r\1036665\168522\32382o\ETX3].0"
-Initializing telemetry for service: "9\CANx\r09'\1034308q=}yJ^[b8\FS*x44qTz\171804\ETB\995389&LP;\163320v#\1029829\SI\"R\198665\1005304\DEL\ESC7\ETX\ESC\1062989\&5\1047146;zs\984957B<z'\DEL"
-Initializing telemetry for service: "9\CANx\r09'\1034308q=}yJ^[b8\FS*x44qTz\171804\ETB\995389&LP;\163320v#\1029829\SI\"R\198665\1005304\DEL\ESC7\ETX\ESC\1062989\&5\1047146;zs\984957B<z'\DEL"
-Initializing telemetry for service: "h\984734\1089892|"
-Initializing telemetry for service: "h\984734\1089892|"
-Initializing telemetry for service: "z\FS\988880w(\153283\n\ACKq\SYNV\140438\121163\187486\EOT^~\DC3B\DC3M\1048814j\rT\RS8~y\1023864\"|Tj2\1088392\&0\47632\66904\1047184\nM\194858\1077951iA\EM1#|\160971\FS1\4494v\30661\994314\64564\206315\55148/&2\36624\156147\145363\57796\ETBl.\1012880{i\EM\DLEO]D?d\a\ETXzA"
-Initializing telemetry for service: "z\FS\988880w(\153283\n\ACKq\SYNV\140438\121163\187486\EOT^~\DC3B\DC3M\1048814j\rT\RS8~y\1023864\"|Tj2\1088392\&0\47632\66904\1047184\nM\194858\1077951iA\EM1#|\160971\FS1\4494v\30661\994314\64564\206315\55148/&2\36624\156147\145363\57796\ETBl.\1012880{i\EM\DLEO]D?d\a\ETXzA"
-Initializing telemetry for service: "\CAN\a]\NUL\NAKOX<T5\DLE-\1017481\ETB\EM\15536\988232xe\ACK\12209\NAK\f\96596]q\RS\r\49303bWW~\DC4\1024029N\200123&lL\SO\"2o\1066648u=1\94667\\m"
-Initializing telemetry for service: "\CAN\a]\NUL\NAKOX<T5\DLE-\1017481\ETB\EM\15536\988232xe\ACK\12209\NAK\f\96596]q\RS\r\49303bWW~\DC4\1024029N\200123&lL\SO\"2o\1066648u=1\94667\\m"
-Initializing telemetry for service: "\\\197736\158319\22015K0\FScZ\79628\&1\18579\DLE\EM^\DC3&\11988qqiB\29936P_\\e\1027827\188153(\ETB7)t\ETXfQ\1002292\vF\EM\ETB\38490R\NAK\1001641\&2\1010812\207085\r\SI\27103iCn\177874\9214B\1000255\143649\191897"
-Initializing telemetry for service: "\\\197736\158319\22015K0\FScZ\79628\&1\18579\DLE\EM^\DC3&\11988qqiB\29936P_\\e\1027827\188153(\ETB7)t\ETXfQ\1002292\vF\EM\ETB\38490R\NAK\1001641\&2\1010812\207085\r\SI\27103iCn\177874\9214B\1000255\143649\191897"
-Initializing telemetry for service: "M\EMEFo\STX\187413Tpt>\10679\1062353q\79721\EOT\189177\191836\120986B\1052923\&4\202604\140600f)-B\18690Z\81136a\80950\11313\f\1106503\&59D\49354\1103107$;\bQ~Gv\1023811\101284\ETX\1079718F6\EOT\11771\74083\CAN\81228\SO"
-Initializing telemetry for service: "M\EMEFo\STX\187413Tpt>\10679\1062353q\79721\EOT\189177\191836\120986B\1052923\&4\202604\140600f)-B\18690Z\81136a\80950\11313\f\1106503\&59D\49354\1103107$;\bQ~Gv\1023811\101284\ETX\1079718F6\EOT\11771\74083\CAN\81228\SO"
-Initializing telemetry for service: "6\RSx\DLEq\134998\1006950\EM\US"
-Initializing telemetry for service: "6\RSx\DLEq\134998\1006950\EM\US"
-Initializing telemetry for service: "\SOH*.\1012970\118295o\1013605mBq=\vPju\39330)\166975X!\8022'Cz\989080EC<m\SOH9\1031018fE\FS>"
-Initializing telemetry for service: "\SOH*.\1012970\118295o\1013605mBq=\vPju\39330)\166975X!\8022'Cz\989080EC<m\SOH9\1031018fE\FS>"
-Initializing telemetry for service: "\DC3,\GS\1041586 \1030635VD\US\DLE\143257\GSl\1081024\EOTzF26xT9\146200\128807\1095624y\DC2\NUL\DELv>\n\FS\DELe\159514\SYN}.\8995\SOB\1057774\63748\983385?\1002320}\1058930\131424R@<b'\ETX\ETBJv\157597\t\RSj;3\DC1\t"
-Initializing telemetry for service: "\DC3,\GS\1041586 \1030635VD\US\DLE\143257\GSl\1081024\EOTzF26xT9\146200\128807\1095624y\DC2\NUL\DELv>\n\FS\DELe\159514\SYN}.\8995\SOB\1057774\63748\983385?\1002320}\1058930\131424R@<b'\ETX\ETBJv\157597\t\RSj;3\DC1\t"
-Initializing telemetry for service: "KM\18722W\989215Y\1004410:\"jE\1072229ES=\137350\1101348\GS\NULB!~\RSH(\DC1lQ$_\CANF\1037012Ft_\177417GS\"bp\DC2L;`\r5)\1074179VZB\DC2\ETX\ACK\EOT'E\985726%L#"
-Initializing telemetry for service: "KM\18722W\989215Y\1004410:\"jE\1072229ES=\137350\1101348\GS\NULB!~\RSH(\DC1lQ$_\CANF\1037012Ft_\177417GS\"bp\DC2L;`\r5)\1074179VZB\DC2\ETX\ACK\EOT'E\985726%L#"
-Initializing telemetry for service: "\143569\1002636\NAK\EM\1102732('\ESC\994087\EM\201708$I\47802C\USa"
-Initializing telemetry for service: "\143569\1002636\NAK\EM\1102732('\ESC\994087\EM\201708$I\47802C\USa"
-Initializing telemetry for service: "\27626Z\bN\RS\DELm*NPCyd;\196934\\\a\ACK\1042719\n\1073453\US\139224\ACK\1012735\NUL) \ETBK\1069876\164302.\RS!$G\1058177+\1004924\&2wlF\983329\ACK\29797\1083735\39536\1023373O\ENQ\1007448\ACK_9 -\207634s~D\183711m\GS<\1012931z\DC1\59708&,\1025127iQpI/\986899Yiw\1091235L)\SUB\\m\1023032"
-Initializing telemetry for service: "\27626Z\bN\RS\DELm*NPCyd;\196934\\\a\ACK\1042719\n\1073453\US\139224\ACK\1012735\NUL) \ETBK\1069876\164302.\RS!$G\1058177+\1004924\&2wlF\983329\ACK\29797\1083735\39536\1023373O\ENQ\1007448\ACK_9 -\207634s~D\183711m\GS<\1012931z\DC1\59708&,\1025127iQpI/\986899Yiw\1091235L)\SUB\\m\1023032"
-Initializing telemetry for service: "Ux.\1070501\&4BTR\129365\NAK(o^\ETXQ]-\1913_\RS8RFD\1078786\1078391\ENQKf\av_\SO\SO\1095195CG2\985918\1098029\137514G\202928\ENQ#L\31436\&8W\983601\1024680a\1035372\an&$ioj&5N&\1068173\FScd\111034\a"
-Initializing telemetry for service: "Ux.\1070501\&4BTR\129365\NAK(o^\ETXQ]-\1913_\RS8RFD\1078786\1078391\ENQKf\av_\SO\SO\1095195CG2\985918\1098029\137514G\202928\ENQ#L\31436\&8W\983601\1024680a\1035372\an&$ioj&5N&\1068173\FScd\111034\a"
-Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\157547GN}\RSm\95052\78040\79098\1050095\113692\1094123zx,Rh nU3snl\27079\&7G'u\ETB\1026077RWw\1042308\STX\CAN`\ENQ6#Z\"w\NULs\1066456;k7\1052724lNhs3h*\40531/|sCtk%U\1102102\158657[%D\1028646L\1092493B\31242\a\ENQ\1037202{\DC2m\98495o\SI"
-Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\157547GN}\RSm\95052\78040\79098\1050095\113692\1094123zx,Rh nU3snl\27079\&7G'u\ETB\1026077RWw\1042308\STX\CAN`\ENQ6#Z\"w\NULs\1066456;k7\1052724lNhs3h*\40531/|sCtk%U\1102102\158657[%D\1028646L\1092493B\31242\a\ENQ\1037202{\DC2m\98495o\SI"
     should handle configuration changes correctly [[32m✔[0m]
       +++ OK, passed 100 tests.
   Concurrent Component Creation
@@ -1107,7 +829,6 @@ Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\15
     should handle unicode characters in component names [[32m✔[0m]
       +++ OK, passed 100 tests.
   Resource Cleanup and Memory Leaks
-Shutting down telemetry system
     should clean up resources properly after shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle multiple init/shutdown cycles [[32m✔[0m]
@@ -1135,106 +856,6 @@ Enhanced QuickCheck-based Telemetry Tests
     should handle Unicode characters in log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Transformation and Validation
-Initializing telemetry for service: "-modified"
-Initializing telemetry for service: "-modified"
-Initializing telemetry for service: "HI-modified"
-Initializing telemetry for service: "\v\FS\GS-modified"
-Initializing telemetry for service: "1\ESC\1025"
-Initializing telemetry for service: "uU"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "T(|"
-Initializing telemetry for service: "jo\v\1044880N8F`-modified"
-Initializing telemetry for service: ":-modified"
-Initializing telemetry for service: "x-modified"
-Initializing telemetry for service: ",(}L~-modified"
-Initializing telemetry for service: "\1056740\NAK\995514\DC1}\146504/6P-modified"
-Initializing telemetry for service: "e\42504X\SI\\W-t"
-Initializing telemetry for service: "\1046237\143624\137803$\SYN\30239c\180300\1109351\SUB"
-Initializing telemetry for service: "c\FS\118817"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "|\45297\1093116\&2u\b\v7`L1-modified"
-Initializing telemetry for service: "(\49470\170912-modified"
-Initializing telemetry for service: "1\f\82093Q\81143s\118275v$;"
-Initializing telemetry for service: "|5l\124136Nt\10925(d_"
-Initializing telemetry for service: "-\b"
-Initializing telemetry for service: "\SOH\1070069mE\1085083]\DC1p@\1095166\1069547\USz\EOT{\1050263\FS-modified"
-Initializing telemetry for service: "?\1106091\&8L-modified"
-Initializing telemetry for service: "\EOTNn-+\1008114\39737@\1017636.w\133268\GS\ETB\1090763xt-modified"
-Initializing telemetry for service: "\ESCia\NUL\FS\1107870\GS\a6\f)\SO*\r*/\199398O"
-Initializing telemetry for service: "4=)\DEL\1029131\STX\US\200194I\1029543$\SI\SO<D4-modified"
-Initializing telemetry for service: "@\188961d\DC4<9b\SOF\r\EOT\146154\&2\179879SV-modified"
-Initializing telemetry for service: "7\ESC#\10183vB\t\NUL\ENQCS\47847\US\FSJ\1086295R-modified"
-Initializing telemetry for service: "Q.\208106h\ENQ\180077xA[W\bf4r\3627\1040790\134767P"
-Initializing telemetry for service: "h\1060973]PU\189709T\54360xI-modified"
-Initializing telemetry for service: "-modified"
-Initializing telemetry for service: "\154504\DC4GV\"\1112611m "
-Initializing telemetry for service: "..\EOTW\160193\ETB$\b\1056347\165929yr\ESCWO;B]\NULG\998473G\CAN\1810(K^_I"
-Initializing telemetry for service: "\1090150E\DEL\1100334o\1024966D\ETB>\ACKQ\1081792\207975\28480\191569\RSYk\US[\GS\1084703y\189347r2\SUB.\43562dN"
-Initializing telemetry for service: "+JT\RSpb\167580Z\1100611&mU\DC34-modified"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "\"y7\ETB\49927l2}\1101198O\182385\16231\DC1"
-Initializing telemetry for service: "U wL\170794'\128890uO\8932N\SOH\1061615\SI}%v\1096195"
-Initializing telemetry for service: "\a\EM@Q\\+\\r\ETBs\EMK-Z\SOD`m\DEL\USD\1061863\t2-modified"
-Initializing telemetry for service: ">-modified"
-Initializing telemetry for service: "\187208<\1041162%\95334\ESC=\1066669'B\SUB\136564p1\96386c\SO\"\32758X`\ETX)\1104052\151496W`\156614\US2az\159776_\ACKtu-modified"
-Initializing telemetry for service: "OvY\"\ESC\DC4,\42583@\45355\3240\1039371\1040767\1017583\DEL\"\47620m!NNjG\a5uV\128586\tz"
-Initializing telemetry for service: " hUJ\182788`9\FS/k\176649lZ\ETB8/\CANY\RS\n\191673\&85tl\188029\&3\DEL\1053078\1019690\1091379\SOj-\96454B\SYNzP\1083302d-modified"
-Initializing telemetry for service: "\DC3^\bL\151465\FS\985656__L\189010}\1089628p\ENQU\11924\1014663\1018571Lk6urm@\138272\994886H$\1012384*-modified"
-Initializing telemetry for service: "H\138818\ENQ"
-Initializing telemetry for service: "'P\1081093\79552?)\152918\1009186YDUp\135305E\1045811ut\1058665\\\92691\&7\NULOfJl\FS\SO.S]\995574\138346\1038872xNd0#~>\174400}!\SI-modified"
-Initializing telemetry for service: "\RS93-modified"
-Initializing telemetry for service: "+yfo%7\995381S_GqN)[fdogk\\"
-Initializing telemetry for service: "Z7\37104\NUL\153241\1013777\DELg\54701dH\EOT\NAK.kkAAq\29528\1036957\"\190650\RS@# U\NAK^\25012i\RS<\144881-modified"
-Initializing telemetry for service: "l\1046763C\95174"
-Initializing telemetry for service: "`\1097917$at`\DC1\96485cWv)G\SI\EOT\995883;e\58321p\1088079j\163053\150676P\RSV\n\156037Lr$!z\1111452#-\1049390\172506\r\SYN\1109116\&3b/o \1112279-modified"
-Initializing telemetry for service: "z\EOT\1056668%5\ACK\1379\&2\GS]aD"
-Initializing telemetry for service: "Kn\1038293\EMh\13830\1008129oQ 3\DC4\CANe-modified"
-Initializing telemetry for service: "\ESC\20307\STX\1053490\&0\986777\136599\EOT-1?]\3430w\1096515"
-Initializing telemetry for service: "\RS/\82228\161829\b\16454=h\1059462+\DEL'\1008089b-modified"
-Initializing telemetry for service: "@A@\37835:p&\204670\&9+1O~h7q"
-Initializing telemetry for service: "Z#\tv*"
-Initializing telemetry for service: "\178976`~\1025831\1041136\43096NU\SIu\1111730\159468}\1048103\138205U\STX\990962f\6869\njVZK\181183;\1020761m\1051620Cg\"\SYN\NUL3"
-Initializing telemetry for service: "\ACKL\GSA0\\hDz\68087\180034\&1l\1089540\DELN'\998194M\186834\1055763,\5276\1006089\1009380\53576d\29686\ACKGXE^u"
-Initializing telemetry for service: "Q\ETX\25958\f-modified"
-Initializing telemetry for service: "D\1021559\25176\ETB\1022237\DC34\96764(.\v\ETX.iBgd\b\198465/\GS\SOEVf\NAK\t\74427q<\NULi>\n\65078?{J\CANU\1074341y\1046337\71473\1101446\1082482"
-Initializing telemetry for service: "\aA\30431\200062\DC46CH\ENQ'\n~\208939_2Pi]\151252\&3vhn\17613\1000235&NHNM\ETX`\1066517f^\DC3\nTk\\U0\9162+"
-Initializing telemetry for service: "WvB}\"\FS:\985060`(fCr\SIq\135413\1098922\1075615J\vx\1028915{\185881n-modified"
-Initializing telemetry for service: "\GS\"C\DC2\988797\1065951\79363\48341ry#S$\33186f\DC2=\ETB!rlPj\997901"
-Initializing telemetry for service: "wdG\1005444\158351\SI\1105685\1064523"
-Initializing telemetry for service: "_\\vF\151638G1\1007674cd\184515\51674\GSA\RS\US\18380\DC4J\54541\aB|{\b-modified"
-Initializing telemetry for service: ":0? EKo\US\49632) \f\vp\ETXmYf<P^\DELV?d\1026961<tv<\176695"
-Initializing telemetry for service: "\992777\1066876}o\DC3](b\1042465\a\b\129960?\78633We^2\1111962\207512\DC3j\ETB\197088\&0t^`\983594-modified"
-Initializing telemetry for service: "<\r\4271\1049448?X+\CANU/umL=6b\1032693EpH'\1080530\t\NUL\r\DLE\1008481\DC1]\138914\DEL,/\1038906d5!iz>\1041530~1W\189005\ETB\153822\t\GS\SIO`o\49166\155813Y\1092389\a\191494\23728\128081g\989239\82195\t\37317|\154586\DC3-modified"
-Initializing telemetry for service: "~\EM\50526\n\1101994\997929F\DLE\DC4I,_\1103659\1010312uP\144974.R\vt%\1095962\DLE\81501^W\ENQ\1066736\1068365Ma\138948\1103733cE\\\186789\SOHJo+\DC288\53438\NAK\1105576\132065@"
-Initializing telemetry for service: "\ENQiV4\1110898D\DEL\97870\1066870?&ZqD\35074C}s+/\1094658\26249\1054887\1058781=\SYNx\EOTx\ETX-\SUB$\27192\DC2\988408\1036678\163970\1064614\&5\1069647|\1006593\EOTl-modified"
-Initializing telemetry for service: "\ETB\ETB/\1008039#\vQxU\189247D\DC4;\159383.wB\"=\SOHVt \a\SI-modified"
-Initializing telemetry for service: "\DC3\177506-\rmvZ\69400\170535\DC3i?:R5l\1014057/d\2636u0S\127890\171549].\1013027\SIf>[\18821L\NAKE`Y6\168891\NUL\131380T\1091075\1056565vQ+WM5"
-Initializing telemetry for service: "\ENQ\SUBu\180923'XD%\ACK:\1087846q\33998\ESC\149990\&7\1061352u\1017276\15877\b~&\EMNe\f\STX=rg\997055\1036102\1087477b!\STXf\NULk"
-Initializing telemetry for service: "W\ACK\204319\ENQ{\1098822\t|\69621\as]\1014854q\1076795UL)\1050156\\\1003296,*\DEL\64657PV\209355s<\80512\4247\35528B\1093287\t+[\131512S\NUL\NUL\ESC/*Y#}U-modified"
-Initializing telemetry for service: "\SI\26026*>Y,\1108683\1055273]Ie\GS\1056414H\DLEI[C~C(\18375\1059423\1002170\1007574\1015086W\ETB=\SUBxN4b\1066405aT;\EM|p\197049mM\1012879\1113266\1094295b\b\DC4"
-Initializing telemetry for service: "Y\tV2$\NAKs\b)/\1054273\54680\43748ptx\\\bT&\bS@\1028241\&9bSoc\1070881#`=.!4\SId(#\985580\&5\EM\DEL\a6?#"
-Initializing telemetry for service: ":O\ENQDHD\159194\SIt{1.\\|\46715\137531\1061283?\136384\US\1057978\&4\GS4"
-Initializing telemetry for service: "\DEL\35227\a\DEL\1040521\34784X\ENQ\ACK~\164487,a:\NUL\DEL\FSA6\NULpQB\1000210\201093\1113115/aX\DC1*\1099749[\RSU(\1110529\999447O\1103022<3\DC2Kw\f\180938\160598KVmAR/B\ACKe\b\SO9v6\1054083f\1075445*6\\\GS\39634[r1\155743Q\174718\1113977$v"
-Initializing telemetry for service: "e}\NAK\US<L\14471\ETX\92654\DC3-\rp!\178594\EOTDf\74311\FS \STX\DC25\209740n~a\SOHp\NAK"
-Initializing telemetry for service: "D@'\1099869\SOZo\DC1\SYN\992215;8-i$<\US\b\1100996v%\18403-yn\SUBW?H\1028859\ENQT\1071144P1\49991\CANI\181502\NUL\1695n!"
-Initializing telemetry for service: "\61698;U6\44678p\DC3f4rj&\40586\121213&\v\992027\&3\1017271|_,0Q\FS-\DC4G\60845\r\1036665\168522\32382o\ETX3].0"
-Initializing telemetry for service: "\NAKS\994777\1061060?UBt \SOHo\1022052\1002975\184824\1039852\r\1071296\169750GY\SUB\989360A\SYN\DC1\45410\9085\2314&\997409q=[?LQ \36736\49462X6s\1012510\1005907>5w\a\GS\205122-modified"
-Initializing telemetry for service: "9\CANx\r09'\1034308q=}yJ^[b8\FS*x44qTz\171804\ETB\995389&LP;\163320v#\1029829\SI\"R\198665\1005304\DEL\ESC7\ETX\ESC\1062989\&5\1047146;zs\984957B<z'\DEL"
-Initializing telemetry for service: "h\984734\1089892|"
-Initializing telemetry for service: "z\FS\988880w(\153283\n\ACKq\SYNV\140438\121163\187486\EOT^~\DC3B\DC3M\1048814j\rT\RS8~y\1023864\"|Tj2\1088392\&0\47632\66904\1047184\nM\194858\1077951iA\EM1#|\160971\FS1\4494v\30661\994314\64564\206315\55148/&2\36624\156147\145363\57796\ETBl.\1012880{i\EM\DLEO]D?d\a\ETXzA"
-Initializing telemetry for service: "\CAN\a]\NUL\NAKOX<T5\DLE-\1017481\ETB\EM\15536\988232xe\ACK\12209\NAK\f\96596]q\RS\r\49303bWW~\DC4\1024029N\200123&lL\SO\"2o\1066648u=1\94667\\m"
-Initializing telemetry for service: "\\\197736\158319\22015K0\FScZ\79628\&1\18579\DLE\EM^\DC3&\11988qqiB\29936P_\\e\1027827\188153(\ETB7)t\ETXfQ\1002292\vF\EM\ETB\38490R\NAK\1001641\&2\1010812\207085\r\SI\27103iCn\177874\9214B\1000255\143649\191897"
-Initializing telemetry for service: "T\1059805\1093200E\SOH\rv\RS)8\24555\SUBS:c\1051799\a\CAN8*\DLE\156226\62155\1069743\nH\SYN\GSb\a\\\SOH\1088551\1087928\DC2D\142615\151669#u\SUB\201114T\1007251\1112778\a\"-modified"
-Initializing telemetry for service: "M\EMEFo\STX\187413Tpt>\10679\1062353q\79721\EOT\189177\191836\120986B\1052923\&4\202604\140600f)-B\18690Z\81136a\80950\11313\f\1106503\&59D\49354\1103107$;\bQ~Gv\1023811\101284\ETX\1079718F6\EOT\11771\74083\CAN\81228\SO"
-Initializing telemetry for service: "a-modified"
-Initializing telemetry for service: "6\RSx\DLEq\134998\1006950\EM\US"
-Initializing telemetry for service: "\SOH*.\1012970\118295o\1013605mBq=\vPju\39330)\166975X!\8022'Cz\989080EC<m\SOH9\1031018fE\FS>"
-Initializing telemetry for service: "\DC3,\GS\1041586 \1030635VD\US\DLE\143257\GSl\1081024\EOTzF26xT9\146200\128807\1095624y\DC2\NUL\DELv>\n\FS\DELe\159514\SYN}.\8995\SOB\1057774\63748\983385?\1002320}\1058930\131424R@<b'\ETX\ETBJv\157597\t\RSj;3\DC1\t"
-Initializing telemetry for service: "KM\18722W\989215Y\1004410:\"jE\1072229ES=\137350\1101348\GS\NULB!~\RSH(\DC1lQ$_\CANF\1037012Ft_\177417GS\"bp\DC2L;`\r5)\1074179VZB\DC2\ETX\ACK\EOT'E\985726%L#"
-Initializing telemetry for service: "\143569\1002636\NAK\EM\1102732('\ESC\994087\EM\201708$I\47802C\USa"
-Initializing telemetry for service: "\27626Z\bN\RS\DELm*NPCyd;\196934\\\a\ACK\1042719\n\1073453\US\139224\ACK\1012735\NUL) \ETBK\1069876\164302.\RS!$G\1058177+\1004924\&2wlF\983329\ACK\29797\1083735\39536\1023373O\ENQ\1007448\ACK_9 -\207634s~D\183711m\GS<\1012931z\DC1\59708&,\1025127iQpI/\986899Yiw\1091235L)\SUB\\m\1023032"
-Initializing telemetry for service: "Ux.\1070501\&4BTR\129365\NAK(o^\ETXQ]-\1913_\RS8RFD\1078786\1078391\ENQKf\av_\SO\SO\1095195CG2\985918\1098029\137514G\202928\ENQ#L\31436\&8W\983601\1024680a\1035372\an&$ioj&5N&\1068173\FScd\111034\a"
-Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\157547GN}\RSm\95052\78040\79098\1050095\113692\1094123zx,Rh nU3snl\27079\&7G'u\ETB\1026077RWw\1042308\STX\CAN`\ENQ6#Z\"w\NULs\1066456;k7\1052724lNhs3h*\40531/|sCtk%U\1102102\158657[%D\1028646L\1092493B\31242\a\ENQ\1037202{\DC2m\98495o\SI"
     should handle configuration transformations [[32m✔[0m]
       +++ OK, passed 100 tests.
   Resource Leak Detection
@@ -1295,64 +916,6 @@ New Cabal Test Suite
     should handle very long log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Properties
-Initializing telemetry for service: "1\ESC\1025"
-Initializing telemetry for service: "uU"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "T(|"
-Initializing telemetry for service: "e\42504X\SI\\W-t"
-Initializing telemetry for service: "\1046237\143624\137803$\SYN\30239c\180300\1109351\SUB"
-Initializing telemetry for service: "c\FS\118817"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "1\f\82093Q\81143s\118275v$;"
-Initializing telemetry for service: "|5l\124136Nt\10925(d_"
-Initializing telemetry for service: "-\b"
-Initializing telemetry for service: "\ESCia\NUL\FS\1107870\GS\a6\f)\SO*\r*/\199398O"
-Initializing telemetry for service: "Q.\208106h\ENQ\180077xA[W\bf4r\3627\1040790\134767P"
-Initializing telemetry for service: "\154504\DC4GV\"\1112611m "
-Initializing telemetry for service: "..\EOTW\160193\ETB$\b\1056347\165929yr\ESCWO;B]\NULG\998473G\CAN\1810(K^_I"
-Initializing telemetry for service: "\1090150E\DEL\1100334o\1024966D\ETB>\ACKQ\1081792\207975\28480\191569\RSYk\US[\GS\1084703y\189347r2\SUB.\43562dN"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "\"y7\ETB\49927l2}\1101198O\182385\16231\DC1"
-Initializing telemetry for service: "U wL\170794'\128890uO\8932N\SOH\1061615\SI}%v\1096195"
-Initializing telemetry for service: "OvY\"\ESC\DC4,\42583@\45355\3240\1039371\1040767\1017583\DEL\"\47620m!NNjG\a5uV\128586\tz"
-Initializing telemetry for service: "H\138818\ENQ"
-Initializing telemetry for service: "+yfo%7\995381S_GqN)[fdogk\\"
-Initializing telemetry for service: "l\1046763C\95174"
-Initializing telemetry for service: "z\EOT\1056668%5\ACK\1379\&2\GS]aD"
-Initializing telemetry for service: "\ESC\20307\STX\1053490\&0\986777\136599\EOT-1?]\3430w\1096515"
-Initializing telemetry for service: "@A@\37835:p&\204670\&9+1O~h7q"
-Initializing telemetry for service: "Z#\tv*"
-Initializing telemetry for service: "\178976`~\1025831\1041136\43096NU\SIu\1111730\159468}\1048103\138205U\STX\990962f\6869\njVZK\181183;\1020761m\1051620Cg\"\SYN\NUL3"
-Initializing telemetry for service: "\ACKL\GSA0\\hDz\68087\180034\&1l\1089540\DELN'\998194M\186834\1055763,\5276\1006089\1009380\53576d\29686\ACKGXE^u"
-Initializing telemetry for service: "D\1021559\25176\ETB\1022237\DC34\96764(.\v\ETX.iBgd\b\198465/\GS\SOEVf\NAK\t\74427q<\NULi>\n\65078?{J\CANU\1074341y\1046337\71473\1101446\1082482"
-Initializing telemetry for service: "\aA\30431\200062\DC46CH\ENQ'\n~\208939_2Pi]\151252\&3vhn\17613\1000235&NHNM\ETX`\1066517f^\DC3\nTk\\U0\9162+"
-Initializing telemetry for service: "\GS\"C\DC2\988797\1065951\79363\48341ry#S$\33186f\DC2=\ETB!rlPj\997901"
-Initializing telemetry for service: "wdG\1005444\158351\SI\1105685\1064523"
-Initializing telemetry for service: ":0? EKo\US\49632) \f\vp\ETXmYf<P^\DELV?d\1026961<tv<\176695"
-Initializing telemetry for service: "~\EM\50526\n\1101994\997929F\DLE\DC4I,_\1103659\1010312uP\144974.R\vt%\1095962\DLE\81501^W\ENQ\1066736\1068365Ma\138948\1103733cE\\\186789\SOHJo+\DC288\53438\NAK\1105576\132065@"
-Initializing telemetry for service: "\DC3\177506-\rmvZ\69400\170535\DC3i?:R5l\1014057/d\2636u0S\127890\171549].\1013027\SIf>[\18821L\NAKE`Y6\168891\NUL\131380T\1091075\1056565vQ+WM5"
-Initializing telemetry for service: "\ENQ\SUBu\180923'XD%\ACK:\1087846q\33998\ESC\149990\&7\1061352u\1017276\15877\b~&\EMNe\f\STX=rg\997055\1036102\1087477b!\STXf\NULk"
-Initializing telemetry for service: "\SI\26026*>Y,\1108683\1055273]Ie\GS\1056414H\DLEI[C~C(\18375\1059423\1002170\1007574\1015086W\ETB=\SUBxN4b\1066405aT;\EM|p\197049mM\1012879\1113266\1094295b\b\DC4"
-Initializing telemetry for service: "Y\tV2$\NAKs\b)/\1054273\54680\43748ptx\\\bT&\bS@\1028241\&9bSoc\1070881#`=.!4\SId(#\985580\&5\EM\DEL\a6?#"
-Initializing telemetry for service: ":O\ENQDHD\159194\SIt{1.\\|\46715\137531\1061283?\136384\US\1057978\&4\GS4"
-Initializing telemetry for service: "\DEL\35227\a\DEL\1040521\34784X\ENQ\ACK~\164487,a:\NUL\DEL\FSA6\NULpQB\1000210\201093\1113115/aX\DC1*\1099749[\RSU(\1110529\999447O\1103022<3\DC2Kw\f\180938\160598KVmAR/B\ACKe\b\SO9v6\1054083f\1075445*6\\\GS\39634[r1\155743Q\174718\1113977$v"
-Initializing telemetry for service: "e}\NAK\US<L\14471\ETX\92654\DC3-\rp!\178594\EOTDf\74311\FS \STX\DC25\209740n~a\SOHp\NAK"
-Initializing telemetry for service: "D@'\1099869\SOZo\DC1\SYN\992215;8-i$<\US\b\1100996v%\18403-yn\SUBW?H\1028859\ENQT\1071144P1\49991\CANI\181502\NUL\1695n!"
-Initializing telemetry for service: "\61698;U6\44678p\DC3f4rj&\40586\121213&\v\992027\&3\1017271|_,0Q\FS-\DC4G\60845\r\1036665\168522\32382o\ETX3].0"
-Initializing telemetry for service: "9\CANx\r09'\1034308q=}yJ^[b8\FS*x44qTz\171804\ETB\995389&LP;\163320v#\1029829\SI\"R\198665\1005304\DEL\ESC7\ETX\ESC\1062989\&5\1047146;zs\984957B<z'\DEL"
-Initializing telemetry for service: "h\984734\1089892|"
-Initializing telemetry for service: "z\FS\988880w(\153283\n\ACKq\SYNV\140438\121163\187486\EOT^~\DC3B\DC3M\1048814j\rT\RS8~y\1023864\"|Tj2\1088392\&0\47632\66904\1047184\nM\194858\1077951iA\EM1#|\160971\FS1\4494v\30661\994314\64564\206315\55148/&2\36624\156147\145363\57796\ETBl.\1012880{i\EM\DLEO]D?d\a\ETXzA"
-Initializing telemetry for service: "\CAN\a]\NUL\NAKOX<T5\DLE-\1017481\ETB\EM\15536\988232xe\ACK\12209\NAK\f\96596]q\RS\r\49303bWW~\DC4\1024029N\200123&lL\SO\"2o\1066648u=1\94667\\m"
-Initializing telemetry for service: "\\\197736\158319\22015K0\FScZ\79628\&1\18579\DLE\EM^\DC3&\11988qqiB\29936P_\\e\1027827\188153(\ETB7)t\ETXfQ\1002292\vF\EM\ETB\38490R\NAK\1001641\&2\1010812\207085\r\SI\27103iCn\177874\9214B\1000255\143649\191897"
-Initializing telemetry for service: "M\EMEFo\STX\187413Tpt>\10679\1062353q\79721\EOT\189177\191836\120986B\1052923\&4\202604\140600f)-B\18690Z\81136a\80950\11313\f\1106503\&59D\49354\1103107$;\bQ~Gv\1023811\101284\ETX\1079718F6\EOT\11771\74083\CAN\81228\SO"
-Initializing telemetry for service: "6\RSx\DLEq\134998\1006950\EM\US"
-Initializing telemetry for service: "\SOH*.\1012970\118295o\1013605mBq=\vPju\39330)\166975X!\8022'Cz\989080EC<m\SOH9\1031018fE\FS>"
-Initializing telemetry for service: "\DC3,\GS\1041586 \1030635VD\US\DLE\143257\GSl\1081024\EOTzF26xT9\146200\128807\1095624y\DC2\NUL\DELv>\n\FS\DELe\159514\SYN}.\8995\SOB\1057774\63748\983385?\1002320}\1058930\131424R@<b'\ETX\ETBJv\157597\t\RSj;3\DC1\t"
-Initializing telemetry for service: "KM\18722W\989215Y\1004410:\"jE\1072229ES=\137350\1101348\GS\NULB!~\RSH(\DC1lQ$_\CANF\1037012Ft_\177417GS\"bp\DC2L;`\r5)\1074179VZB\DC2\ETX\ACK\EOT'E\985726%L#"
-Initializing telemetry for service: "\143569\1002636\NAK\EM\1102732('\ESC\994087\EM\201708$I\47802C\USa"
-Initializing telemetry for service: "\27626Z\bN\RS\DELm*NPCyd;\196934\\\a\ACK\1042719\n\1073453\US\139224\ACK\1012735\NUL) \ETBK\1069876\164302.\RS!$G\1058177+\1004924\&2wlF\983329\ACK\29797\1083735\39536\1023373O\ENQ\1007448\ACK_9 -\207634s~D\183711m\GS<\1012931z\DC1\59708&,\1025127iQpI/\986899Yiw\1091235L)\SUB\\m\1023032"
-Initializing telemetry for service: "Ux.\1070501\&4BTR\129365\NAK(o^\ETXQ]-\1913_\RS8RFD\1078786\1078391\ENQKf\av_\SO\SO\1095195CG2\985918\1098029\137514G\202928\ENQ#L\31436\&8W\983601\1024680a\1035372\an&$ioj&5N&\1068173\FScd\111034\a"
-Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\157547GN}\RSm\95052\78040\79098\1050095\113692\1094123zx,Rh nU3snl\27079\&7G'u\ETB\1026077RWw\1042308\STX\CAN`\ENQ6#Z\"w\NULs\1066456;k7\1052724lNhs3h*\40531/|sCtk%U\1102102\158657[%D\1028646L\1092493B\31242\a\ENQ\1037202{\DC2m\98495o\SI"
     should maintain configuration invariants [[32m✔[0m]
       +++ OK, passed 100 tests.
     should validate configuration field constraints [[32m✔[0m]
@@ -1375,7 +938,8 @@ Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\15
   Resource Management and Memory Leak Prevention
     should clean up resources on shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle metric registry cleanup [[31m✘[0m]
+    should handle metric registry cleanup [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Telemetry System Performance Characteristics
     should handle high-frequency metric operations [[32m✔[0m]
       +++ OK, passed 100 tests.
@@ -1384,7 +948,8 @@ Initializing telemetry for service: "\STXZ\r,\EOT\ESC\1036309\1035421M[M1\DC1\15
   Error Recovery and Exception Handling
     should recover from invalid metric values [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle telemetry system restart [[31m✘[0m]
+    should handle telemetry system restart [[32m✔[0m]
+      +++ OK, passed 100 tests.
 Enhanced Cabal Tests
   SimpleMetric Comprehensive Tests
     should create simple metric with initial value [[32m✔[0m]
@@ -1399,7 +964,7 @@ Enhanced Cabal Tests
     should handle NaN values in simple metrics [[32m✔[0m]
     should handle infinity values in simple metrics [[32m✔[0m]
     should handle transition from NaN to finite values [[32m✔[0m]
-    should handle transition from infinity to finite values [[32m✔[0m]
+    should handle transition from infinity to finite values [[31m✘[0m]
   Metric Sharing Tests
     should share metrics with same name and unit when enabled [[32m✔[0m]
     should create separate metrics when sharing is disabled [[32m✔[0m]
@@ -1407,7 +972,7 @@ Enhanced Cabal Tests
     should handle metric sharing with initial values [[32m✔[0m]
   Trace Context Tests
     should maintain trace context across spans [[32m✔[0m]
-    should generate different trace IDs for new traces [[31m✘[0m]
+    should generate different trace IDs for new traces [[32m✔[0m]
   Span ID Uniqueness Tests
     should generate unique span IDs [[32m✔[0m]
     should generate span IDs with consistent length [[32m✔[0m]
@@ -1427,12 +992,12 @@ Enhanced Cabal Tests
     should handle very small values [[32m✔[0m]
     should handle very large values [[32m✔[0m]
     should handle alternating NaN and finite values [[32m✔[0m]
-    should handle alternating infinity and finite values [[32m✔[0m]
+    should handle alternating infinity and finite values [[31m✘[0m]
   Performance and Concurrency Tests
     should handle concurrent simple metric operations [[32m✔[0m]
     should handle rapid span creation and finishing [[32m✔[0m]
   Resource Cleanup and Memory Leak Tests
-    should properly clean up resources on shutdown [[31m✘[0m]
+    should properly clean up resources on shutdown [[32m✔[0m]
 Comprehensive Integration Tests
   Metric Aggregation
     should aggregate multiple metric values correctly [[32m✔[0m]
@@ -1597,54 +1162,6 @@ TelemetryConfig Properties Tests
       +++ OK, passed 100 tests.
     should preserve service version after initialization [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
     should preserve feature flags after initialization [[32m✔[0m]
       +++ OK, passed 100 tests.
   Default Configuration
@@ -1659,7 +1176,8 @@ Initializing telemetry for service: "test-service"
       +++ OK, passed 100 tests.
     should distinguish different configurations [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle transitive property [[31m✘[0m]
+    should handle transitive property [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Configuration Boundary Conditions
     should handle empty service name [[32m✔[0m]
     should handle empty service version [[32m✔[0m]
@@ -1682,58 +1200,6 @@ Initializing telemetry for service: "test-service"
       +++ OK, passed 100 tests.
     should respect logging flag [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
-Initializing telemetry for service: "test-service"
     should respect debug flag [[32m✔[0m]
       +++ OK, passed 100 tests.
 Metric Aggregation Tests
@@ -1903,8 +1369,8 @@ Numeric Boundary Tests
   Infinity Value Handling
     should handle positive infinity [[32m✔[0m]
     should handle negative infinity [[32m✔[0m]
-    should handle infinity addition [[32m✔[0m]
-    should handle infinity subtraction [[32m✔[0m]
+    should handle infinity addition [[31m✘[0m]
+    should handle infinity subtraction [[31m✘[0m]
     should handle infinity with infinity [[32m✔[0m]
   NaN Value Handling
     should handle NaN [[32m✔[0m]
@@ -1935,7 +1401,7 @@ Numeric Boundary Tests
     should handle arithmetic progression [[32m✔[0m]
       +++ OK, passed 100 tests.
   Boundary and Special Value Interactions
-    should handle zero with infinity [[32m✔[0m]
+    should handle zero with infinity [[31m✘[0m]
     should handle zero with NaN [[32m✔[0m]
     should handle infinity with NaN [[32m✔[0m]
 Telemetry Integration Tests
@@ -1952,121 +1418,8 @@ Telemetry Integration Tests
     should handle data flow from logging to metrics [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration-Driven Integration
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
-Initializing telemetry for service: "integration-test"
     should integrate components based on configuration flags [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
-Initializing telemetry for service: "service-2"
     should handle configuration changes during runtime [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Recovery Integration
@@ -2122,7 +1475,7 @@ Advanced Cabal Test Suite
     should not leak memory during repeated init/shutdown cycles [[32m✔[0m]
     should clean up metric registry after shutdown [[32m✔[0m]
   Error Recovery
-    should recover from invalid metric values [[31m✘[0m]
+    should recover from invalid metric values [[32m✔[0m]
     should handle multiple initialization attempts [[32m✔[0m]
   Performance Regression
     should maintain performance with increasing metric count [[32m✔[0m]
@@ -2204,12 +1557,14 @@ Boundary Condition Cabal Test Suite
     should handle NaN values correctly [[32m✔[0m]
     should handle positive infinity correctly [[32m✔[0m]
     should handle negative infinity correctly [[32m✔[0m]
-    should handle mixed special values [[31m✘[0m]
+    should handle mixed special values [[32m✔[0m]
   String Boundary Tests
     should handle empty strings [[32m✔[0m]
-    should handle very long strings [[31m✘[0m]
+    should handle very long strings [[32m✔[0m]
+      +++ OK, passed 100 tests.
     should handle strings with control characters [[32m✔[0m]
-    should handle strings with whitespace only [[31m✘[0m]
+    should handle strings with whitespace only [[32m✔[0m]
+      +++ OK, passed 100 tests.
   Unicode and Encoding Tests
     should handle multibyte Unicode characters [[32m✔[0m]
     should handle zero-width characters [[32m✔[0m]
@@ -2230,7 +1585,7 @@ Boundary Condition Cabal Test Suite
     should handle memory pressure gracefully [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Recovery Boundary Tests
-    should recover from sequence of invalid operations [[31m✘[0m]
+    should recover from sequence of invalid operations [[32m✔[0m]
     should handle cascading failures [[32m✔[0m]
   Time-Related Boundary Tests
     should handle rapid successive operations [[32m✔[0m]
@@ -2240,2144 +1595,91 @@ Boundary Condition Cabal Test Suite
   System Resource Boundary Tests
     should handle resource exhaustion scenarios [[32m✔[0m]
       +++ OK, passed 100 tests.
-Concurrent Cabal Test Suite
-  Basic Concurrent Safety
-    should handle concurrent metric creation safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent metric recording safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent span creation safely [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  High Concurrency Load Tests
-    should handle high load with many threads [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle mixed concurrent operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Race Condition Tests
-    should handle race conditions in metric registry [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle race conditions in trace context [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Deadlock Detection Tests
-    should not deadlock with nested operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should not deadlock with circular dependencies [[32m✔[0m]
-  Thread Safety Verification
-    should maintain atomicity for metric updates [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain consistency across concurrent operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Interruption and Exception Handling
-    should handle thread interruption gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-azimuth-test: Uncaught exception ghc-internal:GHC.Internal.Exception.ErrorCall:
-
-Intentional exception for testing
-
-HasCallStack backtrace:
-  error, called at test/ConcurrentCabalTestSpec.hs:358:15 in azimuth-0.1.0-inplace-azimuth-test:ConcurrentCabalTestSpec
-
-    should recover from exceptions in worker threads [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Performance Tests
-    should maintain performance under concurrent load [[31m✘[0m]
-    should scale with number of threads [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Contention Tests
-    should handle high contention on shared metrics [[31m✘[0m]
-    should handle contention on trace context [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Boundary Tests
-    should handle extreme concurrent scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle resource exhaustion under concurrency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Consistency Verification
-    should maintain data consistency under concurrent load [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain invariants under concurrent operations [[31m✘[0m]
-Performance Cabal Test Suite
-  Basic Performance Benchmarks
-    should handle metric operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle span operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle logging operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Scalability Tests
-    should scale linearly with metric count [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle increasing load gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Memory Efficiency Tests
-    should not leak memory during repeated operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle large numbers of resources efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrent Performance Tests
-    should maintain performance under concurrent load [[31m✘[0m]
-    should scale with number of cores [[31m✘[0m]
-  High-Frequency Operation Tests
-    should handle high-frequency metric updates [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle burst operations efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Usage Efficiency
-    should minimize CPU usage during idle periods [[32m✔[0m]
-    should handle resource pooling efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Long-Running Stability Tests
-    should maintain performance over extended periods [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle memory growth gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance Regression Tests
-    should not regress in metric operation performance [[32m✔[0m]
-    should not regress in span operation performance [[32m✔[0m]
-  Load Balancing Performance
-    should distribute load evenly across metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle uneven load efficiently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Extreme Performance Tests
-    should handle maximum sustainable load [[32m✔[0m]
-    should recover from performance degradation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Integration Cabal Test Suite
-  End-to-End Telemetry Flow
-    should complete full telemetry workflow [[32m✔[0m]
-    should handle complex multi-component scenarios [[31m✘[0m]
-  Component Interaction Tests
-    should coordinate metrics and spans correctly [[32m✔[0m]
-    should integrate logging with metrics and spans [[32m✔[0m]
-  Configuration Integration
-    should respect configuration across all components [[32m✔[0m]
-    should handle configuration changes dynamically [[32m✔[0m]
-  Data Flow Integration
-    should maintain data consistency across components [[32m✔[0m]
-    should handle complex data transformations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Handling Integration
-    should handle errors gracefully across all components [[32m✔[0m]
-    should maintain system stability during errors [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Performance Integration
-    should maintain performance under integrated load [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should scale performance with component count [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Lifecycle Integration
-    should manage component lifecycle correctly [[32m✔[0m]
-    should handle complex lifecycle scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Resource Management Integration
-    should manage resources efficiently across components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should clean up resources properly [[32m✔[0m]
-  Concurrent Integration
-    should handle concurrent access to all components [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain consistency under concurrent load [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  System-Level Integration
-    should handle realistic system scenarios [[32m✔[0m]
-    should handle complex system interactions [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Domain Cabal Test Suite
-  Domain-Specific Metric Tests
-    should handle HTTP metrics correctly [[32m✔[0m]
-    should handle business metrics correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Domain-Specific Tracing Tests
-    should handle distributed tracing scenarios [[32m✔[0m]
-    should handle microservice tracing patterns [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Domain-Specific Logging Tests
-    should handle structured logging scenarios [[32m✔[0m]
-    should handle log level filtering correctly [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Application Scenario Tests
-    should handle e-commerce application scenarios [[32m✔[0m]
-    should handle financial application scenarios [[31m✘[0m]
-  Monitoring Scenario Tests
-    should handle infrastructure monitoring scenarios [[32m✔[0m]
-    should handle application performance monitoring [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Security Scenario Tests
-    should handle security monitoring scenarios [[32m✔[0m]
-    should handle compliance logging scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  IoT Scenario Tests
-    should handle IoT device telemetry [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Gaming Scenario Tests
-    should handle gaming analytics scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Healthcare Scenario Tests
-    should handle healthcare application scenarios [[32m✔[0m]
-  Education Scenario Tests
-    should handle education platform scenarios [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Regression Cabal Test Suite
-  Basic Functionality Regression Tests
-    should maintain basic metric operations [[32m✔[0m]
-    should maintain basic span operations [[32m✔[0m]
-    should maintain basic logging operations [[32m✔[0m]
-  Numerical Calculation Regression Tests
-    should maintain precision in decimal calculations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle large number accumulation [[32m✔[0m]
-    should maintain additive inverse property [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrency Safety Regression Tests
-    should maintain thread safety for metric operations [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle concurrent span creation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Memory Management Regression Tests
-    should not leak memory during repeated operations [[32m✔[0m]
-    should handle resource cleanup correctly [[32m✔[0m]
-  Configuration Management Regression Tests
-    should handle configuration changes correctly [[32m✔[0m]
-    should maintain configuration persistence [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Error Handling Regression Tests
-    should handle special floating point values consistently [[31m✘[0m]
-    should recover from error conditions [[31m✘[0m]
-  Performance Regression Tests
-    should maintain baseline performance for metric operations [[32m✔[0m]
-    should handle high-frequency operations without degradation [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Boundary Condition Regression Tests
-    should handle empty string values consistently [[32m✔[0m]
-    should handle very long string values consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Data Consistency Regression Tests
-    should maintain metric name consistency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should maintain metric unit consistency [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Integration Regression Tests
-    should maintain component integration consistency [[32m✔[0m]
-    should handle complex workflow consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Edge Case Cabal Test Suite
-  Extreme Numerical Edge Cases
-    should handle subnormal numbers [[32m✔[0m]
-    should handle very close to zero values [[32m✔[0m]
-      +++ OK, passed 100 tests.
-    should handle alternating extreme values [[32m✔[0m]
-  String Edge Cases
-    should handle all ASCII control characters [[32m✔[0m]
-    should handle Unicode edge cases [[32m✔[0m]
-    should handle very long repeated patterns [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Concurrency Edge Cases
-    should handle thundering herd problem [[32m✔[0m]
-    should handle rapid initialization/shutdown cycles [[32m✔[0m]
-    should handle concurrent access to same metric name [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Memory Edge Cases
-    should handle memory pressure scenarios [[32m✔[0m]
-    should handle resource exhaustion gracefully [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Time-Related Edge Cases
-    should handle rapid successive operations [[32m✔[0m]
-    should handle operations with minimal delays [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  State Transition Edge Cases
-    should handle initialization during shutdown [[32m✔[0m]
-    should handle configuration changes during operations [[32m✔[0m]
-  Data Type Edge Cases
-    should handle all possible log levels [[32m✔[0m]
-    should handle boolean configuration combinations [[32m✔[0m]
-  Error Recovery Edge Cases
-    should handle cascading error scenarios [[31m✘[0m]
-    should handle error conditions during concurrent operations [[31m✘[0m]
-  Performance Edge Cases
-    should handle worst-case string operations [[32m✔[0m]
-    should handle pathological metric update patterns [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  System Edge Cases
-    should handle system resource limitations [[32m✔[0m]
-    should handle extreme system load [[32m✔[0m]
-      +++ OK, passed 100 tests.
-Real World Cabal Test Suite
-  Web Application Monitoring
-    should handle typical web application metrics [[32m✔[0m]
-    should handle user session tracking [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  Microservices Architecture Monitoring
-    should handle distributed tracing across services [[32m✔[0m]
-    should handle service mesh communication [[31m✘[0m]
-  Database Performance Monitoring
-    should handle database operation metrics [[32m✔[0m]
-  Cache Performance Monitoring
-    should handle cache hit/miss metrics [[31m✘[0m]
-  Message Queue Monitoring
-    should handle message queue metrics [[32m✔[0m]
-  API Gateway Monitoring
-    should handle API gateway routing metrics [[32m✔[0m]
-  Containerized Application Monitoring
-    should handle container resource metrics [[31m✘[0m]
-  Mobile Application Monitoring
-    should handle mobile app metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
-  IoT Device Monitoring
-    should handle IoT device telemetry [[31m✘[0m]
-  Game Server Monitoring
-    should handle game server metrics [[32m✔[0m]
-      +++ OK, passed 100 tests.
 Validation Tests
   should share metrics with same name and unit [[32m✔[0m]
   should handle configuration changes without affecting operations [[32m✔[0m]
 
 Failures:
 
-[36m  test/AdditionalCoverageSpec.hs:116:15: [0m
-  1) Additional Coverage Tests, Metric Sharing Mechanism, should share metrics with same name and unit
-[31m       expected: [0m[31m10[0m.0
-[31m        but got: [0m[32m25[0m.0
-
-  To rerun use: --match "/Additional Coverage Tests/Metric Sharing Mechanism/should share metrics with same name and unit/" --seed 464113754
-
-[36m  test/AdvancedTelemetrySpec.hs:203:5: [0m
-  2) Advanced Telemetry Tests, Dynamic Configuration Updates, should handle configuration changes during operation
-[31m       Falsified (after 2 tests and 3 shrinks):[0m
-[31m         0[0m
-[31m         0[0m
-
-  To rerun use: --match "/Advanced Telemetry Tests/Dynamic Configuration Updates/should handle configuration changes during operation/" --seed 464113754
-
-[36m  test/AdvancedTelemetrySpec.hs:226:5: [0m
-  3) Advanced Telemetry Tests, Dynamic Configuration Updates, should preserve service identity across configuration changes
-[31m       Falsified (after 2 tests and 3 shrinks):[0m
-[31m         0[0m
-[31m         0[0m
-
-  To rerun use: --match "/Advanced Telemetry Tests/Dynamic Configuration Updates/should preserve service identity across configuration changes/" --seed 464113754
-
-[36m  test/AdvancedTelemetrySpec.hs:537:5: [0m
-  4) Advanced Telemetry Tests, Component Interactions, should handle mixed operations across all components
-[31m       Falsified (after 2 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Advanced Telemetry Tests/Component Interactions/should handle mixed operations across all components/" --seed 464113754
-
-[36m  test/NewQuickCheckTestsSpec.hs:435:5: [0m
-  5) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between metrics and spans
-[31m       Falsified (after 2 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between metrics and spans/" --seed 464113754
-
-[36m  test/NewQuickCheckTestsSpec.hs:473:5: [0m
-  6) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between all three component types
-[31m       Falsified (after 2 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between all three component types/" --seed 464113754
-
-[36m  test/NewQuickCheckTestsSpec.hs:521:5: [0m
-  7) New QuickCheck-based Telemetry Tests, Error Recovery Mechanisms, should handle operations without initialization
-[31m       Falsified (after 2 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Error Recovery Mechanisms/should handle operations without initialization/" --seed 464113754
-
-[36m  test/NewCabalTestSpec.hs:274:5: [0m
-  8) New Cabal Test Suite, Resource Management and Memory Leak Prevention, should handle metric registry cleanup
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New Cabal Test Suite/Resource Management and Memory Leak Prevention/should handle metric registry cleanup/" --seed 464113754
-
-[36m  test/NewCabalTestSpec.hs:348:5: [0m
-  9) New Cabal Test Suite, Error Recovery and Exception Handling, should handle telemetry system restart
-[31m       Falsified (after 2 tests):[0m
-[31m         0[0m
-
-  To rerun use: --match "/New Cabal Test Suite/Error Recovery and Exception Handling/should handle telemetry system restart/" --seed 464113754
-
-[36m  test/EnhancedCabalTestSpec.hs:188:18: [0m
-  10) Enhanced Cabal Tests, Trace Context Tests, should generate different trace IDs for new traces
-[31m       not expected: "a5a2a5f2"[0m
-
-  To rerun use: --match "/Enhanced Cabal Tests/Trace Context Tests/should generate different trace IDs for new traces/" --seed 464113754
-
-[36m  test/EnhancedCabalTestSpec.hs:379:27: [0m
-  11) Enhanced Cabal Tests, Resource Cleanup and Memory Leak Tests, should properly clean up resources on shutdown
+[36m  test/AdditionalCabalTestSpec.hs:197:30: [0m
+  1) Additional Cabal Test Suite, Error Recovery Mechanisms, should recover from invalid metric values
 [31m       expected: [0m[31mTrue[0m
 [31m        but got: [0m[32mFalse[0m
 
-  To rerun use: --match "/Enhanced Cabal Tests/Resource Cleanup and Memory Leak Tests/should properly clean up resources on shutdown/" --seed 464113754
+  To rerun use: --match "/Additional Cabal Test Suite/Error Recovery Mechanisms/should recover from invalid metric values/" --seed 1070252942
+
+[36m  test/NewQuickCheckTestsSpec.hs:435:5: [0m
+  2) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between metrics and spans
+[31m       Falsified (after 2 tests and 1 shrink):[0m
+[31m         0[0m
+
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between metrics and spans/" --seed 1070252942
+
+[36m  test/NewQuickCheckTestsSpec.hs:473:5: [0m
+  3) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between all three component types
+[31m       Falsified (after 2 tests and 1 shrink):[0m
+[31m         0[0m
+
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between all three component types/" --seed 1070252942
+
+[36m  test/NewQuickCheckTestsSpec.hs:521:5: [0m
+  4) New QuickCheck-based Telemetry Tests, Error Recovery Mechanisms, should handle operations without initialization
+[31m       Falsified (after 4 tests):[0m
+[31m         0[0m
+
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Error Recovery Mechanisms/should handle operations without initialization/" --seed 1070252942
+
+[36m  test/EnhancedCabalTestSpec.hs:104:26: [0m
+  5) Enhanced Cabal Tests, Special Values Handling, should handle transition from infinity to finite values
+[31m       expected: [0m[31mTrue[0m
+[31m        but got: [0m[32mFalse[0m
+
+  To rerun use: --match "/Enhanced Cabal Tests/Special Values Handling/should handle transition from infinity to finite values/" --seed 1070252942
+
+[36m  test/EnhancedCabalTestSpec.hs:322:26: [0m
+  6) Enhanced Cabal Tests, Boundary Conditions and Error Handling, should handle alternating infinity and finite values
+[31m       expected: [0m[31mTrue[0m
+[31m        but got: [0m[32mFalse[0m
+
+  To rerun use: --match "/Enhanced Cabal Tests/Boundary Conditions and Error Handling/should handle alternating infinity and finite values/" --seed 1070252942
 
 [36m  test/SpanPropertiesSpec.hs:65:5: [0m
-  12) Span Properties Tests, Trace ID Consistency, should generate different trace IDs for different traces
+  7) Span Properties Tests, Trace ID Consistency, should generate different trace IDs for different traces
 [31m       Falsified (after 1 test):[0m
 [31m         [][0m
 
-  To rerun use: --match "/Span Properties Tests/Trace ID Consistency/should generate different trace IDs for different traces/" --seed 464113754
+  To rerun use: --match "/Span Properties Tests/Trace ID Consistency/should generate different trace IDs for different traces/" --seed 1070252942
 
-[36m  test/TelemetryConfigSpec.hs:98:5: [0m
-  13) TelemetryConfig Properties Tests, Configuration Equality, should handle transitive property
-[31m       Falsified (after 3 tests and 5 shrinks):[0m
-[31m         ""[0m
-[31m         "a"[0m
-[31m         ""[0m
-[31m         False[0m
-[31m         False[0m
-[31m         False[0m
-[31m         False[0m
+[36m  test/NumericBoundarySpec.hs:111:14: [0m
+  8) Numeric Boundary Tests, Infinity Value Handling, should handle infinity addition
+[31m       predicate failed on: 1.0[0m
 
-  To rerun use: --match "/TelemetryConfig Properties Tests/Configuration Equality/should handle transitive property/" --seed 464113754
+  To rerun use: --match "/Numeric Boundary Tests/Infinity Value Handling/should handle infinity addition/" --seed 1070252942
+
+[36m  test/NumericBoundarySpec.hs:120:14: [0m
+  9) Numeric Boundary Tests, Infinity Value Handling, should handle infinity subtraction
+[31m       predicate failed on: -1.0[0m
+
+  To rerun use: --match "/Numeric Boundary Tests/Infinity Value Handling/should handle infinity subtraction/" --seed 1070252942
+
+[36m  test/NumericBoundarySpec.hs:318:14: [0m
+  10) Numeric Boundary Tests, Boundary and Special Value Interactions, should handle zero with infinity
+[31m       predicate failed on: 0.0[0m
+
+  To rerun use: --match "/Numeric Boundary Tests/Boundary and Special Value Interactions/should handle zero with infinity/" --seed 1070252942
 
 [36m  test/AdvancedCabalTestSpec.hs:128:5: [0m
-  14) Advanced Cabal Test Suite, Span and Trace ID Generation Rules, should reset trace context after shutdown
-[31m       Falsified (after 3 tests and 3 shrinks):[0m
+  11) Advanced Cabal Test Suite, Span and Trace ID Generation Rules, should reset trace context after shutdown
+[31m       Falsified (after 3 tests and 2 shrinks):[0m
 [31m         [""][0m
 [31m         [""][0m
 
-  To rerun use: --match "/Advanced Cabal Test Suite/Span and Trace ID Generation Rules/should reset trace context after shutdown/" --seed 464113754
+  To rerun use: --match "/Advanced Cabal Test Suite/Span and Trace ID Generation Rules/should reset trace context after shutdown/" --seed 1070252942
 
-[36m  test/AdvancedCabalTestSpec.hs:306:32: [0m
-  15) Advanced Cabal Test Suite, Error Recovery, should recover from invalid metric values
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
+Randomized with seed 1070252942
 
-  To rerun use: --match "/Advanced Cabal Test Suite/Error Recovery/should recover from invalid metric values/" --seed 464113754
-
-[36m  test/BoundaryConditionCabalSpec.hs:122:32: [0m
-  16) Boundary Condition Cabal Test Suite, Special Floating Point Values, should handle mixed special values
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Boundary Condition Cabal Test Suite/Special Floating Point Values/should handle mixed special values/" --seed 464113754
-
-[36m  test/BoundaryConditionCabalSpec.hs:140:5: [0m
-  17) Boundary Condition Cabal Test Suite, String Boundary Tests, should handle very long strings
-[31m       uncaught exception: ErrorCall[0m
-[31m       Prelude.cycle: empty list[0m
-[31m       (after 1 test)[0m
-[31m         ""[0m
-
-  To rerun use: --match "/Boundary Condition Cabal Test Suite/String Boundary Tests/should handle very long strings/" --seed 464113754
-
-[36m  test/BoundaryConditionCabalSpec.hs:165:5: [0m
-  18) Boundary Condition Cabal Test Suite, String Boundary Tests, should handle strings with whitespace only
-[31m       uncaught exception: ErrorCall[0m
-[31m       Prelude.cycle: empty list[0m
-[31m       (after 1 test)[0m
-[31m         ""[0m
-
-  To rerun use: --match "/Boundary Condition Cabal Test Suite/String Boundary Tests/should handle strings with whitespace only/" --seed 464113754
-
-[36m  test/BoundaryConditionCabalSpec.hs:355:30: [0m
-  19) Boundary Condition Cabal Test Suite, Error Recovery Boundary Tests, should recover from sequence of invalid operations
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Boundary Condition Cabal Test Suite/Error Recovery Boundary Tests/should recover from sequence of invalid operations/" --seed 464113754
-
-[36m  test/ConcurrentCabalTestSpec.hs:379:5: [0m
-  20) Concurrent Cabal Test Suite, Concurrent Performance Tests, should maintain performance under concurrent load
-[31m       uncaught exception: ErrorCall[0m
-[31m       Prelude.undefined[0m
-[31m       (after 1 test)[0m
-[31m         0[0m
-
-  To rerun use: --match "/Concurrent Cabal Test Suite/Concurrent Performance Tests/should maintain performance under concurrent load/" --seed 464113754
-
-[36m  test/ConcurrentCabalTestSpec.hs:437:5: [0m
-  21) Concurrent Cabal Test Suite, Resource Contention Tests, should handle high contention on shared metrics
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Concurrent Cabal Test Suite/Resource Contention Tests/should handle high contention on shared metrics/" --seed 464113754
-
-[36m  test/ConcurrentCabalTestSpec.hs:589:5: [0m
-  22) Concurrent Cabal Test Suite, Concurrent Consistency Verification, should maintain invariants under concurrent operations
-[31m       Falsified (after 3 tests):[0m
-[31m         1[0m
-
-  To rerun use: --match "/Concurrent Cabal Test Suite/Concurrent Consistency Verification/should maintain invariants under concurrent operations/" --seed 464113754
-
-[36m  test/PerformanceCabalTestSpec.hs:200:5: [0m
-  23) Performance Cabal Test Suite, Concurrent Performance Tests, should maintain performance under concurrent load
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Performance Cabal Test Suite/Concurrent Performance Tests/should maintain performance under concurrent load/" --seed 464113754
-
-[36m  test/PerformanceCabalTestSpec.hs:266:20: [0m
-  24) Performance Cabal Test Suite, Concurrent Performance Tests, should scale with number of cores
-[31m       predicate failed on: 1332.9099962311936[0m
-
-  To rerun use: --match "/Performance Cabal Test Suite/Concurrent Performance Tests/should scale with number of cores/" --seed 464113754
-
-[36m  test/IntegrationCabalTestSpec.hs:92:18: [0m
-  25) Integration Cabal Test Suite, End-to-End Telemetry Flow, should handle complex multi-component scenarios
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Integration Cabal Test Suite/End-to-End Telemetry Flow/should handle complex multi-component scenarios/" --seed 464113754
-
-[36m  test/DomainCabalTestSpec.hs:231:5: [0m
-  26) Domain Cabal Test Suite, Application Scenario Tests, should handle financial application scenarios
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Domain Cabal Test Suite/Application Scenario Tests/should handle financial application scenarios/" --seed 464113754
-
-[36m  test/RegressionCabalTestSpec.hs:259:32: [0m
-  27) Regression Cabal Test Suite, Error Handling Regression Tests, should handle special floating point values consistently
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Regression Cabal Test Suite/Error Handling Regression Tests/should handle special floating point values consistently/" --seed 464113754
-
-[36m  test/RegressionCabalTestSpec.hs:262:5: [0m
-  28) Regression Cabal Test Suite, Error Handling Regression Tests, should recover from error conditions
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Regression Cabal Test Suite/Error Handling Regression Tests/should recover from error conditions/" --seed 464113754
-
-[36m  test/EdgeCaseCabalTestSpec.hs:351:25: [0m
-  29) Edge Case Cabal Test Suite, Error Recovery Edge Cases, should handle cascading error scenarios
-[31m       expected: [0m[31mTrue[0m
-[31m        but got: [0m[32mFalse[0m
-
-  To rerun use: --match "/Edge Case Cabal Test Suite/Error Recovery Edge Cases/should handle cascading error scenarios/" --seed 464113754
-
-[36m  test/EdgeCaseCabalTestSpec.hs:353:5: [0m
-  30) Edge Case Cabal Test Suite, Error Recovery Edge Cases, should handle error conditions during concurrent operations
-[31m       Falsified (after 3 tests):[0m
-[31m         1[0m
-
-  To rerun use: --match "/Edge Case Cabal Test Suite/Error Recovery Edge Cases/should handle error conditions during concurrent operations/" --seed 464113754
-
-[36m  test/RealWorldCabalTestSpec.hs:156:5: [0m
-  31) Real World Cabal Test Suite, Microservices Architecture Monitoring, should handle service mesh communication
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Real World Cabal Test Suite/Microservices Architecture Monitoring/should handle service mesh communication/" --seed 464113754
-
-[36m  test/RealWorldCabalTestSpec.hs:253:5: [0m
-  32) Real World Cabal Test Suite, Cache Performance Monitoring, should handle cache hit/miss metrics
-[31m       Falsified (after 11 tests and 1 shrink):[0m
-[31m         10[0m
-
-  To rerun use: --match "/Real World Cabal Test Suite/Cache Performance Monitoring/should handle cache hit/miss metrics/" --seed 464113754
-
-[36m  test/RealWorldCabalTestSpec.hs:397:5: [0m
-  33) Real World Cabal Test Suite, Containerized Application Monitoring, should handle container resource metrics
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Real World Cabal Test Suite/Containerized Application Monitoring/should handle container resource metrics/" --seed 464113754
-
-[36m  test/RealWorldCabalTestSpec.hs:497:5: [0m
-  34) Real World Cabal Test Suite, IoT Device Monitoring, should handle IoT device telemetry
-[31m       Falsified (after 1 test):[0m
-[31m         0[0m
-
-  To rerun use: --match "/Real World Cabal Test Suite/IoT Device Monitoring/should handle IoT device telemetry/" --seed 464113754
-
-Randomized with seed 464113754
-
-Finished in 1854.7459 seconds
-[31m906 examples, 34 failures[0m
+Finished in 345.7235 seconds
+[31m771 examples, 11 failures[0m
 Test suite azimuth-test: FAIL
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log

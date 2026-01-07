@@ -341,6 +341,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         let actualIterations = max 1 (abs iterations `mod` 100 + 1)
         in unsafePerformIO $ do
                     
+          -- 禁用metric sharing以避免测试干扰
+          writeIORef enableMetricSharing False
+          
           -- 执行大量操作
           sequence_ $ replicate actualIterations $ do
             metric <- createMetric "leak-test" "count"
@@ -358,6 +361,8 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           
           finalValue <- metricValue testMetric
           
+          -- 恢复metric sharing
+          writeIORef enableMetricSharing True
                     
           return (finalValue == 42.0)
     
@@ -434,6 +439,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         let operations = max 10 (abs stressLevel `mod` 1000 + 10)
         in unsafePerformIO $ do
                     
+          -- 禁用metric sharing以避免测试干扰
+          writeIORef enableMetricSharing False
+          
           -- 创建健康检查指标
           healthMetric <- createMetric "health-check" "ops"
           healthLogger <- createLogger "health-logger" Info
@@ -446,6 +454,8 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           -- 验证系统健康状态
           totalOps <- metricValue healthMetric
           
+          -- 恢复metric sharing
+          writeIORef enableMetricSharing True
                     
           return (totalOps == fromIntegral operations)
     

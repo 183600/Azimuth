@@ -66,10 +66,13 @@ spec = describe "Span Properties Tests" $ do
       \(_names :: [Int]) ->
         let traceNames = take 3 (map (pack . take 50 . show) ([1..] :: [Int]))
             result = unsafePerformIO $ do
+              -- Reset telemetry between traces to ensure different trace IDs
               traceIds <- sequence $ map (\_ -> do
-                -- 重置追踪上下文以创建新的trace
-                                                
-                -- 创建span以建立trace context
+                -- Reset telemetry to create a new trace context
+                shutdownTelemetry
+                initTelemetry productionConfig
+                
+                -- Create span to establish trace context
                 span <- createSpan "trace-test"
                 return (spanTraceId span)
                             ) traceNames

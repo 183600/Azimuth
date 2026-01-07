@@ -9,7 +9,7 @@ import Control.Exception (try, SomeException, evaluate)
 import Data.Text (pack, unpack)
 import qualified Data.Text as Text
 import Data.List (nub, sort)
-import Control.Concurrent (forkIO, threadDelay, killThread)
+import Control.Concurrent (forkIO, threadDelay, killThread, MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (replicateM, when)
 import Data.IORef
 import System.IO.Unsafe (unsafePerformIO)
@@ -141,23 +141,31 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
             operationsPerThread = 10
         in unsafePerformIO $ do
                     
+          -- 禁用metric sharing以避免测试干扰
+          writeIORef enableMetricSharing False
+          
           metric <- createMetric "concurrent-test" "count"
+          
+          -- 使用MVar来同步线程完成
+          done <- newEmptyMVar
           
           -- 创建多个线程同时操作度量
           threads <- mapM (\_ -> forkIO $ do
             sequence_ $ replicate operationsPerThread $ do
               recordMetric metric 1.0
+            putMVar done ()
             ) [1..actualThreads]
           
           -- 等待所有线程完成
-          threadDelay 10000  -- 10毫秒
-          
-          -- 清理线程
-          sequence_ $ map killThread threads
+          sequence_ $ replicate actualThreads (takeMVar done)
           
           -- 验证最终值
           finalValue <- metricValue metric
           let expectedValue = fromIntegral actualThreads * fromIntegral operationsPerThread
+          
+          -- 恢复metric sharing
+          writeIORef enableMetricSharing True
+          
           return (finalValue == expectedValue)
   
   -- 7. 测试边界值处理
@@ -271,16 +279,20 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
         let operations = max 10 (abs numOps `mod` 100 + 10)
         in unsafePerformIO $ do
                     
+          -- 禁用metric sharing以避免测试干扰
+          writeIORef enableMetricSharing False
+          
           -- 测试度量操作性能
           metric <- createMetric "performance-test" "ops"
           
-          startTime <- evaluate =<< sequence [return ()] -- 简单的时间戳获取
-          
+          -- 执行操作序列
           sequence_ $ replicate operations $ do
             recordMetric metric 1.0
           
-          endTime <- evaluate =<< sequence [return ()] -- 简单的时间戳获取
-          
           -- 验证所有操作都完成了
           finalValue <- metricValue metric
+          
+          -- 恢复metric sharing
+          writeIORef enableMetricSharing True
+          
           return (finalValue == fromIntegral operations)

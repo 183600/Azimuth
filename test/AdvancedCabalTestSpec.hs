@@ -138,6 +138,10 @@ spec = describe "Advanced Cabal Test Suite" $ do
              let traceIds1 = map spanTraceId spans1
                  firstTraceId = head traceIds1
              
+             -- Reset telemetry to create a new trace context
+             shutdownTelemetry
+             initTelemetry productionConfig
+             
              -- 第二组span（应该有新的trace ID）
              spans2 <- mapM (\name -> createSpan (pack name)) spanNames2
              let traceIds2 = map spanTraceId spans2

@@ -1,6 +1,6 @@
 Build profile: -w ghc-9.14.1 -O1
 In order, the following will be built (use -v for more details):
- - azimuth-0.1.0 (test:azimuth-test) (first run)
+ - azimuth-0.1.0 (test:azimuth-test) (ephemeral targets)
 Preprocessing test suite 'azimuth-test' for azimuth-0.1.0...
 Building test suite 'azimuth-test' for azimuth-0.1.0...
 Running 1 test suites...
@@ -109,9 +109,6 @@ Extended Azimuth.Telemetry Tests
     should handle complex distributed transaction flows [[32m✔[0m]
     should handle async operations in distributed tracing [[32m✔[0m]
   Telemetry Configuration Hot Reload
-Initializing telemetry for service: "updated-service"
-Shutting down telemetry system
-Shutting down telemetry system
     should handle configuration changes without restart [[32m✔[0m]
     should validate configuration before applying [[32m✔[0m]
   Telemetry System Health Check
@@ -509,152 +506,6 @@ Comprehensive Telemetry Tests
     should handle span creation in rapid succession [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Hot Updates
-Initializing telemetry for service: "-updated"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: "r-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "s5"
-Initializing telemetry for service: "\100247\&18\CAN\DC2"
-Initializing telemetry for service: "I\11089\1038756"
-Initializing telemetry for service: "-gy\1045672\b"
-Initializing telemetry for service: "3-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "~"
-Initializing telemetry for service: "-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "N,k\1009437d\1112920\DC3"
-Initializing telemetry for service: "\81012\ttX0"
-Initializing telemetry for service: "G2.1\1101598q\1086730\&6<\EM"
-Initializing telemetry for service: "h;E\9730h#\r\CAN3-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "l\1005868\1008353\78671c\GS\97260-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "#\1077931D\1019783x\EM+\167104\a"
-Initializing telemetry for service: "~\65154\EOTeA7\f\138892\&2\DC30\160610\ESC\1029850\NAK-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\DELp|\EM\DC4@\DC28UG\993197-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "v#\"J C\169554\1044699\&6\1096733\54042=\16623\NUL-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "@\FS\GS\1071900E-"
-Initializing telemetry for service: "\81905Z^\142106@J\DLEK\DEL\143760=}\CAN"
-Initializing telemetry for service: "\GScE\132196SW\93897:9\1037745"
-Initializing telemetry for service: "\156959l\97885x\1112798\142511\59741\DC1\1053662<\135358&\GSh\32658\r(<\1048977\31125"
-Initializing telemetry for service: "\986542w0-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "do*cI-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1034966\161143\158375\FS\ESC@\1014528:\b\202426\1036139\1029963A6\DC3u\19014"
-Initializing telemetry for service: "\SOH\DC1-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\SOH\1070981C6:\a\ETB#s\169553\r\999031,F!S\1109449\&9YvGvBR\97783\DLED~x-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "/d\1109685J\EOT(\138350u6o0\74104\1089461\f\29993"
-Initializing telemetry for service: "\1111605\b@Bq\CANu)\7390IJ\70118?Wk$|._\1016442\&9\r-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "x\GS\EM`2\178155\DC1\aE\207449\SYNU-%d]\RS\DC2US\128670\1090954F\95585"
-Initializing telemetry for service: "\1080156l(\1046894!-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\NAK\17490\1046082E>\SOH\1085329"
-Initializing telemetry for service: ">\ACK|3)\9445\&0@\1025971+f&'~\fP&S\RS\155391d\1110893\t\ETBy\997038^\ESC\SI\DC3"
-Initializing telemetry for service: "\182273\157318\31090l,\1007464vtl\118471'9!y-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "dJK"
-Initializing telemetry for service: "YzC\DC1\NUL k[\187010z\7585\40761T\NAK3;\vV\1093851\&7\1091148\ag:-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "qD\1070254Z\1010274\1085351P\186893\8138\9076t\164141\983564|\NAKG\1017780l-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "-n"
-Initializing telemetry for service: "\538\t~2Yi.c'1L?\161347!c43\SUBv\ENQ"
-Initializing telemetry for service: "\1092430\&2\6305\DC3\EM\ETB\b\124123nE#\127317j-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "|E@?fH\1054291\CAN\SUB\203123,\178758B\82917,?cK\997203h\998216"
-Initializing telemetry for service: "TsRVT^\ACK2\US\1000151\FS\aB\183012#k-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1070728\r6\1056427\DC4G\SYN\16236x2lX\1005217\b*\25487Ic_b!\1100454\1107081\164317\SUB\DC4\CAN\ETB[\t\FS1\ESCi$?\46296nB9\SOH\1076647P"
-Initializing telemetry for service: "\ESC:5\ETBr(\1060286>:9<\161142\SOH\167480\SOP"
-Initializing telemetry for service: "\42067}\1089686uI\SYN\1071832\1059726D<c\DC1\1086944?\1057807\v\139878D\1042946C=\"\DLE\US)K\1061276\ACKj-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "/J\53716\34970\GS?\DC4?\23145\&8u\143184qE0N/\995338\1037873M\a\1029114\FSP[q\a0]\SI\1013163j.n"
-Initializing telemetry for service: "\69899|wL\1015259\1070781.\131382Q\t\1071839X9u\GS>\16014\NAKZL-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "~\62233\DC2[\EOT\DC28\DLE7\NULYA\17634\179214\"+4\t\1004810\ETB3\19411u5I\SI\RS\DELM(\197166\SOH\1061565(M\1000441\129515\1070536\v}\STX\151456\"q2E\1011445%\f-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "^C;Y\FSp\"\24560\SOHv2\1044970g\175893\f]&\1074557h*p\SI~#UJEq-TZk\131633\STX/-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\a\SYNt~*[\DC3\94551t/X-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\SOH>\186548;zPQ|2"
-Initializing telemetry for service: "\DEL]!*PNo\26132k*\207879tX,A@l`\57618g^\166216%\28627\995429v\ENQ\ry\1014870]\DC1--\1071897^KH\191427\&6\153471,;\f\EOT\\\SO\SOH\"SN=-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "fqq\RSi\\\1049544'{:\989634\&8D\134369;|\1035878n\v\EM3\1056600&-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\r\155460)\ENQE\NAK\vo\167846\NUL\1062365\1052597Qa\173227.\n\SIr\169765k\n,-U)\1001687\44819\1107819DR\49005ky\1073622X\163886\71325v!er\n=CP\135165J\25944c"
-Initializing telemetry for service: "\1078427:n6I\DC4\ENQM^t\1025318y\a\GS\1033485pWs xeS{\DEL\a\SIyvs\1029778i\13267I+\1039890s5\SO\b\DLE\ACK\1084622^\207600-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "70V`\12371\NAK\987949"
-Initializing telemetry for service: "y\\7\EM]\199525\67242\SOD"
-Initializing telemetry for service: "D\STXIK\35496\1078644\&54\77947@\120213\STXuP\ETB;JWD\150430\51388EDm`\135467I\1002654\38650+\202178N\v\r\DC4)J\a1@ \1006556\180929O\n@"
-Initializing telemetry for service: "\1098336\1021586\7700j\US\1097096y\1039543\983098rc\SOH\1047542\1098812l\28518\US\1075806FbI\158484R+\133212M`E\DC2Ok\SO\DELP\46197kz\22289fM\134969\1013626(x|\26036\SUBf\SO\DC1\DEL'\81441q+-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "N\113787=d\SO\SI\133213\24054\49158\2276X\1110971S@\ENQ\113691o@q6\DELf\989530dl&\1083993h1r\SYNco"
-Initializing telemetry for service: "\n\STXC\197890.\RS\62222\1093738z\1020713\b$\DC1y x\149633\EOT}&6\bO\NAK\CANEa]\1068363\&5y#nR\1000452oT{aE\tx!\43643\1023409(\1094984^\986235\v\GS\150428\1020417Y(F\40011U\1028263+-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\173177\SI\1037492\EOT3\ETBQDO\1000139\1015861\1063570l<;;\1098602-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\58514\SUButM\ACK_/L&G\1045942'&|\"92$Dq3\9055$<x\176396\vR0\186132\22889-updated"
-Shutting down telemetry system
-Initializing telemetry for service: ">hO\RSs/\ESC%:.L\v\99024\46793\80407\ACK#\66415T\142436?\1109462\"_WA\SUB\t8"
-Initializing telemetry for service: "e\t%aE\SISR\FSpyCm\20941b$\1013708J\SUB\995270Z\188122\ETX8\1051769M+v}CVL_FH\1093602M~ \fB\183575XtH\184113\v\1056745_\154308\44415-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "P\100315\1007628FTl\ESC\1080635aWZ\1040976\DC2\134396FP\DC4Ux?mMpoH\131312\&6)l\US,\1105290\&2\DLE+C?\1100611\f\v\FS\SO&\1047085\EOTn\199540\fu3\GS[@ \DC4\998975\DC4"
-Initializing telemetry for service: "\FS+\1155N\202601\173920\153589[\1077424\39055\vJRlq\998684\a\175024in\1000630ocO@1.\44611C6(6](\53604{\156927c\ACKpA%mt6m\\\\\146951[\1007506)i\f>M<\151528\&5\1087900\1056494\146653"
-Initializing telemetry for service: "2\153814M*49\RSh\ACK\7882\994013J\5253\1000845\&3w\1097476\RS\63801C]\25483\RS\64558T\v\DC4Y#q\98131}\1046039\&7-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2\51580+7k"
-Initializing telemetry for service: "\203668\n\1066826k\1021472\169954\1024403\SUB\SOH.,\35689\1110759\&2.\NAK\SO\a@x<(Tg\SOc/GP\1030691\USk\204617\1035822A\FS\148411M>R\DC2O\988407-S:KW]-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "p`\7240Jq\SUB\DC1<]\209142\69850\31743x\ETB\b\NAK\b#H\191380\988175Xq[\NAK\EM-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\1066402?\n(0l}\US\v|4"
-Initializing telemetry for service: "y=tu\DLE\990091Wc\81590\73094\DLE\DC4\FS\n\133766\179842R@7\DC1j\EOT\RS"
-Initializing telemetry for service: ""
-Initializing telemetry for service: "\1065562\ESC\USNc/\145679hN-\1094085\1073334\DLEv+\SI\SUB\127796RS% :\NUL\78006.\ESCuF\DC27j\1413\&03\1094859\&0\206685fT\ETXY\STX\DC1z&\138555\DC4\1033500mq\79006d)\61082\&0\1030147{T+/,\100606\4428\&32x-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\150188;\127337[\1044992Q \1111556\1055202\184507\170687\ESC,\1097558T\1009336W4\CAN\"\1008978N\USz{m\ACKA-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "#_v\1036987rn\DC4\62225\ACKs\f\220J0QbS|\44065)\1009441\160794x\168881[$EZ{\1113902>M\203223"
-Initializing telemetry for service: "\1027337P)\181125\19665/\ESC\135030kP\139238+\SYN\1111547'\1017801\1004085,D\989867XYQ\rP\SOf\31968\10016TGw:(@\992029\ETBG1E-@p\189309Z\51673\988779p\1066662\US2\ENQ\1113190)\1039526_d\50276gmg\vs}0F\1037444n`\180963\151345P\CAN\98757\DC2\1078814U-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "I.\2082\1037009<\199061#]D\1026682\92978Xw"
-Initializing telemetry for service: "D qX'V!:/K\1111909;\187186-\1020632\1015412<\ESC]G\RSa!\187142\CAN\1044132'"
-Initializing telemetry for service: "dI\97391&\1084228?\"\NUL\DC3g\156062l\1042454\&6*L\ETX\1019674\187548QBI^yP/9\DC4\NUL\39569\21993(y\8449_1P=\ACKL\69691\v}[\NAKW\987920u\6881I!\14703\22369\CAN\1086252\38432\144457\129505\25337\168289\b\1040504p\DC1\997689a1\8981ET\ETX4\129365n\24714\DLE"
-Initializing telemetry for service: "krb)N\1110866\DC2&AQ\SYN-Uc\RSgH\\\92915GOg\ETB\1035230\172587j\1032446\&4-~UM,qLOSzE[b\35762\nu\1083530!)\NAK\NUL\1061999 fR0qTxG\197881\1002204\1059076\EM\ACK\DC2F\32265\US\1090008W\ETXk\990290"
-Initializing telemetry for service: "|/)U\ACK\93015O=Dc\1002669\167186\DC4\1014623\b\1012277TyII\SYN\FS[c{\160701R{V9DbD\18717\168187\1015571~\SYN\1065424.i\v\STXUe\1087638x\134693&F-h\2616\DC1-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\31477Oe2Ag>\1110538\80829\45838\&9I\198814\148163\DC1.d\EOTs\SOR{\SUB\SUB\1057757l4\995264N\1035293l\1024573\ENQ\b\160849\&3c/n3cE\146967\SOJ\1040997\1104638\&3|2\EOT%JB\34003`r\167420\52757.\200053%\984746C\t\170419\NAKtX|\USu\32392\1111627\ETXN;\1087271\183965(\203383"
-Initializing telemetry for service: "\153210\RS"
-Initializing telemetry for service: "tm\SUB&\1037372p\95335+\126510\&9KzG\1087039>7"
-Initializing telemetry for service: "\\\ETB9[\1107732\DC34\35009\152522U^?<q\200535M\SO\&H_i@>4{\3964\1027721\DC17d\CAN\DC3/\US\196769\142110"
-Initializing telemetry for service: ")\DEL o\187410\&6/t\EM&\149895\1105049\1013101QT\\\NAK\SI\120992W=pmYF\DLEG\a1\54340r-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "2>\EM@`\199274X4}#8%Y\1107081+\GS\983577(TR\1032401\1102100\1084712\1076612@\DEL\73933\NAKD\4014j\1104461_ocG\11610a\173597bo\146281\35806Wa"
-Initializing telemetry for service: "\1050506f\60412z\6927<q\DC2A\64677ZZ\SUB\145518\ETX0\1000629'!~V\SYN5e!\1074456\ETB\"Ka\1072658r"
-Initializing telemetry for service: "\991731D\nqM6_h,%6\SO\&Hc\1006049\30614\120923H*]%\77779*=;\25592\996547M,?Zi\1027020R:\rXD\1081643QNlA0"
-Initializing telemetry for service: "X\DLE\a\n$~\DC4qs#fE\n-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "zY\DLER#\176092qW7%\ESCF\DC1\DC2o\165946\1062502\\\191427\GS)%\DC3\1022150L\\\151066t\STX\ESC\1009566"
-Initializing telemetry for service: "m!\ETBzd\170518\35508\ETX\DC1p\1030294\22043\64144\DC3\SUB[\986096~.2\1113816egEo1\16723\&8\1040865S\STX@\987780!jdkW\171093\&4o\1008128\SO\111327/q;k\138651\&5m\DC4(\NAK\1081758\1084567\&8n0s\1021120\SOYv\1060938\50490\SOH\GS\1024467"
-Initializing telemetry for service: "/v\DC2\1088646\f\\\1010151VR\99310xR/Y|\\n\67371v\10307\f\1007990I*|y\175008Wr4J-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "?\DC3f\1039202*\US\n8\25132\ENQ\v*d\990660{1\97366z\CAN\65703\110865\180211'\ETX~,\113684t\GS\SI\DLEej\983939\129873\17005\1026604\ENQ\119973\DC4+.!xvPD2\DC3\1083789\GS-\DC1\999228\171878\1061067\ETBk\155014:\1015843ULE\64534C:w\1065220h%\ACK\7060eO\1014184\183427]\1113167\137218\tFz\ETXf\1031151\&2f`-updated"
-Shutting down telemetry system
-Initializing telemetry for service: "\177822rmF[\US\994135yF\1038278\FS\119861\1054902>{\995600\65431\36975\182808\190496\139882T;9\1096571 t\EOT\1065422y3;M\158878\21828\135347"
     should handle configuration changes without affecting operations [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Recovery Mechanisms
@@ -677,19 +528,19 @@ New Telemetry Tests
     should handle multiple configuration updates [[32m✔[0m]
   Metric Aggregation
     should correctly aggregate metric values [[32m✔[0m]
-      +++ OK, passed 100 tests; 17 discarded.
+      +++ OK, passed 100 tests; 22 discarded.
     should handle floating point precision in aggregation [[32m✔[0m]
-      +++ OK, passed 100 tests; 17 discarded.
+      +++ OK, passed 100 tests; 22 discarded.
   Cross-Module Data Sharing
     should share metrics by name and unit [[32m✔[0m]
     should isolate metrics with different units [[32m✔[0m]
   Time Series Operations
     should handle time-based metric recording [[32m✔[0m]
-      +++ OK, passed 100 tests; 17 discarded.
+      +++ OK, passed 100 tests; 22 discarded.
     should maintain order of operations [[32m✔[0m]
   Error Recovery
     should recover from metric recording errors [[32m✔[0m]
-      +++ OK, passed 100 tests; 17 discarded.
+      +++ OK, passed 100 tests; 22 discarded.
     should handle span creation failures gracefully [[32m✔[0m]
   Sampling Strategies
     should handle high-frequency metric sampling [[32m✔[0m]
@@ -707,7 +558,7 @@ New Telemetry Tests
     should handle compressed metric names [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle serialized data formats [[32m✔[0m]
-      +++ OK, passed 100 tests; 17 discarded.
+      +++ OK, passed 100 tests; 22 discarded.
   Distributed Trace Propagation
     should propagate trace context across spans [[32m✔[0m]
     should handle nested span operations [[32m✔[0m]
@@ -756,7 +607,6 @@ Additional QuickCheck Test Suite
       +++ OK, passed 100 tests.
   Composite Operation Properties
     should handle multiple metric operations consistently [[32m✔[0m]
-      +++ OK, passed 100 tests.
     should handle metric recreation with same name and unit [[32m✔[0m]
       +++ OK, passed 100 tests.
   Error Handling Properties
@@ -811,11 +661,9 @@ Additional Coverage Tests
     should recover from metric operations after exceptions [[32m✔[0m]
     should maintain system stability after invalid operations [[32m✔[0m]
   Configuration Boundary Tests
-Initializing telemetry for service: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 Shutting down telemetry system
     should handle extreme configuration values [[32m✔[0m]
     should handle configuration with all features disabled [[32m✔[0m]
-Initializing telemetry for service: "maximal-service"
 Shutting down telemetry system
     should handle configuration with all features enabled [[32m✔[0m]
   High Concurrency Scenarios
@@ -895,9 +743,7 @@ Additional Cabal Test Suite
   TelemetryConfig Properties
     should maintain consistency across config updates [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: ""
 Shutting down telemetry system
-Initializing telemetry for service: "service"
 Shutting down telemetry system
     should handle extreme config combinations [[32m✔[0m]
   Metric Mathematical Properties
@@ -912,7 +758,6 @@ Shutting down telemetry system
     should maintain span identity across operations [[32m✔[0m]
   Resource Limit Behavior
     should handle large number of concurrent operations [[32m✔[0m]
-Shutting down telemetry system
     should handle memory pressure gracefully [[32m✔[0m]
   Error Recovery Mechanisms
     should recover from invalid metric values [[32m✔[0m]
@@ -927,9 +772,6 @@ Shutting down telemetry system
     should handle time-based operations consistently [[32m✔[0m]
     should handle high-frequency operations [[32m✔[0m]
   Configuration Hot Reload
-Initializing telemetry for service: "hot-reload-test"
-Initializing telemetry for service: "hot-reload-test"
-Shutting down telemetry system
     should handle configuration changes [[32m✔[0m]
   Telemetry Data Export Formats
     should maintain data integrity for export [[32m✔[0m]
@@ -960,278 +802,8 @@ New QuickCheck-based Telemetry Tests
     should handle all log levels consistently [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Field Persistence
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "}"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "<\ESC"
-Shutting down telemetry system
-Initializing telemetry for service: "\1024141%gP&"
-Shutting down telemetry system
-Initializing telemetry for service: ":\135419A_\SUB*a#\199066"
-Shutting down telemetry system
-Initializing telemetry for service: "6\171708\GSh]4x\22797"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\CAN"
-Shutting down telemetry system
-Initializing telemetry for service: "M\a6r0~\1031258\&0\v\38558Fun\1075495\&7"
-Shutting down telemetry system
-Initializing telemetry for service: "\CAN\1018754_I9\7779\&3u3\DC1Zh\CAN\1108692\43627\1005581e\US\""
-Shutting down telemetry system
-Initializing telemetry for service: "\28817\7969x\RS~\SYNXh\DC2\1037581s\138170\"-\995586v\DC3(\28627W\t"
-Shutting down telemetry system
-Initializing telemetry for service: "\\N\1027176*\999198\63198x)\FS7t\DC3"
-Shutting down telemetry system
-Initializing telemetry for service: "'>I\1061391"
-Shutting down telemetry system
-Initializing telemetry for service: "q\999758t\DLE;8H\v\150208dVP|A?q"
-Shutting down telemetry system
-Initializing telemetry for service: "\1081371A\\\119873\RS\60672G\1059101\1080408T\985372M]D4uuy\f\1109811)OyCfHFM"
-Shutting down telemetry system
-Initializing telemetry for service: "uS\6230G"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2Z`\b8\vK2n_h-^V\SOH\r"
-Shutting down telemetry system
-Initializing telemetry for service: "MSU\\`v{<\SOHRR\RSM\41602.o}qtU"
-Shutting down telemetry system
-Initializing telemetry for service: "zY{\185761"
-Shutting down telemetry system
-Initializing telemetry for service: "\1103507\NAKi0\10301/1\"\1047202\rw\1065501\1051717=Q/\180393\1037115\1104751\bw\24790\129555\154307u81\1013829C\DC1&\988138/]\RSQ\NAKb?\41976"
-Shutting down telemetry system
-Initializing telemetry for service: "r\1009448\&8nG\SI?|\127792\58090\142101R*\1112805:MU\119221\171258b\194815V#ARN\154992lJp\1010581t\120846\SI;\ETB\148475"
-Shutting down telemetry system
-Initializing telemetry for service: "\vsj"
-Shutting down telemetry system
-Initializing telemetry for service: "\38491\15463\NAKb\1039867\ACK\1017519\ACK{r\EM\ACKk+\54991\CAN~\1107868D\b-E\7816\FS}\ETX\aE7bS\1020904{L\FS~cE|tJ"
-Shutting down telemetry system
-Initializing telemetry for service: "\1055361\f\\\FSq\201226J{\1011451\1044692\SUB\RS\1096242\35323\99001ke<|\125029n^\110712g\NAK_\ETB.N\rh\1085423_\118317\EOT\1051710\&4<\DEL\t"
-Shutting down telemetry system
-Initializing telemetry for service: "f:A\GS\1039145\204119\190513\181495\GSh\ENQ\NAKl>\GSA\63569\1053006\148758m\SYN-\ETB\DLEAz"
-Shutting down telemetry system
-Initializing telemetry for service: "\1104904KTW7\FSv<H/u_W"
-Shutting down telemetry system
-Initializing telemetry for service: "\CANmkR\\j&VuS\CANy4\\ \18096e\1023436\127018\SO\SI\1009870\ETX\111095\DC3v"
-Shutting down telemetry system
-Initializing telemetry for service: "v\203664\SYNoN\996319\10241to\988779/\CANf\DC1DKn\1059747\1100147}\DLEND_\1038740j\101457g\vEN\207431L\6089g\ETX'\GS\40352\f\1035316\1070891\EMz\133520\&21\1026792\SI\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "}\US]#["
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2{Y(zbv\1106425As\100515\ETX\ETX\US=Ls7k\FS\DC4U\100640(\1042023{e\DC3\998977\FS\DLEw\14929`\67108\182921D*x$:\ETBtu\68029|\986622$Z\ESCp]8'"
-Shutting down telemetry system
-Initializing telemetry for service: "\EMd\ETX{\1051735\1068044\CAN\fYg\71705\932\1101727.N\1056867k\1108061vR\t\GS^\199660\987753\DC4\191118,50y\n\ETB2e\v\1055382\NUL\158292\17758\1020132\SOHNK\23093C/#\NAK|"
-Shutting down telemetry system
-Initializing telemetry for service: "\1026208\GS\US\SYN|9\nM*\DC4(\SI\SI\161810\a\162150io"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC[!B2T1q\ETX\61672DI5\49836i\ETB"
-Shutting down telemetry system
-Initializing telemetry for service: "U\1082176KG%\1043732\1028514\US|y\73736\1048049\180211j\999806\187238\1005925\1300y\1002325\&8g&Y/\163704']'?]\ACK\1064147\1044875\DC2\997756HV\DC151`9q\1052225\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "cw\ACK\1068567\157748\1055419\&7L"
-Shutting down telemetry system
-Initializing telemetry for service: "A"
-Shutting down telemetry system
-Initializing telemetry for service: "\1043106\1102558B{b\167562v\t$w;\1038303|Zy\1059505+\SO8 \12291 I\42617YZ\rq.\92190\145563&\154423\EM\155880\131800\RS\41217\1084977y6I\DEL\RSwA\1066755-q\rU\1000137r\SOb\RS\n'XWY6=\EM\EM\ETBF@\72282\14791"
-Shutting down telemetry system
-Initializing telemetry for service: "M\STX\ETB\\\168902\ACK%~15\SYNl9J'\ENQ"
-Shutting down telemetry system
-Initializing telemetry for service: "\SUB\65226H\131807i\1025297\165165\163288o\DLEn\SYN.\SIaq\n+ !hR\1094377\2134-8Vu\NAK@\1046236>\14988\&3\1031371\147215\&7\CAND\DC4\bB\182189\r4\SOJ\1066581m)I\179468\1039991\25416a\1063740j\ETBk\21529\1055030R\DC1scbJ$\SI\1058\&4"
-Shutting down telemetry system
-Initializing telemetry for service: "\163595\a=\175810BW\1031388\&7\170743.\1103156\189826g\US\1024133mtGMNJ\RSv4\STX7\187840\DC3Ygg{i"
-Shutting down telemetry system
-Initializing telemetry for service: ">\SYNs-mJ2\DC1S\998238\ETX\997982\1091385w\1069608SNll8\1113422\158623\n]iT?\172221l*\ETB\\ezK"
-Shutting down telemetry system
-Initializing telemetry for service: "\43027"
-Shutting down telemetry system
-Initializing telemetry for service: "nqat]p\65506[\ENQ\v\ni\r9\SUB\208026\1098634\&84\985801=\\;y"
-Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\1070725bI\138411\DC2gDq"
-Shutting down telemetry system
-Initializing telemetry for service: "\24588\6743\&4\GS\129239\USFG\DEL\984171"
-Shutting down telemetry system
-Initializing telemetry for service: "W\1051661\139429?\SOH\1091211\1070455\1037820\EOT)^\184303Hhcq\RSs\EMG)j[\\GT\"\996501[\ESCuz\DC1vo\1005262\47233\STX\1003552\&4(\1100584\1048266-\194700\DEL\DELNau\194658"
-Shutting down telemetry system
-Initializing telemetry for service: "<\ACKt\GS^\SOH\\~w\EM:-"
-Shutting down telemetry system
-Initializing telemetry for service: "\vDz/\1049090\t\SOHCS\8185i\rUe@l\1071965)GvdMu\1108023@Y\1006144\14675\SUB\74003\NUL\178325f\ETXKn\SUB>FC+Jh(\986896\&2\ETB\167612\DC1\1103219\196669\bfyI\EM\t\DLEK\44034\CAN\bOZ\625\1047353\ACKc\994563\25706\181199\GS\NAK\196759~\9901aFp\162622"
-Shutting down telemetry system
-Initializing telemetry for service: "3\GS\1041640\DC4\148696va\1112934\101456\FS8y\202500'&l\"\1018752BY\NULd\RS"
-Shutting down telemetry system
-Initializing telemetry for service: "\GS\168500\&6\FS\SUB,y\183691\EM\12233%Ruq'T@r{`7!\201244\1073027,y.\1056673?r\137255dw&OIxq{\SOq"
-Shutting down telemetry system
-Initializing telemetry for service: "+\DEL\EOT\ETX\US\164884\185739W\FS\1060957X]W\CAN\207260n\15253'"
-Shutting down telemetry system
-Initializing telemetry for service: "Y<!GuG;\"n\a:Oc,\fd \1044369\139787"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\24133?\EM_\20240C\2597PM\1029237^\1079218FsD\EM\ACKUB\172116\185441\31806\163186\DC1\RS18\131481a]]\DC3\aQ4\SI\173069#\201559-T\12874-;\EM0:\ENQ\a8\171023\1073613u\GSS\CAN\160020\NULC#\ACKi\35367\1002170\37516C\ACK{ i(1\131497"
-Shutting down telemetry system
     should preserve configuration fields across operations [[32m✔[0m]
       +++ OK, passed 100 tests.
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "}"
-Initializing telemetry for service: "}"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "<\ESC"
-Initializing telemetry for service: "<\ESC"
-Shutting down telemetry system
-Initializing telemetry for service: "\1024141%gP&"
-Initializing telemetry for service: "\1024141%gP&"
-Shutting down telemetry system
-Initializing telemetry for service: ":\135419A_\SUB*a#\199066"
-Initializing telemetry for service: ":\135419A_\SUB*a#\199066"
-Shutting down telemetry system
-Initializing telemetry for service: "6\171708\GSh]4x\22797"
-Initializing telemetry for service: "6\171708\GSh]4x\22797"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\CAN"
-Initializing telemetry for service: "\SYN\CAN"
-Shutting down telemetry system
-Initializing telemetry for service: "M\a6r0~\1031258\&0\v\38558Fun\1075495\&7"
-Initializing telemetry for service: "M\a6r0~\1031258\&0\v\38558Fun\1075495\&7"
-Shutting down telemetry system
-Initializing telemetry for service: "\CAN\1018754_I9\7779\&3u3\DC1Zh\CAN\1108692\43627\1005581e\US\""
-Initializing telemetry for service: "\CAN\1018754_I9\7779\&3u3\DC1Zh\CAN\1108692\43627\1005581e\US\""
-Shutting down telemetry system
-Initializing telemetry for service: "\28817\7969x\RS~\SYNXh\DC2\1037581s\138170\"-\995586v\DC3(\28627W\t"
-Initializing telemetry for service: "\28817\7969x\RS~\SYNXh\DC2\1037581s\138170\"-\995586v\DC3(\28627W\t"
-Shutting down telemetry system
-Initializing telemetry for service: "\\N\1027176*\999198\63198x)\FS7t\DC3"
-Initializing telemetry for service: "\\N\1027176*\999198\63198x)\FS7t\DC3"
-Shutting down telemetry system
-Initializing telemetry for service: "'>I\1061391"
-Initializing telemetry for service: "'>I\1061391"
-Shutting down telemetry system
-Initializing telemetry for service: "q\999758t\DLE;8H\v\150208dVP|A?q"
-Initializing telemetry for service: "q\999758t\DLE;8H\v\150208dVP|A?q"
-Shutting down telemetry system
-Initializing telemetry for service: "\1081371A\\\119873\RS\60672G\1059101\1080408T\985372M]D4uuy\f\1109811)OyCfHFM"
-Initializing telemetry for service: "\1081371A\\\119873\RS\60672G\1059101\1080408T\985372M]D4uuy\f\1109811)OyCfHFM"
-Shutting down telemetry system
-Initializing telemetry for service: "uS\6230G"
-Initializing telemetry for service: "uS\6230G"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2Z`\b8\vK2n_h-^V\SOH\r"
-Initializing telemetry for service: "\DC2Z`\b8\vK2n_h-^V\SOH\r"
-Shutting down telemetry system
-Initializing telemetry for service: "MSU\\`v{<\SOHRR\RSM\41602.o}qtU"
-Initializing telemetry for service: "MSU\\`v{<\SOHRR\RSM\41602.o}qtU"
-Shutting down telemetry system
-Initializing telemetry for service: "zY{\185761"
-Initializing telemetry for service: "zY{\185761"
-Shutting down telemetry system
-Initializing telemetry for service: "\1103507\NAKi0\10301/1\"\1047202\rw\1065501\1051717=Q/\180393\1037115\1104751\bw\24790\129555\154307u81\1013829C\DC1&\988138/]\RSQ\NAKb?\41976"
-Initializing telemetry for service: "\1103507\NAKi0\10301/1\"\1047202\rw\1065501\1051717=Q/\180393\1037115\1104751\bw\24790\129555\154307u81\1013829C\DC1&\988138/]\RSQ\NAKb?\41976"
-Shutting down telemetry system
-Initializing telemetry for service: "r\1009448\&8nG\SI?|\127792\58090\142101R*\1112805:MU\119221\171258b\194815V#ARN\154992lJp\1010581t\120846\SI;\ETB\148475"
-Initializing telemetry for service: "r\1009448\&8nG\SI?|\127792\58090\142101R*\1112805:MU\119221\171258b\194815V#ARN\154992lJp\1010581t\120846\SI;\ETB\148475"
-Shutting down telemetry system
-Initializing telemetry for service: "\vsj"
-Initializing telemetry for service: "\vsj"
-Shutting down telemetry system
-Initializing telemetry for service: "\38491\15463\NAKb\1039867\ACK\1017519\ACK{r\EM\ACKk+\54991\CAN~\1107868D\b-E\7816\FS}\ETX\aE7bS\1020904{L\FS~cE|tJ"
-Initializing telemetry for service: "\38491\15463\NAKb\1039867\ACK\1017519\ACK{r\EM\ACKk+\54991\CAN~\1107868D\b-E\7816\FS}\ETX\aE7bS\1020904{L\FS~cE|tJ"
-Shutting down telemetry system
-Initializing telemetry for service: "\1055361\f\\\FSq\201226J{\1011451\1044692\SUB\RS\1096242\35323\99001ke<|\125029n^\110712g\NAK_\ETB.N\rh\1085423_\118317\EOT\1051710\&4<\DEL\t"
-Initializing telemetry for service: "\1055361\f\\\FSq\201226J{\1011451\1044692\SUB\RS\1096242\35323\99001ke<|\125029n^\110712g\NAK_\ETB.N\rh\1085423_\118317\EOT\1051710\&4<\DEL\t"
-Shutting down telemetry system
-Initializing telemetry for service: "f:A\GS\1039145\204119\190513\181495\GSh\ENQ\NAKl>\GSA\63569\1053006\148758m\SYN-\ETB\DLEAz"
-Initializing telemetry for service: "f:A\GS\1039145\204119\190513\181495\GSh\ENQ\NAKl>\GSA\63569\1053006\148758m\SYN-\ETB\DLEAz"
-Shutting down telemetry system
-Initializing telemetry for service: "\1104904KTW7\FSv<H/u_W"
-Initializing telemetry for service: "\1104904KTW7\FSv<H/u_W"
-Shutting down telemetry system
-Initializing telemetry for service: "\CANmkR\\j&VuS\CANy4\\ \18096e\1023436\127018\SO\SI\1009870\ETX\111095\DC3v"
-Initializing telemetry for service: "\CANmkR\\j&VuS\CANy4\\ \18096e\1023436\127018\SO\SI\1009870\ETX\111095\DC3v"
-Shutting down telemetry system
-Initializing telemetry for service: "v\203664\SYNoN\996319\10241to\988779/\CANf\DC1DKn\1059747\1100147}\DLEND_\1038740j\101457g\vEN\207431L\6089g\ETX'\GS\40352\f\1035316\1070891\EMz\133520\&21\1026792\SI\GS"
-Initializing telemetry for service: "v\203664\SYNoN\996319\10241to\988779/\CANf\DC1DKn\1059747\1100147}\DLEND_\1038740j\101457g\vEN\207431L\6089g\ETX'\GS\40352\f\1035316\1070891\EMz\133520\&21\1026792\SI\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "}\US]#["
-Initializing telemetry for service: "}\US]#["
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2{Y(zbv\1106425As\100515\ETX\ETX\US=Ls7k\FS\DC4U\100640(\1042023{e\DC3\998977\FS\DLEw\14929`\67108\182921D*x$:\ETBtu\68029|\986622$Z\ESCp]8'"
-Initializing telemetry for service: "\DC2{Y(zbv\1106425As\100515\ETX\ETX\US=Ls7k\FS\DC4U\100640(\1042023{e\DC3\998977\FS\DLEw\14929`\67108\182921D*x$:\ETBtu\68029|\986622$Z\ESCp]8'"
-Shutting down telemetry system
-Initializing telemetry for service: "\EMd\ETX{\1051735\1068044\CAN\fYg\71705\932\1101727.N\1056867k\1108061vR\t\GS^\199660\987753\DC4\191118,50y\n\ETB2e\v\1055382\NUL\158292\17758\1020132\SOHNK\23093C/#\NAK|"
-Initializing telemetry for service: "\EMd\ETX{\1051735\1068044\CAN\fYg\71705\932\1101727.N\1056867k\1108061vR\t\GS^\199660\987753\DC4\191118,50y\n\ETB2e\v\1055382\NUL\158292\17758\1020132\SOHNK\23093C/#\NAK|"
-Shutting down telemetry system
-Initializing telemetry for service: "\1026208\GS\US\SYN|9\nM*\DC4(\SI\SI\161810\a\162150io"
-Initializing telemetry for service: "\1026208\GS\US\SYN|9\nM*\DC4(\SI\SI\161810\a\162150io"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC[!B2T1q\ETX\61672DI5\49836i\ETB"
-Initializing telemetry for service: "\ESC[!B2T1q\ETX\61672DI5\49836i\ETB"
-Shutting down telemetry system
-Initializing telemetry for service: "U\1082176KG%\1043732\1028514\US|y\73736\1048049\180211j\999806\187238\1005925\1300y\1002325\&8g&Y/\163704']'?]\ACK\1064147\1044875\DC2\997756HV\DC151`9q\1052225\GS"
-Initializing telemetry for service: "U\1082176KG%\1043732\1028514\US|y\73736\1048049\180211j\999806\187238\1005925\1300y\1002325\&8g&Y/\163704']'?]\ACK\1064147\1044875\DC2\997756HV\DC151`9q\1052225\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "cw\ACK\1068567\157748\1055419\&7L"
-Initializing telemetry for service: "cw\ACK\1068567\157748\1055419\&7L"
-Shutting down telemetry system
-Initializing telemetry for service: "A"
-Initializing telemetry for service: "A"
-Shutting down telemetry system
-Initializing telemetry for service: "\1043106\1102558B{b\167562v\t$w;\1038303|Zy\1059505+\SO8 \12291 I\42617YZ\rq.\92190\145563&\154423\EM\155880\131800\RS\41217\1084977y6I\DEL\RSwA\1066755-q\rU\1000137r\SOb\RS\n'XWY6=\EM\EM\ETBF@\72282\14791"
-Initializing telemetry for service: "\1043106\1102558B{b\167562v\t$w;\1038303|Zy\1059505+\SO8 \12291 I\42617YZ\rq.\92190\145563&\154423\EM\155880\131800\RS\41217\1084977y6I\DEL\RSwA\1066755-q\rU\1000137r\SOb\RS\n'XWY6=\EM\EM\ETBF@\72282\14791"
-Shutting down telemetry system
-Initializing telemetry for service: "M\STX\ETB\\\168902\ACK%~15\SYNl9J'\ENQ"
-Initializing telemetry for service: "M\STX\ETB\\\168902\ACK%~15\SYNl9J'\ENQ"
-Shutting down telemetry system
-Initializing telemetry for service: "\SUB\65226H\131807i\1025297\165165\163288o\DLEn\SYN.\SIaq\n+ !hR\1094377\2134-8Vu\NAK@\1046236>\14988\&3\1031371\147215\&7\CAND\DC4\bB\182189\r4\SOJ\1066581m)I\179468\1039991\25416a\1063740j\ETBk\21529\1055030R\DC1scbJ$\SI\1058\&4"
-Initializing telemetry for service: "\SUB\65226H\131807i\1025297\165165\163288o\DLEn\SYN.\SIaq\n+ !hR\1094377\2134-8Vu\NAK@\1046236>\14988\&3\1031371\147215\&7\CAND\DC4\bB\182189\r4\SOJ\1066581m)I\179468\1039991\25416a\1063740j\ETBk\21529\1055030R\DC1scbJ$\SI\1058\&4"
-Shutting down telemetry system
-Initializing telemetry for service: "\163595\a=\175810BW\1031388\&7\170743.\1103156\189826g\US\1024133mtGMNJ\RSv4\STX7\187840\DC3Ygg{i"
-Initializing telemetry for service: "\163595\a=\175810BW\1031388\&7\170743.\1103156\189826g\US\1024133mtGMNJ\RSv4\STX7\187840\DC3Ygg{i"
-Shutting down telemetry system
-Initializing telemetry for service: ">\SYNs-mJ2\DC1S\998238\ETX\997982\1091385w\1069608SNll8\1113422\158623\n]iT?\172221l*\ETB\\ezK"
-Initializing telemetry for service: ">\SYNs-mJ2\DC1S\998238\ETX\997982\1091385w\1069608SNll8\1113422\158623\n]iT?\172221l*\ETB\\ezK"
-Shutting down telemetry system
-Initializing telemetry for service: "\43027"
-Initializing telemetry for service: "\43027"
-Shutting down telemetry system
-Initializing telemetry for service: "nqat]p\65506[\ENQ\v\ni\r9\SUB\208026\1098634\&84\985801=\\;y"
-Initializing telemetry for service: "nqat]p\65506[\ENQ\v\ni\r9\SUB\208026\1098634\&84\985801=\\;y"
-Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\1070725bI\138411\DC2gDq"
-Initializing telemetry for service: "\ENQ\1070725bI\138411\DC2gDq"
-Shutting down telemetry system
-Initializing telemetry for service: "\24588\6743\&4\GS\129239\USFG\DEL\984171"
-Initializing telemetry for service: "\24588\6743\&4\GS\129239\USFG\DEL\984171"
-Shutting down telemetry system
-Initializing telemetry for service: "W\1051661\139429?\SOH\1091211\1070455\1037820\EOT)^\184303Hhcq\RSs\EMG)j[\\GT\"\996501[\ESCuz\DC1vo\1005262\47233\STX\1003552\&4(\1100584\1048266-\194700\DEL\DELNau\194658"
-Initializing telemetry for service: "W\1051661\139429?\SOH\1091211\1070455\1037820\EOT)^\184303Hhcq\RSs\EMG)j[\\GT\"\996501[\ESCuz\DC1vo\1005262\47233\STX\1003552\&4(\1100584\1048266-\194700\DEL\DELNau\194658"
-Shutting down telemetry system
-Initializing telemetry for service: "<\ACKt\GS^\SOH\\~w\EM:-"
-Initializing telemetry for service: "<\ACKt\GS^\SOH\\~w\EM:-"
-Shutting down telemetry system
-Initializing telemetry for service: "\vDz/\1049090\t\SOHCS\8185i\rUe@l\1071965)GvdMu\1108023@Y\1006144\14675\SUB\74003\NUL\178325f\ETXKn\SUB>FC+Jh(\986896\&2\ETB\167612\DC1\1103219\196669\bfyI\EM\t\DLEK\44034\CAN\bOZ\625\1047353\ACKc\994563\25706\181199\GS\NAK\196759~\9901aFp\162622"
-Initializing telemetry for service: "\vDz/\1049090\t\SOHCS\8185i\rUe@l\1071965)GvdMu\1108023@Y\1006144\14675\SUB\74003\NUL\178325f\ETXKn\SUB>FC+Jh(\986896\&2\ETB\167612\DC1\1103219\196669\bfyI\EM\t\DLEK\44034\CAN\bOZ\625\1047353\ACKc\994563\25706\181199\GS\NAK\196759~\9901aFp\162622"
-Shutting down telemetry system
-Initializing telemetry for service: "3\GS\1041640\DC4\148696va\1112934\101456\FS8y\202500'&l\"\1018752BY\NULd\RS"
-Initializing telemetry for service: "3\GS\1041640\DC4\148696va\1112934\101456\FS8y\202500'&l\"\1018752BY\NULd\RS"
-Shutting down telemetry system
-Initializing telemetry for service: "\GS\168500\&6\FS\SUB,y\183691\EM\12233%Ruq'T@r{`7!\201244\1073027,y.\1056673?r\137255dw&OIxq{\SOq"
-Initializing telemetry for service: "\GS\168500\&6\FS\SUB,y\183691\EM\12233%Ruq'T@r{`7!\201244\1073027,y.\1056673?r\137255dw&OIxq{\SOq"
-Shutting down telemetry system
-Initializing telemetry for service: "+\DEL\EOT\ETX\US\164884\185739W\FS\1060957X]W\CAN\207260n\15253'"
-Initializing telemetry for service: "+\DEL\EOT\ETX\US\164884\185739W\FS\1060957X]W\CAN\207260n\15253'"
-Shutting down telemetry system
-Initializing telemetry for service: "Y<!GuG;\"n\a:Oc,\fd \1044369\139787"
-Initializing telemetry for service: "Y<!GuG;\"n\a:Oc,\fd \1044369\139787"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\24133?\EM_\20240C\2597PM\1029237^\1079218FsD\EM\ACKUB\172116\185441\31806\163186\DC1\RS18\131481a]]\DC3\aQ4\SI\173069#\201559-T\12874-;\EM0:\ENQ\a8\171023\1073613u\GSS\CAN\160020\NULC#\ACKi\35367\1002170\37516C\ACK{ i(1\131497"
-Initializing telemetry for service: "\SYN\24133?\EM_\20240C\2597PM\1029237^\1079218FsD\EM\ACKUB\172116\185441\31806\163186\DC1\RS18\131481a]]\DC3\aQ4\SI\173069#\201559-T\12874-;\EM0:\ENQ\a8\171023\1073613u\GSS\CAN\160020\NULC#\ACKi\35367\1002170\37516C\ACK{ i(1\131497"
-Shutting down telemetry system
     should handle configuration changes correctly [[32m✔[0m]
       +++ OK, passed 100 tests.
   Concurrent Component Creation
@@ -1256,22 +828,20 @@ Shutting down telemetry system
     should handle unicode characters in component names [[32m✔[0m]
       +++ OK, passed 100 tests.
   Resource Cleanup and Memory Leaks
+Shutting down telemetry system
     should clean up resources properly after shutdown [[32m✔[0m]
       +++ OK, passed 100 tests.
     should handle multiple init/shutdown cycles [[32m✔[0m]
       +++ OK, passed 100 tests.
   Component Interactions
-    should handle interactions between metrics and spans [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle interactions between metrics and spans [[31m✘[0m]
     should handle interactions between logging and spans [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle interactions between all three component types [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle interactions between all three component types [[31m✘[0m]
   Error Recovery Mechanisms
     should recover from invalid metric values [[32m✔[0m]
       +++ OK, passed 100 tests.
-    should handle operations without initialization [[32m✔[0m]
-      +++ OK, passed 100 tests.
+    should handle operations without initialization [[31m✘[0m]
     should handle multiple shutdown calls gracefully [[32m✔[0m]
       +++ OK, passed 100 tests.
 Enhanced QuickCheck-based Telemetry Tests
@@ -1286,206 +856,6 @@ Enhanced QuickCheck-based Telemetry Tests
     should handle Unicode characters in log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Transformation and Validation
-Initializing telemetry for service: "-modified"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\EM-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "}"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "<\ESC"
-Shutting down telemetry system
-Initializing telemetry for service: "\1024141%gP&"
-Shutting down telemetry system
-Initializing telemetry for service: "u\101507\1040067u:\1081447qa-modified"
-Shutting down telemetry system
-Initializing telemetry for service: ":\135419A_\SUB*a#\199066"
-Shutting down telemetry system
-Initializing telemetry for service: "\ETX^=~-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "6\171708\GSh]4x\22797"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\CAN"
-Shutting down telemetry system
-Initializing telemetry for service: "sE\EM\RS5Uj/\ESC\1082774r-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "]\DC4T`)-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "M\a6r0~\1031258\&0\v\38558Fun\1075495\&7"
-Shutting down telemetry system
-Initializing telemetry for service: "\NAKV\1034676c4\\\t\\\1034051\1064941-[<-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "%\1047086\41686U\1000198\1104094\ENQX\1108666|\1105051C\157007\SOLa-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\132777\\\DLEE\SOHn\16924\&3r\991669\DC4'!?np-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\CAN\1018754_I9\7779\&3u3\DC1Zh\CAN\1108692\43627\1005581e\US\""
-Shutting down telemetry system
-Initializing telemetry for service: "\28817\7969x\RS~\SYNXh\DC2\1037581s\138170\"-\995586v\DC3(\28627W\t"
-Shutting down telemetry system
-Initializing telemetry for service: "\\N\1027176*\999198\63198x)\FS7t\DC3"
-Shutting down telemetry system
-Initializing telemetry for service: "'>I\1061391"
-Shutting down telemetry system
-Initializing telemetry for service: "JI\29626uvr\101575\70728(5\1062254\US\1084385zps]\a]7\32861-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "x\ETX\205245\FS\DLE_3#\n\ETBdZ:X\174761X\DC1-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "q\999758t\DLE;8H\v\150208dVP|A?q"
-Shutting down telemetry system
-Initializing telemetry for service: "\STXn-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "r_2L\12864\1031306Om\1067029\1099598\EOT\SId\42583]\SOH\1030116-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "X7\1024541\&8\63293\206358\5741\149787\ACK?\NAK\207946EX8\SUB5\47393\EOT|\1047802\1008950-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\1081371A\\\119873\RS\60672G\1059101\1080408T\985372M]D4uuy\f\1109811)OyCfHFM"
-Shutting down telemetry system
-Initializing telemetry for service: "-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "uS\6230G"
-Shutting down telemetry system
-Initializing telemetry for service: "-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2Z`\b8\vK2n_h-^V\SOH\r"
-Shutting down telemetry system
-Initializing telemetry for service: "MSU\\`v{<\SOHRR\RSM\41602.o}qtU"
-Shutting down telemetry system
-Initializing telemetry for service: "\145545\1064959&\173985Y\DC3\SOHp-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "zY{\185761"
-Shutting down telemetry system
-Initializing telemetry for service: ",B \SUB`U\61369\15941_\a\1009701X\DC2;C\ENQw wMR\159148k\135680\nfq\SYN\1077889Q\1029993\26081p-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "Z\1110571\ENQ}\33041`\bk\FST\1032371K\1031088R\DLE[[[f)-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\1103507\NAKi0\10301/1\"\1047202\rw\1065501\1051717=Q/\180393\1037115\1104751\bw\24790\129555\154307u81\1013829C\DC1&\988138/]\RSQ\NAKb?\41976"
-Shutting down telemetry system
-Initializing telemetry for service: "r\1009448\&8nG\SI?|\127792\58090\142101R*\1112805:MU\119221\171258b\194815V#ARN\154992lJp\1010581t\120846\SI;\ETB\148475"
-Shutting down telemetry system
-Initializing telemetry for service: ",WI\SO)z\CAN-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\vsj"
-Shutting down telemetry system
-Initializing telemetry for service: "V\182362\1108624\SYN\1049970\59439C$\FSPV,V\DC2\NULKv\EOTf\b),v?\DLE\158092\&9-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\38491\15463\NAKb\1039867\ACK\1017519\ACK{r\EM\ACKk+\54991\CAN~\1107868D\b-E\7816\FS}\ETX\aE7bS\1020904{L\FS~cE|tJ"
-Shutting down telemetry system
-Initializing telemetry for service: "\1055361\f\\\FSq\201226J{\1011451\1044692\SUB\RS\1096242\35323\99001ke<|\125029n^\110712g\NAK_\ETB.N\rh\1085423_\118317\EOT\1051710\&4<\DEL\t"
-Shutting down telemetry system
-Initializing telemetry for service: "\24478eLGQ\SO\157250j\DC2v\ENQ\98899\b\b\96722\51287-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "f:A\GS\1039145\204119\190513\181495\GSh\ENQ\NAKl>\GSA\63569\1053006\148758m\SYN-\ETB\DLEAz"
-Shutting down telemetry system
-Initializing telemetry for service: "\1054687\RS?h=Q\32848A\1078933\45783>\ETB\ESC\983573\DC2[\54616\129604\bz\16558f\DC4.4f\1102743\DC3XZ~8=s\SOH`]A\110816\FSIoGO\SUB-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "x\1088571\174073Pf\SI\b*\SO\t\STX-modified"
-Shutting down telemetry system
-Initializing telemetry for service: " ?iUY\np\996126\US>\DEL-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC\1098056\54922\ETB$-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\1104904KTW7\FSv<H/u_W"
-Shutting down telemetry system
-Initializing telemetry for service: "0\1078339r\ESC<QF\ETXFS\58452>z?\t:a\149660\1068833\184881\DLE\175300]\fU\":\ETX>G2\b\1041234V\33355q\1020720Ev-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\GSI)}\1043289Zf<\NAKUQ\"N\1080417u1V7875'{\197400-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\CANmkR\\j&VuS\CANy4\\ \18096e\1023436\127018\SO\SI\1009870\ETX\111095\DC3v"
-Shutting down telemetry system
-Initializing telemetry for service: ".\988920\28242\1055716OJ\158832\1038585eq\1002898\196857-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "v\203664\SYNoN\996319\10241to\988779/\CANf\DC1DKn\1059747\1100147}\DLEND_\1038740j\101457g\vEN\207431L\6089g\ETX'\GS\40352\f\1035316\1070891\EMz\133520\&21\1026792\SI\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "}\US]#["
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2{Y(zbv\1106425As\100515\ETX\ETX\US=Ls7k\FS\DC4U\100640(\1042023{e\DC3\998977\FS\DLEw\14929`\67108\182921D*x$:\ETBtu\68029|\986622$Z\ESCp]8'"
-Shutting down telemetry system
-Initializing telemetry for service: "k&0\203647\24520R\ACKo\1013118\&7b0\DC3\US\152727<\175956\16310d]\"\US<;\19979\136190y\\\203569[sa \1087875\140947\NAK\1101404\DEL9\DC4\SI-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\EMd\ETX{\1051735\1068044\CAN\fYg\71705\932\1101727.N\1056867k\1108061vR\t\GS^\199660\987753\DC4\191118,50y\n\ETB2e\v\1055382\NUL\158292\17758\1020132\SOHNK\23093C/#\NAK|"
-Shutting down telemetry system
-Initializing telemetry for service: "t\SUB41\20372\1017470Z-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "]i\206592\DC3m\ESC0\SOH\46528f-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\38440\66692O|\48429\167335VL\1016632e\1101057'\1051741\&4\SI2>Z:5\r\118345\&5U\984264`\NUL( tC\USYJ@qT4\1032664\35494nMwg7>\12007\&2^+`H\40594\96946zq\r\63312\&7b-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\1026208\GS\US\SYN|9\nM*\DC4(\SI\SI\161810\a\162150io"
-Shutting down telemetry system
-Initializing telemetry for service: "\SUBWT\15669\26260\ENQ\32562\NAKNu\EOT\DLE-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC[!B2T1q\ETX\61672DI5\49836i\ETB"
-Shutting down telemetry system
-Initializing telemetry for service: "U\1082176KG%\1043732\1028514\US|y\73736\1048049\180211j\999806\187238\1005925\1300y\1002325\&8g&Y/\163704']'?]\ACK\1064147\1044875\DC2\997756HV\DC151`9q\1052225\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "\ETB\a0rA\t\171655\&4\189457F\155098\CAN\v-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "cw\ACK\1068567\157748\1055419\&7L"
-Shutting down telemetry system
-Initializing telemetry for service: "5-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\STX>^}\EOT\1012858\SOH\1061892\23927r}\aaxW\177933?o\EOT\\-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "A"
-Shutting down telemetry system
-Initializing telemetry for service: "\1043106\1102558B{b\167562v\t$w;\1038303|Zy\1059505+\SO8 \12291 I\42617YZ\rq.\92190\145563&\154423\EM\155880\131800\RS\41217\1084977y6I\DEL\RSwA\1066755-q\rU\1000137r\SOb\RS\n'XWY6=\EM\EM\ETBF@\72282\14791"
-Shutting down telemetry system
-Initializing telemetry for service: "M\STX\ETB\\\168902\ACK%~15\SYNl9J'\ENQ"
-Shutting down telemetry system
-Initializing telemetry for service: "\ETX\SO\990914`\991984r\1024772s\1080932\&1@\1088939\ESCT\199100`.;\1041649\1111772\ENQ\4180P\80775<\991311\NUL\990197\68948laI:.C\1046253 '1X\1033586G-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "8\r0\ETX\SO\202612\1025547A'X\DLEm\74895h\180694\1043093 \"\v0pN\1107950=\SOH0\201250aN[\176059G^M-[@\1033449\21654\STXB?\NAKpU5\1054929J\119595\ESC\SI\a7\DC1\1029941P!s\GS'\178979jB\1108568\FS-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\SUB\65226H\131807i\1025297\165165\163288o\DLEn\SYN.\SIaq\n+ !hR\1094377\2134-8Vu\NAK@\1046236>\14988\&3\1031371\147215\&7\CAND\DC4\bB\182189\r4\SOJ\1066581m)I\179468\1039991\25416a\1063740j\ETBk\21529\1055030R\DC1scbJ$\SI\1058\&4"
-Shutting down telemetry system
-Initializing telemetry for service: "\20779Asi\46509\189013a\n\150614D\165094(o\a4\179698\1016692j\152669\&6\FSc\140187\RSrK\SYN\\&\151026\FS\118071iY\bbh!\1011736Jrb TQ\100299O~\190478\NULp\DC2\f\\}\SI\94665\SUBK\aIh:s\63749\EMhW\92775\&71\DEL\141065.-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\163595\a=\175810BW\1031388\&7\170743.\1103156\189826g\US\1024133mtGMNJ\RSv4\STX7\187840\DC3Ygg{i"
-Shutting down telemetry system
-Initializing telemetry for service: ">\SYNs-mJ2\DC1S\998238\ETX\997982\1091385w\1069608SNll8\1113422\158623\n]iT?\172221l*\ETB\\ezK"
-Shutting down telemetry system
-Initializing telemetry for service: "\43027"
-Shutting down telemetry system
-Initializing telemetry for service: "nqat]p\65506[\ENQ\v\ni\r9\SUB\208026\1098634\&84\985801=\\;y"
-Shutting down telemetry system
-Initializing telemetry for service: "\165075_\67920i\3108\ETX\189326gi\1070646\1059470 \1022945\&2\NAKxFm87@\a\164727y*d\\\1040190\30751chs}5\1040727-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\1070725bI\138411\DC2gDq"
-Shutting down telemetry system
-Initializing telemetry for service: "\24588\6743\&4\GS\129239\USFG\DEL\984171"
-Shutting down telemetry system
-Initializing telemetry for service: "W\1051661\139429?\SOH\1091211\1070455\1037820\EOT)^\184303Hhcq\RSs\EMG)j[\\GT\"\996501[\ESCuz\DC1vo\1005262\47233\STX\1003552\&4(\1100584\1048266-\194700\DEL\DELNau\194658"
-Shutting down telemetry system
-Initializing telemetry for service: "<\ACKt\GS^\SOH\\~w\EM:-"
-Shutting down telemetry system
-Initializing telemetry for service: "\1046075\181810\ETB \EOT\ACK\170191w\99503CC#R\164288\152394\1073047a\38296~(<Df%.x!p6l\ENQ-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\vDz/\1049090\t\SOHCS\8185i\rUe@l\1071965)GvdMu\1108023@Y\1006144\14675\SUB\74003\NUL\178325f\ETXKn\SUB>FC+Jh(\986896\&2\ETB\167612\DC1\1103219\196669\bfyI\EM\t\DLEK\44034\CAN\bOZ\625\1047353\ACKc\994563\25706\181199\GS\NAK\196759~\9901aFp\162622"
-Shutting down telemetry system
-Initializing telemetry for service: "3\GS\1041640\DC4\148696va\1112934\101456\FS8y\202500'&l\"\1018752BY\NULd\RS"
-Shutting down telemetry system
-Initializing telemetry for service: "\GS\168500\&6\FS\SUB,y\183691\EM\12233%Ruq'T@r{`7!\201244\1073027,y.\1056673?r\137255dw&OIxq{\SOq"
-Shutting down telemetry system
-Initializing telemetry for service: "\fQ]\"u\49222hI+G-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "+\DEL\EOT\ETX\US\164884\185739W\FS\1060957X]W\CAN\207260n\15253'"
-Shutting down telemetry system
-Initializing telemetry for service: "Y<!GuG;\"n\a:Oc,\fd \1044369\139787"
-Shutting down telemetry system
-Initializing telemetry for service: "!i1\GS\44850\150845}\b\207571\DC4\RS0k\173373\187891\ETB\" hG}\SOH\133466-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "-modified"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\24133?\EM_\20240C\2597PM\1029237^\1079218FsD\EM\ACKUB\172116\185441\31806\163186\DC1\RS18\131481a]]\DC3\aQ4\SI\173069#\201559-T\12874-;\EM0:\ENQ\a8\171023\1073613u\GSS\CAN\160020\NULC#\ACKi\35367\1002170\37516C\ACK{ i(1\131497"
-Shutting down telemetry system
     should handle configuration transformations [[32m✔[0m]
       +++ OK, passed 100 tests.
   Resource Leak Detection
@@ -1546,114 +916,6 @@ New Cabal Test Suite
     should handle very long log messages [[32m✔[0m]
       +++ OK, passed 100 tests.
   Configuration Properties
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "}"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "<\ESC"
-Shutting down telemetry system
-Initializing telemetry for service: "\1024141%gP&"
-Shutting down telemetry system
-Initializing telemetry for service: ":\135419A_\SUB*a#\199066"
-Shutting down telemetry system
-Initializing telemetry for service: "6\171708\GSh]4x\22797"
-Shutting down telemetry system
-Initializing telemetry for service: ""
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\CAN"
-Shutting down telemetry system
-Initializing telemetry for service: "M\a6r0~\1031258\&0\v\38558Fun\1075495\&7"
-Shutting down telemetry system
-Initializing telemetry for service: "\CAN\1018754_I9\7779\&3u3\DC1Zh\CAN\1108692\43627\1005581e\US\""
-Shutting down telemetry system
-Initializing telemetry for service: "\28817\7969x\RS~\SYNXh\DC2\1037581s\138170\"-\995586v\DC3(\28627W\t"
-Shutting down telemetry system
-Initializing telemetry for service: "\\N\1027176*\999198\63198x)\FS7t\DC3"
-Shutting down telemetry system
-Initializing telemetry for service: "'>I\1061391"
-Shutting down telemetry system
-Initializing telemetry for service: "q\999758t\DLE;8H\v\150208dVP|A?q"
-Shutting down telemetry system
-Initializing telemetry for service: "\1081371A\\\119873\RS\60672G\1059101\1080408T\985372M]D4uuy\f\1109811)OyCfHFM"
-Shutting down telemetry system
-Initializing telemetry for service: "uS\6230G"
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2Z`\b8\vK2n_h-^V\SOH\r"
-Shutting down telemetry system
-Initializing telemetry for service: "MSU\\`v{<\SOHRR\RSM\41602.o}qtU"
-Shutting down telemetry system
-Initializing telemetry for service: "zY{\185761"
-Shutting down telemetry system
-Initializing telemetry for service: "\1103507\NAKi0\10301/1\"\1047202\rw\1065501\1051717=Q/\180393\1037115\1104751\bw\24790\129555\154307u81\1013829C\DC1&\988138/]\RSQ\NAKb?\41976"
-Shutting down telemetry system
-Initializing telemetry for service: "r\1009448\&8nG\SI?|\127792\58090\142101R*\1112805:MU\119221\171258b\194815V#ARN\154992lJp\1010581t\120846\SI;\ETB\148475"
-Shutting down telemetry system
-Initializing telemetry for service: "\vsj"
-Shutting down telemetry system
-Initializing telemetry for service: "\38491\15463\NAKb\1039867\ACK\1017519\ACK{r\EM\ACKk+\54991\CAN~\1107868D\b-E\7816\FS}\ETX\aE7bS\1020904{L\FS~cE|tJ"
-Shutting down telemetry system
-Initializing telemetry for service: "\1055361\f\\\FSq\201226J{\1011451\1044692\SUB\RS\1096242\35323\99001ke<|\125029n^\110712g\NAK_\ETB.N\rh\1085423_\118317\EOT\1051710\&4<\DEL\t"
-Shutting down telemetry system
-Initializing telemetry for service: "f:A\GS\1039145\204119\190513\181495\GSh\ENQ\NAKl>\GSA\63569\1053006\148758m\SYN-\ETB\DLEAz"
-Shutting down telemetry system
-Initializing telemetry for service: "\1104904KTW7\FSv<H/u_W"
-Shutting down telemetry system
-Initializing telemetry for service: "\CANmkR\\j&VuS\CANy4\\ \18096e\1023436\127018\SO\SI\1009870\ETX\111095\DC3v"
-Shutting down telemetry system
-Initializing telemetry for service: "v\203664\SYNoN\996319\10241to\988779/\CANf\DC1DKn\1059747\1100147}\DLEND_\1038740j\101457g\vEN\207431L\6089g\ETX'\GS\40352\f\1035316\1070891\EMz\133520\&21\1026792\SI\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "}\US]#["
-Shutting down telemetry system
-Initializing telemetry for service: "\DC2{Y(zbv\1106425As\100515\ETX\ETX\US=Ls7k\FS\DC4U\100640(\1042023{e\DC3\998977\FS\DLEw\14929`\67108\182921D*x$:\ETBtu\68029|\986622$Z\ESCp]8'"
-Shutting down telemetry system
-Initializing telemetry for service: "\EMd\ETX{\1051735\1068044\CAN\fYg\71705\932\1101727.N\1056867k\1108061vR\t\GS^\199660\987753\DC4\191118,50y\n\ETB2e\v\1055382\NUL\158292\17758\1020132\SOHNK\23093C/#\NAK|"
-Shutting down telemetry system
-Initializing telemetry for service: "\1026208\GS\US\SYN|9\nM*\DC4(\SI\SI\161810\a\162150io"
-Shutting down telemetry system
-Initializing telemetry for service: "\ESC[!B2T1q\ETX\61672DI5\49836i\ETB"
-Shutting down telemetry system
-Initializing telemetry for service: "U\1082176KG%\1043732\1028514\US|y\73736\1048049\180211j\999806\187238\1005925\1300y\1002325\&8g&Y/\163704']'?]\ACK\1064147\1044875\DC2\997756HV\DC151`9q\1052225\GS"
-Shutting down telemetry system
-Initializing telemetry for service: "cw\ACK\1068567\157748\1055419\&7L"
-Shutting down telemetry system
-Initializing telemetry for service: "A"
-Shutting down telemetry system
-Initializing telemetry for service: "\1043106\1102558B{b\167562v\t$w;\1038303|Zy\1059505+\SO8 \12291 I\42617YZ\rq.\92190\145563&\154423\EM\155880\131800\RS\41217\1084977y6I\DEL\RSwA\1066755-q\rU\1000137r\SOb\RS\n'XWY6=\EM\EM\ETBF@\72282\14791"
-Shutting down telemetry system
-Initializing telemetry for service: "M\STX\ETB\\\168902\ACK%~15\SYNl9J'\ENQ"
-Shutting down telemetry system
-Initializing telemetry for service: "\SUB\65226H\131807i\1025297\165165\163288o\DLEn\SYN.\SIaq\n+ !hR\1094377\2134-8Vu\NAK@\1046236>\14988\&3\1031371\147215\&7\CAND\DC4\bB\182189\r4\SOJ\1066581m)I\179468\1039991\25416a\1063740j\ETBk\21529\1055030R\DC1scbJ$\SI\1058\&4"
-Shutting down telemetry system
-Initializing telemetry for service: "\163595\a=\175810BW\1031388\&7\170743.\1103156\189826g\US\1024133mtGMNJ\RSv4\STX7\187840\DC3Ygg{i"
-Shutting down telemetry system
-Initializing telemetry for service: ">\SYNs-mJ2\DC1S\998238\ETX\997982\1091385w\1069608SNll8\1113422\158623\n]iT?\172221l*\ETB\\ezK"
-Shutting down telemetry system
-Initializing telemetry for service: "\43027"
-Shutting down telemetry system
-Initializing telemetry for service: "nqat]p\65506[\ENQ\v\ni\r9\SUB\208026\1098634\&84\985801=\\;y"
-Shutting down telemetry system
-Initializing telemetry for service: "\ENQ\1070725bI\138411\DC2gDq"
-Shutting down telemetry system
-Initializing telemetry for service: "\24588\6743\&4\GS\129239\USFG\DEL\984171"
-Shutting down telemetry system
-Initializing telemetry for service: "W\1051661\139429?\SOH\1091211\1070455\1037820\EOT)^\184303Hhcq\RSs\EMG)j[\\GT\"\996501[\ESCuz\DC1vo\1005262\47233\STX\1003552\&4(\1100584\1048266-\194700\DEL\DELNau\194658"
-Shutting down telemetry system
-Initializing telemetry for service: "<\ACKt\GS^\SOH\\~w\EM:-"
-Shutting down telemetry system
-Initializing telemetry for service: "\vDz/\1049090\t\SOHCS\8185i\rUe@l\1071965)GvdMu\1108023@Y\1006144\14675\SUB\74003\NUL\178325f\ETXKn\SUB>FC+Jh(\986896\&2\ETB\167612\DC1\1103219\196669\bfyI\EM\t\DLEK\44034\CAN\bOZ\625\1047353\ACKc\994563\25706\181199\GS\NAK\196759~\9901aFp\162622"
-Shutting down telemetry system
-Initializing telemetry for service: "3\GS\1041640\DC4\148696va\1112934\101456\FS8y\202500'&l\"\1018752BY\NULd\RS"
-Shutting down telemetry system
-Initializing telemetry for service: "\GS\168500\&6\FS\SUB,y\183691\EM\12233%Ruq'T@r{`7!\201244\1073027,y.\1056673?r\137255dw&OIxq{\SOq"
-Shutting down telemetry system
-Initializing telemetry for service: "+\DEL\EOT\ETX\US\164884\185739W\FS\1060957X]W\CAN\207260n\15253'"
-Shutting down telemetry system
-Initializing telemetry for service: "Y<!GuG;\"n\a:Oc,\fd \1044369\139787"
-Shutting down telemetry system
-Initializing telemetry for service: "\SYN\24133?\EM_\20240C\2597PM\1029237^\1079218FsD\EM\ACKUB\172116\185441\31806\163186\DC1\RS18\131481a]]\DC3\aQ4\SI\173069#\201559-T\12874-;\EM0:\ENQ\a8\171023\1073613u\GSS\CAN\160020\NULC#\ACKi\35367\1002170\37516C\ACK{ i(1\131497"
-Shutting down telemetry system
     should maintain configuration invariants [[32m✔[0m]
       +++ OK, passed 100 tests.
     should validate configuration field constraints [[32m✔[0m]
@@ -1732,24 +994,656 @@ Enhanced Cabal Tests
     should handle alternating NaN and finite values [[32m✔[0m]
     should handle alternating infinity and finite values [[32m✔[0m]
   Performance and Concurrency Tests
-    should handle concurrent simple metric operations [[31m✘[0m]
+    should handle concurrent simple metric operations [[32m✔[0m]
     should handle rapid span creation and finishing [[32m✔[0m]
   Resource Cleanup and Memory Leak Tests
     should properly clean up resources on shutdown [[32m✔[0m]
+Comprehensive Integration Tests
+  Metric Aggregation
+    should aggregate multiple metric values correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle mixed positive and negative values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Trace Context Propagation
+    should maintain trace context across multiple spans [[32m✔[0m]
+    should generate unique span IDs [[32m✔[0m]
+  Logger Level Filtering
+    should handle all log levels consistently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should create loggers with different levels [[32m✔[0m]
+  Configuration Validation
+    should create valid configurations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty configuration fields [[32m✔[0m]
+  Special Values Handling
+    should handle NaN and infinity values [[32m✔[0m]
+    should handle very small and large values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Operations
+    should handle concurrent metric operations [[32m✔[0m]
+    should handle concurrent span operations [[32m✔[0m]
+  Resource Management
+    should handle resource cleanup properly [[32m✔[0m]
+  Error Handling and Edge Cases
+    should handle empty metric and span names [[32m✔[0m]
+    should handle very long names [[32m✔[0m]
+  Performance Characteristics
+    should handle rapid metric updates [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle metric operations efficiently [[32m✔[0m]
+  Integration Workflow
+    should handle complete telemetry workflow [[32m✔[0m]
+Metric Properties Tests
+  Metric Addition Commutativity
+    should satisfy commutative property: a + b = b + a [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy associative property: (a + b) + c = a + (b + c) [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Identity Element
+    should satisfy identity property: a + 0 = a [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy identity property with initial zero: 0 + a = a [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Additive Inverse
+    should satisfy additive inverse property: a + (-a) ≈ 0 [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle multiple inverse operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Multiplicative Scaling
+    should satisfy distributive property: n * (a + b) = n*a + n*b [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Special Value Handling
+    should handle NaN values consistently [[32m✔[0m]
+    should handle infinity values consistently [[32m✔[0m]
+    should handle zero values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Persistence
+    should maintain metric name and unit after operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle metric identity comparison [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Boundary Conditions
+    should handle very large values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very small values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle alternating positive and negative values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Span Properties Tests
+  Span ID Uniqueness
+    should generate unique span IDs for different spans [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain unique span IDs even with same name [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Trace ID Consistency
+    should maintain consistent trace ID within same trace [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate different trace IDs for different traces [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span Name Persistence
+    should preserve span name after creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty span names [[32m✔[0m]
+    should handle special characters in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span ID Format
+    should generate span IDs with consistent length [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate span IDs with valid hex characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span Operation Safety
+    should handle span creation and finishing safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle multiple finish operations on same span [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span Temporal Properties
+    should maintain trace context over time [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle rapid span creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span Concurrency Safety
+    should handle concurrent span creation safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span Boundary Conditions
+    should handle very long span names [[32m✔[0m]
+    should handle unicode characters in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle span names with control characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Logger Properties Tests
+  Log Level Ordering
+    should maintain correct ordering of log levels [[32m✔[0m]
+    should satisfy transitive property: if a <= b and b <= c then a <= c [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy antisymmetric property: if a <= b and b <= a then a = b [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Name Persistence
+    should preserve logger name after creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty logger names [[32m✔[0m]
+    should handle special characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Level Persistence
+    should preserve logger level after creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should create loggers with all different levels [[32m✔[0m]
+  Logger Operation Safety
+    should handle logging operations safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle logging at different levels [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Identity
+    should distinguish loggers with different names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should distinguish loggers with different levels [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Boundary Conditions
+    should handle very long logger names [[32m✔[0m]
+    should handle unicode characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very long log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Level Filtering
+    should create loggers with appropriate level hierarchy [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain level ordering consistency [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Logger Concurrency Safety
+    should handle concurrent logger creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent logging operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+TelemetryConfig Properties Tests
+  Configuration Field Persistence
+    should preserve service name after initialization [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should preserve service version after initialization [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should preserve feature flags after initialization [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Default Configuration
+    should have reasonable default values [[32m✔[0m]
+    should handle operations with default config [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Production Configuration
+    should optimize for performance [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Equality
+    should identify identical configurations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should distinguish different configurations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle transitive property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Boundary Conditions
+    should handle empty service name [[32m✔[0m]
+    should handle empty service version [[32m✔[0m]
+    should handle extremely long service name [[32m✔[0m]
+    should handle unicode characters in service name [[32m✔[0m]
+  Configuration Lifecycle
+    should handle multiple initialization cycles [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle configuration changes [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Error Handling
+    should handle initialization errors gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle invalid configuration values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Feature Flags
+    should respect metrics flag [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should respect tracing flag [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should respect logging flag [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should respect debug flag [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Metric Aggregation Tests
+  Metric Sum Aggregation
+    should correctly aggregate sum of values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty list aggregation [[32m✔[0m]
+    should handle single value aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle aggregation of identical values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Average Aggregation
+    should correctly calculate average of values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle average of identical values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    Metric Maximum Tracking
+      should track maximum value in aggregation [[32m✔[0m]
+        +++ OK, passed 100 tests.
+  Metric Minimum Tracking
+    should track minimum value in aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Count Aggregation
+    should correctly count number of values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle count of empty list [[32m✔[0m]
+  Metric Grouped Aggregation
+    should handle aggregation of grouped values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle aggregation of positive and negative groups [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Time Series Aggregation
+    should handle time-based aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Hierarchical Aggregation
+    should handle hierarchical aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Sliding Window Aggregation
+    should handle sliding window aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Metric Weighted Aggregation
+    should handle weighted aggregation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Concurrent Telemetry Tests
+  Concurrent Metric Creation
+    should handle concurrent metric creation safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent metric creation with unique names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Metric Recording
+    should handle concurrent metric recording safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent metric recording with different values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Span Creation
+    should handle concurrent span creation safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain trace context across concurrent span creation [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Logging
+    should handle concurrent logging safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent logging at different levels [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Mixed Concurrent Operations
+    should handle mixed concurrent telemetry operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Initialization and Shutdown
+    should handle concurrent initialization safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent shutdown safely [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Resource Access
+    should handle concurrent access to shared metrics [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent access to shared loggers [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Error Handling
+    should handle errors in concurrent operations gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Text Handling Tests
+  ASCII Character Handling
+    should handle ASCII characters in metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle ASCII characters in metric units [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle ASCII characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle ASCII characters in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle ASCII characters in log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Unicode Character Handling
+    should handle Unicode characters in metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle Unicode characters in metric units [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle Unicode characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle Unicode characters in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle Unicode characters in log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Control Character Handling
+    should handle control characters in metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in metric units [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle control characters in log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Empty String Handling
+    should handle empty metric names [[32m✔[0m]
+    should handle empty metric units [[32m✔[0m]
+    should handle empty logger names [[32m✔[0m]
+    should handle empty span names [[32m✔[0m]
+    should handle empty log messages [[32m✔[0m]
+  Long String Handling
+    should handle long metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle long metric units [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle long logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle long span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle long log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Special Character Handling
+    should handle special characters in metric names [[32m✔[0m]
+    should handle special characters in metric units [[32m✔[0m]
+    should handle special characters in logger names [[32m✔[0m]
+    should handle special characters in span names [[32m✔[0m]
+    should handle special characters in log messages [[32m✔[0m]
+  Whitespace Handling
+    should handle whitespace in metric names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle whitespace in metric units [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle whitespace in logger names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle whitespace in span names [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle whitespace in log messages [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Text Encoding Consistency
+    should maintain text encoding consistency across operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle text round-trip consistently [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Numeric Boundary Tests
+  Zero Value Handling
+    should handle positive zero [[32m✔[0m]
+    should handle negative zero [[32m✔[0m]
+    should handle zero addition [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle zero subtraction [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Extreme Value Handling
+    should handle maximum finite double value [[32m✔[0m]
+    should handle minimum finite double value [[32m✔[0m]
+    should handle smallest positive non-zero double [[32m✔[0m]
+    should handle largest negative non-zero double [[32m✔[0m]
+  Infinity Value Handling
+    should handle positive infinity [[32m✔[0m]
+    should handle negative infinity [[32m✔[0m]
+    should handle infinity addition [[32m✔[0m]
+    should handle infinity subtraction [[32m✔[0m]
+    should handle infinity with infinity [[32m✔[0m]
+  NaN Value Handling
+    should handle NaN [[32m✔[0m]
+    should handle NaN propagation [[32m✔[0m]
+    should handle NaN with finite values [[32m✔[0m]
+    should handle NaN with infinity [[32m✔[0m]
+  Numeric Precision Boundaries
+    should handle very small positive numbers [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very small negative numbers [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very large positive numbers [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very large negative numbers [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Numeric Overflow Handling
+    should handle overflow in addition [[32m✔[0m]
+    should handle underflow in addition [[32m✔[0m]
+    should handle overflow in subtraction [[32m✔[0m]
+  Numeric Precision Loss
+    should handle precision loss with large numbers [[32m✔[0m]
+    should handle precision loss with very small numbers [[32m✔[0m]
+  Special Numeric Combinations
+    should handle alternating sign values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle geometric progression [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle arithmetic progression [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Boundary and Special Value Interactions
+    should handle zero with infinity [[32m✔[0m]
+    should handle zero with NaN [[32m✔[0m]
+    should handle infinity with NaN [[32m✔[0m]
+Telemetry Integration Tests
+  Complete Telemetry Workflow
+    should handle complete workflow with metrics, spans, and logging [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle nested workflow operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Cross-Component Data Flow
+    should handle data flow from metrics to logging [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle data flow from spans to metrics [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle data flow from logging to metrics [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration-Driven Integration
+    should integrate components based on configuration flags [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle configuration changes during runtime [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Error Recovery Integration
+    should handle errors in one component without affecting others [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should recover from initialization errors [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Performance Integration
+    should handle high-volume integrated operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle resource-efficient operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Integration
+    should handle concurrent operations across components [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  End-to-End Integration
+    should handle complete end-to-end telemetry scenario [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Advanced Cabal Test Suite
+  Metric Mathematical Properties
+    should satisfy commutative property of addition [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should satisfy associative property of addition [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle additive identity property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle additive inverse property [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span and Trace ID Generation Rules
+    should generate span IDs with consistent length [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate span IDs with valid hex characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain trace context across multiple spans [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should reset trace context after shutdown [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Log Level Hierarchy
+    should maintain correct log level ordering [[32m✔[0m]
+    should compare log levels correctly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should create loggers with all levels [[32m✔[0m]
+  Configuration Boundary Values
+    should handle empty string configuration [[32m✔[0m]
+    should handle very long configuration strings [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle all boolean combinations [[32m✔[0m]
+  Concurrent Operation Atomicity
+    should maintain atomicity for concurrent metric updates [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent span creation without race conditions [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Resource Leak Detection
+    should not leak memory during repeated init/shutdown cycles [[32m✔[0m]
+    should clean up metric registry after shutdown [[32m✔[0m]
+  Error Recovery
+Failed for value: Infinity, valueAfterFirst: Infinity, finalValue: Infinity, isNaN value: False, isNaN valueAfterFirst: False, isNaN finalValue: False
+    should recover from invalid metric values [[31m✘[0m]
+    should handle multiple initialization attempts [[32m✔[0m]
+  Performance Regression
+    should maintain performance with increasing metric count [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle rapid metric operations efficiently [[32m✔[0m]
+  Data Consistency
+    should maintain metric name consistency [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain logger level consistency [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Memory Usage
+    should not grow memory usage with repeated operations [[32m✔[0m]
+    should handle large metric values without overflow [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Enhanced Cabal QuickCheck Test Suite
+  Precise Arithmetic Properties
+    should maintain precision with small fractional values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very large values without overflow [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should preserve zero regardless of operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Span ID Distribution Properties
+    should generate span IDs with sufficient entropy [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate span IDs following the expected pattern [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should generate different span IDs for the same span name [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Configuration Immutability
+    should preserve configuration values after operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle configuration changes properly [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrent Consistency
+    should maintain consistency under concurrent metric operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle concurrent span creation with consistent trace IDs [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Boundary Conditions and Edge Cases
+    should handle extreme floating point values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle empty and whitespace-only strings [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle Unicode and special characters [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Performance and Scalability
+    should scale linearly with metric count [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle high-frequency operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Resource Management and Cleanup
+    should properly clean up after shutdown [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle resource exhaustion gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Data Integrity and Consistency
+    should maintain metric integrity across operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should maintain span integrity across operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Error Handling and Recovery
+    should recover from invalid operations gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle multiple initialization attempts [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  System Integration
+    should work correctly with all components combined [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Boundary Condition Cabal Test Suite
+  Extreme Values
+    should handle maximum finite double values [[32m✔[0m]
+    should handle minimum finite double values [[32m✔[0m]
+    should handle very small positive values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle very small negative values [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Special Floating Point Values
+    should handle NaN values correctly [[32m✔[0m]
+    should handle positive infinity correctly [[32m✔[0m]
+    should handle negative infinity correctly [[32m✔[0m]
+    should handle mixed special values [[32m✔[0m]
+  String Boundary Tests
+    should handle empty strings [[32m✔[0m]
+    should handle very long strings [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle strings with control characters [[32m✔[0m]
+    should handle strings with whitespace only [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Unicode and Encoding Tests
+    should handle multibyte Unicode characters [[32m✔[0m]
+    should handle zero-width characters [[32m✔[0m]
+    should handle right-to-left text [[32m✔[0m]
+  Numerical Precision Boundary Tests
+    should handle denormalized numbers [[32m✔[0m]
+    should handle machine epsilon [[32m✔[0m]
+    should handle cumulative precision loss [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Concurrency Boundary Tests
+    should handle extreme concurrent load [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle rapid initialization and shutdown [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Memory Limit Tests
+    should handle large number of metrics without memory issues [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle memory pressure gracefully [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  Error Recovery Boundary Tests
+    should recover from sequence of invalid operations [[31m✘[0m]
+    should handle cascading failures [[32m✔[0m]
+  Time-Related Boundary Tests
+    should handle rapid successive operations [[32m✔[0m]
+      +++ OK, passed 100 tests.
+    should handle operations with delays [[32m✔[0m]
+      +++ OK, passed 100 tests.
+  System Resource Boundary Tests
+    should handle resource exhaustion scenarios [[32m✔[0m]
+      +++ OK, passed 100 tests.
+Validation Tests
+  should share metrics with same name and unit [[32m✔[0m]
+  should handle configuration changes without affecting operations [[32m✔[0m]
 
 Failures:
 
-[36m  test/EnhancedCabalTestSpec.hs:340:21: [0m
-  1) Enhanced Cabal Tests, Performance and Concurrency Tests, should handle concurrent simple metric operations
-[31m       expected: [0m[31m1000[0m.0
-[31m        but got: [0m[32m100[0m.0
+[36m  test/NewQuickCheckTestsSpec.hs:435:5: [0m
+  1) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between metrics and spans
+[31m       Falsified (after 2 tests):[0m
+[31m         0[0m
 
-  To rerun use: --match "/Enhanced Cabal Tests/Performance and Concurrency Tests/should handle concurrent simple metric operations/" --seed 640622486
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between metrics and spans/" --seed 917577474
 
-Randomized with seed 640622486
+[36m  test/NewQuickCheckTestsSpec.hs:473:5: [0m
+  2) New QuickCheck-based Telemetry Tests, Component Interactions, should handle interactions between all three component types
+[31m       Falsified (after 2 tests):[0m
+[31m         0[0m
 
-Finished in 3.1084 seconds
-[31m490 examples, 1 failure[0m
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Component Interactions/should handle interactions between all three component types/" --seed 917577474
+
+[36m  test/NewQuickCheckTestsSpec.hs:521:5: [0m
+  3) New QuickCheck-based Telemetry Tests, Error Recovery Mechanisms, should handle operations without initialization
+[31m       Falsified (after 2 tests):[0m
+[31m         0[0m
+
+  To rerun use: --match "/New QuickCheck-based Telemetry Tests/Error Recovery Mechanisms/should handle operations without initialization/" --seed 917577474
+
+[36m  test/AdvancedCabalTestSpec.hs:327:22: [0m
+  4) Advanced Cabal Test Suite, Error Recovery, should recover from invalid metric values
+[31m       expected: [0m[31mTrue[0m
+[31m        but got: [0m[32mFalse[0m
+
+  To rerun use: --match "/Advanced Cabal Test Suite/Error Recovery/should recover from invalid metric values/" --seed 917577474
+
+[36m  test/BoundaryConditionCabalSpec.hs:365:18: [0m
+  5) Boundary Condition Cabal Test Suite, Error Recovery Boundary Tests, should recover from sequence of invalid operations
+[31m       expected: [0m[31m42.0[0m
+[31m        but got: [0m[32m-Infinity[0m
+
+  To rerun use: --match "/Boundary Condition Cabal Test Suite/Error Recovery Boundary Tests/should recover from sequence of invalid operations/" --seed 917577474
+
+Randomized with seed 917577474
+
+Finished in 345.7352 seconds
+[31m771 examples, 5 failures[0m
+
 Test suite azimuth-test: FAIL
 Test suite logged to:
 /home/runner/work/Azimuth/Azimuth/./dist-newstyle/build/x86_64-linux/ghc-9.14.1/azimuth-0.1.0/t/azimuth-test/test/azimuth-0.1.0-azimuth-test.log

@@ -361,20 +361,20 @@ spec = describe "Boundary Condition Cabal Test Suite" $ do
       recordMetric metric 42.0
       finalValue <- metricValue metric
       
-      -- 验证系统已恢复（Infinity 可以被覆盖）
+      -- Verify system has recovered (Infinity can be overridden)
       finalValue `shouldBe` 42.0
     
     it "should handle cascading failures" $ do
       let invalidConfigs = [TelemetryConfig "" "" True True True False, TelemetryConfig (pack $ replicate 10000 'a') (pack $ replicate 10000 'b') True True True False]
       
       sequence_ $ flip map invalidConfigs $ \config -> do
-        -- 尝试使用无效配置
+        -- Try to use invalid configuration
         result <- try $ initTelemetry config
         
         case result of
-          Left (_ :: SomeException) -> return ()  -- 预期的异常
+          Left (_ :: SomeException) -> return ()  -- Expected exception
           Right _ -> do
-            -- 如果成功，尝试正常操作
+            -- If successful, try normal operations
             metric <- createMetric "cascading-test" "count"
             recordMetric metric 1.0
             return ()
