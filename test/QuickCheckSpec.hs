@@ -220,6 +220,10 @@ spec = describe "QuickCheck-based Telemetry Tests" $ do
       sequence_ $ map finishSpan spans
       
       -- 关闭系统
+      shutdownTelemetry
+      
+      -- 重新初始化
+      initTelemetry defaultConfig
             
       -- 验证资源仍然可访问（在实际实现中可能需要检查资源计数）
       let metricNames = map (unpack . metricName) metrics

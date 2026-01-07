@@ -25,7 +25,8 @@ import System.Random (randomRIO)
 import Azimuth.Telemetry
 
 spec :: Spec
-spec = describe "Advanced Telemetry Tests" $ do
+spec = beforeAll_ (writeIORef enableMetricSharing False) $ 
+  describe "Advanced Telemetry Tests" $ do
   
   -- 1. 测试度量值的统计属性
   describe "Metric Statistical Properties" $ do
@@ -207,6 +208,9 @@ spec = describe "Advanced Telemetry Tests" $ do
             config1 = TelemetryConfig serviceName serviceVersion True True True False
             config2 = TelemetryConfig serviceName serviceVersion False True True False
         in unsafePerformIO $ do
+          -- 确保测试模式下的度量共享不会影响结果
+          writeIORef enableMetricSharing False
+          
           initTelemetry config1
           
           -- 创建度量
@@ -229,6 +233,9 @@ spec = describe "Advanced Telemetry Tests" $ do
             serviceVersion = pack $ show (version :: Int)
             config = TelemetryConfig serviceName serviceVersion True True True False
         in unsafePerformIO $ do
+          -- 确保测试模式下的度量共享不会影响结果
+          writeIORef enableMetricSharing False
+          
           initTelemetry config
           
           -- 执行一些操作
@@ -379,28 +386,52 @@ spec = describe "Advanced Telemetry Tests" $ do
                   length spans == componentCount)
     
     it "should clean up resources properly after shutdown" $ property $
-      \numComponents ->
-        let componentCount = max 5 (abs numComponents `mod` 20 + 5)
-        in unsafePerformIO $ do
-                    
-          -- 创建大量组件
-          metrics <- sequence $ replicate componentCount $ do
-            createMetric "cleanup-test" "count"
-          
-          -- 使用组件
-          sequence_ $ map (`recordMetric` 1.0) metrics
-          
-          -- 关闭系统
-                    
-          -- 重新初始化
-                    
-          -- 验证系统仍然工作
-          newMetric <- createMetric "after-cleanup" "count"
-          recordMetric newMetric 42.0
-          result <- metricValue newMetric
-          
-                    
-          return (result == 42.0)
+    
+          \numComponents ->
+    
+            let componentCount = max 5 (abs numComponents `mod` 20 + 5)
+    
+            in unsafePerformIO $ do
+    
+                        
+    
+              -- 创建大量组件
+    
+              metrics <- sequence $ replicate componentCount $ do
+    
+                createMetric "cleanup-test" "count"
+    
+              
+    
+              -- 使用组件
+    
+              sequence_ $ map (`recordMetric` 1.0) metrics
+    
+              
+    
+              -- 关闭系统
+    
+              shutdownTelemetry
+    
+                        
+    
+              -- 重新初始化
+    
+              initTelemetry defaultConfig
+    
+                        
+    
+              -- 验证系统仍然工作
+    
+              newMetric <- createMetric "after-cleanup" "count"
+    
+              recordMetric newMetric 42.0
+    
+              result <- metricValue newMetric
+    
+                        
+    
+              return (result == 42.0)
   
   -- 7. 测试错误处理
   describe "Error Handling" $ do
@@ -421,6 +452,7 @@ spec = describe "Advanced Telemetry Tests" $ do
         let testName = pack $ "after-shutdown-" ++ show (name :: Int)
         in unsafePerformIO $ do
           -- 确保系统关闭
+          shutdownTelemetry
                     
           -- 尝试创建组件
           result <- try $ do
@@ -513,6 +545,8 @@ spec = describe "Advanced Telemetry Tests" $ do
       \numOperations ->
         let operationCount = max 1 (abs numOperations `mod` 10 + 1)
         in unsafePerformIO $ do
+          -- 确保测试模式下的度量共享不会影响结果
+          writeIORef enableMetricSharing False
                     
           -- 创建所有组件类型
           metric <- createMetric "mixed-test" "count"

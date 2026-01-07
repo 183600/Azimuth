@@ -375,36 +375,37 @@ spec = describe "New QuickCheck-based Telemetry Tests" $ do
   -- 8. 测试资源清理和内存泄漏
   describe "Resource Cleanup and Memory Leaks" $ do
     it "should clean up resources properly after shutdown" $ property $
-      \numResources ->
-        let resources = max 1 (abs numResources `mod` 10 + 1)
-        in unsafePerformIO $ do
-                    
-          -- 创建大量资源
-          metrics <- sequence $ replicate resources $ do
-            createMetric "cleanup-test" "count"
-          
-          loggers <- sequence $ replicate resources $ do
-            createLogger "cleanup-logger" Info
-          
-          spans <- sequence $ replicate resources $ do
-            createSpan "cleanup-span"
-          
-          -- 使用资源
-          sequence_ $ map (`recordMetric` 1.0) metrics
-          sequence_ $ flip map loggers $ \logger -> do
-            logMessage logger Info "cleanup test"
-          sequence_ $ map finishSpan spans
-          
-          -- 关闭系统
-                    
-          -- 重新初始化并验证系统仍然工作
-                    
-          newMetric <- createMetric "after-cleanup" "count"
-          recordMetric newMetric 42.0
-          newValue <- metricValue newMetric
-          
-                    
-          return (newValue == 42.0)
+          \numResources ->
+            let resources = max 1 (abs numResources `mod` 10 + 1)
+            in unsafePerformIO $ do
+                        
+              -- 创建大量资源
+              metrics <- sequence $ replicate resources $ do
+                createMetric "cleanup-test" "count"
+              
+              loggers <- sequence $ replicate resources $ do
+                createLogger "cleanup-logger" Info
+              
+              spans <- sequence $ replicate resources $ do
+                createSpan "cleanup-span"
+              
+              -- 使用资源
+              sequence_ $ map (`recordMetric` 1.0) metrics
+              sequence_ $ flip map loggers $ \logger -> do
+                logMessage logger Info "cleanup test"
+              sequence_ $ map finishSpan spans
+              
+              -- 关闭系统
+              shutdownTelemetry
+                        
+              -- 重新初始化并验证系统仍然工作
+              initTelemetry defaultConfig
+                        
+              newMetric <- createMetric "after-cleanup" "count"
+              recordMetric newMetric 42.0
+              newValue <- metricValue newMetric
+                        
+              return (newValue == 42.0)
     
     it "should handle multiple init/shutdown cycles" $ property $
       \(numCycles :: Int) ->

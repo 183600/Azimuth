@@ -180,6 +180,12 @@ spec = describe "Additional Telemetry Tests 2" $ do
         let nameText = pack name
             unitText = pack unit
         in not (null name && null unit) ==> unsafePerformIO $ do
+          -- Save current sharing setting
+          originalSharing <- readIORef enableMetricSharing
+          
+          -- Enable metric sharing for this test
+          writeIORef enableMetricSharing True
+          
           -- 创建两个同名同单位的度量
           metric1 <- createMetric nameText unitText
           recordMetric metric1 10.0
@@ -190,6 +196,9 @@ spec = describe "Additional Telemetry Tests 2" $ do
           -- 验证它们共享相同的值
           value1 <- metricValue metric1
           value2 <- metricValue metric2
+          
+          -- Restore original sharing setting
+          writeIORef enableMetricSharing originalSharing
           
           return (value1 == value2 && value1 == 15.0)
     

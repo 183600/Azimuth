@@ -101,6 +101,12 @@ spec = do
     -- 指标共享机制测试
     describe "Metric Sharing Mechanism" $ do
       it "should share metrics with same name and unit" $ do
+        -- Save current sharing setting
+        originalSharing <- readIORef enableMetricSharing
+        
+        -- Clear metric registry to ensure clean state
+        modifyMVar_ metricRegistry (\_ -> return Map.empty)
+        
         -- Enable metric sharing
         writeIORef enableMetricSharing True
         
@@ -118,6 +124,9 @@ spec = do
         value2 <- metricValue metric2
         value1 `shouldBe` 15.0
         value2 `shouldBe` 15.0
+        
+        -- Restore original sharing setting
+        writeIORef enableMetricSharing originalSharing
       
       it "should not share metrics with different units" $ do
         -- Enable metric sharing
@@ -172,23 +181,32 @@ spec = do
     -- 内存泄漏防护测试
     describe "Memory Leak Protection" $ do
       it "should clear metric registry on shutdown" $ do
-        -- Enable metric sharing and create many metrics
-        writeIORef enableMetricSharing True
-        
-                
-        -- Create many metrics to populate registry
-        metrics <- sequence $ replicate 100 $ do
-          createMetric "memory-test" "count"
-        
-        -- Shutdown telemetry
-                
-        -- Registry should be empty
-        registry <- readMVar metricRegistry
-        Map.null registry `shouldBe` True
-        
-        -- Re-enable metric sharing for other tests
-        writeIORef enableMetricSharing True
-      
+              -- Save current sharing setting
+              originalSharing <- readIORef enableMetricSharing
+              
+              -- Enable metric sharing and create many metrics
+              writeIORef enableMetricSharing True
+              
+              -- Initialize telemetry to ensure clean state
+              initTelemetry defaultConfig
+              
+              -- Create many metrics to populate registry
+              metrics <- sequence $ replicate 100 $ do
+                createMetric "memory-test" "count"
+              
+              -- Check that registry is populated
+              registryBefore <- readMVar metricRegistry
+              Map.size registryBefore `shouldSatisfy` (> 0)
+              
+              -- Shutdown telemetry
+              shutdownTelemetry
+                      
+              -- Registry should be empty
+              registry <- readMVar metricRegistry
+              Map.null registry `shouldBe` True
+              
+              -- Restore original sharing setting
+              writeIORef enableMetricSharing originalSharing      
       it "should handle garbage collection properly" $ do
         -- Create metric and record values
         metric <- createMetric "gc-test" "count"

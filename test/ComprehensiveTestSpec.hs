@@ -25,6 +25,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
   -- 1. 测试度量注册表的共享机制
   describe "Metric Registry Sharing" $ do
     it "should share metrics with same name and unit" $ do
+        -- Save current sharing setting
+        originalSharing <- readIORef enableMetricSharing
+        
         -- Enable metric sharing for this test
         writeIORef enableMetricSharing True
         
@@ -44,6 +47,9 @@ spec = describe "Comprehensive Telemetry Tests" $ do
         
         value1 `shouldBe` value2
         value1 `shouldBe` 30.0
+        
+        -- Restore original sharing setting
+        writeIORef enableMetricSharing originalSharing
     
     it "should not share metrics with different units" $ property $
       \(name :: String) (unit1 :: String) (unit2 :: String) ->
@@ -356,37 +362,70 @@ spec = describe "Comprehensive Telemetry Tests" $ do
           return (finalValue == 42.0)
     
     it "should clean up resources properly after shutdown" $ property $
-      \(resourceCount :: Int) ->
-        let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
-        in unsafePerformIO $ do
-                    
-          -- 创建大量资源
-          metrics <- sequence $ replicate actualCount $ do
-            createMetric "cleanup-test" "count"
-          
-          loggers <- sequence $ replicate actualCount $ do
-            createLogger "cleanup-test-logger" Info
-          
-          spans <- sequence $ replicate actualCount $ do
-            createSpan "cleanup-test-span"
-          
-          -- 使用资源
-          sequence_ $ map (`recordMetric` 1.0) metrics
-          sequence_ $ flip map loggers $ \logger -> do
-            logMessage logger Info "cleanup test"
-          sequence_ $ map finishSpan spans
-          
-          -- 关闭系统
-                    
-          -- 重新初始化并验证系统正常工作
-                    
-          testMetric <- createMetric "post-cleanup-test" "count"
-          recordMetric testMetric 100.0
-          
-          finalValue <- metricValue testMetric
-          
-                    
-          return (finalValue == 100.0)
+    
+          \(resourceCount :: Int) ->
+    
+            let actualCount = max 1 (abs resourceCount `mod` 50 + 1)
+    
+            in unsafePerformIO $ do
+    
+                        
+    
+              -- 创建大量资源
+    
+              metrics <- sequence $ replicate actualCount $ do
+    
+                createMetric "cleanup-test" "count"
+    
+              
+    
+              loggers <- sequence $ replicate actualCount $ do
+    
+                createLogger "cleanup-test-logger" Info
+    
+              
+    
+              spans <- sequence $ replicate actualCount $ do
+    
+                createSpan "cleanup-test-span"
+    
+              
+    
+              -- 使用资源
+    
+              sequence_ $ map (`recordMetric` 1.0) metrics
+    
+              sequence_ $ flip map loggers $ \logger -> do
+    
+                logMessage logger Info "cleanup test"
+    
+              sequence_ $ map finishSpan spans
+    
+              
+    
+              -- 关闭系统
+    
+              shutdownTelemetry
+    
+                        
+    
+              -- 重新初始化并验证系统正常工作
+    
+              initTelemetry defaultConfig
+    
+                        
+    
+              testMetric <- createMetric "post-cleanup-test" "count"
+    
+              recordMetric testMetric 100.0
+    
+              
+    
+              finalValue <- metricValue testMetric
+    
+                        
+    
+              return (finalValue == 100.0)
 
   -- 8. 测试系统健康检查
   describe "System Health Checks" $ do

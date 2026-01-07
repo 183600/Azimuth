@@ -120,9 +120,17 @@ spec = describe "Advanced QuickCheck-based Telemetry Tests" $ do
     it "should generate new trace ID after shutdown and reinit" $ do
       let spanName = "test-span"
       unsafePerformIO $ do
+        -- Create first span and get trace ID
         span1 <- createSpan spanName
         let traceId1 = spanTraceId span1
         
+        -- Shutdown telemetry
+        shutdownTelemetry
+        
+        -- Reinitialize telemetry
+        initTelemetry defaultConfig
+        
+        -- Create second span and get trace ID
         span2 <- createSpan spanName
         let traceId2 = spanTraceId span2
         

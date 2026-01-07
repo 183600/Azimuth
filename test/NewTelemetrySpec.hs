@@ -202,8 +202,10 @@ spec = describe "New Telemetry Tests" $ do
       logMessage logger Info "cleanup test"
       
       -- Shutdown
+      shutdownTelemetry
             
       -- Reinitialize and verify clean state
+      initTelemetry defaultConfig
             
       newMetric <- createMetric "cleanup-metric" "count"
       newValue <- metricValue newMetric

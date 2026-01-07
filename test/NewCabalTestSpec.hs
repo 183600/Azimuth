@@ -262,8 +262,10 @@ spec = describe "New Cabal Test Suite" $ do
           sequence_ $ map (\m -> recordMetric m 1.0) metrics
           
           -- 关闭遥测系统
+          shutdownTelemetry
                     
           -- 重新初始化并验证干净状态
+          initTelemetry defaultConfig
           newMetric <- createMetric "after-shutdown" "count"
           newValue <- metricValue newMetric
                     
@@ -281,6 +283,8 @@ spec = describe "New Cabal Test Suite" $ do
           recordMetric metric 42.0
           
           -- 关闭并重新初始化
+          shutdownTelemetry
+          initTelemetry defaultConfig
                               
           -- 验证注册表已清理
           registry <- takeMVar metricRegistry
@@ -352,6 +356,9 @@ spec = describe "New Cabal Test Suite" $ do
           let performRestart i = do
                 metric <- createMetric (pack $ "restart-" ++ show i) "count"
                 recordMetric metric 1.0
+                -- 实际执行重启
+                shutdownTelemetry
+                initTelemetry defaultConfig
                           
           -- 执行多次重启
           sequence_ $ map performRestart [1..actualRestarts]
