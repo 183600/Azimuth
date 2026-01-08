@@ -1,3 +1,0 @@
-ignore-project: False
-flags: -fast +production
-tests: True

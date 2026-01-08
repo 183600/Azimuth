@@ -1,1 +1,0 @@
-{"name": "azimuth/telemetry/api/logs", "version": "0.1.0", "deps": ["azimuth/telemetry/api/common", "azimuth/telemetry/api/context"]}

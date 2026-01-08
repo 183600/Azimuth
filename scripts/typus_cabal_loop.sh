@@ -3,7 +3,7 @@ set -u
 set -o pipefail
 
 RELEASE_WINDOW_SECONDS=604800
-CABAL_LOG="/tmp/typus_cabal_last.log"
+MOON_LOG="/tmp/typus_moon_last.log"
 
 WORK_BRANCH="${WORK_BRANCH:-main}"
 
@@ -12,17 +12,17 @@ WORK_BRANCH="${WORK_BRANCH:-main}"
 GIT_DIR_REAL="$(git rev-parse --git-dir 2>/dev/null || echo ".git")"
 RELEASE_MARKER_FILE="${RELEASE_MARKER_FILE:-${GIT_DIR_REAL%/}/typus_release_tag}"
 
-extract_cabal_version() {
+extract_moon_version() {
   local f ver
 
-  # 避免从 dist-newstyle/.git 等目录误选到 cabal 文件
-  f="$(find . -name '*.cabal' \
-        -not -path './dist-newstyle/*' \
+  # MoonBit 项目通常在根目录下有 moon.mod.json
+  f="$(find . -name 'moon.mod.json' \
         -not -path './.git/*' \
         -print -quit 2>/dev/null || true)"
   [[ -n "${f:-}" ]] || return 1
 
-  ver="$(sed -nE 's/^[[:space:]]*[Vv]ersion[[:space:]]*:[[:space:]]*([0-9]+(\.[0-9]+)*)[[:space:]]*.*$/\1/p' "$f" | head -n1 || true)"
+  # 解析 JSON 中的 "version": "x.y.z"
+  ver="$(sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$f" | head -n1 || true)"
   [[ -n "${ver:-}" ]] || return 1
   printf '%s\n' "$ver"
 }
@@ -76,18 +76,19 @@ attempt_bump_and_tag() {
   git fetch --tags --force >/dev/null 2>&1 || true
 
   local old_ver new_ver tag
-  old_ver="$(extract_cabal_version || true)"
+  old_ver="$(extract_moon_version || true)"
   echo "ℹ️ 当前版本：${old_ver:-<unknown>}"
 
   echo "满足发布条件：开始 bump 版本号（iFlow）..."
-  iflow '增加版本号(例如0.9.1变成0.9.2) think:high' --yolo || {
+  # 修改提示词以适配 MoonBit 的 moon.mod.json
+  iflow '增加版本号(例如0.9.1变成0.9.2)，请修改 moon.mod.json 文件中的 version 字段，不要修改其他文件。think:high' --yolo || {
     echo "⚠️ bump 版本号失败，跳过本次发布准备。"
     return 0
   }
 
   git add -A
 
-  new_ver="$(extract_cabal_version || true)"
+  new_ver="$(extract_moon_version || true)"
   echo "ℹ️ bump 后版本：${new_ver:-<unknown>}"
   [[ -n "${new_ver:-}" ]] || { echo "⚠️ 无法提取版本号，跳过。"; return 0; }
 
@@ -127,22 +128,24 @@ trap 'echo; echo "已终止."; exit 0' INT TERM
 
 while true; do
   echo "===================="
-  echo "$(date '+%F %T') 运行测试：cabal test --flags=\"-fast production\" --test-show-details=direct"
+  echo "$(date '+%F %T') 运行测试：moon test"
   echo "===================="
 
-  : > "$CABAL_LOG"
+  : > "$MOON_LOG"
 
-  cabal test --flags="-fast production" --test-show-details=direct 2>&1 | tee "$CABAL_LOG"
+  # 使用 moon test 替代 cabal test
+  moon test 2>&1 | tee "$MOON_LOG"
   ps=("${PIPESTATUS[@]}")
-  CABAL_STATUS="${ps[0]:-255}"
+  MOON_STATUS="${ps[0]:-255}"
 
   HAS_ERROR=0
-  if has_error_in_log "$CABAL_LOG"; then
+  if has_error_in_log "$MOON_LOG"; then
     HAS_ERROR=1
   fi
 
-  if [[ "$CABAL_STATUS" -eq 0 ]]; then
-    iflow "给这个项目增加一些cabal test测试用例，不要超过10个，如果需要使用QuickCheck就使用QuickCheck think:high" --yolo || true
+  if [[ "$MOON_STATUS" -eq 0 ]]; then
+    # 修改提示词：请求增加 MoonBit 测试用例
+    iflow "给这个项目增加一些 moon test 测试用例，不要超过10个，使用标准的 MoonBit 测试语法 think:high" --yolo || true
 
     git add -A
     if git diff --cached --quiet; then
@@ -154,13 +157,14 @@ while true; do
     if [[ "$HAS_ERROR" -eq 0 ]]; then
       attempt_bump_and_tag || true
     else
-      echo "ℹ️ cabal 退出码为 0，但日志检测到 error 关键词，跳过发布准备。"
+      echo "ℹ️ moon test 退出码为 0，但日志检测到 error 关键词，跳过发布准备。"
     fi
   else
     echo "调用 iflow 修复..."
-    iflow '解决cabal test --flags="-fast production" --test-show-details=direct显示的所有问题（除了warning），除非测试用例本身有编译错误，否则只修改测试用例以外的代码，debug时可通过加日志和打断点，一定不要消耗大量CPU/内存资源 think:high' --yolo || true
+    # 修改提示词：请求修复 moon test 报错的问题
+    iflow '解决 moon test 显示的所有问题（除了warning），除非测试用例本身有编译错误，否则只修改测试用例以外的代码，debug时可通过加日志和打断点，一定不要消耗大量CPU/内存资源 think:high' --yolo || true
   fi
 
   echo "🔁 回到第 1 步..."
   sleep 1
-done
+doneone

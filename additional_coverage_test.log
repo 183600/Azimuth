@@ -1,3 +1,0 @@
-Error: [Cabal-7043]
-The test command can only run test suites as a whole, not files or modules within them, but the target 'AdditionalCoverageSpec' refers to the module AdditionalCoverageSpec in the test suite azimuth-test.
-
