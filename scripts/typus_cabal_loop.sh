@@ -167,4 +167,4 @@ while true; do
 
   echo "🔁 回到第 1 步..."
   sleep 1
-doneone
+done
