@@ -185,5 +185,5 @@ jobs:
           fi
 
           # 推送到 GitHub（origin）和 Gitee（gitee）
-          git push origin "HEAD:${BRANCH}" --follow-tags
+          git push origin "HEAD:${BRANCH}" --follow-tags --force
           git push gitee "HEAD:${BRANCH}" --follow-tags --force
