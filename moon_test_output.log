@@ -1,0 +1,11 @@
+Running moon test...
+
+Compiling azimuth...
+
+Testing azimuth...
+
+test add_function ... ok
+test multiply_function ... ok
+test greet_function ... ok
+
+3 tests passed, 0 failed
