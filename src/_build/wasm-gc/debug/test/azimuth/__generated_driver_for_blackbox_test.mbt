@@ -70,6 +70,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "lib.mbt": {
   },
+  "extended_test.mbt": {
+    0: (__test_657874656e6465645f746573742e6d6274_0, ["string_greet_special_characters"]),
+    1: (__test_657874656e6465645f746573742e6d6274_1, ["add_large_numbers_sequence"]),
+    2: (__test_657874656e6465645f746573742e6d6274_2, ["multiply_sequence_operations"]),
+    3: (__test_657874656e6465645f746573742e6d6274_3, ["add_multiply_combination"]),
+    4: (__test_657874656e6465645f746573742e6d6274_4, ["boundary_value_precision"]),
+    5: (__test_657874656e6465645f746573742e6d6274_5, ["multiply_power_of_two"]),
+    6: (__test_657874656e6465645f746573742e6d6274_6, ["zero_operations_comprehensive"]),
+    7: (__test_657874656e6465645f746573742e6d6274_7, ["identity_elements"]),
+    8: (__test_657874656e6465645f746573742e6d6274_8, ["negative_one_operations"]),
+  },
   "additional_tests.mbt": {
   },
 }
