@@ -3,7 +3,7 @@
     {
       "root": "azimuth",
       "rel": "azimuth",
-      "artifact": "/home/runner/work/Azimuth/Azimuth/src/_build/wasm-gc/release/check/azimuth/azimuth.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/_build/wasm-gc/debug/test/azimuth/azimuth.mi"
     },
     {
       "root": "moonbitlang/core",

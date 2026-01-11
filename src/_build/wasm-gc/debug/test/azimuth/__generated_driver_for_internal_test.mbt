@@ -44,6 +44,16 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "lib.mbt": {
   },
+  "additional_tests.mbt": {
+    0: (__test_6164646974696f6e616c5f74657374732e6d6274_0, ["string_basic_test"]),
+    1: (__test_6164646974696f6e616c5f74657374732e6d6274_1, ["math_basic_operations"]),
+    2: (__test_6164646974696f6e616c5f74657374732e6d6274_2, ["zero_operations"]),
+    3: (__test_6164646974696f6e616c5f74657374732e6d6274_3, ["negative_operations"]),
+    4: (__test_6164646974696f6e616c5f74657374732e6d6274_4, ["boundary_values"]),
+    5: (__test_6164646974696f6e616c5f74657374732e6d6274_5, ["overflow_handling"]),
+    6: (__test_6164646974696f6e616c5f74657374732e6d6274_6, ["combined_operations"]),
+    7: (__test_6164646974696f6e616c5f74657374732e6d6274_7, ["sequential_operations"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

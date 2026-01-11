@@ -42,35 +42,7 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "performance_test.mbt": {
-    0: (__test_706572666f726d616e63655f746573742e6d6274_0, ["performance_test_add"]),
-    1: (__test_706572666f726d616e63655f746573742e6d6274_1, ["performance_test_multiply"]),
-    2: (__test_706572666f726d616e63655f746573742e6d6274_2, ["edge_case_performance"]),
-  },
-  "lib_test.mbt": {
-    0: (__test_6c69625f746573742e6d6274_0, ["simple_add"]),
-    1: (__test_6c69625f746573742e6d6274_1, ["add_functions"]),
-    2: (__test_6c69625f746573742e6d6274_2, ["multiply_functions"]),
-    3: (__test_6c69625f746573742e6d6274_3, ["greet_function"]),
-    4: (__test_6c69625f746573742e6d6274_4, ["min_value_positive_add"]),
-    5: (__test_6c69625f746573742e6d6274_5, ["multiply_edge_cases"]),
-    6: (__test_6c69625f746573742e6d6274_6, ["min_value_edge_cases"]),
-    7: (__test_6c69625f746573742e6d6274_7, ["extra_test"]),
-    8: (__test_6c69625f746573742e6d6274_8, ["add_boundary_test"]),
-    9: (__test_6c69625f746573742e6d6274_9, ["multiply_boundary_test"]),
-    10: (__test_6c69625f746573742e6d6274_10, ["test_negative_overflow_edge_case"]),
-    11: (__test_6c69625f746573742e6d6274_11, ["debug_add"]),
-    12: (__test_6c69625f746573742e6d6274_12, ["debug_multiply"]),
-    13: (__test_6c69625f746573742e6d6274_13, ["specific_add_test"]),
-    14: (__test_6c69625f746573742e6d6274_14, ["multiply_zero_test"]),
-    15: (__test_6c69625f746573742e6d6274_15, ["add_edge_case"]),
-    16: (__test_6c69625f746573742e6d6274_16, ["add_min_value_positive"]),
-    17: (__test_6c69625f746573742e6d6274_17, ["final_add_test"]),
-    18: (__test_6c69625f746573742e6d6274_18, ["final_multiply_test"]),
-  },
   "lib.mbt": {
-  },
-  "additional_tests.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

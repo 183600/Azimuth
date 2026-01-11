@@ -1,0 +1,4 @@
+#!/bin/bash
+# MoonBit wrapper script
+SCRIPT_DIR="$HOME/.moon/bin"
+node "$SCRIPT_DIR/moonc" "$@"
