@@ -42,7 +42,20 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "string_processing_test.mbt": {
+    0: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_0, ["greet_different_languages"]),
+    1: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_1, ["greet_special_characters"]),
+    2: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_2, ["greet_long_names"]),
+  },
   "specialized_tests.mbt": {
+  },
+  "simple_test.mbt": {
+    0: (__test_73696d706c655f746573742e6d6274_0, ["simple_math_properties"]),
+  },
+  "real_world_test.mbt": {
+    0: (__test_7265616c5f776f726c645f746573742e6d6274_0, ["financial_calculations"]),
+    1: (__test_7265616c5f776f726c645f746573742e6d6274_1, ["geometry_calculations"]),
+    2: (__test_7265616c5f776f726c645f746573742e6d6274_2, ["temperature_conversion"]),
   },
   "practical_scenario_tests.mbt": {
   },
@@ -64,6 +77,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "lib.mbt": {
   },
   "enhanced_tests.mbt": {
+  },
+  "boundary_values_test.mbt": {
+    0: (__test_626f756e646172795f76616c7565735f746573742e6d6274_0, ["extreme_positive_values"]),
+    1: (__test_626f756e646172795f76616c7565735f746573742e6d6274_1, ["extreme_negative_values"]),
+    2: (__test_626f756e646172795f76616c7565735f746573742e6d6274_2, ["boundary_combinations"]),
+  },
+  "advanced_math_test.mbt": {
+    0: (__test_616476616e6365645f6d6174685f746573742e6d6274_0, ["addition_associative_property"]),
+    1: (__test_616476616e6365645f6d6174685f746573742e6d6274_1, ["multiplication_commutative_property"]),
+    2: (__test_616476616e6365645f6d6174685f746573742e6d6274_2, ["mathematical_identity_elements"]),
   },
   "additional_test_cases.mbt": {
   },

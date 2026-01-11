@@ -294,3 +294,84 @@ test "final_multiply_test" {
   assert_eq(-2147483648, @azimuth.multiply(-46341, 46341))
   assert_eq(-2147483648, @azimuth.multiply(46341, -46341))
 }
+
+// 测试加法的交换律性质
+///|
+test "addition_commutative_property" {
+  // 测试 a + b = b + a
+  assert_eq(@azimuth.add(123, 456), @azimuth.add(456, 123))
+  assert_eq(@azimuth.add(-100, 200), @azimuth.add(200, -100))
+  assert_eq(@azimuth.add(-50, -75), @azimuth.add(-75, -50))
+  assert_eq(@azimuth.add(0, 999), @azimuth.add(999, 0))
+  assert_eq(@azimuth.add(2147483647, -2147483648), @azimuth.add(-2147483648, 2147483647))
+}
+
+// 测试乘法的分配律性质
+///|
+test "multiplication_distributive_property" {
+  // 测试 a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 10
+  let c = 15
+  assert_eq(@azimuth.multiply(a, @azimuth.add(b, c)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c)))
+  
+  let x = -3
+  let y = 7
+  let z = -2
+  assert_eq(@azimuth.multiply(x, @azimuth.add(y, z)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z)))
+}
+
+// 测试实际应用场景：计算矩形的面积和周长
+///|
+test "practical_rectangle_calculations" {
+  // 矩形的长和宽
+  let length = 100
+  let width = 50
+  
+  // 计算面积：长 × 宽
+  let area = @azimuth.multiply(length, width)
+  assert_eq(5000, area)
+  
+  // 计算周长：2 × (长 + 宽)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  assert_eq(300, perimeter)
+}
+
+// 测试实际应用场景：购物车总价计算
+///|
+test "practical_shopping_cart_total" {
+  // 商品价格和数量
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  let item3_price = 99
+  let item3_quantity = 3
+  
+  // 计算每种商品的小计
+  let item1_total = @azimuth.multiply(item1_price, item1_quantity)
+  let item2_total = @azimuth.multiply(item2_price, item2_quantity)
+  let item3_total = @azimuth.multiply(item3_price, item3_quantity)
+  
+  // 计算总价
+  let total = @azimuth.add(@azimuth.add(item1_total, item2_total), item3_total)
+  assert_eq(994, total)
+}
+
+// 测试字符串拼接的实际应用场景
+///|
+test "practical_string_concatenation" {
+  // 测试用户信息拼接
+  let first_name = "张"
+  let last_name = "三"
+  let age = "25"
+  let city = "北京"
+  
+  // 拼接完整姓名
+  let full_name = @azimuth.add(first_name, last_name)
+  assert_eq("张三", full_name)
+  
+  // 拼接自我介绍
+  let intro1 = @azimuth.greet(full_name)
+  assert_eq(true, intro1.contains("张三"))
+}
