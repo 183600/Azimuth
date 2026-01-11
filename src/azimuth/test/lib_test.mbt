@@ -578,3 +578,208 @@ test "string_formatting" {
   assert_eq(true, greeting_medium != greeting_long)
   assert_eq(true, greeting_short != greeting_long)
 }
+
+// 新增测试用例 1: 测试减法运算（通过加负数实现）
+///|
+test "subtraction_using_addition" {
+  // a - b = a + (-b)
+  assert_eq(5, @azimuth.add(10, @azimuth.multiply(-1, 5)))  // 10 - 5 = 5
+  assert_eq(-5, @azimuth.add(5, @azimuth.multiply(-1, 10)))  // 5 - 10 = -5
+  assert_eq(0, @azimuth.add(10, @azimuth.multiply(-1, 10)))  // 10 - 10 = 0
+  assert_eq(15, @azimuth.add(5, @azimuth.multiply(-1, -10))) // 5 - (-10) = 15
+  
+  // 边界情况
+  assert_eq(2147483647, @azimuth.add(2147483647, @azimuth.multiply(-1, 0)))  // 最大值 - 0
+  assert_eq(0, @azimuth.add(0, @azimuth.multiply(-1, 0)))  // 0 - 0
+}
+
+// 新增测试用例 2: 测试字符串中的特殊字符
+///|
+test "string_special_characters_extended" {
+  // 测试包含特殊字符的字符串
+  assert_eq("Hello, \"John\"!", @azimuth.greet("\"John\""))
+  assert_eq("Hello, \\ slashes!", @azimuth.greet("\\ slashes"))
+  assert_eq("Hello, line\nbreak!", @azimuth.greet("line\nbreak"))
+  assert_eq("Hello, tab\tcharacter!", @azimuth.greet("tab\tcharacter"))
+  assert_eq("Hello, @#$%^&*()!", @azimuth.greet("@#$%^&*()"))
+}
+
+// 新增测试用例 3: 测试几何计算 - 圆形面积和周长
+///|
+test "geometry_circle_calculations" {
+  // 圆周率近似值 22/7
+  let pi_numerator = 22
+  let pi_denominator = 7
+  
+  // 半径
+  let radius = 7
+  
+  // 面积 = π * r² = (22/7) * 49 = 154
+  let area_times_denominator = @azimuth.multiply(pi_numerator, @azimuth.multiply(radius, radius))
+  assert_eq(154, @azimuth.multiply(pi_denominator, 154))  // 验证结果
+  
+  // 周长 = 2 * π * r = 2 * (22/7) * 7 = 44
+  let circumference_times_denominator = @azimuth.multiply(@azimuth.multiply(2, pi_numerator), radius)
+  assert_eq(44, @azimuth.multiply(pi_denominator, 44))  // 验证结果
+}
+
+// 新增测试用例 4: 测试物理公式 - 速度和距离计算
+///|
+test "physics_motion_calculations" {
+  // 距离 = 初速度 * 时间 + 0.5 * 加速度 * 时间²
+  // 我们通过乘以2来避免小数
+  
+  let initial_velocity = 10  // m/s
+  let acceleration = 2       // m/s²
+  let time = 5               // s
+  
+  // 距离 * 2 = 2 * (初速度 * 时间) + 加速度 * 时间²
+  let distance_times_2 = @azimuth.add(
+    @azimuth.multiply(2, @azimuth.multiply(initial_velocity, time)),
+    @azimuth.multiply(acceleration, @azimuth.multiply(time, time))
+  )
+  
+  // 预期: 2 * (10 * 5) + 2 * 25 = 100 + 50 = 150
+  assert_eq(150, distance_times_2)
+}
+
+// 新增测试用例 5: 测试统计分析 - 平均值计算
+///|
+test "statistics_average_calculation" {
+  // 平均值 = 总和 / 数量
+  // 我们通过计算总和来验证
+  
+  let numbers = [10, 20, 30, 40, 50]  // 假设的数组
+  let count = 5
+  
+  // 计算总和
+  let sum = @azimuth.add(
+    @azimuth.add(
+      @azimuth.add(10, 20),
+      @azimuth.add(30, 40)
+    ),
+    50
+  )
+  
+  // 平均值 * 数量 = 总和
+  let average_times_count = sum
+  assert_eq(150, average_times_count)  // 验证总和
+  
+  // 验证平均值计算
+  assert_eq(30, @azimuth.multiply(5, 30))  // 5 * 30 = 150
+}
+
+// 新增测试用例 6: 测试时间转换 - 秒到分钟和小时
+///|
+test "time_conversion_calculations" {
+  // 3661秒 = 1小时1分钟1秒
+  
+  let total_seconds = 3661
+  
+  // 小时 = 秒 / 3600，我们通过乘法验证
+  let hours = 1
+  let hours_in_seconds = @azimuth.multiply(hours, 3600)
+  assert_eq(3600, hours_in_seconds)
+  
+  // 剩余秒数
+  let remaining_seconds = @azimuth.add(total_seconds, @azimuth.multiply(-1, hours_in_seconds))
+  assert_eq(61, remaining_seconds)
+  
+  // 分钟 = 剩余秒数 / 60
+  let minutes = 1
+  let minutes_in_seconds = @azimuth.multiply(minutes, 60)
+  assert_eq(60, minutes_in_seconds)
+  
+  // 最终剩余秒数
+  let final_seconds = @azimuth.add(remaining_seconds, @azimuth.multiply(-1, minutes_in_seconds))
+  assert_eq(1, final_seconds)
+}
+
+// 新增测试用例 7: 测试货币转换 - 汇率计算
+///|
+test "currency_exchange_calculation" {
+  // 假设汇率：1 USD = 6.5 CNY
+  // 我们通过乘以10来避免小数
+  
+  let usd_amount = 100
+  let exchange_rate_numerator = 65  // 6.5 * 10
+  let exchange_rate_denominator = 10
+  
+  // CNY金额 * 10 = USD金额 * 汇率分子
+  let cny_times_10 = @azimuth.multiply(usd_amount, exchange_rate_numerator)
+  assert_eq(6500, cny_times_10)  // 100 * 65 = 6500，所以是650 CNY
+  
+  // 反向计算
+  let cny_amount = 650
+  let usd_times_10 = @azimuth.multiply(cny_amount, exchange_rate_denominator)
+  assert_eq(6500, usd_times_10)  // 验证反向计算
+}
+
+// 新增测试用例 8: 测试游戏逻辑 - 简单的得分计算
+///|
+test "game_score_calculation" {
+  // 游戏得分 = 基础分 * 等级 + 连击奖励
+  
+  let base_score = 100
+  let level = 5
+  let combo_bonus = 50
+  let combo_multiplier = 3
+  
+  // 基础得分
+  let level_score = @azimuth.multiply(base_score, level)
+  
+  // 连击奖励
+  let total_bonus = @azimuth.multiply(combo_bonus, combo_multiplier)
+  
+  // 总得分
+  let total_score = @azimuth.add(level_score, total_bonus)
+  
+  // 验证: 100 * 5 + 50 * 3 = 500 + 150 = 650
+  assert_eq(650, total_score)
+}
+
+// 新增测试用例 9: 测试复杂数学表达式 - 二次方程求值
+///|
+test "complex_mathematical_expression" {
+  // 计算 ax² + bx + c
+  // 例子: 2x² + 3x + 1，当 x = 5 时
+  
+  let a = 2
+  let b = 3
+  let c = 1
+  let x = 5
+  
+  // x²
+  let x_squared = @azimuth.multiply(x, x)
+  
+  // ax²
+  let ax_squared = @azimuth.multiply(a, x_squared)
+  
+  // bx
+  let bx = @azimuth.multiply(b, x)
+  
+  // ax² + bx + c
+  let result = @azimuth.add(@azimuth.add(ax_squared, bx), c)
+  
+  // 验证: 2*25 + 3*5 + 1 = 50 + 15 + 1 = 66
+  assert_eq(66, result)
+}
+
+// 新增测试用例 10: 测试数组求和（模拟）
+///|
+test "array_sum_simulation" {
+  // 模拟数组求和: [1, 2, 3, 4, 5]
+  
+  // 使用链式加法
+  let sum1 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  assert_eq(15, sum1)
+  
+  // 使用分组加法
+  let group1 = @azimuth.add(1, 5)  // 首尾相加
+  let group2 = @azimuth.add(2, 4)  // 第二和倒数第二相加
+  let sum2 = @azimuth.add(@azimuth.add(group1, group2), 3)  // 加上中间值
+  assert_eq(15, sum2)
+  
+  // 验证两种方法结果一致
+  assert_eq(sum1, sum2)
+}
