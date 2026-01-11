@@ -375,3 +375,85 @@ test "practical_string_concatenation" {
   let intro1 = @azimuth.greet(full_name)
   assert_eq(true, intro1.contains("张三"))
 }
+
+// 测试加法的结合律性质
+///|
+test "addition_associative_property_enhanced" {
+  // 测试 (a + b) + c = a + (b + c)
+  let a = 100
+  let b = 200
+  let c = 300
+  assert_eq(@azimuth.add(@azimuth.add(a, b), c), @azimuth.add(a, @azimuth.add(b, c)))
+  
+  // 测试负数的情况
+  let x = -50
+  let y = -30
+  let z = 20
+  assert_eq(@azimuth.add(@azimuth.add(x, y), z), @azimuth.add(x, @azimuth.add(y, z)))
+  
+  // 测试包含0的情况
+  assert_eq(@azimuth.add(@azimuth.add(0, 123), 456), @azimuth.add(0, @azimuth.add(123, 456)))
+}
+
+// 测试乘法的结合律性质
+///|
+test "multiplication_associative_property_enhanced" {
+  // 测试 (a * b) * c = a * (b * c)
+  let a = 2
+  let b = 3
+  let c = 4
+  assert_eq(@azimuth.multiply(@azimuth.multiply(a, b), c), @azimuth.multiply(a, @azimuth.multiply(b, c)))
+  
+  // 测试包含负数的情况
+  let x = -2
+  let y = 3
+  let z = -4
+  assert_eq(@azimuth.multiply(@azimuth.multiply(x, y), z), @azimuth.multiply(x, @azimuth.multiply(y, z)))
+  
+  // 测试包含0的情况
+  assert_eq(@azimuth.multiply(@azimuth.multiply(0, 123), 456), @azimuth.multiply(0, @azimuth.multiply(123, 456)))
+}
+
+// 测试乘法交换律性质
+///|
+test "multiplication_commutative_property_enhanced" {
+  // 测试 a * b = b * a
+  assert_eq(@azimuth.multiply(12, 34), @azimuth.multiply(34, 12))
+  assert_eq(@azimuth.multiply(-100, 200), @azimuth.multiply(200, -100))
+  assert_eq(@azimuth.multiply(-50, -75), @azimuth.multiply(-75, -50))
+  assert_eq(@azimuth.multiply(0, 999), @azimuth.multiply(999, 0))
+}
+
+// 测试加法单位元性质
+///|
+test "addition_identity_element_enhanced" {
+  // 测试 a + 0 = a 和 0 + a = a
+  assert_eq(123, @azimuth.add(123, 0))
+  assert_eq(123, @azimuth.add(0, 123))
+  assert_eq(-456, @azimuth.add(-456, 0))
+  assert_eq(-456, @azimuth.add(0, -456))
+  assert_eq(0, @azimuth.add(0, 0))
+}
+
+// 测试乘法单位元性质
+///|
+test "multiplication_identity_element_enhanced" {
+  // 测试 a * 1 = a 和 1 * a = a
+  assert_eq(123, @azimuth.multiply(123, 1))
+  assert_eq(123, @azimuth.multiply(1, 123))
+  assert_eq(-456, @azimuth.multiply(-456, 1))
+  assert_eq(-456, @azimuth.multiply(1, -456))
+  assert_eq(0, @azimuth.multiply(0, 1))
+  assert_eq(0, @azimuth.multiply(1, 0))
+}
+
+// 测试乘法零元素性质
+///|
+test "multiplication_zero_element_enhanced" {
+  // 测试 a * 0 = 0 和 0 * a = 0
+  assert_eq(0, @azimuth.multiply(123, 0))
+  assert_eq(0, @azimuth.multiply(0, 123))
+  assert_eq(0, @azimuth.multiply(-456, 0))
+  assert_eq(0, @azimuth.multiply(0, -456))
+  assert_eq(0, @azimuth.multiply(0, 0))
+}
