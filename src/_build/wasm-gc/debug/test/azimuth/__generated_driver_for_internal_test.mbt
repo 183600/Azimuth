@@ -56,6 +56,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "lib.mbt": {
   },
+  "comprehensive_tests.mbt": {
+    0: (__test_636f6d70726568656e736976655f74657374732e6d6274_0, ["add_commutative_property"]),
+    1: (__test_636f6d70726568656e736976655f74657374732e6d6274_1, ["add_associative_property"]),
+    2: (__test_636f6d70726568656e736976655f74657374732e6d6274_2, ["multiply_commutative_property"]),
+    3: (__test_636f6d70726568656e736976655f74657374732e6d6274_3, ["multiply_distributive_property"]),
+    4: (__test_636f6d70726568656e736976655f74657374732e6d6274_4, ["greet_special_characters"]),
+    5: (__test_636f6d70726568656e736976655f74657374732e6d6274_5, ["add_identity_elements"]),
+    6: (__test_636f6d70726568656e736976655f74657374732e6d6274_6, ["multiply_identity_elements"]),
+    7: (__test_636f6d70726568656e736976655f74657374732e6d6274_7, ["boundary_value_combinations"]),
+    8: (__test_636f6d70726568656e736976655f74657374732e6d6274_8, ["power_of_two_operations"]),
+  },
   "additional_tests.mbt": {
     0: (__test_6164646974696f6e616c5f74657374732e6d6274_0, ["string_basic_test"]),
     1: (__test_6164646974696f6e616c5f74657374732e6d6274_1, ["math_basic_operations"]),
