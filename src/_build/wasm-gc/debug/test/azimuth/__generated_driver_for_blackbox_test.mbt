@@ -103,6 +103,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "additional_test_cases.mbt": {
   },
+  "additional_focused_tests.mbt": {
+  },
   "additional_edge_cases.mbt": {
   },
   "additional_comprehensive_test.mbt": {

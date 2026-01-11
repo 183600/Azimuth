@@ -132,6 +132,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_7, ["overflow_recovery_patterns"]),
     8: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_8, ["circular_reference_patterns"]),
   },
+  "additional_focused_tests.mbt": {
+    0: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_0, ["continuous_operations_stability"]),
+    1: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_1, ["fibonacci_sequence_calculation"]),
+    2: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_2, ["factorial_calculation"]),
+    3: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_3, ["difference_of_squares"]),
+    4: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_4, ["binary_related_calculations"]),
+    5: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_5, ["average_calculation"]),
+    6: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_6, ["compound_interest_calculation"]),
+    7: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_7, ["multilingual_string_processing"]),
+    8: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_8, ["number_theory_basics"]),
+    9: (__test_6164646974696f6e616c5f666f63757365645f74657374732e6d6274_9, ["triangle_area_calculation"]),
+  },
   "additional_edge_cases.mbt": {
     0: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_0, ["add_chained_operations"]),
     1: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_1, ["multiply_chained_operations"]),
