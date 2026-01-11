@@ -91,6 +91,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_656e68616e6365645f6d6174685f746573742e6d6274_7, ["bank_interest_calculation_new"]),
     8: (__test_656e68616e6365645f6d6174685f746573742e6d6274_8, ["string_concatenation_special_cases_new"]),
   },
+  "correct_concise_tests.mbt": {
+  },
   "comprehensive_application_tests.mbt": {
   },
   "boundary_values_test.mbt": {

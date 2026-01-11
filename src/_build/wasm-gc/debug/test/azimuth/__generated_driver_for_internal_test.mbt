@@ -122,6 +122,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_656e68616e6365645f74657374732e6d6274_8, ["mixed_operations_stress"]),
     9: (__test_656e68616e6365645f74657374732e6d6274_9, ["extreme_boundary_transitions"]),
   },
+  "correct_concise_tests.mbt": {
+    0: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_0, ["correct_add_identity_element"]),
+    1: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_1, ["correct_multiply_identity_element"]),
+    2: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_2, ["correct_multiply_zero_element"]),
+    3: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_3, ["correct_addition_commutative"]),
+    4: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_4, ["correct_multiplication_commutative"]),
+    5: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_5, ["correct_addition_associative"]),
+    6: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_6, ["correct_multiplication_associative"]),
+    7: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_7, ["correct_multiplication_distributive"]),
+    8: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_8, ["correct_string_handling_basic"]),
+    9: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_9, ["correct_mathematical_identities"]),
+  },
   "comprehensive_application_tests.mbt": {
     0: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_0, ["complex_financial_calculations"]),
     1: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_1, ["string_processing_edge_cases"]),
