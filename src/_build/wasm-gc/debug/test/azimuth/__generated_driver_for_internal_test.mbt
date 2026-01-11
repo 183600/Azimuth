@@ -42,6 +42,18 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "standard_moonbit_tests.mbt": {
+    0: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_0, ["performance_continuous_operations"]),
+    1: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_1, ["error_handling_boundary_inputs"]),
+    2: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_2, ["mathematical_factorial_calculation"]),
+    3: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_3, ["string_long_input_handling"]),
+    4: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_4, ["numeric_range_zero_operations"]),
+    5: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_5, ["algorithm_fibonacci_sequence"]),
+    6: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_6, ["data_structure_stack_simulation"]),
+    7: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_7, ["concurrent_safety_repeated_operations"]),
+    8: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_8, ["memory_efficiency_large_data_simulation"]),
+    9: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_9, ["compatibility_different_input_formats"]),
+  },
   "specialized_tests.mbt": {
     0: (__test_7370656369616c697a65645f74657374732e6d6274_0, ["complex_arithmetic_sequence"]),
     1: (__test_7370656369616c697a65645f74657374732e6d6274_1, ["power_of_two_patterns"]),

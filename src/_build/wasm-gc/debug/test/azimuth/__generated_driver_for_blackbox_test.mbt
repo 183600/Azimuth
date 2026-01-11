@@ -47,6 +47,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_1, ["greet_special_characters"]),
     2: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_2, ["greet_long_names"]),
   },
+  "standard_moonbit_tests.mbt": {
+  },
   "specialized_tests.mbt": {
   },
   "simple_test.mbt": {
