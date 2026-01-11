@@ -122,6 +122,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "lib.mbt": {
   },
+  "focused_comprehensive_tests.mbt": {
+    0: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_0, ["addition_associative_law"]),
+    1: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_1, ["multiplication_associative_law"]),
+    2: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_2, ["zero_element_properties"]),
+    3: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_3, ["negative_number_operations"]),
+    4: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_4, ["large_number_operations"]),
+    5: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_5, ["comprehensive_string_concatenation"]),
+    6: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_6, ["perfect_square_identity"]),
+    7: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_7, ["average_score_calculation"]),
+    8: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_8, ["overflow_boundary_conditions"]),
+    9: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_9, ["arithmetic_sequence_properties"]),
+  },
   "enhanced_tests.mbt": {
     0: (__test_656e68616e6365645f74657374732e6d6274_0, ["greet_special_strings"]),
     1: (__test_656e68616e6365645f74657374732e6d6274_1, ["add_sequence_patterns"]),
