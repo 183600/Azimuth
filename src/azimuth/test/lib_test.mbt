@@ -457,3 +457,124 @@ test "multiplication_zero_element_enhanced" {
   assert_eq(0, @azimuth.multiply(0, -456))
   assert_eq(0, @azimuth.multiply(0, 0))
 }
+
+// 测试字符串处理：特殊字符和Unicode
+///|
+test "string_special_characters" {
+  assert_eq("Hello, 世界!", @azimuth.greet("世界"))
+  assert_eq("Hello, 🌙!", @azimuth.greet("🌙"))
+  assert_eq("Hello, John-Doe!", @azimuth.greet("John-Doe"))
+  assert_eq("Hello, O'Reilly!", @azimuth.greet("O'Reilly"))
+  assert_eq("Hello, C++!", @azimuth.greet("C++"))
+}
+
+// 测试复杂数学运算：平方和立方
+///|
+test "mathematical_operations" {
+  // 平方计算
+  assert_eq(100, @azimuth.multiply(10, 10))
+  assert_eq(144, @azimuth.multiply(12, 12))
+  assert_eq(1, @azimuth.multiply(-1, -1))
+  
+  // 立方计算
+  assert_eq(1000, @azimuth.multiply(10, @azimuth.multiply(10, 10)))
+  assert_eq(27, @azimuth.multiply(3, @azimuth.multiply(3, 3)))
+  assert_eq(-8, @azimuth.multiply(-2, @azimuth.multiply(-2, -2)))
+}
+
+// 测试温度转换：摄氏度到华氏度
+///|
+test "temperature_conversion" {
+  // F = C * 9/5 + 32，我们通过乘法来避免除法
+  // 测试0°C = 32°F
+  let celsius_0 = 0
+  let fahrenheit_0_times_5 = @azimuth.add(@azimuth.multiply(celsius_0, 9), 160)  // (0 * 9 + 160) = 160, 160/5 = 32
+  assert_eq(160, fahrenheit_0_times_5)
+  
+  // 测试100°C = 212°F
+  let celsius_100 = 100
+  let fahrenheit_100_times_5 = @azimuth.add(@azimuth.multiply(celsius_100, 9), 160)  // (100 * 9 + 160) = 1060, 1060/5 = 212
+  assert_eq(1060, fahrenheit_100_times_5)
+  
+  // 测试-40°C = -40°F
+  let celsius_minus40 = -40
+  let fahrenheit_minus40_times_5 = @azimuth.add(@azimuth.multiply(celsius_minus40, 9), 160)  // (-40 * 9 + 160) = -200, -200/5 = -40
+  assert_eq(-200, fahrenheit_minus40_times_5)
+}
+
+// 测试银行利息计算
+///|
+test "bank_interest_calculation" {
+  // 本金
+  let principal = 10000
+  // 年利率 5% 表示为分数
+  let interest_rate_numerator = 5
+  let interest_rate_denominator = 100
+  // 存款年限
+  let years = 3
+  
+  // 简单利息计算：本金 * 利率 * 年限
+  let interest_times_denominator = @azimuth.multiply(@azimuth.multiply(principal, interest_rate_numerator), years)
+  // 总金额 = 本金 + 利息，这里我们只检查计算过程
+  let total_times_denominator = @azimuth.add(@azimuth.multiply(principal, interest_rate_denominator), interest_times_denominator)
+  
+  // 11500 * 100 = 1150000
+  assert_eq(1150000, total_times_denominator)
+}
+
+// 测试数列求和
+///|
+test "arithmetic_series_sum" {
+  // 等差数列求和：1 + 2 + 3 + ... + n = n * (n + 1) / 2
+  // 我们通过乘法来避免除法
+  
+  // 1 + 2 + ... + 10 = 55
+  let n1 = 10
+  let sum1_times_2 = @azimuth.multiply(n1, @azimuth.add(n1, 1))  // 10 * 11 = 110, 110/2 = 55
+  assert_eq(110, sum1_times_2)
+  
+  // 1 + 2 + ... + 100 = 5050
+  let n2 = 100
+  let sum2_times_2 = @azimuth.multiply(n2, @azimuth.add(n2, 1))  // 100 * 101 = 10100, 10100/2 = 5050
+  assert_eq(10100, sum2_times_2)
+}
+
+// 测试大数运算边界情况
+///|
+test "large_number_operations" {
+  // 测试接近边界的运算
+  let large_num = 1000000
+  let another_large = 2000000
+  
+  // 大数加法
+  assert_eq(3000000, @azimuth.add(large_num, another_large))
+  
+  // 大数乘法（不溢出）
+  assert_eq(1000000000000, @azimuth.multiply(large_num, large_num))
+  
+  // 大数减法（用加法实现）
+  assert_eq(-1000000, @azimuth.add(large_num, @azimuth.multiply(-1, another_large)))
+}
+
+// 测试字符串格式化
+///|
+test "string_formatting" {
+  // 测试不同长度的字符串
+  let short_name = "A"
+  let medium_name = "MoonBit"
+  let long_name = "VeryLongProgrammingLanguageName"
+  
+  let greeting_short = @azimuth.greet(short_name)
+  let greeting_medium = @azimuth.greet(medium_name)
+  let greeting_long = @azimuth.greet(long_name)
+  
+  // 验证字符串内容
+  assert_eq("Hello, A!", greeting_short)
+  assert_eq("Hello, MoonBit!", greeting_medium)
+  assert_eq("Hello, VeryLongProgrammingLanguageName!", greeting_long)
+  
+  // 验证不同输入产生不同输出
+  assert_eq(true, greeting_short != greeting_medium)
+  assert_eq(true, greeting_medium != greeting_long)
+  assert_eq(true, greeting_short != greeting_long)
+}
