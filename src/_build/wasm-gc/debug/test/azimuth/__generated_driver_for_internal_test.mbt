@@ -122,6 +122,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_656e68616e6365645f74657374732e6d6274_8, ["mixed_operations_stress"]),
     9: (__test_656e68616e6365645f74657374732e6d6274_9, ["extreme_boundary_transitions"]),
   },
+  "enhanced_coverage_tests.mbt": {
+    0: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_0, ["enhanced_extreme_boundary_combinations"]),
+    1: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_1, ["enhanced_numerical_stability_tests"]),
+    2: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_2, ["enhanced_composite_function_tests"]),
+    3: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_3, ["enhanced_string_boundary_and_special_handling"]),
+    4: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_4, ["enhanced_mathematical_identity_verification"]),
+    5: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_5, ["enhanced_business_scenario_tests"]),
+    6: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_6, ["enhanced_algorithm_efficiency_tests"]),
+    7: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_7, ["enhanced_error_recovery_and_boundary_handling"]),
+    8: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_8, ["enhanced_multi_step_calculation_verification"]),
+    9: (__test_656e68616e6365645f636f7665726167655f74657374732e6d6274_9, ["enhanced_data_pattern_verification"]),
+  },
   "correct_concise_tests.mbt": {
     0: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_0, ["correct_add_identity_element"]),
     1: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_1, ["correct_multiply_identity_element"]),
