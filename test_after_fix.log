@@ -1,25 +1,235 @@
 Running moon test...
-
+Checking syntax and imports...
 Compiling azimuth...
-
-Testing azimuth...
-
-test multiply_edge_cases ... ok
-test final_add_test ... ok
-test final_multiply_test ... ok
-test test_negative_overflow_edge_case ... ok
-test debug_add ... ok
-test debug_multiply ... ok
-test specific_add_test ... ok
-test multiply_zero_test ... ok
-test add_edge_case ... ok
-test add_min_value_positive ... ok
-test extra_test ... ok
-test add_boundary_test ... ok
-test multiply_boundary_test ... ok
-test add_functions ... ok
-test multiply_functions ... ok
-test greet_function ... ok
-test min_value_positive_add ... ok
-
-17 tests passed, 0 failed
+Compiling azimuth tests...
+Compiling additional_comprehensive_test.mbt...
+azimuth_test/additional_comprehensive_test.mbt:25:6-25:40 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:25:29-25:39 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:25:40-25:41 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:25:69-25:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:26:6-26:40 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:26:29-26:39 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:26:40-26:41 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:26:69-26:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:27:6-27:40 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:27:28-27:39 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:27:40-27:41 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:27:69-27:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:28:6-28:36 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:28:29-28:35 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:28:36-28:37 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:28:65-28:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:31:6-31:38 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:31:25-31:37 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:31:38-31:39 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:31:67-31:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:32:6-32:34 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:32:25-32:33 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:32:34-32:35 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:32:63-32:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:33:6-33:35 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:33:25-33:34 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:33:35-33:36 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:33:64-33:65 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:40:6-40:51 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+azimuth_test/additional_comprehensive_test.mbt:40:6-40:51 [E4007] constructor without payload cannot be called with ()
+azimuth_test/additional_comprehensive_test.mbt:40:6-40:51 [E4121] The attribute `!` cannot be used on constructors.
+azimuth_test/additional_comprehensive_test.mbt:40:6-40:13 [E4021] The value identifier User123 is unbound.
+azimuth_test/additional_comprehensive_test.mbt:40:14-40:33 [E3002] Parse error, unexpected token string, you may expect `(`.
+azimuth_test/additional_comprehensive_test.mbt:40:81-40:82 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:41:6-41:10 [E3002] Parse error, unexpected token `test`, you may expect simple expression.
+azimuth_test/additional_comprehensive_test.mbt:41:6-41:10 [E3002] Parse error, unexpected token `test`, you may expect `{`.
+azimuth_test/additional_comprehensive_test.mbt:41:10-41:18 [E3002] Parse error, unexpected token package name, you may expect `{`.
+azimuth_test/additional_comprehensive_test.mbt:41:46-41:54 [E3002] Parse error, unexpected token package name, you may expect `{`.
+azimuth_test/additional_comprehensive_test.mbt:47:22-47:22 [E3001] Lexing error: (unterminated string literal)
+azimuth_test/additional_comprehensive_test.mbt:49:16-49:16 [E3001] Lexing error: (unterminated string literal)
+azimuth_test/additional_comprehensive_test.mbt:101:6-101:45 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:101:29-101:44 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:101:45-101:46 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:101:74-101:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:102:6-102:45 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:102:29-102:44 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:102:45-102:46 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:102:74-102:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:105:6-105:47 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:105:29-105:46 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:105:47-105:48 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:105:76-105:77 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:106:6-106:47 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:106:29-106:46 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:106:47-106:48 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:106:76-106:77 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:109:6-109:50 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:109:34-109:49 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:109:50-109:51 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:109:79-109:80 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:110:6-110:51 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:110:34-110:50 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:110:51-110:52 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:110:80-110:81 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:167:6-167:29 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:167:22-167:28 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:167:29-167:30 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:167:58-167:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:168:6-168:34 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:168:27-168:33 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:168:34-168:35 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:168:63-168:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:169:6-169:38 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:169:27-169:37 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:169:38-169:39 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:169:67-169:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:170:6-170:38 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:170:31-170:37 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:170:38-170:39 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:170:67-170:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:173:6-173:29 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:173:22-173:28 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:173:29-173:30 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:173:58-173:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:174:6-174:29 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:174:22-174:28 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:174:29-174:30 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:174:58-174:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:175:6-175:34 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:175:27-175:33 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:175:34-175:35 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:175:63-175:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:176:6-176:42 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:176:27-176:41 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:176:42-176:43 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:176:71-176:72 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:177:6-177:42 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:177:31-177:41 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:177:42-177:43 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:177:71-177:72 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:180:6-180:31 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:180:23-180:30 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:180:31-180:32 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:180:60-180:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:181:6-181:31 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:181:22-181:30 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:181:31-181:32 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:181:60-181:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:182:6-182:36 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:182:28-182:35 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:182:36-182:37 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:182:65-182:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:183:6-183:44 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:183:28-183:43 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:183:44-183:45 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:183:73-183:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:184:6-184:44 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:184:31-184:43 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/additional_comprehensive_test.mbt:184:44-184:45 [E3002] Parse error, unexpected token `{`, you may expect `,` or `)`.
+azimuth_test/additional_comprehensive_test.mbt:184:73-184:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/additional_comprehensive_test.mbt:195:7-195:12 [E0002] Warning (unused_value): Unused variable 'years'
+Error: azimuth test additional_comprehensive_test.mbt compilation failed

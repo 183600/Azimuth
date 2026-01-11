@@ -1,0 +1,13 @@
+// Generated interface for azimuth package
+package "azimuth"
+
+// Values
+pub fn add(Int, Int) -> Int
+pub fn multiply(Int, Int) -> Int
+pub fn greet(String) -> String
+
+// Types
+
+// Type aliases
+
+// Traits

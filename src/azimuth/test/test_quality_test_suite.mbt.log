@@ -1,0 +1,137 @@
+quality_test_suite.mbt:12:7-12:14 [E0002] Warning (unused_value): Unused variable 'periods'
+quality_test_suite.mbt:15:25-15:42 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:15:54-15:66 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:18:27-18:44 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:18:45-18:62 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:21:28-21:45 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:21:46-21:63 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:39:3-39:14 [E4087] The variable accumulator is not mutable.
+quality_test_suite.mbt:39:17-39:29 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:39:30-39:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:42:3-42:14 [E4087] The variable accumulator is not mutable.
+quality_test_suite.mbt:42:17-42:29 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:42:30-42:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:45:3-45:14 [E4087] The variable accumulator is not mutable.
+quality_test_suite.mbt:45:17-45:29 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:45:30-45:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:48:3-48:14 [E4087] The variable accumulator is not mutable.
+quality_test_suite.mbt:48:17-48:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:51:3-51:14 [E4087] The variable accumulator is not mutable.
+quality_test_suite.mbt:51:17-51:29 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:51:30-51:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:66:7-66:8 [E0002] Warning (unused_value): Unused variable 'n'
+quality_test_suite.mbt:71:11-71:18 [E0002] Warning (unused_value): Unused variable 'current'
+quality_test_suite.mbt:72:11-72:15 [E0002] Warning (unused_value): Unused variable 'next'
+quality_test_suite.mbt:75:15-75:27 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:78:15-78:27 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:81:15-81:27 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:84:15-84:27 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:99:25-99:42 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:100:25-100:42 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:101:3-101:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:101:19-101:31 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:101:55-101:56 [E4037] Cannot use operator `<`: package moonbitlang/core/builtin is not imported.
+quality_test_suite.mbt:118:20-118:37 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:119:20-119:37 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:119:46-119:63 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:121:7-121:17 [E0002] Warning (unused_value): Unused variable 'total_hash'
+quality_test_suite.mbt:121:20-121:32 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:121:33-121:45 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:126:3-126:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:127:18-127:30 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:128:18-128:30 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:148:7-148:14 [E0002] Warning (unused_value): Unused variable 'mixed_r'
+quality_test_suite.mbt:148:17-148:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:148:35-148:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:149:7-149:14 [E0002] Warning (unused_value): Unused variable 'mixed_g'
+quality_test_suite.mbt:149:17-149:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:149:35-149:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:150:7-150:14 [E0002] Warning (unused_value): Unused variable 'mixed_b'
+quality_test_suite.mbt:150:17-150:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:150:35-150:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:153:18-153:30 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:154:3-154:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:154:16-154:28 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:155:3-155:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:155:18-155:30 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:170:27-170:44 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:171:27-171:44 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:172:27-172:44 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:175:7-175:14 [E0002] Warning (unused_value): Unused variable 'ratio_1'
+quality_test_suite.mbt:175:17-175:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:176:7-176:14 [E0002] Warning (unused_value): Unused variable 'ratio_2'
+quality_test_suite.mbt:176:17-176:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:177:7-177:14 [E0002] Warning (unused_value): Unused variable 'ratio_3'
+quality_test_suite.mbt:177:17-177:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:180:18-180:35 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:181:3-181:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:182:3-182:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:183:3-183:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:196:7-196:9 [E0002] Warning (unused_value): Unused variable 'ah'
+quality_test_suite.mbt:202:7-202:9 [E0002] Warning (unused_value): Unused variable 'bh'
+quality_test_suite.mbt:205:12-205:24 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:205:29-205:46 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:206:12-206:24 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:206:29-206:46 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:209:26-209:38 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:209:39-209:56 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:209:66-209:83 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:210:7-210:34 [E0002] Warning (unused_value): Unused variable 'collision_threshold_squared'
+quality_test_suite.mbt:210:37-210:54 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:210:55-210:67 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:210:68-210:85 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:210:99-210:111 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:210:112-210:129 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:213:3-213:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:214:3-214:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:215:3-215:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:236:14-236:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:237:14-237:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:238:14-238:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:239:14-239:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:240:14-240:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:241:14-241:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:242:14-242:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:243:14-243:26 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:244:7-244:16 [E0002] Warning (unused_value): Unused variable 'total_sum'
+quality_test_suite.mbt:244:19-244:31 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:247:3-247:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:248:3-248:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:249:3-249:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:258:7-258:13 [E0002] Warning (unused_value): Unused variable 'char_A'
+quality_test_suite.mbt:259:7-259:13 [E0002] Warning (unused_value): Unused variable 'char_B'
+quality_test_suite.mbt:260:7-260:13 [E0002] Warning (unused_value): Unused variable 'char_C'
+quality_test_suite.mbt:261:7-261:13 [E0002] Warning (unused_value): Unused variable 'char_D'
+quality_test_suite.mbt:271:24-271:36 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:271:37-271:49 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:271:50-271:62 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:271:63-271:75 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:274:3-274:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:275:3-275:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:276:3-276:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:277:3-277:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:278:3-278:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:279:3-279:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:295:23-295:40 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:296:23-296:40 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:297:22-297:34 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:297:35-297:47 [E4020] Package "azimuth" not found in the loaded packages.
+quality_test_suite.mbt:300:3-300:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:301:3-301:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:302:3-302:12 [E4021] The value identifier assert_eq is unbound.
+quality_test_suite.mbt:306:3-306:12 [E4021] The value identifier assert_eq is unbound.

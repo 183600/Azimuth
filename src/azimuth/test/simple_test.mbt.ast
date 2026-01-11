@@ -1,0 +1,137 @@
+((Ptop_funcdef
+  ((name ((binder_name __test_73696d706c655f746573742e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+        ((Pexpr_constant 42) (Pexpr_constant 0))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+        ((Pexpr_constant 0) (Pexpr_constant 42))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant -42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+        ((Pexpr_constant -42) (Pexpr_constant 0))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ()))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_constant -42)
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+       ((Pexpr_constant 0) (Pexpr_constant -42))))
+     (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+      ((Pexpr_constant "Test failed")))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_73696d706c655f746573742e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 0)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant 42) (Pexpr_constant 0))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 0)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant 0) (Pexpr_constant 42))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 0)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant -42) (Pexpr_constant 0))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ()))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_constant 0)
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+       ((Pexpr_constant 0) (Pexpr_constant -42))))
+     (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+      ((Pexpr_constant "Test failed")))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_73696d706c655f746573742e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant 42) (Pexpr_constant 1))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant 42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant 1) (Pexpr_constant 42))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant -42)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+        ((Pexpr_constant -42) (Pexpr_constant 1))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ()))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_constant -42)
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+       ((Pexpr_constant 1) (Pexpr_constant -42))))
+     (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+      ((Pexpr_constant "Test failed")))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_73696d706c655f746573742e6d6274_3)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant "Hello, !")
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.greet)))
+        ((Pexpr_constant ""))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_constant "Hello, A!")
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.greet)))
+        ((Pexpr_constant A))))
+      (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+       ((Pexpr_constant "Test failed")))
+      ()))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_constant "Hello, 123!")
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.greet)))
+       ((Pexpr_constant 123))))
+     (Pexpr_apply (Pexpr_ident ((var_name @test.fail)))
+      ((Pexpr_constant "Test failed")))
+     ())))))

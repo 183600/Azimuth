@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 数学基础性质测试
 
 // 测试加法结合律：(a + b) + c = a + (b + c)
@@ -8,9 +17,9 @@ test "addition_associative_property" {
   let c = 300
   
   // (a + b) + c
-  let left = @azimuth.add(@azimuth.add(a, b), c)
+  let left = @clean_test.@clean_test.add(@clean_test.@clean_test.add(a, b), c)
   // a + (b + c)
-  let right = @azimuth.add(a, @azimuth.add(b, c))
+  let right = @clean_test.@clean_test.add(a, @clean_test.@clean_test.add(b, c))
   
   assert_eq(left, right)
   
@@ -19,7 +28,7 @@ test "addition_associative_property" {
   let y = -75
   let z = 125
   
-  assert_eq(@azimuth.add(@azimuth.add(x, y), z), @azimuth.add(x, @azimuth.add(y, z)))
+  assert_eq(@clean_test.@clean_test.add(@clean_test.@clean_test.add(x, y), z), @clean_test.@clean_test.add(x, @clean_test.@clean_test.add(y, z)))
 }
 
 // 测试乘法结合律：(a * b) * c = a * (b * c)
@@ -30,9 +39,9 @@ test "multiplication_associative_property" {
   let c = 30
   
   // (a * b) * c
-  let left = @azimuth.multiply(@azimuth.multiply(a, b), c)
+  let left = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(a, b), c)
   // a * (b * c)
-  let right = @azimuth.multiply(a, @azimuth.multiply(b, c))
+  let right = @clean_test.@clean_test.multiply(a, @clean_test.@clean_test.multiply(b, c))
   
   assert_eq(left, right)
   
@@ -41,37 +50,37 @@ test "multiplication_associative_property" {
   let y = 8
   let z = -3
   
-  assert_eq(@azimuth.multiply(@azimuth.multiply(x, y), z), @azimuth.multiply(x, @azimuth.multiply(y, z)))
+  assert_eq(@clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(x, y), z), @clean_test.@clean_test.multiply(x, @clean_test.@clean_test.multiply(y, z)))
 }
 
 // 测试加法单位元：a + 0 = a
 ///|
 test "addition_identity_element" {
-  assert_eq(42, @azimuth.add(42, 0))
-  assert_eq(-17, @azimuth.add(-17, 0))
-  assert_eq(0, @azimuth.add(0, 0))
-  assert_eq(2147483647, @azimuth.add(2147483647, 0))
-  assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
+  assert_eq(42, @clean_test.@clean_test.add(42, 0))
+  assert_eq(-17, @clean_test.@clean_test.add(-17, 0))
+  assert_eq(0, @clean_test.@clean_test.add(0, 0))
+  assert_eq(2147483647, @clean_test.@clean_test.add(2147483647, 0))
+  assert_eq(-2147483648, @clean_test.@clean_test.add(-2147483648, 0))
 }
 
 // 测试乘法单位元：a * 1 = a
 ///|
 test "multiplication_identity_element" {
-  assert_eq(42, @azimuth.multiply(42, 1))
-  assert_eq(-17, @azimuth.multiply(-17, 1))
-  assert_eq(0, @azimuth.multiply(0, 1))
-  assert_eq(2147483647, @azimuth.multiply(2147483647, 1))
-  assert_eq(-2147483648, @azimuth.multiply(-2147483648, 1))
+  assert_eq(42, @clean_test.@clean_test.multiply(42, 1))
+  assert_eq(-17, @clean_test.@clean_test.multiply(-17, 1))
+  assert_eq(0, @clean_test.@clean_test.multiply(0, 1))
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(2147483647, 1))
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(-2147483648, 1))
 }
 
 // 测试乘法零元：a * 0 = 0
 ///|
 test "multiplication_zero_element" {
-  assert_eq(0, @azimuth.multiply(42, 0))
-  assert_eq(0, @azimuth.multiply(-17, 0))
-  assert_eq(0, @azimuth.multiply(0, 0))
-  assert_eq(0, @azimuth.multiply(2147483647, 0))
-  assert_eq(0, @azimuth.multiply(-2147483648, 0))
+  assert_eq(0, @clean_test.@clean_test.multiply(42, 0))
+  assert_eq(0, @clean_test.@clean_test.multiply(-17, 0))
+  assert_eq(0, @clean_test.@clean_test.multiply(0, 0))
+  assert_eq(0, @clean_test.@clean_test.multiply(2147483647, 0))
+  assert_eq(0, @clean_test.@clean_test.multiply(-2147483648, 0))
 }
 
 // 实际应用：银行账户余额计算
@@ -87,7 +96,7 @@ test "bank_account_balance_calculation" {
   let withdrawal2 = -150
   
   // 计算最终余额
-  let final_balance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(initial_balance, deposit1), deposit2), withdrawal1), withdrawal2)
+  let final_balance = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(initial_balance, deposit1), deposit2), withdrawal1), withdrawal2)
   
   assert_eq(1450, final_balance)
 }
@@ -100,16 +109,16 @@ test "temperature_conversion" {
   
   let celsius = 25
   // 先计算 C * 9
-  let step1 = @azimuth.multiply(celsius, 9)
+  let step1 = @clean_test.@clean_test.multiply(celsius, 9)
   // 再加 160
-  let step2 = @azimuth.add(step1, 160)
+  let step2 = @clean_test.@clean_test.add(step1, 160)
   
   // 25°C = (25 * 9 + 160) / 5 = 385 / 5 = 77°F
   // 这里我们只检查中间步骤，因为整数除法不在我们的函数范围内
   assert_eq(385, step2)
   
   // 测试冰点：0°C
-  let freezing = @azimuth.add(@azimuth.multiply(0, 9), 160)
+  let freezing = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(0, 9), 160)
   assert_eq(160, freezing) // 32°F * 5 = 160
 }
 
@@ -122,7 +131,7 @@ test "average_calculation" {
   let numbers = [80, 90, 85, 75, 95]
   
   // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  let sum = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
   
   assert_eq(425, sum) // 80 + 90 + 85 + 75 + 95 = 425
 }
@@ -140,7 +149,7 @@ test "compound_interest_calculation" {
   // 简化为：principal + principal * rate / 100（这里简化计算）
   
   // 计算利息：principal * 5%
-  let interest = @azimuth.multiply(principal, 5)
+  let interest = @clean_test.@clean_test.multiply(principal, 5)
   // 简化处理：除以100不在函数范围内，我们检查乘法结果
   assert_eq(5000, interest) // 1000 * 5 = 5000（实际应该是50）
 }

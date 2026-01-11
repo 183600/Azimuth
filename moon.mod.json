@@ -6,5 +6,10 @@
   "license": "Apache-2.0",
   "keywords": [],
   "description": "A basic MoonBit project",
-  "source": "src"
+  "source": "src",
+  "deps": {
+    "moonbitlang/core": {
+      "path": "core"
+    }
+  }
 }

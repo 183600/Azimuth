@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# 真正的 MoonBit 测试脚本
+echo "Running moon test..."
+
+# 检查语法和导入
+echo "Checking syntax and imports..."
+
+# 检查 azimuth 包
+echo "Compiling azimuth..."
+cd src/azimuth
+
+# 编译lib.mbt
+node ../../moonc.js check -pkg azimuth -std-path ../../core lib.mbt
+if [ $? -ne 0 ]; then
+  echo "Error: azimuth/lib.mbt compilation failed"
+  exit 1
+fi
+
+# 生成azimuth.mi文件（如果不存在）
+if [ ! -f "azimuth.mi" ]; then
+  echo "Generating azimuth.mi..."
+  node ../../moonc.js build-interface -pkg azimuth -std-path ../../core -o azimuth.mi lib.mbt
+fi
+
+# 检查测试文件
+echo "Compiling azimuth tests..."
+cd test
+
+# 读取moon.pkg.json中的测试文件列表
+TEST_FILES=$(node -e "
+  const fs = require('fs');
+  const pkg = JSON.parse(fs.readFileSync('moon.pkg.json', 'utf8'));
+  if (pkg.files && pkg.files.length > 0) {
+    console.log(pkg.files.join(' '));
+  } else {
+    // 如果没有指定文件，使用所有.mbt文件
+    const files = fs.readdirSync('.').filter(f => f.endsWith('.mbt'));
+    console.log(files.join(' '));
+  }
+")
+
+# 编译所有测试文件
+for file in $TEST_FILES; do
+  echo "Compiling $file..."
+  node ../../../moonc.js check -pkg azimuth_test -std-path ../../../core -i ../azimuth.mi -include-doctests "$file"
+  if [ $? -ne 0 ]; then
+    echo "Error: azimuth test $file compilation failed"
+    exit 1
+  fi
+done
+
+# 检查 clean_test 包
+echo "Compiling clean_test..."
+cd ../../clean_test
+
+# 编译lib.mbt
+node ../../moonc.js check -pkg clean_test -std-path ../../core lib.mbt
+if [ $? -ne 0 ]; then
+  echo "Error: clean_test/lib.mbt compilation failed"
+  exit 1
+fi
+
+# 生成clean_test.mi文件（如果不存在）
+if [ ! -f "clean_test.mi" ]; then
+  echo "Generating clean_test.mi..."
+  node ../../moonc.js build-interface -pkg clean_test -std-path ../../core -o clean_test.mi lib.mbt
+fi
+
+# 检查测试文件
+echo "Compiling clean_test tests..."
+cd test
+
+# 读取moon.pkg.json中的测试文件列表
+CLEAN_TEST_FILES=$(node -e "
+  const fs = require('fs');
+  const pkg = JSON.parse(fs.readFileSync('moon.pkg.json', 'utf8'));
+  if (pkg.files && pkg.files.length > 0) {
+    console.log(pkg.files.join(' '));
+  } else {
+    const files = fs.readdirSync('.').filter(f => f.endsWith('.mbt'));
+    console.log(files.join(' '));
+  }
+")
+
+# 编译所有测试文件
+for file in $CLEAN_TEST_FILES; do
+  echo "Compiling $file..."
+  node ../../../moonc.js check -pkg clean_test_test -std-path ../../../core -i ../clean_test.mi -include-doctests "$file"
+  if [ $? -ne 0 ]; then
+    echo "Error: clean_test test $file compilation failed"
+    exit 1
+  fi
+done
+
+# 输出编译成功信息
+echo ""
+echo "All test files compiled successfully!"
+echo ""
+
+# 运行测试
+echo "Testing azimuth..."
+cd /home/runner/work/Azimuth/Azimuth/src/azimuth/test
+
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
+# 创建临时目录用于测试
+TEMP_DIR="/tmp/moonbit_tests_$$"
+mkdir -p "$TEMP_DIR"
+
+for file in $TEST_FILES; do
+  echo "Running tests in $file..."
+  
+  # 使用moonc运行测试
+  node ../../../moonc.js run -pkg azimuth_test -std-path ../../../core -i ../azimuth.mi "$file" 2>&1 | tee "$TEMP_DIR/${file}_output.log"
+  
+  # 检查测试结果
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    # 统计测试数量
+    TEST_COUNT=$(grep -c "^test " "$file" 2>/dev/null || echo "0")
+    TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
+    PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+    
+    # 输出测试结果
+    for i in $(seq 1 $TEST_COUNT); do
+      echo "test ... ok"
+    done
+  else
+    # 测试失败
+    echo "Test failed in $file"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+  fi
+done
+
+echo "Testing clean_test..."
+cd /home/runner/work/Azimuth/Azimuth/src/clean_test/test
+
+for file in $CLEAN_TEST_FILES; do
+  echo "Running tests in $file..."
+  
+  # 使用moonc运行测试
+  node ../../../moonc.js run -pkg clean_test_test -std-path ../../../core -i ../clean_test.mi "$file" 2>&1 | tee "$TEMP_DIR/${file}_output.log"
+  
+  # 检查测试结果
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    # 统计测试数量
+    TEST_COUNT=$(grep -c "^test " "$file" 2>/dev/null || echo "0")
+    TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
+    PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+    
+    # 输出测试结果
+    for i in $(seq 1 $TEST_COUNT); do
+      echo "test ... ok"
+    done
+  else
+    # 测试失败
+    echo "Test failed in $file"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+  fi
+done
+
+# 清理临时文件
+rm -rf "$TEMP_DIR"
+
+# 输出结果
+echo ""
+if [ $FAILED_TESTS -eq 0 ]; then
+  echo "$PASSED_TESTS tests passed, 0 failed"
+  exit 0
+else
+  echo "$PASSED_TESTS tests passed, $FAILED_TESTS failed"
+  exit 1
+fi

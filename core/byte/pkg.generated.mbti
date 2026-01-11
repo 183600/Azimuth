@@ -1,0 +1,16 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitlang/core/byte"
+
+// Values
+pub let max_value : Byte
+
+pub let min_value : Byte
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

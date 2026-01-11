@@ -1,23 +1,32 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 综合测试用例 - 包含数学性质、实际应用和边界情况测试
 
 // 测试用例 1: 数学性质 - 加法和乘法的交换律验证
 ///|
 test "mathematical_commutative_laws" {
   // 加法交换律: a + b = b + a
-  assert_eq(@azimuth.add(0, 0), @azimuth.add(0, 0))
-  assert_eq(@azimuth.add(1, 2), @azimuth.add(2, 1))
-  assert_eq(@azimuth.add(-1, 1), @azimuth.add(1, -1))
-  assert_eq(@azimuth.add(-5, -3), @azimuth.add(-3, -5))
-  assert_eq(@azimuth.add(100, 200), @azimuth.add(200, 100))
-  assert_eq(@azimuth.add(-100, 50), @azimuth.add(50, -100))
+  assert_eq(@clean_test.@clean_test.add(0, 0), @clean_test.@clean_test.add(0, 0))
+  assert_eq(@clean_test.@clean_test.add(1, 2), @clean_test.@clean_test.add(2, 1))
+  assert_eq(@clean_test.@clean_test.add(-1, 1), @clean_test.@clean_test.add(1, -1))
+  assert_eq(@clean_test.@clean_test.add(-5, -3), @clean_test.@clean_test.add(-3, -5))
+  assert_eq(@clean_test.@clean_test.add(100, 200), @clean_test.@clean_test.add(200, 100))
+  assert_eq(@clean_test.@clean_test.add(-100, 50), @clean_test.@clean_test.add(50, -100))
   
   // 乘法交换律: a * b = b * a
-  assert_eq(@azimuth.multiply(0, 5), @azimuth.multiply(5, 0))
-  assert_eq(@azimuth.multiply(1, 7), @azimuth.multiply(7, 1))
-  assert_eq(@azimuth.multiply(-1, 3), @azimuth.multiply(3, -1))
-  assert_eq(@azimuth.multiply(-2, 4), @azimuth.multiply(4, -2))
-  assert_eq(@azimuth.multiply(10, 20), @azimuth.multiply(20, 10))
-  assert_eq(@azimuth.multiply(-3, -6), @azimuth.multiply(-6, -3))
+  assert_eq(@clean_test.@clean_test.multiply(0, 5), @clean_test.@clean_test.multiply(5, 0))
+  assert_eq(@clean_test.@clean_test.multiply(1, 7), @clean_test.@clean_test.multiply(7, 1))
+  assert_eq(@clean_test.@clean_test.multiply(-1, 3), @clean_test.@clean_test.multiply(3, -1))
+  assert_eq(@clean_test.@clean_test.multiply(-2, 4), @clean_test.@clean_test.multiply(4, -2))
+  assert_eq(@clean_test.@clean_test.multiply(10, 20), @clean_test.@clean_test.multiply(20, 10))
+  assert_eq(@clean_test.@clean_test.multiply(-3, -6), @clean_test.@clean_test.multiply(-6, -3))
 }
 
 // 测试用例 2: 数学性质 - 结合律验证
@@ -27,24 +36,24 @@ test "mathematical_associative_laws" {
   let a = 100
   let b = 200
   let c = 300
-  let left_assoc = @azimuth.add(@azimuth.add(a, b), c)
-  let right_assoc = @azimuth.add(a, @azimuth.add(b, c))
+  let left_assoc = @clean_test.@clean_test.add(@clean_test.@clean_test.add(a, b), c)
+  let right_assoc = @clean_test.@clean_test.add(a, @clean_test.@clean_test.add(b, c))
   assert_eq(left_assoc, right_assoc)
   
   // 负数测试
   let x = -50
   let y = -30
   let z = 20
-  let left_assoc_neg = @azimuth.add(@azimuth.add(x, y), z)
-  let right_assoc_neg = @azimuth.add(x, @azimuth.add(y, z))
+  let left_assoc_neg = @clean_test.@clean_test.add(@clean_test.@clean_test.add(x, y), z)
+  let right_assoc_neg = @clean_test.@clean_test.add(x, @clean_test.@clean_test.add(y, z))
   assert_eq(left_assoc_neg, right_assoc_neg)
   
   // 乘法结合律: (a * b) * c = a * (b * c)
   let m = 2
   let n = 3
   let p = 4
-  let left_mult = @azimuth.multiply(@azimuth.multiply(m, n), p)
-  let right_mult = @azimuth.multiply(m, @azimuth.multiply(n, p))
+  let left_mult = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(m, n), p)
+  let right_mult = @clean_test.@clean_test.multiply(m, @clean_test.@clean_test.multiply(n, p))
   assert_eq(left_mult, right_mult)
 }
 
@@ -59,16 +68,16 @@ test "bank_compound_interest" {
   let years = 3
   
   // 第一年结束: 本金 + 利息
-  let year1_interest = @azimuth.multiply(principal, rate_percent) / 100
-  let year1_total = @azimuth.add(principal, year1_interest)
+  let year1_interest = @clean_test.@clean_test.multiply(principal, rate_percent) / 100
+  let year1_total = @clean_test.@clean_test.add(principal, year1_interest)
   
   // 第二年结束: 第一年总额 + 新利息
-  let year2_interest = @azimuth.multiply(year1_total, rate_percent) / 100
-  let year2_total = @azimuth.add(year1_total, year2_interest)
+  let year2_interest = @clean_test.@clean_test.multiply(year1_total, rate_percent) / 100
+  let year2_total = @clean_test.@clean_test.add(year1_total, year2_interest)
   
   // 第三年结束: 第二年总额 + 新利息
-  let year3_interest = @azimuth.multiply(year2_total, rate_percent) / 100
-  let year3_total = @azimuth.add(year2_total, year3_interest)
+  let year3_interest = @clean_test.@clean_test.multiply(year2_total, rate_percent) / 100
+  let year3_total = @clean_test.@clean_test.add(year2_total, year3_interest)
   
   // 验证结果大约为 11576 (10000 * 1.05³)
   assert_eq(true, year3_total >= 11570 && year3_total <= 11580)
@@ -86,16 +95,16 @@ test "shopping_discount_calculation" {
   let discount_percent = 20
   
   // 计算总价
-  let total_price = @azimuth.add(
-    @azimuth.add(item1_price, item2_price),
-    @azimuth.add(item3_price, item4_price)
+  let total_price = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.add(item1_price, item2_price),
+    @clean_test.@clean_test.add(item3_price, item4_price)
   )
   
   // 计算折扣金额
-  let discount_amount = @azimuth.multiply(total_price, discount_percent) / 100
+  let discount_amount = @clean_test.@clean_test.multiply(total_price, discount_percent) / 100
   
   // 计算最终价格
-  let final_price = @azimuth.add(total_price, @azimuth.multiply(-1, discount_amount))
+  let final_price = @clean_test.@clean_test.add(total_price, @clean_test.@clean_test.multiply(-1, discount_amount))
   
   // 验证: 原价 1396，折扣20%后应为 1396 * 0.8 = 1116.8 ≈ 1117
   assert_eq(true, final_price >= 1110 && final_price <= 1120)
@@ -109,20 +118,20 @@ test "extreme_value_operations" {
   let min_val = -2147483648
   
   // 最大值加法测试
-  assert_eq(max_val, @azimuth.add(max_val, 1))
-  assert_eq(max_val, @azimuth.add(max_val, max_val))
+  assert_eq(max_val, @clean_test.@clean_test.add(max_val, 1))
+  assert_eq(max_val, @clean_test.@clean_test.add(max_val, max_val))
   
   // 最小值加法测试
-  assert_eq(min_val, @azimuth.add(min_val, -1))
-  assert_eq(min_val, @azimuth.add(min_val, min_val))
+  assert_eq(min_val, @clean_test.@clean_test.add(min_val, -1))
+  assert_eq(min_val, @clean_test.@clean_test.add(min_val, min_val))
   
   // 最大值乘法测试
-  assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  assert_eq(max_val, @azimuth.multiply(46341, 46341))
+  assert_eq(max_val, @clean_test.@clean_test.multiply(max_val, 2))
+  assert_eq(max_val, @clean_test.@clean_test.multiply(46341, 46341))
   
   // 最小值乘法测试
-  assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  assert_eq(min_val, @clean_test.@clean_test.multiply(min_val, 2))
+  assert_eq(min_val, @clean_test.@clean_test.multiply(min_val, -1))
 }
 
 // 测试用例 6: 字符串处理 - 多语言和特殊字符
@@ -133,9 +142,9 @@ test "multilingual_string_processing" {
   let name2 = "World"
   let name3 = "MoonBit"
   
-  let greeting1 = @azimuth.greet(name1)
-  let greeting2 = @azimuth.greet(name2)
-  let greeting3 = @azimuth.greet(name3)
+  let greeting1 = @clean_test.@clean_test.greet(name1)
+  let greeting2 = @clean_test.@clean_test.greet(name2)
+  let greeting3 = @clean_test.@clean_test.greet(name3)
   
   // 验证问候语格式正确
   assert_eq("Hello, 世界!", greeting1)
@@ -146,8 +155,8 @@ test "multilingual_string_processing" {
   let name4 = "John-Doe"
   let name5 = "O'Reilly"
   
-  let greeting4 = @azimuth.greet(name4)
-  let greeting5 = @azimuth.greet(name5)
+  let greeting4 = @clean_test.@clean_test.greet(name4)
+  let greeting5 = @clean_test.@clean_test.greet(name5)
   
   assert_eq("Hello, John-Doe!", greeting4)
   assert_eq("Hello, O'Reilly!", greeting5)
@@ -165,39 +174,39 @@ test "basic_statistical_calculations" {
   let count = 5
   
   // 计算总和
-  let sum = @azimuth.add(
-    @azimuth.add(
-      @azimuth.add(data1, data2),
-      @azimuth.add(data3, data4)
+  let sum = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.add(
+      @clean_test.@clean_test.add(data1, data2),
+      @clean_test.@clean_test.add(data3, data4)
     ),
     data5
   )
   
   // 计算平均值 (通过乘法验证)
   let expected_average = 30
-  let average_check = @azimuth.multiply(expected_average, count)
+  let average_check = @clean_test.@clean_test.multiply(expected_average, count)
   assert_eq(sum, average_check)
   
   // 计算方差 (简化版)
   let mean = 30
-  let diff1 = @azimuth.add(data1, @azimuth.multiply(-1, mean))  // 10 - 30 = -20
-  let diff2 = @azimuth.add(data2, @azimuth.multiply(-1, mean))  // 20 - 30 = -10
-  let diff3 = @azimuth.add(data3, @azimuth.multiply(-1, mean))  // 30 - 30 = 0
-  let diff4 = @azimuth.add(data4, @azimuth.multiply(-1, mean))  // 40 - 30 = 10
-  let diff5 = @azimuth.add(data5, @azimuth.multiply(-1, mean))  // 50 - 30 = 20
+  let diff1 = @clean_test.@clean_test.add(data1, @clean_test.@clean_test.multiply(-1, mean))  // 10 - 30 = -20
+  let diff2 = @clean_test.@clean_test.add(data2, @clean_test.@clean_test.multiply(-1, mean))  // 20 - 30 = -10
+  let diff3 = @clean_test.@clean_test.add(data3, @clean_test.@clean_test.multiply(-1, mean))  // 30 - 30 = 0
+  let diff4 = @clean_test.@clean_test.add(data4, @clean_test.@clean_test.multiply(-1, mean))  // 40 - 30 = 10
+  let diff5 = @clean_test.@clean_test.add(data5, @clean_test.@clean_test.multiply(-1, mean))  // 50 - 30 = 20
   
   // 计算平方和
-  let sq_sum = @azimuth.add(
-    @azimuth.add(
-      @azimuth.multiply(diff1, diff1),
-      @azimuth.multiply(diff2, diff2)
+  let sq_sum = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.add(
+      @clean_test.@clean_test.multiply(diff1, diff1),
+      @clean_test.@clean_test.multiply(diff2, diff2)
     ),
-    @azimuth.add(
-      @azimuth.add(
-        @azimuth.multiply(diff3, diff3),
-        @azimuth.multiply(diff4, diff4)
+    @clean_test.@clean_test.add(
+      @clean_test.@clean_test.add(
+        @clean_test.@clean_test.multiply(diff3, diff3),
+        @clean_test.@clean_test.multiply(diff4, diff4)
       ),
-      @azimuth.multiply(diff5, diff5)
+      @clean_test.@clean_test.multiply(diff5, diff5)
     )
   )
   
@@ -216,9 +225,9 @@ test "physics_kinematics_calculations" {
   let time = 5               // 时间 s
   
   // 计算 2h = 2*v₀*t + g*t²
-  let double_height = @azimuth.add(
-    @azimuth.multiply(2, @azimuth.multiply(initial_velocity, time)),
-    @azimuth.multiply(gravity, @azimuth.multiply(time, time))
+  let double_height = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.multiply(2, @clean_test.@clean_test.multiply(initial_velocity, time)),
+    @clean_test.@clean_test.multiply(gravity, @clean_test.@clean_test.multiply(time, time))
   )
   
   // 验证: 2*10*5 + 10*25 = 100 + 250 = 350，所以 h = 175
@@ -226,10 +235,10 @@ test "physics_kinematics_calculations" {
   
   // 抛物运动: 水平距离 = 水平速度 * 时间
   let horizontal_velocity = 20  // m/s
-  let horizontal_distance = @azimuth.multiply(horizontal_velocity, time)
+  let horizontal_distance = @clean_test.@clean_test.multiply(horizontal_velocity, time)
   assert_eq(100, horizontal_distance)
   
   // 垂直速度: v = v₀ + gt
-  let vertical_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(gravity, time))
+  let vertical_velocity = @clean_test.@clean_test.add(initial_velocity, @clean_test.@clean_test.multiply(gravity, time))
   assert_eq(60, vertical_velocity)
 }

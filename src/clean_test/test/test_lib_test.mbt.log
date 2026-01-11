@@ -1,0 +1,583 @@
+lib_test.mbt:5:3-5:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:5:16-5:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:11:16-11:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:12:16-12:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:13:17-13:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:14:16-14:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:17:25-17:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:18:25-18:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:19:25-19:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:20:25-20:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:21:25-21:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:24:26-24:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:25:26-25:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:26:26-26:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:27:26-27:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:28:26-28:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:29:26-29:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:30:26-30:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:31:26-31:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:32:26-32:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:35:26-35:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:36:17-36:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:37:26-37:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:38:26-38:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:39:19-39:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:42:17-42:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:43:17-43:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:44:26-44:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:45:26-45:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:46:25-46:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:47:18-47:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:48:19-48:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:49:16-49:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:52:25-52:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:53:26-53:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:59:16-59:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:60:16-60:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:61:17-61:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:62:16-62:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:63:16-63:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:64:16-64:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:67:26-67:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:68:26-68:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:69:26-69:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:70:26-70:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:71:16-71:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:72:16-72:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:75:26-75:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:76:26-76:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:77:3-77:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:77:26-77:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:78:3-78:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:78:26-78:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:81:25-81:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:82:3-82:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:82:26-82:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:83:3-83:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:83:26-83:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:84:25-84:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:87:25-87:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:88:25-88:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:89:25-89:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:90:25-90:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:91:25-91:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:92:25-92:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:93:25-93:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:96:26-96:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:97:26-97:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:98:26-98:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:103:3-103:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:103:30-103:47 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:104:32-104:49 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:106:3-106:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:106:25-106:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:107:26-107:43 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:108:3-108:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:108:28-108:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:114:26-114:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:115:26-115:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:116:26-116:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:117:3-117:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:117:26-117:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:118:17-118:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:121:26-121:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:122:26-122:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:123:26-123:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:124:26-124:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:127:26-127:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:128:26-128:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:129:3-129:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:129:26-129:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:130:3-130:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:130:26-130:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:136:3-136:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:136:26-136:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:137:3-137:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:137:26-137:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:138:3-138:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:138:16-138:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:139:3-139:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:139:26-139:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:140:3-140:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:140:26-140:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:143:3-143:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:143:26-143:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:144:3-144:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:144:26-144:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:145:16-145:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:146:26-146:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:147:26-147:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:150:3-150:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:150:25-150:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:151:3-151:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:151:25-151:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:152:25-152:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:155:3-155:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:155:26-155:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:156:3-156:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:156:26-156:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:162:3-162:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:162:26-162:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:163:3-163:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:163:26-163:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:164:3-164:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:164:26-164:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:165:3-165:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:165:26-165:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:166:26-166:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:167:17-167:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:170:3-170:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:170:26-170:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:171:3-171:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:171:26-171:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:172:3-172:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:172:26-172:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:173:3-173:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:173:26-173:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:174:3-174:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:174:26-174:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:175:3-175:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:175:17-175:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:185:3-185:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:185:25-185:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:190:3-190:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:190:25-190:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:197:26-197:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:201:26-201:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:207:3-207:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:207:26-207:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:210:3-210:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:210:26-210:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:211:3-211:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:211:26-211:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:214:3-214:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:214:25-214:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:215:3-215:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:215:25-215:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:218:16-218:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:219:16-219:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:220:17-220:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:223:17-223:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:224:3-224:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:224:16-224:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:225:3-225:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:225:18-225:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:231:3-231:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:231:26-231:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:232:3-232:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:232:26-232:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:233:3-233:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:233:26-233:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:234:3-234:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:234:26-234:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:237:3-237:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:237:25-237:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:238:3-238:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:238:25-238:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:239:3-239:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:239:25-239:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:242:3-242:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:242:26-242:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:243:3-243:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:243:26-243:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:248:3-248:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:248:17-248:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:253:3-253:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:253:16-253:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:258:3-258:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:258:26-258:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:263:3-263:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:263:26-263:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:264:3-264:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:264:26-264:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:270:3-270:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:270:26-270:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:271:3-271:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:271:26-271:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:272:3-272:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:272:26-272:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:273:3-273:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:273:26-273:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:276:3-276:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:276:17-276:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:277:3-277:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:277:19-277:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:278:3-278:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:278:26-278:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:284:3-284:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:284:26-284:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:285:3-285:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:285:26-285:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:286:3-286:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:286:26-286:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:287:3-287:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:287:26-287:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:288:3-288:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:288:16-288:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:289:3-289:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:289:16-289:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:292:3-292:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:292:25-292:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:293:3-293:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:293:25-293:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:294:3-294:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:294:26-294:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:295:3-295:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:295:26-295:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:302:3-302:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:302:13-302:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:302:40-302:55 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:303:3-303:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:303:13-303:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:303:41-303:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:304:3-304:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:304:13-304:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:304:40-304:55 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:305:3-305:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:305:13-305:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:305:38-305:53 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:306:3-306:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:306:13-306:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:306:55-306:70 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:316:3-316:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:316:13-316:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:316:37-316:52 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:316:61-316:76 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:316:77-316:97 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:316:105-316:125 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:321:3-321:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:321:13-321:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:321:37-321:52 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:321:61-321:76 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:321:77-321:97 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:321:105-321:125 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:332:14-332:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:333:3-333:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:336:19-336:39 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:336:43-336:58 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:337:3-337:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:352:21-352:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:353:21-353:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:354:21-354:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:357:15-357:30 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:357:31-357:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:358:3-358:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:367:7-367:10 [E0002] Warning (unused_value): Unused variable 'age'
+lib_test.mbt:368:7-368:11 [E0002] Warning (unused_value): Unused variable 'city'
+lib_test.mbt:371:19-371:44 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:372:3-372:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:375:16-375:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:376:3-376:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:376:19-376:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:386:3-386:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:386:13-386:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:386:29-386:44 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:386:56-386:71 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:386:75-386:90 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:392:3-392:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:392:13-392:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:392:29-392:44 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:392:56-392:71 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:392:75-392:90 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:395:3-395:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:395:13-395:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:395:29-395:44 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:395:60-395:75 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:395:79-395:94 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:405:3-405:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:405:13-405:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:405:34-405:54 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:405:66-405:86 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:405:90-405:110 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:411:3-411:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:411:13-411:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:411:34-411:54 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:411:66-411:86 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:411:90-411:110 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:414:3-414:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:414:13-414:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:414:34-414:54 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:414:70-414:90 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:414:94-414:114 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:421:3-421:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:421:13-421:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:421:43-421:63 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:422:3-422:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:422:13-422:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:422:46-422:66 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:423:3-423:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:423:13-423:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:423:45-423:65 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:424:3-424:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:424:13-424:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:424:43-424:63 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:431:3-431:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:431:18-431:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:432:3-432:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:432:18-432:33 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:433:3-433:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:433:19-433:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:434:3-434:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:434:19-434:34 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:435:3-435:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:435:16-435:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:442:3-442:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:442:18-442:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:443:3-443:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:443:18-443:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:444:3-444:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:444:19-444:39 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:445:3-445:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:445:19-445:39 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:446:3-446:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:446:16-446:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:447:3-447:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:447:16-447:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:454:3-454:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:454:16-454:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:455:3-455:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:455:16-455:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:456:3-456:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:456:16-456:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:457:3-457:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:457:16-457:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:458:3-458:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:458:16-458:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:464:3-464:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:464:27-464:44 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:465:3-465:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:465:26-465:43 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:466:3-466:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:466:33-466:50 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:467:3-467:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:467:33-467:50 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:468:3-468:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:468:28-468:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:475:3-475:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:475:18-475:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:476:3-476:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:476:18-476:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:477:3-477:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:477:16-477:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:480:3-480:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:480:19-480:39 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:480:44-480:64 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:481:3-481:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:481:17-481:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:481:41-481:61 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:482:3-482:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:482:17-482:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:482:42-482:62 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:491:30-491:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:491:46-491:66 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:492:3-492:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:496:32-496:47 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:496:48-496:68 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:497:3-497:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:501:36-501:51 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:501:52-501:72 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:502:3-502:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:517:36-517:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:517:57-517:77 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:519:33-519:48 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:519:49-519:69 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:522:3-522:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:533:22-533:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:533:47-533:62 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:534:3-534:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:538:22-538:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:538:47-538:62 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:539:3-539:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:550:3-550:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:550:22-550:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:553:3-553:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:553:13-553:26 [E4095] Integer literal 1000000000000 is out of range.
+lib_test.mbt:553:28-553:48 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:556:3-556:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:556:23-556:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:556:50-556:70 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:567:24-567:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:568:25-568:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:569:23-569:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:572:3-572:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:573:3-573:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:574:3-574:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:577:3-577:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:577:34-577:36 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+lib_test.mbt:578:3-578:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:578:35-578:37 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+lib_test.mbt:579:3-579:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:579:34-579:36 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+lib_test.mbt:586:3-586:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:586:16-586:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:586:36-586:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:587:3-587:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:587:17-587:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:587:36-587:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:588:3-588:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:588:16-588:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:588:36-588:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:589:3-589:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:589:17-589:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:589:36-589:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:592:3-592:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:592:25-592:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:592:53-592:73 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:593:3-593:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:593:16-593:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:593:35-593:55 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:600:3-600:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:600:33-600:50 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:601:3-601:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:601:35-601:52 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:602:3-602:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:602:36-602:53 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:603:3-603:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:603:39-603:56 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:604:3-604:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:604:34-604:51 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:618:7-618:29 [E0002] Warning (unused_value): Unused variable 'area_times_denominator'
+lib_test.mbt:618:32-618:52 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:618:67-618:87 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:619:3-619:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:619:18-619:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:622:7-622:38 [E0002] Warning (unused_value): Unused variable 'circumference_times_denominator'
+lib_test.mbt:622:41-622:61 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:622:62-622:82 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:623:3-623:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:623:17-623:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:637:26-637:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:638:5-638:25 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:638:29-638:49 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:639:5-639:25 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:639:40-639:60 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:643:3-643:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:652:7-652:14 [E0002] Warning (unused_value): Unused variable 'numbers'
+lib_test.mbt:653:7-653:12 [E0002] Warning (unused_value): Unused variable 'count'
+lib_test.mbt:656:13-656:28 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:657:5-657:20 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:658:7-658:22 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:659:7-659:22 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:666:3-666:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:669:3-669:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:669:17-669:37 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:681:26-681:46 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:682:3-682:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:685:27-685:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:685:58-685:78 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:686:3-686:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:690:28-690:48 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:691:3-691:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:694:23-694:38 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:694:58-694:78 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:695:3-695:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:709:22-709:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:710:3-710:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:714:22-714:42 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:715:3-715:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:729:21-729:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:732:21-732:41 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:735:21-735:36 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:738:3-738:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:753:19-753:39 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:756:20-756:40 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:759:12-759:32 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:762:16-762:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:762:32-762:47 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:765:3-765:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:774:14-774:29 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:774:30-774:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:774:46-774:61 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:774:62-774:77 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:775:3-775:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:778:16-778:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:779:16-779:31 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:780:14-780:29 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:780:30-780:45 [E4020] Package "clean_test" not found in the loaded packages.
+lib_test.mbt:781:3-781:12 [E4021] The value identifier assert_eq is unbound.
+lib_test.mbt:784:3-784:12 [E4021] The value identifier assert_eq is unbound.

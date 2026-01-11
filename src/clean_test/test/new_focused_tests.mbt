@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 新的专注测试用例 - 覆盖特定场景和边界情况
 
 // 测试大数运算的精确性
@@ -8,14 +17,14 @@ test "large_number_precision" {
   let large_neg = -1000000000
   
   // 大数加法
-  assert_eq(2000000000, @azimuth.add(large_pos, large_pos))
-  assert_eq(-2000000000, @azimuth.add(large_neg, large_neg))
-  assert_eq(0, @azimuth.add(large_pos, large_neg))
+  assert_eq(2000000000, @clean_test.@clean_test.add(large_pos, large_pos))
+  assert_eq(-2000000000, @clean_test.@clean_test.add(large_neg, large_neg))
+  assert_eq(0, @clean_test.@clean_test.add(large_pos, large_neg))
   
   // 大数乘法
-  assert_eq(1000000000000000000, @azimuth.multiply(large_pos, large_pos))
-  assert_eq(1000000000000000000, @azimuth.multiply(large_neg, large_neg))
-  assert_eq(-1000000000000000000, @azimuth.multiply(large_pos, large_neg))
+  assert_eq(1000000000000000000, @clean_test.@clean_test.multiply(large_pos, large_pos))
+  assert_eq(1000000000000000000, @clean_test.@clean_test.multiply(large_neg, large_neg))
+  assert_eq(-1000000000000000000, @clean_test.@clean_test.multiply(large_pos, large_neg))
 }
 
 // 测试字符串处理的边界情况
@@ -23,16 +32,16 @@ test "large_number_precision" {
 test "string_boundary_conditions" {
   // 测试极长字符串
   let very_long_name = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let result = @azimuth.greet(very_long_name)
+  let result = @clean_test.@clean_test.greet(very_long_name)
   assert_eq(true, result.contains("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"))
   
   // 测试包含特殊字符的字符串
-  assert_eq("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?", @azimuth.greet("!@#$%^&*()_+-=[]{}|;':\",./<>?"))
+  assert_eq("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?", @clean_test.@clean_test.greet("!@#$%^&*()_+-=[]{}|;':\",./<>?"))
   
   // 测试包含空格的字符串
-  assert_eq("Hello,    ", @azimuth.greet("   "))
-  assert_eq("Hello, leading space!", @azimuth.greet(" leading space"))
-  assert_eq("Hello, trailing space !", @azimuth.greet("trailing space "))
+  assert_eq_string("Hello,    ", @clean_test.@clean_test.greet("   "))
+  assert_eq_string("Hello, leading space!", @clean_test.@clean_test.greet(" leading space"))
+  assert_eq_string("Hello, trailing space !", @clean_test.@clean_test.greet("trailing space "))
 }
 
 // 测试数学运算的实际应用场景
@@ -48,7 +57,7 @@ test "real_world_math_applications" {
   // 我们通过整数运算来模拟
   let rate_times_100 = 500  // 5%
   let base_times_100 = 10500  // 1 + r = 1.05 = 105/100
-  let compound_times_10000 = @azimuth.multiply(base_times_100, @azimuth.multiply(base_times_100, base_times_100))
+  let compound_times_10000 = @clean_test.@clean_test.multiply(base_times_100, @clean_test.@clean_test.multiply(base_times_100, base_times_100))
   
   // 验证计算过程
   assert_eq(10500, base_times_100)
@@ -59,17 +68,17 @@ test "real_world_math_applications" {
 ///|
 test "special_value_operations" {
   // 测试连续运算
-  let result1 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
+  let result1 = @clean_test.@clean_test.add(@clean_test.@clean_test.add(1, 2), @clean_test.@clean_test.add(3, 4))
   assert_eq(10, result1)  // (1+2)+(3+4) = 3+7 = 10
   
-  let result2 = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
+  let result2 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(2, 3), @clean_test.@clean_test.multiply(4, 5))
   assert_eq(120, result2)  // (2*3)*(4*5) = 6*20 = 120
   
   // 测试混合运算
-  let result3 = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
+  let result3 = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(2, 3), @clean_test.@clean_test.multiply(4, 5))
   assert_eq(26, result3)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  let result4 = @azimuth.multiply(2, @azimuth.add(3, 4))
+  let result4 = @clean_test.@clean_test.multiply(2, @clean_test.@clean_test.add(3, 4))
   assert_eq(14, result4)  // 2*(3+4) = 2*7 = 14
 }
 
@@ -80,8 +89,8 @@ test "scientific_calculations" {
   // 质量 = 10kg，速度 = 5m/s
   let mass = 10
   let velocity = 5
-  let velocity_squared = @azimuth.multiply(velocity, velocity)
-  let kinetic_energy_times_2 = @azimuth.multiply(mass, velocity_squared)
+  let velocity_squared = @clean_test.@clean_test.multiply(velocity, velocity)
+  let kinetic_energy_times_2 = @clean_test.@clean_test.multiply(mass, velocity_squared)
   
   assert_eq(25, velocity_squared)  // 5² = 25
   assert_eq(250, kinetic_energy_times_2)  // 10 * 25 = 250，所以动能 = 125J
@@ -91,7 +100,7 @@ test "scientific_calculations" {
   let mass2 = 5
   let gravity_times_10 = 98  // 9.8 * 10
   let height = 10
-  let potential_energy_times_10 = @azimuth.multiply(mass2, @azimuth.multiply(gravity_times_10, height))
+  let potential_energy_times_10 = @clean_test.@clean_test.multiply(mass2, @clean_test.@clean_test.multiply(gravity_times_10, height))
   
   assert_eq(4900, potential_energy_times_10)  // 5 * 98 * 10 = 4900，所以势能 = 490J
 }
@@ -107,7 +116,7 @@ test "financial_calculations" {
   
   // 月利率 = 年利率 / 12 = 0.5%
   let monthly_rate_times_1000 = 50  // 0.5%
-  let months = @azimuth.multiply(years, 12)
+  let months = @clean_test.@clean_test.multiply(years, 12)
   
   // (1+r)^n 的近似计算
   let base_times_1000 = 1050  // 1 + 0.005 = 1.005 = 1050/1000
@@ -134,13 +143,13 @@ test "statistical_analysis" {
   let count = 5
   
   // 计算平方差和
-  let diff1 = @azimuth.multiply(@azimuth.add(data1, @azimuth.multiply(-1, mean)), @azimuth.add(data1, @azimuth.multiply(-1, mean)))
-  let diff2 = @azimuth.multiply(@azimuth.add(data2, @azimuth.multiply(-1, mean)), @azimuth.add(data2, @azimuth.multiply(-1, mean)))
-  let diff3 = @azimuth.multiply(@azimuth.add(data3, @azimuth.multiply(-1, mean)), @azimuth.add(data3, @azimuth.multiply(-1, mean)))
-  let diff4 = @azimuth.multiply(@azimuth.add(data4, @azimuth.multiply(-1, mean)), @azimuth.add(data4, @azimuth.multiply(-1, mean)))
-  let diff5 = @azimuth.multiply(@azimuth.add(data5, @azimuth.multiply(-1, mean)), @azimuth.add(data5, @azimuth.multiply(-1, mean)))
+  let diff1 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(data1, @clean_test.@clean_test.multiply(-1, mean)), @clean_test.@clean_test.add(data1, @clean_test.@clean_test.multiply(-1, mean)))
+  let diff2 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(data2, @clean_test.@clean_test.multiply(-1, mean)), @clean_test.@clean_test.add(data2, @clean_test.@clean_test.multiply(-1, mean)))
+  let diff3 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(data3, @clean_test.@clean_test.multiply(-1, mean)), @clean_test.@clean_test.add(data3, @clean_test.@clean_test.multiply(-1, mean)))
+  let diff4 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(data4, @clean_test.@clean_test.multiply(-1, mean)), @clean_test.@clean_test.add(data4, @clean_test.@clean_test.multiply(-1, mean)))
+  let diff5 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(data5, @clean_test.@clean_test.multiply(-1, mean)), @clean_test.@clean_test.add(data5, @clean_test.@clean_test.multiply(-1, mean)))
   
-  let sum_of_squares = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(diff1, diff2), diff3), diff4), diff5)
+  let sum_of_squares = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(diff1, diff2), diff3), diff4), diff5)
   
   assert_eq(16, diff1)  // (10-14)² = 16
   assert_eq(4, diff2)   // (12-14)² = 4
@@ -164,15 +173,15 @@ test "geometric_calculations" {
   let c = 5
   
   // 半周长：s = (a+b+c)/2
-  let perimeter = @azimuth.add(@azimuth.add(a, b), c)
+  let perimeter = @clean_test.@clean_test.add(@clean_test.@clean_test.add(a, b), c)
   let s_times_2 = perimeter
   
   // 面积² = s(s-a)(s-b)(s-c)
-  let s_minus_a = @azimuth.multiply(-1, @azimuth.add(a, @azimuth.multiply(-1, 6)))  // s-a = 6-3 = 3
-  let s_minus_b = @azimuth.multiply(-1, @azimuth.add(b, @azimuth.multiply(-1, 6)))  // s-b = 6-4 = 2
-  let s_minus_c = @azimuth.multiply(-1, @azimuth.add(c, @azimuth.multiply(-1, 6)))  // s-c = 6-5 = 1
+  let s_minus_a = @clean_test.@clean_test.multiply(-1, @clean_test.@clean_test.add(a, @clean_test.@clean_test.multiply(-1, 6)))  // s-a = 6-3 = 3
+  let s_minus_b = @clean_test.@clean_test.multiply(-1, @clean_test.@clean_test.add(b, @clean_test.@clean_test.multiply(-1, 6)))  // s-b = 6-4 = 2
+  let s_minus_c = @clean_test.@clean_test.multiply(-1, @clean_test.@clean_test.add(c, @clean_test.@clean_test.multiply(-1, 6)))  // s-c = 6-5 = 1
   
-  let area_squared_times_16 = @azimuth.multiply(s_times_2, @azimuth.multiply(@azimuth.multiply(s_minus_a, s_minus_b), s_minus_c))
+  let area_squared_times_16 = @clean_test.@clean_test.multiply(s_times_2, @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(s_minus_a, s_minus_b), s_minus_c))
   
   assert_eq(12, s_times_2)  // (3+4+5) = 12
   assert_eq(3, s_minus_a)
@@ -193,8 +202,8 @@ test "physics_formula_applications" {
   let temperature_times_100 = 273  // 273K
   
   // PV = nRT
-  let pv = @azimuth.multiply(pressure, volume_times_10000)
-  let nrt = @azimuth.multiply(@azimuth.multiply(moles, gas_constant_times_1000), temperature_times_100)
+  let pv = @clean_test.@clean_test.multiply(pressure, volume_times_10000)
+  let nrt = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(moles, gas_constant_times_1000), temperature_times_100)
   
   // 验证方程两边（考虑单位换算）
   assert_eq(226968000, pv)    // 101325 * 2240
@@ -206,7 +215,7 @@ test "physics_formula_applications" {
 test "complex_string_combinations" {
   // 测试包含各种特殊字符的字符串
   let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~"
-  let result1 = @azimuth.greet(special_chars)
+  let result1 = @clean_test.@clean_test.greet(special_chars)
   assert_eq(true, result1.contains(special_chars))
   
   // 测试多语言字符串
@@ -216,14 +225,14 @@ test "complex_string_combinations" {
   let arabic_name = "أحمد"
   let russian_name = "Иван"
   
-  assert_eq("Hello, 张三!", @azimuth.greet(chinese_name))
-  assert_eq("Hello, 田中太郎!", @azimuth.greet(japanese_name))
-  assert_eq("Hello, 김철수!", @azimuth.greet(korean_name))
-  assert_eq("Hello, أحمد!", @azimuth.greet(arabic_name))
-  assert_eq("Hello, Иван!", @azimuth.greet(russian_name))
+  assert_eq_string("Hello, 张三!", @clean_test.@clean_test.greet(chinese_name))
+  assert_eq_string("Hello, 田中太郎!", @clean_test.@clean_test.greet(japanese_name))
+  assert_eq_string("Hello, 김철수!", @clean_test.@clean_test.greet(korean_name))
+  assert_eq_string("Hello, أحمد!", @clean_test.@clean_test.greet(arabic_name))
+  assert_eq_string("Hello, Иван!", @clean_test.@clean_test.greet(russian_name))
   
   // 测试包含表情符号的字符串
   let emoji_name = "😀🎉🌟"
-  let result2 = @azimuth.greet(emoji_name)
+  let result2 = @clean_test.@clean_test.greet(emoji_name)
   assert_eq(true, result2.contains(emoji_name))
 }

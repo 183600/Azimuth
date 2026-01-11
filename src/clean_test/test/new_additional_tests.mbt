@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 新增的测试用例 - 覆盖更多实际场景和边界情况
 
 // 测试用例 1: 除法近似计算（通过乘法和减法实现）
@@ -11,13 +20,13 @@ test "division_approximation" {
   
   // 估算商为4
   let estimated_quotient = 4
-  let product = @azimuth.multiply(divisor, estimated_quotient)
+  let product = @clean_test.@clean_test.multiply(divisor, estimated_quotient)
   
   // 验证 4 * 4 = 16，接近17
   assert_eq(16, product)
   
   // 计算余数
-  let remainder = @azimuth.add(dividend, @azimuth.multiply(-1, product))
+  let remainder = @clean_test.@clean_test.add(dividend, @clean_test.@clean_test.multiply(-1, product))
   assert_eq(1, remainder)  // 17 - 16 = 1
 }
 
@@ -31,7 +40,7 @@ test "percentage_calculations" {
   let total = 200
   
   // 百分比 * 总数 = 部分 * 100
-  let percentage_times_total = @azimuth.multiply(part, 100)
+  let percentage_times_total = @clean_test.@clean_test.multiply(part, 100)
   
   // 验证：12.5% * 200 = 25，即 12.5 * 200 = 2500
   assert_eq(2500, percentage_times_total)
@@ -46,7 +55,7 @@ test "area_unit_conversion" {
   let conversion_factor = 10000
   
   // 平方厘米 = 平方米 * 转换因子
-  let square_centimeters = @azimuth.multiply(square_meters, conversion_factor)
+  let square_centimeters = @clean_test.@clean_test.multiply(square_meters, conversion_factor)
   
   // 验证：5 m² = 50000 cm²
   assert_eq(50000, square_centimeters)
@@ -62,8 +71,8 @@ test "volume_calculation" {
   let height = 3
   
   // 逐步计算体积
-  let base_area = @azimuth.multiply(length, width)
-  let volume = @azimuth.multiply(base_area, height)
+  let base_area = @clean_test.@clean_test.multiply(length, width)
+  let volume = @clean_test.@clean_test.multiply(base_area, height)
   
   // 验证：10 * 5 * 3 = 150
   assert_eq(150, volume)
@@ -78,7 +87,7 @@ test "speed_unit_conversion" {
   let km_per_hour = 72
   
   // m/s * 18 = km/h * 5
-  let m_per_s_times_18 = @azimuth.multiply(km_per_hour, 5)
+  let m_per_s_times_18 = @clean_test.@clean_test.multiply(km_per_hour, 5)
   
   // 验证：72 km/h = 20 m/s，即 20 * 18 = 360
   assert_eq(360, m_per_s_times_18)
@@ -94,9 +103,9 @@ test "string_length_validation" {
   let long = "This is a very long string"
   
   // 测试不同长度字符串的拼接
-  let result1 = @azimuth.greet(short)
-  let result2 = @azimuth.greet(medium)
-  let result3 = @azimuth.greet(long)
+  let result1 = @clean_test.@clean_test.greet(short)
+  let result2 = @clean_test.@clean_test.greet(medium)
+  let result3 = @clean_test.@clean_test.greet(long)
   
   // 验证结果包含预期的前缀
   assert_eq(true, result1.starts_with("Hello, "))
@@ -120,17 +129,17 @@ test "geometric_series_sum" {
   let term4 = 16
   
   // 逐步求和
-  let sum1 = @azimuth.add(term1, term2)
-  let sum2 = @azimuth.add(sum1, term3)
-  let total = @azimuth.add(sum2, term4)
+  let sum1 = @clean_test.@clean_test.add(term1, term2)
+  let sum2 = @clean_test.@clean_test.add(sum1, term3)
+  let total = @clean_test.@clean_test.add(sum2, term4)
   
   // 验证总和
   assert_eq(30, total)
   
   // 验证等比性质：后一项是前一项的2倍
-  assert_eq(term2, @azimuth.multiply(term1, 2))
-  assert_eq(term3, @azimuth.multiply(term2, 2))
-  assert_eq(term4, @azimuth.multiply(term3, 2))
+  assert_eq(term2, @clean_test.@clean_test.multiply(term1, 2))
+  assert_eq(term3, @clean_test.@clean_test.multiply(term2, 2))
+  assert_eq(term4, @clean_test.@clean_test.multiply(term3, 2))
 }
 
 // 测试用例 8: 温度差计算
@@ -142,13 +151,13 @@ test "temperature_difference" {
   let temp2 = -5  // -5°C
   
   // 温度差 = 温度1 - 温度2
-  let difference = @azimuth.add(temp1, @azimuth.multiply(-1, temp2))
+  let difference = @clean_test.@clean_test.add(temp1, @clean_test.@clean_test.multiply(-1, temp2))
   
   // 验证：25 - (-5) = 30
   assert_eq(30, difference)
   
   // 反向计算应该得到负值
-  let reverse_difference = @azimuth.add(temp2, @azimuth.multiply(-1, temp1))
+  let reverse_difference = @clean_test.@clean_test.add(temp2, @clean_test.@clean_test.multiply(-1, temp1))
   assert_eq(-30, reverse_difference)
 }
 
@@ -162,8 +171,8 @@ test "prime_number_properties" {
   let composite = 12
   
   // 质数乘以2得到偶数
-  let even1 = @azimuth.multiply(prime1, 2)
-  let even2 = @azimuth.multiply(prime2, 2)
+  let even1 = @clean_test.@clean_test.multiply(prime1, 2)
+  let even2 = @clean_test.@clean_test.multiply(prime2, 2)
   
   // 验证结果
   assert_eq(14, even1)
@@ -172,7 +181,7 @@ test "prime_number_properties" {
   // 合数可以分解为因数的乘积
   let factor1 = 3
   let factor2 = 4
-  let product = @azimuth.multiply(factor1, factor2)
+  let product = @clean_test.@clean_test.multiply(factor1, factor2)
   
   // 验证：3 * 4 = 12
   assert_eq(composite, product)
@@ -188,11 +197,11 @@ test "time_period_calculation" {
   let seconds = 45
   
   // 转换为秒
-  let hours_in_seconds = @azimuth.multiply(hours, 3600)
-  let minutes_in_seconds = @azimuth.multiply(minutes, 60)
+  let hours_in_seconds = @clean_test.@clean_test.multiply(hours, 3600)
+  let minutes_in_seconds = @clean_test.@clean_test.multiply(minutes, 60)
   
   // 总秒数
-  let total_seconds = @azimuth.add(@azimuth.add(hours_in_seconds, minutes_in_seconds), seconds)
+  let total_seconds = @clean_test.@clean_test.add(@clean_test.@clean_test.add(hours_in_seconds, minutes_in_seconds), seconds)
   
   // 验证：2*3600 + 30*60 + 45 = 7200 + 1800 + 45 = 9045
   assert_eq(9045, total_seconds)

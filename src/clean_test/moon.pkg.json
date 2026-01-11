@@ -1,5 +1,6 @@
 {
-  "name": "azimuth",
+  "name": "clean_test",
+  "import": ["moonbitlang/core/builtin", "moonbitlang/core/string", "moonbitlang/core/list"],
   "export": ["add", "multiply", "greet"],
-  "files": ["lib.mbt", "test/enhanced_test_suite.mbt"]
+  "files": ["lib.mbt", "test_helper.mbt", "test/enhanced_test_suite.mbt"]
 }

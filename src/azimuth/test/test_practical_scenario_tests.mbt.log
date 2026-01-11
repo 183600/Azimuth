@@ -1,0 +1,112 @@
+:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
+practical_scenario_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:7:18-7:30 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:8:17-8:29 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:9:18-9:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:10:18-10:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:16:25-16:42 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:16:43-16:51 [E4021] The value identifier multiply is unbound.
+practical_scenario_tests.mbt:16:86-16:87 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:25:20-25:32 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:25:33-25:50 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:25:63-25:64 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:30:18-30:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:30:36-30:48 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:30:71-30:72 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:42:12-42:24 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:43:12-43:24 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:44:26-44:38 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:44:39-44:56 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:44:66-44:83 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:48:20-48:32 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:48:41-48:42 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:49:20-49:32 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:49:41-49:42 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:63:15-63:27 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:63:28-63:45 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:67:20-67:32 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:83:23-83:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:83:36-83:53 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:84:36-84:48 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:84:49-84:66 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:90:17-90:29 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:90:39-90:56 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:100:13-100:25 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:100:26-100:29 [E4021] The value identifier add is unbound.
+practical_scenario_tests.mbt:100:30-100:33 [E4021] The value identifier add is unbound.
+practical_scenario_tests.mbt:100:34-100:37 [E4021] The value identifier add is unbound.
+practical_scenario_tests.mbt:100:44-100:47 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:100:55-100:58 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:100:67-100:70 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:100:79-100:82 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:100:91-100:94 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:101:3-101:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:105:21-105:22 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:106:3-106:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:110:15-110:27 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:110:34-110:37 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:111:15-111:27 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:111:34-111:37 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+practical_scenario_tests.mbt:112:19-112:36 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:112:51-112:52 [E4037] Cannot use operator `+`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:112:53-112:70 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:112:86-112:87 [E4037] Cannot use operator `/`: package moonbitlang/core/builtin is not imported.
+practical_scenario_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:119:27-119:41 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:120:3-120:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:120:30-120:44 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:121:30-121:44 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:122:27-122:41 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:123:26-123:40 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:124:33-124:47 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:125:30-125:44 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:126:3-126:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:126:31-126:45 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:136:17-136:29 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:136:30-136:33 [E4021] The value identifier add is unbound.
+practical_scenario_tests.mbt:136:41-136:53 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:137:3-137:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:139:17-139:34 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:139:35-139:43 [E4021] The value identifier multiply is unbound.
+practical_scenario_tests.mbt:139:51-139:68 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:140:3-140:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:143:17-143:29 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:143:30-143:47 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:143:56-143:73 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:144:3-144:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:147:17-147:29 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:147:30-147:47 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:147:57-147:74 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:157:16-157:28 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:157:41-157:58 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:158:3-158:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:163:20-163:28 [E4021] The value identifier multiply is unbound.
+practical_scenario_tests.mbt:163:40-163:48 [E4021] The value identifier multiply is unbound.
+practical_scenario_tests.mbt:164:20-164:37 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:164:52-164:60 [E4021] The value identifier multiply is unbound.
+practical_scenario_tests.mbt:165:3-165:12 [E4021] The value identifier assert_eq is unbound.
+practical_scenario_tests.mbt:170:14-170:26 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:171:14-171:26 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:172:14-172:26 [E4020] Package "azimuth" not found in the loaded packages.
+practical_scenario_tests.mbt:173:3-173:12 [E4021] The value identifier assert_eq is unbound.

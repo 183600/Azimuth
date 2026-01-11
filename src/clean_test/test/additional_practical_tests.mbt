@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 实际应用场景测试用例
 
 // 测试用例1: 计算购物车折扣后的总价
@@ -14,16 +23,16 @@ test "shopping_cart_discount_calculation" {
   let item3_qty = 3
   
   // 计算小计
-  let subtotal1 = multiply(item1_price, item1_qty)
-  let subtotal2 = multiply(item2_price, item2_qty)
-  let subtotal3 = multiply(item3_price, item3_qty)
+  let subtotal1 = @clean_test.multiply(item1_price, item1_qty)
+  let subtotal2 = @clean_test.multiply(item2_price, item2_qty)
+  let subtotal3 = @clean_test.multiply(item3_price, item3_qty)
   
   // 计算总价
-  let total_before_discount = add(add(subtotal1, subtotal2), subtotal3)
+  let total_before_discount = @clean_test.add(@clean_test.add(subtotal1, subtotal2), subtotal3)
   
   // 应用折扣：满500减50
   let discount = if total_before_discount >= 500 { 50 } else { 0 }
-  let final_total = add(total_before_discount, multiply(-1, discount))
+  let final_total = @clean_test.add(total_before_discount, @clean_test.multiply(-1, discount))
   
   // 验证结果：(299*2) + 199 + (99*3) - 50 = 598 + 199 + 297 - 50 = 1044
   assert_eq(1044, final_total)
@@ -43,14 +52,14 @@ test "bank_loan_monthly_payment" {
   let years = 20
   
   // 月数
-  let months = @azimuth.multiply(years, 12)
+  let months = @clean_test.@clean_test.multiply(years, 12)
   
   // 简化计算：只计算总利息和本金总和
   // 总利息 = 本金 * 年利率 * 年限
-  let total_interest = multiply(multiply(principal, annual_rate_numerator), years)
+  let total_interest = @clean_test.multiply(@clean_test.multiply(principal, annual_rate_numerator), years)
   
   // 还款总额 = 本金 + 总利息
-  let total_payment = add(principal, multiply(total_interest, annual_rate_denominator))
+  let total_payment = @clean_test.add(principal, @clean_test.multiply(total_interest, annual_rate_denominator))
   
   // 验证结果：300000 + (300000 * 5 * 20) = 300000 + 30000000 = 30300000
   assert_eq(30300000, total_payment)
@@ -64,12 +73,12 @@ test "bmi_calculation_numerator" {
   
   // 身高(m)的平方，我们避免小数用厘米计算
   let height_cm = 175
-  let height_m_squared_numerator = @azimuth.multiply(height_cm, height_cm)
+  let height_m_squared_numerator = @clean_test.@clean_test.multiply(height_cm, height_cm)
   let height_m_squared_denominator = 10000  // (100*100)
   
   // BMI = 体重(kg) / 身高²(m²)
   // 我们只计算分子部分：体重 * 分母
-  let bmi_numerator = multiply(weight, height_m_squared_denominator)
+  let bmi_numerator = @clean_test.multiply(weight, height_m_squared_denominator)
   
   // 验证：70 * 10000 = 700000
   assert_eq(700000, bmi_numerator)
@@ -88,10 +97,10 @@ test "fuel_consumption_calculation" {
   let fuel_price = 7
   
   // 计算总油耗：距离 * 油耗 / 100
-  let total_fuel_times_100 = multiply(distance, fuel_consumption)
+  let total_fuel_times_100 = @clean_test.multiply(distance, fuel_consumption)
   
   // 计算总费用：总油耗 * 油价
-  let total_cost_times_100 = multiply(total_fuel_times_100, fuel_price)
+  let total_cost_times_100 = @clean_test.multiply(total_fuel_times_100, fuel_price)
   
   // 验证：500 * 8 * 7 = 28000，实际费用是280元
   assert_eq(28000, total_cost_times_100)
@@ -112,10 +121,10 @@ test "investment_compound_interest" {
   
   // 简化计算：只计算2年的复利作为示例
   // 第一年结束：本金 + 利息
-  let year1_value_times_den = add(multiply(principal, rate_denominator), multiply(principal, rate_numerator))
+  let year1_value_times_den = @clean_test.add(@clean_test.multiply(principal, rate_denominator), @clean_test.multiply(principal, rate_numerator))
   
   // 第二年结束：第一年价值 + 新利息
-  let year2_value_times_den = add(multiply(year1_value_times_den, rate_denominator), multiply(year1_value_times_den, rate_numerator))
+  let year2_value_times_den = @clean_test.add(@clean_test.multiply(year1_value_times_den, rate_denominator), @clean_test.multiply(year1_value_times_den, rate_numerator))
   
   // 验证计算过程
   assert_eq(true, year2_value_times_den > principal * rate_denominator)
@@ -130,19 +139,19 @@ test "home_renovation_budget" {
   let height = 3
   
   // 计算地面面积
-  let floor_area = multiply(length, width)
+  let floor_area = @clean_test.multiply(length, width)
   
   // 计算墙面面积（四面墙）
-  let wall_area = multiply(2, add(multiply(length, height), multiply(width, height)))
+  let wall_area = @clean_test.multiply(2, @clean_test.add(@clean_test.multiply(length, height), @clean_test.multiply(width, height)))
   
   // 装修单价（元/平方米）
   let floor_price = 150
   let wall_price = 80
   
   // 计算总预算
-  let floor_budget = multiply(floor_area, floor_price)
-  let wall_budget = multiply(wall_area, wall_price)
-  let total_budget = add(floor_budget, wall_budget)
+  let floor_budget = @clean_test.multiply(floor_area, floor_price)
+  let wall_budget = @clean_test.multiply(wall_area, wall_price)
+  let total_budget = @clean_test.add(floor_budget, wall_budget)
   
   // 验证：地面48*150 + 墙面84*80 = 7200 + 6720 = 13920
   assert_eq(13920, total_budget)
@@ -160,9 +169,9 @@ test "exercise_calories_calculation" {
   let swimming_calories_per_min = 8
   
   // 计算总消耗
-  let running_calories = multiply(running_time, running_calories_per_min)
-  let swimming_calories = multiply(swimming_time, swimming_calories_per_min)
-  let total_calories = add(running_calories, swimming_calories)
+  let running_calories = @clean_test.multiply(running_time, running_calories_per_min)
+  let swimming_calories = @clean_test.multiply(swimming_time, swimming_calories_per_min)
+  let total_calories = @clean_test.add(running_calories, swimming_calories)
   
   // 验证：30*10 + 45*8 = 300 + 360 = 660
   assert_eq(660, total_calories)
@@ -181,12 +190,12 @@ test "project_management_cost" {
   let tester_rate = 120
   
   // 计算总工时
-  let total_hours = add(add(planning_hours, development_hours), testing_hours)
+  let total_hours = @clean_test.add(@clean_test.add(planning_hours, development_hours), testing_hours)
   
   // 计算总成本（假设开发和测试各占一半）
-  let dev_cost = multiply(add(planning_hours, development_hours), developer_rate)
-  let test_cost = multiply(testing_hours, tester_rate)
-  let total_cost = add(dev_cost, test_cost)
+  let dev_cost = @clean_test.multiply(@clean_test.add(planning_hours, development_hours), developer_rate)
+  let test_cost = @clean_test.multiply(testing_hours, tester_rate)
+  let total_cost = @clean_test.add(dev_cost, test_cost)
   
   // 验证：200*150 + 80*120 = 30000 + 9600 = 39600
   assert_eq(39600, total_cost)
@@ -202,19 +211,19 @@ test "internationalization_string_tests" {
   let korean_name = "김철수"
   
   // 测试中文
-  let chinese_greeting = greet(chinese_name)
+  let chinese_greeting = @clean_test.greet(chinese_name)
   assert_eq(true, chinese_greeting.contains("小明"))
   
   // 测试英文
-  let english_greeting = greet(english_name)
+  let english_greeting = @clean_test.greet(english_name)
   assert_eq(true, english_greeting.contains("Alice"))
   
   // 测试日文
-  let japanese_greeting = greet(japanese_name)
+  let japanese_greeting = @clean_test.greet(japanese_name)
   assert_eq(true, japanese_greeting.contains("田中"))
   
   // 测试韩文
-  let korean_greeting = greet(korean_name)
+  let korean_greeting = @clean_test.greet(korean_name)
   assert_eq(true, korean_greeting.contains("김철수"))
   
   // 验证不同语言产生不同的问候语
@@ -235,12 +244,12 @@ test "geometric_series_sum" {
   
   // 逐项计算
   let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
+  let term2 = @clean_test.multiply(term1, ratio)
+  let term3 = @clean_test.multiply(term2, ratio)
+  let term4 = @clean_test.multiply(term3, ratio)
   
   // 求和
-  let sum = add(add(add(term1, term2), term3), term4)
+  let sum = @clean_test.add(@clean_test.add(@clean_test.add(term1, term2), term3), term4)
   
   // 验证：2 + 6 + 18 + 54 = 80
   assert_eq(80, sum)

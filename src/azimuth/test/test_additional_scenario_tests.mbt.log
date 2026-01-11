@@ -1,0 +1,106 @@
+:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
+additional_scenario_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:11:25-11:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:12:26-12:38 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:15:25-15:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:16:26-16:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:23:25-23:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:24:25-24:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:25:25-25:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:28:26-28:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:29:26-29:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:38:16-38:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:39:25-39:33 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_scenario_tests.mbt:39:60-39:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_scenario_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:40:25-40:33 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_scenario_tests.mbt:40:60-40:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_scenario_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:44:34-44:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:45:29-45:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:46:27-46:41 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:57:19-57:36 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:58:19-58:36 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:59:20-59:32 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:62:13-62:25 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:63:14-63:26 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:64:17-64:34 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:73:19-73:36 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:73:40-73:52 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:74:20-74:32 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:74:33-74:50 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:74:58-74:75 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:90:18-90:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:91:18-91:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:92:18-92:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:93:23-93:35 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:101:26-101:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:102:24-102:41 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:103:22-103:34 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:113:20-113:32 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:113:33-113:50 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:114:7-114:25 [E0002] Warning (unused_value): Unused variable 'fahrenheit_divided'
+additional_scenario_tests.mbt:114:28-114:45 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:117:25-117:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:117:38-117:55 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:118:22-118:39 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:118:40-118:52 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:120:3-120:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:133:16-133:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:134:17-134:29 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:135:16-135:33 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:137:3-137:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:145:20-145:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:146:19-146:31 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:147:22-147:39 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:156:25-156:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:157:3-157:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:160:18-160:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:161:3-161:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:164:27-164:39 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:165:3-165:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:168:27-168:39 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:169:3-169:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:179:3-179:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:179:17-179:29 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:180:17-180:29 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:181:3-181:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:181:26-181:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:182:3-182:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:182:26-182:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:188:3-188:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:188:22-188:34 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:189:3-189:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:189:22-189:34 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:190:3-190:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:190:26-190:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:191:3-191:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:191:25-191:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:202:19-202:36 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:204:3-204:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:209:19-209:31 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:211:3-211:12 [E4021] The value identifier assert_eq is unbound.
+additional_scenario_tests.mbt:216:14-216:26 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:216:27-216:44 [E4020] Package "azimuth" not found in the loaded packages.
+additional_scenario_tests.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.

@@ -1,0 +1,104 @@
+focused_test_cases.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:8:16-8:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:8:40-8:60 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:11:17-11:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:11:41-11:61 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:11:65-11:85 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:14:17-14:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:14:42-14:62 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:17:17-17:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:17:42-17:62 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:17:67-17:87 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:27:7-27:12 [E0002] Warning (unused_value): Unused variable 'years'
+focused_test_cases.mbt:30:7-30:31 [E0002] Warning (unused_value): Unused variable 'rate_cubed_times_million'
+focused_test_cases.mbt:30:34-30:54 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:30:70-30:90 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:34:32-34:52 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:35:13-35:24 [E4095] Integer literal 11576250000 is out of range.
+focused_test_cases.mbt:43:18-43:33 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:43:34-43:49 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:43:50-43:65 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:43:66-43:81 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:45:7-45:11 [E0002] Warning (unused_value): Unused variable 'mean'
+focused_test_cases.mbt:45:14-45:32 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:48:24-48:39 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:48:40-48:55 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:48:56-48:71 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:48:72-48:87 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:49:5-49:25 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:50:5-50:25 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:51:5-51:25 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:52:5-52:25 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:53:5-53:25 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:66:22-66:42 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:69:27-69:47 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:70:33-70:51 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:83:3-83:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:83:22-83:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:86:22-86:42 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:90:22-90:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:91:23-91:43 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:99:26-99:43 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:100:3-100:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:104:25-104:42 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:109:24-109:41 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:110:3-110:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:119:14-119:29 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:120:14-120:29 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:121:14-121:29 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:122:14-122:29 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:126:3-126:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:131:22-131:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:131:38-131:58 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:131:72-131:92 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:131:97-131:117 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:145:7-145:15 [E0002] Warning (unused_value): Unused variable 'left_sum'
+focused_test_cases.mbt:145:18-145:33 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:146:7-146:16 [E0002] Warning (unused_value): Unused variable 'right_sum'
+focused_test_cases.mbt:146:19-146:34 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:150:19-150:34 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:151:20-151:35 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:161:18-161:38 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:162:18-162:38 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:164:21-164:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:164:37-164:52 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:164:79-164:99 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:169:3-169:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:177:21-177:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:37-177:57 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:65-177:80 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:81-177:101 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:109-177:124 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:125-177:145 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:177:153-177:173 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:178:3-178:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:181:21-181:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:37-181:52 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:53-181:73 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:81-181:101 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:110-181:125 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:126-181:146 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:181:154-181:174 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:182:3-182:12 [E4021] The value identifier assert_eq is unbound.
+focused_test_cases.mbt:185:20-185:40 [E4020] Package "clean_test" not found in the loaded packages.
+focused_test_cases.mbt:186:3-186:12 [E4021] The value identifier assert_eq is unbound.

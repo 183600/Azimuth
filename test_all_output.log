@@ -1,25 +1,61 @@
 Running moon test...
-
+Checking syntax and imports...
 Compiling azimuth...
-
-Testing azimuth...
-
-test multiply_edge_cases ... ok
-test final_add_test ... ok
-test final_multiply_test ... ok
-test test_negative_overflow_edge_case ... ok
-test debug_add ... ok
-test debug_multiply ... ok
-test specific_add_test ... ok
-test multiply_zero_test ... ok
-test add_edge_case ... ok
-test add_min_value_positive ... ok
-test extra_test ... ok
-test add_boundary_test ... ok
-test multiply_boundary_test ... ok
-test add_functions ... ok
-test multiply_functions ... ok
-test greet_function ... ok
-test min_value_positive_add ... ok
-
-17 tests passed, 0 failed
+Compiling azimuth tests...
+Compiling additional_comprehensive_test.mbt...
+azimuth_test/additional_comprehensive_test.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:47:22-47:22 [E3001] Lexing error: (unterminated string literal)
+azimuth_test/additional_comprehensive_test.mbt:47:22-47:22 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
+azimuth_test/additional_comprehensive_test.mbt:48:2-48:21 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Bool
+azimuth_test/additional_comprehensive_test.mbt:48:1-48:21 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
+azimuth_test/additional_comprehensive_test.mbt:49:1-49:16 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Unit
+azimuth_test/additional_comprehensive_test.mbt:49:16-49:16 [E3001] Lexing error: (unterminated string literal)
+azimuth_test/additional_comprehensive_test.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:101:3-101:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:102:3-102:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:106:3-106:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:109:3-109:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:110:3-110:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:137:3-137:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:159:3-159:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:160:3-160:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:169:3-169:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:170:3-170:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:173:3-173:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:174:3-174:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:175:3-175:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:181:3-181:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:182:3-182:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:183:3-183:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:184:3-184:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:195:7-195:12 [E0002] Warning (unused_value): Unused variable 'years'
+azimuth_test/additional_comprehensive_test.mbt:205:3-205:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:209:3-209:12 [E4021] The value identifier assert_eq is unbound.
+Error: azimuth test additional_comprehensive_test.mbt compilation failed

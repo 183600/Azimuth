@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 增强测试套件 - 10个新的测试用例
 
 // 测试用例 1: 测试斐波那契数列计算
@@ -8,13 +17,13 @@ test "fibonacci_sequence_calculation" {
   
   let fib0 = 0
   let fib1 = 1
-  let fib2 = @azimuth.add(fib0, fib1)  // 1
-  let fib3 = @azimuth.add(fib1, fib2)  // 2
-  let fib4 = @azimuth.add(fib2, fib3)  // 3
-  let fib5 = @azimuth.add(fib3, fib4)  // 5
-  let fib6 = @azimuth.add(fib4, fib5)  // 8
-  let fib7 = @azimuth.add(fib5, fib6)  // 13
-  let fib8 = @azimuth.add(fib6, fib7)  // 21
+  let fib2 = @clean_test.@clean_test.add(fib0, fib1)  // 1
+  let fib3 = @clean_test.@clean_test.add(fib1, fib2)  // 2
+  let fib4 = @clean_test.@clean_test.add(fib2, fib3)  // 3
+  let fib5 = @clean_test.@clean_test.add(fib3, fib4)  // 5
+  let fib6 = @clean_test.@clean_test.add(fib4, fib5)  // 8
+  let fib7 = @clean_test.@clean_test.add(fib5, fib6)  // 13
+  let fib8 = @clean_test.@clean_test.add(fib6, fib7)  // 21
   
   assert_eq(1, fib2)
   assert_eq(2, fib3)
@@ -34,19 +43,19 @@ test "factorial_calculation" {
   let fact0 = 1
   
   // 1! = 1
-  let fact1 = @azimuth.multiply(1, fact0)
+  let fact1 = @clean_test.@clean_test.multiply(1, fact0)
   
   // 2! = 2 * 1! = 2
-  let fact2 = @azimuth.multiply(2, fact1)
+  let fact2 = @clean_test.@clean_test.multiply(2, fact1)
   
   // 3! = 3 * 2! = 6
-  let fact3 = @azimuth.multiply(3, fact2)
+  let fact3 = @clean_test.@clean_test.multiply(3, fact2)
   
   // 4! = 4 * 3! = 24
-  let fact4 = @azimuth.multiply(4, fact3)
+  let fact4 = @clean_test.@clean_test.multiply(4, fact3)
   
   // 5! = 5 * 4! = 120
-  let fact5 = @azimuth.multiply(5, fact4)
+  let fact5 = @clean_test.@clean_test.multiply(5, fact4)
   
   assert_eq(1, fact0)
   assert_eq(1, fact1)
@@ -62,23 +71,23 @@ test "power_calculation" {
   // 计算 a^n 通过重复乘法
   
   // 2^3 = 8
-  let power2_3 = @azimuth.multiply(@azimuth.multiply(2, 2), 2)
+  let power2_3 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(2, 2), 2)
   assert_eq(8, power2_3)
   
   // 3^4 = 81
-  let power3_4 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(3, 3), 3), 3)
+  let power3_4 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(3, 3), 3), 3)
   assert_eq(81, power3_4)
   
   // 5^2 = 25
-  let power5_2 = @azimuth.multiply(5, 5)
+  let power5_2 = @clean_test.@clean_test.multiply(5, 5)
   assert_eq(25, power5_2)
   
   // (-2)^3 = -8
-  let power_minus2_3 = @azimuth.multiply(@azimuth.multiply(-2, -2), -2)
+  let power_minus2_3 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(-2, -2), -2)
   assert_eq(-8, power_minus2_3)
   
   // (-2)^4 = 16
-  let power_minus2_4 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(-2, -2), -2), -2)
+  let power_minus2_4 = @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(-2, -2), -2), -2)
   assert_eq(16, power_minus2_4)
 }
 
@@ -93,15 +102,15 @@ test "gcd_simulation" {
   let b = 18
   
   // 48 mod 18 = 12 (通过减法模拟)
-  let remainder1 = @azimuth.add(a, @azimuth.multiply(-2, b))  // 48 - 2*18 = 12
+  let remainder1 = @clean_test.@clean_test.add(a, @clean_test.@clean_test.multiply(-2, b))  // 48 - 2*18 = 12
   assert_eq(12, remainder1)
   
   // 18 mod 12 = 6
-  let remainder2 = @azimuth.add(b, @azimuth.multiply(-1, remainder1))  // 18 - 1*12 = 6
+  let remainder2 = @clean_test.@clean_test.add(b, @clean_test.@clean_test.multiply(-1, remainder1))  // 18 - 1*12 = 6
   assert_eq(6, remainder2)
   
   // 12 mod 6 = 0
-  let remainder3 = @azimuth.add(remainder1, @azimuth.multiply(-2, remainder2))  // 12 - 2*6 = 0
+  let remainder3 = @clean_test.@clean_test.add(remainder1, @clean_test.@clean_test.multiply(-2, remainder2))  // 12 - 2*6 = 0
   assert_eq(0, remainder3)
   
   // gcd是最后一个非零余数
@@ -120,8 +129,8 @@ test "percentage_calculations" {
   let expected_percent = 25  // 50/200 * 100 = 25
   
   // 验证：部分 * 100 = 百分比 * 整体
-  let part_times_100 = @azimuth.multiply(part, 100)
-  let verification = @azimuth.multiply(expected_percent, whole)
+  let part_times_100 = @clean_test.@clean_test.multiply(part, 100)
+  let verification = @clean_test.@clean_test.multiply(expected_percent, whole)
   
   assert_eq(part_times_100, verification)  // 5000 = 25 * 200
   
@@ -129,8 +138,8 @@ test "percentage_calculations" {
   let part2 = 150
   let expected_percent2 = 75
   
-  let part2_times_100 = @azimuth.multiply(part2, 100)
-  let verification2 = @azimuth.multiply(expected_percent2, whole)
+  let part2_times_100 = @clean_test.@clean_test.multiply(part2, 100)
+  let verification2 = @clean_test.@clean_test.multiply(expected_percent2, whole)
   
   assert_eq(part2_times_100, verification2)  // 15000 = 75 * 200
 }
@@ -156,15 +165,15 @@ test "compound_interest_calculation" {
   let year1_factor_denominator = rate_denominator
   
   // 第二年后的金额因子
-  let year2_factor_numerator = @azimuth.multiply(rate_numerator, rate_numerator)
-  let year2_factor_denominator = @azimuth.multiply(rate_denominator, rate_denominator)
+  let year2_factor_numerator = @clean_test.@clean_test.multiply(rate_numerator, rate_numerator)
+  let year2_factor_denominator = @clean_test.@clean_test.multiply(rate_denominator, rate_denominator)
   
   // 第三年后的金额因子
-  let year3_factor_numerator = @azimuth.multiply(year2_factor_numerator, rate_numerator)
-  let year3_factor_denominator = @azimuth.multiply(year2_factor_denominator, rate_denominator)
+  let year3_factor_numerator = @clean_test.@clean_test.multiply(year2_factor_numerator, rate_numerator)
+  let year3_factor_denominator = @clean_test.@clean_test.multiply(year2_factor_denominator, rate_denominator)
   
   // 最终金额 * 分母^3 = 本金 * 分子^3
-  let final_amount_times_denominator_cubed = @azimuth.multiply(principal, year3_factor_numerator)
+  let final_amount_times_denominator_cubed = @clean_test.@clean_test.multiply(principal, year3_factor_numerator)
   
   // 验证计算: 1000 * 1157625 = 1157625000
   assert_eq(1157625000, final_amount_times_denominator_cubed)
@@ -181,11 +190,11 @@ test "string_length_and_indexing" {
   let medium_word = "MoonBit"
   let long_phrase = "ProgrammingLanguage"
   
-  let greet_empty = @azimuth.greet(empty_string)
-  let greet_single = @azimuth.greet(single_char)
-  let greet_short = @azimuth.greet(short_word)
-  let greet_medium = @azimuth.greet(medium_word)
-  let greet_long = @azimuth.greet(long_phrase)
+  let greet_empty = @clean_test.@clean_test.greet(empty_string)
+  let greet_single = @clean_test.@clean_test.greet(single_char)
+  let greet_short = @clean_test.@clean_test.greet(short_word)
+  let greet_medium = @clean_test.@clean_test.greet(medium_word)
+  let greet_long = @clean_test.@clean_test.greet(long_phrase)
   
   // 验证字符串长度关系
   assert_eq(true, greet_empty.length() < greet_single.length())
@@ -213,13 +222,13 @@ test "number_system_conversion" {
   let bit0 = 1  // 2^0位
   
   // 计算各位的值
-  let value3 = @azimuth.multiply(bit3, @azimuth.multiply(@azimuth.multiply(2, 2), 2))  // 1 * 8
-  let value2 = @azimuth.multiply(bit2, @azimuth.multiply(2, 2))  // 0 * 4
-  let value1 = @azimuth.multiply(bit1, 2)  // 1 * 2
-  let value0 = @azimuth.multiply(bit0, 1)  // 1 * 1
+  let value3 = @clean_test.@clean_test.multiply(bit3, @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(2, 2), 2))  // 1 * 8
+  let value2 = @clean_test.@clean_test.multiply(bit2, @clean_test.@clean_test.multiply(2, 2))  // 0 * 4
+  let value1 = @clean_test.@clean_test.multiply(bit1, 2)  // 1 * 2
+  let value0 = @clean_test.@clean_test.multiply(bit0, 1)  // 1 * 1
   
   // 求和
-  let decimal_value = @azimuth.add(@azimuth.add(@azimuth.add(value3, value2), value1), value0)
+  let decimal_value = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(value3, value2), value1), value0)
   
   assert_eq(11, decimal_value)
   
@@ -229,12 +238,12 @@ test "number_system_conversion" {
   let bit1_2 = 0
   let bit0_2 = 1
   
-  let value3_2 = @azimuth.multiply(bit3_2, @azimuth.multiply(@azimuth.multiply(2, 2), 2))  // 1 * 8
-  let value2_2 = @azimuth.multiply(bit2_2, @azimuth.multiply(2, 2))  // 1 * 4
-  let value1_2 = @azimuth.multiply(bit1_2, 2)  // 0 * 2
-  let value0_2 = @azimuth.multiply(bit0_2, 1)  // 1 * 1
+  let value3_2 = @clean_test.@clean_test.multiply(bit3_2, @clean_test.@clean_test.multiply(@clean_test.@clean_test.multiply(2, 2), 2))  // 1 * 8
+  let value2_2 = @clean_test.@clean_test.multiply(bit2_2, @clean_test.@clean_test.multiply(2, 2))  // 1 * 4
+  let value1_2 = @clean_test.@clean_test.multiply(bit1_2, 2)  // 0 * 2
+  let value0_2 = @clean_test.@clean_test.multiply(bit0_2, 1)  // 1 * 1
   
-  let decimal_value_2 = @azimuth.add(@azimuth.add(@azimuth.add(value3_2, value2_2), value1_2), value0_2)
+  let decimal_value_2 = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(value3_2, value2_2), value1_2), value0_2)
   
   assert_eq(13, decimal_value_2)
 }
@@ -253,8 +262,8 @@ test "linear_equation_solving" {
   let x = 5
   
   // 验证：3 * 5 + 7 = 22
-  let ax = @azimuth.multiply(a, x)
-  let ax_plus_b = @azimuth.add(ax, b)
+  let ax = @clean_test.@clean_test.multiply(a, x)
+  let ax_plus_b = @clean_test.@clean_test.add(ax, b)
   
   assert_eq(c, ax_plus_b)
   
@@ -265,8 +274,8 @@ test "linear_equation_solving" {
   let x2 = 3
   
   // 验证：-2 * 3 + 10 = 4
-  let a2x2 = @azimuth.multiply(a2, x2)
-  let a2x2_plus_b2 = @azimuth.add(a2x2, b2)
+  let a2x2 = @clean_test.@clean_test.multiply(a2, x2)
+  let a2x2_plus_b2 = @clean_test.@clean_test.add(a2x2, b2)
   
   assert_eq(c2, a2x2_plus_b2)
 }
@@ -286,10 +295,10 @@ test "array_average_calculation" {
   let count = 5
   
   // 计算总和
-  let sum = @azimuth.add(
-    @azimuth.add(
-      @azimuth.add(num1, num2),
-      @azimuth.add(num3, num4)
+  let sum = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.add(
+      @clean_test.@clean_test.add(num1, num2),
+      @clean_test.@clean_test.add(num3, num4)
     ),
     num5
   )
@@ -298,22 +307,22 @@ test "array_average_calculation" {
   let expected_average = 35
   
   // 验证：平均值 * 数量 = 总和
-  let average_times_count = @azimuth.multiply(expected_average, count)
+  let average_times_count = @clean_test.@clean_test.multiply(expected_average, count)
   
   assert_eq(sum, average_times_count)  // 175 = 35 * 5
   
   // 另一个例子：[10, 20, 30, 40, 50, 60]
-  let nums_sum = @azimuth.add(
-    @azimuth.add(
-      @azimuth.add(10, 20),
-      @azimuth.add(30, 40)
+  let nums_sum = @clean_test.@clean_test.add(
+    @clean_test.@clean_test.add(
+      @clean_test.@clean_test.add(10, 20),
+      @clean_test.@clean_test.add(30, 40)
     ),
-    @azimuth.add(50, 60)
+    @clean_test.@clean_test.add(50, 60)
   )
   
   let nums_count = 6
   let nums_expected_average = 35
-  let nums_average_times_count = @azimuth.multiply(nums_expected_average, nums_count)
+  let nums_average_times_count = @clean_test.@clean_test.multiply(nums_expected_average, nums_count)
   
   assert_eq(nums_sum, nums_average_times_count)  // 210 = 35 * 6
 }

@@ -1,0 +1,6 @@
+simple_test_verify.mbt:5:3-5:12 [E4021] The value identifier assert_eq is unbound.
+simple_test_verify.mbt:5:16-5:28 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+simple_test_verify.mbt:10:16-10:33 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+simple_test_verify.mbt:15:30-15:44 [E4020] Package "azimuth" not found in the loaded packages.

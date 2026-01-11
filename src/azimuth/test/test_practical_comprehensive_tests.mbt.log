@@ -1,0 +1,61 @@
+practical_comprehensive_tests.mbt:10:7-10:23 [E0002] Warning (unused_value): Unused variable 'rate_denominator'
+practical_comprehensive_tests.mbt:12:7-12:12 [E0002] Warning (unused_value): Unused variable 'years'
+practical_comprehensive_tests.mbt:18:25-18:42 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:18:54-18:66 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:22:27-22:44 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:22:45-22:62 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:26:29-26:46 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:26:47-26:64 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:26:65-26:82 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:27:13-27:24 [E4095] Integer literal 11576250000 is out of range.
+practical_comprehensive_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:40:28-40:45 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:44:44-44:61 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:45:5-45:17 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:45:33-45:50 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:63:18-63:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:64:18-64:35 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:74:29-74:46 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:80:35-80:52 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:80:53-80:70 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:94:26-94:43 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:97:23-97:40 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:110:22-110:39 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:111:3-111:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:114:20-114:37 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:119:15-119:32 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:120:3-120:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:133:23-133:40 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:134:3-134:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:137:20-137:37 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:138:5-138:22 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:141:3-141:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:144:7-144:20 [E0002] Warning (unused_value): Unused variable 'bytes_times_8'
+practical_comprehensive_tests.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:145:23-145:40 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:158:3-158:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:161:30-161:47 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:162:3-162:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:165:28-165:45 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:165:46-165:58 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:183:27-183:44 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:184:3-184:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:191:7-191:18 [E0002] Warning (unused_value): Unused variable 'struct_size'
+practical_comprehensive_tests.mbt:196:22-196:39 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:200:26-200:43 [E4020] Package "azimuth" not found in the loaded packages.
+practical_comprehensive_tests.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:204:3-204:12 [E4021] The value identifier assert_eq is unbound.
+practical_comprehensive_tests.mbt:204:16-204:33 [E4020] Package "azimuth" not found in the loaded packages.

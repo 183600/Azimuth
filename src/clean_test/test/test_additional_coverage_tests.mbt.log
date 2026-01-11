@@ -1,0 +1,121 @@
+additional_coverage_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:6:25-6:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:7:25-7:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:8:25-8:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:9:25-9:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:10:25-10:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:16:16-16:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:17:17-17:32 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:18:18-18:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:19:16-19:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:20:17-20:32 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:26:25-26:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:27:25-27:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:28:25-28:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:29:25-29:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:35:25-35:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:36:26-36:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:37:26-37:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:38:22-38:42 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:39:23-39:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:45:34-45:51 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:46:29-46:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:47:27-47:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:48:29-48:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:49:26-49:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:55:16-55:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:56:25-56:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:57:26-57:41 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:58:18-58:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:59:19-59:34 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:60:25-60:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:61:26-61:41 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:67:16-67:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:68:16-68:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:69:16-69:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:70:17-70:37 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:71:20-71:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:72:22-72:42 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:73:25-73:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:74:25-74:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:84:13-84:28 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:84:29-84:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:84:56-84:71 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:84:75-84:90 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:90:13-90:28 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:90:29-90:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:90:56-90:71 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:90:75-90:90 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:93:13-93:28 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:93:29-93:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:93:56-93:71 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:93:75-93:90 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:102:3-102:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:102:13-102:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:102:37-102:52 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:102:61-102:76 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:102:77-102:97 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:102:105-102:125 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:108:3-108:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:108:13-108:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:108:37-108:52 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:108:61-108:76 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:108:77-108:97 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:108:105-108:125 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:118:18-118:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:119:18-119:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:120:3-120:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:120:18-120:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:123:18-123:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:124:18-124:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:125:18-125:33 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:128:26-128:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_coverage_tests.mbt:129:3-129:12 [E4021] The value identifier assert_eq is unbound.
+additional_coverage_tests.mbt:129:26-129:46 [E4020] Package "clean_test" not found in the loaded packages.

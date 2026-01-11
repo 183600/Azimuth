@@ -1,0 +1,37 @@
+check: unknown option '--all'.
+moonc check [options] <input files>
+  -i dependent .mi files
+  -o output file (suffix with .mi by convention)
+  -target {wasm-gc|wasm|js|native|llvm}set compilation target. available targets: wasm, wasm-gc, js, native
+  -pkg package name
+  -all-pkgs package description file
+  -pkg-sources Tell compiler where the package sources are. format: <package name>:<package source directory>
+  -workspace-path path to the project root directory in file system
+  -std-path path containing standard library .mi files
+  -is-main main package
+  -single-file single file mode
+  -blackbox-test check blackbox tests
+  -whitebox-test check whitebox tests
+  -error-format {human|json} set format of diagnostics. available formats: human, json
+  -patch-file patch file
+  -no-mi don't generate .mi file
+  -check-mi check whether the package implements .mi file
+  -cfg set a configuration flag. The value format: <flag>=<value>
+  -include-doctests include doctests in the compilation, for black box tests
+  -doctest-only additionally include only doctests of the provided files for compiling, requires `-include-doctests`
+  -warn-help  show description of warning numbers
+  -w  <list>  Enable or disable warnings according to <list>:
+	+<spec>   enable warnings in <spec>
+	-<spec>   disable warnings in <spec>
+	@<spec>   enable warnings in <spec> and treat them as errors
+	<spec> can be:
+	<num>             a single warning number
+	<num1>..<num2>    a range of consecutive warning numbers
+	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
+  -alert  <list>  Enable or disable warnings according to <list>:
+	+<id>   enable alert
+	-<id>   disable alert
+	@<id>   enable alert and treat it as error
+
+  -help  Display this list of options
+  --help  Display this list of options

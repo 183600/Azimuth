@@ -1,0 +1,109 @@
+focused_unit_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:7:16-7:28 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:10:25-10:37 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:13:26-13:38 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:20:16-20:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:21:16-21:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:22:16-22:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:23:16-23:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:26:16-26:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:29:16-29:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:36:16-36:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:36:40-36:41 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:37:16-37:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:37:41-37:42 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:38:16-38:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:38:41-38:42 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:39:16-39:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:39:42-39:43 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:42:16-42:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:42:40-42:41 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:43:16-43:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:43:42-43:43 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:46:16-46:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:46:40-46:41 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:47:16-47:33 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:47:41-47:42 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:54:24-54:38 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:55:30-55:38 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+focused_unit_tests.mbt:58:30-58:44 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:59:36-59:44 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+focused_unit_tests.mbt:63:23-63:37 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:64:17-64:26 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+focused_unit_tests.mbt:64:26-64:34 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+focused_unit_tests.mbt:64:64-64:72 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+focused_unit_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:75:19-75:31 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:75:38-75:39 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:75:40-75:52 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:76:19-76:31 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:76:38-76:39 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:76:40-76:52 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:83:3-83:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:83:19-83:31 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:83:38-83:39 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:83:40-83:52 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:94:19-94:36 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:94:43-94:44 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:94:45-94:62 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:95:19-95:36 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:95:43-95:44 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+focused_unit_tests.mbt:95:45-95:62 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:107:19-107:36 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:108:19-108:36 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:109:25-109:37 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:109:49-109:66 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:111:13-111:25 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:112:14-112:26 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:112:30-112:47 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:113:17-113:34 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:126:12-126:24 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:130:12-130:24 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:131:3-131:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:134:12-134:24 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:135:3-135:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:138:12-138:24 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:139:3-139:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:146:18-146:32 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:155:3-155:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:155:27-155:35 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+focused_unit_tests.mbt:155:57-155:58 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+focused_unit_tests.mbt:168:17-168:29 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:168:30-168:42 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:168:43-168:55 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:171:17-171:29 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:171:33-171:45 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:171:49-171:61 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:174:17-174:29 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:174:30-174:42 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:174:50-174:62 [E4020] Package "azimuth" not found in the loaded packages.
+focused_unit_tests.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.

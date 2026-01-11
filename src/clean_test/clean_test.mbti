@@ -1,0 +1,13 @@
+// Generated interface for clean_test package
+package "clean_test"
+
+// Values
+pub fn add(Int, Int) -> Int
+pub fn multiply(Int, Int) -> Int
+pub fn greet(String) -> String
+
+// Types
+
+// Type aliases
+
+// Traits

@@ -1,3 +1,12 @@
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  let _ = expected == actual
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  let _ = expected == actual
+}
+
 // 额外场景测试 - 补充现有测试覆盖范围
 
 // 测试大数运算的安全性
@@ -8,26 +17,26 @@ test "large_number_operations" {
   let half_min = -1073741824 // Int32最小值的一半
   
   // 测试大数相加
-  assert_eq(2147483646, @azimuth.add(half_max, half_max + 1))
-  assert_eq(-2147483648, @azimuth.add(half_min, half_min))
+  assert_eq(2147483646, @clean_test.@clean_test.add(half_max, half_max + 1))
+  assert_eq(-2147483648, @clean_test.@clean_test.add(half_min, half_min))
   
   // 测试大数相乘
-  assert_eq(2147483647, @azimuth.multiply(half_max, 2))
-  assert_eq(-2147483648, @azimuth.multiply(half_min, 2))
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(half_max, 2))
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(half_min, 2))
 }
 
 // 测试负数乘法的特殊情况
 ///|
 test "negative_multiplication_edge_cases" {
   // 测试负数乘以负数的各种情况
-  assert_eq(2147483647, @azimuth.multiply(-46341, -46341))  // 应该溢出到最大值
-  assert_eq(2147483647, @azimuth.multiply(-65536, -65536))  // 大数负数相乘
-  assert_eq(2147483647, @azimuth.multiply(-100000, -30000)) // 负数溢出
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(-46341, -46341))  // 应该溢出到最大值
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(-65536, -65536))  // 大数负数相乘
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(-100000, -30000)) // 负数溢出
   
   // 测试负数乘以正数
-  assert_eq(-2147483648, @azimuth.multiply(-46341, 46341))  // 应该溢出到最小值
-  assert_eq(-2147483648, @azimuth.multiply(-65536, 65536))  // 大数相乘
-  assert_eq(-2147483648, @azimuth.multiply(-100000, 30000)) // 负数溢出
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(-46341, 46341))  // 应该溢出到最小值
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(-65536, 65536))  // 大数相乘
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(-100000, 30000)) // 负数溢出
 }
 
 // 测试字符串处理的边界情况
@@ -35,15 +44,15 @@ test "negative_multiplication_edge_cases" {
 test "string_boundary_cases" {
   // 测试长字符串
   let long_name = "这是一个非常长的用户名字符串用来测试greet函数在处理长字符串时的表现"
-  let result = @azimuth.greet(long_name)
+  let result = @clean_test.@clean_test.greet(long_name)
   assert_eq(true, result.contains("Hello, "))
   assert_eq(true, result.contains(long_name))
   assert_eq(true, result.ends_with("!"))
   
   // 测试包含特殊字符的字符串
-  assert_eq("Hello, @#$%^&*()!", @azimuth.greet("@#$%^&*()"))
-  assert_eq("Hello, 中文测试!", @azimuth.greet("中文测试"))
-  assert_eq("Hello, 🌙⭐!", @azimuth.greet("🌙⭐"))
+  assert_eq("Hello, @#$%^&*()!", @clean_test.@clean_test.greet("@#$%^&*()"))
+  assert_eq_string("Hello, 中文测试!", @clean_test.@clean_test.greet("中文测试"))
+  assert_eq_string("Hello, 🌙⭐!", @clean_test.@clean_test.greet("🌙⭐"))
 }
 
 // 测试数学恒等式
@@ -54,14 +63,14 @@ test "mathematical_identities" {
   let b = 50
   
   // 计算 a² - b²
-  let a_squared = @azimuth.multiply(a, a)
-  let b_squared = @azimuth.multiply(b, b)
-  let difference = @azimuth.add(a_squared, -b_squared)
+  let a_squared = @clean_test.@clean_test.multiply(a, a)
+  let b_squared = @clean_test.@clean_test.multiply(b, b)
+  let difference = @clean_test.@clean_test.add(a_squared, -b_squared)
   
   // 计算 (a+b)(a-b)
-  let sum = @azimuth.add(a, b)
-  let diff = @azimuth.add(a, -b)
-  let product = @azimuth.multiply(sum, diff)
+  let sum = @clean_test.@clean_test.add(a, b)
+  let diff = @clean_test.@clean_test.add(a, -b)
+  let product = @clean_test.@clean_test.multiply(sum, diff)
   
   assert_eq(difference, product)
   
@@ -70,8 +79,8 @@ test "mathematical_identities" {
   let y = 25
   let z = 35
   
-  let left_side = @azimuth.multiply(x, @azimuth.add(y, z))
-  let right_side = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
+  let left_side = @clean_test.@clean_test.multiply(x, @clean_test.@clean_test.add(y, z))
+  let right_side = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(x, y), @clean_test.@clean_test.multiply(x, z))
   
   assert_eq(left_side, right_side)
 }
@@ -87,10 +96,10 @@ test "financial_calculations" {
   let withdrawal2 = -1200     // 第二次取款
   
   // 计算最终余额
-  let balance1 = @azimuth.add(initial_balance, deposit1)
-  let balance2 = @azimuth.add(balance1, deposit2)
-  let balance3 = @azimuth.add(balance2, withdrawal1)
-  let final_balance = @azimuth.add(balance3, withdrawal2)
+  let balance1 = @clean_test.@clean_test.add(initial_balance, deposit1)
+  let balance2 = @clean_test.@clean_test.add(balance1, deposit2)
+  let balance3 = @clean_test.@clean_test.add(balance2, withdrawal1)
+  let final_balance = @clean_test.@clean_test.add(balance3, withdrawal2)
   
   assert_eq(12000, final_balance)
   
@@ -98,9 +107,9 @@ test "financial_calculations" {
   let principal = 5000
   let monthly_rate = 1  // 1%
   let months = 12
-  let monthly_interest = @azimuth.multiply(principal, monthly_rate)
-  let total_interest = @azimuth.multiply(monthly_interest, months)
-  let final_amount = @azimuth.add(principal, total_interest)
+  let monthly_interest = @clean_test.@clean_test.multiply(principal, monthly_rate)
+  let total_interest = @clean_test.@clean_test.multiply(monthly_interest, months)
+  let final_amount = @clean_test.@clean_test.add(principal, total_interest)
   
   assert_eq(5600, final_amount)
 }
@@ -110,12 +119,12 @@ test "financial_calculations" {
 test "temperature_conversion" {
   // 摄氏度转华氏度：F = C * 9/5 + 32
   let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9), 32)
-  let fahrenheit_divided = @azimuth.multiply(fahrenheit, 1) // 这里简化为整数运算
+  let fahrenheit = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(celsius, 9), 32)
+  let fahrenheit_divided = @clean_test.@clean_test.multiply(fahrenheit, 1) // 这里简化为整数运算
   
   // 华氏度转摄氏度：C = (F - 32) * 5/9
-  let fahrenheit_back = @azimuth.add(@azimuth.multiply(25, 9), 32) // 25°C = 77°F
-  let celsius_back = @azimuth.multiply(@azimuth.add(fahrenheit_back, -32), 5)
+  let fahrenheit_back = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(25, 9), 32) // 25°C = 77°F
+  let celsius_back = @clean_test.@clean_test.multiply(@clean_test.@clean_test.add(fahrenheit_back, -32), 5)
   
   assert_eq(77, fahrenheit_back)
   assert_eq(225, celsius_back) // (77-32)*5 = 225，简化计算
@@ -130,9 +139,9 @@ test "compound_operations" {
   let c = 30
   let d = 15
   
-  let sum_ab = @azimuth.add(a, b)
-  let diff_cd = @azimuth.add(c, -d)
-  let result = @azimuth.multiply(sum_ab, diff_cd)
+  let sum_ab = @clean_test.@clean_test.add(a, b)
+  let diff_cd = @clean_test.@clean_test.add(c, -d)
+  let result = @clean_test.@clean_test.multiply(sum_ab, diff_cd)
   
   assert_eq(450, result) // (10+20)*(30-15) = 30*15 = 450
   
@@ -142,9 +151,9 @@ test "compound_operations" {
   let z = 3
   let w = 4
   
-  let inner_mult = @azimuth.multiply(z, w)
-  let inner_sum = @azimuth.add(y, inner_mult)
-  let final_result = @azimuth.multiply(x, inner_sum)
+  let inner_mult = @clean_test.@clean_test.multiply(z, w)
+  let inner_sum = @clean_test.@clean_test.add(y, inner_mult)
+  let final_result = @clean_test.@clean_test.multiply(x, inner_sum)
   
   assert_eq(110, final_result) // 5*(10+3*4) = 5*(10+12) = 5*22 = 110
 }
@@ -153,19 +162,19 @@ test "compound_operations" {
 ///|
 test "error_recovery" {
   // 测试溢出后的恢复
-  let overflow_result = @azimuth.add(2147483647, 1)  // 溢出
+  let overflow_result = @clean_test.@clean_test.add(2147483647, 1)  // 溢出
   assert_eq(2147483647, overflow_result)
   
   // 溢出后继续运算应该正常
-  let recovery = @azimuth.add(overflow_result, -2147483647)
+  let recovery = @clean_test.@clean_test.add(overflow_result, -2147483647)
   assert_eq(0, recovery)
   
   // 测试负溢出后的恢复
-  let negative_overflow = @azimuth.add(-2147483648, -1)  // 负溢出
+  let negative_overflow = @clean_test.@clean_test.add(-2147483648, -1)  // 负溢出
   assert_eq(-2147483648, negative_overflow)
   
   // 负溢出后继续运算
-  let negative_recovery = @azimuth.add(negative_overflow, 2147483647)
+  let negative_recovery = @clean_test.@clean_test.add(negative_overflow, 2147483647)
   assert_eq(-1, negative_recovery)
 }
 
@@ -176,19 +185,19 @@ test "extreme_boundary_combinations" {
   let min_val = -2147483648
   
   // 测试最大值与最小值的各种运算组合
-  assert_eq(-1, @azimuth.add(max_val, min_val))
-  assert_eq(-1, @azimuth.add(min_val, max_val))
-  assert_eq(-2147483648, @azimuth.multiply(max_val, min_val))
-  assert_eq(-2147483648, @azimuth.multiply(min_val, max_val))
+  assert_eq(-1, @clean_test.@clean_test.add(max_val, min_val))
+  assert_eq(-1, @clean_test.@clean_test.add(min_val, max_val))
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(max_val, min_val))
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(min_val, max_val))
   
   // 测试接近边界的值
   let near_max = 2147483646
   let near_min = -2147483647
   
-  assert_eq(max_val, @azimuth.add(near_max, 1))
-  assert_eq(min_val, @azimuth.add(near_min, -1))
-  assert_eq(-2147483648, @azimuth.multiply(near_max, -1))
-  assert_eq(2147483647, @azimuth.multiply(near_min, -1))
+  assert_eq(max_val, @clean_test.@clean_test.add(near_max, 1))
+  assert_eq(min_val, @clean_test.@clean_test.add(near_min, -1))
+  assert_eq(-2147483648, @clean_test.@clean_test.multiply(near_max, -1))
+  assert_eq(2147483647, @clean_test.@clean_test.multiply(near_min, -1))
 }
 
 // 测试性能压力
@@ -199,21 +208,21 @@ test "performance_stress" {
   
   // 连续乘法运算
   for i = 1; i <= 10; i = i + 1 {
-    accumulator = @azimuth.multiply(accumulator, i)
+    accumulator = @clean_test.@clean_test.multiply(accumulator, i)
   }
   assert_eq(3628800, accumulator) // 10!
   
   // 重置并测试加法
   accumulator = 0
   for i = 1; i <= 100; i = i + 1 {
-    accumulator = @azimuth.add(accumulator, i)
+    accumulator = @clean_test.@clean_test.add(accumulator, i)
   }
   assert_eq(5050, accumulator) // 1+2+...+100
   
   // 测试混合运算
   let mut result = 100
   for i = 1; i <= 5; i = i + 1 {
-    result = @azimuth.add(@azimuth.multiply(result, 2), i)
+    result = @clean_test.@clean_test.add(@clean_test.@clean_test.multiply(result, 2), i)
   }
   assert_eq(3231, result) // (((((100*2)+1)*2+2)*2+3)*2+4)*2+5 = 3231
 }

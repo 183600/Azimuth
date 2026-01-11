@@ -1,0 +1,142 @@
+new_focused_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:11:25-11:37 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:12:26-12:38 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:13:16-13:28 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:16:13-16:32 [E4095] Integer literal 1000000000000000000 is out of range.
+new_focused_tests.mbt:16:34-16:51 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:17:13-17:32 [E4095] Integer literal 1000000000000000000 is out of range.
+new_focused_tests.mbt:17:34-17:51 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:18:13-18:33 [E4095] Integer literal -1000000000000000000 is out of range.
+new_focused_tests.mbt:18:35-18:52 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:26:16-26:30 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:27:25-27:33 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+new_focused_tests.mbt:27:131-27:132 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+new_focused_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:30:54-30:68 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:33:27-33:41 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:34:38-34:52 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:35:40-35:54 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:43:7-43:16 [E0002] Warning (unused_value): Unused variable 'principal'
+new_focused_tests.mbt:44:7-44:19 [E0002] Warning (unused_value): Unused variable 'rate_percent'
+new_focused_tests.mbt:45:7-45:11 [E0002] Warning (unused_value): Unused variable 'time'
+new_focused_tests.mbt:49:7-49:21 [E0002] Warning (unused_value): Unused variable 'rate_times_100'
+new_focused_tests.mbt:51:30-51:47 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:51:64-51:81 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:62:17-62:29 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:62:30-62:42 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:62:50-62:62 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:65:17-65:34 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:65:35-65:52 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:65:60-65:77 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:69:17-69:29 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:69:30-69:47 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:69:55-69:72 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:72:17-72:34 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:72:38-72:50 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:83:26-83:43 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:84:32-84:49 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:94:35-94:52 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:94:60-94:77 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:104:7-104:16 [E0002] Warning (unused_value): Unused variable 'principal'
+new_focused_tests.mbt:105:7-105:26 [E0002] Warning (unused_value): Unused variable 'annual_rate_percent'
+new_focused_tests.mbt:110:16-110:33 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:117:3-117:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:134:7-134:12 [E0002] Warning (unused_value): Unused variable 'count'
+new_focused_tests.mbt:137:15-137:32 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:137:33-137:45 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:137:53-137:70 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:137:83-137:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:137:103-137:120 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:138:15-138:32 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:138:33-138:45 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:138:53-138:70 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:138:83-138:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:138:103-138:120 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:139:15-139:32 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:139:33-139:45 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:139:53-139:70 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:139:83-139:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:139:103-139:120 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:140:15-140:32 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:140:33-140:45 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:140:53-140:70 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:140:83-140:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:140:103-140:120 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:141:15-141:32 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:141:33-141:45 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:141:53-141:70 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:141:83-141:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:141:103-141:120 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:143:24-143:36 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:143:37-143:49 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:143:50-143:62 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:143:63-143:75 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:150:3-150:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:154:3-154:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:167:19-167:31 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:167:32-167:44 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:171:19-171:36 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:171:41-171:53 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:171:57-171:74 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:172:19-172:36 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:172:41-172:53 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:172:57-172:74 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:173:19-173:36 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:173:41-173:53 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:173:57-173:74 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:175:31-175:48 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:175:60-175:77 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:175:78-175:95 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:178:3-178:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:179:3-179:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:181:3-181:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:196:12-196:29 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:197:13-197:30 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:197:31-197:48 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:200:3-200:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:209:17-209:31 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:210:3-210:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:210:26-210:34 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+new_focused_tests.mbt:210:65-210:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+new_focused_tests.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:219:27-219:41 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:220:29-220:43 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:221:3-221:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:221:28-221:42 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:222:29-222:43 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:223:29-223:43 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:227:17-227:31 [E4020] Package "azimuth" not found in the loaded packages.
+new_focused_tests.mbt:228:3-228:12 [E4021] The value identifier assert_eq is unbound.
+new_focused_tests.mbt:228:26-228:34 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+new_focused_tests.mbt:228:62-228:63 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.

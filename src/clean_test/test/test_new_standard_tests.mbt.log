@@ -1,0 +1,103 @@
+new_standard_tests.mbt:12:19-12:27 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:12:31-12:34 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:13:20-13:23 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:13:24-13:32 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:13:40-13:48 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:22:23-22:31 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:22:35-22:38 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:23:24-23:27 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:23:28-23:36 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:23:44-23:52 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:35:19-35:27 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:36:19-36:27 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:37:20-37:23 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:37:35-37:43 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:40:13-40:16 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:41:14-41:17 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:41:21-41:29 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:42:17-42:25 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:58:7-58:12 [E0002] Warning (unused_value): Unused variable 'years'
+new_standard_tests.mbt:64:15-64:23 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:64:35-64:38 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:67:15-67:23 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:67:31-67:34 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:70:15-70:23 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:70:31-70:34 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:82:3-82:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:82:25-82:30 [E4021] The value identifier greet is unbound.
+new_standard_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:85:26-85:31 [E4021] The value identifier greet is unbound.
+new_standard_tests.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:88:33-88:38 [E4021] The value identifier greet is unbound.
+new_standard_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:91:30-91:35 [E4021] The value identifier greet is unbound.
+new_standard_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:94:29-94:34 [E4021] The value identifier greet is unbound.
+new_standard_tests.mbt:104:7-104:20 [E0002] Warning (unused_value): Unused variable 'initial_guess'
+new_standard_tests.mbt:111:26-111:34 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:116:30-116:33 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:117:35-117:43 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:119:45-119:46 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+new_standard_tests.mbt:122:31-122:34 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:122:48-122:56 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:123:36-123:44 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:125:46-125:47 [E4037] Cannot use operator `<`: package moonbitlang/core/builtin is not imported.
+new_standard_tests.mbt:140:7-140:29 [E0002] Warning (unused_value): Unused variable 'tier1_rate_denominator'
+new_standard_tests.mbt:142:38-142:46 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:146:7-146:29 [E0002] Warning (unused_value): Unused variable 'tier2_rate_denominator'
+new_standard_tests.mbt:148:38-148:46 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:152:7-152:29 [E0002] Warning (unused_value): Unused variable 'tier3_rate_denominator'
+new_standard_tests.mbt:153:21-153:24 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:153:32-153:40 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:153:45-153:48 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:154:38-154:46 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:157:29-157:32 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:157:33-157:36 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:159:3-159:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:173:18-173:26 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:174:16-174:24 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:175:16-175:19 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:175:30-175:38 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:178:3-178:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:186:18-186:26 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:187:17-187:25 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:188:17-188:20 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:188:31-188:39 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:191:3-191:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:208:30-208:38 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:210:3-210:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:214:31-214:34 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:215:5-215:13 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:216:5-216:13 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:230:3-230:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:230:25-230:28 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:233:3-233:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:233:26-233:29 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:236:3-236:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:236:22-236:30 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:239:3-239:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:239:22-239:30 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:242:3-242:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:242:26-242:34 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:245:3-245:12 [E4021] The value identifier assert_eq is unbound.
+new_standard_tests.mbt:245:22-245:25 [E4021] The value identifier add is unbound.
+new_standard_tests.mbt:254:7-254:8 [E0002] Warning (unused_value): Unused variable 'n'
+new_standard_tests.mbt:255:7-255:8 [E0002] Warning (unused_value): Unused variable 'k'
+new_standard_tests.mbt:258:21-258:29 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:258:33-258:41 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:258:45-258:53 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:258:57-258:65 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:259:21-259:29 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:260:21-260:29 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:260:33-260:41 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:263:21-263:29 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:267:39-267:47 [E4021] The value identifier multiply is unbound.
+new_standard_tests.mbt:269:3-269:12 [E4021] The value identifier assert_eq is unbound.

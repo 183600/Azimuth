@@ -1,0 +1,66 @@
+-rwxr-xr-x 1 runner runner     204 Jan 11 19:55 moon
+-rw-r--r-- 1 runner runner       0 Jan 11 17:08 moon-cli-new.tar.gz
+-rw-r--r-- 1 runner runner       0 Jan 11 17:08 moon-cli.tar.gz
+-rw-r--r-- 1 runner runner     268 Jan 11 17:32 moon.mod.json
+-rw-r--r-- 1 runner runner    1774 Jan 11 18:59 moon_check_output.log
+-rwxr-xr-x 1 runner runner    1663 Jan 11 17:08 moon_debug
+-rw-r--r-- 1 runner runner    4979 Jan 11 17:08 moon_debug.log
+-rwxr-xr-x 1 runner runner    2025 Jan 11 17:08 moon_debug2
+-rw-r--r-- 1 runner runner     810 Jan 11 17:08 moon_debug2_test_output.log
+-rwxr-xr-x 1 runner runner    2395 Jan 11 17:27 moon_debug_adaptive
+-rwxr-xr-x 1 runner runner    2014 Jan 11 17:27 moon_debug_azimuth
+-rwxr-xr-x 1 runner runner    2014 Jan 11 17:44 moon_debug_clean
+-rw-r--r-- 1 runner runner     749 Jan 11 17:08 moon_debug_test_output.log
+-rw-r--r-- 1 runner runner      35 Jan 11 17:08 moon_default.log
+-rw-r--r-- 1 runner runner       0 Jan 11 19:57 moon_files_list.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help.log
+-rw-r--r-- 1 runner runner     102 Jan 11 18:59 moon_help2.log
+-rw-r--r-- 1 runner runner      35 Jan 11 17:08 moon_help_analysis.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_check.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_complete.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_current.log
+-rw-r--r-- 1 runner runner      39 Jan 11 17:08 moon_help_detailed.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_full.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_latest.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_output.log
+-rw-r--r-- 1 runner runner      41 Jan 11 17:08 moon_help_verification.log
+-rwxr-xr-x 1 runner runner      95 Jan 11 17:08 moon_new
+-rwxr-xr-x 1 runner runner    3255 Jan 11 17:55 moon_test_final
+-rwxr-xr-x 1 runner runner    3056 Jan 11 18:10 moon_test_fixed
+-rwxr-xr-x 1 runner runner    4100 Jan 11 19:54 moon_test_new
+-rw-r--r-- 1 runner runner      40 Jan 11 17:08 moon_test_output.log
+-rwxr-xr-x 1 runner runner    1766 Jan 11 18:39 moon_test_precise
+-rwxr-xr-x 1 runner runner    3669 Jan 11 19:20 moon_test_real
+-rw-r--r-- 1 runner runner      35 Jan 11 17:08 moon_usage_detailed.log
+-rw-r--r-- 1 runner runner      35 Jan 11 17:08 moon_usage_verification.log
+-rw-r--r-- 1 runner runner      41 Jan 10 08:35 moon_version
+-rw-r--r-- 1 runner runner 2474384 Jan 11 17:08 moonbit-wasm.tar.gz
+-rw-r--r-- 1 runner runner       0 Jan 11 17:08 moonbit.tar.gz
+-rw-r--r-- 1 runner runner   10250 Jan 10 08:35 moonc.js
+-rw-r--r-- 1 runner runner      49 Jan 11 18:59 moonc_check_output.log
+-rw-r--r-- 1 runner runner     102 Jan 11 18:04 moonc_help.log
+-rw-r--r-- 1 runner runner   10252 Jan 10 08:35 moonfmt.js
+-rw-r--r-- 1 runner runner   10253 Jan 10 08:35 mooninfo.js
+
+moonbit-docs:
+total 16
+drwxr-xr-x  2 runner runner  4096 Jan 11 17:08 .
+drwx------ 14 runner runner 12288 Jan 11 19:57 ..
+
+moonc.assets:
+total 4192
+drwxr-xr-x  2 runner runner    4096 Jan 10 08:35 .
+drwx------ 14 runner runner   12288 Jan 11 19:57 ..
+-rw-r--r--  1 runner runner 4274275 Jan 10 08:35 code-c4f984681a81c432a52a.wasm
+
+moonfmt.assets:
+total 1576
+drwxr-xr-x  2 runner runner    4096 Jan 10 08:35 .
+drwx------ 14 runner runner   12288 Jan 11 19:57 ..
+-rw-r--r--  1 runner runner 1596182 Jan 10 08:35 code-d854086a9467b17b4017.wasm
+
+mooninfo.assets:
+total 1660
+drwxr-xr-x  2 runner runner    4096 Jan 10 08:35 .
+drwx------ 14 runner runner   12288 Jan 11 19:57 ..
+-rw-r--r--  1 runner runner 1681158 Jan 10 08:35 code-66757e31c8610b23f595.wasm

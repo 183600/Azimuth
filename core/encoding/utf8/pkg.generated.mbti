@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitlang/core/encoding/utf8"
+
+// Values
+pub fn decode(BytesView, ignore_bom? : Bool) -> String raise Malformed
+
+pub fn decode_lossy(BytesView, ignore_bom? : Bool) -> String
+
+pub fn encode(StringView, bom? : Bool) -> Bytes
+
+// Errors
+pub suberror Malformed BytesView
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

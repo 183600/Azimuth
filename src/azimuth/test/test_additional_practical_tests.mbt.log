@@ -1,0 +1,83 @@
+additional_practical_tests.mbt:17:19-17:27 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:18:19-18:27 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:19:19-19:27 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:22:31-22:34 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:22:35-22:38 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:25:43-25:45 [E4037] Cannot use operator `>=`: package moonbitlang/core/builtin is not imported.
+additional_practical_tests.mbt:26:21-26:24 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:26:48-26:56 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:46:7-46:13 [E0002] Warning (unused_value): Unused variable 'months'
+additional_practical_tests.mbt:46:16-46:33 [E4020] Package "azimuth" not found in the loaded packages.
+additional_practical_tests.mbt:50:24-50:32 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:50:33-50:41 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:53:23-53:26 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:53:38-53:46 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:67:7-67:33 [E0002] Warning (unused_value): Unused variable 'height_m_squared_numerator'
+additional_practical_tests.mbt:67:36-67:53 [E4020] Package "azimuth" not found in the loaded packages.
+additional_practical_tests.mbt:72:23-72:31 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:91:30-91:38 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:94:30-94:38 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:111:7-111:12 [E0002] Warning (unused_value): Unused variable 'years'
+additional_practical_tests.mbt:115:31-115:34 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:115:35-115:43 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:115:74-115:82 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:118:31-118:34 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:118:35-118:43 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:118:86-118:94 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:121:41-121:42 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
+additional_practical_tests.mbt:133:20-133:28 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:136:19-136:27 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:136:31-136:34 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:136:35-136:43 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:136:61-136:69 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:143:22-143:30 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:144:21-144:29 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:145:22-145:25 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:163:26-163:34 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:164:27-164:35 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:165:24-165:27 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:184:7-184:18 [E0002] Warning (unused_value): Unused variable 'total_hours'
+additional_practical_tests.mbt:184:21-184:24 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:184:25-184:28 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:187:18-187:26 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:187:27-187:30 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:188:19-188:27 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:189:20-189:23 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:192:3-192:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:205:26-205:31 [E4021] The value identifier greet is unbound.
+additional_practical_tests.mbt:206:3-206:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:206:35-206:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_practical_tests.mbt:206:65-206:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_practical_tests.mbt:209:26-209:31 [E4021] The value identifier greet is unbound.
+additional_practical_tests.mbt:210:3-210:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:210:35-210:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_practical_tests.mbt:210:68-210:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_practical_tests.mbt:213:27-213:32 [E4021] The value identifier greet is unbound.
+additional_practical_tests.mbt:214:3-214:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:214:36-214:44 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_practical_tests.mbt:214:66-214:67 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_practical_tests.mbt:217:25-217:30 [E4021] The value identifier greet is unbound.
+additional_practical_tests.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:218:34-218:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+additional_practical_tests.mbt:218:65-218:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+additional_practical_tests.mbt:221:3-221:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:221:36-221:38 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+additional_practical_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:222:36-222:38 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+additional_practical_tests.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
+additional_practical_tests.mbt:223:37-223:39 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+additional_practical_tests.mbt:234:7-234:16 [E0002] Warning (unused_value): Unused variable 'num_terms'
+additional_practical_tests.mbt:238:15-238:23 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:239:15-239:23 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:240:15-240:23 [E4021] The value identifier multiply is unbound.
+additional_practical_tests.mbt:243:13-243:16 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:243:17-243:20 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:243:21-243:24 [E4021] The value identifier add is unbound.
+additional_practical_tests.mbt:246:3-246:12 [E4021] The value identifier assert_eq is unbound.

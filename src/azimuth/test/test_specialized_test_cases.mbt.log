@@ -1,0 +1,135 @@
+:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
+specialized_test_cases.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:9:17-9:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:14:13-14:25 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:15:17-15:34 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:16:21-16:33 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:16:34-16:51 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:16:60-16:77 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:25:7-25:12 [E0002] Warning (unused_value): Unused variable 'years'
+specialized_test_cases.mbt:30:12-30:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:30:38-30:50 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:31:12-31:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:31:38-31:50 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:32:12-32:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:32:38-32:50 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:45:7-45:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:46:7-46:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:48:7-48:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:49:7-49:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:51:7-51:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:52:7-52:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:54:7-54:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:55:7-55:19 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:68:20-68:32 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:68:33-68:50 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:74:18-74:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:74:36-74:48 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:85:15-85:32 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:86:15-86:32 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:87:15-87:32 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:88:15-88:32 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:97:21-97:33 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:97:34-97:46 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:97:47-97:59 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:97:60-97:72 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:109:13-109:25 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:110:17-110:34 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:118:17-118:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:119:18-119:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:125:7-125:11 [E0002] Warning (unused_value): Unused variable 'rows'
+specialized_test_cases.mbt:131:15-131:27 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:131:28-131:45 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:137:18-137:30 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:137:31-137:48 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:137:52-137:69 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:137:85-137:97 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:137:98-137:115 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:138:3-138:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:147:13-147:25 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:147:26-147:38 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:147:39-147:51 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:147:52-147:64 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:147:72-147:75 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:147:84-147:87 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:147:97-147:100 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:147:110-147:113 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:147:123-147:126 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:151:7-151:12 [E0002] Warning (unused_value): Unused variable 'count'
+specialized_test_cases.mbt:152:17-152:34 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:157:22-157:34 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:157:35-157:47 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:157:48-157:60 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:157:61-157:73 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:158:5-158:22 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:158:23-158:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:158:43-158:46 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:158:56-158:68 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:158:76-158:79 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:159:5-159:22 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:159:23-159:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:159:43-159:46 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:159:56-159:68 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:159:76-159:79 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:160:5-160:22 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:160:23-160:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:160:43-160:46 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:160:56-160:68 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:160:76-160:79 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:161:5-161:17 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:161:18-161:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:161:36-161:48 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:161:56-161:59 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:161:69-161:81 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:161:89-161:92 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:162:5-162:22 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:162:23-162:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:162:43-162:46 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:162:56-162:68 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:162:76-162:79 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+specialized_test_cases.mbt:162:90-162:90 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
+specialized_test_cases.mbt:164:3-164:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:175:3-175:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:175:28-175:42 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:176:34-176:48 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:177:42-177:56 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:184:3-184:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:184:34-184:48 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:185:3-185:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:185:31-185:45 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:186:3-186:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:186:45-186:59 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:197:17-197:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:197:30-197:47 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:198:17-198:34 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:198:35-198:47 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:199:17-199:29 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:199:30-199:47 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:199:57-199:74 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:202:3-202:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:203:3-203:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:207:18-207:30 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:208:18-208:35 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:209:18-209:30 [E4020] Package "azimuth" not found in the loaded packages.
+specialized_test_cases.mbt:211:3-211:12 [E4021] The value identifier assert_eq is unbound.

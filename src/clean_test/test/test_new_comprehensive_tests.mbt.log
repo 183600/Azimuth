@@ -1,0 +1,114 @@
+new_comprehensive_tests.mbt:9:14-9:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:10:14-10:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:11:14-11:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:12:14-12:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:13:14-13:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:22:26-22:46 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:23:29-23:49 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:36:15-36:35 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:39:15-39:35 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:42:15-42:35 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:45:15-45:35 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:54:19-54:39 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:67:16-67:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:70:16-70:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:73:16-73:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:76:16-76:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:78:3-78:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:79:3-79:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:80:3-80:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:82:3-82:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:85:17-85:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:98:15-98:30 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:98:34-98:54 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:101:15-101:30 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:101:38-101:58 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:104:15-104:30 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:104:34-104:54 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:107:15-107:30 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:107:38-107:58 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:110:15-110:30 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:110:38-110:58 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:119:19-119:39 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:120:19-120:39 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:136:32-136:52 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:137:3-137:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:141:26-141:46 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:142:3-142:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:147:29-147:44 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:147:45-147:65 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:147:82-147:102 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:161:25-161:45 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:161:57-161:72 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:162:3-162:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:165:27-165:47 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:165:65-165:80 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:169:29-169:49 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:169:69-169:84 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:170:3-170:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:184:24-184:39 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:185:5-185:20 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:185:21-185:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:185:55-185:70 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:186:5-186:20 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:189:3-189:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:192:7-192:22 [E0002] Warning (unused_value): Unused variable 'original_length'
+new_comprehensive_tests.mbt:193:37-193:57 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:196:3-196:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:206:7-206:19 [E0002] Warning (unused_value): Unused variable 'file_size_mb'
+new_comprehensive_tests.mbt:211:22-211:42 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:213:3-213:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:217:20-217:40 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:222:44-222:59 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:223:5-223:25 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:224:5-224:25 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:227:3-227:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:240:22-240:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:240:51-240:71 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:241:3-241:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:245:44-245:59 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:246:5-246:25 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:247:5-247:25 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:250:3-250:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:254:30-254:50 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:255:3-255:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:268:19-268:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:269:19-269:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:270:19-270:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:273:14-273:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:274:14-274:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:275:14-275:29 [E4020] Package "clean_test" not found in the loaded packages.
+new_comprehensive_tests.mbt:277:3-277:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:278:3-278:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:279:3-279:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:282:3-282:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:282:29-282:31 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+new_comprehensive_tests.mbt:283:3-283:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:283:29-283:31 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
+new_comprehensive_tests.mbt:284:3-284:12 [E4021] The value identifier assert_eq is unbound.
+new_comprehensive_tests.mbt:284:29-284:31 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.

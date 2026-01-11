@@ -1,0 +1,65 @@
+essential_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:7:16-7:28 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:8:18-8:30 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:9:18-9:30 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:15:17-15:34 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:16:16-16:33 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:17:18-17:35 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:18:17-18:34 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:24:30-24:44 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:25:25-25:39 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:26:28-26:42 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:32:25-32:37 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:33:25-33:37 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:34:26-34:38 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:35:26-35:38 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:41:25-41:42 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:42:25-42:42 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:43:26-43:43 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:44:26-44:43 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:50:26-50:38 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:51:26-51:38 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:52:26-52:43 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:53:26-53:43 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:61:20-61:32 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:61:33-61:50 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:75:21-75:38 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:76:22-76:39 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:77:15-77:27 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:79:3-79:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:85:17-85:29 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:86:18-86:30 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:87:16-87:28 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:93:17-93:34 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:94:18-94:35 [E4020] Package "azimuth" not found in the loaded packages.
+essential_tests.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
+essential_tests.mbt:95:16-95:33 [E4020] Package "azimuth" not found in the loaded packages.
