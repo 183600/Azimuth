@@ -42,6 +42,28 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "specialized_tests.mbt": {
+    0: (__test_7370656369616c697a65645f74657374732e6d6274_0, ["complex_arithmetic_sequence"]),
+    1: (__test_7370656369616c697a65645f74657374732e6d6274_1, ["power_of_two_patterns"]),
+    2: (__test_7370656369616c697a65645f74657374732e6d6274_2, ["string_unicode_handling"]),
+    3: (__test_7370656369616c697a65645f74657374732e6d6274_3, ["distributive_property_verification"]),
+    4: (__test_7370656369616c697a65645f74657374732e6d6274_4, ["overflow_recovery_mechanisms"]),
+    5: (__test_7370656369616c697a65645f74657374732e6d6274_5, ["negative_multiplication_edge_cases"]),
+    6: (__test_7370656369616c697a65645f74657374732e6d6274_6, ["nested_function_composition"]),
+    7: (__test_7370656369616c697a65645f74657374732e6d6274_7, ["precision_boundary_calculations"]),
+  },
+  "new_comprehensive_tests.mbt": {
+    0: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_0, ["additive_associativity"]),
+    1: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_1, ["multiplicative_associativity"]),
+    2: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_2, ["distributive_property"]),
+    3: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_3, ["string_with_special_characters"]),
+    4: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_4, ["extreme_boundary_combinations"]),
+    5: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_5, ["zero_in_complex_expressions"]),
+    6: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_6, ["subtraction_via_addition"]),
+    7: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_7, ["mathematical_series"]),
+    8: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_8, ["commutative_property_verification"]),
+    9: (__test_6e65775f636f6d70726568656e736976655f74657374732e6d6274_9, ["string_edge_cases"]),
+  },
   "lib.mbt": {
   },
   "enhanced_tests.mbt": {
