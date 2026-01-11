@@ -115,8 +115,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "comprehensive_unique_tests.mbt": {
   },
-  "comprehensive_edge_case_tests.mbt": {
-  },
   "comprehensive_application_tests.mbt": {
   },
   "boundary_values_test.mbt": {

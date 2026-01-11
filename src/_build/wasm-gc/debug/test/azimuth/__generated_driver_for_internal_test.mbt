@@ -189,17 +189,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_8, ["data_type_boundary_test"]),
     9: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_9, ["physics_simulation_test"]),
   },
-  "comprehensive_edge_case_tests.mbt": {
-    0: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_0, ["add_overflow_boundary_values"]),
-    1: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_1, ["multiply_overflow_scenarios"]),
-    2: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_2, ["zero_operations_consistency"]),
-    3: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_3, ["negative_one_operations"]),
-    4: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_4, ["greet_function_edge_cases"]),
-    5: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_5, ["cascading_operations"]),
-    6: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_6, ["mixed_sign_operations"]),
-    7: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_7, ["boundary_value_combinations"]),
-    8: (__test_636f6d70726568656e736976655f656467655f636173655f74657374732e6d6274_8, ["practical_calculation_scenarios"]),
-  },
   "comprehensive_application_tests.mbt": {
     0: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_0, ["investment_portfolio_calculation"]),
     1: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_1, ["construction_material_budget"]),
