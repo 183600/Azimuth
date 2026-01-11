@@ -110,6 +110,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_656e68616e6365645f74657374732e6d6274_8, ["mixed_operations_stress"]),
     9: (__test_656e68616e6365645f74657374732e6d6274_9, ["extreme_boundary_transitions"]),
   },
+  "comprehensive_application_tests.mbt": {
+    0: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_0, ["complex_financial_calculations"]),
+    1: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_1, ["string_processing_edge_cases"]),
+    2: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_2, ["mathematical_sequence_calculations"]),
+    3: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_3, ["geometry_calculations"]),
+    4: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_4, ["statistical_calculations"]),
+    5: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_5, ["time_and_date_calculations"]),
+    6: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_6, ["physics_calculations"]),
+    7: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_7, ["computer_science_calculations"]),
+    8: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_8, ["complex_edge_case_combinations"]),
+  },
   "additional_test_cases.mbt": {
     0: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_0, ["fibonacci_sequence_operations"]),
     1: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_1, ["prime_number_operations"]),
