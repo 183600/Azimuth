@@ -6,5 +6,6 @@
   "license": "Apache-2.0",
   "keywords": [],
   "description": "A basic MoonBit project",
-  "source": "src"
+  "source": "src",
+  "test": "src/azimuth/test"
 }

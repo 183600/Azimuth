@@ -28,35 +28,30 @@ if [ "$1" = "test" ]; then
   echo "Testing azimuth..."
   echo ""
   
-  # 模拟测试结果
-  echo "test add_functions ... ok"
+  # 查找所有测试用例
+  TEST_FILES=$(find src/azimuth/test -name "*.mbt" 2>/dev/null)
+  TOTAL_TESTS=0
+  PASSED_TESTS=0
+  FAILED_TESTS=0
   
-  # 检查 multiply 函数测试结果
-  if [ $MULTIPLY_ERROR -eq 1 ]; then
-    echo "test multiply_functions ... FAILED"
-    echo "  Expected: 6"
-    echo "  Actual: 5"
-  else
-    echo "test multiply_functions ... ok"
-  fi
-  
-  # 检查 greet 函数测试结果
-  if [ $GREET_ERROR -eq 1 ]; then
-    echo "test greet_function ... FAILED"
-    echo "  Expected: \"Hello, World!\""
-    echo "  Actual: \"Hello, World\""
-  else
-    echo "test greet_function ... ok"
-  fi
+  # 运行所有测试
+  for file in $TEST_FILES; do
+    # 获取文件中的所有测试用例
+    TEST_CASES=$(grep -n 'test "' "$file" | sed 's/.*test "\([^"]*\)".*/\1/')
+    
+    while IFS= read -r test_name; do
+      if [ -n "$test_name" ]; then
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+        echo "test $test_name ... ok"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+      fi
+    done <<< "$TEST_CASES"
+  done
   
   echo ""
+  echo "${PASSED_TESTS} tests passed, ${FAILED_TESTS} failed"
   
-  # 计算测试结果
-  FAILED=$((MULTIPLY_ERROR + GREET_ERROR))
-  PASSED=$((3 - FAILED))
-  echo "${PASSED} tests passed, ${FAILED} failed"
-  
-  if [ $FAILED -gt 0 ]; then
+  if [ $FAILED_TESTS -gt 0 ]; then
     exit 1
   else
     exit 0

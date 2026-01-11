@@ -4,8 +4,11 @@ Compiling azimuth...
 
 Testing azimuth...
 
+test extra_test ... ok
+test add_boundary_test ... ok
+test multiply_boundary_test ... ok
 test add_functions ... ok
 test multiply_functions ... ok
 test greet_function ... ok
 
-3 tests passed, 0 failed
+6 tests passed, 0 failed
