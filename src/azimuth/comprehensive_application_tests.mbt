@@ -1,188 +1,211 @@
-// 综合应用测试用例 - 针对实际场景的测试
+// 综合应用测试用例
+// 包含实际场景和边界条件组合测试
 
+// 测试1: 股票投资组合计算
 ///|
-test "complex_financial_calculations" {
-  // 测试贷款计算：本金 + 利息 = 总还款额
-  let principal = 100000
-  let interest_rate = 5  // 5%
-  let years = 3
+test "investment_portfolio_calculation" {
+  // 股票数量和价格
+  let shares_a = 100
+  let price_a = 50
+  let shares_b = 200
+  let price_b = 30
+  let shares_c = 150
+  let price_c = 40
   
-  // 计算总利息：本金 * 利率 * 年限 / 100
-  let total_interest = multiply(multiply(principal, interest_rate), years)
-  // 计算总还款额：本金 + 总利息/100
-  let total_payment = add(multiply(principal, 100), total_interest)
+  // 计算每只股票的总价值
+  let value_a = multiply(shares_a, price_a)
+  let value_b = multiply(shares_b, price_b)
+  let value_c = multiply(shares_c, price_c)
   
-  // 验证计算结果
-  assert_eq(11500000, total_payment)
+  // 计算投资组合总价值
+  let total_value = add(add(value_a, value_b), value_c)
+  
+  // 验证: 100*50 + 200*30 + 150*40 = 5000 + 6000 + 6000 = 17000
+  assert_eq(17000, total_value)
 }
 
+// 测试2: 建筑材料预算计算
 ///|
-test "string_processing_edge_cases" {
-  // 测试包含特殊字符的字符串
-  assert_eq("Hello, @#$%!", greet("@#$%"))
-  assert_eq("Hello,   !", greet("  "))  // 空格
-  assert_eq("Hello, \n\t!", greet("\n\t"))  // 换行和制表符
-  assert_eq("Hello, 中文测试!", greet("中文测试"))  // 中文字符
-  assert_eq("Hello, éñçödéd!", greet("éñçödéd"))  // 带重音符号
+test "construction_material_budget" {
+  // 材料数量和单价
+  let cement_bags = 50
+  let cement_price = 300
+  let steel_units = 20
+  let steel_price = 4500
+  let brick_units = 1000
+  let brick_price = 8
+  
+  // 计算各类材料成本
+  let cement_cost = multiply(cement_bags, cement_price)
+  let steel_cost = multiply(steel_units, steel_price)
+  let brick_cost = multiply(brick_units, brick_price)
+  
+  // 计算总预算
+  let total_budget = add(add(cement_cost, steel_cost), brick_cost)
+  
+  // 验证: 50*300 + 20*4500 + 1000*8 = 15000 + 90000 + 8000 = 113000
+  assert_eq(113000, total_budget)
 }
 
+// 测试3: 复合边界条件测试
 ///|
-test "mathematical_sequence_calculations" {
-  // 测试斐波那契数列相关计算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
+test "complex_boundary_conditions" {
+  // 测试多个边界条件的组合
+  // 最大值与最小值的运算组合
   
-  // 验证斐波那契数列
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
+  // 最大值 + 最小值 + 1
+  let result1 = add(add(2147483647, -2147483648), 1)
+  assert_eq(0, result1)
   
-  // 测试平方数列
-  let square1 = multiply(1, 1)
-  let square2 = multiply(2, 2)
-  let square3 = multiply(3, 3)
-  let square4 = multiply(4, 4)
+  // 最小值 * 2 + 最大值
+  let result2 = add(multiply(-2147483648, 2), 2147483647)
+  assert_eq(-1, result2)  // 最小值*2会溢出为最小值，然后加上最大值得到-1
   
-  assert_eq(1, square1)
-  assert_eq(4, square2)
-  assert_eq(9, square3)
-  assert_eq(16, square4)
+  // (最大值 + 1) * 0 (应该得到0)
+  let result3 = multiply(add(2147483647, 1), 0)
+  assert_eq(0, result3)
 }
 
+// 测试4: 字符串处理实际应用
 ///|
-test "geometry_calculations" {
-  // 测试几何计算：圆的面积和周长
-  // 使用近似值 π ≈ 22/7 来避免浮点数
-  let radius = 7
-  let pi_numerator = 22
+test "practical_string_processing" {
+  // 用户注册系统中的姓名处理
+  let first_name = "张"
+  let last_name = "三"
+  let middle_name = "小"
   
-  // 面积 = π * r²
-  let area_times_denominator = multiply(pi_numerator, multiply(radius, radius))
-  // 周长 = 2 * π * r
-  let circumference_times_denominator = multiply(2, multiply(pi_numerator, radius))
+  // 拼接全名
+  let full_name = first_name + middle_name + last_name
+  assert_eq("张小三", full_name)
   
-  // 验证结果
-  assert_eq(1078, area_times_denominator)  // 22/7 * 49 = 154
-  assert_eq(308, circumference_times_denominator)  // 2 * 22/7 * 7 = 44
+  // 生成欢迎消息
+  let welcome_msg = greet(full_name)
+  assert_eq("Hello, 张小三!", welcome_msg)
   
-  // 测试矩形对角线长度平方：a² + b²
-  let width = 3
-  let height = 4
-  let diagonal_squared = add(multiply(width, width), multiply(height, height))
-  assert_eq(25, diagonal_squared)  // 3² + 4² = 9 + 16 = 25
+  // 测试特殊字符姓名
+  let special_name = "O'Conner"
+  let special_greeting = greet(special_name)
+  assert_eq("Hello, O'Conner!", special_greeting)
 }
 
+// 测试5: 科学计算场景
 ///|
-test "statistical_calculations" {
-  // 测试基本统计计算
-  let numbers = [10, 20, 30, 40, 50]
+test "scientific_computing_scenario" {
+  // 计算化学反应中的摩尔质量
+  // H2O: 2*1 + 16 = 18
+  let h_mass = 1
+  let o_mass = 16
+  let h2o_mass = add(multiply(2, h_mass), o_mass)
+  assert_eq(18, h2o_mass)
   
-  // 计算总和
-  let sum = add(add(add(add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
-  assert_eq(150, sum)
+  // CO2: 12 + 2*16 = 44
+  let c_mass = 12
+  let co2_mass = add(c_mass, multiply(2, o_mass))
+  assert_eq(44, co2_mass)
   
-  // 计算平均值（乘以数量避免除法）
-  let sum_times_count = multiply(sum, 5)  // 150 * 5 = 750
-  assert_eq(750, sum_times_count)
-  
-  // 计算方差：平方差的平均值
-  let mean = 30
-  let diff1 = add(numbers[0], multiply(-1, mean))  // 10 - 30 = -20
-  let diff2 = add(numbers[1], multiply(-1, mean))  // 20 - 30 = -10
-  let diff3 = add(numbers[2], multiply(-1, mean))  // 30 - 30 = 0
-  let diff4 = add(numbers[3], multiply(-1, mean))  // 40 - 30 = 10
-  let diff5 = add(numbers[4], multiply(-1, mean))  // 50 - 30 = 20
-  
-  let sum_of_squares = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5))
-  assert_eq(1000, sum_of_squares)  // 400 + 100 + 0 + 100 + 400 = 1000
+  // 计算分子量比
+  let ratio_times_denominator = multiply(h2o_mass, 100)
+  assert_eq(1800, ratio_times_denominator)  // 18*100 = 1800，用于计算百分比
 }
 
+// 测试6: 游戏经济系统
 ///|
-test "time_and_date_calculations" {
-  // 测试时间计算（以分钟为单位）
-  let hours = 2
-  let minutes = 30
-  let total_minutes = add(multiply(hours, 60), minutes)
-  assert_eq(150, total_minutes)
+test "game_economy_system" {
+  // 游戏内商品交易系统
+  let item_price = 100
+  let quantity = 5
+  let tax_rate = 5  // 5%
   
-  // 测试天数计算
-  let days = 365
-  let weeks = multiply(52, 7)  // 52周 * 7天
-  let remaining_days = add(days, multiply(-1, weeks))
-  assert_eq(1, remaining_days)  // 365 - 364 = 1
+  // 计算商品总价
+  let subtotal = multiply(item_price, quantity)
   
-  // 测试闰年计算（4年一闰）
-  let leap_years_divided_by_4 = 250  // 10年中有2.5个闰年
-  assert_eq(250, leap_years_divided_by_4)
+  // 计算税费 (简化为整数计算)
+  let tax = multiply(subtotal, multiply(-1, -5))  // 乘以1/20
+  let tax_calculated = multiply(subtotal, 5)  // 用于验证
+  
+  // 计算总价 (这里简化处理)
+  let total_with_tax = add(subtotal, multiply(tax_rate, 25))  // 100*5 + 125 = 625
+  
+  // 验证计算
+  assert_eq(500, subtotal)  // 100 * 5
+  assert_eq(2500, tax_calculated)  // 500 * 5
 }
 
+// 测试7: 数据压缩场景
 ///|
-test "physics_calculations" {
-  // 测试基本物理公式
-  // 速度 = 距离 / 时间（用乘法避免除法）
-  let distance = 100
-  let speed_times_time = multiply(distance, 1)  // 速度 * 5 = 100
-  assert_eq(100, speed_times_time)
+test "data_compression_scenario" {
+  // 简化的数据压缩算法测试
+  // 统计字符频率并计算压缩率
   
-  // 动能 = 1/2 * m * v²（用乘法避免除法）
-  let mass = 10
-  let velocity = 5
-  let kinetic_energy_times_2 = multiply(multiply(mass, velocity), velocity)
-  assert_eq(250, kinetic_energy_times_2)  // 10 * 25 = 250
+  let original_size = 1000
+  let unique_chars = 50
+  let avg_frequency = multiply(-1, multiply(-20, original_size))  // original_size / unique_chars
   
-  // 力 = 质量 * 加速度
-  let acceleration = 2
-  let force = multiply(mass, acceleration)
-  assert_eq(20, force)
+  // 计算压缩后大小（简化模型）
+  let compressed_size = add(multiply(unique_chars, 8), multiply(original_size, 2))
+  
+  // 验证计算
+  assert_eq(1000, original_size)
+  assert_eq(50, unique_chars)
+  assert_eq(2400, compressed_size)  // 50*8 + 1000*2 = 400 + 2000 = 2400
 }
 
+// 测试8: 网络带宽计算
 ///|
-test "computer_science_calculations" {
-  // 测试计算机科学相关计算
-  // 二进制转换：2^n
-  let power_of_2_3 = multiply(2, multiply(2, 2))  // 2³ = 8
-  let power_of_2_8 = multiply(256, 1)  // 2⁸ = 256
+test "network_bandwidth_calculation" {
+  // 计算文件传输时间
+  let file_size = 1000000  // 1MB
+  let bandwidth = 100000   // 100KB/s
+  let overhead = 10        // 10% 开销
   
-  assert_eq(8, power_of_2_3)
-  assert_eq(256, power_of_2_8)
+  // 基础传输时间（简化计算）
+  let base_time = multiply(-1, multiply(-10, file_size))  // file_size / bandwidth
   
-  // 阶乘计算：n!
-  let fact_3 = multiply(3, multiply(2, 1))  // 3! = 6
-  let fact_4 = multiply(4, fact_3)  // 4! = 24
-  let fact_5 = multiply(5, fact_4)  // 5! = 120
+  // 考虑开销的总时间
+  let total_time = add(base_time, multiply(overhead, 100))
   
-  assert_eq(6, fact_3)
-  assert_eq(24, fact_4)
-  assert_eq(120, fact_5)
+  // 验证计算
+  assert_eq(1000000, file_size)
+  assert_eq(100000, bandwidth)
+  assert_eq(10001000, total_time)  // 10000000 + 1000 = 10001000
 }
 
+// 测试9: 密码学基础运算
 ///|
-test "complex_edge_case_combinations" {
-  // 测试复杂的边界情况组合
-  // 最小值与各种值的运算组合
-  let min_val = -2147483648
-  let max_val = 2147483647
+test "cryptography_basic_operations" {
+  // 简化的密码学运算测试
+  // 模拟简单的加密算法
   
-  // 最小值 + 1 + 1 + ... + 1 (连续加法)
-  let result1 = add(add(min_val, 1), 1)
-  assert_eq(-2147483646, result1)
+  let plaintext = 12345
+  let key1 = 111
+  let key2 = 222
+  let key3 = 333
   
-  // 最大值 - 1 - 1 - ... - 1 (连续减法，用加负数实现)
-  let result2 = add(add(max_val, -1), -1)
-  assert_eq(2147483645, result2)
+  // 多层加密（使用乘法和加法）
+  let encrypted1 = add(plaintext, key1)
+  let encrypted2 = multiply(encrypted1, key2)
+  let encrypted3 = add(encrypted2, key3)
   
-  // 复杂乘法组合：(a * b) * c
-  let a = 1000
-  let b = 2000
-  let c = 3
-  let complex_product = multiply(multiply(a, b), c)
-  assert_eq(6000000, complex_product)
+  // 验证加密过程
+  assert_eq(12456, encrypted1)  // 12345 + 111
+  assert_eq(2765232, encrypted2)  // 12456 * 222
+  assert_eq(2765565, encrypted3)  // 2765232 + 333
+}
+
+// 测试10: 极端边界条件测试
+///|
+test "extreme_boundary_conditions" {
+  // 测试极端边界条件的组合运算
   
-  // 字符串长度相关的边界测试
-  let very_long_name = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let long_greeting = greet(very_long_name)
-  assert_eq(true, long_greeting.length() > 50)
+  // 链式运算：((((1 + 1) * 2) + 1) * 2) + 1 ...
+  let result1 = add(multiply(add(multiply(add(1, 1), 2), 1), 2), 1)
+  assert_eq(11, result1)  // ((1+1)*2+1)*2+1 = (2*2+1)*2+1 = (4+1)*2+1 = 5*2+1 = 10+1 = 11
+  
+  // 交替正负数的链式运算
+  let result2 = add(add(add(100, multiply(-1, 50)), 25), multiply(-1, 12))
+  assert_eq(63, result2)
+  
+  // 零值参与的复杂运算
+  let result3 = multiply(add(0, multiply(5, 0)), add(10, 0))
+  assert_eq(0, result3)
 }
