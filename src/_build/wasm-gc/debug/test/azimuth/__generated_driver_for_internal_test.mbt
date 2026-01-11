@@ -53,6 +53,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_6164646974696f6e616c5f74657374732e6d6274_5, ["overflow_handling"]),
     6: (__test_6164646974696f6e616c5f74657374732e6d6274_6, ["combined_operations"]),
     7: (__test_6164646974696f6e616c5f74657374732e6d6274_7, ["sequential_operations"]),
+    8: (__test_6164646974696f6e616c5f74657374732e6d6274_8, ["string_special_characters"]),
+    9: (__test_6164646974696f6e616c5f74657374732e6d6274_9, ["large_number_operations"]),
+    10: (__test_6164646974696f6e616c5f74657374732e6d6274_10, ["negative_multiply_special_cases"]),
+    11: (__test_6164646974696f6e616c5f74657374732e6d6274_11, ["mixed_arithmetic_operations"]),
+    12: (__test_6164646974696f6e616c5f74657374732e6d6274_12, ["boundary_value_combinations"]),
+    13: (__test_6164646974696f6e616c5f74657374732e6d6274_13, ["string_length_tests"]),
+    14: (__test_6164646974696f6e616c5f74657374732e6d6274_14, ["mathematical_identities"]),
+    15: (__test_6164646974696f6e616c5f74657374732e6d6274_15, ["extreme_value_operations"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
