@@ -89,6 +89,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_7, ["overflow_recovery_patterns"]),
     8: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_8, ["circular_reference_patterns"]),
   },
+  "additional_edge_cases.mbt": {
+    0: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_0, ["add_chained_operations"]),
+    1: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_1, ["multiply_chained_operations"]),
+    2: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_2, ["mixed_operations_stability"]),
+    3: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_3, ["greet_long_string"]),
+    4: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_4, ["greet_unicode_and_emoji"]),
+    5: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_5, ["add_extreme_boundary_combinations"]),
+    6: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_6, ["multiply_power_of_two"]),
+    7: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_7, ["multiply_negative_power_patterns"]),
+    8: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_8, ["greet_whitespace_handling"]),
+    9: (__test_6164646974696f6e616c5f656467655f63617365732e6d6274_9, ["stress_test_repeated_operations"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
