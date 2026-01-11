@@ -42,6 +42,18 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "standard_test_cases.mbt": {
+    0: (__test_7374616e646172645f746573745f63617365732e6d6274_0, ["basic_addition_functionality"]),
+    1: (__test_7374616e646172645f746573745f63617365732e6d6274_1, ["basic_multiplication_functionality"]),
+    2: (__test_7374616e646172645f746573745f63617365732e6d6274_2, ["string_processing_functionality"]),
+    3: (__test_7374616e646172645f746573745f63617365732e6d6274_3, ["boundary_value_tests"]),
+    4: (__test_7374616e646172645f746573745f63617365732e6d6274_4, ["overflow_handling_tests"]),
+    5: (__test_7374616e646172645f746573745f63617365732e6d6274_5, ["negative_number_operations"]),
+    6: (__test_7374616e646172645f746573745f63617365732e6d6274_6, ["zero_value_handling"]),
+    7: (__test_7374616e646172645f746573745f63617365732e6d6274_7, ["mathematical_properties"]),
+    8: (__test_7374616e646172645f746573745f63617365732e6d6274_8, ["practical_application_scenarios"]),
+    9: (__test_7374616e646172645f746573745f63617365732e6d6274_9, ["special_inputs_and_error_handling"]),
+  },
   "standard_moonbit_tests.mbt": {
     0: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_0, ["performance_continuous_operations"]),
     1: (__test_7374616e646172645f6d6f6f6e6269745f74657374732e6d6274_1, ["error_handling_boundary_inputs"]),
