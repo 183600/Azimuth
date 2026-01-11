@@ -158,6 +158,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_8, ["correct_string_handling_basic"]),
     9: (__test_636f72726563745f636f6e636973655f74657374732e6d6274_9, ["correct_mathematical_identities"]),
   },
+  "comprehensive_unique_tests.mbt": {
+    0: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_0, ["performance_stress_test"]),
+    1: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_1, ["nested_operations_test"]),
+    2: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_2, ["string_boundary_test"]),
+    3: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_3, ["mathematical_identities_test"]),
+    4: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_4, ["business_scenario_test"]),
+    5: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_5, ["error_recovery_test"]),
+    6: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_6, ["combined_boundary_test"]),
+    7: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_7, ["algorithm_complexity_test"]),
+    8: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_8, ["data_type_boundary_test"]),
+    9: (__test_636f6d70726568656e736976655f756e697175655f74657374732e6d6274_9, ["physics_simulation_test"]),
+  },
   "comprehensive_application_tests.mbt": {
     0: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_0, ["complex_financial_calculations"]),
     1: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_1, ["string_processing_edge_cases"]),
