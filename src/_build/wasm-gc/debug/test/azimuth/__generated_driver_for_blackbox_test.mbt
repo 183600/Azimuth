@@ -53,6 +53,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "standard_moonbit_tests.mbt": {
   },
+  "standard_moonbit_test_suite.mbt": {
+  },
   "specialized_tests.mbt": {
   },
   "simplified_unit_tests.mbt": {
@@ -116,6 +118,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "correct_concise_tests.mbt": {
   },
   "comprehensive_unique_tests.mbt": {
+  },
+  "comprehensive_test_suite.mbt": {
   },
   "comprehensive_application_tests.mbt": {
   },
