@@ -47,6 +47,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_706572666f726d616e63655f746573742e6d6274_1, ["performance_test_multiply"]),
     2: (__test_706572666f726d616e63655f746573742e6d6274_2, ["edge_case_performance"]),
   },
+  "new_tests.mbt": {
+  },
   "lib_test.mbt": {
     0: (__test_6c69625f746573742e6d6274_0, ["simple_add"]),
     1: (__test_6c69625f746573742e6d6274_1, ["add_functions"]),
