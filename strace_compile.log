@@ -1,0 +1,43 @@
+write(1, "Running moon test...\n", 21)  = 21
+write(1, "\n", 1)                       = 1
+write(1, "Compiling azimuth...\n", 21)  = 21
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49672, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49674, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(1, "\n", 1)                       = 1
+write(1, "Testing azimuth...\n", 19)    = 19
+write(1, "\n", 1)                       = 1
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49676, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49678, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "multiply_edge_cases\n", 20)   = 20
+write(1, "test multiply_edge_cases ... ok\n", 32) = 32
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49681, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "final_add_test\nfinal_multiply_te"..., 35) = 35
+write(1, "test final_add_test ... ok\n", 27) = 27
+write(1, "test final_multiply_test ... ok\n", 32) = 32
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49684, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "test_negative_overflow_edge_case"..., 33) = 33
+write(1, "test test_negative_overflow_edge"..., 45) = 45
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49687, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "debug_add\ndebug_multiply\nspecifi"..., 99) = 99
+write(1, "test debug_add ... ok\n", 22) = 22
+write(1, "test debug_multiply ... ok\n", 27) = 27
+write(1, "test specific_add_test ... ok\n", 30) = 30
+write(1, "test multiply_zero_test ... ok\n", 31) = 31
+write(1, "test add_edge_case ... ok\n", 26) = 26
+write(1, "test add_min_value_positive ... "..., 35) = 35
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49690, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "extra_test\nadd_boundary_test\nmul"..., 52) = 52
+write(1, "test extra_test ... ok\n", 23) = 23
+write(1, "test add_boundary_test ... ok\n", 30) = 30
+write(1, "test multiply_boundary_test ... "..., 35) = 35
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49693, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "add_functions\nmultiply_functions"..., 48) = 48
+write(1, "test add_functions ... ok\n", 26) = 26
+write(1, "test multiply_functions ... ok\n", 31) = 31
+write(1, "test greet_function ... ok\n", 27) = 27
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=49696, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "min_value_positive_add\n", 23) = 23
+write(1, "test min_value_positive_add ... "..., 35) = 35
+write(1, "\n", 1)                       = 1
+write(1, "17 tests passed, 0 failed\n", 26) = 26
++++ exited with 0 +++

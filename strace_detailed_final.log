@@ -1,0 +1,68 @@
+write(1, "Running moon test...\n", 21Running moon test...
+)  = 21
+write(1, "\n", 1
+)                       = 1
+write(1, "Compiling azimuth...\n", 21Compiling azimuth...
+)  = 21
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50433, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50435, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(1, "\n", 1
+)                       = 1
+write(1, "Testing azimuth...\n", 19Testing azimuth...
+)    = 19
+write(1, "\n", 1
+)                       = 1
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50437, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50439, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "multiply_edge_cases\n", 20)   = 20
+write(1, "test multiply_edge_cases ... ok\n", 32test multiply_edge_cases ... ok
+) = 32
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50442, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "final_add_test\nfinal_multiply_te"..., 35) = 35
+write(1, "test final_add_test ... ok\n", 27test final_add_test ... ok
+) = 27
+write(1, "test final_multiply_test ... ok\n", 32test final_multiply_test ... ok
+) = 32
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50445, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "test_negative_overflow_edge_case"..., 33) = 33
+write(1, "test test_negative_overflow_edge"..., 45test test_negative_overflow_edge_case ... ok
+) = 45
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50448, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "debug_add\ndebug_multiply\nspecifi"..., 99) = 99
+write(1, "test debug_add ... ok\n", 22test debug_add ... ok
+) = 22
+write(1, "test debug_multiply ... ok\n", 27test debug_multiply ... ok
+) = 27
+write(1, "test specific_add_test ... ok\n", 30test specific_add_test ... ok
+) = 30
+write(1, "test multiply_zero_test ... ok\n", 31test multiply_zero_test ... ok
+) = 31
+write(1, "test add_edge_case ... ok\n", 26test add_edge_case ... ok
+) = 26
+write(1, "test add_min_value_positive ... "..., 35test add_min_value_positive ... ok
+) = 35
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50451, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "extra_test\nadd_boundary_test\nmul"..., 52) = 52
+write(1, "test extra_test ... ok\n", 23test extra_test ... ok
+) = 23
+write(1, "test add_boundary_test ... ok\n", 30test add_boundary_test ... ok
+) = 30
+write(1, "test multiply_boundary_test ... "..., 35test multiply_boundary_test ... ok
+) = 35
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50454, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "add_functions\nmultiply_functions"..., 48) = 48
+write(1, "test add_functions ... ok\n", 26test add_functions ... ok
+) = 26
+write(1, "test multiply_functions ... ok\n", 31test multiply_functions ... ok
+) = 31
+write(1, "test greet_function ... ok\n", 27test greet_function ... ok
+) = 27
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=50457, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+write(4, "min_value_positive_add\n", 23) = 23
+write(1, "test min_value_positive_add ... "..., 35test min_value_positive_add ... ok
+) = 35
+write(1, "\n", 1
+)                       = 1
+write(1, "17 tests passed, 0 failed\n", 2617 tests passed, 0 failed
+) = 26
++++ exited with 0 +++

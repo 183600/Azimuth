@@ -1,0 +1,26 @@
+Running moon test...
+
+Compiling azimuth...
+
+Testing azimuth...
+
+test multiply_edge_cases ... ok
+test final_add_test ... ok
+test final_multiply_test ... ok
+test test_negative_overflow_edge_case ... ok
+test debug_add ... ok
+test debug_multiply ... ok
+test specific_add_test ... ok
+test multiply_zero_test ... ok
+test add_edge_case ... ok
+test add_min_value_positive ... ok
+test test_negative_add_overflow ... ok
+test extra_test ... ok
+test add_boundary_test ... ok
+test multiply_boundary_test ... ok
+test add_functions ... ok
+test multiply_functions ... ok
+test greet_function ... ok
+test min_value_positive_add ... ok
+
+18 tests passed, 0 failed

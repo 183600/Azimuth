@@ -1,0 +1,2 @@
+write(1, "3:test \"final_add_test\" {\n16:tes"..., 58) = 58
++++ exited with 0 +++

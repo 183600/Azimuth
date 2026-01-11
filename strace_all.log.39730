@@ -1,0 +1,2 @@
+write(1, "multiply_edge_cases\n", 20)   = 20
++++ exited with 0 +++

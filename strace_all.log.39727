@@ -1,0 +1,2 @@
+write(1, "src/azimuth/test/multiply_edge_t"..., 236) = 236
++++ exited with 0 +++

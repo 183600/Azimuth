@@ -1,0 +1,2 @@
+write(1, "extra_test\nadd_boundary_test\nmul"..., 52) = 52
++++ exited with 0 +++

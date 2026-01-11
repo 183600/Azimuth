@@ -1,0 +1,2 @@
+write(1, "debug_add\ndebug_multiply\nspecifi"..., 99) = 99
++++ exited with 0 +++

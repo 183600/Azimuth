@@ -1,0 +1,2 @@
+write(1, "pub fn multiply(a : Int, b : Int"..., 1343) = 1343
++++ exited with 0 +++

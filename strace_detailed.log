@@ -1,22 +1,676 @@
-write(1, "Running moon test...\n", 21)  = 21
-write(1, "\n", 1)                       = 1
-write(1, "Compiling azimuth...\n", 21)  = 21
---- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=47684, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
---- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=47686, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
-write(1, "\n", 1)                       = 1
-write(1, "Testing azimuth...\n", 19)    = 19
-write(1, "\n", 1)                       = 1
---- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=47688, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
---- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=47690, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
-write(4, "extra_test\nadd_boundary_test\nmul"..., 52) = 52
-write(1, "test extra_test ... ok\n", 23) = 23
-write(1, "test add_boundary_test ... ok\n", 30) = 30
-write(1, "test multiply_boundary_test ... "..., 35) = 35
---- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=47693, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
-write(4, "add_functions\nmultiply_functions"..., 48) = 48
-write(1, "test add_functions ... ok\n", 26) = 26
-write(1, "test multiply_functions ... ok\n", 31) = 31
-write(1, "test greet_function ... ok\n", 27) = 27
-write(1, "\n", 1)                       = 1
-write(1, "6 tests passed, 0 failed\n", 25) = 25
-+++ exited with 0 +++
+36078 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36078 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36078 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36078 read(3, "", 4096)                 = 0
+36078 read(3, "#!/bin/bash\n\n# \346\250\241\346\213\237 moon test "..., 80) = 80
+36078 read(255, "#!/bin/bash\n\n# \346\250\241\346\213\237 moon test "..., 1635) = 1635
+36078 write(1, "Running moon test...\n", 21) = 21
+36078 write(1, "\n", 1)                 = 1
+36078 write(1, "Compiling azimuth...\n", 21) = 21
+36079 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36080 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36079 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36080 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36079 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36080 read(3,  <unfinished ...>
+36079 read(3,  <unfinished ...>
+36080 <... read resumed>"# Locale name alias data base.\n#"..., 4096) = 2996
+36079 <... read resumed>"", 4096)       = 0
+36080 read(3, "", 4096)                 = 0
+36080 read(3,  <unfinished ...>
+36079 read(3,  <unfinished ...>
+36080 <... read resumed>"562be9f50000-562be9f54000 r--p 0"..., 8192) = 4079
+36079 <... read resumed>"557433044000-557433048000 r--p 0"..., 8192) = 4079
+36080 read(3,  <unfinished ...>
+36079 read(3,  <unfinished ...>
+36080 <... read resumed>"562be9f50000-562be9f54000 r--p 0"..., 16384) = 4079
+36079 <... read resumed>"557433044000-557433048000 r--p 0"..., 16384) = 4079
+36080 read(3,  <unfinished ...>
+36079 read(3,  <unfinished ...>
+36080 <... read resumed>"7f26bb41c000-7f26bb41e000 rw-p 0"..., 12305) = 285
+36079 <... read resumed>"7fc03755a000-7fc03755c000 rw-p 0"..., 12305) = 285
+36080 read(3,  <unfinished ...>
+36079 read(3,  <unfinished ...>
+36080 <... read resumed>"", 12020)      = 0
+36079 <... read resumed>"", 12020)      = 0
+36080 read(0,  <unfinished ...>
+36079 read(3, "// \345\237\272\347\241\200\345\272\223\346\226\207\344\273\266\npub fn add(a "..., 98304) = 2172
+36079 read(3, "", 94208)                = 0
+36079 write(1, "pub fn multiply(a : Int, b : Int"..., 1343) = 1343
+36080 <... read resumed>"pub fn multiply(a : Int, b : Int"..., 98304) = 1343
+36079 +++ exited with 0 +++
+36080 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36079, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36081 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36082 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36081 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36082 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36081 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36081 read(3,  <unfinished ...>
+36082 read(3,  <unfinished ...>
+36081 <... read resumed>"", 4096)       = 0
+36082 <... read resumed>"# Locale name alias data base.\n#"..., 4096) = 2996
+36082 read(3, "", 4096)                 = 0
+36081 read(3,  <unfinished ...>
+36082 read(3,  <unfinished ...>
+36081 <... read resumed>"5627371d2000-5627371d6000 r--p 0"..., 8192) = 4079
+36082 <... read resumed>"561e5cf46000-561e5cf4a000 r--p 0"..., 8192) = 4079
+36082 read(3,  <unfinished ...>
+36081 read(3,  <unfinished ...>
+36082 <... read resumed>"561e5cf46000-561e5cf4a000 r--p 0"..., 16384) = 4079
+36081 <... read resumed>"5627371d2000-5627371d6000 r--p 0"..., 16384) = 4079
+36082 read(3,  <unfinished ...>
+36081 read(3,  <unfinished ...>
+36082 <... read resumed>"7f206fe1b000-7f206fe1d000 rw-p 0"..., 12305) = 285
+36081 <... read resumed>"7f541d63f000-7f541d641000 rw-p 0"..., 12305) = 285
+36082 read(3,  <unfinished ...>
+36081 read(3,  <unfinished ...>
+36082 <... read resumed>"", 12020)      = 0
+36081 <... read resumed>"", 12020)      = 0
+36082 read(0,  <unfinished ...>
+36081 read(3, "// \345\237\272\347\241\200\345\272\223\346\226\207\344\273\266\npub fn add(a "..., 98304) = 2172
+36081 read(3, "", 94208)                = 0
+36081 write(1, "pub fn greet(name : String) -> S"..., 118 <unfinished ...>
+36082 <... read resumed>"pub fn greet(name : String) -> S"..., 98304) = 118
+36081 <... write resumed>)              = 118
+36082 +++ exited with 0 +++
+36081 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36082, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(1, "\n", 1)                 = 1
+36078 write(1, "Testing azimuth...\n", 19) = 19
+36078 write(1, "\n", 1)                 = 1
+36078 read(3,  <unfinished ...>
+36084 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36084 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36084 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36084 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36084 read(3, "", 1024)                 = 0
+36084 read(4, "# Locale name alias data base.\n#"..., 4096) = 2996
+36084 read(4, "", 4096)                 = 0
+36084 write(1, "src/azimuth/test/multiply_edge_t"..., 236 <unfinished ...>
+36078 <... read resumed>"src/azimuth/test/multiply_edge_t"..., 4096) = 236
+36084 <... write resumed>)              = 236
+36078 read(3,  <unfinished ...>
+36084 +++ exited with 0 +++
+36083 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36084, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36083 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36083, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 read(3,  <unfinished ...>
+36086 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36087 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36086 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36087 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36087 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36087 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36086 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36086 read(3, "", 4096)                 = 0
+36087 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36087 read(3, "", 1024)                 = 0
+36087 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36087 read(3, "", 4096)                 = 0
+36086 read(3, "556d850f5000-556d850f9000 r--p 0"..., 8192) = 4079
+36086 read(3, "556d850f5000-556d850f9000 r--p 0"..., 16384) = 4079
+36086 read(3, "7f43cbf52000-7f43cbf54000 rw-p 0"..., 12305) = 285
+36086 read(3, "", 12020)                = 0
+36086 read(3, "// \346\265\213\350\257\225\344\271\230\346\263\225\345\207\275\346\225\260\347\232\204\350\276\271\347\225\214\346\203"..., 98304) = 1283
+36086 read(3, "", 98304)                = 0
+36086 write(1, "3:test \"multiply_edge_cases\" {\n", 31) = 31
+36087 read(0, "3:test \"multiply_edge_cases\" {\n", 4096) = 31
+36086 +++ exited with 0 +++
+36087 read(0, "", 4096)                 = 0
+36087 write(1, "multiply_edge_cases\n", 20 <unfinished ...>
+36078 <... read resumed>"multiply_edge_cases\n", 4096) = 20
+36087 <... write resumed>)              = 20
+36078 read(3,  <unfinished ...>
+36087 +++ exited with 0 +++
+36085 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36086, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36085 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36085, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "multiply_edge_cases\n", 20) = 20
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test multiply_edge_cases ... ok\n", 32) = 32
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36089 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36089 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36090 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36090 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36090 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36090 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36089 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36089 read(3, "", 4096)                 = 0
+36090 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36090 read(3, "", 1024)                 = 0
+36090 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36090 read(3, "", 4096)                 = 0
+36089 read(3, "559380fac000-559380fb0000 r--p 0"..., 8192) = 4079
+36089 read(3, "559380fac000-559380fb0000 r--p 0"..., 16384) = 4079
+36089 read(3, "7fc131f0b000-7fc131f0d000 rw-p 0"..., 12305) = 285
+36089 read(3, "", 12020)                = 0
+36089 read(3, "// \346\234\200\347\273\210\346\265\213\350\257\225\346\226\207\344\273\266\357\274\214\351\252\214\350\257\201\346\211"..., 98304) = 1226
+36089 read(3, "", 98304)                = 0
+36089 write(1, "3:test \"final_add_test\" {\n16:tes"..., 58) = 58
+36089 +++ exited with 0 +++
+36090 read(0, "3:test \"final_add_test\" {\n16:tes"..., 4096) = 58
+36090 read(0, "", 4096)                 = 0
+36090 write(1, "final_add_test\nfinal_multiply_te"..., 35 <unfinished ...>
+36078 <... read resumed>"final_add_test\nfinal_multiply_te"..., 4096) = 35
+36090 <... write resumed>)              = 35
+36078 read(3,  <unfinished ...>
+36090 +++ exited with 0 +++
+36088 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36089, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36088 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36088, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "final_add_test\nfinal_multiply_te"..., 35) = 35
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test final_add_test ... ok\n", 27) = 27
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test final_multiply_test ... ok\n", 32) = 32
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36092 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36093 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36093 read(3,  <unfinished ...>
+36092 read(3,  <unfinished ...>
+36093 <... read resumed>"\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36092 <... read resumed>"\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36093 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36093 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36092 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36092 read(3, "", 4096)                 = 0
+36093 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36093 read(3, "", 1024)                 = 0
+36093 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36093 read(3, "", 4096)                 = 0
+36092 read(3,  <unfinished ...>
+36093 read(0,  <unfinished ...>
+36092 <... read resumed>"55e11b1a2000-55e11b1a6000 r--p 0"..., 8192) = 4079
+36092 read(3, "55e11b1a2000-55e11b1a6000 r--p 0"..., 16384) = 4079
+36092 read(3, "7f6cc12e8000-7f6cc12ea000 rw-p 0"..., 12305) = 285
+36092 read(3, "", 12020)                = 0
+36092 read(3, "// \344\270\264\346\227\266\346\265\213\350\257\225\346\226\207\344\273\266\357\274\214\347\224\250\344\272\216\351\252"..., 98304) = 675
+36092 read(3, "", 98304)                = 0
+36092 write(1, "3:test \"test_negative_overflow_e"..., 44 <unfinished ...>
+36093 <... read resumed>"3:test \"test_negative_overflow_e"..., 4096) = 44
+36092 <... write resumed>)              = 44
+36093 read(0, "", 4096)                 = 0
+36093 write(1, "test_negative_overflow_edge_case"..., 33 <unfinished ...>
+36078 <... read resumed>"test_negative_overflow_edge_case"..., 4096) = 33
+36093 <... write resumed>)              = 33
+36078 read(3,  <unfinished ...>
+36092 +++ exited with 0 +++
+36093 +++ exited with 0 +++
+36091 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36092, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36091 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36091, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "test_negative_overflow_edge_case"..., 33) = 33
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "w", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test test_negative_overflow_edge"..., 45) = 45
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36095 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36096 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36095 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36096 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36096 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36096 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36095 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36095 read(3, "", 4096)                 = 0
+36096 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36096 read(3, "", 1024)                 = 0
+36096 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36096 read(3, "", 4096)                 = 0
+36095 read(3, "556e34313000-556e34317000 r--p 0"..., 8192) = 4079
+36095 read(3, "556e34313000-556e34317000 r--p 0"..., 16384) = 4079
+36095 read(3, "7fde6a4c0000-7fde6a4c2000 rw-p 0"..., 12305) = 285
+36095 read(3, "", 12020)                = 0
+36096 read(0,  <unfinished ...>
+36095 read(3, "// \350\260\203\350\257\225\346\265\213\350\257\225\346\226\207\344\273\266\357\274\214\347\224\250\344\272\216\351\252"..., 98304) = 3649
+36095 read(3, "", 94208)                = 0
+36095 write(1, "3:test \"debug_add\" {\n34:test \"de"..., 173 <unfinished ...>
+36096 <... read resumed>"3:test \"debug_add\" {\n34:test \"de"..., 4096) = 173
+36095 <... write resumed>)              = 173
+36096 read(0, "", 4096)                 = 0
+36096 write(1, "debug_add\ndebug_multiply\nspecifi"..., 99 <unfinished ...>
+36078 <... read resumed>"debug_add\ndebug_multiply\nspecifi"..., 4096) = 99
+36096 <... write resumed>)              = 99
+36078 read(3,  <unfinished ...>
+36095 +++ exited with 0 +++
+36096 +++ exited with 0 +++
+36094 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36095, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36094 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36094, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "debug_add\ndebug_multiply\nspecifi"..., 99) = 99
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "b", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test debug_add ... ok\n", 22) = 22
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "b", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test debug_multiply ... ok\n", 27) = 27
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test specific_add_test ... ok\n", 30) = 30
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "z", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test multiply_zero_test ... ok\n", 31) = 31
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test add_edge_case ... ok\n", 26) = 26
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test add_min_value_positive ... "..., 35) = 35
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36098 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36098 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36099 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36099 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36099 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36099 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36098 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36098 read(3, "", 4096)                 = 0
+36099 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36099 read(3, "", 1024)                 = 0
+36099 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36099 read(3, "", 4096)                 = 0
+36098 read(3, "555c53e54000-555c53e58000 r--p 0"..., 8192) = 4079
+36098 read(3, "555c53e54000-555c53e58000 r--p 0"..., 16384) = 4079
+36098 read(3, "7f0799c5a000-7f0799c5c000 rw-p 0"..., 12305) = 285
+36098 read(3, "", 12020)                = 0
+36098 read(3, "// \351\242\235\345\244\226\347\232\204\346\265\213\350\257\225\346\226\207\344\273\266\n\ntest \""..., 98304) = 225
+36098 read(3, "", 98304)                = 0
+36098 write(1, "3:test \"extra_test\" {\n7:test \"ad"..., 86) = 86
+36098 +++ exited with 0 +++
+36099 read(0, "3:test \"extra_test\" {\n7:test \"ad"..., 4096) = 86
+36099 read(0, "", 4096)                 = 0
+36099 write(1, "extra_test\nadd_boundary_test\nmul"..., 52 <unfinished ...>
+36078 <... read resumed>"extra_test\nadd_boundary_test\nmul"..., 4096) = 52
+36099 <... write resumed>)              = 52
+36078 read(3,  <unfinished ...>
+36099 +++ exited with 0 +++
+36097 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36098, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36097 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36097, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "extra_test\nadd_boundary_test\nmul"..., 52) = 52
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "x", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test extra_test ... ok\n", 23) = 23
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "b", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test add_boundary_test ... ok\n", 30) = 30
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "b", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test multiply_boundary_test ... "..., 35) = 35
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36101 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36102 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36101 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36102 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36102 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36102 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36101 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36101 read(3, "", 4096)                 = 0
+36102 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36102 read(3, "", 1024)                 = 0
+36102 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36102 read(3, "", 4096)                 = 0
+36101 read(3, "55c1ed0ec000-55c1ed0f0000 r--p 0"..., 8192) = 4079
+36101 read(3, "55c1ed0ec000-55c1ed0f0000 r--p 0"..., 16384) = 4079
+36101 read(3, "7f9642261000-7f9642263000 rw-p 0"..., 12305) = 285
+36101 read(3, "", 12020)                = 0
+36102 read(0,  <unfinished ...>
+36101 read(3, "// \345\237\272\347\241\200\346\265\213\350\257\225\346\226\207\344\273\266\n\ntest \"add"..., 98304) = 4704
+36101 read(3, "", 94208)                = 0
+36101 write(1, "3:test \"add_functions\" {\n50:test"..., 83 <unfinished ...>
+36102 <... read resumed>"3:test \"add_functions\" {\n50:test"..., 4096) = 83
+36101 <... write resumed>)              = 83
+36102 read(0, "", 4096)                 = 0
+36102 write(1, "add_functions\nmultiply_functions"..., 48) = 48
+36078 <... read resumed>"add_functions\nmultiply_functions"..., 4096) = 48
+36078 read(3,  <unfinished ...>
+36101 +++ exited with 0 +++
+36102 +++ exited with 0 +++
+36100 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36101, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36100 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36100, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "add_functions\nmultiply_functions"..., 48) = 48
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test add_functions ... ok\n", 26) = 26
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "y", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test multiply_functions ... ok\n", 31) = 31
+36078 read(0, "g", 1)                   = 1
+36078 read(0, "r", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "f", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "c", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test greet_function ... ok\n", 27) = 27
+36078 read(0, "", 1)                    = 0
+36078 read(3,  <unfinished ...>
+36104 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36105 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36104 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36105 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36105 read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832
+36105 read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+36104 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36104 read(3, "", 4096)                 = 0
+36105 read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 1024) = 407
+36105 read(3, "", 1024)                 = 0
+36105 read(3, "# Locale name alias data base.\n#"..., 4096) = 2996
+36105 read(3, "", 4096)                 = 0
+36104 read(3, "55fd79c8b000-55fd79c8f000 r--p 0"..., 8192) = 4079
+36104 read(3,  <unfinished ...>
+36105 read(0,  <unfinished ...>
+36104 <... read resumed>"55fd79c8b000-55fd79c8f000 r--p 0"..., 16384) = 4079
+36104 read(3, "7f419dc65000-7f419dc67000 rw-p 0"..., 12305) = 285
+36104 read(3, "", 12020)                = 0
+36104 read(3, "// \346\265\213\350\257\225\346\234\200\345\260\217\345\200\274\344\277\256\345\244\215\347\232\204\351\252\214\350\257"..., 98304) = 1088
+36104 read(3, "", 98304)                = 0
+36104 write(1, "3:test \"min_value_positive_add\" "..., 34 <unfinished ...>
+36105 <... read resumed>"3:test \"min_value_positive_add\" "..., 4096) = 34
+36104 <... write resumed>)              = 34
+36105 read(0, "", 4096)                 = 0
+36105 write(1, "min_value_positive_add\n", 23) = 23
+36078 <... read resumed>"min_value_positive_add\n", 4096) = 23
+36078 read(3,  <unfinished ...>
+36104 +++ exited with 0 +++
+36105 +++ exited with 0 +++
+36103 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36104, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 <... read resumed>"", 4096)       = 0
+36103 +++ exited with 0 +++
+36078 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=36103, si_uid=1001, si_status=0, si_utime=0, si_stime=0} ---
+36078 write(4, "min_value_positive_add\n", 23) = 23
+36078 read(0, "m", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "n", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "l", 1)                   = 1
+36078 read(0, "u", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "p", 1)                   = 1
+36078 read(0, "o", 1)                   = 1
+36078 read(0, "s", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "t", 1)                   = 1
+36078 read(0, "i", 1)                   = 1
+36078 read(0, "v", 1)                   = 1
+36078 read(0, "e", 1)                   = 1
+36078 read(0, "_", 1)                   = 1
+36078 read(0, "a", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "d", 1)                   = 1
+36078 read(0, "\n", 1)                  = 1
+36078 write(1, "test min_value_positive_add ... "..., 35) = 35
+36078 read(0, "", 1)                    = 0
+36078 write(1, "\n", 1)                 = 1
+36078 write(1, "17 tests passed, 0 failed\n", 26) = 26
+36078 +++ exited with 0 +++

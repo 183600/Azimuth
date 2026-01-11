@@ -1,0 +1,2 @@
+write(1, "3:test \"multiply_edge_cases\" {\n", 31) = 31
++++ exited with 0 +++

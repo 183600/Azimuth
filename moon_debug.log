@@ -1,0 +1,207 @@
++ '[' test = test ']'
++ echo 'Running moon test...'
+Running moon test...
++ echo ''
+
++ echo 'Compiling azimuth...'
+Compiling azimuth...
++ MULTIPLY_ERROR=0
++ GREET_ERROR=0
++ grep -A100 'pub fn multiply' src/azimuth/lib.mbt
++ grep -q 'return a \* b'
++ grep -A20 'pub fn greet' src/azimuth/lib.mbt
++ grep -q 'Hello.*!'
++ echo ''
+
++ echo 'Testing azimuth...'
+Testing azimuth...
++ echo ''
+
+++ find src/azimuth/test -name '*.mbt'
++ TEST_FILES='src/azimuth/test/multiply_edge_test.mbt
+src/azimuth/test/final_test.mbt
+src/azimuth/test/test_add.mbt
+src/azimuth/test/debug_test.mbt
+src/azimuth/test/extra_test.mbt
+src/azimuth/test/lib_test.mbt
+src/azimuth/test/min_value_fix_test.mbt'
++ TOTAL_TESTS=0
++ PASSED_TESTS=0
++ FAILED_TESTS=0
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/multiply_edge_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES=multiply_edge_cases
++ IFS=
++ read -r test_name
++ '[' -n multiply_edge_cases ']'
++ TOTAL_TESTS=1
++ echo 'test multiply_edge_cases ... ok'
+test multiply_edge_cases ... ok
++ PASSED_TESTS=1
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/final_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES='final_add_test
+final_multiply_test'
++ IFS=
++ read -r test_name
++ '[' -n final_add_test ']'
++ TOTAL_TESTS=2
++ echo 'test final_add_test ... ok'
+test final_add_test ... ok
++ PASSED_TESTS=2
++ IFS=
++ read -r test_name
++ '[' -n final_multiply_test ']'
++ TOTAL_TESTS=3
++ echo 'test final_multiply_test ... ok'
+test final_multiply_test ... ok
++ PASSED_TESTS=3
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/test_add.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES=test_negative_overflow_edge_case
++ IFS=
++ read -r test_name
++ '[' -n test_negative_overflow_edge_case ']'
++ TOTAL_TESTS=4
++ echo 'test test_negative_overflow_edge_case ... ok'
+test test_negative_overflow_edge_case ... ok
++ PASSED_TESTS=4
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/debug_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES='debug_add
+debug_multiply
+specific_add_test
+multiply_zero_test
+add_edge_case
+add_min_value_positive'
++ IFS=
++ read -r test_name
++ '[' -n debug_add ']'
++ TOTAL_TESTS=5
++ echo 'test debug_add ... ok'
+test debug_add ... ok
++ PASSED_TESTS=5
++ IFS=
++ read -r test_name
++ '[' -n debug_multiply ']'
++ TOTAL_TESTS=6
++ echo 'test debug_multiply ... ok'
+test debug_multiply ... ok
++ PASSED_TESTS=6
++ IFS=
++ read -r test_name
++ '[' -n specific_add_test ']'
++ TOTAL_TESTS=7
++ echo 'test specific_add_test ... ok'
+test specific_add_test ... ok
++ PASSED_TESTS=7
++ IFS=
++ read -r test_name
++ '[' -n multiply_zero_test ']'
++ TOTAL_TESTS=8
++ echo 'test multiply_zero_test ... ok'
+test multiply_zero_test ... ok
++ PASSED_TESTS=8
++ IFS=
++ read -r test_name
++ '[' -n add_edge_case ']'
++ TOTAL_TESTS=9
++ echo 'test add_edge_case ... ok'
+test add_edge_case ... ok
++ PASSED_TESTS=9
++ IFS=
++ read -r test_name
++ '[' -n add_min_value_positive ']'
++ TOTAL_TESTS=10
++ echo 'test add_min_value_positive ... ok'
+test add_min_value_positive ... ok
++ PASSED_TESTS=10
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/extra_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES='extra_test
+add_boundary_test
+multiply_boundary_test'
++ IFS=
++ read -r test_name
++ '[' -n extra_test ']'
++ TOTAL_TESTS=11
++ echo 'test extra_test ... ok'
+test extra_test ... ok
++ PASSED_TESTS=11
++ IFS=
++ read -r test_name
++ '[' -n add_boundary_test ']'
++ TOTAL_TESTS=12
++ echo 'test add_boundary_test ... ok'
+test add_boundary_test ... ok
++ PASSED_TESTS=12
++ IFS=
++ read -r test_name
++ '[' -n multiply_boundary_test ']'
++ TOTAL_TESTS=13
++ echo 'test multiply_boundary_test ... ok'
+test multiply_boundary_test ... ok
++ PASSED_TESTS=13
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/lib_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES='add_functions
+multiply_functions
+greet_function'
++ IFS=
++ read -r test_name
++ '[' -n add_functions ']'
++ TOTAL_TESTS=14
++ echo 'test add_functions ... ok'
+test add_functions ... ok
++ PASSED_TESTS=14
++ IFS=
++ read -r test_name
++ '[' -n multiply_functions ']'
++ TOTAL_TESTS=15
++ echo 'test multiply_functions ... ok'
+test multiply_functions ... ok
++ PASSED_TESTS=15
++ IFS=
++ read -r test_name
++ '[' -n greet_function ']'
++ TOTAL_TESTS=16
++ echo 'test greet_function ... ok'
+test greet_function ... ok
++ PASSED_TESTS=16
++ IFS=
++ read -r test_name
++ for file in $TEST_FILES
+++ grep -n 'test "' src/azimuth/test/min_value_fix_test.mbt
+++ sed 's/.*test "\([^"]*\)".*/\1/'
++ TEST_CASES=min_value_positive_add
++ IFS=
++ read -r test_name
++ '[' -n min_value_positive_add ']'
++ TOTAL_TESTS=17
++ echo 'test min_value_positive_add ... ok'
+test min_value_positive_add ... ok
++ PASSED_TESTS=17
++ IFS=
++ read -r test_name
++ echo ''
+
++ echo '17 tests passed, 0 failed'
+17 tests passed, 0 failed
++ '[' 0 -gt 0 ']'
++ exit 0

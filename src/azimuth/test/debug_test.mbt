@@ -90,3 +90,8 @@ test "multiply_zero_test" {
 test "add_edge_case" { 
   assert_eq(-2147483648, add(-1073741824, -1073741824))? 
 }
+
+test "add_min_value_positive" {
+  assert_eq(-2147483647, add(-2147483648, 1))?  // 最小值 + 1
+  assert_eq(-2147483647, add(1, -2147483648))?  // 1 + 最小值
+}

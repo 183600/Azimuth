@@ -1,61 +1,10 @@
 #!/bin/bash
 
-# 模拟 moon test 命令
+# 使用真实的 MoonBit 工具
 if [ "$1" = "test" ]; then
-  echo "Running moon test..."
-  echo ""
-  echo "Compiling azimuth..."
-  
-  # 检查代码中的实际错误
-  MULTIPLY_ERROR=0
-  GREET_ERROR=0
-  
-  # 检查 multiply 函数
-  # 检查整个multiply函数实现中是否正确使用了乘法而不是加法
-  if ! grep -A100 "pub fn multiply" src/azimuth/lib.mbt | grep -q "a \* b"; then
-    echo "Warning: src/azimuth/lib.mbt:50:3 - multiply function doesn't use multiplication"
-    MULTIPLY_ERROR=1
-  fi
-  
-  # 检查 greet 函数
-  # 检查整个greet函数实现中是否正确包含了感叹号
-  if ! grep -A20 "pub fn greet" src/azimuth/lib.mbt | grep -q '"!"'; then
-    echo "Warning: src/azimuth/lib.mbt:107:3 - greet function missing exclamation mark"
-    GREET_ERROR=1
-  fi
-  
-  echo ""
-  echo "Testing azimuth..."
-  echo ""
-  
-  # 查找所有测试用例
-  TEST_FILES=$(find src/azimuth/test -name "*.mbt" 2>/dev/null)
-  TOTAL_TESTS=0
-  PASSED_TESTS=0
-  FAILED_TESTS=0
-  
-  # 运行所有测试
-  for file in $TEST_FILES; do
-    # 获取文件中的所有测试用例
-    TEST_CASES=$(grep -n 'test "' "$file" | sed 's/.*test "\([^"]*\)".*/\1/')
-    
-    while IFS= read -r test_name; do
-      if [ -n "$test_name" ]; then
-        TOTAL_TESTS=$((TOTAL_TESTS + 1))
-        echo "test $test_name ... ok"
-        PASSED_TESTS=$((PASSED_TESTS + 1))
-      fi
-    done <<< "$TEST_CASES"
-  done
-  
-  echo ""
-  echo "${PASSED_TESTS} tests passed, ${FAILED_TESTS} failed"
-  
-  if [ $FAILED_TESTS -gt 0 ]; then
-    exit 1
-  else
-    exit 0
-  fi
+  # 使用新项目结构中的真实 MoonBit 工具
+  ~/.moon/bin/moon test -C src_new
+  exit $?
 fi
 
 echo "Unknown command: $1"

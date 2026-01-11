@@ -1,0 +1,2 @@
+write(1, "final_add_test\nfinal_multiply_te"..., 35) = 35
++++ exited with 0 +++

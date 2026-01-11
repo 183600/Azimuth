@@ -1,0 +1,2 @@
+write(1, "min_value_positive_add\n", 23) = 23
++++ exited with 0 +++

@@ -1,0 +1,22 @@
+moonrun --test-args '{"package":"azimuth/azimuth","file_and_index":[["test_add.mbt",[]],["multiply_edge_test.mbt",[{"start":0,"end":1}]],["min_value_fix_test.mbt",[{"start":0,"end":1}]],["lib_test.mbt",[{"start":0,"end":3}]],["lib.mbt",[]],["final_test.mbt",[{"start":0,"end":2}]],["extra_test.mbt",[{"start":0,"end":3}]],["debug_test.mbt",[{"start":0,"end":6}]],["test_add.mbt",[]],["multiply_edge_test.mbt",[]],["min_value_fix_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]],["final_test.mbt",[]],["extra_test.mbt",[]],["debug_test.mbt",[]],["test_add.mbt",[]],["multiply_edge_test.mbt",[]],["min_value_fix_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]],["final_test.mbt",[]],["extra_test.mbt",[]],["debug_test.mbt",[]],["test_add.mbt",[]],["multiply_edge_test.mbt",[]],["min_value_fix_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]],["final_test.mbt",[]],["extra_test.mbt",[]],["debug_test.mbt",[]]]}' ./_build/wasm-gc/debug/test/azimuth/azimuth.blackbox_test.wasm --
+moonrun --test-args '{"package":"azimuth/azimuth","file_and_index":[["test_add.mbt",[{"start":0,"end":1}]],["lib.mbt",[]],["test_add.mbt",[]],["lib.mbt",[]],["test_add.mbt",[]],["lib.mbt",[]],["test_add.mbt",[]],["lib.mbt",[]]]}' ./_build/wasm-gc/debug/test/azimuth/azimuth.internal_test.wasm --
+moonrun --test-args '{"package":"azimuth","file_and_index":[["README.mbt.md",[]],["README.mbt.md",[]],["README.mbt.md",[]],["README.mbt.md",[]]]}' ./_build/wasm-gc/debug/test/azimuth.blackbox_test.wasm --
+moonrun --test-args '{"package":"azimuth","file_and_index":[]}' ./_build/wasm-gc/debug/test/azimuth.internal_test.wasm --
+[azimuth] test azimuth/multiply_edge_test.mbt:3 ("multiply_edge_cases") ok
+[azimuth] test azimuth/min_value_fix_test.mbt:3 ("min_value_positive_add") ok
+[azimuth] test azimuth/lib_test.mbt:3 ("add_functions") ok
+[azimuth] test azimuth/lib_test.mbt:50 ("multiply_functions") ok
+[azimuth] test azimuth/lib_test.mbt:94 ("greet_function") ok
+[azimuth] test azimuth/final_test.mbt:3 ("final_add_test") ok
+[azimuth] test azimuth/final_test.mbt:16 ("final_multiply_test") ok
+[azimuth] test azimuth/extra_test.mbt:3 ("extra_test") ok
+[azimuth] test azimuth/extra_test.mbt:7 ("add_boundary_test") ok
+[azimuth] test azimuth/extra_test.mbt:11 ("multiply_boundary_test") ok
+[azimuth] test azimuth/debug_test.mbt:3 ("debug_add") ok
+[azimuth] test azimuth/debug_test.mbt:34 ("debug_multiply") ok
+[azimuth] test azimuth/debug_test.mbt:82 ("specific_add_test") ok
+[azimuth] test azimuth/debug_test.mbt:86 ("multiply_zero_test") ok
+[azimuth] test azimuth/debug_test.mbt:90 ("add_edge_case") ok
+[azimuth] test azimuth/debug_test.mbt:94 ("add_min_value_positive") ok
+[azimuth] test azimuth/test_add.mbt:3 ("test_negative_overflow_edge_case") ok
+Total tests: 17, passed: 17, failed: 0.

@@ -1,0 +1,2 @@
+write(1, "3:test \"debug_add\" {\n34:test \"de"..., 173) = 173
++++ exited with 0 +++

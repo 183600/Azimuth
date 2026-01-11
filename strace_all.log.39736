@@ -1,0 +1,2 @@
+write(1, "test_negative_overflow_edge_case"..., 33) = 33
++++ exited with 0 +++
