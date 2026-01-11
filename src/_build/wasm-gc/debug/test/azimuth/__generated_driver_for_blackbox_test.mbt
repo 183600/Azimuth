@@ -53,6 +53,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "specialized_tests.mbt": {
   },
+  "simplified_unit_tests.mbt": {
+  },
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_math_properties"]),
   },

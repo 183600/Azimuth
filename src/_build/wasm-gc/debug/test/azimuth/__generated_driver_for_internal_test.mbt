@@ -76,6 +76,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_7370656369616c697a65645f74657374732e6d6274_6, ["nested_function_composition"]),
     7: (__test_7370656369616c697a65645f74657374732e6d6274_7, ["precision_boundary_calculations"]),
   },
+  "simplified_unit_tests.mbt": {
+    0: (__test_73696d706c69666965645f756e69745f74657374732e6d6274_0, ["batch_operations_performance"]),
+    1: (__test_73696d706c69666965645f756e69745f74657374732e6d6274_1, ["mathematical_identities"]),
+    2: (__test_73696d706c69666965645f756e69745f74657374732e6d6274_2, ["special_boundary_combinations"]),
+    3: (__test_73696d706c69666965645f756e69745f74657374732e6d6274_3, ["advanced_string_processing"]),
+    4: (__test_73696d706c69666965645f756e69745f74657374732e6d6274_4, ["real_business_scenarios"]),
+  },
   "practical_scenario_tests.mbt": {
     0: (__test_70726163746963616c5f7363656e6172696f5f74657374732e6d6274_0, ["financial_calculations"]),
     1: (__test_70726163746963616c5f7363656e6172696f5f74657374732e6d6274_1, ["temperature_conversion"]),
