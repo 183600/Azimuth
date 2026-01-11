@@ -169,6 +169,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_7, ["computer_science_calculations"]),
     8: (__test_636f6d70726568656e736976655f6170706c69636174696f6e5f74657374732e6d6274_8, ["complex_edge_case_combinations"]),
   },
+  "additional_tests.mbt": {
+    0: (__test_6164646974696f6e616c5f74657374732e6d6274_0, ["add_function_boundary_values"]),
+    1: (__test_6164646974696f6e616c5f74657374732e6d6274_1, ["multiply_function_boundary_values"]),
+    2: (__test_6164646974696f6e616c5f74657374732e6d6274_2, ["greet_function_string_processing"]),
+    3: (__test_6164646974696f6e616c5f74657374732e6d6274_3, ["add_function_overflow_handling"]),
+    4: (__test_6164646974696f6e616c5f74657374732e6d6274_4, ["multiply_function_overflow_handling"]),
+    5: (__test_6164646974696f6e616c5f74657374732e6d6274_5, ["shopping_cart_calculation"]),
+    6: (__test_6164646974696f6e616c5f74657374732e6d6274_6, ["mathematical_associative_laws"]),
+    7: (__test_6164646974696f6e616c5f74657374732e6d6274_7, ["mathematical_commutative_laws"]),
+    8: (__test_6164646974696f6e616c5f74657374732e6d6274_8, ["temperature_conversion"]),
+    9: (__test_6164646974696f6e616c5f74657374732e6d6274_9, ["area_and_perimeter_calculation"]),
+  },
   "additional_test_cases.mbt": {
     0: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_0, ["fibonacci_sequence_operations"]),
     1: (__test_6164646974696f6e616c5f746573745f63617365732e6d6274_1, ["prime_number_operations"]),
