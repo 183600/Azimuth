@@ -218,3 +218,173 @@ test "string_edge_cases" {
   assert_eq("Hello, trailing space !", greet("trailing space "))
   assert_eq("Hello, multiple   spaces!", greet("multiple   spaces"))
 }
+
+// 额外添加的10个新测试用例
+///|
+test "new_add_symmetry_properties" {
+  // 测试加法的交换律
+  assert_eq(add(100, 200), add(200, 100))
+  assert_eq(add(-100, 200), add(200, -100))
+  assert_eq(add(-100, -200), add(-200, -100))
+  
+  // 测试加法的结合律（在溢出保护下的表现）
+  let a = 1000000
+  let b = 2000000
+  let c = 3000000
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+}
+
+///|
+test "new_multiply_distributive_properties" {
+  // 测试乘法对加法的分配律（在溢出保护下的表现）
+  let a = 100
+  let b = 200
+  let c = 3
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  
+  // 负数情况
+  assert_eq(multiply(-100, add(200, -50)), add(multiply(-100, 200), multiply(-100, -50)))
+}
+
+///|
+test "new_extreme_boundary_combinations" {
+  // 测试极端边界值的组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值的多次运算
+  let result1 = add(max_val, add(max_val, max_val))
+  assert_eq(max_val, result1) // 应该溢出
+  
+  // 最小值的多次运算
+  let result2 = add(min_val, add(min_val, min_val))
+  assert_eq(min_val, result2) // 应该溢出
+  
+  // 混合边界运算
+  let result3 = add(add(max_val, min_val), 1)
+  assert_eq(0, result3) // max_val + min_val = -1, then + 1 = 0
+}
+
+///|
+test "new_power_of_two_operations" {
+  // 测试2的幂次方的运算
+  assert_eq(multiply(2, 1024), 2048)
+  assert_eq(multiply(4, 512), 2048)
+  assert_eq(multiply(8, 256), 2048)
+  assert_eq(multiply(16, 128), 2048)
+  assert_eq(multiply(32, 64), 2048)
+  
+  // 2的幂次方相加
+  assert_eq(add(1024, 2048), 3072)
+  assert_eq(add(4096, 8192), 12288)
+  
+  // 大的2的幂次方
+  assert_eq(multiply(32768, 32768), 1073741824) // 32768 * 32768 = 1073741824
+}
+
+///|
+test "new_greet_unicode_and_special_chars" {
+  // 测试包含特殊字符和Unicode的字符串
+  assert_eq("Hello, 中文!", greet("中文"))
+  assert_eq("Hello, 🌙!", greet("🌙"))
+  assert_eq("Hello, Café!", greet("Café"))
+  assert_eq("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq("Hello, Hello World!", greet("Hello World"))
+  
+  // 测试包含空格的字符串
+  assert_eq("Hello,   !", greet("  "))
+  assert_eq("Hello, a b c!", greet("a b c"))
+}
+
+///|
+test "new_sequential_operations_stability" {
+  // 测试连续运算的稳定性
+  let mut result = 0
+  result = add(result, 100)
+  assert_eq(100, result)
+  result = multiply(result, 2)
+  assert_eq(200, result)
+  result = add(result, -50)
+  assert_eq(150, result)
+  result = multiply(result, 3)
+  assert_eq(450, result)
+  
+  // 测试接近边界的连续运算
+  let mut large_result = 1000000
+  large_result = multiply(large_result, 1000)
+  assert_eq(1000000000, large_result) // 1000000 * 1000 = 1000000000
+  large_result = add(large_result, -1000000)
+  assert_eq(999000000, large_result) // 1000000000 - 1000000 = 999000000
+}
+
+///|
+test "new_negative_zero_handling" {
+  // 测试负零的处理（虽然Int中没有负零，但测试相关边界）
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, -1))
+  assert_eq(0, multiply(-1, 0))
+  assert_eq(0, multiply(0, 2147483647))
+  assert_eq(0, multiply(0, -2147483648))
+}
+
+///|
+test "new_alternating_sign_patterns" {
+  // 测试交替符号的模式
+  assert_eq(0, add(100, -100))
+  assert_eq(0, add(-100, 100))
+  assert_eq(200, add(-100, 300))
+  assert_eq(-200, add(100, -300))
+  
+  // 乘法的交替符号
+  assert_eq(-10000, multiply(100, -100))
+  assert_eq(10000, multiply(-100, -100))
+  assert_eq(10000, multiply(100, 100))
+  
+  // 复杂的符号组合
+  let result = multiply(add(10, -5), add(-3, 8))
+  assert_eq(25, result) // (10-5)*( -3+8) = 5*5 = 25
+}
+
+///|
+test "new_boundary_precision_tests" {
+  // 测试边界精度相关的测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值的减法（通过加负数实现）
+  assert_eq(-1, add(max_val, multiply(min_val, -1))) // 2147483647 + (-2147483648 * -1) = 2147483647 + 2147483648 = 溢出
+  
+  // 测试接近边界的精确计算
+  assert_eq(2147483646, add(1073741823, 1073741823))
+  assert_eq(-2147483647, add(-1073741824, -1073741823))
+  
+  // 测试边界值的乘法
+  assert_eq(2147441940, multiply(46340, 46341)) // 接近溢出但不溢出
+  assert_eq(2147441940, multiply(46341, 46340)) // 反过来
+}
+
+///|
+test "new_mathematical_identities" {
+  // 测试数学恒等式
+  let test_values = [0, 1, -1, 100, -100, 2147483647, -2147483648]
+  
+  for value in test_values {
+    // 加法恒等式：a + 0 = a
+    assert_eq(value, add(value, 0))
+    assert_eq(value, add(0, value))
+    
+    // 乘法恒等式：a * 1 = a
+    assert_eq(value, multiply(value, 1))
+    assert_eq(value, multiply(1, value))
+    
+    // 零乘法：a * 0 = 0
+    assert_eq(0, multiply(value, 0))
+    assert_eq(0, multiply(0, value))
+    
+    // 负一乘法：a * -1 = -a（除了最小值）
+    if value != -2147483648 {
+      assert_eq(multiply(value, -1), multiply(-1, value))
+    }
+  }
+}
