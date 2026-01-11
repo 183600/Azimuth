@@ -50,6 +50,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "new_comprehensive_tests.mbt": {
   },
+  "mathematical_properties_test.mbt": {
+    0: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_0, ["add_commutative_property"]),
+    1: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_1, ["add_associative_property"]),
+    2: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_2, ["multiply_commutative_property"]),
+    3: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_3, ["multiply_distributive_property"]),
+    4: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_4, ["identity_elements"]),
+    5: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_5, ["greet_special_characters"]),
+    6: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_6, ["add_sequence_pattern"]),
+    7: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_7, ["multiply_power_pattern"]),
+    8: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_8, ["extreme_boundary_combinations"]),
+  },
   "lib.mbt": {
   },
   "enhanced_tests.mbt": {
