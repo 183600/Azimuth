@@ -44,6 +44,8 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "specialized_tests.mbt": {
   },
+  "practical_application_tests.mbt": {
+  },
   "new_comprehensive_tests.mbt": {
   },
   "lib.mbt": {
