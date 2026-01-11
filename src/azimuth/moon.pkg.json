@@ -1,5 +1,5 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet"],
-  "files": ["lib.mbt", "test/enhanced_test_suite.mbt"]
+  "files": ["lib.mbt", "test/simple_test.mbt"]
 }
