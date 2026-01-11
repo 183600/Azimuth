@@ -103,6 +103,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "additional_edge_cases.mbt": {
   },
+  "additional_comprehensive_test.mbt": {
+    0: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_0, ["fibonacci_sequence_calculations"]),
+    1: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_1, ["factorial_calculations"]),
+    2: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_2, ["power_operations"]),
+    3: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_3, ["average_calculations"]),
+    4: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_4, ["advanced_string_processing"]),
+    5: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_5, ["arithmetic_series_sum"]),
+    6: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_6, ["geometric_calculations"]),
+    7: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_7, ["time_calculations"]),
+    8: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_8, ["currency_calculations"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
