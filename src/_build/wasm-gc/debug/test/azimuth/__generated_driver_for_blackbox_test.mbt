@@ -137,6 +137,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "additional_edge_cases.mbt": {
   },
+  "additional_comprehensive_tests.mbt": {
+  },
   "additional_comprehensive_test.mbt": {
     0: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_0, ["fibonacci_sequence_calculations"]),
     1: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_1, ["factorial_calculations"]),
