@@ -33,7 +33,7 @@ if [ "$1" = "test" ]; then
   echo ""
   
   # 查找所有测试用例
-  TEST_FILES=$(find src/azimuth/test -name "*.mbt" 2>/dev/null)
+  TEST_FILES=$(find src/azimuth -name "*.mbt" 2>/dev/null)
   TOTAL_TESTS=0
   PASSED_TESTS=0
   FAILED_TESTS=0
