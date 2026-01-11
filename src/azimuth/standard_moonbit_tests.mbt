@@ -134,7 +134,7 @@ test "large_number_operations" {
   let another_large = 2000000
   
   assert_eq(3000000, add(large_num, another_large))
-  assert_eq(2000000000000, multiply(large_num, another_large))
+  assert_eq(2147483647, multiply(large_num, another_large))  // 乘积会溢出到最大值
   
   // 大数与边界值混合
   assert_eq(2147483647, add(2147483647, large_num))
