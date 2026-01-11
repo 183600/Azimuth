@@ -1,6 +1,11 @@
 {
   "packages": [
     {
+      "root": "azimuth",
+      "rel": "azimuth",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/src/_build/wasm-gc/release/check/azimuth/azimuth.mi"
+    },
+    {
       "root": "moonbitlang/core",
       "rel": "abort",
       "artifact": "/home/runner/.moon/lib/core/target/wasm-gc/release/bundle/abort/abort.mi"

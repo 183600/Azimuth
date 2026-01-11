@@ -1,5 +1,0 @@
-{
-  "name": "azimuth",
-  "export": ["add", "multiply", "greet"],
-  "test": "test"
-}
