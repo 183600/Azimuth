@@ -54,6 +54,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_math_properties"]),
   },
+  "simple_new_test.mbt": {
+    0: (__test_73696d706c655f6e65775f746573742e6d6274_0, ["simple_new_add_test"]),
+    1: (__test_73696d706c655f6e65775f746573742e6d6274_1, ["simple_new_multiply_test"]),
+    2: (__test_73696d706c655f6e65775f746573742e6d6274_2, ["simple_new_greet_test"]),
+  },
   "real_world_test.mbt": {
     0: (__test_7265616c5f776f726c645f746573742e6d6274_0, ["financial_calculations"]),
     1: (__test_7265616c5f776f726c645f746573742e6d6274_1, ["geometry_calculations"]),
