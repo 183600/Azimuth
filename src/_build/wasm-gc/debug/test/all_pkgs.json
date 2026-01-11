@@ -6,6 +6,11 @@
       "artifact": "/home/runner/work/Azimuth/Azimuth/src/_build/wasm-gc/debug/test/azimuth/azimuth.mi"
     },
     {
+      "root": "azimuth",
+      "rel": "clean_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/src/_build/wasm-gc/debug/test/clean_test/clean_test.mi"
+    },
+    {
       "root": "moonbitlang/core",
       "rel": "abort",
       "artifact": "/home/runner/.moon/lib/core/target/wasm-gc/release/bundle/abort/abort.mi"

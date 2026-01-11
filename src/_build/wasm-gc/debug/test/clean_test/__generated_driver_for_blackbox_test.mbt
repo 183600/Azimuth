@@ -42,111 +42,7 @@ type Moonbit_Test_Driver_Internal_TestDriver_Async_With_Args_Map = @moonbitlang/
 ]
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "string_processing_test.mbt": {
-    0: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_0, ["greet_different_languages"]),
-    1: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_1, ["greet_special_characters"]),
-    2: (__test_737472696e675f70726f63657373696e675f746573742e6d6274_2, ["greet_long_names"]),
-  },
-  "standard_test_cases.mbt": {
-  },
-  "standard_moonbit_tests.mbt": {
-  },
-  "specialized_tests.mbt": {
-  },
-  "simple_test.mbt": {
-    0: (__test_73696d706c655f746573742e6d6274_0, ["simple_math_properties"]),
-  },
-  "simple_new_test.mbt": {
-    0: (__test_73696d706c655f6e65775f746573742e6d6274_0, ["fibonacci_calculation"]),
-    1: (__test_73696d706c655f6e65775f746573742e6d6274_1, ["factorial_calculation"]),
-    2: (__test_73696d706c655f6e65775f746573742e6d6274_2, ["power_calculation"]),
-    3: (__test_73696d706c655f6e65775f746573742e6d6274_3, ["linear_equation"]),
-    4: (__test_73696d706c655f6e65775f746573742e6d6274_4, ["string_processing"]),
-    5: (__test_73696d706c655f6e65775f746573742e6d6274_5, ["array_average"]),
-    6: (__test_73696d706c655f6e65775f746573742e6d6274_6, ["binary_conversion"]),
-    7: (__test_73696d706c655f6e65775f746573742e6d6274_7, ["percentage_calculation"]),
-    8: (__test_73696d706c655f6e65775f746573742e6d6274_8, ["temperature_conversion"]),
-    9: (__test_73696d706c655f6e65775f746573742e6d6274_9, ["gcd_simulation"]),
-  },
-  "real_world_test.mbt": {
-    0: (__test_7265616c5f776f726c645f746573742e6d6274_0, ["financial_calculations"]),
-    1: (__test_7265616c5f776f726c645f746573742e6d6274_1, ["geometry_calculations"]),
-    2: (__test_7265616c5f776f726c645f746573742e6d6274_2, ["temperature_conversion"]),
-  },
-  "practical_scenario_tests.mbt": {
-  },
-  "practical_application_tests.mbt": {
-  },
-  "new_comprehensive_tests.mbt": {
-  },
-  "mathematical_properties_test.mbt": {
-    0: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_0, ["add_commutative_property"]),
-    1: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_1, ["add_associative_property"]),
-    2: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_2, ["multiply_commutative_property"]),
-    3: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_3, ["multiply_distributive_property"]),
-    4: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_4, ["identity_elements"]),
-    5: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_5, ["greet_special_characters"]),
-    6: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_6, ["add_sequence_pattern"]),
-    7: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_7, ["multiply_power_pattern"]),
-    8: (__test_6d617468656d61746963616c5f70726f706572746965735f746573742e6d6274_8, ["extreme_boundary_combinations"]),
-  },
   "lib.mbt": {
-  },
-  "focused_comprehensive_tests.mbt": {
-  },
-  "enhanced_tests.mbt": {
-  },
-  "enhanced_math_test.mbt": {
-    0: (__test_656e68616e6365645f6d6174685f746573742e6d6274_0, ["addition_associative_property_new"]),
-    1: (__test_656e68616e6365645f6d6174685f746573742e6d6274_1, ["multiplication_associative_property_new"]),
-    2: (__test_656e68616e6365645f6d6174685f746573742e6d6274_2, ["multiplication_commutative_property_new"]),
-    3: (__test_656e68616e6365645f6d6174685f746573742e6d6274_3, ["addition_identity_element_new"]),
-    4: (__test_656e68616e6365645f6d6174685f746573742e6d6274_4, ["multiplication_identity_element_new"]),
-    5: (__test_656e68616e6365645f6d6174685f746573742e6d6274_5, ["multiplication_zero_element_new"]),
-    6: (__test_656e68616e6365645f6d6174685f746573742e6d6274_6, ["temperature_conversion_calculation_new"]),
-    7: (__test_656e68616e6365645f6d6174685f746573742e6d6274_7, ["bank_interest_calculation_new"]),
-    8: (__test_656e68616e6365645f6d6174685f746573742e6d6274_8, ["string_concatenation_special_cases_new"]),
-  },
-  "enhanced_coverage_tests.mbt": {
-  },
-  "correct_concise_tests.mbt": {
-  },
-  "comprehensive_unique_tests.mbt": {
-  },
-  "comprehensive_edge_case_tests.mbt": {
-  },
-  "comprehensive_application_tests.mbt": {
-  },
-  "boundary_values_test.mbt": {
-    0: (__test_626f756e646172795f76616c7565735f746573742e6d6274_0, ["extreme_positive_values"]),
-    1: (__test_626f756e646172795f76616c7565735f746573742e6d6274_1, ["extreme_negative_values"]),
-    2: (__test_626f756e646172795f76616c7565735f746573742e6d6274_2, ["boundary_combinations"]),
-  },
-  "advanced_math_test.mbt": {
-    0: (__test_616476616e6365645f6d6174685f746573742e6d6274_0, ["addition_associative_property"]),
-    1: (__test_616476616e6365645f6d6174685f746573742e6d6274_1, ["multiplication_commutative_property"]),
-    2: (__test_616476616e6365645f6d6174685f746573742e6d6274_2, ["mathematical_identity_elements"]),
-  },
-  "additional_tests.mbt": {
-  },
-  "additional_test_cases.mbt": {
-  },
-  "additional_moonbit_tests.mbt": {
-  },
-  "additional_focused_tests.mbt": {
-  },
-  "additional_edge_cases.mbt": {
-  },
-  "additional_comprehensive_test.mbt": {
-    0: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_0, ["fibonacci_sequence_calculations"]),
-    1: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_1, ["factorial_calculations"]),
-    2: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_2, ["power_operations"]),
-    3: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_3, ["average_calculations"]),
-    4: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_4, ["advanced_string_processing"]),
-    5: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_5, ["arithmetic_series_sum"]),
-    6: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_6, ["geometric_calculations"]),
-    7: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_7, ["time_calculations"]),
-    8: (__test_6164646974696f6e616c5f636f6d70726568656e736976655f746573742e6d6274_8, ["currency_calculations"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -174,7 +70,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/azimuth\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/clean_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
