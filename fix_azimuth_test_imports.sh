@@ -1,32 +1,44 @@
 #!/bin/bash
 
 # 批量修复azimuth测试文件中的导入问题
+TEST_DIR="/home/runner/work/Azimuth/Azimuth/src/azimuth/test"
 
-echo "开始修复azimuth测试文件中的导入问题..."
+echo "Fixing import issues in azimuth test files..."
 
-# 获取所有azimuth测试文件
-test_files=$(find src/azimuth/test -name "*.mbt" -type f)
-
-# 对每个测试文件进行处理
-for file in $test_files; do
-    echo "处理文件: $file"
+# 遍历所有测试文件
+for test_file in "$TEST_DIR"/*.mbt; do
+  if [ -f "$test_file" ]; then
+    echo "Processing $(basename "$test_file")..."
     
-    # 检查文件是否包含未绑定的函数调用
-    if grep -q "assert_eq\|assert_eq_string\|assert_true\|assert_false\|add\|multiply\|greet" "$file"; then
-        # 检查是否已经有导入语句
-        if ! grep -q "import" "$file"; then
-            # 添加导入语句到文件开头
-            temp_file=$(mktemp)
-            echo "import \"../azimuth\"" > "$temp_file"
-            cat "$file" >> "$temp_file"
-            mv "$temp_file" "$file"
-            echo "  已添加导入语句"
-        else
-            echo "  文件已包含导入语句"
-        fi
-    else
-        echo "  文件无需修复"
+    # 检查文件是否包含重复定义的函数
+    if grep -q "^fn add(" "$test_file"; then
+      # 创建临时文件
+      temp_file=$(mktemp)
+      
+      # 移除重复定义的函数，保留测试部分
+      awk '
+      /^test / { in_test = 1 }
+      in_test { print }
+      /^fn / { in_test = 0 }
+      ' "$test_file" > "$temp_file"
+      
+      # 修复函数调用，添加azimuth::前缀
+      sed -i "s/add(/azimuth::add(/g" "$temp_file"
+      sed -i "s/multiply(/azimuth::multiply(/g" "$temp_file"
+      sed -i "s/greet(/azimuth::greet(/g" "$temp_file"
+      sed -i "s/assert_eq(/azimuth::assert_eq(/g" "$temp_file"
+      sed -i "s/assert_eq_string(/azimuth::assert_eq_string(/g" "$temp_file"
+      sed -i "s/assert_true(/azimuth::assert_true(/g" "$temp_file"
+      sed -i "s/assert_false(/azimuth::assert_false(/g" "$temp_file"
+      
+      # 添加注释
+      echo "// 测试文件 - 使用azimuth包中的函数" > "$test_file"
+      cat "$temp_file" >> "$test_file"
+      
+      # 清理临时文件
+      rm "$temp_file"
     fi
+  fi
 done
 
-echo "azimuth测试文件导入问题修复完成！"
+echo "Fixed import issues in azimuth test files."

@@ -1,12 +1,19 @@
-
+// 测试文件 - 使用内置操作符测试基本功能
 test "basic_add_test" {
-  azimuth::assert_eq(5, azimuth::add(2, 3))
+  let result = @azimuth.add(2, 3)
+  if result != 5 {
+    @builtin.panic()
+  }
 }
-
 test "basic_multiply_test" {
-  azimuth::assert_eq(6, azimuth::multiply(2, 3))
+  let result = @azimuth.multiply(2, 3)
+  if result != 6 {
+    @builtin.panic()
+  }
 }
-
 test "basic_greet_test" {
-  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
+  let result = @azimuth.greet("World")
+  if result != "Hello, World!" {
+    @builtin.panic()
+  }
 }

@@ -1,0 +1,14 @@
+// 测试文件 - 使用azimuth包中的函数
+test "basic_test" {
+  if 5 != azimuth::add(2, 3) {
+    @builtin.panic()
+  }
+  
+  if 6 != azimuth::multiply(2, 3) {
+    @builtin.panic()
+  }
+  
+  if "Hello, World!" != azimuth::greet("World") {
+    @builtin.panic()
+  }
+}

@@ -1,0 +1,9 @@
+Running real MoonBit compilation check...
+
+Checking azimuth package...
+✓ azimuth package compiles successfully
+
+Checking clean_test package...
+✓ clean_test package compiles successfully
+
+✓ All packages compile successfully!

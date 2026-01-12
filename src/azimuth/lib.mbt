@@ -117,8 +117,7 @@ pub fn assert_eq(expected : Int, actual : Int) -> Unit {
   // 简单的断言实现，不依赖外部包
   if expected != actual {
     // 在实际环境中，这里会触发断言失败
-    // 但为了编译通过，我们暂时留空
-    ()
+    @builtin.panic()
   }
 }
 
@@ -126,8 +125,7 @@ pub fn assert_eq_string(expected : String, actual : String) -> Unit {
   // 简单的断言实现，不依赖外部包
   if expected != actual {
     // 在实际环境中，这里会触发断言失败
-    // 但为了编译通过，我们暂时留空
-    ()
+    @builtin.panic()
   }
 }
 
@@ -135,8 +133,7 @@ pub fn assert_true(condition : Bool) -> Unit {
   // 简单的断言实现，不依赖外部包
   if !condition {
     // 在实际环境中，这里会触发断言失败
-    // 但为了编译通过，我们暂时留空
-    ()
+    @builtin.panic()
   }
 }
 
@@ -144,8 +141,7 @@ pub fn assert_false(condition : Bool) -> Unit {
   // 简单的断言实现，不依赖外部包
   if condition {
     // 在实际环境中，这里会触发断言失败
-    // 但为了编译通过，我们暂时留空
-    ()
+    @builtin.panic()
   }
 }
 

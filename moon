@@ -2,7 +2,7 @@
 
 # 使用自定义的 MoonBit 测试脚本
 if [ "$1" = "test" ]; then
-  ./moon_test_final
+  ./moon_test_real
 elif [ "$1" = "--help" ] || [ "$1" = "-help" ] || [ "$1" = "help" ]; then
   echo "Usage: moon [command]"
   echo "Commands:"

@@ -1,12 +1,12 @@
-
-test "unique_test_case_1" {
-  azimuth::assert_eq(10, azimuth::add(3, 7))
-}
-
-test "unique_test_case_2" {
-  azimuth::assert_eq(15, azimuth::multiply(3, 5))
-}
-
-test "unique_test_case_3" {
-  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
+// 测试文件 - 使用azimuth包中的函数
+test "basic_test" {
+  if 5 != @azimuth.add(2, 3) {
+    @builtin.panic()
+  }
+  if 6 != @azimuth.multiply(2, 3) {
+    @builtin.panic()
+  }
+  if "Hello, World!" != @azimuth.greet("World") {
+    @builtin.panic()
+  }
 }

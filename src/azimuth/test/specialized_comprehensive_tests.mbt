@@ -1,12 +1,16 @@
-
+// 测试文件 - 使用azimuth包中的函数
 test "basic_add_test" {
-  azimuth::assert_eq(5, azimuth::add(2, 3))
+  if 5 != @azimuth.add(2, 3) {
+    @builtin.panic()
+  }
 }
-
 test "basic_multiply_test" {
-  azimuth::assert_eq(6, azimuth::multiply(2, 3))
+  if 6 != @azimuth.multiply(2, 3) {
+    @builtin.panic()
+  }
 }
-
 test "basic_greet_test" {
-  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
+  if "Hello, World!" != @azimuth.greet("World") {
+    @builtin.panic()
+  }
 }

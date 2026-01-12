@@ -1,22 +1,14 @@
-
+// 测试文件 - 使用azimuth包中的函数
+// 测试基本功能
 test "basic_add_test" {
-
-  assert_eq(5, add(2, 3))
-
+  let result = @azimuth.add(2, 3)
+  @azimuth.assert_eq(5, result)
 }
-
-
-
 test "basic_multiply_test" {
-
-  assert_eq(6, multiply(2, 3))
-
+  let result = @azimuth.multiply(2, 3)
+  @azimuth.assert_eq(6, result)
 }
-
-
-
 test "basic_greet_test" {
-
-  assert_eq_string("Hello, World!", greet("World"))
-
+  let result = @azimuth.greet("World")
+  @azimuth.assert_eq_string("Hello, World!", result)
 }

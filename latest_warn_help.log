@@ -1,0 +1,5 @@
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-warn-help'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options

@@ -1,23 +1,18 @@
-
-
-// 在测试文件中定义需要的函数以解决导入问题
-
-
-
+// 测试文件 - 使用clean_test包中的函数
 test "basic_add_focused_add" {
-  let result  = clean_test::add(2, 3)
+  let result = @clean_test.add(2, 3)
   if result != 5 {
     // println("Test failed")
   }
 }
 test "basic_multiply_focused_add" {
-  let result  = clean_test::multiply(2, 3)
+  let result  = @clean_test.multiply(2, 3)
   if result != 6 {
     // println("Test failed")
   }
 }
 test "basic_greet_focused_add" {
-  let result  = clean_test::greet("World")
+  let result  = @clean_test.greet("World")
   if result != "Hello, World!" {
     // println("Test failed")
   }

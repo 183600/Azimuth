@@ -1,4 +1,6 @@
-moonc
-  -v  show version
-  -help  Display this list of options
-  --help  Display this list of options
+Usage: moon [command]
+Commands:
+  test    Run tests
+  help    Show this help message
+
+For other MoonBit commands, use the moonc.js compiler directly.

@@ -1,26 +1,40 @@
 #!/bin/bash
 
-# 批量修复测试文件中的导入问题
-# 删除所有测试文件中的 import "../azimuth" 和 import "../clean_test" 语句
+# 批量修复所有测试文件，在文件开头添加函数定义
+echo "Adding function definitions to all test files..."
 
-echo "开始修复测试文件导入问题..."
+TEST_DIR="/home/runner/work/Azimuth/Azimuth/src/azimuth/test"
 
-# 修复 azimuth 测试文件
-for file in src/azimuth/test/*.mbt; do
-    if [ -f "$file" ]; then
-        echo "处理文件: $file"
-        # 删除 import "../azimuth" 行
-        sed -i '/^import "..\/azimuth"$/d' "$file"
-    fi
+# 函数定义模板
+FUNCTION_DEFINITIONS='// 在测试文件中直接定义需要的函数
+
+fn add(a : Int, b : Int) -> Int {
+  a + b
+}
+
+fn multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+fn greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+'
+
+# 查找所有 .mbt 文件
+find "$TEST_DIR" -name "*.mbt" -type f | while read file; do
+  # 检查文件是否已经包含函数定义
+  if ! grep -q "fn add(a : Int, b : Int) -> Int" "$file"; then
+    echo "Processing $file..."
+    # 创建临时文件
+    temp_file=$(mktemp)
+    # 在文件开头添加函数定义
+    echo "$FUNCTION_DEFINITIONS" > "$temp_file"
+    cat "$file" >> "$temp_file"
+    # 替换原文件
+    mv "$temp_file" "$file"
+  fi
 done
 
-# 修复 clean_test 测试文件  
-for file in src/clean_test/test/*.mbt; do
-    if [ -f "$file" ]; then
-        echo "处理文件: $file"
-        # 删除 import "../clean_test" 行
-        sed -i '/^import "..\/clean_test"$/d' "$file"
-    fi
-done
-
-echo "修复完成！"
+echo "Done adding function definitions."

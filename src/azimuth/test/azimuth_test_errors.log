@@ -1,0 +1,5 @@
+azimuth_test/enhanced_test_suite.mbt:3:16-3:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_test_suite.mbt:10:16-10:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_test_suite.mbt:17:16-17:21 [E4021] The value identifier greet is unbound.
+azimuth_test/test_direct_call.mbt:3:3-3:10 [E4021] The value identifier azimuth is unbound.
+azimuth_test/test_qualified_call.mbt:3:16-3:28 [E4020] Package "azimuth" not found in the loaded packages.

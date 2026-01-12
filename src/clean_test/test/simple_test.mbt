@@ -1,13 +1,10 @@
-// 测试基本功能
-
+// 测试文件 - 使用clean_test包中的函数
 test "add_basic" {
-  assert_eq(5, add(2, 3))
+  if 5 != @clean_test.add(2, 3) { @builtin.panic() }
 }
-
 test "multiply_basic" {
-  assert_eq(6, multiply(2, 3))
+  if 6 != @clean_test.multiply(2, 3) { @builtin.panic() }
 }
-
 test "greet_basic" {
-  assert_eq_string("Hello, World!", greet("World"))
+  if "Hello, World!" != @clean_test.greet("World") { @builtin.panic() }
 }

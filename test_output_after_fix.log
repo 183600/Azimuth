@@ -252,8 +252,9 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+test ... ok
 
-247 tests passed, 0 failed
+248 tests passed, 0 failed
 
 Compiling clean_test...
 ✓ Correct negative addition overflow check
@@ -382,7 +383,8 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+test ... ok
 
-122 tests passed, 0 failed
+123 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!

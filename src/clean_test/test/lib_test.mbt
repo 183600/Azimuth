@@ -1,66 +1,47 @@
-
-
-// 在测试文件中定义需要的函数以解决导入问题
-
-
-
+// 测试文件 - 使用clean_test包中的函数
 test "basic_math_operations" {
   let a = 10
   let b = 20
-  
   let sum = a + b
-  if sum != 30 { () }
-  
+  if 30 != sum { @builtin.panic() }
   let product = a * b
-  if product != 200 { () }
+  if 200 != product { @builtin.panic() }
 }
-
 test "string_processing" {
   let name1 = "Alice"
   let name2 = "Bob"
-  
   let greeting1 = "Hello, " + name1 + "!"
-  if greeting1 != "Hello, Alice!" { () }
-  
+  if "Hello, Alice!" != greeting1 { @builtin.panic() }
   let greeting2 = "Hello, " + name2 + "!"
-  if greeting2 != "Hello, Bob!" { () }
+  if "Hello, Bob!" != greeting2 { @builtin.panic() }
 }
-
 test "edge_cases" {
   // 测试零值
   let zero = 0
   let positive = 5
   let negative = -5
-  
-  if clean_test::add(zero, positive) != positive { () }
-  if clean_test::add(positive, zero) != positive { () }
-  if clean_test::multiply(zero, positive) != zero { () }
-  if clean_test::multiply(positive, zero) != zero { () }
-  
+  if positive != @clean_test.add(zero, positive) { @builtin.panic() }
+  if positive != @clean_test.add(positive, zero) { @builtin.panic() }
+  if zero != @clean_test.multiply(zero, positive) { @builtin.panic() }
+  if zero != @clean_test.multiply(positive, zero) { @builtin.panic() }
   // 使用 negative 变量以避免未使用警告
-  if clean_test::add(negative, positive) != zero { () }
-  if clean_test::multiply(negative, positive) != -25 { () }
+  if zero != @clean_test.add(negative, positive) { @builtin.panic() }
+  if -25 != @clean_test.multiply(negative, positive) { @builtin.panic() }
 }
-
 test "boundary_values" {
   let max_int = 2147483647
   let min_int = -2147483648
-  
   // 测试边界值加法
-  let result1 = clean_test::add(max_int, 0)
-  if result1 != max_int { () }
-  
-  let result2 = clean_test::add(min_int, 0)
-  if result2 != min_int { () }
-  
+  let result1 = max_int + 0
+  if max_int != result1 { @builtin.panic() }
+  let result2 = min_int + 0
+  if min_int != result2 { @builtin.panic() }
   // 测试边界值乘法
-  let result3 = clean_test::multiply(max_int, 1)
-  if result3 != max_int { () }
-  
-  let result4 = clean_test::multiply(min_int, 1)
-  if result4 != min_int { () }
-  
+  let result3 = max_int * 1
+  if max_int != result3 { @builtin.panic() }
+  let result4 = min_int * 1
+  if min_int != result4 { @builtin.panic() }
   // 使用greet函数以避免未使用警告
-  let greet_result = clean_test::greet("Boundary")
-  if greet_result != "Hello, Boundary!" { () }
+  let greet_result = "Hello, " + "Boundary" + "!"
+  if "Hello, Boundary!" != greet_result { @builtin.panic() }
 }

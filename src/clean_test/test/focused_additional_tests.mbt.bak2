@@ -1,0 +1,19 @@
+// 测试文件 - 使用clean_test包中的函数
+test "basic_add_focused_add" {
+  let result  = add(2, 3)
+  if result != 5 {
+    // println("Test failed")
+  }
+}
+test "basic_multiply_focused_add" {
+  let result  = multiply(2, 3)
+  if result != 6 {
+    // println("Test failed")
+  }
+}
+test "basic_greet_focused_add" {
+  let result  = greet("World")
+  if result != "Hello, World!" {
+    // println("Test failed")
+  }
+}

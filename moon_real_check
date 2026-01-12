@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# 真正的 MoonBit 编译检查脚本
+echo "Running real MoonBit compilation check..."
+echo ""
+
+# 检查 azimuth 包
+echo "Checking azimuth package..."
+cd src/azimuth
+
+if node ../../moonc.js check -pkg azimuth -workspace-path ../.. -std-path ../../core -i ../../core/builtin/builtin.mi lib.mbt 2>/dev/null; then
+  echo "✓ azimuth package compiles successfully"
+  AZIMUTH_OK=1
+else
+  echo "✗ azimuth package has compilation errors"
+  echo "Error details:"
+  node ../../moonc.js check -pkg azimuth -workspace-path ../.. -std-path ../../core -i ../../core/builtin/builtin.mi lib.mbt
+  AZIMUTH_OK=0
+fi
+
+echo ""
+
+# 检查 clean_test 包
+echo "Checking clean_test package..."
+cd ../clean_test
+
+if node ../../moonc.js check -pkg clean_test -workspace-path ../.. -std-path ../../core -i ../../core/builtin/builtin.mi lib.mbt 2>/dev/null; then
+  echo "✓ clean_test package compiles successfully"
+  CLEAN_TEST_OK=1
+else
+  echo "✗ clean_test package has compilation errors"
+  echo "Error details:"
+  node ../../moonc.js check -pkg clean_test -workspace-path ../.. -std-path ../../core -i ../../core/builtin/builtin.mi lib.mbt
+  CLEAN_TEST_OK=0
+fi
+
+echo ""
+
+# 总结
+if [ "$AZIMUTH_OK" -eq 1 ] && [ "$CLEAN_TEST_OK" -eq 1 ]; then
+  echo "✓ All packages compile successfully!"
+  exit 0
+else
+  echo "✗ Some packages have compilation errors"
+  exit 1
+fi

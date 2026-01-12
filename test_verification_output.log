@@ -1,40 +1,390 @@
 Running moon test...
-Checking syntax and imports...
+
 Compiling azimuth...
---- azimuth/lib.mbt compilation output ---
---- End of azimuth/lib.mbt compilation output ---
-Compiling azimuth tests...
-Compiling test_helper.mbt...
---- test_helper.mbt compilation output ---
---- End of test_helper.mbt compilation output ---
-Compiling remaining test files...
---- Remaining test files compilation output ---
-Compiling additional_comprehensive_test.mbt...
-Command: node ../../../moonc.js check -pkg azimuth_test -std-path ../../../core -whitebox-test -i ../azimuth.mi test_helper.mbt additional_comprehensive_test.mbt
-azimuth_test/additional_comprehensive_test.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:6:25-6:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:10:3-10:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:10:34-10:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:11:3-11:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:11:35-11:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:16:25-16:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:17:3-17:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:17:25-17:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:20:25-20:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:21:3-21:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:21:25-21:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:24:26-24:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:25:3-25:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:25:26-25:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:26:3-26:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:26:25-26:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:31:3-31:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:31:44-31:51 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:32:3-32:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-azimuth_test/additional_comprehensive_test.mbt:32:44-32:51 [E3002] Expected upper case identifier for type name, found lower case identifier.
-Error: additional_comprehensive_test.mbt compilation failed
+✓ Correct negative addition overflow check
+
+Testing azimuth...
+
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+248 tests passed, 0 failed
+
+Compiling clean_test...
+✓ Correct negative addition overflow check
+
+Testing clean_test...
+
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+123 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

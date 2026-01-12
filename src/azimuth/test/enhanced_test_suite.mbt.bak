@@ -1,18 +1,21 @@
-// 断言相等函数，用于测试
-pub fn assert_eq_string(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
+// 测试文件 - 使用内置操作符测试基本功能
+test "basic_add_test" {
+  let result = azimuth.add(2, 3)
+  if result != 5 {
+    @builtin.panic()
+  }
 }
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
+test "basic_multiply_test" {
+  let result = azimuth.multiply(2, 3)
+  if result != 6 {
+    @builtin.panic()
+  }
 }
 
-pub fn assert_true(condition : Bool) -> Unit {
-  let _ = condition
+test "basic_greet_test" {
+  let result = azimuth.greet("World")
+  if result != "Hello, World!" {
+    @builtin.panic()
+  }
 }
-
-pub fn assert_false(condition : Bool) -> Unit {
-  let _ = condition == false
-}
-
-

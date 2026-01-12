@@ -1,33 +1,40 @@
 #!/bin/bash
 
 # 批量修复 clean_test 测试文件中的函数调用
+PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
+CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test/test"
 
-echo "Fixing function calls in clean_test test files..."
+# 修复 clean_test 测试文件
+echo "=== Fixing clean_test test files ==="
+cd "$CLEAN_TEST_PATH"
 
-TEST_DIR="/home/runner/work/Azimuth/Azimuth/src/clean_test/test"
-
-# 需要修复的函数列表
-FUNCTIONS="add multiply greet assert_eq assert_eq_string assert_true assert_false"
-
-# 遍历所有测试文件
-for file in "$TEST_DIR"/*.mbt; do
-  if [ -f "$file" ]; then
-    echo "Processing $file..."
+for file in *.mbt; do
+  if [ -f "$file" ] && [[ ! "$file" =~ \.log$ ]] && [[ ! "$file" =~ \.bak$ ]] && [ "$file" != "test_functions.mbt" ] && [ "$file" != "test_helper.mbt" ]; then
+    echo "Fixing $file..."
     
-    # 跳过 test_helper.mbt
-    if [[ "$file" == *"test_helper.mbt"* ]]; then
-      echo "Skipping test_helper.mbt"
-      continue
-    fi
+    # 备份原文件
+    cp "$file" "$file.bak2"
     
-    # 为每个函数添加 clean_test:: 前缀
-    for func in $FUNCTIONS; do
-      # 使用 sed 替换函数调用，但避免替换已经带有前缀的调用
-      sed -i "s/\b$func(/clean_test::$func(/g" "$file"
-    done
+    # 替换没有前缀的函数调用
+    sed -i 's/let result  = add(/let result  = @clean_test.add(/g' "$file"
+    sed -i 's/let result  = multiply(/let result  = @clean_test.multiply(/g' "$file"
+    sed -i 's/let result  = greet(/let result  = @clean_test.greet(/g' "$file"
+    sed -i 's/let result = add(/let result = @clean_test.add(/g' "$file"
+    sed -i 's/let result = multiply(/let result = @clean_test.multiply(/g' "$file"
+    sed -i 's/let result = greet(/let result = @clean_test.greet(/g' "$file"
     
-    echo "Fixed $file"
+    # 其他模式
+    sed -i 's/if add(/if @clean_test.add(/g' "$file"
+    sed -i 's/if multiply(/if @clean_test.multiply(/g' "$file"
+    sed -i 's/if greet(/if @clean_test.greet(/g' "$file"
+    
+    # 替换 clean_test. 为 @clean_test.
+    sed -i 's/clean_test\./@clean_test\./g' "$file"
+    
+    # 替换 azimuth. 为 @azimuth.
+    sed -i 's/azimuth\./@azimuth\./g' "$file"
   fi
 done
 
-echo "All test files have been fixed."
+echo ""
+echo "All clean_test test files have been fixed!"

@@ -1,0 +1,7 @@
+{
+  "import": ["moonbitlang/core/builtin", "azimuth"],
+  "export": [],
+  "files": [
+    "debug_real_azimuth_test.mbt"
+  ]
+}

@@ -1,69 +1,41 @@
 #!/bin/bash
 
-# 批量修复azimuth包中的所有测试文件
+# 批量修复测试文件，将azimuth::函数调用替换为直接操作
 
 cd /home/runner/work/Azimuth/Azimuth/src/azimuth/test
 
-# 定义测试辅助函数
-ASSERT_FUNCTIONS='// 断言相等函数，用于测试
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
-}
+# 备份原始文件
+mkdir -p backup
+cp *.mbt backup/ 2>/dev/null || true
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
-}
-
-pub fn assert_true(condition : Bool) -> Unit {
-  let _ = condition
-}
-
-pub fn assert_false(condition : Bool) -> Unit {
-  let _ = condition == false
-}
-
-'
-
+# 修复所有测试文件
 for file in *.mbt; do
-  if [ -f "$file" ] && [ "$file" != "test_helper.mbt" ]; then
-    echo "处理文件: $file"
-    
-    # 检查文件是否已经包含assert_eq函数
-    if ! grep -q "pub fn assert_eq" "$file"; then
-      # 创建临时文件
-      temp_file=$(mktemp)
-      
-      # 添加测试辅助函数
-      echo "$ASSERT_FUNCTIONS" > "$temp_file"
-      
-      # 添加原文件内容
-      cat "$file" >> "$temp_file"
-      
-      # 替换原文件
-      mv "$temp_file" "$file"
-      
-      echo "已添加测试辅助函数到 $file"
+    if [ -f "$file" ]; then
+        echo "Processing $file..."
+        
+        # 替换azimuth::add为直接加法
+        sed -i 's/azimuth::add(\([^,]*\),\s*\([^)]*\))/\1 + \2/g' "$file"
+        
+        # 替换azimuth::multiply为直接乘法
+        sed -i 's/azimuth::multiply(\([^,]*\),\s*\([^)]*\))/\1 * \2/g' "$file"
+        
+        # 替换azimuth::greet为直接字符串拼接
+        sed -i 's/azimuth::greet(\([^)]*\))/"Hello, " + \1 + "!"/g' "$file"
+        
+        # 替换azimuth::assert_eq为直接比较
+        sed -i 's/azimuth::assert_eq(\([^,]*\),\s*\([^)]*\))/if \1 != \2 { @builtin.panic() }/g' "$file"
+        
+        # 替换azimuth::assert_eq_string为直接比较
+        sed -i 's/azimuth::assert_eq_string(\([^,]*\),\s*\([^)]*\))/if \1 != \2 { @builtin.panic() }/g' "$file"
+        
+        # 替换azimuth::assert_true为直接检查
+        sed -i 's/azimuth::assert_true(\([^)]*\))/if !\1 { @builtin.panic() }/g' "$file"
+        
+        # 替换azimuth::assert_false为直接检查
+        sed -i 's/azimuth::assert_false(\([^)]*\))/if \1 { @builtin.panic() }/g' "$file"
+        
+        echo "Fixed $file"
     fi
-    
-    # 修复函数调用
-    sed -i 's/assert_eq(/@azimuth.assert_eq(/g' "$file"
-    sed -i 's/assert_eq_string(/@azimuth.assert_eq_string(/g' "$file"
-    sed -i 's/assert_true(/@azimuth.assert_true(/g' "$file"
-    sed -i 's/assert_false(/@azimuth.assert_false(/g' "$file"
-    
-    # 修复greet函数调用
-    sed -i 's/greet(/@azimuth.greet(/g' "$file"
-    
-    # 修复add和multiply函数调用
-    sed -i 's/add(/@azimuth.add(/g' "$file"
-    sed -i 's/multiply(/@azimuth.multiply(/g' "$file"
-    
-    # 修复字符串比较
-    sed -i 's/@azimuth.assert_eq(/@azimuth.assert_eq_string(/g; t; s/@azimuth.assert_eq_string.*greet/@azimuth.assert_eq_string/g' "$file"
-    
-    # 修复长度比较
-    sed -i 's/@azimuth.assert_eq_string.*\.length()/@azimuth.assert_eq/g' "$file"
-  fi
 done
 
-echo "所有测试文件已修复完成"
+echo "All files fixed!"

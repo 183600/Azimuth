@@ -1,68 +1,70 @@
 #!/bin/bash
 
-# 修复所有测试文件中的断言问题
-echo "Fixing assertion issues in all test files..."
+# 修复所有测试文件中的断言函数
 
-PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-AZIMUTH_TEST_PATH="$PROJECT_ROOT/src/azimuth/test"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test/test"
+cd /home/runner/work/Azimuth/Azimuth
 
-# 修复 azimuth 测试文件
-echo "Fixing azimuth test files..."
-cd "$AZIMUTH_TEST_PATH"
+# 查找所有测试文件
+TEST_FILES=$(find src -name "*.mbt")
 
-# 替换 @azimuth.assert_eq 为 if 语句
-for file in *.mbt; do
-  if [ -f "$file" ] && [ "$file" != "simple_test.mbt" ]; then
-    echo "Processing $file..."
+for file in $TEST_FILES; do
+  # 检查文件是否包含断言函数
+  if grep -q "azimuth::assert_eq" "$file" || grep -q "azimuth::assert_eq_string" "$file" || grep -q "azimuth::assert_true" "$file" || grep -q "azimuth::assert_false" "$file"; then
+    echo "Fixing assertions in $file..."
     
     # 创建临时文件
     temp_file=$(mktemp)
     
-    # 使用 sed 替换断言
-    sed -E 's/@azimuth\.assert_eq\(([^,]+),\s*([^)]+)\)/if \2 != \1 { @test.fail("Expected " + \1.to_string() + " but got " + \2.to_string()) }/g' "$file" > "$temp_file"
+    # 处理文件内容，替换断言函数
+    awk '
+    /azimuth::assert_eq/ {
+      # 找到assert_eq调用
+      match($0, /azimuth::assert_eq\(([^,]+),\s*([^)]+)\)/, arr)
+      if (arr[1] != "" && arr[2] != "") {
+        # 替换为if语句
+        gsub(/azimuth::assert_eq\(([^,]+),\s*([^)]+)\)/, "if \1 != \2 {\n    @builtin.panic()\n  }")
+      }
+      print
+      next
+    }
+    /azimuth::assert_eq_string/ {
+      # 找到assert_eq_string调用
+      match($0, /azimuth::assert_eq_string\(([^,]+),\s*([^)]+)\)/, arr)
+      if (arr[1] != "" && arr[2] != "") {
+        # 替换为if语句
+        gsub(/azimuth::assert_eq_string\(([^,]+),\s*([^)]+)\)/, "if \1 != \2 {\n    @builtin.panic()\n  }")
+      }
+      print
+      next
+    }
+    /azimuth::assert_true/ {
+      # 找到assert_true调用
+      match($0, /azimuth::assert_true\(([^)]+)\)/, arr)
+      if (arr[1] != "") {
+        # 替换为if语句
+        gsub(/azimuth::assert_true\(([^)]+)\)/, "if !\1 {\n    @builtin.panic()\n  }")
+      }
+      print
+      next
+    }
+    /azimuth::assert_false/ {
+      # 找到assert_false调用
+      match($0, /azimuth::assert_false\(([^)]+)\)/, arr)
+      if (arr[1] != "") {
+        # 替换为if语句
+        gsub(/azimuth::assert_false\(([^)]+)\)/, "if \1 {\n    @builtin.panic()\n  }")
+      }
+      print
+      next
+    }
+    {
+      print
+    }
+    ' "$file" > "$temp_file"
     
-    # 替换 @azimuth.assert_eq_string
-    sed -E -i 's/@azimuth\.assert_eq_string\(([^,]+),\s*([^)]+)\)/if \2 != \1 { @test.fail("Expected \"" + \1 + "\" but got \"" + \2 + "\"") }/g' "$temp_file"
-    
-    # 替换 @azimuth.assert_true
-    sed -E -i 's/@azimuth\.assert_true\(([^)]+)\)/if !\1 { @test.fail("Expected true but got false") }/g' "$temp_file"
-    
-    # 替换 @azimuth.assert_false
-    sed -E -i 's/@azimuth\.assert_false\(([^)]+)\)/if \1 { @test.fail("Expected false but got true") }/g' "$temp_file"
-    
-    # 移动临时文件到原文件
+    # 替换原文件
     mv "$temp_file" "$file"
   fi
 done
 
-# 修复 clean_test 测试文件
-echo "Fixing clean_test test files..."
-cd "$CLEAN_TEST_PATH"
-
-# 替换 @clean_test.assert_eq 为 if 语句
-for file in *.mbt; do
-  if [ -f "$file" ]; then
-    echo "Processing $file..."
-    
-    # 创建临时文件
-    temp_file=$(mktemp)
-    
-    # 使用 sed 替换断言
-    sed -E 's/@clean_test\.assert_eq\(([^,]+),\s*([^)]+)\)/if \2 != \1 { @test.fail("Expected " + \1.to_string() + " but got " + \2.to_string()) }/g' "$file" > "$temp_file"
-    
-    # 替换 @clean_test.assert_eq_string
-    sed -E -i 's/@clean_test\.assert_eq_string\(([^,]+),\s*([^)]+)\)/if \2 != \1 { @test.fail("Expected \"" + \1 + "\" but got \"" + \2 + "\"") }/g' "$temp_file"
-    
-    # 替换 @clean_test.assert_true
-    sed -E -i 's/@clean_test\.assert_true\(([^)]+)\)/if !\1 { @test.fail("Expected true but got false") }/g' "$temp_file"
-    
-    # 替换 @clean_test.assert_false
-    sed -E -i 's/@clean_test\.assert_false\(([^)]+)\)/if \1 { @test.fail("Expected false but got true") }/g' "$temp_file"
-    
-    # 移动临时文件到原文件
-    mv "$temp_file" "$file"
-  fi
-done
-
-echo "All assertion fixes completed!"
+echo "Fixed assertions in all test files"
