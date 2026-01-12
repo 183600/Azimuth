@@ -1,108 +1,16 @@
-algorithmic_tests.mbt:12:12-12:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:13:12-13:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:14:12-14:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:15:12-15:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:16:12-16:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:17:12-17:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:18:12-18:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:19:12-19:24 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:20:13-20:25 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:40:15-40:32 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:41:15-41:32 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:42:15-42:32 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:43:15-43:32 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:61:16-61:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:62:16-62:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:68:16-68:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:69:16-69:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:80:19-80:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:80:40-80:57 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:84:19-84:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:84:40-84:57 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:84:61-84:78 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:88:19-88:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:92:20-92:37 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:92:42-92:59 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:106:7-106:20 [E0002] Warning (unused_value): Unused variable 'verification1'
-algorithmic_tests.mbt:106:23-106:40 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:107:19-107:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:113:19-113:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:114:19-114:36 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:126:32-126:49 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:126:67-126:79 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:126:85-126:102 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:132:32-132:49 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:132:67-132:79 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:132:85-132:102 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:133:3-133:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:145:35-145:52 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:145:72-145:84 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:151:35-151:52 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:151:72-151:84 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:163:7-163:16 [E0002] Warning (unused_value): Unused variable 'height_cm'
-algorithmic_tests.mbt:167:23-167:40 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:167:41-167:58 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:168:34-168:51 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:171:3-171:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:172:3-172:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:185:21-185:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:186:3-186:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:190:21-190:33 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:192:3-192:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:195:7-195:19 [E0002] Warning (unused_value): Unused variable 'original_msg'
-algorithmic_tests.mbt:196:23-196:37 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:197:32-197:40 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-algorithmic_tests.mbt:197:65-197:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-algorithmic_tests.mbt:207:16-207:28 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:208:16-208:28 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:209:16-209:28 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:210:16-210:28 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:213:19-213:31 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:214:19-214:31 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:217:15-217:27 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:221:3-221:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:224:3-224:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:225:3-225:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:226:3-226:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:229:25-229:37 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:38-229:50 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:51-229:63 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:64-229:76 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:77-229:89 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:90-229:102 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:103-229:115 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:139-229:151 [E4020] Package "azimuth" not found in the loaded packages.
-algorithmic_tests.mbt:229:158-229:158 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
-algorithmic_tests.mbt:230:3-230:12 [E4021] The value identifier assert_eq is unbound.
+algorithmic_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+algorithmic_tests.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

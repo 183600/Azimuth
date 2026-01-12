@@ -1,135 +1,20 @@
 :0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
-specialized_test_cases.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:9:17-9:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:14:13-14:28 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:15:17-15:37 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:16:21-16:36 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:16:37-16:57 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:16:66-16:86 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:25:7-25:12 [E0002] Warning (unused_value): Unused variable 'years'
-specialized_test_cases.mbt:30:12-30:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:30:41-30:56 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:31:12-31:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:31:41-31:56 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:32:12-32:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:32:41-32:56 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:45:7-45:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:46:7-46:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:48:7-48:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:49:7-49:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:51:7-51:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:52:7-52:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:54:7-54:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:55:7-55:22 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:68:20-68:35 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:68:36-68:56 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:74:18-74:38 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:74:39-74:54 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:85:15-85:35 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:86:15-86:35 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:87:15-87:35 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:88:15-88:35 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:97:21-97:36 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:97:37-97:52 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:97:53-97:68 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:97:69-97:84 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:109:13-109:28 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:110:17-110:37 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:118:17-118:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:119:18-119:38 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:125:7-125:11 [E0002] Warning (unused_value): Unused variable 'rows'
-specialized_test_cases.mbt:131:15-131:30 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:131:31-131:51 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:137:18-137:33 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:137:34-137:54 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:137:58-137:78 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:137:94-137:109 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:137:110-137:130 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:138:3-138:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:147:13-147:28 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:147:29-147:44 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:147:45-147:60 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:147:61-147:76 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:147:84-147:87 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:147:96-147:99 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:147:109-147:112 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:147:122-147:125 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:147:135-147:138 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:151:7-151:12 [E0002] Warning (unused_value): Unused variable 'count'
-specialized_test_cases.mbt:152:17-152:37 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:157:22-157:37 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:157:38-157:53 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:157:54-157:69 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:157:70-157:85 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:158:5-158:25 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:158:26-158:41 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:158:49-158:52 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:158:62-158:77 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:158:85-158:88 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:159:5-159:25 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:159:26-159:41 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:159:49-159:52 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:159:62-159:77 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:159:85-159:88 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:160:5-160:25 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:160:26-160:41 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:160:49-160:52 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:160:62-160:77 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:160:85-160:88 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:161:5-161:20 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:161:21-161:41 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:161:42-161:57 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:161:65-161:68 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:161:78-161:93 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:161:101-161:104 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:162:5-162:25 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:162:26-162:41 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:162:49-162:52 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:162:62-162:77 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:162:85-162:88 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-specialized_test_cases.mbt:162:99-162:99 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
-specialized_test_cases.mbt:164:3-164:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:175:3-175:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:175:28-175:45 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:176:34-176:51 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:177:42-177:59 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:184:3-184:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:184:34-184:51 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:185:3-185:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:185:31-185:48 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:186:3-186:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:186:45-186:62 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:197:17-197:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:197:33-197:53 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:198:17-198:37 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:198:38-198:53 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:199:17-199:32 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:199:33-199:53 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:199:63-199:83 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:202:3-202:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:203:3-203:12 [E4021] The value identifier assert_eq is unbound.
-specialized_test_cases.mbt:207:18-207:33 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:208:18-208:38 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:209:18-209:33 [E4020] Package "clean_test" not found in the loaded packages.
-specialized_test_cases.mbt:211:3-211:12 [E4021] The value identifier assert_eq is unbound.
+specialized_test_cases.mbt:6:3-6:24 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:6:29-6:44 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:11:13-11:28 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:12:17-12:37 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:13:21-13:36 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:13:37-13:57 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:13:66-13:86 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:14:3-14:24 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:25:24-25:44 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:25:45-25:65 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:26:22-26:37 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:28:3-28:24 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:41:13-41:28 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:41:29-41:44 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:41:45-41:60 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:41:61-41:76 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:42:3-42:24 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:45:17-45:37 [E4020] Package "clean_test" not found in the loaded packages.
+specialized_test_cases.mbt:46:3-46:24 [E4020] Package "clean_test" not found in the loaded packages.

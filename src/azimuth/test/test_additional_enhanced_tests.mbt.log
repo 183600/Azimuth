@@ -1,87 +1,16 @@
-:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
-additional_enhanced_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:8:35-8:49 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:9:29-9:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:10:27-10:41 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:11:25-11:39 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:15:42-15:56 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:26:16-26:28 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:27:16-27:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:35:20-35:37 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:36:17-36:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:44:16-44:28 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:45:17-45:34 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:57:23-57:35 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:58:23-58:40 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:59:22-59:39 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:67:29-67:41 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:68:26-68:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:79:7-79:20 [E0002] Warning (unused_value): Unused variable 'divide_factor'
-additional_enhanced_tests.mbt:82:20-82:37 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:83:17-83:34 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:84:20-84:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:93:20-93:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:94:18-94:35 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:106:26-106:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:107:16-107:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:108:21-108:38 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:111:3-111:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:116:18-116:35 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:129:20-129:37 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:130:22-130:34 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:141:26-141:38 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:141:39-141:56 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:142:23-142:40 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:143:21-143:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:157:26-157:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:158:28-158:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:159:23-159:35 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:159:36-159:48 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:161:3-161:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:166:25-166:37 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:180:21-180:38 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:181:19-181:31 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:181:32-181:49 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:183:3-183:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:190:23-190:40 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:191:22-191:34 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:193:3-193:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:204:20-204:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:205:25-205:42 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:207:3-207:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:208:3-208:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:215:21-215:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:216:26-216:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:226:3-226:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:226:26-226:40 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:227:3-227:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:227:26-227:40 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:228:3-228:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:228:25-228:39 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:231:3-231:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:231:36-231:50 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:232:3-232:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:232:38-232:52 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:233:3-233:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:233:40-233:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:236:3-236:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:236:29-236:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_enhanced_tests.mbt:237:3-237:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:237:35-237:49 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+additional_enhanced_tests.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

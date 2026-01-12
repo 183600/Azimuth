@@ -1,64 +1,16 @@
-concise_functional_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:6:17-6:29 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:7:17-7:29 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:8:16-8:28 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:14:17-14:34 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:15:17-15:34 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:16:16-16:33 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:22:30-22:44 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:23:28-23:42 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:29:25-29:37 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:30:26-30:38 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:31:26-31:38 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:37:25-37:42 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:38:26-38:43 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:39:16-39:33 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:46:13-46:25 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:47:16-47:33 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:51:14-51:26 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:52:17-52:34 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:59:13-59:25 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:59:35-59:47 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:60:13-60:25 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:60:35-60:47 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:66:13-66:30 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:66:38-66:55 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:67:13-67:30 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:67:39-67:56 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:73:27-73:41 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:74:28-74:42 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:75:25-75:39 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:82:3-82:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:82:17-82:29 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:83:3-83:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:83:17-83:29 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:86:17-86:34 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:87:17-87:34 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:90:16-90:33 [E4020] Package "azimuth" not found in the loaded packages.
-concise_functional_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-concise_functional_tests.mbt:91:16-91:33 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+concise_functional_tests.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

@@ -1,128 +1,30 @@
-:0:0-0:0 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
-focused_comprehensive_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:11:17-11:32 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:12:17-12:32 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:15:22-15:37 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:16:22-16:37 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:19:22-19:42 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:20:22-20:42 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:21:16-21:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:22:16-22:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:31:7-31:18 [E0002] Warning (unused_value): Unused variable 'test_values'
-focused_comprehensive_tests.mbt:33:7-33:8 [E3002] Parse error, unexpected token `(`, you may expect id (lowercase start), `;` or `{`.
-focused_comprehensive_tests.mbt:34:21-34:41 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:34:42-34:43 [E4021] The value identifier a is unbound.
-focused_comprehensive_tests.mbt:34:45-34:60 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:34:61-34:62 [E4021] The value identifier b is unbound.
-focused_comprehensive_tests.mbt:34:64-34:65 [E4021] The value identifier c is unbound.
-focused_comprehensive_tests.mbt:35:22-35:37 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:35:38-35:58 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:35:59-35:60 [E4021] The value identifier a is unbound.
-focused_comprehensive_tests.mbt:35:62-35:63 [E4021] The value identifier b is unbound.
-focused_comprehensive_tests.mbt:35:66-35:86 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:35:87-35:88 [E4021] The value identifier a is unbound.
-focused_comprehensive_tests.mbt:35:90-35:91 [E4021] The value identifier c is unbound.
-focused_comprehensive_tests.mbt:36:5-36:14 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:40:16-40:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:41:16-41:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:42:20-42:35 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:43:20-43:35 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:52:25-52:42 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:55:26-55:43 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:59:23-59:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:60:32-60:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_comprehensive_tests.mbt:60:70-60:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-focused_comprehensive_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:63:28-63:45 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:64:29-64:46 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:78:24-78:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:79:7-79:16 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:79:34-79:36 [E4037] Cannot use operator `>=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:79:63-79:65 [E4037] Cannot use operator `<=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:82:24-82:44 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:83:7-83:16 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:83:34-83:36 [E4037] Cannot use operator `>=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:83:63-83:65 [E4037] Cannot use operator `<=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:98:19-98:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:98:51-98:54 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:98:71-98:74 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:99:19-99:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:99:51-99:54 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:99:71-99:74 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:100:19-100:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:100:51-100:54 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:100:71-100:74 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:101:19-101:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:101:51-101:54 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:101:71-101:74 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
-focused_comprehensive_tests.mbt:104:15-104:30 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:105:5-105:20 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:106:5-106:20 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:110:3-110:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:124:23-124:38 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:125:5-125:20 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:126:7-126:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:127:7-127:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:133:3-133:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:146:12-146:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:150:12-150:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:151:3-151:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:154:12-154:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:155:3-155:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:158:12-158:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:159:3-159:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:167:7-167:11 [E0002] Warning (unused_value): Unused variable 'base'
-focused_comprehensive_tests.mbt:168:16-168:19 [E0035] Warning (reserved_keyword): The word `ref` is reserved for possible future use. Please consider using another name.
-focused_comprehensive_tests.mbt:168:16-168:19 [E4021] The value identifier ref is unbound.
-focused_comprehensive_tests.mbt:168:20-168:24 [E3002] Parse error, unexpected token id (lowercase start), you may expect `;` or `}`.
-focused_comprehensive_tests.mbt:172:14-172:29 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:179:20-179:23 [E0035] Warning (reserved_keyword): The word `ref` is reserved for possible future use. Please consider using another name.
-focused_comprehensive_tests.mbt:179:20-179:23 [E4021] The value identifier ref is unbound.
-focused_comprehensive_tests.mbt:179:24-179:25 [E3002] Parse error, unexpected token integer, you may expect `;` or `}`.
-focused_comprehensive_tests.mbt:181:18-181:38 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:185:3-185:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:197:20-197:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:200:7-200:16 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:200:30-200:32 [E4037] Cannot use operator `>=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:200:55-200:57 [E4037] Cannot use operator `<=`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:203:12-203:14 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:203:22-203:24 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:204:9-204:18 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:205:19-205:21 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:206:9-206:18 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:207:19-207:21 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:208:9-208:18 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:209:19-209:21 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:210:9-210:18 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:211:19-211:21 [E4037] Cannot use operator `==`: package moonbitlang/core/builtin is not imported.
-focused_comprehensive_tests.mbt:212:9-212:18 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:228:23-228:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:229:23-229:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_comprehensive_tests.mbt:232:3-232:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:232:32-232:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_comprehensive_tests.mbt:232:70-232:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-focused_comprehensive_tests.mbt:233:3-233:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:233:32-233:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_comprehensive_tests.mbt:233:70-233:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-focused_comprehensive_tests.mbt:236:3-236:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:237:3-237:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:238:3-238:12 [E4021] The value identifier assert_eq is unbound.
-focused_comprehensive_tests.mbt:239:3-239:12 [E4021] The value identifier assert_eq is unbound.
+focused_comprehensive_tests.mbt:5:13-5:28 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:6:17-6:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:19:19-19:39 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:19:43-19:58 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:20:20-20:35 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:20:36-20:56 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:20:64-20:84 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:22:3-22:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:28:20-28:40 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:28:44-28:59 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:29:21-29:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:29:37-29:57 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:29:65-29:85 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:31:3-31:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:45:19-45:39 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:46:19-46:39 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:47:19-47:39 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:49:15-49:30 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:49:31-49:46 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:51:3-51:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:60:25-60:45 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:61:21-61:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:61:53-61:73 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:63:3-63:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:72:19-72:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:73:19-73:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:75:3-75:31 [E4020] Package "clean_test" not found in the loaded packages.
+focused_comprehensive_tests.mbt:76:3-76:31 [E4020] Package "clean_test" not found in the loaded packages.

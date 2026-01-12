@@ -1,87 +1,86 @@
 :0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
-additional_enhanced_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:8:35-8:52 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:9:29-9:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:10:27-10:44 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:11:25-11:42 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:15:42-15:59 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:26:16-26:31 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:27:16-27:36 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:35:20-35:40 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:36:17-36:32 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:44:16-44:31 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:45:17-45:37 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:57:23-57:38 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:58:23-58:43 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:59:22-59:42 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:67:29-67:44 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:68:26-68:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:79:7-79:20 [E0002] Warning (unused_value): Unused variable 'divide_factor'
-additional_enhanced_tests.mbt:82:20-82:40 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:83:17-83:37 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:84:20-84:35 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:93:20-93:35 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:94:18-94:38 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:106:26-106:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:107:16-107:36 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:108:21-108:41 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:111:3-111:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:116:18-116:38 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:129:20-129:40 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:130:22-130:37 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:141:26-141:41 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:141:42-141:62 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:142:23-142:43 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:143:21-143:36 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:157:26-157:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:158:28-158:48 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:159:23-159:38 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:159:39-159:54 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:161:3-161:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:166:25-166:40 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:180:21-180:41 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:181:19-181:34 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:181:35-181:55 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:183:3-183:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:190:23-190:43 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:191:22-191:37 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:193:3-193:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:204:20-204:35 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:205:25-205:45 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:207:3-207:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:208:3-208:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:215:21-215:36 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:216:26-216:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:218:3-218:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:226:3-226:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:226:26-226:43 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:227:3-227:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:227:26-227:43 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:228:3-228:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:228:25-228:42 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:231:3-231:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:231:36-231:53 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:232:3-232:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:232:38-232:55 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:233:3-233:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:233:40-233:57 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:236:3-236:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:236:29-236:46 [E4020] Package "clean_test" not found in the loaded packages.
-additional_enhanced_tests.mbt:237:3-237:12 [E4021] The value identifier assert_eq is unbound.
-additional_enhanced_tests.mbt:237:35-237:52 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:3:3-3:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:3:54-3:71 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:4:3-4:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:4:48-4:65 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:5:3-5:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:5:46-5:63 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:6:3-6:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:6:44-6:61 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:10:3-10:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:10:61-10:78 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:21:16-21:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:22:16-22:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:23:3-23:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:30:20-30:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:31:17-31:32 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:32:3-32:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:39:16-39:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:40:17-40:37 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:41:3-41:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:52:23-52:38 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:53:23-53:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:54:22-54:42 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:57:3-57:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:62:29-62:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:63:26-63:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:65:3-65:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:76:20-76:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:77:17-77:37 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:78:20-78:35 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:81:3-81:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:87:20-87:35 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:88:18-88:38 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:90:3-90:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:100:26-100:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:101:16-101:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:102:21-102:41 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:105:3-105:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:110:18-110:38 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:112:3-112:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:123:20-123:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:124:22-124:37 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:126:3-126:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:135:26-135:41 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:135:42-135:62 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:136:23-136:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:137:21-137:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:140:3-140:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:151:26-151:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:152:28-152:48 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:153:23-153:38 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:153:39-153:54 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:155:3-155:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:160:25-160:40 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:162:3-162:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:174:21-174:41 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:175:19-175:34 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:175:35-175:55 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:177:3-177:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:184:23-184:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:185:22-185:37 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:187:3-187:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:198:20-198:35 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:199:25-199:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:201:3-201:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:202:3-202:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:209:21-209:36 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:210:26-210:46 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:212:3-212:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:213:3-213:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:220:3-220:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:220:45-220:62 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:221:3-221:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:221:45-221:62 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:222:3-222:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:222:44-222:61 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:225:3-225:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:225:55-225:72 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:226:3-226:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:226:57-226:74 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:227:3-227:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:227:59-227:76 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:230:3-230:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:230:48-230:65 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:231:3-231:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_enhanced_tests.mbt:231:54-231:71 [E4020] Package "clean_test" not found in the loaded packages.

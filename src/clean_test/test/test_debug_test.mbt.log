@@ -1,2 +1,2 @@
-debug_test.mbt:8:16-8:36 [E4020] Package "clean_test" not found in the loaded packages.
-debug_test.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+debug_test.mbt:6:16-6:36 [E4020] Package "clean_test" not found in the loaded packages.
+debug_test.mbt:10:3-10:24 [E4020] Package "clean_test" not found in the loaded packages.

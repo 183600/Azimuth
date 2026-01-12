@@ -5,6 +5,10 @@ package "clean_test"
 pub fn add(Int, Int) -> Int
 pub fn multiply(Int, Int) -> Int
 pub fn greet(String) -> String
+pub fn assert_eq(Int, Int) -> Unit
+pub fn assert_eq_string(String, String) -> Unit
+pub fn assert_true(Bool) -> Unit
+pub fn assert_false(Bool) -> Unit
 
 // Types
 

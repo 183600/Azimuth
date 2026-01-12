@@ -1,108 +1,41 @@
-algorithmic_tests.mbt:12:12-12:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:13:12-13:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:14:12-14:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:15:12-15:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:16:12-16:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:17:12-17:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:18:12-18:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:19:12-19:27 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:20:13-20:28 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:40:15-40:35 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:41:15-41:35 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:42:15-42:35 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:43:15-43:35 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:61:16-61:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:62:16-62:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:68:16-68:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:69:16-69:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:80:19-80:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:80:43-80:63 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:84:19-84:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:84:43-84:63 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:84:67-84:87 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:88:19-88:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:92:20-92:40 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:92:45-92:65 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:106:7-106:20 [E0002] Warning (unused_value): Unused variable 'verification1'
-algorithmic_tests.mbt:106:23-106:43 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:107:19-107:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:113:19-113:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:114:19-114:39 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:126:32-126:52 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:126:70-126:85 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:126:91-126:111 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:132:32-132:52 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:132:70-132:85 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:132:91-132:111 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:133:3-133:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:145:35-145:55 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:145:75-145:90 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:151:35-151:55 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:151:75-151:90 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:163:7-163:16 [E0002] Warning (unused_value): Unused variable 'height_cm'
-algorithmic_tests.mbt:167:23-167:43 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:167:44-167:64 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:168:34-168:54 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:171:3-171:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:172:3-172:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:185:21-185:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:186:3-186:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:190:21-190:36 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:192:3-192:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:195:7-195:19 [E0002] Warning (unused_value): Unused variable 'original_msg'
-algorithmic_tests.mbt:196:23-196:40 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:197:32-197:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-algorithmic_tests.mbt:197:68-197:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-algorithmic_tests.mbt:207:16-207:31 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:208:16-208:31 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:209:16-209:31 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:210:16-210:31 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:213:19-213:34 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:214:19-214:34 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:217:15-217:30 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:221:3-221:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:224:3-224:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:225:3-225:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:226:3-226:12 [E4021] The value identifier assert_eq is unbound.
-algorithmic_tests.mbt:229:25-229:40 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:41-229:56 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:57-229:72 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:73-229:88 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:89-229:104 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:105-229:120 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:121-229:136 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:160-229:175 [E4020] Package "clean_test" not found in the loaded packages.
-algorithmic_tests.mbt:229:182-229:182 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
-algorithmic_tests.mbt:230:3-230:12 [E4021] The value identifier assert_eq is unbound.
+algorithmic_tests.mbt:4:12-4:27 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:5:12-5:27 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:6:12-6:27 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:7:12-7:27 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:10:3-10:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:11:3-11:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:12:3-12:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:19:15-19:35 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:20:15-20:35 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:21:15-21:35 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:22:15-22:35 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:24:3-24:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:25:3-25:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:26:3-26:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:27:3-27:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:28:3-28:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:36:16-36:36 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:37:16-37:36 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:38:16-38:36 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:40:3-40:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:41:3-41:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:42:3-42:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:48:14-48:29 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:49:14-49:29 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:50:14-50:29 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:51:14-51:29 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:53:3-53:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:54:3-54:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:55:3-55:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:56:3-56:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:64:12-64:32 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:65:12-65:32 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:66:12-66:32 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:67:12-67:32 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:68:12-68:32 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:70:3-70:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:71:3-71:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:72:3-72:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:73:3-73:24 [E4020] Package "clean_test" not found in the loaded packages.
+algorithmic_tests.mbt:74:3-74:24 [E4020] Package "clean_test" not found in the loaded packages.

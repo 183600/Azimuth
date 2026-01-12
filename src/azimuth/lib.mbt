@@ -113,3 +113,30 @@ pub fn greet(name : String) -> String {
   // 字符串拼接：空字符串会自动处理
   "Hello, " + name + "!"
 }
+
+// 测试辅助函数
+
+// 断言相等函数，用于测试
+pub fn assert_eq(expected : Int, actual : Int) -> Unit raise @moonbitlang/core/builtin.Failure {
+  if expected != actual {
+    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected \{expected} but got \{actual}")
+  }
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit raise @moonbitlang/core/builtin.Failure {
+  if expected != actual {
+    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected \"\{expected}\" but got \"\{actual}\"")
+  }
+}
+
+pub fn assert_true(condition : Bool) -> Unit raise @moonbitlang/core/builtin.Failure {
+  if !condition {
+    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected true but got false")
+  }
+}
+
+pub fn assert_false(condition : Bool) -> Unit raise @moonbitlang/core/builtin.Failure {
+  if condition {
+    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected false but got true")
+  }
+}

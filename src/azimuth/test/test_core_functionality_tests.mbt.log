@@ -1,102 +1,16 @@
-core_functionality_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:7:17-7:29 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:8:18-8:30 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:9:16-9:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:10:25-10:37 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:11:26-11:38 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:18:16-18:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:19:16-19:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:20:16-20:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:21:16-21:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:22:16-22:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:29:16-29:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:29:33-29:50 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:30:16-30:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:30:34-30:51 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:31:16-31:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:31:32-31:49 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:32:16-32:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:32:35-32:52 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:33:16-33:28 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:33:36-33:53 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:40:16-40:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:42:16-42:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:44:16-44:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:51:25-51:39 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:54:26-54:40 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:55:26-55:40 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:56:25-56:39 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:59:33-59:47 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:60:27-60:41 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:67:17-67:34 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:68:18-68:35 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:69:19-69:36 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:72:16-72:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:73:17-73:34 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:74:18-74:35 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:85:20-85:32 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:85:33-85:45 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:86:21-86:33 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:86:37-86:49 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:95:24-95:36 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:95:37-95:49 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:96:25-96:37 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:96:41-96:53 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:109:19-109:36 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:109:40-109:52 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:110:20-110:32 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:110:33-110:50 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:110:58-110:75 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:119:23-119:40 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:119:44-119:56 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:120:24-120:36 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:120:37-120:54 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:120:62-120:79 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:133:3-133:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:133:22-133:34 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:136:3-136:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:136:13-136:26 [E4095] Integer literal 2000000000000 is out of range.
-core_functionality_tests.mbt:136:28-136:45 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:139:3-139:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:139:28-139:45 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:142:3-142:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:142:25-142:42 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:150:18-150:32 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:151:3-151:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:155:27-155:41 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:156:3-156:12 [E4021] The value identifier assert_eq is unbound.
-core_functionality_tests.mbt:160:34-160:48 [E4020] Package "azimuth" not found in the loaded packages.
-core_functionality_tests.mbt:161:3-161:12 [E4021] The value identifier assert_eq is unbound.
+core_functionality_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+core_functionality_tests.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

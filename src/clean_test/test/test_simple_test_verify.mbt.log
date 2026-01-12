@@ -1,6 +1,6 @@
-simple_test_verify.mbt:5:3-5:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:5:16-5:19 [E4021] The value identifier add is unbound.
-simple_test_verify.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:10:16-10:24 [E4021] The value identifier multiply is unbound.
-simple_test_verify.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:15:30-15:35 [E4021] The value identifier greet is unbound.
+simple_test_verify.mbt:2:3-2:24 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test_verify.mbt:2:28-2:43 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test_verify.mbt:7:3-7:24 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test_verify.mbt:7:28-7:48 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test_verify.mbt:12:3-12:31 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test_verify.mbt:12:49-12:66 [E4020] Package "clean_test" not found in the loaded packages.

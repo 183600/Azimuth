@@ -1,63 +1,16 @@
-standard_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
 standard_test_cases.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:7:16-7:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:8:17-8:29 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:14:16-14:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:15:16-15:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:16:17-16:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:22:32-22:46 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:23:25-23:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:29:25-29:37 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:30:26-30:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:31:26-31:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:37:25-37:42 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:38:26-38:43 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:39:26-39:43 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:45:13-45:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:45:35-45:47 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:46:13-46:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:46:38-46:55 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:52:13-52:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:52:26-52:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:52:50-52:62 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:52:66-52:78 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:53:13-53:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:53:31-53:48 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:53:60-53:77 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:53:81-53:98 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:59:18-59:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:60:18-60:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:61:16-61:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:62:16-62:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:68:18-68:35 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:69:18-69:35 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:70:19-70:36 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:79:14-79:31 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:80:3-80:12 [E4021] The value identifier assert_eq is unbound.
-standard_test_cases.mbt:83:19-83:36 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:83:40-83:52 [E4020] Package "azimuth" not found in the loaded packages.
-standard_test_cases.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
+standard_test_cases.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+standard_test_cases.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

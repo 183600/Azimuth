@@ -1,109 +1,22 @@
-focused_unit_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:7:16-7:31 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:10:25-10:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:13:26-13:41 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:20:16-20:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:21:16-21:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:22:16-22:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:23:16-23:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:26:16-26:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:29:16-29:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:36:16-36:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:36:43-36:44 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:37:16-37:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:37:44-37:45 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:38:16-38:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:38:44-38:45 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:39:16-39:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:39:45-39:46 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:42:16-42:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:42:43-42:44 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:43:16-43:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:43:45-43:46 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:46:16-46:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:46:43-46:44 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:47:16-47:36 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:47:44-47:45 [E4037] Cannot use operator `%`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:54:24-54:41 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:55:30-55:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_unit_tests.mbt:58:30-58:47 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:59:36-59:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_unit_tests.mbt:63:23-63:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:64:17-64:26 [E4014] Expr Type Mismatch
-        has type : String
-        wanted   : Int
-focused_unit_tests.mbt:64:26-64:37 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_unit_tests.mbt:64:67-64:78 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_unit_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:75:19-75:34 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:75:41-75:42 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:75:43-75:58 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:76:19-76:34 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:76:41-76:42 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:76:43-76:58 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:83:3-83:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:83:19-83:34 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:83:41-83:42 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:83:43-83:58 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:94:19-94:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:94:46-94:47 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:94:48-94:68 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:95:19-95:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:95:46-95:47 [E4037] Cannot use operator `>`: package moonbitlang/core/builtin is not imported.
-focused_unit_tests.mbt:95:48-95:68 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:107:19-107:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:108:19-108:39 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:109:25-109:40 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:109:52-109:72 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:111:13-111:28 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:112:14-112:29 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:112:33-112:53 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:113:17-113:37 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:126:12-126:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:130:12-130:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:131:3-131:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:134:12-134:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:135:3-135:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:138:12-138:27 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:139:3-139:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:146:18-146:35 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:155:3-155:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:155:27-155:38 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-focused_unit_tests.mbt:155:60-155:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-focused_unit_tests.mbt:168:17-168:32 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:168:33-168:48 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:168:49-168:64 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:171:17-171:32 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:171:36-171:51 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:171:55-171:70 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:174:17-174:32 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:174:33-174:48 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:174:56-174:71 [E4020] Package "clean_test" not found in the loaded packages.
-focused_unit_tests.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
-focused_unit_tests.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
+focused_unit_tests.mbt:5:13-5:28 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:6:17-6:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:18:19-18:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:19:19-19:36 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:21:3-21:31 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:22:3-22:31 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:31:17-31:32 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:32:17-32:32 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:34:3-34:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:35:3-35:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:44:13-44:28 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:45:17-45:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:47:3-47:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:48:3-48:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:56:17-56:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:57:17-57:32 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:58:17-58:37 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:60:3-60:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:61:3-61:24 [E4020] Package "clean_test" not found in the loaded packages.
+focused_unit_tests.mbt:62:3-62:24 [E4020] Package "clean_test" not found in the loaded packages.

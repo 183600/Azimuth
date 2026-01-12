@@ -1,10 +1,3 @@
 // 测试辅助函数
 
-// 断言相等函数，用于测试
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
-}
-
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
-}
+// 这个文件不需要实际内容，因为所有测试函数都在主库中定义

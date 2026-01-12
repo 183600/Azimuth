@@ -1,4 +1,4 @@
 {
-  "import": ["moonbitlang/core/builtin", "moonbitlang/core/string", "moonbitlang/core/list", "clean_test", "azimuth"],
-  "export": ["assert_eq"]
+  "import": ["moonbitlang/core/builtin", "../clean_test"],
+  "export": []
 }

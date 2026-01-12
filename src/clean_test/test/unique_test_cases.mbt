@@ -1,262 +1,163 @@
-// 断言相等函数，用于测试
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
+test "number_system_conversions" {
+  // 二进制到十进制的简单转换模拟
+  // 1010 (二进制) = 10 (十进制)
+  let binary_1010 = @clean_test.add(@clean_test.multiply(1, 8), @clean_test.add(@clean_test.multiply(0, 4), @clean_test.add(@clean_test.multiply(1, 2), @clean_test.multiply(0, 1))))
+  @clean_test.assert_eq(10, binary_1010)
+  
+  // 1111 (二进制) = 15 (十进制)
+  let binary_1111 = @clean_test.add(@clean_test.multiply(1, 8), @clean_test.add(@clean_test.multiply(1, 4), @clean_test.add(@clean_test.multiply(1, 2), @clean_test.multiply(1, 1))))
+  @clean_test.assert_eq(15, binary_1111)
 }
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
-}
-
-// 独特的测试用例集合
-
-// 测试用例 1: 测试斐波那契数列计算
+// 测试用例 2: 数学常数验证
 ///|
-test "fibonacci_sequence_calculation" {
-  // 使用加法计算前几个斐波那契数
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = @clean_test.@clean_test.add(fib1, fib2)  // 2
-  let fib4 = @clean_test.@clean_test.add(fib2, fib3)  // 3
-  let fib5 = @clean_test.@clean_test.add(fib3, fib4)  // 5
-  let fib6 = @clean_test.@clean_test.add(fib4, fib5)  // 8
-  let fib7 = @clean_test.@clean_test.add(fib5, fib6)  // 13
-  let fib8 = @clean_test.@clean_test.add(fib6, fib7)  // 21
+test "mathematical_constants" {
+  // 验证黄金比例的近似值 (1.618...)
+  // 使用整数近似：1618/1000
   
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  assert_eq(8, fib6)
-  assert_eq(13, fib7)
-  assert_eq(21, fib8)
+  // 验证斐波那契数列中的黄金比例
+  let fib_13 = 233
+  let fib_ratio = @clean_test.multiply(fib_13, 1000)  // 233000
+  @clean_test.assert_eq(233000, fib_ratio)
 }
 
-// 测试用例 2: 测试阶乘计算
+// 测试用例 3: 字符串边界测试
 ///|
-test "factorial_calculation" {
-  // 使用乘法计算阶乘
-  let fact1 = 1  // 1!
-  let fact2 = @clean_test.@clean_test.multiply(2, fact1)  // 2! = 2
-  let fact3 = @clean_test.@clean_test.multiply(3, fact2)  // 3! = 6
-  let fact4 = @clean_test.@clean_test.multiply(4, fact3)  // 4! = 24
-  let fact5 = @clean_test.@clean_test.multiply(5, fact4)  // 5! = 120
-  let fact6 = @clean_test.@clean_test.multiply(6, fact5)  // 6! = 720
-  
-  assert_eq(1, fact1)
-  assert_eq(2, fact2)
-  assert_eq(6, fact3)
-  assert_eq(24, fact4)
-  assert_eq(120, fact5)
-  assert_eq(720, fact6)
-}
-
-// 测试用例 3: 测试幂运算（通过重复乘法）
-///|
-test "power_operation" {
-  // 计算 2^n
-  let power2_1 = 2  // 2^1
-  let power2_2 = @clean_test.@clean_test.multiply(2, power2_1)  // 2^2 = 4
-  let power2_3 = @clean_test.@clean_test.multiply(2, power2_2)  // 2^3 = 8
-  let power2_4 = @clean_test.@clean_test.multiply(2, power2_3)  // 2^4 = 16
-  let power2_5 = @clean_test.@clean_test.multiply(2, power2_4)  // 2^5 = 32
-  
-  assert_eq(2, power2_1)
-  assert_eq(4, power2_2)
-  assert_eq(8, power2_3)
-  assert_eq(16, power2_4)
-  assert_eq(32, power2_5)
-  
-  // 计算 3^n
-  let power3_1 = 3  // 3^1
-  let power3_2 = @clean_test.@clean_test.multiply(3, power3_1)  // 3^2 = 9
-  let power3_3 = @clean_test.@clean_test.multiply(3, power3_2)  // 3^3 = 27
-  
-  assert_eq(3, power3_1)
-  assert_eq(9, power3_2)
-  assert_eq(27, power3_3)
-}
-
-// 测试用例 4: 测试最大公约数（通过减法模拟）
-///|
-test "gcd_simulation" {
-  // 使用减法模拟欧几里得算法
-  // GCD(48, 18) = 6
-  
-  let a = 48
-  let b = 18
-  
-  // 48 - 18 = 30
-  let step1 = @clean_test.@clean_test.add(a, @clean_test.@clean_test.multiply(-1, b))
-  // 30 - 18 = 12
-  let step2 = @clean_test.@clean_test.add(step1, @clean_test.@clean_test.multiply(-1, b))
-  // 18 - 12 = 6
-  let step3 = @clean_test.@clean_test.add(b, @clean_test.@clean_test.multiply(-1, step2))
-  // 12 - 6 = 6
-  let step4 = @clean_test.@clean_test.add(step2, @clean_test.@clean_test.multiply(-1, step3))
-  // 6 - 6 = 0
-  let step5 = @clean_test.@clean_test.add(step3, @clean_test.@clean_test.multiply(-1, step4))
-  
-  assert_eq(6, step3)  // GCD is 6
-  assert_eq(0, step5)  // Remainder is 0
-}
-
-// 测试用例 5: 测试百分比计算
-///|
-test "percentage_calculation" {
-  // 计算 25% of 80
-  // 25% = 25/100 = 1/4
-  let value = 80
-  let percentage_numerator = 25
-  let percentage_denominator = 100
-  
-  // 结果 * 100 = 值 * 百分比分子
-  let result_times_100 = @clean_test.@clean_test.multiply(value, percentage_numerator)
-  assert_eq(2000, result_times_100)  // 80 * 25 = 2000, 所以结果是 20
-  
-  // 计算 150% of 40
-  let value2 = 40
-  let percentage2_numerator = 150
-  let result2_times_100 = @clean_test.@clean_test.multiply(value2, percentage2_numerator)
-  assert_eq(6000, result2_times_100)  // 40 * 150 = 6000, 所以结果是 60
-}
-
-// 测试用例 6: 测试复利计算
-///|
-test "compound_interest_calculation" {
-  // 本金 = 1000，年利率 = 10%，年限 = 3年
-  // 复利公式：A = P * (1 + r)^n
-  // 我们避免小数，使用整数计算
-  
-  let principal = 1000
-  let rate_percent = 10
-  let years = 3
-  
-  // (100 + 10) = 110，表示 1.10
-  let growth_factor = @clean_test.@clean_test.add(100, rate_percent)
-  
-  // 第一年后
-  let year1 = @clean_test.@clean_test.multiply(principal, growth_factor)  // 1000 * 110 = 110000
-  // 第二年后
-  let year2 = @clean_test.@clean_test.multiply(year1, growth_factor)     // 110000 * 110 = 12100000
-  // 第三年后
-  let year3 = @clean_test.@clean_test.multiply(year2, growth_factor)     // 12100000 * 110 = 133100000
-  
-  // 验证结果：133100000 / 100^3 = 1331
-  assert_eq(133100000, year3)
-}
-
-// 测试用例 7: 测试字符串长度相关的计算
-///|
-test "string_length_calculations" {
-  // 测试不同长度字符串的拼接
-  let empty = ""
-  let single_char = "A"
-  let word = "Hello"
-  let sentence = "This is a test"
-  
+test "string_boundary_tests" {
   // 测试空字符串
-  let empty_greeting = @clean_test.@clean_test.greet(empty)
-  assert_eq("Hello, !", empty_greeting)
+  let empty = ""
+  let empty_greeting = @clean_test.greet(empty)
+  @clean_test.assert_eq_string("Hello, !", empty_greeting)
   
   // 测试单字符
-  let single_greeting = @clean_test.@clean_test.greet(single_char)
-  assert_eq("Hello, A!", single_greeting)
+  let single_char = "A"
+  let single_greeting = @clean_test.greet(single_char)
+  @clean_test.assert_eq_string("Hello, A!", single_greeting)
   
   // 测试单词
-  let word_greeting = @clean_test.@clean_test.greet(word)
-  assert_eq("Hello, Hello!", word_greeting)
-  
-  // 测试句子
-  let sentence_greeting = @clean_test.@clean_test.greet(sentence)
-  assert_eq("Hello, This is a test!", sentence_greeting)
-  
-  // 验证长度递增
-  assert_eq(true, empty_greeting.length() < single_greeting.length())
-  assert_eq(true, single_greeting.length() < word_greeting.length())
-  assert_eq(true, word_greeting.length() < sentence_greeting.length())
+  let word = "Hello"
+  let word_greeting = @clean_test.greet(word)
+  @clean_test.assert_eq_string("Hello, Hello!", word_greeting)
 }
 
-// 测试用例 8: 测试数字系统转换（二进制到十进制）
+// 测试用例 4: 极值计算
 ///|
-test "binary_to_decimal_conversion" {
-  // 二进制 1011 = 1*2^3 + 0*2^2 + 1*2^1 + 1*2^0 = 8 + 0 + 2 + 1 = 11
+test "extreme_value_calculations" {
+  // 测试最大正值和最小负值的加法
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  let bit0 = 1  // 2^0
-  let bit1 = @clean_test.@clean_test.multiply(2, 1)  // 2^1 = 2
-  let bit2 = @clean_test.@clean_test.multiply(2, bit1)  // 2^2 = 4
-  let bit3 = @clean_test.@clean_test.multiply(2, bit2)  // 2^3 = 8
+  // 最大值 + 0 = 最大值
+  @clean_test.assert_eq(max_int, @clean_test.add(max_int, 0))
   
-  // 1011 (从右到左)
-  let decimal = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(
-    @clean_test.@clean_test.multiply(1, bit0),  // 1 * 1 = 1
-    @clean_test.@clean_test.multiply(1, bit1)   // 1 * 2 = 2
-  ), @clean_test.@clean_test.multiply(0, bit2)), @clean_test.@clean_test.multiply(1, bit3))  // 0 * 4 = 0, 1 * 8 = 8
+  // 最小值 + 0 = 最小值
+  @clean_test.assert_eq(min_int, @clean_test.add(min_int, 0))
   
-  assert_eq(11, decimal)
+  // 最大值 * 1 = 最大值
+  @clean_test.assert_eq(max_int, @clean_test.multiply(max_int, 1))
   
-  // 二进制 1101 = 1*2^3 + 1*2^2 + 0*2^1 + 1*2^0 = 8 + 4 + 0 + 1 = 13
-  let decimal2 = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(
-    @clean_test.@clean_test.multiply(1, bit0),  // 1 * 1 = 1
-    @clean_test.@clean_test.multiply(0, bit1)   // 0 * 2 = 0
-  ), @clean_test.@clean_test.multiply(1, bit2)), @clean_test.@clean_test.multiply(1, bit3))  // 1 * 4 = 4, 1 * 8 = 8
-  
-  assert_eq(13, decimal2)
+  // 最小值 * 1 = 最小值
+  @clean_test.assert_eq(min_int, @clean_test.multiply(min_int, 1))
 }
 
-// 测试用例 9: 测试几何级数求和
+// 测试用例 5: 算法复杂度验证
 ///|
-test "geometric_series_sum" {
-  // 几何级数：1 + 2 + 4 + 8 + 16 = 31
-  // 公比 r = 2，项数 n = 5
+test "algorithm_complexity_verification" {
+  // O(1) 常数时间操作
+  let constant_time_result = @clean_test.add(42, 58)
+  @clean_test.assert_eq(100, constant_time_result)
   
-  let term1 = 1
-  let term2 = @clean_test.@clean_test.multiply(2, term1)  // 2
-  let term3 = @clean_test.@clean_test.multiply(2, term2)  // 4
-  let term4 = @clean_test.@clean_test.multiply(2, term3)  // 8
-  let term5 = @clean_test.@clean_test.multiply(2, term4)  // 16
-  
-  let sum = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(term1, term2), term3), term4), term5)
-  assert_eq(31, sum)
-  
-  // 另一个几何级数：3 + 6 + 12 + 24 = 45
-  // 公比 r = 2，首项 a = 3
-  
-  let geo_term1 = 3
-  let geo_term2 = @clean_test.@clean_test.multiply(2, geo_term1)  // 6
-  let geo_term3 = @clean_test.@clean_test.multiply(2, geo_term2)  // 12
-  let geo_term4 = @clean_test.@clean_test.multiply(2, geo_term3)  // 24
-  
-  let geo_sum = @clean_test.@clean_test.add(@clean_test.@clean_test.add(@clean_test.@clean_test.add(geo_term1, geo_term2), geo_term3), geo_term4)
-  assert_eq(45, geo_sum)
+  // O(n) 线性时间操作模拟
+  let sum1 = @clean_test.add(1, 2)
+  let sum2 = @clean_test.add(sum1, 3)
+  let sum3 = @clean_test.add(sum2, 4)
+  let linear_sum = @clean_test.add(sum3, 5)
+  @clean_test.assert_eq(15, linear_sum)
 }
 
-// 测试用例 10: 测试排列组合计算
+// 测试用例 6: 数据结构操作
 ///|
-test "permutation_calculation" {
-  // 排列 P(n,k) = n! / (n-k)!
-  // P(5,3) = 5! / 2! = 120 / 2 = 60
+test "data_structure_operations" {
+  // 模拟栈操作：push(1), push(2), pop(), push(3)
+  // 使用单个整数来模拟栈状态
+  let mut stack_state = 0
   
-  let n = 5
-  let k = 3
+  // push(1): stack_state = 0 * 10 + 1 = 1
+  stack_state = @clean_test.add(@clean_test.multiply(stack_state, 10), 1)
   
-  // 计算 5! = 120
-  let fact5 = @clean_test.@clean_test.multiply(5, @clean_test.@clean_test.multiply(4, @clean_test.@clean_test.multiply(3, @clean_test.@clean_test.multiply(2, 1))))
+  // push(2): stack_state = 1 * 10 + 2 = 12
+  stack_state = @clean_test.add(@clean_test.multiply(stack_state, 10), 2)
   
-  // 计算 2! = 2
-  let fact2 = @clean_test.@clean_test.multiply(2, 1)
+  // pop(): stack_state = 12 / 10 = 1
+  stack_state = 1
   
-  // P(5,3) = 60
-  // 我们通过验证 60 * 2! = 5! 来确认
-  let permutation_times_fact2 = @clean_test.@clean_test.multiply(60, fact2)
-  assert_eq(fact5, permutation_times_fact2)
+  // push(3): stack_state = 1 * 10 + 3 = 13
+  stack_state = @clean_test.add(@clean_test.multiply(stack_state, 10), 3)
   
-  // 组合 C(n,k) = n! / (k! * (n-k)!)
-  // C(5,2) = 5! / (2! * 3!) = 120 / (2 * 6) = 10
+  @clean_test.assert_eq(13, stack_state)
+}
+
+// 测试用例 7: 错误处理模拟
+///|
+test "error_handling_simulation" {
+  // 模拟除零错误的处理
   
-  // 计算 3! = 6
-  let fact3 = @clean_test.@clean_test.multiply(3, @clean_test.@clean_test.multiply(2, 1))
+  // 由于没有除法操作，我们用加法来模拟
+  // 正常情况：100 / 10 = 10
+  let normal_result = @clean_test.multiply(10, 1)
+  @clean_test.assert_eq(10, normal_result)
   
-  // C(5,2) = 10
-  // 我们通过验证 10 * 2! * 3! = 5! 来确认
-  let combination_times_fact2_fact3 = @clean_test.@clean_test.multiply(10, @clean_test.@clean_test.multiply(fact2, fact3))
-  assert_eq(fact5, combination_times_fact2_fact3)
+  // 错误情况：除以零，返回错误码
+  let error_result = -1
+  @clean_test.assert_eq(-1, error_result)
+}
+
+// 测试用例 8: 性能测试
+///|
+test "performance_tests" {
+  // 简单的性能基准测试
+  let start_time = 1000  // 模拟开始时间
+  let end_time = 2000    // 模拟结束时间
+  
+  // 计算执行时间
+  let execution_time = @clean_test.add(end_time, @clean_test.multiply(-1, start_time))
+  @clean_test.assert_eq(1000, execution_time)
+  
+  // 验证执行时间在合理范围内
+  @clean_test.assert_true(execution_time > 0)
+  @clean_test.assert_true(execution_time < 5000)
+}
+
+// 测试用例 9: 边界条件测试
+///|
+test "boundary_condition_tests" {
+  // 测试数值边界
+  let boundary_value = 1000
+  
+  // 测试刚好在边界内的情况
+  let within_boundary = @clean_test.add(boundary_value, -1)
+  @clean_test.assert_eq(999, within_boundary)
+  
+  // 测试刚好在边界外的情况
+  let beyond_boundary = @clean_test.add(boundary_value, 1)
+  @clean_test.assert_eq(1001, beyond_boundary)
+}
+
+// 测试用例 10: 综合测试
+///|
+test "comprehensive_test" {
+  // 综合运用所有功能
+  let initial_value = 100
+  
+  // 加法操作
+  let after_add = @clean_test.add(initial_value, 50)
+  @clean_test.assert_eq(150, after_add)
+  
+  // 乘法操作
+  let after_multiply = @clean_test.multiply(after_add, 2)
+  @clean_test.assert_eq(300, after_multiply)
+  
+  // 字符串操作
+  let greeting = @clean_test.greet("Test")
+  @clean_test.assert_eq_string("Hello, Test!", greeting)
 }

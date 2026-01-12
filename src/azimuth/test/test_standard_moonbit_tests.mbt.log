@@ -1,149 +1,16 @@
-:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
-standard_moonbit_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:8:16-8:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:9:16-9:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:10:17-10:29 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:13:16-13:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:14:17-14:29 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:15:16-15:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:22:16-22:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:23:17-23:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+standard_moonbit_tests.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
 standard_moonbit_tests.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:27:16-27:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:28:16-28:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:29:16-29:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:32:16-32:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:33:17-33:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:40:30-40:44 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:41:28-41:42 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:44:25-44:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:45:28-45:42 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:46:29-46:43 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:54:22-54:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:55:22-55:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:56:22-56:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:60:22-60:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:61:22-61:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:62:22-62:34 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:65:3-65:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:65:17-65:29 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:66:16-66:28 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:74:22-74:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:75:23-75:40 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:79:3-79:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:79:22-79:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:80:3-80:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:80:22-80:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:81:16-81:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:84:22-84:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:85:22-85:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:92:13-92:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:92:35-92:47 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:93:13-93:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:93:35-93:47 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:94:13-94:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:94:37-94:49 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:97:13-97:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:97:38-97:55 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:98:13-98:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:98:39-98:56 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:99:3-99:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:99:13-99:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:99:40-99:57 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:106:13-106:14 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
-standard_moonbit_tests.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:107:13-107:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:107:26-107:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:107:42-107:43 [E4021] The value identifier b is unbound.
-standard_moonbit_tests.mbt:107:46-107:47 [E4021] The value identifier c is unbound.
-standard_moonbit_tests.mbt:107:50-107:62 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:107:66-107:78 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:107:79-107:80 [E4021] The value identifier b is unbound.
-standard_moonbit_tests.mbt:107:82-107:83 [E4021] The value identifier c is unbound.
-standard_moonbit_tests.mbt:109:13-109:14 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
-standard_moonbit_tests.mbt:110:3-110:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:110:13-110:25 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:110:26-110:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:110:42-110:43 [E4021] The value identifier y is unbound.
-standard_moonbit_tests.mbt:110:46-110:47 [E4021] The value identifier z is unbound.
-standard_moonbit_tests.mbt:110:50-110:62 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:110:66-110:78 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:110:79-110:80 [E4021] The value identifier y is unbound.
-standard_moonbit_tests.mbt:110:82-110:83 [E4021] The value identifier z is unbound.
-standard_moonbit_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:113:13-113:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:113:31-113:48 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:113:60-113:77 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:113:81-113:98 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:114:13-114:30 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:114:31-114:48 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:114:62-114:79 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:114:84-114:101 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:121:18-121:19 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
-standard_moonbit_tests.mbt:122:14-122:31 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:122:40-122:45 [E4021] The value identifier width is unbound.
-standard_moonbit_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:126:19-126:36 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:126:40-126:52 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:126:61-126:66 [E4021] The value identifier width is unbound.
-standard_moonbit_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:130:17-130:18 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
-standard_moonbit_tests.mbt:131:18-131:35 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:131:43-131:51 [E4021] The value identifier quantity is unbound.
-standard_moonbit_tests.mbt:132:15-132:27 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:132:38-132:41 [E4021] The value identifier tax is unbound.
-standard_moonbit_tests.mbt:133:3-133:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:141:3-141:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:141:26-141:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:142:3-142:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:142:26-142:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:143:3-143:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:143:26-143:38 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:146:22-146:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:147:22-147:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:148:16-148:33 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:151:3-151:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:151:25-151:39 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:152:26-152:40 [E4020] Package "azimuth" not found in the loaded packages.
-standard_moonbit_tests.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
-standard_moonbit_tests.mbt:153:46-153:60 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+standard_moonbit_tests.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

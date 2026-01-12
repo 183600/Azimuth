@@ -1,142 +1,22 @@
-new_focused_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:11:25-11:40 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:12:26-12:41 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:13:16-13:31 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:16:13-16:32 [E4095] Integer literal 1000000000000000000 is out of range.
-new_focused_tests.mbt:16:34-16:54 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:17:13-17:32 [E4095] Integer literal 1000000000000000000 is out of range.
-new_focused_tests.mbt:17:34-17:54 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:18:13-18:33 [E4095] Integer literal -1000000000000000000 is out of range.
-new_focused_tests.mbt:18:35-18:55 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:26:16-26:33 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:27:25-27:36 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-new_focused_tests.mbt:27:134-27:135 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-new_focused_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:30:54-30:71 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:33:27-33:44 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:34:38-34:55 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:35:40-35:57 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:43:7-43:16 [E0002] Warning (unused_value): Unused variable 'principal'
-new_focused_tests.mbt:44:7-44:19 [E0002] Warning (unused_value): Unused variable 'rate_percent'
-new_focused_tests.mbt:45:7-45:11 [E0002] Warning (unused_value): Unused variable 'time'
-new_focused_tests.mbt:49:7-49:21 [E0002] Warning (unused_value): Unused variable 'rate_times_100'
-new_focused_tests.mbt:51:30-51:50 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:51:67-51:87 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:62:17-62:32 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:62:33-62:48 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:62:56-62:71 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:65:17-65:37 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:65:38-65:58 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:65:66-65:86 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:69:17-69:32 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:69:33-69:53 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:69:61-69:81 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:72:17-72:37 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:72:41-72:56 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:83:26-83:46 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:84:32-84:52 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:94:35-94:55 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:94:63-94:83 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:104:7-104:16 [E0002] Warning (unused_value): Unused variable 'principal'
-new_focused_tests.mbt:105:7-105:26 [E0002] Warning (unused_value): Unused variable 'annual_rate_percent'
-new_focused_tests.mbt:110:16-110:36 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:117:3-117:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:134:7-134:12 [E0002] Warning (unused_value): Unused variable 'count'
-new_focused_tests.mbt:137:15-137:35 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:137:36-137:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:137:59-137:79 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:137:92-137:107 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:137:115-137:135 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:138:15-138:35 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:138:36-138:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:138:59-138:79 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:138:92-138:107 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:138:115-138:135 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:139:15-139:35 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:139:36-139:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:139:59-139:79 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:139:92-139:107 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:139:115-139:135 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:140:15-140:35 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:140:36-140:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:140:59-140:79 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:140:92-140:107 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:140:115-140:135 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:141:15-141:35 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:141:36-141:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:141:59-141:79 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:141:92-141:107 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:141:115-141:135 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:143:24-143:39 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:143:40-143:55 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:143:56-143:71 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:143:72-143:87 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:146:3-146:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:150:3-150:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:154:3-154:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:167:19-167:34 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:167:35-167:50 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:171:19-171:39 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:171:44-171:59 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:171:63-171:83 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:172:19-172:39 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:172:44-172:59 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:172:63-172:83 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:173:19-173:39 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:173:44-173:59 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:173:63-173:83 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:175:31-175:51 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:175:63-175:83 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:175:84-175:104 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:178:3-178:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:179:3-179:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:181:3-181:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:196:12-196:32 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:197:13-197:33 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:197:34-197:54 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:200:3-200:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:209:17-209:34 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:210:3-210:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:210:26-210:37 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-new_focused_tests.mbt:210:68-210:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-new_focused_tests.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:219:27-219:44 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:220:3-220:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:220:29-220:46 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:221:3-221:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:221:28-221:45 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:222:29-222:46 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:223:3-223:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:223:29-223:46 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:227:17-227:34 [E4020] Package "clean_test" not found in the loaded packages.
-new_focused_tests.mbt:228:3-228:12 [E4021] The value identifier assert_eq is unbound.
-new_focused_tests.mbt:228:26-228:37 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-new_focused_tests.mbt:228:65-228:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+new_focused_tests.mbt:5:13-5:28 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:6:17-6:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:18:19-18:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:19:19-19:36 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:21:3-21:31 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:22:3-22:31 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:31:17-31:32 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:32:17-32:32 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:34:3-34:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:35:3-35:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:44:13-44:28 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:45:17-45:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:47:3-47:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:48:3-48:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:56:17-56:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:57:17-57:32 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:58:17-58:37 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:60:3-60:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:61:3-61:24 [E4020] Package "clean_test" not found in the loaded packages.
+new_focused_tests.mbt:62:3-62:24 [E4020] Package "clean_test" not found in the loaded packages.

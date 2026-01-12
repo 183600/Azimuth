@@ -1,16 +1,3 @@
-// 断言相等函数，用于测试
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
-}
-
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
-}
-
-// 实际应用场景测试用例
-
-// 测试用例1: 计算购物车折扣后的总价
-///|
 test "shopping_cart_discount_calculation" {
   // 商品价格
   let item1_price = 299
@@ -35,7 +22,7 @@ test "shopping_cart_discount_calculation" {
   let final_total = @clean_test.add(total_before_discount, @clean_test.multiply(-1, discount))
   
   // 验证结果：(299*2) + 199 + (99*3) - 50 = 598 + 199 + 297 - 50 = 1044
-  assert_eq(1044, final_total)
+  @clean_test.assert_eq(1044, final_total)
 }
 
 // 测试用例2: 计算银行贷款月供（简化版）
@@ -51,9 +38,6 @@ test "bank_loan_monthly_payment" {
   // 贷款年限
   let years = 20
   
-  // 月数
-  let months = @clean_test.@clean_test.multiply(years, 12)
-  
   // 简化计算：只计算总利息和本金总和
   // 总利息 = 本金 * 年利率 * 年限
   let total_interest = @clean_test.multiply(@clean_test.multiply(principal, annual_rate_numerator), years)
@@ -62,7 +46,7 @@ test "bank_loan_monthly_payment" {
   let total_payment = @clean_test.add(principal, @clean_test.multiply(total_interest, annual_rate_denominator))
   
   // 验证结果：300000 + (300000 * 5 * 20) = 300000 + 30000000 = 30300000
-  assert_eq(30300000, total_payment)
+  @clean_test.assert_eq(30300000, total_payment)
 }
 
 // 测试用例3: 计算身体质量指数(BMI)的分子部分
@@ -72,8 +56,6 @@ test "bmi_calculation_numerator" {
   let weight = 70
   
   // 身高(m)的平方，我们避免小数用厘米计算
-  let height_cm = 175
-  let height_m_squared_numerator = @clean_test.@clean_test.multiply(height_cm, height_cm)
   let height_m_squared_denominator = 10000  // (100*100)
   
   // BMI = 体重(kg) / 身高²(m²)
@@ -81,7 +63,7 @@ test "bmi_calculation_numerator" {
   let bmi_numerator = @clean_test.multiply(weight, height_m_squared_denominator)
   
   // 验证：70 * 10000 = 700000
-  assert_eq(700000, bmi_numerator)
+  @clean_test.assert_eq(700000, bmi_numerator)
 }
 
 // 测试用例4: 计算燃油消耗和费用
@@ -103,7 +85,7 @@ test "fuel_consumption_calculation" {
   let total_cost_times_100 = @clean_test.multiply(total_fuel_times_100, fuel_price)
   
   // 验证：500 * 8 * 7 = 28000，实际费用是280元
-  assert_eq(28000, total_cost_times_100)
+  @clean_test.assert_eq(28000, total_cost_times_100)
 }
 
 // 测试用例5: 计算投资复利（简化版）
@@ -116,9 +98,6 @@ test "investment_compound_interest" {
   let rate_numerator = 8
   let rate_denominator = 100
   
-  // 投资年限
-  let years = 5
-  
   // 简化计算：只计算2年的复利作为示例
   // 第一年结束：本金 + 利息
   let year1_value_times_den = @clean_test.add(@clean_test.multiply(principal, rate_denominator), @clean_test.multiply(principal, rate_numerator))
@@ -127,7 +106,7 @@ test "investment_compound_interest" {
   let year2_value_times_den = @clean_test.add(@clean_test.multiply(year1_value_times_den, rate_denominator), @clean_test.multiply(year1_value_times_den, rate_numerator))
   
   // 验证计算过程
-  assert_eq(true, year2_value_times_den > principal * rate_denominator)
+  @clean_test.assert_true(year2_value_times_den > principal * rate_denominator)
 }
 
 // 测试用例6: 计算房屋面积和装修预算
@@ -154,7 +133,7 @@ test "home_renovation_budget" {
   let total_budget = @clean_test.add(floor_budget, wall_budget)
   
   // 验证：地面48*150 + 墙面84*80 = 7200 + 6720 = 13920
-  assert_eq(13920, total_budget)
+  @clean_test.assert_eq(13920, total_budget)
 }
 
 // 测试用例7: 计算运动卡路里消耗
@@ -174,7 +153,7 @@ test "exercise_calories_calculation" {
   let total_calories = @clean_test.add(running_calories, swimming_calories)
   
   // 验证：30*10 + 45*8 = 300 + 360 = 660
-  assert_eq(660, total_calories)
+  @clean_test.assert_eq(660, total_calories)
 }
 
 // 测试用例8: 计算项目管理工时和成本
@@ -189,16 +168,13 @@ test "project_management_cost" {
   let developer_rate = 150
   let tester_rate = 120
   
-  // 计算总工时
-  let total_hours = @clean_test.add(@clean_test.add(planning_hours, development_hours), testing_hours)
-  
   // 计算总成本（假设开发和测试各占一半）
   let dev_cost = @clean_test.multiply(@clean_test.add(planning_hours, development_hours), developer_rate)
   let test_cost = @clean_test.multiply(testing_hours, tester_rate)
   let total_cost = @clean_test.add(dev_cost, test_cost)
   
   // 验证：200*150 + 80*120 = 30000 + 9600 = 39600
-  assert_eq(39600, total_cost)
+  @clean_test.assert_eq(39600, total_cost)
 }
 
 // 测试用例9: 测试国际化字符串处理
@@ -212,24 +188,24 @@ test "internationalization_string_tests" {
   
   // 测试中文
   let chinese_greeting = @clean_test.greet(chinese_name)
-  assert_eq(true, chinese_greeting.contains("小明"))
+  @clean_test.assert_true(chinese_greeting.contains("小明"))
   
   // 测试英文
   let english_greeting = @clean_test.greet(english_name)
-  assert_eq(true, english_greeting.contains("Alice"))
+  @clean_test.assert_true(english_greeting.contains("Alice"))
   
   // 测试日文
   let japanese_greeting = @clean_test.greet(japanese_name)
-  assert_eq(true, japanese_greeting.contains("田中"))
+  @clean_test.assert_true(japanese_greeting.contains("田中"))
   
   // 测试韩文
   let korean_greeting = @clean_test.greet(korean_name)
-  assert_eq(true, korean_greeting.contains("김철수"))
+  @clean_test.assert_true(korean_greeting.contains("김철수"))
   
   // 验证不同语言产生不同的问候语
-  assert_eq(true, chinese_greeting != english_greeting)
-  assert_eq(true, english_greeting != japanese_greeting)
-  assert_eq(true, japanese_greeting != korean_greeting)
+  @clean_test.assert_true(chinese_greeting != english_greeting)
+  @clean_test.assert_true(english_greeting != japanese_greeting)
+  @clean_test.assert_true(japanese_greeting != korean_greeting)
 }
 
 // 测试用例10: 计算几何级数求和
@@ -240,8 +216,6 @@ test "geometric_series_sum" {
   
   let first_term = 2
   let ratio = 3
-  let num_terms = 4
-  
   // 逐项计算
   let term1 = first_term
   let term2 = @clean_test.multiply(term1, ratio)
@@ -252,5 +226,5 @@ test "geometric_series_sum" {
   let sum = @clean_test.add(@clean_test.add(@clean_test.add(term1, term2), term3), term4)
   
   // 验证：2 + 6 + 18 + 54 = 80
-  assert_eq(80, sum)
+  @clean_test.assert_eq(80, sum)
 }

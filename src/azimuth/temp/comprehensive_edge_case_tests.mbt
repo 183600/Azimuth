@@ -65,18 +65,18 @@ test "negative_one_operations" {
 ///|
 test "greet_function_edge_cases" {
   // 测试空字符串
-  assert_eq("Hello, !", @azimuth.greet(""))
+  assert_eq_string("Hello, !", @azimuth.greet(""))
   
   // 测试单字符
-  assert_eq("Hello, A!", @azimuth.greet("A"))
-  assert_eq("Hello, 1!", @azimuth.greet("1"))
+  assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  assert_eq_string("Hello, 1!", @azimuth.greet("1"))
   
   // 测试长字符串
   let long_name = "这是一个非常非常长的名字用来测试greet函数处理长字符串的能力"
-  assert_eq("Hello, " + long_name + "!", @azimuth.greet(long_name))
+  assert_eq_string("Hello, " + long_name + "!", @azimuth.greet(long_name))
   
   // 测试包含引号的字符串
-  assert_eq("Hello, \"John\"!", @azimuth.greet("\"John\""))
+  assert_eq_string("Hello, \"John\"!", @azimuth.greet("\"John\""))
 }
 
 ///|

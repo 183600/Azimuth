@@ -1,6 +1,16 @@
-simple_test_verify.mbt:5:3-5:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:5:16-5:28 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test_verify.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:10:16-10:33 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test_verify.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-simple_test_verify.mbt:15:30-15:44 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:6:16-6:28 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:12:16-12:28 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:18:25-18:37 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:24:16-24:33 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:31:27-31:44 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:36:16-36:30 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test_verify.mbt:37:3-37:28 [E4020] Package "azimuth" not found in the loaded packages.

@@ -1,203 +1,48 @@
-additional_comprehensive_tests.mbt:11:12-11:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:12:12-12:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:13:12-13:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:14:12-14:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:15:12-15:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:16:12-16:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:17:12-17:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:18:12-18:24 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:19:13-19:25 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:40:15-40:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:41:15-41:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:42:15-42:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:43:15-43:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:44:15-44:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:45:15-45:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:67:20-67:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:67:37-67:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:69:20-69:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:69:37-69:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:71:20-71:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:71:45-71:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:81:20-81:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:81:37-81:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:83:20-83:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:83:37-83:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:85:20-85:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:85:45-85:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:87:20-87:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:87:45-87:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:101:16-101:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:104:16-104:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:107:16-107:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:107:37-107:54 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:110:16-110:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:113:16-113:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:116:16-116:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:119:16-119:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:122:16-122:33 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:126:3-126:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:129:3-129:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:130:3-130:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:131:3-131:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:138:3-138:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:138:32-138:46 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:139:3-139:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:139:34-139:48 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:140:3-140:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:140:31-140:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:143:3-143:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:143:33-143:47 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:144:3-144:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:144:41-144:55 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:148:23-148:37 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:149:3-149:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:149:32-149:40 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
-additional_comprehensive_tests.mbt:149:120-149:121 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
-additional_comprehensive_tests.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:152:34-152:48 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:161:14-161:26 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:161:30-161:42 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:161:46-161:58 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:161:62-161:74 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:162:3-162:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:165:14-165:26 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:31-165:43 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:47-165:59 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:63-165:75 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:79-165:91 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:95-165:107 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:111-165:123 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:127-165:139 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:165:143-165:155 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:169:18-169:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:169:34-169:46 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:169:50-169:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:169:66-169:78 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:170:3-170:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:173:17-173:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:173:33-173:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:173:49-173:61 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:173:65-173:77 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:174:3-174:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:192:17-192:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:193:17-193:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:193:30-193:42 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:193:50-193:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:194:17-194:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:195:17-195:29 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:197:3-197:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:198:3-198:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:199:3-199:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:200:3-200:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:201:3-201:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:202:3-202:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:203:3-203:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:204:3-204:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:206:3-206:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:207:3-207:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:208:3-208:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:209:3-209:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:221:27-221:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:222:3-222:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:227:27-227:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:228:3-228:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:233:27-233:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:234:3-234:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:239:27-239:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:240:3-240:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:253:13-253:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:254:13-254:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:255:3-255:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:262:13-262:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:263:13-263:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:264:3-264:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:269:7-269:19 [E0002] Warning (unused_value): Unused variable 'denominator1'
-additional_comprehensive_tests.mbt:271:7-271:19 [E0002] Warning (unused_value): Unused variable 'denominator2'
-additional_comprehensive_tests.mbt:274:27-274:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:275:27-275:44 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:276:26-276:38 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:279:3-279:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:280:3-280:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:281:3-281:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:282:3-282:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:299:13-299:30 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:300:3-300:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:303:20-303:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:33-303:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:46-303:58 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:66-303:78 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:87-303:99 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:100-303:112 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:303:120-303:132 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:304:3-304:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:309:15-309:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:309:33-309:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:309:49-309:66 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:309:76-309:88 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:309:92-309:109 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:310:15-310:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:310:33-310:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:310:49-310:66 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:310:76-310:88 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:310:92-310:109 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:311:15-311:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:311:33-311:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:311:49-311:66 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:311:76-311:88 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:311:92-311:109 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:312:15-312:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:312:33-312:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:312:49-312:66 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:312:76-312:88 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:312:92-312:109 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:313:15-313:32 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:313:33-313:45 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:313:49-313:66 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:313:76-313:88 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:313:92-313:109 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:24-316:36 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:37-316:49 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:50-316:62 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:63-316:75 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:83-316:95 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:112-316:124 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:141-316:153 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:161-316:173 [E4020] Package "azimuth" not found in the loaded packages.
-additional_comprehensive_tests.mbt:316:189-316:189 [E3002] Unexpected line break here, missing `,` or `)` at the end of this line.
-additional_comprehensive_tests.mbt:318:3-318:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:319:3-319:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:320:3-320:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:321:3-321:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:322:3-322:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:323:3-323:12 [E4021] The value identifier assert_eq is unbound.
-additional_comprehensive_tests.mbt:327:3-327:12 [E4021] The value identifier assert_eq is unbound.
+additional_comprehensive_tests.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:6:34-6:46 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:7:35-7:47 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:17:31-17:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:18:31-18:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:21:3-21:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:21:31-21:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:22:3-22:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:22:31-22:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:32:31-32:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:33:31-33:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:34:31-34:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:35:31-35:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:45:3-45:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:45:31-45:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:46:3-46:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:46:31-46:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:55:3-55:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:55:31-55:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:56:3-56:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:56:35-56:47 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:59:31-59:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:60:3-60:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:60:31-60:48 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:61:25-61:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:67:3-67:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:67:41-67:55 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:68:3-68:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:68:41-68:55 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:69:3-69:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:69:45-69:59 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:70:3-70:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:70:42-70:56 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:81:16-81:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:82:16-82:33 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:83:3-83:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:86:20-86:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:87:17-87:29 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
