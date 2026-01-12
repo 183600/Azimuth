@@ -1,36 +1,72 @@
 #!/bin/bash
 
-# 批量修复测试文件中的函数调用，添加@azimuth前缀
+# 修复测试文件中的函数调用问题
+# 使用正确的导入语法
 
-cd src/azimuth/test
+echo "开始修复测试文件中的函数调用问题..."
 
-# 需要修复的文件列表
-FILES=(
-    "new_tests.mbt"
-    "simple_test_verify.mbt"
-    "new_standard_tests.mbt"
-    "additional_tests.mbt"
-    "simple_test.mbt"
-    "simple_new_tests.mbt"
-    "concise_functional_tests.mbt"
-    "additional_unique_tests.mbt"
-    "comprehensive_edge_tests.mbt"
-    "comprehensive_tests.mbt"
-)
-
-# 修复每个文件
-for file in "${FILES[@]}"; do
-    if [ -f "$file" ]; then
-        echo "Fixing $file..."
-        # 替换add(为@azimuth.add(
-        sed -i 's/add(/@azimuth.add(/g' "$file"
-        # 替换multiply(为@azimuth.multiply(
-        sed -i 's/multiply(/@azimuth.multiply(/g' "$file"
-        # 替换greet(为@azimuth.greet(
-        sed -i 's/greet(/@azimuth.greet(/g' "$file"
-        # 替换divide(为@azimuth.divide(
-        sed -i 's/divide(/@azimuth.divide(/g' "$file"
-    fi
+# 修复azimuth测试文件
+echo "修复azimuth测试文件..."
+find src/azimuth/test -name "*.mbt" -type f | while read file; do
+  # 跳过test_helper.mbt
+  if [[ "$file" == *"test_helper.mbt" ]]; then
+    continue
+  fi
+  
+  echo "修复文件: $file"
+  
+  # 创建临时文件
+  temp_file=$(mktemp)
+  
+  # 添加导入语句并修复函数调用
+  {
+    echo "// 测试函数和断言函数从 azimuth 包导入"
+    echo ""
+    # 处理文件内容，将函数调用替换为不带前缀的形式
+    sed -e 's/azimuth::assert_eq(/assert_eq(/g' \
+        -e 's/azimuth::assert_eq_string(/assert_eq_string(/g' \
+        -e 's/azimuth::assert_true(/assert_true(/g' \
+        -e 's/azimuth::assert_false(/assert_false(/g' \
+        -e 's/azimuth::add(/add(/g' \
+        -e 's/azimuth::multiply(/multiply(/g' \
+        -e 's/azimuth::greet(/greet(/g' \
+        "$file"
+  } > "$temp_file"
+  
+  # 替换原文件
+  mv "$temp_file" "$file"
 done
 
-echo "Done!"
+# 修复clean_test测试文件
+echo "修复clean_test测试文件..."
+find src/clean_test/test -name "*.mbt" -type f | while read file; do
+  # 跳过test_helper.mbt
+  if [[ "$file" == *"test_helper.mbt" ]]; then
+    continue
+  fi
+  
+  echo "修复文件: $file"
+  
+  # 创建临时文件
+  temp_file=$(mktemp)
+  
+  # 添加导入语句并修复函数调用
+  {
+    echo "// 测试函数和断言函数从 clean_test 包导入"
+    echo ""
+    # 处理文件内容，将函数调用替换为不带前缀的形式
+    sed -e 's/test_helper::assert_eq(/assert_eq(/g' \
+        -e 's/test_helper::assert_eq_string(/assert_eq_string(/g' \
+        -e 's/test_helper::assert_true(/assert_true(/g' \
+        -e 's/test_helper::assert_false(/assert_false(/g' \
+        -e 's/test_helper::add(/add(/g' \
+        -e 's/test_helper::multiply(/multiply(/g' \
+        -e 's/test_helper::greet(/greet(/g' \
+        "$file"
+  } > "$temp_file"
+  
+  # 替换原文件
+  mv "$temp_file" "$file"
+done
+
+echo "测试文件修复完成！"

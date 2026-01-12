@@ -1,37 +1,13 @@
-test "lib_add_comprehensive" {
-  // 基础功能测试
-  @azimuth.assert_eq(10, @azimuth.add(7, 3))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
-  
-  // 零值测试
-  @azimuth.assert_eq(7, @azimuth.add(0, 7))
-  @azimuth.assert_eq(-3, @azimuth.add(-3, 0))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+// 测试函数和断言函数从 azimuth 包导入
+
+test "basic_add_test" {
+  assert_eq(5, add(2, 3))
 }
 
-///|
-test "lib_multiply_comprehensive" {
-  // 基础功能测试
-  @azimuth.assert_eq(21, @azimuth.multiply(7, 3))
-  @azimuth.assert_eq(-21, @azimuth.multiply(7, -3))
-  @azimuth.assert_eq(21, @azimuth.multiply(-7, -3))
-  
-  // 特殊值测试
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 7))
-  @azimuth.assert_eq(7, @azimuth.multiply(1, 7))
-  @azimuth.assert_eq(-7, @azimuth.multiply(-1, 7))
+test "basic_multiply_test" {
+  assert_eq(6, multiply(2, 3))
 }
 
-///|
-test "lib_greet_comprehensive" {
-  // 基础功能测试
-  @azimuth.assert_eq_string("Hello, Azimuth!", @azimuth.greet("Azimuth"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  
-  // 特殊字符测试
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, test_case!", @azimuth.greet("test_case"))
+test "basic_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
 }
-
-

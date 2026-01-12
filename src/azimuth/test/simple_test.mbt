@@ -1,20 +1,13 @@
-// 简单测试用例
+// 测试函数和断言函数从 azimuth 包导入
 
-test "simple_addition" {
-  let result = @azimuth.add(2, 3)
-  @azimuth.assert_eq(5, result)
+test "basic_add_test" {
+  assert_eq(5, add(2, 3))
 }
 
-// 测试乘法功能
-///|
-test "simple_multiplication" {
-  let result = @azimuth.multiply(4, 5)
-  @azimuth.assert_eq(20, result)
+test "basic_multiply_test" {
+  assert_eq(6, multiply(2, 3))
 }
 
-// 测试字符串功能
-///|
-test "simple_greet" {
-  let result = @azimuth.greet("World")
-  @azimuth.assert_eq_string("Hello, World!", result)
+test "basic_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
 }

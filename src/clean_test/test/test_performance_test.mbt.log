@@ -1,6 +1,0 @@
-performance_test.mbt:5:11-5:26 [E4020] Package "clean_test" not found in the loaded packages.
-performance_test.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
-performance_test.mbt:16:14-16:34 [E4020] Package "clean_test" not found in the loaded packages.
-performance_test.mbt:19:3-19:24 [E4020] Package "clean_test" not found in the loaded packages.
-performance_test.mbt:28:14-28:29 [E4020] Package "clean_test" not found in the loaded packages.
-performance_test.mbt:32:3-32:24 [E4020] Package "clean_test" not found in the loaded packages.

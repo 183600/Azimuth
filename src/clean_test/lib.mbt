@@ -1,5 +1,3 @@
-// 基础库文件
-///|
 pub fn add(a : Int, b : Int) -> Int {
   // 特殊情况处理：如果有一个是0，直接返回另一个
   if a == 0 {
@@ -52,7 +50,7 @@ pub fn add(a : Int, b : Int) -> Int {
   return a + b
 }
 
-///|
+///
 pub fn multiply(a : Int, b : Int) -> Int {
   // 常量定义
   let min_val = -2147483648
@@ -108,7 +106,7 @@ pub fn multiply(a : Int, b : Int) -> Int {
   return a * b
 }
 
-///|
+///
 pub fn greet(name : String) -> String {
   // 字符串拼接：空字符串会自动处理
   "Hello, " + name + "!"
@@ -138,5 +136,48 @@ pub fn assert_true(condition : Bool) -> Unit raise @moonbitlang/core/builtin.Fai
 pub fn assert_false(condition : Bool) -> Unit raise @moonbitlang/core/builtin.Failure {
   if condition {
     raise @moonbitlang/core/builtin.Failure("Assertion failed: expected false but got true")
+  }
+}
+
+// 测试用例
+test "add_basic" {
+  let result = add(2, 3)
+  if result != 5 {
+    raise @moonbitlang/core/builtin.Failure("Add test failed")
+  }
+}
+
+test "add_negative" {
+  let result = add(5, -5)
+  if result != 0 {
+    raise @moonbitlang/core/builtin.Failure("Add negative test failed")
+  }
+}
+
+test "multiply_basic" {
+  let result = multiply(2, 3)
+  if result != 6 {
+    raise @moonbitlang/core/builtin.Failure("Multiply test failed")
+  }
+}
+
+test "multiply_negative" {
+  let result = multiply(2, -3)
+  if result != -6 {
+    raise @moonbitlang/core/builtin.Failure("Multiply negative test failed")
+  }
+}
+
+test "greet_basic" {
+  let result = greet("World")
+  if result != "Hello, World!" {
+    raise @moonbitlang/core/builtin.Failure("Greet test failed")
+  }
+}
+
+test "greet_empty" {
+  let result = greet("")
+  if result != "Hello, !" {
+    raise @moonbitlang/core/builtin.Failure("Greet empty test failed")
   }
 }

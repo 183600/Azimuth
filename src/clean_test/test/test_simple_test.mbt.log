@@ -1,7 +1,0 @@
-simple_test.mbt:2:11-2:26 [E4020] Package "clean_test" not found in the loaded packages.
-simple_test.mbt:3:5-3:15 [E4020] Package "test" not found in the loaded packages.
-simple_test.mbt:8:11-8:31 [E4020] Package "clean_test" not found in the loaded packages.
-simple_test.mbt:9:5-9:15 [E4020] Package "test" not found in the loaded packages.
-simple_test.mbt:14:22-14:24 [E4037] Cannot use operator `!=`: package moonbitlang/core/builtin is not imported.
-simple_test.mbt:14:25-14:42 [E4020] Package "clean_test" not found in the loaded packages.
-simple_test.mbt:15:5-15:15 [E4020] Package "test" not found in the loaded packages.

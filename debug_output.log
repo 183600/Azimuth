@@ -1,0 +1,959 @@
+=== 详细调试测试脚本 ===
+
+1. 检查 azimuth/lib.mbt...
+
+2. 检查 azimuth 测试文件...
+检查 test_helper.mbt...
+
+检查 additional_comprehensive_test.mbt...
+azimuth_test/additional_comprehensive_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:10:25-10:28 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:11:26-11:29 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:16:16-16:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:17:16-17:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:20:16-20:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:21:16-21:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:24:17-24:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:25:17-25:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:26:16-26:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:31:3-31:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_test.mbt:31:35-31:40 [E4021] The value identifier greet is unbound.
+azimuth_test/additional_comprehensive_test.mbt:32:3-32:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_test.mbt:32:35-32:40 [E4021] The value identifier greet is unbound.
+
+检查 additional_comprehensive_test_new.mbt...
+azimuth_test/additional_comprehensive_test_new.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test_new.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test_new.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test_new.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test_new.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_test_new.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_comprehensive_tests.mbt...
+azimuth_test/additional_comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_coverage_tests.mbt...
+azimuth_test/additional_coverage_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_coverage_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_coverage_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_coverage_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_coverage_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_coverage_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_edge_cases.mbt...
+azimuth_test/additional_edge_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_edge_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_edge_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_edge_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_edge_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_edge_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_enhanced_tests.mbt...
+azimuth_test/additional_enhanced_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_enhanced_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_enhanced_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_enhanced_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_enhanced_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_enhanced_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_focused_tests.mbt...
+azimuth_test/additional_focused_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_focused_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_focused_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_focused_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_focused_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_focused_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_moonbit_tests.mbt...
+azimuth_test/additional_moonbit_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_moonbit_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_moonbit_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_moonbit_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_moonbit_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_moonbit_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_practical_tests.mbt...
+azimuth_test/additional_practical_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_practical_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_practical_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_practical_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_practical_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_practical_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_scenario_tests.mbt...
+azimuth_test/additional_scenario_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_scenario_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_scenario_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_scenario_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_scenario_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_scenario_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_standard_tests.mbt...
+azimuth_test/additional_standard_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_standard_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_standard_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_standard_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_standard_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_standard_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_test_cases.mbt...
+azimuth_test/additional_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_test_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_test_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_test_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_tests.mbt...
+azimuth_test/additional_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 additional_unique_tests.mbt...
+azimuth_test/additional_unique_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_unique_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_unique_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_unique_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_unique_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_unique_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 advanced_math_test.mbt...
+azimuth_test/advanced_math_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/advanced_math_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/advanced_math_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/advanced_math_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/advanced_math_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/advanced_math_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 advanced_test_scenarios.mbt...
+azimuth_test/advanced_test_scenarios.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/advanced_test_scenarios.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/advanced_test_scenarios.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/advanced_test_scenarios.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/advanced_test_scenarios.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/advanced_test_scenarios.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 algorithmic_tests.mbt...
+azimuth_test/algorithmic_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/algorithmic_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/algorithmic_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/algorithmic_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/algorithmic_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/algorithmic_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 basic_test.mbt...
+
+检查 basic_test_fixed.mbt...
+azimuth_test/basic_test_fixed.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test_fixed.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test_fixed.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:8:18-8:21 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test_fixed.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:12:16-12:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test_fixed.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:13:17-13:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test_fixed.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test_fixed.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test_fixed.mbt:18:3-18:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test_fixed.mbt:18:37-18:42 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test_fixed.mbt:19:3-19:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test_fixed.mbt:19:32-19:37 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test_fixed.mbt:20:3-20:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test_fixed.mbt:20:39-20:44 [E4021] The value identifier greet is unbound.
+
+检查 boundary_values_test.mbt...
+azimuth_test/boundary_values_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/boundary_values_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/boundary_values_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/boundary_values_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/boundary_values_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/boundary_values_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_application_tests.mbt...
+azimuth_test/comprehensive_application_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_application_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_application_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_application_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_application_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_application_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_edge_tests.mbt...
+azimuth_test/comprehensive_edge_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_edge_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_edge_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_edge_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_edge_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_edge_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_test_cases.mbt...
+azimuth_test/comprehensive_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_test_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_test_new.mbt...
+azimuth_test/comprehensive_test_new.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_new.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_test_new.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_new.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_test_new.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_test_new.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_test_suite.mbt...
+azimuth_test/comprehensive_test_suite.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_suite.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_test_suite.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_test_suite.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_test_suite.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_test_suite.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_tests.mbt...
+azimuth_test/comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_unique_tests.mbt...
+azimuth_test/comprehensive_unique_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_unique_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/comprehensive_unique_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/comprehensive_unique_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/comprehensive_unique_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/comprehensive_unique_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 concise_functional_tests.mbt...
+azimuth_test/concise_functional_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/concise_functional_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/concise_functional_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/concise_functional_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/concise_functional_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/concise_functional_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 concise_tests.mbt...
+azimuth_test/concise_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/concise_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/concise_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/concise_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/concise_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/concise_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 core_functionality_tests.mbt...
+azimuth_test/core_functionality_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/core_functionality_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/core_functionality_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/core_functionality_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/core_functionality_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/core_functionality_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 correct_concise_tests.mbt...
+azimuth_test/correct_concise_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/correct_concise_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/correct_concise_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/correct_concise_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/correct_concise_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/correct_concise_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 debug_test.mbt...
+azimuth_test/debug_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/debug_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/debug_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/debug_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/debug_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/debug_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 debug_test_new.mbt...
+azimuth_test/debug_test_new.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/debug_test_new.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/debug_test_new.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/debug_test_new.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/debug_test_new.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/debug_test_new.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_coverage_tests.mbt...
+azimuth_test/enhanced_coverage_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_coverage_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_coverage_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_coverage_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_coverage_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/enhanced_coverage_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_math_properties_test.mbt...
+azimuth_test/enhanced_math_properties_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_math_properties_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_math_properties_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_math_properties_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_math_properties_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/enhanced_math_properties_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_math_test.mbt...
+azimuth_test/enhanced_math_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_math_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_math_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_math_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_math_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/enhanced_math_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_test_suite.mbt...
+azimuth_test/enhanced_test_suite.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_test_suite.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_test_suite.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_test_suite.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_test_suite.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/enhanced_test_suite.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_tests.mbt...
+azimuth_test/enhanced_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/enhanced_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/enhanced_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 essential_tests.mbt...
+azimuth_test/essential_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/essential_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/essential_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/essential_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/essential_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/essential_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 extended_test.mbt...
+azimuth_test/extended_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/extended_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/extended_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/extended_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/extended_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/extended_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 focused_additional_tests.mbt...
+azimuth_test/focused_additional_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_additional_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/focused_additional_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_additional_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/focused_additional_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/focused_additional_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 focused_comprehensive_tests.mbt...
+azimuth_test/focused_comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/focused_comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/focused_comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/focused_comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 focused_enhanced_tests.mbt...
+azimuth_test/focused_enhanced_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_enhanced_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/focused_enhanced_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_enhanced_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/focused_enhanced_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/focused_enhanced_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 focused_test_cases.mbt...
+azimuth_test/focused_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_test_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/focused_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_test_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/focused_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/focused_test_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 focused_unit_tests.mbt...
+azimuth_test/focused_unit_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_unit_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/focused_unit_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/focused_unit_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/focused_unit_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/focused_unit_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 lib_test.mbt...
+azimuth_test/lib_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/lib_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/lib_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/lib_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/lib_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/lib_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 lib_with_tests.mbt...
+azimuth_test/lib_with_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/lib_with_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/lib_with_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/lib_with_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/lib_with_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/lib_with_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 math_fundamentals_test.mbt...
+azimuth_test/math_fundamentals_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:6:13-6:16 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:6:24-6:27 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:7:13-7:16 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:7:26-7:29 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:10:13-10:16 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:10:17-10:20 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:10:32-10:35 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:10:39-10:42 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:11:13-11:16 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:11:17-11:20 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:11:35-11:38 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:11:43-11:46 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:14:16-14:19 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:15:17-15:20 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:20:13-20:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:20:29-20:37 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:21:13-21:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:21:31-21:39 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:24:13-24:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:24:22-24:30 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:24:42-24:50 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:24:54-24:62 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:25:13-25:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:25:22-25:30 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:25:45-25:53 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:25:58-25:66 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:28:16-28:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:29:17-29:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:13-32:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:25-32:28 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:37-32:40 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:41-32:49 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:32:57-32:65 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:41:22-41:25 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/math_fundamentals_test.mbt:42:22-42:25 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:45:17-45:20 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:46:17-46:20 [E4021] The value identifier add is unbound.
+
+检查 mathematical_properties_test.mbt...
+azimuth_test/mathematical_properties_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/mathematical_properties_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/mathematical_properties_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/mathematical_properties_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/mathematical_properties_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/mathematical_properties_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_additional_tests.mbt...
+azimuth_test/new_additional_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_additional_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_additional_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_additional_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_additional_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_additional_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_comprehensive_tests.mbt...
+azimuth_test/new_comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_feature_tests.mbt...
+azimuth_test/new_feature_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_feature_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_feature_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_feature_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_feature_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_feature_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_focused_tests.mbt...
+azimuth_test/new_focused_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_focused_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_focused_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_focused_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_focused_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_focused_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_standard_tests.mbt...
+azimuth_test/new_standard_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_standard_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_standard_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_standard_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_standard_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_standard_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 new_tests.mbt...
+azimuth_test/new_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/new_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/new_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/new_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 performance_test.mbt...
+azimuth_test/performance_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/performance_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/performance_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/performance_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/performance_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/performance_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 practical_application_tests.mbt...
+azimuth_test/practical_application_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_application_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/practical_application_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_application_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/practical_application_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/practical_application_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 practical_comprehensive_tests.mbt...
+azimuth_test/practical_comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/practical_comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/practical_comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/practical_comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 practical_scenario_tests.mbt...
+azimuth_test/practical_scenario_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_scenario_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/practical_scenario_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/practical_scenario_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/practical_scenario_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/practical_scenario_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 quality_test_suite.mbt...
+azimuth_test/quality_test_suite.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/quality_test_suite.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/quality_test_suite.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/quality_test_suite.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/quality_test_suite.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/quality_test_suite.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 real_world_test.mbt...
+azimuth_test/real_world_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/real_world_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/real_world_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/real_world_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/real_world_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/real_world_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_debug_test.mbt...
+azimuth_test/simple_debug_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_debug_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_debug_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_debug_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_debug_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_debug_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_import_test.mbt...
+azimuth_test/simple_import_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_import_test.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
+
+检查 simple_new_test.mbt...
+azimuth_test/simple_new_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_new_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_new_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_new_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_new_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_new_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_new_tests.mbt...
+azimuth_test/simple_new_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_new_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_new_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_new_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_new_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_new_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_test.mbt...
+azimuth_test/simple_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_test_new.mbt...
+azimuth_test/simple_test_new.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test_new.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_test_new.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test_new.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_test_new.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_test_new.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_test_verify.mbt...
+azimuth_test/simple_test_verify.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test_verify.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_test_verify.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test_verify.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_test_verify.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simple_test_verify.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 simplified_unit_tests.mbt...
+azimuth_test/simplified_unit_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simplified_unit_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simplified_unit_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simplified_unit_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simplified_unit_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/simplified_unit_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 specialized_comprehensive_tests.mbt...
+azimuth_test/specialized_comprehensive_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_comprehensive_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/specialized_comprehensive_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_comprehensive_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/specialized_comprehensive_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/specialized_comprehensive_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 specialized_test_cases.mbt...
+azimuth_test/specialized_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_test_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/specialized_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_test_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/specialized_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/specialized_test_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 specialized_tests.mbt...
+azimuth_test/specialized_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/specialized_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/specialized_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/specialized_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/specialized_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 standalone_test.mbt...
+azimuth_test/standalone_test.mbt:5:3-5:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standalone_test.mbt:5:16-5:19 [E4021] The value identifier add is unbound.
+azimuth_test/standalone_test.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standalone_test.mbt:9:16-9:19 [E4021] The value identifier add is unbound.
+azimuth_test/standalone_test.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standalone_test.mbt:13:16-13:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standalone_test.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standalone_test.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standalone_test.mbt:21:3-21:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standalone_test.mbt:21:37-21:42 [E4021] The value identifier greet is unbound.
+azimuth_test/standalone_test.mbt:25:3-25:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standalone_test.mbt:25:32-25:37 [E4021] The value identifier greet is unbound.
+
+检查 standard_moonbit_test_suite.mbt...
+azimuth_test/standard_moonbit_test_suite.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_test_suite.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_test_suite.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_test_suite.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_test_suite.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_test_suite.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 standard_moonbit_tests.mbt...
+azimuth_test/standard_moonbit_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 standard_test_cases.mbt...
+azimuth_test/standard_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_test_cases.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_test_cases.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_test_cases.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 standard_tests.mbt...
+azimuth_test/standard_tests.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_tests.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_tests.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_tests.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 string_processing_test.mbt...
+azimuth_test/string_processing_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/string_processing_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/string_processing_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/string_processing_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/string_processing_test.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/string_processing_test.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 template.mbt...
+azimuth_test/template.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/template.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/template.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/template.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/template.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/template.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 test_no_to_string.mbt...
+azimuth_test/test_no_to_string.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/test_no_to_string.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/test_no_to_string.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/test_no_to_string.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/test_no_to_string.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/test_no_to_string.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 test_with_comment.mbt...
+azimuth_test/test_with_comment.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/test_with_comment.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/test_with_comment.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/test_with_comment.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/test_with_comment.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/test_with_comment.mbt:10:37-10:42 [E4021] The value identifier greet is unbound.
+
+检查 unique_test_cases.mbt...
+azimuth_test/unique_test_cases.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/unique_test_cases.mbt:2:17-2:20 [E4021] The value identifier add is unbound.
+azimuth_test/unique_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/unique_test_cases.mbt:6:17-6:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/unique_test_cases.mbt:10:3-10:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/unique_test_cases.mbt:10:39-10:44 [E4021] The value identifier greet is unbound.
+
+3. 检查 clean_test/lib.mbt...
+
+4. 检查 clean_test 测试文件...
+检查 additional_comprehensive_test.mbt...
+clean_test_test/additional_comprehensive_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_comprehensive_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_comprehensive_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_comprehensive_tests.mbt...
+clean_test_test/additional_comprehensive_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_comprehensive_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_comprehensive_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_coverage_tests.mbt...
+clean_test_test/additional_coverage_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_coverage_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_coverage_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_enhanced_tests.mbt...
+clean_test_test/additional_enhanced_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_enhanced_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_enhanced_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_practical_tests.mbt...
+clean_test_test/additional_practical_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_practical_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_practical_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_scenario_tests.mbt...
+clean_test_test/additional_scenario_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_scenario_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_scenario_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_standard_tests.mbt...
+clean_test_test/additional_standard_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_standard_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_standard_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 additional_tests.mbt...
+clean_test_test/additional_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 advanced_test_scenarios.mbt...
+clean_test_test/advanced_test_scenarios.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/advanced_test_scenarios.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/advanced_test_scenarios.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 algorithmic_tests.mbt...
+clean_test_test/algorithmic_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/algorithmic_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/algorithmic_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_test_cases.mbt...
+clean_test_test/comprehensive_test_cases.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/comprehensive_test_cases.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/comprehensive_test_cases.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 comprehensive_tests.mbt...
+clean_test_test/comprehensive_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/comprehensive_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/comprehensive_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 concise_tests.mbt...
+clean_test_test/concise_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/concise_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/concise_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 core_functionality_tests.mbt...
+clean_test_test/core_functionality_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/core_functionality_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/core_functionality_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 debug_test.mbt...
+clean_test_test/debug_test.mbt:18:20-18:23 [E4021] The value identifier add is unbound.
+clean_test_test/debug_test.mbt:21:25-21:33 [E4021] The value identifier multiply is unbound.
+clean_test_test/debug_test.mbt:24:22-24:27 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_math_properties_test.mbt...
+clean_test_test/enhanced_math_properties_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/enhanced_math_properties_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/enhanced_math_properties_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 enhanced_test_suite.mbt...
+clean_test_test/enhanced_test_suite.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/enhanced_test_suite.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/enhanced_test_suite.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 essential_tests.mbt...
+clean_test_test/essential_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/essential_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/essential_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 extended_test.mbt...
+clean_test_test/extended_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/extended_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/extended_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 focused_additional_tests.mbt...
+clean_test_test/focused_additional_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/focused_additional_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/focused_additional_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 focused_comprehensive_tests.mbt...
+clean_test_test/focused_comprehensive_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/focused_comprehensive_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/focused_comprehensive_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 focused_enhanced_tests.mbt...
+clean_test_test/focused_enhanced_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/focused_enhanced_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/focused_enhanced_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 focused_test_cases.mbt...
+clean_test_test/focused_test_cases.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/focused_test_cases.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/focused_test_cases.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 focused_unit_tests.mbt...
+clean_test_test/focused_unit_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/focused_unit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/focused_unit_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 lib_test.mbt...
+clean_test_test/lib_test.mbt:35:6-35:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:36:6-36:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:37:6-37:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:38:6-38:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:41:6-41:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:42:6-42:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:50:17-50:20 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:53:17-53:20 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:57:17-57:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:60:17-60:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:64:22-64:27 [E4021] The value identifier greet is unbound.
+
+检查 math_fundamentals_test.mbt...
+clean_test_test/math_fundamentals_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/math_fundamentals_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/math_fundamentals_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_additional_tests.mbt...
+clean_test_test/new_additional_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_additional_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_additional_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_comprehensive_tests.mbt...
+clean_test_test/new_comprehensive_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_comprehensive_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_comprehensive_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_feature_tests.mbt...
+clean_test_test/new_feature_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_feature_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_feature_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_focused_tests.mbt...
+clean_test_test/new_focused_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_focused_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_focused_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_standard_tests.mbt...
+clean_test_test/new_standard_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_standard_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_standard_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 new_tests.mbt...
+clean_test_test/new_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/new_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/new_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 performance_test.mbt...
+clean_test_test/performance_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/performance_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/performance_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 practical_scenario_tests.mbt...
+clean_test_test/practical_scenario_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/practical_scenario_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/practical_scenario_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 quality_test_suite.mbt...
+clean_test_test/quality_test_suite.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/quality_test_suite.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/quality_test_suite.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 simple_test.mbt...
+clean_test_test/simple_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
+clean_test_test/simple_test.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:10:16-10:24 [E4021] The value identifier multiply is unbound.
+clean_test_test/simple_test.mbt:14:3-14:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/simple_test.mbt:14:37-14:42 [E4021] The value identifier greet is unbound.
+
+检查 simple_test_verify.mbt...
+clean_test_test/simple_test_verify.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/simple_test_verify.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/simple_test_verify.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 specialized_test_cases.mbt...
+clean_test_test/specialized_test_cases.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/specialized_test_cases.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/specialized_test_cases.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 standard_moonbit_tests.mbt...
+clean_test_test/standard_moonbit_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/standard_moonbit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/standard_moonbit_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 standard_tests.mbt...
+clean_test_test/standard_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/standard_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/standard_tests.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+检查 test_helper.mbt...
+
+检查 unique_test_cases.mbt...
+clean_test_test/unique_test_cases.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/unique_test_cases.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/unique_test_cases.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+
+=== 检查完成 ===

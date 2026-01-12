@@ -1,0 +1,406 @@
+((Ptop_funcdef
+  ((name ((binder_name add)))
+   (decl_params
+    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
+      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+       (Pexpr_constant 0))
+      (Pexpr_return ((Pexpr_ident ((var_name b))))) ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+       (Pexpr_constant 0))
+      (Pexpr_return ((Pexpr_ident ((var_name a))))) ()))
+    (Pexpr_let (Ppat_var ((binder_name min_val)))
+     (Pexpr_constant -2147483648)
+     (Pexpr_let (Ppat_var ((binder_name max_val)))
+      (Pexpr_constant 2147483647)
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+          (Pexpr_ident ((var_name min_val))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant 0))
+            (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+          (Pexpr_ident ((var_name min_val))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant 0))
+            (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name max_val)))
+            (Pexpr_ident ((var_name b)))))
+          (Pexpr_return ((Pexpr_ident ((var_name max_val))))) ())
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name min_val)))
+            (Pexpr_ident ((var_name b)))))
+          (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ())
+         ()))
+       (Pexpr_return
+        ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+          (Pexpr_ident ((var_name b))))))))))))
+ (Ptop_funcdef
+  ((name ((binder_name multiply)))
+   (decl_params
+    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
+      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name min_val))) (Pexpr_constant -2147483648)
+    (Pexpr_let (Ppat_var ((binder_name max_val))) (Pexpr_constant 2147483647)
+     (Pexpr_sequence
+      ((Pexpr_if
+        (Pexpr_infix ((var_name ||))
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+          (Pexpr_constant 0))
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+          (Pexpr_constant 0)))
+        (Pexpr_return ((Pexpr_constant 0))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_constant 1))
+        (Pexpr_return ((Pexpr_ident ((var_name b))))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_constant 1))
+        (Pexpr_return ((Pexpr_ident ((var_name a))))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_constant -1))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_apply
+             (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+              ((label_name neg)))
+             ((Pexpr_ident ((var_name b)))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_constant -1))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_apply
+             (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+              ((label_name neg)))
+             ((Pexpr_ident ((var_name a)))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_ident ((var_name min_val))))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ||))
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant 1))
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant -1)))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_ident ((var_name min_val))))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ||))
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant 1))
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant -1)))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b))))))))
+        ()))
+      (Pexpr_let (Ppat_var ((binder_name sign)))
+       (Pexpr_if
+        (Pexpr_infix ((var_name ||))
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0))))
+        (Pexpr_constant 1) ((Pexpr_constant -1)))
+       (Pexpr_let (Ppat_var ((binder_name abs_a)))
+        (Pexpr_if
+         (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+          (Pexpr_constant 0))
+         (Pexpr_apply
+          (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+           ((label_name neg)))
+          ((Pexpr_ident ((var_name a)))))
+         ((Pexpr_ident ((var_name a)))))
+        (Pexpr_let (Ppat_var ((binder_name abs_b)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0))
+          (Pexpr_apply
+           (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+            ((label_name neg)))
+           ((Pexpr_ident ((var_name b)))))
+          ((Pexpr_ident ((var_name b)))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name abs_a)))
+             (Pexpr_infix ((var_name /)) (Pexpr_ident ((var_name max_val)))
+              (Pexpr_ident ((var_name abs_b)))))
+            (Pexpr_return
+             ((Pexpr_if
+               (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name sign)))
+                (Pexpr_constant 0))
+               (Pexpr_ident ((var_name max_val)))
+               ((Pexpr_ident ((var_name min_val)))))))
+            ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))))))))))
+ (Ptop_funcdef
+  ((name ((binder_name greet)))
+   (decl_params (((((binder_name name)) ((Ptype_name ((lid String)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid String)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_infix ((var_name +))
+    (Pexpr_infix ((var_name +)) (Pexpr_constant "Hello, ")
+     (Pexpr_ident ((var_name name))))
+    (Pexpr_constant !))))
+ (Ptop_funcdef
+  ((name ((binder_name assert_eq)))
+   (decl_params
+    (((((binder_name expected)) ((Ptype_name ((lid Int)) ())))
+      (((binder_name actual)) ((Ptype_name ((lid Int)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type
+    (Error_typ (Ptype_name ((lid @moonbitlang/core/builtin.Failure)) ())))
+   (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_if
+    (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name expected)))
+     (Pexpr_ident ((var_name actual))))
+    (Pexpr_raise
+     (Pexpr_apply
+      (Pexpr_constr
+       ((constr_name ((name Failure)))
+        (extra_info (Package moonbitlang/core/builtin))))
+      ((Pexpr_interp
+        ((Interp_lit "Assertion failed: expected ")
+         (Interp_expr (Pexpr_ident ((var_name expected))))
+         (Interp_lit " but got ")
+         (Interp_expr (Pexpr_ident ((var_name actual)))))))))
+    ())))
+ (Ptop_funcdef
+  ((name ((binder_name assert_eq_string)))
+   (decl_params
+    (((((binder_name expected)) ((Ptype_name ((lid String)) ())))
+      (((binder_name actual)) ((Ptype_name ((lid String)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type
+    (Error_typ (Ptype_name ((lid @moonbitlang/core/builtin.Failure)) ())))
+   (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_if
+    (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name expected)))
+     (Pexpr_ident ((var_name actual))))
+    (Pexpr_raise
+     (Pexpr_apply
+      (Pexpr_constr
+       ((constr_name ((name Failure)))
+        (extra_info (Package moonbitlang/core/builtin))))
+      ((Pexpr_interp
+        ((Interp_lit "Assertion failed: expected \5C\22")
+         (Interp_expr (Pexpr_ident ((var_name expected))))
+         (Interp_lit "\5C\22 but got \5C\22")
+         (Interp_expr (Pexpr_ident ((var_name actual))))
+         (Interp_lit "\5C\22"))))))
+    ())))
+ (Ptop_funcdef
+  ((name ((binder_name assert_true)))
+   (decl_params
+    (((((binder_name condition)) ((Ptype_name ((lid Bool)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type
+    (Error_typ (Ptype_name ((lid @moonbitlang/core/builtin.Failure)) ())))
+   (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_if
+    (Pexpr_unary ((var_name !)) (Pexpr_ident ((var_name condition))))
+    (Pexpr_raise
+     (Pexpr_apply
+      (Pexpr_constr
+       ((constr_name ((name Failure)))
+        (extra_info (Package moonbitlang/core/builtin))))
+      ((Pexpr_constant "Assertion failed: expected true but got false"))))
+    ())))
+ (Ptop_funcdef
+  ((name ((binder_name assert_false)))
+   (decl_params
+    (((((binder_name condition)) ((Ptype_name ((lid Bool)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type
+    (Error_typ (Ptype_name ((lid @moonbitlang/core/builtin.Failure)) ())))
+   (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_if (Pexpr_ident ((var_name condition)))
+    (Pexpr_raise
+     (Pexpr_apply
+      (Pexpr_constr
+       ((constr_name ((name Failure)))
+        (extra_info (Package moonbitlang/core/builtin))))
+      ((Pexpr_constant "Assertion failed: expected false but got true"))))
+    ())))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_0))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name add)))
+     ((Pexpr_constant 2) (Pexpr_constant 3)))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant 5))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Add test failed"))))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_1))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name add)))
+     ((Pexpr_constant 5) (Pexpr_constant -5)))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant 0))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Add negative test failed"))))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_2))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+     ((Pexpr_constant 2) (Pexpr_constant 3)))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant 6))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Multiply test failed"))))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_3))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+     ((Pexpr_constant 2) (Pexpr_constant -3)))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant -6))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Multiply negative test failed"))))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_4))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name greet))) ((Pexpr_constant World)))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant "Hello, World!"))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Greet test failed"))))
+     ()))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_6c69622e6d6274_5))) (decl_params (()))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result)))
+    (Pexpr_apply (Pexpr_ident ((var_name greet))) ((Pexpr_constant "")))
+    (Pexpr_if
+     (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result)))
+      (Pexpr_constant "Hello, !"))
+     (Pexpr_raise
+      (Pexpr_apply
+       (Pexpr_constr
+        ((constr_name ((name Failure)))
+         (extra_info (Package moonbitlang/core/builtin))))
+       ((Pexpr_constant "Greet empty test failed"))))
+     ())))))

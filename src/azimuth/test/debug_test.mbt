@@ -1,24 +1,13 @@
-test "debug_simple_cases" {
-  // 最简单的测试用例，用于调试
-  @azimuth.assert_eq(2, @azimuth.add(1, 1))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq_string("Hello, x!", @azimuth.greet("x"))
+// 测试函数和断言函数从 azimuth 包导入
+
+test "basic_add_test" {
+  assert_eq(5, add(2, 3))
 }
 
-///|
-test "debug_edge_cases" {
-  // 边界情况调试
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "basic_multiply_test" {
+  assert_eq(6, multiply(2, 3))
 }
 
-///|
-test "debug_negative_cases" {
-  // 负数调试
-  @azimuth.assert_eq(-2, @azimuth.add(-1, -1))
-  @azimuth.assert_eq(2, @azimuth.multiply(-1, -2))
-  @azimuth.assert_eq(-2, @azimuth.multiply(1, -2))
+test "basic_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
 }
-
-

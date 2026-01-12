@@ -1,14 +1,17 @@
-test "simple_add" {
-  let result = @clean_test.add(1, 2)
-  @clean_test.assert_eq(3, result)
+// 测试函数和断言函数从 clean_test 包导入
+
+// 测试函数和断言函数从 clean_test 包导入
+
+// 测试基本功能
+
+test "add_basic" {
+  assert_eq(5, add(2, 3))
 }
 
-test "simple_multiply" {
-  let result = @clean_test.multiply(2, 3)
-  @clean_test.assert_eq(6, result)
+test "multiply_basic" {
+  assert_eq(6, multiply(2, 3))
 }
 
-test "simple_greet" {
-  let result = @clean_test.greet("World")
-  @clean_test.assert_eq_string("Hello, World!", result)
+test "greet_basic" {
+  assert_eq_string("Hello, World!", greet("World"))
 }

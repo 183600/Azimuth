@@ -1,4 +1,6 @@
 {
   "import": ["moonbitlang/core/builtin", "../clean_test"],
-  "export": []
+  "test-import": [],
+  "export": [],
+  "files": ["additional_comprehensive_test.mbt", "additional_comprehensive_tests.mbt", "additional_coverage_tests.mbt", "additional_enhanced_tests.mbt", "additional_practical_tests.mbt", "additional_scenario_tests.mbt", "additional_standard_tests.mbt", "additional_tests.mbt", "advanced_test_scenarios.mbt", "algorithmic_tests.mbt", "comprehensive_test_cases.mbt", "comprehensive_tests.mbt", "concise_tests.mbt", "core_functionality_tests.mbt", "debug_test.mbt", "enhanced_math_properties_test.mbt", "enhanced_test_suite.mbt", "essential_tests.mbt", "extended_test.mbt", "focused_additional_tests.mbt", "focused_comprehensive_tests.mbt", "focused_enhanced_tests.mbt", "focused_test_cases.mbt", "focused_unit_tests.mbt", "lib_test.mbt", "math_fundamentals_test.mbt", "new_additional_tests.mbt", "new_comprehensive_tests.mbt", "new_feature_tests.mbt", "new_focused_tests.mbt", "new_standard_tests.mbt", "new_tests.mbt", "performance_test.mbt", "practical_scenario_tests.mbt", "quality_test_suite.mbt", "simple_test.mbt", "simple_test_verify.mbt", "specialized_test_cases.mbt", "standard_moonbit_tests.mbt", "standard_tests.mbt", "test_helper.mbt", "unique_test_cases.mbt" ]
 }

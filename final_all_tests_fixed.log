@@ -1,0 +1,47 @@
+Running moon test...
+Checking syntax and imports...
+Compiling azimuth...
+--- azimuth/lib.mbt compilation output ---
+--- End of azimuth/lib.mbt compilation output ---
+Compiling azimuth tests...
+Compiling test_helper.mbt...
+--- test_helper.mbt compilation output ---
+--- End of test_helper.mbt compilation output ---
+Compiling remaining test files...
+--- Remaining test files compilation output ---
+--- End of remaining test files compilation output ---
+Compiling clean_test...
+--- clean_test/lib.mbt compilation output ---
+--- End of clean_test/lib.mbt compilation output ---
+Compiling clean_test tests...
+Compiling test_helper.mbt...
+--- clean_test test_helper.mbt compilation output ---
+--- End of clean_test test_helper.mbt compilation output ---
+Generating test_helper.mi...
+clean_test_test/test_helper.mbt:4:1-4:4 [E3100] Invalid mbti: unexpected `pub` here
+Compiling remaining clean_test files...
+--- Remaining clean_test files compilation output ---
+clean_test_test/additional_comprehensive_test.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/additional_comprehensive_test.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/additional_comprehensive_test.mbt:20:17-20:22 [E4021] The value identifier greet is unbound.
+clean_test_test/debug_test.mbt:18:20-18:23 [E4021] The value identifier add is unbound.
+clean_test_test/debug_test.mbt:21:25-21:33 [E4021] The value identifier multiply is unbound.
+clean_test_test/debug_test.mbt:24:22-24:27 [E4021] The value identifier greet is unbound.
+clean_test_test/lib_test.mbt:35:6-35:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:36:6-36:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:37:6-37:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:38:6-38:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:41:6-41:9 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:42:6-42:14 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:50:17-50:20 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:53:17-53:20 [E4021] The value identifier add is unbound.
+clean_test_test/lib_test.mbt:57:17-57:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:60:17-60:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/lib_test.mbt:64:22-64:27 [E4021] The value identifier greet is unbound.
+clean_test_test/simple_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
+clean_test_test/simple_test.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:10:16-10:24 [E4021] The value identifier multiply is unbound.
+clean_test_test/simple_test.mbt:14:3-14:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/simple_test.mbt:14:37-14:42 [E4021] The value identifier greet is unbound.
+Error: Some clean_test files compilation failed

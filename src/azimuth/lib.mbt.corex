@@ -1,0 +1,191 @@
+pub fn add (a/19 : Int, b/20 : Int) -> Int {
+  if a/19 == 0 { return b/20 }
+  if b/20 == 0 { return a/19 }
+  let min_val/21 : Int = -2147483648
+  let max_val/22 : Int = 2147483647
+  if a/19 == min_val/21 {
+    if b/20 < 0 { return min_val/21 }
+    return a/19 + b/20
+  }
+  if b/20 == min_val/21 {
+    if a/19 < 0 { return min_val/21 }
+    return a/19 + b/20
+  }
+  if a/19 > 0 && b/20 > 0 { if a/19 > max_val/22 - b/20 { return max_val/22 }  }
+  if a/19 < 0 && b/20 < 0 { if a/19 < min_val/21 - b/20 { return min_val/21 }  }
+  a/19 + b/20
+}
+
+pub fn multiply (a/12 : Int, b/13 : Int) -> Int {
+  let min_val/14 : Int = -2147483648
+  let max_val/15 : Int = 2147483647
+  if a/12 == 0 || b/13 == 0 { return 0 }
+  if a/12 == 1 { return b/13 }
+  if b/13 == 1 { return a/12 }
+  if a/12 == -1 { return if b/13 == min_val/14 { min_val/14 } else { -b/13 } }
+  if b/13 == -1 { return if a/12 == min_val/14 { min_val/14 } else { -a/12 } }
+  if a/12 == min_val/14 { return if b/13 > 1 || b/13 < -1 { min_val/14 } else { a/12 * b/13 } }
+  if b/13 == min_val/14 { return if a/12 > 1 || a/12 < -1 { min_val/14 } else { a/12 * b/13 } }
+  let sign/16 : Int = if a/12 > 0 && b/13 > 0 || a/12 < 0 && b/13 < 0 { 1 } else { -1 }
+  let abs_a/17 : Int = if a/12 < 0 { -a/12 } else { a/12 }
+  let abs_b/18 : Int = if b/13 < 0 { -b/13 } else { b/13 }
+  if abs_a/17 > max_val/15 / abs_b/18 { return if sign/16 > 0 { max_val/15 } else { min_val/14 } }
+  a/12 * b/13
+}
+
+pub fn greet (name/11 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/11), "!")
+}
+
+pub fn assert_eq (expected/9 : Int, actual/10 : Int) -> Unit raise Failure {
+  if expected/9 != actual/10 {
+    return_err Failure(
+      @ccall add_string(
+        @ccall add_string(
+          @ccall add_string(
+            "Assertion failed: expected ",
+            Show::to_string|$default_impl|(expected/9)
+          ),
+          " but got "
+        ),
+        Show::to_string|$default_impl|(actual/10)
+      )
+    )
+  } else {
+    @make_value(())
+  }
+}
+
+pub fn assert_eq_string (expected/7 : String, actual/8 : String) -> Unit raise Failure {
+  if Eq::not_equal|$default_impl|(expected/7, actual/8) {
+    return_err Failure(
+      @ccall add_string(
+        @ccall add_string(
+          @ccall add_string(
+            @ccall add_string("Assertion failed: expected \"", Show::to_string|String|(expected/7)),
+            "\" but got \""
+          ),
+          Show::to_string|String|(actual/8)
+        ),
+        "\""
+      )
+    )
+  } else {
+    @make_value(())
+  }
+}
+
+pub fn assert_true (condition/6 : Bool) -> Unit raise Failure {
+  if !condition/6 {
+    return_err Failure("Assertion failed: expected true but got false")
+  } else {
+    @make_value(())
+  }
+}
+
+pub fn assert_false (condition/5 : Bool) -> Unit raise Failure {
+  if condition/5 {
+    return_err Failure("Assertion failed: expected false but got true")
+  } else {
+    @make_value(())
+  }
+}
+
+pub fn test_internal_functions () -> Unit raise Failure {
+  assert_eq(10, add(7, 3)) catch { err => return_err err }
+  assert_eq(0, add(5, -5)) catch { err => return_err err }
+  assert_eq(-10, add(-7, -3)) catch { err => return_err err }
+  assert_eq(21, multiply(7, 3)) catch { err => return_err err }
+  assert_eq(-21, multiply(7, -3)) catch { err => return_err err }
+  assert_eq(21, multiply(-7, -3)) catch { err => return_err err }
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth")) catch { err => return_err err }
+  assert_eq_string("Hello, !", greet(""))
+}
+
+fn __test_6c69622e6d6274_0 () -> Unit raise Failure { assert_eq(5, add(2, 3)) }
+
+fn __test_6c69622e6d6274_1 () -> Unit raise Failure { assert_eq(0, add(5, -5)) }
+
+fn __test_6c69622e6d6274_2 () -> Unit raise Failure { assert_eq(6, multiply(2, 3)) }
+
+fn __test_6c69622e6d6274_3 () -> Unit raise Failure { assert_eq(-6, multiply(2, -3)) }
+
+fn __test_6c69622e6d6274_4 () -> Unit raise Failure {
+  assert_eq_string("Hello, World!", greet("World"))
+}
+
+fn __test_6c69622e6d6274_5 () -> Unit raise Failure { assert_eq_string("Hello, !", greet("")) }
+
+fn __test_6c69622e6d6274_6 () -> Unit raise Failure {
+  assert_eq(5, add(2, 3)) catch { err => return_err err }
+  assert_eq(0, add(5, -5)) catch { err => return_err err }
+  assert_eq(-10, add(-7, -3))
+}
+
+fn __test_6c69622e6d6274_7 () -> Unit raise Failure {
+  assert_eq(6, multiply(2, 3)) catch { err => return_err err }
+  assert_eq(-6, multiply(2, -3)) catch { err => return_err err }
+  assert_eq(21, multiply(-7, -3))
+}
+
+fn __test_6c69622e6d6274_8 () -> Unit raise Failure {
+  assert_eq_string("Hello, World!", greet("World")) catch { err => return_err err }
+  assert_eq_string("Hello, !", greet("")) catch { err => return_err err }
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
+}
+
+fn __test_6c69622e6d6274_9 () -> Unit raise Failure {
+  assert_eq(5, add(0, 5)) catch { err => return_err err }
+  assert_eq(5, add(5, 0)) catch { err => return_err err }
+  assert_eq(2147483647, add(2147483646, 1)) catch { err => return_err err }
+  assert_eq(-2147483648, add(-2147483647, -1))
+}
+
+fn __test_6c69622e6d6274_10 () -> Unit raise Failure {
+  assert_eq(0, multiply(0, 5)) catch { err => return_err err }
+  assert_eq(0, multiply(5, 0)) catch { err => return_err err }
+  assert_eq(5, multiply(1, 5)) catch { err => return_err err }
+  assert_eq(5, multiply(5, 1)) catch { err => return_err err }
+  assert_eq(-5, multiply(-1, 5)) catch { err => return_err err }
+  assert_eq(-5, multiply(5, -1)) catch { err => return_err err }
+  assert_eq(5, multiply(-1, -5))
+}
+
+fn __test_6c69622e6d6274_11 () -> Unit raise Failure {
+  assert_eq_string("Hello, @#$!", greet("@#$")) catch { err => return_err err }
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+fn __test_6c69622e6d6274_12 () -> Unit raise Failure {
+  assert_eq(add(2, 3), add(3, 2)) catch { err => return_err err }
+  assert_eq(add(-5, 10), add(10, -5)) catch { err => return_err err }
+  assert_eq(add(add(1, 2), 3), add(1, add(2, 3))) catch { err => return_err err }
+  assert_eq(add(add(-1, -2), -3), add(-1, add(-2, -3))) catch { err => return_err err }
+  assert_eq(5, add(5, 0)) catch { err => return_err err }
+  assert_eq(-5, add(-5, 0))
+}
+
+fn __test_6c69622e6d6274_13 () -> Unit raise Failure {
+  assert_eq(multiply(2, 3), multiply(3, 2)) catch { err => return_err err }
+  assert_eq(multiply(-5, 10), multiply(10, -5)) catch { err => return_err err }
+  assert_eq(multiply(multiply(1, 2), 3), multiply(1, multiply(2, 3))) catch {
+    err => return_err err
+  }
+  assert_eq(multiply(multiply(-1, -2), -3), multiply(-1, multiply(-2, -3))) catch {
+    err => return_err err
+  }
+  assert_eq(5, multiply(5, 1)) catch { err => return_err err }
+  assert_eq(-5, multiply(-5, 1)) catch { err => return_err err }
+  assert_eq(multiply(2, add(3, 4)), add(multiply(2, 3), multiply(2, 4)))
+}
+
+fn __test_6c69622e6d6274_14 () -> Unit raise Failure {
+  let max_val/1 : Int = 2147483647
+  let min_val/2 : Int = -2147483648
+  assert_eq(max_val/1, add(max_val/1, 0)) catch { err => return_err err }
+  assert_eq(min_val/2, add(min_val/2, 0)) catch { err => return_err err }
+  let result1/3 : Int = add(max_val/1, 1)
+  let result2/4 : Int = add(min_val/2, -1)
+  assert_true(result1/3 >= min_val/2 && result1/3 <= max_val/1) catch { err => return_err err }
+  assert_true(result2/4 >= min_val/2 && result2/4 <= max_val/1)
+}

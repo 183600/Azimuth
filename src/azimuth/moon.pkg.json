@@ -1,6 +1,5 @@
 {
-  "name": "azimuth",
   "import": ["moonbitlang/core/builtin"],
-  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
+  "export": ["azimuth", "add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
   "files": ["lib.mbt"]
 }

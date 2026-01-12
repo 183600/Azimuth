@@ -1,46 +1,87 @@
 #!/bin/bash
 
-# 添加测试辅助函数到所有测试文件
+# 修复测试文件中的重复函数定义问题
 
-# 定义测试辅助函数
-ASSERT_FUNCTIONS='// 断言相等函数，用于测试
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  let _ = expected == actual
-}
+echo "Fixing duplicate function definitions in test files..."
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  let _ = expected == actual
-}
+# 设置路径
+TEST_PATH="/home/runner/work/Azimuth/Azimuth/src/azimuth/test"
 
-pub fn assert_true(condition : Bool) -> Unit {
-  let _ = condition
-}
+# 进入测试目录
+cd "$TEST_PATH"
 
-pub fn assert_false(condition : Bool) -> Unit {
-  let _ = condition == false
-}
+# 获取所有测试文件
+TEST_FILES=$(ls *.mbt 2>/dev/null | grep -v "moon.pkg.json" | grep -v "test_helper.mbt")
 
-'
+echo "Found test files: $TEST_FILES"
 
-# 移动所有测试文件到test子目录
-cd /home/runner/work/Azimuth/Azimuth/src/azimuth
-for file in *.mbt; do
-  if [ "$file" != "lib.mbt" ] && [ -f "$file" ]; then
-    echo "处理文件: $file"
+# 修复每个测试文件
+for test_file in $TEST_FILES; do
+    echo "Fixing $test_file..."
     
-    # 移动到test子目录
-    mv "$file" "test/"
+    # 创建临时文件
+    temp_file=$(mktemp)
     
-    # 检查文件是否已经包含assert_eq函数
-    if ! grep -q "pub fn assert_eq" "test/$file"; then
-      # 在文件开头添加测试辅助函数
-      echo "添加测试辅助函数到 test/$file"
-      temp_file=$(mktemp)
-      echo "$ASSERT_FUNCTIONS" > "$temp_file"
-      cat "test/$file" >> "$temp_file"
-      mv "$temp_file" "test/$file"
+    # 检查文件是否包含函数定义
+    if grep -q "fn add(" "$test_file"; then
+        # 移除函数定义部分，保留测试部分
+        awk '
+        BEGIN { in_functions = 0; skip_until_tests = 0 }
+        
+        # 检测函数定义开始
+        /fn add\(/ { 
+            in_functions = 1
+            skip_until_tests = 1
+            next
+        }
+        
+        # 如果在跳过模式，且遇到测试定义，则停止跳过
+        skip_until_tests && /^test/ {
+            skip_until_tests = 0
+            in_functions = 0
+        }
+        
+        # 如果不在跳过模式，打印行
+        !skip_until_tests {
+            print
+        }
+        ' "$test_file" > "$temp_file"
+        
+        # 替换原文件
+        mv "$temp_file" "$test_file"
+        echo "  Removed duplicate function definitions from $test_file"
+    else
+        echo "  No duplicate functions found in $test_file"
     fi
-  fi
 done
 
-echo "所有测试文件已处理完成"
+echo "Fixing duplicate test names..."
+
+# 修复重复的测试名称问题
+counter=1
+for test_file in $TEST_FILES; do
+    echo "Fixing test names in $test_file..."
+    
+    # 创建临时文件
+    temp_file=$(mktemp)
+    
+    # 为测试添加唯一前缀
+    awk -v prefix="test_${counter}_" '
+    /^test/ {
+        # 提取测试名称
+        if (match($0, /test "([^"]+)"/, arr)) {
+            original_name = arr[1]
+            # 替换为带前缀的名称
+            sub(/test "[^"]+"/, "test \"" prefix original_name \"" )
+        }
+    }
+    { print }
+    ' "$test_file" > "$temp_file"
+    
+    # 替换原文件
+    mv "$temp_file" "$test_file"
+    
+    counter=$((counter + 1))
+done
+
+echo "Done fixing test files."

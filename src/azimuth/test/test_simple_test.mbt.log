@@ -1,6 +1,0 @@
-simple_test.mbt:4:16-4:28 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test.mbt:5:3-5:21 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test.mbt:11:16-11:33 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test.mbt:12:3-12:21 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test.mbt:18:16-18:30 [E4020] Package "azimuth" not found in the loaded packages.
-simple_test.mbt:19:3-19:28 [E4020] Package "azimuth" not found in the loaded packages.

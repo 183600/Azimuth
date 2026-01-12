@@ -1,0 +1,24 @@
+Running moon test...
+Checking syntax and imports...
+Compiling azimuth...
+Compiling azimuth tests...
+Compiling basic_test.mbt...
+azimuth_test/basic_test.mbt:2:3-2:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:3:3-3:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:3:16-3:19 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:4:3-4:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:4:18-4:21 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:8:16-8:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:9:17-9:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/basic_test.mbt:10:17-10:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:14:3-14:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test.mbt:14:37-14:42 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test.mbt:15:3-15:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test.mbt:15:32-15:37 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test.mbt:16:3-16:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/basic_test.mbt:16:39-16:44 [E4021] The value identifier greet is unbound.
+Error: azimuth test basic_test.mbt compilation failed

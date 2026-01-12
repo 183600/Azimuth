@@ -1,0 +1,256 @@
+Checking warnings in source files...
+=== Checking azimuth/lib.mbt ===
+
+=== Checking clean_test/lib.mbt ===
+
+=== Checking test files ===
+--- Checking additional_comprehensive_test.mbt ---
+
+--- Checking additional_comprehensive_test_new.mbt ---
+
+--- Checking additional_comprehensive_tests.mbt ---
+
+--- Checking additional_coverage_tests.mbt ---
+
+--- Checking additional_edge_cases.mbt ---
+
+--- Checking additional_enhanced_tests.mbt ---
+
+--- Checking additional_focused_tests.mbt ---
+
+--- Checking additional_moonbit_tests.mbt ---
+
+--- Checking additional_practical_tests.mbt ---
+
+--- Checking additional_scenario_tests.mbt ---
+
+--- Checking additional_standard_tests.mbt ---
+
+--- Checking additional_test_cases.mbt ---
+
+--- Checking additional_tests.mbt ---
+
+--- Checking additional_unique_tests.mbt ---
+
+--- Checking advanced_math_test.mbt ---
+
+--- Checking advanced_test_scenarios.mbt ---
+
+--- Checking algorithmic_tests.mbt ---
+
+--- Checking basic_test.mbt ---
+
+--- Checking basic_test_fixed.mbt ---
+
+--- Checking boundary_values_test.mbt ---
+
+--- Checking comprehensive_application_tests.mbt ---
+
+--- Checking comprehensive_edge_tests.mbt ---
+
+--- Checking comprehensive_test_cases.mbt ---
+
+--- Checking comprehensive_test_new.mbt ---
+
+--- Checking comprehensive_test_suite.mbt ---
+
+--- Checking comprehensive_tests.mbt ---
+
+--- Checking comprehensive_unique_tests.mbt ---
+
+--- Checking concise_functional_tests.mbt ---
+
+--- Checking concise_tests.mbt ---
+
+--- Checking core_functionality_tests.mbt ---
+
+--- Checking correct_concise_tests.mbt ---
+
+--- Checking debug_test.mbt ---
+
+--- Checking debug_test_new.mbt ---
+
+--- Checking enhanced_coverage_tests.mbt ---
+
+--- Checking enhanced_math_properties_test.mbt ---
+
+--- Checking enhanced_math_test.mbt ---
+
+--- Checking enhanced_test_suite.mbt ---
+
+--- Checking enhanced_tests.mbt ---
+
+--- Checking essential_tests.mbt ---
+
+--- Checking extended_test.mbt ---
+
+--- Checking focused_additional_tests.mbt ---
+
+--- Checking focused_comprehensive_tests.mbt ---
+
+--- Checking focused_enhanced_tests.mbt ---
+
+--- Checking focused_test_cases.mbt ---
+
+--- Checking focused_unit_tests.mbt ---
+
+--- Checking lib_test.mbt ---
+
+--- Checking lib_with_tests.mbt ---
+
+--- Checking math_fundamentals_test.mbt ---
+
+--- Checking mathematical_properties_test.mbt ---
+
+--- Checking new_additional_tests.mbt ---
+
+--- Checking new_comprehensive_tests.mbt ---
+
+--- Checking new_feature_tests.mbt ---
+
+--- Checking new_focused_tests.mbt ---
+
+--- Checking new_standard_tests.mbt ---
+
+--- Checking new_tests.mbt ---
+
+--- Checking performance_test.mbt ---
+
+--- Checking practical_application_tests.mbt ---
+
+--- Checking practical_comprehensive_tests.mbt ---
+
+--- Checking practical_scenario_tests.mbt ---
+
+--- Checking quality_test_suite.mbt ---
+
+--- Checking real_world_test.mbt ---
+
+--- Checking simple_debug_test.mbt ---
+
+--- Checking simple_import_test.mbt ---
+
+--- Checking simple_new_test.mbt ---
+
+--- Checking simple_new_tests.mbt ---
+
+--- Checking simple_test.mbt ---
+
+--- Checking simple_test_new.mbt ---
+
+--- Checking simple_test_verify.mbt ---
+
+--- Checking simplified_unit_tests.mbt ---
+
+--- Checking specialized_comprehensive_tests.mbt ---
+
+--- Checking specialized_test_cases.mbt ---
+
+--- Checking specialized_tests.mbt ---
+
+--- Checking standalone_test.mbt ---
+
+--- Checking standard_moonbit_test_suite.mbt ---
+
+--- Checking standard_moonbit_tests.mbt ---
+
+--- Checking standard_test_cases.mbt ---
+
+--- Checking standard_tests.mbt ---
+
+--- Checking string_processing_test.mbt ---
+
+--- Checking template.mbt ---
+
+--- Checking test_helper.mbt ---
+
+--- Checking test_no_to_string.mbt ---
+
+--- Checking test_with_comment.mbt ---
+
+--- Checking unique_test_cases.mbt ---
+
+--- Checking additional_comprehensive_test.mbt ---
+
+--- Checking additional_comprehensive_tests.mbt ---
+
+--- Checking additional_coverage_tests.mbt ---
+
+--- Checking additional_enhanced_tests.mbt ---
+
+--- Checking additional_practical_tests.mbt ---
+
+--- Checking additional_scenario_tests.mbt ---
+
+--- Checking additional_standard_tests.mbt ---
+
+--- Checking additional_tests.mbt ---
+
+--- Checking advanced_test_scenarios.mbt ---
+
+--- Checking algorithmic_tests.mbt ---
+
+--- Checking comprehensive_test_cases.mbt ---
+
+--- Checking comprehensive_tests.mbt ---
+
+--- Checking concise_tests.mbt ---
+
+--- Checking core_functionality_tests.mbt ---
+
+--- Checking debug_test.mbt ---
+
+--- Checking enhanced_math_properties_test.mbt ---
+
+--- Checking enhanced_test_suite.mbt ---
+
+--- Checking essential_tests.mbt ---
+
+--- Checking extended_test.mbt ---
+
+--- Checking focused_additional_tests.mbt ---
+
+--- Checking focused_comprehensive_tests.mbt ---
+
+--- Checking focused_enhanced_tests.mbt ---
+
+--- Checking focused_test_cases.mbt ---
+
+--- Checking focused_unit_tests.mbt ---
+
+--- Checking lib_test.mbt ---
+
+--- Checking math_fundamentals_test.mbt ---
+
+--- Checking new_additional_tests.mbt ---
+
+--- Checking new_comprehensive_tests.mbt ---
+
+--- Checking new_feature_tests.mbt ---
+
+--- Checking new_focused_tests.mbt ---
+
+--- Checking new_standard_tests.mbt ---
+
+--- Checking new_tests.mbt ---
+
+--- Checking performance_test.mbt ---
+
+--- Checking practical_scenario_tests.mbt ---
+
+--- Checking quality_test_suite.mbt ---
+
+--- Checking simple_test.mbt ---
+
+--- Checking simple_test_verify.mbt ---
+
+--- Checking specialized_test_cases.mbt ---
+
+--- Checking standard_moonbit_tests.mbt ---
+
+--- Checking standard_tests.mbt ---
+
+--- Checking test_helper.mbt ---
+
+--- Checking unique_test_cases.mbt ---
+

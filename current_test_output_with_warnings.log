@@ -1,0 +1,223 @@
+Running moon test...
+Checking syntax and imports...
+Compiling azimuth...
+--- azimuth/lib.mbt compilation output ---
+--- End of azimuth/lib.mbt compilation output ---
+Compiling azimuth tests...
+Compiling test_helper.mbt...
+--- test_helper.mbt compilation output ---
+--- End of test_helper.mbt compilation output ---
+Compiling remaining test files...
+--- Remaining test files compilation output ---
+--- End of remaining test files compilation output ---
+Compiling clean_test...
+--- clean_test/lib.mbt compilation output ---
+--- End of clean_test/lib.mbt compilation output ---
+Compiling clean_test tests...
+Compiling test_helper.mbt...
+--- clean_test test_helper.mbt compilation output ---
+--- End of clean_test test_helper.mbt compilation output ---
+Compiling remaining clean_test files...
+--- Remaining clean_test files compilation output ---
+--- End of remaining clean_test files compilation output ---
+
+All test files compiled successfully!
+
+Testing azimuth...
+Running tests in test_helper.mbt...
+No tests found in test_helper.mbt
+Running tests in basic_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in math_fundamentals_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_comprehensive_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in standalone_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Running tests in basic_test_fixed.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in simple_import_test.mbt...
+test ... ok
+Testing clean_test...
+Running tests in test_helper.mbt...
+No tests found in test_helper.mbt
+Running tests in additional_comprehensive_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_coverage_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_practical_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in advanced_test_scenarios.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in algorithmic_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in comprehensive_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in concise_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in core_functionality_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in debug_test.mbt...
+test ... ok
+Running tests in enhanced_math_properties_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in enhanced_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in essential_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in extended_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in focused_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in focused_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in focused_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in focused_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in focused_unit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in lib_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Running tests in math_fundamentals_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_feature_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_focused_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in new_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in performance_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in practical_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in quality_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in simple_test_verify.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in specialized_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in standard_moonbit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Running tests in test_helper.mbt...
+No tests found in test_helper.mbt
+Running tests in unique_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+
+141 tests passed, 0 failed

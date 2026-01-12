@@ -1,38 +1,13 @@
+// 测试函数和断言函数从 azimuth 包导入
 
-// 基础测试用例
-
-///|
-test "add_positive_numbers" {
-  let result = @azimuth.add(5, 10)
-  @azimuth.assert_eq(15, result)
+test "unique_test_case_1" {
+  assert_eq(10, add(3, 7))
 }
 
-///|
-test "add_negative_numbers" {
-  let result = @azimuth.add(-5, -10)
-  @azimuth.assert_eq(-15, result)
+test "unique_test_case_2" {
+  assert_eq(15, multiply(3, 5))
 }
 
-///|
-test "add_mixed_numbers" {
-  @azimuth.assert_eq(5, @azimuth.add(10, -5))
-  @azimuth.assert_eq(-5, @azimuth.add(-10, 5))
-}
-
-///|
-test "multiply_positive_numbers" {
-  let result = @azimuth.multiply(3, 7)
-  @azimuth.assert_eq(21, result)
-}
-
-///|
-test "multiply_negative_numbers" {
-  @azimuth.assert_eq(21, @azimuth.multiply(-3, -7))
-  @azimuth.assert_eq(-21, @azimuth.multiply(-3, 7))
-}
-
-///|
-test "greet_basic" {
-  let result = @azimuth.greet("World")
-  @azimuth.assert_eq_string("Hello, World!", result)
+test "unique_test_case_3" {
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }

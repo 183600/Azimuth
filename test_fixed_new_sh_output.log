@@ -1,0 +1,32 @@
+Running real moon test with fixed imports...
+
+Compiling and running tests...
+Testing azimuth...
+Compiling azimuth package...
+Found 15 tests in azimuth/lib.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Testing clean_test...
+Compiling clean_test package...
+Found 6 tests in clean_test/lib.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+21 tests passed, 0 failed
