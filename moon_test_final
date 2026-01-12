@@ -109,6 +109,13 @@ if [ "$IMPORT_ERRORS" -gt 0 ]; then
   SYNTAX_OK=0
 fi
 
+# 检查双重前缀问题
+DOUBLE_PREFIX_ERRORS=$(find test -name "*.mbt" -exec grep -l "azimuth::azimuth::" {} + 2>/dev/null | wc -l)
+if [ "$DOUBLE_PREFIX_ERRORS" -gt 0 ]; then
+  echo "Error: $DOUBLE_PREFIX_ERRORS test files use double prefix azimuth::azimuth::"
+  SYNTAX_OK=0
+fi
+
 echo ""
 if [ $SYNTAX_OK -eq 1 ]; then
   echo "Testing clean_test..."

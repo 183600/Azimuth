@@ -1,76 +1,32 @@
 #!/bin/bash
 
-# 批量修复 clean_test 测试文件的导入问题
+# 批量修复clean_test测试文件中的导入问题
 
-echo "批量修复 clean_test 测试文件..."
+echo "开始修复clean_test测试文件中的导入问题..."
 
-TEST_DIR="/home/runner/work/Azimuth/Azimuth/src/clean_test/test"
+# 获取所有clean_test测试文件
+test_files=$(find src/clean_test/test -name "*.mbt" -type f)
 
-# 创建临时函数定义文件
-cat > "$TEST_DIR/test_functions.mbt" << 'EOF'
-// 在测试文件中定义需要的函数以解决导入问题
-fn add(a : Int, b : Int) -> Int {
-  a + b
-}
-
-fn multiply(a : Int, b : Int) -> Int {
-  a * b
-}
-
-fn greet(name : String) -> String {
-  "Hello, " + name + "!"
-}
-
-fn assert_eq(a : Int, b : Int) -> Unit {
-  if a != b {
-    raise @moonbitlang/core/builtin.Failure("Assertion failed: " + a.to_string() + " != " + b.to_string())
-  }
-}
-
-fn assert_eq_string(a : String, b : String) -> Unit {
-  if a != b {
-    raise @moonbitlang/core/builtin.Failure("Assertion failed: " + a + " != " + b)
-  }
-}
-
-fn assert_true(cond : Bool) -> Unit {
-  if not cond {
-    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected true")
-  }
-}
-
-fn assert_false(cond : Bool) -> Unit {
-  if cond {
-    raise @moonbitlang/core/builtin.Failure("Assertion failed: expected false")
-  }
-}
-
-EOF
-
-# 修复所有测试文件
-for file in "$TEST_DIR"/*.mbt; do
-  # 跳过我们刚创建的文件
-  if [ "$(basename "$file")" = "test_functions.mbt" ]; then
-    continue
-  fi
-  
-  echo "修复 $file..."
-  
-  # 检查文件是否包含 clean_test:: 引用
-  if grep -q "clean_test::" "$file"; then
-    # 创建临时文件
-    temp_file=$(mktemp)
+# 对每个测试文件进行处理
+for file in $test_files; do
+    echo "处理文件: $file"
     
-    # 添加函数定义
-    cat "$TEST_DIR/test_functions.mbt" > "$temp_file"
-    echo "" >> "$temp_file"
-    
-    # 替换 clean_test:: 为空（移除模块前缀）
-    sed 's/clean_test:://g' "$file" >> "$temp_file"
-    
-    # 替换原文件
-    mv "$temp_file" "$file"
-  fi
+    # 检查文件是否包含未绑定的函数调用
+    if grep -q "assert_eq\|assert_eq_string\|assert_true\|assert_false\|add\|multiply\|greet" "$file"; then
+        # 检查是否已经有导入语句
+        if ! grep -q "import" "$file"; then
+            # 添加导入语句到文件开头
+            temp_file=$(mktemp)
+            echo "import \"../clean_test\"" > "$temp_file"
+            cat "$file" >> "$temp_file"
+            mv "$temp_file" "$file"
+            echo "  已添加导入语句"
+        else
+            echo "  文件已包含导入语句"
+        fi
+    else
+        echo "  文件无需修复"
+    fi
 done
 
-echo "修复完成！"
+echo "clean_test测试文件导入问题修复完成！"

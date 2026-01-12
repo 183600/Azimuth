@@ -1,0 +1,167 @@
+((fns
+  (((binder assert_false) (fn_kind_ (Top_pub assert_false))
+    (fn
+     ((params ((condition/14 : I32_Bool)))
+      (body (Lif (condition/14 : I32_Bool) (Ppanic) 0 (Ret_single I32_Unit)))
+      (return_type_ I32_Unit))))
+   ((binder assert_true) (fn_kind_ (Top_pub assert_true))
+    (fn
+     ((params ((condition/13 : I32_Bool)))
+      (body
+       (Lif (Pnot (condition/13 : I32_Bool)) (Ppanic) 0
+        (Ret_single I32_Unit)))
+      (return_type_ I32_Unit))))
+   ((binder assert_eq_string) (fn_kind_ (Top_pub assert_eq_string))
+    (fn
+     ((params ((expected/11 : Ref_string) (actual/12 : Ref_string)))
+      (body
+       (Lif
+        (Lapply
+         (Dynamic
+          (Eq::not_equal|$default_impl||String| :
+           (Ref (tid <String*String>=>Bool))))
+         ((expected/11 : Ref_string) (actual/12 : Ref_string)))
+        (Ppanic) 0 (Ret_single I32_Unit)))
+      (return_type_ I32_Unit))))
+   ((binder assert_eq) (fn_kind_ (Top_pub assert_eq))
+    (fn
+     ((params ((expected/9 : I32_Int) (actual/10 : I32_Int)))
+      (body
+       (Lif
+        ((Pcomparison I32 Ne) (expected/9 : I32_Int) (actual/10 : I32_Int))
+        (Ppanic) 0 (Ret_single I32_Unit)))
+      (return_type_ I32_Unit))))
+   ((binder greet) (fn_kind_ (Top_pub greet))
+    (fn
+     ((params ((name/8 : Ref_string)))
+      (body
+       (Llet
+        (((*tmp/18 : Ref_string)
+          (@add_string "Hello, " (name/8 : Ref_string))))
+        (@add_string (*tmp/18 : Ref_string) !)))
+      (return_type_ Ref_string))))
+   ((binder multiply) (fn_kind_ (Top_pub multiply))
+    (fn
+     ((params ((a/3 : I32_Int) (b/4 : I32_Int)))
+      (body
+       (Lsequence
+        (Lif
+         (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) 0) true
+          ((Pcomparison I32 Eq) (b/4 : I32_Int) 0) (Ret_single I32_Bool))
+         (Lreturn 0) 0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) 1)
+         (Lreturn (b/4 : I32_Int)) 0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) 1)
+         (Lreturn (a/3 : I32_Int)) 0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -1)
+         (Lreturn
+          (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -2147483648) -2147483648
+           ((Parith I32 Neg) (b/4 : I32_Int)) (Ret_single I32_Int)))
+         0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -1)
+         (Lreturn
+          (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -2147483648) -2147483648
+           ((Parith I32 Neg) (a/3 : I32_Int)) (Ret_single I32_Int)))
+         0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -2147483648)
+         (Lreturn
+          (Lif
+           (Lif ((Pcomparison I32 Gt) (b/4 : I32_Int) 1) true
+            ((Pcomparison I32 Lt) (b/4 : I32_Int) -1) (Ret_single I32_Bool))
+           -2147483648 ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))
+           (Ret_single I32_Int)))
+         0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -2147483648)
+         (Lreturn
+          (Lif
+           (Lif ((Pcomparison I32 Gt) (a/3 : I32_Int) 1) true
+            ((Pcomparison I32 Lt) (a/3 : I32_Int) -1) (Ret_single I32_Bool))
+           -2147483648 ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))
+           (Ret_single I32_Int)))
+         0 (Ret_single I32_Unit))
+        (Llet
+         (((sign/5 : I32_Int)
+           (Lif
+            (Lif
+             (Lif ((Pcomparison I32 Gt) (a/3 : I32_Int) 0)
+              ((Pcomparison I32 Gt) (b/4 : I32_Int) 0) false
+              (Ret_single I32_Bool))
+             true
+             (Lif ((Pcomparison I32 Lt) (a/3 : I32_Int) 0)
+              ((Pcomparison I32 Lt) (b/4 : I32_Int) 0) false
+              (Ret_single I32_Bool))
+             (Ret_single I32_Bool))
+            1 -1 (Ret_single I32_Int)))
+          ((abs_a/6 : I32_Int)
+           (Lif ((Pcomparison I32 Lt) (a/3 : I32_Int) 0)
+            ((Parith I32 Neg) (a/3 : I32_Int)) (a/3 : I32_Int)
+            (Ret_single I32_Int)))
+          ((abs_b/7 : I32_Int)
+           (Lif ((Pcomparison I32 Lt) (b/4 : I32_Int) 0)
+            ((Parith I32 Neg) (b/4 : I32_Int)) (b/4 : I32_Int)
+            (Ret_single I32_Int))))
+         (Lsequence
+          (Lif
+           (Llet
+            (((*tmp/17 : I32_Int)
+              ((Parith I32 Div) 2147483647 (abs_b/7 : I32_Int))))
+            ((Pcomparison I32 Gt) (abs_a/6 : I32_Int) (*tmp/17 : I32_Int)))
+           (Lreturn
+            (Lif ((Pcomparison I32 Gt) (sign/5 : I32_Int) 0) 2147483647
+             -2147483648 (Ret_single I32_Int)))
+           0 (Ret_single I32_Unit))
+          ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))))))
+      (return_type_ I32_Int))))
+   ((binder add) (fn_kind_ (Top_pub add))
+    (fn
+     ((params ((a/1 : I32_Int) (b/2 : I32_Int)))
+      (body
+       (Lsequence
+        (Lif ((Pcomparison I32 Eq) (a/1 : I32_Int) 0)
+         (Lreturn (b/2 : I32_Int)) 0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (b/2 : I32_Int) 0)
+         (Lreturn (a/1 : I32_Int)) 0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (a/1 : I32_Int) -2147483648)
+         (Lsequence
+          (Lif ((Pcomparison I32 Lt) (b/2 : I32_Int) 0) (Lreturn -2147483648)
+           0 (Ret_single I32_Unit))
+          (Lreturn ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
+         0 (Ret_single I32_Unit))
+        (Lif ((Pcomparison I32 Eq) (b/2 : I32_Int) -2147483648)
+         (Lsequence
+          (Lif ((Pcomparison I32 Lt) (a/1 : I32_Int) 0) (Lreturn -2147483648)
+           0 (Ret_single I32_Unit))
+          (Lreturn ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
+         0 (Ret_single I32_Unit))
+        (Lif
+         (Lif ((Pcomparison I32 Gt) (a/1 : I32_Int) 0)
+          ((Pcomparison I32 Gt) (b/2 : I32_Int) 0) false
+          (Ret_single I32_Bool))
+         (Lif
+          (Llet
+           (((*tmp/15 : I32_Int)
+             ((Parith I32 Sub) 2147483647 (b/2 : I32_Int))))
+           ((Pcomparison I32 Gt) (a/1 : I32_Int) (*tmp/15 : I32_Int)))
+          (Lreturn 2147483647) 0 (Ret_single I32_Unit))
+         0 (Ret_single I32_Unit))
+        (Lif
+         (Lif ((Pcomparison I32 Lt) (a/1 : I32_Int) 0)
+          ((Pcomparison I32 Lt) (b/2 : I32_Int) 0) false
+          (Ret_single I32_Bool))
+         (Lif
+          (Llet
+           (((*tmp/16 : I32_Int)
+             ((Parith I32 Sub) -2147483648 (b/2 : I32_Int))))
+           ((Pcomparison I32 Lt) (a/1 : I32_Int) (*tmp/16 : I32_Int)))
+          (Lreturn -2147483648) 0 (Ret_single I32_Unit))
+         0 (Ret_single I32_Unit))
+        ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
+      (return_type_ I32_Int))))))
+ (main ()) (globals ())
+ (type_defs
+  ((moonbit.array_i64 (Ref_array (elem I64) (mut true)))
+   (moonbit.array_f64 (Ref_array (elem F64) (mut true)))
+   (<String*String>=>Bool
+    (Ref_closure_abstract
+     (fn_sig ((params (Ref_string Ref_string)) (ret I32_Bool)))))
+   (moonbit.array_i32 (Ref_array (elem I32_Int) (mut true))))))

@@ -1,25 +1,388 @@
-moonrun --test-args '{"package":"azimuth/azimuth","file_and_index":[["performance_test.mbt",[{"start":0,"end":3}]],["lib_test.mbt",[{"start":0,"end":19}]],["lib.mbt",[]],["performance_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]],["performance_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]],["performance_test.mbt",[]],["lib_test.mbt",[]],["lib.mbt",[]]]}' ./_build/wasm-gc/debug/test/azimuth/azimuth.blackbox_test.wasm --
-moonrun --test-args '{"package":"azimuth/azimuth","file_and_index":[["lib.mbt",[]],["lib.mbt",[]],["lib.mbt",[]],["lib.mbt",[]]]}' ./_build/wasm-gc/debug/test/azimuth/azimuth.internal_test.wasm --
-[azimuth] test azimuth/performance_test.mbt:4 ("performance_test_add") ok
-[azimuth] test azimuth/performance_test.mbt:15 ("performance_test_multiply") ok
-[azimuth] test azimuth/performance_test.mbt:26 ("edge_case_performance") ok
-[azimuth] test azimuth/lib_test.mbt:4 ("simple_add") ok
-[azimuth] test azimuth/lib_test.mbt:9 ("add_functions") ok
-[azimuth] test azimuth/lib_test.mbt:57 ("multiply_functions") ok
-[azimuth] test azimuth/lib_test.mbt:102 ("greet_function") ok
-[azimuth] test azimuth/lib_test.mbt:112 ("min_value_positive_add") ok
-[azimuth] test azimuth/lib_test.mbt:134 ("multiply_edge_cases") ok
-[azimuth] test azimuth/lib_test.mbt:160 ("min_value_edge_cases") ok
-[azimuth] test azimuth/lib_test.mbt:179 ("extra_test") ok
-[azimuth] test azimuth/lib_test.mbt:184 ("add_boundary_test") ok
-[azimuth] test azimuth/lib_test.mbt:189 ("multiply_boundary_test") ok
-[azimuth] test azimuth/lib_test.mbt:194 ("test_negative_overflow_edge_case") ok
-[azimuth] test azimuth/lib_test.mbt:205 ("debug_add") ok
-[azimuth] test azimuth/lib_test.mbt:229 ("debug_multiply") ok
-[azimuth] test azimuth/lib_test.mbt:247 ("specific_add_test") ok
-[azimuth] test azimuth/lib_test.mbt:252 ("multiply_zero_test") ok
-[azimuth] test azimuth/lib_test.mbt:257 ("add_edge_case") ok
-[azimuth] test azimuth/lib_test.mbt:262 ("add_min_value_positive") ok
-[azimuth] test azimuth/lib_test.mbt:268 ("final_add_test") ok
-[azimuth] test azimuth/lib_test.mbt:282 ("final_multiply_test") ok
-Total tests: 22, passed: 22, failed: 0.
+Running moon test...
+
+Compiling azimuth...
+✓ Correct negative addition overflow check
+
+Testing azimuth...
+
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+247 tests passed, 0 failed
+
+Compiling clean_test...
+✓ Correct negative addition overflow check
+
+Testing clean_test...
+
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+122 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

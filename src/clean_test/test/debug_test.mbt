@@ -1,6 +1,4 @@
-// 测试函数和断言函数从 clean_test 包导入
 
-// 测试函数和断言函数从 clean_test 包导入
 
 // 在测试文件中定义需要的函数以解决导入问题
 
@@ -17,12 +15,12 @@ test "debug_multiply_min_max" {
   if result != min_val { () }
   
   // 使用定义的函数以避免未使用警告
-  let add_result = add(5, 3)
+  let add_result = clean_test::add(5, 3)
   if add_result != 8 { () }
   
-  let multiply_result = multiply(4, 3)
+  let multiply_result = clean_test::multiply(4, 3)
   if multiply_result != 12 { () }
   
-  let greet_result = greet("Debug")
+  let greet_result = clean_test::greet("Debug")
   if greet_result != "Hello, Debug!" { () }
 }

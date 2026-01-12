@@ -1,6 +1,4 @@
-// 测试函数和断言函数从 clean_test 包导入
 
-// 测试函数和断言函数从 clean_test 包导入
 
 // 在测试文件中定义需要的函数以解决导入问题
 
@@ -34,14 +32,14 @@ test "edge_cases" {
   let positive = 5
   let negative = -5
   
-  if add(zero, positive) != positive { () }
-  if add(positive, zero) != positive { () }
-  if multiply(zero, positive) != zero { () }
-  if multiply(positive, zero) != zero { () }
+  if clean_test::add(zero, positive) != positive { () }
+  if clean_test::add(positive, zero) != positive { () }
+  if clean_test::multiply(zero, positive) != zero { () }
+  if clean_test::multiply(positive, zero) != zero { () }
   
   // 使用 negative 变量以避免未使用警告
-  if add(negative, positive) != zero { () }
-  if multiply(negative, positive) != -25 { () }
+  if clean_test::add(negative, positive) != zero { () }
+  if clean_test::multiply(negative, positive) != -25 { () }
 }
 
 test "boundary_values" {
@@ -49,20 +47,20 @@ test "boundary_values" {
   let min_int = -2147483648
   
   // 测试边界值加法
-  let result1 = add(max_int, 0)
+  let result1 = clean_test::add(max_int, 0)
   if result1 != max_int { () }
   
-  let result2 = add(min_int, 0)
+  let result2 = clean_test::add(min_int, 0)
   if result2 != min_int { () }
   
   // 测试边界值乘法
-  let result3 = multiply(max_int, 1)
+  let result3 = clean_test::multiply(max_int, 1)
   if result3 != max_int { () }
   
-  let result4 = multiply(min_int, 1)
+  let result4 = clean_test::multiply(min_int, 1)
   if result4 != min_int { () }
   
   // 使用greet函数以避免未使用警告
-  let greet_result = greet("Boundary")
+  let greet_result = clean_test::greet("Boundary")
   if greet_result != "Hello, Boundary!" { () }
 }

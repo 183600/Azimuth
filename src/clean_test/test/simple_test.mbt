@@ -1,7 +1,3 @@
-// 测试函数和断言函数从 clean_test 包导入
-
-// 测试函数和断言函数从 clean_test 包导入
-
 // 测试基本功能
 
 test "add_basic" {

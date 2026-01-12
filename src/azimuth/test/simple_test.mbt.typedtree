@@ -4,72 +4,14 @@
    (fn
     ((params ())
      (body
-      (Texpr_sequence
-       ((Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 42 Int) (Texpr_constant 0 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 0 Int) (Texpr_constant 42 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant -42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant -42 Int) (Texpr_constant 0 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit))
-       (Texpr_if
+      (Texpr_apply
+       (Texpr_ident assert_eq () Normal
+        ((Int Unit) -> Unit (generic_ false)))
+       ((Texpr_constant 5 Int)
         (Texpr_apply
-         (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-          ((Int Int) -> Bool (generic_ false)))
-         ((Texpr_constant -42 Int)
-          (Texpr_apply
-           (Texpr_ident $azimuth.add () Normal
-            ((Int Int) -> Int (generic_ false)))
-           ((Texpr_constant 0 Int) (Texpr_constant -42 Int)) Int Normal))
-         Bool Infix)
-        (Texpr_apply
-         (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-          ((String T_blackhole) -> Unit !
-           (T_constr Error () (generic_ false)) (generic_ false)))
-         ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-        () Unit)
-       Unit))
+         (Texpr_ident add () Normal ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Unit Normal))
+       Unit Normal))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint
       (Error_typ
@@ -83,72 +25,15 @@
    (fn
     ((params ())
      (body
-      (Texpr_sequence
-       ((Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 0 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 42 Int) (Texpr_constant 0 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 0 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 0 Int) (Texpr_constant 42 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 0 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant -42 Int) (Texpr_constant 0 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit))
-       (Texpr_if
+      (Texpr_apply
+       (Texpr_ident assert_eq () Normal
+        ((Int Unit) -> Unit (generic_ false)))
+       ((Texpr_constant 6 Int)
         (Texpr_apply
-         (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-          ((Int Int) -> Bool (generic_ false)))
-         ((Texpr_constant 0 Int)
-          (Texpr_apply
-           (Texpr_ident $azimuth.multiply () Normal
-            ((Int Int) -> Int (generic_ false)))
-           ((Texpr_constant 0 Int) (Texpr_constant -42 Int)) Int Normal))
-         Bool Infix)
-        (Texpr_apply
-         (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-          ((String T_blackhole) -> Unit !
-           (T_constr Error () (generic_ false)) (generic_ false)))
-         ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-        () Unit)
-       Unit))
+         (Texpr_ident multiply () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Unit Normal))
+       Unit Normal))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint
       (Error_typ
@@ -162,135 +47,14 @@
    (fn
     ((params ())
      (body
-      (Texpr_sequence
-       ((Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 42 Int) (Texpr_constant 1 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant 42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant 1 Int) (Texpr_constant 42 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-           ((Int Int) -> Bool (generic_ false)))
-          ((Texpr_constant -42 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.multiply () Normal
-             ((Int Int) -> Int (generic_ false)))
-            ((Texpr_constant -42 Int) (Texpr_constant 1 Int)) Int Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit))
-       (Texpr_if
+      (Texpr_apply
+       (Texpr_ident assert_eq_string () Normal
+        ((String Unit) -> Unit (generic_ false)))
+       ((Texpr_constant "Hello, World!" String)
         (Texpr_apply
-         (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
-          ((Int Int) -> Bool (generic_ false)))
-         ((Texpr_constant -42 Int)
-          (Texpr_apply
-           (Texpr_ident $azimuth.multiply () Normal
-            ((Int Int) -> Int (generic_ false)))
-           ((Texpr_constant 1 Int) (Texpr_constant -42 Int)) Int Normal))
-         Bool Infix)
-        (Texpr_apply
-         (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-          ((String T_blackhole) -> Unit !
-           (T_constr Error () (generic_ false)) (generic_ false)))
-         ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-        () Unit)
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint
-      (Error_typ
-       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
-     (ty
-      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
-   (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular)
-   (fn_binder __test_73696d706c655f746573742e6d6274_3)
-   (fn
-    ((params ())
-     (body
-      (Texpr_sequence
-       ((Texpr_if
-         (Texpr_apply
-          (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal String
-           ((String String) -> Bool (generic_ true)))
-          ((Texpr_constant "Hello, !" String)
-           (Texpr_apply
-            (Texpr_ident $azimuth.greet () Normal
-             ((String) -> String (generic_ false)))
-            ((Texpr_constant "" String)) String Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit)
-        (Texpr_if
-         (Texpr_apply
-          (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal String
-           ((String String) -> Bool (generic_ true)))
-          ((Texpr_constant "Hello, A!" String)
-           (Texpr_apply
-            (Texpr_ident $azimuth.greet () Normal
-             ((String) -> String (generic_ false)))
-            ((Texpr_constant A String)) String Normal))
-          Bool Infix)
-         (Texpr_apply
-          (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-           ((String T_blackhole) -> Unit !
-            (T_constr Error () (generic_ false)) (generic_ false)))
-          ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-         () Unit))
-       (Texpr_if
-        (Texpr_apply
-         (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal String
-          ((String String) -> Bool (generic_ true)))
-         ((Texpr_constant "Hello, 123!" String)
-          (Texpr_apply
-           (Texpr_ident $azimuth.greet () Normal
-            ((String) -> String (generic_ false)))
-           ((Texpr_constant 123 String)) String Normal))
-         Bool Infix)
-        (Texpr_apply
-         (Texpr_ident $test.fail (Unit) ((_ (auto loc))) Normal
-          ((String T_blackhole) -> Unit !
-           (T_constr Error () (generic_ false)) (generic_ false)))
-         ((Texpr_constant "Test failed" String)) Rethrow Unit Normal)
-        () Unit)
-       Unit))
+         (Texpr_ident greet () Normal ((String) -> Unit (generic_ false)))
+         ((Texpr_constant World String)) Unit Normal))
+       Unit Normal))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint
       (Error_typ

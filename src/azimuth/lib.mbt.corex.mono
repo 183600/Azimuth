@@ -1,1 +1,44 @@
+fn add (a/1 : Int, b/2 : Int) -> Int {
+  if a/1 == 0 { return b/2 }
+  if b/2 == 0 { return a/1 }
+  if a/1 == -2147483648 {
+    if b/2 < 0 { return -2147483648 }
+    return a/1 + b/2
+  }
+  if b/2 == -2147483648 {
+    if a/1 < 0 { return -2147483648 }
+    return a/1 + b/2
+  }
+  if a/1 > 0 && b/2 > 0 { if a/1 > 2147483647 - b/2 { return 2147483647 }  }
+  if a/1 < 0 && b/2 < 0 { if a/1 < -2147483648 - b/2 { return -2147483648 }  }
+  a/1 + b/2
+}
 
+fn multiply (a/3 : Int, b/4 : Int) -> Int {
+  if a/3 == 0 || b/4 == 0 { return 0 }
+  if a/3 == 1 { return b/4 }
+  if b/4 == 1 { return a/3 }
+  if a/3 == -1 { return if b/4 == -2147483648 { -2147483648 } else { -b/4 } }
+  if b/4 == -1 { return if a/3 == -2147483648 { -2147483648 } else { -a/3 } }
+  if a/3 == -2147483648 { return if b/4 > 1 || b/4 < -1 { -2147483648 } else { a/3 * b/4 } }
+  if b/4 == -2147483648 { return if a/3 > 1 || a/3 < -1 { -2147483648 } else { a/3 * b/4 } }
+  let sign/5 : Int = if a/3 > 0 && b/4 > 0 || a/3 < 0 && b/4 < 0 { 1 } else { -1 }
+  let abs_a/6 : Int = if a/3 < 0 { -a/3 } else { a/3 }
+  let abs_b/7 : Int = if b/4 < 0 { -b/4 } else { b/4 }
+  if abs_a/6 > 2147483647 / abs_b/7 { return if sign/5 > 0 { 2147483647 } else { -2147483648 } }
+  a/3 * b/4
+}
+
+fn greet (name/8 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/8), "!")
+}
+
+fn assert_eq (expected/9 : Int, actual/10 : Int) -> Unit { if expected/9 != actual/10 { panic }  }
+
+fn assert_eq_string (expected/11 : String, actual/12 : String) -> Unit {
+  if Eq::not_equal|$default_impl||String|(expected/11, actual/12) { panic }
+}
+
+fn assert_true (condition/13 : Bool) -> Unit { if !condition/13 { panic }  }
+
+fn assert_false (condition/14 : Bool) -> Unit { if condition/14 { panic }  }

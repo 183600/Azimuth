@@ -1,99 +1,44 @@
-pub fn add (a/19 : Int, b/20 : Int) -> Int {
-  if a/19 == 0 { return b/20 }
-  if b/20 == 0 { return a/19 }
-  if a/19 == -2147483648 {
-    if b/20 < 0 { return -2147483648 }
-    return a/19 + b/20
+pub fn add (a/15 : Int, b/16 : Int) -> Int {
+  if a/15 == 0 { return b/16 }
+  if b/16 == 0 { return a/15 }
+  if a/15 == -2147483648 {
+    if b/16 < 0 { return -2147483648 }
+    return a/15 + b/16
   }
-  if b/20 == -2147483648 {
-    if a/19 < 0 { return -2147483648 }
-    return a/19 + b/20
+  if b/16 == -2147483648 {
+    if a/15 < 0 { return -2147483648 }
+    return a/15 + b/16
   }
-  if a/19 > 0 && b/20 > 0 { if a/19 > 2147483647 - b/20 { return 2147483647 }  }
-  if a/19 < 0 && b/20 < 0 { if a/19 < -2147483648 - b/20 { return -2147483648 }  }
-  a/19 + b/20
+  if a/15 > 0 && b/16 > 0 { if a/15 > 2147483647 - b/16 { return 2147483647 }  }
+  if a/15 < 0 && b/16 < 0 { if a/15 < -2147483648 - b/16 { return -2147483648 }  }
+  a/15 + b/16
 }
 
-pub fn multiply (a/12 : Int, b/13 : Int) -> Int {
-  if a/12 == 0 || b/13 == 0 { return 0 }
-  if a/12 == 1 { return b/13 }
-  if b/13 == 1 { return a/12 }
-  if a/12 == -1 { return if b/13 == -2147483648 { -2147483648 } else { -b/13 } }
-  if b/13 == -1 { return if a/12 == -2147483648 { -2147483648 } else { -a/12 } }
-  if a/12 == -2147483648 { return if b/13 > 1 || b/13 < -1 { -2147483648 } else { a/12 * b/13 } }
-  if b/13 == -2147483648 { return if a/12 > 1 || a/12 < -1 { -2147483648 } else { a/12 * b/13 } }
-  let sign/16 : Int = if a/12 > 0 && b/13 > 0 || a/12 < 0 && b/13 < 0 { 1 } else { -1 }
-  let abs_a/17 : Int = if a/12 < 0 { -a/12 } else { a/12 }
-  let abs_b/18 : Int = if b/13 < 0 { -b/13 } else { b/13 }
-  if abs_a/17 > 2147483647 / abs_b/18 { return if sign/16 > 0 { 2147483647 } else { -2147483648 } }
-  a/12 * b/13
+pub fn multiply (a/8 : Int, b/9 : Int) -> Int {
+  if a/8 == 0 || b/9 == 0 { return 0 }
+  if a/8 == 1 { return b/9 }
+  if b/9 == 1 { return a/8 }
+  if a/8 == -1 { return if b/9 == -2147483648 { -2147483648 } else { -b/9 } }
+  if b/9 == -1 { return if a/8 == -2147483648 { -2147483648 } else { -a/8 } }
+  if a/8 == -2147483648 { return if b/9 > 1 || b/9 < -1 { -2147483648 } else { a/8 * b/9 } }
+  if b/9 == -2147483648 { return if a/8 > 1 || a/8 < -1 { -2147483648 } else { a/8 * b/9 } }
+  let sign/12 : Int = if a/8 > 0 && b/9 > 0 || a/8 < 0 && b/9 < 0 { 1 } else { -1 }
+  let abs_a/13 : Int = if a/8 < 0 { -a/8 } else { a/8 }
+  let abs_b/14 : Int = if b/9 < 0 { -b/9 } else { b/9 }
+  if abs_a/13 > 2147483647 / abs_b/14 { return if sign/12 > 0 { 2147483647 } else { -2147483648 } }
+  a/8 * b/9
 }
 
-pub fn greet (name/11 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/11), "!")
+pub fn greet (name/7 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/7), "!")
 }
 
-pub fn assert_eq (expected/9 : Int, actual/10 : Int) -> Unit raise Failure {
-  if expected/9 != actual/10 {
-    return_err Failure(
-      @ccall add_string(
-        @ccall add_string(
-          @ccall add_string(
-            "Assertion failed: expected ",
-            Show::to_string|$default_impl|(expected/9)
-          ),
-          " but got "
-        ),
-        Show::to_string|$default_impl|(actual/10)
-      )
-    )
-  } else {
-    @make_value(())
-  }
+pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit { if expected/5 != actual/6 { panic }  }
+
+pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
+  if Eq::not_equal|$default_impl|(expected/3, actual/4) { panic }
 }
 
-pub fn assert_eq_string (expected/7 : String, actual/8 : String) -> Unit raise Failure {
-  if Eq::not_equal|$default_impl|(expected/7, actual/8) {
-    return_err Failure(
-      @ccall add_string(
-        @ccall add_string(
-          @ccall add_string(
-            @ccall add_string("Assertion failed: expected \"", Show::to_string|String|(expected/7)),
-            "\" but got \""
-          ),
-          Show::to_string|String|(actual/8)
-        ),
-        "\""
-      )
-    )
-  } else {
-    @make_value(())
-  }
-}
+pub fn assert_true (condition/2 : Bool) -> Unit { if !condition/2 { panic }  }
 
-pub fn assert_true (condition/6 : Bool) -> Unit raise Failure {
-  if !condition/6 {
-    return_err Failure("Assertion failed: expected true but got false")
-  } else {
-    @make_value(())
-  }
-}
-
-pub fn assert_false (condition/5 : Bool) -> Unit raise Failure {
-  if condition/5 {
-    return_err Failure("Assertion failed: expected false but got true")
-  } else {
-    @make_value(())
-  }
-}
-
-pub fn test_internal_functions () -> Unit raise Failure {
-  assert_eq(10, add(7, 3)) catch { err => return_err err }
-  assert_eq(0, add(5, -5)) catch { err => return_err err }
-  assert_eq(-10, add(-7, -3)) catch { err => return_err err }
-  assert_eq(21, multiply(7, 3)) catch { err => return_err err }
-  assert_eq(-21, multiply(7, -3)) catch { err => return_err err }
-  assert_eq(21, multiply(-7, -3)) catch { err => return_err err }
-  assert_eq_string("Hello, Azimuth!", greet("Azimuth")) catch { err => return_err err }
-  assert_eq_string("Hello, !", greet(""))
-}
+pub fn assert_false (condition/1 : Bool) -> Unit { if condition/1 { panic }  }

@@ -1,42 +1,26 @@
 #!/bin/bash
 
-# 修复所有测试文件中缺少的导入语句
-# 这个脚本会为所有显示"No tests found"的测试文件添加必要的导入
+# 批量修复测试文件中的导入问题
+# 删除所有测试文件中的 import "../azimuth" 和 import "../clean_test" 语句
 
-echo "开始修复测试文件的导入语句..."
+echo "开始修复测试文件导入问题..."
 
-# 定义测试目录
-TEST_DIR="src/azimuth/test"
-
-# 进入测试目录
-cd "$TEST_DIR" || exit 1
-
-# 遍历所有.mbt文件
-for file in *.mbt; do
+# 修复 azimuth 测试文件
+for file in src/azimuth/test/*.mbt; do
     if [ -f "$file" ]; then
         echo "处理文件: $file"
-        
-        # 检查文件是否已经包含导入语句
-        if ! grep -q "import azimuth" "$file"; then
-            echo "  添加导入语句到 $file"
-            
-            # 创建临时文件
-            temp_file=$(mktemp)
-            
-            # 添加导入语句到文件开头
-            echo "import azimuth" > "$temp_file"
-            echo "" >> "$temp_file"
-            cat "$file" >> "$temp_file"
-            
-            # 替换原文件
-            mv "$temp_file" "$file"
-        else
-            echo "  $file 已包含导入语句"
-        fi
+        # 删除 import "../azimuth" 行
+        sed -i '/^import "..\/azimuth"$/d' "$file"
+    fi
+done
+
+# 修复 clean_test 测试文件  
+for file in src/clean_test/test/*.mbt; do
+    if [ -f "$file" ]; then
+        echo "处理文件: $file"
+        # 删除 import "../clean_test" 行
+        sed -i '/^import "..\/clean_test"$/d' "$file"
     fi
 done
 
 echo "修复完成！"
-
-# 返回原目录
-cd - > /dev/null
