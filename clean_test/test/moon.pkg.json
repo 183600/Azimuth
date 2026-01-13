@@ -1,5 +1,5 @@
 {
   "import": ["clean_test"],
   "export": [],
-  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt"]
+  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt", "enhanced_test_cases.mbt"]
 }
