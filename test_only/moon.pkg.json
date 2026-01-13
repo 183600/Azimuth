@@ -1,5 +1,5 @@
 {
   "name": "test_only",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
-  "files": ["lib.mbt"]
+  "files": ["lib.mbt", "additional_standard_tests.mbt"]
 }
