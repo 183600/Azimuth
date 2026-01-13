@@ -1,5 +1,5 @@
 {
   "import": ["azimuth"],
   "export": [],
-  "test": ["additional_tests.mbt", "simple_test.mbt", "additional_comprehensive_tests.mbt", "comprehensive_tests.mbt", "standard_tests.mbt", "new_comprehensive_tests.mbt", "additional_test_cases.mbt", "comprehensive_standard_tests.mbt", "enhanced_boundary_tests.mbt", "standard_moonbit_tests.mbt", "new_moonbit_tests.mbt", "enhanced_moonbit_tests.mbt", "moonbit_standard_tests.mbt", "new_test_cases.mbt", "moonbit_test_cases.mbt", "new_comprehensive_tests.mbt", "enhanced_test_cases.mbt", "additional_standard_tests.mbt", "new_additional_tests.mbt"]
+  "test": ["additional_tests.mbt", "simple_test.mbt", "additional_comprehensive_tests.mbt", "comprehensive_tests.mbt", "standard_tests.mbt", "new_comprehensive_tests.mbt", "additional_test_cases.mbt", "comprehensive_standard_tests.mbt", "enhanced_boundary_tests.mbt", "standard_moonbit_tests.mbt", "new_moonbit_tests.mbt", "enhanced_moonbit_tests.mbt", "moonbit_standard_tests.mbt", "new_test_cases.mbt", "moonbit_test_cases.mbt", "new_comprehensive_tests.mbt", "enhanced_test_cases.mbt", "additional_standard_tests.mbt", "new_additional_tests.mbt", "additional_test_scenarios.mbt"]
 }
