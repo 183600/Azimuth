@@ -49,3 +49,11 @@ test "assert_true_function" {
   @azimuth.assert_true(5 > 3)
   @azimuth.assert_false(5 < 3)
 }
+
+test "large_number_test" {
+  // 测试大数运算
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  let sum_result = @azimuth.add(large_num1, large_num2)
+  @azimuth.assert_eq(3000000, sum_result)
+}
