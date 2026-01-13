@@ -1,6 +1,8 @@
-test "basic_add_test" {
-  let result = @azimuth.add(2, 3)
-  @azimuth.assert_eq(5, result)
+// 综合测试用例 - 覆盖 Azimuth 库的主要功能
+// 测试安全加法函数的各种边界情况
+test "add_positive_numbers" {
+  let result = @azimuth.add(10, 20)
+  @azimuth.assert_eq(30, result)
 }
 
 test "add_with_zero" {
@@ -15,15 +17,21 @@ test "add_negative_numbers" {
   @azimuth.assert_eq(-30, result)
 }
 
+test "add_mixed_numbers" {
+  let result = @azimuth.add(15, -5)
+  @azimuth.assert_eq(10, result)
+}
+
 test "add_overflow_protection" {
   let max_val = 2147483647
   let result = @azimuth.add(max_val, 1)
   @azimuth.assert_eq(max_val, result)
 }
 
-test "basic_multiply_test" {
-  let result = @azimuth.multiply(2, 3)
-  @azimuth.assert_eq(6, result)
+// 测试安全乘法函数
+test "multiply_basic" {
+  let result = @azimuth.multiply(6, 7)
+  @azimuth.assert_eq(42, result)
 }
 
 test "multiply_with_zero_and_one" {
@@ -35,9 +43,10 @@ test "multiply_with_zero_and_one" {
   @azimuth.assert_eq(-42, result3)
 }
 
-test "basic_greet_test" {
-  let result = @azimuth.greet("World")
-  @azimuth.assert_eq_string("Hello, World!", result)
+// 测试字符串拼接函数
+test "greet_basic" {
+  let result = @azimuth.greet("MoonBit")
+  @azimuth.assert_eq_string("Hello, MoonBit!", result)
 }
 
 test "greet_empty_string" {
@@ -45,6 +54,7 @@ test "greet_empty_string" {
   @azimuth.assert_eq_string("Hello, !", result)
 }
 
+// 测试断言函数
 test "assert_true_function" {
   @azimuth.assert_true(5 > 3)
   @azimuth.assert_false(5 < 3)
