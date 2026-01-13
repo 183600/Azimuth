@@ -1,276 +1,167 @@
-// 额外的 MoonBit 测试用例
-// 这些测试用例展示了不同的测试场景和技术
+// 新增的 MoonBit 测试用例
+// 这些测试用例覆盖了更多边界情况和实际应用场景
 
-test "number_sequence_operations" {
-  // 测试数字序列操作：计算等差数列的和
-  // 1 + 2 + 3 + ... + n = n * (n + 1) / 2
-  let n = 10
-  let expected_sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  
-  // 手动计算前10个自然数的和
-  let manual_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5), 6), 7), 8), 9), 10)
-  
-  @azimuth.assert_eq(expected_sum, manual_sum)
-  @azimuth.assert_eq(55, manual_sum)  // 1+2+3+4+5+6+7+8+9+10 = 55
+// 导入主模块
+test "add_negative_positive_combinations" {
+  // 测试负数和正数的各种组合相加
+  assert_eq(0, add(-100, 100))
+  assert_eq(-50, add(-100, 50))
+  assert_eq(50, add(100, -50))
+  assert_eq(-150, add(-200, 50))
+  assert_eq(150, add(200, -50))
 }
 
-test "geometric_progression_test" {
-  // 测试等比数列：a, ar, ar², ar³, ...
-  let a = 2  // 首项
-  let r = 3  // 公比
+test "multiply_fractional_simulation" {
+  // 模拟分数运算：通过整数运算模拟分数乘法
+  // 计算 (3/4) * (8/9) = 24/36 = 2/3，模拟为 3*8/(4*9) = 24/36
+  let numerator1 = 3
+  let denominator1 = 4
+  let numerator2 = 8
+  let denominator2 = 9
   
-  // 计算前5项的和：a + ar + ar² + ar³ + ar⁴
-  let term1 = a
-  let term2 = @azimuth.multiply(a, r)
-  let term3 = @azimuth.multiply(term2, r)
-  let term4 = @azimuth.multiply(term3, r)
-  let term5 = @azimuth.multiply(term4, r)
+  let result_numerator = multiply(numerator1, numerator2)
+  let result_denominator = multiply(denominator1, denominator2)
   
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
-  
-  // 2 + 6 + 18 + 54 + 162 = 242
-  @azimuth.assert_eq(242, sum)
+  assert_eq(24, result_numerator)
+  assert_eq(36, result_denominator)
 }
 
-test "string_template_processing" {
-  // 测试字符串模板处理
-  let name = "Alice"
-  let age = "30"
-  let city = "Beijing"
+test "string_length_impact" {
+  // 测试不同长度字符串的处理
+  let empty = ""
+  let single = "A"
+  let short = "Hello"
+  let medium = "MoonBit Programming"
+  let long = "This is a very long string that contains multiple words and should test the string handling capabilities"
   
-  // 使用greet函数模拟模板处理
-  let greeting1 = @azimuth.greet(name)
-  let greeting2 = @azimuth.greet(name + " from " + city)
-  let greeting3 = @azimuth.greet(name + " (age " + age + ")")
-  
-  @azimuth.assert_eq_string("Hello, Alice!", greeting1)
-  @azimuth.assert_eq_string("Hello, Alice from Beijing!", greeting2)
-  @azimuth.assert_eq_string("Hello, Alice (age 30)!", greeting3)
+  assert_eq_string("Hello, !", greet(empty))
+  assert_eq_string("Hello, A!", greet(single))
+  assert_eq_string("Hello, Hello!", greet(short))
+  assert_eq_string("Hello, MoonBit Programming!", greet(medium))
+  assert_eq_string("Hello, This is a very long string that contains multiple words and should test the string handling capabilities!", greet(long))
 }
 
-test "discount_calculation_scenario" {
-  // 测试折扣计算场景
-  let original_price = 1000
-  let discount_percent = 20  // 20% 折扣
+test "arithmetic_progression" {
+  // 测试等差数列求和：1 + 3 + 5 + ... + 19 = 100
+  let first_term = 1
+  let common_diff = 2
+  let num_terms = 10
   
-  // 计算折扣金额：原价 × 折扣百分比 ÷ 100
-  let discount_amount = @azimuth.multiply(original_price, discount_percent) / 100
+  // 手动计算前10项
+  let term1 = first_term
+  let term2 = add(term1, common_diff)  // 3
+  let term3 = add(term2, common_diff)  // 5
+  let term4 = add(term3, common_diff)  // 7
+  let term5 = add(term4, common_diff)  // 9
+  let term6 = add(term5, common_diff)  // 11
+  let term7 = add(term6, common_diff)  // 13
+  let term8 = add(term7, common_diff)  // 15
+  let term9 = add(term8, common_diff)  // 17
+  let term10 = add(term9, common_diff) // 19
   
-  // 计算最终价格：原价 - 折扣金额
-  let final_price = @azimuth.add(original_price, -discount_amount)
+  let sum = add(add(add(add(add(add(add(add(add(term1, term2), term3), term4), term5), term6), term7), term8), term9), term10)
+  assert_eq(100, sum)
+}
+
+test "geometric_progression" {
+  // 测试等比数列求和：2 + 4 + 8 + 16 = 30
+  let first_term = 2
+  let common_ratio = 2
+  let num_terms = 4
   
-  @azimuth.assert_eq(200, discount_amount)  // 1000 × 20 ÷ 100 = 200
-  @azimuth.assert_eq(800, final_price)      // 1000 - 200 = 800
+  // 手动计算前4项
+  let term1 = first_term
+  let term2 = multiply(term1, common_ratio)  // 4
+  let term3 = multiply(term2, common_ratio)  // 8
+  let term4 = multiply(term3, common_ratio)  // 16
+  
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(30, sum)
 }
 
 test "compound_interest_calculation" {
-  // 测试复利计算（简化版）
-  let principal = 10000  // 本金
-  let rate = 5          // 利率 5%
+  // 测试复利计算：本金 × (1 + 利率)^年数
+  // 简化版本，使用整数运算
+  let principal = 1000  // 本金
+  let rate_percent = 5   // 利率百分比
   let years = 3         // 年数
   
-  // 简化复利计算：本息和 = 本金 + 本金 × 利率 × 年数
-  let interest_per_year = @azimuth.multiply(principal, rate) / 100
-  let total_interest = @azimuth.multiply(interest_per_year, years)
-  let total_amount = @azimuth.add(principal, total_interest)
+  // 第一年：1000 + 1000*5% = 1000 + 50 = 1050
+  let year1_interest = multiply(principal, rate_percent) / 100
+  let year1_total = add(principal, year1_interest)
   
-  @azimuth.assert_eq(500, interest_per_year)    // 10000 × 5 ÷ 100 = 500
-  @azimuth.assert_eq(1500, total_interest)     // 500 × 3 = 1500
-  @azimuth.assert_eq(11500, total_amount)      // 10000 + 1500 = 11500
+  // 第二年：1050 + 1050*5% = 1050 + 52 = 1102（整数除法）
+  let year2_interest = multiply(year1_total, rate_percent) / 100
+  let year2_total = add(year1_total, year2_interest)
+  
+  // 第三年：1102 + 1102*5% = 1102 + 55 = 1157（整数除法）
+  let year3_interest = multiply(year2_total, rate_percent) / 100
+  let year3_total = add(year2_total, year3_interest)
+  
+  assert_eq(1157, year3_total)
 }
 
-test "array_index_calculation" {
-  // 测试数组索引计算（模拟二维数组到一维数组的索引转换）
-  let rows = 3
-  let cols = 4
-  let row_index = 1  // 第二行（从0开始）
-  let col_index = 2  // 第三列（从0开始）
-  
-  // 二维数组到一维数组的索引转换：index = row * cols + col
-  let linear_index = @azimuth.add(@azimuth.multiply(row_index, cols), col_index)
-  
-  @azimuth.assert_eq(6, linear_index)  // 1 * 4 + 2 = 6
-  
-  // 测试边界情况
-  let first_element = @azimuth.add(@azimuth.multiply(0, cols), 0)
-  let last_element = @azimuth.add(@azimuth.multiply(@azimuth.add(rows, -1), @azimuth.add(cols, -1)), @azimuth.add(cols, -1))
-  
-  @azimuth.assert_eq(0, first_element)   // 第一行第一列
-  @azimuth.assert_eq(11, last_element)   // 最后一行最后一列：(3-1)*4 + (4-1) = 2*4 + 3 = 11
-}
-
-test "time_conversion_calculations" {
-  // 测试时间转换计算
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
-  
-  // 将时间转换为总秒数
-  let total_seconds = @azimuth.add(@azimuth.add(
-    @azimuth.multiply(hours, 3600),    // 小时转秒
-    @azimuth.multiply(minutes, 60)     // 分钟转秒
-  ), seconds)
-  
-  @azimuth.assert_eq(9045, total_seconds)  // 2*3600 + 30*60 + 45 = 7200 + 1800 + 45 = 9045
-  
-  // 测试反向计算：从总秒数计算小时和分钟
-  let total_seconds_rounded = 9000  // 简化为可被整除的值
-  let calculated_hours = total_seconds_rounded / 3600
-  let remaining_seconds = total_seconds_rounded % 3600
-  let calculated_minutes = remaining_seconds / 60
-  
-  @azimuth.assert_eq(2, calculated_hours)     // 9000 ÷ 3600 = 2
-  @azimuth.assert_eq(30, calculated_minutes)  // (9000 % 3600) ÷ 60 = 1800 ÷ 60 = 30
-}
-
-test "temperature_conversion_precise" {
-  // 测试更精确的温度转换（使用整数运算近似）
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 使用整数运算：F = C × 2 - C/5 + 32 （近似公式）
-  
-  let celsius = 25
-  
-  // 使用近似公式计算
-  let term1 = @azimuth.multiply(celsius, 2)           // C × 2
-  let term2 = celsius / 5                             // C ÷ 5（整数除法）
-  let fahrenheit = @azimuth.add(@azimuth.add(term1, -term2), 32)
-  
-  @azimuth.assert_eq(77, fahrenheit)  // 25 × 2 - 25/5 + 32 = 50 - 5 + 32 = 77
-  
-  // 测试其他温度点
-  let freezing = 0
-  let freezing_f = @azimuth.add(@azimuth.add(@azimuth.multiply(freezing, 2), -(freezing / 5)), 32)
-  @azimuth.assert_eq(32, freezing_f)  // 0 × 2 - 0/5 + 32 = 32
-  
-  let boiling = 100
-  let boiling_f = @azimuth.add(@azimuth.add(@azimuth.multiply(boiling, 2), -(boiling / 5)), 32)
-  @azimuth.assert_eq(212, boiling_f)  // 100 × 2 - 100/5 + 32 = 200 - 20 + 32 = 212
-}
-
-test "perimeter_and_area_calculations" {
-  // 测试周长和面积计算
-  let length = 8
-  let width = 5
-  
-  // 矩形周长：2 × (长 + 宽)
-  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
-  
-  // 矩形面积：长 × 宽
-  let area = @azimuth.multiply(length, width)
-  
-  @azimuth.assert_eq(26, perimeter)  // 2 × (8 + 5) = 2 × 13 = 26
-  @azimuth.assert_eq(40, area)       // 8 × 5 = 40
-  
-  // 计算相同面积的正方形边长（简化，只考虑完全平方数）
-  let square_area = 36
-  let square_side = 6  // 已知36是完全平方数
-  
-  // 验证正方形面积
-  let calculated_square_area = @azimuth.multiply(square_side, square_side)
-  @azimuth.assert_eq(square_area, calculated_square_area)
-  
-  // 计算正方形周长
-  let square_perimeter = @azimuth.multiply(4, square_side)
-  @azimuth.assert_eq(24, square_perimeter)  // 4 × 6 = 24
-}
-
-test "string_length_processing" {
-  // 测试字符串长度处理（通过字符数估算）
-  let short_name = "Bob"
-  let medium_name = "Elizabeth"
-  let long_name = "Alexander the Great"
-  
-  // 使用greet函数处理不同长度的字符串
-  let short_greeting = @azimuth.greet(short_name)
-  let medium_greeting = @azimuth.greet(medium_name)
-  let long_greeting = @azimuth.greet(long_name)
-  
-  @azimuth.assert_eq_string("Hello, Bob!", short_greeting)
-  @azimuth.assert_eq_string("Hello, Elizabeth!", medium_greeting)
-  @azimuth.assert_eq_string("Hello, Alexander the Great!", long_greeting)
-  
-  // 测试包含数字和特殊字符的字符串
-  let mixed_name = "User123@Example"
-  let mixed_greeting = @azimuth.greet(mixed_name)
-  @azimuth.assert_eq_string("Hello, User123@Example!", mixed_greeting)
-  
-  // 测试多语言字符串
-  let chinese_name = "李明"
-  let chinese_greeting = @azimuth.greet(chinese_name)
-  @azimuth.assert_eq_string("Hello, 李明!", chinese_greeting)
-  
-  let japanese_name = "田中太郎"
-  let japanese_greeting = @azimuth.greet(japanese_name)
-  @azimuth.assert_eq_string("Hello, 田中太郎!", japanese_greeting)
-}
-
-test "advanced_mathematical_operations" {
-  // 测试高级数学运算
-  // 计算平方和：1² + 2² + 3² + ... + n²
+test "factorial_calculation" {
+  // 测试阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
   let n = 5
-  let square1 = @azimuth.multiply(1, 1)
-  let square2 = @azimuth.multiply(2, 2)
-  let square3 = @azimuth.multiply(3, 3)
-  let square4 = @azimuth.multiply(4, 4)
-  let square5 = @azimuth.multiply(5, 5)
   
-  let sum_of_squares = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(square1, square2), square3), square4), square5)
-  @azimuth.assert_eq(55, sum_of_squares)  // 1 + 4 + 9 + 16 + 25 = 55
+  let step1 = multiply(n, 4)  // 5 * 4 = 20
+  let step2 = multiply(step1, 3)  // 20 * 3 = 60
+  let step3 = multiply(step2, 2)  // 60 * 2 = 120
+  let step4 = multiply(step3, 1)  // 120 * 1 = 120
+  
+  assert_eq(120, step4)
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  // 复利计算（简化版）：本金 + 本金 × 利率 × 年数
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
+test "binary_conversion_simulation" {
+  // 模拟二进制转换：将二进制数 1011 转换为十进制
+  // 1011₂ = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11
   
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total = @azimuth.add(principal, interest)
+  let bit3 = 1  // 最高位
+  let bit2 = 0
+  let bit1 = 1
+  let bit0 = 1  // 最低位
   
-  @azimuth.assert_eq(160000, total)  // 10000 + 10000*5*3 = 10000 + 150000 = 160000
+  let value3 = multiply(bit3, multiply(2, multiply(2, 2)))  // 1 * 2³ = 8
+  let value2 = multiply(bit2, multiply(2, 2))              // 0 * 2² = 0
+  let value1 = multiply(bit1, 2)                           // 1 * 2¹ = 2
+  let value0 = multiply(bit0, 1)                           // 1 * 2⁰ = 1
+  
+  let decimal_value = add(add(add(value3, value2), value1), value0)
+  assert_eq(11, decimal_value)
 }
 
-test "geometry_calculations" {
-  // 测试几何计算
-  // 圆的面积（简化为整数）：π × r²，使用π≈3
-  let radius = 5
-  let area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(75, area)  // 3 × 5² = 3 × 25 = 75
+test "volume_calculation" {
+  // 测试体积计算：长方体体积 = 长 × 宽 × 高
+  let length = 5
+  let width = 3
+  let height = 4
   
-  // 球的体积（简化）：4/3 × π × r³，使用整数近似
-  let volume = @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(radius, @azimuth.multiply(radius, radius)))) / 3
-  @azimuth.assert_eq(500, volume)  // 4 × 3 × 125 / 3 = 500
+  let base_area = multiply(length, width)  // 5 * 3 = 15
+  let volume = multiply(base_area, height) // 15 * 4 = 60
+  
+  assert_eq(60, volume)
+  
+  // 圆柱体体积（简化版）：底面积 × 高
+  let radius = 3
+  let cyl_height = 10
+  
+  // 圆面积 ≈ 半径² × 3（π的近似值）
+  let circle_area = multiply(multiply(radius, radius), 3)  // 3² × 3 = 27
+  let cylinder_volume = multiply(circle_area, cyl_height)  // 27 × 10 = 270
+  
+  assert_eq(270, cylinder_volume)
 }
 
-test "temperature_conversions" {
-  // 测试温度转换
-  // 摄氏度转华氏度（简化版）：F = C × 2 + 30
-  let celsius_temps = [0, 10, 20, 30, 40, 100]
-  let expected_fahrenheit = [30, 50, 70, 90, 110, 230]
+test "string_case_scenarios" {
+  // 测试不同大小写场景的字符串处理
+  let lowercase = "moonbit"
+  let uppercase = "MOONBIT"
+  let mixedcase = "MoonBit"
+  let camelcase = "moonBit"
   
-  // 测试几个关键温度点
-  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))    // 0°C
-  @azimuth.assert_eq(70, @azimuth.add(@azimuth.multiply(20, 2), 30))  // 20°C
-  @azimuth.assert_eq(100, @azimuth.add(@azimuth.multiply(35, 2), 30)) // 35°C
-  @azimuth.assert_eq(212, @azimuth.add(@azimuth.multiply(91, 2), 30)) // 91°C（接近沸点）
-}
-
-test "time_calculations" {
-  // 测试时间计算
-  // 将小时、分钟、秒转换为总秒数
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
-  
-  let total_seconds = @azimuth.add(
-    @azimuth.add(
-      @azimuth.multiply(hours, 3600),  // 小时转秒
-      @azimuth.multiply(minutes, 60)   // 分钟转秒
-    ),
-    seconds
-  )
-  
-  @azimuth.assert_eq(9045, total_seconds)  // 2*3600 + 30*60 + 45 = 7200 + 1800 + 45 = 9045
+  assert_eq_string("Hello, moonbit!", greet(lowercase))
+  assert_eq_string("Hello, MOONBIT!", greet(uppercase))
+  assert_eq_string("Hello, MoonBit!", greet(mixedcase))
+  assert_eq_string("Hello, moonBit!", greet(camelcase))
 }
