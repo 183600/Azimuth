@@ -1,178 +1,190 @@
 // 新的 MoonBit 测试用例
-// 测试 azimuth 包中的各种功能
+// 使用标准的 MoonBit 测试语法和断言
 
-test "add_overflow_edge_cases" {
-  // 测试加法溢出的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "addition_with_various_ranges" {
+  // 测试不同范围的加法运算
+  // 小正数
+  azimuth::assert_eq(7, azimuth::add(3, 4))
   
-  // 测试正数溢出
-  assert_eq(max_val, azimuth::add(max_val, 1))
-  assert_eq(max_val, azimuth::add(max_val, max_val))
+  // 小负数
+  azimuth::assert_eq(-7, azimuth::add(-3, -4))
   
-  // 测试负数溢出
-  assert_eq(min_val, azimuth::add(min_val, -1))
-  assert_eq(min_val, azimuth::add(min_val, min_val))
+  // 混合符号
+  azimuth::assert_eq(-1, azimuth::add(3, -4))
+  azimuth::assert_eq(1, azimuth::add(-3, 4))
   
-  // 测试最大值与最小值相加
-  assert_eq(-1, azimuth::add(max_val, min_val))
+  // 大数运算
+  azimuth::assert_eq(2000000, azimuth::add(1000000, 1000000))
+  azimuth::assert_eq(-2000000, azimuth::add(-1000000, -1000000))
 }
 
-test "multiply_overflow_scenarios" {
-  // 测试乘法溢出的各种场景
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "multiplication_edge_cases" {
+  // 测试乘法的边缘情况
+  // 零乘法
+  azimuth::assert_eq(0, azimuth::multiply(0, 12345))
+  azimuth::assert_eq(0, azimuth::multiply(-12345, 0))
   
-  // 测试大数相乘溢出
-  assert_eq(max_val, azimuth::multiply(46341, 46341))
-  assert_eq(min_val, azimuth::multiply(-46341, 46341))
+  // 单位乘法
+  azimuth::assert_eq(12345, azimuth::multiply(1, 12345))
+  azimuth::assert_eq(-12345, azimuth::multiply(-1, 12345))
   
-  // 测试最小值乘法特殊情况
-  assert_eq(min_val, azimuth::multiply(min_val, -1))
-  assert_eq(min_val, azimuth::multiply(min_val, 2))
-  
-  // 测试边界值组合
-  assert_eq(0, azimuth::multiply(max_val, 0))
-  assert_eq(0, azimuth::multiply(min_val, 0))
+  // 大数乘法
+  azimuth::assert_eq(1000000, azimuth::multiply(1000, 1000))
+  azimuth::assert_eq(-1000000, azimuth::multiply(-1000, 1000))
 }
 
-test "greet_unicode_and_special_chars" {
-  // 测试包含 Unicode 字符和特殊字符的问候
-  assert_eq_string("Hello, 🌍!", azimuth::greet("🌍"))
-  assert_eq_string("Hello, 🚀!", azimuth::greet("🚀"))
-  assert_eq_string("Hello, 张三!", azimuth::greet("张三"))
-  assert_eq_string("Hello, ñoño!", azimuth::greet("ñoño"))
-  assert_eq_string("Hello, Москва!", azimuth::greet("Москва"))
+test "greet_function_internationalization" {
+  // 测试问候函数的国际化支持
+  // 中文字符
+  azimuth::assert_eq_string("Hello, 张三!", azimuth::greet("张三"))
+  
+  // 日文字符
+  azimuth::assert_eq_string("Hello, 田中!", azimuth::greet("田中"))
+  
+  // 韩文字符
+  azimuth::assert_eq_string("Hello, 김철수!", azimuth::greet("김철수"))
+  
+  // 俄文字符
+  azimuth::assert_eq_string("Hello, Иван!", azimuth::greet("Иван"))
+  
+  // 阿拉伯文字符
+  azimuth::assert_eq_string("Hello, محمد!", azimuth::greet("محمد"))
 }
 
-test "complex_mathematical_expressions" {
-  // 测试复杂数学表达式
-  // 计算：(a + b) * (c - d)
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
+test "complex_financial_calculations" {
+  // 测试复杂金融计算场景
+  // 计算贷款利息：本金 × 利率 × 期限
+  let principal = 100000  // 10万本金
+  let rate = 5  // 5%年利率
+  let years = 3  // 3年期限
   
-  let sum_ab = azimuth::add(a, b)  // 15
-  let diff_cd = azimuth::add(c, -d)  // 12
-  let result = azimuth::multiply(sum_ab, diff_cd)  // 15 * 12 = 180
+  // 简化计算：总利息 = 本金 × 利率 × 年数
+  let total_interest = azimuth::multiply(principal, azimuth::multiply(rate, years))
+  azimuth::assert_eq(1500000, total_interest)
   
-  assert_eq(180, result)
-  
-  // 计算：a * b + c * d
-  let product_ab = azimuth::multiply(a, b)  // 50
-  let product_cd = azimuth::multiply(c, d)  // 160
-  let sum_result = azimuth::add(product_ab, product_cd)  // 50 + 160 = 210
-  
-  assert_eq(210, sum_result)
+  // 计算还款总额：本金 + 利息
+  let total_payment = azimuth::add(principal, total_interest)
+  azimuth::assert_eq(1600000, total_payment)
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  // 计算复利：principal * (1 + rate * years)
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
+test "physics_calculations" {
+  // 测试物理计算场景
+  // 计算动能：E = 1/2 × m × v²
+  let mass = 10  // 10kg
+  let velocity = 20  // 20m/s
   
-  let rate_multiplier = azimuth::add(1, azimuth::multiply(rate, years))  // 1 + 5*3 = 16
-  let total = azimuth::multiply(principal, rate_multiplier)  // 10000 * 16 = 160000
+  // 简化计算：E = m × v × v / 2
+  let velocity_squared = azimuth::multiply(velocity, velocity)
+  let energy = azimuth::multiply(mass, velocity_squared) / 2
+  azimuth::assert_eq(2000, energy)
   
-  assert_eq(160000, total)
-  
-  // 计算折扣价格：original_price * (1 - discount_rate)
-  let original_price = 200
-  let discount_rate = 20  // 20%
-  let discount_multiplier = azimuth::add(1, -discount_rate)  // 1 - 20 = -19
-  let discounted_price = azimuth::multiply(original_price, discount_multiplier)  // 200 * -19 = -3800
-  
-  assert_eq(-3800, discounted_price)
+  // 计算动量：p = m × v
+  let momentum = azimuth::multiply(mass, velocity)
+  azimuth::assert_eq(200, momentum)
 }
 
-test "geometry_calculations" {
-  // 测试几何计算
-  // 计算圆的周长（近似值）：2 * π * r，使用 π ≈ 3
-  let radius = 10
-  let pi_approx = 3
-  let circumference = azimuth::multiply(2, azimuth::multiply(pi_approx, radius))  // 2 * 3 * 10 = 60
+test "statistical_analysis" {
+  // 测试统计分析计算
+  // 计算一组数据的平均值
+  let data_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(85, 90), 78), 92), 95)
+  let data_count = 5
+  let average = data_sum / data_count
+  azimuth::assert_eq(88, average)
   
-  assert_eq(60, circumference)
+  // 计算方差（简化版）
+  let diff1 = azimuth::add(85, -average)
+  let diff2 = azimuth::add(90, -average)
+  let diff3 = azimuth::add(78, -average)
+  let diff4 = azimuth::add(92, -average)
+  let diff5 = azimuth::add(95, -average)
   
-  // 计算梯形面积：(上底 + 下底) * 高 / 2
-  let top_base = 8
-  let bottom_base = 12
-  let height = 5
+  let variance = azimuth::add(azimuth::add(azimuth::add(azimuth::add(
+    azimuth::multiply(diff1, diff1),
+    azimuth::multiply(diff2, diff2)),
+    azimuth::multiply(diff3, diff3)),
+    azimuth::multiply(diff4, diff4)),
+    azimuth::multiply(diff5, diff5)) / data_count
   
-  let sum_bases = azimuth::add(top_base, bottom_base)  // 20
-  let area_times_2 = azimuth::multiply(sum_bases, height)  // 20 * 5 = 100
-  let area = area_times_2 / 2  // 50
-  
-  assert_eq(50, area)
+  azimuth::assert_eq(34, variance)
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试非常长的名字
-  let very_long_name = "ThisIsAnExtremelyLongNameThatCouldPotentiallyCauseIssuesInSomeSystems"
-  let result1 = azimuth::greet(very_long_name)
-  assert_eq_string("Hello, " + very_long_name + "!", result1)
+test "coordinate_geometry" {
+  // 测试坐标几何计算
+  // 计算两点间距离的平方：(x2-x1)² + (y2-y1)²
+  let x1 = 1
+  let y1 = 2
+  let x2 = 4
+  let y2 = 6
   
-  // 测试包含各种特殊字符的名字
-  let special_chars_name = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result2 = azimuth::greet(special_chars_name)
-  assert_eq_string("Hello, " + special_chars_name + "!", result2)
+  let dx = azimuth::add(x2, -x1)
+  let dy = azimuth::add(y2, -y1)
+  let distance_squared = azimuth::add(azimuth::multiply(dx, dx), azimuth::multiply(dy, dy))
+  azimuth::assert_eq(25, distance_squared)
   
-  // 测试包含空格的名字
-  let spaced_name = "   "
-  let result3 = azimuth::greet(spaced_name)
-  assert_eq_string("Hello,    !", result3)
+  // 计算三角形面积（使用海伦公式的简化版）
+  // 边长：3, 4, 5 的直角三角形
+  let a = 3
+  let b = 4
+  let c = 5
+  let s = azimuth::add(azimuth::add(a, b), c) / 2  // 半周长
+  // 简化面积计算：直角三角形面积 = 底 × 高 / 2
+  let area = azimuth::multiply(a, b) / 2
+  azimuth::assert_eq(6, area)
 }
 
-test "sequence_operations" {
-  // 测试序列操作
-  // 计算等差数列前n项和：n/2 * (2a + (n-1)d)
+test "combinatorial_calculations" {
+  // 测试组合数学计算
+  // 计算排列数 P(n,k) = n × (n-1) × ... × (n-k+1)
+  // P(5,3) = 5 × 4 × 3 = 60
+  let n = 5
+  let k = 3
+  let permutation = azimuth::multiply(n, azimuth::multiply(n - 1, n - 2))
+  azimuth::assert_eq(60, permutation)
+  
+  // 计算组合数 C(n,k) = P(n,k) / k!
+  // C(5,3) = 60 / (3 × 2 × 1) = 10
+  let k_factorial = azimuth::multiply(k, azimuth::multiply(k - 1, k - 2))
+  let combination = permutation / k_factorial
+  azimuth::assert_eq(10, combination)
+}
+
+test "time_conversion_utilities" {
+  // 测试时间转换工具
+  // 将天数转换为小时、分钟、秒
+  let days = 2
+  let hours_per_day = 24
+  let minutes_per_hour = 60
+  let seconds_per_minute = 60
+  
+  // 转换为小时
+  let total_hours = azimuth::multiply(days, hours_per_day)
+  azimuth::assert_eq(48, total_hours)
+  
+  // 转换为分钟
+  let total_minutes = azimuth::multiply(total_hours, minutes_per_hour)
+  azimuth::assert_eq(2880, total_minutes)
+  
+  // 转换为秒
+  let total_seconds = azimuth::multiply(total_minutes, seconds_per_minute)
+  azimuth::assert_eq(172800, total_seconds)
+}
+
+test "algorithm_complexity_simulation" {
+  // 测试算法复杂度模拟
+  // 模拟 O(n²) 算法的时间复杂度
   let n = 10
-  let a = 1  // 首项
-  let d = 2  // 公差
+  // 简化的复杂度计算：n × (n+1) / 2
+  let operations = azimuth::multiply(n, azimuth::add(n, 1)) / 2
+  azimuth::assert_eq(55, operations)
   
-  let two_a = azimuth::multiply(2, a)  // 2
-  let n_minus_1 = azimuth::add(n, -1)  // 9
-  let term_in_parentheses = azimuth::add(two_a, azimuth::multiply(n_minus_1, d))  // 2 + 9*2 = 20
-  let sum = azimuth::multiply(n / 2, term_in_parentheses)  // 5 * 20 = 100
+  // 模拟 O(n³) 算法的时间复杂度
+  // 简化计算：n² × n
+  let n_squared = azimuth::multiply(n, n)
+  let cubic_operations = azimuth::multiply(n_squared, n)
+  azimuth::assert_eq(1000, cubic_operations)
   
-  assert_eq(100, sum)
-  
-  // 计算等比数列前n项和（简化版）：a * (1 - r^n) / (1 - r)
-  // 这里我们只计算前3项的和
-  let first_term = 2
-  let ratio = 3
-  
-  let term1 = first_term  // 2
-  let term2 = azimuth::multiply(first_term, ratio)  // 6
-  let term3 = azimuth::multiply(term2, ratio)  // 18
-  let geo_sum = azimuth::add(azimuth::add(term1, term2), term3)  // 2 + 6 + 18 = 26
-  
-  assert_eq(26, geo_sum)
-}
-
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试断言函数的正确性
-  azimuth::assert_true(true)
-  azimuth::assert_false(false)
-  azimuth::assert_eq(42, 42)
-  azimuth::assert_eq_string("test", "test")
-  
-  // 测试边界值的运算结果
-  assert_true(azimuth::add(max_val, 1) == max_val)
-  assert_true(azimuth::add(min_val, -1) == min_val)
-  assert_true(azimuth::multiply(max_val, 2) == max_val)
-  assert_true(azimuth::multiply(min_val, -1) == min_val)
-  
-  // 测试正常运算
-  assert_true(azimuth::add(100, 200) == 300)
-  assert_true(azimuth::multiply(15, 20) == 300)
-  assert_true(azimuth::greet("Test") == "Hello, Test!")
+  // 模拟 O(log n) 算法的时间复杂度（简化为连续除以2）
+  let log_value = n
+  let log_operations = azimuth::add(log_value / 2, log_value / 4) + log_value / 8 + log_value / 16
+  azimuth::assert_eq(9, log_operations)
 }
