@@ -35,4 +35,15 @@ if [ -f "additional_comprehensive_tests.mbt" ]; then
   fi
 fi
 
+if [ -f "lib_tests.mbt" ]; then
+  echo "Checking lib_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test lib_tests.mbt -i ../clean_test.mi
+  if [ $? -eq 0 ]; then
+    echo "lib_tests.mbt ... ok"
+  else
+    echo "lib_tests.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"

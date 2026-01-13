@@ -166,13 +166,73 @@ test "basic_add_test" {
   let result = add(2, 3)
   assert_eq(5, result)
 }
+
+test "add_with_zero" {
+  // 测试与0相加的情况
+  assert_eq(5, add(5, 0))
+  assert_eq(5, add(0, 5))
+  assert_eq(0, add(0, 0))
+}
+
+test "add_with_negative_numbers" {
+  // 测试负数相加
+  assert_eq(-5, add(-2, -3))
+  assert_eq(0, add(5, -5))
+  assert_eq(-1, add(3, -4))
+}
+
+test "add_overflow_protection" {
+  // 测试溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+}
+
 test "basic_multiply_test" {
   let result = multiply(2, 3)
   assert_eq(6, result)
 }
+
+test "multiply_with_zero_and_one" {
+  // 测试与0和1相乘的情况
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, multiply(1, 5))
+}
+
+test "multiply_with_negative_numbers" {
+  // 测试负数相乘
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+}
+
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
 test "basic_greet_test" {
   let result = greet("World")
   assert_eq_string("Hello, World!", result)
+}
+
+test "greet_with_special_characters" {
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
 }
 
 
