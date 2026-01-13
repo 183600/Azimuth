@@ -246,4 +246,75 @@ test "greet_with_special_characters" {
   assert_eq_string("Hello, 测试@123!", result)
 }
 
+// 新增测试用例
+test "add_large_numbers" {
+  // 测试大数相加
+  assert_eq(2000000000, add(1000000000, 1000000000))
+  assert_eq(-2000000000, add(-1000000000, -1000000000))
+}
+
+test "add_mixed_signs" {
+  // 测试不同符号的数相加
+  assert_eq(0, add(100, -100))
+  assert_eq(-50, add(100, -150))
+  assert_eq(50, add(-100, 150))
+}
+
+test "multiply_large_numbers" {
+  // 测试大数相乘
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-1000000, multiply(-1000, 1000))
+  assert_eq(1000000, multiply(-1000, -1000))
+}
+
+test "multiply_boundary_combinations" {
+  // 测试边界值组合的乘法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
+}
+
+test "greet_with_whitespace" {
+  // 测试包含空白字符的字符串
+  assert_eq_string("Hello,   World!", greet("  World"))
+  assert_eq_string("Hello, World   !", greet("World  "))
+  assert_eq_string("Hello,  World  !", greet(" World  "))
+}
+
+test "greet_with_unicode_emoji" {
+  // 测试包含 Unicode emoji 的字符串
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, 👋!", greet("👋"))
+}
+
+test "assert_functions_test" {
+  // 测试断言函数本身
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+}
+
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形的周长
+  let length = 10
+  let width = 5
+  let perimeter = add(multiply(2, length), multiply(2, width))
+  assert_eq(30, perimeter)
+}
+
+test "financial_calculation_scenario" {
+  // 测试金融计算场景：复利计算（简化版）
+  let principal = 1000
+  let rate = 5
+  let years = 3
+  // 简化的复利计算：本息和 = 本金 + 本金 × 利率 × 年数
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
+  assert_eq(16000, total)  // 1000 + 1000*5*3 = 16000，表示1600元
+}
+
 
