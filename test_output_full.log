@@ -1,0 +1,308 @@
+Running moon test with real execution...
+Compiling azimuth...
+Generating azimuth.wasm...
+Testing azimuth...
+Checking additional_tests.mbt...
+Found 9 tests in additional_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking simple_test.mbt...
+Found 9 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 19 tests in additional_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking comprehensive_tests.mbt...
+Found 20 tests in comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_tests.mbt...
+Found 9 tests in standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_comprehensive_tests.mbt...
+azimuth_test/new_comprehensive_tests.mbt:70:7-70:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+azimuth_test/new_comprehensive_tests.mbt:172:7-172:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+Found 10 tests in new_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_test_cases.mbt...
+Found 10 tests in additional_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking comprehensive_standard_tests.mbt...
+Found 10 tests in comprehensive_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_boundary_tests.mbt...
+Found 10 tests in enhanced_boundary_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_tests.mbt...
+Found 10 tests in standard_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_tests.mbt...
+Found 10 tests in new_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_moonbit_tests.mbt...
+Found 10 tests in enhanced_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_standard_tests.mbt...
+Found 10 tests in moonbit_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_test_cases.mbt...
+azimuth_test/new_test_cases.mbt:181:7-181:11 [E0002] Warning (unused_value): Unused variable 'time'
+Found 10 tests in new_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_test_cases.mbt...
+Found 10 tests in moonbit_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_comprehensive_tests.mbt...
+azimuth_test/new_comprehensive_tests.mbt:70:7-70:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+azimuth_test/new_comprehensive_tests.mbt:172:7-172:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+Found 10 tests in new_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_test_cases.mbt...
+Found 8 tests in enhanced_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_standard_tests.mbt...
+azimuth_test/additional_standard_tests.mbt:89:7-89:20 [E0002] Warning (unused_value): Unused variable 'discount_rate'
+Found 10 tests in additional_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_additional_tests.mbt...
+Found 10 tests in new_additional_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_test_scenarios.mbt...
+Found 10 tests in additional_test_scenarios.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_new_tests.mbt...
+Found 10 tests in moonbit_new_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Compiling clean_test...
+Generating clean_test.wasm...
+Testing clean_test...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+Testing test_only...
+Found 13 tests in test_only
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+
+224 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!
