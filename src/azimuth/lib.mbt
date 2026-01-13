@@ -674,4 +674,136 @@ test "data_conversion_scenarios" {
   assert_eq_string("Hello, false!", greet(false_str))
 }
 
+// 新增的10个MoonBit测试用例
+test "factorial_calculation" {
+  // 计算5的阶乘：5! = 5 × 4 × 3 × 2 × 1 = 120
+  let n = 5
+  let result = multiply(n, multiply(n - 1, multiply(n - 2, multiply(n - 3, n - 4))))
+  assert_eq(120, result)
+}
+
+test "compound_interest_precise" {
+  // 精确的复利计算：本金 × (1 + 利率)^年数
+  // 简化为整数计算：1000 × (1 + 5%)^3 ≈ 1000 × 116 = 116000
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
+  
+  // 简化的复利公式，避免浮点数
+  let growth_factor = add(100, multiply(rate_percent, years))
+  let total = multiply(principal, growth_factor)
+  assert_eq(115000, total)  // 1000 × (100 + 5×3) = 1000 × 115 = 115000
+}
+
+test "nested_calculations" {
+  // 嵌套计算测试：((a + b) × (c + d)) - (e × f)
+  let a = 10
+  let b = 20
+  let c = 5
+  let d = 15
+  let e = 8
+  let f = 12
+  
+  let sum1 = add(a, b)  // 30
+  let sum2 = add(c, d)  // 20
+  let product1 = multiply(sum1, sum2)  // 600
+  let product2 = multiply(e, f)  // 96
+  let result = add(product1, -product2)  // 504
+  
+  assert_eq(504, result)
+}
+
+test "string_length_edge_cases" {
+  // 测试不同长度字符串的greet函数处理
+  let empty = ""
+  let single = "A"
+  let short = "Hi"
+  let medium = "MoonBit"
+  let long = "ThisIsAVeryLongStringForTestingPurposes"
+  
+  assert_eq_string("Hello, !", greet(empty))
+  assert_eq_string("Hello, A!", greet(single))
+  assert_eq_string("Hello, Hi!", greet(short))
+  assert_eq_string("Hello, MoonBit!", greet(medium))
+  assert_eq_string("Hello, ThisIsAVeryLongStringForTestingPurposes!", greet(long))
+}
+
+test "mathematical_series_sum" {
+  // 计算等差数列的和：1 + 3 + 5 + ... + 19（前10个奇数）
+  // 使用公式：n × (首项 + 末项) / 2
+  let n = 10
+  let first = 1
+  let last = 19
+  
+  let sum = multiply(n, add(first, last)) / 2
+  assert_eq(100, sum)  // 10 × (1 + 19) / 2 = 100
+}
+
+test "power_of_two_calculation" {
+  // 计算2的幂：2^8 = 256
+  // 通过连续相乘实现
+  let power = 8
+  let result = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(multiply(2, 2), multiply(2, 2)))
+  assert_eq(256, result)
+}
+
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 500
+  let percentage = 25  // 25%
+  
+  // 计算百分比值：总数 × 百分比 / 100
+  let value = multiply(total, percentage) / 100
+  assert_eq(125, value)  // 500 × 25 / 100 = 125
+  
+  // 计算增加后的值：总数 + 百分比值
+  let increased = add(total, value)
+  assert_eq(625, increased)  // 500 + 125 = 625
+}
+
+test "string_with_numbers_and_symbols" {
+  // 测试包含数字和符号的字符串
+  let alphanumeric = "Test123"
+  let symbolic = "test@example.com"
+  let mixed = "User_2023@Project#1"
+  
+  assert_eq_string("Hello, Test123!", greet(alphanumeric))
+  assert_eq_string("Hello, test@example.com!", greet(symbolic))
+  assert_eq_string("Hello, User_2023@Project#1!", greet(mixed))
+}
+
+test "extreme_boundary_combinations" {
+  // 极端边界值组合测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值与最小值的各种运算
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(max_val, add(max_val, 0))
+  
+  // 边界值附近的运算
+  assert_eq(2147483646, add(max_val, -1))
+  assert_eq(-2147483647, add(min_val, 1))
+}
+
+test "real_world_application" {
+  // 实际应用场景：计算订单总价
+  let item_price = 199
+  let quantity = 3
+  let shipping = 15
+  let tax_rate = 10  // 10%
+  
+  // 计算商品总价
+  let subtotal = multiply(item_price, quantity)
+  // 计算税费
+  let tax = multiply(subtotal, tax_rate) / 100
+  // 计算最终总价
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(674, total)  // (199×3) + (199×3×10/100) + 15 = 597 + 59 + 15 = 674
+}
+
 
