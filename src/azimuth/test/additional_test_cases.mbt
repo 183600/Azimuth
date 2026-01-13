@@ -1,167 +1,180 @@
 // 新增的 MoonBit 测试用例
-// 这些测试用例覆盖了更多边界情况和实际应用场景
+// 这些测试用例涵盖了更多的边界情况和实际应用场景
 
-// 导入主模块
-test "add_negative_positive_combinations" {
-  // 测试负数和正数的各种组合相加
-  assert_eq(0, add(-100, 100))
-  assert_eq(-50, add(-100, 50))
-  assert_eq(50, add(100, -50))
-  assert_eq(-150, add(-200, 50))
-  assert_eq(150, add(200, -50))
+test "add_large_positive_numbers" {
+  // 测试大正数相加
+  @azimuth.assert_eq(2000000000, @azimuth.add(1000000000, 1000000000))
+  @azimuth.assert_eq(1500000000, @azimuth.add(750000000, 750000000))
+  @azimuth.assert_eq(2147483647, @azimuth.add(1073741823, 1073741824))
 }
 
-test "multiply_fractional_simulation" {
-  // 模拟分数运算：通过整数运算模拟分数乘法
-  // 计算 (3/4) * (8/9) = 24/36 = 2/3，模拟为 3*8/(4*9) = 24/36
-  let numerator1 = 3
-  let denominator1 = 4
-  let numerator2 = 8
-  let denominator2 = 9
-  
-  let result_numerator = multiply(numerator1, numerator2)
-  let result_denominator = multiply(denominator1, denominator2)
-  
-  assert_eq(24, result_numerator)
-  assert_eq(36, result_denominator)
+test "add_large_negative_numbers" {
+  // 测试大负数相加
+  @azimuth.assert_eq(-2000000000, @azimuth.add(-1000000000, -1000000000))
+  @azimuth.assert_eq(-1500000000, @azimuth.add(-750000000, -750000000))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-1073741824, -1073741824))
 }
 
-test "string_length_impact" {
-  // 测试不同长度字符串的处理
-  let empty = ""
-  let single = "A"
-  let short = "Hello"
-  let medium = "MoonBit Programming"
-  let long = "This is a very long string that contains multiple words and should test the string handling capabilities"
+test "multiply_fractional_approximation" {
+  // 测试分数近似值的乘法
+  // 1/3 ≈ 0.333..., 0.333 * 3 ≈ 1 (整数近似)
+  @azimuth.assert_eq(0, @azimuth.multiply(1, 0))
   
-  assert_eq_string("Hello, !", greet(empty))
-  assert_eq_string("Hello, A!", greet(single))
-  assert_eq_string("Hello, Hello!", greet(short))
-  assert_eq_string("Hello, MoonBit Programming!", greet(medium))
-  assert_eq_string("Hello, This is a very long string that contains multiple words and should test the string handling capabilities!", greet(long))
+  // 使用整数模拟分数运算
+  // 1/2 * 4 = 2 (使用 1 * 4 / 2 = 2)
+  let half_times_four = @azimuth.multiply(1, 4) / 2
+  @azimuth.assert_eq(2, half_times_four)
+  
+  // 2/3 * 6 = 4 (使用 2 * 6 / 3 = 4)
+  let two_thirds_times_six = @azimuth.multiply(2, 6) / 3
+  @azimuth.assert_eq(4, two_thirds_times_six)
 }
 
-test "arithmetic_progression" {
-  // 测试等差数列求和：1 + 3 + 5 + ... + 19 = 100
-  let first_term = 1
-  let common_diff = 2
-  let num_terms = 10
+test "calculate_rectangle_properties" {
+  // 计算矩形的属性
+  let length = 15
+  let width = 8
   
-  // 手动计算前10项
-  let term1 = first_term
-  let term2 = add(term1, common_diff)  // 3
-  let term3 = add(term2, common_diff)  // 5
-  let term4 = add(term3, common_diff)  // 7
-  let term5 = add(term4, common_diff)  // 9
-  let term6 = add(term5, common_diff)  // 11
-  let term7 = add(term6, common_diff)  // 13
-  let term8 = add(term7, common_diff)  // 15
-  let term9 = add(term8, common_diff)  // 17
-  let term10 = add(term9, common_diff) // 19
+  // 计算面积
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(120, area)
   
-  let sum = add(add(add(add(add(add(add(add(add(term1, term2), term3), term4), term5), term6), term7), term8), term9), term10)
-  assert_eq(100, sum)
-}
-
-test "geometric_progression" {
-  // 测试等比数列求和：2 + 4 + 8 + 16 = 30
-  let first_term = 2
-  let common_ratio = 2
-  let num_terms = 4
+  // 计算周长
+  let perimeter = @azimuth.multiply(@azimuth.add(length, width), 2)
+  @azimuth.assert_eq(46, perimeter)
   
-  // 手动计算前4项
-  let term1 = first_term
-  let term2 = multiply(term1, common_ratio)  // 4
-  let term3 = multiply(term2, common_ratio)  // 8
-  let term4 = multiply(term3, common_ratio)  // 16
-  
-  let sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(30, sum)
+  // 计算对角线长度的平方 (a² + b²)
+  let diagonal_squared = @azimuth.add(@azimuth.multiply(length, length), @azimuth.multiply(width, width))
+  @azimuth.assert_eq(289, diagonal_squared)  // 15² + 8² = 225 + 64 = 289
 }
 
 test "compound_interest_calculation" {
-  // 测试复利计算：本金 × (1 + 利率)^年数
-  // 简化版本，使用整数运算
+  // 复利计算（简化版，整数运算）
   let principal = 1000  // 本金
-  let rate_percent = 5   // 利率百分比
+  let rate = 5          // 利率（百分比）
   let years = 3         // 年数
   
-  // 第一年：1000 + 1000*5% = 1000 + 50 = 1050
-  let year1_interest = multiply(principal, rate_percent) / 100
-  let year1_total = add(principal, year1_interest)
+  // 计算每年的利息并累加
+  let year1_interest = @azimuth.multiply(principal, rate) / 100
+  let year1_total = @azimuth.add(principal, year1_interest)
   
-  // 第二年：1050 + 1050*5% = 1050 + 52 = 1102（整数除法）
-  let year2_interest = multiply(year1_total, rate_percent) / 100
-  let year2_total = add(year1_total, year2_interest)
+  let year2_interest = @azimuth.multiply(year1_total, rate) / 100
+  let year2_total = @azimuth.add(year1_total, year2_interest)
   
-  // 第三年：1102 + 1102*5% = 1102 + 55 = 1157（整数除法）
-  let year3_interest = multiply(year2_total, rate_percent) / 100
-  let year3_total = add(year2_total, year3_interest)
+  let year3_interest = @azimuth.multiply(year2_total, rate) / 100
+  let final_total = @azimuth.add(year2_total, year3_interest)
   
-  assert_eq(1157, year3_total)
+  // 验证最终金额约等于 1157 (1000 * 1.05³)
+  @azimuth.assert_eq(1157, final_total)
 }
 
-test "factorial_calculation" {
-  // 测试阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
-  let n = 5
+test "string_validation_and_processing" {
+  // 测试字符串验证和处理
+  // 测试空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
-  let step1 = multiply(n, 4)  // 5 * 4 = 20
-  let step2 = multiply(step1, 3)  // 20 * 3 = 60
-  let step3 = multiply(step2, 2)  // 60 * 2 = 120
-  let step4 = multiply(step3, 1)  // 120 * 1 = 120
+  // 测试单字符
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
   
-  assert_eq(120, step4)
+  // 测试包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Smith!", @azimuth.greet("John Smith"))
+  
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string("Hello, user@domain.com!", @azimuth.greet("user@domain.com"))
+  
+  // 测试包含Unicode字符的字符串
+  @azimuth.assert_eq_string("Hello, 🌟MoonBit🌟!", @azimuth.greet("🌟MoonBit🌟"))
 }
 
-test "binary_conversion_simulation" {
-  // 模拟二进制转换：将二进制数 1011 转换为十进制
-  // 1011₂ = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11
+test "statistical_calculations" {
+  // 统计计算
+  let numbers = [12, 15, 18, 21, 24]  // 模拟数组
   
-  let bit3 = 1  // 最高位
-  let bit2 = 0
-  let bit1 = 1
-  let bit0 = 1  // 最低位
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  @azimuth.assert_eq(90, sum)
   
-  let value3 = multiply(bit3, multiply(2, multiply(2, 2)))  // 1 * 2³ = 8
-  let value2 = multiply(bit2, multiply(2, 2))              // 0 * 2² = 0
-  let value1 = multiply(bit1, 2)                           // 1 * 2¹ = 2
-  let value0 = multiply(bit0, 1)                           // 1 * 2⁰ = 1
+  // 计算平均值
+  let average = sum / 5
+  @azimuth.assert_eq(18, average)
   
-  let decimal_value = add(add(add(value3, value2), value1), value0)
-  assert_eq(11, decimal_value)
+  // 计算方差（简化版）
+  let diff1 = @azimuth.multiply(numbers[0] - average, numbers[0] - average)
+  let diff2 = @azimuth.multiply(numbers[1] - average, numbers[1] - average)
+  let diff3 = @azimuth.multiply(numbers[2] - average, numbers[2] - average)
+  let diff4 = @azimuth.multiply(numbers[3] - average, numbers[3] - average)
+  let diff5 = @azimuth.multiply(numbers[4] - average, numbers[4] - average)
+  
+  let variance_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(diff1, diff2), diff3), diff4), diff5)
+  let variance = variance_sum / 5
+  @azimuth.assert_eq(18, variance)  // 简化的方差计算
 }
 
-test "volume_calculation" {
-  // 测试体积计算：长方体体积 = 长 × 宽 × 高
-  let length = 5
-  let width = 3
-  let height = 4
+test "time_calculations" {
+  // 时间计算（秒转换为时分秒）
+  let total_seconds = 3665  // 1小时1分5秒
   
-  let base_area = multiply(length, width)  // 5 * 3 = 15
-  let volume = multiply(base_area, height) // 15 * 4 = 60
+  // 计算小时
+  let hours = total_seconds / 3600
+  @azimuth.assert_eq(1, hours)
   
-  assert_eq(60, volume)
+  // 计算剩余秒数
+  let remaining_seconds = total_seconds - @azimuth.multiply(hours, 3600)
+  @azimuth.assert_eq(65, remaining_seconds)
   
-  // 圆柱体体积（简化版）：底面积 × 高
-  let radius = 3
-  let cyl_height = 10
+  // 计算分钟
+  let minutes = remaining_seconds / 60
+  @azimuth.assert_eq(1, minutes)
   
-  // 圆面积 ≈ 半径² × 3（π的近似值）
-  let circle_area = multiply(multiply(radius, radius), 3)  // 3² × 3 = 27
-  let cylinder_volume = multiply(circle_area, cyl_height)  // 27 × 10 = 270
-  
-  assert_eq(270, cylinder_volume)
+  // 计算秒数
+  let seconds = remaining_seconds - @azimuth.multiply(minutes, 60)
+  @azimuth.assert_eq(5, seconds)
 }
 
-test "string_case_scenarios" {
-  // 测试不同大小写场景的字符串处理
-  let lowercase = "moonbit"
-  let uppercase = "MOONBIT"
-  let mixedcase = "MoonBit"
-  let camelcase = "moonBit"
+test "number_system_conversions" {
+  // 数字系统转换（简化版）
+  // 十进制转二进制（模拟）
+  let decimal_num = 13
   
-  assert_eq_string("Hello, moonbit!", greet(lowercase))
-  assert_eq_string("Hello, MOONBIT!", greet(uppercase))
-  assert_eq_string("Hello, MoonBit!", greet(mixedcase))
-  assert_eq_string("Hello, moonBit!", greet(camelcase))
+  // 使用除2取余法模拟二进制转换
+  let rem1 = decimal_num % 2
+  let div1 = decimal_num / 2
+  let rem2 = div1 % 2
+  let div2 = div1 / 2
+  let rem3 = div2 % 2
+  let div3 = div2 / 2
+  let rem4 = div3 % 2
+  
+  // 将余数组合成二进制数（1101）
+  let binary_num = @azimuth.add(@azimuth.add(@azimuth.multiply(rem4, 1000), @azimuth.multiply(rem3, 100)), @azimuth.add(@azimuth.multiply(rem2, 10), rem1))
+  @azimuth.assert_eq(1101, binary_num)
+  
+  // 二进制转十进制验证
+  let decimal_back = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(1, 4)), @azimuth.add(@azimuth.multiply(0, 2), @azimuth.multiply(1, 1)))
+  @azimuth.assert_eq(13, decimal_back)
+}
+
+test "geometric_progression" {
+  // 等比数列计算
+  let first_term = 2
+  let ratio = 3
+  let n = 5  // 项数
+  
+  // 计算前5项：2, 6, 18, 54, 162
+  let term1 = first_term
+  let term2 = @azimuth.multiply(term1, ratio)
+  let term3 = @azimuth.multiply(term2, ratio)
+  let term4 = @azimuth.multiply(term3, ratio)
+  let term5 = @azimuth.multiply(term4, ratio)
+  
+  // 验证各项
+  @azimuth.assert_eq(2, term1)
+  @azimuth.assert_eq(6, term2)
+  @azimuth.assert_eq(18, term3)
+  @azimuth.assert_eq(54, term4)
+  @azimuth.assert_eq(162, term5)
+  
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
+  @azimuth.assert_eq(242, sum)
 }
