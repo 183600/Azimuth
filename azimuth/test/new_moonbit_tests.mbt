@@ -1,81 +1,75 @@
 // 新增的 MoonBit 测试用例
-// 覆盖 add、multiply 和 greet 函数的各种场景
+// 覆盖更多边界情况和功能测试
 
-// 测试 add 函数的边界情况
-test "add_minimum_value" {
-  let min_val = -2147483648
-  let result = @azimuth.add(min_val, 0)
-  @azimuth.assert_eq(min_val, result)
-}
-
-// 测试 add 函数的负数溢出保护
+// 加法边界测试 - 负数溢出
 test "add_negative_overflow" {
   let min_val = -2147483648
   let result = @azimuth.add(min_val, -1)
   @azimuth.assert_eq(min_val, result)
 }
 
-// 测试 add 函数的正数溢出保护
-test "add_positive_overflow" {
-  let max_val = 2147483647
-  let result = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, result)
-}
-
-// 测试 multiply 函数的最小值处理
-test "multiply_minimum_value" {
+// 加法边界测试 - 最小值加正数
+test "add_min_value_with_positive" {
   let min_val = -2147483648
-  let result = @azimuth.multiply(min_val, 1)
-  @azimuth.assert_eq(min_val, result)
+  let result = @azimuth.add(min_val, 1)
+  @azimuth.assert_eq(-2147483647, result)
 }
 
-// 测试 multiply 函数的溢出保护
-test "multiply_overflow_protection" {
+// 乘法边界测试 - 大数相乘溢出
+test "multiply_large_numbers_overflow" {
   let max_val = 2147483647
-  let result = @azimuth.multiply(max_val, max_val)
+  let result = @azimuth.multiply(max_val, 2)
   @azimuth.assert_eq(max_val, result)
 }
 
-// 测试 multiply 函数的最小值乘以-1的情况
-test "multiply_minimum_by_negative_one" {
+// 乘法边界测试 - 最小值乘以-1
+test "multiply_min_value_by_negative_one" {
   let min_val = -2147483648
   let result = @azimuth.multiply(min_val, -1)
   @azimuth.assert_eq(min_val, result)
 }
 
-// 测试 greet 函数的特殊字符处理
-test "greet_special_characters" {
+// 字符串处理测试 - 特殊字符
+test "greet_with_special_characters" {
   let result = @azimuth.greet("张三")
   @azimuth.assert_eq_string("Hello, 张三!", result)
 }
 
-// 测试 greet 函数的长字符串处理
-test "greet_long_string" {
-  let long_name = "这是一个非常长的名字用来测试greet函数处理长字符串的能力"
-  let result = @azimuth.greet(long_name)
-  @azimuth.assert_eq_string("Hello, " + long_name + "!", result)
+// 字符串处理测试 - 数字和符号
+test "greet_with_numbers_and_symbols" {
+  let result = @azimuth.greet("User123@#$")
+  @azimuth.assert_eq_string("Hello, User123@#$!", result)
 }
 
-// 测试断言函数的布尔值处理
-test "assert_functions_with_booleans" {
+// 混合运算测试 - 先乘后加
+test "mixed_operations_multiply_then_add" {
+  let mult_result = @azimuth.multiply(10, 5)
+  let final_result = @azimuth.add(mult_result, 20)
+  @azimuth.assert_eq(70, final_result)
+}
+
+// 边界值组合测试 - 接近最大值
+test "near_maximum_values" {
+  let near_max = 2147483640
+  let result1 = @azimuth.add(near_max, 5)
+  let result2 = @azimuth.multiply(near_max, 1)
+  @azimuth.assert_eq(2147483647, result1)
+  @azimuth.assert_eq(near_max, result2)
+}
+
+// 复杂场景测试 - 多步计算
+test "complex_calculation_sequence" {
+  let step1 = @azimuth.add(100, 200)
+  let step2 = @azimuth.multiply(step1, 3)
+  let step3 = @azimuth.add(step2, -100)
+  let final_result = @azimuth.multiply(step3, 2)
+  @azimuth.assert_eq(1800, final_result)
+}
+
+// 错误处理测试 - 验证断言函数正常工作
+test "assertion_functions_verification" {
   @azimuth.assert_true(true)
   @azimuth.assert_false(false)
-  @azimuth.assert_true(1 == 1)
-  @azimuth.assert_false(1 == 2)
-}
-
-// 测试 add 和 multiply 函数的组合使用
-test "combined_operations" {
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  let sum = @azimuth.add(a, b)
-  @azimuth.assert_eq(30, sum)
-  
-  let product = @azimuth.multiply(sum, 1)
-  @azimuth.assert_eq(30, product)
-  
-  let final_result = @azimuth.add(product, c)
-  @azimuth.assert_eq(60, final_result)
+  @azimuth.assert_eq(0, 0)
+  @azimuth.assert_eq_string("", "")
 }
