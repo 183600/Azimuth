@@ -1,212 +1,137 @@
-// 测试用例1: 测试加法运算的更多边界情况
-test "add_edge_cases" {
-  // 测试连续相加
-  let result1 = @azimuth.add(@azimuth.add(1, 2), 3)
-  @azimuth.assert_eq(6, result1)
-  
-  // 测试极大值相加
-  let max_val = 2147483647
-  let result2 = @azimuth.add(max_val, -2147483647)
-  @azimuth.assert_eq(0, result2)
-  
-  // 测试极小值相加
-  let min_val = -2147483648
-  let result3 = @azimuth.add(min_val, 2147483647)
-  @azimuth.assert_eq(-1, result3)
-}
+// 附加测试用例 - Azimuth 项目
+// 这些测试用例补充了现有的测试，覆盖更多边缘情况
 
-// 测试用例2: 测试乘法运算的更多边界情况
-test "multiply_edge_cases" {
-  // 测试连续相乘
-  let result1 = @azimuth.multiply(@azimuth.multiply(2, 3), 4)
-  @azimuth.assert_eq(24, result1)
-  
-  // 测试负数相乘
-  let result2 = @azimuth.multiply(-2, -3)
-  @azimuth.assert_eq(6, result2)
-  
-  // 测试正负数相乘
-  let result3 = @azimuth.multiply(-2, 3)
-  @azimuth.assert_eq(-6, result3)
-  
-  // 测试与边界值相乘
-  let max_val = 2147483647
-  let result4 = @azimuth.multiply(max_val, -1)
-  @azimuth.assert_eq(-2147483647, result4)
-}
-
-// 测试用例3: 测试字符串拼接的更多情况
-test "greet_complex_strings" {
-  // 测试包含空格的字符串
-  let result1 = @azimuth.greet("John Doe")
-  @azimuth.assert_eq_string("Hello, John Doe!", result1)
-  
-  // 测试包含数字的字符串
-  let result2 = @azimuth.greet("User123")
-  @azimuth.assert_eq_string("Hello, User123!", result2)
-  
-  // 测试包含特殊符号的字符串
-  let result3 = @azimuth.greet("!@#$%^&*()")
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()!", result3)
-  
-  // 测试长字符串
-  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let result4 = @azimuth.greet(long_name)
-  @azimuth.assert_eq_string("Hello, " + long_name + "!", result4)
-}
-
-// 测试用例4: 测试复杂计算场景
-test "complex_calculations" {
-  // 测试计算 (a + b) * c
-  let a = 10
-  let b = 20
-  let c = 3
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(90, result)  // (10 + 20) * 3 = 90
-  
-  // 测试计算 a * b + c * d
-  let a2 = 5
-  let b2 = 6
-  let c2 = 7
-  let d2 = 8
-  let product1 = @azimuth.multiply(a2, b2)
-  let product2 = @azimuth.multiply(c2, d2)
-  let result2 = @azimuth.add(product1, product2)
-  @azimuth.assert_eq(86, result2)  // 5*6 + 7*8 = 30 + 56 = 86
-}
-
-// 测试用例5: 测试边界值和溢出处理
-test "overflow_handling" {
+// 测试加法函数的极端边界情况
+test "add_extreme_boundary_values" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试加法正溢出
-  let result1 = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, result1)
+  // 测试最大值与正数相加
+  assert_eq(max_val, add(max_val, 100))
   
-  // 测试加法负溢出
-  let result2 = @azimuth.add(min_val, min_val)
-  @azimuth.assert_eq(min_val, result2)
+  // 测试最小值与负数相加
+  assert_eq(min_val, add(min_val, -100))
   
-  // 测试乘法正溢出
-  let result3 = @azimuth.multiply(max_val, max_val)
-  @azimuth.assert_eq(max_val, result3)
-  
-  // 测试乘法负溢出
-  let result4 = @azimuth.multiply(min_val, min_val)
-  @azimuth.assert_eq(max_val, result4)  // 负负得正，但会溢出
+  // 测试接近边界的值
+  assert_eq(2147483646, add(2147483645, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
 }
 
-// 测试用例6: 测试数学函数的组合使用
-test "function_combinations" {
-  // 测试 (a + b) * (c + d)
-  let a = 3
-  let b = 4
-  let c = 5
-  let d = 6
-  let sum1 = @azimuth.add(a, b)
-  let sum2 = @azimuth.add(c, d)
-  let result = @azimuth.multiply(sum1, sum2)
-  @azimuth.assert_eq(77, result)  // (3 + 4) * (5 + 6) = 7 * 11 = 77
+// 测试乘法函数的极端边界情况
+test "multiply_extreme_boundary_values" {
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试 a * b + c
-  let a2 = 10
-  let b2 = 20
-  let c2 = 30
-  let product = @azimuth.multiply(a2, b2)
-  let result2 = @azimuth.add(product, c2)
-  @azimuth.assert_eq(230, result2)  // 10 * 20 + 30 = 200 + 30 = 230
+  // 测试大数相乘的溢出处理
+  assert_eq(max_val, multiply(65536, 32768))  // 2^16 * 2^15 = 2^31，接近溢出边界
+  
+  // 测试最小值与2的乘法
+  assert_eq(min_val, multiply(min_val, 2))
+  
+  // 测试负数的大数相乘
+  assert_eq(min_val, multiply(-65536, 32768))
 }
 
-// 测试用例7: 测试字符串处理的不同场景
-test "string_processing_scenarios" {
-  // 测试包含中文字符的字符串
-  let result1 = @azimuth.greet("中文测试")
-  @azimuth.assert_eq_string("Hello, 中文测试!", result1)
-  
-  // 测试包含日文字符的字符串
-  let result2 = @azimuth.greet("こんにちは")
-  @azimuth.assert_eq_string("Hello, こんにちは!", result2)
-  
-  // 测试包含混合字符的字符串
-  let result3 = @azimuth.greet("Test测试123")
-  @azimuth.assert_eq_string("Hello, Test测试123!", result3)
-  
-  // 测试包含换行符的字符串（如果支持）
-  let result4 = @azimuth.greet("Line1\nLine2")
-  @azimuth.assert_eq_string("Hello, Line1\nLine2!", result4)
+// 测试加法的零值处理
+test "add_zero_handling" {
+  // 测试各种零值组合
+  assert_eq(0, add(0, 0))
+  assert_eq(100, add(0, 100))
+  assert_eq(-100, add(-100, 0))
+  assert_eq(2147483647, add(0, 2147483647))
+  assert_eq(-2147483648, add(-2147483648, 0))
 }
 
-// 测试用例8: 测试断言函数的各种情况
-test "assert_functions_various_cases" {
-  // 测试 assert_true
-  @azimuth.assert_true(1 == 1)
-  @azimuth.assert_true(0 < 1)
-  @azimuth.assert_true(-1 < 0)
+// 测试乘法的零值和负一处理
+test "multiply_special_values" {
+  // 测试零值的各种组合
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 2147483647))
+  assert_eq(0, multiply(0, -2147483648))
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(0, multiply(-2147483648, 0))
   
-  // 测试 assert_false
-  @azimuth.assert_false(1 == 0)
-  @azimuth.assert_false(0 > 1)
-  @azimuth.assert_false(-1 > 0)
-  
-  // 测试 assert_eq
-  @azimuth.assert_eq(0, 0)
-  @azimuth.assert_eq(-1, -1)
-  @azimuth.assert_eq(2147483647, 2147483647)
-  @azimuth.assert_eq(-2147483648, -2147483648)
-  
-  // 测试 assert_eq_string
-  @azimuth.assert_eq_string("", "")
-  @azimuth.assert_eq_string("a", "a")
-  @azimuth.assert_eq_string("Hello", "Hello")
-  @azimuth.assert_eq_string("Hello, World!", "Hello, World!")
+  // 测试负一的特殊情况
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(-2147483648, multiply(-2147483648, -1))
+  assert_eq(2147483647, multiply(-1, -2147483647))
 }
 
-// 测试用例9: 测试实际应用场景
+// 测试字符串处理的边缘情况
+test "greet_edge_cases" {
+  // 测试包含各种特殊字符的字符串
+  assert_eq_string("Hello, \n\t!", greet("\n\t"))
+  assert_eq_string("Hello, \"quote\"!", greet("\"quote\""))
+  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))
+  
+  // 测试非常长的字符串
+  let long_name = "This_is_a_very_long_name_that_tests_the_greet_function_with_extended_input"
+  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
+}
+
+// 测试复杂的数学运算组合
+test "complex_mathematical_operations" {
+  // 测试连续加法运算
+  let result1 = add(add(10, 20), add(30, 40))
+  assert_eq(100, result1)
+  
+  // 测试连续乘法运算
+  let result2 = multiply(multiply(2, 3), multiply(4, 5))
+  assert_eq(120, result2)
+  
+  // 测试混合运算
+  let result3 = add(multiply(10, 20), multiply(30, 40))
+  assert_eq(1400, result3)
+}
+
+// 测试实际应用场景
 test "real_world_scenarios" {
-  // 场景1: 计算购物车总价（商品价格 * 数量，然后求和）
-  let item1_price = 100
-  let item1_quantity = 2
-  let item2_price = 50
-  let item2_quantity = 3
+  // 测试温度转换场景：摄氏度转华氏度 F = C * 9/5 + 32
+  let celsius = 100
+  let fahrenheit = add(multiply(celsius, 9/5), 32)  // 简化为整数运算
+  assert_eq(212, fahrenheit)
   
-  let item1_total = @azimuth.multiply(item1_price, item1_quantity)
-  let item2_total = @azimuth.multiply(item2_price, item2_quantity)
-  let cart_total = @azimuth.add(item1_total, item2_total)
-  
-  @azimuth.assert_eq(350, cart_total)  // 100*2 + 50*3 = 200 + 150 = 350
-  
-  // 场景2: 计算温度转换（摄氏度到华氏度：F = C * 9/5 + 32）
-  // 由于我们只有整数运算，我们简化为 F = C * 2 + 30
-  let celsius = 20
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(70, fahrenheit)  // 20 * 2 + 30 = 70
+  // 测试购物车计算：商品总价
+  let item_price = 199
+  let quantity = 5
+  let tax_rate = 8  // 8%
+  let subtotal = multiply(item_price, quantity)
+  let tax = multiply(subtotal, tax_rate) / 100  // 简化为整数运算
+  let total = add(subtotal, tax)
+  assert_eq(1073, total)  // 199*5 + (199*5*8)/100 = 995 + 78 = 1073
 }
 
-// 测试用例10: 测试极端边界情况
-test "extreme_boundary_cases" {
-  let max_val = 2147483647
-  let min_val = -2147483648
+// 测试断言函数的边缘情况
+test "assert_functions_edge_cases" {
+  // 测试边界值的断言
+  assert_eq(2147483647, 2147483647)
+  assert_eq(-2147483648, -2147483648)
+  assert_eq(0, 0)
   
-  // 测试最大值与最小值的运算
-  let result1 = @azimuth.add(max_val, min_val)
-  @azimuth.assert_eq(-1, result1)  // 2147483647 + (-2147483648) = -1
+  // 测试布尔值的边界情况
+  assert_true(1 == 1)
+  assert_true(0 != 1)
+  assert_false(1 == 0)
+  assert_false(0 != 0)
   
-  let result2 = @azimuth.multiply(max_val, min_val)
-  @azimuth.assert_eq(min_val, result2)  // 2147483647 * (-2147483648) = 溢出为最小值
+  // 测试字符串断言的边缘情况
+  assert_eq_string("", "")
+  assert_eq_string(" ", " ")
+  assert_eq_string("a", "a")
+}
+
+// 测试错误处理和边界条件
+test "error_handling_and_boundaries" {
+  // 测试接近溢出的计算
+  let near_max = 2147483640
+  let small_add = 7
+  assert_eq(2147483647, add(near_max, small_add))
   
-  // 测试最大值与自身的运算
-  let result3 = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, result3)  // 溢出为最大值
+  // 测试大数乘法的安全处理
+  let large_num = 1000000
+  assert_eq(1000000000000, multiply(large_num, large_num))
   
-  let result4 = @azimuth.multiply(max_val, 1)
-  @azimuth.assert_eq(max_val, result4)  // 2147483647 * 1 = 2147483647
-  
-  // 测试最小值与自身的运算
-  let result5 = @azimuth.add(min_val, min_val)
-  @azimuth.assert_eq(min_val, result5)  // 溢出为最小值
-  
-  let result6 = @azimuth.multiply(min_val, 1)
-  @azimuth.assert_eq(min_val, result6)  // -2147483648 * 1 = -2147483648
+  // 测试负数的大数乘法
+  assert_eq(-1000000000000, multiply(-large_num, large_num))
+  assert_eq(1000000000000, multiply(-large_num, -large_num))
 }
