@@ -57,4 +57,15 @@ if [ -f "enhanced_boundary_tests.mbt" ]; then
   fi
 fi
 
+if [ -f "new_moonbit_tests.mbt" ]; then
+  echo "Checking new_moonbit_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test new_moonbit_tests.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "new_moonbit_tests.mbt ... ok"
+  else
+    echo "new_moonbit_tests.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"
