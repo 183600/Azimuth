@@ -1,5 +1,5 @@
 {
   "import": ["azimuth"],
   "export": [],
-  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt", "comprehensive_tests.mbt", "standard_tests.mbt", "additional_tests.mbt", "new_comprehensive_tests.mbt"]
+  "test": ["additional_tests.mbt", "simple_test.mbt", "additional_comprehensive_tests.mbt", "comprehensive_tests.mbt", "standard_tests.mbt", "new_comprehensive_tests.mbt"]
 }
