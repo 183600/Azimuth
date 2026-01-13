@@ -317,4 +317,196 @@ test "financial_calculation_scenario" {
   assert_eq(16000, total)  // 1000 + 1000*5*3 = 16000，表示1600元
 }
 
+// 新增的10个测试用例
+test "sequential_addition" {
+  // 测试连续相加的情况
+  let result1 = add(add(1, 2), add(3, 4))
+  assert_eq(10, result1)
+  
+  let result2 = add(add(100, 200), add(300, 400))
+  assert_eq(1000, result2)
+  
+  // 测试包含最小值的连续相加
+  let min_val = -2147483648
+  let result3 = add(add(min_val, 1), add(1, 1))
+  assert_eq(-2147483645, result3)
+}
+
+test "sequential_multiplication" {
+  // 测试连续相乘的情况
+  let result1 = multiply(multiply(2, 3), multiply(4, 5))
+  assert_eq(120, result1)
+  
+  let result2 = multiply(multiply(10, 20), multiply(30, 40))
+  assert_eq(240000, result2)
+  
+  // 测试包含负数的连续相乘
+  let result3 = multiply(multiply(-2, 3), multiply(4, -5))
+  assert_eq(120, result3)
+}
+
+test "extreme_value_operations" {
+  // 测试极值运算的组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 极值相加
+  assert_eq(-1, add(max_val, min_val))
+  
+  // 极值与接近极值的数相加
+  assert_eq(max_val, add(max_val, 100))
+  assert_eq(min_val, add(min_val, -100))
+  
+  // 极值相乘
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "string_edge_cases" {
+  // 测试字符串连接的边界情况
+  // 测试非常长的字符串
+  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
+  let result = greet(long_name)
+  assert_eq_string("Hello, " + long_name + "!", result)
+  
+  // 测试包含引号的字符串
+  let quoted_name = "\"John Doe\""
+  let result2 = greet(quoted_name)
+  assert_eq_string("Hello, \"John Doe\"!", result2)
+  
+  // 测试包含换行符的字符串
+  let newline_name = "Line1\nLine2"
+  let result3 = greet(newline_name)
+  assert_eq_string("Hello, Line1\nLine2!", result3)
+}
+
+test "addition_associativity" {
+  // 测试加法结合律 (a + b) + c = a + (b + c)
+  let a = 100
+  let b = 200
+  let c = 300
+  
+  let result1 = add(add(a, b), c)
+  let result2 = add(a, add(b, c))
+  assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let d = -150
+  let e = 250
+  let f = -100
+  
+  let result3 = add(add(d, e), f)
+  let result4 = add(d, add(e, f))
+  assert_eq(result3, result4)
+}
+
+test "multiplication_commutativity" {
+  // 测试乘法交换律 a * b = b * a
+  let a = 12
+  let b = 15
+  
+  let result1 = multiply(a, b)
+  let result2 = multiply(b, a)
+  assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let c = -20
+  let d = 30
+  
+  let result3 = multiply(c, d)
+  let result4 = multiply(d, c)
+  assert_eq(result3, result4)
+  
+  // 测试包含0的情况
+  let e = 0
+  let f = 100
+  
+  let result5 = multiply(e, f)
+  let result6 = multiply(f, e)
+  assert_eq(result5, result6)
+}
+
+test "complex_string_processing" {
+  // 测试复杂字符串处理
+  // 测试包含多种特殊字符的字符串
+  let complex_name = "John@Doe#123$%^&*()"
+  let result = greet(complex_name)
+  assert_eq_string("Hello, John@Doe#123$%^&*()!", result)
+  
+  // 测试包含中文字符的字符串
+  let chinese_name = "张三"
+  let result2 = greet(chinese_name)
+  assert_eq_string("Hello, 张三!", result2)
+  
+  // 测试混合语言字符串
+  let mixed_name = "John张三123"
+  let result3 = greet(mixed_name)
+  assert_eq_string("Hello, John张三123!", result3)
+}
+
+test "shopping_cart_calculation" {
+  // 测试实际应用场景：购物车计算
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
+  let item3_price = 99
+  let item3_quantity = 1
+  
+  // 计算每种商品的总价
+  let total1 = multiply(item1_price, item1_quantity)
+  let total2 = multiply(item2_price, item2_quantity)
+  let total3 = multiply(item3_price, item3_quantity)
+  
+  // 计算购物车总价
+  let cart_total = add(add(total1, total2), total3)
+  
+  // 验证总价：299*2 + 199*3 + 99*1 = 598 + 597 + 99 = 1294
+  assert_eq(1294, cart_total)
+}
+
+test "temperature_conversion" {
+  // 测试实际应用场景：温度转换（简化版）
+  // 摄氏度转华氏度：F = C * 9/5 + 32
+  // 由于我们只有整数运算，我们使用近似值：F = C * 2 + 30
+  
+  let celsius_temp = 25
+  let fahrenheit_temp = add(multiply(celsius_temp, 2), 30)
+  assert_eq(80, fahrenheit_temp)  // 25 * 2 + 30 = 80
+  
+  // 测试冰点温度
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
+  assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
+  
+  // 测试沸点温度
+  let boiling_celsius = 100
+  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
+  assert_eq(230, boiling_fahrenheit)  // 100 * 2 + 30 = 230
+}
+
+test "error_handling_scenarios" {
+  // 测试错误处理场景
+  // 测试断言函数的错误情况（这些测试会故意失败，但在实际使用中被注释掉）
+  // assert_true(false)  // 这会导致运行时错误
+  // assert_false(true)  // 这会导致运行时错误
+  // assert_eq(1, 2)     // 这会导致运行时错误
+  // assert_eq_string("hello", "world")  // 这会导致运行时错误
+  
+  // 测试边界情况的正确处理
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 确保溢出被正确处理
+  assert_true(add(max_val, 1) == max_val)
+  assert_true(add(min_val, -1) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, -1) == min_val)
+  
+  // 测试正常情况
+  assert_true(add(5, 3) == 8)
+  assert_true(multiply(4, 6) == 24)
+  assert_true(greet("Test") == "Hello, Test!")
+}
+
 
