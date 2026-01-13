@@ -1,0 +1,34 @@
+test "azimuth_init" { }
+
+test "basic_add_test" {
+  let result = add(2, 3)
+  assert_eq(5, result)
+}
+
+test "basic_multiply_test" {
+  let result = multiply(2, 3)
+  assert_eq(6, result)
+}
+
+test "basic_greet_test" {
+  let result = greet("World")
+  assert_eq_string("Hello, World!", result)
+}
+
+test "lib_add_test" {
+  if 5 != add(2, 3) {
+    panic()
+  }
+}
+
+test "lib_multiply_test" {
+  if 6 != multiply(2, 3) {
+    panic()
+  }
+}
+
+test "lib_greet_test" {
+  if "Hello, World!" != greet("World") {
+    panic()
+  }
+}

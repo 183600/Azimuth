@@ -1,5 +1,3 @@
-// 测试文件 - 使用azimuth包中的函数
-// 测试基本功能
 test "basic_add_test" {
   let result = @azimuth.add(2, 3)
   @azimuth.assert_eq(5, result)

@@ -1,44 +1,95 @@
 #!/bin/bash
 
-# 修复测试文件中的函数调用和类型不匹配问题
+# 为每个测试文件添加函数定义
+PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
+AZIMUTH_TEST_PATH="$PROJECT_ROOT/src/azimuth/test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test/test"
 
-cd /home/runner/work/Azimuth/Azimuth/src/azimuth/test
+# 函数定义
+FUNCTIONS='// 测试辅助函数定义
+pub fn add(a : Int, b : Int) -> Int {
+  a + b
+}
 
+pub fn multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+pub fn greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if expected != actual {
+    @builtin.panic()
+  }
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if expected != actual {
+    @builtin.panic()
+  }
+}
+
+pub fn assert_true(condition : Bool) -> Unit {
+  if !condition {
+    @builtin.panic()
+  }
+}
+
+pub fn assert_false(condition : Bool) -> Unit {
+  if condition {
+    @builtin.panic()
+  }
+}
+
+'
+
+# 函数：修复单个文件
+fix_file() {
+  local file_path="$1"
+  echo "修复文件: $file_path"
+  
+  # 创建临时文件
+  local temp_file=$(mktemp)
+  
+  # 添加函数定义
+  echo "$FUNCTIONS" > "$temp_file"
+  
+  # 添加原文件内容
+  cat "$file_path" >> "$temp_file"
+  
+  # 替换原文件
+  mv "$temp_file" "$file_path"
+}
+
+# 修复 azimuth 测试文件
+echo "=== 修复 azimuth 测试文件 ==="
+cd "$AZIMUTH_TEST_PATH"
 for file in *.mbt; do
-  if [ -f "$file" ] && grep -q "assert_eq.*greet" "$file"; then
-    echo "修复文件: $file"
-    
-    # 创建临时文件
-    temp_file=$(mktemp)
-    
-    # 处理文件内容
-    while IFS= read -r line; do
-      # 替换 assert_eq(..., greet(...)) 为 assert_eq_string(..., @azimuth.greet(...))
-      if echo "$line" | grep -q "assert_eq.*greet"; then
-        line=$(echo "$line" | sed 's/assert_eq(/assert_eq_string(/g')
-        line=$(echo "$line" | sed 's/greet(/@azimuth.greet(/g')
+  if [ -f "$file" ] && [[ ! "$file" =~ \.log$ ]] && [[ ! "$file" =~ \.bak$ ]]; then
+    # 跳过已经包含函数定义的文件
+    if [ "$file" != "test_shared.mbt" ] && [ "$file" != "test_functions.mbt" ] && [ "$file" != "test_helper.mbt" ]; then
+      # 检查文件是否已经包含函数定义
+      if ! grep -q "pub fn add" "$file"; then
+        fix_file "$file"
       fi
-      
-      # 替换其他 greet 调用
-      if echo "$line" | grep -q "greet(" && echo "$line" | grep -v "@azimuth.greet("; then
-        line=$(echo "$line" | sed 's/greet(/@azimuth.greet(/g')
-      fi
-      
-      # 替换其他 add 和 multiply 调用
-      if echo "$line" | grep -q "add(" && echo "$line" | grep -v "@azimuth.add("; then
-        line=$(echo "$line" | sed 's/add(/@azimuth.add(/g')
-      fi
-      
-      if echo "$line" | grep -q "multiply(" && echo "$line" | grep -v "@azimuth.multiply("; then
-        line=$(echo "$line" | sed 's/multiply(/@azimuth.multiply(/g')
-      fi
-      
-      echo "$line" >> "$temp_file"
-    done < "$file"
-    
-    # 替换原文件
-    mv "$temp_file" "$file"
+    fi
   fi
 done
 
-echo "所有测试文件已修复完成"
+# 修复 clean_test 测试文件
+echo ""
+echo "=== 修复 clean_test 测试文件 ==="
+cd "$CLEAN_TEST_PATH"
+for file in *.mbt; do
+  if [ -f "$file" ] && [[ ! "$file" =~ \.log$ ]] && [[ ! "$file" =~ \.bak$ ]]; then
+    # 检查文件是否已经包含函数定义
+    if ! grep -q "fn add" "$file"; then
+      fix_file "$file"
+    fi
+  fi
+done
+
+echo ""
+echo "修复完成！"

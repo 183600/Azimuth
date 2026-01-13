@@ -1,0 +1,13 @@
+test "azimuth_init" { }
+
+test "basic_math_test" {
+  if 5 != azimuth.add(2, 3) {
+    @builtin.panic()
+  }
+  if 6 != azimuth.multiply(2, 3) {
+    @builtin.panic()
+  }
+  if "Hello, World!" != azimuth.greet("World") {
+    @builtin.panic()
+  }
+}

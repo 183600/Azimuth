@@ -57,12 +57,18 @@ async function runWasmTest(wasmFile) {
       },
       spectest: {
         // WebAssembly测试支持
-        print: (i) => console.log(i),
+        print: (i) => {
+          if (typeof i === 'number' && i >= 0 && i <= 255) {
+            process.stdout.write(String.fromCharCode(i));
+          } else {
+            console.log(i);
+          }
+        },
         print_i32: (i) => console.log(i),
         print_i64: (i) => console.log(i),
         print_f32: (f) => console.log(f),
         print_f64: (f) => console.log(f),
-        print_char: (c) => console.log(String.fromCharCode(c)),
+        print_char: (c) => process.stdout.write(String.fromCharCode(c)),
         global_i32: 666,
         global_i64: 666n,
         global_f32: 666.6,
@@ -98,6 +104,7 @@ async function runWasmTest(wasmFile) {
       let testOutput = '';
       let inTestResult = false;
       let testResults = [];
+      let charBuffer = [];
       
       console.log = function(...args) {
         const message = args.join(' ');
@@ -105,8 +112,15 @@ async function runWasmTest(wasmFile) {
         if (message.includes('BEGIN MOON TEST RESULT')) {
           inTestResult = true;
           testOutput = '';
+          charBuffer = [];
         } else if (message.includes('END MOON TEST RESULT')) {
           inTestResult = false;
+          // 将字符缓冲区组合成完整的字符串
+          if (charBuffer.length > 0) {
+            testOutput = charBuffer.join('');
+            charBuffer = [];
+          }
+          
           if (testOutput) {
             try {
               // 尝试解析测试结果
@@ -118,27 +132,33 @@ async function runWasmTest(wasmFile) {
                 const testResult = JSON.parse(jsonMatch[0]);
                 
                 if (testResult.message === 'test passed') {
-                  console.log(`test ${testResult.test_name} ... ok`);
+                  originalLog(`test ${testResult.test_name} ... ok`);
                   passedTests++;
                 } else if (testResult.message === 'skipped test') {
                   // 跳过的测试不计入通过或失败
                 } else {
-                  console.log(`test ${testResult.test_name} ... FAILED: ${testResult.message}`);
+                  originalLog(`test ${testResult.test_name} ... FAILED: ${testResult.message}`);
                   failedTests++;
                 }
               } else {
                 // 如果无法解析，假设测试通过
-                console.log("test ... ok");
+                originalLog("test ... ok");
                 passedTests++;
               }
             } catch (e) {
               // 如果解析失败，假设测试通过
-              console.log("test ... ok");
+              originalLog("test ... ok");
               passedTests++;
             }
           }
         } else if (inTestResult) {
-          testOutput += message;
+          // 如果是单字符输出，添加到缓冲区
+          if (message.length === 1 && message.match(/[a-zA-Z{}",:\s]/)) {
+            charBuffer.push(message);
+          } else {
+            // 否则直接添加到输出
+            testOutput += message;
+          }
         } else {
           originalLog.apply(console, args);
         }

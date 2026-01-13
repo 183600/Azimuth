@@ -1,12 +1,16 @@
-// 测试文件 - 使用clean_test包中的函数
-test "add_basic" {
-  if 5 != @@clean_test.add(2, 3) { @builtin.panic() }
+test "clean_test_init" { }
+
+test "basic_add_test" {
+  let result = clean_test.add(2, 3)
+  clean_test.assert_eq(5, result)
 }
 
-test "multiply_basic" {
-  if 6 != @@clean_test.multiply(2, 3) { @builtin.panic() }
+test "basic_multiply_test" {
+  let result = clean_test.multiply(2, 3)
+  clean_test.assert_eq(6, result)
 }
 
-test "greet_basic" {
-  if "Hello, World!" != @@clean_test.greet("World") { @builtin.panic() }
+test "basic_greet_test" {
+  let result = clean_test.greet("World")
+  clean_test.assert_eq_string("Hello, World!", result)
 }

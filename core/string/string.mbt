@@ -13,38 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Convert char array to string.
-///
-/// ```mbt check
-/// test {
-///   let s = String::from_array(['H', 'e', 'l', 'l', 'o'])
-///   assert_eq(s, "Hello")
-/// }
-/// ```
-///
-/// Do not convert large data to `Array[Char]` and build a string with `String::from_array`.
-///
-/// For efficiency considerations, it's recommended to use `Buffer` instead.
-#deprecated
-pub fn from_array(chars : ArrayView[Char]) -> String {
-  String::from_array(chars)
-}
-
-///|
-/// Convert char iterator to string,
-#deprecated
-pub fn from_iter(iter : Iter[Char]) -> String {
-  String::from_iter(iter)
-}
-
-///|
-/// Convert char iterator to string,
-#deprecated
-pub fn from_iterator(iter : Iter[Char]) -> String {
-  String::from_iter(iter)
-}
-
-///|
 /// same as `String::default`
 pub fn default() -> String {
   ""

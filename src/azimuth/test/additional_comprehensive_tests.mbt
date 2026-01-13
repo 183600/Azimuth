@@ -4,11 +4,13 @@ test "basic_add_test" {
     @builtin.panic()
   }
 }
+
 test "basic_multiply_test" {
   if 6 != @azimuth.multiply(2, 3) {
     @builtin.panic()
   }
 }
+
 test "basic_greet_test" {
   if "Hello, World!" != @azimuth.greet("World") {
     @builtin.panic()

@@ -1,9 +1,8 @@
 {
-  "import": ["moonbitlang/core/builtin", "moonbitlang/core/char"],
+  "import": ["moonbitlang/core/builtin", "moonbitlang/core/char", "moonbitlang/core/array"],
   "test-import": [
     "moonbitlang/core/list",
     "moonbitlang/core/json",
-    "moonbitlang/core/array",
     "moonbitlang/core/quickcheck",
     {
       "path": "moonbitlang/core/encoding/utf8",
@@ -16,5 +15,6 @@
   ],
   "targets": {
     "panic_test.mbt": ["not", "native", "llvm"]
-  }
+  },
+  "test": ["string_test_simple.mbt"]
 }

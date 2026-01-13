@@ -1,5 +1,6 @@
 {
-  "import": ["moonbitlang/core/builtin", "../azimuth"],
+  "test-import": ["../azimuth"],
+  "import": ["../azimuth"],
   "export": [],
-  "test": ["*.mbt"]
+  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt"]
 }

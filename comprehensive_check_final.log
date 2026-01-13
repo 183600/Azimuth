@@ -1,0 +1,115 @@
+Running comprehensive test check...
+Checking azimuth package...
+azimuth package is OK
+Generating azimuth.mi...
+Checking azimuth test files...
+azimuth test package is OK
+Checking additional_comprehensive_test.mbt...
+azimuth_test/additional_comprehensive_test.mbt:3:3-3:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:3:16-3:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:4:3-4:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:4:16-4:19 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:6:25-6:28 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:7:26-7:29 [E4021] The value identifier add is unbound.
+azimuth_test/additional_comprehensive_test.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:11:16-11:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:12:16-12:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:14:16-14:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:15:16-15:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:18:17-18:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/additional_comprehensive_test.mbt:19:16-19:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_comprehensive_test.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_test.mbt:23:35-23:40 [E4021] The value identifier greet is unbound.
+azimuth_test/additional_comprehensive_test.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/additional_comprehensive_test.mbt:24:35-24:40 [E4021] The value identifier greet is unbound.
+ERROR: additional_comprehensive_test.mbt has issues!
+Checking additional_tests.mbt...
+azimuth_test/additional_tests.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/additional_tests.mbt:7:11-7:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/additional_tests.mbt:12:25-12:30 [E4021] The value identifier greet is unbound.
+ERROR: additional_tests.mbt has issues!
+Checking all_tests.mbt...
+azimuth_test/all_tests.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/all_tests.mbt:3:3-3:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/all_tests.mbt:7:16-7:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/all_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/all_tests.mbt:12:16-12:21 [E4021] The value identifier greet is unbound.
+azimuth_test/all_tests.mbt:13:3-13:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/all_tests.mbt:17:11-17:14 [E4021] The value identifier add is unbound.
+azimuth_test/all_tests.mbt:23:11-23:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/all_tests.mbt:29:25-29:30 [E4021] The value identifier greet is unbound.
+ERROR: all_tests.mbt has issues!
+Checking basic_test.mbt...
+azimuth_test/basic_test.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:5:11-5:14 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:8:13-8:16 [E4021] The value identifier add is unbound.
+azimuth_test/basic_test.mbt:13:11-13:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:16:12-16:20 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:19:12-19:20 [E4021] The value identifier multiply is unbound.
+azimuth_test/basic_test.mbt:24:25-24:30 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test.mbt:27:20-27:25 [E4021] The value identifier greet is unbound.
+azimuth_test/basic_test.mbt:30:27-30:32 [E4021] The value identifier greet is unbound.
+ERROR: basic_test.mbt has issues!
+Checking enhanced_tests.mbt...
+azimuth_test/enhanced_tests.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/enhanced_tests.mbt:7:11-7:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/enhanced_tests.mbt:12:25-12:30 [E4021] The value identifier greet is unbound.
+ERROR: enhanced_tests.mbt has issues!
+Checking lib_test.mbt...
+azimuth_test/lib_test.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/lib_test.mbt:7:11-7:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/lib_test.mbt:12:25-12:30 [E4021] The value identifier greet is unbound.
+ERROR: lib_test.mbt has issues!
+Checking math_fundamentals_test.mbt...
+azimuth_test/math_fundamentals_test.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/math_fundamentals_test.mbt:5:11-5:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/math_fundamentals_test.mbt:8:25-8:30 [E4021] The value identifier greet is unbound.
+ERROR: math_fundamentals_test.mbt has issues!
+Checking new_tests.mbt...
+azimuth_test/new_tests.mbt:2:11-2:14 [E4021] The value identifier add is unbound.
+azimuth_test/new_tests.mbt:7:11-7:19 [E4021] The value identifier multiply is unbound.
+azimuth_test/new_tests.mbt:12:25-12:30 [E4021] The value identifier greet is unbound.
+ERROR: new_tests.mbt has issues!
+Checking simple_test.mbt...
+azimuth_test/simple_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+azimuth_test/simple_test.mbt:3:3-3:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test.mbt:6:16-6:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/simple_test.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/simple_test.mbt:10:16-10:21 [E4021] The value identifier greet is unbound.
+azimuth_test/simple_test.mbt:11:3-11:19 [E4021] The value identifier assert_eq_string is unbound.
+ERROR: simple_test.mbt has issues!
+Checking test_functions.mbt...
+test_functions.mbt is OK
+Checking test_functions_def.mbt...
+test_functions_def.mbt is OK
+Checking test_helper.mbt...
+test_helper.mbt is OK
+Checking test_helpers.mbt...
+test_helpers.mbt is OK
+Checking test_shared.mbt...
+test_shared.mbt is OK
+Checking clean_test package...
+clean_test package is OK
+Generating clean_test.mi...
+Checking clean_test test files...
+clean_test test package is OK
+Checking simple_test.mbt...
+clean_test_test/simple_test.mbt:2:16-2:19 [E4021] The value identifier add is unbound.
+clean_test_test/simple_test.mbt:3:3-3:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:7:16-7:24 [E4021] The value identifier multiply is unbound.
+clean_test_test/simple_test.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test.mbt:12:16-12:21 [E4021] The value identifier greet is unbound.
+clean_test_test/simple_test.mbt:13:3-13:19 [E4021] The value identifier assert_eq_string is unbound.
+ERROR: simple_test.mbt has issues!
+Checking test_helpers.mbt...
+test_helpers.mbt is OK
+Comprehensive test check complete.
