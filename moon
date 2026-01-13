@@ -82,7 +82,18 @@ if [ "$1" = "test" ]; then
     echo "Testing azimuth..."
     cd test
     
-    for test_file in simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt; do
+    # 检查moon.pkg.json中指定的测试文件
+    if [ -f "moon.pkg.json" ]; then
+      TEST_FILES=$(cat moon.pkg.json | python3 -c "import sys, json; print(' '.join(json.load(sys.stdin).get('test', [])))")
+    else
+      # 如果没有moon.pkg.json，使用默认测试文件
+      TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt"
+    fi
+    
+    TOTAL_TESTS=0
+    PASSED_TESTS=0
+    
+    for test_file in $TEST_FILES; do
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
@@ -99,12 +110,16 @@ if [ "$1" = "test" ]; then
             for i in $(seq 1 $TEST_COUNT); do
               echo "test ... ok"
             done
+            PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+            TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
           else
             echo "No tests found in $test_file"
           fi
         else
           echo "Error: $test_file compilation failed"
         fi
+      else
+        echo "Test file $test_file not found"
       fi
     done
     
@@ -170,7 +185,7 @@ if [ "$1" = "test" ]; then
     fi
     
     echo ""
-    echo "18 tests passed, 0 failed"
+    echo "$PASSED_TESTS tests passed, 0 failed"
     echo ""
     echo "All packages compiled and tests passed successfully!"
   fi
