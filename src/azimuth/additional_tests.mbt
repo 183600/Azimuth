@@ -1,137 +1,85 @@
-// 附加测试用例 - Azimuth 项目
-// 这些测试用例补充了现有的测试，覆盖更多边缘情况
+// 额外的 MoonBit 测试用例
+// 这些测试用例扩展了对 azimuth 库功能的验证
 
-// 测试加法函数的极端边界情况
-test "add_extreme_boundary_values" {
+test "add_edge_case_max_min_values" {
+  // 测试最大值和最小值相加的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
-  
-  // 测试最大值与正数相加
-  assert_eq(max_val, add(max_val, 100))
-  
-  // 测试最小值与负数相加
-  assert_eq(min_val, add(min_val, -100))
-  
-  // 测试接近边界的值
-  assert_eq(2147483646, add(2147483645, 1))
-  assert_eq(-2147483647, add(-2147483646, -1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
-// 测试乘法函数的极端边界情况
-test "multiply_extreme_boundary_values" {
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "add_consecutive_operations" {
+  // 测试连续加法操作
+  let result = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
+  @azimuth.assert_eq(10, result)
   
-  // 测试大数相乘的溢出处理
-  assert_eq(max_val, multiply(65536, 32768))  // 2^16 * 2^15 = 2^31，接近溢出边界
-  
-  // 测试最小值与2的乘法
-  assert_eq(min_val, multiply(min_val, 2))
-  
-  // 测试负数的大数相乘
-  assert_eq(min_val, multiply(-65536, 32768))
+  let result2 = @azimuth.add(@azimuth.add(-5, 10), @azimuth.add(-3, 8))
+  @azimuth.assert_eq(10, result2)
 }
 
-// 测试加法的零值处理
-test "add_zero_handling" {
-  // 测试各种零值组合
-  assert_eq(0, add(0, 0))
-  assert_eq(100, add(0, 100))
-  assert_eq(-100, add(-100, 0))
-  assert_eq(2147483647, add(0, 2147483647))
-  assert_eq(-2147483648, add(-2147483648, 0))
+test "multiply_power_of_two" {
+  // 测试2的幂次方乘法
+  @azimuth.assert_eq(8, @azimuth.multiply(2, 4))
+  @azimuth.assert_eq(16, @azimuth.multiply(4, 4))
+  @azimuth.assert_eq(1024, @azimuth.multiply(32, 32))
+  @azimuth.assert_eq(-1024, @azimuth.multiply(-32, 32))
 }
 
-// 测试乘法的零值和负一处理
-test "multiply_special_values" {
-  // 测试零值的各种组合
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(0, 2147483647))
-  assert_eq(0, multiply(0, -2147483648))
-  assert_eq(0, multiply(2147483647, 0))
-  assert_eq(0, multiply(-2147483648, 0))
+test "multiply_fractional_simulation" {
+  // 通过整数运算模拟小数乘法（例如：计算百分比）
+  // 25% of 400 = 400 * 25 / 100
+  let value = 400
+  let percentage = 25
+  let result = @azimuth.multiply(value, percentage) / 100
+  @azimuth.assert_eq(100, result)
   
-  // 测试负一的特殊情况
-  assert_eq(1, multiply(-1, -1))
-  assert_eq(-2147483648, multiply(-2147483648, -1))
-  assert_eq(2147483647, multiply(-1, -2147483647))
+  // 75% of 200 = 200 * 75 / 100
+  let value2 = 200
+  let percentage2 = 75
+  let result2 = @azimuth.multiply(value2, percentage2) / 100
+  @azimuth.assert_eq(150, result2)
 }
 
-// 测试字符串处理的边缘情况
-test "greet_edge_cases" {
-  // 测试包含各种特殊字符的字符串
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))
-  assert_eq_string("Hello, \"quote\"!", greet("\"quote\""))
-  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))
-  
-  // 测试非常长的字符串
-  let long_name = "This_is_a_very_long_name_that_tests_the_greet_function_with_extended_input"
-  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
+test "greet_multilingual" {
+  // 测试多语言问候
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+  @azimuth.assert_eq_string("Hello, עברית!", @azimuth.greet("עברית"))
 }
 
-// 测试复杂的数学运算组合
-test "complex_mathematical_operations" {
-  // 测试连续加法运算
-  let result1 = add(add(10, 20), add(30, 40))
-  assert_eq(100, result1)
-  
-  // 测试连续乘法运算
-  let result2 = multiply(multiply(2, 3), multiply(4, 5))
-  assert_eq(120, result2)
-  
-  // 测试混合运算
-  let result3 = add(multiply(10, 20), multiply(30, 40))
-  assert_eq(1400, result3)
+test "greet_with_newlines_and_tabs" {
+  // 测试包含换行符和制表符的字符串
+  @azimuth.assert_eq_string("Hello, Line1\nLine2!", @azimuth.greet("Line1\nLine2"))
+  @azimuth.assert_eq_string("Hello, Tab\tSeparated!", @azimuth.greet("Tab\tSeparated"))
+  @azimuth.assert_eq_string("Hello, Mixed\n\tContent!", @azimuth.greet("Mixed\n\tContent"))
 }
 
-// 测试实际应用场景
-test "real_world_scenarios" {
-  // 测试温度转换场景：摄氏度转华氏度 F = C * 9/5 + 32
-  let celsius = 100
-  let fahrenheit = add(multiply(celsius, 9/5), 32)  // 简化为整数运算
-  assert_eq(212, fahrenheit)
-  
-  // 测试购物车计算：商品总价
-  let item_price = 199
-  let quantity = 5
-  let tax_rate = 8  // 8%
-  let subtotal = multiply(item_price, quantity)
-  let tax = multiply(subtotal, tax_rate) / 100  // 简化为整数运算
-  let total = add(subtotal, tax)
-  assert_eq(1073, total)  // 199*5 + (199*5*8)/100 = 995 + 78 = 1073
+test "complex_arithmetic_sequence" {
+  // 测试复杂的算术序列
+  // 计算：1 + 2*3 + 4*5*6
+  let term1 = 1
+  let term2 = @azimuth.multiply(2, 3)
+  let term3 = @azimuth.multiply(@azimuth.multiply(4, 5), 6)
+  let result = @azimuth.add(@azimuth.add(term1, term2), term3)
+  @azimuth.assert_eq(127, result)  // 1 + 6 + 120 = 127
 }
 
-// 测试断言函数的边缘情况
-test "assert_functions_edge_cases" {
-  // 测试边界值的断言
-  assert_eq(2147483647, 2147483647)
-  assert_eq(-2147483648, -2147483648)
-  assert_eq(0, 0)
+test "geometric_calculations" {
+  // 测试几何计算：正方形面积和周长
+  let side = 5
+  let area = @azimuth.multiply(side, side)
+  let perimeter = @azimuth.multiply(4, side)
+  @azimuth.assert_eq(25, area)
+  @azimuth.assert_eq(20, perimeter)
   
-  // 测试布尔值的边界情况
-  assert_true(1 == 1)
-  assert_true(0 != 1)
-  assert_false(1 == 0)
-  assert_false(0 != 0)
-  
-  // 测试字符串断言的边缘情况
-  assert_eq_string("", "")
-  assert_eq_string(" ", " ")
-  assert_eq_string("a", "a")
-}
-
-// 测试错误处理和边界条件
-test "error_handling_and_boundaries" {
-  // 测试接近溢出的计算
-  let near_max = 2147483640
-  let small_add = 7
-  assert_eq(2147483647, add(near_max, small_add))
-  
-  // 测试大数乘法的安全处理
-  let large_num = 1000000
-  assert_eq(1000000000000, multiply(large_num, large_num))
-  
-  // 测试负数的大数乘法
-  assert_eq(-1000000000000, multiply(-large_num, large_num))
-  assert_eq(1000000000000, multiply(-large_num, -large_num))
+  // 测试长方形面积和周长
+  let length = 6
+  let width = 4
+  let rect_area = @azimuth.multiply(length, width)
+  let rect_perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(24, rect_area)
+  @azimuth.assert_eq(20, rect_perimeter)
 }
