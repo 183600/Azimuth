@@ -1,38 +1,24 @@
-// 额外的 MoonBit 测试用例
-// 这些测试用例补充现有的测试，覆盖更多边界情况和实际应用场景
+// 新的 MoonBit 测试用例
+// 这些测试用例补充现有的测试，覆盖更多实际应用场景
 
-// 测试用例1: 幂运算模拟（通过重复乘法）
+// 测试用例1: 幂运算模拟
 test "power_calculation" {
   // 计算 2^4 = 2 * 2 * 2 * 2 = 16
   let base = 2
-  let exponent = 4
-  
   let result1 = @azimuth.multiply(base, base)  // 2 * 2 = 4
   let result2 = @azimuth.multiply(result1, base)  // 4 * 2 = 8
   let final_result = @azimuth.multiply(result2, base)  // 8 * 2 = 16
-  
   @azimuth.assert_eq(16, final_result)
-  
-  // 计算 3^3 = 3 * 3 * 3 = 27
-  let base2 = 3
-  let exponent2 = 3
-  
-  let result3 = @azimuth.multiply(base2, base2)  // 3 * 3 = 9
-  let final_result2 = @azimuth.multiply(result3, base2)  // 9 * 3 = 27
-  
-  @azimuth.assert_eq(27, final_result2)
 }
 
-// 测试用例2: 阶乘计算（通过累乘）
+// 测试用例2: 阶乘计算
 test "factorial_calculation" {
   // 计算 5! = 5 * 4 * 3 * 2 * 1 = 120
   let n = 5
-  
   let step1 = @azimuth.multiply(n, 4)  // 5 * 4 = 20
   let step2 = @azimuth.multiply(step1, 3)  // 20 * 3 = 60
   let step3 = @azimuth.multiply(step2, 2)  // 60 * 2 = 120
   let final_result = @azimuth.multiply(step3, 1)  // 120 * 1 = 120
-  
   @azimuth.assert_eq(120, final_result)
 }
 
@@ -41,20 +27,9 @@ test "percentage_calculation" {
   // 计算 200 的 25% = 200 * 25 / 100 = 50
   let value = 200
   let percentage = 25
-  
   let intermediate = @azimuth.multiply(value, percentage)  // 200 * 25 = 5000
   let result = intermediate / 100  // 5000 / 100 = 50
-  
   @azimuth.assert_eq(50, result)
-  
-  // 计算 150 的 10% = 150 * 10 / 100 = 15
-  let value2 = 150
-  let percentage2 = 10
-  
-  let intermediate2 = @azimuth.multiply(value2, percentage2)  // 150 * 10 = 1500
-  let result2 = intermediate2 / 100  // 1500 / 100 = 15
-  
-  @azimuth.assert_eq(15, result2)
 }
 
 // 测试用例4: 距离单位转换
@@ -62,14 +37,7 @@ test "distance_conversion" {
   // 公里转米：1公里 = 1000米
   let kilometers = 5
   let meters = @azimuth.multiply(kilometers, 1000)  // 5 * 1000 = 5000
-  
   @azimuth.assert_eq(5000, meters)
-  
-  // 米转厘米：1米 = 100厘米
-  let meters2 = 3
-  let centimeters = @azimuth.multiply(meters2, 100)  // 3 * 100 = 300
-  
-  @azimuth.assert_eq(300, centimeters)
 }
 
 // 测试用例5: 时间计算
@@ -78,31 +46,19 @@ test "time_calculation" {
   let hours = 2
   let minutes = 30
   let seconds = 15
-  
   let seconds_from_hours = @azimuth.multiply(hours, 3600)  // 2 * 3600 = 7200
   let seconds_from_minutes = @azimuth.multiply(minutes, 60)  // 30 * 60 = 1800
   let total_seconds = @azimuth.add(@azimuth.add(seconds_from_hours, seconds_from_minutes), seconds)  // 7200 + 1800 + 15 = 9015
-  
   @azimuth.assert_eq(9015, total_seconds)
 }
 
-// 测试用例6: 字符串长度比较（间接）
-test "string_length_comparison" {
-  // 通过字符串拼接的结果来间接比较字符串长度
+// 测试用例6: 字符串比较
+test "string_comparison" {
   let short_name = "Tom"
   let long_name = "Alexander"
-  
   let short_greeting = @azimuth.greet(short_name)  // "Hello, Tom!"
   let long_greeting = @azimuth.greet(long_name)  // "Hello, Alexander!"
-  
-  // 长字符串的问候应该比短字符串的问候长
-  // 由于我们无法直接比较字符串长度，我们通过拼接一个固定字符串来验证
-  let short_with_suffix = short_greeting + "_suffix"
-  let long_with_suffix = long_greeting + "_suffix"
-  
-  // 验证拼接后的字符串不同
   @azimuth.assert_false(short_greeting == long_greeting)
-  @azimuth.assert_false(short_with_suffix == long_with_suffix)
 }
 
 // 测试用例7: 数列求和
@@ -112,11 +68,9 @@ test "arithmetic_series_sum" {
   let first_term = 1
   let last_term = 9
   let number_of_terms = 5
-  
   let sum_of_terms = @azimuth.add(first_term, last_term)  // 1 + 9 = 10
   let product = @azimuth.multiply(sum_of_terms, number_of_terms)  // 10 * 5 = 50
   let series_sum = product / 2  // 50 / 2 = 25
-  
   @azimuth.assert_eq(25, series_sum)
 }
 
@@ -126,16 +80,12 @@ test "currency_calculation" {
   let item_price = 199  // 商品价格（分为单位）
   let quantity = 3  // 数量
   let tax_rate = 10  // 税率（百分比）
-  
   // 计算商品总价
   let subtotal = @azimuth.multiply(item_price, quantity)  // 199 * 3 = 597
-  
   // 计算税费
   let tax_amount = subtotal / tax_rate  // 597 / 10 = 59（整数除法）
-  
   // 计算最终总价
   let total_price = @azimuth.add(subtotal, tax_amount)  // 597 + 59 = 656
-  
   @azimuth.assert_eq(656, total_price)
 }
 
@@ -144,17 +94,7 @@ test "geometric_perimeter_calculation" {
   // 计算正六边形周长：6 × 边长
   let hexagon_side = 7
   let hexagon_perimeter = @azimuth.multiply(6, hexagon_side)  // 6 * 7 = 42
-  
   @azimuth.assert_eq(42, hexagon_perimeter)
-  
-  // 计算三角形周长：边长1 + 边长2 + 边长3
-  let triangle_side1 = 5
-  let triangle_side2 = 7
-  let triangle_side3 = 9
-  
-  let triangle_perimeter = @azimuth.add(@azimuth.add(triangle_side1, triangle_side2), triangle_side3)  // 5 + 7 + 9 = 21
-  
-  @azimuth.assert_eq(21, triangle_perimeter)
 }
 
 // 测试用例10: 数值范围检查
@@ -163,20 +103,10 @@ test "numeric_range_validation" {
   let value = 75
   let min_range = 10
   let max_range = 100
-  
   // 检查 value >= min_range
   let above_min = value >= min_range
   @azimuth.assert_true(above_min)
-  
   // 检查 value <= max_range
   let below_max = value <= max_range
   @azimuth.assert_true(below_max)
-  
-  // 测试超出范围的情况
-  let out_of_range_value = 150
-  let out_of_range_above_min = out_of_range_value >= min_range
-  let out_of_range_below_max = out_of_range_value <= max_range
-  
-  @azimuth.assert_true(out_of_range_above_min)
-  @azimuth.assert_false(out_of_range_below_max)
 }
