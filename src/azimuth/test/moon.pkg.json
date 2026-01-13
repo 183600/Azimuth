@@ -1,5 +1,5 @@
 {
   "import": ["azimuth"],
   "export": [],
-  "test": ["additional_test_cases.mbt", "standard_moonbit_tests.mbt", "moonbit_additional_tests.mbt", "additional_moonbit_tests.mbt"]
+  "test": ["additional_test_cases.mbt", "standard_moonbit_tests.mbt", "moonbit_additional_tests.mbt", "additional_moonbit_tests.mbt", "enhanced_test_cases.mbt"]
 }
