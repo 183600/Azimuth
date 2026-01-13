@@ -255,3 +255,69 @@ test "data_structure_simulation" {
   stack_top = 0  // 栈为空
   @azimuth.assert_eq(0, stack_top)
 }
+
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算一组数的平均值、最大值、最小值
+  let numbers = [12, 18, 24, 30, 36]
+  
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  
+  // 计算平均值
+  let average = sum / 5
+  @azimuth.assert_eq(24, average)  // (12 + 18 + 24 + 30 + 36) / 5 = 120 / 5 = 24
+  
+  // 计算范围（最大值 - 最小值）
+  let range = @azimuth.add(36, -12)
+  @azimuth.assert_eq(24, range)  // 36 - 12 = 24
+}
+
+test "unit_conversion_calculations" {
+  // 测试单位转换计算
+  // 长度转换：1米 = 100厘米 = 1000毫米
+  let meters = 5
+  let centimeters = @azimuth.multiply(meters, 100)
+  let millimeters = @azimuth.multiply(meters, 1000)
+  
+  @azimuth.assert_eq(500, centimeters)  // 5米 = 500厘米
+  @azimuth.assert_eq(5000, millimeters) // 5米 = 5000毫米
+  
+  // 重量转换：1千克 = 1000克
+  let kilograms = 3
+  let grams = @azimuth.multiply(kilograms, 1000)
+  @azimuth.assert_eq(3000, grams)  // 3千克 = 3000克
+}
+
+test "simple_interest_calculation" {
+  // 测试简单利息计算
+  // 利息 = 本金 × 利率 × 时间
+  let principal = 10000
+  let rate = 5  // 5%
+  let time = 2  // 2年
+  
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, time))
+  let total_amount = @azimuth.add(principal, interest)
+  
+  @azimuth.assert_eq(100000, interest)      // 10000 × 5 × 2 = 100000
+  @azimuth.assert_eq(110000, total_amount) // 10000 + 100000 = 110000
+}
+
+test "moonbit_new_test_case" {
+  // 新的 MoonBit 测试用例
+  // 测试基本算术运算
+  @azimuth.assert_eq(25, @azimuth.add(10, 15))
+  @azimuth.assert_eq(50, @azimuth.multiply(5, 10))
+  
+  // 测试字符串处理
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  
+  // 测试复杂表达式
+  let result = @azimuth.add(@azimuth.multiply(3, 4), @azimuth.multiply(2, 5))
+  @azimuth.assert_eq(22, result)  // 3*4 + 2*5 = 12 + 10 = 22
+  
+  // 测试边界值
+  let max_val = 2147483647
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+}

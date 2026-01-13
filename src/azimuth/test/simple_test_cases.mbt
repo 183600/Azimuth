@@ -62,3 +62,67 @@ test "complex_operations" {
   let result2 = azimuth::add(5, product)
   assert_eq(47, result2)
 }
+
+test "boundary_values" {
+  // 测试边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值溢出
+  assert_eq(max_val, azimuth::add(max_val, 1))
+  assert_eq(max_val, azimuth::multiply(max_val, 2))
+  
+  // 测试最小值溢出
+  assert_eq(min_val, azimuth::add(min_val, -1))
+  assert_eq(min_val, azimuth::multiply(min_val, -1))
+}
+
+test "sequential_operations" {
+  // 测试连续运算
+  // 1 + 2 + 3 + 4 + 5 = 15
+  let result1 = azimuth::add(azimuth::add(1, 2), azimuth::add(3, 4))
+  let final_sum = azimuth::add(result1, 5)
+  assert_eq(15, final_sum)
+  
+  // 2 * 3 * 4 = 24
+  let result2 = azimuth::multiply(azimuth::multiply(2, 3), 4)
+  assert_eq(24, result2)
+}
+
+test "string_processing" {
+  // 测试字符串处理
+  assert_eq_string("Hello, John Doe!", azimuth::greet("John Doe"))
+  assert_eq_string("Hello,   spaced   !", azimuth::greet("  spaced  "))
+  assert_eq_string("Hello, emoji😊!", azimuth::greet("emoji😊"))
+  assert_eq_string("Hello, newline\n!", azimuth::greet("newline\n"))
+}
+
+test "mathematical_sequences" {
+  // 测试数学序列
+  // 等差数列：1 + 3 + 5 + 7 + 9 = 25
+  let sum1 = azimuth::add(azimuth::add(1, 3), azimuth::add(5, 7))
+  let total1 = azimuth::add(sum1, 9)
+  assert_eq(25, total1)
+  
+  // 等比数列：2 + 4 + 8 = 14
+  let sum2 = azimuth::add(azimuth::multiply(1, 2), azimuth::multiply(2, 2))
+  let total2 = azimuth::add(sum2, azimuth::multiply(3, 2))
+  assert_eq(14, total2)
+}
+
+test "real_world_scenarios" {
+  // 测试真实世界场景
+  // 购物车计算：商品价格 * 数量 + 运费
+  let item_price = 199
+  let quantity = 3
+  let shipping = 15
+  
+  let subtotal = azimuth::multiply(item_price, quantity)
+  let total = azimuth::add(subtotal, shipping)
+  assert_eq(612, total)  // 199 * 3 + 15 = 597 + 15 = 612
+  
+  // 温度转换：摄氏度转华氏度（简化版）
+  let celsius = 25
+  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)  // 25 * 2 + 30 = 80
+}

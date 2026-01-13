@@ -204,3 +204,73 @@ test "string_length_processing" {
   let japanese_greeting = @azimuth.greet(japanese_name)
   @azimuth.assert_eq_string("Hello, 田中太郎!", japanese_greeting)
 }
+
+test "advanced_mathematical_operations" {
+  // 测试高级数学运算
+  // 计算平方和：1² + 2² + 3² + ... + n²
+  let n = 5
+  let square1 = @azimuth.multiply(1, 1)
+  let square2 = @azimuth.multiply(2, 2)
+  let square3 = @azimuth.multiply(3, 3)
+  let square4 = @azimuth.multiply(4, 4)
+  let square5 = @azimuth.multiply(5, 5)
+  
+  let sum_of_squares = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(square1, square2), square3), square4), square5)
+  @azimuth.assert_eq(55, sum_of_squares)  // 1 + 4 + 9 + 16 + 25 = 55
+}
+
+test "financial_calculations" {
+  // 测试金融计算场景
+  // 复利计算（简化版）：本金 + 本金 × 利率 × 年数
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let total = @azimuth.add(principal, interest)
+  
+  @azimuth.assert_eq(160000, total)  // 10000 + 10000*5*3 = 10000 + 150000 = 160000
+}
+
+test "geometry_calculations" {
+  // 测试几何计算
+  // 圆的面积（简化为整数）：π × r²，使用π≈3
+  let radius = 5
+  let area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
+  @azimuth.assert_eq(75, area)  // 3 × 5² = 3 × 25 = 75
+  
+  // 球的体积（简化）：4/3 × π × r³，使用整数近似
+  let volume = @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(radius, @azimuth.multiply(radius, radius)))) / 3
+  @azimuth.assert_eq(500, volume)  // 4 × 3 × 125 / 3 = 500
+}
+
+test "temperature_conversions" {
+  // 测试温度转换
+  // 摄氏度转华氏度（简化版）：F = C × 2 + 30
+  let celsius_temps = [0, 10, 20, 30, 40, 100]
+  let expected_fahrenheit = [30, 50, 70, 90, 110, 230]
+  
+  // 测试几个关键温度点
+  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))    // 0°C
+  @azimuth.assert_eq(70, @azimuth.add(@azimuth.multiply(20, 2), 30))  // 20°C
+  @azimuth.assert_eq(100, @azimuth.add(@azimuth.multiply(35, 2), 30)) // 35°C
+  @azimuth.assert_eq(212, @azimuth.add(@azimuth.multiply(91, 2), 30)) // 91°C（接近沸点）
+}
+
+test "time_calculations" {
+  // 测试时间计算
+  // 将小时、分钟、秒转换为总秒数
+  let hours = 2
+  let minutes = 30
+  let seconds = 45
+  
+  let total_seconds = @azimuth.add(
+    @azimuth.add(
+      @azimuth.multiply(hours, 3600),  // 小时转秒
+      @azimuth.multiply(minutes, 60)   // 分钟转秒
+    ),
+    seconds
+  )
+  
+  @azimuth.assert_eq(9045, total_seconds)  // 2*3600 + 30*60 + 45 = 7200 + 1800 + 45 = 9045
+}
