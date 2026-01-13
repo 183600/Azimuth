@@ -1,0 +1,5 @@
+clean_test/lib.mbt:624:7-624:8 [E0002] Warning (unused_value): Unused variable 'n'
+clean_test/lib.mbt:659:7-659:13 [E0002] Warning (unused_value): Unused variable 'number'
+clean_test/lib.mbt:745:7-745:12 [E0002] Warning (unused_value): Unused variable 'power'
+clean_test/lib.mbt:938:6-938:29 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "factorial_calculation" should be unique, but it is already used at clean_test/lib.mbt:678:6.
+clean_test/lib.mbt:945:6-945:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "power_of_two_calculation" should be unique, but it is already used at clean_test/lib.mbt:742:6.
