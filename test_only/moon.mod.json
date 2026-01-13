@@ -1,0 +1,10 @@
+{
+  "name": "test_only",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "description": "Test only package for MoonBit",
+  "source": "src"
+}

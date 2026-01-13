@@ -1,0 +1,5 @@
+{
+  "import": ["test_only"],
+  "export": [],
+  "test": ["comprehensive_tests.mbt", "standard_moonbit_tests.mbt", "simplified_unit_tests.mbt"]
+}

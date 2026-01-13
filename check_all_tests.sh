@@ -4,7 +4,7 @@
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
 AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 生成 .mi 文件
 cd "$AZIMUTH_PATH"

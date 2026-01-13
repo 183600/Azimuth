@@ -1,44 +1,44 @@
-pub fn add (a/15 : Int, b/16 : Int) -> Int {
-  if a/15 == 0 { return b/16 }
-  if b/16 == 0 { return a/15 }
-  let min_val/17 : Int = -2147483648
-  let max_val/18 : Int = 2147483647
-  if a/15 == min_val/17 {
-    if b/16 < 0 { return min_val/17 }
-    return a/15 + b/16
+pub fn add (a/18 : Int, b/19 : Int) -> Int {
+  if a/18 == 0 { return b/19 }
+  if b/19 == 0 { return a/18 }
+  let min_val/20 : Int = -2147483648
+  let max_val/21 : Int = 2147483647
+  if a/18 == min_val/20 {
+    if b/19 < 0 { return min_val/20 }
+    return a/18 + b/19
   }
-  if b/16 == min_val/17 {
-    if a/15 < 0 { return min_val/17 }
-    return a/15 + b/16
+  if b/19 == min_val/20 {
+    if a/18 < 0 { return min_val/20 }
+    return a/18 + b/19
   }
-  if a/15 > 0 && b/16 > 0 { if a/15 > max_val/18 - b/16 { return max_val/18 }  }
-  if a/15 < 0 && b/16 < 0 { if a/15 < min_val/17 - b/16 { return min_val/17 }  }
-  a/15 + b/16
+  if a/18 > 0 && b/19 > 0 { if a/18 > max_val/21 - b/19 { return max_val/21 }  }
+  if a/18 < 0 && b/19 < 0 { if a/18 < min_val/20 - b/19 { return min_val/20 }  }
+  a/18 + b/19
 }
 
-pub fn multiply (a/8 : Int, b/9 : Int) -> Int {
-  let min_val/10 : Int = -2147483648
-  let max_val/11 : Int = 2147483647
-  if a/8 == 0 || b/9 == 0 { return 0 }
-  if a/8 == 1 { return b/9 }
-  if b/9 == 1 { return a/8 }
-  if a/8 == -1 { return if b/9 == min_val/10 { min_val/10 } else { -b/9 } }
-  if b/9 == -1 { return if a/8 == min_val/10 { min_val/10 } else { -a/8 } }
-  if a/8 == min_val/10 { return if b/9 > 1 || b/9 < -1 { min_val/10 } else { a/8 * b/9 } }
-  if b/9 == min_val/10 { return if a/8 > 1 || a/8 < -1 { min_val/10 } else { a/8 * b/9 } }
-  let sign/12 : Int = if a/8 > 0 && b/9 > 0 || a/8 < 0 && b/9 < 0 { 1 } else { -1 }
-  let abs_a/13 : Int = if a/8 < 0 { -a/8 } else { a/8 }
-  let abs_b/14 : Int = if b/9 < 0 { -b/9 } else { b/9 }
-  if abs_a/13 > max_val/11 / abs_b/14 { return if sign/12 > 0 { max_val/11 } else { min_val/10 } }
-  a/8 * b/9
+pub fn multiply (a/11 : Int, b/12 : Int) -> Int {
+  let min_val/13 : Int = -2147483648
+  let max_val/14 : Int = 2147483647
+  if a/11 == 0 || b/12 == 0 { return 0 }
+  if a/11 == 1 { return b/12 }
+  if b/12 == 1 { return a/11 }
+  if a/11 == -1 { return if b/12 == min_val/13 { min_val/13 } else { -b/12 } }
+  if b/12 == -1 { return if a/11 == min_val/13 { min_val/13 } else { -a/11 } }
+  if a/11 == min_val/13 { return if b/12 > 1 || b/12 < -1 { min_val/13 } else { a/11 * b/12 } }
+  if b/12 == min_val/13 { return if a/11 > 1 || a/11 < -1 { min_val/13 } else { a/11 * b/12 } }
+  let sign/15 : Int = if a/11 > 0 && b/12 > 0 || a/11 < 0 && b/12 < 0 { 1 } else { -1 }
+  let abs_a/16 : Int = if a/11 < 0 { -a/11 } else { a/11 }
+  let abs_b/17 : Int = if b/12 < 0 { -b/12 } else { b/12 }
+  if abs_a/16 > max_val/14 / abs_b/17 { return if sign/15 > 0 { max_val/14 } else { min_val/13 } }
+  a/11 * b/12
 }
 
-pub fn greet (name/7 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/7), "!")
+pub fn greet (name/10 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/10), "!")
 }
 
-pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
-  if expected/5 == actual/6 {
+pub fn assert_eq (expected/8 : Int, actual/9 : Int) -> Unit {
+  if expected/8 == actual/9 {
     ()
   } else {
     1 / 0
@@ -46,8 +46,8 @@ pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
-  if @stringequal(expected/3, actual/4) {
+pub fn assert_eq_string (expected/6 : String, actual/7 : String) -> Unit {
+  if @stringequal(expected/6, actual/7) {
     ()
   } else {
     1 / 0
@@ -55,8 +55,8 @@ pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
   }
 }
 
-pub fn assert_true (condition/2 : Bool) -> Unit {
-  if condition/2 {
+pub fn assert_true (condition/5 : Bool) -> Unit {
+  if condition/5 {
     ()
   } else {
     1 / 0
@@ -64,11 +64,26 @@ pub fn assert_true (condition/2 : Bool) -> Unit {
   }
 }
 
-pub fn assert_false (condition/1 : Bool) -> Unit {
-  if condition/1 {
+pub fn assert_false (condition/4 : Bool) -> Unit {
+  if condition/4 {
     1 / 0
     ()
   } else {
     ()
   }
+}
+
+fn __test_6c69622e6d6274_0 () -> Unit raise Error {
+  let result/3 : Int = add(2, 3)
+  @make_value(assert_eq(5, result/3))
+}
+
+fn __test_6c69622e6d6274_1 () -> Unit raise Error {
+  let result/2 : Int = multiply(2, 3)
+  @make_value(assert_eq(6, result/2))
+}
+
+fn __test_6c69622e6d6274_2 () -> Unit raise Error {
+  let result/1 : String = greet("World")
+  @make_value(assert_eq_string("Hello, World!", result/1))
 }

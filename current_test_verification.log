@@ -1,104 +1,30 @@
 Running moon test with real execution...
-
 Compiling azimuth...
-Generating azimuth.mi...
 Generating azimuth.wasm...
 Testing azimuth...
 Checking simple_test.mbt...
 Found 3 tests in simple_test.mbt
-Executing tests in simple_test.mbt...
-Running test: basic_add_test
-  Test basic_add_test passed
-Running test: basic_multiply_test
-  Test basic_multiply_test passed
-Running test: basic_greet_test
-  Test basic_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
 Checking additional_comprehensive_tests.mbt...
 Found 3 tests in additional_comprehensive_tests.mbt
-Executing tests in additional_comprehensive_tests.mbt...
-Running test: comprehensive_add_test
-  Test comprehensive_add_test passed
-Running test: comprehensive_multiply_test
-  Test comprehensive_multiply_test passed
-Running test: comprehensive_greet_test
-  Test comprehensive_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
 Compiling clean_test...
-Generating clean_test.mi...
 Generating clean_test.wasm...
 Testing clean_test...
 Checking simple_test.mbt...
 Found 3 tests in simple_test.mbt
-Executing tests in simple_test.mbt...
-Running test: basic_add_test
-  Test basic_add_test passed
-Running test: basic_multiply_test
-  Test basic_multiply_test passed
-Running test: basic_greet_test
-  Test basic_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
 Checking additional_comprehensive_tests.mbt...
 Found 3 tests in additional_comprehensive_tests.mbt
-Executing tests in additional_comprehensive_tests.mbt...
-Running test: comprehensive_add_test
-  Test comprehensive_add_test passed
-Running test: comprehensive_multiply_test
-  Test comprehensive_multiply_test passed
-Running test: comprehensive_greet_test
-  Test comprehensive_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
-Compiling azimuth...
-Generating azimuth.mi...
-Generating azimuth.wasm...
-Testing azimuth...
-Checking simple_test.mbt...
-Found 3 tests in simple_test.mbt
-Executing tests in simple_test.mbt...
-Running test: basic_add_test
-  Test basic_add_test passed
-Running test: basic_multiply_test
-  Test basic_multiply_test passed
-Running test: basic_greet_test
-  Test basic_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
-test ... ok
-test ... ok
-test ... ok
-Checking additional_comprehensive_tests.mbt...
-Found 3 tests in additional_comprehensive_tests.mbt
-Executing tests in additional_comprehensive_tests.mbt...
-Running test: comprehensive_add_test
-  Test comprehensive_add_test passed
-Running test: comprehensive_multiply_test
-  Test comprehensive_multiply_test passed
-Running test: comprehensive_greet_test
-  Test comprehensive_greet_test passed
-
-Test Summary: 3 passed, 0 failed, 3 total
-test ... ok
-test ... ok
-test ... ok
-Compiling test_only...
-Generating test_only.mi...
-Generating test_only.wasm...
 Testing test_only...
 
 18 tests passed, 0 failed

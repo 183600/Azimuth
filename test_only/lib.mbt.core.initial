@@ -231,4 +231,44 @@
       (Cexpr_if (Cexpr_var condition/0 Bool ())
        (Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit) Unit)
        ((Cexpr_unit)) Unit))))
-   (ty_params_ ()) (is_pub_ true))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let result/0
+       (Cexpr_apply add (2 3) (Normal ((Int Int) -> Int (generic_ false)))
+        Int ())
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq (5 (Cexpr_var result/0 Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let result/0
+       (Cexpr_apply multiply (2 3)
+        (Normal ((Int Int) -> Int (generic_ false))) Int ())
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq (6 (Cexpr_var result/0 Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let result/0
+       (Cexpr_apply greet (World)
+        (Normal ((String) -> String (generic_ false))) String ())
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq_string
+         ("Hello, World!" (Cexpr_var result/0 String ()))
+         (Normal ((String String) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false))))

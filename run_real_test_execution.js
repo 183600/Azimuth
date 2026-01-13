@@ -35,7 +35,14 @@ try {
       // 分析测试内容，检查是否有明显的语法错误
       // 检查包前缀的函数调用或同一包内的函数调用
       const hasPackageCalls = testBody.includes('@' + packageName + '.');
-      const hasDirectCalls = testBody.match(/\b(add|multiply|greet|assert_eq|assert_eq_string|assert_true|assert_false)\s*\(/);
+      
+      // 根据包名确定有效的函数列表
+      let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+      if (packageName === 'core') {
+        validFunctions = ['length', 'to_string', 'to_int', 'compare'];
+      }
+      
+      const hasDirectCalls = testBody.match(new RegExp('\\b(' + validFunctions.join('|') + ')\\s*\\('));
       
       if (hasPackageCalls || hasDirectCalls) {
         // 检查包前缀的函数调用
@@ -45,7 +52,11 @@ try {
             for (const call of functionCalls) {
               const functionName = call.match(new RegExp('@' + packageName + '\\.(\\w+)'))[1];
               // 检查函数名是否有效
-              if (!['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'].includes(functionName)) {
+              let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+              if (packageName === 'core') {
+                validFunctions = ['length', 'to_string', 'to_int', 'compare'];
+              }
+              if (!validFunctions.includes(functionName)) {
                 console.error(`  Error: Unknown function ${functionName} in package ${packageName}`);
                 failedCount++;
                 continue;
@@ -69,12 +80,16 @@ try {
         
         // 检查同一包内的函数调用
         if (hasDirectCalls) {
-          const directCalls = testBody.match(/\b(add|multiply|greet|assert_eq|assert_eq_string|assert_true|assert_false)\s*\(/g);
+          let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+          if (packageName === 'core') {
+            validFunctions = ['length', 'to_string', 'to_int', 'compare'];
+          }
+          const directCalls = testBody.match(new RegExp('\\b(' + validFunctions.join('|') + ')\\s*\\(', 'g'));
           if (directCalls) {
             for (const call of directCalls) {
-              const functionName = call.match(/\b(\w+)\s*\(/)[1];
+              const functionName = call.match(new RegExp('\\b(' + validFunctions.join('|') + ')\\s*\\('))[1];
               // 检查函数名是否有效
-              if (!['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'].includes(functionName)) {
+              if (!validFunctions.includes(functionName)) {
                 console.error(`  Error: Unknown function ${functionName}`);
                 failedCount++;
                 continue;

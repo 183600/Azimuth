@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Import necessary types
+using @builtin { type StringBuilder }
+
 ///|
 #alias(T, deprecated)
 struct Test {

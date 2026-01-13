@@ -7,7 +7,8 @@ echo "Running real moon test execution..."
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
 AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
+TEST_ONLY_PATH="$PROJECT_ROOT/test_only"
 
 # 统计变量
 TOTAL_TESTS=0
@@ -108,6 +109,13 @@ fi
 run_package_tests "$CLEAN_TEST_PATH" "clean_test"
 if [ $? -ne 0 ]; then
   echo "Failed to test clean_test package"
+  exit 1
+fi
+
+# 测试 test_only
+run_package_tests "$TEST_ONLY_PATH" "test_only"
+if [ $? -ne 0 ]; then
+  echo "Failed to test test_only package"
   exit 1
 fi
 

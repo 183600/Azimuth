@@ -1,0 +1,5 @@
+/home/runner/work/Azimuth/Azimuth/test_only/moonc.js: unknown option '-target'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options

@@ -8,7 +8,7 @@ echo "Verifying all tests..."
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
 AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 统计变量
 TOTAL_TESTS=0

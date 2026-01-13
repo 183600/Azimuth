@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# test_only包的测试脚本
+echo "Running tests..."
+
+# 进入测试目录
+cd test
+
+# 检查测试文件
+if [ -f "comprehensive_tests.mbt" ]; then
+  echo "Checking comprehensive_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "test_only" -std-path "../../core" -blackbox-test comprehensive_tests.mbt -i ../test_only.mi
+  if [ $? -eq 0 ]; then
+    echo "comprehensive_tests.mbt ... ok"
+  else
+    echo "comprehensive_tests.mbt ... failed"
+  fi
+fi
+
+if [ -f "standard_moonbit_tests.mbt" ]; then
+  echo "Checking standard_moonbit_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "test_only" -std-path "../../core" -blackbox-test standard_moonbit_tests.mbt -i ../test_only.mi
+  if [ $? -eq 0 ]; then
+    echo "standard_moonbit_tests.mbt ... ok"
+  else
+    echo "standard_moonbit_tests.mbt ... failed"
+  fi
+fi
+
+if [ -f "simplified_unit_tests.mbt" ]; then
+  echo "Checking simplified_unit_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "test_only" -std-path "../../core" -blackbox-test simplified_unit_tests.mbt -i ../test_only.mi
+  if [ $? -eq 0 ]; then
+    echo "simplified_unit_tests.mbt ... ok"
+  else
+    echo "simplified_unit_tests.mbt ... failed"
+  fi
+fi
+
+echo "Tests completed"

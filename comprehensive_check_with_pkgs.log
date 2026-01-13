@@ -1,0 +1,21 @@
+
+         --  -- 
+       /  //  / __--------_
+      /  //  /_/            \
+   ---      -                \ __
+  / X        /        ____   /   )
+  *_________/__/_____/______/ `--
+
+Oops, the compiler has encountered an unexpected situation.
+This is a bug in the compiler.
+
+A bug report containing the error description and relevant code would be
+greatly appreciated. You can submit the bug report here:
+
+  https://github.com/moonbitlang/moonbit-docs/issues/new?template=ice.md
+
+Error: invalid package.json file format
+
+Compiler args: /home/runner/work/Azimuth/Azimuth/moonc.js check -workspace-path . -all-pkgs ./azimuth/moon.pkg.json ./clean_test/moon.pkg.json ./test_only/moon.pkg.json
+
+moonc version: v0.7.1+adb125543

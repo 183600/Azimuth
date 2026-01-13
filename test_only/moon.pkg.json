@@ -1,6 +1,5 @@
 {
   "name": "test_only",
-  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string"],
-  "files": ["lib.mbt"],
-  "test": ["comprehensive_tests.mbt", "standard_moonbit_tests.mbt", "simplified_unit_tests.mbt"]
+  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
+  "files": ["lib.mbt"]
 }

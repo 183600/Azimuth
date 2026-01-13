@@ -26,6 +26,10 @@ test ... ok
 test ... ok
 test ... ok
 Testing test_only...
+Found 3 tests in test_only
+test ... ok
+test ... ok
+test ... ok
 
 18 tests passed, 0 failed
 

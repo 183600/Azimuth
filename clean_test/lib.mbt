@@ -161,6 +161,20 @@ pub fn assert_false(condition : Bool) -> Unit {
   }
 }
 
+// 测试用例
+test "basic_add_test" {
+  let result = add(2, 3)
+  assert_eq(5, result)
+}
+test "basic_multiply_test" {
+  let result = multiply(2, 3)
+  assert_eq(6, result)
+}
+test "basic_greet_test" {
+  let result = greet("World")
+  assert_eq_string("Hello, World!", result)
+}
+
 
 
 

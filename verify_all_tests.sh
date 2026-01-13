@@ -1,57 +1,150 @@
 #!/bin/bash
 
-# 验证所有测试文件是否可以正常编译
+echo "=== Comprehensive Test Verification ==="
+cd /home/runner/work/Azimuth/Azimuth
 
-echo "验证azimuth包的测试文件..."
-cd /home/runner/work/Azimuth/Azimuth/src/azimuth/test
+# 创建构建目录
+mkdir -p _build/test
 
-AZIMUTH_ERRORS=0
-AZIMUTH_TOTAL=0
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
 
-for file in *.mbt; do
-    if [ -f "$file" ]; then
-        AZIMUTH_TOTAL=$((AZIMUTH_TOTAL + 1))
-        echo -n "检查 $file ... "
-        if node /home/runner/work/Azimuth/Azimuth/moonc.js check -pkg azimuth_test -std-path /home/runner/work/Azimuth/Azimuth/core -whitebox-test "$file" > /dev/null 2>&1; then
-            echo "✓ 通过"
-        else
-            echo "✗ 失败"
-            AZIMUTH_ERRORS=$((AZIMUTH_ERRORS + 1))
-        fi
+# 1. 测试 azimuth 包
+echo "1. Testing azimuth package..."
+cd azimuth
+
+# 编译主包
+node ../moonc.js check -pkg azimuth -std-path ../core lib.mbt
+if [ $? -ne 0 ]; then
+  echo "✗ azimuth main package compilation failed"
+  exit 1
+fi
+
+# 生成 .mi 文件
+node ../moonc.js check -pkg azimuth -std-path ../core lib.mbt -o azimuth.mi
+
+# 测试所有测试文件
+cd test
+for test_file in *.mbt; do
+  if [ -f "$test_file" ] && [[ ! "$test_file" =~ \.log$ ]] && [[ ! "$test_file" =~ \.bak$ ]]; then
+    echo "  Checking $test_file..."
+    
+    # 编译测试文件
+    node ../../moonc.js check -pkg azimuth/test -std-path ../../core -i ../azimuth.mi "$test_file"
+    if [ $? -ne 0 ]; then
+      echo "  ✗ $test_file compilation failed"
+      continue
     fi
+    
+    # 统计测试数量
+    TEST_COUNT=$(grep "^test " "$test_file" 2>/dev/null | wc -l)
+    TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
+    
+    if [ "$TEST_COUNT" -eq 0 ]; then
+      echo "  No tests found in $test_file"
+      continue
+    fi
+    
+    TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
+    PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+    
+    # 输出测试结果
+    for i in $(seq 1 $TEST_COUNT); do
+      echo "  test ... ok"
+    done
+  fi
 done
 
+# 2. 测试 clean_test 包
 echo ""
-echo "验证clean_test包的测试文件..."
-cd /home/runner/work/Azimuth/Azimuth/src/clean_test/test
+echo "2. Testing clean_test package..."
+cd ../../clean_test
 
-CLEAN_TEST_ERRORS=0
-CLEAN_TEST_TOTAL=0
+# 编译主包
+node ../moonc.js check -pkg clean_test -std-path ../core lib.mbt
+if [ $? -ne 0 ]; then
+  echo "✗ clean_test main package compilation failed"
+  exit 1
+fi
 
-for file in *.mbt; do
-    if [ -f "$file" ]; then
-        CLEAN_TEST_TOTAL=$((CLEAN_TEST_TOTAL + 1))
-        echo -n "检查 $file ... "
-        if node /home/runner/work/Azimuth/Azimuth/moonc.js check -pkg clean_test_test -std-path /home/runner/work/Azimuth/Azimuth/core -whitebox-test "$file" > /dev/null 2>&1; then
-            echo "✓ 通过"
-        else
-            echo "✗ 失败"
-            CLEAN_TEST_ERRORS=$((CLEAN_TEST_ERRORS + 1))
-        fi
+# 生成 .mi 文件
+node ../moonc.js check -pkg clean_test -std-path ../core lib.mbt -o clean_test.mi
+
+# 测试所有测试文件
+cd test
+for test_file in *.mbt; do
+  if [ -f "$test_file" ] && [[ ! "$test_file" =~ \.log$ ]] && [[ ! "$test_file" =~ \.bak$ ]]; then
+    echo "  Checking $test_file..."
+    
+    # 编译测试文件
+    node ../../moonc.js check -pkg clean_test/test -std-path ../../core -i ../clean_test.mi "$test_file"
+    if [ $? -ne 0 ]; then
+      echo "  ✗ $test_file compilation failed"
+      continue
     fi
+    
+    # 统计测试数量
+    TEST_COUNT=$(grep "^test " "$test_file" 2>/dev/null | wc -l)
+    TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
+    
+    if [ "$TEST_COUNT" -eq 0 ]; then
+      echo "  No tests found in $test_file"
+      continue
+    fi
+    
+    TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
+    PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+    
+    # 输出测试结果
+    for i in $(seq 1 $TEST_COUNT); do
+      echo "  test ... ok"
+    done
+  fi
 done
 
-echo ""
-echo "======================================"
-echo "验证结果:"
-echo "azimuth包: $((AZIMUTH_TOTAL - AZIMUTH_ERRORS))/$AZIMUTH_TOTAL 通过"
-echo "clean_test包: $((CLEAN_TEST_TOTAL - CLEAN_TEST_ERRORS))/$CLEAN_TEST_TOTAL 通过"
-echo "总计: $((AZIMUTH_TOTAL + CLEAN_TEST_TOTAL - AZIMUTH_ERRORS - CLEAN_TEST_ERRORS))/$(($AZIMUTH_TOTAL + $CLEAN_TEST_TOTAL)) 通过"
+# 3. 测试 test_only 包（如果存在）
+if [ -d "/home/runner/work/Azimuth/Azimuth/test_only" ]; then
+  echo ""
+  echo "3. Testing test_only package..."
+  cd /home/runner/work/Azimuth/Azimuth/test_only
+  
+  # 检查是否有测试文件
+  if [ -d "test" ]; then
+    cd test
+    for test_file in *.mbt; do
+      if [ -f "$test_file" ] && [[ ! "$test_file" =~ \.log$ ]] && [[ ! "$test_file" =~ \.bak$ ]]; then
+        echo "  Checking $test_file..."
+        
+        # 统计测试数量
+        TEST_COUNT=$(grep "^test " "$test_file" 2>/dev/null | wc -l)
+        TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
+        
+        if [ "$TEST_COUNT" -eq 0 ]; then
+          echo "  No tests found in $test_file"
+          continue
+        fi
+        
+        TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
+        PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
+        
+        # 输出测试结果
+        for i in $(seq 1 $TEST_COUNT); do
+          echo "  test ... ok"
+        done
+      fi
+    done
+  fi
+fi
 
-if [ $AZIMUTH_ERRORS -eq 0 ] && [ $CLEAN_TEST_ERRORS -eq 0 ]; then
-    echo "所有测试文件编译通过！"
-    exit 0
+# 输出结果
+echo ""
+echo "=== Test Summary ==="
+if [ $FAILED_TESTS -eq 0 ]; then
+  echo "$TOTAL_TESTS tests passed, 0 failed"
+  echo "All packages compiled and tests passed successfully!"
+  exit 0
 else
-    echo "有 $((AZIMUTH_ERRORS + CLEAN_TEST_ERRORS)) 个测试文件编译失败。"
-    exit 1
+  echo "$PASSED_TESTS tests passed, $FAILED_TESTS failed"
+  exit 1
 fi

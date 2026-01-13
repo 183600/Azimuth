@@ -134,7 +134,7 @@ while true; do
   : > "$MOON_LOG"
 
   # 使用 moon test 替代 cabal test
-  moon test 2>&1 | tee "$MOON_LOG"
+  ./moon test 2>&1 | tee "$MOON_LOG"
   ps=("${PIPESTATUS[@]}")
   MOON_STATUS="${ps[0]:-255}"
 
