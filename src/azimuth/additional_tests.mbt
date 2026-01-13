@@ -83,3 +83,44 @@ test "geometric_calculations" {
   @azimuth.assert_eq(24, rect_area)
   @azimuth.assert_eq(20, rect_perimeter)
 }
+
+test "factorial_calculation" {
+  // 计算 5! = 5 * 4 * 3 * 2 * 1 = 120
+  let fact1 = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
+  @azimuth.assert_eq(120, fact1)
+  
+  // 计算 4! = 4 * 3 * 2 * 1 = 24
+  let fact2 = @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1)))
+  @azimuth.assert_eq(24, fact2)
+  
+  // 计算 3! = 3 * 2 * 1 = 6
+  let fact3 = @azimuth.multiply(3, @azimuth.multiply(2, 1))
+  @azimuth.assert_eq(6, fact3)
+}
+
+test "fibonacci_sequence" {
+  // 斐波那契数列：F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2)
+  let f0 = 0
+  let f1 = 1
+  let f2 = @azimuth.add(f1, f0)  // 1
+  let f3 = @azimuth.add(f2, f1)  // 2
+  let f4 = @azimuth.add(f3, f2)  // 3
+  let f5 = @azimuth.add(f4, f3)  // 5
+  let f6 = @azimuth.add(f5, f4)  // 8
+  let f7 = @azimuth.add(f6, f5)  // 13
+  let f8 = @azimuth.add(f7, f6)  // 21
+  let f9 = @azimuth.add(f8, f7)  // 34
+  let f10 = @azimuth.add(f9, f8) // 55
+  
+  @azimuth.assert_eq(0, f0)
+  @azimuth.assert_eq(1, f1)
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  @azimuth.assert_eq(8, f6)
+  @azimuth.assert_eq(13, f7)
+  @azimuth.assert_eq(21, f8)
+  @azimuth.assert_eq(34, f9)
+  @azimuth.assert_eq(55, f10)
+}
