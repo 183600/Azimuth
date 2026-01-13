@@ -82,7 +82,7 @@ if [ "$1" = "test" ]; then
     echo "Testing azimuth..."
     cd test
     
-    for test_file in simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt; do
+    for test_file in simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt; do
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
