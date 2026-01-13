@@ -1,1 +1,0 @@
-{"$message_type":"diagnostic","level":"warning","loc":{"path":"/home/runner/work/Azimuth/Azimuth/azimuth/test/moon.pkg.json","start":{"line":2,"col":19},"end":{"line":2,"col":28}},"message":"Warning (unused_package): Unused package 'azimuth'","error_code":29}
