@@ -1,112 +1,186 @@
-// 新的 MoonBit 测试用例
-// 这些测试用例补充现有的测试，覆盖更多实际应用场景
+// 新增的 MoonBit 测试用例
+// 覆盖各种场景，使用标准的 MoonBit 测试语法
 
-// 测试用例1: 幂运算模拟
-test "power_calculation" {
-  // 计算 2^4 = 2 * 2 * 2 * 2 = 16
+test "string_length_validation" {
+  // 测试字符串长度验证功能
+  let short_name = "Bob"
+  let medium_name = "Alexander"
+  let long_name = "VeryLongNameThatExceedsNormalExpectations"
+  
+  // 验证greet函数处理不同长度字符串的能力
+  assert_eq_string("Hello, Bob!", greet(short_name))
+  assert_eq_string("Hello, Alexander!", greet(medium_name))
+  assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectations!", greet(long_name))
+}
+
+test "numeric_precision_tests" {
+  // 测试数值精度和边界情况
+  let large_positive = 1000000
+  let large_negative = -1000000
+  
+  // 测试大数相加
+  let sum_result = add(large_positive, large_positive)
+  assert_eq(2000000, sum_result)
+  
+  // 测试大数相乘
+  let product_result = multiply(large_positive, 2)
+  assert_eq(2000000, product_result)
+  
+  // 测试大负数运算
+  let negative_sum = add(large_negative, large_negative)
+  assert_eq(-2000000, negative_sum)
+  
+  // 测试正负数相乘
+  let mixed_product = multiply(large_positive, -2)
+  assert_eq(-2000000, mixed_product)
+}
+
+test "complex_arithmetic_expressions" {
+  // 测试复杂算术表达式
+  // 计算：(a + b) * (c - d) + e * f
+  let a = 10
+  let b = 5
+  let c = 20
+  let d = 8
+  let e = 3
+  let f = 4
+  
+  let sum_ab = add(a, b)        // 15
+  let diff_cd = add(c, -d)      // 12
+  let product_ef = multiply(e, f) // 12
+  let product_ab_cd = multiply(sum_ab, diff_cd) // 180
+  let final_result = add(product_ab_cd, product_ef) // 192
+  
+  assert_eq(192, final_result)
+}
+
+test "error_boundary_conditions" {
+  // 测试错误边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值边界
+  assert_true(add(max_val, 0) == max_val)
+  assert_true(add(max_val, -1) == 2147483646)
+  assert_true(add(max_val, 1) == max_val)  // 溢出保护
+  
+  // 测试最小值边界
+  assert_true(add(min_val, 0) == min_val)
+  assert_true(add(min_val, 1) == -2147483647)
+  assert_true(add(min_val, -1) == min_val)  // 溢出保护
+  
+  // 测试乘法边界
+  assert_true(multiply(max_val, 1) == max_val)
+  assert_true(multiply(min_val, 1) == min_val)
+  assert_true(multiply(max_val, -1) == min_val)
+  assert_true(multiply(min_val, -1) == min_val)
+}
+
+test "string_special_characters_handling" {
+  // 测试特殊字符处理
+  let unicode_name = "张三李四"
+  let emoji_name = "🌟🚀"
+  let mixed_special = "Test@123#$"
+  let quoted_name = "\"John\""
+  let newline_name = "Line1\nLine2"
+  
+  assert_eq_string("Hello, 张三李四!", greet(unicode_name))
+  assert_eq_string("Hello, 🌟🚀!", greet(emoji_name))
+  assert_eq_string("Hello, Test@123#$!", greet(mixed_special))
+  assert_eq_string("Hello, \"John\"!", greet(quoted_name))
+  assert_eq_string("Hello, Line1\nLine2!", greet(newline_name))
+}
+
+test "mathematical_sequence_calculations" {
+  // 测试数学序列计算
+  // 计算斐波那契数列前几项的和：1, 1, 2, 3, 5, 8, 13, 21
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)  // 2
+  let fib4 = add(fib2, fib3)  // 3
+  let fib5 = add(fib3, fib4)  // 5
+  let fib6 = add(fib4, fib5)  // 8
+  let fib7 = add(fib5, fib6)  // 13
+  let fib8 = add(fib6, fib7)  // 21
+  
+  // 计算前8项的和
+  let sum_fib = add(add(add(add(add(add(add(fib1, fib2), fib3), fib4), fib5), fib6), fib7), fib8)
+  assert_eq(54, sum_fib)
+}
+
+test "real_world_financial_calculations" {
+  // 测试实际金融计算场景
+  // 计算贷款月供：P * r * (1 + r)^n / ((1 + r)^n - 1)
+  // 简化为整数计算
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let years = 30          // 贷款年限
+  
+  // 简化计算：月供 ≈ 本金 / (年限 * 12) + 利息
+  let monthly_principal = principal / (years * 12)
+  let total_interest = multiply(principal, annual_rate) / 100
+  let monthly_interest = total_interest / (years * 12)
+  let monthly_payment = add(monthly_principal, monthly_interest)
+  
+  assert_eq(444, monthly_payment)  // 简化计算结果
+}
+
+test "performance_stress_tests" {
+  // 测试性能压力场景
   let base = 2
-  let result1 = @azimuth.multiply(base, base)  // 2 * 2 = 4
-  let result2 = @azimuth.multiply(result1, base)  // 4 * 2 = 8
-  let final_result = @azimuth.multiply(result2, base)  // 8 * 2 = 16
-  @azimuth.assert_eq(16, final_result)
+  
+  // 计算2的10次方：2^10 = 1024
+  let power_2 = multiply(base, base)
+  let power_4 = multiply(power_2, power_2)
+  let power_8 = multiply(power_4, power_4)
+  let power_10 = multiply(power_8, multiply(base, base))
+  
+  assert_eq(1024, power_10)
+  
+  // 连续加法测试
+  let sum_1_to_100 = multiply(100, add(100, 1)) / 2  // 等差数列求和公式
+  assert_eq(5050, sum_1_to_100)
 }
 
-// 测试用例2: 阶乘计算
-test "factorial_calculation" {
-  // 计算 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let n = 5
-  let step1 = @azimuth.multiply(n, 4)  // 5 * 4 = 20
-  let step2 = @azimuth.multiply(step1, 3)  // 20 * 3 = 60
-  let step3 = @azimuth.multiply(step2, 2)  // 60 * 2 = 120
-  let final_result = @azimuth.multiply(step3, 1)  // 120 * 1 = 120
-  @azimuth.assert_eq(120, final_result)
+test "data_structure_simulation" {
+  // 模拟数据结构操作
+  // 模拟栈操作：push, push, pop, peek
+  let stack_initial = 0
+  let push1 = add(stack_initial, 10)
+  let push2 = add(push1, 20)
+  let push3 = add(push2, 30)
+  
+  // 模拟pop操作（移除最后一个元素）
+  let after_pop = add(push3, -30)
+  
+  // 模拟peek操作（查看栈顶元素）
+  let peek_value = 20
+  
+  assert_eq(30, push3)      // 栈中有三个元素：10, 20, 30
+  assert_eq(20, after_pop)  // pop后栈中有两个元素：10, 20
+  assert_eq(20, peek_value) // 栈顶元素是20
 }
 
-// 测试用例3: 百分比计算
-test "percentage_calculation" {
-  // 计算 200 的 25% = 200 * 25 / 100 = 50
-  let value = 200
-  let percentage = 25
-  let intermediate = @azimuth.multiply(value, percentage)  // 200 * 25 = 5000
-  let result = intermediate / 100  // 5000 / 100 = 50
-  @azimuth.assert_eq(50, result)
-}
-
-// 测试用例4: 距离单位转换
-test "distance_conversion" {
-  // 公里转米：1公里 = 1000米
-  let kilometers = 5
-  let meters = @azimuth.multiply(kilometers, 1000)  // 5 * 1000 = 5000
-  @azimuth.assert_eq(5000, meters)
-}
-
-// 测试用例5: 时间计算
-test "time_calculation" {
-  // 计算总秒数：2小时30分钟15秒 = 2*3600 + 30*60 + 15 = 7200 + 1800 + 15 = 9015
-  let hours = 2
-  let minutes = 30
-  let seconds = 15
-  let seconds_from_hours = @azimuth.multiply(hours, 3600)  // 2 * 3600 = 7200
-  let seconds_from_minutes = @azimuth.multiply(minutes, 60)  // 30 * 60 = 1800
-  let total_seconds = @azimuth.add(@azimuth.add(seconds_from_hours, seconds_from_minutes), seconds)  // 7200 + 1800 + 15 = 9015
-  @azimuth.assert_eq(9015, total_seconds)
-}
-
-// 测试用例6: 字符串比较
-test "string_comparison" {
-  let short_name = "Tom"
-  let long_name = "Alexander"
-  let short_greeting = @azimuth.greet(short_name)  // "Hello, Tom!"
-  let long_greeting = @azimuth.greet(long_name)  // "Hello, Alexander!"
-  @azimuth.assert_false(short_greeting == long_greeting)
-}
-
-// 测试用例7: 数列求和
-test "arithmetic_series_sum" {
-  // 计算等差数列 1, 3, 5, 7, 9 的和
-  // 使用公式：和 = (首项 + 末项) * 项数 / 2
-  let first_term = 1
-  let last_term = 9
-  let number_of_terms = 5
-  let sum_of_terms = @azimuth.add(first_term, last_term)  // 1 + 9 = 10
-  let product = @azimuth.multiply(sum_of_terms, number_of_terms)  // 10 * 5 = 50
-  let series_sum = product / 2  // 50 / 2 = 25
-  @azimuth.assert_eq(25, series_sum)
-}
-
-// 测试用例8: 货币计算
-test "currency_calculation" {
-  // 计算总价：商品价格 × 数量 + 税费
-  let item_price = 199  // 商品价格（分为单位）
-  let quantity = 3  // 数量
-  let tax_rate = 10  // 税率（百分比）
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(item_price, quantity)  // 199 * 3 = 597
-  // 计算税费
-  let tax_amount = subtotal / tax_rate  // 597 / 10 = 59（整数除法）
-  // 计算最终总价
-  let total_price = @azimuth.add(subtotal, tax_amount)  // 597 + 59 = 656
-  @azimuth.assert_eq(656, total_price)
-}
-
-// 测试用例9: 几何图形周长计算
-test "geometric_perimeter_calculation" {
-  // 计算正六边形周长：6 × 边长
-  let hexagon_side = 7
-  let hexagon_perimeter = @azimuth.multiply(6, hexagon_side)  // 6 * 7 = 42
-  @azimuth.assert_eq(42, hexagon_perimeter)
-}
-
-// 测试用例10: 数值范围检查
-test "numeric_range_validation" {
-  // 检查数值是否在特定范围内
-  let value = 75
-  let min_range = 10
-  let max_range = 100
-  // 检查 value >= min_range
-  let above_min = value >= min_range
-  @azimuth.assert_true(above_min)
-  // 检查 value <= max_range
-  let below_max = value <= max_range
-  @azimuth.assert_true(below_max)
+test "conditional_calculation_logic" {
+  // 测试条件计算逻辑
+  let x = 15
+  let y = 25
+  let z = 10
+  
+  // 条件1：如果x < y，则计算x + z，否则计算y - z
+  let condition1 = x < y
+  let result1 = if condition1 { add(x, z) } else { add(y, -z) }
+  assert_eq(25, result1)  // 15 < 25为真，所以15 + 10 = 25
+  
+  // 条件2：如果y > z且x > 5，则计算x * y，否则计算x + y
+  let condition2a = y > z
+  let condition2b = x > 5
+  let condition2 = condition2a && condition2b
+  let result2 = if condition2 { multiply(x, y) } else { add(x, y) }
+  assert_eq(375, result2)  // 25 > 10且15 > 5为真，所以15 * 25 = 375
+  
+  // 条件3：复杂条件判断
+  let complex_condition = (x + y > z) && (y - x < x)
+  let result3 = if complex_condition { multiply(add(x, y), z) } else { add(multiply(x, y), z) }
+  assert_eq(400, result3)  // (15+25 > 10)且(25-15 < 15)为真，所以(15+25) * 10 = 400
 }
