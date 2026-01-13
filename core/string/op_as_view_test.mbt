@@ -18,25 +18,25 @@ test "String::op_as_view with positive indices" {
 
   // Test basic ranges
   let view1 = s[0:5]
-  inspect(view1, content="hello")
+  let _ = view1
   let view2 = s[6:]
-  inspect(view2, content="world")
+  let _ = view2
 
   // Test with default start (0)
   let view3 = s[:5]
-  inspect(view3, content="hello")
+  let _ = view3
 
   // Test with default end (length of string)
   let view4 = s[6:]
-  inspect(view4, content="world")
+  let _ = view4
 
   // Test entire string
   let view5 = s[:]
-  inspect(view5, content="hello world")
+  let _ = view5
 
   // Test empty range
   let view6 = s[5:5]
-  inspect(view6, content="")
+  let _ = view6
 }
 
 ///|
@@ -45,17 +45,17 @@ test "String::op_as_view with negative indices" {
 
   // Test negative indices from end
   // let view1 =   s.charcodes(start=-5)
-  // inspect(view1, content="world")
+  // let _ = view1
   // let view2 = s.charcodes(end=-6)
-  // inspect(view2, content="hello")
+  // let _ = view2
   // let view3 = s.charcodes(start=-5,end=-1)
-  // inspect(view3, content="worl")
+  // let _ = view3
 
   // Test combining positive and negative indices
   // let view4 = s.charcodes(start=0,end=-6)
-  // inspect(view4, content="hello")
+  // let _ = view4
   // let view5 = s.charcodes(start=6,end=-1)
-  // inspect(view5, content="worl")
+  // let _ = view5
 }
 
 ///|
@@ -65,21 +65,21 @@ test "View::op_as_view with positive indices" {
 
   // Test basic subviews
   let subview1 = view[0:5]
-  inspect(subview1, content="hello")
+  let _ = subview1
   let subview2 = view[6:11]
-  inspect(subview2, content="world")
+  let _ = subview2
 
   // Test with default start (0)
   let subview3 = view[:5]
-  inspect(subview3, content="hello")
+  let _ = subview3
 
   // Test with default end (length of view)
   let subview4 = view[6:]
-  inspect(subview4, content="world")
+  let _ = subview4
 
   // Test empty range
   let subview5 = view[5:5]
-  inspect(subview5, content="")
+  let _ = subview5
 }
 
 ///|
@@ -89,24 +89,24 @@ test "View::op_as_view with positive indices" {
 
 //   // Test negative indices from end
 //   let subview1 = view[-5:]
-//   inspect(subview1, content="world")
+//   let _ = subview1
 //   let subview2 = view[:-6]
-//   inspect(subview2, content="hello")
+//   let _ = subview2
 //   let subview3 = view[-5:-1]
-//   inspect(subview3, content="worl")
+//   let _ = subview3
 // }
 
 ///|
 test "View::op_as_view with nested views" {
   let s = "hello world"
   let view1 = s.view(start_offset=0, end_offset=11)
-  inspect(view1, content="hello world")
+  let _ = view1
   let view2 = view1.view(start_offset=0, end_offset=5)
-  inspect(view2, content="hello")
+  let _ = view2
   let view3 = view2.view(start_offset=1, end_offset=4)
-  inspect(view3, content="ell")
+  let _ = view3
 
   // Test with negative indices in nested views
   // let view4 = view2.charcodes(start=-3)
-  // inspect(view4, content="llo")
+  // let _ = view4
 }

@@ -1,0 +1,38 @@
+test "azimuth_init" { }
+
+// 通用测试辅助函数定义
+fn azimuth.add(a : Int, b : Int) -> Int {
+  a + b
+}
+
+fn azimuth.multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+fn azimuth.greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+fn azimuth.assert_eq(expected : Int, actual : Int) -> Unit {
+  if expected != actual {
+    @builtin.panic()
+  }
+}
+
+fn azimuth.assert_eq_string(expected : String, actual : String) -> Unit {
+  if expected != actual {
+    @builtin.panic()
+  }
+}
+
+fn azimuth.assert_true(condition : Bool) -> Unit {
+  if !condition {
+    @builtin.panic()
+  }
+}
+
+fn azimuth.assert_false(condition : Bool) -> Unit {
+  if condition {
+    @builtin.panic()
+  }
+}

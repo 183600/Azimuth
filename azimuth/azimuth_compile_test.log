@@ -1,0 +1,9 @@
+Usage: moonc subcommand
+Available subcommands:
+  bundle-core: bundle multiple core IR files into one
+  link-core: link core IR files and generate backend code
+  build-package: build core IR file for a single package
+  check: check the code of a single package
+  compile: compile a single file and generate backend code
+  gen-test-info: generate test block info for a package
+  build-interface: build mi file from a mbti interface

@@ -1,0 +1,25 @@
+fn add (a/1 : Int, b/2 : Int) -> Int { a/1 + b/2 }
+
+fn multiply (a/3 : Int, b/4 : Int) -> Int { a/3 * b/4 }
+
+fn greet (name/5 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/5), "!")
+}
+
+fn assert_eq (expected/6 : Int, actual/7 : Int) -> Unit {
+  if expected/6 == actual/7 {
+    ()
+  } else {
+    expected/6 - actual/7
+    ()
+  }
+}
+
+fn assert_eq_string (expected/8 : String, actual/9 : String) -> Unit {
+  if @stringequal(expected/8, actual/9) {
+    ()
+  } else {
+    @stringlength(expected/8) - @stringlength(actual/9)
+    ()
+  }
+}

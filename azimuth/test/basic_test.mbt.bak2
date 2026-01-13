@@ -1,0 +1,35 @@
+test "azimuth_init" { }
+
+test "test_1_basic_add_original" {
+  if 5 != add(2, 3) {
+    panic()
+  }
+  if 0 != add(5, -5) {
+    panic()
+  }
+  if -10 != add(-7, -3) {
+    panic()
+  }
+}
+test "test_1_basic_multiply_original" {
+  if 6 != multiply(2, 3) {
+    panic()
+  }
+  if -6 != multiply(2, -3) {
+    panic()
+  }
+  if 21 != multiply(-7, -3) {
+    panic()
+  }
+}
+test "test_1_basic_greet_original" {
+  if "Hello, World!" != greet("World") {
+    panic()
+  }
+  if "Hello, !" != greet("") {
+    panic()
+  }
+  if "Hello, Azimuth!" != greet("Azimuth") {
+    panic()
+  }
+}

@@ -7,7 +7,7 @@ echo "=========================================="
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
 AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 函数：检查包编译
 check_package_compilation() {
@@ -44,7 +44,13 @@ check_test_compilation() {
     if [ -f "$file" ]; then
       total_count=$((total_count + 1))
       
-      node "$PROJECT_ROOT/moonc.js" check -pkg "${pkg_name}_test" -std-path "$CORE_PATH" -i "$mi_file" "$file" >/dev/null 2>&1
+      if [ "$pkg_name" = "clean_test" ]; then
+        # clean_test测试需要依赖azimuth包
+        node "$PROJECT_ROOT/moonc.js" check -pkg "${pkg_name}_test" -std-path "$CORE_PATH" -i "$mi_file" -i "$AZIMUTH_PATH/azimuth.mi" "$file" >/dev/null 2>&1
+      else
+        # 其他测试只需要依赖当前包
+        node "$PROJECT_ROOT/moonc.js" check -pkg "${pkg_name}_test" -std-path "$CORE_PATH" -i "$mi_file" "$file" >/dev/null 2>&1
+      fi
       if [ $? -eq 0 ]; then
         echo "  ✓ $file"
       else
@@ -67,7 +73,7 @@ check_wasm_generation() {
   
   # 检查是否存在 WASM 文件
   cd "$PROJECT_ROOT"
-  local wasm_files=$(find src/_build/wasm-gc -name "*${pkg_name}*.wasm" 2>/dev/null | wc -l)
+  local wasm_files=$(find src -name "*${pkg_name}*.wasm" 2>/dev/null | wc -l)
   if [ "$wasm_files" -gt 0 ]; then
     echo "  ✓ $pkg_name WASM files found: $wasm_files"
     return 0

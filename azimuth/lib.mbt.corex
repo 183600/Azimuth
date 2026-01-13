@@ -1,0 +1,91 @@
+pub fn add (a/15 : Int, b/16 : Int) -> Int {
+  if a/15 == 0 { return b/16 }
+  if b/16 == 0 { return a/15 }
+  let min_val/17 : Int = -2147483648
+  let max_val/18 : Int = 2147483647
+  if a/15 == min_val/17 {
+    if b/16 < 0 { return min_val/17 }
+    return a/15 + b/16
+  }
+  if b/16 == min_val/17 {
+    if a/15 < 0 { return min_val/17 }
+    return a/15 + b/16
+  }
+  if a/15 > 0 && b/16 > 0 { if a/15 > max_val/18 - b/16 { return max_val/18 }  }
+  if a/15 < 0 && b/16 < 0 { if a/15 < min_val/17 - b/16 { return min_val/17 }  }
+  a/15 + b/16
+}
+
+pub fn multiply (a/8 : Int, b/9 : Int) -> Int {
+  let min_val/10 : Int = -2147483648
+  let max_val/11 : Int = 2147483647
+  if a/8 == 0 || b/9 == 0 { return 0 }
+  if a/8 == 1 { return b/9 }
+  if b/9 == 1 { return a/8 }
+  if a/8 == -1 { return if b/9 == min_val/10 { min_val/10 } else { -b/9 } }
+  if b/9 == -1 { return if a/8 == min_val/10 { min_val/10 } else { -a/8 } }
+  if a/8 == min_val/10 { return if b/9 > 1 || b/9 < -1 { min_val/10 } else { a/8 * b/9 } }
+  if b/9 == min_val/10 { return if a/8 > 1 || a/8 < -1 { min_val/10 } else { a/8 * b/9 } }
+  let sign/12 : Int = if a/8 > 0 && b/9 > 0 || a/8 < 0 && b/9 < 0 { 1 } else { -1 }
+  let abs_a/13 : Int = if a/8 < 0 { -a/8 } else { a/8 }
+  let abs_b/14 : Int = if b/9 < 0 { -b/9 } else { b/9 }
+  if abs_a/13 > max_val/11 / abs_b/14 { return if sign/12 > 0 { max_val/11 } else { min_val/10 } }
+  a/8 * b/9
+}
+
+pub fn greet (name/7 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/7), "!")
+}
+
+pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
+  if expected/5 == actual/6 {
+    ()
+  } else {
+    $builtin.abort(
+      @ccall add_string(
+        @ccall add_string(
+          @ccall add_string("Assertion failed: expected ", Int::to_string.inner(expected/5, 10)),
+          " but got "
+        ),
+        Int::to_string.inner(actual/6, 10)
+      ),
+      "@:lib.mbt:121:5-121:108"
+    )
+  }
+}
+
+pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
+  if @stringequal(expected/3, actual/4) {
+    ()
+  } else {
+    $builtin.abort(
+      @ccall add_string(
+        @ccall add_string(
+          @ccall add_string(
+            @ccall add_string("Assertion failed: expected \"", expected/3),
+            "\" but got \""
+          ),
+          actual/4
+        ),
+        "\""
+      ),
+      "@:lib.mbt:130:5-130:97"
+    )
+  }
+}
+
+pub fn assert_true (condition/2 : Bool) -> Unit {
+  if condition/2 {
+    ()
+  } else {
+    $builtin.abort("Assertion failed: expected true but got false", "@:lib.mbt:139:5-139:68")
+  }
+}
+
+pub fn assert_false (condition/1 : Bool) -> Unit {
+  if condition/1 {
+    $builtin.abort("Assertion failed: expected false but got true", "@:lib.mbt:146:5-146:68")
+  } else {
+    ()
+  }
+}

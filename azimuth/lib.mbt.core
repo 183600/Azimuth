@@ -1,0 +1,275 @@
+((Ctop_fn
+  ((binder add)
+   (func
+    ((params (((binder a/0) (ty Int)) ((binder b/1) (ty Int))))
+     (body
+      (Cexpr_sequence
+       ((Cexpr_if (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ()) 0)
+         (Cexpr_return (Cexpr_var b/1 Int ()) Single_value Unit) () Unit)
+        (Cexpr_if (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ()) 0)
+         (Cexpr_return (Cexpr_var a/0 Int ()) Single_value Unit) () Unit))
+       (Cexpr_let min_val/2 -2147483648
+        (Cexpr_let max_val/3 2147483647
+         (Cexpr_sequence
+          ((Cexpr_if
+            (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ())
+             (Cexpr_var min_val/2 Int ()))
+            (Cexpr_sequence
+             ((Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var b/1 Int ()) 0)
+               (Cexpr_return (Cexpr_var min_val/2 Int ()) Single_value Unit)
+               () Unit))
+             (Cexpr_return
+              (Cexpr_prim (Parith I32 Add) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Single_value Unit)
+             Unit)
+            () Unit)
+           (Cexpr_if
+            (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ())
+             (Cexpr_var min_val/2 Int ()))
+            (Cexpr_sequence
+             ((Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ()) 0)
+               (Cexpr_return (Cexpr_var min_val/2 Int ()) Single_value Unit)
+               () Unit))
+             (Cexpr_return
+              (Cexpr_prim (Parith I32 Add) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Single_value Unit)
+             Unit)
+            () Unit)
+           (Cexpr_if
+            (Cexpr_and
+             (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var a/0 Int ()) 0)
+             (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var b/1 Int ()) 0))
+            (Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var a/0 Int ())
+              (Cexpr_prim (Parith I32 Sub) (Cexpr_var max_val/3 Int ())
+               (Cexpr_var b/1 Int ())))
+             (Cexpr_return (Cexpr_var max_val/3 Int ()) Single_value Unit) ()
+             Unit)
+            () Unit)
+           (Cexpr_if
+            (Cexpr_and
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ()) 0)
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var b/1 Int ()) 0))
+            (Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ())
+              (Cexpr_prim (Parith I32 Sub) (Cexpr_var min_val/2 Int ())
+               (Cexpr_var b/1 Int ())))
+             (Cexpr_return (Cexpr_var min_val/2 Int ()) Single_value Unit) ()
+             Unit)
+            () Unit))
+          (Cexpr_prim (Parith I32 Add) (Cexpr_var a/0 Int ())
+           (Cexpr_var b/1 Int ()))
+          Int)
+         Int)
+        Int)
+       Int))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder multiply)
+   (func
+    ((params (((binder a/0) (ty Int)) ((binder b/1) (ty Int))))
+     (body
+      (Cexpr_let min_val/2 -2147483648
+       (Cexpr_let max_val/3 2147483647
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_or
+            (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ()) 0)
+            (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ()) 0))
+           (Cexpr_return 0 Single_value Unit) () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ()) 1)
+           (Cexpr_return (Cexpr_var b/1 Int ()) Single_value Unit) () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ()) 1)
+           (Cexpr_return (Cexpr_var a/0 Int ()) Single_value Unit) () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ()) -1)
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ())
+              (Cexpr_var min_val/2 Int ()))
+             (Cexpr_var min_val/2 Int ())
+             ((Cexpr_prim (Parith I32 Neg) (Cexpr_var b/1 Int ()))) Int)
+            Single_value Unit)
+           () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ()) -1)
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ())
+              (Cexpr_var min_val/2 Int ()))
+             (Cexpr_var min_val/2 Int ())
+             ((Cexpr_prim (Parith I32 Neg) (Cexpr_var a/0 Int ()))) Int)
+            Single_value Unit)
+           () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var a/0 Int ())
+            (Cexpr_var min_val/2 Int ()))
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_or
+              (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var b/1 Int ()) 1)
+              (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var b/1 Int ()) -1))
+             (Cexpr_var min_val/2 Int ())
+             ((Cexpr_prim (Parith I32 Mul) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ())))
+             Int)
+            Single_value Unit)
+           () Unit)
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var b/1 Int ())
+            (Cexpr_var min_val/2 Int ()))
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_or
+              (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var a/0 Int ()) 1)
+              (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ()) -1))
+             (Cexpr_var min_val/2 Int ())
+             ((Cexpr_prim (Parith I32 Mul) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ())))
+             Int)
+            Single_value Unit)
+           () Unit))
+         (Cexpr_let sign/4
+          (Cexpr_if
+           (Cexpr_or
+            (Cexpr_and
+             (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var a/0 Int ()) 0)
+             (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var b/1 Int ()) 0))
+            (Cexpr_and
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ()) 0)
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var b/1 Int ()) 0)))
+           1 (-1) Int)
+          (Cexpr_let abs_a/5
+           (Cexpr_if
+            (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var a/0 Int ()) 0)
+            (Cexpr_prim (Parith I32 Neg) (Cexpr_var a/0 Int ()))
+            ((Cexpr_var a/0 Int ())) Int)
+           (Cexpr_let abs_b/6
+            (Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var b/1 Int ()) 0)
+             (Cexpr_prim (Parith I32 Neg) (Cexpr_var b/1 Int ()))
+             ((Cexpr_var b/1 Int ())) Int)
+            (Cexpr_sequence
+             ((Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var abs_a/5 Int ())
+                (Cexpr_prim (Parith I32 Div) (Cexpr_var max_val/3 Int ())
+                 (Cexpr_var abs_b/6 Int ())))
+               (Cexpr_return
+                (Cexpr_if
+                 (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var sign/4 Int ())
+                  0)
+                 (Cexpr_var max_val/3 Int ()) ((Cexpr_var min_val/2 Int ()))
+                 Int)
+                Single_value Unit)
+               () Unit))
+             (Cexpr_prim (Parith I32 Mul) (Cexpr_var a/0 Int ())
+              (Cexpr_var b/1 Int ()))
+             Int)
+            Int)
+           Int)
+          Int)
+         Int)
+        Int)
+       Int))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder greet)
+   (func
+    ((params (((binder name/0) (ty String))))
+     (body
+      (Cexpr_prim @add_string
+       (Cexpr_prim @add_string "Hello, " (Cexpr_var name/0 String ())) !))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder assert_eq)
+   (func
+    ((params (((binder expected/0) (ty Int)) ((binder actual/1) (ty Int))))
+     (body
+      (Cexpr_if
+       (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var expected/0 Int ())
+        (Cexpr_var actual/1 Int ()))
+       (Cexpr_unit)
+       ((Cexpr_apply $builtin.abort
+         ((Cexpr_prim @add_string
+           (Cexpr_prim @add_string
+            (Cexpr_prim @add_string "Assertion failed: expected "
+             (Cexpr_apply Int::to_string.inner
+              ((Cexpr_var expected/0 Int ()) 10)
+              (Normal
+               ((Int (Option Int (generic_ true))) -> String
+                (generic_ false)))
+              String ()))
+            " but got ")
+           (Cexpr_apply Int::to_string.inner ((Cexpr_var actual/1 Int ()) 10)
+            (Normal
+             ((Int (Option Int (generic_ true))) -> String (generic_ false)))
+            String ()))
+          @:lib.mbt:121:5-121:108)
+         (Normal
+          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+           (generic_ false)))
+         Unit (Unit)))
+       Unit))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder assert_eq_string)
+   (func
+    ((params
+      (((binder expected/0) (ty String)) ((binder actual/1) (ty String))))
+     (body
+      (Cexpr_if
+       (Cexpr_prim Pstringequal (Cexpr_var expected/0 String ())
+        (Cexpr_var actual/1 String ()))
+       (Cexpr_unit)
+       ((Cexpr_apply $builtin.abort
+         ((Cexpr_prim @add_string
+           (Cexpr_prim @add_string
+            (Cexpr_prim @add_string
+             (Cexpr_prim @add_string "Assertion failed: expected \22"
+              (Cexpr_var expected/0 String ()))
+             "\22 but got \22")
+            (Cexpr_var actual/1 String ()))
+           "\22")
+          @:lib.mbt:130:5-130:97)
+         (Normal
+          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+           (generic_ false)))
+         Unit (Unit)))
+       Unit))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder assert_true)
+   (func
+    ((params (((binder condition/0) (ty Bool))))
+     (body
+      (Cexpr_if (Cexpr_var condition/0 Bool ()) (Cexpr_unit)
+       ((Cexpr_apply $builtin.abort
+         ("Assertion failed: expected true but got false"
+          @:lib.mbt:139:5-139:68)
+         (Normal
+          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+           (generic_ false)))
+         Unit (Unit)))
+       Unit))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
+  ((binder assert_false)
+   (func
+    ((params (((binder condition/0) (ty Bool))))
+     (body
+      (Cexpr_if (Cexpr_var condition/0 Bool ())
+       (Cexpr_apply $builtin.abort
+        ("Assertion failed: expected false but got true"
+         @:lib.mbt:146:5-146:68)
+        (Normal
+         ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+          (generic_ false)))
+        Unit (Unit))
+       ((Cexpr_unit)) Unit))))
+   (ty_params_ ()) (is_pub_ true))))

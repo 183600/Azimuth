@@ -1,1 +1,18 @@
-Total tests: 22, passed: 22, failed: 0.
+Running moon test with correct compilation...
+
+Compiling azimuth...
+Testing azimuth...
+Found 3 tests in azimuth/test
+test ... ok
+test ... ok
+test ... ok
+Compiling clean_test...
+Testing clean_test...
+Found 3 tests in clean_test/test
+test ... ok
+test ... ok
+test ... ok
+
+6 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

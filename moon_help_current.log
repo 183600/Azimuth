@@ -1,2 +1,6 @@
-Unknown command: --help
-Usage: moon test
+Usage: moon [command]
+Commands:
+  test    Run tests
+  help    Show this help message
+
+For other MoonBit commands, use the moonc.js compiler directly.

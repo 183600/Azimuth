@@ -1,0 +1,4 @@
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options

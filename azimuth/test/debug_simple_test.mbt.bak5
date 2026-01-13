@@ -1,0 +1,7 @@
+test "azimuth_add_test" {
+  // Try using a different syntax
+  let result = @azimuth.add(2, 3)
+  if result != 5 {
+    @builtin.panic()
+  }
+}

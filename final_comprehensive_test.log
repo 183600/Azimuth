@@ -1,47 +1,579 @@
-Running improved moon test with syntax and compilation verification...
+Running comprehensive moon test with all test files...
+Compiling azimuth...
+Compiling clean_test...
+
+Compiling and running all tests...
 Testing azimuth...
-Checking azimuth package...
-azimuth/lib.mbt compilation successful
-Verifying functions in lib.mbt...
-Function add found
-Function multiply found
-Function greet found
-Checking lib.mbt...
+Checking ./test/additional_comprehensive_tests.mbt...
 test ... ok
 test ... ok
 test ... ok
+Checking ./test/backup/additional_comprehensive_test.mbt...
 test ... ok
 test ... ok
 test ... ok
+Checking ./test/backup/additional_comprehensive_test_new.mbt...
 test ... ok
 test ... ok
 test ... ok
+Checking ./test/backup/additional_comprehensive_tests.mbt...
 test ... ok
 test ... ok
 test ... ok
+Checking ./test/backup/additional_coverage_tests.mbt...
 test ... ok
 test ... ok
 test ... ok
-
+Checking ./test/backup/additional_edge_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_focused_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_moonbit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_practical_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_unique_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_math_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_test_scenarios.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/algorithmic_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/basic_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/basic_test_fixed.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/boundary_values_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_application_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_edge_case_tests.mbt...
+No tests found in ./test/backup/comprehensive_edge_case_tests.mbt
+Checking ./test/backup/comprehensive_edge_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_new.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_unique_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_functional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/core_functionality_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/correct_concise_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_azimuth_test.mbt...
+test ... ok
+Checking ./test/backup/debug_builtin_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_direct_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_fqn_test.mbt...
+test ... ok
+Checking ./test/backup/debug_real_azimuth_test.mbt...
+test ... ok
+Checking ./test/backup/debug_simple_test.mbt...
+test ... ok
+Checking ./test/backup/debug_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_test_new.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_coverage_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_math_properties_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_math_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/essential_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/extended_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_unit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/import_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_with_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/math_fundamentals_test.mbt...
+test ... ok
+Checking ./test/backup/math_fundamentals_test_fixed.mbt...
+test ... ok
+Checking ./test/backup/math_fundamentals_test_fixed2.mbt...
+test ... ok
+Checking ./test/backup/mathematical_properties_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/minimal_test.mbt...
+test ... ok
+Checking ./test/backup/new_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_feature_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_focused_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/performance_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_application_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/quality_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/real_function_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/real_world_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_debug_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_import_test.mbt...
+test ... ok
+Checking ./test/backup/simple_new_test.mbt...
+test ... ok
+Checking ./test/backup/simple_new_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_direct.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_final.mbt...
+test ... ok
+Checking ./test/backup/simple_test_fixed.mbt...
+No tests found in ./test/backup/simple_test_fixed.mbt
+Checking ./test/backup/simple_test_new.mbt...
+test ... ok
+Checking ./test/backup/simple_test_verify.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_working.mbt...
+test ... ok
+Checking ./test/backup/simplified_unit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standalone_test.mbt...
+test ... ok
+Checking ./test/backup/standard_moonbit_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_moonbit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/string_processing_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_direct_call.mbt...
+test ... ok
+Checking ./test/backup/test_functions.mbt...
+No tests found in ./test/backup/test_functions.mbt
+Checking ./test/backup/test_helper.mbt...
+No tests found in ./test/backup/test_helper.mbt
+Checking ./test/backup/test_no_to_string.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_qualified_call.mbt...
+test ... ok
+Checking ./test/backup/test_simple_import.mbt...
+test ... ok
+Checking ./test/backup/test_with_comment.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/unique_test_cases.mbt...
+test ... ok
+Checking ./test/comprehensive_test_dir/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test_dir/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/test_helper.mbt...
+No tests found in ./test/test_helper.mbt
 Testing clean_test...
-Checking clean_test package...
-clean_test/lib.mbt compilation successful
-Verifying functions in lib.mbt...
-Function add found
-Function multiply found
-Function greet found
-Checking lib.mbt...
+Checking ./test/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_coverage_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_practical_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_test_scenarios.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/algorithmic_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/core_functionality_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_test.mbt...
+test ... ok
+Checking ./test/backup/enhanced_math_properties_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/essential_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/extended_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_enhanced_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_unit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_test.mbt...
 test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking ./test/backup/math_fundamentals_test.mbt...
 test ... ok
 test ... ok
+test ... ok
+Checking ./test/backup/new_additional_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_feature_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_focused_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/performance_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_scenario_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/quality_test_suite.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_final.mbt...
+test ... ok
+Checking ./test/backup/simple_test_verify.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_moonbit_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_functions.mbt...
+No tests found in ./test/backup/test_functions.mbt
+Checking ./test/backup/test_helper.mbt...
+No tests found in ./test/backup/test_helper.mbt
+Checking ./test/backup/unique_test_cases.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/comprehensive_test_dir/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test_dir/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/test_helper.mbt...
+No tests found in ./test/test_helper.mbt
 
-Test Summary:
-Total tests: 21
-Passed: 21
-Failed: 0
-Compilation errors: 0
-
-21 tests passed, 0 failed
+All test files compiled successfully
+0 tests passed, 0 failed

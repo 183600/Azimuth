@@ -1,0 +1,1193 @@
+Running comprehensive moon test with all test files...
+Compiling azimuth...
+Compiling clean_test...
+
+Compiling and running all tests...
+Testing azimuth...
+Checking ./test/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_test.mbt...
+azimuth_test/additional_comprehensive_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_comprehensive_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_comprehensive_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_comprehensive_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_test_new.mbt...
+azimuth_test/additional_comprehensive_test_new.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_comprehensive_test_new.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_comprehensive_test_new.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_comprehensive_test_new.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_tests.mbt...
+azimuth_test/additional_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_coverage_tests.mbt...
+azimuth_test/additional_coverage_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_coverage_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_coverage_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_coverage_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_edge_cases.mbt...
+azimuth_test/additional_edge_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_edge_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_edge_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_edge_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_enhanced_tests.mbt...
+azimuth_test/additional_enhanced_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_enhanced_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_enhanced_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_enhanced_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_focused_tests.mbt...
+azimuth_test/additional_focused_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_focused_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_focused_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_focused_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_moonbit_tests.mbt...
+azimuth_test/additional_moonbit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_moonbit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_moonbit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_moonbit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_practical_tests.mbt...
+azimuth_test/additional_practical_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_practical_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_practical_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_practical_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_scenario_tests.mbt...
+azimuth_test/additional_scenario_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_scenario_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_scenario_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_scenario_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_standard_tests.mbt...
+azimuth_test/additional_standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_test_cases.mbt...
+azimuth_test/additional_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_tests.mbt...
+azimuth_test/additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_unique_tests.mbt...
+azimuth_test/additional_unique_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/additional_unique_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/additional_unique_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/additional_unique_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_math_test.mbt...
+azimuth_test/advanced_math_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/advanced_math_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/advanced_math_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/advanced_math_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_test_scenarios.mbt...
+azimuth_test/advanced_test_scenarios.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/advanced_test_scenarios.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/advanced_test_scenarios.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/advanced_test_scenarios.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/algorithmic_tests.mbt...
+azimuth_test/algorithmic_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/algorithmic_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/algorithmic_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/algorithmic_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/basic_test.mbt...
+azimuth_test/basic_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/basic_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/basic_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/basic_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/basic_test_fixed.mbt...
+azimuth_test/basic_test_fixed.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/basic_test_fixed.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/basic_test_fixed.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/basic_test_fixed.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/boundary_values_test.mbt...
+azimuth_test/boundary_values_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/boundary_values_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/boundary_values_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/boundary_values_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_application_tests.mbt...
+azimuth_test/comprehensive_application_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_application_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_application_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_application_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_edge_case_tests.mbt...
+azimuth_test/comprehensive_edge_case_tests.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+azimuth_test/comprehensive_edge_case_tests.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/comprehensive_edge_case_tests.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/comprehensive_edge_case_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_edge_case_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_edge_case_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_edge_case_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/comprehensive_edge_case_tests.mbt
+Checking ./test/backup/comprehensive_edge_tests.mbt...
+azimuth_test/comprehensive_edge_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_edge_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_edge_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_edge_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_cases.mbt...
+azimuth_test/comprehensive_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_new.mbt...
+azimuth_test/comprehensive_test_new.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_test_new.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_test_new.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_test_new.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_suite.mbt...
+azimuth_test/comprehensive_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_tests.mbt...
+azimuth_test/comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_unique_tests.mbt...
+azimuth_test/comprehensive_unique_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/comprehensive_unique_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/comprehensive_unique_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/comprehensive_unique_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_functional_tests.mbt...
+azimuth_test/concise_functional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/concise_functional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/concise_functional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/concise_functional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_tests.mbt...
+azimuth_test/concise_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/concise_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/concise_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/concise_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/core_functionality_tests.mbt...
+azimuth_test/core_functionality_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/core_functionality_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/core_functionality_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/core_functionality_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/correct_concise_tests.mbt...
+azimuth_test/correct_concise_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/correct_concise_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/correct_concise_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/correct_concise_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_azimuth_test.mbt...
+azimuth_test/debug_azimuth_test.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/debug_azimuth_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/debug_azimuth_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_azimuth_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_azimuth_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_azimuth_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/debug_builtin_test.mbt...
+azimuth_test/debug_builtin_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/debug_builtin_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_builtin_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_builtin_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_builtin_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_direct_test.mbt...
+azimuth_test/debug_direct_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_direct_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_direct_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_direct_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_fqn_test.mbt...
+azimuth_test/debug_fqn_test.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/debug_fqn_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/debug_fqn_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_fqn_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_fqn_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_fqn_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/debug_real_azimuth_test.mbt...
+azimuth_test/debug_real_azimuth_test.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/debug_real_azimuth_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/debug_real_azimuth_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_real_azimuth_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_real_azimuth_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_real_azimuth_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/debug_simple_test.mbt...
+azimuth_test/debug_simple_test.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/debug_simple_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/debug_simple_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_simple_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_simple_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_simple_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/debug_test.mbt...
+azimuth_test/debug_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_test_new.mbt...
+azimuth_test/debug_test_new.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/debug_test_new.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/debug_test_new.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/debug_test_new.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_coverage_tests.mbt...
+azimuth_test/enhanced_coverage_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/enhanced_coverage_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/enhanced_coverage_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/enhanced_coverage_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_math_properties_test.mbt...
+azimuth_test/enhanced_math_properties_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/enhanced_math_properties_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/enhanced_math_properties_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/enhanced_math_properties_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_math_test.mbt...
+azimuth_test/enhanced_math_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/enhanced_math_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/enhanced_math_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/enhanced_math_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_test_suite.mbt...
+azimuth_test/enhanced_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/enhanced_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/enhanced_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/enhanced_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_tests.mbt...
+azimuth_test/enhanced_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/enhanced_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/enhanced_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/enhanced_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/essential_tests.mbt...
+azimuth_test/essential_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/essential_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/essential_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/essential_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/extended_test.mbt...
+azimuth_test/extended_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/extended_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/extended_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/extended_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_additional_tests.mbt...
+azimuth_test/focused_additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/focused_additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/focused_additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/focused_additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_comprehensive_tests.mbt...
+azimuth_test/focused_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/focused_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/focused_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/focused_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_enhanced_tests.mbt...
+azimuth_test/focused_enhanced_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/focused_enhanced_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/focused_enhanced_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/focused_enhanced_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_test_cases.mbt...
+azimuth_test/focused_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/focused_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/focused_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/focused_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_unit_tests.mbt...
+azimuth_test/focused_unit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/focused_unit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/focused_unit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/focused_unit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/import_test.mbt...
+azimuth_test/import_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/import_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/import_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/import_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_test.mbt...
+azimuth_test/lib_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/lib_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/lib_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/lib_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_with_tests.mbt...
+azimuth_test/lib_with_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/lib_with_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/lib_with_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/lib_with_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/math_fundamentals_test.mbt...
+azimuth_test/math_fundamentals_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/math_fundamentals_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/math_fundamentals_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/math_fundamentals_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/math_fundamentals_test_fixed.mbt...
+azimuth_test/math_fundamentals_test_fixed.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/math_fundamentals_test_fixed.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/math_fundamentals_test_fixed.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/math_fundamentals_test_fixed.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/math_fundamentals_test_fixed2.mbt...
+azimuth_test/math_fundamentals_test_fixed2.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/math_fundamentals_test_fixed2.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/math_fundamentals_test_fixed2.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/math_fundamentals_test_fixed2.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/mathematical_properties_test.mbt...
+azimuth_test/mathematical_properties_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/mathematical_properties_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/mathematical_properties_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/mathematical_properties_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/minimal_test.mbt...
+azimuth_test/minimal_test.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/minimal_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/minimal_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/minimal_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/minimal_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/minimal_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/new_additional_tests.mbt...
+azimuth_test/new_additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_comprehensive_tests.mbt...
+azimuth_test/new_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_feature_tests.mbt...
+azimuth_test/new_feature_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_feature_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_feature_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_feature_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_focused_tests.mbt...
+azimuth_test/new_focused_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_focused_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_focused_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_focused_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_standard_tests.mbt...
+azimuth_test/new_standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_tests.mbt...
+azimuth_test/new_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/new_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/new_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/new_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/performance_test.mbt...
+azimuth_test/performance_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/performance_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/performance_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/performance_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_application_tests.mbt...
+azimuth_test/practical_application_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/practical_application_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/practical_application_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/practical_application_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_comprehensive_tests.mbt...
+azimuth_test/practical_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/practical_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/practical_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/practical_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_scenario_tests.mbt...
+azimuth_test/practical_scenario_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/practical_scenario_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/practical_scenario_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/practical_scenario_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/quality_test_suite.mbt...
+azimuth_test/quality_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/quality_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/quality_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/quality_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/real_function_test.mbt...
+azimuth_test/real_function_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/real_function_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/real_function_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/real_function_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/real_world_test.mbt...
+azimuth_test/real_world_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/real_world_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/real_world_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/real_world_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_debug_test.mbt...
+azimuth_test/simple_debug_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_debug_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_debug_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_debug_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_import_test.mbt...
+azimuth_test/simple_import_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_import_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_import_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_import_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simple_new_test.mbt...
+azimuth_test/simple_new_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_new_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_new_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_new_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simple_new_tests.mbt...
+azimuth_test/simple_new_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_new_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_new_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_new_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test.mbt...
+azimuth_test/simple_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_direct.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_final.mbt...
+azimuth_test/simple_test_final.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_test_final.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_test_final.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test_final.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simple_test_fixed.mbt...
+azimuth_test/simple_test_fixed.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+azimuth_test/simple_test_fixed.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/simple_test_fixed.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/simple_test_fixed.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_test_fixed.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_test_fixed.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test_fixed.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/simple_test_fixed.mbt
+Checking ./test/backup/simple_test_new.mbt...
+azimuth_test/simple_test_new.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/simple_test_new.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/simple_test_new.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_test_new.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_test_new.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test_new.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simple_test_verify.mbt...
+azimuth_test/simple_test_verify.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_test_verify.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_test_verify.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test_verify.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_working.mbt...
+azimuth_test/simple_test_working.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/simple_test_working.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/simple_test_working.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simple_test_working.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simple_test_working.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simple_test_working.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simplified_unit_tests.mbt...
+azimuth_test/simplified_unit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/simplified_unit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/simplified_unit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/simplified_unit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_comprehensive_tests.mbt...
+azimuth_test/specialized_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/specialized_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/specialized_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/specialized_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_test_cases.mbt...
+azimuth_test/specialized_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/specialized_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/specialized_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/specialized_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_tests.mbt...
+azimuth_test/specialized_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/specialized_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/specialized_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/specialized_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standalone_test.mbt...
+azimuth_test/standalone_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/standalone_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/standalone_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/standalone_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/standard_moonbit_test_suite.mbt...
+azimuth_test/standard_moonbit_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/standard_moonbit_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/standard_moonbit_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/standard_moonbit_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_moonbit_tests.mbt...
+azimuth_test/standard_moonbit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/standard_moonbit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/standard_moonbit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/standard_moonbit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_test_cases.mbt...
+azimuth_test/standard_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/standard_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/standard_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/standard_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_tests.mbt...
+azimuth_test/standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/string_processing_test.mbt...
+azimuth_test/string_processing_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/string_processing_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/string_processing_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/string_processing_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_direct_call.mbt...
+azimuth_test/test_direct_call.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/test_direct_call.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/test_direct_call.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_direct_call.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_direct_call.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_direct_call.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/test_functions.mbt...
+azimuth_test/test_functions.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+azimuth_test/test_functions.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/test_functions.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/test_functions.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_functions.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_functions.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_functions.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/test_functions.mbt
+Checking ./test/backup/test_helper.mbt...
+azimuth_test/test_helper.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+azimuth_test/test_helper.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/test_helper.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/test_helper.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_helper.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_helper.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_helper.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/test_helper.mbt
+Checking ./test/backup/test_no_to_string.mbt...
+azimuth_test/test_no_to_string.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_no_to_string.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_no_to_string.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_no_to_string.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_qualified_call.mbt...
+azimuth_test/test_qualified_call.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/test_qualified_call.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/test_qualified_call.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_qualified_call.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_qualified_call.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_qualified_call.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/test_simple_import.mbt...
+azimuth_test/test_simple_import.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+azimuth_test/test_simple_import.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+azimuth_test/test_simple_import.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_simple_import.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_simple_import.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_simple_import.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/test_with_comment.mbt...
+azimuth_test/test_with_comment.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/test_with_comment.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/test_with_comment.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/test_with_comment.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/unique_test_cases.mbt...
+azimuth_test/unique_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+azimuth_test/unique_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+azimuth_test/unique_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+azimuth_test/unique_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/comprehensive_test_dir/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test_dir/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Testing clean_test...
+Checking ./test/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_test.mbt...
+clean_test_test/additional_comprehensive_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_comprehensive_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_comprehensive_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_comprehensive_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_comprehensive_tests.mbt...
+clean_test_test/additional_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_coverage_tests.mbt...
+clean_test_test/additional_coverage_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_coverage_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_coverage_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_coverage_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_enhanced_tests.mbt...
+clean_test_test/additional_enhanced_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_enhanced_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_enhanced_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_enhanced_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_practical_tests.mbt...
+clean_test_test/additional_practical_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_practical_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_practical_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_practical_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_scenario_tests.mbt...
+clean_test_test/additional_scenario_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_scenario_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_scenario_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_scenario_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_standard_tests.mbt...
+clean_test_test/additional_standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/additional_tests.mbt...
+clean_test_test/additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/advanced_test_scenarios.mbt...
+clean_test_test/advanced_test_scenarios.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/advanced_test_scenarios.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/advanced_test_scenarios.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/advanced_test_scenarios.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/algorithmic_tests.mbt...
+clean_test_test/algorithmic_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/algorithmic_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/algorithmic_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/algorithmic_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_test_cases.mbt...
+clean_test_test/comprehensive_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/comprehensive_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/comprehensive_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/comprehensive_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/comprehensive_tests.mbt...
+clean_test_test/comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/concise_tests.mbt...
+clean_test_test/concise_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/concise_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/concise_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/concise_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/core_functionality_tests.mbt...
+clean_test_test/core_functionality_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/core_functionality_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/core_functionality_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/core_functionality_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/debug_test.mbt...
+clean_test_test/debug_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+clean_test_test/debug_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/debug_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/debug_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/debug_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/enhanced_math_properties_test.mbt...
+clean_test_test/enhanced_math_properties_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/enhanced_math_properties_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/enhanced_math_properties_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/enhanced_math_properties_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/enhanced_test_suite.mbt...
+clean_test_test/enhanced_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/enhanced_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/enhanced_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/enhanced_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/essential_tests.mbt...
+clean_test_test/essential_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/essential_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/essential_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/essential_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/extended_test.mbt...
+clean_test_test/extended_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/extended_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/extended_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/extended_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_additional_tests.mbt...
+clean_test_test/focused_additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/focused_additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/focused_additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/focused_additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_comprehensive_tests.mbt...
+clean_test_test/focused_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/focused_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/focused_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/focused_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_enhanced_tests.mbt...
+clean_test_test/focused_enhanced_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/focused_enhanced_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/focused_enhanced_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/focused_enhanced_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_test_cases.mbt...
+clean_test_test/focused_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/focused_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/focused_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/focused_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/focused_unit_tests.mbt...
+clean_test_test/focused_unit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/focused_unit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/focused_unit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/focused_unit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/lib_test.mbt...
+clean_test_test/lib_test.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+clean_test_test/lib_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/lib_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/lib_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/lib_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/math_fundamentals_test.mbt...
+clean_test_test/math_fundamentals_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/math_fundamentals_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/math_fundamentals_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/math_fundamentals_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_additional_tests.mbt...
+clean_test_test/new_additional_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_additional_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_additional_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_additional_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_comprehensive_tests.mbt...
+clean_test_test/new_comprehensive_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_comprehensive_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_comprehensive_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_comprehensive_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_feature_tests.mbt...
+clean_test_test/new_feature_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_feature_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_feature_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_feature_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_focused_tests.mbt...
+clean_test_test/new_focused_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_focused_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_focused_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_focused_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_standard_tests.mbt...
+clean_test_test/new_standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/new_tests.mbt...
+clean_test_test/new_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/new_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/new_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/new_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/performance_test.mbt...
+clean_test_test/performance_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/performance_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/performance_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/performance_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/practical_scenario_tests.mbt...
+clean_test_test/practical_scenario_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/practical_scenario_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/practical_scenario_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/practical_scenario_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/quality_test_suite.mbt...
+clean_test_test/quality_test_suite.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/quality_test_suite.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/quality_test_suite.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/quality_test_suite.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test.mbt...
+clean_test_test/simple_test.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/simple_test.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/simple_test.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/simple_test.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/simple_test_final.mbt...
+clean_test_test/simple_test_final.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+clean_test_test/simple_test_final.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/simple_test_final.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/simple_test_final.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/simple_test_final.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+Checking ./test/backup/simple_test_verify.mbt...
+clean_test_test/simple_test_verify.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/simple_test_verify.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/simple_test_verify.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/simple_test_verify.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/specialized_test_cases.mbt...
+clean_test_test/specialized_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/specialized_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/specialized_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/specialized_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_moonbit_tests.mbt...
+clean_test_test/standard_moonbit_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/standard_moonbit_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/standard_moonbit_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/standard_moonbit_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/standard_tests.mbt...
+clean_test_test/standard_tests.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/standard_tests.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/standard_tests.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/standard_tests.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/backup/test_functions.mbt...
+clean_test_test/test_functions.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+clean_test_test/test_functions.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+clean_test_test/test_functions.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+clean_test_test/test_functions.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/test_functions.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/test_functions.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/test_functions.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/test_functions.mbt
+Checking ./test/backup/test_helper.mbt...
+clean_test_test/test_helper.mbt:2:4-2:7 [E0001] Warning (unused_value): Unused function 'add'
+clean_test_test/test_helper.mbt:6:4-6:12 [E0001] Warning (unused_value): Unused function 'multiply'
+clean_test_test/test_helper.mbt:10:4-10:9 [E0001] Warning (unused_value): Unused function 'greet'
+clean_test_test/test_helper.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/test_helper.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/test_helper.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/test_helper.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+No tests found in ./test/backup/test_helper.mbt
+Checking ./test/backup/unique_test_cases.mbt...
+clean_test_test/unique_test_cases.mbt:14:4-14:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/unique_test_cases.mbt:20:4-20:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+clean_test_test/unique_test_cases.mbt:26:4-26:15 [E0001] Warning (unused_value): Unused function 'assert_true'
+clean_test_test/unique_test_cases.mbt:32:4-32:16 [E0001] Warning (unused_value): Unused function 'assert_false'
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/comprehensive_test_dir/additional_comprehensive_tests.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+Checking ./test/simple_test_dir/simple_test.mbt...
+test ... ok
+test ... ok
+test ... ok
+
+All test files compiled successfully
+0 tests passed, 0 failed

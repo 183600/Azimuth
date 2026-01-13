@@ -1,0 +1,15 @@
+{
+  "name": "azimuth",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "description": "An azimuth package",
+  "source": ".",
+  "deps": {
+    "moonbitlang/core": {
+      "path": "../core"
+    }
+  }
+}

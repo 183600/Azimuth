@@ -1,0 +1,7 @@
+:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
+azimuth/lib.mbt:3:1-3:7 [E3002] Parse error, unexpected token derive, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+azimuth/lib.mbt:116:13-116:17 [E4018] Type String does not implement trait Show: definition of the trait is unknown, due to its package not imported.
+azimuth/lib.mbt:138:6-138:8 [E4018] Type String does not implement trait Show: definition of the trait is unknown, due to its package not imported.
+azimuth/lib.mbt:138:11-138:13 [E4018] Type String does not implement trait Show: definition of the trait is unknown, due to its package not imported.
+azimuth/lib.mbt:175:8-175:20 [E0027] Warning (deprecated_syntax): The syntax fn f[..] for declaring polymorphic function is deprecated. Use fn[..] f instead.
+azimuth/lib.mbt:175:30-175:37 [E4032] The type List is undefined.

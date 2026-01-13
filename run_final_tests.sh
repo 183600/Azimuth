@@ -7,7 +7,7 @@ echo "Running final moon test with all working tests..."
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
 AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 编译 azimuth 包
 echo "Compiling azimuth..."

@@ -1,0 +1,15 @@
+{
+  "name": "clean_test",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "description": "A clean test package",
+  "source": ".",
+  "deps": {
+    "moonbitlang/core": {
+      "path": "../core"
+    }
+  }
+}

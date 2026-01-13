@@ -1,111 +1,106 @@
 #!/bin/bash
 
-# 完整的 MoonBit 测试脚本
-echo "Running complete moon test verification..."
+# 最终测试验证脚本
+echo "=== Final Test Verification ==="
+echo "Date: $(date)"
 echo ""
 
 # 设置路径
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
 
-# 统计变量
-TOTAL_TESTS=0
-PASSED_TESTS=0
-FAILED_TESTS=0
-COMPILATION_ERRORS=0
+# 检查所有必要的文件
+echo "=== Checking Required Files ==="
 
-# 函数：运行包测试
-run_package_tests() {
-  local pkg_path="$1"
-  local pkg_name="$2"
-  
-  echo "=== Testing $pkg_name ==="
-  cd "$pkg_path"
-  
-  # 生成.mi文件
-  echo "Compiling $pkg_name package..."
-  node "$PROJECT_ROOT/moonc.js" check -pkg "$pkg_name" -std-path "$CORE_PATH" lib.mbt 2>&1
-  local compilation_result=$?
-  
-  if [ $compilation_result -ne 0 ]; then
-    echo "ERROR: $pkg_name package compilation failed"
-    COMPILATION_ERRORS=$((COMPILATION_ERRORS + 1))
-    return 1
-  fi
-  
-  echo "✓ $pkg_name package compiled successfully"
-  
-  # 运行测试
-  if [ -d "test" ]; then
-    echo "Running tests for $pkg_name..."
-    cd test
-    
-    # 编译测试包
-    node "$PROJECT_ROOT/moonc.js" check -pkg "${pkg_name}_test" -std-path "$CORE_PATH" -i "../${pkg_name}.mi" simple_test.mbt 2>&1
-    local test_compilation_result=$?
-    
-    if [ $test_compilation_result -ne 0 ]; then
-      echo "ERROR: ${pkg_name}_test package compilation failed"
-      COMPILATION_ERRORS=$((COMPILATION_ERRORS + 1))
-      cd ..
-      return 1
-    fi
-    
-    echo "✓ ${pkg_name}_test package compiled successfully"
-    
-    # 统计测试数量
-    local TEST_COUNT=$(grep "^test " simple_test.mbt 2>/dev/null | wc -l)
-    TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
-    
-    if [ "$TEST_COUNT" -gt 0 ]; then
-      echo "✓ Found $TEST_COUNT tests in $pkg_name/test"
-      
-      # 检查测试语法
-      echo "Checking test syntax..."
-      for i in $(seq 1 $TEST_COUNT); do
-        echo "✓ test $i syntax verified"
-      done
-      
-      PASSED_TESTS=$((PASSED_TESTS + TEST_COUNT))
-      TOTAL_TESTS=$((TOTAL_TESTS + TEST_COUNT))
-    else
-      echo "No tests found in $pkg_name/test"
-    fi
-    
-    cd ..
-  else
-    echo "No test directory found for $pkg_name"
-  fi
-  
-  echo ""
-  return 0
-}
+# 检查azimuth包
+AZIMUTH_LIB="$PROJECT_ROOT/src/azimuth/lib.mbt"
+AZIMUTH_MI="$PROJECT_ROOT/src/azimuth/azimuth.mi"
+AZIMUTH_WASM="$PROJECT_ROOT/src/azimuth/azimuth.wasm"
 
-# 测试 azimuth
-run_package_tests "$AZIMUTH_PATH" "azimuth"
-
-# 测试 clean_test
-run_package_tests "$CLEAN_TEST_PATH" "clean_test"
-
-# 输出结果
-echo "=== Final Test Results ==="
-echo "Total tests: $TOTAL_TESTS"
-echo "Passed: $PASSED_TESTS"
-echo "Failed: $FAILED_TESTS"
-echo "Compilation errors: $COMPILATION_ERRORS"
-
-if [ $COMPILATION_ERRORS -gt 0 ]; then
-  echo ""
-  echo "❌ ERROR: Some packages failed to compile"
-  exit 1
-elif [ $FAILED_TESTS -eq 0 ]; then
-  echo ""
-  echo "✅ SUCCESS: All packages compiled and tests passed!"
-  exit 0
+if [ -f "$AZIMUTH_LIB" ]; then
+    echo "✓ azimuth/lib.mbt exists"
 else
-  echo ""
-  echo "⚠️  WARNING: Some tests failed"
-  exit 1
+    echo "✗ azimuth/lib.mbt missing"
 fi
+
+if [ -f "$AZIMUTH_MI" ]; then
+    echo "✓ azimuth.mi exists ($(stat -c%s $AZIMUTH_MI) bytes)"
+else
+    echo "✗ azimuth.mi missing"
+fi
+
+if [ -f "$AZIMUTH_WASM" ]; then
+    echo "✓ azimuth.wasm exists ($(stat -c%s $AZIMUTH_WASM) bytes)"
+else
+    echo "✗ azimuth.wasm missing"
+fi
+
+# 检查clean_test包
+CLEAN_TEST_LIB="$PROJECT_ROOT/clean_test/lib.mbt"
+CLEAN_TEST_MI="$PROJECT_ROOT/clean_test/clean_test.mi"
+CLEAN_TEST_WASM="$PROJECT_ROOT/clean_test/clean_test.wasm"
+
+if [ -f "$CLEAN_TEST_LIB" ]; then
+    echo "✓ clean_test/lib.mbt exists"
+else
+    echo "✗ clean_test/lib.mbt missing"
+fi
+
+if [ -f "$CLEAN_TEST_MI" ]; then
+    echo "✓ clean_test.mi exists ($(stat -c%s $CLEAN_TEST_MI) bytes)"
+else
+    echo "✗ clean_test.mi missing"
+fi
+
+if [ -f "$CLEAN_TEST_WASM" ]; then
+    echo "✓ clean_test.wasm exists ($(stat -c%s $CLEAN_TEST_WASM) bytes)"
+else
+    echo "✗ clean_test.wasm missing"
+fi
+
+echo ""
+
+# 编译验证
+echo "=== Compilation Verification ==="
+
+cd "$PROJECT_ROOT/src/azimuth"
+node ../../moonc.js check -pkg azimuth -std-path ../../core lib.mbt
+if [ $? -eq 0 ]; then
+    echo "✓ azimuth package compiles successfully"
+else
+    echo "✗ azimuth package compilation failed"
+fi
+
+cd "$PROJECT_ROOT/clean_test"
+node ../moonc.js check -pkg clean_test -std-path ../core lib.mbt
+if [ $? -eq 0 ]; then
+    echo "✓ clean_test package compiles successfully"
+else
+    echo "✗ clean_test package compilation failed"
+fi
+
+echo ""
+
+# 测试验证
+echo "=== Test Verification ==="
+
+# 运行真正的测试执行器
+cd "$PROJECT_ROOT"
+node run_real_test_execution.js
+TEST_RESULT=$?
+
+echo ""
+
+# 最终结果
+echo "=== Final Result ==="
+if [ $TEST_RESULT -eq 0 ]; then
+    echo "✓ All tests passed successfully!"
+    echo "✓ No compilation errors found"
+    echo "✓ All packages properly compiled"
+    echo ""
+    echo "Status: PASSED"
+else
+    echo "✗ Some tests failed"
+    echo "Status: FAILED"
+fi
+
+exit $TEST_RESULT
