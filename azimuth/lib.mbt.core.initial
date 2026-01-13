@@ -195,26 +195,8 @@
        (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var expected/0 Int ())
         (Cexpr_var actual/1 Int ()))
        (Cexpr_unit)
-       ((Cexpr_apply $builtin.abort
-         ((Cexpr_prim @add_string
-           (Cexpr_prim @add_string
-            (Cexpr_prim @add_string "Assertion failed: expected "
-             (Cexpr_apply Int::to_string.inner
-              ((Cexpr_var expected/0 Int ()) 10)
-              (Normal
-               ((Int (Option Int (generic_ true))) -> String
-                (generic_ false)))
-              String ()))
-            " but got ")
-           (Cexpr_apply Int::to_string.inner ((Cexpr_var actual/1 Int ()) 10)
-            (Normal
-             ((Int (Option Int (generic_ true))) -> String (generic_ false)))
-            String ()))
-          @:lib.mbt:121:5-121:108)
-         (Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         Unit (Unit)))
+       ((Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit)
+         Unit))
        Unit))))
    (ty_params_ ()) (is_pub_ true)))
  (Ctop_fn
@@ -227,20 +209,8 @@
        (Cexpr_prim Pstringequal (Cexpr_var expected/0 String ())
         (Cexpr_var actual/1 String ()))
        (Cexpr_unit)
-       ((Cexpr_apply $builtin.abort
-         ((Cexpr_prim @add_string
-           (Cexpr_prim @add_string
-            (Cexpr_prim @add_string
-             (Cexpr_prim @add_string "Assertion failed: expected \22"
-              (Cexpr_var expected/0 String ()))
-             "\22 but got \22")
-            (Cexpr_var actual/1 String ()))
-           "\22")
-          @:lib.mbt:130:5-130:97)
-         (Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         Unit (Unit)))
+       ((Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit)
+         Unit))
        Unit))))
    (ty_params_ ()) (is_pub_ true)))
  (Ctop_fn
@@ -249,13 +219,8 @@
     ((params (((binder condition/0) (ty Bool))))
      (body
       (Cexpr_if (Cexpr_var condition/0 Bool ()) (Cexpr_unit)
-       ((Cexpr_apply $builtin.abort
-         ("Assertion failed: expected true but got false"
-          @:lib.mbt:139:5-139:68)
-         (Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         Unit (Unit)))
+       ((Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit)
+         Unit))
        Unit))))
    (ty_params_ ()) (is_pub_ true)))
  (Ctop_fn
@@ -264,12 +229,6 @@
     ((params (((binder condition/0) (ty Bool))))
      (body
       (Cexpr_if (Cexpr_var condition/0 Bool ())
-       (Cexpr_apply $builtin.abort
-        ("Assertion failed: expected false but got true"
-         @:lib.mbt:146:5-146:68)
-        (Normal
-         ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-          (generic_ false)))
-        Unit (Unit))
+       (Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit) Unit)
        ((Cexpr_unit)) Unit))))
    (ty_params_ ()) (is_pub_ true))))

@@ -1,0 +1,196 @@
+Running moon test with real execution...
+
+Compiling azimuth...
+Generating azimuth.wasm...
+compile: unknown option '-pkg'.
+moonc compile [options] <input file>
+  -q quite mode
+  -verbose  verbose mode for debugging
+  -g save debugging information
+  -O0  turn off optimization
+  -no-dedup turn off dedup-wasm
+  -dsource debug source
+  -source-map emit sourcemap
+  -source-map-url set url of source map
+  -no-dts Do not emit typescript declaration file
+  -stop-on-main stop on main function
+  -o output file, suffix with .wat or .wasm
+  -pass-no-unused-let  remove some unused binding created by let or letrec
+  -wat-stats  emit binary size information in .wat.stats
+  -wat-plain-mode  output plain style wat
+  -pass-no-shrink-wasm  remove unused runtime from wasm
+  -pass-no-contification  remove contification pass
+  -allocator {bump|tlsf|tlsf-mbt} choose a memory allocator (bump or tlsf or tlsf-mbt)
+  -no-rc  disable reference counting GC
+  -target {wasm-gc|wasm|js|native|llvm} set compilation target. available targets: wasm, wasm-gc, js, native
+  -js-format {esm|cjs|iife}set js format
+  -wasi  compile to WASI
+  -debug-tokens  debug token stream
+  -debug-segments  debug segments
+  -parser {yacc|hand|both} option to set the parser, default: both
+  -stop-after-parsing  stop after parsing
+  -stop-after-typing  stop after typing
+  -show-loc  show loc in ir
+  -no-intermediate-file  don't generate intermediate IR files
+  -enable-coverage  Enable code coverage tracking
+  -coverage-package-override Override package name for coverage tracking. use "@self" for current package.
+  -workspace-path path to the project root directory in file system
+  -std-path path containing standard library .mi files
+  -l [.core] binary of extra dependencies
+  -exported_functions exported functions in the package, format: <function1>:<export_name1>,<function2>:<export_name2>,... where the export name can be omitted and the original name will be used.
+  -export-memory-name customize exported memory name in wasm backend
+  -no-block-params not using block params for compatibility with binaryen
+  -test-mode enable test mode
+  -error-format {human|json} set format of diagnostics. available formats: human, json
+  -leak-check enable memory leak check for wasm_linear backend
+  -memory-safety-check enable memory safety check
+  -use-js-builtin-string use js builtin string
+  -disallow-unaligned-access disallow unaligned memory address access
+  -regex-backend {auto|table|block}set regex backend (auto, table, block)
+  -cfg set a configuration flag. The value format: <flag>=<value>
+  -llvm-opt set llvm optimization level. available levels: 0, 1, 2, 3, s, z. (LLVM backend only)
+  -llvm-target set llvm target triple. unset means current target. (LLVM backend only)
+  -S emit text format of the result instead of binary (LLVM backend only)
+  -emit-llvm-ir emit LLVM IR or bitcode instead of machine code (LLVM backend only)
+  -warn-help  show description of warning numbers
+  -w  <list>  Enable or disable warnings according to <list>:
+	+<spec>   enable warnings in <spec>
+	-<spec>   disable warnings in <spec>
+	@<spec>   enable warnings in <spec> and treat them as errors
+	<spec> can be:
+	<num>             a single warning number
+	<num1>..<num2>    a range of consecutive warning numbers
+	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
+  -alert  <list>  Enable or disable warnings according to <list>:
+	+<id>   enable alert
+	-<id>   disable alert
+	@<id>   enable alert and treat it as error
+
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to generate WASM for azimuth
+Testing azimuth...
+Checking simple_test.mbt...
+azimuth_test/simple_test.mbt:2:16-2:28 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/simple_test.mbt:3:3-3:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/simple_test.mbt:6:16-6:33 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/simple_test.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/simple_test.mbt:10:16-10:30 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/simple_test.mbt:11:3-11:28 [E4020] Package "azimuth" not found in the loaded packages.
+Error: simple_test.mbt compilation failed
+Checking additional_comprehensive_tests.mbt...
+azimuth_test/additional_comprehensive_tests.mbt:3:3-3:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:3:25-3:37 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:4:3-4:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:4:26-4:38 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:5:3-5:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:5:27-5:39 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:8:25-8:42 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:9:26-9:43 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:10:26-10:43 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:13:3-13:28 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:13:48-13:62 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:14:3-14:28 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/additional_comprehensive_tests.mbt:14:41-14:55 [E4020] Package "azimuth" not found in the loaded packages.
+Error: additional_comprehensive_tests.mbt compilation failed
+Compiling clean_test...
+Generating clean_test.wasm...
+compile: unknown option '-pkg'.
+moonc compile [options] <input file>
+  -q quite mode
+  -verbose  verbose mode for debugging
+  -g save debugging information
+  -O0  turn off optimization
+  -no-dedup turn off dedup-wasm
+  -dsource debug source
+  -source-map emit sourcemap
+  -source-map-url set url of source map
+  -no-dts Do not emit typescript declaration file
+  -stop-on-main stop on main function
+  -o output file, suffix with .wat or .wasm
+  -pass-no-unused-let  remove some unused binding created by let or letrec
+  -wat-stats  emit binary size information in .wat.stats
+  -wat-plain-mode  output plain style wat
+  -pass-no-shrink-wasm  remove unused runtime from wasm
+  -pass-no-contification  remove contification pass
+  -allocator {bump|tlsf|tlsf-mbt} choose a memory allocator (bump or tlsf or tlsf-mbt)
+  -no-rc  disable reference counting GC
+  -target {wasm-gc|wasm|js|native|llvm} set compilation target. available targets: wasm, wasm-gc, js, native
+  -js-format {esm|cjs|iife}set js format
+  -wasi  compile to WASI
+  -debug-tokens  debug token stream
+  -debug-segments  debug segments
+  -parser {yacc|hand|both} option to set the parser, default: both
+  -stop-after-parsing  stop after parsing
+  -stop-after-typing  stop after typing
+  -show-loc  show loc in ir
+  -no-intermediate-file  don't generate intermediate IR files
+  -enable-coverage  Enable code coverage tracking
+  -coverage-package-override Override package name for coverage tracking. use "@self" for current package.
+  -workspace-path path to the project root directory in file system
+  -std-path path containing standard library .mi files
+  -l [.core] binary of extra dependencies
+  -exported_functions exported functions in the package, format: <function1>:<export_name1>,<function2>:<export_name2>,... where the export name can be omitted and the original name will be used.
+  -export-memory-name customize exported memory name in wasm backend
+  -no-block-params not using block params for compatibility with binaryen
+  -test-mode enable test mode
+  -error-format {human|json} set format of diagnostics. available formats: human, json
+  -leak-check enable memory leak check for wasm_linear backend
+  -memory-safety-check enable memory safety check
+  -use-js-builtin-string use js builtin string
+  -disallow-unaligned-access disallow unaligned memory address access
+  -regex-backend {auto|table|block}set regex backend (auto, table, block)
+  -cfg set a configuration flag. The value format: <flag>=<value>
+  -llvm-opt set llvm optimization level. available levels: 0, 1, 2, 3, s, z. (LLVM backend only)
+  -llvm-target set llvm target triple. unset means current target. (LLVM backend only)
+  -S emit text format of the result instead of binary (LLVM backend only)
+  -emit-llvm-ir emit LLVM IR or bitcode instead of machine code (LLVM backend only)
+  -warn-help  show description of warning numbers
+  -w  <list>  Enable or disable warnings according to <list>:
+	+<spec>   enable warnings in <spec>
+	-<spec>   disable warnings in <spec>
+	@<spec>   enable warnings in <spec> and treat them as errors
+	<spec> can be:
+	<num>             a single warning number
+	<num1>..<num2>    a range of consecutive warning numbers
+	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
+  -alert  <list>  Enable or disable warnings according to <list>:
+	+<id>   enable alert
+	-<id>   disable alert
+	@<id>   enable alert and treat it as error
+
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to generate WASM for clean_test
+Testing clean_test...
+Checking simple_test.mbt...
+clean_test_test/simple_test.mbt:2:16-2:31 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/simple_test.mbt:3:3-3:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/simple_test.mbt:6:16-6:36 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/simple_test.mbt:7:3-7:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/simple_test.mbt:10:16-10:33 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/simple_test.mbt:11:3-11:31 [E4020] Package "clean_test" not found in the loaded packages.
+Error: simple_test.mbt compilation failed
+Checking additional_comprehensive_tests.mbt...
+clean_test_test/additional_comprehensive_tests.mbt:3:3-3:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:3:28-3:43 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:4:3-4:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:4:29-4:44 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:5:3-5:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:5:30-5:45 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:8:28-8:48 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:9:29-9:49 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:10:3-10:24 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:10:29-10:49 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:13:3-13:31 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:13:51-13:68 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:14:3-14:31 [E4020] Package "clean_test" not found in the loaded packages.
+clean_test_test/additional_comprehensive_tests.mbt:14:44-14:61 [E4020] Package "clean_test" not found in the loaded packages.
+Error: additional_comprehensive_tests.mbt compilation failed
+
+0 tests passed, 4 failed

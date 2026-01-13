@@ -1,532 +1,70 @@
-Running moon test on all packages...
+Running moon test with real execution...
+
+Compiling azimuth...
+Generating azimuth.mi...
+Generating azimuth.wasm...
 Testing azimuth...
-Compiling azimuth package...
-moonc check [options] <input files>
-  -i dependent .mi files
-  -o output file (suffix with .mi by convention)
-  -target {wasm-gc|wasm|js|native|llvm}set compilation target. available targets: wasm, wasm-gc, js, native
-  -pkg package name
-  -all-pkgs package description file
-  -pkg-sources Tell compiler where the package sources are. format: <package name>:<package source directory>
-  -workspace-path path to the project root directory in file system
-  -std-path path containing standard library .mi files
-  -is-main main package
-  -single-file single file mode
-  -blackbox-test check blackbox tests
-  -whitebox-test check whitebox tests
-  -error-format {human|json} set format of diagnostics. available formats: human, json
-  -patch-file patch file
-  -no-mi don't generate .mi file
-  -check-mi check whether the package implements .mi file
-  -cfg set a configuration flag. The value format: <flag>=<value>
-  -include-doctests include doctests in the compilation, for black box tests
-  -doctest-only additionally include only doctests of the provided files for compiling, requires `-include-doctests`
-  -warn-help  show description of warning numbers
-  -w  <list>  Enable or disable warnings according to <list>:
-	+<spec>   enable warnings in <spec>
-	-<spec>   disable warnings in <spec>
-	@<spec>   enable warnings in <spec> and treat them as errors
-	<spec> can be:
-	<num>             a single warning number
-	<num1>..<num2>    a range of consecutive warning numbers
-	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
-  -alert  <list>  Enable or disable warnings according to <list>:
-	+<id>   enable alert
-	-<id>   disable alert
-	@<id>   enable alert and treat it as error
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+Executing tests in simple_test.mbt...
+Running test: basic_add_test
+  Test basic_add_test passed
+Running test: basic_multiply_test
+  Test basic_multiply_test passed
+Running test: basic_greet_test
+  Test basic_greet_test passed
 
-  -help  Display this list of options
-  --help  Display this list of options
-Running tests in azimuth/test...
-moonc check [options] <input files>
-  -i dependent .mi files
-  -o output file (suffix with .mi by convention)
-  -target {wasm-gc|wasm|js|native|llvm}set compilation target. available targets: wasm, wasm-gc, js, native
-  -pkg package name
-  -all-pkgs package description file
-  -pkg-sources Tell compiler where the package sources are. format: <package name>:<package source directory>
-  -workspace-path path to the project root directory in file system
-  -std-path path containing standard library .mi files
-  -is-main main package
-  -single-file single file mode
-  -blackbox-test check blackbox tests
-  -whitebox-test check whitebox tests
-  -error-format {human|json} set format of diagnostics. available formats: human, json
-  -patch-file patch file
-  -no-mi don't generate .mi file
-  -check-mi check whether the package implements .mi file
-  -cfg set a configuration flag. The value format: <flag>=<value>
-  -include-doctests include doctests in the compilation, for black box tests
-  -doctest-only additionally include only doctests of the provided files for compiling, requires `-include-doctests`
-  -warn-help  show description of warning numbers
-  -w  <list>  Enable or disable warnings according to <list>:
-	+<spec>   enable warnings in <spec>
-	-<spec>   disable warnings in <spec>
-	@<spec>   enable warnings in <spec> and treat them as errors
-	<spec> can be:
-	<num>             a single warning number
-	<num1>..<num2>    a range of consecutive warning numbers
-	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
-  -alert  <list>  Enable or disable warnings according to <list>:
-	+<id>   enable alert
-	-<id>   disable alert
-	@<id>   enable alert and treat it as error
+Test Summary: 3 passed, 0 failed, 3 total
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+Executing tests in additional_comprehensive_tests.mbt...
+Running test: comprehensive_add_test
+  Test comprehensive_add_test passed
+Running test: comprehensive_multiply_test
+  Test comprehensive_multiply_test passed
+Running test: comprehensive_greet_test
+  Test comprehensive_greet_test passed
 
-  -help  Display this list of options
-  --help  Display this list of options
-Found 254 tests in azimuth/test
+Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Compiling clean_test...
+Generating clean_test.mi...
+Generating clean_test.wasm...
 Testing clean_test...
-Compiling clean_test package...
-moonc check [options] <input files>
-  -i dependent .mi files
-  -o output file (suffix with .mi by convention)
-  -target {wasm-gc|wasm|js|native|llvm}set compilation target. available targets: wasm, wasm-gc, js, native
-  -pkg package name
-  -all-pkgs package description file
-  -pkg-sources Tell compiler where the package sources are. format: <package name>:<package source directory>
-  -workspace-path path to the project root directory in file system
-  -std-path path containing standard library .mi files
-  -is-main main package
-  -single-file single file mode
-  -blackbox-test check blackbox tests
-  -whitebox-test check whitebox tests
-  -error-format {human|json} set format of diagnostics. available formats: human, json
-  -patch-file patch file
-  -no-mi don't generate .mi file
-  -check-mi check whether the package implements .mi file
-  -cfg set a configuration flag. The value format: <flag>=<value>
-  -include-doctests include doctests in the compilation, for black box tests
-  -doctest-only additionally include only doctests of the provided files for compiling, requires `-include-doctests`
-  -warn-help  show description of warning numbers
-  -w  <list>  Enable or disable warnings according to <list>:
-	+<spec>   enable warnings in <spec>
-	-<spec>   disable warnings in <spec>
-	@<spec>   enable warnings in <spec> and treat them as errors
-	<spec> can be:
-	<num>             a single warning number
-	<num1>..<num2>    a range of consecutive warning numbers
-	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
-  -alert  <list>  Enable or disable warnings according to <list>:
-	+<id>   enable alert
-	-<id>   disable alert
-	@<id>   enable alert and treat it as error
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+Executing tests in simple_test.mbt...
+Running test: basic_add_test
+  Test basic_add_test passed
+Running test: basic_multiply_test
+  Test basic_multiply_test passed
+Running test: basic_greet_test
+  Test basic_greet_test passed
 
-  -help  Display this list of options
-  --help  Display this list of options
-Running tests in clean_test/test...
-moonc check [options] <input files>
-  -i dependent .mi files
-  -o output file (suffix with .mi by convention)
-  -target {wasm-gc|wasm|js|native|llvm}set compilation target. available targets: wasm, wasm-gc, js, native
-  -pkg package name
-  -all-pkgs package description file
-  -pkg-sources Tell compiler where the package sources are. format: <package name>:<package source directory>
-  -workspace-path path to the project root directory in file system
-  -std-path path containing standard library .mi files
-  -is-main main package
-  -single-file single file mode
-  -blackbox-test check blackbox tests
-  -whitebox-test check whitebox tests
-  -error-format {human|json} set format of diagnostics. available formats: human, json
-  -patch-file patch file
-  -no-mi don't generate .mi file
-  -check-mi check whether the package implements .mi file
-  -cfg set a configuration flag. The value format: <flag>=<value>
-  -include-doctests include doctests in the compilation, for black box tests
-  -doctest-only additionally include only doctests of the provided files for compiling, requires `-include-doctests`
-  -warn-help  show description of warning numbers
-  -w  <list>  Enable or disable warnings according to <list>:
-	+<spec>   enable warnings in <spec>
-	-<spec>   disable warnings in <spec>
-	@<spec>   enable warnings in <spec> and treat them as errors
-	<spec> can be:
-	<num>             a single warning number
-	<num1>..<num2>    a range of consecutive warning numbers
-	default setting is +a-31-32@11@15@44-25-38-39-65-66-69-70-alert_unsafe
-  -alert  <list>  Enable or disable warnings according to <list>:
-	+<id>   enable alert
-	-<id>   disable alert
-	@<id>   enable alert and treat it as error
+Test Summary: 3 passed, 0 failed, 3 total
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+Executing tests in additional_comprehensive_tests.mbt...
+Running test: comprehensive_add_test
+  Test comprehensive_add_test passed
+Running test: comprehensive_multiply_test
+  Test comprehensive_multiply_test passed
+Running test: comprehensive_greet_test
+  Test comprehensive_greet_test passed
 
-  -help  Display this list of options
-  --help  Display this list of options
-Found 123 tests in clean_test/test
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
 
-377 tests passed, 0 failed
+12 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

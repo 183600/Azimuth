@@ -1,0 +1,18 @@
+fn __test_746573745f746573745f73696d706c652e6d6274_0 () -> Unit raise Error {
+  let s/4 : String = "Hello"
+  s/4
+  @make_value(())
+}
+
+fn __test_746573745f746573745f73696d706c652e6d6274_1 () -> Unit raise Error {
+  let a/2 : String = "1"
+  let b/3 : String = "2"
+  @ccall add_string(a/2, b/3)
+  @make_value(())
+}
+
+fn __test_746573745f746573745f73696d706c652e6d6274_2 () -> Unit raise Error {
+  let name/1 : String = "sample"
+  name/1
+  @make_value(())
+}

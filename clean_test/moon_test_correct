@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# 简单的测试脚本
+echo "Running tests..."
+
+# 检查测试目录
+if [ ! -d "test" ]; then
+  echo "No test directory found"
+  exit 1
+fi
+
+# 进入测试目录
+cd test
+
+# 检查测试文件
+if [ -f "simple_test.mbt" ]; then
+  echo "Checking simple_test.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test simple_test.mbt -i ../clean_test.mi
+  if [ $? -eq 0 ]; then
+    echo "simple_test.mbt ... ok"
+  else
+    echo "simple_test.mbt ... failed"
+  fi
+fi
+
+if [ -f "additional_comprehensive_tests.mbt" ]; then
+  echo "Checking additional_comprehensive_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test additional_comprehensive_tests.mbt -i ../clean_test.mi
+  if [ $? -eq 0 ]; then
+    echo "additional_comprehensive_tests.mbt ... ok"
+  else
+    echo "additional_comprehensive_tests.mbt ... failed"
+  fi
+fi
+
+echo "Tests completed"

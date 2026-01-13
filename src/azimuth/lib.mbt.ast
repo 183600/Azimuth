@@ -220,16 +220,9 @@
     (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name expected)))
      (Pexpr_ident ((var_name actual))))
     (Pexpr_unit)
-    ((Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
-      ((Pexpr_infix ((var_name +))
-        (Pexpr_infix ((var_name +))
-         (Pexpr_infix ((var_name +))
-          (Pexpr_constant "Assertion failed: expected ")
-          (Pexpr_dot_apply (Pexpr_ident ((var_name expected)))
-           ((label_name to_string)) ()))
-         (Pexpr_constant " but got "))
-        (Pexpr_dot_apply (Pexpr_ident ((var_name actual)))
-         ((label_name to_string)) ()))))))))
+    ((Pexpr_let (Ppat_any)
+      (Pexpr_infix ((var_name /)) (Pexpr_constant 1) (Pexpr_constant 0))
+      (Pexpr_unit))))))
  (Ptop_funcdef
   ((name ((binder_name assert_eq_string)))
    (decl_params
@@ -242,16 +235,9 @@
     (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name expected)))
      (Pexpr_ident ((var_name actual))))
     (Pexpr_unit)
-    ((Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
-      ((Pexpr_infix ((var_name +))
-        (Pexpr_infix ((var_name +))
-         (Pexpr_infix ((var_name +))
-          (Pexpr_infix ((var_name +))
-           (Pexpr_constant "Assertion failed: expected \5C\22")
-           (Pexpr_ident ((var_name expected))))
-          (Pexpr_constant "\5C\22 but got \5C\22"))
-         (Pexpr_ident ((var_name actual))))
-        (Pexpr_constant "\5C\22"))))))))
+    ((Pexpr_let (Ppat_any)
+      (Pexpr_infix ((var_name /)) (Pexpr_constant 1) (Pexpr_constant 0))
+      (Pexpr_unit))))))
  (Ptop_funcdef
   ((name ((binder_name assert_true)))
    (decl_params
@@ -260,8 +246,9 @@
    (error_type No_error_typ) (vis (Vis_pub ())))
   (Decl_body
    (Pexpr_if (Pexpr_ident ((var_name condition))) (Pexpr_unit)
-    ((Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
-      ((Pexpr_constant "Assertion failed: expected true but got false")))))))
+    ((Pexpr_let (Ppat_any)
+      (Pexpr_infix ((var_name /)) (Pexpr_constant 1) (Pexpr_constant 0))
+      (Pexpr_unit))))))
  (Ptop_funcdef
   ((name ((binder_name assert_false)))
    (decl_params
@@ -270,6 +257,7 @@
    (error_type No_error_typ) (vis (Vis_pub ())))
   (Decl_body
    (Pexpr_if (Pexpr_ident ((var_name condition)))
-    (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
-     ((Pexpr_constant "Assertion failed: expected false but got true")))
+    (Pexpr_let (Ppat_any)
+     (Pexpr_infix ((var_name /)) (Pexpr_constant 1) (Pexpr_constant 0))
+     (Pexpr_unit))
     ((Pexpr_unit))))))

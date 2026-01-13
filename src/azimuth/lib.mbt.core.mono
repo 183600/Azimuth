@@ -1,1 +1,185 @@
-((body ()) (types ()) (object_methods ()))
+((body
+  ((Ctop_fn
+    ((binder add)
+     (func
+      ((params (((binder a/0) (ty T_int)) ((binder b/1) (ty T_int))))
+       (body
+        (Cexpr_sequence
+         ((Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) 0)
+           (Cexpr_return (Cexpr_var b/1 T_int) Single_value T_unit) ()
+           T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) 0)
+           (Cexpr_return (Cexpr_var a/0 T_int) Single_value T_unit) ()
+           T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) -2147483648)
+           (Cexpr_sequence
+            ((Cexpr_if ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) 0)
+              (Cexpr_return -2147483648 Single_value T_unit) () T_unit))
+            (Cexpr_return
+             ((Parith I32 Add) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+             Single_value T_unit)
+            T_unit)
+           () T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) -2147483648)
+           (Cexpr_sequence
+            ((Cexpr_if ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) 0)
+              (Cexpr_return -2147483648 Single_value T_unit) () T_unit))
+            (Cexpr_return
+             ((Parith I32 Add) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+             Single_value T_unit)
+            T_unit)
+           () T_unit)
+          (Cexpr_if
+           (Cexpr_and ((Pcomparison I32 Gt) (Cexpr_var a/0 T_int) 0)
+            ((Pcomparison I32 Gt) (Cexpr_var b/1 T_int) 0))
+           (Cexpr_if
+            ((Pcomparison I32 Gt) (Cexpr_var a/0 T_int)
+             ((Parith I32 Sub) 2147483647 (Cexpr_var b/1 T_int)))
+            (Cexpr_return 2147483647 Single_value T_unit) () T_unit)
+           () T_unit)
+          (Cexpr_if
+           (Cexpr_and ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) 0)
+            ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) 0))
+           (Cexpr_if
+            ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int)
+             ((Parith I32 Sub) -2147483648 (Cexpr_var b/1 T_int)))
+            (Cexpr_return -2147483648 Single_value T_unit) () T_unit)
+           () T_unit))
+         ((Parith I32 Add) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+         T_int))))
+     (export_info_ (add))))
+   (Ctop_fn
+    ((binder multiply)
+     (func
+      ((params (((binder a/0) (ty T_int)) ((binder b/1) (ty T_int))))
+       (body
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_or ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) 0)
+            ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) 0))
+           (Cexpr_return 0 Single_value T_unit) () T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) 1)
+           (Cexpr_return (Cexpr_var b/1 T_int) Single_value T_unit) ()
+           T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) 1)
+           (Cexpr_return (Cexpr_var a/0 T_int) Single_value T_unit) ()
+           T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) -1)
+           (Cexpr_return
+            (Cexpr_if
+             ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) -2147483648)
+             -2147483648 (((Parith I32 Neg) (Cexpr_var b/1 T_int))) T_int)
+            Single_value T_unit)
+           () T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) -1)
+           (Cexpr_return
+            (Cexpr_if
+             ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) -2147483648)
+             -2147483648 (((Parith I32 Neg) (Cexpr_var a/0 T_int))) T_int)
+            Single_value T_unit)
+           () T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var a/0 T_int) -2147483648)
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_or ((Pcomparison I32 Gt) (Cexpr_var b/1 T_int) 1)
+              ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) -1))
+             -2147483648
+             (((Parith I32 Mul) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int)))
+             T_int)
+            Single_value T_unit)
+           () T_unit)
+          (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) -2147483648)
+           (Cexpr_return
+            (Cexpr_if
+             (Cexpr_or ((Pcomparison I32 Gt) (Cexpr_var a/0 T_int) 1)
+              ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) -1))
+             -2147483648
+             (((Parith I32 Mul) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int)))
+             T_int)
+            Single_value T_unit)
+           () T_unit))
+         (Cexpr_let sign/2
+          (Cexpr_if
+           (Cexpr_or
+            (Cexpr_and ((Pcomparison I32 Gt) (Cexpr_var a/0 T_int) 0)
+             ((Pcomparison I32 Gt) (Cexpr_var b/1 T_int) 0))
+            (Cexpr_and ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) 0)
+             ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) 0)))
+           1 (-1) T_int)
+          (Cexpr_let abs_a/3
+           (Cexpr_if ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) 0)
+            ((Parith I32 Neg) (Cexpr_var a/0 T_int)) ((Cexpr_var a/0 T_int))
+            T_int)
+           (Cexpr_let abs_b/4
+            (Cexpr_if ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) 0)
+             ((Parith I32 Neg) (Cexpr_var b/1 T_int)) ((Cexpr_var b/1 T_int))
+             T_int)
+            (Cexpr_sequence
+             ((Cexpr_if
+               ((Pcomparison I32 Gt) (Cexpr_var abs_a/3 T_int)
+                ((Parith I32 Div) 2147483647 (Cexpr_var abs_b/4 T_int)))
+               (Cexpr_return
+                (Cexpr_if ((Pcomparison I32 Gt) (Cexpr_var sign/2 T_int) 0)
+                 2147483647 (-2147483648) T_int)
+                Single_value T_unit)
+               () T_unit))
+             ((Parith I32 Mul) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+             T_int)
+            T_int)
+           T_int)
+          T_int)
+         T_int))))
+     (export_info_ (multiply))))
+   (Ctop_fn
+    ((binder greet)
+     (func
+      ((params (((binder name/0) (ty T_string))))
+       (body
+        (@add_string (@add_string "Hello, " (Cexpr_var name/0 T_string)) !))))
+     (export_info_ (greet))))
+   (Ctop_fn
+    ((binder assert_eq)
+     (func
+      ((params
+        (((binder expected/0) (ty T_int)) ((binder actual/1) (ty T_int))))
+       (body
+        (Cexpr_if
+         ((Pcomparison I32 Eq) (Cexpr_var expected/0 T_int)
+          (Cexpr_var actual/1 T_int))
+         (Cexpr_unit)
+         ((Cexpr_sequence (((Parith I32 Div) 1 0)) (Cexpr_unit) T_unit))
+         T_unit))))
+     (export_info_ (assert_eq))))
+   (Ctop_fn
+    ((binder assert_eq_string)
+     (func
+      ((params
+        (((binder expected/0) (ty T_string))
+         ((binder actual/1) (ty T_string))))
+       (body
+        (Cexpr_if
+         (Pstringequal (Cexpr_var expected/0 T_string)
+          (Cexpr_var actual/1 T_string))
+         (Cexpr_unit)
+         ((Cexpr_sequence (((Parith I32 Div) 1 0)) (Cexpr_unit) T_unit))
+         T_unit))))
+     (export_info_ (assert_eq_string))))
+   (Ctop_fn
+    ((binder assert_true)
+     (func
+      ((params (((binder condition/0) (ty T_bool))))
+       (body
+        (Cexpr_if (Cexpr_var condition/0 T_bool) (Cexpr_unit)
+         ((Cexpr_sequence (((Parith I32 Div) 1 0)) (Cexpr_unit) T_unit))
+         T_unit))))
+     (export_info_ (assert_true))))
+   (Ctop_fn
+    ((binder assert_false)
+     (func
+      ((params (((binder condition/0) (ty T_bool))))
+       (body
+        (Cexpr_if (Cexpr_var condition/0 T_bool)
+         (Cexpr_sequence (((Parith I32 Div) 1 0)) (Cexpr_unit) T_unit)
+         ((Cexpr_unit)) T_unit))))
+     (export_info_ (assert_false))))))
+ (types ()) (object_methods ()))

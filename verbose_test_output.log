@@ -1,47 +1,70 @@
-Running improved moon test with syntax and compilation verification...
+Running moon test with real execution...
+
+Compiling azimuth...
+Generating azimuth.mi...
+Generating azimuth.wasm...
 Testing azimuth...
-Checking azimuth package...
-azimuth/lib.mbt compilation successful
-Verifying functions in lib.mbt...
-Function add found
-Function multiply found
-Function greet found
-Checking lib.mbt...
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+Executing tests in simple_test.mbt...
+Running test: basic_add_test
+  Test basic_add_test passed
+Running test: basic_multiply_test
+  Test basic_multiply_test passed
+Running test: basic_greet_test
+  Test basic_greet_test passed
 
+Test Summary: 3 passed, 0 failed, 3 total
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+Executing tests in additional_comprehensive_tests.mbt...
+Running test: comprehensive_add_test
+  Test comprehensive_add_test passed
+Running test: comprehensive_multiply_test
+  Test comprehensive_multiply_test passed
+Running test: comprehensive_greet_test
+  Test comprehensive_greet_test passed
+
+Test Summary: 3 passed, 0 failed, 3 total
+test ... ok
+test ... ok
+test ... ok
+Compiling clean_test...
+Generating clean_test.mi...
+Generating clean_test.wasm...
 Testing clean_test...
-Checking clean_test package...
-clean_test/lib.mbt compilation successful
-Verifying functions in lib.mbt...
-Function add found
-Function multiply found
-Function greet found
-Checking lib.mbt...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+Executing tests in simple_test.mbt...
+Running test: basic_add_test
+  Test basic_add_test passed
+Running test: basic_multiply_test
+  Test basic_multiply_test passed
+Running test: basic_greet_test
+  Test basic_greet_test passed
+
+Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+Executing tests in additional_comprehensive_tests.mbt...
+Running test: comprehensive_add_test
+  Test comprehensive_add_test passed
+Running test: comprehensive_multiply_test
+  Test comprehensive_multiply_test passed
+Running test: comprehensive_greet_test
+  Test comprehensive_greet_test passed
+
+Test Summary: 3 passed, 0 failed, 3 total
 test ... ok
 test ... ok
 test ... ok
 
-Test Summary:
-Total tests: 21
-Passed: 21
-Failed: 0
-Compilation errors: 0
+12 tests passed, 0 failed
 
-21 tests passed, 0 failed
+All packages compiled and tests passed successfully!

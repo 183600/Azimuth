@@ -1,47 +1,4 @@
-((fns
-  (((binder assert_eq_string) (fn_kind_ (Top_pub assert_eq_string))
-    (fn
-     ((params ((expected/8 : Ref_string) (actual/9 : Ref_string)))
-      (body
-       (Lif (Pstringequal (expected/8 : Ref_string) (actual/9 : Ref_string))
-        0
-        (Lsequence
-         ((Parith I32 Sub) (Pstringlength (expected/8 : Ref_string))
-          (Pstringlength (actual/9 : Ref_string)))
-         0)
-        I32_Unit))
-      (return_type_ I32_Unit)))
-    (tid ()))
-   ((binder assert_eq) (fn_kind_ (Top_pub assert_eq))
-    (fn
-     ((params ((expected/6 : I32_Int) (actual/7 : I32_Int)))
-      (body
-       (Lif
-        ((Pcomparison I32 Eq) (expected/6 : I32_Int) (actual/7 : I32_Int)) 0
-        (Lsequence
-         ((Parith I32 Sub) (expected/6 : I32_Int) (actual/7 : I32_Int)) 0)
-        I32_Unit))
-      (return_type_ I32_Unit)))
-    (tid ()))
-   ((binder greet) (fn_kind_ (Top_pub greet))
-    (fn
-     ((params ((name/5 : Ref_string)))
-      (body (@add_string (@add_string "Hello, " (name/5 : Ref_string)) !))
-      (return_type_ Ref_string)))
-    (tid ()))
-   ((binder multiply) (fn_kind_ (Top_pub multiply))
-    (fn
-     ((params ((a/3 : I32_Int) (b/4 : I32_Int)))
-      (body ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int)))
-      (return_type_ I32_Int)))
-    (tid ()))
-   ((binder add) (fn_kind_ (Top_pub add))
-    (fn
-     ((params ((a/1 : I32_Int) (b/2 : I32_Int)))
-      (body ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int)))
-      (return_type_ I32_Int)))
-    (tid ()))))
- (main ()) (globals ())
+((fns ()) (main ()) (globals ())
  (type_defs
   ((moonbit.array_i64 (Ref_array (elem I64) (mut true)))
    (moonbit.array_f64 (Ref_array (elem F64) (mut true)))

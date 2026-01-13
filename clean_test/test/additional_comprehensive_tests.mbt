@@ -1,4 +1,3 @@
-// 额外的综合测试文件 - 使用clean_test包中的函数
 test "comprehensive_add_test" {
   @clean_test.assert_eq(0, @clean_test.add(0, 0))
   @clean_test.assert_eq(-1, @clean_test.add(-2, 1))

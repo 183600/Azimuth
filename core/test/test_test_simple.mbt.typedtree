@@ -1,0 +1,63 @@
+((Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_746573745f746573745f73696d706c652e6d6274_0)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var s/0 String) (Texpr_constant Hello String)
+       (((binder s/0) (binder_typ String)))
+       (Texpr_let (Tpat_any String) (Texpr_ident s/0 () Normal String) ()
+        (Texpr_unit) Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_746573745f746573745f73696d706c652e6d6274_1)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var a/0 String) (Texpr_constant 1 String)
+       (((binder a/0) (binder_typ String)))
+       (Texpr_let (Tpat_var b/1 String) (Texpr_constant 2 String)
+        (((binder b/1) (binder_typ String)))
+        (Texpr_let (Tpat_any String)
+         (Texpr_apply
+          (Texpr_ident Add::add|String| () (Prim @add_string)
+           ((String String) -> String (generic_ false)))
+          ((Texpr_ident a/0 () Normal String)
+           (Texpr_ident b/1 () Normal String))
+          String Infix)
+         () (Texpr_unit) Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_746573745f746573745f73696d706c652e6d6274_2)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var name/0 String) (Texpr_constant sample String)
+       (((binder name/0) (binder_typ String)))
+       (Texpr_let (Tpat_any String) (Texpr_ident name/0 () Normal String) ()
+        (Texpr_unit) Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ()))))

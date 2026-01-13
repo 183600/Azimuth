@@ -1,6 +1,9 @@
 {
   "import": [
-    "moonbitlang/core/builtin"
+    "moonbitlang/core/builtin",
+    "moonbitlang/core/show",
+    "moonbitlang/core/string",
+    "moonbitlang/core/buffer"
   ],
   "test": ["test.mbt", "test_test_simple.mbt"]
 }

@@ -5,8 +5,8 @@ echo "Checking real test compilation status..."
 
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-CLEAN_TEST_PATH="$PROJECT_ROOT/src/clean_test"
+AZIMUTH_PATH="$PROJECT_ROOT/azimuth"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 编译主包
 echo "Compiling main packages..."

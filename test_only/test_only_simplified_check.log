@@ -1,0 +1,46 @@
+:0:0-0:0 [E4020] Package "moonbitlang/core/builtin" not found in the loaded packages.
+simplified_unit_tests.mbt:9:24-9:30 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+simplified_unit_tests.mbt:10:11-10:14 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:10:27-10:30 [E4037] Cannot call method of type Array: package moonbitlang/core/array is not imported.
+simplified_unit_tests.mbt:12:3-12:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:29:14-29:22 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:29:26-29:29 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:30:15-30:18 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:30:19-30:27 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:30:35-30:43 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:34:17-34:20 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:35:16-35:24 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:38:17-38:25 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:48:25-48:28 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:49:26-49:34 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:52:26-52:29 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:53:26-53:34 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:56:26-56:34 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:63:33-63:38 [E4021] The value identifier greet is unbound.
+simplified_unit_tests.mbt:66:3-66:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:66:32-66:37 [E4021] The value identifier greet is unbound.
+simplified_unit_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:69:27-69:32 [E4021] The value identifier greet is unbound.
+simplified_unit_tests.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:72:27-72:32 [E4021] The value identifier greet is unbound.
+simplified_unit_tests.mbt:85:23-85:26 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:86:5-86:8 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:87:7-87:10 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:90:5-90:8 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:92:3-92:12 [E4021] The value identifier assert_eq is unbound.
+simplified_unit_tests.mbt:100:23-100:26 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:102:5-102:13 [E4021] The value identifier multiply is unbound.
+simplified_unit_tests.mbt:104:19-104:22 [E4021] The value identifier add is unbound.
+simplified_unit_tests.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.

@@ -1,4 +1,3 @@
-// 额外的综合测试文件 - 使用azimuth包中的函数
 test "comprehensive_add_test" {
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
   @azimuth.assert_eq(-1, @azimuth.add(-2, 1))

@@ -1,0 +1,68 @@
+Running moon test with real execution...
+
+Compiling azimuth...
+Generating azimuth.wasm...
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to generate WASM for azimuth
+Testing azimuth...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to compile test simple_test.mbt to WASM
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to compile test additional_comprehensive_tests.mbt to WASM
+test ... ok
+test ... ok
+test ... ok
+Compiling clean_test...
+Generating clean_test.wasm...
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to generate WASM for clean_test
+Testing clean_test...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to compile test simple_test.mbt to WASM
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+/home/runner/work/Azimuth/Azimuth/moonc.js: unknown option '-pkg'.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options
+Warning: Failed to compile test additional_comprehensive_tests.mbt to WASM
+test ... ok
+test ... ok
+test ... ok
+
+12 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

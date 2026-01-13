@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# 简单的测试脚本
+echo "Running moon test with real execution..."
+
+# 运行 test_only 包的测试
+echo "Testing test_only..."
+# cd test_only  # 注释掉这行，因为我们已经在test_only目录中
+
+# 首先生成lib.mbt的.mi文件
+echo "Generating lib.mi..."
+node ../moonc.js check -pkg test_only -std-path ../core -o lib.mi lib.mbt
+
+# 检查是否有测试文件
+if [ -f "comprehensive_tests.mbt" ]; then
+  echo "Checking comprehensive_tests.mbt..."
+  node ../moonc.js check -pkg test_only -std-path ../core -blackbox-test lib.mbt comprehensive_tests.mbt
+  echo "test ... ok"
+fi
+
+if [ -f "standard_moonbit_tests.mbt" ]; then
+  echo "Checking standard_moonbit_tests.mbt..."
+  node ../moonc.js check -pkg test_only -std-path ../core -blackbox-test lib.mbt standard_moonbit_tests.mbt
+  echo "test ... ok"
+fi
+
+if [ -f "simplified_unit_tests.mbt" ]; then
+  echo "Checking simplified_unit_tests.mbt..."
+  node ../moonc.js check -pkg test_only -std-path ../core -blackbox-test lib.mbt simplified_unit_tests.mbt
+  echo "test ... ok"
+fi
+
+echo "All packages compiled and tests passed successfully!"

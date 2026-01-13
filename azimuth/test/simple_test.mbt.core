@@ -5,7 +5,7 @@
      (body
       (Cexpr_prim (Parith I32 Add) (Cexpr_var a/0 Int ())
        (Cexpr_var b/1 Int ())))))
-   (ty_params_ ()) (is_pub_ true)))
+   (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
   ((binder multiply)
    (func
@@ -13,7 +13,7 @@
      (body
       (Cexpr_prim (Parith I32 Mul) (Cexpr_var a/0 Int ())
        (Cexpr_var b/1 Int ())))))
-   (ty_params_ ()) (is_pub_ true)))
+   (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
   ((binder greet)
    (func
@@ -21,7 +21,7 @@
      (body
       (Cexpr_prim @add_string
        (Cexpr_prim @add_string "Hello, " (Cexpr_var name/0 String ())) !))))
-   (ty_params_ ()) (is_pub_ true)))
+   (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
   ((binder assert_eq)
    (func
@@ -31,12 +31,10 @@
        (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var expected/0 Int ())
         (Cexpr_var actual/1 Int ()))
        (Cexpr_unit)
-       ((Cexpr_sequence
-         ((Cexpr_prim (Parith I32 Sub) (Cexpr_var expected/0 Int ())
-           (Cexpr_var actual/1 Int ())))
-         (Cexpr_unit) Unit))
+       ((Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit)
+         Unit))
        Unit))))
-   (ty_params_ ()) (is_pub_ true)))
+   (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
   ((binder assert_eq_string)
    (func
@@ -47,13 +45,10 @@
        (Cexpr_prim Pstringequal (Cexpr_var expected/0 String ())
         (Cexpr_var actual/1 String ()))
        (Cexpr_unit)
-       ((Cexpr_sequence
-         ((Cexpr_prim (Parith I32 Sub)
-           (Cexpr_prim Pstringlength (Cexpr_var expected/0 String ()))
-           (Cexpr_prim Pstringlength (Cexpr_var actual/1 String ()))))
-         (Cexpr_unit) Unit))
+       ((Cexpr_sequence ((Cexpr_prim (Parith I32 Div) 1 0)) (Cexpr_unit)
+         Unit))
        Unit))))
-   (ty_params_ ()) (is_pub_ true)))
+   (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
   ((binder __test_73696d706c655f746573742e6d6274_0)
    (func

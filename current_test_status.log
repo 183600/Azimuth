@@ -2,17 +2,29 @@ Running moon test with correct compilation...
 
 Compiling azimuth...
 Testing azimuth...
-Found 3 tests in azimuth/test
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
 test ... ok
 test ... ok
 test ... ok
 Compiling clean_test...
 Testing clean_test...
-Found 3 tests in clean_test/test
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
 test ... ok
 test ... ok
 test ... ok
 
-6 tests passed, 0 failed
+12 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!

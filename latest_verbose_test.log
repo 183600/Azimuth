@@ -1,1 +1,30 @@
-Total tests: 17, passed: 17, failed: 0.
+Running moon test with correct compilation...
+
+Compiling azimuth...
+Testing azimuth...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+Compiling clean_test...
+Testing clean_test...
+Checking simple_test.mbt...
+Found 3 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Found 3 tests in additional_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+
+12 tests passed, 0 failed
+
+All packages compiled and tests passed successfully!

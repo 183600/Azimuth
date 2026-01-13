@@ -436,34 +436,12 @@
          (Texpr_ident actual/1 () Normal Int))
         Bool Infix)
        (Texpr_unit)
-       ((Texpr_apply
-         (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         ((Texpr_apply
-           (Texpr_ident Add::add|String| () (Prim @add_string)
-            ((String String) -> String (generic_ false)))
-           ((Texpr_apply
-             (Texpr_ident Add::add|String| () (Prim @add_string)
-              ((String String) -> String (generic_ false)))
-             ((Texpr_apply
-               (Texpr_ident Add::add|String| () (Prim @add_string)
-                ((String String) -> String (generic_ false)))
-               ((Texpr_constant "Assertion failed: expected " String)
-                (Texpr_apply
-                 (Texpr_ident Int::to_string () ((_ radix?)) Normal
-                  ((Int (Option Int (generic_ true))) -> String
-                   (generic_ false)))
-                 ((Texpr_ident expected/0 () Normal Int)) String Dot))
-               String Infix)
-              (Texpr_constant " but got " String))
-             String Infix)
-            (Texpr_apply
-             (Texpr_ident Int::to_string () ((_ radix?)) Normal
-              ((Int (Option Int (generic_ true))) -> String (generic_ false)))
-             ((Texpr_ident actual/1 () Normal Int)) String Dot))
-           String Infix))
-         Unit Normal))
+       ((Texpr_let (Tpat_any Int)
+         (Texpr_apply
+          (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 1 Int) (Texpr_constant 0 Int)) Int Infix)
+         () (Texpr_unit) Unit))
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint No_error_typ) (ty ((Int Int) -> Unit (generic_ false)))))
@@ -483,32 +461,12 @@
          (Texpr_ident actual/1 () Normal String))
         Bool Infix)
        (Texpr_unit)
-       ((Texpr_apply
-         (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         ((Texpr_apply
-           (Texpr_ident Add::add|String| () (Prim @add_string)
-            ((String String) -> String (generic_ false)))
-           ((Texpr_apply
-             (Texpr_ident Add::add|String| () (Prim @add_string)
-              ((String String) -> String (generic_ false)))
-             ((Texpr_apply
-               (Texpr_ident Add::add|String| () (Prim @add_string)
-                ((String String) -> String (generic_ false)))
-               ((Texpr_apply
-                 (Texpr_ident Add::add|String| () (Prim @add_string)
-                  ((String String) -> String (generic_ false)))
-                 ((Texpr_constant "Assertion failed: expected \22" String)
-                  (Texpr_ident expected/0 () Normal String))
-                 String Infix)
-                (Texpr_constant "\22 but got \22" String))
-               String Infix)
-              (Texpr_ident actual/1 () Normal String))
-             String Infix)
-            (Texpr_constant "\22" String))
-           String Infix))
-         Unit Normal))
+       ((Texpr_let (Tpat_any Int)
+         (Texpr_apply
+          (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 1 Int) (Texpr_constant 0 Int)) Int Infix)
+         () (Texpr_unit) Unit))
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint No_error_typ)
@@ -520,13 +478,12 @@
     ((params ((Param condition/0 ((Tname ((lid Bool)) () Bool)) Bool)))
      (body
       (Texpr_if (Texpr_ident condition/0 () Normal Bool) (Texpr_unit)
-       ((Texpr_apply
-         (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
-          ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-           (generic_ false)))
-         ((Texpr_constant "Assertion failed: expected true but got false"
-           String))
-         Unit Normal))
+       ((Texpr_let (Tpat_any Int)
+         (Texpr_apply
+          (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 1 Int) (Texpr_constant 0 Int)) Int Infix)
+         () (Texpr_unit) Unit))
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint No_error_typ) (ty ((Bool) -> Unit (generic_ false)))))
@@ -537,13 +494,12 @@
     ((params ((Param condition/0 ((Tname ((lid Bool)) () Bool)) Bool)))
      (body
       (Texpr_if (Texpr_ident condition/0 () Normal Bool)
-       (Texpr_apply
-        (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
-         ((String (T_constr SourceLoc () (generic_ false))) -> Unit
-          (generic_ false)))
-        ((Texpr_constant "Assertion failed: expected false but got true"
-          String))
-        Unit Normal)
+       (Texpr_let (Tpat_any Int)
+        (Texpr_apply
+         (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+          ((Int Int) -> Int (generic_ false)))
+         ((Texpr_constant 1 Int) (Texpr_constant 0 Int)) Int Infix)
+        () (Texpr_unit) Unit)
        ((Texpr_unit)) Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint No_error_typ) (ty ((Bool) -> Unit (generic_ false)))))

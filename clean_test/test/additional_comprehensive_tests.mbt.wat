@@ -1,0 +1,1 @@
+(memory $moonbit.memory 1)

@@ -37,16 +37,8 @@ pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
   if expected/5 == actual/6 {
     ()
   } else {
-    $builtin.abort(
-      @ccall add_string(
-        @ccall add_string(
-          @ccall add_string("Assertion failed: expected ", Int::to_string.inner(expected/5, 10)),
-          " but got "
-        ),
-        Int::to_string.inner(actual/6, 10)
-      ),
-      "@:lib.mbt:121:5-121:108"
-    )
+    1 / 0
+    ()
   }
 }
 
@@ -54,19 +46,8 @@ pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
   if @stringequal(expected/3, actual/4) {
     ()
   } else {
-    $builtin.abort(
-      @ccall add_string(
-        @ccall add_string(
-          @ccall add_string(
-            @ccall add_string("Assertion failed: expected \"", expected/3),
-            "\" but got \""
-          ),
-          actual/4
-        ),
-        "\""
-      ),
-      "@:lib.mbt:130:5-130:97"
-    )
+    1 / 0
+    ()
   }
 }
 
@@ -74,13 +55,15 @@ pub fn assert_true (condition/2 : Bool) -> Unit {
   if condition/2 {
     ()
   } else {
-    $builtin.abort("Assertion failed: expected true but got false", "@:lib.mbt:139:5-139:68")
+    1 / 0
+    ()
   }
 }
 
 pub fn assert_false (condition/1 : Bool) -> Unit {
   if condition/1 {
-    $builtin.abort("Assertion failed: expected false but got true", "@:lib.mbt:146:5-146:68")
+    1 / 0
+    ()
   } else {
     ()
   }

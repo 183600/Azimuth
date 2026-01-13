@@ -1,0 +1,40 @@
+((Ctop_fn
+  ((binder __test_746573745f746573745f73696d706c652e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let s/0 Hello
+       (Cexpr_sequence ((Cexpr_var s/0 String ()))
+        (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+         (Cexpr_unit))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_746573745f746573745f73696d706c652e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let a/0 1
+       (Cexpr_let b/1 2
+        (Cexpr_sequence
+         ((Cexpr_prim @add_string (Cexpr_var a/0 String ())
+           (Cexpr_var b/1 String ())))
+         (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+          (Cexpr_unit))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_746573745f746573745f73696d706c652e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let name/0 sample
+       (Cexpr_sequence ((Cexpr_var name/0 String ()))
+        (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+         (Cexpr_unit))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false))))

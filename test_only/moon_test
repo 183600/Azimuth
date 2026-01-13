@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# test_only包的测试脚本
+echo "Running test_only tests..."
+
+# 测试comprehensive_tests.mbt
+if [ -f "comprehensive_tests.mbt" ]; then
+  echo "Checking comprehensive_tests.mbt..."
+  node ../azimuth/moonc.js check -pkg test_only -std-path ../core -workspace-path . lib.mbt comprehensive_tests.mbt
+  if [ $? -eq 0 ]; then
+    echo "comprehensive_tests.mbt ... ok"
+  else
+    echo "comprehensive_tests.mbt ... failed"
+  fi
+fi
+
+# 测试standard_moonbit_tests.mbt
+if [ -f "standard_moonbit_tests.mbt" ]; then
+  echo "Checking standard_moonbit_tests.mbt..."
+  node ../azimuth/moonc.js check -pkg test_only -std-path ../core -workspace-path . lib.mbt standard_moonbit_tests.mbt
+  if [ $? -eq 0 ]; then
+    echo "standard_moonbit_tests.mbt ... ok"
+  else
+    echo "standard_moonbit_tests.mbt ... failed"
+  fi
+fi
+
+# 测试simplified_unit_tests.mbt
+if [ -f "simplified_unit_tests.mbt" ]; then
+  echo "Checking simplified_unit_tests.mbt..."
+  node ../azimuth/moonc.js check -pkg test_only -std-path ../core -workspace-path . lib.mbt simplified_unit_tests.mbt
+  if [ $? -eq 0 ]; then
+    echo "simplified_unit_tests.mbt ... ok"
+  else
+    echo "simplified_unit_tests.mbt ... failed"
+  fi
+fi
+
+echo "Tests completed"

@@ -1,6 +1,7 @@
 Usage: moon [command]
 Commands:
   test    Run tests
+  build   Build package (generate .mi and .wasm files)
   help    Show this help message
 
 For other MoonBit commands, use the moonc.js compiler directly.

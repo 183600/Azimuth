@@ -1,129 +1,19 @@
 ((Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder add)
-   (fn
-    ((params
-      ((Param a/0 ((Tname ((lid Int)) () Int)) Int)
-       (Param b/1 ((Tname ((lid Int)) () Int)) Int)))
-     (body
-      (Texpr_apply
-       (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
-        ((Int Int) -> Int (generic_ false)))
-       ((Texpr_ident a/0 () Normal Int) (Texpr_ident b/1 () Normal Int)) Int
-       Infix))
-     (ret_constraint ((Tname ((lid Int)) () Int)))
-     (err_constraint No_error_typ) (ty ((Int Int) -> Int (generic_ false)))))
-   (is_pub true) (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder multiply)
-   (fn
-    ((params
-      ((Param a/0 ((Tname ((lid Int)) () Int)) Int)
-       (Param b/1 ((Tname ((lid Int)) () Int)) Int)))
-     (body
-      (Texpr_apply
-       (Texpr_ident Mul::mul|Int| () (Prim (Parith I32 Mul))
-        ((Int Int) -> Int (generic_ false)))
-       ((Texpr_ident a/0 () Normal Int) (Texpr_ident b/1 () Normal Int)) Int
-       Infix))
-     (ret_constraint ((Tname ((lid Int)) () Int)))
-     (err_constraint No_error_typ) (ty ((Int Int) -> Int (generic_ false)))))
-   (is_pub true) (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder greet)
-   (fn
-    ((params ((Param name/0 ((Tname ((lid String)) () String)) String)))
-     (body
-      (Texpr_apply
-       (Texpr_ident Add::add|String| () (Prim @add_string)
-        ((String String) -> String (generic_ false)))
-       ((Texpr_apply
-         (Texpr_ident Add::add|String| () (Prim @add_string)
-          ((String String) -> String (generic_ false)))
-         ((Texpr_constant "Hello, " String)
-          (Texpr_ident name/0 () Normal String))
-         String Infix)
-        (Texpr_constant ! String))
-       String Infix))
-     (ret_constraint ((Tname ((lid String)) () String)))
-     (err_constraint No_error_typ)
-     (ty ((String) -> String (generic_ false)))))
-   (is_pub true) (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder assert_eq)
-   (fn
-    ((params
-      ((Param expected/0 ((Tname ((lid Int)) () Int)) Int)
-       (Param actual/1 ((Tname ((lid Int)) () Int)) Int)))
-     (body
-      (Texpr_if
-       (Texpr_apply
-        (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
-         ((Int Int) -> Bool (generic_ false)))
-        ((Texpr_ident expected/0 () Normal Int)
-         (Texpr_ident actual/1 () Normal Int))
-        Bool Infix)
-       (Texpr_unit)
-       ((Texpr_let (Tpat_any Int)
-         (Texpr_apply
-          (Texpr_ident Sub::sub|Int| () (Prim (Parith I32 Sub))
-           ((Int Int) -> Int (generic_ false)))
-          ((Texpr_ident expected/0 () Normal Int)
-           (Texpr_ident actual/1 () Normal Int))
-          Int Infix)
-         () (Texpr_unit) Unit))
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint No_error_typ) (ty ((Int Int) -> Unit (generic_ false)))))
-   (is_pub true) (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder assert_eq_string)
-   (fn
-    ((params
-      ((Param expected/0 ((Tname ((lid String)) () String)) String)
-       (Param actual/1 ((Tname ((lid String)) () String)) String)))
-     (body
-      (Texpr_if
-       (Texpr_apply
-        (Texpr_ident Eq::equal|String| () (Prim Pstringequal)
-         ((String String) -> Bool (generic_ false)))
-        ((Texpr_ident expected/0 () Normal String)
-         (Texpr_ident actual/1 () Normal String))
-        Bool Infix)
-       (Texpr_unit)
-       ((Texpr_let (Tpat_any Int)
-         (Texpr_apply
-          (Texpr_ident Sub::sub|Int| () (Prim (Parith I32 Sub))
-           ((Int Int) -> Int (generic_ false)))
-          ((Texpr_apply
-            (Texpr_ident String::length () (Prim Pstringlength)
-             ((String) -> Int (generic_ false)))
-            ((Texpr_ident expected/0 () Normal String)) Int Dot)
-           (Texpr_apply
-            (Texpr_ident String::length () (Prim Pstringlength)
-             ((String) -> Int (generic_ false)))
-            ((Texpr_ident actual/1 () Normal String)) Int Dot))
-          Int Infix)
-         () (Texpr_unit) Unit))
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint No_error_typ)
-     (ty ((String String) -> Unit (generic_ false)))))
-   (is_pub true) (attrs ())))
- (Timpl_fun_decl
   ((kind Fun_kind_regular)
    (fn_binder __test_73696d706c655f746573742e6d6274_0)
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var result/0 Int)
+      (Texpr_let (Tpat_var result/0 Unit)
        (Texpr_apply
-        (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
-        ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Int Normal)
-       (((binder result/0) (binder_typ Int)))
-       (Texpr_apply
-        (Texpr_ident assert_eq () Normal
+        (Texpr_ident $azimuth.add () Normal
          ((Int Int) -> Unit (generic_ false)))
-        ((Texpr_constant 5 Int) (Texpr_ident result/0 () Normal Int)) Unit
+        ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Unit Normal)
+       (((binder result/0) (binder_typ Unit)))
+       (Texpr_apply
+        (Texpr_ident $azimuth.assert_eq () Normal
+         ((Int Unit) -> Unit (generic_ false)))
+        ((Texpr_constant 5 Int) (Texpr_ident result/0 () Normal Unit)) Unit
         Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
@@ -139,15 +29,16 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var result/0 Int)
+      (Texpr_let (Tpat_var result/0 Unit)
        (Texpr_apply
-        (Texpr_ident multiply () Normal ((Int Int) -> Int (generic_ false)))
-        ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Int Normal)
-       (((binder result/0) (binder_typ Int)))
-       (Texpr_apply
-        (Texpr_ident assert_eq () Normal
+        (Texpr_ident $azimuth.multiply () Normal
          ((Int Int) -> Unit (generic_ false)))
-        ((Texpr_constant 6 Int) (Texpr_ident result/0 () Normal Int)) Unit
+        ((Texpr_constant 2 Int) (Texpr_constant 3 Int)) Unit Normal)
+       (((binder result/0) (binder_typ Unit)))
+       (Texpr_apply
+        (Texpr_ident $azimuth.assert_eq () Normal
+         ((Int Unit) -> Unit (generic_ false)))
+        ((Texpr_constant 6 Int) (Texpr_ident result/0 () Normal Unit)) Unit
         Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
@@ -163,16 +54,17 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var result/0 String)
+      (Texpr_let (Tpat_var result/0 Unit)
        (Texpr_apply
-        (Texpr_ident greet () Normal ((String) -> String (generic_ false)))
-        ((Texpr_constant World String)) String Normal)
-       (((binder result/0) (binder_typ String)))
+        (Texpr_ident $azimuth.greet () Normal
+         ((String) -> Unit (generic_ false)))
+        ((Texpr_constant World String)) Unit Normal)
+       (((binder result/0) (binder_typ Unit)))
        (Texpr_apply
-        (Texpr_ident assert_eq_string () Normal
-         ((String String) -> Unit (generic_ false)))
+        (Texpr_ident $azimuth.assert_eq_string () Normal
+         ((String Unit) -> Unit (generic_ false)))
         ((Texpr_constant "Hello, World!" String)
-         (Texpr_ident result/0 () Normal String))
+         (Texpr_ident result/0 () Normal Unit))
         Unit Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))

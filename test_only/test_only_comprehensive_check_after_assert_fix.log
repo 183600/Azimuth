@@ -1,0 +1,75 @@
+comprehensive_tests.mbt:23:17-23:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:26:22-26:25 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:29:22-29:25 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:39:22-39:30 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:40:22-40:30 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:43:22-43:30 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:46:22-46:30 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:53:16-53:19 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:54:17-54:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:55:17-55:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:58:16-58:24 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:59:16-59:24 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:60:16-60:24 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:63:17-63:25 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:64:17-64:25 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:67:18-67:26 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:68:18-68:26 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:69:17-69:25 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:76:13-76:24 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:76:26-76:31 [E4021] The value identifier greet is unbound.
+comprehensive_tests.mbt:79:13-79:28 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:79:30-79:35 [E4021] The value identifier greet is unbound.
+comprehensive_tests.mbt:82:13-82:25 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:82:27-82:32 [E4021] The value identifier greet is unbound.
+comprehensive_tests.mbt:85:13-85:32 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:85:34-85:39 [E4021] The value identifier greet is unbound.
+comprehensive_tests.mbt:92:17-92:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:92:21-92:24 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:92:32-92:35 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:96:17-96:25 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:96:26-96:34 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:96:42-96:50 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:100:17-100:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:100:21-100:29 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:100:37-100:45 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:103:17-103:25 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:103:26-103:29 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:103:37-103:40 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:111:16-111:19 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:112:18-112:21 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:113:17-113:20 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:116:19-116:27 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:117:18-117:26 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:118:16-118:24 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:121:16-121:19 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:121:20-121:28 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:121:37-121:45 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:129:22-129:25 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:130:21-130:24 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:133:22-133:30 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:134:23-134:31 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:137:16-137:24 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:137:25-137:28 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:137:44-137:47 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:145:13-145:16 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:145:26-145:29 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:146:13-146:16 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:146:27-146:30 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:149:13-149:21 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:149:29-149:37 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:150:13-150:21 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:150:30-150:38 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:156:13-156:21 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:156:25-156:28 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:156:37-156:40 [E4021] The value identifier add is unbound.
+comprehensive_tests.mbt:156:41-156:49 [E4021] The value identifier multiply is unbound.
+comprehensive_tests.mbt:156:57-156:65 [E4021] The value identifier multiply is unbound.

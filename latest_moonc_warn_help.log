@@ -1,0 +1,2 @@
+./moonc.js: line 1: syntax error near unexpected token `('
+./moonc.js: line 1: `(function(a){typeof'

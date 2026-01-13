@@ -1,0 +1,62 @@
+Running moon test with real execution...
+
+Compiling azimuth...
+Generating azimuth.wasm...
+Testing azimuth...
+Checking simple_test.mbt...
+simple_test.mbt:2:16-2:28 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test.mbt:3:3-3:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test.mbt:6:16-6:33 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test.mbt:10:16-10:30 [E4020] Package "azimuth" not found in the loaded packages.
+simple_test.mbt:11:3-11:28 [E4020] Package "azimuth" not found in the loaded packages.
+Error: simple_test.mbt compilation failed
+Checking additional_comprehensive_tests.mbt...
+additional_comprehensive_tests.mbt:3:3-3:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:3:25-3:37 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:4:3-4:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:4:26-4:38 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:5:3-5:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:5:27-5:39 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:8:25-8:42 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:9:26-9:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:10:26-10:43 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:13:3-13:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:13:48-13:62 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:14:3-14:28 [E4020] Package "azimuth" not found in the loaded packages.
+additional_comprehensive_tests.mbt:14:41-14:55 [E4020] Package "azimuth" not found in the loaded packages.
+Error: additional_comprehensive_tests.mbt compilation failed
+Compiling clean_test...
+Generating clean_test.wasm...
+Testing clean_test...
+Checking simple_test.mbt...
+simple_test.mbt:2:16-2:31 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test.mbt:3:3-3:24 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test.mbt:6:16-6:36 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test.mbt:7:3-7:24 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test.mbt:10:16-10:33 [E4020] Package "clean_test" not found in the loaded packages.
+simple_test.mbt:11:3-11:31 [E4020] Package "clean_test" not found in the loaded packages.
+Error: simple_test.mbt compilation failed
+Checking additional_comprehensive_tests.mbt...
+additional_comprehensive_tests.mbt:3:3-3:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:3:28-3:43 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:4:3-4:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:4:29-4:44 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:5:3-5:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:5:30-5:45 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:8:3-8:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:8:28-8:48 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:9:3-9:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:9:29-9:49 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:10:3-10:24 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:10:29-10:49 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:13:3-13:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:13:51-13:68 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:14:3-14:31 [E4020] Package "clean_test" not found in the loaded packages.
+additional_comprehensive_tests.mbt:14:44-14:61 [E4020] Package "clean_test" not found in the loaded packages.
+Error: additional_comprehensive_tests.mbt compilation failed
+
+0 tests passed, 4 failed

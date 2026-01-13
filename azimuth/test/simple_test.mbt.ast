@@ -1,69 +1,4 @@
 ((Ptop_funcdef
-  ((name ((binder_name add)))
-   (decl_params
-    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
-      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
-   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
-   (error_type No_error_typ) (vis (Vis_pub ())))
-  (Decl_body
-   (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
-    (Pexpr_ident ((var_name b))))))
- (Ptop_funcdef
-  ((name ((binder_name multiply)))
-   (decl_params
-    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
-      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
-   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
-   (error_type No_error_typ) (vis (Vis_pub ())))
-  (Decl_body
-   (Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
-    (Pexpr_ident ((var_name b))))))
- (Ptop_funcdef
-  ((name ((binder_name greet)))
-   (decl_params (((((binder_name name)) ((Ptype_name ((lid String)) ()))))))
-   (quantifiers ()) (return_type ((Ptype_name ((lid String)) ())))
-   (error_type No_error_typ) (vis (Vis_pub ())))
-  (Decl_body
-   (Pexpr_infix ((var_name +))
-    (Pexpr_infix ((var_name +)) (Pexpr_constant "Hello, ")
-     (Pexpr_ident ((var_name name))))
-    (Pexpr_constant !))))
- (Ptop_funcdef
-  ((name ((binder_name assert_eq)))
-   (decl_params
-    (((((binder_name expected)) ((Ptype_name ((lid Int)) ())))
-      (((binder_name actual)) ((Ptype_name ((lid Int)) ()))))))
-   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
-   (error_type No_error_typ) (vis (Vis_pub ())))
-  (Decl_body
-   (Pexpr_if
-    (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name expected)))
-     (Pexpr_ident ((var_name actual))))
-    (Pexpr_unit)
-    ((Pexpr_let (Ppat_any)
-      (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name expected)))
-       (Pexpr_ident ((var_name actual))))
-      (Pexpr_unit))))))
- (Ptop_funcdef
-  ((name ((binder_name assert_eq_string)))
-   (decl_params
-    (((((binder_name expected)) ((Ptype_name ((lid String)) ())))
-      (((binder_name actual)) ((Ptype_name ((lid String)) ()))))))
-   (quantifiers ()) (return_type ((Ptype_name ((lid Unit)) ())))
-   (error_type No_error_typ) (vis (Vis_pub ())))
-  (Decl_body
-   (Pexpr_if
-    (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name expected)))
-     (Pexpr_ident ((var_name actual))))
-    (Pexpr_unit)
-    ((Pexpr_let (Ppat_any)
-      (Pexpr_infix ((var_name -))
-       (Pexpr_dot_apply (Pexpr_ident ((var_name expected)))
-        ((label_name length)) ())
-       (Pexpr_dot_apply (Pexpr_ident ((var_name actual)))
-        ((label_name length)) ()))
-      (Pexpr_unit))))))
- (Ptop_funcdef
   ((name ((binder_name __test_73696d706c655f746573742e6d6274_0)))
    (decl_params (())) (quantifiers ())
    (return_type ((Ptype_name ((lid Unit)) ())))
@@ -71,9 +6,9 @@
    (is_test_ true))
   (Decl_body
    (Pexpr_let (Ppat_var ((binder_name result)))
-    (Pexpr_apply (Pexpr_ident ((var_name add)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
      ((Pexpr_constant 2) (Pexpr_constant 3)))
-    (Pexpr_apply (Pexpr_ident ((var_name assert_eq)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
      ((Pexpr_constant 5) (Pexpr_ident ((var_name result))))))))
  (Ptop_funcdef
   ((name ((binder_name __test_73696d706c655f746573742e6d6274_1)))
@@ -83,9 +18,9 @@
    (is_test_ true))
   (Decl_body
    (Pexpr_let (Ppat_var ((binder_name result)))
-    (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
      ((Pexpr_constant 2) (Pexpr_constant 3)))
-    (Pexpr_apply (Pexpr_ident ((var_name assert_eq)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
      ((Pexpr_constant 6) (Pexpr_ident ((var_name result))))))))
  (Ptop_funcdef
   ((name ((binder_name __test_73696d706c655f746573742e6d6274_2)))
@@ -95,6 +30,7 @@
    (is_test_ true))
   (Decl_body
    (Pexpr_let (Ppat_var ((binder_name result)))
-    (Pexpr_apply (Pexpr_ident ((var_name greet))) ((Pexpr_constant World)))
-    (Pexpr_apply (Pexpr_ident ((var_name assert_eq_string)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.greet)))
+     ((Pexpr_constant World)))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq_string)))
      ((Pexpr_constant "Hello, World!") (Pexpr_ident ((var_name result)))))))))

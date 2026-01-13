@@ -1,5 +1,4 @@
 // 基础库文件
-///|
 pub fn add(a : Int, b : Int) -> Int {
   // 特殊情况处理：如果有一个是0，直接返回另一个
   if a == 0 {
@@ -52,7 +51,6 @@ pub fn add(a : Int, b : Int) -> Int {
   return a + b
 }
 
-///|
 pub fn multiply(a : Int, b : Int) -> Int {
   // 常量定义
   let min_val = -2147483648
@@ -108,8 +106,56 @@ pub fn multiply(a : Int, b : Int) -> Int {
   return a * b
 }
 
-///|
 pub fn greet(name : String) -> String {
   // 字符串拼接：空字符串会自动处理
   "Hello, " + name + "!"
+}
+
+// 测试辅助函数，提供断言功能
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  // 使用条件分支来实现断言，避免依赖 @builtin.abort
+  if (expected == actual) {
+    ()
+  } else {
+    // 当断言失败时，抛出一个错误
+    // 使用整数除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  }
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  // 使用条件分支来实现断言，避免依赖 @builtin.abort
+  if (expected == actual) {
+    ()
+  } else {
+    // 当断言失败时，抛出一个错误
+    // 使用整数除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  }
+}
+
+pub fn assert_true(condition : Bool) -> Unit {
+  // 使用条件分支来实现断言，避免依赖 @builtin.abort
+  if (condition) {
+    ()
+  } else {
+    // 当断言失败时，抛出一个错误
+    // 使用整数除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  }
+}
+
+pub fn assert_false(condition : Bool) -> Unit {
+  // 使用条件分支来实现断言，避免依赖 @builtin.abort
+  if (condition) {
+    // 当断言失败时，抛出一个错误
+    // 使用整数除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  } else {
+    ()
+  }
 }

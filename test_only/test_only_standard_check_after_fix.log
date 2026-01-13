@@ -1,0 +1,37 @@
+standard_moonbit_tests.mbt:29:4-29:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+standard_moonbit_tests.mbt:62:13-62:28 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:62:30-62:44 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:63:13-63:30 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:63:32-63:48 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:64:13-64:23 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:64:25-64:34 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:159:13-159:61 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:159:63-159:79 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:162:13-162:32 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:162:34-162:52 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:165:13-165:31 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+standard_moonbit_tests.mbt:165:33-165:50 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int

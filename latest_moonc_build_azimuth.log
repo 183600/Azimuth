@@ -1,0 +1,5 @@
+/home/runner/work/Azimuth/Azimuth/moonc.js: Dont'know what to do with build.
+moonc
+  -v  show version
+  -help  Display this list of options
+  --help  Display this list of options

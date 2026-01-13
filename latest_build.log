@@ -1,2 +1,2 @@
-Unknown command: build
-Usage: moon test
+Building package...
+Error: lib.mbt not found

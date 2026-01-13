@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Import necessary types and functions
+using @builtin { trait Show, type StringBuilder, type SourceLoc, physical_equal }
+
 ///|
 fn[T : Show] debug_string(t : T) -> String {
   let buf = StringBuilder::new(size_hint=50)
@@ -77,56 +80,4 @@ pub fn[T : Show] not_same_object(a : T, b : T, loc~ : SourceLoc) -> Unit raise {
 #callsite(autofill(loc))
 pub fn[T] fail(msg : String, loc~ : SourceLoc) -> T raise {
   @builtin.fail(msg, loc~)
-}
-
-///|
-/// Write data to snapshot buffer, use `snapshot` to output.
-/// 
-/// See also `@test.T::writeln`
-pub fn Test::write(self : Test, obj : &Show) -> Unit {
-  self.buffer.write_string(obj.to_string())
-}
-
-///|
-/// Write data to snapshot buffer and newline, use `snapshot` to output.
-/// 
-/// See also `@test.T::write`
-pub fn Test::writeln(self : Test, obj : &Show) -> Unit {
-  self.write(obj)
-  self.buffer.write_char('\n')
-}
-
-///|
-/// Take a snapshot of the current buffer and write to a file.
-/// 
-/// ```mbt check
-/// test {
-///   let t = @test.new("test.txt")
-///   t.writeln("hello")
-///   t.snapshot(filename="test.txt") // actual test block end
-/// }
-/// ```
-///
-/// Currently it can only be used once and should be used as the last step.
-#callsite(autofill(args_loc, loc))
-pub fn Test::snapshot(
-  self : Test,
-  filename~ : String,
-  loc~ : SourceLoc,
-  args_loc~ : ArgsLoc,
-) -> Unit raise SnapshotError {
-  let loc = loc.to_json_string()
-  let args_loc = args_loc.to_json()
-  let actual = self.buffer.to_string().escape()
-  let expect = filename.escape()
-  // always raise SnapshotError, moon will handle this
-  raise SnapshotError::SnapshotError(
-    "@SNAPSHOT_TESTING {\"loc\": \{loc}, \"args_loc\": \{args_loc}, \"expect\": \{expect}, \"actual\": \{actual}, \"snapshot\": true}",
-  )
-}
-
-///|
-/// Return the name of the test.
-pub fn Test::name(self : Self) -> String {
-  self.name
 }

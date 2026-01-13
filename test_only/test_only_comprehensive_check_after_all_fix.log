@@ -1,0 +1,25 @@
+comprehensive_tests.mbt:29:4-29:20 [E0001] Warning (unused_value): Unused function 'assert_eq_string'
+comprehensive_tests.mbt:101:13-101:24 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:101:26-101:36 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:104:13-104:28 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:104:30-104:44 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:107:13-107:25 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:107:27-107:38 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:110:13-110:32 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
+comprehensive_tests.mbt:110:34-110:52 [E4014] Expr Type Mismatch
+        has type : String
+        wanted   : Int
