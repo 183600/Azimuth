@@ -1,110 +1,131 @@
 // 标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法和断言
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
-  @azimuth.assert_eq(@azimuth.add(10, 20), 30)
-  @azimuth.assert_eq(@azimuth.add(-5, 5), 0)
-  @azimuth.assert_eq(@azimuth.add(0, 0), 0)
+test "basic_addition_functionality" {
+  // 测试基本加法功能
+  azimuth::assert_eq(5, azimuth::add(2, 3))
+  azimuth::assert_eq(0, azimuth::add(-2, 2))
+  azimuth::assert_eq(-10, azimuth::add(-3, -7))
 }
 
-test "add_function_edge_cases" {
-  // 测试 add 函数的边界情况
+test "addition_boundary_values" {
+  // 测试加法的边界值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出处理
-  @azimuth.assert_eq(@azimuth.add(max_val, 1), max_val)
-  @azimuth.assert_eq(@azimuth.add(min_val, -1), min_val)
-  @azimuth.assert_eq(@azimuth.add(max_val, min_val), -1)
+  // 测试最大值边界
+  azimuth::assert_eq(max_val, azimuth::add(max_val, 1))
+  azimuth::assert_eq(max_val, azimuth::add(max_val, max_val))
+  
+  // 测试最小值边界
+  azimuth::assert_eq(min_val, azimuth::add(min_val, -1))
+  azimuth::assert_eq(min_val, azimuth::add(min_val, min_val))
+  
+  // 测试最大值与最小值相加
+  azimuth::assert_eq(-1, azimuth::add(max_val, min_val))
 }
 
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  @azimuth.assert_eq(@azimuth.multiply(3, 7), 21)
-  @azimuth.assert_eq(@azimuth.multiply(-4, 5), -20)
-  @azimuth.assert_eq(@azimuth.multiply(-6, -8), 48)
-  @azimuth.assert_eq(@azimuth.multiply(0, 12345), 0)
+test "basic_multiplication_functionality" {
+  // 测试基本乘法功能
+  azimuth::assert_eq(6, azimuth::multiply(2, 3))
+  azimuth::assert_eq(-6, azimuth::multiply(-2, 3))
+  azimuth::assert_eq(6, azimuth::multiply(-2, -3))
+  azimuth::assert_eq(0, azimuth::multiply(5, 0))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试 multiply 函数的边界情况
+test "multiplication_boundary_values" {
+  // 测试乘法的边界值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出处理
-  @azimuth.assert_eq(@azimuth.multiply(max_val, 2), max_val)
-  @azimuth.assert_eq(@azimuth.multiply(min_val, -1), min_val)
-  @azimuth.assert_eq(@azimuth.multiply(46341, 46341), max_val)
+  // 测试最大值乘法
+  azimuth::assert_eq(max_val, azimuth::multiply(max_val, 1))
+  azimuth::assert_eq(max_val, azimuth::multiply(46341, 46341))
+  
+  // 测试最小值乘法
+  azimuth::assert_eq(min_val, azimuth::multiply(min_val, 1))
+  azimuth::assert_eq(min_val, azimuth::multiply(min_val, -1))
+  azimuth::assert_eq(min_val, azimuth::multiply(min_val, 2))
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  @azimuth.assert_eq_string(@azimuth.greet("MoonBit"), "Hello, MoonBit!")
-  @azimuth.assert_eq_string(@azimuth.greet(""), "Hello, !")
-  @azimuth.assert_eq_string(@azimuth.greet("123"), "Hello, 123!")
-  @azimuth.assert_eq_string(@azimuth.greet("测试"), "Hello, 测试!")
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
+  azimuth::assert_eq_string("Hello, John Doe!", azimuth::greet("John Doe"))
+  azimuth::assert_eq_string("Hello, 123!", azimuth::greet("123"))
 }
 
 test "complex_mathematical_operations" {
-  // 测试复杂数学运算
-  // 计算 (a + b) * c - d
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 10
+  // 测试复杂数学运算组合
+  let a = 10
+  let b = 20
+  let c = 5
   
-  let sum_ab = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum_ab, c)
-  let result = @azimuth.add(product, -d)
+  // 计算 (a + b) * c
+  let sum_ab = azimuth::add(a, b)
+  let result = azimuth::multiply(sum_ab, c)
+  azimuth::assert_eq(150, result)
   
-  @azimuth.assert_eq(result, 22)
+  // 计算 a * b + c
+  let product_ab = azimuth::multiply(a, b)
+  let result2 = azimuth::add(product_ab, c)
+  azimuth::assert_eq(205, result2)
 }
 
-test "real_world_calculation_scenario" {
-  // 测试真实世界计算场景：购物车总价计算
-  let item_price = 199
-  let quantity = 3
-  let shipping = 15
+test "real_world_shopping_cart" {
+  // 测试实际应用场景：购物车计算
+  let item1_price = 99
+  let item1_quantity = 2
+  let item2_price = 149
+  let item2_quantity = 1
   
-  let subtotal = @azimuth.multiply(item_price, quantity)
-  let total = @azimuth.add(subtotal, shipping)
+  // 计算每种商品的总价
+  let total1 = azimuth::multiply(item1_price, item1_quantity)
+  let total2 = azimuth::multiply(item2_price, item2_quantity)
   
-  @azimuth.assert_eq(total, 612)  // 199 * 3 + 15 = 597 + 15 = 612
+  // 计算购物车总价
+  let cart_total = azimuth::add(total1, total2)
+  
+  // 验证总价：99*2 + 149*1 = 198 + 149 = 347
+  azimuth::assert_eq(347, cart_total)
 }
 
-test "string_processing_with_special_characters" {
-  // 测试包含特殊字符的字符串处理
-  @azimuth.assert_eq_string(@azimuth.greet("John@Doe"), "Hello, John@Doe!")
-  @azimuth.assert_eq_string(@azimuth.greet("user#123"), "Hello, user#123!")
-  @azimuth.assert_eq_string(@azimuth.greet("test$%^&*"), "Hello, test$%^&*!")
-}
-
-test "sequential_operations_test" {
-  // 测试连续运算操作
-  let initial = 100
-  
-  // 连续加法
-  let result1 = @azimuth.add(@azimuth.add(initial, 50), 25)
-  @azimuth.assert_eq(result1, 175)
-  
-  // 连续乘法
-  let result2 = @azimuth.multiply(@azimuth.multiply(2, 3), 4)
-  @azimuth.assert_eq(result2, 24)
-  
-  // 混合运算
-  let result3 = @azimuth.add(@azimuth.multiply(5, 10), @azimuth.multiply(3, 4))
-  @azimuth.assert_eq(result3, 62)  // 5*10 + 3*4 = 50 + 12 = 62
-}
-
-test "boundary_value_combinations" {
-  // 测试边界值组合
+test "error_handling_scenarios" {
+  // 测试错误处理场景
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值与最小值的运算
-  @azimuth.assert_eq(@azimuth.add(max_val, min_val), -1)
-  @azimuth.assert_eq(@azimuth.multiply(max_val, 0), 0)
-  @azimuth.assert_eq(@azimuth.multiply(min_val, 0), 0)
-  @azimuth.assert_eq(@azimuth.multiply(max_val, 1), max_val)
-  @azimuth.assert_eq(@azimuth.multiply(min_val, 1), min_val)
+  // 确保溢出被正确处理
+  azimuth::assert_eq(max_val, azimuth::add(max_val, 100))
+  azimuth::assert_eq(min_val, azimuth::add(min_val, -100))
+  azimuth::assert_eq(max_val, azimuth::multiply(max_val, 2))
+  azimuth::assert_eq(min_val, azimuth::multiply(min_val, -2))
+}
+
+test "performance_critical_calculations" {
+  // 测试性能关键路径的计算
+  let base = 100
+  
+  // 连续加法操作
+  let result1 = azimuth::add(azimuth::add(base, base), azimuth::add(base, base))
+  azimuth::assert_eq(400, result1)
+  
+  // 连续乘法操作
+  let result2 = azimuth::multiply(azimuth::multiply(2, 5), azimuth::multiply(3, 4))
+  azimuth::assert_eq(120, result2)
+}
+
+test "function_composition_patterns" {
+  // 测试函数组合模式
+  let initial_value = 5
+  
+  // 嵌套函数调用：multiply(add(multiply(2, 3), add(4, 1)), 2)
+  let inner_mult = azimuth::multiply(2, 3)
+  let inner_add = azimuth::add(4, 1)
+  let middle_add = azimuth::add(inner_mult, inner_add)
+  let final_result = azimuth::multiply(middle_add, 2)
+  
+  // 验证结果：multiply(add(multiply(2, 3), add(4, 1)), 2) = multiply(add(6, 5), 2) = multiply(11, 2) = 22
+  azimuth::assert_eq(22, final_result)
 }
