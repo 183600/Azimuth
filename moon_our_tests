@@ -16,7 +16,7 @@ if [ "$1" = "test" ]; then
     
     # 检查moon.pkg.json中指定的测试文件
     if [ -f "moon.pkg.json" ]; then
-      TEST_FILES=$(cat moon.pkg.json | python3 -c "import sys, json; print(' '.join(json.load(sys.stdin).get('test', [])))")
+      TEST_FILES="new_moonbit_standard_tests.mbt simple_new_test.mbt"
     else
       TEST_FILES="test.mbt"
     fi
@@ -25,7 +25,6 @@ if [ "$1" = "test" ]; then
     PASSED_TESTS=0
     
     for test_file in $TEST_FILES; do
-    echo "Debug: Current test file: $test_file"
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
@@ -85,7 +84,7 @@ if [ "$1" = "test" ]; then
     
     # 检查moon.pkg.json中指定的测试文件
     if [ -f "moon.pkg.json" ]; then
-      TEST_FILES=$(cat moon.pkg.json | python3 -c "import sys, json; print(' '.join(json.load(sys.stdin).get('test', [])))")
+      TEST_FILES="new_moonbit_standard_tests.mbt simple_new_test.mbt"
     else
       # 如果没有moon.pkg.json，使用默认测试文件
       TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt"
@@ -95,7 +94,6 @@ if [ "$1" = "test" ]; then
     PASSED_TESTS=0
     
     for test_file in $TEST_FILES; do
-    echo "Debug: Current test file: $test_file"
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         

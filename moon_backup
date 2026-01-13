@@ -25,7 +25,6 @@ if [ "$1" = "test" ]; then
     PASSED_TESTS=0
     
     for test_file in $TEST_FILES; do
-    echo "Debug: Current test file: $test_file"
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
@@ -95,7 +94,6 @@ if [ "$1" = "test" ]; then
     PASSED_TESTS=0
     
     for test_file in $TEST_FILES; do
-    echo "Debug: Current test file: $test_file"
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
