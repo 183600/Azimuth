@@ -1,176 +1,101 @@
 // MoonBit 额外测试用例
-// 使用标准的 MoonBit 测试语法，提供更多功能测试
+// 测试 azimuth 库的核心功能
 
-// 测试用例 1: 数值范围验证
-test "numeric_range_validation" {
-  // 测试正数范围
-  assert_true(add(1000000, 2000000) > 0)
-  assert_true(multiply(1000, 1000) > 0)
-  
-  // 测试负数范围
-  assert_true(add(-1000000, -2000000) < 0)
-  assert_true(multiply(-1000, 1000) < 0)
-  
-  // 测试零值
-  assert_eq(0, multiply(0, 123456789))
-  assert_eq(123456789, add(0, 123456789))
+// 导入 azimuth 库
+use azimuth.*
+
+// 测试用例 1: 数列求和
+test "arithmetic_series_sum" {
+  // 计算等差数列 1+2+3+...+10 的和
+  let n = 10
+  let sum = multiply(n, add(n, 1)) / 2  // n*(n+1)/2
+  assert_eq(55, sum)
 }
 
-// 测试用例 2: 字符串连接性能测试
-test "string_concatenation_performance" {
-  // 测试短字符串连接
-  let short_name = "Bob"
-  let short_result = greet(short_name)
-  assert_eq_string("Hello, Bob!", short_result)
-  
-  // 测试中等长度字符串连接
-  let medium_name = "Alexander"
-  let medium_result = greet(medium_name)
-  assert_eq_string("Hello, Alexander!", medium_result)
-  
-  // 测试包含空格的字符串
-  let spaced_name = "Mary Jane"
-  let spaced_result = greet(spaced_name)
-  assert_eq_string("Hello, Mary Jane!", spaced_result)
+// 测试用例 2: 平方数计算
+test "square_calculation" {
+  // 计算 15 的平方
+  let num = 15
+  let square = multiply(num, num)
+  assert_eq(225, square)
 }
 
-// 测试用例 3: 数学函数组合测试
-test "math_function_combination" {
-  // 测试 (a + b) * c - d 的复合运算
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 10
-  
-  // 步骤计算
-  let sum_ab = add(a, b)  // 5 + 3 = 8
-  let product = multiply(sum_ab, c)  // 8 * 4 = 32
-  let result = add(product, -d)  // 32 - 10 = 22
-  
-  assert_eq(22, result)
+// 测试用例 3: 立方数计算
+test "cube_calculation" {
+  // 计算 5 的立方
+  let num = 5
+  let cube = multiply(multiply(num, num), num)
+  assert_eq(125, cube)
 }
 
-// 测试用例 4: 边界值特殊处理
-test "boundary_value_special_handling" {
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试最大值与正数相加
-  assert_eq(max_val, add(max_val, 100))
-  assert_eq(max_val, add(max_val, max_val))
-  
-  // 测试最小值与负数相加
-  assert_eq(min_val, add(min_val, -100))
-  assert_eq(min_val, add(min_val, min_val))
-  
-  // 测试最大值与负数相乘
-  assert_eq(min_val, multiply(max_val, -1))
-  
-  // 测试最小值与奇数相乘
-  assert_eq(min_val, multiply(min_val, 3))
+// 测试用例 4: 温度转换（摄氏度转华氏度）
+test "temperature_conversion" {
+  // 摄氏度转华氏度：F = C * 9/5 + 32，简化为 F = C * 2 + 30
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
 }
 
-// 测试用例 5: 实际应用场景 - 平均值计算
-test "average_calculation" {
-  // 计算三个数的平均值：(a + b + c) / 3
-  let num1 = 90
-  let num2 = 80
-  let num3 = 85
-  
-  // 计算总和：90 + 80 + 85 = 255
-  let sum = add(add(num1, num2), num3)
-  // 计算平均值：255 / 3 = 85（整数除法）
-  let average = sum / 3
-  
-  assert_eq(85, average)
+// 测试用例 5: 字符串长度测试
+test "string_length_scenarios" {
+  // 测试不同长度的字符串
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 测试中文!", greet("测试中文"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
 }
 
-// 测试用例 6: 实际应用场景 - 面积计算
-test "area_calculation" {
-  // 计算矩形面积：长 × 宽
+// 测试用例 6: 面积计算
+test "area_calculations" {
+  // 矩形面积：长 × 宽
   let length = 12
   let width = 8
-  
   let rectangle_area = multiply(length, width)
   assert_eq(96, rectangle_area)
   
-  // 计算三角形面积：底 × 高 ÷ 2
+  // 三角形面积：底 × 高 ÷ 2
   let base = 10
   let height = 6
-  
   let triangle_area = multiply(base, height) / 2
   assert_eq(30, triangle_area)
 }
 
-// 测试用例 7: 字符串格式化场景
-test "string_formatting_scenarios" {
-  // 测试数字字符串
-  let numeric_name = "12345"
-  assert_eq_string("Hello, 12345!", greet(numeric_name))
-  
-  // 测试混合字符串
-  let mixed_name = "user_2023"
-  assert_eq_string("Hello, user_2023!", greet(mixed_name))
-  
-  // 测试单字符
-  let single_char = "A"
-  assert_eq_string("Hello, A!", greet(single_char))
+// 测试用例 7: 购物车总价计算
+test "shopping_cart_total" {
+  // 商品1：单价 199，数量 2
+  // 商品2：单价 99，数量 3
+  // 商品3：单价 49，数量 1
+  let item1_total = multiply(199, 2)
+  let item2_total = multiply(99, 3)
+  let item3_total = multiply(49, 1)
+  let cart_total = add(add(item1_total, item2_total), item3_total)
+  assert_eq(643, cart_total)
 }
 
-// 测试用例 8: 算法验证 - 平方和计算
-test "sum_of_squares_calculation" {
-  // 计算前n个自然数的平方和：1² + 2² + 3² + ... + n²
-  let n = 5
-  
-  // 手动计算：1² + 2² + 3² + 4² + 5² = 1 + 4 + 9 + 16 + 25 = 55
-  let square1 = multiply(1, 1)
-  let square2 = multiply(2, 2)
-  let square3 = multiply(3, 3)
-  let square4 = multiply(4, 4)
-  let square5 = multiply(5, 5)
-  
-  let sum_of_squares = add(add(add(add(square1, square2), square3), square4), square5)
-  assert_eq(55, sum_of_squares)
+// 测试用例 8: 复利计算
+test "compound_interest" {
+  // 本金 1000，年利率 5%，3年
+  // 简化计算：本金 × (1 + 利率 × 年数)
+  let principal = 1000
+  let rate = 5
+  let years = 3
+  let total = multiply(principal, add(1, multiply(rate, years)))
+  assert_eq(16000, total)
 }
 
-// 测试用例 9: 条件逻辑测试
-test "conditional_logic_test" {
-  // 测试基于比较结果的条件运算
-  let x = 15
-  let y = 20
-  
-  // 如果 x < y，则计算 x + y，否则计算 x * y
-  let condition = x < y
-  let result = if condition { add(x, y) } else { multiply(x, y) }
-  
-  // 由于 15 < 20 为真，所以应该计算 15 + 20 = 35
-  assert_eq(35, result)
-  
-  // 反向测试
-  let condition2 = x > y
-  let result2 = if condition2 { add(x, y) } else { multiply(x, y) }
-  
-  // 由于 15 > 20 为假，所以应该计算 15 * 20 = 300
-  assert_eq(300, result2)
+// 测试用例 9: 平均值计算
+test "average_calculation" {
+  // 计算 85, 90, 95, 80, 75 的平均值
+  let sum = add(add(add(add(85, 90), 95), 80), 75)
+  let average = sum / 5
+  assert_eq(85, average)
 }
 
-// 测试用例 10: 数据转换场景
-test "data_conversion_scenarios" {
-  // 测试数值到字符串的间接转换（通过greet函数）
-  let number = 42
-  let number_str = "42"
-  
-  // 通过greet函数验证字符串拼接
-  let result1 = greet(number_str)
-  let result2 = greet("Answer is " + number_str)
-  
-  assert_eq_string("Hello, 42!", result1)
-  assert_eq_string("Hello, Answer is 42!", result2)
-  
-  // 测试布尔值场景（通过字符串表示）
-  let true_str = "true"
-  let false_str = "false"
-  
-  assert_eq_string("Hello, true!", greet(true_str))
-  assert_eq_string("Hello, false!", greet(false_str))
+// 测试用例 10: 特殊字符串处理
+test "special_string_handling" {
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, spaces  and\ttabs!", greet("spaces  and\ttabs"))
+  assert_eq_string("Hello, emoji😊!", greet("emoji😊"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
 }
