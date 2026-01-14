@@ -190,3 +190,231 @@ test "game_score_calculation_complex" {
   let rank_level = final_score / 1000  // 15
   @azimuth.assert_eq(15, rank_level)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "large_number_operations" {
+  // 测试大数运算
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  
+  // 大数相加
+  let sum_result = @azimuth.add(large_num1, large_num2)
+  @azimuth.assert_eq(3000000, sum_result)
+  
+  // 大数相乘
+  let product_result = @azimuth.multiply(1000, 2000)
+  @azimuth.assert_eq(2000000, product_result)
+  
+  // 大数与边界值运算
+  let max_val = 2147483647
+  let large_sum = @azimuth.add(max_val, 1000000)
+  @azimuth.assert_eq(max_val, large_sum)  // 应该被限制在最大值
+}
+
+test "negative_number_operations" {
+  // 测试负数运算
+  let neg_num1 = -100
+  let neg_num2 = -200
+  let pos_num = 150
+  
+  // 负数相加
+  let neg_sum = @azimuth.add(neg_num1, neg_num2)
+  @azimuth.assert_eq(-300, neg_sum)
+  
+  // 正负数相加
+  let mixed_sum = @azimuth.add(neg_num1, pos_num)
+  @azimuth.assert_eq(50, mixed_sum)
+  
+  // 负数相乘
+  let neg_product = @azimuth.multiply(neg_num1, neg_num2)
+  @azimuth.assert_eq(20000, neg_product)
+  
+  // 正负数相乘
+  let mixed_product = @azimuth.multiply(neg_num1, pos_num)
+  @azimuth.assert_eq(-15000, mixed_product)
+}
+
+test "boundary_value_operations" {
+  // 测试边界值运算
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值运算
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  
+  // 最小值运算
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  
+  // 边界值组合
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+}
+
+test "string_processing_extreme" {
+  // 测试字符串处理的极端情况
+  // 空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  
+  // 单个字符
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  
+  // 长字符串
+  let long_string = "ThisIsAVeryLongStringThatContainsManyCharactersAndShouldStillWorkProperly"
+  @azimuth.assert_eq_string("Hello, " + long_string + "!", @azimuth.greet(long_string))
+  
+  // 包含特殊字符的字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  @azimuth.assert_eq_string("Hello, " + special_chars + "!", @azimuth.greet(special_chars))
+  
+  // 包含Unicode字符的字符串
+  let unicode_string = "测试中文🌟Emoji"
+  @azimuth.assert_eq_string("Hello, " + unicode_string + "!", @azimuth.greet(unicode_string))
+}
+
+test "mathematical_properties_validation" {
+  // 测试数学性质验证
+  let a = 12
+  let b = 8
+  let c = 5
+  
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  
+  // 加法结合律
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(a, b), c), @azimuth.add(a, @azimuth.add(b, c)))
+  
+  // 乘法结合律
+  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(a, b), c), @azimuth.multiply(a, @azimuth.multiply(b, c)))
+  
+  // 分配律
+  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, c)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c)))
+}
+
+test "real_world_currency_conversion" {
+  // 测试实际应用：货币转换
+  let usd_amount = 100
+  let exchange_rate = 7  // 1 USD = 7 CNY (简化汇率)
+  let fee_rate = 2  // 2% 手续费
+  
+  // 转换为人民币
+  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
+  @azimuth.assert_eq(700, cny_amount)
+  
+  // 计算手续费
+  let fee = @azimuth.multiply(cny_amount, fee_rate) / 100
+  @azimuth.assert_eq(14, fee)
+  
+  // 计算最终金额
+  let final_amount = @azimuth.add(cny_amount, -fee)
+  @azimuth.assert_eq(686, final_amount)
+  
+  // 反向计算验证
+  let reverse_usd = final_amount / exchange_rate
+  @azimuth.assert_eq(98, reverse_usd)  // 整数除法，舍去小数部分
+}
+
+test "error_boundary_handling" {
+  // 测试错误边界处理
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  let overflow_add = @azimuth.add(max_val, max_val)
+  @azimuth.assert_eq(max_val, overflow_add)
+  
+  let underflow_add = @azimuth.add(min_val, min_val)
+  @azimuth.assert_eq(min_val, underflow_add)
+  
+  let overflow_mul = @azimuth.multiply(max_val, max_val)
+  @azimuth.assert_eq(max_val, overflow_mul)
+  
+  // 测试除零保护（通过模拟）
+  // 由于没有除法函数，我们通过其他方式测试错误处理
+  let zero_result = @azimuth.multiply(0, max_val)
+  @azimuth.assert_eq(0, zero_result)
+  
+  // 测试边界情况下的特殊处理
+  let special_case = @azimuth.multiply(min_val, -1)
+  @azimuth.assert_eq(min_val, special_case)
+}
+
+test "performance_calculation_patterns" {
+  // 测试性能计算模式
+  let base_value = 100
+  let multiplier = 2
+  let iterations = 10
+  
+  // 模拟循环累加：base_value + base_value*multiplier + ... + base_value*multiplier^iterations
+  // 使用公式计算：base_value * (multiplier^(iterations+1) - 1) / (multiplier - 1)
+  
+  // 手动计算前几项验证
+  let term1 = base_value  // 100
+  let term2 = @azimuth.multiply(base_value, multiplier)  // 200
+  let term3 = @azimuth.multiply(term2, multiplier)  // 400
+  let term4 = @azimuth.multiply(term3, multiplier)  // 800
+  
+  let sum_first_4 = @azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4)
+  @azimuth.assert_eq(1500, sum_first_4)
+  
+  // 计算等比数列的和（简化版）
+  let power_of_2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2)  // 2^4 = 16
+  let geometric_sum = @azimuth.multiply(base_value, power_of_2)
+  @azimuth.assert_eq(1600, geometric_sum)
+}
+
+test "complex_formula_evaluation" {
+  // 测试复杂公式评估
+  // 计算二次方程 ax² + bx + c 的值
+  let x = 7
+  let a = 3
+  let b = 5
+  let c = 2
+  
+  // 计算 x²
+  let x_squared = @azimuth.multiply(x, x)  // 49
+  
+  // 计算 ax²
+  let ax_squared = @azimuth.multiply(a, x_squared)  // 147
+  
+  // 计算 bx
+  let bx = @azimuth.multiply(b, x)  // 35
+  
+  // 计算最终结果
+  let result = @azimuth.add(@azimuth.add(ax_squared, bx), c)  // 147 + 35 + 2 = 184
+  @azimuth.assert_eq(184, result)
+  
+  // 计算导数值（简化版）：2ax + b
+  let derivative = @azimuth.add(@azimuth.multiply(@azimuth.multiply(2, a), x), b)  // 2*3*7 + 5 = 47
+  @azimuth.assert_eq(47, derivative)
+}
+
+test "data_type_boundary_simulation" {
+  // 测试数据类型边界模拟
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 模拟有符号整数溢出行为
+  let positive_to_negative = @azimuth.add(max_val, 1)
+  @azimuth.assert_eq(max_val, positive_to_negative)  // 应该被限制
+  
+  let negative_to_positive = @azimuth.add(min_val, 1)
+  @azimuth.assert_eq(-2147483647, negative_to_positive)
+  
+  // 模拟无符号整数行为（通过偏移）
+  let offset = 2147483648  // 2^31
+  let unsigned_value = 100
+  let signed_representation = @azimuth.add(unsigned_value, -offset)
+  @azimuth.assert_eq(-2147483548, signed_representation)
+  
+  // 测试字符串到数字的模拟转换
+  let digit_string = "123"
+  let simulated_number = @azimuth.add(@azimuth.add(100, 20), 3)  // 模拟 "123" 转换为数字
+  @azimuth.assert_eq(123, simulated_number)
+}
