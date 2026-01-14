@@ -1,112 +1,130 @@
-// MoonBit 测试用例集合
-// 测试 azimuth 包中的核心功能和数学特性
+// MoonBit 标准测试用例
+// 测试 azimuth 包的核心功能
 
-// 测试基本算术运算
-test "basic_arithmetic_operations" {
-  // 基本加法测试
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(-3, 3))
-  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
-  
-  // 基本乘法测试
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(-6, @azimuth.multiply(2, -3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+test "add_function_basic_functionality" {
+  // 测试 add 函数的基本功能
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
 }
 
-// 测试数学恒等式
-test "mathematical_identities" {
-  // 加法恒等式
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(42, @azimuth.add(0, 42))
-  
-  // 乘法恒等式
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(42, @azimuth.multiply(1, 42))
-  @azimuth.assert_eq(0, @azimuth.multiply(42, 0))
-  
-  // 负数恒等式
-  @azimuth.assert_eq(-42, @azimuth.multiply(42, -1))
-  @azimuth.assert_eq(-42, @azimuth.multiply(-1, 42))
-}
-
-// 测试边界值的特殊组合
-test "boundary_value_combinations" {
+test "add_function_edge_cases" {
+  // 测试 add 函数的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值与最小值的运算
+  // 测试溢出保护
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
   @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
   
-  // 测试接近边界值的运算
-  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
+  // 测试与零相加
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
 }
 
-// 测试字符串处理功能
-test "string_processing_functions" {
-  // 基本字符串测试
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  
-  // 边界情况测试
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  
-  // 特殊字符测试
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
+test "multiply_function_basic_functionality" {
+  // 测试 multiply 函数的基本功能
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
+  @azimuth.assert_eq(-8, @azimuth.multiply(-2, 4))
+  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
 }
 
-// 测试溢出保护机制
-test "overflow_protection" {
+test "multiply_function_edge_cases" {
+  // 测试 multiply 函数的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试加法溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  
-  // 测试乘法溢出保护
+  // 测试溢出保护
   @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+  
+  // 测试特殊值
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
 }
 
-// 测试数学交换律
-test "commutative_properties" {
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(15, 27), @azimuth.add(27, 15))
-  @azimuth.assert_eq(@azimuth.add(-10, 20), @azimuth.add(20, -10))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(6, 7), @azimuth.multiply(7, 6))
-  @azimuth.assert_eq(@azimuth.multiply(-3, 8), @azimuth.multiply(8, -3))
+test "greet_function_various_inputs" {
+  // 测试 greet 函数的各种输入
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
 }
 
-// 测试复杂表达式计算
-test "complex_expression_evaluation" {
-  // 嵌套运算
-  let result1 = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(26, result1)
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算矩形面积和周长
+  let length = 8
+  let width = 5
   
-  // 多层嵌套
-  let result2 = @azimuth.multiply(@azimuth.add(10, 5), @azimuth.add(3, 2))
-  @azimuth.assert_eq(75, result2)
+  // 面积 = 长 × 宽
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(40, area)
   
-  // 混合正负数
-  let result3 = @azimuth.add(@azimuth.multiply(-2, 3), @azimuth.multiply(4, -5))
-  @azimuth.assert_eq(-26, result3)
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(26, perimeter)
 }
 
-// 测试断言函数
-test "assertion_functions" {
-  // 测试整数断言
-  @azimuth.assert_eq(10, 10)
+test "financial_calculation" {
+  // 测试金融计算场景
+  // 商品价格 × 数量 + 税费 - 折扣
+  let price = 199
+  let quantity = 3
+  let tax_rate = 8  // 8%
+  let discount = 50
   
-  // 测试字符串断言
-  @azimuth.assert_eq_string("test", "test")
+  // 计算总价
+  let subtotal = @azimuth.multiply(price, quantity)
+  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), -discount)
   
-  // 测试布尔断言
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_eq(583, total)  // 199*3 + 199*3*8/100 - 50 = 597 + 47 - 50 = 594
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试特殊字符
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+  @azimuth.assert_eq_string("Hello,   spaced   !", @azimuth.greet("  spaced  "))
+  
+  // 测试长字符串
+  let long_string = "ThisIsAVeryLongStringForTestingPurposes"
+  @azimuth.assert_eq_string("Hello, ThisIsAVeryLongStringForTestingPurposes!", @azimuth.greet(long_string))
+}
+
+test "mathematical_operations_combination" {
+  // 测试数学运算的组合
+  // 计算 (a + b) × c - d ÷ e
+  let a = 10
+  let b = 5
+  let c = 3
+  let d = 12
+  let e = 4
+  
+  let sum_ab = @azimuth.add(a, b)  // 15
+  let product = @azimuth.multiply(sum_ab, c)  // 45
+  let division = d / e  // 3
+  let result = @azimuth.add(product, -division)  // 42
+  
+  @azimuth.assert_eq(42, result)
+}
+
+test "real_world_application" {
+  // 测试实际应用场景：计算平均分
+  let math_score = 85
+  let english_score = 78
+  let science_score = 92
+  let history_score = 88
+  
+  // 计算总分
+  let total_score = @azimuth.add(@azimuth.add(@azimuth.add(math_score, english_score), science_score), history_score)
+  // 计算平均分
+  let average_score = total_score / 4
+  
+  @azimuth.assert_eq(85, average_score)  // (85+78+92+88)/4 = 343/4 = 85
 }
