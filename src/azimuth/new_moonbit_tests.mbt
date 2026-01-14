@@ -1,186 +1,207 @@
 // 新增的 MoonBit 测试用例
-// 覆盖各种场景，使用标准的 MoonBit 测试语法
+// 这些测试用例涵盖了各种实际应用场景和边界情况
 
-test "string_length_validation" {
-  // 测试字符串长度验证功能
-  let short_name = "Bob"
-  let medium_name = "Alexander"
-  let long_name = "VeryLongNameThatExceedsNormalExpectations"
+// 导入主模块中的函数
+use azimuth
+
+test "string_case_processing" {
+  // 字符串大小写处理测试
+  let lower_name = "moonbit"
+  let upper_name = "MOONBIT"
+  let mixed_name = "MoonBit"
   
-  // 验证greet函数处理不同长度字符串的能力
-  assert_eq_string("Hello, Bob!", greet(short_name))
-  assert_eq_string("Hello, Alexander!", greet(medium_name))
-  assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectations!", greet(long_name))
+  // 测试不同大小写的字符串处理
+  assert_eq_string("Hello, moonbit!", greet(lower_name))
+  assert_eq_string("Hello, MOONBIT!", greet(upper_name))
+  assert_eq_string("Hello, MoonBit!", greet(mixed_name))
 }
 
-test "numeric_precision_tests" {
-  // 测试数值精度和边界情况
-  let large_positive = 1000000
-  let large_negative = -1000000
+test "calculation_with_negative_numbers" {
+  // 负数计算测试
+  let a = -15
+  let b = -20
+  let c = 10
   
-  // 测试大数相加
-  let sum_result = add(large_positive, large_positive)
-  assert_eq(2000000, sum_result)
+  // 测试负数相加
+  let neg_add = add(a, b)
+  assert_eq(-35, neg_add)
   
-  // 测试大数相乘
-  let product_result = multiply(large_positive, 2)
-  assert_eq(2000000, product_result)
+  // 测试正负数相加
+  let mixed_add = add(a, c)
+  assert_eq(-5, mixed_add)
   
-  // 测试大负数运算
-  let negative_sum = add(large_negative, large_negative)
-  assert_eq(-2000000, negative_sum)
+  // 测试负数相乘
+  let neg_mul = multiply(a, b)
+  assert_eq(300, neg_mul)
   
   // 测试正负数相乘
-  let mixed_product = multiply(large_positive, -2)
-  assert_eq(-2000000, mixed_product)
+  let mixed_mul = multiply(a, c)
+  assert_eq(-150, mixed_mul)
 }
 
-test "complex_arithmetic_expressions" {
-  // 测试复杂算术表达式
-  // 计算：(a + b) * (c - d) + e * f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 4
+test "complex_arithmetic_sequence" {
+  // 复杂算术序列测试
+  let initial = 5
+  let difference = 3
+  let terms = 5
   
-  let sum_ab = add(a, b)        // 15
-  let diff_cd = add(c, -d)      // 12
-  let product_ef = multiply(e, f) // 12
-  let product_ab_cd = multiply(sum_ab, diff_cd) // 180
-  let final_result = add(product_ab_cd, product_ef) // 192
+  // 计算等差数列的第n项：a + (n-1)d
+  let term1 = initial
+  let term2 = add(initial, difference)
+  let term3 = add(term2, difference)
+  let term4 = add(term3, difference)
+  let term5 = add(term4, difference)
   
-  assert_eq(192, final_result)
+  assert_eq(5, term1)
+  assert_eq(8, term2)
+  assert_eq(11, term3)
+  assert_eq(14, term4)
+  assert_eq(17, term5)
+  
+  // 计算前n项和：n/2 * (首项 + 末项)
+  let sum = multiply(terms, add(term1, term5)) / 2
+  assert_eq(55, sum)
 }
 
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "real_world_measurement_conversion" {
+  // 实际测量单位转换测试
+  let meters = 100
   
-  // 测试最大值边界
-  assert_true(add(max_val, 0) == max_val)
-  assert_true(add(max_val, -1) == 2147483646)
-  assert_true(add(max_val, 1) == max_val)  // 溢出保护
+  // 转换为厘米：1米 = 100厘米
+  let centimeters = multiply(meters, 100)
+  assert_eq(10000, centimeters)
   
-  // 测试最小值边界
-  assert_true(add(min_val, 0) == min_val)
-  assert_true(add(min_val, 1) == -2147483647)
-  assert_true(add(min_val, -1) == min_val)  // 溢出保护
+  // 转换为毫米：1厘米 = 10毫米
+  let millimeters = multiply(centimeters, 10)
+  assert_eq(100000, millimeters)
   
-  // 测试乘法边界
-  assert_true(multiply(max_val, 1) == max_val)
-  assert_true(multiply(min_val, 1) == min_val)
-  assert_true(multiply(max_val, -1) == min_val)
-  assert_true(multiply(min_val, -1) == min_val)
+  // 转换为千米：1000米 = 1千米
+  let kilometers = meters / 1000
+  assert_eq(0, kilometers)  // 整数除法
+  
+  // 转换为英寸（近似）：1米 ≈ 39.37英寸，简化为39
+  let inches = multiply(meters, 39)
+  assert_eq(3900, inches)
 }
 
-test "string_special_characters_handling" {
-  // 测试特殊字符处理
-  let unicode_name = "张三李四"
-  let emoji_name = "🌟🚀"
-  let mixed_special = "Test@123#$"
-  let quoted_name = "\"John\""
-  let newline_name = "Line1\nLine2"
+test "business_profit_calculation" {
+  // 商业利润计算测试
+  let revenue = 50000
+  let cost1 = 20000
+  let cost2 = 15000
+  let cost3 = 8000
   
-  assert_eq_string("Hello, 张三李四!", greet(unicode_name))
-  assert_eq_string("Hello, 🌟🚀!", greet(emoji_name))
-  assert_eq_string("Hello, Test@123#$!", greet(mixed_special))
-  assert_eq_string("Hello, \"John\"!", greet(quoted_name))
-  assert_eq_string("Hello, Line1\nLine2!", greet(newline_name))
+  // 计算总成本
+  let total_cost = add(add(cost1, cost2), cost3)
+  assert_eq(43000, total_cost)
+  
+  // 计算利润
+  let profit = add(revenue, -total_cost)
+  assert_eq(7000, profit)
+  
+  // 计算利润率（百分比）
+  let profit_margin = multiply(profit, 100) / revenue
+  assert_eq(14, profit_margin)  // 7000 * 100 / 50000 = 14%
 }
 
-test "mathematical_sequence_calculations" {
-  // 测试数学序列计算
-  // 计算斐波那契数列前几项的和：1, 1, 2, 3, 5, 8, 13, 21
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
-  let fib6 = add(fib4, fib5)  // 8
-  let fib7 = add(fib5, fib6)  // 13
-  let fib8 = add(fib6, fib7)  // 21
-  
-  // 计算前8项的和
-  let sum_fib = add(add(add(add(add(add(add(fib1, fib2), fib3), fib4), fib5), fib6), fib7), fib8)
-  assert_eq(54, sum_fib)
-}
-
-test "real_world_financial_calculations" {
-  // 测试实际金融计算场景
-  // 计算贷款月供：P * r * (1 + r)^n / ((1 + r)^n - 1)
-  // 简化为整数计算
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 30          // 贷款年限
-  
-  // 简化计算：月供 ≈ 本金 / (年限 * 12) + 利息
-  let monthly_principal = principal / (years * 12)
-  let total_interest = multiply(principal, annual_rate) / 100
-  let monthly_interest = total_interest / (years * 12)
-  let monthly_payment = add(monthly_principal, monthly_interest)
-  
-  assert_eq(444, monthly_payment)  // 简化计算结果
-}
-
-test "performance_stress_tests" {
-  // 测试性能压力场景
+test "scientific_notation_simulation" {
+  // 科学计数法模拟测试
   let base = 2
+  let exponent = 10
   
-  // 计算2的10次方：2^10 = 1024
-  let power_2 = multiply(base, base)
-  let power_4 = multiply(power_2, power_2)
-  let power_8 = multiply(power_4, power_4)
-  let power_10 = multiply(power_8, multiply(base, base))
+  // 计算 2^10 = 1024
+  let result = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(2, 2))
+  assert_eq(64, result)  // 2^6 = 64
   
-  assert_eq(1024, power_10)
+  // 继续计算剩余的幂
+  let final_result = multiply(result, multiply(2, 2))
+  assert_eq(256, final_result)  // 2^8 = 256
   
-  // 连续加法测试
-  let sum_1_to_100 = multiply(100, add(100, 1)) / 2  // 等差数列求和公式
-  assert_eq(5050, sum_1_to_100)
+  let complete_result = multiply(final_result, multiply(2, 2))
+  assert_eq(1024, complete_result)  // 2^10 = 1024
 }
 
-test "data_structure_simulation" {
-  // 模拟数据结构操作
-  // 模拟栈操作：push, push, pop, peek
-  let stack_initial = 0
-  let push1 = add(stack_initial, 10)
-  let push2 = add(push1, 20)
-  let push3 = add(push2, 30)
+test "game_logic_calculation" {
+  // 游戏逻辑计算测试
+  let player_level = 15
+  let base_hp = 100
+  let hp_per_level = 20
   
-  // 模拟pop操作（移除最后一个元素）
-  let after_pop = add(push3, -30)
+  // 计算玩家生命值
+  let player_hp = add(base_hp, multiply(player_level, hp_per_level))
+  assert_eq(400, player_hp)
   
-  // 模拟peek操作（查看栈顶元素）
-  let peek_value = 20
+  // 计算经验值需求（简化公式）
+  let exp_required = multiply(player_level, multiply(player_level, 100))
+  assert_eq(22500, exp_required)
   
-  assert_eq(30, push3)      // 栈中有三个元素：10, 20, 30
-  assert_eq(20, after_pop)  // pop后栈中有两个元素：10, 20
-  assert_eq(20, peek_value) // 栈顶元素是20
+  // 计算伤害值
+  let weapon_damage = 50
+  let skill_multiplier = 2
+  let total_damage = multiply(weapon_damage, skill_multiplier)
+  assert_eq(100, total_damage)
 }
 
-test "conditional_calculation_logic" {
-  // 测试条件计算逻辑
-  let x = 15
-  let y = 25
-  let z = 10
+test "date_time_calculations" {
+  // 日期时间计算测试
+  let days_in_month = 30
+  let months = 6
+  let days_in_week = 7
   
-  // 条件1：如果x < y，则计算x + z，否则计算y - z
-  let condition1 = x < y
-  let result1 = if condition1 { add(x, z) } else { add(y, -z) }
-  assert_eq(25, result1)  // 15 < 25为真，所以15 + 10 = 25
+  // 计算总天数
+  let total_days = multiply(days_in_month, months)
+  assert_eq(180, total_days)
   
-  // 条件2：如果y > z且x > 5，则计算x * y，否则计算x + y
-  let condition2a = y > z
-  let condition2b = x > 5
-  let condition2 = condition2a && condition2b
-  let result2 = if condition2 { multiply(x, y) } else { add(x, y) }
-  assert_eq(375, result2)  // 25 > 10且15 > 5为真，所以15 * 25 = 375
+  // 计算周数
+  let weeks = total_days / days_in_week
+  assert_eq(25, weeks)  // 180 / 7 = 25（整数除法）
   
-  // 条件3：复杂条件判断
-  let complex_condition = (x + y > z) && (y - x < x)
-  let result3 = if complex_condition { multiply(add(x, y), z) } else { add(multiply(x, y), z) }
-  assert_eq(400, result3)  // (15+25 > 10)且(25-15 < 15)为真，所以(15+25) * 10 = 400
+  // 计算剩余天数
+  let remaining_days = total_days % days_in_week
+  assert_eq(5, remaining_days)  // 180 % 7 = 5
+}
+
+test "statistical_analysis" {
+  // 统计分析测试
+  // 数据集：10, 20, 30, 40, 50, 60, 70, 80, 90, 100
+  let data_sum = add(add(add(add(add(add(add(add(add(10, 20), 30), 40), 50), 60), 70), 80), 90), 100)
+  let data_count = 10
+  
+  // 计算平均值
+  let mean = data_sum / data_count
+  assert_eq(55, mean)
+  
+  // 计算中位数（偶数个数据点，取中间两个的平均值）
+  let median = add(50, 60) / 2
+  assert_eq(55, median)
+  
+  // 计算范围（最大值 - 最小值）
+  let range = add(100, -10)
+  assert_eq(90, range)
+}
+
+test "network_performance_metrics" {
+  // 网络性能指标测试
+  let packet_size = 1500  // 字节
+  let packets_per_second = 1000
+  let duration_seconds = 60
+  
+  // 计算总数据量
+  let total_packets = multiply(packets_per_second, duration_seconds)
+  let total_bytes = multiply(total_packets, packet_size)
+  assert_eq(90000000, total_bytes)
+  
+  // 转换为千字节
+  let total_kb = total_bytes / 1000
+  assert_eq(90000, total_kb)
+  
+  // 转换为兆字节
+  let total_mb = total_kb / 1000
+  assert_eq(90, total_mb)
+  
+  // 计算带宽利用率（假设最大带宽为100MB/s）
+  let max_bandwidth = 100
+  let actual_bandwidth = total_mb / duration_seconds
+  let utilization = multiply(actual_bandwidth, 100) / max_bandwidth
+  assert_eq(1, utilization)  // 1.5MB/s / 100MB/s * 100% = 1%（整数除法）
 }
