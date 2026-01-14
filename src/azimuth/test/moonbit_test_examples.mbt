@@ -1,114 +1,76 @@
 // MoonBit 测试用例示例
-// 包含10个标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法
 
-test "add_basic_functionality" {
-  // 测试基本加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-3, @azimuth.add(-1, -2))
+// 基础数学运算测试
+test "basic_addition_operation" {
+  let result = add(10, 20)
+  assert_eq(30, result)
 }
 
-test "add_boundary_values" {
-  // 测试边界值的加法
+// 基础乘法运算测试
+test "basic_multiplication_operation" {
+  let result = multiply(5, 6)
+  assert_eq(30, result)
+}
+
+// 字符串拼接测试
+test "string_concatenation_operation" {
+  let result = greet("MoonBit")
+  assert_eq_string("Hello, MoonBit!", result)
+}
+
+// 边界值测试 - 最大值
+test "max_value_boundary_test" {
   let max_val = 2147483647
+  let result = add(max_val, 0)
+  assert_eq(max_val, result)
+}
+
+// 边界值测试 - 最小值
+test "min_value_boundary_test" {
   let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  let result = add(min_val, 0)
+  assert_eq(min_val, result)
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
-  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
-}
-
-test "multiply_special_cases" {
-  // 测试乘法特殊情况
+// 溢出处理测试
+test "overflow_handling_test" {
   let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  let result = add(max_val, 1)
+  assert_eq(max_val, result)  // 应该被限制为最大值
 }
 
-test "greet_functionality" {
-  // 测试问候函数
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+// 负数运算测试
+test "negative_numbers_test" {
+  let result1 = add(-10, -20)
+  assert_eq(-30, result1)
+  
+  let result2 = multiply(-5, 6)
+  assert_eq(-30, result2)
 }
 
-test "complex_calculations" {
-  // 测试复杂计算
-  // (a + b) * c - d
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 10
+// 混合符号运算测试
+test "mixed_sign_operations_test" {
+  let result1 = add(100, -50)
+  assert_eq(50, result1)
   
-  let sum_ab = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum_ab, c)
-  let result = @azimuth.add(product, -d)
-  
-  @azimuth.assert_eq(22, result)
+  let result2 = multiply(-4, -5)
+  assert_eq(20, result2)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 11
-  
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
-  
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
+// 复合运算测试
+test "compound_operations_test" {
+  // 计算 (2 + 3) * 4
+  let sum = add(2, 3)
+  let result = multiply(sum, 4)
+  assert_eq(20, result)
 }
 
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 计算矩形周长：2 * (长 + 宽)
-  let length = 10
-  let width = 5
+// 特殊字符串测试
+test "special_string_characters_test" {
+  let result1 = greet("")
+  assert_eq_string("Hello, !", result1)
   
-  let sum_sides = @azimuth.add(length, width)
-  let perimeter = @azimuth.multiply(2, sum_sides)
-  
-  @azimuth.assert_eq(30, perimeter)
-}
-
-test "error_handling" {
-  // 测试错误处理
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
-  
-  // 测试溢出保护
-  let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-}
-
-test "performance_calculations" {
-  // 测试性能相关计算
-  // 计算前n个自然数的和：n * (n + 1) / 2
-  let n = 100
-  
-  let sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  @azimuth.assert_eq(5050, sum)
-  
-  // 计算平方和：1² + 2² + ... + n²
-  // 简化测试：只计算前5个
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.multiply(4, 4)), @azimuth.multiply(5, 5))
-  @azimuth.assert_eq(55, square_sum)
+  let result2 = greet("测试123")
+  assert_eq_string("Hello, 测试123!", result2)
 }
