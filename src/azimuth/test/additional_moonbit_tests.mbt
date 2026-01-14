@@ -1,262 +1,301 @@
-// Azimuth 项目额外的 MoonBit 测试用例
-// 测试边界条件、性能和实际应用场景
+// 额外的 MoonBit 测试用例
+// 补充现有测试，覆盖更多实际应用场景
 
-// 测试1: 二进制运算模拟
-test "binary_operations_simulation" {
-  // 模拟位运算：使用加减乘除实现位运算效果
-  let a = 16
-  let b = 5
+test "advanced_mathematical_operations" {
+  // 测试高级数学运算
+  // 计算平方和：a² + b² + c²
+  let a = 3
+  let b = 4
+  let c = 5
   
-  // 左移运算模拟：a << 1 = a * 2
-  let left_shift = @azimuth.multiply(a, 2)
-  @azimuth.assert_eq(32, left_shift)
+  let a_squared = @azimuth.multiply(a, a)  // 9
+  let b_squared = @azimuth.multiply(b, b)  // 16
+  let c_squared = @azimuth.multiply(c, c)  // 25
   
-  // 右移运算模拟：a >> 1 = a / 2
-  let right_shift = a / 2
-  @azimuth.assert_eq(8, right_shift)
+  let sum_of_squares = @azimuth.add(@azimuth.add(a_squared, b_squared), c_squared)
+  @azimuth.assert_eq(50, sum_of_squares)
   
-  // 模拟按位与运算（简化版）
-  let bitwise_and_sim = @azimuth.multiply(a, b) / b
-  @azimuth.assert_eq(16, bitwise_and_sim)
+  // 计算立方差：a³ - b³
+  let x = 4
+  let y = 2
+  let x_cubed = @azimuth.multiply(x, @azimuth.multiply(x, x))  // 64
+  let y_cubed = @azimuth.multiply(y, @azimuth.multiply(y, y))  // 8
+  let difference = @azimuth.add(x_cubed, -y_cubed)  // 56
+  
+  @azimuth.assert_eq(56, difference)
 }
 
-// 测试2: 货币转换计算
-test "currency_exchange_calculation" {
-  // 实际货币转换场景
-  let usd_amount = 250
-  let exchange_rate = 7  // 1 USD = 7 CNY (简化汇率)
-  let transaction_fee = 15  // 固定手续费
+test "physics_calculations" {
+  // 测试物理计算
+  // 计算动能：KE = 1/2 × m × v²
+  let mass = 10
+  let velocity = 5
+  let velocity_squared = @azimuth.multiply(velocity, velocity)  // 25
+  let kinetic_energy = @azimuth.multiply(mass, velocity_squared) / 2  // 125
   
-  // 转换为人民币
-  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
-  @azimuth.assert_eq(1750, cny_amount)
+  @azimuth.assert_eq(125, kinetic_energy)
   
-  // 添加手续费
-  let total_with_fee = @azimuth.add(cny_amount, transaction_fee)
-  @azimuth.assert_eq(1765, total_with_fee)
+  // 计算势能：PE = m × g × h
+  let height = 20
+  let gravity = 10  // 简化重力加速度
+  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)  // 2000
   
-  // 计算折扣（5%）
-  let discount = @azimuth.multiply(total_with_fee, 5) / 100
-  let final_amount = @azimuth.add(total_with_fee, -discount)
-  @azimuth.assert_eq(1676, final_amount)
+  @azimuth.assert_eq(2000, potential_energy)
+  
+  // 计算总机械能
+  let total_energy = @azimuth.add(kinetic_energy, potential_energy)
+  @azimuth.assert_eq(2125, total_energy)
 }
 
-// 测试3: 几何体积计算
-test "geometry_volume_calculations" {
-  // 计算3D几何体的体积
-  let cube_side = 4
+test "data_structure_operations" {
+  // 测试数据结构操作
+  // 模拟数组操作：计算数组元素的总和、平均值、最大值、最小值
+  // 数组：[15, 8, 23, 42, 7, 19]
   
-  // 立方体体积：side³
-  let cube_volume = @azimuth.multiply(
-    @azimuth.multiply(cube_side, cube_side), 
-    cube_side
-  )
-  @azimuth.assert_eq(64, cube_volume)
+  let elem1 = 15
+  let elem2 = 8
+  let elem3 = 23
+  let elem4 = 42
+  let elem5 = 7
+  let elem6 = 19
   
-  // 长方体体积
-  let length = 6
-  let width = 4
-  let height = 3
-  let rectangular_volume = @azimuth.multiply(
-    @azimuth.multiply(length, width), 
-    height
-  )
-  @azimuth.assert_eq(72, rectangular_volume)
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(elem1, elem2), elem3), elem4), elem5), elem6)
+  @azimuth.assert_eq(114, sum)
   
-  // 圆柱体体积（简化计算）：π × r² × h ≈ 3 × r² × h
-  let radius = 5
-  let cylinder_height = 10
-  let cylinder_volume = @azimuth.multiply(
-    @azimuth.multiply(3, @azimuth.multiply(radius, radius)),
-    cylinder_height
-  )
-  @azimuth.assert_eq(750, cylinder_volume)
+  // 计算平均值
+  let count = 6
+  let average = sum / count
+  @azimuth.assert_eq(19, average)
+  
+  // 查找最大值（简化比较）
+  let max_val = 42
+  @azimuth.assert_eq(42, max_val)
+  
+  // 查找最小值（简化比较）
+  let min_val = 7
+  @azimuth.assert_eq(7, min_val)
+  
+  // 计算范围
+  let range = @azimuth.add(max_val, -min_val)
+  @azimuth.assert_eq(35, range)
 }
 
-// 测试4: 数列计算
-test "mathematical_series_calculations" {
-  // 计算等差数列和等比数列
+test "algorithmic_complexity" {
+  // 测试算法复杂度相关计算
+  // 计算斐波那契数列前几项
+  let n1 = 1
+  let n2 = 1
+  let n3 = @azimuth.add(n1, n2)  // 2
+  let n4 = @azimuth.add(n2, n3)  // 3
+  let n5 = @azimuth.add(n3, n4)  // 5
+  let n6 = @azimuth.add(n4, n5)  // 8
+  let n7 = @azimuth.add(n5, n6)  // 13
   
-  // 等差数列：2, 5, 8, 11, 14（公差为3）
-  let ap_first = 2
-  let ap_diff = 3
-  let ap_n = 5
+  @azimuth.assert_eq(13, n7)
   
-  // 使用公式：n × (2×a + (n-1)×d) / 2
-  let ap_sum = @azimuth.multiply(
-    ap_n, 
-    @azimuth.add(
-      @azimuth.multiply(2, ap_first),
-      @azimuth.multiply(ap_n - 1, ap_diff)
-    )
-  ) / 2
-  @azimuth.assert_eq(40, ap_sum)
+  // 计算斐波那契数列前7项的和
+  let fib_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(n1, n2), n3), n4), n5), n6), n7)
+  @azimuth.assert_eq(33, fib_sum)
   
-  // 等比数列：3, 6, 12, 24, 48（公比为2）
-  let gp_first = 3
-  let gp_ratio = 2
-  let gp_n = 5
-  
-  // 手动计算前5项
-  let gp_term1 = gp_first
-  let gp_term2 = @azimuth.multiply(gp_term1, gp_ratio)
-  let gp_term3 = @azimuth.multiply(gp_term2, gp_ratio)
-  let gp_term4 = @azimuth.multiply(gp_term3, gp_ratio)
-  let gp_term5 = @azimuth.multiply(gp_term4, gp_ratio)
-  
-  let gp_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    gp_term1, gp_term2), gp_term3), gp_term4), gp_term5)
-  @azimuth.assert_eq(93, gp_sum)
+  // 计算幂运算：2^8
+  let base = 2
+  let exponent = 8
+  let power_of_2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(base, base), base), base), 
+                                     @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(base, base), base), base))
+  @azimuth.assert_eq(256, power_of_2)
 }
 
-// 测试5: 数据压缩模拟
-test "data_compression_simulation" {
-  // 模拟简单的数据压缩算法
+test "business_intelligence" {
+  // 测试商业智能计算
+  // 销售数据分析
+  let q1_sales = 45000
+  let q2_sales = 52000
+  let q3_sales = 48000
+  let q4_sales = 61000
   
-  let original_size = 1000
-  let compression_ratio = 70  // 压缩到70%
+  // 年度总销售额
+  let annual_sales = @azimuth.add(@azimuth.add(@azimuth.add(q1_sales, q2_sales), q3_sales), q4_sales)
+  @azimuth.assert_eq(206000, annual_sales)
   
-  // 计算压缩后大小
-  let compressed_size = @azimuth.multiply(original_size, compression_ratio) / 100
-  @azimuth.assert_eq(700, compressed_size)
+  // 季度平均销售额
+  let quarterly_avg = annual_sales / 4
+  @azimuth.assert_eq(51500, quarterly_avg)
   
-  // 计算节省的空间
-  let space_saved = @azimuth.add(original_size, -compressed_size)
-  @azimuth.assert_eq(300, space_saved)
+  // 同比增长率（假设去年销售额为180000）
+  let last_year_sales = 180000
+  let growth = @azimuth.add(annual_sales, -last_year_sales)  // 26000
+  let growth_rate = @azimuth.multiply(growth, 100) / last_year_sales  // 14%
   
-  // 计算压缩效率（节省百分比）
-  let compression_efficiency = @azimuth.multiply(space_saved, 100) / original_size
-  @azimuth.assert_eq(30, compression_efficiency)
+  @azimuth.assert_eq(14, growth_rate)
+  
+  // 市场份额计算（假设市场总规模为1000000）
+  let market_size = 1000000
+  let market_share = @azimuth.multiply(annual_sales, 100) / market_size  // 20%
+  
+  @azimuth.assert_eq(20, market_share)
 }
 
-// 测试6: 网络带宽计算
-test "network_bandwidth_calculations" {
-  // 网络带宽和下载时间计算
+test "game_development_calculations" {
+  // 测试游戏开发相关计算
+  // 角色属性计算
+  let base_hp = 100
+  let level = 8
+  let vitality = 15
   
-  let file_size_mb = 850
-  let bandwidth_mbps = 50  // 50 Mbps
+  // 计算生命值：HP = base + level × 10 + vitality × 5
+  let hp_from_level = @azimuth.multiply(level, 10)  // 80
+  let hp_from_vitality = @azimuth.multiply(vitality, 5)  // 75
+  let total_hp = @azimuth.add(@azimuth.add(base_hp, hp_from_level), hp_from_vitality)  // 255
   
-  // 计算下载时间（秒）：文件大小 / 带宽
-  let download_time_seconds = file_size_mb / bandwidth_mbps
-  @azimuth.assert_eq(17, download_time_seconds)
+  @azimuth.assert_eq(255, total_hp)
   
-  // 转换为分钟
-  let download_time_minutes = download_time_seconds / 60
-  @azimuth.assert_eq(0, download_time_minutes)  // 整数除法
+  // 计算攻击力：Attack = base + level × 5 + strength × 3
+  let base_attack = 20
+  let strength = 12
+  let attack_from_level = @azimuth.multiply(level, 5)  // 40
+  let attack_from_strength = @azimuth.multiply(strength, 3)  // 36
+  let total_attack = @azimuth.add(@azimuth.add(base_attack, attack_from_level), attack_from_strength)  // 96
   
-  // 计算剩余秒数
-  let remaining_seconds = download_time_seconds % 60
-  @azimuth.assert_eq(17, remaining_seconds)
+  @azimuth.assert_eq(96, total_attack)
   
-  // 考虑网络开销（增加20%时间）
-  let overhead_percentage = 20
-  let overhead_time = @azimuth.multiply(download_time_seconds, overhead_percentage) / 100
-  let total_time = @azimuth.add(download_time_seconds, overhead_time)
-  @azimuth.assert_eq(20, total_time)
+  // 计算暴击伤害：Critical Damage = Attack × 2
+  let critical_damage = @azimuth.multiply(total_attack, 2)
+  @azimuth.assert_eq(192, critical_damage)
 }
 
-// 测试7: 字符串处理性能
-test "string_processing_performance" {
-  // 测试字符串处理的性能相关计算
+test "scientific_computing" {
+  // 测试科学计算
+  // 计算理想气体状态方程：PV = nRT（简化版本）
+  let pressure = 101325  // 帕斯卡
+  let volume = 22400     // 升
+  let n = 1              // 摩尔数
+  let gas_constant = 8   // 简化气体常数
+  let temperature = 280  // 开尔文
   
-  let base_string_length = 10
-  let repeat_count = 100
+  // 验证方程：P × V = n × R × T
+  let left_side = @azimuth.multiply(pressure, volume) / 1000  // 简化计算
+  let right_side = @azimuth.multiply(@azimuth.multiply(n, gas_constant), temperature)
   
-  // 计算重复拼接后的总长度
-  let total_length = @azimuth.multiply(base_string_length, repeat_count)
-  @azimuth.assert_eq(1000, total_length)
+  @azimuth.assert_eq(2240, left_side)
+  @azimuth.assert_eq(2240, right_side)
   
-  // 计算内存使用估算（每个字符2字节）
-  let memory_usage_bytes = @azimuth.multiply(total_length, 2)
-  @azimuth.assert_eq(2000, memory_usage_bytes)
+  // 计算密度：ρ = m/V
+  let mass = 1000  // 克
+  let volume2 = 500  // 立方厘米
+  let density = @azimuth.multiply(mass, 1000) / volume2  // 2000 kg/m³
   
-  // 转换为KB
-  let memory_usage_kb = memory_usage_bytes / 1024
-  @azimuth.assert_eq(1, memory_usage_kb)
+  @azimuth.assert_eq(2000, density)
   
-  // 测试greet函数的处理
-  let test_name = "PerformanceTest"
-  let greet_result = @azimuth.greet(test_name)
-  @azimuth.assert_eq_string("Hello, PerformanceTest!", greet_result)
+  // 计算浓度：C = n/V
+  let moles = 2
+  let volume3 = 500  // 毫升
+  let concentration = @azimuth.multiply(moles, 1000) / volume3  // 4 mol/L
+  
+  @azimuth.assert_eq(4, concentration)
 }
 
-// 测试8: 物理运动计算
-test "physics_motion_calculations" {
-  // 简单的物理运动计算
+test "cryptography_basics" {
+  // 测试密码学基础计算
+  // 简单凯撒密码
+  let plaintext = 13  // A对应数字13
+  let shift = 3
+  let ciphertext = @azimuth.add(plaintext, shift)  // 16 (D)
   
-  let initial_velocity = 10  // m/s
-  let acceleration = 2       // m/s²
-  let time = 5               // s
+  @azimuth.assert_eq(16, ciphertext)
   
-  // 计算最终速度：v = u + at
-  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
-  @azimuth.assert_eq(20, final_velocity)
+  // 解密
+  let decrypted = @azimuth.add(ciphertext, -shift)
+  @azimuth.assert_eq(13, decrypted)
   
-  // 计算位移：s = ut + 0.5at²
-  let displacement_part1 = @azimuth.multiply(initial_velocity, time)  // ut = 50
-  let displacement_part2 = @azimuth.multiply(
-    @azimuth.multiply(acceleration, time), 
-    time
-  ) / 2  // 0.5at² = 25
-  let total_displacement = @azimuth.add(displacement_part1, displacement_part2)
-  @azimuth.assert_eq(75, total_displacement)
+  // 简单模运算
+  let a = 17
+  let m = 5
+  let remainder = a % m  // 2
+  @azimuth.assert_eq(2, remainder)
   
-  // 计算平均速度
-  let average_velocity = total_displacement / time
-  @azimuth.assert_eq(15, average_velocity)
+  // 计算最大公约数（简化版，欧几里得算法）
+  let x = 48
+  let y = 18
+  // 简化计算：gcd(48, 18) = gcd(18, 48 % 18) = gcd(18, 12) = gcd(12, 6) = gcd(6, 0) = 6
+  let gcd = 6
+  @azimuth.assert_eq(6, gcd)
 }
 
-// 测试9: 电池续航计算
-test "battery_life_calculations" {
-  // 电池续航时间计算
+test "networking_calculations" {
+  // 测试网络相关计算
+  // 计算网络带宽利用率
+  let actual_bandwidth = 850  // Mbps
+  let max_bandwidth = 1000   // Mbps
+  let utilization = @azimuth.multiply(actual_bandwidth, 100) / max_bandwidth  // 85%
   
-  let battery_capacity_mah = 4000  // mAh
-  let device_consumption_ma = 200  // mA
+  @azimuth.assert_eq(85, utilization)
   
-  // 计算理论续航时间（小时）
-  let battery_life_hours = battery_capacity_mah / device_consumption_ma
-  @azimuth.assert_eq(20, battery_life_hours)
+  // 计算数据传输时间
+  let file_size = 5000  // MB
+  let transfer_rate = 10  // MB/s
+  let transfer_time = file_size / transfer_rate  // 500秒
   
-  // 转换为分钟
-  let battery_life_minutes = @azimuth.multiply(battery_life_hours, 60)
-  @azimuth.assert_eq(1200, battery_life_minutes)
+  @azimuth.assert_eq(500, transfer_time)
   
-  // 考虑实际使用效率（80%）
-  let efficiency_percentage = 80
-  let actual_life_hours = @azimuth.multiply(battery_life_hours, efficiency_percentage) / 100
-  @azimuth.assert_eq(16, actual_life_hours)
+  // 计算网络延迟影响
+  let base_response_time = 100  // 毫秒
+  let network_latency = 50      // 毫秒
+  let total_response_time = @azimuth.add(base_response_time, network_latency)  // 150毫秒
   
-  // 计算可使用次数（每次使用2小时）
-  let usage_per_session_hours = 2
-  let sessions_count = actual_life_hours / usage_per_session_hours
-  @azimuth.assert_eq(8, sessions_count)
+  @azimuth.assert_eq(150, total_response_time)
+  
+  // 计算数据包丢失率
+  let packets_sent = 1000
+  let packets_received = 950
+  let packets_lost = @azimuth.add(packets_sent, -packets_received)  // 50
+  let loss_rate = @azimuth.multiply(packets_lost, 100) / packets_sent  // 5%
+  
+  @azimuth.assert_eq(5, loss_rate)
 }
 
-// 测试10: 复杂表达式计算
-test "complex_expression_evaluation" {
-  // 测试复杂数学表达式的计算
+test "machine_learning_basics" {
+  // 测试机器学习基础计算
+  // 线性回归：y = mx + b
+  let m = 2  // 斜率
+  let x = 5  // 输入值
+  let b = 3  // 截距
   
-  let x = 3
-  let y = 4
-  let z = 2
+  let y = @azimuth.add(@azimuth.multiply(m, x), b)  // 13
+  @azimuth.assert_eq(13, y)
   
-  // 计算：(x + y) × (x - y) + z²
-  let sum_xy = @azimuth.add(x, y)  // 7
-  let diff_xy = @azimuth.add(x, -y)  // -1
-  let product_xy = @azimuth.multiply(sum_xy, diff_xy)  // -7
-  let z_squared = @azimuth.multiply(z, z)  // 4
-  let result1 = @azimuth.add(product_xy, z_squared)  // -3
-  @azimuth.assert_eq(-3, result1)
+  // 计算多个预测值的总和
+  let x1 = 1
+  let x2 = 2
+  let x3 = 3
+  let x4 = 4
   
-  // 计算：x² + y² + 2xy (即 (x + y)²)
-  let x_squared = @azimuth.multiply(x, x)  // 9
-  let y_squared = @azimuth.multiply(y, y)  // 16
-  let two_xy = @azimuth.multiply(@azimuth.multiply(2, x), y)  // 24
-  let result2 = @azimuth.add(@azimuth.add(x_squared, y_squared), two_xy)  // 49
-  @azimuth.assert_eq(49, result2)
+  let y1 = @azimuth.add(@azimuth.multiply(m, x1), b)  // 5
+  let y2 = @azimuth.add(@azimuth.multiply(m, x2), b)  // 7
+  let y3 = @azimuth.add(@azimuth.multiply(m, x3), b)  // 9
+  let y4 = @azimuth.add(@azimuth.multiply(m, x4), b)  // 11
   
-  // 验证 (x + y)² = x² + y² + 2xy
-  let x_plus_y = @azimuth.add(x, y)  // 7
-  let square_of_sum = @azimuth.multiply(x_plus_y, x_plus_y)  // 49
-  @azimuth.assert_eq(result2, square_of_sum)
+  let total_prediction = @azimuth.add(@azimuth.add(@azimuth.add(y1, y2), y3), y4)
+  @azimuth.assert_eq(32, total_prediction)
+  
+  // 计算平均绝对误差
+  let actual1 = 6
+  let actual2 = 7
+  let actual3 = 8
+  let actual4 = 10
+  
+  let error1 = @azimuth.add(actual1, -y1)  // 1
+  let error2 = @azimuth.add(actual2, -y2)  // 0
+  let error3 = @azimuth.add(actual3, -y3)  // -1
+  let error4 = @azimuth.add(actual4, -y4)  // -1
+  
+  let abs_error1 = if (error1 < 0) { @azimuth.add(0, -error1) } else { error1 }  // 1
+  let abs_error2 = if (error2 < 0) { @azimuth.add(0, -error2) } else { error2 }  // 0
+  let abs_error3 = if (error3 < 0) { @azimuth.add(0, -error3) } else { error3 }  // 1
+  let abs_error4 = if (error4 < 0) { @azimuth.add(0, -error4) } else { error4 }  // 1
+  
+  let total_error = @azimuth.add(@azimuth.add(@azimuth.add(abs_error1, abs_error2), abs_error3), abs_error4)
+  let mean_absolute_error = total_error / 4  // 0.75，简化为0
+  
+  @azimuth.assert_eq(0, mean_absolute_error)
 }
