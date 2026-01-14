@@ -90,4 +90,15 @@ if [ -f "moonbit_test_cases.mbt" ]; then
   fi
 fi
 
+if [ -f "my_additional_tests.mbt" ]; then
+  echo "Checking my_additional_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test my_additional_tests.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "my_additional_tests.mbt ... ok"
+  else
+    echo "my_additional_tests.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"
