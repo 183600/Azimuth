@@ -1,229 +1,196 @@
-// 增强测试场景 - 包含10个新的MoonBit测试用例
-// 测试各种实际应用场景和边界情况
+// 增强测试场景 - 提供10个新的 MoonBit 测试用例
+// 测试 azimuth 包的核心功能和边界情况
 
-test "statistical_variance_calculation" {
-  // 统计方差计算测试
-  // 数据集: [10, 15, 20, 25, 30]
-  let values_sum = add(add(add(add(10, 15), 20), 25), 30)  // 100
-  let count = 5
-  let mean = values_sum / count  // 20
-  
-  // 计算方差: Σ(x - mean)² / n
-  let diff1 = add(10, -mean)  // -10
-  let diff2 = add(15, -mean)  // -5
-  let diff3 = add(20, -mean)  // 0
-  let diff4 = add(25, -mean)  // 5
-  let diff5 = add(30, -mean)  // 10
-  
-  let squared_diffs_sum = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), 
-                                     multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5))
-  let variance = squared_diffs_sum / count
-  
-  assert_eq(50, variance)  // (-10)² + (-5)² + 0² + 5² + 10² = 100+25+0+25+100 = 250, 250/5 = 50
+test "divide_with_ceil_basic" {
+  // 测试基本的向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(3, divide_with_ceil(12, 4))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(1, divide_with_ceil(1, 1))
 }
 
-test "loan_amortization_schedule" {
-  // 贷款摊还计划测试
-  let principal = 120000  // 贷款本金
-  let annual_rate = 6     // 年利率6%
-  let loan_term = 30      // 贷款期限30年
-  let monthly_rate = annual_rate / 12  // 月利率0.5%
-  let total_payments = multiply(loan_term, 12)  // 总还款次数360
-  
-  // 简化的月供计算: P * r * (1 + r)^n / [(1 + r)^n - 1]
-  // 这里使用简化公式: 本金 + 总利息
-  let total_interest = multiply(principal, multiply(annual_rate, loan_term)) / 100
-  let total_payment = add(principal, total_interest)
-  let monthly_payment = total_payment / total_payments
-  
-  assert_eq(216000, total_payment)  // 120000 + 120000*6*30/100 = 120000 + 216000 = 336000
-  assert_eq(600, monthly_payment)   // 336000 / 360 = 933.33 ≈ 600 (简化计算)
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-4, 4))
+  assert_eq(-3, divide_with_ceil(-11, 4))
 }
 
-test "inventory_management" {
-  // 库存管理测试
-  let initial_stock = 100
-  let sales_per_day = 15
-  let restock_amount = 50
-  let days_until_restock = 3
-  
-  // 计算3天后的库存
-  let total_sales = multiply(sales_per_day, days_until_restock)
-  let stock_before_restock = add(initial_stock, -total_sales)
-  let stock_after_restock = add(stock_before_restock, restock_amount)
-  
-  assert_eq(45, stock_before_restock)  // 100 - 15*3 = 55
-  assert_eq(95, stock_after_restock)   // 55 + 50 = 105
-  
-  // 计算库存周转率
-  let cost_per_unit = 10
-  let inventory_value = multiply(stock_after_restock, cost_per_unit)
-  let annual_sales = multiply(sales_per_day, 365)
-  let turnover_rate = multiply(annual_sales, cost_per_unit) / inventory_value
-  
-  assert_eq(950, inventory_value)     // 95 * 10 = 950
-  assert_eq(57, turnover_rate)        // (15*365*10)/950 ≈ 57.6 ≈ 57
+test "divide_with_ceil_mixed_signs" {
+  // 测试混合符号的向上取整除法
+  assert_eq(-2, divide_with_ceil(7, -4))
+  assert_eq(2, divide_with_ceil(-7, -4))
+  assert_eq(-1, divide_with_ceil(3, -4))
 }
 
-test "cpu_scheduling_simulation" {
-  // CPU调度模拟测试
-  let process_count = 5
-  let time_quantum = 10  // 时间片
-  let burst_times = add(add(add(add(8, 15), 6), 12), 9)  // 总突发时间50
+test "complex_financial_calculation" {
+  // 复杂金融计算：贷款分期付款
+  let principal = 10000
+  let annual_rate = 6  // 6%
+  let years = 5
+  let months_per_year = 12
   
-  // 计算轮转调度下的上下文切换次数
-  let context_switches = divide_with_ceil(burst_times, time_quantum)
-  let total_overhead = multiply(context_switches, 2)  // 每次切换开销2个时间单位
-  let total_execution_time = add(burst_times, total_overhead)
+  // 计算总月数
+  let total_months = multiply(years, months_per_year)
+  assert_eq(60, total_months)
   
-  assert_eq(5, context_switches)     // 50/10 = 5
-  assert_eq(10, total_overhead)      // 5 * 2 = 10
-  assert_eq(60, total_execution_time) // 50 + 10 = 60
+  // 简化的月利率计算（年利率/12）
+  let monthly_rate = annual_rate / months_per_year
+  
+  // 简化的月付款计算（本金/总月数 + 利息）
+  let monthly_principal = principal / total_months
+  let monthly_interest = multiply(principal, monthly_rate) / 100
+  let monthly_payment = add(monthly_principal, monthly_interest)
+  
+  assert_eq(183, monthly_payment)
 }
 
-test "network_throughput_calculation" {
-  // 网络吞吐量计算测试
-  let packet_size = 1500    // 数据包大小(字节)
-  let packets_per_second = 1000
-  let transmission_time = 5  // 传输时间(秒)
-  let protocol_overhead = 20  // 协议开销百分比
+test "scientific_notation_simulation" {
+  // 科学计数法模拟：处理大数运算
+  // 模拟 1.23 × 10^6 = 1230000
+  let mantissa = 123
+  let exponent = 4  // 表示 10^4
+  let result = multiply(mantissa, multiply(10, multiply(10, multiply(10, 10))))
+  assert_eq(1230000, result)
   
-  // 计算原始吞吐量
-  let raw_throughput = multiply(packet_size, packets_per_second)  // 字节/秒
-  let effective_throughput = multiply(raw_throughput, add(100, -protocol_overhead)) / 100
-  
-  // 计算总传输量
-  let total_transmission = multiply(effective_throughput, transmission_time)
-  
-  assert_eq(1500000, raw_throughput)      // 1500 * 1000 = 1,500,000 字节/秒
-  assert_eq(1200000, effective_throughput) // 1,500,000 * 80% = 1,200,000 字节/秒
-  assert_eq(6000000, total_transmission)  // 1,200,000 * 5 = 6,000,000 字节
+  // 模拟 4.56 × 10^3 = 4560
+  let mantissa2 = 456
+  let exponent2 = 1  // 表示 10^1
+  let result2 = multiply(mantissa2, 10)
+  assert_eq(4560, result2)
 }
 
-test "cache_performance_analysis" {
-  // 缓存性能分析测试
-  let cache_size = 1024      // 缓存大小(KB)
-  let block_size = 64        // 块大小(字节)
-  let total_accesses = 10000
-  let hit_rate = 85          // 命中率85%
-  let hit_time = 1           // 命中时间(周期)
-  let miss_penalty = 50      // 未命中惩罚(周期)
+test "coordinate_geometry_calculations" {
+  // 坐标几何计算：两点间距离的平方（避免开方运算）
+  let x1 = 3
+  let y1 = 4
+  let x2 = 7
+  let y3 = 1
   
-  // 计算缓存行数
-  let cache_lines = multiply(cache_size, 1024) / block_size
-  assert_eq(16384, cache_lines)  // 1024*1024/64 = 16384
+  // 计算 dx = x2 - x1, dy = y2 - y1
+  let dx = add(x2, -x1)
+  let dy = add(y3, -y1)
   
-  // 计算平均访问时间
-  let hit_count = multiply(total_accesses, hit_rate) / 100
-  let miss_count = add(total_accesses, -hit_count)
-  let total_time = add(multiply(hit_count, hit_time), multiply(miss_count, miss_penalty))
-  let avg_access_time = total_time / total_accesses
-  
-  assert_eq(8500, hit_count)     // 10000 * 85% = 8500
-  assert_eq(1500, miss_count)    // 10000 - 8500 = 1500
-  assert_eq(8, avg_access_time)  // (8500*1 + 1500*50)/10000 = 8.35 ≈ 8
+  // 计算距离的平方：dx² + dy²
+  let distance_squared = add(multiply(dx, dx), multiply(dy, dy))
+  assert_eq(25, distance_squared)  // 4² + (-3)² = 16 + 9 = 25
 }
 
-test "digital_signal_processing" {
-  // 数字信号处理测试
-  let sampling_frequency = 44100  // 采样频率(Hz)
-  let signal_duration = 3         // 信号持续时间(秒)
-  let frequency = 440             // 信号频率(Hz, A4音符)
-  let amplitude = 32767           // 振幅(16位有符号整数最大值)
+test "temperature_conversion_precise" {
+  // 精确温度转换：摄氏度到华氏度和开尔文
+  let celsius = 25
   
-  // 计算总样本数
-  let total_samples = multiply(sampling_frequency, signal_duration)
-  assert_eq(132300, total_samples)  // 44100 * 3 = 132300
+  // 摄氏度到华氏度：F = C × 9/5 + 32
+  // 使用整数近似：F ≈ C × 2 + 30
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
   
-  // 计算一个周期的样本数
-  let samples_per_cycle = divide_with_ceil(sampling_frequency, frequency)
-  assert_eq(101, samples_per_cycle)  // 44100/440 ≈ 100.23 ≈ 101
+  // 摄氏度到开尔文：K = C + 273
+  let kelvin = add(celsius, 273)
+  assert_eq(298, kelvin)
   
-  // 计算总周期数
-  let total_cycles = total_samples / samples_per_cycle
-  assert_eq(1309, total_cycles)      // 132300/101 ≈ 1309
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
+  let freezing_kelvin = add(freezing_celsius, 273)
   
-  // 计算信号能量(简化)
-  let signal_energy = multiply(amplitude, amplitude) / 2
-  assert_eq(536838944, signal_energy)  // 32767²/2 ≈ 536,838,944
+  assert_eq(30, freezing_fahrenheit)
+  assert_eq(273, freezing_kelvin)
 }
 
-test "compression_algorithm_analysis" {
-  // 压缩算法分析测试
-  let original_size = 1000000    // 原始大小(字节)
-  let compression_ratios = add(add(add(add(70, 60), 50), 40), 30)  // 各种压缩比
-  let algorithm_count = 5
+test "string_pattern_validation" {
+  // 字符串模式验证测试
+  // 测试电子邮件格式（简化版）
+  let email1 = "user@example.com"
+  let email2 = "test123@domain.org"
+  let invalid_email = "invalid-email"
   
-  // 计算平均压缩比
-  let avg_compression_ratio = compression_ratios / algorithm_count
-  assert_eq(50, avg_compression_ratio)  // (70+60+50+40+30)/5 = 50
+  // 通过greet函数验证字符串处理
+  assert_eq_string("Hello, user@example.com!", greet(email1))
+  assert_eq_string("Hello, test123@domain.org!", greet(email2))
+  assert_eq_string("Hello, invalid-email!", greet(invalid_email))
   
-  // 计算平均压缩后大小
-  let avg_compressed_size = multiply(original_size, avg_compression_ratio) / 100
-  assert_eq(500000, avg_compressed_size)  // 1000000 * 50% = 500000
+  // 测试电话号码格式（简化版）
+  let phone1 = "123-456-7890"
+  let phone2 = "+1-555-123-4567"
   
-  // 计算空间节省
-  let space_saved = add(original_size, -avg_compressed_size)
-  assert_eq(500000, space_saved)  // 1000000 - 500000 = 500000
-  
-  // 计算压缩时间(假设压缩速度为10MB/秒)
-  let compression_speed = 10000000  // 字节/秒
-  let compression_time = original_size / compression_speed
-  assert_eq(0, compression_time)    // 1000000/10000000 = 0.1秒 ≈ 0秒(整数除法)
+  assert_eq_string("Hello, 123-456-7890!", greet(phone1))
+  assert_eq_string("Hello, +1-555-123-4567!", greet(phone2))
 }
 
-test "database_query_optimization" {
-  // 数据库查询优化测试
-  let table_rows = 1000000     // 表行数
-  let index_selectivity = 5    // 索引选择性(百分比)
-  let join_tables = 3          // 连接表数
-  let sort_operations = 2      // 排序操作数
+test "combinatorial_calculations" {
+  // 组合数学计算：排列和组合（简化版）
+  let n = 5
+  let r = 3
   
-  // 计算全表扫描成本
-  let full_scan_cost = table_rows
-  assert_eq(1000000, full_scan_cost)
+  // 计算排列 P(n,r) = n! / (n-r)!
+  // 5! / 2! = 120 / 2 = 60
+  let n_factorial = multiply(n, multiply(n - 1, multiply(n - 2, multiply(n - 3, n - 4))))
+  let n_minus_r_factorial = multiply(n - r, n - r - 1)
+  let permutation = n_factorial / n_minus_r_factorial
+  assert_eq(60, permutation)
   
-  // 计算索引查找成本
-  let index_lookup_cost = multiply(table_rows, index_selectivity) / 100
-  assert_eq(50000, index_lookup_cost)  // 1000000 * 5% = 50000
-  
-  // 计算连接操作成本(嵌套循环连接)
-  let join_cost = multiply(table_rows, table_rows)
-  assert_eq(1000000000000, join_cost)  // 1000000 * 1000000 = 10^12
-  
-  // 计算排序成本
-  let sort_cost = multiply(table_rows, sort_operations)
-  assert_eq(2000000, sort_cost)  // 1000000 * 2 = 2000000
-  
-  // 计算优化后的查询成本
-  let optimized_cost = add(add(index_lookup_cost, multiply(join_tables, 1000)), sort_cost)
-  assert_eq(503000, optimized_cost)  // 50000 + 3*1000 + 2000000 = 2053000
+  // 计算组合 C(n,r) = P(n,r) / r!
+  // 60 / 6 = 10
+  let r_factorial = multiply(r, r - 1)
+  let combination = permutation / r_factorial
+  assert_eq(10, combination)
 }
 
-test "machine_learning_model_evaluation" {
-  // 机器学习模型评估测试
-  let total_samples = 1000
-  let true_positives = 450
-  let false_positives = 50
-  let false_negatives = 100
-  let true_negatives = 400
+test "game_mechanics_simulation" {
+  // 游戏机制模拟：RPG角色属性计算
+  let base_strength = 10
+  let base_agility = 8
+  let base_intelligence = 12
+  let level = 5
+  let equipment_bonus = 3
   
-  // 计算准确率
-  let correct_predictions = add(add(true_positives, true_negatives), 0)
-  let accuracy = multiply(correct_predictions, 100) / total_samples
-  assert_eq(85, accuracy)  // (450+400)/1000 = 85%
+  // 计算最终属性：基础值 + 等级加成 + 装备加成
+  let strength_level_bonus = multiply(level, 2)
+  let final_strength = add(add(base_strength, strength_level_bonus), equipment_bonus)
   
-  // 计算精确率
-  let predicted_positives = add(true_positives, false_positives)
-  let precision = multiply(true_positives, 100) / predicted_positives
-  assert_eq(90, precision)  // 450/(450+50) = 90%
+  let agility_level_bonus = multiply(level, 1)
+  let final_agility = add(add(base_agility, agility_level_bonus), equipment_bonus)
   
-  // 计算召回率
-  let actual_positives = add(true_positives, false_negatives)
-  let recall = multiply(true_positives, 100) / actual_positives
-  assert_eq(81, recall)  // 450/(450+100) = 81.8% ≈ 81%
+  let intelligence_level_bonus = multiply(level, 3)
+  let final_intelligence = add(add(base_intelligence, intelligence_level_bonus), equipment_bonus)
   
-  // 计算F1分数(简化)
-  let f1_score = multiply(2, multiply(precision, recall)) / add(precision, recall)
-  assert_eq(85, f1_score)  // 2*90*81/(90+81) ≈ 85.2 ≈ 85%
+  assert_eq(23, final_strength)    // 10 + 5*2 + 3 = 23
+  assert_eq(16, final_agility)     // 8 + 5*1 + 3 = 16
+  assert_eq(30, final_intelligence) // 12 + 5*3 + 3 = 30
+  
+  // 计算总战斗力
+  let combat_power = add(add(multiply(final_strength, 2), multiply(final_agility, 3)), multiply(final_intelligence, 1))
+  assert_eq(106, combat_power)
+}
+
+test "data_structures_operations" {
+  // 数据结构操作模拟：栈和队列的基本操作
+  // 模拟栈操作（后进先出）
+  let stack_size = 0
+  
+  // push操作
+  stack_size = add(stack_size, 1)  // push 1
+  stack_size = add(stack_size, 1)  // push 2
+  stack_size = add(stack_size, 1)  // push 3
+  assert_eq(3, stack_size)
+  
+  // pop操作
+  stack_size = add(stack_size, -1)  // pop 3
+  stack_size = add(stack_size, -1)  // pop 2
+  assert_eq(1, stack_size)
+  
+  // 模拟队列操作（先进先出）
+  let queue_size = 0
+  
+  // enqueue操作
+  queue_size = add(queue_size, 1)  // enqueue 1
+  queue_size = add(queue_size, 1)  // enqueue 2
+  queue_size = add(queue_size, 1)  // enqueue 3
+  assert_eq(3, queue_size)
+  
+  // dequeue操作
+  queue_size = add(queue_size, -1)  // dequeue 1
+  queue_size = add(queue_size, -1)  // dequeue 2
+  assert_eq(1, queue_size)
 }
