@@ -1,203 +1,147 @@
-// 新增的 MoonBit 测试用例
-// 覆盖数据验证、性能、边界条件和实际业务场景
+// 新的 MoonBit 测试用例
+// 为 Azimuth 项目添加的标准测试用例
 
-test "data_validation_input_ranges" {
-  // 测试输入数据的有效性验证
-  let max_input = 2147483647
-  let min_input = -2147483648
-  let normal_positive = 1000
-  let normal_negative = -1000
-  let zero_value = 0
+test "basic_arithmetic_commutativity" {
+  // 测试加法交换律
+  @azimuth.assert_eq(@azimuth.add(15, 25), @azimuth.add(25, 15))
+  @azimuth.assert_eq(@azimuth.add(-10, 20), @azimuth.add(20, -10))
   
-  // 验证加法的输入范围
-  @azimuth.assert_eq(max_input, @azimuth.add(max_input, 0))
-  @azimuth.assert_eq(min_input, @azimuth.add(min_input, 0))
-  @azimuth.assert_eq(normal_positive, @azimuth.add(normal_positive, 0))
-  @azimuth.assert_eq(normal_negative, @azimuth.add(normal_negative, 0))
-  @azimuth.assert_eq(zero_value, @azimuth.add(zero_value, 0))
-  
-  // 验证乘法的输入范围
-  @azimuth.assert_eq(0, @azimuth.multiply(max_input, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_input, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(normal_positive, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(normal_negative, 0))
+  // 测试乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(6, 7), @azimuth.multiply(7, 6))
+  @azimuth.assert_eq(@azimuth.multiply(-3, 8), @azimuth.multiply(8, -3))
 }
 
-test "performance_large_number_operations" {
-  // 测试大数运算的性能场景
-  let large_num1 = 1000000
-  let large_num2 = 2000000
-  let large_num3 = 3000000
-  
-  // 大数加法测试
-  let sum_large = @azimuth.add(@azimuth.add(large_num1, large_num2), large_num3)
-  @azimuth.assert_eq(6000000, sum_large)
-  
-  // 大数乘法测试
-  let product_large = @azimuth.multiply(large_num1, 2)
-  @azimuth.assert_eq(2000000, product_large)
-  
-  // 混合运算测试
-  let mixed_result = @azimuth.add(@azimuth.multiply(large_num1, 3), @azimuth.multiply(large_num2, 2))
-  @azimuth.assert_eq(7000000, mixed_result)
-}
-
-test "boundary_cascade_operations" {
-  // 测试边界值的级联运算
+test "boundary_value_handling" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 级联加法测试
-  let cascade_add = @azimuth.add(@azimuth.add(@azimuth.add(max_val, -100), 50), -25)
-  @azimuth.assert_eq(2147483647, cascade_add)
+  // 测试边界值加法
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
   
-  // 级联乘法测试
-  let cascade_mul = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(100, 100), 100), 100)
-  @azimuth.assert_eq(100000000, cascade_mul)
-  
-  // 混合级联运算
-  let mixed_cascade = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, -max_val), 100), 50)
-  @azimuth.assert_eq(50, mixed_cascade)
-}
-
-test "business_inventory_management" {
-  // 测试实际业务场景：库存管理
-  let initial_stock = 1000
-  let incoming_shipment = 500
-  let sales_today = 150
-  let returns_today = 25
-  let damaged_items = 10
-  
-  // 计算今日库存变化
-  let net_change = @azimuth.add(@azimuth.add(incoming_shipment, -sales_today), returns_today)
-  let final_stock = @azimuth.add(initial_stock, @azimuth.add(net_change, -damaged_items))
-  
-  @azimuth.assert_eq(1365, final_stock)
-  
-  // 计算库存价值（假设单价为25）
-  let unit_price = 25
-  let total_value = @azimuth.multiply(final_stock, unit_price)
-  @azimuth.assert_eq(34125, total_value)
-}
-
-test "scientific_calculations_physics" {
-  // 测试科学计算场景：物理公式
-  // 计算动能：KE = 1/2 * m * v²
-  let mass = 10
-  let velocity = 20
-  
-  let velocity_squared = @azimuth.multiply(velocity, velocity)
-  let kinetic_energy = @azimuth.multiply(mass, velocity_squared) / 2
-  @azimuth.assert_eq(2000, kinetic_energy)
-  
-  // 计算势能：PE = m * g * h (简化 g = 10)
-  let gravity = 10
-  let height = 15
-  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)
-  @azimuth.assert_eq(1500, potential_energy)
-  
-  // 计算总机械能
-  let total_energy = @azimuth.add(kinetic_energy, potential_energy)
-  @azimuth.assert_eq(3500, total_energy)
+  // 测试边界值乘法
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
 }
 
 test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试极长字符串
-  let very_long_name = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let long_result = @azimuth.greet(very_long_name)
-  @azimuth.assert_eq_string("Hello, " + very_long_name + "!", long_result)
+  // 测试空字符串和单字符
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
   
-  // 测试包含各种特殊字符的字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let special_result = @azimuth.greet(special_chars)
-  @azimuth.assert_eq_string("Hello, " + special_chars + "!", special_result)
+  // 测试包含数字和符号的字符串
+  @azimuth.assert_eq_string("Hello, user123!", @azimuth.greet("user123"))
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
   
-  // 测试包含数字和字母混合的字符串
-  let alphanumeric = "User123ABC456"
-  let alpha_result = @azimuth.greet(alphanumeric)
-  @azimuth.assert_eq_string("Hello, " + alphanumeric + "!", alpha_result)
+  // 测试包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
 }
 
-test "error_resilience_testing" {
-  // 测试错误恢复能力
+test "complex Mathematical_calculations" {
+  // 测试复合数学运算：(a + b) * (c - d)
+  let a = 12
+  let b = 8
+  let c = 20
+  let d = 5
+  
+  let sum_ab = @azimuth.add(a, b)  // 20
+  let diff_cd = @azimuth.add(c, -d)  // 15
+  let result = @azimuth.multiply(sum_ab, diff_cd)  // 300
+  
+  @azimuth.assert_eq(300, result)
+}
+
+test "real_world_application_calculations" {
+  // 测试实际应用：贷款月供计算（简化版）
+  let loan_amount = 100000  // 贷款金额
+  let interest_rate = 5     // 年利率百分比
+  let loan_years = 20       // 贷款年限
+  
+  // 简化的月供计算：月供 = (本金 + 总利息) / (年数 × 12)
+  let total_interest = @azimuth.multiply(loan_amount, @azimuth.multiply(interest_rate, loan_years)) / 100
+  let total_payment = @azimuth.add(loan_amount, total_interest)
+  let monthly_payment = total_payment / @azimuth.multiply(loan_years, 12)
+  
+  @azimuth.assert_eq(625, monthly_payment)  // 简化计算结果
+}
+
+test "performance_related_calculations" {
+  // 测试性能计算：数据传输时间估算
+  let data_size_mb = 100
+  let speed_mbps = 20
+  
+  // 计算传输时间（秒）
+  let transfer_time = data_size_mb / speed_mbps
+  @azimuth.assert_eq(5, transfer_time)
+  
+  // 转换为分钟
+  let transfer_minutes = transfer_time / 60
+  @azimuth.assert_eq(0, transfer_minutes)  // 5秒 = 0分钟（整数除法）
+}
+
+test "scientific_calculations" {
+  // 测试科学计算：简化的物理公式
+  // 自由落体距离：d = g × t² / 2（简化为整数计算）
+  let gravity = 10  // 简化的重力加速度
+  let time = 3      // 时间（秒）
+  
+  let time_squared = @azimuth.multiply(time, time)  // 9
+  let distance = @azimuth.multiply(gravity, time_squared) / 2  // 45
+  
+  @azimuth.assert_eq(45, distance)
+}
+
+test "business_calculations" {
+  // 测试商业计算：利润和亏损分析
+  let revenue = 50000
+  let costs = 35000
+  let tax_rate = 20  // 税率百分比
+  
+  // 计算税前利润
+  let profit_before_tax = @azimuth.add(revenue, -costs)  // 15000
+  
+  // 计算税费
+  let tax_amount = @azimuth.multiply(profit_before_tax, tax_rate) / 100  // 3000
+  
+  // 计算净利润
+  let net_profit = @azimuth.add(profit_before_tax, -tax_amount)  // 12000
+  
+  @azimuth.assert_eq(15000, profit_before_tax)
+  @azimuth.assert_eq(3000, tax_amount)
+  @azimuth.assert_eq(12000, net_profit)
+}
+
+test "algorithmic_calculations" {
+  // 测试算法计算：等差数列求和
+  // 公式：sum = n × (first + last) / 2
+  let n = 10           // 项数
+  let first = 1        // 首项
+  let last = 19        // 末项
+  
+  let sum = @azimuth.multiply(n, @azimuth.add(first, last)) / 2
+  @azimuth.assert_eq(100, sum)  // 10 × (1 + 19) / 2 = 100
+  
+  // 测试等比数列（简化）：2^4 = 16
+  let base = 2
+  let exponent = 4
+  let power_result = @azimuth.multiply(@azimuth.multiply(2, 2), @azimuth.multiply(2, 2))
+  @azimuth.assert_eq(16, power_result)
+}
+
+test "error_validation_and_boundary_testing" {
+  // 测试错误验证和边界测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试连续溢出操作
-  let overflow1 = @azimuth.add(max_val, 100)
-  let overflow2 = @azimuth.add(overflow1, 100)
-  let overflow3 = @azimuth.add(overflow2, 100)
-  @azimuth.assert_eq(max_val, overflow3)
+  // 验证溢出保护
+  @azimuth.assert_true(@azimuth.add(max_val, max_val) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, min_val) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
   
-  // 测试连续下溢操作
-  let underflow1 = @azimuth.add(min_val, -100)
-  let underflow2 = @azimuth.add(underflow1, -100)
-  let underflow3 = @azimuth.add(underflow2, -100)
-  @azimuth.assert_eq(min_val, underflow3)
-  
-  // 测试乘法溢出保护
-  let mul_overflow1 = @azimuth.multiply(max_val, 100)
-  let mul_overflow2 = @azimuth.multiply(mul_overflow1, 100)
-  @azimuth.assert_eq(max_val, mul_overflow2)
-}
-
-test "algorithm_complexity_testing" {
-  // 测试算法复杂度场景
-  // 模拟O(n)复杂度的累加
-  let n = 100
-  let sum_result = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2  // n*(n+1)/2
-  @azimuth.assert_eq(5050, sum_result)
-  
-  // 模拟O(n²)复杂度的计算
-  let n_squared = @azimuth.multiply(n, n)
-  @azimuth.assert_eq(10000, n_squared)
-  
-  // 模拟O(n³)复杂度的计算
-  let n_cubed = @azimuth.multiply(n_squared, n)
-  @azimuth.assert_eq(1000000, n_cubed)
-}
-
-test "data_structure_simulation" {
-  // 测试数据结构操作的模拟
-  // 模拟栈操作：push和pop
-  let stack_initial = 0
-  let push1 = 10
-  let push2 = 20
-  let push3 = 30
-  
-  // 模拟栈顶元素
-  let stack_top = @azimuth.add(@azimuth.add(@azimuth.add(stack_initial, push1), push2), push3)
-  @azimuth.assert_eq(60, stack_top)
-  
-  // 模拟队列操作：enqueue和dequeue
-  let queue_length = 5
-  let enqueue_count = 3
-  let dequeue_count = 2
-  let final_length = @azimuth.add(queue_length, @azimuth.add(enqueue_count, -dequeue_count))
-  @azimuth.assert_eq(6, final_length)
-}
-
-test "security_input_validation" {
-  // 测试安全性相关的输入验证
-  // 测试SQL注入模拟（字符串处理）
-  let sql_injection_attempt = "'; DROP TABLE users; --"
-  let safe_result = @azimuth.greet(sql_injection_attempt)
-  @azimuth.assert_eq_string("Hello, '; DROP TABLE users; --!", safe_result)
-  
-  // 测试XSS攻击模拟（字符串处理）
-  let xss_attempt = "<script>alert('XSS')</script>"
-  let xss_result = @azimuth.greet(xss_attempt)
-  @azimuth.assert_eq_string("Hello, <script>alert('XSS')</script>!", xss_result)
-  
-  // 测试路径遍历模拟
-  let path_traversal = "../../../etc/passwd"
-  let path_result = @azimuth.greet(path_traversal)
-  @azimuth.assert_eq_string("Hello, ../../../etc/passwd!", path_result)
-  
-  // 验证数值输入的安全性
-  let extremely_large_number = 2147483647
-  let extremely_small_number = -2147483648
-  @azimuth.assert_eq(extremely_large_number, @azimuth.add(extremely_large_number, 100))
-  @azimuth.assert_eq(extremely_small_number, @azimuth.add(extremely_small_number, -100))
+  // 验证正常运算
+  @azimuth.assert_true(@azimuth.add(100, 200) == 300)
+  @azimuth.assert_true(@azimuth.multiply(15, 4) == 60)
+  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
 }
