@@ -2,5 +2,5 @@
   "import": ["azimuth"],
   "export": [],
   "test-import": ["moonbitlang/core/builtin"],
-  "test": ["simple_extended_test.mbt", "user_test_cases.mbt", "extended_test_cases.mbt", "standard_moonbit_tests.mbt"]
+  "test": ["simple_extended_test.mbt", "user_test_cases.mbt", "extended_test_cases.mbt", "standard_moonbit_test_cases.mbt"]
 }
