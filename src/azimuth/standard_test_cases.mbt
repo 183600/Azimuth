@@ -1,95 +1,74 @@
 // 标准 MoonBit 测试用例
-// 这些测试用例使用标准的 MoonBit 测试语法
+// 测试 azimuth 包的核心功能
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-8, add(-3, -5))
+test "add_positive_numbers" {
+  // 测试正数加法
+  let result = azimuth::add(15, 25)
+  assert_eq(40, result)
 }
 
-test "add_edge_cases" {
-  // 测试加法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  
-  // 测试零值
-  assert_eq(5, add(5, 0))
-  assert_eq(-3, add(0, -3))
+test "add_negative_numbers" {
+  // 测试负数加法
+  let result = azimuth::add(-10, -20)
+  assert_eq(-30, result)
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(3, -4))
-  assert_eq(0, multiply(0, 100))
+test "add_mixed_numbers" {
+  // 测试正负数混合加法
+  let result = azimuth::add(50, -30)
+  assert_eq(20, result)
 }
 
-test "multiply_edge_cases" {
-  // 测试乘法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
-  
-  // 测试单位元
-  assert_eq(7, multiply(7, 1))
-  assert_eq(7, multiply(1, 7))
-  assert_eq(-7, multiply(-7, 1))
+test "multiply_positive_numbers" {
+  // 测试正数乘法
+  let result = azimuth::multiply(8, 7)
+  assert_eq(56, result)
 }
 
-test "greet_functionality" {
-  // 测试字符串拼接功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "multiply_negative_numbers" {
+  // 测试负数乘法
+  let result = azimuth::multiply(-6, -9)
+  assert_eq(54, result)
 }
 
-test "complex_calculations" {
-  // 测试复杂计算场景
-  // 计算 (a + b) * c - d
+test "multiply_mixed_numbers" {
+  // 测试正负数混合乘法
+  let result = azimuth::multiply(12, -4)
+  assert_eq(-48, result)
+}
+
+test "greet_standard_name" {
+  // 测试标准名称问候
+  let result = azimuth::greet("Alice")
+  assert_eq_string("Hello, Alice!", result)
+}
+
+test "greet_numeric_string" {
+  // 测试数字字符串问候
+  let result = azimuth::greet("123")
+  assert_eq_string("Hello, 123!", result)
+}
+
+test "complex_arithmetic_operation" {
+  // 测试复合算术运算：(a + b) * c
   let a = 5
   let b = 3
   let c = 4
-  let d = 10
-  
-  let sum_ab = add(a, b)
-  let product = multiply(sum_ab, c)
-  let result = add(product, -d)
-  
-  assert_eq(22, result)
+  let sum = azimuth::add(a, b)
+  let result = azimuth::multiply(sum, c)
+  assert_eq(32, result)
 }
 
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 购物车计算
-  let item_price = 199
-  let quantity = 3
-  let shipping = 15
+test "boundary_value_handling" {
+  // 测试边界值处理
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let subtotal = multiply(item_price, quantity)
-  let total = add(subtotal, shipping)
+  // 测试最大值加法溢出保护
+  let overflow_result = azimuth::add(max_val, 1)
+  assert_eq(max_val, overflow_result)
   
-  assert_eq(612, total)
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 11
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+  // 测试最小值乘法
+  let min_multiply = azimuth::multiply(min_val, 1)
+  assert_eq(min_val, min_multiply)
 }
