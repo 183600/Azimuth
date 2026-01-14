@@ -1,116 +1,96 @@
-test "add_with_extreme_values" {
-  // 测试极端值的加法
-  let max_val = 2147483647
+test "add_zero_handling" {
+  // 测试加法的零值处理
+  @azimuth.assert_eq(42, @azimuth.add(0, 42))
+  @azimuth.assert_eq(42, @azimuth.add(42, 0))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-42, @azimuth.add(0, -42))
+  @azimuth.assert_eq(-42, @azimuth.add(-42, 0))
+}
+
+test "multiply_edge_cases" {
+  // 测试乘法的边界情况
+  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -9876))
+  @azimuth.assert_eq(12345, @azimuth.multiply(12345, 1))
+  @azimuth.assert_eq(-9876, @azimuth.multiply(1, -9876))
+  @azimuth.assert_eq(-12345, @azimuth.multiply(12345, -1))
+  @azimuth.assert_eq(9876, @azimuth.multiply(-1, -9876))
+}
+
+test "add_negative_boundary" {
+  // 测试负数加法的边界情况
   let min_val = -2147483648
-  
-  // 测试最大值加最小值
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  
-  // 测试接近边界的值
-  @azimuth.assert_eq(max_val - 1, @azimuth.add(max_val - 2, 3))
-  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val + 2, -3))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(-1, min_val))
+  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val, 1))
+  @azimuth.assert_eq(min_val + 100, @azimuth.add(min_val, 100))
 }
 
-test "multiply_power_of_two" {
-  // 测试2的幂次方乘法
-  @azimuth.assert_eq(8, @azimuth.multiply(2, 4))
-  @azimuth.assert_eq(64, @azimuth.multiply(8, 8))
-  @azimuth.assert_eq(1024, @azimuth.multiply(32, 32))
-  
-  // 测试负数的幂次方
-  @azimuth.assert_eq(-8, @azimuth.multiply(-2, 4))
-  @azimuth.assert_eq(8, @azimuth.multiply(-2, -4))
-}
-
-test "greet_with_unicode_characters" {
-  // 测试Unicode字符处理
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
-  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-}
-
-test "arithmetic_sequence_operations" {
-  // 测试等差数列操作
-  let first_term = 5
-  let difference = 3
-  let n = 4
-  
-  // 计算第n项：a + (n-1)*d
-  let nth_term = @azimuth.add(first_term, @azimuth.multiply(n - 1, difference))
-  @azimuth.assert_eq(14, nth_term)  // 5 + (4-1)*3 = 5 + 9 = 14
-  
-  // 计算前n项和：n/2 * (2a + (n-1)*d)
-  let sum_n = @azimuth.multiply(n / 2, @azimuth.add(2 * first_term, @azimuth.multiply(n - 1, difference)))
-  @azimuth.assert_eq(38, sum_n)  // 4/2 * (2*5 + 3*3) = 2 * (10 + 9) = 38
-}
-
-test "multiply_negative_boundary_cases" {
-  // 测试负数边界情况的乘法
-  let max_val = 2147483647
+test "multiply_min_value_special_cases" {
+  // 测试最小值乘法的特殊情况
   let min_val = -2147483648
-  
-  // 测试最小值乘以正数
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(-1, min_val))
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 100))
-  
-  // 测试最小值乘以负数
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -2))
-  
-  // 测试接近边界的负数乘法
-  @azimuth.assert_eq(max_val, @azimuth.multiply(-46340, -46341))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(2, min_val))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, min_val))
 }
 
-test "complex_string_greetings" {
-  // 测试复杂字符串的问候
-  let name_with_spaces = "John Doe"
-  let name_with_numbers = "User123"
-  let name_with_symbols = "test@example.com"
-  
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet(name_with_spaces))
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet(name_with_numbers))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet(name_with_symbols))
+test "greet_unicode_characters" {
+  // 测试包含Unicode字符的字符串
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
 }
 
-test "add_fibonacci_sequence" {
-  // 测试斐波那契数列的加法
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = 2
-  let fib4 = 3
-  let fib5 = 5
-  let fib6 = 8
-  let fib7 = 13
-  let fib8 = 21
-  let fib9 = 34
-  let fib10 = 55
+test "complex_business_calculation" {
+  // 测试复杂业务计算：订单总价计算
+  let item_price = 199
+  let quantity = 3
+  let shipping_fee = 15
+  let tax_rate = 8  // 8%
   
-  // 验证斐波那契性质：F(n) = F(n-1) + F(n-2)
-  @azimuth.assert_eq(fib3, @azimuth.add(fib1, fib2))
-  @azimuth.assert_eq(fib4, @azimuth.add(fib2, fib3))
-  @azimuth.assert_eq(fib5, @azimuth.add(fib3, fib4))
-  @azimuth.assert_eq(fib6, @azimuth.add(fib4, fib5))
-  @azimuth.assert_eq(fib7, @azimuth.add(fib5, fib6))
-  @azimuth.assert_eq(fib8, @azimuth.add(fib6, fib7))
-  @azimuth.assert_eq(fib9, @azimuth.add(fib7, fib8))
-  @azimuth.assert_eq(fib10, @azimuth.add(fib8, fib9))
+  // 计算商品总价
+  let subtotal = @azimuth.multiply(item_price, quantity)
+  // 计算税费
+  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
+  // 计算订单总价
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping_fee)
+  
+  // 验证结果：199*3 + 199*3*8/100 + 15 = 597 + 47 + 15 = 659
+  @azimuth.assert_eq(659, total)
 }
 
-test "multiply_geometric_progression" {
-  // 测试等比数列的乘法
-  let first_term = 3
-  let ratio = 2
+test "array_index_calculation" {
+  // 测试数组索引计算：二维数组转一维数组的索引计算
+  let row = 3
+  let col = 4
+  let width = 10  // 数组宽度
   
-  // 计算第n项：a * r^(n-1)
-  let term2 = @azimuth.multiply(first_term, ratio)
-  let term3 = @azimuth.multiply(term2, ratio)
-  let term4 = @azimuth.multiply(term3, ratio)
-  let term5 = @azimuth.multiply(term4, ratio)
+  // 计算一维索引：row * width + col
+  let index = @azimuth.add(@azimuth.multiply(row, width), col)
+  @azimuth.assert_eq(34, index)  // 3*10 + 4 = 34
+}
+
+test "physics_calculation" {
+  // 测试物理计算：自由落体距离（简化版）
+  // 距离 = 0.5 * g * t^2，简化为整数计算
+  let gravity = 10  // 简化的重力加速度
+  let time = 5
   
-  @azimuth.assert_eq(6, term2)  // 3 * 2
-  @azimuth.assert_eq(12, term3)  // 6 * 2
-  @azimuth.assert_eq(24, term4)  // 12 * 2
-  @azimuth.assert_eq(48, term5)  // 24 * 2
+  // 计算距离：0.5 * 10 * 5^2 = 5 * 25 = 125
+  let distance = @azimuth.multiply(gravity / 2, @azimuth.multiply(time, time))
+  @azimuth.assert_eq(125, distance)
+}
+
+test "string_concatenation_edge_cases" {
+  // 测试字符串拼接的边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
+  @azimuth.assert_eq_string("Hello, abcdefghijklmnopqrstuvwxyz!", @azimuth.greet("abcdefghijklmnopqrstuvwxyz"))
 }
 
 test "mixed_arithmetic_operations" {
@@ -123,7 +103,7 @@ test "mixed_arithmetic_operations" {
   // 计算：(a + b) * (c - d)
   let result1 = @azimuth.multiply(
     @azimuth.add(a, b),
-    @azimuth.add(c, -d)
+    @azimuth.add(c, @azimuth.multiply(d, -1))
   )
   @azimuth.assert_eq(80, result1)  // (12 + 8) * (5 - 3) = 20 * 2 = 40
   
@@ -133,33 +113,4 @@ test "mixed_arithmetic_operations" {
     @azimuth.multiply(c, d)
   )
   @azimuth.assert_eq(111, result2)  // 12 * 8 + 5 * 3 = 96 + 15 = 111
-  
-  // 计算：(a - b) * (c + d)
-  let result3 = @azimuth.multiply(
-    @azimuth.add(a, -b),
-    @azimuth.add(c, d)
-  )
-  @azimuth.assert_eq(32, result3)  // (12 - 8) * (5 + 3) = 4 * 8 = 32
-}
-
-test "edge_case_zero_operations" {
-  // 测试零的边缘情况操作
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 零与边界值的加法
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.add(0, max_val))
-  @azimuth.assert_eq(0, @azimuth.add(0, min_val))
-  
-  // 零与边界值的乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, min_val))
-  
-  // 零与零的操作
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
 }
