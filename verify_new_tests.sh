@@ -4,7 +4,7 @@
 echo "验证新添加的 MoonBit 测试用例..."
 
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-TEST_FILE="$PROJECT_ROOT/src/azimuth/moonbit_test_examples.mbt"
+TEST_FILE="$PROJECT_ROOT/src/azimuth/test/practical_core_tests.mbt"
 
 # 检查测试文件是否存在
 if [ ! -f "$TEST_FILE" ]; then
