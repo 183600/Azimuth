@@ -1,202 +1,137 @@
-// 标准 MoonBit 测试用例集合
-// 使用标准的 MoonBit 测试语法，覆盖各种边界情况和实际应用场景
+// 标准 MoonBit 测试用例
+// 覆盖 azimuth 库的核心功能和边界情况
 
-test "add_fibonacci_sequence" {
-  // 测试斐波那契数列中的加法运算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = 2
-  let fib4 = 3
-  let fib5 = 5
-  let fib6 = 8
-  let fib7 = 13
-  let fib8 = 21
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  let result = azimuth::add(10, 20)
+  @azimuth.assert_eq(30, result)
   
-  // 验证斐波那契数列的加法关系
-  assert_eq(fib3, add(fib1, fib2))
-  assert_eq(fib4, add(fib2, fib3))
-  assert_eq(fib5, add(fib3, fib4))
-  assert_eq(fib6, add(fib4, fib5))
-  assert_eq(fib7, add(fib5, fib6))
-  assert_eq(fib8, add(fib6, fib7))
+  // 测试负数加法
+  let negative_result = azimuth::add(-5, 15)
+  @azimuth.assert_eq(10, negative_result)
 }
 
-test "multiply_powers_of_two" {
-  // 测试2的幂次方的乘法运算
-  let two1 = 2
-  let two2 = 4
-  let two3 = 8
-  let two4 = 16
-  let two5 = 32
+test "add_overflow_protection" {
+  // 测试正数溢出保护
+  let max_val = 2147483647
+  let overflow_result = azimuth::add(max_val, 1)
+  @azimuth.assert_eq(max_val, overflow_result)
   
-  // 验证2的幂次方的乘法关系
-  assert_eq(two2, multiply(two1, two1))
-  assert_eq(two3, multiply(two2, two1))
-  assert_eq(two4, multiply(two2, two2))
-  assert_eq(two5, multiply(two3, two2))
+  // 测试负数溢出保护
+  let min_val = -2147483648
+  let underflow_result = azimuth::add(min_val, -1)
+  @azimuth.assert_eq(min_val, underflow_result)
 }
 
-test "calculate_rectangle_area" {
-  // 测试矩形面积计算的实际应用场景
-  let length1 = 5
-  let width1 = 3
-  let area1 = multiply(length1, width1)
-  assert_eq(15, area1)
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  let result = azimuth::multiply(6, 7)
+  @azimuth.assert_eq(42, result)
   
-  let length2 = 10
-  let width2 = 7
-  let area2 = multiply(length2, width2)
-  assert_eq(70, area2)
-  
-  // 边界情况：一边为1
-  let length3 = 1
-  let width3 = 100
-  let area3 = multiply(length3, width3)
-  assert_eq(100, area3)
+  // 测试与零相乘
+  let zero_result = azimuth::multiply(123, 0)
+  @azimuth.assert_eq(0, zero_result)
 }
 
-test "calculate_total_price_with_tax" {
-  // 测试含税总价计算的实际应用场景
-  let price = 100
-  let quantity = 5
-  let tax_rate = 8  // 8%的税率，简化为整数计算
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
+  let max_val = 2147483647
+  let overflow_result = azimuth::multiply(max_val, 2)
+  @azimuth.assert_eq(max_val, overflow_result)
   
-  // 计算商品总价（不含税）
-  let subtotal = multiply(price, quantity)
-  
-  // 计算税费（简化计算：税 = 总价 × 税率 ÷ 100）
-  let tax = multiply(subtotal, tax_rate)
-  let tax_amount = tax / 100
-  
-  // 计算含税总价
-  let total = add(subtotal, tax_amount)
-  
-  // 验证结果：100 × 5 = 500，税 = 500 × 8 ÷ 100 = 40，总价 = 500 + 40 = 540
-  assert_eq(540, total)
+  // 测试最小值乘法
+  let min_val = -2147483648
+  let min_multiply = azimuth::multiply(min_val, 1)
+  @azimuth.assert_eq(min_val, min_multiply)
 }
 
-test "greet_international_names" {
-  // 测试国际化名称的问候
-  assert_eq_string("Hello, José!", greet("José"))
-  assert_eq_string("Hello, François!", greet("François"))
-  assert_eq_string("Hello, Björn!", greet("Björn"))
-  assert_eq_string("Hello, Øyvind!", greet("Øyvind"))
-  assert_eq_string("Hello, Łukasz!", greet("Łukasz"))
+test "greet_function_variations" {
+  // 测试基本问候功能
+  let basic_greeting = azimuth::greet("MoonBit")
+  @azimuth.assert_eq_string("Hello, MoonBit!", basic_greeting)
+  
+  // 测试空字符串
+  let empty_greeting = azimuth::greet("")
+  @azimuth.assert_eq_string("Hello, !", empty_greeting)
+  
+  // 测试特殊字符
+  let special_greeting = azimuth::greet("测试@123")
+  @azimuth.assert_eq_string("Hello, 测试@123!", special_greeting)
 }
 
-test "add_alternating_series" {
-  // 测试交替级数的加法运算
-  // 1 - 2 + 3 - 4 + 5 - 6 + 7 - 8 + 9 - 10
-  let result = add(add(add(add(add(1, -2), 3), -4), 5), -6)
-  let result2 = add(add(add(add(result, 7), -8), 9), -10)
-  assert_eq(-5, result2)
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形面积和周长
+  let length = 8
+  let width = 5
   
-  // 另一种计算方式：分组计算
-  let group1 = add(1, -2)
-  let group2 = add(3, -4)
-  let group3 = add(5, -6)
-  let group4 = add(7, -8)
-  let group5 = add(9, -10)
-  let total = add(add(add(add(group1, group2), group3), group4), group5)
-  assert_eq(-5, total)
+  // 计算面积
+  let area = azimuth::multiply(length, width)
+  @azimuth.assert_eq(40, area)
+  
+  // 计算周长：2 × (length + width)
+  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
+  @azimuth.assert_eq(26, perimeter)
 }
 
-test "multiply_geometric_progression" {
-  // 测试几何级数的乘法运算
-  let first_term = 2
-  let ratio = 3
+test "financial_calculation" {
+  // 测试金融计算场景：简单利息计算
+  let principal = 1000
+  let rate = 5
+  let years = 3
   
-  // 计算前5项：2, 6, 18, 54, 162
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  let term5 = multiply(term4, ratio)
+  // 计算利息：principal × rate × years
+  let interest = azimuth::multiply(principal, azimuth::multiply(rate, years))
+  @azimuth.assert_eq(15000, interest)
   
-  // 验证结果
-  assert_eq(2, term1)
-  assert_eq(6, term2)
-  assert_eq(18, term3)
-  assert_eq(54, term4)
-  assert_eq(162, term5)
-  
-  // 计算前5项的乘积
-  let product = multiply(multiply(multiply(multiply(term1, term2), term3), term4), term5)
-  assert_eq(2099520, product)
+  // 计算总额：principal + interest
+  let total = azimuth::add(principal, interest)
+  @azimuth.assert_eq(16000, total)
 }
 
-test "greet_with_special_formatting" {
-  // 测试特殊格式化字符串的问候
-  // 测试包含制表符的字符串
-  assert_eq_string("Hello, \tTabbed!", greet("\tTabbed"))
+test "boundary_value_combinations" {
+  // 测试边界值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试包含退格符的字符串
-  assert_eq_string("Hello, \bBackspace!", greet("\bBackspace"))
+  // 最大值与最小值相加
+  let sum_result = azimuth::add(max_val, min_val)
+  @azimuth.assert_eq(-1, sum_result)
   
-  // 测试包含回车符的字符串
-  assert_eq_string("Hello, \rCarriage!", greet("\rCarriage"))
+  // 最大值与1相乘
+  let max_multiply = azimuth::multiply(max_val, 1)
+  @azimuth.assert_eq(max_val, max_multiply)
   
-  // 测试包含各种引号的字符串
-  assert_eq_string("Hello, 'Single'!", greet("'Single'"))
-  assert_eq_string("Hello, \"Double\"!", greet("\"Double\""))
+  // 最小值与1相乘
+  let min_multiply = azimuth::multiply(min_val, 1)
+  @azimuth.assert_eq(min_val, min_multiply)
 }
 
-test "calculate_distance_between_points" {
-  // 测试两点间距离计算的实际应用场景（简化版，仅计算曼哈顿距离）
-  // 点1 (x1, y1)，点2 (x2, y2)
-  // 曼哈顿距离 = |x1 - x2| + |y1 - y2|
+test "assert_functions_verification" {
+  // 测试断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
   
-  // 第一个点对：(1, 2) 和 (4, 6)
-  let x1 = 1
-  let y1 = 2
-  let x2 = 4
-  let y2 = 6
-  
-  let dx = if x1 > x2 { x1 - x2 } else { x2 - x1 }
-  let dy = if y1 > y2 { y1 - y2 } else { y2 - y1 }
-  let distance1 = add(dx, dy)
-  assert_eq(7, distance1)  // |1-4| + |2-6| = 3 + 4 = 7
-  
-  // 第二个点对：(10, 5) 和 (3, 9)
-  let x3 = 10
-  let y3 = 5
-  let x4 = 3
-  let y4 = 9
-  
-  let dx2 = if x3 > x4 { x3 - x4 } else { x4 - x3 }
-  let dy2 = if y3 > y4 { y3 - y4 } else { y4 - y3 }
-  let distance2 = add(dx2, dy2)
-  assert_eq(11, distance2)  // |10-3| + |5-9| = 7 + 4 = 11
+  // 测试计算结果的断言
+  let calc_result = azimuth::add(azimuth::multiply(3, 4), azimuth::multiply(2, 5))
+  @azimuth.assert_eq(22, calc_result)  // 3*4 + 2*5 = 12 + 10 = 22
 }
 
-test "complex_business_calculation" {
-  // 测试复杂商业计算场景
-  // 假设有一个简单的库存管理系统
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameThatTestsStringHandlingCapabilities"
+  let long_result = azimuth::greet(long_name)
+  @azimuth.assert_eq_string("Hello, " + long_name + "!", long_result)
   
-  // 商品A：单价100元，库存20件
-  let price_a = 100
-  let stock_a = 20
+  // 测试包含空格的字符串
+  let spaced_name = "  Leading and trailing spaces  "
+  let spaced_result = azimuth::greet(spaced_name)
+  @azimuth.assert_eq_string("Hello,   Leading and trailing spaces  !", spaced_result)
   
-  // 商品B：单价200元，库存15件
-  let price_b = 200
-  let stock_b = 15
-  
-  // 商品C：单价50元，库存30件
-  let price_c = 50
-  let stock_c = 30
-  
-  // 计算每种商品的总价值
-  let value_a = multiply(price_a, stock_a)  // 100 * 20 = 2000
-  let value_b = multiply(price_b, stock_b)  // 200 * 15 = 3000
-  let value_c = multiply(price_c, stock_c)  // 50 * 30 = 1500
-  
-  // 计算总库存价值
-  let total_value = add(add(value_a, value_b), value_c)  // 2000 + 3000 + 1500 = 6500
-  assert_eq(6500, total_value)
-  
-  // 假设需要增加10%的安全库存
-  let safety_factor = 10  // 10%
-  let safety_stock = multiply(total_value, safety_factor) / 100  // 6500 * 10 / 100 = 650
-  let total_with_safety = add(total_value, safety_stock)  // 6500 + 650 = 7150
-  assert_eq(7150, total_with_safety)
+  // 测试Unicode字符
+  let unicode_name = "🌍🚀"
+  let unicode_result = azimuth::greet(unicode_name)
+  @azimuth.assert_eq_string("Hello, 🌍🚀!", unicode_result)
 }
