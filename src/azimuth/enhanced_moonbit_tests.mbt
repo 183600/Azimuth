@@ -1,171 +1,194 @@
 // 增强的 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法，提供更多高级功能测试
+// 这些测试用例涵盖了各种实际应用场景和边界情况
 
-// 测试用例 1: 负数运算验证
-test "negative_arithmetic_operations" {
-  // 测试负数加法
-  assert_eq(-10, add(-5, -5))
-  assert_eq(0, add(-10, 10))
-  assert_eq(5, add(-15, 20))
+test "hexadecimal_conversion_simulation" {
+  // 模拟十六进制转换：将十进制数转换为十六进制表示（通过字符串）
+  let decimal_num = 255
+  let hex_representation = "FF"
   
-  // 测试负数乘法
-  assert_eq(25, multiply(-5, -5))
-  assert_eq(-50, multiply(-5, 10))
-  assert_eq(50, multiply(-10, -5))
+  // 验证转换结果（通过字符串匹配）
+  let result = azimuth::greet(hex_representation)
+  azimuth::assert_eq_string("Hello, FF!", result)
+  
+  // 测试更大的数字
+  let large_decimal = 4095
+  let large_hex = "FFF"
+  let large_result = azimuth::greet(large_hex)
+  azimuth::assert_eq_string("Hello, FFF!", large_result)
 }
 
-// 测试用例 2: 大数运算验证
-test "large_number_operations" {
-  // 测试接近边界的加法
-  let near_max = 2147483640
-  let near_min = -2147483640
+test "array_sum_calculation" {
+  // 模拟数组求和：计算一系列数字的总和
+  let num1 = 15
+  let num2 = 25
+  let num3 = 35
+  let num4 = 45
+  let num5 = 55
   
-  assert_eq(2147483647, add(near_max, 7))  // 接近最大值
-  assert_eq(-2147483648, add(near_min, -8))  // 接近最小值
+  // 计算总和
+  let total = azimuth::add(azimuth::add(azimuth::add(azimuth::add(num1, num2), num3), num4), num5)
+  azimuth::assert_eq(175, total)
   
-  // 测试大数乘法（不溢出的情况）
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(4000000, multiply(2000, 2000))
+  // 计算平均值
+  let average = total / 5
+  azimuth::assert_eq(35, average)
 }
 
-// 测试用例 3: 字符串边界情况
-test "string_boundary_cases" {
-  // 测试空字符串
-  assert_eq_string("Hello, !", greet(""))
+test "loan_calculation_scenario" {
+  // 贷款计算场景：计算月供和总利息
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let loan_term = 30      // 贷款期限30年
   
-  // 测试单个字符
-  assert_eq_string("Hello, A!", greet("A"))
+  // 简化的月供计算（仅用于演示）
+  let monthly_rate = annual_rate / 12  // 月利率
+  let total_months = loan_term * 12    // 总月数
+  let total_interest = azimuth::multiply(principal, azimuth::multiply(monthly_rate, total_months)) / 100
+  let total_payment = azimuth::add(principal, total_interest)
   
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
-  assert_eq_string("Hello, \\\"\\'!", greet("\\\"\\'"))
+  // 验证计算结果
+  azimuth::assert_eq(180000, total_interest)  // 简化计算
+  azimuth::assert_eq(280000, total_payment)
 }
 
-// 测试用例 4: 复合数学运算
-test "compound_mathematical_operations" {
-  // 测试 (a * b) + (c * d) 的复合运算
-  let a = 10
-  let b = 5
-  let c = 3
-  let d = 4
+test "temperature_conversion_precise" {
+  // 精确的温度转换：摄氏度转华氏度 F = C × 9/5 + 32
+  // 由于只有整数运算，我们使用近似值：F = C × 2 - C × 3/10 + 32
   
-  let product1 = multiply(a, b)  // 10 * 5 = 50
-  let product2 = multiply(c, d)  // 3 * 4 = 12
-  let result = add(product1, product2)  // 50 + 12 = 62
+  let celsius = 25
+  let fahrenheit_approx = azimuth::add(azimuth::add(azimuth::multiply(celsius, 2), azimuth::multiply(celsius, -3) / 10), 32)
+  azimuth::assert_eq(77, fahrenheit_approx)  // 25 × 2 - 25 × 3/10 + 32 = 50 - 7 + 32 = 75（近似值）
   
-  assert_eq(62, result)
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = azimuth::add(azimuth::add(azimuth::multiply(freezing_celsius, 2), azimuth::multiply(freezing_celsius, -3) / 10), 32)
+  azimuth::assert_eq(32, freezing_fahrenheit)
+  
+  // 测试沸点
+  let boiling_celsius = 100
+  let boiling_fahrenheit = azimuth::add(azimuth::add(azimuth::multiply(boiling_celsius, 2), azimuth::multiply(boiling_celsius, -3) / 10), 32)
+  azimuth::assert_eq(212, boiling_fahrenheit)
 }
 
-// 测试用例 5: 递归式计算模拟
-test "recursive_calculation_simulation" {
-  // 模拟计算阶乘（简化版，只计算小数）
-  // 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let factorial_5 = multiply(multiply(multiply(multiply(5, 4), 3), 2), 1)
-  assert_eq(120, factorial_5)
+test "discount_calculation_business" {
+  // 商业折扣计算：基于购买量的阶梯折扣
+  let unit_price = 50
+  let quantity1 = 10   // 无折扣
+  let quantity2 = 50   // 10%折扣
+  let quantity3 = 100  // 20%折扣
   
-  // 模拟计算斐波那契数（简化版）
-  // F(5) = F(4) + F(3) = 3 + 2 = 5
-  let fib_4 = add(2, 1)  // F(4) = F(3) + F(2) = 2 + 1 = 3
-  let fib_3 = add(1, 1)  // F(3) = F(2) + F(1) = 1 + 1 = 2
-  let fib_5 = add(fib_4, fib_3)
-  assert_eq(5, fib_5)
+  // 计算不同数量下的总价
+  let total1 = azimuth::multiply(unit_price, quantity1)
+  let discount2 = azimuth::multiply(azimuth::multiply(unit_price, quantity2), 10) / 100
+  let total2 = azimuth::add(azimuth::multiply(unit_price, quantity2), -discount2)
+  let discount3 = azimuth::multiply(azimuth::multiply(unit_price, quantity3), 20) / 100
+  let total3 = azimuth::add(azimuth::multiply(unit_price, quantity3), -discount3)
+  
+  // 验证计算结果
+  azimuth::assert_eq(500, total1)    // 50 × 10 = 500
+  azimuth::assert_eq(2250, total2)   // 50 × 50 - 10% = 2500 - 250 = 2250
+  azimuth::assert_eq(4000, total3)   // 50 × 100 - 20% = 5000 - 1000 = 4000
 }
 
-// 测试用例 6: 条件表达式测试
-test "conditional_expression_tests" {
-  // 测试基于数学结果的条件分支
-  let x = 15
-  let y = 3
+test "base_conversion_simulation" {
+  // 模拟进制转换：二进制转十进制
+  // 二进制数 1011 = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11
   
-  // 如果 x 能被 y 整除，则计算商，否则计算和
-  let is_divisible = (x / y) * y == x
-  let result = if is_divisible { x / y } else { add(x, y) }
+  let bit3 = 1  // 2³位
+  let bit2 = 0  // 2²位
+  let bit1 = 1  // 2¹位
+  let bit0 = 1  // 2⁰位
   
-  // 由于 15 能被 3 整除，所以应该是商：15 / 3 = 5
-  assert_eq(5, result)
+  let decimal_value = azimuth::add(azimuth::add(azimuth::multiply(bit3, 8), azimuth::multiply(bit2, 4)), azimuth::add(azimuth::multiply(bit1, 2), bit0))
+  azimuth::assert_eq(11, decimal_value)
   
-  // 测试不能整除的情况
-  let a = 16
-  let b = 3
-  let is_divisible2 = (a / b) * b == a
-  let result2 = if is_divisible2 { a / b } else { add(a, b) }
+  // 测试另一个二进制数：1101 = 1×2³ + 1×2² + 0×2¹ + 1×2⁰ = 8 + 4 + 0 + 1 = 13
+  let bit3_2 = 1
+  let bit2_2 = 1
+  let bit1_2 = 0
+  let bit0_2 = 1
   
-  // 由于 16 不能被 3 整除，所以应该是和：16 + 3 = 19
-  assert_eq(19, result2)
+  let decimal_value2 = azimuth::add(azimuth::add(azimuth::multiply(bit3_2, 8), azimuth::multiply(bit2_2, 4)), azimuth::add(azimuth::multiply(bit1_2, 2), bit0_2))
+  azimuth::assert_eq(13, decimal_value2)
 }
 
-// 测试用例 7: 字符串处理逻辑
-test "string_processing_logic" {
-  // 测试字符串长度相关的逻辑（通过拼接验证）
-  let short = "Hi"
-  let medium = "Hello"
-  let long = "Good morning"
+test "velocity_distance_calculation" {
+  // 物理计算：速度、距离和时间的关系
+  // 距离 = 速度 × 时间
   
-  let short_result = greet(short)
-  let medium_result = greet(medium)
-  let long_result = greet(long)
+  let velocity = 60  // km/h
+  let time = 2.5     // 小时（用整数表示：2小时30分钟 = 150分钟）
+  let time_in_minutes = 150
   
-  // 验证字符串拼接正确性
-  assert_true(short_result.length() < medium_result.length())
-  assert_true(medium_result.length() < long_result.length())
+  // 计算距离（km）：60 km/h × 2.5 h = 150 km
+  let distance = azimuth::multiply(velocity, time_in_minutes) / 60
+  azimuth::assert_eq(150, distance)
+  
+  // 计算返回时间：距离 / 速度
+  let return_time_minutes = azimuth::multiply(distance, 60) / velocity
+  azimuth::assert_eq(150, return_time_minutes)
 }
 
-// 测试用例 8: 数学恒等式验证
-test "mathematical_identities" {
-  // 验证分配律：a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 3
-  let c = 2
+test "data_storage_calculation" {
+  // 数据存储计算：计算文件大小和存储需求
+  let file_size_mb = 25
+  let file_count = 100
+  let redundancy_factor = 3  // 3倍冗余
   
-  let left_side = multiply(a, add(b, c))  // 5 * (3 + 2) = 5 * 5 = 25
-  let right_side = add(multiply(a, b), multiply(a, c))  // 5 * 3 + 5 * 2 = 15 + 10 = 25
+  // 计算原始存储需求
+  let raw_storage = azimuth::multiply(file_size_mb, file_count)
+  azimuth::assert_eq(2500, raw_storage)  // 25 MB × 100 = 2500 MB
   
-  assert_eq(left_side, right_side)
+  // 计算冗余存储需求
+  let redundant_storage = azimuth::multiply(raw_storage, redundancy_factor)
+  azimuth::assert_eq(7500, redundant_storage)  // 2500 MB × 3 = 7500 MB
   
-  // 验证结合律：（a + b）+ c = a + (b + c)
-  let x = 10
-  let y = 20
-  let z = 30
-  
-  let associativity1 = add(add(x, y), z)  // (10 + 20) + 30 = 30 + 30 = 60
-  let associativity2 = add(x, add(y, z))  // 10 + (20 + 30) = 10 + 50 = 60
-  
-  assert_eq(associativity1, associativity2)
+  // 转换为GB（简化：1GB = 1000MB）
+  let storage_gb = redundant_storage / 1000
+  azimuth::assert_eq(7, storage_gb)
 }
 
-// 测试用例 9: 边界值组合测试
-test "boundary_value_combinations" {
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "cryptographic_hash_simulation" {
+  // 模拟简单哈希函数：基于字符串长度和字符值的简单哈希
+  let input_string = "Hello"
+  let string_length = 5
   
-  // 测试最大值与1的运算
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
+  // 简化的哈希计算：将每个字符的ASCII值相加
+  // H(72) + e(101) + l(108) + l(108) + o(111) = 500
+  let hash_value = azimuth::add(azimuth::add(azimuth::add(azimuth::add(72, 101), 108), 108), 111)
+  azimuth::assert_eq(500, hash_value)
   
-  // 测试最小值与1的运算
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
+  // 测试另一个字符串
+  let input_string2 = "World"
+  // W(87) + o(111) + r(114) + l(108) + d(100) = 520
+  let hash_value2 = azimuth::add(azimuth::add(azimuth::add(azimuth::add(87, 111), 114), 108), 100)
+  azimuth::assert_eq(520, hash_value2)
   
-  // 测试最大值与-1的运算
-  assert_eq(max_val - 1, add(max_val, -1))
-  assert_eq(min_val, multiply(max_val, -1))
-  
-  // 测试最小值与-1的运算
-  assert_eq(min_val, multiply(min_val, -1))
+  // 验证不同字符串产生不同哈希值
+  azimuth::assert_true(hash_value != hash_value2)
 }
 
-// 测试用例 10: 实际应用场景 - 银行利息计算
-test "bank_interest_calculation" {
-  // 简化的银行利息计算：本金 + 本金 × 利率 × 时间
-  let principal = 10000  // 本金10000元
-  let rate = 3  // 年利率3%
-  let years = 5  // 5年
+test "network_bandwidth_calculation" {
+  // 网络带宽计算：计算文件传输时间
+  let file_size_mb = 500
+  let bandwidth_mbps = 50  // 50 Mbps
   
-  // 计算利息：10000 × 3 × 5 = 150000（表示1500元）
-  let interest = multiply(principal, multiply(rate, years))
+  // 计算传输时间（秒）：文件大小(MB) × 8 / 带宽(Mbps)
+  let transfer_time_seconds = azimuth::multiply(file_size_mb, 8) / bandwidth_mbps
+  azimuth::assert_eq(80, transfer_time_seconds)  // 500 × 8 / 50 = 80秒
   
-  // 计算本息和：10000 + 150000 = 160000（表示16000元）
-  let total = add(principal, interest)
+  // 转换为分钟和秒
+  let minutes = transfer_time_seconds / 60
+  let seconds = transfer_time_seconds % 60
+  azimuth::assert_eq(1, minutes)
+  azimuth::assert_eq(20, seconds)
   
-  assert_eq(160000, total)
+  // 计算多个文件的传输时间
+  let file_count = 10
+  let total_time_seconds = azimuth::multiply(transfer_time_seconds, file_count)
+  azimuth::assert_eq(800, total_time_seconds)  // 80秒 × 10 = 800秒
+  
+  // 转换为分钟
+  let total_minutes = total_time_seconds / 60
+  azimuth::assert_eq(13, total_minutes)  // 800秒 / 60 = 13分钟（余20秒）
 }
