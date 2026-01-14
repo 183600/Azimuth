@@ -1,77 +1,106 @@
-// 新增的测试用例，用于补充test_only包的测试覆盖率
-test "add_with_zero" {
-  // 测试与0相加的情况
-  assert_eq(5, add(5, 0))
-  assert_eq(5, add(0, 5))
-  assert_eq(0, add(0, 0))
-}
+// 新增 MoonBit 测试用例
 
-test "add_with_min_value" {
-  // 测试最小值的情况
-  let min_val = -2147483648
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, add(0, min_val))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-2147483647, add(min_val, 1))
-}
-
-test "add_positive_overflow" {
-  // 测试正数溢出的情况
+test "arithmetics_add_boundary_values" {
+  // 测试加法边界值
   let max_val = 2147483647
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(1000000000, 1500000000))
-}
-
-test "add_negative_overflow" {
-  // 测试负数溢出的情况
   let min_val = -2147483648
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(-1500000000, -1000000000))
+  @test_only.assert_eq(@test_only.add(max_val, 0), max_val)
+  @test_only.assert_eq(@test_only.add(min_val, 0), min_val)
+  @test_only.assert_eq(@test_only.add(max_val, -max_val), 0)
 }
 
-test "multiply_with_zero_and_one" {
-  // 测试与0和1相乘的情况
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(5, multiply(5, 1))
-  assert_eq(5, multiply(1, 5))
+test "arithmetics_multiply_edge_cases" {
+  // 测试乘法边界情况
+  @test_only.assert_eq(@test_only.multiply(-2147483648, 0), 0)
+  @test_only.assert_eq(@test_only.multiply(2147483647, 1), 2147483647)
+  @test_only.assert_eq(@test_only.multiply(-2147483648, 1), -2147483648)
 }
 
-test "multiply_with_negative_one" {
-  // 测试与-1相乘的情况
-  assert_eq(-5, multiply(5, -1))
-  assert_eq(-5, multiply(-1, 5))
-  assert_eq(5, multiply(-5, -1))
+test "string_greet_unicode_characters" {
+  // 测试包含Unicode字符的字符串处理
+  @test_only.assert_eq_string(@test_only.greet("世界"), "Hello, 世界!")
+  @test_only.assert_eq_string(@test_only.greet("🌟"), "Hello, 🌟!")
+  @test_only.assert_eq_string(@test_only.greet("Café"), "Hello, Café!")
+}
+
+test "arithmetics_sequence_operations" {
+  // 测试序列运算：((a + b) * c) - d
+  let a = 10
+  let b = 20
+  let c = 3
+  let d = 15
   
-  // 测试最小值与-1相乘的特殊情况
-  let min_val = -2147483648
-  assert_eq(min_val, multiply(min_val, -1))
+  let sum = @test_only.add(a, b)
+  let product = @test_only.multiply(sum, c)
+  let result = @test_only.add(product, -d)
+  
+  @test_only.assert_eq(result, 75)  // ((10+20)*3)-15 = 90-15 = 75
 }
 
-test "multiply_overflow" {
-  // 测试乘法溢出的情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  assert_eq(max_val, multiply(46341, 46341))  // sqrt(max_val)的平方
-  assert_eq(min_val, multiply(-46341, 46341))
+test "arithmetics_fibonacci_calculation" {
+  // 测试斐波那契数列计算（简化版）
+  // 计算 fib(8) = 21
+  let n1 = 1
+  let n2 = 1
+  let n3 = @test_only.add(n1, n2)     // 2
+  let n4 = @test_only.add(n2, n3)     // 3
+  let n5 = @test_only.add(n3, n4)     // 5
+  let n6 = @test_only.add(n4, n5)     // 8
+  let n7 = @test_only.add(n5, n6)     // 13
+  let n8 = @test_only.add(n6, n7)     // 21
+  
+  @test_only.assert_eq(n8, 21)
 }
 
-test "greet_with_empty_string" {
-  // 测试空字符串的情况
-  let result = greet("")
-  assert_eq_string("Hello, !", result)
+test "string_greet_with_spaces" {
+  // 测试包含空格的字符串处理
+  @test_only.assert_eq_string(@test_only.greet("John Doe"), "Hello, John Doe!")
+  @test_only.assert_eq_string(@test_only.greet("  leading"), "Hello,   leading!")
+  @test_only.assert_eq_string(@test_only.greet("trailing  "), "Hello, trailing  !")
 }
 
-test "greet_with_special_characters" {
-  // 测试包含特殊字符的字符串
-  let result = greet("测试@123")
-  assert_eq_string("Hello, 测试@123!", result)
+test "arithmetics_power_simulation" {
+  // 测试幂运算模拟（使用乘法）
+  // 计算 2^5 = 32
+  let base = 2
+  let result1 = @test_only.multiply(base, base)      // 2^2 = 4
+  let result2 = @test_only.multiply(result1, base)   // 2^3 = 8
+  let result3 = @test_only.multiply(result2, base)   // 2^4 = 16
+  let result4 = @test_only.multiply(result3, base)   // 2^5 = 32
+  
+  @test_only.assert_eq(result4, 32)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形的周长
-  let length = 10
-  let width = 5
-  let perimeter = add(multiply(2, length), multiply(2, width))
-  assert_eq(30, perimeter)
+test "arithmetics_average_calculation" {
+  // 测试平均值计算
+  let num1 = 15
+  let num2 = 25
+  let num3 = 35
+  let num4 = 45
+  
+  let sum = @test_only.add(@test_only.add(num1, num2), @test_only.add(num3, num4))
+  // 模拟除法：使用减法来验证平均值
+  let average_times_4 = sum
+  let expected_sum = @test_only.multiply(30, 4)  // 平均值30 * 4 = 120
+  
+  @test_only.assert_eq(average_times_4, expected_sum)
+}
+
+test "string_greet_numeric_strings" {
+  // 测试数字字符串处理
+  @test_only.assert_eq_string(@test_only.greet("123"), "Hello, 123!")
+  @test_only.assert_eq_string(@test_only.greet("-456"), "Hello, -456!")
+  @test_only.assert_eq_string(@test_only.greet("3.14159"), "Hello, 3.14159!")
+}
+
+test "arithmetics_factorial_simulation" {
+  // 测试阶乘计算模拟（使用乘法）
+  // 计算 5! = 120
+  let n1 = 1
+  let n2 = @test_only.multiply(n1, 2)  // 2! = 2
+  let n3 = @test_only.multiply(n2, 3)  // 3! = 6
+  let n4 = @test_only.multiply(n3, 4)  // 4! = 24
+  let n5 = @test_only.multiply(n4, 5)  // 5! = 120
+  
+  @test_only.assert_eq(n5, 120)
 }

@@ -109,3 +109,27 @@ test "real_business_scenarios" {
   current_stock = @test_only.add(current_stock, -items_sold)
   @test_only.assert_eq(118, current_stock)  // 100 + 3*25 - 57 = 118
 }
+
+// 新增的测试用例
+test "arithmetics_add_boundary_values" {
+  // 测试加法边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  @test_only.assert_eq(@test_only.add(max_val, 0), max_val)
+  @test_only.assert_eq(@test_only.add(min_val, 0), min_val)
+  @test_only.assert_eq(@test_only.add(max_val, -max_val), 0)
+}
+
+test "arithmetics_multiply_edge_cases" {
+  // 测试乘法边界情况
+  @test_only.assert_eq(@test_only.multiply(-2147483648, 0), 0)
+  @test_only.assert_eq(@test_only.multiply(2147483647, 1), 2147483647)
+  @test_only.assert_eq(@test_only.multiply(-2147483648, 1), -2147483648)
+}
+
+test "string_greet_unicode_characters" {
+  // 测试包含Unicode字符的字符串处理
+  @test_only.assert_eq_string(@test_only.greet("世界"), "Hello, 世界!")
+  @test_only.assert_eq_string(@test_only.greet("🌟"), "Hello, 🌟!")
+  @test_only.assert_eq_string(@test_only.greet("Café"), "Hello, Café!")
+}

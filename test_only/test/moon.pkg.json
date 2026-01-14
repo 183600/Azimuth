@@ -1,5 +1,5 @@
 {
   "import": ["test_only"],
   "export": [],
-  "test": ["comprehensive_tests.mbt", "standard_moonbit_tests.mbt", "simplified_unit_tests.mbt", "new_tests.mbt", "new_standard_tests.mbt", "moonbit_enhanced_test_cases.mbt", "simple_new_test.mbt", "our_new_tests.mbt", "enhanced_test_cases.mbt", "user_added_tests.mbt"]
+  "test": ["new_tests.mbt", "comprehensive_tests.mbt", "standard_moonbit_tests.mbt", "simplified_unit_tests.mbt", "new_standard_tests.mbt", "moonbit_enhanced_test_cases.mbt", "simple_new_test.mbt", "our_new_tests.mbt", "enhanced_test_cases.mbt", "user_added_tests.mbt"]
 }
