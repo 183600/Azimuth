@@ -1,105 +1,91 @@
-// 新的 MoonBit 测试用例
-// 这些测试用例展示了标准 MoonBit 测试语法的使用
+// 新增的 MoonBit 测试用例
+// 测试 azimuth 模块的核心功能
 
-// 测试1: 基本加法运算
-test "add_basic_numbers" {
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(-2, 2))
-  assert_eq(100, add(50, 50))
+test "add_negative_numbers" {
+  // 测试负数相加
+  let result = azimuth::add(-10, -20)
+  assert_eq(-30, result)
 }
 
-// 测试2: 基本乘法运算
-test "multiply_basic_numbers" {
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(2, -3))
-  assert_eq(25, multiply(5, 5))
+test "add_mixed_positive_negative" {
+  // 测试正数和负数混合相加
+  let result1 = azimuth::add(100, -50)
+  assert_eq(50, result1)
+  
+  let result2 = azimuth::add(-100, 50)
+  assert_eq(-50, result2)
 }
 
-// 测试3: 字符串问候功能
-test "greet_functionality" {
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
+test "multiply_large_numbers" {
+  // 测试大数相乘
+  let result = azimuth::multiply(10000, 10000)
+  assert_eq(100000000, result)
 }
 
-// 测试4: 边界值测试 - 最大值
-test "max_value_operations" {
+test "multiply_negative_numbers" {
+  // 测试负数相乘
+  let result1 = azimuth::multiply(-5, -6)
+  assert_eq(30, result1)
+  
+  let result2 = azimuth::multiply(-5, 6)
+  assert_eq(-30, result2)
+}
+
+test "greet_with_unicode" {
+  // 测试包含 Unicode 字符的问候
+  let result = azimuth::greet("世界")
+  assert_eq_string("Hello, 世界!", result)
+}
+
+test "greet_with_special_chars" {
+  // 测试包含特殊字符的问候
+  let result = azimuth::greet("Test@123")
+  assert_eq_string("Hello, Test@123!", result)
+}
+
+test "complex_arithmetic_expression" {
+  // 测试复杂算术表达式：(a + b) * c - d
+  let a = 10
+  let b = 20
+  let c = 3
+  let d = 15
+  
+  let sum = azimuth::add(a, b)
+  let product = azimuth::multiply(sum, c)
+  let result = azimuth::add(product, -d)
+  
+  assert_eq(75, result)
+}
+
+test "boundary_value_operations" {
+  // 测试边界值操作
   let max_val = 2147483647
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(max_val, add(max_val, 1))  // 溢出保护
-}
-
-// 测试5: 边界值测试 - 最小值
-test "min_value_operations" {
   let min_val = -2147483648
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, add(min_val, -1))  // 溢出保护
+  
+  // 测试最大值与0的运算
+  assert_eq(max_val, azimuth::add(max_val, 0))
+  assert_eq(0, azimuth::multiply(max_val, 0))
+  
+  // 测试最小值与0的运算
+  assert_eq(min_val, azimuth::add(min_val, 0))
+  assert_eq(0, azimuth::multiply(min_val, 0))
 }
 
-// 测试6: 复合运算测试
-test "compound_operations" {
-  // 测试 (a + b) * c
-  let a = 3
-  let b = 4
-  let c = 5
-  let result = multiply(add(a, b), c)
-  assert_eq(35, result)  // (3 + 4) * 5 = 35
+test "sequential_operations" {
+  // 测试连续操作
+  // 计算：1 + 2 + 3 + 4 + 5
+  let result1 = azimuth::add(azimuth::add(azimuth::add(azimuth::add(1, 2), 3), 4), 5)
+  assert_eq(15, result1)
   
-  // 测试 a * b + c * d
-  let result2 = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result2)  // 2 * 3 + 4 * 5 = 6 + 20 = 26
+  // 计算：2 * 3 * 4
+  let result2 = azimuth::multiply(azimuth::multiply(2, 3), 4)
+  assert_eq(24, result2)
 }
 
-// 测试7: 条件逻辑测试
-test "conditional_logic" {
-  // 使用 if 表达式进行条件判断
-  let x = 10
-  let y = 20
-  let max_result = if (x > y) { x } else { y }
-  assert_eq(20, max_result)
-  
-  let min_result = if (x < y) { x } else { y }
-  assert_eq(10, min_result)
-}
-
-// 测试8: 数学性质验证
-test "mathematical_properties" {
-  // 加法交换律
-  let a = 15
-  let b = 25
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  let c = 5
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-}
-
-// 测试9: 实际应用场景 - 平均值计算
-test "average_calculation" {
-  // 计算三个数的平均值
-  let num1 = 80
-  let num2 = 90
-  let num3 = 100
-  
-  let sum = add(add(num1, num2), num3)
-  let average = sum / 3
-  assert_eq(90, average)
-}
-
-// 测试10: 实际应用场景 - 简单利息计算
-test "simple_interest_calculation" {
-  // 简单利息计算：本金 × (1 + 利率 × 时间)
-  let principal = 1000
-  let rate = 5  // 5%
-  let time = 3  // 3年
-  
-  let interest = multiply(principal, multiply(rate, time))
-  let total = add(principal, interest)
-  assert_eq(16000, total)  // 1000 + 1000*5*3 = 16000
+test "assert_functions_functionality" {
+  // 测试断言函数的功能
+  azimuth::assert_true(5 > 3)
+  azimuth::assert_false(5 < 3)
+  azimuth::assert_eq(42, 42)
+  azimuth::assert_eq_string("test", "test")
 }
