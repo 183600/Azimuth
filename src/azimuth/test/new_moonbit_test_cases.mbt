@@ -1,158 +1,175 @@
 // 新的 MoonBit 测试用例
-// 测试 azimuth 包的核心功能
-test "performance_large_number_operations" {
-  // 性能测试：大数运算
-  let large_num1 = 1000000
-  let large_num2 = 2000000
-  let large_num3 = 3000000
+// 这些测试用例展示了 MoonBit 的标准测试语法和各种测试场景
+
+// 测试1: 数值范围验证
+test "numeric_range_validation" {
+  // 测试正数范围
+  azimuth::@azimuth.assert_true(azimuth::@azimuth.add(1000000, 2000000) > 0)
+  azimuth::@azimuth.assert_true(azimuth::@azimuth.multiply(1000, 1000) > 0)
   
-  // 大数加法
-  let sum_result = azimuth::@azimuth.add(azimuth::@azimuth.add(large_num1, large_num2), large_num3)
-  @azimuth.assert_eq(6000000, sum_result)
+  // 测试负数范围
+  azimuth::@azimuth.assert_true(azimuth::@azimuth.add(-1000000, -2000000) < 0)
+  azimuth::@azimuth.assert_true(azimuth::@azimuth.multiply(-1000, 1000) < 0)
   
-  // 大数乘法
-  let product_result = azimuth::@azimuth.multiply(large_num1, 3)
-  @azimuth.assert_eq(3000000, product_result)
+  // 测试零值
+  azimuth::@azimuth.assert_eq(0, azimuth::@azimuth.multiply(0, 123456789))
+  azimuth::@azimuth.assert_eq(123456789, azimuth::@azimuth.add(0, 123456789))
 }
-test "edge_case_decimal_simulation" {
-  // 边界情况：模拟小数运算
-  // 使用整数表示小数：1.5 表示为 15，除以 10
-  let value1 = 15  // 代表 1.5
-  let value2 = 25  // 代表 2.5
+
+// 测试2: 字符串连接性能测试
+test "string_concatenation_performance" {
+  // 测试短字符串连接
+  let short_name = "Bob"
+  let short_result = azimuth::@azimuth.greet(short_name)
+  azimuth::@azimuth.assert_eq_string("Hello, Bob!", short_result)
   
-  // 模拟小数加法：1.5 + 2.5 = 4.0，表示为 40
-  let decimal_sum = azimuth::@azimuth.add(value1, value2)
-  @azimuth.assert_eq(40, decimal_sum)
+  // 测试中等长度字符串连接
+  let medium_name = "Alexander"
+  let medium_result = azimuth::@azimuth.greet(medium_name)
+  azimuth::@azimuth.assert_eq_string("Hello, Alexander!", medium_result)
   
-  // 模拟小数乘法：1.5 × 2.5 = 3.75，表示为 38（四舍五入）
-  let decimal_product = azimuth::@azimuth.multiply(value1, value2) / 10
-  @azimuth.assert_eq(3, decimal_product)
+  // 测试包含空格的字符串
+  let spaced_name = "Mary Jane"
+  let spaced_result = azimuth::@azimuth.greet(spaced_name)
+  azimuth::@azimuth.assert_eq_string("Hello, Mary Jane!", spaced_result)
 }
-test "real_world_calculator_scenario" {
-  // 实际应用场景：计算器功能模拟
-  // 计算表达式：(10 + 5) × 3 - 15 ÷ 5
-  let step1 = azimuth::@azimuth.add(10, 5)  // 15
-  let step2 = azimuth::@azimuth.multiply(step1, 3)  // 45
-  let step3 = 15 / 5  // 3（使用整数除法）
-  let result = azimuth::@azimuth.add(step2, -step3)  // 42
+
+// 测试3: 数学函数组合测试
+test "math_function_combination" {
+  // 测试 (a + b) * c - d 的复合运算
+  let a = 5
+  let b = 3
+  let c = 4
+  let d = 10
   
-  @azimuth.assert_eq(42, result)
+  // 步骤计算
+  let sum_ab = azimuth::@azimuth.add(a, b)  // 5 + 3 = 8
+  let product = azimuth::@azimuth.multiply(sum_ab, c)  // 8 * 4 = 32
+  let result = azimuth::@azimuth.add(product, -d)  // 32 - 10 = 22
+  
+  azimuth::@azimuth.assert_eq(22, result)
 }
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  // 测试包含各种特殊字符的字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result = azimuth::@azimuth.greet(special_chars)
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?! ", result)
+
+// 测试4: 边界值特殊处理
+test "boundary_value_special_handling" {
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试包含数字和字母混合的字符串
-  let alphanumeric = "User123Admin456"
-  let result2 = azimuth::@azimuth.greet(alphanumeric)
-  @azimuth.assert_eq_string("Hello, User123Admin456!", result2)
+  // 测试最大值与正数相加
+  azimuth::@azimuth.assert_eq(max_val, azimuth::@azimuth.add(max_val, 100))
+  azimuth::@azimuth.assert_eq(max_val, azimuth::@azimuth.add(max_val, max_val))
+  
+  // 测试最小值与负数相加
+  azimuth::@azimuth.assert_eq(min_val, azimuth::@azimuth.add(min_val, -100))
+  azimuth::@azimuth.assert_eq(min_val, azimuth::@azimuth.add(min_val, min_val))
+  
+  // 测试最大值与负数相乘
+  azimuth::@azimuth.assert_eq(min_val, azimuth::@azimuth.multiply(max_val, -1))
+  
+  // 测试最小值与奇数相乘
+  azimuth::@azimuth.assert_eq(min_val, azimuth::@azimuth.multiply(min_val, 3))
 }
-test "mathematical_constants_approximation" {
-  // 数学常数近似值测试
-  // π 的近似值：3.14159，表示为 314159
-  let pi_approx = 314159
-  let pi_scaled = pi_approx / 100000  // 3
-  @azimuth.assert_eq(3, pi_scaled)
+
+// 测试5: 平均值计算
+test "average_calculation" {
+  // 计算三个数的平均值：(a + b + c) / 3
+  let num1 = 90
+  let num2 = 80
+  let num3 = 85
   
-  // e 的近似值：2.71828，表示为 271828
-  let e_approx = 271828
-  let e_scaled = e_approx / 100000  // 2
-  @azimuth.assert_eq(2, e_scaled)
+  // 计算总和：90 + 80 + 85 = 255
+  let sum = azimuth::@azimuth.add(azimuth::@azimuth.add(num1, num2), num3)
+  // 计算平均值：255 / 3 = 85（整数除法）
+  let average = sum / 3
   
-  // 黄金比例：1.61803，表示为 161803
-  let golden_ratio = 161803
-  let golden_scaled = golden_ratio / 100000  // 1
-  @azimuth.assert_eq(1, golden_scaled)
+  azimuth::@azimuth.assert_eq(85, average)
 }
-test "algorithm_binary_search_simulation" {
-  // 算法测试：二分查找模拟
-  // 在已排序数组 [1, 3, 5, 7, 9, 11, 13, 15] 中查找 7
-  let sorted_array_sum = azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(1, 3), 5), 7), azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(9, 11), 13), 15))
-  let target = 7
+
+// 测试6: 面积计算
+test "area_calculation" {
+  // 计算矩形面积：长 × 宽
+  let length = 12
+  let width = 8
   
-  // 模拟二分查找的步骤
-  let low = 0
-  let high = 7
-  let mid = azimuth::@azimuth.add(low, high) / 2  // 3
+  let rectangle_area = azimuth::@azimuth.multiply(length, width)
+  azimuth::@azimuth.assert_eq(96, rectangle_area)
   
-  // 验证查找过程
-  @azimuth.assert_true(target <= 15)
-  @azimuth.assert_true(target >= 1)
-  @azimuth.assert_eq(64, sorted_array_sum)  // 1+3+5+7+9+11+13+15 = 64
+  // 计算三角形面积：底 × 高 ÷ 2
+  let base = 10
+  let height = 6
+  
+  let triangle_area = azimuth::@azimuth.multiply(base, height) / 2
+  azimuth::@azimuth.assert_eq(30, triangle_area)
 }
-test "data_structure_stack_simulation" {
-  // 数据结构测试：栈操作模拟
-  // 使用整数模拟栈操作
-  let stack_top = 10
-  let push_value = 20
+
+// 测试7: 字符串格式化场景
+test "string_formatting_scenarios" {
+  // 测试数字字符串
+  let numeric_name = "12345"
+  azimuth::@azimuth.assert_eq_string("Hello, 12345!", azimuth::@azimuth.greet(numeric_name))
   
-  // 入栈操作
-  let new_top = push_value
-  @azimuth.assert_eq(20, new_top)
+  // 测试混合字符串
+  let mixed_name = "user_2023"
+  azimuth::@azimuth.assert_eq_string("Hello, user_2023!", azimuth::@azimuth.greet(mixed_name))
   
-  // 出栈操作
-  let popped_value = new_top
-  @azimuth.assert_eq(20, popped_value)
-  
-  // 栈大小变化
-  let initial_size = 5
-  let after_push = azimuth::@azimuth.add(initial_size, 1)
-  let after_pop = azimuth::@azimuth.add(after_push, -1)
-  @azimuth.assert_eq(initial_size, after_pop)
+  // 测试单字符
+  let single_char = "A"
+  azimuth::@azimuth.assert_eq_string("Hello, A!", azimuth::@azimuth.greet(single_char))
 }
-test "game_logic_dice_roll" {
-  // 游戏逻辑测试：骰子游戏模拟
-  // 模拟两个骰子的投掷
-  let dice1 = 4
-  let dice2 = 5
+
+// 测试8: 平方和计算
+test "sum_of_squares_calculation" {
+  // 计算前n个自然数的平方和：1² + 2² + 3² + ... + n²
+  let n = 5
   
-  // 计算总和
-  let total = azimuth::@azimuth.add(dice1, dice2)
-  @azimuth.assert_eq(9, total)
+  // 手动计算：1² + 2² + 3² + 4² + 5² = 1 + 4 + 9 + 16 + 25 = 55
+  let square1 = azimuth::@azimuth.multiply(1, 1)
+  let square2 = azimuth::@azimuth.multiply(2, 2)
+  let square3 = azimuth::@azimuth.multiply(3, 3)
+  let square4 = azimuth::@azimuth.multiply(4, 4)
+  let square5 = azimuth::@azimuth.multiply(5, 5)
   
-  // 判断是否获胜（总和大于等于7为获胜）
-  let is_win = total >= 7
-  @azimuth.assert_true(is_win)
-  
-  // 计算得分（总和乘以10）
-  let score = azimuth::@azimuth.multiply(total, 10)
-  @azimuth.assert_eq(90, score)
+  let sum_of_squares = azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(square1, square2), square3), square4), square5)
+  azimuth::@azimuth.assert_eq(55, sum_of_squares)
 }
-test "network_data_packet_simulation" {
-  // 网络数据测试：数据包模拟
-  // 模拟网络数据包的处理
-  let header_size = 20
-  let payload_size = 1000
-  let checksum_size = 4
+
+// 测试9: 条件逻辑测试
+test "conditional_logic_test" {
+  // 测试基于比较结果的条件运算
+  let x = 15
+  let y = 20
   
-  // 计算总包大小
-  let total_packet_size = azimuth::@azimuth.add(azimuth::@azimuth.add(header_size, payload_size), checksum_size)
-  @azimuth.assert_eq(1024, total_packet_size)
+  // 如果 x < y，则计算 x + y，否则计算 x * y
+  let condition = x < y
+  let result = if condition { azimuth::@azimuth.add(x, y) } else { azimuth::@azimuth.multiply(x, y) }
   
-  // 计算传输时间（简化：包大小/传输速率）
-  let transmission_rate = 1024  // 字节/秒
-  let transmission_time = total_packet_size / transmission_rate
-  @azimuth.assert_eq(1, transmission_time)
+  // 由于 15 < 20 为真，所以应该计算 15 + 20 = 35
+  azimuth::@azimuth.assert_eq(35, result)
+  
+  // 反向测试
+  let condition2 = x > y
+  let result2 = if condition2 { azimuth::@azimuth.add(x, y) } else { azimuth::@azimuth.multiply(x, y) }
+  
+  // 由于 15 > 20 为假，所以应该计算 15 * 20 = 300
+  azimuth::@azimuth.assert_eq(300, result2)
 }
-test "cryptography_simple_cipher" {
-  // 密码学测试：简单密码算法模拟
-  // 凯撒密码模拟（字母移位）
-  let letter_position = 5  // 字母 'E' 的位置
-  let shift = 3
+
+// 测试10: 数据转换场景
+test "data_conversion_scenarios" {
+  // 测试数值到字符串的间接转换（通过greet函数）
+  let number_str = "42"
   
-  // 加密：新位置 = (原位置 + 位移) mod 26
-  let encrypted_position = azimuth::@azimuth.add(letter_position, shift)
-  @azimuth.assert_eq(8, encrypted_position)  // 'H' 的位置
+  // 通过greet函数验证字符串拼接
+  let result1 = azimuth::@azimuth.greet(number_str)
+  let result2 = azimuth::@azimuth.greet("Answer is " + number_str)
   
-  // 解密：原位置 = (加密位置 - 位移) mod 26
-  let decrypted_position = azimuth::@azimuth.add(encrypted_position, -shift)
-  @azimuth.assert_eq(5, decrypted_position)  // 回到 'E' 的位置
+  azimuth::@azimuth.assert_eq_string("Hello, 42!", result1)
+  azimuth::@azimuth.assert_eq_string("Hello, Answer is 42!", result2)
   
-  // 验证字符串处理
-  let original_message = "HELLO"
-  let processed_message = azimuth::@azimuth.greet(original_message)
-  @azimuth.assert_eq_string("Hello, HELLO!", processed_message)
+  // 测试布尔值场景（通过字符串表示）
+  let true_str = "true"
+  let false_str = "false"
+  
+  azimuth::@azimuth.assert_eq_string("Hello, true!", azimuth::@azimuth.greet(true_str))
+  azimuth::@azimuth.assert_eq_string("Hello, false!", azimuth::@azimuth.greet(false_str))
 }
