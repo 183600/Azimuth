@@ -1,40 +1,40 @@
-pub fn add (a/18 : Int, b/19 : Int) -> Int {
-  if a/18 == 0 { return b/19 }
-  if b/19 == 0 { return a/18 }
-  if a/18 == -2147483648 {
-    if b/19 < 0 { return -2147483648 }
-    return a/18 + b/19
+pub fn add (a/22 : Int, b/23 : Int) -> Int {
+  if a/22 == 0 { return b/23 }
+  if b/23 == 0 { return a/22 }
+  if a/22 == -2147483648 {
+    if b/23 < 0 { return -2147483648 }
+    return a/22 + b/23
   }
-  if b/19 == -2147483648 {
-    if a/18 < 0 { return -2147483648 }
-    return a/18 + b/19
+  if b/23 == -2147483648 {
+    if a/22 < 0 { return -2147483648 }
+    return a/22 + b/23
   }
-  if a/18 > 0 && b/19 > 0 { if a/18 > 2147483647 - b/19 { return 2147483647 }  }
-  if a/18 < 0 && b/19 < 0 { if a/18 < -2147483648 - b/19 { return -2147483648 }  }
-  a/18 + b/19
+  if a/22 > 0 && b/23 > 0 { if a/22 > 2147483647 - b/23 { return 2147483647 }  }
+  if a/22 < 0 && b/23 < 0 { if a/22 < -2147483648 - b/23 { return -2147483648 }  }
+  a/22 + b/23
 }
 
-pub fn multiply (a/11 : Int, b/12 : Int) -> Int {
-  if a/11 == 0 || b/12 == 0 { return 0 }
-  if a/11 == 1 { return b/12 }
-  if b/12 == 1 { return a/11 }
-  if a/11 == -1 { return if b/12 == -2147483648 { -2147483648 } else { -b/12 } }
-  if b/12 == -1 { return if a/11 == -2147483648 { -2147483648 } else { -a/11 } }
-  if a/11 == -2147483648 { return if b/12 > 1 || b/12 < -1 { -2147483648 } else { a/11 * b/12 } }
-  if b/12 == -2147483648 { return if a/11 > 1 || a/11 < -1 { -2147483648 } else { a/11 * b/12 } }
-  let sign/15 : Int = if a/11 > 0 && b/12 > 0 || a/11 < 0 && b/12 < 0 { 1 } else { -1 }
-  let abs_a/16 : Int = if a/11 < 0 { -a/11 } else { a/11 }
-  let abs_b/17 : Int = if b/12 < 0 { -b/12 } else { b/12 }
-  if abs_a/16 > 2147483647 / abs_b/17 { return if sign/15 > 0 { 2147483647 } else { -2147483648 } }
-  a/11 * b/12
+pub fn multiply (a/15 : Int, b/16 : Int) -> Int {
+  if a/15 == 0 || b/16 == 0 { return 0 }
+  if a/15 == 1 { return b/16 }
+  if b/16 == 1 { return a/15 }
+  if a/15 == -1 { return if b/16 == -2147483648 { -2147483648 } else { -b/16 } }
+  if b/16 == -1 { return if a/15 == -2147483648 { -2147483648 } else { -a/15 } }
+  if a/15 == -2147483648 { return if b/16 > 1 || b/16 < -1 { -2147483648 } else { a/15 * b/16 } }
+  if b/16 == -2147483648 { return if a/15 > 1 || a/15 < -1 { -2147483648 } else { a/15 * b/16 } }
+  let sign/19 : Int = if a/15 > 0 && b/16 > 0 || a/15 < 0 && b/16 < 0 { 1 } else { -1 }
+  let abs_a/20 : Int = if a/15 < 0 { -a/15 } else { a/15 }
+  let abs_b/21 : Int = if b/16 < 0 { -b/16 } else { b/16 }
+  if abs_a/20 > 2147483647 / abs_b/21 { return if sign/19 > 0 { 2147483647 } else { -2147483648 } }
+  a/15 * b/16
 }
 
-pub fn greet (name/10 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/10), "!")
+pub fn greet (name/14 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/14), "!")
 }
 
-pub fn assert_eq (expected/8 : Int, actual/9 : Int) -> Unit {
-  if expected/8 == actual/9 {
+pub fn assert_eq (expected/12 : Int, actual/13 : Int) -> Unit {
+  if expected/12 == actual/13 {
     ()
   } else {
     1 / 0
@@ -42,8 +42,8 @@ pub fn assert_eq (expected/8 : Int, actual/9 : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string (expected/6 : String, actual/7 : String) -> Unit {
-  if @stringequal(expected/6, actual/7) {
+pub fn assert_eq_string (expected/10 : String, actual/11 : String) -> Unit {
+  if @stringequal(expected/10, actual/11) {
     ()
   } else {
     1 / 0
@@ -51,8 +51,8 @@ pub fn assert_eq_string (expected/6 : String, actual/7 : String) -> Unit {
   }
 }
 
-pub fn assert_true (condition/5 : Bool) -> Unit {
-  if condition/5 {
+pub fn assert_true (condition/9 : Bool) -> Unit {
+  if condition/9 {
     ()
   } else {
     1 / 0
@@ -60,8 +60,8 @@ pub fn assert_true (condition/5 : Bool) -> Unit {
   }
 }
 
-pub fn assert_false (condition/4 : Bool) -> Unit {
-  if condition/4 {
+pub fn assert_false (condition/8 : Bool) -> Unit {
+  if condition/8 {
     1 / 0
     ()
   } else {
