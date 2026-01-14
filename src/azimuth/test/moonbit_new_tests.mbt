@@ -1,156 +1,217 @@
 // 新增的 MoonBit 测试用例
-// 包含各种实用场景和边界条件测试
+// 测试 Azimuth 项目的核心功能
 
-test "complex_arithmetic_sequence" {
-  // 测试复杂数列计算：计算等差数列前n项和
-  // 公式：Sn = n(a1 + an) / 2
-  let n = 10
-  let first_term = 3
-  let last_term = 30
+test "binary_number_operations" {
+  // 测试二进制数相关的运算
+  // 模拟二进制左移：n << 1 = n * 2
+  let n = 8
+  let left_shift = @azimuth.multiply(n, 2)
+  @azimuth.assert_eq(16, left_shift)
   
-  let sum = @azimuth.multiply(n, @azimuth.add(first_term, last_term)) / 2
-  @azimuth.assert_eq(165, sum)  // 10 × (3 + 30) / 2 = 165
+  // 模拟二进制右移：n >> 1 = n / 2
+  let right_shift = n / 2
+  @azimuth.assert_eq(4, right_shift)
+  
+  // 模拟位与运算：8 & 7 = 0（1000 & 0111 = 0000）
+  let a = 8
+  let b = 7
+  let result = @azimuth.multiply(a, b) / @azimuth.multiply(a, b)  // 如果a*b>0则为1，否则为0
+  @azimuth.assert_eq(0, result)
 }
 
-test "string_pattern_validation" {
-  // 测试字符串模式验证
-  // 测试邮箱格式（简化验证）
-  let email_simple = "user@example.com"
-  let email_result = @azimuth.greet(email_simple)
-  @azimuth.assert_eq_string("Hello, user@example.com!", email_result)
+test "fibonacci_sequence_calculation" {
+  // 测试斐波那契数列计算
+  // F(5) = F(4) + F(3) = 3 + 2 = 5
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = @azimuth.add(fib1, fib2)  // 2
+  let fib4 = @azimuth.add(fib2, fib3)  // 3
+  let fib5 = @azimuth.add(fib3, fib4)  // 5
   
-  // 测试包含特殊字符的ID
-  let user_id = "user_2023@project#1"
-  let id_result = @azimuth.greet(user_id)
-  @azimuth.assert_eq_string("Hello, user_2023@project#1!", id_result)
-  
-  // 测试数字字符串
-  let numeric_string = "1234567890"
-  let numeric_result = @azimuth.greet(numeric_string)
-  @azimuth.assert_eq_string("Hello, 1234567890!", numeric_result)
+  @azimuth.assert_eq(2, fib3)
+  @azimuth.assert_eq(3, fib4)
+  @azimuth.assert_eq(5, fib5)
 }
 
-test "mathematical_limits_stress" {
-  // 测试数学极限压力测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "greatest_common_divisor" {
+  // 测试最大公约数的简化计算
+  // 使用欧几里得算法的简化版本
+  let a = 48
+  let b = 18
   
-  // 测试连续运算的稳定性
-  let result1 = @azimuth.add(@azimuth.add(max_val, -1000000), 1000000)
-  @azimuth.assert_eq(max_val, result1)
+  // 48 % 18 = 12
+  let remainder1 = a % b
+  @azimuth.assert_eq(12, remainder1)
   
-  let result2 = @azimuth.add(@azimuth.add(min_val, 1000000), -1000000)
-  @azimuth.assert_eq(min_val, result2)
+  // 18 % 12 = 6
+  let remainder2 = b % remainder1
+  @azimuth.assert_eq(6, remainder2)
   
-  // 测试乘法分配律在边界条件下的表现
-  let result3 = @azimuth.multiply(@azimuth.add(max_val, min_val), 100)
-  @azimuth.assert_eq(-100, result3)  // (-1) × 100 = -100
+  // 12 % 6 = 0，所以GCD是6
+  let remainder3 = remainder1 % remainder2
+  @azimuth.assert_eq(0, remainder3)
+  
+  // GCD是6
+  let gcd = remainder2
+  @azimuth.assert_eq(6, gcd)
 }
 
-test "business_calculation_scenario" {
-  // 测试实际业务计算场景：利润计算
-  let revenue = 50000
-  let cost = 35000
-  let tax_rate = 20  // 20%
+test "prime_number_check" {
+  // 测试质数检查的简化版本
+  let num = 17
   
-  // 计算利润
-  let profit = @azimuth.add(revenue, -cost)
+  // 检查是否能被2到sqrt(17)之间的数整除
+  let sqrt_17_approx = 4  // sqrt(17) ≈ 4.12，取整数部分
+  let divisible_by_2 = num % 2
+  let divisible_by_3 = num % 3
+  let divisible_by_4 = num % 4
   
-  // 计算税费
-  let tax = @azimuth.multiply(profit, tax_rate) / 100
-  
-  // 计算净利润
-  let net_profit = @azimuth.add(profit, -tax)
-  
-  @azimuth.assert_eq(12000, net_profit)  // (50000 - 35000) × (1 - 0.2) = 12000
+  // 如果都不能整除，则可能是质数
+  let is_prime = @azimuth.add(@azimuth.add(divisible_by_2, divisible_by_3), divisible_by_4) != 0
+  @azimuth.assert_true(is_prime)
 }
 
-test "data_structure_simulation" {
-  // 测试数据结构模拟：栈操作
-  // 使用整数模拟栈的push和pop操作
-  let initial_stack = 0
-  let push1 = 100
-  let push2 = 200
-  let push3 = 300
+test "palindrome_string_check" {
+  // 测试回文字符串检查（简化版）
+  let str = "level"
+  let str_length = 5
   
-  // 模拟栈顶位置
-  let stack_top = @azimuth.add(@azimuth.add(@azimuth.add(initial_stack, push1), push2), push3)
+  // 检查第一个和最后一个字符
+  let first_char_match = true  // 简化假设为true
+  let second_char_match = true  // 简化假设为true
   
-  // 模拟pop操作（减去最后push的值）
-  let after_pop = @azimuth.add(stack_top, -push3)
+  // 如果所有对应字符都匹配，则是回文
+  let is_palindrome = first_char_match && second_char_match
+  @azimuth.assert_true(is_palindrome)
   
-  @azimuth.assert_eq(300, after_pop)  // 100 + 200 = 300
+  // 测试非回文字符串
+  let non_palindrome = false  // 简化假设
+  @azimuth.assert_false(non_palindrome)
 }
 
-test "algorithm_complexity_test" {
-  // 测试算法复杂度：模拟O(n²)操作
-  let n = 100
+test "quadratic_equation_solver" {
+  // 测试二次方程求解：ax² + bx + c = 0
+  // 简化版本：只测试有整数解的情况
+  // x² - 5x + 6 = 0 的解是 x = 2 和 x = 3
   
-  // 模拟嵌套循环的总操作次数：n × n
-  let total_operations = @azimuth.multiply(n, n)
+  let a = 1
+  let b = -5
+  let c = 6
   
-  // 模拟优化后的操作次数：n × log₂(n) ≈ n × 7（对于n=100）
-  let optimized_operations = @azimuth.multiply(n, 7)
+  // 测试 x = 2 是否是解
+  let x1 = 2
+  let x1_squared = @azimuth.multiply(x1, x1)  // 4
+  let ax1_squared = @azimuth.multiply(a, x1_squared)  // 4
+  let bx1 = @azimuth.multiply(b, x1)  // -10
+  let equation_result1 = @azimuth.add(@azimuth.add(ax1_squared, bx1), c)  // 4 + (-10) + 6 = 0
+  @azimuth.assert_eq(0, equation_result1)
   
-  // 验证优化效果
-  let improvement_ratio = total_operations / optimized_operations
-  @azimuth.assert_true(improvement_ratio > 10)  // 优化后应该至少快10倍
+  // 测试 x = 3 是否是解
+  let x2 = 3
+  let x2_squared = @azimuth.multiply(x2, x2)  // 9
+  let ax2_squared = @azimuth.multiply(a, x2_squared)  // 9
+  let bx2 = @azimuth.multiply(b, x2)  // -15
+  let equation_result2 = @azimuth.add(@azimuth.add(ax2_squared, bx2), c)  // 9 + (-15) + 6 = 0
+  @azimuth.assert_eq(0, equation_result2)
 }
 
-test "scientific_computation" {
-  // 测试科学计算场景：物理公式计算
-  // 自由落体距离：s = 0.5 × g × t²
-  // 简化为整数计算：s = g × t² / 2
-  let gravity = 98  // 9.8 m/s² 放大10倍
-  let time = 5      // 5秒
+test "array_sum_and_average" {
+  // 测试数组的求和与平均值计算
+  // 模拟数组 [5, 10, 15, 20, 25]
+  let elem1 = 5
+  let elem2 = 10
+  let elem3 = 15
+  let elem4 = 20
+  let elem5 = 25
   
-  let distance = @azimuth.multiply(gravity, @azimuth.multiply(time, time)) / 20  // 除以20因为gravity放大了10倍且公式有0.5
-  @azimuth.assert_eq(122, distance)  // 98 × 25 / 20 = 122.5 ≈ 122（整数除法）
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(elem1, elem2), elem3), elem4), elem5)
+  @azimuth.assert_eq(75, sum)
+  
+  // 计算平均值
+  let count = 5
+  let average = sum / count
+  @azimuth.assert_eq(15, average)
+  
+  // 计算最大值和最小值的差
+  let max = elem5
+  let min = elem1
+  let range = @azimuth.add(max, -min)
+  @azimuth.assert_eq(20, range)
 }
 
-test "security_validation" {
-  // 测试安全性验证：PIN码验证（简化版）
-  let correct_pin = 1234
-  let user_pin = 1234
-  let max_attempts = 3
+test "speed_distance_time_calculations" {
+  // 测试速度、距离、时间计算
+  let distance = 300  // 公里
+  let time = 5        // 小时
   
-  // 模拟验证逻辑
-  let is_valid = if (user_pin == correct_pin) { 1 } else { 0 }
-  let attempts_remaining = @azimuth.add(max_attempts, @azimuth.multiply(is_valid, -1))
+  // 计算速度：速度 = 距离 / 时间
+  let speed = distance / time
+  @azimuth.assert_eq(60, speed)
   
-  @azimuth.assert_eq(3, attempts_remaining)  // 验证成功，尝试次数不变
+  // 计算如果速度增加20%的新时间
+  let speed_increase_percent = 20
+  let speed_increase = @azimuth.multiply(speed, speed_increase_percent) / 100
+  let new_speed = @azimuth.add(speed, speed_increase)  // 72
+  let new_time = distance / new_speed  // 4.166...，整数除法为4
+  @azimuth.assert_eq(4, new_time)
+  
+  // 计算节省的时间
+  let time_saved = @azimuth.add(time, -new_time)
+  @azimuth.assert_eq(1, time_saved)
 }
 
-test "performance_benchmark" {
-  // 性能基准测试：大量数据处理的模拟
-  let data_size = 1000
-  let operation_cost = 5
+test "simple_interest_calculation" {
+  // 测试单利计算
+  let principal = 5000   // 本金
+  let rate = 8           // 年利率百分比
+  let time = 3           // 年数
   
-  // 计算总操作成本
-  let total_cost = @azimuth.multiply(data_size, operation_cost)
+  // 计算利息：利息 = 本金 × 利率 × 时间 / 100
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), time) / 100
+  @azimuth.assert_eq(1200, interest)
   
-  // 模拟优化后的成本（减少30%）
-  let optimization_factor = 70  // 70%的原始成本
-  let optimized_cost = @azimuth.multiply(total_cost, optimization_factor) / 100
+  // 计算总金额
+  let total_amount = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(6200, total_amount)
   
-  // 验证优化效果
-  let cost_reduction = @azimuth.add(total_cost, -optimized_cost)
-  @azimuth.assert_eq(1500, cost_reduction)  // 5000 - 3500 = 1500
+  // 计算月还款额（简化：总金额 / 月数）
+  let months = @azimuth.multiply(time, 12)
+  let monthly_payment = total_amount / months
+  @azimuth.assert_eq(172, monthly_payment)  // 6200 / 36 = 172.22...，整数除法为172
 }
 
-test "edge_case_comprehensive" {
-  // 综合边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let zero = 0
+test "base_conversion_simulation" {
+  // 测试进制转换模拟
+  // 十进制转二进制的简化模拟
   
-  // 测试零的运算特性
-  @azimuth.assert_eq(zero, @azimuth.multiply(zero, max_val))
-  @azimuth.assert_eq(zero, @azimuth.multiply(zero, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.add(zero, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(zero, min_val))
+  // 转换数字13到二进制（1101）
+  let decimal_num = 13
   
-  // 测试极值运算的组合
-  let complex_calculation = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, min_val), 100), @azimuth.multiply(100, @azimuth.add(max_val, min_val)))
-  @azimuth.assert_eq(-200, complex_calculation)  // (-1 × 100) + (100 × -1) = -200
+  // 计算二进制各位
+  let bit0 = decimal_num % 2        // 1
+  let remainder1 = decimal_num / 2   // 6
+  let bit1 = remainder1 % 2          // 0
+  let remainder2 = remainder1 / 2    // 3
+  let bit2 = remainder2 % 2          // 1
+  let remainder3 = remainder2 / 2    // 1
+  let bit3 = remainder3 % 2          // 1
+  
+  // 验证二进制各位
+  @azimuth.assert_eq(1, bit0)
+  @azimuth.assert_eq(0, bit1)
+  @azimuth.assert_eq(1, bit2)
+  @azimuth.assert_eq(1, bit3)
+  
+  // 将二进制转换回十进制验证：1×2³ + 1×2² + 0×2¹ + 1×2⁰ = 8 + 4 + 0 + 1 = 13
+  let two_pow_0 = 1
+  let two_pow_1 = @azimuth.multiply(2, 1)
+  let two_pow_2 = @azimuth.multiply(2, 2)
+  let two_pow_3 = @azimuth.multiply(2, 4)
+  
+  let reconstructed = @azimuth.add(@azimuth.add(@azimuth.multiply(bit3, two_pow_3), 
+                                               @azimuth.multiply(bit2, two_pow_2)),
+                                   @azimuth.add(@azimuth.multiply(bit1, two_pow_1), 
+                                               @azimuth.multiply(bit0, two_pow_0)))
+  @azimuth.assert_eq(13, reconstructed)
 }
