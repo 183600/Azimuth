@@ -1,103 +1,97 @@
 // 标准 MoonBit 测试用例
-// 测试 azimuth 包中的核心功能
+// 测试 azimuth 包的核心功能
 
-test "add_basic_functionality" {
+test "add_function_basic" {
   // 测试基本的加法功能
-  @azimuth.assert_eq(10, @azimuth.add(7, 3))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-1, -1))
 }
 
-test "add_boundary_values" {
-  // 测试边界值的加法
+test "add_function_edge_cases" {
+  // 测试加法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
 }
 
-test "multiply_basic_functionality" {
+test "multiply_function_basic" {
   // 测试基本的乘法功能
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(-12, @azimuth.multiply(3, -4))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(2, -3))
 }
 
-test "multiply_boundary_values" {
-  // 测试边界值的乘法
+test "multiply_function_edge_cases" {
+  // 测试乘法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
 }
 
-test "greet_functionality" {
-  // 测试问候功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+test "greet_function_basic" {
+  // 测试基本的问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, Alice!", greet("Alice"))
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
-  // 计算 (a + b) * c
-  let a = 4
-  let b = 5
-  let c = 6
-  
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  
-  @azimuth.assert_eq(54, result)  // (4 + 5) * 6 = 54
+test "greet_function_special_characters" {
+  // 测试包含特殊字符的问候
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "sequential_operations" {
-  // 测试连续运算
-  // 计算 a + b + c + d
-  let a = 10
-  let b = 20
-  let c = 30
-  let d = 40
+test "complex_calculation" {
+  // 测试复合计算：计算矩形的面积和周长
+  let length = 5
+  let width = 3
   
-  let step1 = @azimuth.add(a, b)
-  let step2 = @azimuth.add(step1, c)
-  let result = @azimuth.add(step2, d)
+  // 面积 = 长 × 宽
+  let area = multiply(length, width)
+  assert_eq(15, area)
   
-  @azimuth.assert_eq(100, result)  // 10 + 20 + 30 + 40 = 100
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(16, perimeter)
 }
 
-test "mathematical_formulas" {
-  // 测试数学公式计算
-  // 计算三角形的面积：底 × 高 ÷ 2
-  let base = 12
-  let height = 8
+test "assert_functions_test" {
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+}
+
+test "financial_calculation" {
+  // 测试金融计算场景
+  let principal = 1000
+  let rate = 5
+  let years = 2
   
-  let area = @azimuth.multiply(base, height) / 2
-  @azimuth.assert_eq(48, area)  // 12 * 8 / 2 = 48
+  // 简单利息计算：利息 = 本金 × 利率 × 年数
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
+  
+  assert_eq(11000, total)
 }
 
 test "string_processing" {
-  // 测试字符串处理
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, Test User!", @azimuth.greet("Test User"))
-  @azimuth.assert_eq_string("Hello, 🌙!", @azimuth.greet("🌙"))
-}
-
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 计算购物车总价：商品1 × 数量1 + 商品2 × 数量2
-  let price1 = 199
-  let quantity1 = 2
-  let price2 = 299
-  let quantity2 = 1
+  // 测试字符串处理场景
+  let first_name = "John"
+  let last_name = "Doe"
   
-  let total1 = @azimuth.multiply(price1, quantity1)
-  let total2 = @azimuth.multiply(price2, quantity2)
-  let cart_total = @azimuth.add(total1, total2)
+  // 测试全名问候
+  let full_name = first_name + " " + last_name
+  let greeting = greet(full_name)
   
-  @azimuth.assert_eq(697, cart_total)  // 199*2 + 299*1 = 398 + 299 = 697
+  assert_eq_string("Hello, John Doe!", greeting)
 }
