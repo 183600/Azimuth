@@ -14,7 +14,8 @@ test ... ok
 test ... ok
 test ... ok
 Checking simple_test.mbt...
-Found 9 tests in simple_test.mbt
+Found 10 tests in simple_test.mbt
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -286,6 +287,46 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking verify_advanced_tests.mbt...
+azimuth_test/verify_advanced_tests.mbt:5:1-5:7 [E3001] Invalid import declaration here.
+      Hint: Add the package path to the `moon.pkg.json` file in the same directory.
+      For example: `"import": ["path/to/package1", "path/to/package2"]` or `"test-import": ["path/to/package"]`.
+azimuth_test/verify_advanced_tests.mbt:5:1-5:7 [E3002] Parse error, unexpected token `import`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+azimuth_test/verify_advanced_tests.mbt:8:4-8:22 [E0001] Warning (unused_value): Unused function 'run_advanced_tests'
+azimuth_test/verify_advanced_tests.mbt:68:22-68:35 [E4095] Integer literal 1000000000000 is out of range.
+azimuth_test/verify_advanced_tests.mbt:117:1-117:19 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+Error: verify_advanced_tests.mbt compilation failed
+Checking additional_moonbit_tests.mbt...
+azimuth_test/additional_moonbit_tests.mbt:148:7-148:14 [E0002] Warning (unused_value): Unused variable 'periods'
+azimuth_test/additional_moonbit_tests.mbt:149:7-149:18 [E0002] Warning (unused_value): Unused variable 'growth_rate'
+azimuth_test/additional_moonbit_tests.mbt:195:7-195:20 [E0002] Warning (unused_value): Unused variable 'student_count'
+Found 10 tests in additional_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking advanced_moonbit_tests.mbt...
+azimuth_test/advanced_moonbit_tests.mbt:33:7-33:12 [E0002] Warning (unused_value): Unused variable 'terms'
+azimuth_test/advanced_moonbit_tests.mbt:61:7-61:18 [E0002] Warning (unused_value): Unused variable 'annual_rate'
+azimuth_test/advanced_moonbit_tests.mbt:62:7-62:25 [E0002] Warning (unused_value): Unused variable 'compounds_per_year'
+azimuth_test/advanced_moonbit_tests.mbt:63:7-63:12 [E0002] Warning (unused_value): Unused variable 'years'
+Found 10 tests in advanced_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Compiling clean_test...
 Generating clean_test.wasm...
 Testing clean_test...
@@ -315,6 +356,6 @@ test ... ok
 test ... ok
 test ... ok
 
-234 tests passed, 0 failed
+255 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
