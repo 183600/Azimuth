@@ -1,5 +1,5 @@
 {
   "test-import": ["azimuth"],
   "export": [],
-  "test": ["new_moonbit_test_cases.mbt", "simple_test_cases.mbt", "standard_moonbit_tests.mbt", "additional_test_cases.mbt", "new_moonbit_tests.mbt", "focused_test_scenarios.mbt", "xyz123_final_tests.mbt", "additional_moonbit_tests.mbt", "enhanced_test_cases.mbt", "new_comprehensive_tests.mbt"]
+  "test": ["new_moonbit_test_cases.mbt", "simple_test_cases.mbt", "standard_moonbit_tests.mbt", "additional_test_cases.mbt", "new_moonbit_tests.mbt", "focused_test_scenarios.mbt", "xyz123_final_tests.mbt", "additional_moonbit_tests.mbt", "enhanced_test_cases.mbt", "new_comprehensive_tests.mbt", "new_advanced_tests.mbt", "simple_new_test.mbt"]
 }

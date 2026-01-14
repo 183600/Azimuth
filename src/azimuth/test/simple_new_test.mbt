@@ -1,13 +1,20 @@
-// 简单的新测试用例
+// 简化的新测试用例
+// 测试 azimuth 包的基本功能
 
 test "simple_add_test" {
-  @azimuth.assert_eq(@azimuth.add(2, 3), 5)
+  // 测试基本加法
+  azimuth::assert_eq(10, azimuth::add(3, 7))
+  azimuth::assert_eq(0, azimuth::add(5, -5))
 }
 
 test "simple_multiply_test" {
-  @azimuth.assert_eq(@azimuth.multiply(2, 3), 6)
+  // 测试基本乘法
+  azimuth::assert_eq(12, azimuth::multiply(3, 4))
+  azimuth::assert_eq(0, azimuth::multiply(5, 0))
 }
 
 test "simple_greet_test" {
-  @azimuth.assert_eq_string(@azimuth.greet("World"), "Hello, World!")
+  // 测试基本问候功能
+  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
 }

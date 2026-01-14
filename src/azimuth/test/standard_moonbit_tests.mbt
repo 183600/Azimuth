@@ -129,3 +129,10 @@ test "function_composition_patterns" {
   // 验证结果：multiply(add(multiply(2, 3), add(4, 1)), 2) = multiply(add(6, 5), 2) = multiply(11, 2) = 22
   azimuth::assert_eq(22, final_result)
 }
+
+test "newly_added_test_case" {
+  // 新添加的测试用例，用于验证测试系统是否正常工作
+  azimuth::assert_eq(42, azimuth::add(20, 22))
+  azimuth::assert_eq(100, azimuth::multiply(10, 10))
+  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
+}
