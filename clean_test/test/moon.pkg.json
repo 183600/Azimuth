@@ -1,5 +1,6 @@
 {
   "import": ["clean_test"],
+  "test-import": ["moonbitlang/core/builtin"],
   "export": [],
-  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt", "enhanced_test_cases.mbt", "lib_tests.mbt", "additional_tests.mbt", "simple_new_test.mbt"]
+  "test": ["simple_test.mbt", "additional_comprehensive_tests.mbt", "enhanced_test_cases.mbt", "lib_tests.mbt", "additional_tests.mbt", "simple_new_test.mbt", "comprehensive_tests.mbt", "simple_comprehensive_test.mbt"]
 }
