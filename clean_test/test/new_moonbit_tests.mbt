@@ -1,17 +1,6 @@
-test "basic_add_test" {
-  let result = @clean_test.add(2, 3)
-  @clean_test.assert_eq(5, result)
-}
-test "basic_multiply_test" {
-  let result = @clean_test.multiply(2, 3)
-  @clean_test.assert_eq(6, result)
-}
-test "basic_greet_test" {
-  let result = @clean_test.greet("World")
-  @clean_test.assert_eq_string("Hello, World!", result)
-}
-
 // 新增的 MoonBit 测试用例
+// 测试 clean_test 模块的功能
+
 test "add_associative_property" {
   // 测试加法结合律: (a + b) + c = a + (b + c)
   let a = 100
@@ -21,6 +10,15 @@ test "add_associative_property" {
   let result1 = @clean_test.add(@clean_test.add(a, b), c)
   let result2 = @clean_test.add(a, @clean_test.add(b, c))
   @clean_test.assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let d = -150
+  let e = 250
+  let f = -100
+  
+  let result3 = @clean_test.add(@clean_test.add(d, e), f)
+  let result4 = @clean_test.add(d, @clean_test.add(e, f))
+  @clean_test.assert_eq(result3, result4)
 }
 
 test "multiply_commutative_property" {
@@ -31,6 +29,14 @@ test "multiply_commutative_property" {
   let result1 = @clean_test.multiply(a, b)
   let result2 = @clean_test.multiply(b, a)
   @clean_test.assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let c = -20
+  let d = 30
+  
+  let result3 = @clean_test.multiply(c, d)
+  let result4 = @clean_test.multiply(d, c)
+  @clean_test.assert_eq(result3, result4)
 }
 
 test "complex_calculation_scenario" {
@@ -120,4 +126,21 @@ test "mathematical_series_sum" {
   
   let sum = @clean_test.multiply(n, @clean_test.add(first, last)) / 2
   @clean_test.assert_eq(100, sum)  // 10 × (1 + 19) / 2 = 100
+}
+
+test "error_boundary_conditions" {
+  // 测试错误边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 确保溢出被正确处理
+  @clean_test.assert_true(@clean_test.add(max_val, 1) == max_val)
+  @clean_test.assert_true(@clean_test.add(min_val, -1) == min_val)
+  @clean_test.assert_true(@clean_test.multiply(max_val, 2) == max_val)
+  @clean_test.assert_true(@clean_test.multiply(min_val, -1) == min_val)
+  
+  // 测试正常情况
+  @clean_test.assert_true(@clean_test.add(5, 3) == 8)
+  @clean_test.assert_true(@clean_test.multiply(4, 6) == 24)
+  @clean_test.assert_true(@clean_test.greet("Test") == "Hello, Test!")
 }
