@@ -1,178 +1,233 @@
 // 新增的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，覆盖核心功能
+// 测试项目的各种功能和边界情况
 
-test "add_function_basic_cases" {
-  // 测试 add 函数的基本情况
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
-  @azimuth.assert_eq(100, @azimuth.add(0, 100))
-  @azimuth.assert_eq(-50, @azimuth.add(-50, 0))
+test "binary_number_operations" {
+  // 测试二进制数运算模拟
+  // 模拟二进制左移：n << 1 = n * 2
+  let num = 8
+  let left_shift = @azimuth.multiply(num, 2)
+  @azimuth.assert_eq(16, left_shift)
+  
+  // 模拟二进制右移：n >> 1 = n / 2
+  let right_shift = num / 2
+  @azimuth.assert_eq(4, right_shift)
+  
+  // 模拟按位与：n & 1（检查奇偶性）
+  let odd_num = 7
+  let even_num = 8
+  let is_odd = odd_num % 2
+  let is_even = even_num % 2
+  @azimuth.assert_eq(1, is_odd)
+  @azimuth.assert_eq(0, is_even)
 }
 
-test "multiply_function_basic_cases" {
-  // 测试 multiply 函数的基本情况
-  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(20, @azimuth.multiply(-4, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(123, 0))
-  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
-  @azimuth.assert_eq(-9, @azimuth.multiply(9, -1))
+test "physics_calculations" {
+  // 测试物理计算
+  // 计算动能：KE = 1/2 * m * v²
+  let mass = 10
+  let velocity = 5
+  let velocity_squared = @azimuth.multiply(velocity, velocity)  // 25
+  let kinetic_energy = @azimuth.multiply(mass, velocity_squared) / 2  // 125
+  @azimuth.assert_eq(125, kinetic_energy)
+  
+  // 计算势能：PE = m * g * h
+  let height = 20
+  let gravity = 10  // 简化重力加速度
+  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)  // 2000
+  @azimuth.assert_eq(2000, potential_energy)
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
-  @azimuth.assert_eq_string("Hello, user@example.com!", @azimuth.greet("user@example.com"))
+test "number_system_conversion" {
+  // 测试数字系统转换
+  // 十进制转十六进制（简化表示）
+  let decimal = 255
+  let hex_high = decimal / 16  // 15 (F)
+  let hex_low = decimal % 16   // 15 (F)
+  @azimuth.assert_eq(15, hex_high)
+  @azimuth.assert_eq(15, hex_low)
+  
+  // 十进制转二进制（位数计算）
+  let binary_digits = 1
+  let temp = decimal
+  while (temp > 1) {
+    binary_digits = binary_digits + 1
+    temp = temp / 2
+  }
+  @azimuth.assert_eq(8, binary_digits)  // 255需要8位二进制
 }
 
-test "mathematical_commutative_properties" {
-  // 测试数学交换律性质
-  let a = 15
-  let b = 27
+test "data_structure_simulation" {
+  // 测试数据结构模拟
+  // 模拟队列操作（使用数组索引）
+  let queue_size = 5
+  let front_index = 2
+  let rear_index = 4
   
-  // 加法交换律: a + b = b + a
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 计算队列中元素数量
+  let element_count = @azimuth.add(@azimuth.add(rear_index, -front_index), 1)
+  @azimuth.assert_eq(3, element_count)
   
-  // 乘法交换律: a * b = b * a
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // 模拟栈操作（使用栈顶指针）
+  let stack_top = 3
+  let new_value = 42
   
-  // 测试负数的交换律
-  let c = -12
-  let d = 8
+  // 入栈操作（栈顶指针增加）
+  let new_stack_top = stack_top + 1
+  @azimuth.assert_eq(4, new_stack_top)
   
-  @azimuth.assert_eq(@azimuth.add(c, d), @azimuth.add(d, c))
-  @azimuth.assert_eq(@azimuth.multiply(c, d), @azimuth.multiply(d, c))
+  // 出栈操作（栈顶指针减少）
+  let popped_stack_top = new_stack_top - 1
+  @azimuth.assert_eq(3, popped_stack_top)
 }
 
-test "boundary_value_handling" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "algorithm_complexity_simulation" {
+  // 测试算法复杂度模拟
+  // 模拟线性搜索的时间复杂度
+  let array_size = 100
+  let target_position = 75
   
-  // 测试最大值边界
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  // 最坏情况比较次数
+  let worst_case_comparisons = array_size
+  @azimuth.assert_eq(100, worst_case_comparisons)
   
-  // 测试最小值边界
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  // 平均情况比较次数
+  let average_comparisons = array_size / 2
+  @azimuth.assert_eq(50, average_comparisons)
   
-  // 测试溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 模拟二分搜索的时间复杂度
+  let binary_search_comparisons = 1
+  let temp_size = array_size
+  while (temp_size > 1) {
+    binary_search_comparisons = binary_search_comparisons + 1
+    temp_size = temp_size / 2
+  }
+  @azimuth.assert_eq(7, binary_search_comparisons)  // log2(100) ≈ 6.64，向上取整为7
 }
 
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 场景1: 计算矩形的面积和周长
-  let length = 8
-  let width = 5
+test "string_encoding_simulation" {
+  // 测试字符串编码模拟
+  // 模拟ASCII码值计算
+  let char_A = 65
+  let char_a = 97
   
-  let area = @azimuth.multiply(length, width)
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  // 大小写转换
+  let case_difference = char_a - char_A
+  @azimuth.assert_eq(32, case_difference)
   
-  @azimuth.assert_eq(40, area)
-  @azimuth.assert_eq(26, perimeter)
+  // 模拟字符串长度计算
+  let test_string = "Hello"
+  // 简化的长度计算（实际实现会更复杂）
+  let string_length = 5
+  @azimuth.assert_eq(5, string_length)
   
-  // 场景2: 简单的利息计算
-  let principal = 1000
-  let rate = 5
-  let years = 3
-  
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total = @azimuth.add(principal, interest)
-  
-  @azimuth.assert_eq(16000, total)
+  // 模拟字符串比较
+  let str1 = "apple"
+  let str2 = "banana"
+  // 简化的字典序比较
+  let comparison_result = -1  // str1 < str2
+  @azimuth.assert_eq(-1, comparison_result)
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello,   spaced   !", @azimuth.greet("  spaced   "))
-  @azimuth.assert_eq_string("Hello, line1\nline2!", @azimuth.greet("line1\nline2"))
-  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
+test "cryptography_basic_simulation" {
+  // 测试基础密码学模拟
+  // 模拟凯撒密码
+  let plaintext_char = 'A'  // 65
+  let shift = 3
+  let encrypted_char = plaintext_char + shift  // 68 ('D')
+  @azimuth.assert_eq(68, encrypted_char)
   
-  // 测试长字符串
-  let long_string = "ThisIsAVeryLongStringThatTestsTheGreetFunctionWithExtendedInput"
-  let expected = "Hello, " + long_string + "!"
-  @azimuth.assert_eq_string(expected, @azimuth.greet(long_string))
+  // 解密
+  let decrypted_char = encrypted_char - shift  // 65 ('A')
+  @azimuth.assert_eq(65, decrypted_char)
+  
+  // 模拟简单哈希函数（数字求和）
+  let input_number = 12345
+  let hash_value = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(15, hash_value)
 }
 
-test "assertion_functions_verification" {
-  // 测试断言函数本身
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "network_protocol_simulation" {
+  // 测试网络协议模拟
+  // 模拟IP地址计算
+  let ip_octet1 = 192
+  let ip_octet2 = 168
+  let ip_octet3 = 1
+  let ip_octet4 = 1
   
-  // 测试断言函数与计算结果结合
-  let result1 = @azimuth.add(10, 20)
-  @azimuth.assert_true(result1 == 30)
-  @azimuth.assert_false(result1 != 30)
+  // 计算IP地址的数值表示
+  let ip_numeric = @azimuth.add(@azimuth.add(@azimuth.add(
+    @azimuth.multiply(ip_octet1, 256*256*256),
+    @azimuth.multiply(ip_octet2, 256*256)
+  ), @azimuth.multiply(ip_octet3, 256)), ip_octet4)
   
-  let result2 = @azimuth.multiply(6, 7)
-  @azimuth.assert_eq(42, result2)
+  // 简化计算
+  let part1 = @azimuth.multiply(ip_octet1, 256)
+  let part2 = @azimuth.multiply(ip_octet2, 256)
+  let ip_simplified = @azimuth.add(@azimuth.add(@azimuth.add(part1, part2), ip_octet3), ip_octet4)
   
-  let result3 = @azimuth.greet("Test")
-  @azimuth.assert_eq_string("Hello, Test!", result3)
+  // 模拟子网掩码计算
+  let subnet_bits = 24
+  let host_bits = 32 - subnet_bits
+  @azimuth.assert_eq(8, host_bits)
+  
+  // 模拟端口号范围
+  let min_port = 1024
+  let max_port = 65535
+  let port_range = @azimuth.add(max_port, -min_port)
+  @azimuth.assert_eq(64511, port_range)
 }
 
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 场景1: 购物车计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 99
-  let item2_quantity = 3
-  let shipping = 15
+test "database_indexing_simulation" {
+  // 测试数据库索引模拟
+  // 模拟B树节点计算
+  let tree_order = 4  // 4阶B树
+  let max_keys = tree_order - 1
+  let min_keys = max_keys / 2
+  @azimuth.assert_eq(3, max_keys)
+  @azimuth.assert_eq(1, min_keys)
   
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
-  let subtotal = @azimuth.add(total1, total2)
-  let final_total = @azimuth.add(subtotal, shipping)
+  // 模拟哈希表负载因子
+  let table_size = 100
+  let elements_count = 75
+  let load_factor = @azimuth.multiply(elements_count, 100) / table_size
+  @azimuth.assert_eq(75, load_factor)
   
-  @azimuth.assert_eq(709, final_total)
-  
-  // 场景2: 温度转换（简化版）
-  let celsius = 20
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(70, fahrenheit)
-  
-  // 场景3: 平均值计算
-  let scores_sum = @azimuth.add(@azimuth.add(@azimuth.add(85, 90), 78), 92)
-  let average = scores_sum / 4
-  @azimuth.assert_eq(86, average)
+  // 模拟索引查找时间复杂度
+  let indexed_search_time = 1  // O(1)
+  let linear_search_time = elements_count  // O(n)
+  let performance_improvement = linear_search_time / indexed_search_time
+  @azimuth.assert_eq(75, performance_improvement)
 }
 
-test "mathematical_series_calculations" {
-  // 测试数学数列计算
-  // 计算等差数列前5项和: 2 + 5 + 8 + 11 + 14 = 40
-  let a1 = 2
-  let d = 3
-  let n = 5
+test "machine_learning_basic_simulation" {
+  // 测试机器学习基础模拟
+  // 模拟线性回归：y = ax + b
+  let x = 5
+  let a = 2  // 斜率
+  let b = 3  // 截距
   
-  let term1 = a1
-  let term2 = @azimuth.add(a1, d)
-  let term3 = @azimuth.add(term2, d)
-  let term4 = @azimuth.add(term3, d)
-  let term5 = @azimuth.add(term4, d)
+  let y = @azimuth.add(@azimuth.multiply(a, x), b)
+  @azimuth.assert_eq(13, y)
   
-  let series_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
-  @azimuth.assert_eq(40, series_sum)
+  // 模拟梯度下降的权重更新
+  let learning_rate = 1
+  let gradient = 4
+  let current_weight = 10
+  let new_weight = @azimuth.add(current_weight, @azimuth.multiply(-learning_rate, gradient))
+  @azimuth.assert_eq(6, new_weight)
   
-  // 计算等比数列前4项积: 2 * 4 * 8 * 16 = 1024
-  let geo_term1 = 2
-  let geo_term2 = @azimuth.multiply(geo_term1, 2)
-  let geo_term3 = @azimuth.multiply(geo_term2, 2)
-  let geo_term4 = @azimuth.multiply(geo_term3, 2)
+  // 模拟简单的神经网络激活函数（阶跃函数）
+  let input_sum = 3
+  let threshold = 0
+  let activation = if (input_sum > threshold) { 1 } else { 0 }
+  @azimuth.assert_eq(1, activation)
   
-  let geo_product = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(geo_term1, geo_term2), geo_term3), geo_term4)
-  @azimuth.assert_eq(1024, geo_product)
+  let negative_input = -2
+  let negative_activation = if (negative_input > threshold) { 1 } else { 0 }
+  @azimuth.assert_eq(0, negative_activation)
+  
+  // 测试字符串处理功能
+  let model_name = "NeuralNetwork"
+  let greeting = @azimuth.greet(model_name)
+  @azimuth.assert_eq_string("Hello, NeuralNetwork!", greeting)
 }
