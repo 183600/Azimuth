@@ -1,168 +1,190 @@
 // 额外的 MoonBit 测试用例
 // 使用标准的 MoonBit 测试语法
 
-test "arithmetic_sequence_sum" {
-  // 计算等差数列的和：2 + 4 + 6 + ... + 20（前10个偶数）
-  let n = 10
-  let first = 2
-  let last = 20
+test "add_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  let a = 12345
+  let b = 67890
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  let sum = @azimuth.multiply(n, @azimuth.add(first, last)) / 2
-  @azimuth.assert_eq(110, sum)  // 10 × (2 + 20) / 2 = 110
+  // 测试负数情况
+  let c = -12345
+  let d = 67890
+  @azimuth.assert_eq(@azimuth.add(c, d), @azimuth.add(d, c))
+  
+  // 测试两个负数
+  let e = -12345
+  let f = -67890
+  @azimuth.assert_eq(@azimuth.add(e, f), @azimuth.add(f, e))
 }
 
-test "string_case_handling" {
-  // 测试不同大小写的字符串处理
-  let lowercase = "moonbit"
-  let uppercase = "MOONBIT"
-  let mixedcase = "MoonBit"
+test "multiply_distributive_property" {
+  // 测试乘法分配律：a × (b + c) = a × b + a × c
+  let a = 7
+  let b = 15
+  let c = 23
   
-  @azimuth.assert_eq_string("Hello, moonbit!", @azimuth.greet(lowercase))
-  @azimuth.assert_eq_string("Hello, MOONBIT!", @azimuth.greet(uppercase))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet(mixedcase))
-}
-
-test "mathematical_identities" {
-  // 测试数学恒等式
-  let x = 15
-  
-  // 平方差恒等式：x² - 1 = (x - 1)(x + 1)
-  let left_side = @azimuth.add(@azimuth.multiply(x, x), -1)
-  let right_side = @azimuth.multiply(@azimuth.add(x, -1), @azimuth.add(x, 1))
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
   @azimuth.assert_eq(left_side, right_side)
   
-  // 立方和恒等式：x³ + 1 = (x + 1)(x² - x + 1)
-  let cube_left = @azimuth.add(@azimuth.multiply(@azimuth.multiply(x, x), x), 1)
-  let cube_right = @azimuth.multiply(
-    @azimuth.add(x, 1),
-    @azimuth.add(@azimuth.add(@azimuth.multiply(x, x), @azimuth.multiply(x, -1)), 1)
-  )
-  @azimuth.assert_eq(cube_left, cube_right)
+  // 测试包含负数的情况
+  let x = -5
+  let y = 12
+  let z = -8
+  
+  let left_side2 = @azimuth.multiply(x, @azimuth.add(y, z))
+  let right_side2 = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
+  @azimuth.assert_eq(left_side2, right_side2)
 }
 
-test "business_calculations" {
-  // 业务计算测试：利润计算
-  let revenue = 5000
-  let cost = 3000
-  let tax_rate = 20  // 20%
-  
-  // 计算利润
-  let profit = @azimuth.add(revenue, -cost)
-  
-  // 计算税后利润
-  let tax = @azimuth.multiply(profit, tax_rate) / 100
-  let net_profit = @azimuth.add(profit, -tax)
-  
-  @azimuth.assert_eq(2000, profit)     // 5000 - 3000 = 2000
-  @azimuth.assert_eq(400, tax)         // 2000 × 20% = 400
-  @azimuth.assert_eq(1600, net_profit) // 2000 - 400 = 1600
+test "greet_multilingual_support" {
+  // 测试多语言支持的问候功能
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
 }
 
-test "physical_calculations" {
-  // 物理计算测试：自由落体运动（简化版）
-  let gravity = 10  // 重力加速度 m/s²（简化值）
-  let time = 5      // 时间 s
+test "complex_financial_calculation" {
+  // 复杂金融计算：贷款分期计算
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let years = 3           // 3年
   
-  // 计算下落距离：s = 0.5 × g × t²
-  // 由于是整数运算，我们简化为：s = g × t² / 2
-  let time_squared = @azimuth.multiply(time, time)  // 25
-  let distance = @azimuth.multiply(gravity, time_squared) / 2
+  // 简化的利息计算：总利息 = 本金 × 年利率 × 年数
+  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
   
-  @azimuth.assert_eq(125, distance)  // 10 × 25 / 2 = 125
+  // 总还款额 = 本金 + 总利息
+  let total_payment = @azimuth.add(principal, total_interest)
+  
+  // 月还款额（简化计算，不考虑复利）
+  let monthly_payment = total_payment / (years * 12)
+  
+  @azimuth.assert_eq(1180000, total_payment)  // 100000 + 100000*6*3 = 1180000
+  @azimuth.assert_eq(32777, monthly_payment)  // 1180000 / 36 ≈ 32777
 }
 
-test "statistical_variance" {
-  // 统计方差计算（简化版）
-  // 数据集：10, 20, 30, 40, 50
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)  // 150
-  let mean = sum / 5  // 30
+test "physics_simulation" {
+  // 物理模拟：自由落体运动计算（简化版）
+  let initial_height = 100  // 初始高度（米）
+  let time = 4              // 时间（秒）
   
-  // 计算平方差之和
-  let diff1 = @azimuth.add(10, -mean)  // -20
-  let diff2 = @azimuth.add(20, -mean)  // -10
-  let diff3 = @azimuth.add(30, -mean)  // 0
-  let diff4 = @azimuth.add(40, -mean)  // 10
-  let diff5 = @azimuth.add(50, -mean)  // 20
+  // 下落距离 = 0.5 × g × t²（简化为 g × t²）
+  let distance = @azimuth.multiply(10, @azimuth.multiply(time, time))
   
-  let sum_squared_diffs = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.multiply(diff1, diff1),    // 400
-    @azimuth.multiply(diff2, diff2)),   // 100
-    @azimuth.multiply(diff3, diff3)),   // 0
-    @azimuth.multiply(diff4, diff4)),   // 100
-    @azimuth.multiply(diff5, diff5))    // 400
+  // 剩余高度 = 初始高度 - 下落距离
+  let remaining_height = @azimuth.add(initial_height, -distance)
   
-  let variance = sum_squared_diffs / 5
-  
-  @azimuth.assert_eq(1000, sum_squared_diffs)  // 400 + 100 + 0 + 100 + 400 = 1000
-  @azimuth.assert_eq(200, variance)            // 1000 / 5 = 200
+  @azimuth.assert_eq(160, distance)      // 10 × 4² = 160
+  @azimuth.assert_eq(-60, remaining_height)  // 100 - 160 = -60（已落地）
 }
 
-test "game_mechanics" {
-  // 游戏机制测试：经验值计算
-  let base_exp = 100
-  let level = 5
-  let difficulty_multiplier = 2
-  let bonus = 50
+test "data_structure_operations" {
+  // 数据结构操作模拟
+  // 模拟栈操作：push和pop
+  let mut stack_size = 0
   
-  // 计算获得的经验值
-  let level_exp = @azimuth.multiply(base_exp, level)
-  let adjusted_exp = @azimuth.multiply(level_exp, difficulty_multiplier)
-  let total_exp = @azimuth.add(adjusted_exp, bonus)
+  // push操作
+  stack_size = @azimuth.add(stack_size, 1)  // push item1
+  stack_size = @azimuth.add(stack_size, 1)  // push item2
+  stack_size = @azimuth.add(stack_size, 1)  // push item3
   
-  @azimuth.assert_eq(1050, total_exp)  // (100 × 5 × 2) + 50 = 1050
+  @azimuth.assert_eq(3, stack_size)
+  
+  // pop操作
+  stack_size = @azimuth.add(stack_size, -1)  // pop item3
+  stack_size = @azimuth.add(stack_size, -1)  // pop item2
+  
+  @azimuth.assert_eq(1, stack_size)
+  
+  // 模拟队列操作：enqueue和dequeue
+  let mut queue_size = 0
+  let enqueue_count = 5
+  let dequeue_count = 2
+  
+  queue_size = @azimuth.add(queue_size, enqueue_count)   // enqueue 5 items
+  queue_size = @azimuth.add(queue_size, -dequeue_count)  // dequeue 2 items
+  
+  @azimuth.assert_eq(3, queue_size)
 }
 
-test "array_manipulation" {
-  // 数组操作测试：模拟数组操作
-  let array_size = 10
-  let start_index = 2
-  let end_index = 7
+test "statistical_analysis" {
+  // 统计分析测试
+  // 模拟数据集：10, 20, 30, 40, 50
+  let data1 = 10
+  let data2 = 20
+  let data3 = 30
+  let data4 = 40
+  let data5 = 50
   
-  // 计算数组长度
-  let length = @azimuth.add(end_index, -start_index)
-  @azimuth.assert_eq(5, length)  // 7 - 2 = 5
+  // 计算总和
+  let data_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
+  let data_count = 5
   
-  // 计算中间索引
-  let middle_index = @azimuth.add(start_index, length / 2)
-  @azimuth.assert_eq(4, middle_index)  // 2 + 5/2 = 2 + 2 = 4
+  // 计算平均值
+  let average = data_sum / data_count
   
-  // 计算循环索引（模拟数组循环）
-  let current_index = 9
-  let next_index = @azimuth.add(current_index, 1) % array_size
-  @azimuth.assert_eq(0, next_index)  // (9 + 1) % 10 = 0
+  // 计算方差（简化版）
+  let diff1 = @azimuth.add(data1, -average)
+  let diff2 = @azimuth.add(data2, -average)
+  let diff3 = @azimuth.add(data3, -average)
+  let diff4 = @azimuth.add(data4, -average)
+  let diff5 = @azimuth.add(data5, -average)
+  
+  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(diff1, diff1), @azimuth.multiply(diff2, diff2)), 
+                           @azimuth.multiply(diff3, diff3)), @azimuth.multiply(diff4, diff4)), 
+                           @azimuth.multiply(diff5, diff5)) / data_count
+  
+  @azimuth.assert_eq(150, data_sum)
+  @azimuth.assert_eq(30, average)
+  @azimuth.assert_eq(200, variance)  // 简化计算
 }
 
-test "time_zone_conversion" {
-  // 时区转换测试（简化版）
-  let local_hour = 15  // 下午3点
-  let time_zone_offset = -8  // 时差（小时）
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟
+  let n = 100
   
-  // 计算目标时间
-  let target_hour = @azimuth.add(local_hour, time_zone_offset)
+  // O(1) 常数时间复杂度
+  let constant_time = 1
   
-  // 处理跨日情况
-  let adjusted_hour = if (target_hour < 0) {
-    @azimuth.add(target_hour, 24)
-  } else if (target_hour >= 24) {
-    @azimuth.add(target_hour, -24)
-  } else {
-    target_hour
-  }
+  // O(n) 线性时间复杂度
+  let linear_time = n
   
-  @azimuth.assert_eq(7, adjusted_hour)  // 15 + (-8) = 7（上午7点）
+  // O(n²) 平方时间复杂度
+  let quadratic_time = @azimuth.multiply(n, n)
+  
+  // O(log n) 对数时间复杂度（简化为 n/10）
+  let logarithmic_time = n / 10
+  
+  @azimuth.assert_eq(1, constant_time)
+  @azimuth.assert_eq(100, linear_time)
+  @azimuth.assert_eq(10000, quadratic_time)
+  @azimuth.assert_eq(10, logarithmic_time)
 }
 
-test "encryption_simulation" {
-  // 简单加密模拟（凯撒密码）
-  let original = 5
-  let shift = 3
-  let alphabet_size = 26
+test "edge_case_comprehensive" {
+  // 综合边界情况测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 加密
-  let encrypted = @azimuth.add(original, shift) % alphabet_size
-  @azimuth.assert_eq(8, encrypted)  // (5 + 3) % 26 = 8
+  // 测试连续运算的边界情况
+  let result1 = @azimuth.add(@azimuth.add(max_val, -max_val), max_val)
+  @azimuth.assert_eq(max_val, result1)
   
-  // 解密
-  let decrypted = @azimuth.add(encrypted, @azimuth.add(alphabet_size, -shift)) % alphabet_size
-  @azimuth.assert_eq(5, decrypted)  // (8 + (26-3)) % 26 = 5
+  let result2 = @azimuth.multiply(@azimuth.multiply(min_val, -1), -1)
+  @azimuth.assert_eq(min_val, result2)
+  
+  // 测试混合边界运算
+  let result3 = @azimuth.add(@azimuth.multiply(max_val, 0), min_val)
+  @azimuth.assert_eq(min_val, result3)
+  
+  let result4 = @azimuth.multiply(@azimuth.add(max_val, min_val), 100)
+  @azimuth.assert_eq(-100, result4)
+  
+  // 测试字符串边界情况
+  let very_long_name = "A" + "B" + "C" + "D" + "E" + "F" + "G" + "H" + "I" + "J"
+  let long_greeting = @azimuth.greet(very_long_name)
+  @azimuth.assert_eq_string("Hello, ABCDEFGHIJ!", long_greeting)
 }
