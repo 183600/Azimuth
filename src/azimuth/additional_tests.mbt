@@ -1,382 +1,247 @@
 // 额外的 MoonBit 测试用例
-// 这些测试用例补充现有的测试，覆盖更多边界情况和实际应用场景
+// 这些测试用例涵盖了各种实际应用场景和边界情况
 
-// 测试用例1: 幂运算模拟（通过重复乘法）
-test "power_calculation" {
-  // 计算 2^4 = 2 * 2 * 2 * 2 = 16
-  let base = 2
-  let exponent = 4
+test "fibonacci_sequence_calculation" {
+  // 计算斐波那契数列的前几项
+  // F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8, F(7)=13
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = azimuth::add(fib_0, fib_1)  // 1
+  let fib_3 = azimuth::add(fib_1, fib_2)  // 2
+  let fib_4 = azimuth::add(fib_2, fib_3)  // 3
+  let fib_5 = azimuth::add(fib_3, fib_4)  // 5
+  let fib_6 = azimuth::add(fib_4, fib_5)  // 8
+  let fib_7 = azimuth::add(fib_5, fib_6)  // 13
   
-  let result1 = @azimuth.multiply(base, base)  // 2 * 2 = 4
-  let result2 = @azimuth.multiply(result1, base)  // 4 * 2 = 8
-  let final_result = @azimuth.multiply(result2, base)  // 8 * 2 = 16
-  
-  @azimuth.assert_eq(16, final_result)
-  
-  // 计算 3^3 = 3 * 3 * 3 = 27
-  let base2 = 3
-  let exponent2 = 3
-  
-  let result3 = @azimuth.multiply(base2, base2)  // 3 * 3 = 9
-  let final_result2 = @azimuth.multiply(result3, base2)  // 9 * 3 = 27
-  
-  @azimuth.assert_eq(27, final_result2)
+  assert_eq(1, fib_2)
+  assert_eq(2, fib_3)
+  assert_eq(3, fib_4)
+  assert_eq(5, fib_5)
+  assert_eq(8, fib_6)
+  assert_eq(13, fib_7)
 }
 
-// 测试用例2: 阶乘计算（通过累乘）
-test "factorial_calculation" {
-  // 计算 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let n = 5
+test "prime_number_validation" {
+  // 验证一些素数和非素数
+  // 通过简单的除法测试验证素数
   
-  let step1 = @azimuth.multiply(n, 4)  // 5 * 4 = 20
-  let step2 = @azimuth.multiply(step1, 3)  // 20 * 3 = 60
-  let step3 = @azimuth.multiply(step2, 2)  // 60 * 2 = 120
-  let final_result = @azimuth.multiply(step3, 1)  // 120 * 1 = 120
+  // 7是素数（不能被2,3,4,5,6整除）
+  let candidate_7 = 7
+  let is_7_prime = azimuth::add(candidate_7 % 2, azimuth::add(candidate_7 % 3, azimuth::add(candidate_7 % 4, azimuth::add(candidate_7 % 5, candidate_7 % 6)))) > 0
+  assert_true(is_7_prime)
   
-  @azimuth.assert_eq(120, final_result)
+  // 11是素数
+  let candidate_11 = 11
+  let is_11_prime = azimuth::add(candidate_11 % 2, azimuth::add(candidate_11 % 3, azimuth::add(candidate_11 % 4, azimuth::add(candidate_11 % 5, azimuth::add(candidate_11 % 6, candidate_11 % 7))))) > 0
+  assert_true(is_11_prime)
+  
+  // 9不是素数（能被3整除）
+  let candidate_9 = 9
+  let is_9_prime = candidate_9 % 3 > 0
+  assert_false(is_9_prime)
 }
 
-// 测试用例3: 百分比计算
-test "percentage_calculation" {
-  // 计算 200 的 25% = 200 * 25 / 100 = 50
-  let value = 200
-  let percentage = 25
+test "loan_calculation_scenario" {
+  // 贷款计算场景
+  let principal = 100000  // 本金
+  let annual_rate = 5     // 年利率5%
+  let years = 3           // 贷款年限
   
-  let intermediate = @azimuth.multiply(value, percentage)  // 200 * 25 = 5000
-  let result = intermediate / 100  // 5000 / 100 = 50
+  // 简化的单利计算：总利息 = 本金 × 利率 × 年数
+  let total_interest = azimuth::multiply(azimuth::multiply(principal, annual_rate), years) / 100
+  assert_eq(15000, total_interest)  // 100000 × 5 × 3 / 100 = 15000
   
-  @azimuth.assert_eq(50, result)
+  // 总还款额 = 本金 + 利息
+  let total_payment = azimuth::add(principal, total_interest)
+  assert_eq(115000, total_payment)
   
-  // 计算 150 的 10% = 150 * 10 / 100 = 15
-  let value2 = 150
-  let percentage2 = 10
-  
-  let intermediate2 = @azimuth.multiply(value2, percentage2)  // 150 * 10 = 1500
-  let result2 = intermediate2 / 100  // 1500 / 100 = 15
-  
-  @azimuth.assert_eq(15, result2)
+  // 月供（简化计算）
+  let monthly_payment = total_payment / azimuth::multiply(years, 12)
+  assert_eq(3194, monthly_payment)  // 整数除法
 }
 
-// 测试用例4: 距离单位转换
-test "distance_conversion" {
-  // 公里转米：1公里 = 1000米
-  let kilometers = 5
-  let meters = @azimuth.multiply(kilometers, 1000)  // 5 * 1000 = 5000
+test "temperature_conversion_comprehensive" {
+  // 温度转换综合测试
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 简化为整数运算：F = C × 2 + 30（近似值）
   
-  @azimuth.assert_eq(5000, meters)
+  let celsius_values = [0, 10, 25, 37, 100]
+  let expected_fahrenheit = [30, 50, 80, 104, 230]
   
-  // 米转厘米：1米 = 100厘米
-  let meters2 = 3
-  let centimeters = @azimuth.multiply(meters2, 100)  // 3 * 100 = 300
+  // 冰点
+  let fahrenheit_0 = azimuth::add(azimuth::multiply(0, 2), 30)
+  assert_eq(30, fahrenheit_0)
   
-  @azimuth.assert_eq(300, centimeters)
+  // 室温
+  let fahrenheit_25 = azimuth::add(azimuth::multiply(25, 2), 30)
+  assert_eq(80, fahrenheit_25)
+  
+  // 体温
+  let fahrenheit_37 = azimuth::add(azimuth::multiply(37, 2), 30)
+  assert_eq(104, fahrenheit_37)
+  
+  // 沸点
+  let fahrenheit_100 = azimuth::add(azimuth::multiply(100, 2), 30)
+  assert_eq(230, fahrenheit_100)
 }
 
-// 测试用例5: 时间计算
-test "time_calculation" {
-  // 计算总秒数：2小时30分钟15秒 = 2*3600 + 30*60 + 15 = 7200 + 1800 + 15 = 9015
-  let hours = 2
-  let minutes = 30
-  let seconds = 15
-  
-  let seconds_from_hours = @azimuth.multiply(hours, 3600)  // 2 * 3600 = 7200
-  let seconds_from_minutes = @azimuth.multiply(minutes, 60)  // 30 * 60 = 1800
-  let total_seconds = @azimuth.add(@azimuth.add(seconds_from_hours, seconds_from_minutes), seconds)  // 7200 + 1800 + 15 = 9015
-  
-  @azimuth.assert_eq(9015, total_seconds)
-}
-
-// 测试用例6: 字符串长度比较（间接）
-test "string_length_comparison" {
-  // 通过字符串拼接的结果来间接比较字符串长度
-  let short_name = "Tom"
-  let long_name = "Alexander"
-  
-  let short_greeting = @azimuth.greet(short_name)  // "Hello, Tom!"
-  let long_greeting = @azimuth.greet(long_name)  // "Hello, Alexander!"
-  
-  // 长字符串的问候应该比短字符串的问候长
-  // 由于我们无法直接比较字符串长度，我们通过拼接一个固定字符串来验证
-  let short_with_suffix = short_greeting + "_suffix"
-  let long_with_suffix = long_greeting + "_suffix"
-  
-  // 验证拼接后的字符串不同
-  @azimuth.assert_false(short_greeting == long_greeting)
-  @azimuth.assert_false(short_with_suffix == long_with_suffix)
-}
-
-// 测试用例7: 数列求和
-test "arithmetic_series_sum" {
-  // 计算等差数列 1, 3, 5, 7, 9 的和
-  // 使用公式：和 = (首项 + 末项) * 项数 / 2
-  let first_term = 1
-  let last_term = 9
-  let number_of_terms = 5
-  
-  let sum_of_terms = @azimuth.add(first_term, last_term)  // 1 + 9 = 10
-  let product = @azimuth.multiply(sum_of_terms, number_of_terms)  // 10 * 5 = 50
-  let series_sum = product / 2  // 50 / 2 = 25
-  
-  @azimuth.assert_eq(25, series_sum)
-}
-
-// 测试用例8: 货币计算
-test "currency_calculation" {
-  // 计算总价：商品价格 × 数量 + 税费
-  let item_price = 199  // 商品价格（分为单位）
-  let quantity = 3  // 数量
-  let tax_rate = 10  // 税率（百分比）
-  
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(item_price, quantity)  // 199 * 3 = 597
-  
-  // 计算税费
-  let tax_amount = subtotal / tax_rate  // 597 / 10 = 59（整数除法）
-  
-  // 计算最终总价
-  let total_price = @azimuth.add(subtotal, tax_amount)  // 597 + 59 = 656
-  
-  @azimuth.assert_eq(656, total_price)
-}
-
-// 测试用例9: 几何图形周长计算
-test "geometric_perimeter_calculation" {
-  // 计算正六边形周长：6 × 边长
-  let hexagon_side = 7
-  let hexagon_perimeter = @azimuth.multiply(6, hexagon_side)  // 6 * 7 = 42
-  
-  @azimuth.assert_eq(42, hexagon_perimeter)
-  
-  // 计算三角形周长：边长1 + 边长2 + 边长3
-  let triangle_side1 = 5
-  let triangle_side2 = 7
-  let triangle_side3 = 9
-  
-  let triangle_perimeter = @azimuth.add(@azimuth.add(triangle_side1, triangle_side2), triangle_side3)  // 5 + 7 + 9 = 21
-  
-  @azimuth.assert_eq(21, triangle_perimeter)
-}
-
-// 测试用例10: 数值范围检查
-test "numeric_range_validation" {
-  // 检查数值是否在特定范围内
-  let value = 75
-  let min_range = 10
-  let max_range = 100
-  
-  // 检查 value >= min_range
-  let above_min = value >= min_range
-  @azimuth.assert_true(above_min)
-  
-  // 检查 value <= max_range
-  let below_max = value <= max_range
-  @azimuth.assert_true(below_max)
-  
-  // 测试超出范围的情况
-  let out_of_range_value = 150
-  let out_of_range_above_min = out_of_range_value >= min_range
-  let out_of_range_below_max = out_of_range_value <= max_range
-  
-  @azimuth.assert_true(out_of_range_above_min)
-  @azimuth.assert_false(out_of_range_below_max)
-}
-
-// 新增的10个实用测试用例
-test "bank_interest_calculation" {
-  // 银行利息计算：本金 + (本金 × 利率 × 时间)
-  let principal = 10000  // 本金 10000元
-  let rate = 3          // 年利率 3%
-  let years = 5         // 存期 5年
-  
-  // 计算利息：10000 × 3 × 5 = 150000
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  // 计算本息和：10000 + 150000 = 160000
-  let total = @azimuth.add(principal, interest)
-  
-  @azimuth.assert_eq(160000, total)
-}
-
-test "shopping_cart_with_discount" {
-  // 购物车计算与折扣
+test "shopping_cart_with_discounts" {
+  // 带折扣的购物车计算
   let item1_price = 299
   let item1_quantity = 2
-  let item2_price = 199
+  let item2_price = 599
   let item2_quantity = 1
-  let discount_rate = 10  // 10% 折扣
+  let item3_price = 199
+  let item3_quantity = 3
   
-  // 计算商品总价
-  let item1_total = @azimuth.multiply(item1_price, item1_quantity)  // 299 × 2 = 598
-  let item2_total = @azimuth.multiply(item2_price, item2_quantity)  // 199 × 1 = 199
-  let subtotal = @azimuth.add(item1_total, item2_total)            // 598 + 199 = 797
+  // 计算各项总价
+  let total1 = azimuth::multiply(item1_price, item1_quantity)
+  let total2 = azimuth::multiply(item2_price, item2_quantity)
+  let total3 = azimuth::multiply(item3_price, item3_quantity)
   
-  // 计算折扣金额：797 × 10 ÷ 100 = 79（整数除法）
-  let discount_amount = @azimuth.multiply(subtotal, discount_rate) / 100
-  // 计算最终价格：797 - 79 = 718
-  let final_price = @azimuth.add(subtotal, -discount_amount)
+  // 计算小计
+  let subtotal = azimuth::add(azimuth::add(total1, total2), total3)
+  assert_eq(1494, subtotal)  // 299*2 + 599*1 + 199*3 = 598 + 599 + 597 = 1794
   
-  @azimuth.assert_eq(718, final_price)
+  // 满1000减100折扣
+  let discount = if (subtotal >= 1000) { 100 } else { 0 }
+  let after_discount = azimuth::add(subtotal, -discount)
+  assert_eq(1394, after_discount)
+  
+  // 运费（满1000免运费）
+  let shipping = if (subtotal >= 1000) { 0 } else { 50 }
+  let final_total = azimuth::add(after_discount, shipping)
+  assert_eq(1394, final_total)
 }
 
-test "temperature_conversion_batch" {
-  // 批量温度转换：摄氏度转华氏度（近似公式：F = C × 2 + 30）
-  let celsius_temps = [0, 10, 20, 30, 40]  // 摄氏度数组
-  let expected_fahrenheit = [30, 50, 70, 90, 110]  // 期望的华氏度结果
+test "array_index_calculations" {
+  // 数组索引计算测试
+  // 二维数组转一维数组的索引计算：index = row * width + col
   
-  // 转换第一个温度：0 × 2 + 30 = 30
-  let temp1 = @azimuth.add(@azimuth.multiply(celsius_temps[0], 2), 30)
-  @azimuth.assert_eq(expected_fahrenheit[0], temp1)
+  let width = 5
+  let height = 4
   
-  // 转换第二个温度：10 × 2 + 30 = 50
-  let temp2 = @azimuth.add(@azimuth.multiply(celsius_temps[1], 2), 30)
-  @azimuth.assert_eq(expected_fahrenheit[1], temp2)
+  // 测试几个关键位置
+  let index_00 = azimuth::add(azimuth::multiply(0, width), 0)  // 第0行第0列
+  let index_04 = azimuth::add(azimuth::multiply(0, width), 4)  // 第0行第4列
+  let index_10 = azimuth::add(azimuth::multiply(1, width), 0)  // 第1行第0列
+  let index_34 = azimuth::add(azimuth::multiply(3, width), 4)  // 第3行第4列（最后一个）
   
-  // 转换第三个温度：20 × 2 + 30 = 70
-  let temp3 = @azimuth.add(@azimuth.multiply(celsius_temps[2], 2), 30)
-  @azimuth.assert_eq(expected_fahrenheit[2], temp3)
+  assert_eq(0, index_00)
+  assert_eq(4, index_04)
+  assert_eq(5, index_10)
+  assert_eq(19, index_34)
+  
+  // 验证总数
+  let total_elements = azimuth::multiply(width, height)
+  assert_eq(20, total_elements)
 }
 
-test "area_perimeter_calculation" {
-  // 房间面积和周长计算
-  let room_length = 6  // 房间长度 6米
-  let room_width = 4   // 房间宽度 4米
-  let room_height = 3  // 房间高度 3米
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况
+  // 测试各种特殊字符串的greet函数处理
   
-  // 计算房间面积：6 × 4 = 24 平方米
-  let floor_area = @azimuth.multiply(room_length, room_width)
+  // 空字符串
+  let empty_result = azimuth::greet("")
+  assert_eq_string("Hello, !", empty_result)
   
-  // 计算房间周长：2 × (6 + 4) = 2 × 10 = 20 米
-  let perimeter = @azimuth.multiply(2, @azimuth.add(room_length, room_width))
+  // 单字符
+  let single_char_result = azimuth::greet("A")
+  assert_eq_string("Hello, A!", single_char_result)
   
-  // 计算墙面面积：周长 × 高度 = 20 × 3 = 60 平方米
-  let wall_area = @azimuth.multiply(perimeter, room_height)
+  // 包含空格的字符串
+  let spaced_result = azimuth::greet("John Doe")
+  assert_eq_string("Hello, John Doe!", spaced_result)
   
-  @azimuth.assert_eq(24, floor_area)
-  @azimuth.assert_eq(20, perimeter)
-  @azimuth.assert_eq(60, wall_area)
+  // 包含特殊字符
+  let special_result = azimuth::greet("user@domain.com")
+  assert_eq_string("Hello, user@domain.com!", special_result)
+  
+  // 包含Unicode字符
+  let unicode_result = azimuth::greet("测试123")
+  assert_eq_string("Hello, 测试123!", unicode_result)
 }
 
-test "score_statistics_calculation" {
-  // 学生成绩统计
-  let math_score = 85
-  let english_score = 92
-  let science_score = 78
-  let history_score = 88
+test "mathematical_series_evaluation" {
+  // 数学级数求值
   
-  // 计算总分：85 + 92 + 78 + 88 = 343
-  let total_score = @azimuth.add(@azimuth.add(math_score, english_score), 
-                                   @azimuth.add(science_score, history_score))
+  // 等差数列求和：1 + 3 + 5 + ... + 19（前10个奇数）
+  // 使用公式：n × (首项 + 末项) / 2
+  let n = 10
+  let first_term = 1
+  let last_term = 19
+  let arithmetic_sum = azimuth::multiply(n, azimuth::add(first_term, last_term)) / 2
+  assert_eq(100, arithmetic_sum)
   
-  // 计算平均分：343 ÷ 4 = 85（整数除法）
-  let average_score = total_score / 4
+  // 等比数列求和：2 + 4 + 8 + 16 + 32（前5项，公比为2）
+  // 手动计算
+  let geo_term1 = 2
+  let geo_term2 = azimuth::multiply(geo_term1, 2)
+  let geo_term3 = azimuth::multiply(geo_term2, 2)
+  let geo_term4 = azimuth::multiply(geo_term3, 2)
+  let geo_term5 = azimuth::multiply(geo_term4, 2)
+  let geometric_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(geo_term1, geo_term2), geo_term3), geo_term4), geo_term5)
+  assert_eq(62, geometric_sum)
   
-  // 计算最高分与最低分的差值：92 - 78 = 14
-  let score_range = @azimuth.add(92, -78)
-  
-  @azimuth.assert_eq(343, total_score)
-  @azimuth.assert_eq(85, average_score)
-  @azimuth.assert_eq(14, score_range)
+  // 平方和：1² + 2² + 3² + 4² + 5²
+  let square_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(1, 1), azimuth::multiply(2, 2)), azimuth::multiply(3, 3)), azimuth::add(azimuth::multiply(4, 4), azimuth::multiply(5, 5)))
+  assert_eq(55, square_sum)
 }
 
-test "fuel_consumption_calculation" {
-  // 燃油消耗计算
-  let distance = 500      // 行驶距离 500公里
-  let fuel_efficiency = 8 // 油耗 8升/100公里
-  let fuel_price = 7      // 油价 7元/升
+test "game_mechanics_simulation" {
+  // 游戏机制模拟
   
-  // 计算总油耗：500 × 8 ÷ 100 = 40 升
-  let total_fuel = @azimuth.multiply(distance, fuel_efficiency) / 100
+  // 角色属性计算
+  let base_strength = 10
+  let equipment_bonus = 5
+  let buff_multiplier = 150  // 1.5倍表示为150
+  let level_bonus = 3
   
-  // 计算总油费：40 × 7 = 280 元
-  let total_cost = @azimuth.multiply(total_fuel, fuel_price)
+  // 计算最终力量值
+  let equipment_total = azimuth::add(base_strength, equipment_bonus)
+  let buffed_strength = azimuth::multiply(equipment_total, buff_multiplier) / 100
+  let final_strength = azimuth::add(buffed_strength, level_bonus)
+  assert_eq(23, final_strength)  // (10+5)*1.5+3 = 22.5，整数除法为22
   
-  // 计算每公里油费：280 ÷ 500 = 0（整数除法，实际为0.56元）
-  let cost_per_km = total_cost / distance
+  // 伤害计算
+  let weapon_damage = 50
+  let critical_hit = if (true) { 2 } else { 1 }  // 暴击2倍伤害
+  let defense = 20
+  let final_damage = azimuth::add(azimuth::multiply(weapon_damage, critical_hit), -defense)
+  assert_eq(80, final_damage)  // 50*2-20 = 80
   
-  @azimuth.assert_eq(40, total_fuel)
-  @azimuth.assert_eq(280, total_cost)
+  // 经验值计算
+  let base_exp = 100
+  let level_difficulty = 3
+  let party_bonus = 150  // 1.5倍
+  let total_exp = azimuth::multiply(azimuth::multiply(base_exp, level_difficulty), party_bonus) / 100
+  assert_eq(450, total_exp)  // 100*3*1.5 = 450
 }
 
-test "project_time_estimation" {
-  // 项目时间估算
-  let task1_days = 5
-  let task2_days = 3
-  let task3_days = 7
-  let buffer_percentage = 20  // 20% 缓冲时间
+test "data_analysis_scenario" {
+  // 数据分析场景
   
-  // 计算基础任务时间：5 + 3 + 7 = 15 天
-  let base_time = @azimuth.add(@azimuth.add(task1_days, task2_days), task3_days)
+  // 销售数据分析
+  let q1_sales = 15000
+  let q2_sales = 18000
+  let q3_sales = 22000
+  let q4_sales = 25000
   
-  // 计算缓冲时间：15 × 20 ÷ 100 = 3 天
-  let buffer_time = @azimuth.multiply(base_time, buffer_percentage) / 100
+  // 年度总销售额
+  let annual_sales = azimuth::add(azimuth::add(azimuth::add(q1_sales, q2_sales), q3_sales), q4_sales)
+  assert_eq(80000, annual_sales)
   
-  // 计算总预估时间：15 + 3 = 18 天
-  let total_estimated_time = @azimuth.add(base_time, buffer_time)
+  // 季度平均销售额
+  let quarterly_average = annual_sales / 4
+  assert_eq(20000, quarterly_average)
   
-  @azimuth.assert_eq(15, base_time)
-  @azimuth.assert_eq(3, buffer_time)
-  @azimuth.assert_eq(18, total_estimated_time)
-}
-
-test "batch_greeting_processing" {
-  // 批量问候处理
-  let user_names = ["Alice", "Bob", "Charlie", "Diana"]
+  // 同比增长率（简化计算）
+  let last_year_sales = 70000
+  let growth_rate = azimuth::multiply(azimuth::add(annual_sales, -last_year_sales), 100) / last_year_sales
+  assert_eq(14, growth_rate)  // (80000-70000)*100/70000 ≈ 14%
   
-  // 处理每个用户的问候
-  let greeting1 = @azimuth.greet(user_names[0])
-  let greeting2 = @azimuth.greet(user_names[1])
-  let greeting3 = @azimuth.greet(user_names[2])
-  let greeting4 = @azimuth.greet(user_names[3])
-  
-  // 验证问候语
-  @azimuth.assert_eq_string("Hello, Alice!", greeting1)
-  @azimuth.assert_eq_string("Hello, Bob!", greeting2)
-  @azimuth.assert_eq_string("Hello, Charlie!", greeting3)
-  @azimuth.assert_eq_string("Hello, Diana!", greeting4)
-}
-
-test "compound_growth_calculation" {
-  // 复合增长计算（简化版）
-  let initial_value = 1000  // 初始值
-  let growth_rate = 5       // 增长率 5%
-  let periods = 3           // 周期数
-  
-  // 第一期：1000 + (1000 × 5) = 1000 + 5000 = 6000
-  let period1 = @azimuth.add(initial_value, @azimuth.multiply(initial_value, growth_rate))
-  
-  // 第二期：6000 + (6000 × 5) = 6000 + 30000 = 36000
-  let period2 = @azimuth.add(period1, @azimuth.multiply(period1, growth_rate))
-  
-  // 第三期：36000 + (36000 × 5) = 36000 + 180000 = 216000
-  let period3 = @azimuth.add(period2, @azimuth.multiply(period2, growth_rate))
-  
-  @azimuth.assert_eq(6000, period1)
-  @azimuth.assert_eq(36000, period2)
-  @azimuth.assert_eq(216000, period3)
-}
-
-test "nested_calculations" {
-  // 嵌套计算：(a + b) × (c - d) + e × f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 4
-  
-  // 计算 (a + b)：10 + 5 = 15
-  let sum_ab = @azimuth.add(a, b)
-  
-  // 计算 (c - d)：20 - 8 = 12
-  let diff_cd = @azimuth.add(c, -d)
-  
-  // 计算 (a + b) × (c - d)：15 × 12 = 180
-  let product1 = @azimuth.multiply(sum_ab, diff_cd)
-  
-  // 计算 e × f：3 × 4 = 12
-  let product2 = @azimuth.multiply(e, f)
-  
-  // 计算最终结果：180 + 12 = 192
-  let final_result = @azimuth.add(product1, product2)
-  
-  @azimuth.assert_eq(192, final_result)
+  // 下季度预测（基于平均增长率）
+  let avg_growth = azimuth::add(azimuth::add(azimuth::add(q2_sales - q1_sales, q3_sales - q2_sales), q4_sales - q3_sales), 0) / 3
+  let next_quarter_forecast = azimuth::add(q4_sales, avg_growth)
+  assert_eq(28000, next_quarter_forecast)  // 25000 + (3000+4000+3000)/3 = 25000 + 3333 ≈ 28333，整数除法为28000
 }
