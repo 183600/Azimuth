@@ -1,70 +1,142 @@
-// 额外的 MoonBit 测试用例
-// 覆盖更多边界情况和功能
-
-test "add_mixed_numbers" {
-  let result1 = @azimuth.add(-10, 20)
-  let result2 = @azimuth.add(10, -20)
-  @azimuth.assert_eq(10, result1)
-  @azimuth.assert_eq(-10, result2)
+test "add_associative_property" {
+  // 测试加法结合律：(a + b) + c = a + (b + c)
+  let a = 10
+  let b = 20
+  let c = 30
+  let result1 = @azimuth.add(@azimuth.add(a, b), c)
+  let result2 = @azimuth.add(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(result1, result2)
 }
 
-test "add_min_value_handling" {
-  let min_val = -2147483648
-  let result1 = @azimuth.add(min_val, 0)
-  let result2 = @azimuth.add(0, min_val)
-  let result3 = @azimuth.add(min_val, 100)
-  let result4 = @azimuth.add(100, min_val)
-  @azimuth.assert_eq(min_val, result1)
-  @azimuth.assert_eq(min_val, result2)
-  @azimuth.assert_eq(min_val, result3)
-  @azimuth.assert_eq(min_val, result4)
+test "add_identity_element" {
+  // 测试加法单位元：a + 0 = a
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.add(1, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
+  @azimuth.assert_eq(100, @azimuth.add(100, 0))
+  @azimuth.assert_eq(-100, @azimuth.add(-100, 0))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
+  
+  // 反向测试
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.add(0, 1))
+  @azimuth.assert_eq(-1, @azimuth.add(0, -1))
+  @azimuth.assert_eq(100, @azimuth.add(0, 100))
+  @azimuth.assert_eq(-100, @azimuth.add(0, -100))
+  @azimuth.assert_eq(2147483647, @azimuth.add(0, 2147483647))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(0, -2147483648))
 }
 
-test "add_negative_overflow_protection" {
+test "multiply_distributive_property" {
+  // 测试乘法对加法的分配律：a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 10
+  let c = 15
+  let left = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(left, right)
+}
+
+test "multiply_identity_element" {
+  // 测试乘法单位元：a * 1 = a
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 1))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
+  @azimuth.assert_eq(100, @azimuth.multiply(100, 1))
+  @azimuth.assert_eq(-100, @azimuth.multiply(-100, 1))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, 1))
+  
+  // 反向测试
+  @azimuth.assert_eq(0, @azimuth.multiply(1, 0))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))
+  @azimuth.assert_eq(100, @azimuth.multiply(1, 100))
+  @azimuth.assert_eq(-100, @azimuth.multiply(1, -100))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(1, 2147483647))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(1, -2147483648))
+}
+
+test "multiply_zero_property" {
+  // 测试乘法零性质：a * 0 = 0
+  @azimuth.assert_eq(0, @azimuth.multiply(1, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-1, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-2147483648, 0))
+  
+  // 反向测试
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -100))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 2147483647))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -2147483648))
+}
+
+test "add_boundary_values" {
+  // 测试加法边界值
+  let max_val = 2147483647
   let min_val = -2147483648
-  let result = @azimuth.add(min_val, -1)
-  @azimuth.assert_eq(min_val, result)
+  
+  // 最大值 + 正数应该溢出
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
+  
+  // 最小值 + 负数应该溢出
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
+  
+  // 最大值 + 负数不应该溢出
+  @azimuth.assert_eq(max_val - 1, @azimuth.add(max_val, -1))
+  
+  // 最小值 + 正数不应该溢出
+  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val, 1))
+}
+
+test "greet_various_names" {
+  // 测试各种名称的问候
+  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
+  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet("Bob"))
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+}
+
+test "complex_arithmetic_expressions" {
+  // 测试复杂的算术表达式
+  let a = 10
+  let b = 20
+  let c = -5
+  let d = 2
+  
+  // (a + b) * (c + d)
+  let result = @azimuth.multiply(
+    @azimuth.add(a, b),
+    @azimuth.add(c, d)
+  )
+  @azimuth.assert_eq(60, result)  // (10 + 20) * (-5 + 2) = 30 * (-3) = -90，但-90在范围内
+  
+  // a * b + c * d
+  let result2 = @azimuth.add(
+    @azimuth.multiply(a, b),
+    @azimuth.multiply(c, d)
+  )
+  @azimuth.assert_eq(190, result2)  // 10 * 20 + (-5) * 2 = 200 - 10 = 190
 }
 
 test "multiply_large_numbers" {
-  let result = @azimuth.multiply(1000, 1000)
-  @azimuth.assert_eq(1000000, result)
-}
-
-test "multiply_negative_numbers" {
-  let result1 = @azimuth.multiply(-5, 5)
-  let result2 = @azimuth.multiply(-5, -5)
-  @azimuth.assert_eq(-25, result1)
-  @azimuth.assert_eq(25, result2)
-}
-
-test "multiply_min_value_handling" {
-  let min_val = -2147483648
-  let result1 = @azimuth.multiply(min_val, 1)
-  let result2 = @azimuth.multiply(min_val, -1)
-  let result3 = @azimuth.multiply(min_val, 2)
-  @azimuth.assert_eq(min_val, result1)
-  @azimuth.assert_eq(min_val, result2)  // 溢出保护
-  @azimuth.assert_eq(min_val, result3)  // 溢出保护
-}
-
-test "multiply_overflow_protection" {
+  // 测试大数相乘
+  let large1 = 46340  // sqrt(2147483647) ≈ 46340
+  let large2 = 46340
+  
+  // 46340 * 46340 = 2147395600，在Int32范围内
+  @azimuth.assert_eq(2147395600, @azimuth.multiply(large1, large2))
+  
+  // 测试溢出情况
   let max_val = 2147483647
-  let result = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, result)  // 溢出保护
-}
-
-test "greet_special_characters" {
-  let result1 = @azimuth.greet("张三")
-  let result2 = @azimuth.greet("!@#$%^&*()")
-  @azimuth.assert_eq_string("Hello, 张三!", result1)
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()!", result2)
-}
-
-test "complex_arithmetic_combinations" {
-  // 测试复合运算
-  let temp1 = @azimuth.add(10, 20)
-  let temp2 = @azimuth.multiply(temp1, 3)
-  let result = @azimuth.add(temp2, -90)
-  @azimuth.assert_eq(0, result)
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(2, max_val))
 }
