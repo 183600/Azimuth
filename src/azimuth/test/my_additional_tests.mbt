@@ -22,23 +22,23 @@ test "multiply_with_decimal_simulation" {
   
   // 计算折扣金额
   let discount_amount = @azimuth.multiply(original_price, discount_rate) / 100
-  assert_eq(44, discount_amount)  // 299 * 15 / 100 = 44.85 ≈ 44（整数除法）
+  @azimuth.assert_eq(44, discount_amount)  // 299 * 15 / 100 = 44.85 ≈ 44（整数除法）
   
   // 计算折后价格
   let final_price = @azimuth.add(original_price, -discount_amount)
-  assert_eq(255, final_price)  // 299 - 44 = 255
+  @azimuth.assert_eq(255, final_price)  // 299 - 44 = 255
 }
 
 test "greet_with_unicode_and_emoji" {
   // 测试包含 Unicode 字符和 emoji 的字符串处理
-  assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  assert_eq_string("Hello, 👨‍💻!", @azimuth.greet("👨‍💻"))
-  assert_eq_string("Hello, 🎉!", @azimuth.greet("🎉"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, 👨‍💻!", @azimuth.greet("👨‍💻"))
+  @azimuth.assert_eq_string("Hello, 🎉!", @azimuth.greet("🎉"))
   
   // 测试混合字符串
-  assert_eq_string("Hello, MoonBit🌙!", @azimuth.greet("MoonBit🌙"))
-  assert_eq_string("Hello, 你好世界🌍!", @azimuth.greet("你好世界🌍"))
+  @azimuth.assert_eq_string("Hello, MoonBit🌙!", @azimuth.greet("MoonBit🌙"))
+  @azimuth.assert_eq_string("Hello, 你好世界🌍!", @azimuth.greet("你好世界🌍"))
 }
 
 test "complex_financial_calculation" {
@@ -49,15 +49,15 @@ test "complex_financial_calculation" {
   
   // 简化的单利计算：总利息 = 本金 × 利率 × 年数
   let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years)) / 100
-  assert_eq(60000, total_interest)  // 100000 × 6 × 10 / 100 = 60000
+  @azimuth.assert_eq(60000, total_interest)  // 100000 × 6 × 10 / 100 = 60000
   
   // 计算总还款额
   let total_payment = @azimuth.add(principal, total_interest)
-  assert_eq(160000, total_payment)
+  @azimuth.assert_eq(160000, total_payment)
   
   // 计算月供（简化）
   let monthly_payment = total_payment / @azimuth.multiply(years, 12)
-  assert_eq(1333, monthly_payment)  // 160000 / 120 ≈ 1333
+  @azimuth.assert_eq(1333, monthly_payment)  // 160000 / 120 ≈ 1333
 }
 
 test "temperature_conversion_comprehensive" {
@@ -71,17 +71,17 @@ test "temperature_conversion_comprehensive" {
   // 测试冰点
   let freezing_c = 0
   let freezing_f = @azimuth.add(@azimuth.multiply(freezing_c, 2), 30)
-  assert_eq(30, freezing_f)
+  @azimuth.assert_eq(30, freezing_f)
   
   // 测试室温
   let room_c = 20
   let room_f = @azimuth.add(@azimuth.multiply(room_c, 2), 30)
-  assert_eq(70, room_f)
+  @azimuth.assert_eq(70, room_f)
   
   // 测试沸点
   let boiling_c = 100
   let boiling_f = @azimuth.add(@azimuth.multiply(boiling_c, 2), 30)
-  assert_eq(230, boiling_f)
+  @azimuth.assert_eq(230, boiling_f)
 }
 
 test "shopping_cart_with_tax_and_shipping" {
@@ -100,11 +100,11 @@ test "shopping_cart_with_tax_and_shipping" {
   
   // 计算税费
   let tax = @azimuth.multiply(subtotal, tax_rate) / 100  // 695 * 8 / 100 = 55.6 ≈ 55
-  assert_eq(55, tax)
+  @azimuth.assert_eq(55, tax)
   
   // 计算最终总价
   let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping_fee)  // 695 + 55 + 15 = 765
-  assert_eq(765, total)
+  @azimuth.assert_eq(765, total)
 }
 
 test "statistical_analysis" {
@@ -117,15 +117,15 @@ test "statistical_analysis" {
   // 计算平均值
   let count = 10
   let mean = total_sum / count
-  assert_eq(60, mean)
+  @azimuth.assert_eq(60, mean)
   
   // 计算中位数（偶数个数据，取中间两个的平均）
   let median = @azimuth.add(55, 65) / 2
-  assert_eq(60, median)
+  @azimuth.assert_eq(60, median)
   
   // 计算范围（最大值 - 最小值）
   let range = @azimuth.add(105, -15)
-  assert_eq(90, range)
+  @azimuth.assert_eq(90, range)
 }
 
 test "physics_projectile_motion" {
@@ -136,19 +136,19 @@ test "physics_projectile_motion" {
   
   // 水平速度分量（简化：v × cos(45°) ≈ v × 0.7 ≈ v × 7 / 10）
   let vx = @azimuth.multiply(initial_velocity, 7) / 10
-  assert_eq(14, vx)  // 20 * 7 / 10 = 14
+  @azimuth.assert_eq(14, vx)  // 20 * 7 / 10 = 14
   
   // 垂直速度分量（简化：v × sin(45°) ≈ v × 0.7 ≈ v × 7 / 10）
   let vy = @azimuth.multiply(initial_velocity, 7) / 10
-  assert_eq(14, vy)  // 20 * 7 / 10 = 14
+  @azimuth.assert_eq(14, vy)  // 20 * 7 / 10 = 14
   
   // 飞行时间（简化：2 × vy / g）
   let flight_time = @azimuth.multiply(2, vy) / gravity
-  assert_eq(2, flight_time)  // 2 * 14 / 10 = 2.8 ≈ 2
+  @azimuth.assert_eq(2, flight_time)  // 2 * 14 / 10 = 2.8 ≈ 2
   
   // 水平距离
   let horizontal_distance = @azimuth.multiply(vx, flight_time)
-  assert_eq(28, horizontal_distance)  // 14 * 2 = 28
+  @azimuth.assert_eq(28, horizontal_distance)  // 14 * 2 = 28
 }
 
 test "data_structure_operations" {
@@ -161,7 +161,7 @@ test "data_structure_operations" {
   
   // 计算一维数组索引：index = row × cols + col
   let index = @azimuth.add(@azimuth.multiply(row_index, cols), col_index)
-  assert_eq(13, index)  // 2 × 5 + 3 = 13
+  @azimuth.assert_eq(13, index)  // 2 × 5 + 3 = 13
   
   // 模拟栈操作：压入和弹出
   let stack_size = 0
@@ -170,11 +170,11 @@ test "data_structure_operations" {
   
   // 压入操作
   let after_push = @azimuth.add(stack_size, push_count)
-  assert_eq(5, after_push)
+  @azimuth.assert_eq(5, after_push)
   
   // 弹出操作
   let after_pop = @azimuth.add(after_push, -pop_count)
-  assert_eq(3, after_pop)
+  @azimuth.assert_eq(3, after_pop)
 }
 
 test "algorithm_complexity_simulation" {
@@ -183,21 +183,21 @@ test "algorithm_complexity_simulation" {
   
   // O(1) 常数时间复杂度
   let constant_time_ops = 1
-  assert_eq(1, constant_time_ops)
+  @azimuth.assert_eq(1, constant_time_ops)
   
   // O(log n) 对数时间复杂度（简化计算）
   let log_time_ops = 7  // log₂(100) ≈ 6.64 ≈ 7
-  assert_eq(7, log_time_ops)
+  @azimuth.assert_eq(7, log_time_ops)
   
   // O(n) 线性时间复杂度
   let linear_time_ops = n
-  assert_eq(100, linear_time_ops)
+  @azimuth.assert_eq(100, linear_time_ops)
   
   // O(n log n) 时间复杂度
   let n_log_n_ops = @azimuth.multiply(n, log_time_ops)
-  assert_eq(700, n_log_n_ops)
+  @azimuth.assert_eq(700, n_log_n_ops)
   
   // O(n²) 平方时间复杂度
   let quadratic_ops = @azimuth.multiply(n, n)
-  assert_eq(10000, quadratic_ops)
+  @azimuth.assert_eq(10000, quadratic_ops)
 }
