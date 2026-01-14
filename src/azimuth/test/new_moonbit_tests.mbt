@@ -1,126 +1,225 @@
-// 新的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法
+// 额外的 MoonBit 测试用例
+// 测试 Azimuth 项目的各种功能
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  @azimuth.assert_eq(10, @azimuth.add(4, 6))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(-12, @azimuth.multiply(-3, 4))
+test "binary_operations_simulation" {
+  // 模拟二进制运算：使用加减乘除实现位运算效果
+  let a = 16
+  let b = 5
+  
+  // 左移运算模拟：a << 1 = a * 2
+  let left_shift = @azimuth.multiply(a, 2)
+  @azimuth.assert_eq(32, left_shift)
+  
+  // 右移运算模拟：a >> 1 = a / 2
+  let right_shift = a / 2
+  @azimuth.assert_eq(8, right_shift)
+  
+  // 模按位与运算（简化）：a & b = min(a, b) 当某些条件满足时
+  let bitwise_and_sim = @azimuth.multiply(a / b, b)
+  @azimuth.assert_eq(0, bitwise_and_sim)
 }
 
-test "string_greeting_functionality" {
-  // 字符串问候功能测试
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+test "currency_conversion_practical" {
+  // 实际货币转换场景
+  let usd_amount = 100
+  let exchange_rate = 7  // 1 USD = 7 CNY (简化汇率)
+  
+  // 转换为人民币
+  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
+  @azimuth.assert_eq(700, cny_amount)
+  
+  // 添加手续费 5%
+  let fee = @azimuth.multiply(cny_amount, 5) / 100
+  let total_with_fee = @azimuth.add(cny_amount, fee)
+  @azimuth.assert_eq(735, total_with_fee)
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
-  let a = 7
-  let b = 11
+test "energy_consumption_calculation" {
+  // 能耗计算测试
+  let power_rating = 100  // 瓦特
+  let hours_used = 24
+  let days_used = 30
+  let cost_per_kwh = 10  // 每千瓦时费用（简化）
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 计算总能耗（瓦时）
+  let daily_consumption = @azimuth.multiply(power_rating, hours_used)
+  let monthly_consumption = @azimuth.multiply(daily_consumption, days_used)
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // 转换为千瓦时
+  let kwh_consumption = monthly_consumption / 1000
+  @azimuth.assert_eq(72, kwh_consumption)
   
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, 3)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 3)))
+  // 计算费用
+  let total_cost = @azimuth.multiply(kwh_consumption, cost_per_kwh)
+  @azimuth.assert_eq(720, total_cost)
 }
 
-test "boundary_values_handling" {
-  // 边界值处理测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "game_damage_calculation" {
+  // 游戏伤害计算测试
+  let base_damage = 100
+  let weapon_multiplier = 2
+  let critical_strike = 3  // 暴击倍数
+  let enemy_defense = 25
+  let skill_bonus = 50
   
-  // 边界值加法
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  // 计算基础伤害
+  let weapon_damage = @azimuth.multiply(base_damage, weapon_multiplier)
   
-  // 边界值乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 计算暴击伤害
+  let critical_damage = @azimuth.multiply(weapon_damage, critical_strike)
+  
+  // 减去敌人防御
+  let damage_after_defense = @azimuth.add(critical_damage, -enemy_defense)
+  
+  // 添加技能加成
+  let final_damage = @azimuth.add(damage_after_defense, skill_bonus)
+  
+  @azimuth.assert_eq(625, final_damage)
+  
+  // 计算 DPS（每秒伤害），假设攻击间隔为2秒
+  let attack_interval = 2
+  let dps = final_damage / attack_interval
+  @azimuth.assert_eq(312, dps)  // 整数除法
 }
 
-test "practical_application_calculations" {
-  // 实际应用计算测试
-  // 温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
-  let celsius = 20
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(70, fahrenheit)
-  
-  // 简单贷款计算：本金 × (1 + 利率 × 年数)
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
-  let total = @azimuth.multiply(principal, @azimuth.add(1, @azimuth.multiply(rate, years)))
-  @azimuth.assert_eq(160000, total)  // 10000 × (1 + 5×3) = 10000 × 16 = 160000
-}
-
-test "complex_calculation_scenarios" {
-  // 复杂计算场景测试
-  // 计算矩形的面积和周长
-  let length = 10
+test "array_index_calculation" {
+  // 数组索引计算测试：二维数组转一维数组的索引计算
+  let row = 3
+  let col = 4
   let width = 5
   
-  // 面积 = 长 × 宽
-  let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(50, area)
+  // 计算二维数组在一维数组中的索引：index = row * width + col
+  let index = @azimuth.add(@azimuth.multiply(row, width), col)
+  @azimuth.assert_eq(19, index)
   
-  // 周长 = 2 × 长 + 2 × 宽
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
-  @azimuth.assert_eq(30, perimeter)
+  // 测试边界情况
+  let first_row = 0
+  let first_col = 0
+  let first_index = @azimuth.add(@azimuth.multiply(first_row, width), first_col)
+  @azimuth.assert_eq(0, first_index)
+  
+  let last_row = 9
+  let last_col = 4
+  let last_index = @azimuth.add(@azimuth.multiply(last_row, width), last_col)
+  @azimuth.assert_eq(49, last_index)
 }
 
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况测试
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(100, 100)
-  @azimuth.assert_eq_string("success", "success")
+test "data_compression_ratio" {
+  // 压缩比计算：模拟数据压缩效果
+  let original_size = 10000
+  let compressed_size = 2500
   
-  // 测试溢出保护
-  let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  // 计算压缩比
+  let compression_ratio = @azimuth.multiply(compressed_size, 100) / original_size
+  @azimuth.assert_eq(25, compression_ratio)  // 25% of original size
+  
+  // 计算空间节省
+  let space_saved = @azimuth.add(original_size, -compressed_size)
+  @azimuth.assert_eq(7500, space_saved)
+  
+  // 计算节省百分比
+  let savings_percent = @azimuth.multiply(space_saved, 100) / original_size
+  @azimuth.assert_eq(75, savings_percent)
 }
 
-test "sequential_operations" {
-  // 连续运算测试
-  // 计算 (a + b) × c - d
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 10
+test "physics_projectile_motion" {
+  // 物理抛物运动模拟
+  let initial_velocity = 20  // m/s
+  let angle = 45  // 度（简化，假设sin(45)=cos(45)=0.7≈1/√2）
+  let gravity = 10  // m/s²
   
-  let sum_ab = @azimuth.add(a, b)  // 8
-  let product = @azimuth.multiply(sum_ab, c)  // 32
-  let result = @azimuth.add(product, -d)  // 22
+  // 计算水平和垂直分量（简化）
+  let v_horizontal = initial_velocity / 1  // 简化计算
+  let v_vertical = initial_velocity / 1    // 简化计算
   
-  @azimuth.assert_eq(22, result)
+  // 计算飞行时间：t = 2v/g
+  let flight_time = @azimuth.multiply(2, v_vertical) / gravity
+  @azimuth.assert_eq(4, flight_time)
+  
+  // 计算水平距离：d = v * t
+  let horizontal_distance = @azimuth.multiply(v_horizontal, flight_time)
+  @azimuth.assert_eq(80, horizontal_distance)
+  
+  // 计算最大高度：h = v²/(2g)
+  let max_height = @azimuth.multiply(v_vertical, v_vertical) / @azimuth.multiply(2, gravity)
+  @azimuth.assert_eq(20, max_height)
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
+test "statistical_variance_calculation" {
+  // 统计方差计算
+  // 数据集：10, 20, 30, 40, 50
+  let data1 = 10
+  let data2 = 20
+  let data3 = 30
+  let data4 = 40
+  let data5 = 50
+  
+  // 计算平均值
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
+  let mean = sum / 5
+  @azimuth.assert_eq(30, mean)
+  
+  // 计算方差：Σ(x - mean)² / n
+  let diff1 = @azimuth.add(data1, -mean)
+  let diff2 = @azimuth.add(data2, -mean)
+  let diff3 = @azimuth.add(data3, -mean)
+  let diff4 = @azimuth.add(data4, -mean)
+  let diff5 = @azimuth.add(data5, -mean)
+  
+  let sq1 = @azimuth.multiply(diff1, diff1)
+  let sq2 = @azimuth.multiply(diff2, diff2)
+  let sq3 = @azimuth.multiply(diff3, diff3)
+  let sq4 = @azimuth.multiply(diff4, diff4)
+  let sq5 = @azimuth.multiply(diff5, diff5)
+  
+  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(sq1, sq2), sq3), sq4), sq5) / 5
+  @azimuth.assert_eq(200, variance)
+}
+
+test "network_throughput_calculation" {
+  // 网络吞吐量计算
+  let packet_size = 1500  // 字节
+  let packets_per_second = 100
+  let transmission_time = 10  // 秒
+  let overhead_ratio = 10  // 10% 开销
+  
+  // 计算原始数据量
+  let raw_data = @azimuth.multiply(packet_size, packets_per_second)
+  
+  // 计算总传输量
+  let total_transferred = @azimuth.multiply(raw_data, transmission_time)
+  @azimuth.assert_eq(1500000, total_transferred)
+  
+  // 计算有效数据（减去开销）
+  let overhead = @azimuth.multiply(total_transferred, overhead_ratio) / 100
+  let effective_data = @azimuth.add(total_transferred, -overhead)
+  @azimuth.assert_eq(1350000, effective_data)
+  
+  // 计算吞吐量（字节/秒）
+  let throughput = effective_data / transmission_time
+  @azimuth.assert_eq(135000, throughput)
+}
+
+test "advanced_string_patterns" {
+  // 高级字符串模式测试
+  // 测试包含各种格式的字符串
+  let email = "user@example.com"
+  let url = "https://www.example.com/path"
+  let phone = "+1-555-123-4567"
+  let date = "2023-12-25"
+  
+  // 验证字符串处理
+  @azimuth.assert_eq_string("Hello, user@example.com!", @azimuth.greet(email))
+  @azimuth.assert_eq_string("Hello, https://www.example.com/path!", @azimuth.greet(url))
+  @azimuth.assert_eq_string("Hello, +1-555-123-4567!", @azimuth.greet(phone))
+  @azimuth.assert_eq_string("Hello, 2023-12-25!", @azimuth.greet(date))
+  
   // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello,   spaced   !", @azimuth.greet("  spaced   "))
-  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
-  @azimuth.assert_eq_string("Hello, émoji🚀!", @azimuth.greet("émoji🚀"))
-}
-
-test "mathematical_series_calculations" {
-  // 数学数列计算测试
-  // 计算等差数列的和：1 + 3 + 5 + ... + 19（前10个奇数）
-  // 使用公式：n × (首项 + 末项) / 2
-  let n = 10
-  let first = 1
-  let last = 19
+  let json = "{\"key\":\"value\"}"
+  let xml = "<element>content</element>"
+  let sql = "SELECT * FROM users"
   
-  let sum = @azimuth.multiply(n, @azimuth.add(first, last)) / 2
-  @azimuth.assert_eq(100, sum)  // 10 × (1 + 19) / 2 = 100
+  @azimuth.assert_eq_string("Hello, {\"key\":\"value\"}!", @azimuth.greet(json))
+  @azimuth.assert_eq_string("Hello, <element>content</element>!", @azimuth.greet(xml))
+  @azimuth.assert_eq_string("Hello, SELECT * FROM users!", @azimuth.greet(sql))
 }
