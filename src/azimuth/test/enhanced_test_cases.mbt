@@ -1,173 +1,221 @@
-// Azimuth 项目增强测试用例
-// 覆盖高级场景和实际应用案例
+// 增强的 MoonBit 测试用例
+// 测试 Azimuth 项目的各种功能和边界情况
 
-test "stack_operations_simulation" {
-  // 模拟栈操作：使用加减法模拟push和pop
-  let mut stack_size = 0
+// 测试用例1: 复杂的数学运算序列
+test "complex_mathematical_sequence" {
+  // 计算 (a + b) * (c - d) + e * f
+  let a = 15
+  let b = 25
+  let c = 100
+  let d = 40
+  let e = 8
+  let f = 12
   
-  // Push操作
-  stack_size = @azimuth.add(stack_size, 1)
-  stack_size = @azimuth.add(stack_size, 1)
-  stack_size = @azimuth.add(stack_size, 1)
+  let sum_ab = @azimuth.add(a, b)  // 40
+  let diff_cd = @azimuth.add(c, -d)  // 60
+  let product_ab_cd = @azimuth.multiply(sum_ab, diff_cd)  // 2400
+  let product_ef = @azimuth.multiply(e, f)  // 96
+  let result = @azimuth.add(product_ab_cd, product_ef)  // 2496
   
-  @azimuth.assert_eq(3, stack_size)
-  
-  // Pop操作
-  stack_size = @azimuth.add(stack_size, -1)
-  stack_size = @azimuth.add(stack_size, -1)
-  stack_size = @azimuth.add(stack_size, -1)
-  
-  @azimuth.assert_eq(0, stack_size)
+  @azimuth.assert_eq(2496, result)
 }
 
-test "binary_search_simulation" {
-  // 模拟二分查找：在有序数组中查找元素
-  let target = 40
-  let mut iterations = 0
+// 测试用例2: 温度转换计算
+test "temperature_conversion_calculations" {
+  // 摄氏度转华氏度：F = C * 9/5 + 32
+  // 简化为整数计算：F = C * 2 + 30 (近似值)
   
-  // 简化的二分查找模拟
-  let mut low = 0
-  let mut high = 9
-  let mut mid = @azimuth.add(low, @azimuth.multiply(@azimuth.add(high, -low), 5) / 10)
+  // 测试0°C
+  let temp1 = @azimuth.add(@azimuth.multiply(0, 2), 30)
+  @azimuth.assert_eq(30, temp1)
   
-  // 第一次查找
-  iterations = @azimuth.add(iterations, 1)
-  if (target < 50) {
-    high = @azimuth.add(mid, -1)
-  } else {
-    low = @azimuth.add(mid, 1)
-  }
+  // 测试20°C (室温)
+  let temp2 = @azimuth.add(@azimuth.multiply(20, 2), 30)
+  @azimuth.assert_eq(70, temp2)
   
-  // 第二次查找
-  mid = @azimuth.add(low, @azimuth.multiply(@azimuth.add(high, -low), 5) / 10)
-  iterations = @azimuth.add(iterations, 1)
-  if (target > 20) {
-    low = @azimuth.add(mid, 1)
-  } else {
-    high = @azimuth.add(mid, -1)
-  }
-  
-  // 第三次查找
-  mid = @azimuth.add(low, @azimuth.multiply(@azimuth.add(high, -low), 5) / 10)
-  iterations = @azimuth.add(iterations, 1)
-  if (target > 30) {
-    low = @azimuth.add(mid, 1)
-  } else {
-    high = @azimuth.add(mid, -1)
-  }
-  
-  // 第四次查找
-  mid = @azimuth.add(low, @azimuth.multiply(@azimuth.add(high, -low), 5) / 10)
-  iterations = @azimuth.add(iterations, 1)
-  
-  @azimuth.assert_eq(3, mid)
-  @azimuth.assert_eq(4, iterations)
+  // 测试40°C (高温)
+  let temp3 = @azimuth.add(@azimuth.multiply(40, 2), 30)
+  @azimuth.assert_eq(110, temp3)
 }
 
-test "string_special_characters" {
-  // 测试字符串包含特殊字符的处理
-  let special_string = "Path/to/file.txt"
-  let special_greeting = @azimuth.greet(special_string)
-  @azimuth.assert_eq_string("Hello, Path/to/file.txt!", special_greeting)
+// 测试用例3: 购物车总价计算
+test "shopping_cart_total_calculation" {
+  // 商品价格和数量
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  let item3_price = 99
+  let item3_quantity = 3
   
-  // 测试包含数字和字母的混合字符串
-  let mixed_string = "User2023"
-  let mixed_greeting = @azimuth.greet(mixed_string)
-  @azimuth.assert_eq_string("Hello, User2023!", mixed_greeting)
+  // 计算每种商品的小计
+  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)  // 398
+  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)  // 299
+  let subtotal3 = @azimuth.multiply(item3_price, item3_quantity)  // 297
+  
+  // 计算总价
+  let total = @azimuth.add(@azimuth.add(subtotal1, subtotal2), subtotal3)
+  
+  @azimuth.assert_eq(994, total)
 }
 
-test "derivative_approximation" {
-  // 微积分导数近似计算：f(x) = x²，在x=3处的导数
-  let x = 3
-  let h = 1
+// 测试用例4: 字符串处理边界情况
+test "string_processing_boundary_cases" {
+  // 测试空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
-  // 计算 f(x) = x²
-  let fx = @azimuth.multiply(x, x)
+  // 测试单字符
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
   
-  // 计算 f(x+h) = (x+h)²
-  let x_plus_h = @azimuth.add(x, h)
-  let fx_plus_h = @azimuth.multiply(x_plus_h, x_plus_h)
+  // 测试长字符串
+  let long_string = "ThisIsAVeryLongStringThatContainsManyCharactersAndSymbols1234567890!@#$%^&*()"
+  let expected_long = "Hello, " + long_string + "!"
+  @azimuth.assert_eq_string(expected_long, @azimuth.greet(long_string))
   
-  // 计算导数近似值
-  let derivative_approx = @azimuth.add(fx_plus_h, -fx) / h
-  
-  @azimuth.assert_eq(7, derivative_approx)
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string("Hello, 中文测试123!", @azimuth.greet("中文测试123"))
+  @azimuth.assert_eq_string("Hello, 🌍🌎🌏!", @azimuth.greet("🌍🌎🌏"))
 }
 
-test "overflow_comprehensive" {
-  // 综合溢出测试
+// 测试用例5: 数列和级数计算
+test "series_and_progression_calculations" {
+  // 计算等差数列前n项和：1 + 3 + 5 + ... + (2n-1) = n²
+  let n = 10
+  let sum_of_odds = @azimuth.multiply(n, n)  // 10² = 100
+  @azimuth.assert_eq(100, sum_of_odds)
+  
+  // 计算等比数列前n项和：2 + 4 + 8 + ... + 2^n
+  // 简化计算：2 * (2^n - 1)
+  let power_of_2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2)  // 2^4 = 16
+  let geometric_sum = @azimuth.multiply(2, @azimuth.add(power_of_2, -1))  // 2 * (16 - 1) = 30
+  @azimuth.assert_eq(30, geometric_sum)
+}
+
+// 测试用例6: 面积和体积计算
+test "area_and_volume_calculations" {
+  // 计算矩形面积：长 × 宽
+  let length = 12
+  let width = 8
+  let rectangle_area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(96, rectangle_area)
+  
+  // 计算三角形面积：底 × 高 ÷ 2
+  let base = 10
+  let height = 6
+  let triangle_area = @azimuth.multiply(base, height) / 2
+  @azimuth.assert_eq(30, triangle_area)
+  
+  // 计算梯形面积：(上底 + 下底) × 高 ÷ 2
+  let top_base = 6
+  let bottom_base = 10
+  let trapezoid_height = 4
+  let trapezoid_area = @azimuth.multiply(@azimuth.add(top_base, bottom_base), trapezoid_height) / 2
+  @azimuth.assert_eq(32, trapezoid_area)
+}
+
+// 测试用例7: 金融计算场景
+test "financial_calculation_scenarios" {
+  // 简单贷款计算：月供 = (本金 + 利息) / 期数
+  let principal = 100000  // 10万元
+  let annual_rate = 6     // 年利率6%
+  let years = 3           // 3年
+  let months = @azimuth.multiply(years, 12)  // 36个月
+  
+  // 计算总利息：本金 × 年利率 × 年数
+  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
+  // 总还款额
+  let total_payment = @azimuth.add(principal, total_interest)
+  // 月供
+  let monthly_payment = total_payment / months
+  
+  @azimuth.assert_eq(2777, monthly_payment)  // 向下取整
+}
+
+// 测试用例8: 极值边界测试
+test "extreme_value_boundary_tests" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试加法溢出
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  
-  // 测试乘法溢出
-  @azimuth.assert_eq(max_val, @azimuth.multiply(100000, 30000))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-100000, 30000))
-  
-  // 测试边界值组合
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  // 测试最大值的各种运算
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
   @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  
+  // 测试最小值的各种运算
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  
+  // 测试极值相加
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
-test "fibonacci_sequence" {
-  // 斐波那契数列计算
-  let f0 = 0
-  let f1 = 1
-  let f2 = @azimuth.add(f1, f0)
-  let f3 = @azimuth.add(f2, f1)
-  let f4 = @azimuth.add(f3, f2)
-  let f5 = @azimuth.add(f4, f3)
-  let f6 = @azimuth.add(f5, f4)
-  let f7 = @azimuth.add(f6, f5)
-  let f8 = @azimuth.add(f7, f6)
-  let f9 = @azimuth.add(f8, f7)
-  let f10 = @azimuth.add(f9, f8)
+// 测试用例9: 游戏得分计算
+test "game_score_calculations" {
+  // 基础得分计算
+  let base_score = 1000
+  let level_bonus = 200
+  let combo_multiplier = 3
+  let time_bonus = 150
+  let penalty = 50
   
-  @azimuth.assert_eq(0, f0)
-  @azimuth.assert_eq(1, f1)
-  @azimuth.assert_eq(1, f2)
-  @azimuth.assert_eq(2, f3)
-  @azimuth.assert_eq(3, f4)
-  @azimuth.assert_eq(5, f5)
-  @azimuth.assert_eq(8, f6)
-  @azimuth.assert_eq(13, f7)
-  @azimuth.assert_eq(21, f8)
-  @azimuth.assert_eq(34, f9)
-  @azimuth.assert_eq(55, f10)
+  // 计算最终得分
+  let level_total = @azimuth.add(base_score, level_bonus)
+  let combo_total = @azimuth.multiply(level_total, combo_multiplier)
+  let time_total = @azimuth.add(combo_total, time_bonus)
+  let final_score = @azimuth.add(time_total, -penalty)
+  
+  @azimuth.assert_eq(3750, final_score)
+  
+  // 计算排名得分（前10%额外加分）
+  let rank_bonus_percent = 10
+  let rank_bonus = @azimuth.multiply(final_score, rank_bonus_percent) / 100
+  let rank_total = @azimuth.add(final_score, rank_bonus)
+  
+  @azimuth.assert_eq(4125, rank_total)
 }
 
-test "mathematical_series" {
-  // 数学级数计算
-  let n = 100
+// 测试用例10: 数据统计计算
+test "data_statistics_calculations" {
+  // 计算数据集的基本统计量
+  let data1 = 85
+  let data2 = 92
+  let data3 = 78
+  let data4 = 96
+  let data5 = 89
   
-  // 使用公式：sum = n × (n + 1) / 2
-  let formula_sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  @azimuth.assert_eq(5050, formula_sum)
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
+  @azimuth.assert_eq(440, sum)
   
-  // 几何级数求和：2^0 + 2^1 + 2^2 + ... + 2^k
-  let power_sum = @azimuth.add(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2), -1)
-  @azimuth.assert_eq(31, power_sum)
-}
-
-test "inventory_management" {
-  // 库存管理系统测试
-  let product_a_stock = 100
-  let product_a_sales = 30
-  let product_a_restock = 50
+  // 计算平均值
+  let average = sum / 5
+  @azimuth.assert_eq(88, average)
   
-  // 计算销售后库存
-  let product_a_after_sales = @azimuth.add(product_a_stock, -product_a_sales)
+  // 计算最大值和最小值的差（极差）
+  let max_val = 96
+  let min_val = 78
+  let range = @azimuth.add(max_val, -min_val)
+  @azimuth.assert_eq(18, range)
   
-  // 计算补货后库存
-  let product_a_final = @azimuth.add(product_a_after_sales, product_a_restock)
+  // 计算方差（简化版）
+  let diff1 = @azimuth.add(data1, -average)
+  let diff2 = @azimuth.add(data2, -average)
+  let diff3 = @azimuth.add(data3, -average)
+  let diff4 = @azimuth.add(data4, -average)
+  let diff5 = @azimuth.add(data5, -average)
   
-  @azimuth.assert_eq(120, product_a_final)
+  let squared_diff1 = @azimuth.multiply(diff1, diff1)
+  let squared_diff2 = @azimuth.multiply(diff2, diff2)
+  let squared_diff3 = @azimuth.multiply(diff3, diff3)
+  let squared_diff4 = @azimuth.multiply(diff4, diff4)
+  let squared_diff5 = @azimuth.multiply(diff5, diff5)
   
-  // 计算库存价值
-  let price_a = 10
-  let value_a = @azimuth.multiply(product_a_final, price_a)
-  @azimuth.assert_eq(1200, value_a)
+  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(squared_diff1, squared_diff2), squared_diff3), squared_diff4), squared_diff5) / 5
+  @azimuth.assert_eq(34, variance)
 }
