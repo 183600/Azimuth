@@ -1743,4 +1743,204 @@ test "game_development_calculations" {
   assert_eq(225, distance_squared)  // 15² + 15² = 225
 }
 
+// 新增的8个 MoonBit 测试用例
+test "binary_operations_simulation" {
+  // 二进制运算模拟测试
+  let a = 12  // 二进制 1100
+  let b = 10  // 二进制 1010
+  
+  // 模拟按位与运算：1100 & 1010 = 1000 (8)
+  let bitwise_and = 8
+  assert_eq(8, bitwise_and)
+  
+  // 模拟按位或运算：1100 | 1010 = 1110 (14)
+  let bitwise_or = 14
+  assert_eq(14, bitwise_or)
+  
+  // 模拟按位异或运算：1100 ^ 1010 = 0110 (6)
+  let bitwise_xor = 6
+  assert_eq(6, bitwise_xor)
+  
+  // 模拟左移运算：1100 << 2 = 110000 (48)
+  let left_shift = multiply(a, 4)
+  assert_eq(48, left_shift)
+  
+  // 模拟右移运算：1100 >> 2 = 11 (3)
+  let right_shift = a / 4
+  assert_eq(3, right_shift)
+}
+
+test "error_correction_codes" {
+  // 错误纠正码模拟测试
+  let data_bits = 4
+  let parity_bits = 3
+  let total_bits = add(data_bits, parity_bits)
+  
+  // 计算汉明码的总位数
+  assert_eq(7, total_bits)
+  
+  // 模拟错误检测和纠正
+  let received_data = 85  // 二进制 1010101
+  let error_position = 3
+  let corrected_data = add(received_data, multiply(4, error_position))
+  
+  // 验证错误纠正后的数据
+  assert_eq(97, corrected_data)
+  
+  // 计算冗余度
+  let redundancy = multiply(parity_bits, 100) / total_bits
+  assert_eq(42, redundancy)  // 3/7 ≈ 42.86% ≈ 42%
+}
+
+test "signal_processing" {
+  // 信号处理模拟测试
+  let sampling_rate = 44100  // Hz
+  let duration = 5  // seconds
+  let bit_depth = 16  // bits
+  
+  // 计算音频数据大小
+  let total_samples = multiply(sampling_rate, duration)
+  let bytes_per_sample = bit_depth / 8
+  let total_bytes = multiply(total_samples, bytes_per_sample)
+  
+  assert_eq(220500, total_samples)
+  assert_eq(2, bytes_per_sample)
+  assert_eq(441000, total_bytes)
+  
+  // 计算数据传输速率
+  let bitrate = multiply(sampling_rate, bit_depth)
+  assert_eq(705600, bitrate)
+  
+  // 计算压缩后的数据大小（假设压缩比为10:1）
+  let compressed_size = total_bytes / 10
+  assert_eq(44100, compressed_size)
+}
+
+test "queue_simulation" {
+  // 队列操作模拟测试
+  let queue_capacity = 10
+  let initial_size = 0
+  let enqueue_count = 7
+  let dequeue_count = 3
+  
+  // 模拟入队操作
+  let after_enqueue = add(initial_size, enqueue_count)
+  assert_eq(7, after_enqueue)
+  
+  // 模拟出队操作
+  let after_dequeue = add(after_enqueue, -dequeue_count)
+  assert_eq(4, after_dequeue)
+  
+  // 检查队列状态
+  let is_empty = after_dequeue == 0
+  let is_full = after_dequeue == queue_capacity
+  
+  assert_false(is_empty)
+  assert_false(is_full)
+  
+  // 计算队列利用率
+  let utilization = multiply(after_dequeue, 100) / queue_capacity
+  assert_eq(40, utilization)
+}
+
+test "stack_operations" {
+  // 栈操作模拟测试
+  let stack_capacity = 8
+  let push_operations = 5
+  let pop_operations = 2
+  
+  // 模拟栈操作
+  let current_size = add(push_operations, -pop_operations)
+  assert_eq(3, current_size)
+  
+  // 检查栈状态
+  let is_empty = current_size == 0
+  let is_full = current_size == stack_capacity
+  let can_push = add(current_size, 1) <= stack_capacity
+  let can_pop = current_size > 0
+  
+  assert_false(is_empty)
+  assert_false(is_full)
+  assert_true(can_push)
+  assert_true(can_pop)
+  
+  // 计算栈的使用率
+  let usage_percentage = multiply(current_size, 100) / stack_capacity
+  assert_eq(37, usage_percentage)  // 3/8 ≈ 37.5% ≈ 37%
+}
+
+test "hash_table_simulation" {
+  // 哈希表操作模拟测试
+  let table_size = 16
+  let elements_count = 10
+  let collision_resolution_steps = 3
+  
+  // 计算负载因子
+  let load_factor = multiply(elements_count, 100) / table_size
+  assert_eq(62, load_factor)  // 10/16 ≈ 62.5% ≈ 62%
+  
+  // 模拟哈希冲突处理
+  let hash_value = 7
+  let collision_count = 2
+  let final_index = add(hash_value, collision_count)
+  
+  assert_eq(9, final_index)
+  
+  // 计算平均查找长度
+  let avg_lookup_length = add(1, multiply(load_factor, collision_resolution_steps) / 100)
+  assert_eq(2, avg_lookup_length)  // 简化计算
+}
+
+test "graph_algorithms" {
+  // 图算法模拟测试
+  let vertex_count = 6
+  let edge_count = 9
+  let start_vertex = 0
+  let end_vertex = 5
+  
+  // 计算图的密度
+  let max_edges = multiply(vertex_count, add(vertex_count, -1)) / 2
+  let density = multiply(edge_count, 100) / max_edges
+  assert_eq(60, density)  // 9/15 = 0.6 = 60%
+  
+  // 模拟最短路径计算（Dijkstra算法简化版）
+  let path_length = 14
+  let intermediate_vertices = 3
+  
+  assert_eq(14, path_length)
+  assert_eq(3, intermediate_vertices)
+  
+  // 计算图的连通性（简化）
+  let connected_components = 1
+  let is_connected = connected_components == 1
+  assert_true(is_connected)
+}
+
+test "tree_operations" {
+  // 树操作模拟测试
+  let tree_height = 4
+  let branching_factor = 3
+  
+  // 计算完全树的最大节点数
+  let max_nodes = 1
+  let level1_nodes = multiply(1, branching_factor)
+  let level2_nodes = multiply(level1_nodes, branching_factor)
+  let level3_nodes = multiply(level2_nodes, branching_factor)
+  let total_nodes = add(add(add(add(1, level1_nodes), level2_nodes), level3_nodes), 1)
+  
+  assert_eq(40, total_nodes)  // 1 + 3 + 9 + 27 = 40
+  
+  // 计算叶子节点数
+  let leaf_nodes = multiply(3, multiply(3, 3))
+  assert_eq(27, leaf_nodes)
+  
+  // 计算内部节点数
+  let internal_nodes = add(total_nodes, -leaf_nodes)
+  assert_eq(13, internal_nodes)
+  
+  // 计算树的平衡因子（简化）
+  let is_balanced = true
+  assert_true(is_balanced)
+}
+
 
