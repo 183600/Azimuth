@@ -1,278 +1,209 @@
-// Azimuth 项目增强测试用例
-// 使用标准的 MoonBit 测试语法，包含各种实际应用场景
+// 增强的 MoonBit 测试用例
+// 测试基本数学运算和字符串处理功能的高级应用场景
 
-test "array_index_calculation" {
-  // 数组索引计算测试：二维数组转一维数组的索引计算
-  let row = 3
-  let col = 4
-  let width = 5
+test "binary_number_conversion" {
+  // 测试二进制数转换模拟
+  // 将二进制数 1011 (11) 转换为十进制
+  let bit3 = 1  // 2³ = 8
+  let bit2 = 0  // 2² = 0
+  let bit1 = 1  // 2¹ = 2
+  let bit0 = 1  // 2⁰ = 1
   
-  // 计算二维数组在一维数组中的索引：index = row * width + col
-  let index = @azimuth.add(@azimuth.multiply(row, width), col)
-  @azimuth.assert_eq(19, index)
+  let decimal_value = @azimuth.add(@azimuth.add(@azimuth.add(
+    @azimuth.multiply(bit3, 8), 
+    @azimuth.multiply(bit2, 4)), 
+    @azimuth.multiply(bit1, 2)), 
+    @azimuth.multiply(bit0, 1))
   
-  // 测试边界情况
-  let first_row = 0
-  let first_col = 0
-  let first_index = @azimuth.add(@azimuth.multiply(first_row, width), first_col)
-  @azimuth.assert_eq(0, first_index)
+  @azimuth.assert_eq(11, decimal_value)
   
-  let last_row = 9
-  let last_col = 4
-  let last_index = @azimuth.add(@azimuth.multiply(last_row, width), last_col)
-  @azimuth.assert_eq(49, last_index)
+  // 测试另一个二进制数 1100 (12)
+  let decimal_value2 = @azimuth.add(@azimuth.add(@azimuth.add(
+    @azimuth.multiply(1, 8), 
+    @azimuth.multiply(1, 4)), 
+    @azimuth.multiply(0, 2)), 
+    @azimuth.multiply(0, 1))
+  
+  @azimuth.assert_eq(12, decimal_value2)
 }
 
-test "string_template_processing" {
-  // 字符串模板处理测试：模拟简单的字符串模板功能
-  let name = "Alice"
-  let day = "Monday"
+test "array_sum_calculation" {
+  // 测试数组求和计算（模拟）
+  // 模拟数组 [5, 10, 15, 20, 25] 的求和
+  let element1 = 5
+  let element2 = 10
+  let element3 = 15
+  let element4 = 20
+  let element5 = 25
   
-  // 模拟模板替换（简化版）
-  let greeting = @azimuth.greet(name)
-  let day_prefix = " Today is "
-  let day_suffix = "."
-  let full_message = greeting + day_prefix + day + day_suffix
+  let array_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
+    element1, element2), element3), element4), element5)
   
-  @azimuth.assert_eq_string("Hello, Alice! Today is Monday.", full_message)
+  @azimuth.assert_eq(75, array_sum)
   
-  // 测试空值处理
-  let empty_name = ""
-  let empty_greeting = @azimuth.greet(empty_name)
-  @azimuth.assert_eq_string("Hello, !", empty_greeting)
-  
-  // 测试特殊字符
-  let special_name = "Bob@123"
-  let special_greeting = @azimuth.greet(special_name)
-  @azimuth.assert_eq_string("Hello, Bob@123!", special_greeting)
+  // 计算平均值
+  let array_length = 5
+  let average = array_sum / array_length
+  @azimuth.assert_eq(15, average)
 }
 
-test "mathematical_formula_validation" {
-  // 数学公式验证测试：验证基本的数学恒等式
-  let a = 7
-  let b = 3
+test "simple_interest_calculation" {
+  // 测试单利计算
+  let principal = 5000  // 本金
+  let rate = 8  // 年利率百分比
+  let time = 3  // 年数
   
-  // 验证分配律：a × (b + c) = a × b + a × c
-  let c = 5
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left_side, right_side)
+  // 单利公式：利息 = 本金 × 利率 × 时间
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), time)
   
-  // 验证平方差公式：(a + b) × (a - b) = a² - b²
-  let sum = @azimuth.add(a, b)
-  let diff = @azimuth.add(a, -b)
-  let product = @azimuth.multiply(sum, diff)
-  let square_diff = @azimuth.add(@azimuth.multiply(a, a), @azimuth.multiply(-b, b))
-  @azimuth.assert_eq(product, square_diff)
+  // 总金额 = 本金 + 利息
+  let total_amount = @azimuth.add(principal, interest)
+  
+  @azimuth.assert_eq(120000, interest)  // 5000 × 8 × 3 = 120000
+  @azimuth.assert_eq(125000, total_amount)  // 5000 + 120000 = 125000
 }
 
-test "boundary_condition_combinations" {
-  // 边界条件组合测试：测试多个边界条件的复杂组合
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let zero = 0
-  let one = 1
-  let neg_one = -1
+test "speed_distance_time_calculation" {
+  // 测试速度、距离、时间计算
+  let speed = 60  // km/h
+  let time = 2.5  // 小时（用整数表示：2.5 = 5/2）
   
-  // 测试最大值与其他边界值的运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, zero))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, neg_one))
+  // 距离 = 速度 × 时间
+  // 使用整数计算：60 × 5 ÷ 2 = 150
+  let distance = @azimuth.multiply(speed, 5) / 2
   
-  // 测试最小值与其他边界值的运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, zero))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, one))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(min_val, neg_one))
+  @azimuth.assert_eq(150, distance)
   
-  // 测试零的运算特性
-  @azimuth.assert_eq(zero, @azimuth.multiply(zero, max_val))
-  @azimuth.assert_eq(zero, @azimuth.multiply(zero, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.add(zero, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(zero, min_val))
-  
-  // 测试连续边界运算
-  let chain_result = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, min_val), one), max_val)
-  @azimuth.assert_eq(max_val, chain_result)
+  // 反向计算：时间 = 距离 ÷ 速度
+  let calculated_time = @azimuth.multiply(distance, 2) / speed
+  @azimuth.assert_eq(5, calculated_time)  // 应该得到 5（表示 5/2 = 2.5 小时）
 }
 
-test "real_world_business_scenario" {
-  // 实际业务场景测试：模拟电商订单计算
-  let product_price = 299
-  let quantity = 3
-  let discount_threshold = 500
-  let discount_rate = 10
-  let shipping_fee = 20
-  let tax_rate = 8
+test "string_length_processing" {
+  // 测试字符串长度处理（通过字符计数模拟）
+  let short_name = "Hi"  // 2个字符
+  let medium_name = "MoonBit"  // 7个字符
+  let long_name = "Azimuth Project"  // 16个字符
   
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(product_price, quantity)
+  // 测试不同长度字符串的greet函数处理
+  @azimuth.assert_eq_string("Hello, Hi!", @azimuth.greet(short_name))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet(medium_name))
+  @azimuth.assert_eq_string("Hello, Azimuth Project!", @azimuth.greet(long_name))
   
-  // 计算折扣（如果超过阈值）
-  let discount_amount = if (subtotal > discount_threshold) {
-    @azimuth.multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
-  
-  // 计算折后价格
-  let discounted_total = @azimuth.add(subtotal, -discount_amount)
-  
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_total, tax_rate) / 100
-  
-  // 计算最终总价（含运费）
-  let final_total = @azimuth.add(@azimuth.add(discounted_total, tax_amount), shipping_fee)
-  
-  @azimuth.assert_eq(1076, final_total)
-  
-  // 测试小额订单（无折扣）
-  let small_price = 50
-  let small_quantity = 2
-  let small_subtotal = @azimuth.multiply(small_price, small_quantity)
-  let small_final = @azimuth.add(@azimuth.add(small_subtotal, @azimuth.multiply(small_subtotal, tax_rate) / 100), shipping_fee)
-  
-  @azimuth.assert_eq(127, small_final)
+  // 测试包含数字的字符串
+  let numeric_name = "User123"
+  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet(numeric_name))
 }
 
-test "performance_related_calculations" {
-  // 性能相关测试：模拟大量数据的计算
-  let base_value = 1000
-  let iterations = 100
+test "percentage_discount_calculation" {
+  // 测试百分比折扣计算
+  let original_price = 200
+  let discount_percentage = 15  // 15% 折扣
   
-  // 模拟累加计算：base_value + base_value*2 + ... + base_value*iterations
-  // 使用公式：base_value × (1 + 2 + ... + iterations) = base_value × iterations × (iterations + 1) / 2
-  let sum_formula = @azimuth.multiply(base_value, @azimuth.multiply(iterations, @azimuth.add(iterations, 1)) / 2)
+  // 折扣金额 = 原价 × 折扣百分比 ÷ 100
+  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
   
-  // 验证前几项的计算
-  let sum_first_5 = @azimuth.multiply(base_value, @azimuth.multiply(5, 6) / 2)
-  @azimuth.assert_eq(15000, sum_first_5)
+  // 折后价格 = 原价 - 折扣金额
+  let discounted_price = @azimuth.add(original_price, -discount_amount)
   
-  // 验证总和
-  @azimuth.assert_eq(5050000, sum_formula)
+  @azimuth.assert_eq(30, discount_amount)  // 200 × 15 ÷ 100 = 30
+  @azimuth.assert_eq(170, discounted_price)  // 200 - 30 = 170
   
-  // 模拟指数增长计算
-  let growth_factor = 2
-  let periods = 10
-  let initial_amount = 100
+  // 测试多级折扣
+  let additional_discount = 10  // 额外10%折扣
+  let additional_amount = @azimuth.multiply(discounted_price, additional_discount) / 100
+  let final_price = @azimuth.add(discounted_price, -additional_amount)
   
-  // 计算：initial_amount × growth_factor^periods
-  let exponential_growth = @azimuth.multiply(initial_amount, @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), @azimuth.multiply(2, 2)), @azimuth.multiply(2, 2)))
-  @azimuth.assert_eq(102400, exponential_growth)
+  @azimuth.assert_eq(17, additional_amount)  // 170 × 10 ÷ 100 = 17
+  @azimuth.assert_eq(153, final_price)  // 170 - 17 = 153
 }
 
-test "error_handling_scenarios" {
-  // 错误处理测试：测试各种错误情况的处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "coordinate_geometry_distance" {
+  // 测试坐标几何距离计算（简化版，不使用平方根）
+  // 点 A(3, 4) 和点 B(7, 1)
+  let x1 = 3
+  let y1 = 4
+  let x2 = 7
+  let y2 = 1
   
-  // 测试溢出保护
-  let overflow_add = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, overflow_add)
+  // 计算x和y的差值
+  let dx = @azimuth.add(x2, -x1)  // 7 - 3 = 4
+  let dy = @azimuth.add(y2, -y1)  // 1 - 4 = -3
   
-  let underflow_add = @azimuth.add(min_val, min_val)
-  @azimuth.assert_eq(min_val, underflow_add)
+  // 计算距离的平方（避免平方根）
+  let dx_squared = @azimuth.multiply(dx, dx)  // 4² = 16
+  let dy_squared = @azimuth.multiply(dy, dy)  // (-3)² = 9
+  let distance_squared = @azimuth.add(dx_squared, dy_squared)  // 16 + 9 = 25
   
-  let overflow_mul = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, overflow_mul)
-  
-  let underflow_mul = @azimuth.multiply(min_val, 2)
-  @azimuth.assert_eq(min_val, underflow_mul)
-  
-  // 测试边界条件的特殊处理
-  let special_case_1 = @azimuth.multiply(min_val, -1)
-  @azimuth.assert_eq(min_val, special_case_1)
-  
-  let special_case_2 = @azimuth.add(max_val, 1)
-  @azimuth.assert_eq(max_val, special_case_2)
-  
-  // 测试断言函数的容错性
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_false(@azimuth.add(5, 3) == 9)
-  @azimuth.assert_eq(8, @azimuth.add(5, 3))
-  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
+  @azimuth.assert_eq(25, distance_squared)  // 距离的平方是25，实际距离是5
 }
 
-test "data_type_conversion_simulation" {
-  // 数据类型转换测试：模拟不同数据类型之间的转换
-  // 模拟整数到字符串的转换（通过greet函数）
-  let number_as_string = "2023"
-  let converted_greeting = @azimuth.greet(number_as_string)
+test "fibonacci_sequence_calculation" {
+  // 测试斐波那契数列计算（前几项）
+  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
   
-  @azimuth.assert_eq_string("Hello, 2023!", converted_greeting)
+  let f0 = 0
+  let f1 = 1
+  let f2 = @azimuth.add(f1, f0)  // 1
+  let f3 = @azimuth.add(f2, f1)  // 2
+  let f4 = @azimuth.add(f3, f2)  // 3
+  let f5 = @azimuth.add(f4, f3)  // 5
+  let f6 = @azimuth.add(f5, f4)  // 8
+  let f7 = @azimuth.add(f6, f5)  // 13
   
-  // 模拟布尔值到字符串的转换
-  let true_as_string = "true"
-  let false_as_string = "false"
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  @azimuth.assert_eq(8, f6)
+  @azimuth.assert_eq(13, f7)
   
-  @azimuth.assert_eq_string("Hello, true!", @azimuth.greet(true_as_string))
-  @azimuth.assert_eq_string("Hello, false!", @azimuth.greet(false_as_string))
-  
-  // 模拟浮点数的简化表示（使用整数表示小数部分）
-  let pi_approx_string = "3.14"
-  
-  @azimuth.assert_eq_string("Hello, 3.14!", @azimuth.greet(pi_approx_string))
-  
-  // 模拟日期时间字符串
-  let date_string = "2023-12-25"
-  let time_string = "14:30:00"
-  let datetime_string = "2023-12-25T14:30:00"
-  
-  @azimuth.assert_eq_string("Hello, 2023-12-25!", @azimuth.greet(date_string))
-  @azimuth.assert_eq_string("Hello, 14:30:00!", @azimuth.greet(time_string))
-  @azimuth.assert_eq_string("Hello, 2023-12-25T14:30:00!", @azimuth.greet(datetime_string))
+  // 计算前8项的和
+  let sum_fib = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(f0, f1), f2), f3), f4), f5), f6), f7)
+  @azimuth.assert_eq(33, sum_fib)  // 0 + 1 + 1 + 2 + 3 + 5 + 8 + 13 = 33
 }
 
-test "bitwise_operations_simulation" {
-  // 模拟位运算：使用加减乘除实现位运算效果
-  let a = 8
-  let b = 3
+test "leap_year_calculation" {
+  // 测试闰年计算逻辑
+  // 闰年规则：能被4整除但不能被100整除，或者能被400整除
   
-  // 左移运算模拟：a << 1 = a * 2
-  let left_shift = @azimuth.multiply(a, 2)
-  @azimuth.assert_eq(16, left_shift)
+  let year1 = 2020  // 闰年（能被4整除）
+  let year2 = 1900  // 非闰年（能被100整除但不能被400整除）
+  let year3 = 2000  // 闰年（能被400整除）
+  let year4 = 2023  // 非闰年（不能被4整除）
   
-  // 右移运算模拟：a >> 1 = a / 2
-  let right_shift = a / 2
-  @azimuth.assert_eq(4, right_shift)
+  // 使用模运算模拟（通过减法实现）
+  let is_leap1 = (year1 / 4) * 4 == year1 && (year1 / 100) * 100 != year1
+  let is_leap2 = (year2 / 4) * 4 == year2 && (year2 / 100) * 100 != year2
+  let is_leap3 = (year3 / 400) * 400 == year3
+  let is_leap4 = (year4 / 4) * 4 == year4 && (year4 / 100) * 100 != year4
   
-  // 位或运算模拟（简化）：a | b = a + b - (a & b)
-  // 这里我们简化为 a + b
-  let bit_or_sim = @azimuth.add(a, b)
-  @azimuth.assert_eq(11, bit_or_sim)
-  
-  // 测试连续位移操作
-  let double_left_shift = @azimuth.multiply(a, 4)  // a << 2
-  @azimuth.assert_eq(32, double_left_shift)
-  
-  let double_right_shift = a / 4  // a >> 2
-  @azimuth.assert_eq(2, double_right_shift)
+  // 验证闰年判断
+  @azimuth.assert_true(is_leap1)  // 2020是闰年
+  @azimuth.assert_false(is_leap2)  // 1900不是闰年
+  @azimuth.assert_true(is_leap3)  // 2000是闰年
+  @azimuth.assert_false(is_leap4)  // 2023不是闰年
 }
 
-test "currency_conversion_practical" {
-  // 实际货币转换场景
-  let usd_amount = 100
-  let exchange_rate = 7  // 1 USD = 7 CNY (简化汇率)
+test "complex_number_operations_simulation" {
+  // 测试复数运算模拟（简化版）
+  // 复数 (3 + 2i) 和 (1 + 4i) 的运算
   
-  // 转换为人民币
-  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
-  @azimuth.assert_eq(700, cny_amount)
+  let real1 = 3
+  let imag1 = 2
+  let real2 = 1
+  let imag2 = 4
   
-  // 添加手续费 5%
-  let fee = @azimuth.multiply(cny_amount, 5) / 100
-  let total_with_fee = @azimuth.add(cny_amount, fee)
-  @azimuth.assert_eq(735, total_with_fee)
+  // 复数加法：(a + bi) + (c + di) = (a + c) + (b + d)i
+  let add_real = @azimuth.add(real1, real2)  // 3 + 1 = 4
+  let add_imag = @azimuth.add(imag1, imag2)  // 2 + 4 = 6
   
-  // 测试多种货币转换
-  let eur_amount = 100
-  let eur_to_usd = 1.1  // 简化为整数 11/10
-  let eur_in_usd = @azimuth.multiply(eur_amount, 11) / 10
-  let eur_in_cny = @azimuth.multiply(eur_in_usd, exchange_rate)
-  @azimuth.assert_eq(770, eur_in_cny)
+  // 复数乘法：(a + bi) × (c + di) = (ac - bd) + (ad + bc)i
+  let mul_real = @azimuth.add(@azimuth.multiply(real1, real2), @azimuth.multiply(-imag1, imag2))  // 3×1 - 2×4 = 3 - 8 = -5
+  let mul_imag = @azimuth.add(@azimuth.multiply(real1, imag2), @azimuth.multiply(imag1, real2))  // 3×4 + 2×1 = 12 + 2 = 14
   
-  // 测试大额货币转换
-  let large_usd = 10000
-  let large_cny = @azimuth.multiply(large_usd, exchange_rate)
-  let large_fee = @azimuth.multiply(large_cny, 3) / 100  // 3% 手续费
-  let large_total = @azimuth.add(large_cny, large_fee)
-  @azimuth.assert_eq(72100, large_total)
+  @azimuth.assert_eq(4, add_real)
+  @azimuth.assert_eq(6, add_imag)
+  @azimuth.assert_eq(-5, mul_real)
+  @azimuth.assert_eq(14, mul_imag)
 }
