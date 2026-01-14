@@ -1,115 +1,121 @@
-// MoonBit 标准测试用例
-// 测试 azimuth 包中的核心功能
-
-// 测试加法的交换律
-test "add_commutative_property" {
-  let a = 12345
-  let b = 67890
-  @azimuth.assert_eq(@azimuth.add(a)(b), @azimuth.add(b)(a))
-}
-
-// 测试加法的结合律
-test "add_associative_property" {
-  let a = 100
-  let b = 200
-  let c = 300
-  let result1 = @azimuth.add(@azimuth.add(a)(b))(c)
-  let result2 = @azimuth.add(a)(@azimuth.add(b)(c))
-  @azimuth.assert_eq(result1, result2)
-}
-
-// 测试乘法的交换律
-test "multiply_commutative_property" {
-  let a = 12
-  let b = 34
-  @azimuth.assert_eq(@azimuth.multiply(a)(b), @azimuth.multiply(b)(a))
-}
-
-// 测试乘法的结合律
-test "multiply_associative_property" {
-  let a = 2
-  let b = 3
-  let c = 4
-  let result1 = @azimuth.multiply(@azimuth.multiply(a)(b))(c)
-  let result2 = @azimuth.multiply(a)(@azimuth.multiply(b)(c))
-  @azimuth.assert_eq(result1, result2)
-}
-
-// 测试乘法对加法的分配律
-test "multiply_distributive_property" {
-  let a = 5
-  let b = 7
-  let c = 9
-  let left = @azimuth.multiply(a)(@azimuth.add(b)(c))
-  let right = @azimuth.add(@azimuth.multiply(a)(b))(@azimuth.multiply(a)(c))
-  @azimuth.assert_eq(left, right)
-}
-
-// 测试大数运算的稳定性
-test "large_number_operations" {
-  let large1 = 1000000
-  let large2 = 2000000
-  let large3 = 3000000
-  
-  // 大数加法
-  let sum1 = @azimuth.add(large1)(large2)
-  let sum2 = @azimuth.add(sum1)(large3)
-  @azimuth.assert_eq(6000000, sum2)
-  
-  // 大数乘法
-  let product1 = @azimuth.multiply(large1)(2)
-  let product2 = @azimuth.multiply(large2)(3)
-  @azimuth.assert_eq(2000000, product1)
-  @azimuth.assert_eq(6000000, product2)
-}
-
-// 测试混合运算场景
-test "mixed_operations" {
-  let base = 10
-  
-  // (base + 5) * 2
-  let step1 = @azimuth.add(base)(5)
-  let result1 = @azimuth.multiply(step1)(2)
-  @azimuth.assert_eq(30, result1)
-  
-  // (base * 3) + 7
-  let step2 = @azimuth.multiply(base)(3)
-  let result2 = @azimuth.add(step2)(7)
-  @azimuth.assert_eq(37, result2)
-}
-
-// 测试边界值的组合运算
-test "boundary_value_combinations" {
+test "add_complex_boundary_tests" {
+  // 测试复杂边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // max_val + (-max_val) 应该等于 0
-  let result1 = @azimuth.add(max_val)(-max_val)
-  @azimuth.assert_eq(0, result1)
+  // 测试最大值加最小值
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
   
-  // min_val + 1 应该触发溢出保护
-  let result2 = @azimuth.add(min_val)(1)
-  @azimuth.assert_eq(min_val, result2)
+  // 测试多个边界值相加
+  @azimuth.assert_eq(max_val - 1, @azimuth.add(max_val, -1))
+  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val, 1))
   
-  // max_val * 1 应该等于 max_val
-  let result3 = @azimuth.multiply(max_val)(1)
-  @azimuth.assert_eq(max_val, result3)
-  
-  // min_val * 1 应该等于 min_val
-  let result4 = @azimuth.multiply(min_val)(1)
-  @azimuth.assert_eq(min_val, result4)
+  // 测试连续相加的边界情况
+  let result = @azimuth.add(@azimuth.add(max_val - 2, 1), 1)
+  @azimuth.assert_eq(max_val, result)
 }
 
-// 测试字符串处理的更多场景
-test "greet_extended_scenarios" {
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+test "multiply_negative_edge_cases" {
+  // 测试负数乘法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, Hello & World!", @azimuth.greet("Hello & World"))
+  // 测试负数乘以负数
+  @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -5))
+  
+  // 测试最小值乘以负数
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -2))
+  
+  // 测试最大值乘以负数
+  @azimuth.assert_eq(-max_val, @azimuth.multiply(max_val, -1))
+}
+
+test "greet_unicode_and_special_chars" {
+  // 测试Unicode字符和特殊字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
+  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
+}
+
+test "arithmetic_property_combinations" {
+  // 测试数学属性的组合
+  let a = 12
+  let b = 8
+  let c = 5
+  
+  // 测试分配律：a * (b + c) = a * b + a * c
+  let distributive_left = @azimuth.multiply(a, @azimuth.add(b, c))
+  let distributive_right = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(distributive_left, distributive_right)
+  
+  // 测试结合律：(a + b) + c = a + (b + c)
+  let associative_left = @azimuth.add(@azimuth.add(a, b), c)
+  let associative_right = @azimuth.add(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(associative_left, associative_right)
+}
+
+test "extreme_value_combinations" {
+  // 测试极值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值与自身相加
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  
+  // 测试最小值与自身相加
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+  
+  // 测试最大值与最小值相乘
+  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, min_val))
+  
+  // 测试最小值与自身相乘
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, min_val))
+}
+
+test "string_edge_cases" {
+  // 测试字符串边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
   // 测试长字符串
-  let long_name = "This is a very long name that should still work properly with the greet function"
+  let long_name = "This is a very long name that contains many words and characters"
   let expected = "Hello, " + long_name + "!"
   @azimuth.assert_eq_string(expected, @azimuth.greet(long_name))
+  
+  // 测试包含数字的字符串
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+}
+
+test "mixed_arithmetic_operations" {
+  // 测试混合算术运算
+  let values = [1, 2, 3, 4, 5]
+  
+  // 计算总和
+  let sum1 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(values[0], values[1]), values[2]), values[3]), values[4])
+  @azimuth.assert_eq(15, sum1)
+  
+  // 计算乘积
+  let product1 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(values[0], values[1]), values[2]), values[3])
+  @azimuth.assert_eq(24, product1)
+  
+  // 混合运算：(1 + 2) * (3 + 4)
+  let mixed = @azimuth.multiply(@azimuth.add(values[0], values[1]), @azimuth.add(values[2], values[3]))
+  @azimuth.assert_eq(21, mixed)
+}
+
+test "negative_zero_and_identity_tests" {
+  // 测试负零和单位元性质
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
+  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  
+  // 测试负数与单位元
+  @azimuth.assert_eq(-5, @azimuth.add(-5, 0))
+  @azimuth.assert_eq(-5, @azimuth.multiply(-5, 1))
+  @azimuth.assert_eq(5, @azimuth.multiply(-5, -1))
 }
