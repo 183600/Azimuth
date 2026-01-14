@@ -186,3 +186,67 @@ test "statistical_calculations" {
   let variance = variance_numerator / count
   azimuth::assert_eq(22, variance)  // 近似值
 }
+
+// 新增的测试用例
+
+test "string_with_unicode_characters" {
+  // 测试包含Unicode字符的字符串
+  azimuth::assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
+  azimuth::assert_eq_string("Hello, 🌍!", azimuth::greet("🌍"))
+  azimuth::assert_eq_string("Hello, 👋!", azimuth::greet("👋"))
+}
+
+test "mathematical_series_sum" {
+  // 计算等差数列的和：1 + 3 + 5 + ... + 19（前10个奇数）
+  // 使用公式：n × (首项 + 末项) / 2
+  let n = 10
+  let first = 1
+  let last = 19
+  
+  let sum = azimuth::multiply(n, azimuth::add(first, last)) / 2
+  azimuth::assert_eq(100, sum)  // 10 × (1 + 19) / 2 = 100
+}
+
+test "power_of_two_calculation" {
+  // 计算2的幂：2^8 = 256
+  // 通过连续相乘实现
+  let result = azimuth::multiply(
+    azimuth::multiply(azimuth::multiply(2, 2), azimuth::multiply(2, 2)),
+    azimuth::multiply(azimuth::multiply(2, 2), azimuth::multiply(2, 2))
+  )
+  azimuth::assert_eq(256, result)
+}
+
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 500
+  let percentage = 25  // 25%
+  
+  // 计算百分比值：总数 × 百分比 / 100
+  let value = azimuth::multiply(total, percentage) / 100
+  azimuth::assert_eq(125, value)  // 500 × 25 / 100 = 125
+  
+  // 计算增加后的值：总数 + 百分比值
+  let increased = azimuth::add(total, value)
+  azimuth::assert_eq(625, increased)  // 500 + 125 = 625
+}
+
+test "complex_nested_calculations" {
+  // 复杂嵌套计算测试
+  // 计算：(a + b) × (c - d) + e × f
+  let a = 10
+  let b = 5
+  let c = 20
+  let d = 8
+  let e = 3
+  let f = 4
+  
+  let sum_ab = azimuth::add(a, b)
+  let diff_cd = azimuth::add(c, -d)
+  let product_ef = azimuth::multiply(e, f)
+  let product = azimuth::multiply(sum_ab, diff_cd)
+  let result = azimuth::add(product, product_ef)
+  
+  // 验证：(10 + 5) × (20 - 8) + 3 × 4 = 15 × 12 + 12 = 180 + 12 = 192
+  azimuth::assert_eq(192, result)
+}
