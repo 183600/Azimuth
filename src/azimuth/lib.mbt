@@ -1943,4 +1943,158 @@ test "tree_operations" {
   assert_true(is_balanced)
 }
 
+// 新增的 MoonBit 测试用例
+test "divide_with_ceil_basic" {
+  // 测试基本的向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(5, divide_with_ceil(11, 2))
+}
+
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(100, divide_with_ceil(100, 1))
+  assert_eq(1, divide_with_ceil(99, 100))
+  assert_eq(2, divide_with_ceil(101, 100))
+  assert_eq(10, divide_with_ceil(91, 10))
+}
+
+test "divide_with_ceil_negative" {
+  // 测试向上取整除法的负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-3, divide_with_ceil(-9, 3))
+  assert_eq(0, divide_with_ceil(-1, 100))
+  assert_eq(-1, divide_with_ceil(-100, 100))
+  assert_eq(-5, divide_with_ceil(-11, 2))
+}
+
+test "resource_allocation" {
+  // 测试资源分配场景
+  let total_resources = 17
+  let team_size = 5
+  
+  // 计算每个团队需要的资源数（向上取整）
+  let resources_per_team = divide_with_ceil(total_resources, team_size)
+  assert_eq(4, resources_per_team)
+  
+  // 计算总分配资源
+  let total_allocated = multiply(resources_per_team, team_size)
+  assert_eq(20, total_allocated)
+  
+  // 计算剩余资源
+  let remaining = add(total_allocated, -total_resources)
+  assert_eq(3, remaining)
+}
+
+test "page_pagination" {
+  // 测试分页场景
+  let total_items = 23
+  let items_per_page = 10
+  
+  // 计算需要的页数（向上取整）
+  let total_pages = divide_with_ceil(total_items, items_per_page)
+  assert_eq(3, total_pages)
+  
+  // 最后一页的项目数
+  let last_page_items = total_items % items_per_page
+  assert_eq(3, last_page_items)
+}
+
+test "time_slot_scheduling" {
+  // 测试时间段调度场景
+  let total_duration = 65  // 分钟
+  let slot_duration = 15   // 分钟
+  
+  // 计算需要的时间段数（向上取整）
+  let required_slots = divide_with_ceil(total_duration, slot_duration)
+  assert_eq(5, required_slots)
+  
+  // 计算总分配时间
+  let total_allocated_time = multiply(required_slots, slot_duration)
+  assert_eq(75, total_allocated_time)
+  
+  // 计算空闲时间
+  let idle_time = add(total_allocated_time, -total_duration)
+  assert_eq(10, idle_time)
+}
+
+test "container_packing" {
+  // 测试容器装箱场景
+  let total_items = 37
+  let container_capacity = 12
+  
+  // 计算需要的容器数（向上取整）
+  let required_containers = divide_with_ceil(total_items, container_capacity)
+  assert_eq(4, required_containers)
+  
+  // 计算总容量
+  let total_capacity = multiply(required_containers, container_capacity)
+  assert_eq(48, total_capacity)
+  
+  // 计算剩余容量
+  let remaining_capacity = add(total_capacity, -total_items)
+  assert_eq(11, remaining_capacity)
+}
+
+test "bandwidth_allocation" {
+  // 测试带宽分配场景
+  let total_bandwidth = 1000  // Mbps
+  let min_bandwidth_per_user = 150  // Mbps
+  
+  // 计算可支持的最大用户数（向下取整）
+  let max_users = total_bandwidth / min_bandwidth_per_user
+  assert_eq(6, max_users)
+  
+  // 计算实际使用的带宽
+  let used_bandwidth = multiply(max_users, min_bandwidth_per_user)
+  assert_eq(900, used_bandwidth)
+  
+  // 计算剩余带宽
+  let remaining_bandwidth = add(total_bandwidth, -used_bandwidth)
+  assert_eq(100, remaining_bandwidth)
+}
+
+test "storage_planning" {
+  // 测试存储规划场景
+  let data_size = 2500  // GB
+  let disk_capacity = 1000  // GB
+  
+  // 计算需要的磁盘数（向上取整）
+  let required_disks = divide_with_ceil(data_size, disk_capacity)
+  assert_eq(3, required_disks)
+  
+  // 计算总存储容量
+  let total_storage = multiply(required_disks, disk_capacity)
+  assert_eq(3000, total_storage)
+  
+  // 计算存储利用率
+  let utilization = multiply(data_size, 100) / total_storage
+  assert_eq(83, utilization)  // 2500/3000 ≈ 83.33% ≈ 83%
+}
+
+test "task_distribution" {
+  // 测试任务分配场景
+  let total_tasks = 47
+  let worker_count = 8
+  
+  // 计算每个工人的基本任务数
+  let base_tasks = total_tasks / worker_count
+  assert_eq(5, base_tasks)
+  
+  // 计算需要额外处理任务的工人数
+  let extra_tasks = total_tasks % worker_count
+  assert_eq(7, extra_tasks)
+  
+  // 计算最大任务负载
+  let max_load = add(base_tasks, if extra_tasks > 0 { 1 } else { 0 })
+  assert_eq(6, max_load)
+  
+  // 计算最小任务负载
+  let min_load = base_tasks
+  assert_eq(5, min_load)
+}
+
 
