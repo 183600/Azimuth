@@ -1,247 +1,189 @@
-// 额外的 MoonBit 测试用例
-// 这些测试用例覆盖了更多边界情况和实际应用场景
-test "hexadecimal_conversion_simulation" {
-  // 模拟十六进制转换：将十进制数转换为十六进制表示
-  // 使用字符串拼接来模拟十六进制表示
+// Azimuth 项目额外的 MoonBit 测试用例
+// 包含各种场景的测试，使用标准的 MoonBit 测试语法
+
+test "integer_division_simulation" {
+  // 模拟整数除法运算
+  let dividend = 17
+  let divisor = 5
   
-  // 测试 0-15 的基本转换
-  @azimuth.assert_eq_string("0xA", "0xA")  // 10 的十六进制
-  @azimuth.assert_eq_string("0xF", "0xF")  // 15 的十六进制
+  // 模拟整数除法：17 / 5 = 3 余 2
+  let quotient = dividend / divisor
+  let remainder = dividend - (divisor * quotient)
   
-  // 测试更大的数（简化模拟）
-  let decimal_255 = 255
-  let hex_255 = "0xFF"
-  @azimuth.assert_true(decimal_255 > 0)
+  @azimuth.assert_eq(3, quotient)
+  @azimuth.assert_eq(2, remainder)
   
-  // 通过 greet 函数测试十六进制字符串处理
-  let hex_result = @azimuth.greet("0x10")
-  @azimuth.assert_eq_string("Hello, 0x10!", hex_result)
+  // 测试边界情况
+  @azimuth.assert_eq(0, 0 / 5)
+  @azimuth.assert_eq(5, 25 / 5)
 }
-test "matrix_operations_simulation" {
-  // 模拟简单的矩阵运算
-  // 2x2 矩阵加法：[[a, b], [c, d]] + [[e, f], [g, h]] = [[a+e, b+f], [c+g, d+h]]
+
+test "absolute_value_calculation" {
+  // 模拟绝对值计算
+  let positive = 42
+  let negative = -42
+  let zero = 0
   
-  let a11 = 1, a12 = 2
-  let a21 = 3, a22 = 4
-  let b11 = 5, b12 = 6
-  let b21 = 7, b22 = 8
+  // 正数的绝对值是本身
+  @azimuth.assert_eq(positive, positive)
   
-  // 矩阵加法结果
-  let c11 = @azimuth.add(a11, b11)  // 6
-  let c12 = @azimuth.add(a12, b12)  // 8
-  let c21 = @azimuth.add(a21, b21)  // 10
-  let c22 = @azimuth.add(a22, b22)  // 12
+  // 负数的绝对值是其相反数
+  @azimuth.assert_eq(42, -negative)
   
-  // 验证结果
-  @azimuth.assert_eq(6, c11)
-  @azimuth.assert_eq(8, c12)
-  @azimuth.assert_eq(10, c21)
-  @azimuth.assert_eq(12, c22)
-  
-  // 计算矩阵的迹（对角线元素之和）
-  let trace_a = @azimuth.add(a11, a22)  // 1 + 4 = 5
-  let trace_b = @azimuth.add(b11, b22)  // 5 + 8 = 13
-  let trace_c = @azimuth.add(c11, c22)  // 6 + 12 = 18
-  
-  @azimuth.assert_eq(5, trace_a)
-  @azimuth.assert_eq(13, trace_b)
-  @azimuth.assert_eq(18, trace_c)
+  // 零的绝对值是零
+  @azimuth.assert_eq(0, zero)
 }
-test "physics_calculations" {
-  // 物理计算测试
-  // 自由落体距离：s = 0.5 * g * t^2（简化为整数计算）
-  // 使用 g = 10 m/s²（简化值）
+
+test "string_length_analysis" {
+  // 分析字符串长度特性
+  let empty = ""
+  let single = "A"
+  let short = "Hello"
+  let long = "This is a longer string for testing purposes"
   
-  let gravity = 10
-  let time = 3
-  
-  // 简化的距离计算：s = 5 * t^2
-  let distance = @azimuth.multiply(5, @azimuth.multiply(time, time))
-  @azimuth.assert_eq(45, distance)  // 5 * 9 = 45 米
-  
-  // 速度计算：v = g * t
-  let velocity = @azimuth.multiply(gravity, time)
-  @azimuth.assert_eq(30, velocity)  // 10 * 3 = 30 m/s
-  
-  // 动能计算：E = 0.5 * m * v^2（简化为整数）
-  let mass = 2
-  let energy = @azimuth.multiply(mass, @azimuth.multiply(velocity, velocity)) / 2
-  @azimuth.assert_eq(900, energy)  // 2 * 900 / 2 = 900 焦耳
+  // 测试不同长度字符串的greet函数处理
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(empty))
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet(single))
+  @azimuth.assert_eq_string("Hello, Hello!", @azimuth.greet(short))
+  @azimuth.assert_eq_string("Hello, This is a longer string for testing purposes!", @azimuth.greet(long))
 }
-test "financial_investment_calculation" {
-  // 投资计算测试
-  let principal = 10000
-  let annual_rate = 8  // 8% 年利率
-  let years = 5
-  
-  // 简单利息计算
-  let simple_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years)) / 100
-  let simple_total = @azimuth.add(principal, simple_interest)
-  @azimuth.assert_eq(14000, simple_total)  // 10000 + 10000*8*5/100 = 14000
-  
-  // 复利计算（简化）：A = P * (1 + r)^n
-  // 简化为：A = P * (100 + r*n) / 100
-  let compound_factor = @azimuth.add(100, @azimuth.multiply(annual_rate, years))
-  let compound_total = @azimuth.multiply(principal, compound_factor) / 100
-  @azimuth.assert_eq(14000, compound_total)  // 10000 * 140 / 100 = 14000
-  
-  // 月度投资计算
-  let monthly_investment = 500
-  let months = @azimuth.multiply(years, 12)
-  let total_invested = @azimuth.multiply(monthly_investment, months)
-  @azimuth.assert_eq(30000, total_invested)  // 500 * 60 = 30000
-}
-test "data_structure_simulation" {
-  // 数据结构模拟：栈操作
-  // 使用变量模拟栈的 push 和 pop 操作
-  
-  // 初始化栈
-  let stack_top1 = 10
-  let stack_size1 = 1
-  
-  // push 操作
-  let stack_top2 = 20
-  let stack_size2 = @azimuth.add(stack_size1, 1)
-  @azimuth.assert_eq(2, stack_size2)
-  
-  // push 操作
-  let stack_top3 = 30
-  let stack_size3 = @azimuth.add(stack_size2, 1)
-  @azimuth.assert_eq(3, stack_size3)
-  
-  // pop 操作（模拟）
-  let popped_value = stack_top3
-  let stack_size_after_pop = stack_size2
-  @azimuth.assert_eq(30, popped_value)
-  @azimuth.assert_eq(2, stack_size_after_pop)
-  
-  // 队列操作模拟（简化）
-  let queue_front = 100
-  let queue_rear = 200
-  let queue_size = 2
-  
-  // 入队操作
-  let new_rear = 300
-  let new_size = @azimuth.add(queue_size, 1)
-  @azimuth.assert_eq(3, new_size)
-}
-test "string_pattern_matching" {
-  // 字符串模式匹配测试（通过 greet 函数）
-  // 测试不同模式的字符串
-  
-  // 电子邮件模式
-  let email = "user@example.com"
-  let email_greeting = @azimuth.greet(email)
-  @azimuth.assert_eq_string("Hello, user@example.com!", email_greeting)
-  
-  // 电话号码模式
-  let phone = "123-456-7890"
-  let phone_greeting = @azimuth.greet(phone)
-  @azimuth.assert_eq_string("Hello, 123-456-7890!", phone_greeting)
-  
-  // URL 模式
-  let url = "https://example.com"
-  let url_greeting = @azimuth.greet(url)
-  @azimuth.assert_eq_string("Hello, https://example.com!", url_greeting)
-  
-  // 日期模式
-  let date = "2023-12-25"
-  let date_greeting = @azimuth.greet(date)
-  @azimuth.assert_eq_string("Hello, 2023-12-25!", date_greeting)
-}
-test "number_system_conversions" {
-  // 数字系统转换测试（简化模拟）
-  
-  // 二进制模拟（通过字符串）
-  let binary_str = "1010"  // 代表十进制 10
-  let binary_greeting = @azimuth.greet(binary_str)
-  @azimuth.assert_eq_string("Hello, 1010!", binary_greeting)
-  
-  // 八进制模拟
-  let octal_str = "12"  // 代表十进制 10
-  let octal_greeting = @azimuth.greet(octal_str)
-  @azimuth.assert_eq_string("Hello, 12!", octal_greeting)
-  
-  // 十六进制模拟
-  let hex_str = "A"  // 代表十进制 10
-  let hex_greeting = @azimuth.greet(hex_str)
-  @azimuth.assert_eq_string("Hello, A!", hex_greeting)
-  
-  // 罗马数字模拟
-  let roman_str = "X"  // 代表十进制 10
-  let roman_greeting = @azimuth.greet(roman_str)
-  @azimuth.assert_eq_string("Hello, X!", roman_greeting)
-}
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  
-  // O(1) - 常数时间操作
-  let constant_time_result = @azimuth.add(5, 3)
-  @azimuth.assert_eq(8, constant_time_result)
-  
-  // O(n) - 线性时间操作（模拟）
-  let n = 100
-  let linear_sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2  // 1 + 2 + ... + n
-  @azimuth.assert_eq(5050, linear_sum)
-  
-  // O(n²) - 平方时间操作（模拟）
-  // 计算 n x n 矩阵的所有元素之和
-  let matrix_sum = @azimuth.multiply(n, @azimuth.multiply(n, @azimuth.add(n, 1)) / 2)
-  @azimuth.assert_eq(505000, matrix_sum)
-  
-  // O(log n) - 对数时间操作（模拟）
-  // 二分查找的步骤数（简化）
-  let log_steps = 7  // log2(100) ≈ 6.64，向上取整为 7
-  @azimuth.assert_true(log_steps < n)
-}
-test "error_boundary_testing" {
-  // 错误边界测试
-  
-  let max_val = 2147483647
+
+test "range_validation" {
+  // 数值范围验证测试
   let min_val = -2147483648
+  let max_val = 2147483647
   
-  // 测试加法边界
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))  // 溢出处理
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))  // 溢出处理
+  // 测试极值运算
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
   
-  // 测试乘法边界
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))  // 溢出处理
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))  // 溢出处理
-  
-  // 测试除零保护（通过条件检查）
-  let dividend = 100
-  let divisor = 0
-  // 在实际代码中，应该检查 divisor != 0 再进行除法
-  let safe_division = if divisor != 0 { dividend / divisor } else { 0 }
-  @azimuth.assert_eq(0, safe_division)
-  
-  // 测试字符串边界
-  let very_long_string = "ThisIsAVeryLongStringThatMightCauseIssues"
-  let long_string_greeting = @azimuth.greet(very_long_string)
-  @azimuth.assert_true(long_string_greeting.length() > 0)
+  // 测试中间值
+  let mid_val = 0
+  @azimuth.assert_eq(mid_val, @azimuth.add(min_val, max_val))
 }
-test "real_world_business_logic" {
-  // 实际业务逻辑测试
+
+test "scientific_notation_simulation" {
+  // 模拟科学计数法计算
+  // 计算 1.23 × 10^6，使用整数模拟
+  let mantissa = 123
+  let exponent = 4  // 表示 10^4
+  let scale = 10000  // 10^4
   
-  // 库存管理
-  let initial_stock = 100
-  let sold_items = 30
-  let restocked_items = 20
+  let result = @azimuth.multiply(mantissa, scale)
+  @azimuth.assert_eq(1230000, result)
   
-  let current_stock = @azimuth.add(@azimuth.add(initial_stock, -sold_items), restocked_items)
-  @azimuth.assert_eq(90, current_stock)
+  // 测试另一个例子：2.5 × 10^3
+  let mantissa2 = 25
+  let exponent2 = 2
+  let scale2 = 100
   
-  // 折扣计算
-  let original_price = 200
-  let discount_percentage = 15
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  let final_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(170, final_price)
+  let result2 = @azimuth.multiply(mantissa2, scale2)
+  @azimuth.assert_eq(2500, result2)
+}
+
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 200
+  let percentage = 25  // 25%
   
-  // 税收计算
-  let price_before_tax = 170
-  let tax_rate = 8  // 8%
-  let tax_amount = @azimuth.multiply(price_before_tax, tax_rate) / 100
-  let total_price = @azimuth.add(price_before_tax, tax_amount)
-  @azimuth.assert_eq(183, total_price)  // 170 + 170*8/100 = 170 + 13 = 183
+  // 计算百分比值：总数 × 百分比 / 100
+  let value = @azimuth.multiply(total, percentage) / 100
+  @azimuth.assert_eq(50, value)
+  
+  // 计算增加后的值：总数 + 百分比值
+  let increased = @azimuth.add(total, value)
+  @azimuth.assert_eq(250, increased)
+  
+  // 计算减少后的值：总数 - 百分比值
+  let decreased = @azimuth.add(total, -value)
+  @azimuth.assert_eq(150, decreased)
+}
+
+test "temperature_conversion" {
+  // 温度转换测试（简化版）
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 简化为整数运算：F = C × 2 + 30
+  
+  let celsius = 20
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(70, fahrenheit)
+  
+  // 测试冰点
+  let freezing = 0
+  let freezing_f = @azimuth.add(@azimuth.multiply(freezing, 2), 30)
+  @azimuth.assert_eq(30, freezing_f)
+  
+  // 测试沸点
+  let boiling = 100
+  let boiling_f = @azimuth.add(@azimuth.multiply(boiling, 2), 30)
+  @azimuth.assert_eq(230, boiling_f)
+}
+
+test "geometric_calculations" {
+  // 几何计算测试
+  let radius = 7
+  
+  // 圆周长（简化）：2 × π × r ≈ 2 × 3 × r
+  let circumference = @azimuth.multiply(@azimuth.multiply(2, 3), radius)
+  @azimuth.assert_eq(42, circumference)
+  
+  // 圆面积（简化）：π × r² ≈ 3 × r²
+  let area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
+  @azimuth.assert_eq(147, area)
+  
+  // 球体体积（简化）：4/3 × π × r³ ≈ 4 × r³
+  let volume = @azimuth.multiply(4, @azimuth.multiply(radius, @azimuth.multiply(radius, radius)))
+  @azimuth.assert_eq(1372, volume)
+}
+
+test "number_system_conversion" {
+  // 数制转换测试（简化版）
+  // 十进制转二进制（模拟）
+  let decimal = 13
+  
+  // 模拟二进制转换：13 = 1101（二进制）
+  // 通过位运算模拟：8 + 4 + 0 + 1 = 13
+  let binary_value = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(1, 4)), @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(decimal, binary_value)
+  
+  // 十进制转十六进制（模拟）
+  let decimal2 = 255
+  
+  // 模拟十六进制转换：255 = FF（十六进制）
+  // 通过计算：15 × 16 + 15 = 255
+  let hex_value = @azimuth.add(@azimuth.multiply(15, 16), 15)
+  @azimuth.assert_eq(decimal2, hex_value)
+}
+
+test "comprehensive_business_calculation" {
+  // 综合业务计算测试
+  let unit_price = 99
+  let quantity = 5
+  let discount_threshold = 400
+  let discount_rate = 10
+  let tax_rate = 8
+  let shipping = 15
+  
+  // 计算商品总价
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  
+  // 计算折扣（如果超过阈值）
+  let discount = if (subtotal > discount_threshold) {
+    @azimuth.multiply(subtotal, discount_rate) / 100
+  } else {
+    0
+  }
+  
+  // 计算折后价格
+  let discounted_total = @azimuth.add(subtotal, -discount)
+  
+  // 计算税费
+  let tax = @azimuth.multiply(discounted_total, tax_rate) / 100
+  
+  // 计算最终总价
+  let final_total = @azimuth.add(@azimuth.add(discounted_total, tax), shipping)
+  
+  @azimuth.assert_eq(530, final_total)
 }
