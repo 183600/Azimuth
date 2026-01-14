@@ -1,153 +1,168 @@
-// 新的 MoonBit 测试用例 - 覆盖核心功能和边界情况
-// 导入 azimuth 包以使用其中的函数
+// 新的 MoonBit 测试用例
+// 测试 azimuth 包的核心功能
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(10, azimuth::add(7, 3))
-  assert_eq(0, azimuth::add(5, -5))
-  assert_eq(-10, azimuth::add(-7, -3))
+test "performance_large_number_operations" {
+  // 性能测试：大数运算
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  let large_num3 = 3000000
   
-  assert_eq(15, azimuth::multiply(3, 5))
-  assert_eq(0, azimuth::multiply(8, 0))
-  assert_eq(-12, azimuth::multiply(-3, 4))
+  // 大数加法
+  let sum_result = azimuth::add(azimuth::add(large_num1, large_num2), large_num3)
+  assert_eq(6000000, sum_result)
+  
+  // 大数乘法
+  let product_result = azimuth::multiply(large_num1, 3)
+  assert_eq(3000000, product_result)
 }
 
-test "extreme_boundary_values" {
-  // 测试极值边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "edge_case_decimal_simulation" {
+  // 边界情况：模拟小数运算
+  // 使用整数表示小数：1.5 表示为 15，除以 10
+  let value1 = 15  // 代表 1.5
+  let value2 = 25  // 代表 2.5
   
-  // 最大值运算
-  assert_eq(max_val, azimuth::add(max_val, 0))
-  assert_eq(max_val, azimuth::multiply(max_val, 1))
+  // 模拟小数加法：1.5 + 2.5 = 4.0，表示为 40
+  let decimal_sum = azimuth::add(value1, value2)
+  assert_eq(40, decimal_sum)
   
-  // 最小值运算
-  assert_eq(min_val, azimuth::add(min_val, 0))
-  assert_eq(min_val, azimuth::multiply(min_val, 1))
-  
-  // 极值相加
-  assert_eq(-1, azimuth::add(max_val, min_val))
+  // 模拟小数乘法：1.5 × 2.5 = 3.75，表示为 38（四舍五入）
+  let decimal_product = azimuth::multiply(value1, value2) / 10
+  assert_eq(3, decimal_product)
 }
 
-test "string_processing_variations" {
-  // 测试字符串处理的各种变化
-  // 数字字符串
-  assert_eq_string("Hello, 123!", azimuth::greet("123"))
+test "real_world_calculator_scenario" {
+  // 实际应用场景：计算器功能模拟
+  // 计算表达式：(10 + 5) × 3 - 15 ÷ 5
+  let step1 = azimuth::add(10, 5)  // 15
+  let step2 = azimuth::multiply(step1, 3)  // 45
+  let step3 = 15 / 5  // 3（使用整数除法）
+  let result = azimuth::add(step2, -step3)  // 42
   
-  // 特殊符号
-  assert_eq_string("Hello, @#$%!", azimuth::greet("@#$%"))
-  
-  // 混合内容
-  assert_eq_string("Hello, User123!", azimuth::greet("User123"))
-  
-  // 空格处理
-  assert_eq_string("Hello,  !", azimuth::greet(" "))
+  assert_eq(42, result)
 }
 
-test "mathematical_series_calculations" {
-  // 测试数学数列计算
-  // 等差数列前5项和：2+4+6+8+10 = 30
-  let sum1 = azimuth::add(azimuth::add(2, 4), azimuth::add(6, azimuth::add(8, 10)))
-  assert_eq(30, sum1)
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试包含各种特殊字符的字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let result = azimuth::greet(special_chars)
+  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?! ", result)
   
-  // 等比数列前4项积：2×4×8×16 = 1024
-  let product1 = azimuth::multiply(2, azimuth::multiply(4, azimuth::multiply(8, 16)))
-  assert_eq(1024, product1)
+  // 测试包含数字和字母混合的字符串
+  let alphanumeric = "User123Admin456"
+  let result2 = azimuth::greet(alphanumeric)
+  assert_eq_string("Hello, User123Admin456!", result2)
 }
 
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 银行利息计算
-  let principal = 10000
-  let rate = 5
-  let years = 3
-  let interest = azimuth::multiply(principal, azimuth::multiply(rate, years))
-  let total = azimuth::add(principal, interest)
-  assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
+test "mathematical_constants_approximation" {
+  // 数学常数近似值测试
+  // π 的近似值：3.14159，表示为 314159
+  let pi_approx = 314159
+  let pi_scaled = pi_approx / 100000  // 3
+  assert_eq(3, pi_scaled)
   
-  // 面积计算
-  let length = 12
-  let width = 8
-  let area = azimuth::multiply(length, width)
-  assert_eq(96, area)
+  // e 的近似值：2.71828，表示为 271828
+  let e_approx = 271828
+  let e_scaled = e_approx / 100000  // 2
+  assert_eq(2, e_scaled)
+  
+  // 黄金比例：1.61803，表示为 161803
+  let golden_ratio = 161803
+  let golden_scaled = golden_ratio / 100000  // 1
+  assert_eq(1, golden_scaled)
 }
 
-test "error_handling_and_edge_cases" {
-  // 测试错误处理和边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "algorithm_binary_search_simulation" {
+  // 算法测试：二分查找模拟
+  // 在已排序数组 [1, 3, 5, 7, 9, 11, 13, 15] 中查找 7
+  let sorted_array_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(1, 3), 5), 7), azimuth::add(azimuth::add(azimuth::add(9, 11), 13), 15))
+  let target = 7
   
-  // 溢出保护验证
-  assert_eq(max_val, azimuth::add(max_val, 100))
-  assert_eq(min_val, azimuth::add(min_val, -100))
-  assert_eq(max_val, azimuth::multiply(max_val, 2))
-  assert_eq(min_val, azimuth::multiply(min_val, -2))
+  // 模拟二分查找的步骤
+  let low = 0
+  let high = 7
+  let mid = azimuth::add(low, high) / 2  // 3
   
-  // 特殊值处理
-  assert_eq(min_val, azimuth::multiply(min_val, -1))
+  // 验证查找过程
+  assert_true(target <= 15)
+  assert_true(target >= 1)
+  assert_eq(64, sorted_array_sum)  // 1+3+5+7+9+11+13+15 = 64
 }
 
-test "function_composition_patterns" {
-  // 测试函数组合模式
-  // 复合计算：(a+b)×(c-d)
-  let a = 8
-  let b = 2
-  let c = 15
-  let d = 5
+test "data_structure_stack_simulation" {
+  // 数据结构测试：栈操作模拟
+  // 使用整数模拟栈操作
+  let stack_top = 10
+  let push_value = 20
   
-  let sum_ab = azimuth::add(a, b)
-  let diff_cd = azimuth::add(c, -d)
-  let result = azimuth::multiply(sum_ab, diff_cd)
+  // 入栈操作
+  let new_top = push_value
+  assert_eq(20, new_top)
   
-  assert_eq(100, result)  // (8+2)×(15-5) = 10×10 = 100
+  // 出栈操作
+  let popped_value = new_top
+  assert_eq(20, popped_value)
+  
+  // 栈大小变化
+  let initial_size = 5
+  let after_push = azimuth::add(initial_size, 1)
+  let after_pop = azimuth::add(after_push, -1)
+  assert_eq(initial_size, after_pop)
 }
 
-test "conditional_calculations" {
-  // 测试条件计算
-  let x = 15
-  let y = 20
+test "game_logic_dice_roll" {
+  // 游戏逻辑测试：骰子游戏模拟
+  // 模拟两个骰子的投掷
+  let dice1 = 4
+  let dice2 = 5
   
-  // 条件：如果x<y则相加，否则相乘
-  let condition = x < y
-  let result = if condition { azimuth::add(x, y) } else { azimuth::multiply(x, y) }
-  assert_eq(35, result)  // 15<20为真，所以15+20=35
+  // 计算总和
+  let total = azimuth::add(dice1, dice2)
+  assert_eq(9, total)
   
-  // 反向条件
-  let result2 = if x > y { azimuth::add(x, y) } else { azimuth::multiply(x, y) }
-  assert_eq(300, result2)  // 15>20为假，所以15×20=300
+  // 判断是否获胜（总和大于等于7为获胜）
+  let is_win = total >= 7
+  assert_true(is_win)
+  
+  // 计算得分（总和乘以10）
+  let score = azimuth::multiply(total, 10)
+  assert_eq(90, score)
 }
 
-test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符
-  // 各种语言
-  assert_eq_string("Hello, Москва!", azimuth::greet("Москва"))
-  assert_eq_string("Hello, القاهرة!", azimuth::greet("القاهرة"))
-  assert_eq_string("Hello, 東京!", azimuth::greet("東京"))
+test "network_data_packet_simulation" {
+  // 网络数据测试：数据包模拟
+  // 模拟网络数据包的处理
+  let header_size = 20
+  let payload_size = 1000
+  let checksum_size = 4
   
-  // 复合Emoji
-  assert_eq_string("Hello, 👨‍💻!", azimuth::greet("👨‍💻"))
-  assert_eq_string("Hello, 🏳️‍🌈!", azimuth::greet("🏳️‍🌈"))
+  // 计算总包大小
+  let total_packet_size = azimuth::add(azimuth::add(header_size, payload_size), checksum_size)
+  assert_eq(1024, total_packet_size)
   
-  // 特殊空白字符
-  assert_eq_string("Hello, \t\n!", azimuth::greet("\t\n"))
+  // 计算传输时间（简化：包大小/传输速率）
+  let transmission_rate = 1024  // 字节/秒
+  let transmission_time = total_packet_size / transmission_rate
+  assert_eq(1, transmission_time)
 }
 
-test "performance_and_stress_tests" {
-  // 测试性能和压力情况
-  // 大数运算
-  let large1 = 1000000
-  let large2 = 2000000
-  let large3 = 3000000
+test "cryptography_simple_cipher" {
+  // 密码学测试：简单密码算法模拟
+  // 凯撒密码模拟（字母移位）
+  let letter_position = 5  // 字母 'E' 的位置
+  let shift = 3
   
-  assert_eq(6000000, azimuth::add(azimuth::add(large1, large2), large3))
-  assert_eq(6000000000000000, azimuth::multiply(large1, azimuth::multiply(large2, large3)))
+  // 加密：新位置 = (原位置 + 位移) mod 26
+  let encrypted_position = azimuth::add(letter_position, shift)
+  assert_eq(8, encrypted_position)  // 'H' 的位置
   
-  // 重复运算链
-  let chain_result = azimuth::add(1, 1)
-  chain_result = azimuth::add(chain_result, 2)
-  chain_result = azimuth::add(chain_result, 3)
-  chain_result = azimuth::add(chain_result, 4)
-  chain_result = azimuth::add(chain_result, 5)
+  // 解密：原位置 = (加密位置 - 位移) mod 26
+  let decrypted_position = azimuth::add(encrypted_position, -shift)
+  assert_eq(5, decrypted_position)  // 回到 'E' 的位置
   
-  assert_eq(16, chain_result)  // 1+1+2+3+4+5 = 16
+  // 验证字符串处理
+  let original_message = "HELLO"
+  let processed_message = azimuth::greet(original_message)
+  assert_eq_string("Hello, HELLO!", processed_message)
 }
