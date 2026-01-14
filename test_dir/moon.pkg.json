@@ -1,4 +1,5 @@
 {
-  "import": ["moonbitlang/core/builtin", "../azimuth"],
+  "import": ["moonbitlang/core/builtin"],
+  "test-import": ["../azimuth"],
   "export": []
 }
