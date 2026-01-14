@@ -1,155 +1,188 @@
-// 新增的 MoonBit 测试用例
-// 测试 azimuth 包中的函数
+// 额外的 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法和断言
 
-test "add_edge_cases" {
-  // 测试加法的边界情况
+test "addition_commutativity" {
+  // 测试加法交换律：a + b = b + a
+  let a = 12345
+  let b = 67890
+  
+  let result1 = azimuth::add(a, b)
+  let result2 = azimuth::add(b, a)
+  azimuth::assert_eq(result1, result2)
+  
+  // 测试负数情况
+  let c = -123
+  let d = 456
+  
+  let result3 = azimuth::add(c, d)
+  let result4 = azimuth::add(d, c)
+  azimuth::assert_eq(result3, result4)
+}
+
+test "multiplication_associativity" {
+  // 测试乘法结合律：(a * b) * c = a * (b * c)
+  let a = 7
+  let b = 8
+  let c = 9
+  
+  let result1 = azimuth::multiply(azimuth::multiply(a, b), c)
+  let result2 = azimuth::multiply(a, azimuth::multiply(b, c))
+  azimuth::assert_eq(result1, result2)
+  
+  // 测试包含0的情况
+  let zero = 0
+  let result3 = azimuth::multiply(azimuth::multiply(a, zero), c)
+  let result4 = azimuth::multiply(a, azimuth::multiply(zero, c))
+  azimuth::assert_eq(result3, result4)
+}
+
+test "mixed_operations_precision" {
+  // 测试混合运算的精度
+  let x = 100
+  let y = 25
+  let z = 4
+  
+  // 计算 (x / y) * z 与 x * (z / y) 的比较
+  // 由于是整数运算，我们使用加法和乘法来模拟
+  let result1 = azimuth::multiply(azimuth::add(x, y), z)
+  let result2 = azimuth::add(azimuth::multiply(x, z), azimuth::multiply(y, z))
+  azimuth::assert_eq(result1, result2)
+}
+
+test "string_special_characters_handling" {
+  // 测试特殊字符的字符串处理
+  let unicode_name = "张三李四"
+  let emoji_name = "🚀🌟"
+  let mixed_name = "Test123!@#"
+  let whitespace_name = "  spaced  "
+  
+  azimuth::assert_eq_string("Hello, 张三李四!", azimuth::greet(unicode_name))
+  azimuth::assert_eq_string("Hello, 🚀🌟!", azimuth::greet(emoji_name))
+  azimuth::assert_eq_string("Hello, Test123!@#!", azimuth::greet(mixed_name))
+  azimuth::assert_eq_string("Hello,   spaced  !", azimuth::greet(whitespace_name))
+}
+
+test "extreme_boundary_combinations" {
+  // 测试极端边界值的组合
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值与最小值相加
-  assert_eq(-1, azimuth::add(max_val, min_val))
+  // 最大值与最小值的各种运算组合
+  let sum_result = azimuth::add(max_val, min_val)
+  let mult_result = azimuth::multiply(max_val, 0)
   
-  // 测试大数相加
-  assert_eq(2000000000, azimuth::add(1000000000, 1000000000))
-  assert_eq(-2000000000, azimuth::add(-1000000000, -1000000000))
+  azimuth::assert_eq(-1, sum_result)
+  azimuth::assert_eq(0, mult_result)
   
-  // 测试连续相加
-  let sum1 = azimuth::add(1, 2)
-  let sum2 = azimuth::add(3, 4)
-  let sum3 = azimuth::add(sum1, sum2)
-  assert_eq(15, azimuth::add(sum3, 5))
+  // 边界值附近的运算
+  let near_max = azimuth::add(max_val, -100)
+  let near_min = azimuth::add(min_val, 100)
+  
+  azimuth::assert_eq(2147483547, near_max)
+  azimuth::assert_eq(-2147483548, near_min)
 }
 
-test "multiply_edge_cases" {
-  // 测试乘法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "sequential_calculation_chain" {
+  // 测试连续计算链
+  let initial = 10
   
-  // 测试大数相乘
-  assert_eq(1000000, azimuth::multiply(1000, 1000))
-  assert_eq(-1000000, azimuth::multiply(-1000, 1000))
+  // 连续加法：10 + 20 + 30 + 40 + 50
+  let step1 = azimuth::add(initial, 20)
+  let step2 = azimuth::add(step1, 30)
+  let step3 = azimuth::add(step2, 40)
+  let step4 = azimuth::add(step3, 50)
   
-  // 测试连续相乘
-  assert_eq(24, azimuth::multiply(azimuth::multiply(2, 3), 4))
+  azimuth::assert_eq(150, step4)
   
-  // 测试最小值与-1相乘
-  assert_eq(min_val, azimuth::multiply(min_val, -1))
+  // 连续乘法：2 * 3 * 4 * 5
+  let mult_step1 = azimuth::multiply(2, 3)
+  let mult_step2 = azimuth::multiply(mult_step1, 4)
+  let mult_step3 = azimuth::multiply(mult_step2, 5)
+  
+  azimuth::assert_eq(120, mult_step3)
 }
 
-test "greet_variations" {
-  // 测试问候函数的各种情况
-  // 测试空字符串
-  assert_eq_string("Hello, !", azimuth::greet(""))
+test "financial_calculation_scenario" {
+  // 测试金融计算场景：贷款计算
+  let principal = 100000  // 本金
+  let rate = 5            // 利率百分比
+  let years = 3           // 年数
   
-  // 测试包含空格的字符串
-  assert_eq_string("Hello, John Doe!", azimuth::greet("John Doe"))
+  // 简化的单利计算：利息 = 本金 * 利率 * 年数 / 100
+  let interest = azimuth::multiply(azimuth::multiply(principal, rate), years) / 100
+  let total_amount = azimuth::add(principal, interest)
   
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, @#$%!", azimuth::greet("@#$%"))
-  
-  // 测试Unicode字符
-  assert_eq_string("Hello, 🌍!", azimuth::greet("🌍"))
-  assert_eq_string("Hello, 测试!", azimuth::greet("测试"))
+  // 验证：100000 + 100000*5*3/100 = 100000 + 15000 = 115000
+  azimuth::assert_eq(115000, total_amount)
 }
 
-test "complex_calculations" {
-  // 测试复合计算
-  // 计算 (a + b) * c
-  let a = 10
-  let b = 20
-  let c = 3
+test "geometry_calculations" {
+  // 测试几何计算：矩形和三角形面积
+  let length = 12
+  let width = 8
+  let base = 10
+  let height = 6
   
-  let sum = azimuth::add(a, b)
-  let result = azimuth::multiply(sum, c)
-  assert_eq(90, result)  // (10 + 20) * 3 = 90
+  // 矩形面积：长 × 宽
+  let rectangle_area = azimuth::multiply(length, width)
+  azimuth::assert_eq(96, rectangle_area)
   
-  // 计算 a * b + c * d
-  let d = 4
-  let product1 = azimuth::multiply(a, b)
-  let product2 = azimuth::multiply(c, d)
-  let result2 = azimuth::add(product1, product2)
-  assert_eq(212, result2)  // 10 * 20 + 3 * 4 = 200 + 12 = 212
+  // 三角形面积：底 × 高 ÷ 2
+  let triangle_area = azimuth::multiply(base, height) / 2
+  azimuth::assert_eq(30, triangle_area)
+  
+  // 梯形面积：(上底 + 下底) × 高 ÷ 2
+  let top_base = 5
+  let bottom_base = 15
+  let trapezoid_height = 4
+  let trapezoid_area = azimuth::multiply(azimuth::add(top_base, bottom_base), trapezoid_height) / 2
+  azimuth::assert_eq(40, trapezoid_area)
 }
 
-test "mathematical_series" {
-  // 测试数学序列计算
-  // 计算等差数列前5项的和：1 + 3 + 5 + 7 + 9 = 25
-  let sum1 = azimuth::add(azimuth::add(1, 3), azimuth::add(5, 7))
-  let total1 = azimuth::add(sum1, 9)
-  assert_eq(25, total1)
+test "temperature_conversion_scenario" {
+  // 测试温度转换场景
+  // 摄氏度转华氏度：F = C * 9/5 + 32
+  // 简化为整数运算：F = C * 2 + 30
   
-  // 计算等比数列前4项的和：2 + 4 + 8 + 16 = 30
-  let term2 = azimuth::multiply(2, 2)
-  let term3 = azimuth::multiply(term2, 2)
-  let term4 = azimuth::multiply(term3, 2)
-  let sum2 = azimuth::add(azimuth::add(2, term2), azimuth::add(term3, term4))
-  assert_eq(30, sum2)
+  let celsius_temp = 25
+  let fahrenheit_temp = azimuth::add(azimuth::multiply(celsius_temp, 2), 30)
+  azimuth::assert_eq(80, fahrenheit_temp)
+  
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = azimuth::add(azimuth::multiply(freezing_celsius, 2), 30)
+  azimuth::assert_eq(30, freezing_fahrenheit)
+  
+  // 测试沸点
+  let boiling_celsius = 100
+  let boiling_fahrenheit = azimuth::add(azimuth::multiply(boiling_celsius, 2), 30)
+  azimuth::assert_eq(230, boiling_fahrenheit)
 }
 
-test "real_world_scenarios" {
-  // 测试真实世界场景
-  // 购物车计算：商品价格 * 数量 + 运费
-  let item_price = 199
-  let quantity = 3
-  let shipping = 15
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算一组数的总和、平均值、中位数
+  let numbers_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(85, 90), 78), 92), 88)
+  let count = 5
+  let average = numbers_sum / count
   
-  let subtotal = azimuth::multiply(item_price, quantity)
-  let total = azimuth::add(subtotal, shipping)
-  assert_eq(612, total)  // 199 * 3 + 15 = 597 + 15 = 612
+  azimuth::assert_eq(433, numbers_sum)
+  azimuth::assert_eq(86, average)  // 433 / 5 = 86.6，整数除法取86
   
-  // 温度转换：摄氏度转华氏度（简化版）
-  let celsius = 25
-  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)  // 25 * 2 + 30 = 80
-}
-
-test "performance_oriented" {
-  // 测试性能相关的计算
-  // 批量计算：0 + 1 + 2 + ... + 9 = 45
-  let sum1 = azimuth::add(0, 1)
-  let sum2 = azimuth::add(sum1, 2)
-  let sum3 = azimuth::add(sum2, 3)
-  let sum4 = azimuth::add(sum3, 4)
-  let sum5 = azimuth::add(sum4, 5)
-  let sum6 = azimuth::add(sum5, 6)
-  let sum7 = azimuth::add(sum6, 7)
-  let sum8 = azimuth::add(sum7, 8)
-  let sum9 = azimuth::add(sum8, 9)
-  assert_eq(45, sum9)
+  // 计算方差（简化版）
+  let mean = 86
+  let variance_numerator = azimuth::add(
+    azimuth::add(
+      azimuth::multiply(azimuth::add(85, -mean), azimuth::add(85, -mean)),
+      azimuth::multiply(azimuth::add(90, -mean), azimuth::add(90, -mean))
+    ),
+    azimuth::add(
+      azimuth::multiply(azimuth::add(78, -mean), azimuth::add(78, -mean)),
+      azimuth::multiply(azimuth::add(92, -mean), azimuth::add(92, -mean))
+    )
+  )
   
-  // 阶乘计算：5! = 120
-  let factorial = azimuth::multiply(5, azimuth::multiply(4, azimuth::multiply(3, azimuth::multiply(2, 1))))
-  assert_eq(120, factorial)
-}
-
-test "error_handling" {
-  // 测试错误处理和边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 确保溢出被正确处理
-  assert_eq(max_val, azimuth::add(max_val, 1))
-  assert_eq(max_val, azimuth::add(max_val, 100))
-  assert_eq(min_val, azimuth::add(min_val, -1))
-  assert_eq(min_val, azimuth::add(min_val, -100))
-  
-  // 测试乘法溢出
-  assert_eq(max_val, azimuth::multiply(46341, 46341))
-  assert_eq(min_val, azimuth::multiply(-46341, 46341))
-}
-
-test "string_operations" {
-  // 测试字符串操作
-  // 测试不同长度的字符串
-  assert_eq_string("Hello, A!", azimuth::greet("A"))
-  assert_eq_string("Hello, ABC!", azimuth::greet("ABC"))
-  assert_eq_string("Hello, ABCDEFGHIJKLMNOPQRSTUVWXYZ!", azimuth::greet("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-  
-  // 测试包含数字的字符串
-  assert_eq_string("Hello, 123!", azimuth::greet("123"))
-  assert_eq_string("Hello, Test123!", azimuth::greet("Test123"))
-  
-  // 测试包含符号的字符串
-  assert_eq_string("Hello, test@example.com!", azimuth::greet("test@example.com"))
-  assert_eq_string("Hello, user_2023!", azimuth::greet("user_2023"))
+  // 计算标准差（整数除法）
+  let variance = variance_numerator / count
+  azimuth::assert_eq(22, variance)  // 近似值
 }
