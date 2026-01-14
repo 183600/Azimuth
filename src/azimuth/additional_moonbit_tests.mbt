@@ -1,149 +1,176 @@
 // 额外的 MoonBit 测试用例
-// 覆盖一些未充分测试的场景和边界情况
+// 基于 azimuth 包中的 add、multiply、greet 等函数
 
-test "add_with_large_positive_numbers" {
-  // 测试大正数相加
-  let result1 = @azimuth.add(1000000000, 1000000000)
-  @azimuth.assert_eq(result1, 2000000000)
+test "calculation_parentheses_priority" {
+  // 测试运算优先级和括号的影响
+  let a = 5
+  let b = 10
+  let c = 2
   
-  let result2 = @azimuth.add(1500000000, 1500000000)
-  @azimuth.assert_eq(result2, 2147483647)  // 应该被限制为最大值
-}
-
-test "add_with_large_negative_numbers" {
-  // 测试大负数相加
-  let result1 = @azimuth.add(-1000000000, -1000000000)
-  @azimuth.assert_eq(result1, -2000000000)
+  // 测试 (a + b) * c 与 a + b * c 的区别
+  let with_parentheses = multiply(add(a, b), c)  // (5 + 10) * 2 = 30
+  let without_parentheses = add(a, multiply(b, c))  // 5 + 10 * 2 = 25
   
-  let result2 = @azimuth.add(-1500000000, -1500000000)
-  @azimuth.assert_eq(result2, -2147483648)  // 应该被限制为最小值
-}
-
-test "multiply_with_fractional_approximation" {
-  // 测试通过整数运算近似分数运算
-  // 计算 1/3 * 9 的近似值：1 * 9 / 3 = 3
-  let numerator = 1
-  let denominator = 3
-  let value = 9
-  
-  let result = @azimuth.multiply(numerator, value) / denominator
-  @azimuth.assert_eq(result, 3)
-}
-
-test "compound_interest_calculation" {
-  // 测试复利计算（简化版）
-  // 公式：最终金额 = 本金 * (1 + 利率)^年数
-  // 简化为整数运算：最终金额 = 本金 + 本金 * 利率 * 年数
-  let principal = 10000  // 本金
-  let rate = 5          // 利率 5%
-  let years = 3         // 年数
-  
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total = @azimuth.add(principal, interest)
-  
-  @azimuth.assert_eq(total, 160000)  // 10000 + 10000*5*3 = 160000，表示1600.00元
+  assert_eq(30, with_parentheses)
+  assert_eq(25, without_parentheses)
 }
 
 test "discount_calculation" {
-  // 测试折扣计算
+  // 测试折扣计算场景
   let original_price = 1000
   let discount_percentage = 20  // 20% 折扣
   
-  // 计算折扣金额：原价 * 折扣率 / 100
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  // 计算最终价格：原价 - 折扣金额
-  let final_price = @azimuth.add(original_price, -discount_amount)
+  // 计算折扣金额
+  let discount_amount = multiply(original_price, discount_percentage) / 100
+  // 计算折后价格
+  let discounted_price = add(original_price, -discount_amount)
   
-  @azimuth.assert_eq(discount_amount, 200)
-  @azimuth.assert_eq(final_price, 800)
+  assert_eq(200, discount_amount)
+  assert_eq(800, discounted_price)
 }
 
-test "temperature_conversion_advanced" {
-  // 测试更精确的温度转换
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  // 使用整数近似：F = C * 2 - C/5 + 32
+test "compound_calculation" {
+  // 测试复合计算：(a + b) * (c - d) + e
+  let a = 8
+  let b = 7
+  let c = 15
+  let d = 5
+  let e = 10
   
-  let celsius_temps = [@azimuth.add(-40, 0), @azimuth.add(0, 0), @azimuth.add(100, 0)]
+  let sum_ab = add(a, b)  // 15
+  let diff_cd = add(c, -d)  // 10
+  let product = multiply(sum_ab, diff_cd)  // 150
+  let result = add(product, e)  // 160
   
-  // 测试 -40°C（应该等于 -40°F）
-  let c1 = celsius_temps[0]
-  let f1 = @azimuth.add(@azimuth.add(@azimuth.multiply(c1, 2), -c1/5), 32)
-  @azimuth.assert_eq(f1, -40)
-  
-  // 测试 0°C（应该等于 32°F）
-  let c2 = celsius_temps[1]
-  let f2 = @azimuth.add(@azimuth.add(@azimuth.multiply(c2, 2), -c2/5), 32)
-  @azimuth.assert_eq(f2, 32)
-  
-  // 测试 100°C（应该约等于 212°F）
-  let c3 = celsius_temps[2]
-  let f3 = @azimuth.add(@azimuth.add(@azimuth.multiply(c3, 2), -c3/5), 32)
-  @azimuth.assert_eq(f3, 212)
+  assert_eq(160, result)
 }
 
-test "string_template_processing" {
-  // 测试字符串模板处理
-  // 通过拼接多个字符串来模拟模板处理
-  let first_name = "John"
-  let last_name = "Doe"
-  let age = "30"
+test "string_with_various_lengths" {
+  // 测试不同长度字符串的处理
+  let very_short = "A"
+  let short = "Hi"
+  let medium = "MoonBit"
+  let long = "ThisIsALongStringForTesting"
+  let very_long = "ThisIsAVeryVeryLongStringThatContainsManyCharactersToTestTheGreetFunctionsWithDifferentInputLengths"
   
-  // 构建完整介绍字符串
-  let greeting = @azimuth.greet(first_name + " " + last_name)
-  let introduction = greeting + " I am " + age + " years old."
-  
-  @azimuth.assert_eq_string(introduction, "Hello, John Doe! I am 30 years old.")
+  assert_eq_string("Hello, A!", greet(very_short))
+  assert_eq_string("Hello, Hi!", greet(short))
+  assert_eq_string("Hello, MoonBit!", greet(medium))
+  assert_eq_string("Hello, ThisIsALongStringForTesting!", greet(long))
+  assert_eq_string("Hello, ThisIsAVeryVeryLongStringThatContainsManyCharactersToTestTheGreetFunctionsWithDifferentInputLengths!", greet(very_long))
 }
 
-test "array_sum_simulation" {
-  // 模拟数组求和（使用多个变量表示数组元素）
-  let num1 = 15
-  let num2 = 25
-  let num3 = 35
-  let num4 = 45
-  let num5 = 55
+test "calculation_with_negative_numbers" {
+  // 测试负数计算
+  let a = -10
+  let b = 5
+  let c = -3
   
-  // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5)
+  // 负数加法
+  assert_eq(-5, add(a, b))
+  assert_eq(-13, add(a, c))
   
-  // 计算平均值
-  let average = sum / 5
+  // 负数乘法
+  assert_eq(50, multiply(a, c))
+  assert_eq(-30, multiply(b, c))
   
-  @azimuth.assert_eq(sum, 175)
-  @azimuth.assert_eq(average, 35)
+  // 混合运算
+  let result = add(multiply(a, b), c)  // (-10) * 5 + (-3) = -53
+  assert_eq(-53, result)
 }
 
-test "geometric calculations" {
-  // 测试几何计算
-  // 计算圆的周长和面积（使用π≈3.14159的近似值）
-  let radius = 10
-  let pi_approx = 3  // 使用 π≈3 的近似值
+test "temperature_conversion_scenarios" {
+  // 测试温度转换场景（简化版）
+  // 摄氏度转华氏度：F = C * 2 + 30 (简化公式)
   
-  // 周长 = 2 * π * r
-  let circumference = @azimuth.multiply(@azimuth.multiply(2, pi_approx), radius)
+  let freezing_celsius = 0
+  let room_celsius = 20
+  let boiling_celsius = 100
   
-  // 面积 = π * r²
-  let area = @azimuth.multiply(pi_approx, @azimuth.multiply(radius, radius))
+  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
+  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
+  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
   
-  @azimuth.assert_eq(circumference, 60)  // 2 * 3 * 10 = 60
-  @azimuth.assert_eq(area, 300)         // 3 * 10 * 10 = 300
+  assert_eq(30, freezing_fahrenheit)  // 0°C ≈ 30°F (简化)
+  assert_eq(70, room_fahrenheit)     // 20°C ≈ 70°F (简化)
+  assert_eq(230, boiling_fahrenheit) // 100°C ≈ 230°F (简化)
 }
 
-test "time_calculations" {
-  // 测试时间计算
-  // 计算总秒数
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
+test "calculation_chaining" {
+  // 测试计算链：((((a + b) + c) + d) + e)
+  let a = 10
+  let b = 20
+  let c = 30
+  let d = 40
+  let e = 50
   
-  // 将小时和分钟转换为秒
-  let hours_in_seconds = @azimuth.multiply(hours, 3600)
-  let minutes_in_seconds = @azimuth.multiply(minutes, 60)
+  let result = add(add(add(add(a, b), c), d), e)
+  assert_eq(150, result)
   
-  // 计算总秒数
-  let total_seconds = @azimuth.add(@azimuth.add(hours_in_seconds, minutes_in_seconds), seconds)
+  // 测试乘法链：a * b * c * d
+  let m1 = 2
+  let m2 = 3
+  let m3 = 4
+  let m4 = 5
   
-  @azimuth.assert_eq(hours_in_seconds, 7200)   // 2 * 3600 = 7200
-  @azimuth.assert_eq(minutes_in_seconds, 1500) // 30 * 60 = 1500
-  @azimuth.assert_eq(total_seconds, 9045)      // 7200 + 1500 + 45 = 9045
+  let product_result = multiply(multiply(multiply(m1, m2), m3), m4)
+  assert_eq(120, product_result)
+}
+
+test "mixed_operations_complex" {
+  // 测试混合运算的复杂情况
+  let base_value = 100
+  let multiplier = 3
+  let addition = 50
+  let subtraction = 25
+  
+  // 计算：(base_value * multiplier) + addition - subtraction
+  let step1 = multiply(base_value, multiplier)  // 300
+  let step2 = add(step1, addition)              // 350
+  let final_result = add(step2, -subtraction)   // 325
+  
+  assert_eq(325, final_result)
+}
+
+test "string_special_characters_extended" {
+  // 测试包含各种特殊字符的字符串
+  let with_spaces = "John Doe"
+  let with_symbols = "user@domain.com"
+  let with_numbers = "Test123"
+  let with_mixed = "User_2023@Project#1"
+  let with_unicode = "测试中文"
+  let with_emoji = "🌍🚀"
+  
+  assert_eq_string("Hello, John Doe!", greet(with_spaces))
+  assert_eq_string("Hello, user@domain.com!", greet(with_symbols))
+  assert_eq_string("Hello, Test123!", greet(with_numbers))
+  assert_eq_string("Hello, User_2023@Project#1!", greet(with_mixed))
+  assert_eq_string("Hello, 测试中文!", greet(with_unicode))
+  assert_eq_string("Hello, 🌍🚀!", greet(with_emoji))
+}
+
+test "boundary_value_combinations_extended" {
+  // 测试边界值的组合情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  let one = 1
+  let neg_one = -1
+  
+  // 最大值与不同值的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(max_val, add(max_val, one))
+  assert_eq(max_val, add(max_val, max_val))
+  
+  // 最小值与不同值的运算
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(min_val, add(min_val, neg_one))
+  assert_eq(min_val, add(min_val, min_val))
+  
+  // 乘法边界测试
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, one))
+  assert_eq(min_val, multiply(min_val, one))
+  assert_eq(min_val, multiply(max_val, neg_one))
+  assert_eq(max_val, multiply(min_val, neg_one))
 }
