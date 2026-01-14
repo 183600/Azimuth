@@ -1,209 +1,159 @@
-// 实际应用场景测试用例
-// 专注于真实世界中的应用场景和边缘情况
+// 实际应用场景的 MoonBit 测试用例
+// 测试各种实际应用场景中的功能使用
 
-test "bank_account_balance_calculation" {
-  // 银行账户余额计算测试
-  let initial_balance = 1000
-  let deposit1 = 500
-  let deposit2 = 300
-  let withdrawal1 = 200
-  let withdrawal2 = 150
+test "shopping_cart_total" {
+  // 测试购物车总价计算
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
   
-  // 计算最终余额
-  let total_deposits = azimuth::@azimuth.add(deposit1, deposit2)
-  let total_withdrawals = azimuth::@azimuth.add(withdrawal1, withdrawal2)
-  let final_balance = azimuth::@azimuth.add(initial_balance, azimuth::@azimuth.add(total_deposits, -total_withdrawals))
+  // 计算每种商品的总价
+  let total1 = azimuth::@azimuth.multiply(item1_price, item1_quantity)
+  let total2 = azimuth::@azimuth.multiply(item2_price, item2_quantity)
   
-  // 验证结果：1000 + (500+300) - (200+150) = 1000 + 800 - 350 = 1450
-  azimuth::@azimuth.assert_eq(1450, final_balance)
+  // 计算购物车总价
+  let cart_total = azimuth::@azimuth.add(total1, total2)
+  
+  // 验证总价：199*2 + 299*1 = 398 + 299 = 697
+  @azimuth.assert_eq(697, cart_total)
 }
 
-test "pizza_order_calculation" {
-  // 披萨订单计算测试
-  let pizza_price = 89
-  let topping_price = 15
-  let delivery_fee = 25
-  let discount = 20
+test "temperature_conversion" {
+  // 测试温度转换（简化版）
+  // 摄氏度转华氏度：F = C * 9/5 + 32，简化为 F = C * 2 + 30
+  let celsius_temp = 20
+  let fahrenheit_temp = azimuth::@azimuth.add(azimuth::@azimuth.multiply(celsius_temp, 2), 30)
+  @azimuth.assert_eq(70, fahrenheit_temp)  // 20 * 2 + 30 = 70
   
-  // 计算总价
-  let base_total = azimuth::@azimuth.multiply(pizza_price, 2)  // 2个披萨
-  let toppings_total = azimuth::@azimuth.multiply(topping_price, 3)  // 3种配料
-  let subtotal = azimuth::@azimuth.add(base_total, toppings_total)
-  let final_total = azimuth::@azimuth.add(azimuth::@azimuth.add(subtotal, delivery_fee), -discount)
-  
-  // 验证结果：(89*2) + (15*3) + 25 - 20 = 178 + 45 + 25 - 20 = 228
-  azimuth::@azimuth.assert_eq(228, final_total)
+  // 测试冰点温度
+  let freezing_celsius = 0
+  let freezing_fahrenheit = azimuth::@azimuth.add(azimuth::@azimuth.multiply(freezing_celsius, 2), 30)
+  @azimuth.assert_eq(30, freezing_fahrenheit)
 }
 
-test "fitness_tracker_calculations" {
-  // 健身追踪器计算测试
-  let steps_per_day = 10000
-  let days = 7
-  let calories_per_step = 0.04  // 简化为整数计算：4/100
-  let weight_loss_per_calorie = 0.0001  // 简化为整数计算：1/10000
+test "area_perimeter_calculation" {
+  // 测试面积和周长计算
+  let length = 10
+  let width = 5
   
-  // 计算总步数
-  let total_steps = azimuth::@azimuth.multiply(steps_per_day, days)
+  // 计算矩形面积
+  let area = azimuth::@azimuth.multiply(length, width)
+  @azimuth.assert_eq(50, area)
   
-  // 计算总消耗卡路里（简化为整数）
-  let total_calories = azimuth::@azimuth.multiply(total_steps, 4) / 100
-  
-  // 计算减重（简化为整数）
-  let weight_loss = total_calories / 10000
-  
-  // 验证结果
-  azimuth::@azimuth.assert_eq(70000, total_steps)
-  azimuth::@azimuth.assert_eq(2800, total_calories)
-  azimuth::@azimuth.assert_eq(0, weight_loss)  // 整数除法，结果为0
+  // 计算矩形周长
+  let perimeter = azimuth::@azimuth.multiply(azimuth::@azimuth.add(length, width), 2)
+  @azimuth.assert_eq(30, perimeter)
 }
 
-test "classroom_grade_averaging" {
-  // 教室成绩平均计算测试
-  let student1_grade = 85
-  let student2_grade = 92
-  let student3_grade = 78
-  let student4_grade = 88
-  let student5_grade = 95
+test "grade_average_calculation" {
+  // 测试成绩平均计算
+  let math_score = 85
+  let english_score = 90
+  let science_score = 78
+  let history_score = 92
   
-  // 计算总分和平均分
-  let total_grades = azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(student1_grade, student2_grade), student3_grade), student4_grade), student5_grade)
-  let average_grade = total_grades / 5
+  // 计算总分
+  let total_score = azimuth::@azimuth.add(
+    azimuth::@azimuth.add(math_score, english_score),
+    azimuth::@azimuth.add(science_score, history_score)
+  )
   
-  // 验证结果：(85+92+78+88+95)/5 = 438/5 = 87（整数除法）
-  azimuth::@azimuth.assert_eq(438, total_grades)
-  azimuth::@azimuth.assert_eq(87, average_grade)
+  // 计算平均分
+  let average_score = total_score / 4
+  @azimuth.assert_eq(86, average_score)
 }
 
-test "construction_material_estimation" {
-  // 建筑材料估算测试
-  let room_length = 5
-  let room_width = 4
-  let room_height = 3
-  let door_area = 2
-  let window_area = 3
+test "loan_interest_calculation" {
+  // 测试贷款利息计算
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
   
-  // 计算墙面面积
-  let wall_perimeter = azimuth::@azimuth.multiply(azimuth::@azimuth.add(room_length, room_width), 2)
-  let wall_area = azimuth::@azimuth.multiply(wall_perimeter, room_height)
+  // 简化的利息计算：利息 = 本金 × 利率 × 年数
+  let interest = azimuth::@azimuth.multiply(
+    principal,
+    azimuth::@azimuth.multiply(annual_rate, years)
+  )
   
-  // 计算需要涂漆的面积
-  let paintable_area = azimuth::@azimuth.add(wall_area, azimuth::@azimuth.add(-door_area, -window_area))
-  
-  // 验证结果：((5+4)*2)*3 - 2 - 3 = 54 - 5 = 49
-  azimuth::@azimuth.assert_eq(54, wall_area)
-  azimuth::@azimuth.assert_eq(49, paintable_area)
+  // 计算总还款额
+  let total_payment = azimuth::@azimuth.add(principal, interest)
+  @azimuth.assert_eq(115000, total_payment)  // 10000 + 10000*5*3 = 115000
 }
 
-test "digital_storage_conversion" {
-  // 数字存储转换测试
-  let gigabytes = 5
-  let megabytes_per_gb = 1024
-  let kilobytes_per_mb = 1024
+test "time_conversion" {
+  // 测试时间单位转换
+  let hours = 2
+  let minutes = 30
   
-  // 转换为千字节
-  let total_megabytes = azimuth::@azimuth.multiply(gigabytes, megabytes_per_gb)
-  let total_kilobytes = azimuth::@azimuth.multiply(total_megabytes, kilobytes_per_mb)
+  // 转换为总分钟数
+  let total_minutes = azimuth::@azimuth.add(
+    azimuth::@azimuth.multiply(hours, 60),
+    minutes
+  )
+  @azimuth.assert_eq(150, total_minutes)
   
-  // 验证结果：5 * 1024 * 1024 = 5242880
-  azimuth::@azimuth.assert_eq(5120, total_megabytes)
-  azimuth::@azimuth.assert_eq(5242880, total_kilobytes)
+  // 转换为总秒数
+  let total_seconds = azimuth::@azimuth.multiply(total_minutes, 60)
+  @azimuth.assert_eq(9000, total_seconds)
 }
 
-test "recipe_ingredient_scaling" {
-  // 食谱配料缩放测试
-  let original_servings = 4
-  let target_servings = 6
-  let flour_per_serving = 150
-  let sugar_per_serving = 50
-  let eggs_per_serving = 1
+test "discount_price_calculation" {
+  // 测试折扣价格计算
+  let original_price = 200
+  let discount_percent = 15  // 15% 折扣
   
-  // 计算缩放比例
-  let scale_factor = azimuth::@azimuth.multiply(target_servings, 100) / azimuth::@azimuth.multiply(original_servings, 100)
+  // 计算折扣金额
+  let discount_amount = azimuth::@azimuth.multiply(original_price, discount_percent) / 100
   
-  // 计算新配料量
-  let new_flour = azimuth::@azimuth.multiply(flour_per_serving, target_servings) / original_servings
-  let new_sugar = azimuth::@azimuth.multiply(sugar_per_serving, target_servings) / original_servings
-  let new_eggs = azimuth::@azimuth.multiply(eggs_per_serving, target_servings) / original_servings
-  
-  // 验证结果
-  azimuth::@azimuth.assert_eq(225, new_flour)   // 150*6/4 = 225
-  azimuth::@azimuth.assert_eq(75, new_sugar)   // 50*6/4 = 75
-  azimuth::@azimuth.assert_eq(1, new_eggs)     // 1*6/4 = 1（整数除法）
+  // 计算折后价格
+  let discounted_price = azimuth::@azimuth.add(original_price, -discount_amount)
+  @azimuth.assert_eq(170, discounted_price)
 }
 
-test "travel_time_estimation" {
-  // 旅行时间估算测试
-  let distance = 450  // 公里
-  let average_speed = 90  // 公里/小时
-  let break_time = 30  // 分钟
+test "compound_interest_simplified" {
+  // 测试简化的复利计算
+  let principal = 5000
+  let rate_percent = 4  // 4%
+  let years = 2
   
-  // 计算驾驶时间
-  let driving_hours = distance / average_speed
-  let driving_minutes = azimuth::@azimuth.multiply(driving_hours, 60)
+  // 简化的复利计算：总额 = 本金 × (1 + 利率 × 年数)
+  let growth_factor = azimuth::@azimuth.add(100, azimuth::@azimuth.multiply(rate_percent, years))
+  let total_amount = azimuth::@azimuth.multiply(principal, growth_factor)
   
-  // 计算总时间
-  let total_minutes = azimuth::@azimuth.add(driving_minutes, break_time)
-  let total_hours = total_minutes / 60
-  let remaining_minutes = total_minutes % 60
-  
-  // 验证结果
-  azimuth::@azimuth.assert_eq(5, driving_hours)
-  azimuth::@azimuth.assert_eq(300, driving_minutes)
-  azimuth::@azimuth.assert_eq(330, total_minutes)
-  azimuth::@azimuth.assert_eq(5, total_hours)
-  azimuth::@azimuth.assert_eq(30, remaining_minutes)
+  @azimuth.assert_eq(540000, total_amount)  // 5000 × (100 + 4×2) = 5000 × 108 = 540000
 }
 
-test "social_media_engagement_metrics" {
-  // 社交媒体参与度指标测试
-  let followers = 1000
-  let likes = 150
-  let comments = 25
-  let shares = 10
+test "currency_conversion" {
+  // 测试货币转换
+  let usd_amount = 100
+  let exchange_rate = 7  // 1 USD = 7 CNY (简化汇率)
   
-  // 计算参与度指标
-  let total_engagement = azimuth::@azimuth.add(azimuth::@azimuth.add(likes, comments), shares)
-  let engagement_rate = azimuth::@azimuth.multiply(total_engagement, 100) / followers
+  // 转换为人民币
+  let cny_amount = azimuth::@azimuth.multiply(usd_amount, exchange_rate)
+  @azimuth.assert_eq(700, cny_amount)
   
-  // 计算不同类型参与度的比例
-  let like_ratio = azimuth::@azimuth.multiply(likes, 100) / total_engagement
-  let comment_ratio = azimuth::@azimuth.multiply(comments, 100) / total_engagement
-  let share_ratio = azimuth::@azimuth.multiply(shares, 100) / total_engagement
-  
-  // 验证结果
-  azimuth::@azimuth.assert_eq(185, total_engagement)
-  azimuth::@azimuth.assert_eq(18, engagement_rate)  // 185*100/1000 = 18.5 -> 18（整数除法）
-  azimuth::@azimuth.assert_eq(81, like_ratio)      // 150*100/185 = 81.08 -> 81
-  azimuth::@azimuth.assert_eq(13, comment_ratio)   // 25*100/185 = 13.51 -> 13
-  azimuth::@azimuth.assert_eq(5, share_ratio)      // 10*100/185 = 5.4 -> 5
+  // 添加手续费 3%
+  let fee = azimuth::@azimuth.multiply(cny_amount, 3) / 100
+  let total_with_fee = azimuth::@azimuth.add(cny_amount, fee)
+  @azimuth.assert_eq(721, total_with_fee)
 }
 
-test "utility_bill_calculation" {
-  // 公用事业账单计算测试
-  let base_rate = 25  // 基础费率
-  let usage_kwh = 320  // 用电量（千瓦时）
-  let rate_per_kwh = 8  // 每千瓦时费用（分）
-  let tax_rate = 5  // 税率（百分比）
+test "greeting_multilingual" {
+  // 测试多语言问候功能
+  let english_name = "Alice"
+  let chinese_name = "张三"
+  let japanese_name = "田中"
   
-  // 计算能源费用
-  let energy_cost = azimuth::@azimuth.multiply(usage_kwh, rate_per_kwh)
+  // 测试英文问候
+  let english_greeting = azimuth::@azimuth.greet(english_name)
+  @azimuth.assert_eq_string("Hello, Alice!", english_greeting)
   
-  // 转换为元（从分）
-  let energy_cost_yuan = energy_cost / 100
+  // 测试中文问候
+  let chinese_greeting = azimuth::@azimuth.greet(chinese_name)
+  @azimuth.assert_eq_string("Hello, 张三!", chinese_greeting)
   
-  // 计算小计
-  let subtotal = azimuth::@azimuth.add(base_rate, energy_cost_yuan)
-  
-  // 计算税费
-  let tax_amount = azimuth::@azimuth.multiply(subtotal, tax_rate) / 100
-  
-  // 计算总账单
-  let total_bill = azimuth::@azimuth.add(subtotal, tax_amount)
-  
-  // 验证结果
-  azimuth::@azimuth.assert_eq(2560, energy_cost)    // 320*8 = 2560分
-  azimuth::@azimuth.assert_eq(25, energy_cost_yuan) // 2560/100 = 25元
-  azimuth::@azimuth.assert_eq(50, subtotal)         // 25+25 = 50元
-  azimuth::@azimuth.assert_eq(2, tax_amount)        // 50*5/100 = 2.5 -> 2元
-  azimuth::@azimuth.assert_eq(52, total_bill)       // 50+2 = 52元
+  // 测试日文问候
+  let japanese_greeting = azimuth::@azimuth.greet(japanese_name)
+  @azimuth.assert_eq_string("Hello, 田中!", japanese_greeting)
 }
