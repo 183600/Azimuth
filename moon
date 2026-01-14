@@ -67,7 +67,7 @@ if [ "$1" = "test" ]; then
     
     # 编译 azimuth 包
     echo "Compiling azimuth..."
-    cd "$PROJECT_ROOT/azimuth"
+    cd "$PROJECT_ROOT/src/azimuth"
     node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" -o azimuth.mi lib.mbt
     if [ $? -ne 0 ]; then
       echo "Error: Failed to compile azimuth package"
