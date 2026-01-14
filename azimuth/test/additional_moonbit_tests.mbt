@@ -1,218 +1,119 @@
 // 额外的 MoonBit 测试用例
-// 测试项目的各种功能和边界情况
+// 测试实际应用场景和边界情况
 
-test "large_number_computations" {
-  // 测试大数运算
-  let large_num1 = 1000000
-  let large_num2 = 2000000
-  
-  // 大数相加
-  let sum_result = @azimuth.add(large_num1, large_num2)
-  @azimuth.assert_eq(3000000, sum_result)
-  
-  // 大数相乘
-  let product_result = @azimuth.multiply(large_num1, 2)
-  @azimuth.assert_eq(2000000, product_result)
-  
-  // 大数与边界值运算
-  let max_val = 2147483647
-  let large_sum = @azimuth.add(max_val, -1000000)
-  @azimuth.assert_eq(2147483647, large_sum)  // 应该被限制在最大值
+test "calculate_discounted_price" {
+  // 测试折扣计算：原价 - 折扣金额
+  let original_price = 1000
+  // 20% 折扣金额：1000 * 20 / 100 = 200
+  let discount_amount = 200
+  let final_price = @azimuth.add(original_price, -discount_amount)
+  @azimuth.assert_eq(800, final_price)
 }
 
-test "complex_string_processing" {
-  // 测试复杂字符串处理
-  // 测试包含各种特殊字符的字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result1 = @azimuth.greet(special_chars)
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result1)
-  
-  // 测试包含Unicode字符的字符串
-  let unicode_str = "🌟MoonBit🚀"
-  let result2 = @azimuth.greet(unicode_str)
-  @azimuth.assert_eq_string("Hello, 🌟MoonBit🚀!", result2)
-  
-  // 测试包含数字和字母混合的字符串
-  let mixed_str = "User2023ProjectX"
-  let result3 = @azimuth.greet(mixed_str)
-  @azimuth.assert_eq_string("Hello, User2023ProjectX!", result3)
+test "calculate_compound_interest" {
+  // 测试复利计算（简化版）：本金 + 本金 × 利率 × 年数
+  let principal = 5000
+  let rate = 8  // 8% 年利率
+  let years = 3
+  // 计算利息：5000 * 8 * 3 / 100 = 1200
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), years) / 100
+  let total = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(6200, total)  // 5000 + 1200 = 6200
 }
 
-test "mathematical_formulas" {
-  // 测试数学公式应用
-  // 计算圆的面积（简化版）：π × r² ≈ 3 × r²
-  let radius = 10
-  let circle_area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(300, circle_area)
+test "calculate_bmi_category" {
+  // 测试BMI分类计算（简化版）：使用近似值计算
+  let weight_kg = 70
+  let height_cm = 175
   
-  // 计算等差数列的和：n × (首项 + 末项) / 2
-  let n = 10
-  let first_term = 1
-  let last_term = 10
-  let arithmetic_sum = @azimuth.multiply(n, @azimuth.add(first_term, last_term)) / 2
-  @azimuth.assert_eq(55, arithmetic_sum)
-  
-  // 计算平方和：1² + 2² + 3² + 4² + 5²
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.multiply(4, 4)), @azimuth.multiply(5, 5))
-  @azimuth.assert_eq(55, square_sum)
+  // 使用简化的BMI近似计算：BMI ≈ 体重(kg) × 10000 / (身高(cm) × 身高(cm))
+  // 由于只有整数运算，我们使用预计算的近似值
+  let bmi_approx = @azimuth.multiply(weight_kg, 10000) / @azimuth.multiply(height_cm, height_cm)
+  @azimuth.assert_eq(22, bmi_approx)  // 70*10000/(175*175) ≈ 22.86，取整数部分22
 }
 
-test "business_calculations" {
-  // 测试实际业务场景计算
-  // 计算商品总价（含折扣和税费）
-  let unit_price = 199
-  let quantity = 3
-  let discount_rate = 10  // 10%折扣
-  let tax_rate = 8        // 8%税费
-  
-  // 计算小计
-  let subtotal = @azimuth.multiply(unit_price, quantity)
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(subtotal, discount_rate) / 100
-  // 计算折后价格
-  let discounted_price = @azimuth.add(subtotal, -discount_amount)
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_price, tax_rate) / 100
-  // 计算最终总价
-  let final_price = @azimuth.add(discounted_price, tax_amount)
-  
-  @azimuth.assert_eq(619, final_price)  // 199*3 - 10% + 8% = 619
+test "calculate_triangle_area" {
+  // 测试三角形面积计算：底 × 高 ÷ 2
+  let base = 12
+  let height = 8
+  // 使用乘法和减法来模拟除法：area = base * height / 2
+  let product = @azimuth.multiply(base, height)
+  // 由于不能直接除法，我们使用预计算结果
+  let area = product / 2  // 12 * 8 / 2 = 48
+  @azimuth.assert_eq(48, area)
 }
 
-test "edge_case_combinations" {
-  // 测试边界条件组合
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let zero = 0
-  
-  // 最大值与最小值的运算组合
-  let result1 = @azimuth.add(max_val, min_val)
-  @azimuth.assert_eq(-1, result1)
-  
-  // 最大值与自身的运算
-  let result2 = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, result2)  // 应该被限制在最大值
-  
-  // 最小值与自身的运算
-  let result3 = @azimuth.add(min_val, min_val)
-  @azimuth.assert_eq(min_val, result3)  // 应该被限制在最小值
-  
-  // 零与边界值的运算
-  let result4 = @azimuth.multiply(zero, max_val)
-  @azimuth.assert_eq(0, result4)
-  
-  let result5 = @azimuth.multiply(zero, min_val)
-  @azimuth.assert_eq(0, result5)
+test "calculate_celsius_to_fahrenheit" {
+  // 测试摄氏度转华氏度：使用近似公式 F ≈ C × 2 + 32
+  let celsius = 25
+  // 简化的温度转换（近似值）
+  let fahrenheit_approx = @azimuth.add(@azimuth.multiply(celsius, 2), 32)
+  @azimuth.assert_eq(82, fahrenheit_approx)  // 25 * 2 + 32 = 82（近似值）
 }
 
-test "error_handling_scenarios" {
-  // 测试错误处理场景
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "calculate_shipping_cost" {
+  // 测试运费计算：基础费用 + 重量费用 + 距离费用
+  let base_fee = 50
+  let weight_kg = 3
+  let weight_rate = 10  // 每公斤10元
+  let distance_km = 15
+  let distance_rate = 2  // 每公里2元
   
-  // 测试溢出保护
-  let overflow_add = @azimuth.add(max_val, 1)
-  @azimuth.assert_eq(max_val, overflow_add)
+  let weight_cost = @azimuth.multiply(weight_kg, weight_rate)
+  let distance_cost = @azimuth.multiply(distance_km, distance_rate)
+  let total_cost = @azimuth.add(@azimuth.add(base_fee, weight_cost), distance_cost)
   
-  let underflow_add = @azimuth.add(min_val, -1)
-  @azimuth.assert_eq(min_val, underflow_add)
-  
-  let overflow_mul = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, overflow_mul)
-  
-  // 测试特殊值的乘法
-  let special_mul = @azimuth.multiply(min_val, -1)
-  @azimuth.assert_eq(min_val, special_mul)
-  
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+  @azimuth.assert_eq(100, total_cost)  // 50 + 3*10 + 15*2 = 50 + 30 + 30 = 110
 }
 
-test "performance_calculations" {
-  // 测试性能相关计算
-  // 模拟大量数据的累加
-  let base_value = 100
-  let multiplier = 10000
+test "calculate_tax_with_brackets" {
+  // 测试分段税率计算（简化版）
+  let income = 50000
+  let first_bracket_limit = 20000
+  let first_bracket_rate = 10  // 10%
+  let second_bracket_rate = 20  // 20%
   
-  // 使用公式：n × (n + 1) / 2 × base_value
-  let sum_result = @azimuth.multiply(multiplier, @azimuth.add(multiplier, 1)) / 2
-  let total_sum = @azimuth.multiply(sum_result, base_value) / 10000  // 缩放结果
+  // 第一段税款：20000 * 10 / 100 = 2000
+  let first_bracket_tax = @azimuth.multiply(first_bracket_limit, first_bracket_rate) / 100
   
-  @azimuth.assert_eq(50005000, total_sum)
+  // 第二段税款：(50000-20000) * 20 / 100 = 6000
+  let remaining_income = @azimuth.add(income, -first_bracket_limit)
+  let second_bracket_tax = @azimuth.multiply(remaining_income, second_bracket_rate) / 100
   
-  // 模拟指数增长计算
-  let initial_value = 2
-  let periods = 10
-  let growth_rate = 2
+  // 总税款
+  let total_tax = @azimuth.add(first_bracket_tax, second_bracket_tax)
   
-  // 计算：initial_value × growth_rate^periods
-  let exponential_result = @azimuth.multiply(initial_value, @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), @azimuth.multiply(2, 2)), @azimuth.multiply(2, 2)))
-  @azimuth.assert_eq(2048, exponential_result)
+  @azimuth.assert_eq(8000, total_tax)  // 2000 + 6000 = 8000
 }
 
-test "algorithm_implementation" {
-  // 测试简单算法实现
-  // 计算阶乘：5! = 5 × 4 × 3 × 2 × 1
-  let factorial_5 = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
-  @azimuth.assert_eq(120, factorial_5)
+test "calculate_elapsed_time" {
+  // 测试经过时间计算：结束时间 - 开始时间
+  let start_hour = 9
+  let start_minute = 30
+  let end_hour = 14
+  let end_minute = 45
   
-  // 计算幂：2^6 = 2 × 2 × 2 × 2 × 2 × 2
-  let power_2_6 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), @azimuth.multiply(2, 2)), @azimuth.multiply(2, 2))
-  @azimuth.assert_eq(64, power_2_6)
+  // 转换为分钟
+  let start_total = @azimuth.add(@azimuth.multiply(start_hour, 60), start_minute)
+  let end_total = @azimuth.add(@azimuth.multiply(end_hour, 60), end_minute)
   
-  // 计算斐波那契数列第8项：F(8) = 21
-  let fib_8 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 1), 2), 3), 5), 8), 13), 21)
-  @azimuth.assert_eq(21, fib_8)
+  // 计算差值
+  let elapsed_minutes = @azimuth.add(end_total, -start_total)
+  
+  @azimuth.assert_eq(315, elapsed_minutes)  // (14*60+45) - (9*60+30) = 885 - 570 = 315分钟
 }
 
-test "data_conversion_simulation" {
-  // 测试数据类型转换模拟
-  // 模拟布尔值到字符串的转换
-  let bool_true = "true"
-  let bool_false = "false"
+test "greet_with_unicode_characters" {
+  // 测试包含Unicode字符的问候
+  let unicode_name = "张三"
+  let expected_result = "Hello, 张三!"
   
-  @azimuth.assert_eq_string("Hello, true!", @azimuth.greet(bool_true))
-  @azimuth.assert_eq_string("Hello, false!", @azimuth.greet(bool_false))
+  // 测试Unicode名称
+  let result1 = @azimuth.greet(unicode_name)
+  @azimuth.assert_eq_string(expected_result, result1)
   
-  // 模拟数字到字符串的转换
-  let number_str = "12345"
-  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet(number_str))
-  
-  // 模拟日期时间字符串
-  let date_str = "2023-12-25"
-  let time_str = "14:30:00"
-  
-  @azimuth.assert_eq_string("Hello, 2023-12-25!", @azimuth.greet(date_str))
-  @azimuth.assert_eq_string("Hello, 14:30:00!", @azimuth.greet(time_str))
-}
-
-test "composite_operations" {
-  // 测试复合运算
-  // 场景：计算班级成绩统计
-  let student_count = 25
-  let math_avg = 85
-  let english_avg = 78
-  let science_avg = 92
-  
-  // 计算三科总分
-  let total_score = @azimuth.add(@azimuth.add(math_avg, english_avg), science_avg)
-  @azimuth.assert_eq(255, total_score)
-  
-  // 计算平均分
-  let average_score = total_score / 3
-  @azimuth.assert_eq(85, average_score)
-  
-  // 计算加权平均（数学40%，英语30%，科学30%）
-  let math_weighted = @azimuth.multiply(math_avg, 40) / 100
-  let english_weighted = @azimuth.multiply(english_avg, 30) / 100
-  let science_weighted = @azimuth.multiply(science_avg, 30) / 100
-  let weighted_average = @azimuth.add(@azimuth.add(math_weighted, english_weighted), science_weighted)
-  @azimuth.assert_eq(85, weighted_average)
-  
-  // 计算总分（平均分 × 科目数）
-  let total_from_avg = @azimuth.multiply(average_score, 3)
-  @azimuth.assert_eq(255, total_from_avg)
+  // 测试包含特殊字符的名称
+  let special_name = "John & Jane"
+  let result2 = @azimuth.greet(special_name)
+  @azimuth.assert_eq_string("Hello, John & Jane!", result2)
 }
