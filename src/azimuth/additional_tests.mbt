@@ -1,214 +1,139 @@
 // 额外的 MoonBit 测试用例
-// 这些测试用例覆盖了 azimuth 库的各种功能和场景
+// 这些测试用例展示了对 azimuth 库函数的各种使用场景
 
-test "absolute_value_simulation" {
-  // 模拟绝对值计算
-  let positive = 42
-  let negative = -42
-  let zero = 0
+test "string_length_validation" {
+  // 测试不同长度字符串的处理
+  let empty_string = ""
+  let short_string = "Hi"
+  let medium_string = "MoonBit"
+  let long_string = "ThisIsAVeryLongStringForTestingPurposes"
   
-  // 正数的绝对值是它本身
-  let pos_abs = if positive < 0 { azimuth::multiply(positive, -1) } else { positive }
-  assert_eq(42, pos_abs)
-  
-  // 负数的绝对值是它的相反数
-  let neg_abs = if negative < 0 { azimuth::multiply(negative, -1) } else { negative }
-  assert_eq(42, neg_abs)
-  
-  // 零的绝对值是零
-  let zero_abs = if zero < 0 { azimuth::multiply(zero, -1) } else { zero }
-  assert_eq(0, zero_abs)
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(empty_string))
+  azimuth::assert_eq_string("Hello, Hi!", azimuth::greet(short_string))
+  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet(medium_string))
+  azimuth::assert_eq_string("Hello, ThisIsAVeryLongStringForTestingPurposes!", azimuth::greet(long_string))
 }
 
-test "distance_calculation" {
-  // 计算两点之间的距离（简化版，只考虑整数）
-  let x1 = 3
-  let y1 = 4
-  let x2 = 9
-  let y2 = 12
+test "mathematical_sequence_sum" {
+  // 计算等差数列的和：2 + 4 + 6 + 8 + 10 = 30
+  let term1 = 2
+  let term2 = 4
+  let term3 = 6
+  let term4 = 8
+  let term5 = 10
   
-  // 计算 x 坐标差值
-  let dx = azimuth::add(x2, -x1)
-  // 计算 y 坐标差值
-  let dy = azimuth::add(y2, -y1)
-  
-  // 计算平方和（简化距离计算）
-  let dx_squared = azimuth::multiply(dx, dx)
-  let dy_squared = azimuth::multiply(dy, dy)
-  let distance_squared = azimuth::add(dx_squared, dy_squared)
-  
-  assert_eq(100, distance_squared)  // 6² + 8² = 36 + 64 = 100
+  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(term1, term2), term3), term4), term5)
+  azimuth::assert_eq(30, sum)
 }
 
-test "loan_amortization" {
-  // 贷款摊还计算（简化版）
-  let principal = 10000  // 本金
-  let annual_rate = 6    // 年利率（百分比）
-  let years = 3          // 贷款年限
+test "discount_calculation" {
+  // 商业场景：折扣计算
+  let original_price = 1000
+  let discount_percentage = 20
   
-  // 计算总利息（简化计算：本金 × 年利率 × 年数）
-  let total_interest = azimuth::multiply(principal, azimuth::multiply(annual_rate, years)) / 100
-  // 计算总还款额
-  let total_payment = azimuth::add(principal, total_interest)
-  // 计算月还款额（简化：总还款额 / 总月数）
-  let monthly_payment = total_payment / (years * 12)
+  // 计算折扣金额
+  let discount_amount = azimuth::multiply(original_price, discount_percentage) / 100
+  // 计算折后价格
+  let final_price = azimuth::add(original_price, -discount_amount)
   
-  assert_eq(1800, total_interest)    // 10000 × 6 × 3 / 100 = 1800
-  assert_eq(11800, total_payment)    // 10000 + 1800 = 11800
-  assert_eq(327, monthly_payment)    // 11800 / 36 ≈ 327（整数除法）
+  azimuth::assert_eq(200, discount_amount)
+  azimuth::assert_eq(800, final_price)
 }
 
-test "temperature_conversion_extended" {
-  // 扩展的温度转换测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 简化为整数：F = C × 2 + 30（近似值）
+test "temperature_conversion" {
+  // 温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
+  let celsius = 15
+  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
   
-  let freezing_c = 0     // 冰点
-  let boiling_c = 100    // 沸点
-  let room_c = 20        // 室温
-  let body_c = 37        // 体温
+  azimuth::assert_eq(60, fahrenheit)
   
-  // 转换为华氏度
-  let freezing_f = azimuth::add(azimuth::multiply(freezing_c, 2), 30)
-  let boiling_f = azimuth::add(azimuth::multiply(boiling_c, 2), 30)
-  let room_f = azimuth::add(azimuth::multiply(room_c, 2), 30)
-  let body_f = azimuth::add(azimuth::multiply(body_c, 2), 30)
-  
-  assert_eq(30, freezing_f)    // 0 × 2 + 30 = 30（近似32°F）
-  assert_eq(230, boiling_f)    // 100 × 2 + 30 = 230（近似212°F）
-  assert_eq(70, room_f)        // 20 × 2 + 30 = 70（近似68°F）
-  assert_eq(104, body_f)       // 37 × 2 + 30 = 104（近似98.6°F）
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = azimuth::add(azimuth::multiply(freezing_celsius, 2), 30)
+  azimuth::assert_eq(30, freezing_fahrenheit)
 }
 
-test "inventory_management" {
-  // 库存管理计算
-  let initial_stock = 500
-  let units_sold = 120
-  let units_received = 80
-  let units_damaged = 15
-  let safety_stock = 50
-  
-  // 计算当前库存
-  let current_stock = azimuth::add(azimuth::add(initial_stock, -units_sold), units_received)
-  // 减去损坏商品
-  let available_stock = azimuth::add(current_stock, -units_damaged)
-  // 计算是否需要补货
-  let needs_reorder = available_stock < safety_stock
-  
-  assert_eq(445, available_stock)  // 500 - 120 + 80 - 15 = 445
-  assert_false(needs_reorder)      // 445 > 50，不需要补货
-}
-
-test "compound_interest_comparison" {
-  // 复利与单利比较
-  let principal = 1000
+test "compound_interest_simple" {
+  // 简单复利计算
+  let principal = 5000
   let rate = 5  // 5%
-  let years = 3
+  let years = 2
   
-  // 单利计算：本金 + (本金 × 利率 × 年数)
-  let simple_interest = azimuth::multiply(principal, azimuth::multiply(rate, years)) / 100
-  let simple_total = azimuth::add(principal, simple_interest)
+  // 简化计算：本金 + 本金 × 利率 × 年数
+  let interest = azimuth::multiply(principal, azimuth::multiply(rate, years))
+  let total = azimuth::add(principal, interest)
   
-  // 复利计算（简化）：本金 × (1 + 利率 × 年数)
-  let compound_factor = azimuth::add(100, azimuth::multiply(rate, years))
-  let compound_total = azimuth::multiply(principal, compound_factor)
-  
-  assert_eq(150, simple_interest)     // 1000 × 5 × 3 / 100 = 150
-  assert_eq(1150, simple_total)       // 1000 + 150 = 1150
-  assert_eq(115000, compound_total)   // 1000 × 115 = 115000（表示1150）
+  azimuth::assert_eq(55000, total)  // 5000 + 5000×5×2 = 55000
 }
 
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  // 测试各种特殊字符串情况
+test "area_perimeter_calculation" {
+  // 几何计算：矩形的面积和周长
+  let length = 8
+  let width = 6
   
-  // 测试包含数字的字符串
-  let numeric_name = "User2023"
-  assert_eq_string("Hello, User2023!", azimuth::greet(numeric_name))
+  // 面积 = 长 × 宽
+  let area = azimuth::multiply(length, width)
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
   
-  // 测试包含下划线的字符串
-  let underscore_name = "first_last"
-  assert_eq_string("Hello, first_last!", azimuth::greet(underscore_name))
-  
-  // 测试包含连字符的字符串
-  let hyphen_name = "user-name"
-  assert_eq_string("Hello, user-name!", azimuth::greet(hyphen_name))
-  
-  // 测试混合大小写
-  let mixed_case = "TeStInG"
-  assert_eq_string("Hello, TeStInG!", azimuth::greet(mixed_case))
+  azimuth::assert_eq(48, area)
+  azimuth::assert_eq(28, perimeter)
 }
 
-test "array_sum_simulation" {
-  // 模拟数组求和（使用展开的方式）
-  // 假设有数组 [10, 20, 30, 40, 50]
+test "score_statistics" {
+  // 游戏得分统计
+  let score1 = 85
+  let score2 = 92
+  let score3 = 78
+  let score4 = 96
+  let score5 = 89
   
-  let elem1 = 10
-  let elem2 = 20
-  let elem3 = 30
-  let elem4 = 40
-  let elem5 = 50
+  // 计算总分
+  let total_score = azimuth::add(azimuth::add(azimuth::add(azimuth::add(score1, score2), score3), score4), score5)
+  // 计算平均分
+  let average_score = total_score / 5
   
-  // 计算总和
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(elem1, elem2), elem3), elem4), elem5)
-  
-  // 计算平均值
-  let average = sum / 5
-  
-  // 计算加权平均（权重分别为 1, 2, 3, 4, 5）
-  let weighted_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(
-    azimuth::multiply(elem1, 1), 
-    azimuth::multiply(elem2, 2)), 
-    azimuth::multiply(elem3, 3)), 
-    azimuth::multiply(elem4, 4)), 
-    azimuth::multiply(elem5, 5))
-  
-  let total_weights = azimuth::add(azimuth::add(azimuth::add(azimuth::add(1, 2), 3), 4), 5)
-  let weighted_average = weighted_sum / total_weights
-  
-  assert_eq(150, sum)
-  assert_eq(30, average)
-  assert_eq(36, weighted_average)  // (10×1 + 20×2 + 30×3 + 40×4 + 50×5) / 15 = 550 / 15 ≈ 36
+  azimuth::assert_eq(440, total_score)
+  azimuth::assert_eq(88, average_score)
 }
 
-test "sales_commission" {
-  // 销售佣金计算
-  let base_salary = 2000
-  let sales_amount = 50000
-  let commission_rate = 8  // 8%
-  let bonus_threshold = 40000
-  let bonus_amount = 500
+test "time_conversion" {
+  // 时间单位转换
+  let hours = 3
+  let minutes = 45
   
-  // 计算佣金
-  let commission = azimuth::multiply(sales_amount, commission_rate) / 100
-  // 计算是否达到奖金门槛
-  let has_bonus = sales_amount > bonus_threshold
-  let total_bonus = if has_bonus { bonus_amount } else { 0 }
-  // 计算总收入
-  let total_income = azimuth::add(azimuth::add(base_salary, commission), total_bonus)
+  // 转换为总分钟数
+  let total_minutes = azimuth::add(azimuth::multiply(hours, 60), minutes)
+  // 转换为总秒数
+  let total_seconds = azimuth::multiply(total_minutes, 60)
   
-  assert_eq(4000, commission)      // 50000 × 8 / 100 = 4000
-  assert_true(has_bonus)           // 50000 > 40000
-  assert_eq(6500, total_income)    // 2000 + 4000 + 500 = 6500
+  azimuth::assert_eq(225, total_minutes)
+  azimuth::assert_eq(13500, total_seconds)
 }
 
-test "greeting_with_context" {
-  // 带上下文的问候测试
-  // 测试不同场景下的问候功能
+test "border_value_operations" {
+  // 边界值运算测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试正式场合
-  let formal_name = "Mr. Smith"
-  assert_eq_string("Hello, Mr. Smith!", azimuth::greet(formal_name))
+  // 边界值与零的运算
+  azimuth::assert_eq(max_val, azimuth::add(max_val, 0))
+  azimuth::assert_eq(min_val, azimuth::add(min_val, 0))
+  azimuth::assert_eq(0, azimuth::multiply(max_val, 0))
+  azimuth::assert_eq(0, azimuth::multiply(min_val, 0))
   
-  // 测试非正式场合
-  let informal_name = "Bob"
-  assert_eq_string("Hello, Bob!", azimuth::greet(informal_name))
+  // 边界值与1的运算
+  azimuth::assert_eq(max_val, azimuth::multiply(max_val, 1))
+  azimuth::assert_eq(min_val, azimuth::multiply(min_val, 1))
+}
+
+test "string_special_characters" {
+  // 特殊字符字符串测试
+  let unicode_string = "测试"
+  let emoji_string = "🌍"
+  let mixed_string = "Hello测试123"
   
-  // 测试带头衔的姓名
-  let titled_name = "Dr. Jane Johnson"
-  assert_eq_string("Hello, Dr. Jane Johnson!", azimuth::greet(titled_name))
-  
-  // 测试包含数字的用户ID
-  let user_id = "User12345"
-  assert_eq_string("Hello, User12345!", azimuth::greet(user_id))
+  azimuth::assert_eq_string("Hello, 测试!", azimuth::greet(unicode_string))
+  azimuth::assert_eq_string("Hello, 🌍!", azimuth::greet(emoji_string))
+  azimuth::assert_eq_string("Hello, Hello测试123!", azimuth::greet(mixed_string))
 }
