@@ -509,6 +509,80 @@ test "error_handling_scenarios" {
   assert_true(greet("Test") == "Hello, Test!")
 }
 
+// 新增的标准 MoonBit 测试用例
+test "standard_integer_operations" {
+  // 测试整数运算
+  assert_eq(10, add(4, 6))
+  assert_eq(0, add(-5, 5))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+}
+
+test "standard_string_operations" {
+  // 测试字符串操作
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "standard_mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 11
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+}
+
+test "standard_boundary_values" {
+  // 测试边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 边界值加法
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+  
+  // 边界值乘法
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "standard_real_world_scenarios" {
+  // 测试实际应用场景
+  // 温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
+  let celsius = 20
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(70, fahrenheit)
+  
+  // 简单贷款计算：本金 × (1 + 利率 × 年数)
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  let total = multiply(principal, add(1, multiply(rate, years)))
+  assert_eq(160000, total)  // 10000 × (1 + 5×3) = 10000 × 16 = 160000
+}
+
+test "standard_error_handling" {
+  // 测试错误处理
+  assert_true(true)
+  assert_false(false)
+  assert_eq(100, 100)
+  assert_eq_string("success", "success")
+  
+  // 测试溢出保护
+  let max_val = 2147483647
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(multiply(max_val, 2) == max_val)
+}
+
 // 新增的 MoonBit 测试用例
 test "numeric_range_validation" {
   // 测试正数范围

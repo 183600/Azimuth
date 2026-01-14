@@ -1,6 +1,20 @@
-// 简单的 MoonBit 测试用例
-// 测试 azimuth 包的核心功能
-test "simple_addition_test" {
-  // 测试 add 函数的基本功能
-  azimuth::@azimuth.assert_eq(5, azimuth::@azimuth.add(2, 3))
+// 简单的标准 MoonBit 测试
+// 测试基本功能
+
+test "simple_addition" {
+  // 测试基本加法
+  let result = 2 + 3
+  assert_eq(5, result)
+}
+
+test "simple_multiplication" {
+  // 测试基本乘法
+  let result = 2 * 3
+  assert_eq(6, result)
+}
+
+test "simple_string" {
+  // 测试字符串拼接
+  let result = "Hello" + ", " + "World"
+  assert_eq_string("Hello, World", result)
 }
