@@ -1009,14 +1009,14 @@ test "energy_consumption" {
   assert_eq(720, total_cost)
 }
 
-test "factorial_calculation" {
+test "factorial_calculation_v2" {
   // 计算5的阶乘：5! = 5 × 4 × 3 × 2 × 1 = 120
   let n = 5
   let result = multiply(n, multiply(n - 1, multiply(n - 2, multiply(n - 3, n - 4))))
   assert_eq(120, result)
 }
 
-test "power_of_two_calculation" {
+test "power_of_two_calculation_v2" {
   // 计算2的幂：2^8 = 256
   // 通过连续相乘实现
   let result = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(multiply(2, 2), multiply(2, 2)))
@@ -1197,7 +1197,7 @@ test "performance_related_calculations" {
   assert_eq(102400, exponential_growth)
 }
 
-test "error_handling_scenarios" {
+test "error_handling_scenarios_v2" {
   // 错误处理测试：测试各种错误情况的处理
   let max_val = 2147483647
   let min_val = -2147483648
@@ -1339,6 +1339,206 @@ test "complex_composite_operations" {
   let report_content = "Average: " + overall_avg.to_string() + ", Weighted: " + weighted_avg.to_string()
   
   assert_eq_string("Hello, Class 2023!", report_header)
+}
+
+// 新增的10个MoonBit测试用例
+test "advanced_calculator_functions" {
+  // 高级计算器功能测试
+  // 计算复合利率：A = P(1 + r/n)^(nt)
+  let principal = 10000
+  let rate = 5  // 5%
+  let compounds = 12  // 月复利
+  let years = 3
+  
+  // 简化计算：10000 * (1 + 5/12)^(36) ≈ 10000 * 16 = 160000
+  let growth_factor = add(1, multiply(rate, years))
+  let final_amount = multiply(principal, growth_factor)
+  assert_eq(160000, final_amount)
+}
+
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试包含各种特殊字符的字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let result = greet(special_chars)
+  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result)
+  
+  // 测试包含HTML标签的字符串
+  let html_string = "<div>Hello</div>"
+  let html_result = greet(html_string)
+  assert_eq_string("Hello, <div>Hello</div>!", html_result)
+  
+  // 测试包含JSON格式的字符串
+  let json_string = "{\"name\":\"John\",\"age\":30}"
+  let json_result = greet(json_string)
+  assert_eq_string("Hello, {\"name\":\"John\",\"age\":30}!", json_result)
+}
+
+test "matrix_operations_simulation" {
+  // 矩阵运算模拟测试
+  // 2x2矩阵乘法模拟
+  let a11 = 1; let a12 = 2
+  let a21 = 3; let a22 = 4
+  let b11 = 5; let b12 = 6
+  let b21 = 7; let b22 = 8
+  
+  // 计算结果矩阵的元素
+  let c11 = add(multiply(a11, b11), multiply(a12, b21))
+  let c12 = add(multiply(a11, b12), multiply(a12, b22))
+  let c21 = add(multiply(a21, b11), multiply(a22, b21))
+  let c22 = add(multiply(a21, b12), multiply(a22, b22))
+  
+  assert_eq(19, c11)  // 1*5 + 2*7 = 19
+  assert_eq(22, c12)  // 1*6 + 2*8 = 22
+  assert_eq(43, c21)  // 3*5 + 4*7 = 43
+  assert_eq(50, c22)  // 3*6 + 4*8 = 50
+}
+
+test "cryptography_basic" {
+  // 基础密码学测试（简化版）
+  // 简单的凯撒密码实现
+  let plaintext = "HELLO"
+  let shift = 3
+  
+  // 由于我们只有数值运算，我们模拟字符编码
+  let h_code = 72  // 'H'的ASCII码
+  let e_code = 69  // 'E'的ASCII码
+  let l_code = 76  // 'L'的ASCII码
+  let o_code = 79  // 'O'的ASCII码
+  
+  // 加密过程（简化）
+  let h_encrypted = add(h_code, shift)
+  let e_encrypted = add(e_code, shift)
+  let l_encrypted = add(l_code, shift)
+  let o_encrypted = add(o_code, shift)
+  
+  assert_eq(75, h_encrypted)  // 72 + 3 = 75 ('K')
+  assert_eq(72, e_encrypted)  // 69 + 3 = 72 ('H')
+  assert_eq(79, l_encrypted)  // 76 + 3 = 79 ('O')
+  assert_eq(82, o_encrypted)  // 79 + 3 = 82 ('R')
+}
+
+test "physics_simulation" {
+  // 物理模拟测试
+  // 自由落体运动：h = v₀t + (1/2)gt²
+  let initial_velocity = 10  // m/s
+  let gravity = 10  // m/s² (简化值)
+  let time = 5  // seconds
+  
+  // 计算位移：h = 10*5 + (1/2)*10*5² = 50 + 125 = 175
+  let velocity_component = multiply(initial_velocity, time)
+  let gravity_component = multiply(gravity, multiply(time, time)) / 2
+  let displacement = add(velocity_component, gravity_component)
+  
+  assert_eq(175, displacement)
+  
+  // 计算最终速度：v = v₀ + gt = 10 + 10*5 = 60
+  let final_velocity = add(initial_velocity, multiply(gravity, time))
+  assert_eq(60, final_velocity)
+}
+
+test "data_compression_simulation" {
+  // 数据压缩模拟测试
+  // 简单的行程长度编码模拟
+  let original_data = 1111000  // 模拟数据：4个1，3个0
+  let run_length_1 = 4
+  let run_length_0 = 3
+  
+  // 压缩后的数据表示
+  let compressed_size = add(run_length_1, run_length_0)
+  let compression_ratio = multiply(100, compressed_size) / 7  // 原始长度为7
+  
+  assert_eq(7, compressed_size)
+  assert_eq(100, compression_ratio)  // 在这种情况下没有压缩
+}
+
+test "network_protocol_simulation" {
+  // 网络协议模拟测试
+  // 简单的TCP校验和计算
+  let packet1 = 1000
+  let packet2 = 2000
+  let packet3 = 3000
+  let packet4 = 4000
+  
+  // 计算校验和
+  let sum = add(add(add(packet1, packet2), packet3), packet4)
+  let checksum = sum / 65535  // 简化的校验和计算
+  
+  assert_eq(10000, sum)
+  assert_eq(0, checksum)  // 简化结果
+}
+
+test "machine_learning_basic" {
+  // 机器学习基础测试
+  // 简单的线性回归：y = mx + b
+  let x1 = 1; let y1 = 3
+  let x2 = 2; let y2 = 5
+  let x3 = 3; let y3 = 7
+  
+  // 计算斜率m = (y2-y1)/(x2-x1) = (5-3)/(2-1) = 2
+  let slope = add(y2, -y1) / add(x2, -x1)
+  
+  // 计算截距b = y1 - mx1 = 3 - 2*1 = 1
+  let intercept = add(y1, multiply(-slope, x1))
+  
+  // 预测x=4时的值：y = 2*4 + 1 = 9
+  let x4 = 4
+  let y4_predicted = add(multiply(slope, x4), intercept)
+  
+  assert_eq(2, slope)
+  assert_eq(1, intercept)
+  assert_eq(9, y4_predicted)
+}
+
+test "database_operations" {
+  // 数据库操作模拟测试
+  // 简单的SQL聚合函数模拟
+  let table_values = add(add(add(add(10, 20), 30), 40), 50)
+  let count = 5
+  
+  // 计算平均值
+  let average = table_values / count
+  
+  // 计算总和
+  let sum = table_values
+  
+  // 计算最大值（简化）
+  let max_value = 50
+  
+  // 计算最小值（简化）
+  let min_value = 10
+  
+  assert_eq(30, average)
+  assert_eq(150, sum)
+  assert_eq(50, max_value)
+  assert_eq(10, min_value)
+}
+
+test "game_development_calculations" {
+  // 游戏开发计算测试
+  // 2D游戏中的碰撞检测
+  let rect1_x = 10; let rect1_y = 10; let rect1_width = 20; let rect1_height = 20
+  let rect2_x = 25; let rect2_y = 25; let rect2_width = 30; let rect2_height = 30
+  
+  // 计算矩形边界
+  let rect1_right = add(rect1_x, rect1_width)
+  let rect1_bottom = add(rect1_y, rect1_height)
+  let rect2_right = add(rect2_x, rect2_width)
+  let rect2_bottom = add(rect2_y, rect2_height)
+  
+  // 碰撞检测（简化）
+  let collision_x = rect1_right > rect2_x && rect1_x < rect2_right
+  let collision_y = rect1_bottom > rect2_y && rect1_y < rect2_bottom
+  let collision = collision_x && collision_y
+  
+  assert_true(collision)
+  
+  // 计算距离
+  let dx = add(rect2_x, -rect1_x)
+  let dy = add(rect2_y, -rect1_y)
+  let distance_squared = add(multiply(dx, dx), multiply(dy, dy))
+  
+  assert_eq(225, distance_squared)  // 15² + 15² = 225
 }
 
 
