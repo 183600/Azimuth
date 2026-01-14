@@ -57,3 +57,36 @@ test "large_number_test" {
   let sum_result = @azimuth.add(large_num1, large_num2)
   @azimuth.assert_eq(3000000, sum_result)
 }
+
+test "multiply_commutative_property" {
+  // 测试乘法交换律：a * b = b * a
+  @azimuth.assert_eq(@azimuth.multiply(6, 7), @azimuth.multiply(7, 6))
+  @azimuth.assert_eq(@azimuth.multiply(-5, 8), @azimuth.multiply(8, -5))
+  @azimuth.assert_eq(@azimuth.multiply(-4, -9), @azimuth.multiply(-9, -4))
+}
+
+test "greet_special_characters" {
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+}
+
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试正数溢出
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  
+  // 测试最小值的特殊情况
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+}
+
+test "add_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  @azimuth.assert_eq(@azimuth.add(15, 27), @azimuth.add(27, 15))
+  @azimuth.assert_eq(@azimuth.add(-10, 25), @azimuth.add(25, -10))
+  @azimuth.assert_eq(@azimuth.add(-15, -27), @azimuth.add(-27, -15))
+}
