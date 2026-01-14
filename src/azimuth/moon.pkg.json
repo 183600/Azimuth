@@ -1,5 +1,5 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
-  "files": ["lib.mbt", "simple_verification_test.mbt", "standard_test_cases.mbt"]
+  "files": ["lib.mbt", "simple_verification_test.mbt", "standard_test_cases.mbt", "new_moonbit_test_cases.mbt"]
 }
