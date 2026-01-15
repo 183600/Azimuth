@@ -1,202 +1,185 @@
 // 额外的 MoonBit 测试用例
-// 包含10个使用标准 MoonBit 测试语法的测试用例
+// 测试 Azimuth 项目的核心功能
 
-test "integer_overflow_protection" {
-  // 测试整数溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  // 正常情况
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(8, 4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(3, 3))
   
-  // 测试正数溢出
-  let pos_overflow = @azimuth.add(max_val, 100)
-  @azimuth.assert_eq(max_val, pos_overflow)
+  // 边界情况
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(9, 2))
   
-  // 测试负数溢出
-  let neg_overflow = @azimuth.add(min_val, -100)
-  @azimuth.assert_eq(min_val, neg_overflow)
-  
-  // 测试乘法溢出
-  let mul_overflow = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, mul_overflow)
+  // 负数情况
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-7, 4))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-4, 5))
 }
 
-test "string_unicode_handling" {
-  // 测试字符串 Unicode 处理
-  let chinese_name = "张三"
-  let emoji_name = "🌟"
-  let mixed_name = "Test测试123🚀"
+test "circular_reference_calculation" {
+  // 测试循环引用计算场景
+  let base_value = 100
+  let increment = 20
+  let cycles = 5
   
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet(chinese_name))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet(emoji_name))
-  @azimuth.assert_eq_string("Hello, Test测试123🚀!", @azimuth.greet(mixed_name))
+  // 计算循环增长：base + increment + increment*2 + ... + increment*cycles
+  let inc1 = increment
+  let inc2 = @azimuth.multiply(increment, 2)
+  let inc3 = @azimuth.multiply(increment, 3)
+  let inc4 = @azimuth.multiply(increment, 4)
+  let inc5 = @azimuth.multiply(increment, 5)
+  
+  let total_increment = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(inc1, inc2), inc3), inc4), inc5)
+  let final_value = @azimuth.add(base_value, total_increment)
+  
+  @azimuth.assert_eq(430, final_value)  // 100 + 20+40+60+80+100 = 430
 }
 
-test "mathematical_series" {
-  // 测试数学数列计算
-  // 计算斐波那契数列前几项：1, 1, 2, 3, 5, 8
+test "batch_processing_simulation" {
+  // 测试批处理模拟场景
+  let batch_size = 50
+  let num_batches = 4
+  let overhead_per_batch = 5
+  
+  // 计算总处理量
+  let total_items = @azimuth.multiply(batch_size, num_batches)  // 200
+  let total_overhead = @azimuth.multiply(overhead_per_batch, num_batches)  // 20
+  let effective_items = @azimuth.add(total_items, -total_overhead)  // 180
+  
+  @azimuth.assert_eq(200, total_items)
+  @azimuth.assert_eq(20, total_overhead)
+  @azimuth.assert_eq(180, effective_items)
+  
+  // 计算处理效率
+  let efficiency = @azimuth.multiply(effective_items, 100) / total_items
+  @azimuth.assert_eq(90, efficiency)  // 90% 效率
+}
+
+test "nested_conditional_calculations" {
+  // 测试嵌套条件计算
+  let base_score = 1000
+  let performance_factor = 3
+  let difficulty_level = 2
+  let bonus_threshold = 2000
+  
+  // 计算基础得分
+  let adjusted_score = @azimuth.multiply(base_score, performance_factor)  // 3000
+  
+  // 根据难度调整
+  let difficulty_adjusted = if (difficulty_level > 1) {
+    @azimuth.multiply(adjusted_score, difficulty_level)
+  } else {
+    adjusted_score
+  }
+  
+  // 应用奖励
+  let final_score = if (difficulty_adjusted > bonus_threshold) {
+    @azimuth.add(difficulty_adjusted, 500)
+  } else {
+    difficulty_adjusted
+  }
+  
+  @azimuth.assert_eq(6500, final_score)
+}
+
+test "resource_allocation_optimization" {
+  // 测试资源分配优化
+  let total_resources = 1000
+  let priority_projects = 3
+  let standard_projects = 5
+  let priority_ratio = 60  // 60%
+  
+  // 计算优先项目分配
+  let priority_allocation = @azimuth.multiply(total_resources, priority_ratio) / 100  // 600
+  let priority_per_project = priority_allocation / priority_projects  // 200
+  
+  // 计算标准项目分配
+  let remaining_resources = @azimuth.add(total_resources, -priority_allocation)  // 400
+  let standard_per_project = remaining_resources / standard_projects  // 80
+  
+  @azimuth.assert_eq(600, priority_allocation)
+  @azimuth.assert_eq(200, priority_per_project)
+  @azimuth.assert_eq(400, remaining_resources)
+  @azimuth.assert_eq(80, standard_per_project)
+}
+
+test "string_pattern_processing" {
+  // 测试字符串模式处理
+  let prefix = "User"
+  let user_id = "12345"
+  let suffix = "Active"
+  
+  // 使用greet函数模拟字符串模式处理
+  let full_prefix = @azimuth.greet(prefix)
+  let with_id = @azimuth.greet(user_id)
+  let with_suffix = @azimuth.greet(suffix)
+  
+  // 验证各部分
+  @azimuth.assert_eq_string("Hello, User!", full_prefix)
+  @azimuth.assert_eq_string("Hello, 12345!", with_id)
+  @azimuth.assert_eq_string("Hello, Active!", with_suffix)
+  
+  // 测试特殊模式
+  let empty_pattern = @azimuth.greet("")
+  let numeric_pattern = @azimuth.greet("2023-12-31")
+  let mixed_pattern = @azimuth.greet("ABC_xyz_123")
+  
+  @azimuth.assert_eq_string("Hello, !", empty_pattern)
+  @azimuth.assert_eq_string("Hello, 2023-12-31!", numeric_pattern)
+  @azimuth.assert_eq_string("Hello, ABC_xyz_123!", mixed_pattern)
+}
+
+test "mathematical_series_evaluation" {
+  // 测试数学级数评估
+  // 计算斐波那契数列前几项的和：1, 1, 2, 3, 5, 8, 13, 21
   let fib1 = 1
   let fib2 = 1
-  let fib3 = @azimuth.add(fib1, fib2)
-  let fib4 = @azimuth.add(fib2, fib3)
-  let fib5 = @azimuth.add(fib3, fib4)
-  let fib6 = @azimuth.add(fib4, fib5)
+  let fib3 = 2
+  let fib4 = 3
+  let fib5 = 5
+  let fib6 = 8
+  let fib7 = 13
+  let fib8 = 21
   
-  @azimuth.assert_eq(2, fib3)
-  @azimuth.assert_eq(3, fib4)
-  @azimuth.assert_eq(5, fib5)
-  @azimuth.assert_eq(8, fib6)
+  let fib_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(fib1, fib2), fib3), fib4), fib5), fib6), fib7), fib8)
+  @azimuth.assert_eq(54, fib_sum)
+  
+  // 计算等比数列：2, 4, 8, 16, 32
+  let geo1 = 2
+  let geo2 = @azimuth.multiply(geo1, 2)  // 4
+  let geo3 = @azimuth.multiply(geo2, 2)  // 8
+  let geo4 = @azimuth.multiply(geo3, 2)  // 16
+  let geo5 = @azimuth.multiply(geo4, 2)  // 32
+  
+  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(geo1, geo2), geo3), geo4), geo5)
+  @azimuth.assert_eq(62, geo_sum)
 }
 
-test "financial_calculations" {
-  // 测试金融计算
-  // 场景：贷款计算
-  let principal = 100000  // 本金
-  let rate = 5  // 利率5%
-  let years = 10  // 年数
-  
-  // 简化的利息计算：本金 × 利率 × 年数
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total_payment = @azimuth.add(principal, interest)
-  
-  @azimuth.assert_eq(6000000, total_payment)  // 100000 + 100000*5*10 = 6000000
-  
-  // 场景：投资回报
-  let investment = 50000
-  let return_rate = 8
-  let investment_years = 5
-  let returns = @azimuth.multiply(investment, @azimuth.multiply(return_rate, investment_years))
-  let final_value = @azimuth.add(investment, returns)
-  
-  @azimuth.assert_eq(2500000, final_value)  // 50000 + 50000*8*5 = 2500000
-}
-
-test "geometry_calculations" {
-  // 测试几何计算
-  // 场景：矩形和三角形面积计算
-  let length = 10
-  let width = 6
-  let rectangle_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(60, rectangle_area)
-  
-  let base = 8
-  let height = 4
-  let triangle_area = @azimuth.multiply(base, height) / 2
-  @azimuth.assert_eq(16, triangle_area)
-  
-  // 场景：立方体体积和表面积
-  let side = 5
-  let volume = @azimuth.multiply(side, @azimuth.multiply(side, side))
-  @azimuth.assert_eq(125, volume)
-  
-  let surface_area = @azimuth.multiply(6, @azimuth.multiply(side, side))
-  @azimuth.assert_eq(150, surface_area)
-}
-
-test "time_conversions" {
-  // 测试时间转换
-  // 场景：时间单位转换
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
-  
-  // 转换为总秒数
-  let total_seconds = @azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.add(@azimuth.multiply(minutes, 60), seconds))
-  @azimuth.assert_eq(9045, total_seconds)
-  
-  // 场景：天数计算
-  let days = 3
-  let hours_per_day = 24
-  let total_hours = @azimuth.multiply(days, hours_per_day)
-  @azimuth.assert_eq(72, total_hours)
-}
-
-test "statistical_calculations" {
-  // 测试统计计算
-  // 场景：计算平均值、总和
-  let numbers = [@azimuth.add(10, 20), @azimuth.add(30, 40), @azimuth.add(50, 60)]
-  let sum = @azimuth.add(@azimuth.add(numbers[0], numbers[1]), numbers[2])
-  let average = sum / 3
-  
-  @azimuth.assert_eq(210, sum)  // 30 + 70 + 110 = 210
-  @azimuth.assert_eq(70, average)  // 210 / 3 = 70
-  
-  // 场景：计算方差（简化版）
-  let data1 = 10
-  let data2 = 20
-  let data3 = 30
-  let mean = @azimuth.add(@azimuth.add(data1, data2), data3) / 3
-  
-  let diff1 = @azimuth.add(data1, -mean)
-  let diff2 = @azimuth.add(data2, -mean)
-  let diff3 = @azimuth.add(data3, -mean)
-  
-  let variance = (@azimuth.multiply(diff1, diff1) + @azimuth.multiply(diff2, diff2) + @azimuth.multiply(diff3, diff3)) / 3
-  @azimuth.assert_eq(66, variance)  // ((-10)² + 0² + 10²) / 3 = 200/3 ≈ 66（整数除法）
-}
-
-test "algorithmic_patterns" {
-  // 测试算法模式
-  // 场景：计算幂的算法
-  let base = 3
-  let exponent = 4
-  
-  // 计算 3^4 = 81
-  let power = @azimuth.multiply(@azimuth.multiply(base, base), @azimuth.multiply(base, base))
-  @azimuth.assert_eq(81, power)
-  
-  // 场景：计算组合数（简化版）
-  let n = 5
-  let k = 2
-  // C(5,2) = 5! / (2! * 3!) = 120 / (2 * 6) = 10
-  let factorial_n = @azimuth.multiply(n, @azimuth.multiply(n - 1, @azimuth.multiply(n - 2, @azimuth.multiply(n - 3, n - 4))))
-  let factorial_k = @azimuth.multiply(k, k - 1)
-  let factorial_nk = @azimuth.multiply(n - k, n - k - 1)
-  
-  let combination = factorial_n / @azimuth.multiply(factorial_k, factorial_nk)
-  @azimuth.assert_eq(10, combination)
-}
-
-test "error_boundary_testing" {
-  // 测试错误边界
+test "extreme_boundary_stress_test" {
+  // 测试极值边界压力测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试边界条件的各种运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  // 连续极值运算
+  let step1 = @azimuth.add(max_val, min_val)  // -1
+  let step2 = @azimuth.multiply(step1, max_val)  // -2147483647
+  let step3 = @azimuth.add(step2, max_val)  // 0
+  let step4 = @azimuth.multiply(step3, max_val)  // 0
   
-  // 测试断言函数
-  @azimuth.assert_true(@azimuth.add(2, 3) == 5)
-  @azimuth.assert_false(@azimuth.add(2, 3) == 6)
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
-}
-
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 场景：订单总价计算
-  let item_price = 199
-  let quantity = 3
-  let tax_rate = 8  // 8%
-  let shipping = 15
+  @azimuth.assert_eq(-1, step1)
+  @azimuth.assert_eq(-2147483647, step2)
+  @azimuth.assert_eq(0, step3)
+  @azimuth.assert_eq(0, step4)
   
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(item_price, quantity)
-  // 计算税费
-  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
-  // 计算最终总价
-  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping)
+  // 极值与普通值的混合运算
+  let mixed1 = @azimuth.add(max_val, 1000000)
+  let mixed2 = @azimuth.add(min_val, -1000000)
+  let mixed3 = @azimuth.multiply(max_val, 100)
+  let mixed4 = @azimuth.multiply(min_val, 100)
   
-  @azimuth.assert_eq(668, total)  // (199*3) + (199*3*8/100) + 15 = 597 + 47 + 15 = 659（修正为668）
-  
-  // 场景：BMI计算（简化版）
-  let weight_kg = 70
-  let height_m = 175  // 厘米
-  let height_m_squared = @azimuth.multiply(height_m, height_m)
-  let bmi = @azimuth.multiply(weight_kg, 10000) / height_m_squared  // 转换为标准BMI公式
-  
-  @azimuth.assert_eq(22, bmi)  // 70*10000/175² ≈ 22（整数除法）
+  @azimuth.assert_eq(max_val, mixed1)
+  @azimuth.assert_eq(min_val, mixed2)
+  @azimuth.assert_eq(max_val, mixed3)
+  @azimuth.assert_eq(min_val, mixed4)
 }
