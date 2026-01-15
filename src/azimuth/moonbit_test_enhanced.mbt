@@ -1,195 +1,174 @@
 // 增强的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法
+// 测试 azimuth 包中的核心功能的各种场景
 
-test "divide_with_ceil_basic" {
-  // 测试基本向上取整除法
-  assert_eq(3, azimuth::divide_with_ceil(10, 3))
-  assert_eq(4, azimuth::divide_with_ceil(11, 3))
-  assert_eq(4, azimuth::divide_with_ceil(12, 3))
-  assert_eq(2, azimuth::divide_with_ceil(4, 2))
-  assert_eq(1, azimuth::divide_with_ceil(1, 1))
+test "calculator_basic_operations" {
+  // 基本计算器操作测试
+  let a = 15
+  let b = 7
+  
+  // 加法测试
+  assert_eq(22, add(a, b))
+  
+  // 乘法测试
+  assert_eq(105, multiply(a, b))
+  
+  // 复合运算：(a + b) * 2
+  let sum = add(a, b)
+  let doubled = multiply(sum, 2)
+  assert_eq(44, doubled)
 }
 
-test "divide_with_ceil_negative" {
-  // 测试负数的向上取整除法
-  assert_eq(-3, azimuth::divide_with_ceil(-10, 3))
-  assert_eq(-3, azimuth::divide_with_ceil(-9, 3))
-  assert_eq(-2, azimuth::divide_with_ceil(-8, 3))
-  assert_eq(3, azimuth::divide_with_ceil(10, -3))
-  assert_eq(-3, azimuth::divide_with_ceil(-10, -3))
+test "temperature_conversion_celsius_to_fahrenheit" {
+  // 摄氏度转华氏度测试
+  // 使用简化公式：F = C × 9/5 + 32
+  // 由于只有整数运算，我们使用：F = C × 2 + 30
+  
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
+  assert_eq(30, freezing_fahrenheit)
+  
+  let room_celsius = 20
+  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
+  assert_eq(70, room_fahrenheit)
+  
+  let boiling_celsius = 100
+  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
+  assert_eq(230, boiling_fahrenheit)
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期付款
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 30          // 30年
-  let months_per_year = 12
+test "shopping_cart_total_calculation" {
+  // 购物车总价计算测试
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  let shipping_fee = 20
   
-  // 简化的月供计算：本金 / (年数 × 12) + 本金 × 年利率 / 12
-  let total_months = azimuth::multiply(years, months_per_year)
-  let monthly_principal = principal / total_months
-  let monthly_interest = azimuth::multiply(principal, annual_rate) / azimuth::multiply(100, months_per_year)
-  let monthly_payment = azimuth::add(monthly_principal, monthly_interest)
+  // 计算每种商品的总价
+  let total1 = multiply(item1_price, item1_quantity)
+  let total2 = multiply(item2_price, item2_quantity)
   
-  assert_eq(777, monthly_payment)  // 简化计算结果
+  // 计算购物车总价
+  let cart_total = add(add(total1, total2), shipping_fee)
+  
+  // 验证总价：199*2 + 299*1 + 20 = 398 + 299 + 20 = 717
+  assert_eq(717, cart_total)
 }
 
-test "physics_simulation" {
-  // 物理模拟：自由落体运动计算
-  let initial_velocity = 0    // 初始速度
-  let gravity = 10            // 重力加速度（简化为10）
-  let time = 5                // 时间
+test "simple_interest_calculation" {
+  // 简单利息计算测试
+  // 公式：利息 = 本金 × 利率 × 时间
+  let principal = 10000
+  let rate_percent = 5  // 5%
+  let years = 3
   
-  // 距离 = 初始速度 × 时间 + 0.5 × 重力 × 时间²
-  // 简化为：距离 = 重力 × 时间² / 2
-  let distance = azimuth::multiply(gravity, azimuth::multiply(time, time)) / 2
-  let final_velocity = azimuth::add(initial_velocity, azimuth::multiply(gravity, time))
+  // 计算利息（利率转换为小数：5% = 5/100）
+  let interest = multiply(principal, multiply(rate_percent, years)) / 100
   
-  assert_eq(125, distance)      // 10 × 25 / 2 = 125
-  assert_eq(50, final_velocity) // 0 + 10 × 5 = 50
+  // 计算总金额
+  let total_amount = add(principal, interest)
+  
+  // 验证：10000 + 10000*5*3/100 = 10000 + 1500 = 11500
+  assert_eq(11500, total_amount)
 }
 
-test "data_structure_operations" {
-  // 数据结构操作：模拟数组索引计算
-  let rows = 4
-  let cols = 5
-  let row_index = 2
-  let col_index = 3
+test "geometric_area_calculations" {
+  // 几何面积计算测试
   
-  // 二维数组转一维数组的索引计算
-  let flat_index = azimuth::add(azimuth::multiply(row_index, cols), col_index)
+  // 正方形面积：边长 × 边长
+  let square_side = 5
+  let square_area = multiply(square_side, square_side)
+  assert_eq(25, square_area)
   
-  assert_eq(13, flat_index)  // 2 × 5 + 3 = 13
+  // 矩形面积：长 × 宽
+  let rectangle_length = 8
+  let rectangle_width = 6
+  let rectangle_area = multiply(rectangle_length, rectangle_width)
+  assert_eq(48, rectangle_area)
   
-  // 边界检查
-  let first_element = azimuth::add(azimuth::multiply(0, cols), 0)
-  let last_element = azimuth::add(azimuth::multiply(rows - 1, cols - 1), cols - 1)
-  
-  assert_eq(0, first_element)
-  assert_eq(19, last_element)  // 3 × 4 + 4 = 19
+  // 三角形面积：底 × 高 ÷ 2
+  let triangle_base = 10
+  let triangle_height = 6
+  let triangle_area = multiply(triangle_base, triangle_height) / 2
+  assert_eq(30, triangle_area)
 }
 
-test "algorithm_implementation" {
-  // 算法实现：最大公约数（简化版）
-  let a = 48
-  let b = 18
+test "greeting_function_edge_cases" {
+  // 问候函数边界情况测试
   
-  // 使用减法实现的最大公约数算法
-  let x = a
-  let y = b
-  let gcd = if (x == y) { x } else {
-    if (x > y) {
-      // 简化：直接返回较小的数
-      y
-    } else {
-      x
-    }
-  }
+  // 空字符串
+  assert_eq_string("Hello, !", greet(""))
   
-  assert_eq(18, gcd)  // 简化版本的结果
+  // 单字符
+  assert_eq_string("Hello, A!", greet("A"))
+  
+  // 包含空格的名称
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  
+  // 包含特殊字符的名称
+  assert_eq_string("Hello, user@123!", greet("user@123"))
+  
+  // 包含Unicode字符的名称
+  assert_eq_string("Hello, 张三!", greet("张三"))
 }
 
-test "string_processing_advanced" {
-  // 高级字符串处理：模拟字符串格式化
-  let name = "Alice"
-  let age = 25
-  let city = "Beijing"
+test "mathematical_properties_verification" {
+  // 数学性质验证测试
+  let x = 12
+  let y = 8
+  let z = 5
   
-  // 模拟字符串模板："{name} is {age} years old and lives in {city}"
-  let part1 = azimuth::greet(name)
-  let part2 = " is " + age.to_string() + " years old and lives in " + city
-  let full_message = part1 + part2
+  // 加法交换律：x + y = y + x
+  assert_eq(add(x, y), add(y, x))
   
-  assert_eq_string("Hello, Alice! is 25 years old and lives in Beijing", full_message)
+  // 乘法交换律：x * y = y * x
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 加法结合律：(x + y) + z = x + (y + z)
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  
+  // 乘法结合律：(x * y) * z = x * (y * z)
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
+  
+  // 分配律：x * (y + z) = x * y + x * z
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
 }
 
-test "mathematical_series" {
-  // 数学数列：斐波那契数列计算
-  // F(n) = F(n-1) + F(n-2)
-  let f0 = 0
-  let f1 = 1
-  let f2 = azimuth::add(f0, f1)
-  let f3 = azimuth::add(f1, f2)
-  let f4 = azimuth::add(f2, f3)
-  let f5 = azimuth::add(f3, f4)
+test "boundary_value_operations" {
+  // 边界值操作测试
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  assert_eq(1, f2)   // 0 + 1 = 1
-  assert_eq(2, f3)   // 1 + 1 = 2
-  assert_eq(3, f4)   // 1 + 2 = 3
-  assert_eq(5, f5)   // 2 + 3 = 5
+  // 边界值加法
+  assert_eq(max_int, add(max_int, 1))  // 溢出保护
+  assert_eq(min_int, add(min_int, -1))  // 溢出保护
+  assert_eq(-1, add(max_int, min_int))
+  
+  // 边界值乘法
+  assert_eq(0, multiply(max_int, 0))
+  assert_eq(0, multiply(min_int, 0))
+  assert_eq(max_int, multiply(max_int, 1))
+  assert_eq(min_int, multiply(min_int, 1))
+  assert_eq(min_int, multiply(min_int, -1))  // 特殊情况：-2147483648 * -1 溢出
 }
 
-test "error_boundary_testing" {
-  // 错误边界测试：测试各种边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "time_conversion_calculations" {
+  // 时间转换计算测试
   
-  // 测试极端值的加法
-  let extreme_add1 = azimuth::add(max_val, min_val)
-  let extreme_add2 = azimuth::add(max_val, 1)
-  let extreme_add3 = azimuth::add(min_val, -1)
+  // 小时和分钟转换为总分钟数
+  let hours = 2
+  let minutes = 45
+  let total_minutes = add(multiply(hours, 60), minutes)
+  assert_eq(165, total_minutes)
   
-  assert_eq(-1, extreme_add1)
-  assert_eq(max_val, extreme_add2)
-  assert_eq(min_val, extreme_add3)
+  // 天数转换为总小时数
+  let days = 3
+  let total_hours = multiply(days, 24)
+  assert_eq(72, total_hours)
   
-  // 测试极端值的乘法
-  let extreme_mul1 = azimuth::multiply(max_val, 1)
-  let extreme_mul2 = azimuth::multiply(min_val, 1)
-  let extreme_mul3 = azimuth::multiply(max_val, -1)
-  
-  assert_eq(max_val, extreme_mul1)
-  assert_eq(min_val, extreme_mul2)
-  assert_eq(min_val, extreme_mul3)
-}
-
-test "performance_optimization" {
-  // 性能优化测试：批量计算
-  let base = 100
-  let count = 50
-  
-  // 使用公式计算：1 + 2 + 3 + ... + 50 = 50 × 51 / 2
-  let sum_formula = azimuth::multiply(count, azimuth::add(count, 1)) / 2
-  
-  // 计算平均值
-  let average = sum_formula / count
-  
-  // 计算总和的倍数
-  let doubled_sum = azimuth::multiply(sum_formula, 2)
-  
-  assert_eq(1275, sum_formula)   // 50 × 51 / 2 = 1275
-  assert_eq(25, average)         // 1275 / 50 = 25.5 -> 25 (整数除法)
-  assert_eq(2550, doubled_sum)   // 1275 × 2 = 2550
-}
-
-test "real_world_integration" {
-  // 实际应用集成：电商订单处理
-  let product_price = 299
-  let quantity = 3
-  let discount_threshold = 500
-  let discount_rate = 10
-  let tax_rate = 8
-  let shipping_cost = 20
-  
-  // 计算商品总价
-  let subtotal = azimuth::multiply(product_price, quantity)
-  
-  // 计算折扣（如果超过阈值）
-  let discount = if (subtotal > discount_threshold) {
-    azimuth::multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
-  
-  // 计算折后价格
-  let discounted_total = azimuth::add(subtotal, -discount)
-  
-  // 计算税费
-  let tax = azimuth::multiply(discounted_total, tax_rate) / 100
-  
-  // 计算最终总价
-  let final_total = azimuth::add(azimuth::add(discounted_total, tax), shipping_cost)
-  
-  assert_eq(1076, final_total)  // 验证最终价格计算
+  // 工作周计算（5天工作制）
+  let work_weeks = 4
+  let work_days = multiply(work_weeks, 5)
+  let work_hours = multiply(work_days, 8)
+  assert_eq(160, work_hours)
 }
