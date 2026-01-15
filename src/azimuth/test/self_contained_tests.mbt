@@ -1,5 +1,5 @@
-// 实用 MoonBit 测试用例
-// 测试 azimuth 包的实用功能和场景
+// 自包含的 MoonBit 测试用例
+// 包含所需的函数定义和测试用例
 
 // 定义所需的函数
 pub fn add(a : Int, b : Int) -> Int {
@@ -32,6 +32,7 @@ pub fn assert_eq_string(expected : String, actual : String) -> Unit {
   }
 }
 
+// 测试用例
 test "temperature_conversion" {
   // 温度转换测试：摄氏度转华氏度（简化版 F = C × 2 + 30）
   let celsius = 25
@@ -157,7 +158,6 @@ test "speed_distance_time" {
   // 速度、距离、时间关系测试
   // 计算距离：速度 × 时间
   let speed = 60  // km/h
-  let time = 2.5  // 小时（用整数表示：2小时30分钟 = 150分钟）
   let time_minutes = 150
   let distance = multiply(speed, time_minutes) / 60
   
