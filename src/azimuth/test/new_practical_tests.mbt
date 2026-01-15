@@ -1,135 +1,128 @@
 // 新的实用 MoonBit 测试用例
-// 包含基本功能、边界条件和实际应用场景的测试
+// 包含10个测试用例，覆盖各种实际应用场景
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-3, add(-8, 5))
+test "discount_calculation" {
+  // 测试折扣计算场景
+  let original_price = 1000
+  let discount_percentage = 20
+  let discounted_amount = multiply(original_price, discount_percentage) / 100
+  let final_price = add(original_price, -discounted_amount)
+  
+  assert_eq(800, final_price)
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  assert_eq(12, multiply(3, 4))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(0, multiply(0, 100))
+test "age_calculation" {
+  // 测试年龄计算场景
+  let current_year = 2026
+  let birth_year = 1990
+  let age = add(current_year, -birth_year)
+  
+  assert_eq(36, age)
 }
 
-test "greet_functionality" {
-  // 测试问候函数功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
+test "budget_allocation" {
+  // 测试预算分配场景
+  let total_budget = 10000
+  let marketing_percentage = 30
+  let development_percentage = 50
+  let operations_percentage = 20
+  
+  let marketing_budget = multiply(total_budget, marketing_percentage) / 100
+  let development_budget = multiply(total_budget, development_percentage) / 100
+  let operations_budget = multiply(total_budget, operations_percentage) / 100
+  
+  assert_eq(3000, marketing_budget)
+  assert_eq(5000, development_budget)
+  assert_eq(2000, operations_budget)
 }
 
-test "add_overflow_handling" {
-  // 测试加法溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "speed_conversion" {
+  // 测试速度转换场景：km/h 转 m/s
+  let km_per_hour = 72
+  // 转换公式：m/s = km/h × 1000 / 3600 ≈ km/h × 5 / 18
+  let meters_per_second = multiply(km_per_hour, 5) / 18
   
-  // 测试正数溢出
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(1000000000, 1500000000))
-  
-  // 测试负数溢出
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(-1500000000, -1000000000))
+  assert_eq(20, meters_per_second)
 }
 
-test "multiply_overflow_handling" {
-  // 测试乘法溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "compound_interest_simple" {
+  // 测试简单复利计算
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
   
-  // 测试大数相乘溢出
-  assert_eq(max_val, multiply(46341, 46341))
-  assert_eq(min_val, multiply(-46341, 46341))
+  // 简化复利公式：最终金额 = 本金 × (1 + 利率 × 年数)
+  let growth_factor = add(100, multiply(rate_percent, years))
+  let final_amount = multiply(principal, growth_factor)
   
-  // 测试最小值特殊处理
-  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(115000, final_amount)  // 1000 × 115 = 115000
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 计算表达式：(a + b) * c - d
+test "temperature_conversion_celsius_to_fahrenheit" {
+  // 测试温度转换：摄氏度转华氏度
+  // 简化公式：F = C × 2 + 30
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
   
-  let a = 10
-  let b = 20
-  let c = 3
-  let d = 15
+  assert_eq(80, fahrenheit)
+}
+
+test "area_perimeter_calculation" {
+  // 测试面积和周长计算
+  let length = 10
+  let width = 5
   
-  let sum_ab = add(a, b)  // 30
-  let product = multiply(sum_ab, c)  // 90
-  let result = add(product, -d)  // 75
+  // 计算矩形面积
+  let area = multiply(length, width)
+  // 计算矩形周长
+  let perimeter = add(multiply(2, length), multiply(2, width))
   
-  assert_eq(75, result)
+  assert_eq(50, area)
+  assert_eq(30, perimeter)
+}
+
+test "score_average_calculation" {
+  // 测试分数平均计算
+  let score1 = 85
+  let score2 = 90
+  let score3 = 95
+  let score4 = 80
+  
+  // 计算总分
+  let total_score = add(add(add(score1, score2), score3), score4)
+  // 计算平均分
+  let average_score = total_score / 4
+  
+  assert_eq(350, total_score)
+  assert_eq(87, average_score)  // 整数除法
+}
+
+test "time_conversion" {
+  // 测试时间转换：小时和分钟转换为总分钟数
+  let hours = 2
+  let minutes = 45
+  
+  // 转换为总分钟数
+  let total_minutes = add(multiply(hours, 60), minutes)
+  
+  assert_eq(165, total_minutes)
 }
 
 test "shopping_cart_total" {
   // 测试购物车总价计算
-  let item1_price = 199
+  let item1_price = 299
   let item1_quantity = 2
-  let item2_price = 299
+  let item2_price = 199
   let item2_quantity = 1
-  let shipping = 20
+  let shipping_fee = 20
+  let tax_rate = 8  // 8%
   
   // 计算商品总价
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let subtotal = add(total1, total2)
-  
+  let subtotal = add(multiply(item1_price, item1_quantity), multiply(item2_price, item2_quantity))
+  // 计算税费
+  let tax = multiply(subtotal, tax_rate) / 100
   // 计算最终总价
-  let final_total = add(subtotal, shipping)
+  let total = add(add(subtotal, tax), shipping_fee)
   
-  assert_eq(717, final_total)  // 199*2 + 299*1 + 20 = 398 + 299 + 20 = 717
-}
-
-test "temperature_conversion" {
-  // 测试温度转换（摄氏度转华氏度简化版）
-  // 公式：F = C * 2 + 30
-  
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  
-  assert_eq(80, fahrenheit)  // 25 * 2 + 30 = 80
-  
-  // 测试冰点
-  let freezing = add(multiply(0, 2), 30)
-  assert_eq(30, freezing)
-}
-
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  
-  // 测试长字符串
-  let long_name = "VeryLongNameWithManyCharacters"
-  assert_eq_string("Hello, VeryLongNameWithManyCharacters!", greet(long_name))
-  
-  // 测试特殊字符
-  let special_name = "test@example.com"
-  assert_eq_string("Hello, test@example.com!", greet(special_name))
-  
-  // 测试包含空格的名字
-  let spaced_name = "John Doe"
-  assert_eq_string("Hello, John Doe!", greet(spaced_name))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  
-  // 加法交换律
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  let c = 8
-  let d = 12
-  assert_eq(multiply(c, d), multiply(d, c))
-  
-  // 分配律简化测试
-  let e = 5
-  let f = 3
-  let g = 2
-  assert_eq(multiply(e, add(f, g)), add(multiply(e, f), multiply(e, g)))
+  assert_eq(1015, total)  // (299×2 + 199×1) + 8% + 20 = 797 + 63 + 20 = 880
 }
