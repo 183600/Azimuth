@@ -1,223 +1,230 @@
-// Azimuth 项目附加 MoonBit 测试用例集
-// 包含10个新的测试用例，使用标准 MoonBit 测试语法
+// 额外的 MoonBit 测试用例
+// 覆盖不同的数学运算和字符串处理场景
 
-test "number_sequence_operations" {
-  // 测试数列运算：计算等差数列和等比数列
-  let first_term = 3
-  let common_diff = 5
-  let terms = 6
-  
-  // 计算等差数列第n项：a_n = a_1 + (n-1)×d
-  let nth_term = @azimuth.add(first_term, @azimuth.multiply(common_diff, terms - 1))
-  @azimuth.assert_eq(28, nth_term)  // 3 + 5×5 = 28
-  
-  // 计算等差数列前n项和：S_n = n×(a_1 + a_n)/2
-  let sum = @azimuth.multiply(terms, @azimuth.add(first_term, nth_term)) / 2
-  @azimuth.assert_eq(93, sum)  // 6×(3+28)/2 = 93
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(20, 4))
+  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(25, 4))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
 }
 
-test "financial_calculation_compound" {
-  // 测试金融计算：复利和贷款计算
-  let principal = 10000
-  let annual_rate = 8  // 8%
-  let years = 3
+test "calculation_pyramid_pattern" {
+  // 测试金字塔模式计算：1 + 2 + 3 + 2 + 1
+  let level1 = 1
+  let level2 = 2
+  let level3 = 3
   
-  // 简化复利计算：本息和 = 本金 × (1 + 利率×年数)
-  let total_amount = @azimuth.multiply(principal, @azimuth.add(1, @azimuth.multiply(annual_rate, years)))
-  @azimuth.assert_eq(250000, total_amount)  // 10000 × (1 + 8×3) = 10000 × 25 = 250000
+  let pyramid_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(level1, level2), level3), level2), level1)
+  @azimuth.assert_eq(9, pyramid_sum)
   
-  // 计算月还款额（简化版）：总金额 ÷ (年数×12)
-  let monthly_payment = total_amount / @azimuth.multiply(years, 12)
-  @azimuth.assert_eq(6944, monthly_payment)  // 250000 ÷ 36 ≈ 6944
+  // 更大的金字塔：1 + 2 + 3 + 4 + 3 + 2 + 1
+  let level4 = 4
+  let larger_pyramid = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 3), 2), 1)
+  @azimuth.assert_eq(16, larger_pyramid)
 }
 
-test "physics_kinematics_calculations" {
-  // 测试物理运动学计算
-  let initial_velocity = 10
-  let acceleration = 5
-  let time = 4
+test "fibonacci_sequence_calculation" {
+  // 测试斐波那契数列计算（前几项）
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = @azimuth.add(fib1, fib2)  // 2
+  let fib4 = @azimuth.add(fib2, fib3)  // 3
+  let fib5 = @azimuth.add(fib3, fib4)  // 5
+  let fib6 = @azimuth.add(fib4, fib5)  // 8
   
-  // 计算末速度：v = u + at
-  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
-  @azimuth.assert_eq(30, final_velocity)  // 10 + 5×4 = 30
+  @azimuth.assert_eq(2, fib3)
+  @azimuth.assert_eq(3, fib4)
+  @azimuth.assert_eq(5, fib5)
+  @azimuth.assert_eq(8, fib6)
   
-  // 计算位移：s = ut + 0.5at²（简化为整数：s = ut + at²/2）
-  let displacement = @azimuth.add(@azimuth.multiply(initial_velocity, time), 
-    @azimuth.multiply(acceleration, @azimuth.multiply(time, time)) / 2)
-  @azimuth.assert_eq(80, displacement)  // 10×4 + 5×16/2 = 40 + 40 = 80
+  // 验证斐波那契性质：fib(n) * fib(n+2) = fib(n+1)² + (-1)^(n+1)
+  let left_side = @azimuth.multiply(fib4, fib6)  // fib(4) * fib(6) = 3 * 8 = 24
+  let right_side = @azimuth.add(@azimuth.multiply(fib5, fib5), -1)  // fib(5)² - 1 = 25 - 1 = 24
+  @azimuth.assert_eq(left_side, right_side)
 }
 
-test "data_structure_array_operations" {
-  // 测试数据结构：数组操作模拟
-  let array_size = 10
-  let element_size = 4
+test "string_pattern_processing" {
+  // 测试字符串模式处理
+  // 测试重复字符模式
+  let repeated_chars = "AAA"
+  @azimuth.assert_eq_string("Hello, AAA!", @azimuth.greet(repeated_chars))
   
-  // 计算数组总大小
-  let total_size = @azimuth.multiply(array_size, element_size)
-  @azimuth.assert_eq(40, total_size)
+  // 测试交替模式
+  let alternating_pattern = "ABABAB"
+  @azimuth.assert_eq_string("Hello, ABABAB!", @azimuth.greet(alternating_pattern))
   
-  // 计算数组索引：row × width + col
-  let row = 3
-  let col = 2
-  let width = 5
-  let index = @azimuth.add(@azimuth.multiply(row, width), col)
-  @azimuth.assert_eq(17, index)  // 3×5 + 2 = 17
+  // 测试数字字母混合模式
+  let alphanumeric_pattern = "A1B2C3"
+  @azimuth.assert_eq_string("Hello, A1B2C3!", @azimuth.greet(alphanumeric_pattern))
   
-  // 计算内存偏移量：index × element_size
-  let offset = @azimuth.multiply(index, element_size)
-  @azimuth.assert_eq(68, offset)  // 17×4 = 68
+  // 测试递增模式
+  let incrementing_pattern = "12345"
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet(incrementing_pattern))
 }
 
-test "game_logic_score_system" {
-  // 测试游戏逻辑：得分系统
-  let base_score = 1000
-  let level_multiplier = 4
-  let combo_bonus = 500
-  let time_penalty = 200
-  let difficulty_bonus = 300
+test "geometric_series_sum" {
+  // 测试等比数列求和：2 + 6 + 18 + 54 = 80
+  let first_term = 2
+  let ratio = 3
+  let term2 = @azimuth.multiply(first_term, ratio)  // 6
+  let term3 = @azimuth.multiply(term2, ratio)       // 18
+  let term4 = @azimuth.multiply(term3, ratio)       // 54
   
-  // 计算基础得分
-  let level_score = @azimuth.multiply(base_score, level_multiplier)
+  let series_sum = @azimuth.add(@azimuth.add(@azimuth.add(first_term, term2), term3), term4)
+  @azimuth.assert_eq(80, series_sum)
   
-  // 计算最终得分
-  let final_score = @azimuth.add(@azimuth.add(@azimuth.add(level_score, combo_bonus), 
-    difficulty_bonus), -time_penalty)
-  
-  @azimuth.assert_eq(4600, final_score)  // 1000×4 + 500 + 300 - 200 = 4600
-  
-  // 计算排名得分（前20%额外加分）
-  let top_percentage = 20
-  let rank_bonus = @azimuth.multiply(final_score, top_percentage) / 100
-  let rank_total = @azimuth.add(final_score, rank_bonus)
-  
-  @azimuth.assert_eq(5520, rank_total)  // 4600 + 4600×20/100 = 4600 + 920 = 5520
+  // 验证等比数列性质：相邻两项的比值相等
+  @azimuth.assert_eq(term2 / first_term, term3 / term2)
+  @azimuth.assert_eq(term3 / term2, term4 / term3)
 }
 
-test "string_processing_advanced" {
-  // 测试高级字符串处理
-  let username = "Player"
-  let level = 25
-  let score = 9850
+test "number_base_conversion_simulation" {
+  // 测试数字进制转换模拟（二进制转十进制）
+  // 二进制 1011 = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11
+  let bit3 = 1
+  let bit2 = 0
+  let bit1 = 1
+  let bit0 = 1
   
-  // 构建状态消息
-  let level_str = "25"
-  let score_str = "9850"
-  let status_prefix = @azimuth.greet(username)
-  let status_message = status_prefix + " You are at level " + level_str + " with score " + score_str + "!"
+  let power_of_2_0 = 1
+  let power_of_2_1 = @azimuth.multiply(2, 1)      // 2
+  let power_of_2_2 = @azimuth.multiply(2, 2)      // 4
+  let power_of_2_3 = @azimuth.multiply(2, 4)      // 8
   
-  @azimuth.assert_eq_string("Hello, Player! You are at level 25 with score 9850!", status_message)
+  let decimal_value = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(bit3, power_of_2_3), @azimuth.multiply(bit2, power_of_2_2)), @azimuth.multiply(bit1, power_of_2_1)), @azimuth.multiply(bit0, power_of_2_0))
+  @azimuth.assert_eq(11, decimal_value)
   
-  // 测试特殊字符处理
-  let special_name = "Test@User#123"
-  let special_greeting = @azimuth.greet(special_name)
-  @azimuth.assert_eq_string("Hello, Test@User#123!", special_greeting)
-  
-  // 测试Unicode字符
-  let unicode_name = "游戏玩家"
-  let unicode_greeting = @azimuth.greet(unicode_name)
-  @azimuth.assert_eq_string("Hello, 游戏玩家!", unicode_greeting)
+  // 二进制 1111 = 1×2³ + 1×2² + 1×2¹ + 1×2⁰ = 8 + 4 + 2 + 1 = 15
+  let all_ones_decimal = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(1, 4)), @azimuth.multiply(1, 2)), @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(15, all_ones_decimal)
 }
 
-test "algorithm_binary_search_simulation" {
-  // 测试算法：二分查找模拟
-  let array_size = 100
-  let target = 75
+test "matrix_multiplication_simulation" {
+  // 测试矩阵乘法模拟（2x2 矩阵）
+  // 矩阵 A: [[a, b], [c, d]], 矩阵 B: [[e, f], [g, h]]
+  // 结果矩阵 C: [[a×e + b×g, a×f + b×h], [c×e + d×g, c×f + d×h]]
   
-  // 模拟二分查找的步骤计算
-  let low = 0
-  let high = array_size - 1
-  let mid = @azimuth.add(low, high) / 2
+  let a = 1; let b = 2; let c = 3; let d = 4
+  let e = 5; let f = 6; let g = 7; let h = 8
   
-  // 第一次查找
-  @azimuth.assert_eq(49, mid)  // (0 + 99) / 2 = 49
+  // 计算结果矩阵的各个元素
+  let c11 = @azimuth.add(@azimuth.multiply(a, e), @azimuth.multiply(b, g))  // 1×5 + 2×7 = 5 + 14 = 19
+  let c12 = @azimuth.add(@azimuth.multiply(a, f), @azimuth.multiply(b, h))  // 1×6 + 2×8 = 6 + 16 = 22
+  let c21 = @azimuth.add(@azimuth.multiply(c, e), @azimuth.multiply(d, g))  // 3×5 + 4×7 = 15 + 28 = 43
+  let c22 = @azimuth.add(@azimuth.multiply(c, f), @azimuth.multiply(d, h))  // 3×6 + 4×8 = 18 + 32 = 50
   
-  // 调整查找范围
-  let new_low = @azimuth.add(mid, 1)
-  let new_mid = @azimuth.add(new_low, high) / 2
-  @azimuth.assert_eq(74, new_mid)  // (50 + 99) / 2 = 74
+  @azimuth.assert_eq(19, c11)
+  @azimuth.assert_eq(22, c12)
+  @azimuth.assert_eq(43, c21)
+  @azimuth.assert_eq(50, c22)
   
-  // 再次调整
-  let final_low = @azimuth.add(new_mid, 1)
-  let final_mid = @azimuth.add(final_low, high) / 2
-  @azimuth.assert_eq(87, final_mid)  // (75 + 99) / 2 = 87
+  // 验证矩阵乘法的行列式性质：det(AB) = det(A) × det(B)
+  let det_a = @azimuth.add(@azimuth.multiply(a, d), @azimuth.multiply(-b, c))  // 1×4 - 2×3 = 4 - 6 = -2
+  let det_b = @azimuth.add(@azimuth.multiply(e, h), @azimuth.multiply(-f, g))  // 5×8 - 6×7 = 40 - 42 = -2
+  let det_ab = @azimuth.add(@azimuth.multiply(c11, c22), @azimuth.multiply(-c12, c21))  // 19×50 - 22×43 = 950 - 946 = 4
   
-  // 查找步数统计
-  let search_steps = 3
-  @azimuth.assert_eq(3, search_steps)
+  @azimuth.assert_eq(@azimuth.multiply(det_a, det_b), det_ab)
 }
 
-test "cryptography_simple_hashing" {
-  // 测试密码学：简单哈希函数模拟
-  let input = "Hello"
-  let prime1 = 31
-  let prime2 = 37
+test "prime_number_validation" {
+  // 测试质数验证（通过试除法）
+  let num_to_test = 17
   
-  // 简单哈希算法：逐字符处理
-  // H = (((H * A) + B) * C + D) ...
-  let hash = @azimuth.add(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(72, prime1), 101), prime2), 111)
-  @azimuth.assert_eq(8350663, hash)
+  // 检查是否能被小于等于其平方根的质数整除
+  let sqrt_17 = 4  // sqrt(17) ≈ 4.12，取整数部分
   
-  // 测试不同输入的哈希值
-  let input2 = "World"
-  let hash2 = @azimuth.add(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(87, prime1), 111), prime2), 108)
-  @azimuth.assert_eq(12493938, hash2)
+  // 检查能否被2整除
+  let divisible_by_2 = num_to_test % 2 == 0
+  @azimuth.assert_false(divisible_by_2)
   
-  // 验证哈希值不同
-  @azimuth.assert_true(hash != hash2)
+  // 检查能否被3整除
+  let divisible_by_3 = num_to_test % 3 == 0
+  @azimuth.assert_false(divisible_by_3)
+  
+  // 检查能否被4整除
+  let divisible_by_4 = num_to_test % 4 == 0
+  @azimuth.assert_false(divisible_by_4)
+  
+  // 由于17不能被2、3、4整除，所以它是质数
+  @azimuth.assert_true(true)  // 17是质数
+  
+  // 测试合数18
+  let num_to_test_2 = 18
+  let divisible_by_2_2 = num_to_test_2 % 2 == 0
+  @azimuth.assert_true(divisible_by_2_2)  // 18能被2整除，所以是合数
 }
 
-test "network_data_packet_simulation" {
-  // 测试网络：数据包模拟
-  let header_size = 20
-  let payload_size = 1024
-  let checksum_size = 4
+test "polynomial_evaluation" {
+  // 测试多项式求值：f(x) = 2x³ - 3x² + 4x - 5，求f(3)
+  let x = 3
+  let a = 2  // x³的系数
+  let b = -3  // x²的系数
+  let c = 4  // x的系数
+  let d = -5  // 常数项
   
-  // 计算数据包总大小
-  let packet_size = @azimuth.add(@azimuth.add(header_size, payload_size), checksum_size)
-  @azimuth.assert_eq(1048, packet_size)
+  // 计算 x³
+  let x_cubed = @azimuth.multiply(@azimuth.multiply(x, x), x)  // 27
   
-  // 计算传输时间（简化）：数据包大小 ÷ 带宽
-  let bandwidth = 100  // 100 bytes/ms
-  let transmission_time = packet_size / bandwidth
-  @azimuth.assert_eq(10, transmission_time)  // 1048 ÷ 100 ≈ 10
+  // 计算 x²
+  let x_squared = @azimuth.multiply(x, x)  // 9
   
-  // 计算网络延迟下的总时间
-  let latency = 50  // 50ms
-  let total_time = @azimuth.add(transmission_time, latency)
-  @azimuth.assert_eq(60, total_time)
+  // 计算各项
+  let term1 = @azimuth.multiply(a, x_cubed)    // 2×27 = 54
+  let term2 = @azimuth.multiply(b, x_squared)  // -3×9 = -27
+  let term3 = @azimuth.multiply(c, x)          // 4×3 = 12
+  let term4 = d                                // -5
+  
+  // 计算多项式值
+  let polynomial_value = @azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4)
+  @azimuth.assert_eq(34, polynomial_value)  // 54 - 27 + 12 - 5 = 34
+  
+  // 使用霍纳法则验证：f(x) = ((2x - 3)x + 4)x - 5
+  let horner_step1 = @azimuth.add(@azimuth.multiply(2, x), -3)  // 2×3 - 3 = 3
+  let horner_step2 = @azimuth.add(@azimuth.multiply(horner_step1, x), 4)  // 3×3 + 4 = 13
+  let horner_result = @azimuth.add(@azimuth.multiply(horner_step2, x), -5)  // 13×3 - 5 = 34
+  
+  @azimuth.assert_eq(polynomial_value, horner_result)
 }
 
-test "optimization_greedy_algorithm" {
-  // 测试优化：贪心算法模拟（背包问题简化版）
-  let item1_value = 60
-  let item1_weight = 10
-  let item2_value = 100
-  let item2_weight = 20
-  let item3_value = 120
-  let item3_weight = 30
-  let capacity = 50
+test "combinatorial_calculations" {
+  // 测试组合数学计算
+  // 计算排列数 P(n, k) = n! / (n-k)!
+  // 计算 P(5, 3) = 5! / 2! = 120 / 2 = 60
   
-  // 计算价值重量比
-  let ratio1 = item1_value / item1_weight  // 6
-  let ratio2 = item2_value / item2_weight  // 5
-  let ratio3 = item3_value / item3_weight  // 4
+  let n = 5
+  let k = 3
   
-  // 按价值重量比排序：item1 > item2 > item3
-  // 贪心选择
-  let mut remaining_capacity = capacity
-  let mut total_value = 0
+  // 计算 5! = 5×4×3×2×1 = 120
+  let five_factorial = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(5, 4), 3), 2), 1)
   
-  // 选择item1
-  total_value = @azimuth.add(total_value, item1_value)
-  remaining_capacity = @azimuth.add(remaining_capacity, -item1_weight)
+  // 计算 2! = 2×1 = 2
+  let two_factorial = @azimuth.multiply(2, 1)
   
-  // 选择item2
-  total_value = @azimuth.add(total_value, item2_value)
-  remaining_capacity = @azimuth.add(remaining_capacity, -item2_weight)
+  // 计算 P(5, 3) = 5! / 2! = 120 / 2 = 60
+  let permutation = five_factorial / two_factorial
+  @azimuth.assert_eq(60, permutation)
   
-  // 选择item3（部分）
-  let fraction = remaining_capacity / item3_weight  // 20/30 = 0（整数除法）
-  total_value = @azimuth.add(total_value, @azimuth.multiply(item3_value, fraction))
+  // 计算组合数 C(n, k) = P(n, k) / k!
+  // 计算 C(5, 3) = P(5, 3) / 3! = 60 / 6 = 10
   
-  @azimuth.assert_eq(160, total_value)  // 60 + 100 + 0 = 160
+  // 计算 3! = 3×2×1 = 6
+  let three_factorial = @azimuth.multiply(@azimuth.multiply(3, 2), 1)
+  
+  // 计算 C(5, 3) = 60 / 6 = 10
+  let combination = permutation / three_factorial
+  @azimuth.assert_eq(10, combination)
+  
+  // 验证组合数性质：C(n, k) = C(n, n-k)
+  // C(5, 3) = C(5, 2) = 10
+  let n_minus_k = @azimuth.add(n, -k)  // 5 - 3 = 2
+  
+  // 计算 P(5, 2) = 5! / 3! = 120 / 6 = 20
+  let permutation_5_2 = five_factorial / three_factorial
+  
+  // 计算 C(5, 2) = P(5, 2) / 2! = 20 / 2 = 10
+  let combination_5_2 = permutation_5_2 / two_factorial
+  
+  @azimuth.assert_eq(combination, combination_5_2)
 }
