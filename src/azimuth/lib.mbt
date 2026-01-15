@@ -2637,4 +2637,77 @@ test "error_detection_codes" {
   assert_true(crc_detected)  // 检测到错误
 }
 
+// 新增的10个简洁测试用例
+test "simple_add_functionality" {
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-8, add(-3, -5))
+}
+
+test "add_overflow_handling" {
+  let max_val = 2147483647
+  let min_val = -2147483648
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+}
+
+test "simple_multiply_functionality" {
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 100))
+}
+
+test "multiply_boundary_cases" {
+  let max_val = 2147483647
+  let min_val = -2147483648
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "greet_function_tests" {
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "math_expression_tests" {
+  let result = multiply(add(2, 3), 4)
+  assert_eq(20, result)
+  
+  let result2 = add(multiply(5, 3), 2)
+  assert_eq(17, result2)
+}
+
+test "practical_calculation_tests" {
+  let price = 199
+  let quantity = 3
+  let total = multiply(price, quantity)
+  assert_eq(597, total)
+}
+
+test "string_processing_tests" {
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, VeryLongName!", greet("VeryLongName"))
+}
+
+test "complex_business_logic_tests" {
+  let order_total = 1200
+  let discount_rate = 10
+  let discount_amount = multiply(order_total, discount_rate) / 100
+  let final_total = add(order_total, -discount_amount)
+  assert_eq(1080, final_total)
+}
+
+test "assertion_function_tests" {
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("MoonBit", "MoonBit")
+  
+  let calc_result = add(15, 27)
+  assert_true(calc_result == 42)
+  assert_false(calc_result != 42)
+}
+
 
