@@ -2097,4 +2097,185 @@ test "task_distribution" {
   assert_eq(5, min_load)
 }
 
+// 新增的10个 MoonBit 测试用例
+test "string_length_validation" {
+  // 测试字符串长度验证
+  let short_string = "Hi"
+  let medium_string = "MoonBit"
+  let long_string = "This is a very long string for testing purposes"
+  
+  // 验证不同长度字符串的greet函数处理
+  assert_eq_string("Hello, Hi!", greet(short_string))
+  assert_eq_string("Hello, MoonBit!", greet(medium_string))
+  assert_eq_string("Hello, This is a very long string for testing purposes!", greet(long_string))
+}
+
+test "mathematical_series" {
+  // 测试数学级数计算
+  // 计算等比数列前n项和：a + ar + ar² + ... + ar^(n-1)
+  let a = 2      // 首项
+  let r = 3      // 公比
+  let n = 4      // 项数
+  
+  // 手动计算：2 + 6 + 18 + 54 = 80
+  let term1 = a
+  let term2 = multiply(a, r)
+  let term3 = multiply(term2, r)
+  let term4 = multiply(term3, r)
+  let sum = add(add(add(term1, term2), term3), term4)
+  
+  assert_eq(80, sum)
+}
+
+test "number_system_conversion" {
+  // 测试数字系统转换（简化版）
+  // 十进制转二进制模拟
+  let decimal_num = 13
+  
+  // 模拟13的二进制表示：1101 = 1*2³ + 1*2² + 0*2¹ + 1*2⁰ = 8 + 4 + 0 + 1 = 13
+  let bit0 = 1
+  let bit1 = 0
+  let bit2 = 1
+  let bit3 = 1
+  
+  let reconstructed = add(add(add(multiply(bit3, 8), multiply(bit2, 4)), multiply(bit1, 2)), bit0)
+  assert_eq(decimal_num, reconstructed)
+}
+
+test "temperature_conversion_precise" {
+  // 测试精确的温度转换
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数近似：F = C × 2 - C × 0.2 + 32 ≈ C × 2 + 32 - C/5
+  
+  let celsius = 25
+  let fahrenheit_approx = add(add(multiply(celsius, 2), 32), multiply(-1, celsius / 5))
+  assert_eq(77, fahrenheit_approx)  // 25 × 2 + 32 - 5 = 77
+  
+  // 测试负温度
+  let neg_celsius = -10
+  let neg_fahrenheit = add(add(multiply(neg_celsius, 2), 32), multiply(-1, neg_celsius / 5))
+  assert_eq(14, neg_fahrenheit)  // -10 × 2 + 32 - (-2) = 14
+}
+
+test "financial_compound_interest" {
+  // 测试金融复利计算
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
+  let compounds_per_year = 12  // 月复利
+  
+  // 简化复利公式：A = P(1 + r/n)^(nt)
+  // 近似计算：A = P(1 + r×t)
+  let growth_factor = add(1, multiply(annual_rate, years))
+  let final_amount = multiply(principal, growth_factor)
+  
+  assert_eq(160000, final_amount)  // 10000 × (1 + 5×3) = 10000 × 16 = 160000
+}
+
+test "statistical_variance" {
+  // 测试统计方差计算
+  // 数据集：[5, 8, 12, 15, 20]
+  let values = [5, 8, 12, 15, 20]
+  let count = 5
+  
+  // 计算平均值：(5 + 8 + 12 + 15 + 20) / 5 = 60 / 5 = 12
+  let sum = add(add(add(add(5, 8), 12), 15), 20)
+  let mean = sum / count
+  assert_eq(12, mean)
+  
+  // 计算方差：Σ(x - mean)² / n
+  let diff1 = add(5, -12)  // -7
+  let diff2 = add(8, -12)  // -4
+  let diff3 = add(12, -12) // 0
+  let diff4 = add(15, -12) // 3
+  let diff5 = add(20, -12) // 8
+  
+  let variance_sum = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), 
+                                multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5))
+  let variance = variance_sum / count
+  
+  assert_eq(26, variance)  // (49 + 16 + 0 + 9 + 64) / 5 = 138 / 5 = 27.6 ≈ 26 (整数除法)
+}
+
+test "geometry_circle_properties" {
+  // 测试圆的几何属性
+  let radius = 5
+  let pi_approx = 3  // π的近似值
+  
+  // 计算直径
+  let diameter = multiply(radius, 2)
+  assert_eq(10, diameter)
+  
+  // 计算周长：C = π × d
+  let circumference = multiply(pi_approx, diameter)
+  assert_eq(30, circumference)
+  
+  // 计算面积：A = π × r²
+  let area = multiply(pi_approx, multiply(radius, radius))
+  assert_eq(75, area)
+}
+
+test "game_score_ranking" {
+  // 测试游戏得分排名系统
+  let scores = [850, 920, 780, 950, 890]
+  let player_count = 5
+  
+  // 计算总分
+  let total_score = add(add(add(add(850, 920), 780), 950), 890)
+  assert_eq(4390, total_score)
+  
+  // 计算平均分
+  let average_score = total_score / player_count
+  assert_eq(878, average_score)  // 4390 / 5 = 878
+  
+  // 计算最高分和最低分的差值
+  let max_score = 950
+  let min_score = 780
+  let score_range = add(max_score, -min_score)
+  assert_eq(170, score_range)
+}
+
+test "network_throughput" {
+  // 测试网络吞吐量计算
+  let file_size = 1048576  // 1MB in bytes
+  let bandwidth = 1048576  // 1MB/s
+  let latency = 50         // 50ms
+  let packet_size = 1500   // 1500 bytes
+  
+  // 计算传输时间（简化）
+  let transfer_time = file_size / bandwidth
+  assert_eq(1, transfer_time)  // 1秒
+  
+  // 计算数据包数量
+  let packet_count = divide_with_ceil(file_size, packet_size)
+  assert_eq(700, packet_count)  // 1048576 / 1500 ≈ 699.05 ≈ 700
+  
+  // 计算总延迟时间
+  let total_latency = multiply(packet_count, latency)
+  assert_eq(35000, total_latency)  // 700 × 50 = 35000ms
+}
+
+test "data_structure_validation" {
+  // 测试数据结构验证
+  // 验证数组索引计算
+  let row = 3
+  let col = 2
+  let cols_per_row = 5
+  
+  // 二维数组转一维数组的索引计算
+  let index_1d = add(multiply(row, cols_per_row), col)
+  assert_eq(17, index_1d)  // 3 × 5 + 2 = 17
+  
+  // 验证边界条件
+  let first_index = add(multiply(0, cols_per_row), 0)
+  let last_index = add(multiply(9, cols_per_row), 4)  // 假设10行5列
+  
+  assert_eq(0, first_index)
+  assert_eq(49, last_index)
+  
+  // 验证索引范围
+  let is_valid_index = index_1d >= first_index && index_1d <= last_index
+  assert_true(is_valid_index)
+}
+
 
