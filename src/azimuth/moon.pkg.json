@@ -5,6 +5,7 @@
     "lib.mbt",
     "azimuth_test_suite.mbt",
     "new_moonbit_tests.mbt",
-    "test/standard_moonbit_test_cases.mbt"
+    "test/standard_moonbit_test_cases.mbt",
+    "test/essential_moonbit_tests.mbt"
   ]
 }
