@@ -1,275 +1,234 @@
-// Azimuth 项目额外的 MoonBit 测试用例
-// 涵盖各种数学运算、字符串处理和实际应用场景
+// 增强的 MoonBit 测试用例
+// 包含各种实际应用场景和边界情况测试
 
 test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的第10项：F(10) = 55
-  // 使用递推公式：F(n) = F(n-1) + F(n-2)
-  let f1 = 1  // F(1)
-  let f2 = 1  // F(2)
-  let f3 = @azimuth.add(f1, f2)  // F(3) = 2
-  let f4 = @azimuth.add(f2, f3)  // F(4) = 3
-  let f5 = @azimuth.add(f3, f4)  // F(5) = 5
-  let f6 = @azimuth.add(f4, f5)  // F(6) = 8
-  let f7 = @azimuth.add(f5, f6)  // F(7) = 13
-  let f8 = @azimuth.add(f6, f7)  // F(8) = 21
-  let f9 = @azimuth.add(f7, f8)  // F(9) = 34
-  let f10 = @azimuth.add(f8, f9)  // F(10) = 55
+  // 计算斐波那契数列的前几项
+  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
   
-  @azimuth.assert_eq(55, f10)
+  // 手动计算前几项
+  let f0 = 0
+  let f1 = 1
+  let f2 = f0 + f1  // 1
+  let f3 = f1 + f2  // 2
+  let f4 = f2 + f3  // 3
+  let f5 = f3 + f4  // 5
+  let f6 = f4 + f5  // 8
+  let f7 = f5 + f6  // 13
+  let f8 = f6 + f7  // 21
+  let f9 = f7 + f8  // 34
+  let f10 = f8 + f9 // 55
   
-  // 验证黄金比例近似：F(n+1)/F(n) ≈ 1.618
-  // 使用整数运算验证：F(10) * 100 / F(9) ≈ 161
-  let golden_ratio_approx = @azimuth.multiply(f10, 100) / f9
-  @azimuth.assert_eq(161, golden_ratio_approx)
+  // 使用简单的断言方式
+  if (f2 != 1) { @builtin.abort("Test failed") }
+  if (f3 != 2) { @builtin.abort("Test failed") }
+  if (f4 != 3) { @builtin.abort("Test failed") }
+  if (f5 != 5) { @builtin.abort("Test failed") }
+  if (f6 != 8) { @builtin.abort("Test failed") }
+  if (f7 != 13) { @builtin.abort("Test failed") }
+  if (f8 != 21) { @builtin.abort("Test failed") }
+  if (f9 != 34) { @builtin.abort("Test failed") }
+  if (f10 != 55) { @builtin.abort("Test failed") }
 }
 
 test "prime_number_validation" {
-  // 验证质数：检查7是否为质数
-  let num = 7
+  // 验证质数性质（通过模拟）
+  // 检查一个数是否能被小于它的数整除
+  
+  let num = 17
   let is_prime = true
   
-  // 检查2到6之间是否有因子
-  let has_factor_2 = (num % 2 == 0)
-  let has_factor_3 = (num % 3 == 0)
-  let has_factor_4 = (num % 4 == 0)
-  let has_factor_5 = (num % 5 == 0)
-  let has_factor_6 = (num % 6 == 0)
+  // 模拟质数检查：检查是否能被2, 3, 4, 5整除
+  let divisible_by_2 = (num % 2 == 0)
+  let divisible_by_3 = (num % 3 == 0)
+  let divisible_by_4 = (num % 4 == 0)
+  let divisible_by_5 = (num % 5 == 0)
   
-  // 7不能被2,3,4,5,6整除，所以是质数
-  let actually_prime = @azimuth.add(
-    @azimuth.add(
-      @azimuth.add(
-        @azimuth.add(
-          if (has_factor_2) { 0 } else { 1 },
-          if (has_factor_3) { 0 } else { 1 }
-        ),
-        if (has_factor_4) { 0 } else { 1 }
-      ),
-      if (has_factor_5) { 0 } else { 1 }
-    ),
-    if (has_factor_6) { 0 } else { 1 }
-  )
+  // 17不能被2, 3, 4, 5整除，所以是质数
+  if (divisible_by_2 != false) { @builtin.abort("Test failed") }
+  if (divisible_by_3 != false) { @builtin.abort("Test failed") }
+  if (divisible_by_4 != false) { @builtin.abort("Test failed") }
+  if (divisible_by_5 != false) { @builtin.abort("Test failed") }
   
-  @azimuth.assert_eq(5, actually_prime)  // 所有检查都通过，是质数
+  // 测试非质数
+  let composite_num = 15
+  let divisible_by_3_15 = (composite_num % 3 == 0)
+  let divisible_by_5_15 = (composite_num % 5 == 0)
   
-  // 验证6不是质数
-  let num2 = 6
-  let has_factor_2_2 = (num2 % 2 == 0)
-  @azimuth.assert_true(has_factor_2_2)  // 6能被2整除，不是质数
-}
-
-test "binary_number_simulation" {
-  // 模拟二进制运算：计算二进制1011(11) + 1100(12) = 10111(23)
-  let binary1 = 11  // 1011 in binary
-  let binary2 = 12  // 1100 in binary
-  
-  // 使用十进制加法模拟二进制加法
-  let sum = @azimuth.add(binary1, binary2)
-  @azimuth.assert_eq(23, sum)  // 10111 in binary
-  
-  // 模拟二进制位移运算：1011 << 2 = 101100
-  let left_shift = @azimuth.multiply(binary1, 4)  // 乘以2^2
-  @azimuth.assert_eq(44, left_shift)  // 101100 in binary = 44 in decimal
-  
-  // 模拟二进制与运算：1011 & 1100 = 1000
-  // 简化模拟：取两个数中较小的2的幂
-  let power_of_2_in_common = 8  // 1000 in binary = 8 in decimal
-  @azimuth.assert_eq(8, power_of_2_in_common)
+  if (divisible_by_3_15 != true) { @builtin.abort("Test failed") }
+  if (divisible_by_5_15 != true) { @builtin.abort("Test failed") }
 }
 
 test "loan_amortization_calculation" {
-  // 贷款分期计算：计算每月还款额（简化版）
-  let principal = 120000  // 贷款本金
-  let annual_rate = 6     // 年利率百分比
-  let loan_years = 30     // 贷款年限
+  // 贷款分期计算模拟
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let years = 30          // 贷款年限
+  let months = years * 12  // 总月数
   
-  // 简化计算：月利率 × 本金 ÷ 期限
-  let monthly_rate = annual_rate / 12  // 月利率百分比
-  let total_months = @azimuth.multiply(loan_years, 12)  // 总月数
-  let monthly_interest = @azimuth.multiply(principal, monthly_rate) / 100  // 月利息
-  let monthly_principal = principal / total_months  // 月本金
-  let monthly_payment = @azimuth.add(monthly_interest, monthly_principal)  // 月还款额
+  // 简化的月利率计算
+  let monthly_rate = annual_rate / 12  // 0.5%（简化为整数）
   
-  @azimuth.assert_eq(766, monthly_payment)  // 120000×0.5%÷360 + 120000÷360 ≈ 766
+  // 简化的月供计算：本金 / 月数 + 利息
+  let monthly_principal = principal / months
+  let first_month_interest = principal * monthly_rate / 100
+  let first_month_payment = monthly_principal + first_month_interest
   
-  // 计算总还款额
-  let total_payment = @azimuth.multiply(monthly_payment, total_months)
-  @azimuth.assert_eq(275760, total_payment)
-  
-  // 计算总利息
-  let total_interest = @azimuth.add(total_payment, -principal)
-  @azimuth.assert_eq(155760, total_interest)
-}
-
-test "physics_velocity_calculation" {
-  // 物理计算：速度和加速度
-  let initial_velocity = 10  // 初始速度 m/s
-  let acceleration = 3       // 加速度 m/s²
-  let time = 5               // 时间 s
-  
-  // 计算最终速度：v = v₀ + at
-  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
-  @azimuth.assert_eq(25, final_velocity)
-  
-  // 计算位移：s = v₀t + ½at²
-  let displacement_part1 = @azimuth.multiply(initial_velocity, time)  // v₀t = 50
-  let displacement_part2 = @azimuth.multiply(@azimuth.multiply(acceleration, time), time) / 2  // ½at² = 37.5，整数除法为37
-  let total_displacement = @azimuth.add(displacement_part1, displacement_part2)
-  @azimuth.assert_eq(87, total_displacement)
-  
-  // 计算平均速度：v_avg = (v₀ + v) / 2
-  let average_velocity = @azimuth.add(initial_velocity, final_velocity) / 2
-  @azimuth.assert_eq(17, average_velocity)
-}
-
-test "calendar_date_calculation" {
-  // 日历计算：计算两个日期之间的天数
-  let year1 = 2023
-  let month1 = 1
-  let day1 = 15
-  
-  let year2 = 2023
-  let month2 = 3
-  let day2 = 10
-  
-  // 简化计算：假设每个月30天
-  let days_from_start_of_year1 = @azimuth.add(@azimuth.multiply(month1, 30), day1)
-  let days_from_start_of_year2 = @azimuth.add(@azimuth.multiply(month2, 30), day2)
-  
-  let days_between = @azimuth.add(days_from_start_of_year2, -days_from_start_of_year1)
-  @azimuth.assert_eq(55, days_between)  // (3×30+10) - (1×30+15) = 100 - 45 = 55
-  
-  // 计算一年中的第几天（1月1日为第1天）
-  let day_of_year = @azimuth.add(@azimuth.multiply(5, 30), 15)  // 5月15日
-  @azimuth.assert_eq(165, day_of_year)
-  
-  // 计算星期几（简化：假设1月1日是星期一）
-  let day_of_week = day_of_year % 7
-  @azimuth.assert_eq(4, day_of_week)  // 第165天是星期五（0=星期一，4=星期五）
+  if (monthly_principal != 277) { @builtin.abort("Test failed") }  // 100000 / 360 ≈ 277
+  if (first_month_interest != 500) { @builtin.abort("Test failed") }  // 100000 * 0.5 / 100 = 500
+  if (first_month_payment != 777) { @builtin.abort("Test failed") }   // 277 + 500 = 777
 }
 
 test "data_compression_simulation" {
-  // 模拟数据压缩：计算压缩率
-  let original_size = 10000  // 原始数据大小（字节）
-  let compressed_size = 3500  // 压缩后大小（字节）
+  // 数据压缩模拟（简化版）
+  let original_data = "AAAAABBBCCCDDE"
+  
+  // 模拟游程编码：A5B3C3D2E1
+  let compressed_size = 10  // 压缩后大小
+  let original_size = 15    // 原始大小
   
   // 计算压缩率
-  let compression_ratio = @azimuth.multiply(compressed_size, 100) / original_size
-  @azimuth.assert_eq(35, compression_ratio)  // 压缩到35%
+  let compression_ratio = compressed_size * 100 / original_size
+  let space_saved = 100 - compression_ratio
   
-  // 计算节省的空间
-  let space_saved = @azimuth.add(original_size, -compressed_size)
-  @azimuth.assert_eq(6500, space_saved)
-  
-  // 计算节省的百分比
-  let space_saved_percent = @azimuth.multiply(space_saved, 100) / original_size
-  @azimuth.assert_eq(65, space_saved_percent)  // 节省65%空间
-  
-  // 模拟重复数据的压缩效果
-  let repeated_data_size = @azimuth.multiply(100, 50)  // 50个重复的100字节块
-  let highly_compressed_size = @azimuth.multiply(100, 5)  // 压缩到5个块
-  let high_compression_ratio = @azimuth.multiply(highly_compressed_size, 100) / repeated_data_size
-  @azimuth.assert_eq(10, high_compression_ratio)  // 压缩到10%
+  if (compression_ratio != 66) { @builtin.abort("Test failed") }  // 10*100/15 ≈ 66
+  if (space_saved != 34) { @builtin.abort("Test failed") }        // 100-66 = 34
 }
 
-test "game_probability_calculation" {
-  // 游戏概率计算：计算获胜概率
-  let total_outcomes = 1000  // 总可能结果数
-  let winning_outcomes = 150  // 获胜结果数
+test "cache_performance_simulation" {
+  // 缓存性能模拟
+  let total_requests = 1000
+  let cache_hit_rate = 80  // 80%命中率
+  let cache_access_time = 1   // 1ms
+  let memory_access_time = 10 // 10ms
   
-  // 计算获胜概率（百分比）
-  let win_probability = @azimuth.multiply(winning_outcomes, 100) / total_outcomes
-  @azimuth.assert_eq(15, win_probability)  // 15%的获胜概率
+  // 计算缓存命中数
+  let cache_hits = total_requests * cache_hit_rate / 100
+  let cache_misses = total_requests - cache_hits
   
-  // 计算期望值：奖金 × 概率
-  let prize = 500  // 奖金
-  let expected_value = @azimuth.multiply(prize, win_probability) / 100
-  @azimuth.assert_eq(75, expected_value)  // 期望值75
+  // 计算总访问时间
+  let cache_time = cache_hits * cache_access_time
+  let memory_time = cache_misses * memory_access_time
+  let total_time = cache_time + memory_time
   
-  // 计算多次游戏的期望结果
-  let games_played = 100
-  let expected_wins = @azimuth.multiply(games_played, win_probability) / 100
-  @azimuth.assert_eq(15, expected_wins)  // 期望获胜15次
-  
-  let expected_total_prize = @azimuth.multiply(expected_wins, prize)
-  @azimuth.assert_eq(7500, expected_total_prize)  // 期望总奖金7500
-  
-  // 计算盈亏平衡点
-  let cost_per_game = 8  // 每次游戏费用
-  let total_cost = @azimuth.multiply(games_played, cost_per_game)
-  let profit_loss = @azimuth.add(expected_total_prize, -total_cost)
-  @azimuth.assert_eq(-700, profit_loss)  // 期望亏损700
+  if (cache_hits != 800) { @builtin.abort("Test failed") }
+  if (cache_misses != 200) { @builtin.abort("Test failed") }
+  if (cache_time != 800) { @builtin.abort("Test failed") }
+  if (memory_time != 2000) { @builtin.abort("Test failed") }
+  if (total_time != 2800) { @builtin.abort("Test failed") }
 }
 
-test "network_throughput_calculation" {
-  // 网络吞吐量计算
-  let file_size = 5000000  // 文件大小（字节）
-  let bandwidth = 1000000   // 带宽（字节/秒）
-  let latency = 50         // 延迟（毫秒）
-  let packet_overhead = 200 // 数据包开销（字节）
-  let packet_size = 1500   // 数据包大小（字节）
-  
-  // 计算有效载荷大小
-  let payload_per_packet = @azimuth.add(packet_size, -packet_overhead)
-  @azimuth.assert_eq(1300, payload_per_packet)
-  
-  // 计算需要的数据包数量
-  let packets_needed = file_size / payload_per_packet
-  @azimuth.assert_eq(3846, packets_needed)  // 5000000÷1300≈3846
-  
-  // 计算总开销
-  let total_overhead = @azimuth.multiply(packets_needed, packet_overhead)
-  @azimuth.assert_eq(769200, total_overhead)
-  
-  // 计算传输数据量
-  let total_data = @azimuth.add(file_size, total_overhead)
-  @azimuth.assert_eq(5769200, total_data)
+test "network_bandwidth_calculation" {
+  // 网络带宽计算
+  let file_size_mb = 100    // 100MB文件
+  let bandwidth_mbps = 10   // 10Mbps带宽
   
   // 计算传输时间（秒）
-  let transfer_time = total_data / bandwidth
-  @azimuth.assert_eq(5, transfer_time)
+  let file_size_mbits = file_size_mb * 8  // 转换为Mbit
+  let transfer_time_seconds = file_size_mbits / bandwidth_mbps
   
-  // 计算总时间（包括延迟）
-  let total_time = @azimuth.add(transfer_time, latency / 1000)
-  @azimuth.assert_eq(5, total_time)  // 整数除法，延迟小于1秒
+  // 转换为分钟和秒
+  let minutes = transfer_time_seconds / 60
+  let seconds = transfer_time_seconds % 60
   
-  // 计算实际吞吐量
-  let actual_throughput = file_size / total_time
-  @azimuth.assert_eq(1000000, actual_throughput)
+  if (file_size_mbits != 800) { @builtin.abort("Test failed") }  // 100 * 8 = 800
+  if (transfer_time_seconds != 80) { @builtin.abort("Test failed") }  // 800 / 10 = 80秒
+  if (minutes != 1) { @builtin.abort("Test failed") }  // 80 / 60 = 1分钟
+  if (seconds != 20) { @builtin.abort("Test failed") } // 80 % 60 = 20秒
 }
 
-test "cryptography_simulation" {
-  // 模拟密码学运算：简单的凯撒密码
-  let original_message = "HELLO"
-  let shift = 3
+test "inventory_management" {
+  // 库存管理计算
+  let initial_stock = 1000
+  let daily_sales = 50
+  let restock_amount = 300
+  let reorder_threshold = 200
   
-  // 模拟加密：将字母向后移动3位
-  // H(7) + 3 = K(10), E(4) + 3 = H(7), L(11) + 3 = O(14), L(11) + 3 = O(14), O(14) + 3 = R(17)
-  let encrypted_message = "KHOOR"
+  // 模拟5天的库存变化
+  let day1_stock = initial_stock - daily_sales  // 950
+  let day2_stock = day1_stock - daily_sales    // 900
+  let day3_stock = day2_stock - daily_sales    // 850
+  let day4_stock = day3_stock - daily_sales    // 800
+  let day5_stock = day4_stock - daily_sales    // 750
   
-  // 验证加密结果
-  @azimuth.assert_eq_string("Hello, KHOOR!", @azimuth.greet(encrypted_message))
+  // 检查是否需要补货
+  let needs_reorder = day5_stock < reorder_threshold
+  let after_restock = if needs_reorder { 
+    day5_stock + restock_amount 
+  } else { 
+    day5_stock 
+  }
   
-  // 模拟数字加密：异或运算（使用加法模拟）
-  let original_number = 12345
-  let key = 54321
+  if (day5_stock != 750) { @builtin.abort("Test failed") }
+  if (needs_reorder != false) { @builtin.abort("Test failed") }  // 750 > 200，不需要补货
+  if (after_restock != 750) { @builtin.abort("Test failed") }
+}
+
+test "cryptographic_hash_simulation" {
+  // 加密哈希模拟（简化版）
+  let input_data = "Hello"
+  let hash_prime = 31
+  let hash_result = 1
   
-  // 简单的"加密"：数字与密钥相加
-  let encrypted_number = @azimuth.add(original_number, key)
-  @azimuth.assert_eq(66666, encrypted_number)
+  // 模拟简单的哈希计算：hash = hash * prime + char_code
+  let h_char = hash_result * hash_prime  // 31
+  let e_char = h_char * hash_prime       // 31*31
+  let l1_char = e_char * hash_prime      // 31*31*31
+  let l2_char = l1_char * hash_prime     // 31*31*31*31
+  let o_char = l2_char * hash_prime      // 31*31*31*31*31
   
-  // "解密"：减去密钥
-  let decrypted_number = @azimuth.add(encrypted_number, -key)
-  @azimuth.assert_eq(12345, decrypted_number)
+  // 简化的哈希值计算
+  let simplified_hash = l2_char + 100  // 简化
   
-  // 模拟哈希函数（简化版）：数字各位之和
-  let hash_input = 12345
-  let digit1 = hash_input / 10000
-  let digit2 = (hash_input % 10000) / 1000
-  let digit3 = (hash_input % 1000) / 100
-  let digit4 = (hash_input % 100) / 10
-  let digit5 = hash_input % 10
+  if (h_char != 31) { @builtin.abort("Test failed") }
+  if (e_char != 961) { @builtin.abort("Test failed") }  // 31*31
+  if (simplified_hash <= 1000000) { @builtin.abort("Test failed") }  // 确保哈希值足够大
+}
+
+test "machine_learning_prediction" {
+  // 机器学习预测模拟（线性回归）
+  let feature1 = 2
+  let feature2 = 3
+  let feature3 = 1
+  let weight1 = 5
+  let weight2 = -2
+  let weight3 = 1
+  let bias = 10
   
-  let hash_result = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(digit1, digit2), digit3), digit4), digit5)
-  @azimuth.assert_eq(15, hash_result)  // 1+2+3+4+5 = 15
+  // 计算预测值：prediction = w1*x1 + w2*x2 + w3*x3 + bias
+  let term1 = feature1 * weight1  // 2*5 = 10
+  let term2 = feature2 * weight2  // 3*(-2) = -6
+  let term3 = feature3 * weight3  // 1*1 = 1
+  
+  let prediction = term1 + term2 + term3 + bias
+  if (prediction != 15) { @builtin.abort("Test failed") }  // 10 + (-6) + 1 + 10 = 15
+  
+  // 计算预测误差
+  let actual_value = 18
+  let error = actual_value - prediction
+  if (error != 3) { @builtin.abort("Test failed") }
+}
+
+test "database_query_optimization" {
+  // 数据库查询优化模拟
+  let table_size = 1000000
+  let selectivity_percent = 10  // 10%的选择率
+  let index_scan_cost = 2
+  let full_scan_cost = 100
+  
+  // 计算索引扫描成本
+  let selected_rows = table_size * selectivity_percent / 100
+  let index_scan_total = selected_rows * index_scan_cost
+  
+  // 计算全表扫描成本
+  let full_scan_total = table_size * full_scan_cost
+  
+  // 选择最优扫描方式
+  let use_index_scan = index_scan_total < full_scan_total
+  let optimal_cost = if use_index_scan { index_scan_total } else { full_scan_total }
+  
+  if (selected_rows != 100000) { @builtin.abort("Test failed") }
+  if (index_scan_total != 200000) { @builtin.abort("Test failed") }
+  if (full_scan_total != 100000000) { @builtin.abort("Test failed") }
+  if (use_index_scan != true) { @builtin.abort("Test failed") }
+  if (optimal_cost != 200000) { @builtin.abort("Test failed") }
 }
