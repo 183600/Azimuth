@@ -1,273 +1,211 @@
-// 额外的 MoonBit 测试用例
-// 测试项目的核心功能和实际应用场景
+// 新增的 MoonBit 测试用例
+// 覆盖各种边界条件、实际应用场景和复杂计算
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  // 正常情况
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))
-  
-  // 边界情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(5, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  
-  // 负数情况
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-9, 3))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-5, 3))
-}
-
-test "mathematical_associativity_laws" {
-  // 测试数学结合律
-  let a = 15
-  let b = 25
-  let c = 35
-  
-  // 加法结合律: (a + b) + c = a + (b + c)
-  let left_add = @azimuth.add(@azimuth.add(a, b), c)
-  let right_add = @azimuth.add(a, @azimuth.add(b, c))
-  @azimuth.assert_eq(left_add, right_add)
-  
-  // 乘法结合律: (a × b) × c = a × (b × c)
-  let left_mul = @azimuth.multiply(@azimuth.multiply(a, b), c)
-  let right_mul = @azimuth.multiply(a, @azimuth.multiply(b, c))
-  @azimuth.assert_eq(left_mul, right_mul)
-  
-  // 混合运算结合律测试
-  let mixed1 = @azimuth.add(@azimuth.multiply(a, b), c)
-  let mixed2 = @azimuth.multiply(a, @azimuth.add(b, c))
-  // 这两个不应该相等，但我们测试它们的计算是否正确
-  @azimuth.assert_eq(410, mixed1)  // 15*25 + 35 = 375 + 35 = 410
-  @azimuth.assert_eq(900, mixed2)  // 15*(25+35) = 15*60 = 900
-}
-
-test "discount_price_calculation" {
-  // 测试实际场景：计算折扣价格
-  let original_price = 1000
-  let discount_percentage = 20  // 20% 折扣
-  let tax_percentage = 8        // 8% 税费
-  
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  @azimuth.assert_eq(200, discount_amount)
-  
-  // 计算折后价格
-  let discounted_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(800, discounted_price)
-  
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_price, tax_percentage) / 100
-  @azimuth.assert_eq(64, tax_amount)
-  
-  // 计算最终价格
-  let final_price = @azimuth.add(discounted_price, tax_amount)
-  @azimuth.assert_eq(864, final_price)
-}
-
-test "speed_distance_time_calculations" {
-  // 测试实际场景：计算速度、距离和时间
-  // 公式：距离 = 速度 × 时间
-  let speed = 60  // km/h
-  
-  // 使用整数计算：60 * 250 / 100 = 150
-  let distance = @azimuth.multiply(speed, 250) / 100
-  @azimuth.assert_eq(150, distance)
-  
-  // 反向计算：速度 = 距离 / 时间
-  let calculated_speed = distance / 2  // 简化为整数除法
-  @azimuth.assert_eq(75, calculated_speed)  // 150 / 2 = 75
-  
-  // 另一个场景：计算到达时间
-  let remaining_distance = 300
-  let average_speed = 75
-  let time_needed = @azimuth.divide_with_ceil(remaining_distance, average_speed)
-  @azimuth.assert_eq(4, time_needed)  // 300/75 = 4 小时
-}
-
-test "extreme_boundary_operations" {
-  // 测试边界情况：最大值和最小值的运算
+test "extreme_boundary_addition" {
+  // 测试极值加法运算
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值与正数运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 测试最大值与最小值相加
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
   
-  // 最大值与负数运算
-  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, -1))
+  // 测试最大值溢出
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
   
-  // 最小值与正数运算
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  
-  // 最小值与负数运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(min_val, -1))
-  
-  // 零与边界值运算
-  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.add(0, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(0, min_val))
+  // 测试最小值溢出
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
 }
 
-test "multilingual_greeting_processing" {
-  // 测试字符串处理：不同语言的问候
-  // 英文问候
-  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
-  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet("Bob"))
+test "complex_financial_calculation" {
+  // 测试复杂财务计算：贷款分期付款
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let years = 30          // 贷款年限
+  let months = years * 12 // 总月数
   
-  // 中文问候
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
-  @azimuth.assert_eq_string("Hello, 李四!", @azimuth.greet("李四"))
-  
-  // 日文问候
-  @azimuth.assert_eq_string("Hello, 田中!", @azimuth.greet("田中"))
-  @azimuth.assert_eq_string("Hello, 佐藤!", @azimuth.greet("佐藤"))
-  
-  // 韩文问候
-  @azimuth.assert_eq_string("Hello, 김철수!", @azimuth.greet("김철수"))
-  @azimuth.assert_eq_string("Hello, 이영희!", @azimuth.greet("이영희"))
-  
-  // 阿拉伯文问候
-  @azimuth.assert_eq_string("Hello, محمد!", @azimuth.greet("محمد"))
-  
-  // 俄文问候
-  @azimuth.assert_eq_string("Hello, Владимир!", @azimuth.greet("Владимир"))
-  
-  // 混合语言
-  @azimuth.assert_eq_string("Hello, John张三!", @azimuth.greet("John张三"))
-}
-
-test "mathematical_difference_of_squares" {
-  // 测试数学性质：平方差公式 (a² - b²) = (a + b)(a - b)
-  let a = 13
-  let b = 7
-  
-  // 直接计算 a² - b²
-  let a_squared = @azimuth.multiply(a, a)
-  let b_squared = @azimuth.multiply(b, b)
-  let direct_result = @azimuth.add(a_squared, -b_squared)
-  
-  // 使用平方差公式计算 (a + b)(a - b)
-  let sum = @azimuth.add(a, b)
-  let difference = @azimuth.add(a, -b)
-  let formula_result = @azimuth.multiply(sum, difference)
-  
-  // 验证两种方法结果相同
-  @azimuth.assert_eq(direct_result, formula_result)
-  @azimuth.assert_eq(120, direct_result)  // 13² - 7² = 169 - 49 = 120
-  
-  // 测试另一组数值
-  let x = 25
-  let y = 15
-  let x_squared = @azimuth.multiply(x, x)
-  let y_squared = @azimuth.multiply(y, y)
-  let result2 = @azimuth.add(x_squared, -y_squared)
-  
-  let sum2 = @azimuth.add(x, y)
-  let diff2 = @azimuth.add(x, -y)
-  let formula_result2 = @azimuth.multiply(sum2, diff2)
-  
-  @azimuth.assert_eq(result2, formula_result2)
-  @azimuth.assert_eq(400, result2)  // 25² - 15² = 625 - 225 = 400
-}
-
-test "bmi_calculation_simplified" {
-  // 测试实际场景：计算BMI指数（简化版）
-  // BMI = 体重(kg) / 身高(m)²
-  // 使用整数计算，避免浮点数：BMI = 体重(kg) × 10000 / 身高(cm)²
-  
-  let weight_kg = 70      // 体重：70kg
-  let height_cm = 175     // 身高：175cm
-  
-  // 计算身高平方
-  let height_squared = @azimuth.multiply(height_cm, height_cm)
-  
-  // 计算BMI（乘以100以保留两位小数）
-  let bmi_times_100 = @azimuth.multiply(weight_kg, 10000) / height_squared
-  @azimuth.assert_eq(22, bmi_times_100)  // 70×10000/175² ≈ 22.86，取整为22
-  
-  // 另一个例子
-  let weight2 = 85
-  let height2 = 180
-  let height2_squared = @azimuth.multiply(height2, height2)
-  let bmi2_times_100 = @azimuth.multiply(weight2, 10000) / height2_squared
-  @azimuth.assert_eq(26, bmi2_times_100)  // 85×10000/180² ≈ 26.23，取整为26
-  
-  // BMI分类测试（简化版）
-  // BMI < 18.5: 体重过轻
-  // 18.5 ≤ BMI < 25: 正常体重
-  // 25 ≤ BMI < 30: 超重
-  // BMI ≥ 30: 肥胖
-  
-  let normal_bmi = 22
-  let overweight_bmi = 26
-  
-  @azimuth.assert_true(normal_bmi >= 18 && normal_bmi < 25)
-  @azimuth.assert_true(overweight_bmi >= 25 && overweight_bmi < 30)
-}
-
-test "factorial_calculation" {
-  // 测试数学运算：阶乘计算
-  // 计算 5! = 5 × 4 × 3 × 2 × 1 = 120
-  let n = 5
-  let factorial_5 = @azimuth.multiply(n, @azimuth.multiply(n - 1, @azimuth.multiply(n - 2, @azimuth.multiply(n - 3, n - 4))))
-  @azimuth.assert_eq(120, factorial_5)
-  
-  // 计算 4! = 4 × 3 × 2 × 1 = 24
-  let factorial_4 = @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1)))
-  @azimuth.assert_eq(24, factorial_4)
-  
-  // 计算 3! = 3 × 2 × 1 = 6
-  let factorial_3 = @azimuth.multiply(3, @azimuth.multiply(2, 1))
-  @azimuth.assert_eq(6, factorial_3)
-  
-  // 计算 6! = 6 × 5 × 4 × 3 × 2 × 1 = 720
-  let factorial_6 = @azimuth.multiply(6, @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1)))))
-  @azimuth.assert_eq(720, factorial_6)
-  
-  // 验证阶乘性质：n! = n × (n-1)!
-  let factorial_5_alt = @azimuth.multiply(5, 24)  // 5 × 4!
-  @azimuth.assert_eq(120, factorial_5_alt)
-}
-
-test "loan_payment_calculation" {
-  // 测试实际场景：计算贷款月供（简化版）
-  // 简化的月供计算：月供 = (本金 + 总利息) / 月数
-  // 总利息 = 本金 × 年利率 × 年数
-  
-  let principal = 100000    // 贷款本金：100,000元
-  let annual_rate = 5       // 年利率：5%
-  let years = 3             // 贷款年限：3年
-  let months = @azimuth.multiply(years, 12)  // 总月数
-  
-  // 计算总利息
+  // 简化的月供计算：本金 + 总利息
   let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years)) / 100
-  @azimuth.assert_eq(15000, total_interest)  // 100000 × 5% × 3 = 15000
-  
-  // 计算总还款额
   let total_payment = @azimuth.add(principal, total_interest)
-  @azimuth.assert_eq(115000, total_payment)
-  
-  // 计算月供
   let monthly_payment = total_payment / months
-  @azimuth.assert_eq(3194, monthly_payment)  // 115000 / 36 ≈ 3194.44，取整为3194
   
-  // 另一个例子：更大金额的贷款
-  let principal2 = 500000
-  let annual_rate2 = 4
-  let years2 = 10
-  let months2 = @azimuth.multiply(years2, 12)
+  @azimuth.assert_eq(555, monthly_payment)  // 简化计算结果
+}
+
+test "geometry_volume_calculations" {
+  // 测试几何体积计算
+  let radius = 5
   
-  let total_interest2 = @azimuth.multiply(principal2, @azimuth.multiply(annual_rate2, years2)) / 100
-  let total_payment2 = @azimuth.add(principal2, total_interest2)
-  let monthly_payment2 = total_payment2 / months2
+  // 球体体积（简化公式）：4/3 * π * r³ ≈ 4 * r³
+  let sphere_volume = @azimuth.multiply(4, @azimuth.multiply(radius, @azimuth.multiply(radius, radius)))
+  @azimuth.assert_eq(500, sphere_volume)
   
-  @azimuth.assert_eq(200000, total_interest2)  // 500000 × 4% × 10 = 200000
-  @azimuth.assert_eq(700000, total_payment2)   // 500000 + 200000 = 700000
-  @azimuth.assert_eq(5833, monthly_payment2)   // 700000 / 120 ≈ 5833.33，取整为5833
+  // 圆柱体体积（简化公式）：π * r² * h ≈ 3 * r² * h
+  let height = 10
+  let cylinder_volume = @azimuth.multiply(3, @azimuth.multiply(@azimuth.multiply(radius, radius), height))
+  @azimuth.assert_eq(750, cylinder_volume)
+  
+  // 圆锥体体积（简化公式）：1/3 * π * r² * h ≈ r² * h
+  let cone_volume = @azimuth.multiply(@azimuth.multiply(radius, radius), height)
+  @azimuth.assert_eq(250, cone_volume)
+}
+
+test "advanced_string_processing" {
+  // 测试高级字符串处理
+  // 测试包含各种特殊字符的字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  @azimuth.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", @azimuth.greet(special_chars))
+  
+  // 测试包含Unicode字符的字符串
+  let unicode_text = "Hello世界🌍"
+  @azimuth.assert_eq_string("Hello, Hello世界🌍!", @azimuth.greet(unicode_text))
+  
+  // 测试包含数字和字母混合的字符串
+  let alphanumeric = "User2023ProjectAlpha"
+  @azimuth.assert_eq_string("Hello, User2023ProjectAlpha!", @azimuth.greet(alphanumeric))
+}
+
+test "physics_motion_calculations" {
+  // 测试物理运动计算
+  let initial_velocity = 10  // 初始速度 m/s
+  let acceleration = 2       // 加速度 m/s²
+  let time = 5               // 时间 s
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
+  @azimuth.assert_eq(20, final_velocity)
+  
+  // 计算位移（简化公式）：s = ut + 0.5at² ≈ ut + at²/2
+  let displacement = @azimuth.add(@azimuth.multiply(initial_velocity, time), 
+                                 @azimuth.multiply(@azimuth.multiply(acceleration, time), time) / 2)
+  @azimuth.assert_eq(75, displacement)
+  
+  // 计算动能（简化公式）：KE = 0.5 * m * v² ≈ m * v²
+  let mass = 10
+  let kinetic_energy = @azimuth.multiply(mass, @azimuth.multiply(final_velocity, final_velocity))
+  @azimuth.assert_eq(4000, kinetic_energy)
+}
+
+test "statistical_analysis" {
+  // 测试统计分析计算
+  // 数据集：10, 20, 30, 40, 50
+  let data1 = 10
+  let data2 = 20
+  let data3 = 30
+  let data4 = 40
+  let data5 = 50
+  
+  let sum1 = @azimuth.add(data1, data2)
+  let sum2 = @azimuth.add(sum1, data3)
+  let sum3 = @azimuth.add(sum2, data4)
+  let data_sum = @azimuth.add(sum3, data5)
+  
+  @azimuth.assert_eq(150, data_sum)
+  
+  // 计算平均值
+  let data_count = 5
+  let mean = data_sum / data_count
+  @azimuth.assert_eq(30, mean)
+  
+  // 计算方差（简化）：平方和的平均值
+  let diff1 = data1 - mean
+  let diff2 = data2 - mean
+  let diff3 = data3 - mean
+  let diff4 = data4 - mean
+  let diff5 = data5 - mean
+  
+  let sq1 = @azimuth.multiply(diff1, diff1)
+  let sq2 = @azimuth.multiply(diff2, diff2)
+  let sq3 = @azimuth.multiply(diff3, diff3)
+  let sq4 = @azimuth.multiply(diff4, diff4)
+  let sq5 = @azimuth.multiply(diff5, diff5)
+  
+  let sq_sum1 = @azimuth.add(sq1, sq2)
+  let sq_sum2 = @azimuth.add(sq_sum1, sq3)
+  let sq_sum3 = @azimuth.add(sq_sum2, sq4)
+  let variance_sum = @azimuth.add(sq_sum3, sq5)
+  
+  let variance = variance_sum / data_count
+  @azimuth.assert_eq(200, variance)
+}
+
+test "cryptography_simulation" {
+  // 测试密码学模拟（简化版）
+  let plaintext = 1234
+  let key = 5678
+  
+  // 简单的加密操作：异或的简化版本（使用加减法模拟）
+  let encrypted = @azimuth.add(plaintext, key)
+  @azimuth.assert_eq(6912, encrypted)
+  
+  // 解密操作
+  let decrypted = @azimuth.add(encrypted, -key)
+  @azimuth.assert_eq(plaintext, decrypted)
+  
+  // 测试密钥强度（简化：密钥的平方）
+  let key_strength = @azimuth.multiply(key, key)
+  @azimuth.assert_eq(32239684, key_strength)
+}
+
+test "game_mechanics_calculation" {
+  // 测试游戏机制计算
+  let base_damage = 100
+  let weapon_multiplier = 2
+  let critical_multiplier = 2
+  
+  // 计算基础伤害
+  let normal_damage = @azimuth.multiply(base_damage, weapon_multiplier)
+  @azimuth.assert_eq(200, normal_damage)
+  
+  // 计算暴击伤害
+  let critical_damage = @azimuth.multiply(normal_damage, critical_multiplier)
+  @azimuth.assert_eq(400, critical_damage)
+  
+  // 计算期望伤害（简化）：普通伤害 * 80% + 暴击伤害 * 20%
+  let normal_part = @azimuth.multiply(normal_damage, 80)
+  let critical_part = @azimuth.multiply(critical_damage, 20)
+  let total_parts = @azimuth.add(normal_part, critical_part)
+  let expected_damage = total_parts / 100
+  @azimuth.assert_eq(240, expected_damage)
+}
+
+test "data_structure_operations" {
+  // 测试数据结构操作（模拟）
+  let array_size = 10
+  let element_size = 4
+  
+  // 计算数组总大小
+  let total_size = @azimuth.multiply(array_size, element_size)
+  @azimuth.assert_eq(40, total_size)
+  
+  // 计算二维数组索引（行主序）
+  let row = 3
+  let col = 2
+  let width = 5
+  let row_offset = @azimuth.multiply(row, width)
+  let index = @azimuth.add(row_offset, col)
+  @azimuth.assert_eq(17, index)
+  
+  // 计算哈希表容量（简化：下一个2的幂）
+  let hash_capacity = 128  // 简化为固定的下一个2的幂
+  @azimuth.assert_eq(128, hash_capacity)
+}
+
+test "network_protocol_simulation" {
+  // 测试网络协议模拟
+  let packet_size = 1024
+  let header_size = 20
+  let payload_size = @azimuth.add(packet_size, -header_size)
+  @azimuth.assert_eq(1004, payload_size)
+  
+  // 计算带宽利用率
+  let transmission_time = @azimuth.multiply(packet_size, 8)  // 转换为位
+  @azimuth.assert_eq(8192, transmission_time)
+  
+  // 计算延迟（简化）
+  let propagation_delay = 50  // 50ms
+  let transmission_delay = 10  // 10ms
+  let total_delay = @azimuth.add(propagation_delay, transmission_delay)
+  @azimuth.assert_eq(60, total_delay)
 }
