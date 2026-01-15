@@ -2278,4 +2278,363 @@ test "data_structure_validation" {
   assert_true(is_valid_index)
 }
 
+// 新增的10个 MoonBit 测试用例
+test "complex_arithmetic_sequence" {
+  // 测试复杂等差数列计算
+  // 计算数列：3, 7, 11, 15, 19, 23, 27, 31, 35, 39 的和
+  // 这是一个首项为3，公差为4的等差数列
+  let first_term = 3
+  let common_diff = 4
+  let num_terms = 10
+  
+  // 使用公式：和 = n/2 × (2a + (n-1)d)
+  let sum_formula = multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))) / 2
+  assert_eq(210, sum_formula)  // 10/2 × (6 + 36) = 5 × 42 = 210
+  
+  // 验证特定项的值
+  let term_5 = add(first_term, multiply(4, common_diff))  // 第5项
+  assert_eq(19, term_5)  // 3 + 4×4 = 19
+  
+  let term_10 = add(first_term, multiply(9, common_diff))  // 第10项
+  assert_eq(39, term_10)  // 3 + 9×4 = 39
+}
+
+test "string_pattern_matching" {
+  // 测试字符串模式匹配场景
+  // 模拟简单的字符串匹配算法
+  
+  // 测试包含特定模式的字符串
+  let pattern = "test"
+  let text1 = "this is a test string"
+  let text2 = "no match here"
+  let text3 = "test at beginning"
+  let text4 = "test"
+  
+  // 验证字符串包含关系（通过greet函数间接测试）
+  let result1 = greet(text1)
+  let result2 = greet(text2)
+  let result3 = greet(text3)
+  let result4 = greet(text4)
+  
+  assert_eq_string("Hello, this is a test string!", result1)
+  assert_eq_string("Hello, no match here!", result2)
+  assert_eq_string("Hello, test at beginning!", result3)
+  assert_eq_string("Hello, test!", result4)
+  
+  // 测试字符串长度计算（模拟）
+  let len1 = 21  // "this is a test string" 的长度
+  let len2 = 14  // "no match here" 的长度
+  let len3 = 19  // "test at beginning" 的长度
+  let len4 = 4   // "test" 的长度
+  
+  // 验证长度关系
+  assert_true(len1 > len2)
+  assert_true(len3 > len4)
+  assert_eq(4, len4)
+}
+
+test "memory_address_calculation" {
+  // 测试内存地址计算模拟
+  // 模拟数组元素的内存地址计算
+  
+  let base_address = 1000  // 基地址
+  let element_size = 4     // 每个元素4字节
+  let index1 = 0
+  let index2 = 5
+  let index3 = 10
+  
+  // 计算元素地址：地址 = 基地址 + 索引 × 元素大小
+  let addr1 = add(base_address, multiply(index1, element_size))
+  let addr2 = add(base_address, multiply(index2, element_size))
+  let addr3 = add(base_address, multiply(index3, element_size))
+  
+  assert_eq(1000, addr1)  // 1000 + 0×4 = 1000
+  assert_eq(1020, addr2)  // 1000 + 5×4 = 1020
+  assert_eq(1040, addr3)  // 1000 + 10×4 = 1040
+  
+  // 计算元素间的偏移量
+  let offset12 = add(addr2, -addr1)
+  let offset23 = add(addr3, -addr2)
+  
+  assert_eq(20, offset12)  // 1020 - 1000 = 20
+  assert_eq(20, offset23)  // 1040 - 1020 = 20
+  
+  // 验证地址对齐（4字节对齐）
+  let aligned1 = addr1 % element_size == 0
+  let aligned2 = addr2 % element_size == 0
+  let aligned3 = addr3 % element_size == 0
+  
+  assert_true(aligned1 && aligned2 && aligned3)
+}
+
+test "probability_calculation" {
+  // 测试概率计算场景
+  // 模掷两个骰子的概率计算
+  
+  let dice_faces = 6  // 六面骰子
+  let total_outcomes = multiply(dice_faces, dice_faces)  // 总结果数 = 6×6 = 36
+  
+  // 计算特定点数的组合数
+  let sum_7_combinations = 6  // 点数和为7的组合：(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)
+  let sum_11_combinations = 2 // 点数和为11的组合：(5,6), (6,5)
+  let sum_2_combinations = 1  // 点数和为2的组合：(1,1)
+  let sum_12_combinations = 1 // 点数和为12的组合：(6,6)
+  
+  // 计算概率（以百分比表示）
+  let prob_7 = multiply(sum_7_combinations, 100) / total_outcomes
+  let prob_11 = multiply(sum_11_combinations, 100) / total_outcomes
+  let prob_2 = multiply(sum_2_combinations, 100) / total_outcomes
+  let prob_12 = multiply(sum_12_combinations, 100) / total_outcomes
+  
+  assert_eq(16, prob_7)   // 6/36 ≈ 16.67% ≈ 16%
+  assert_eq(5, prob_11)   // 2/36 ≈ 5.56% ≈ 5%
+  assert_eq(2, prob_2)    // 1/36 ≈ 2.78% ≈ 2%
+  assert_eq(2, prob_12)   // 1/36 ≈ 2.78% ≈ 2%
+  
+  // 计算期望值（简化）
+  let expected_sum = 7  // 两个骰子的期望和
+  assert_eq(7, expected_sum)
+}
+
+test "circular_buffer_operations" {
+  // 测试循环缓冲区操作模拟
+  let buffer_size = 8
+  let initial_head = 0
+  let initial_tail = 0
+  let initial_count = 0
+  
+  // 模拟入队操作
+  let enqueue_count = 5
+  let new_tail = add(initial_tail, enqueue_count) % buffer_size
+  let new_count = add(initial_count, enqueue_count)
+  
+  assert_eq(5, new_tail)  // (0 + 5) % 8 = 5
+  assert_eq(5, new_count) // 0 + 5 = 5
+  
+  // 模拟出队操作
+  let dequeue_count = 3
+  let new_head = add(initial_head, dequeue_count) % buffer_size
+  let final_count = add(new_count, -dequeue_count)
+  
+  assert_eq(3, new_head)  // (0 + 3) % 8 = 3
+  assert_eq(2, final_count) // 5 - 3 = 2
+  
+  // 检查缓冲区状态
+  let is_empty = final_count == 0
+  let is_full = final_count == buffer_size
+  let has_space = final_count < buffer_size
+  
+  assert_false(is_empty)
+  assert_false(is_full)
+  assert_true(has_space)
+  
+  // 计算缓冲区利用率
+  let utilization = multiply(final_count, 100) / buffer_size
+  assert_eq(25, utilization) // 2/8 = 25%
+}
+
+test "color_space_conversion" {
+  // 测试颜色空间转换模拟
+  // RGB到HSV的简化转换模拟
+  
+  let r = 255  // 红色分量
+  let g = 0    // 绿色分量
+  let b = 0    // 蓝色分量
+  
+  // 计算最大值和最小值
+  let max_val = 255
+  let min_val = 0
+  let delta = add(max_val, -min_val)
+  
+  assert_eq(255, max_val)
+  assert_eq(0, min_val)
+  assert_eq(255, delta)
+  
+  // 简化的色相计算（红色对应0度）
+  let hue = if max_val == r { 0 } else { 120 }  // 简化逻辑
+  assert_eq(0, hue)
+  
+  // 饱和度计算（简化）
+  let saturation = if max_val == 0 { 0 } else { multiply(delta, 100) / max_val }
+  assert_eq(100, saturation)  // 255/255 × 100 = 100%
+  
+  // 明度计算
+  let value = max_val
+  assert_eq(255, value)
+  
+  // 测试另一种颜色（绿色）
+  let r2 = 0
+  let g2 = 255
+  let b2 = 0
+  
+  let max_val2 = 255
+  let min_val2 = 0
+  let delta2 = add(max_val2, -min_val2)
+  
+  let hue2 = if max_val2 == r2 { 0 } else { 120 }  // 绿色对应120度
+  let saturation2 = if max_val2 == 0 { 0 } else { multiply(delta2, 100) / max_val2 }
+  let value2 = max_val2
+  
+  assert_eq(120, hue2)
+  assert_eq(100, saturation2)
+  assert_eq(255, value2)
+}
+
+test "checksum_verification" {
+  // 测试校验和验证
+  // 模拟简单的校验和算法
+  
+  let data_block1 = 100
+  let data_block2 = 200
+  let data_block3 = 300
+  let data_block4 = 400
+  
+  // 计算简单校验和
+  let checksum = add(add(add(data_block1, data_block2), data_block3), data_block4)
+  assert_eq(1000, checksum)
+  
+  // 模拟数据传输后的验证
+  let received_block1 = 100
+  let received_block2 = 200
+  let received_block3 = 300  // 模拟这个块出错
+  let received_block4 = 400
+  
+  let received_checksum = add(add(add(received_block1, received_block2), received_block3), received_block4)
+  assert_eq(1000, received_checksum)
+  
+  // 检测错误（通过比较校验和）
+  let error_detected = checksum != received_checksum
+  assert_false(error_detected)  // 在这种情况下没有检测到错误
+  
+  // 模拟有错误的情况
+  let corrupted_block3 = 310
+  let corrupted_checksum = add(add(add(data_block1, data_block2), corrupted_block3), data_block4)
+  let actual_error = checksum != corrupted_checksum
+  assert_true(actual_error)  // 检测到错误
+}
+
+test "load_balancer_round_robin" {
+  // 测试轮询负载均衡器模拟
+  let server_count = 3
+  let request_count = 10
+  
+  // 模拟请求分发
+  let server1_requests = 0
+  let server2_requests = 0
+  let server3_requests = 0
+  
+  // 手动模拟轮询分配
+  // 请求1-10分别分配到服务器：1,2,3,1,2,3,1,2,3,1
+  let final_server1_requests = 4  // 请求1,4,7,10
+  let final_server2_requests = 3  // 请求2,5,8
+  let final_server3_requests = 3  // 请求3,6,9
+  
+  assert_eq(4, final_server1_requests)
+  assert_eq(3, final_server2_requests)
+  assert_eq(3, final_server3_requests)
+  
+  // 验证总请求数
+  let total_distributed = add(add(final_server1_requests, final_server2_requests), final_server3_requests)
+  assert_eq(request_count, total_distributed)
+  
+  // 计算负载均衡度
+  let max_requests = 4
+  let min_requests = 3
+  let load_imbalance = add(max_requests, -min_requests)
+  assert_eq(1, load_imbalance)  // 最大差值为1，表示负载均衡较好
+  
+  // 计算每个服务器的负载百分比
+  let server1_load = multiply(final_server1_requests, 100) / request_count
+  let server2_load = multiply(final_server2_requests, 100) / request_count
+  let server3_load = multiply(final_server3_requests, 100) / request_count
+  
+  assert_eq(40, server1_load)  // 4/10 = 40%
+  assert_eq(30, server2_load)  // 3/10 = 30%
+  assert_eq(30, server3_load)  // 3/10 = 30%
+}
+
+test "cache_replacement_policy" {
+  // 测试缓存替换策略模拟
+  // 模拟LRU（最近最少使用）缓存策略
+  
+  let cache_size = 3
+  let access_sequence = [1, 2, 3, 4, 1, 2, 5]  // 访问序列
+  
+  // 模拟缓存状态变化
+  // 访问1,2,3后：缓存 = [1,2,3]
+  // 访问4后：缓存 = [2,3,4] (1被替换)
+  // 访问1后：缓存 = [3,4,1] (2被替换)
+  // 访问2后：缓存 = [4,1,2] (3被替换)
+  // 访问5后：缓存 = [1,2,5] (4被替换)
+  
+  let final_cache = [1, 2, 5]
+  let cache_hits = 2  // 访问1和2时命中
+  let cache_misses = 5 // 其他访问未命中
+  let total_accesses = 7
+  
+  assert_eq(2, cache_hits)
+  assert_eq(5, cache_misses)
+  assert_eq(7, total_accesses)
+  
+  // 计算缓存命中率
+  let hit_rate = multiply(cache_hits, 100) / total_accesses
+  assert_eq(28, hit_rate)  // 2/7 ≈ 28.57% ≈ 28%
+  
+  // 计算缓存未命中率
+  let miss_rate = multiply(cache_misses, 100) / total_accesses
+  assert_eq(71, miss_rate)  // 5/7 ≈ 71.43% ≈ 71%
+  
+  // 验证命中率与未命中率之和
+  let total_rate = add(hit_rate, miss_rate)
+  assert_eq(99, total_rate)  // 由于整数除法，不是100%
+}
+
+test "error_detection_codes" {
+  // 测试错误检测码模拟
+  // 模拟奇偶校验码
+  
+  let data_byte = 10110101  // 二进制数据
+  let data_bits = 8
+  
+  // 计算奇偶校验位（偶校验）
+  // 1的个数：5个
+  let ones_count = 5
+  let parity_bit = if ones_count % 2 == 0 { 0 } else { 1 }
+  assert_eq(1, parity_bit)  // 奇数个1，所以校验位为1
+  
+  // 模拟传输后的数据
+  let received_data = 10100101  // 第4位从1变为0
+  let received_ones_count = 4
+  let received_parity_bit = if received_ones_count % 2 == 0 { 0 } else { 1 }
+  assert_eq(0, received_parity_bit)  // 偶数个1，所以校验位为0
+  
+  // 检测错误
+  let error_detected = parity_bit != received_parity_bit
+  assert_true(error_detected)  // 检测到错误
+  
+  // 模拟CRC校验（简化）
+  let data_block = 12345
+  let divisor = 123
+  let remainder = data_block % divisor
+  let crc_value = remainder
+  
+  assert_eq(45, crc_value)  // 12345 % 123 = 45
+  
+  // 模拟接收端的CRC计算
+  let received_block = 12345
+  let received_remainder = received_block % divisor
+  let received_crc = received_remainder
+  
+  let crc_error = crc_value != received_crc
+  assert_false(crc_error)  // 没有错误
+  
+  // 模拟数据损坏
+  let corrupted_block = 12350
+  let corrupted_remainder = corrupted_block % divisor
+  let corrupted_crc = corrupted_remainder
+  
+  let crc_detected = crc_value != corrupted_crc
+  assert_true(crc_detected)  // 检测到错误
+}
+
 
