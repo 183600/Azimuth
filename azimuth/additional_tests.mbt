@@ -1,6 +1,5 @@
 // 附加的 MoonBit 测试用例
 // 使用标准的 MoonBit 测试语法，覆盖 azimuth 模块的核心功能
-// 函数通过 moon.pkg.json 中的 test-import 配置导入
 
 test "addition_commutative_and_associative" {
   // 测试加法交换律：a + b = b + a
