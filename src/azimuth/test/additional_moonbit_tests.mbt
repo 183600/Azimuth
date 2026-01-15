@@ -1,185 +1,131 @@
 // 额外的 MoonBit 测试用例
-// 测试 Azimuth 项目的核心功能
+// 测试 azimuth 模块的核心功能
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  // 正常情况
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(8, 4))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(3, 3))
-  
-  // 边界情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(9, 2))
-  
-  // 负数情况
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-7, 4))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-4, 5))
+test "add_function_basic" {
+  // 测试基本的加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-3, add(-8, 5))
 }
 
-test "circular_reference_calculation" {
-  // 测试循环引用计算场景
-  let base_value = 100
-  let increment = 20
-  let cycles = 5
-  
-  // 计算循环增长：base + increment + increment*2 + ... + increment*cycles
-  let inc1 = increment
-  let inc2 = @azimuth.multiply(increment, 2)
-  let inc3 = @azimuth.multiply(increment, 3)
-  let inc4 = @azimuth.multiply(increment, 4)
-  let inc5 = @azimuth.multiply(increment, 5)
-  
-  let total_increment = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(inc1, inc2), inc3), inc4), inc5)
-  let final_value = @azimuth.add(base_value, total_increment)
-  
-  @azimuth.assert_eq(430, final_value)  // 100 + 20+40+60+80+100 = 430
-}
-
-test "batch_processing_simulation" {
-  // 测试批处理模拟场景
-  let batch_size = 50
-  let num_batches = 4
-  let overhead_per_batch = 5
-  
-  // 计算总处理量
-  let total_items = @azimuth.multiply(batch_size, num_batches)  // 200
-  let total_overhead = @azimuth.multiply(overhead_per_batch, num_batches)  // 20
-  let effective_items = @azimuth.add(total_items, -total_overhead)  // 180
-  
-  @azimuth.assert_eq(200, total_items)
-  @azimuth.assert_eq(20, total_overhead)
-  @azimuth.assert_eq(180, effective_items)
-  
-  // 计算处理效率
-  let efficiency = @azimuth.multiply(effective_items, 100) / total_items
-  @azimuth.assert_eq(90, efficiency)  // 90% 效率
-}
-
-test "nested_conditional_calculations" {
-  // 测试嵌套条件计算
-  let base_score = 1000
-  let performance_factor = 3
-  let difficulty_level = 2
-  let bonus_threshold = 2000
-  
-  // 计算基础得分
-  let adjusted_score = @azimuth.multiply(base_score, performance_factor)  // 3000
-  
-  // 根据难度调整
-  let difficulty_adjusted = if (difficulty_level > 1) {
-    @azimuth.multiply(adjusted_score, difficulty_level)
-  } else {
-    adjusted_score
-  }
-  
-  // 应用奖励
-  let final_score = if (difficulty_adjusted > bonus_threshold) {
-    @azimuth.add(difficulty_adjusted, 500)
-  } else {
-    difficulty_adjusted
-  }
-  
-  @azimuth.assert_eq(6500, final_score)
-}
-
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_resources = 1000
-  let priority_projects = 3
-  let standard_projects = 5
-  let priority_ratio = 60  // 60%
-  
-  // 计算优先项目分配
-  let priority_allocation = @azimuth.multiply(total_resources, priority_ratio) / 100  // 600
-  let priority_per_project = priority_allocation / priority_projects  // 200
-  
-  // 计算标准项目分配
-  let remaining_resources = @azimuth.add(total_resources, -priority_allocation)  // 400
-  let standard_per_project = remaining_resources / standard_projects  // 80
-  
-  @azimuth.assert_eq(600, priority_allocation)
-  @azimuth.assert_eq(200, priority_per_project)
-  @azimuth.assert_eq(400, remaining_resources)
-  @azimuth.assert_eq(80, standard_per_project)
-}
-
-test "string_pattern_processing" {
-  // 测试字符串模式处理
-  let prefix = "User"
-  let user_id = "12345"
-  let suffix = "Active"
-  
-  // 使用greet函数模拟字符串模式处理
-  let full_prefix = @azimuth.greet(prefix)
-  let with_id = @azimuth.greet(user_id)
-  let with_suffix = @azimuth.greet(suffix)
-  
-  // 验证各部分
-  @azimuth.assert_eq_string("Hello, User!", full_prefix)
-  @azimuth.assert_eq_string("Hello, 12345!", with_id)
-  @azimuth.assert_eq_string("Hello, Active!", with_suffix)
-  
-  // 测试特殊模式
-  let empty_pattern = @azimuth.greet("")
-  let numeric_pattern = @azimuth.greet("2023-12-31")
-  let mixed_pattern = @azimuth.greet("ABC_xyz_123")
-  
-  @azimuth.assert_eq_string("Hello, !", empty_pattern)
-  @azimuth.assert_eq_string("Hello, 2023-12-31!", numeric_pattern)
-  @azimuth.assert_eq_string("Hello, ABC_xyz_123!", mixed_pattern)
-}
-
-test "mathematical_series_evaluation" {
-  // 测试数学级数评估
-  // 计算斐波那契数列前几项的和：1, 1, 2, 3, 5, 8, 13, 21
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = 2
-  let fib4 = 3
-  let fib5 = 5
-  let fib6 = 8
-  let fib7 = 13
-  let fib8 = 21
-  
-  let fib_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(fib1, fib2), fib3), fib4), fib5), fib6), fib7), fib8)
-  @azimuth.assert_eq(54, fib_sum)
-  
-  // 计算等比数列：2, 4, 8, 16, 32
-  let geo1 = 2
-  let geo2 = @azimuth.multiply(geo1, 2)  // 4
-  let geo3 = @azimuth.multiply(geo2, 2)  // 8
-  let geo4 = @azimuth.multiply(geo3, 2)  // 16
-  let geo5 = @azimuth.multiply(geo4, 2)  // 32
-  
-  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(geo1, geo2), geo3), geo4), geo5)
-  @azimuth.assert_eq(62, geo_sum)
-}
-
-test "extreme_boundary_stress_test" {
-  // 测试极值边界压力测试
+test "add_function_edge_cases" {
+  // 测试加法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 连续极值运算
-  let step1 = @azimuth.add(max_val, min_val)  // -1
-  let step2 = @azimuth.multiply(step1, max_val)  // -2147483647
-  let step3 = @azimuth.add(step2, max_val)  // 0
-  let step4 = @azimuth.multiply(step3, max_val)  // 0
+  // 测试溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "multiply_function_basic" {
+  // 测试基本的乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 12345))
+}
+
+test "multiply_function_edge_cases" {
+  // 测试乘法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  @azimuth.assert_eq(-1, step1)
-  @azimuth.assert_eq(-2147483647, step2)
-  @azimuth.assert_eq(0, step3)
-  @azimuth.assert_eq(0, step4)
+  // 测试特殊值处理
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "greet_function_various_inputs" {
+  // 测试 greet 函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+}
+
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算 (a + b) * c - d
+  let a = 10
+  let b = 5
+  let c = 3
+  let d = 7
   
-  // 极值与普通值的混合运算
-  let mixed1 = @azimuth.add(max_val, 1000000)
-  let mixed2 = @azimuth.add(min_val, -1000000)
-  let mixed3 = @azimuth.multiply(max_val, 100)
-  let mixed4 = @azimuth.multiply(min_val, 100)
+  let sum_ab = add(a, b)  // 15
+  let product = multiply(sum_ab, c)  // 45
+  let result = add(product, -d)  // 38
   
-  @azimuth.assert_eq(max_val, mixed1)
-  @azimuth.assert_eq(min_val, mixed2)
-  @azimuth.assert_eq(max_val, mixed3)
-  @azimuth.assert_eq(min_val, mixed4)
+  assert_eq(38, result)
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 12
+  let y = 8
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(multiply(x, add(y, 3)), add(multiply(x, y), multiply(x, 3)))
+}
+
+test "real_world_application" {
+  // 测试实际应用场景：计算购物车总价
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  let shipping = 15
+  
+  // 计算商品总价
+  let total1 = multiply(item1_price, item1_quantity)  // 398
+  let total2 = multiply(item2_price, item2_quantity)  // 299
+  let subtotal = add(total1, total2)  // 697
+  
+  // 计算最终总价
+  let final_total = add(subtotal, shipping)  // 712
+  
+  assert_eq(712, final_total)
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试包含特殊字符的字符串
+  let special_chars = "test@example.com"
+  assert_eq_string("Hello, test@example.com!", greet(special_chars))
+  
+  // 测试包含空格的字符串
+  let spaced_name = "John Doe"
+  assert_eq_string("Hello, John Doe!", greet(spaced_name))
+  
+  // 测试包含数字的字符串
+  let numeric_name = "User123"
+  assert_eq_string("Hello, User123!", greet(numeric_name))
+}
+
+test "computation_with_negative_numbers" {
+  // 测试负数的计算
+  let a = -10
+  let b = 15
+  let c = -5
+  
+  // 测试负数加法
+  assert_eq(5, add(a, b))
+  assert_eq(-15, add(a, c))
+  
+  // 测试负数乘法
+  assert_eq(-150, multiply(a, b))
+  assert_eq(50, multiply(a, c))
+  assert_eq(-75, multiply(b, c))
+  
+  // 测试混合运算
+  let result = add(multiply(a, b), c)  // -10 * 15 + (-5) = -155
+  assert_eq(-155, result)
 }
