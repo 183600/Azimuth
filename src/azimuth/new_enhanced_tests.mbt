@@ -1,130 +1,173 @@
-// 新增的 MoonBit 测试用例
-// 这些测试用例进一步扩展了对 azimuth 库功能的验证
+// 新的 MoonBit 测试用例
+// 覆盖多种实际应用场景和边界条件
+// 使用标准的 MoonBit 测试语法
 
-test "add_with_large_positive_numbers" {
-  // 测试大正数相加
-  let num1 = 1000000000
-  let num2 = 1000000000
-  let result = add(num1, num2)
-  assert_eq(2000000000, result)
+test "datetime_string_processing" {
+  // 测试日期时间字符串处理
+  let date = "2023-12-25"
+  let time = "14:30:00"
+  let datetime = date + " " + time
   
-  // 测试接近最大值的数相加
-  let near_max = 2147483640
-  let small = 5
-  let result2 = add(near_max, small)
-  assert_eq(2147483645, result2)
-}
-
-test "add_with_large_negative_numbers" {
-  // 测试大负数相加
-  let num1 = -1000000000
-  let num2 = -1000000000
-  let result = add(num1, num2)
-  assert_eq(-2000000000, result)
+  // 使用 greet 函数处理日期时间字符串
+  let date_greeting = @azimuth.greet(date)
+  let time_greeting = @azimuth.greet(time)
+  let datetime_greeting = @azimuth.greet(datetime)
   
-  // 测试接近最小值的数相加
-  let near_min = -2147483640
-  let small = -5
-  let result2 = add(near_min, small)
-  assert_eq(-2147483645, result2)
+  @azimuth.assert_eq_string("Hello, 2023-12-25!", date_greeting)
+  @azimuth.assert_eq_string("Hello, 14:30:00!", time_greeting)
+  @azimuth.assert_eq_string("Hello, 2023-12-25 14:30:00!", datetime_greeting)
 }
 
-test "multiply_with_decimal_simulation" {
-  // 通过整数运算模拟小数乘法（例如：计算折扣）
-  // 原价 200，打 8 折 = 200 * 80 / 100 = 160
-  let original_price = 200
-  let discount_percent = 80
-  let discounted_price = multiply(original_price, discount_percent) / 100
-  assert_eq(160, discounted_price)
+test "scientific_calculations" {
+  // 测试科学计算场景
+  // 计算物体自由落体距离：s = 0.5 * g * t²
+  // 简化为整数计算：s = 5 * t² (g ≈ 10 m/s²)
+  let time = 3
+  let gravity = 5  // 简化的重力常数
+  let distance = @azimuth.multiply(gravity, @azimuth.multiply(time, time))
+  @azimuth.assert_eq(45, distance)
   
-  // 原价 150，打 7 折 = 150 * 70 / 100 = 105
-  let original_price2 = 150
-  let discount_percent2 = 70
-  let discounted_price2 = multiply(original_price2, discount_percent2) / 100
-  assert_eq(105, discounted_price2)
+  // 计算简单动能：KE = 0.5 * m * v²
+  // 简化为整数计算：KE = m * v² / 2
+  let mass = 10
+  let velocity = 8
+  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(mass, velocity), velocity) / 2
+  @azimuth.assert_eq(320, kinetic_energy)
 }
 
-test "compound_interest_calculation" {
-  // 简化的复利计算：本金 * (1 + 利率 * 年数)
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
-  let interest_rate = multiply(rate, years)
-  let total_rate = add(100, interest_rate)  // 100 + 5*3 = 115
-  let total_amount = multiply(principal, total_rate) / 100
-  assert_eq(11500, total_amount)  // 10000 * 115 / 100 = 11500
-}
-
-test "greet_with_special_unicode_characters" {
-  // 测试包含特殊 Unicode 字符的字符串
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, ⭐!", greet("⭐"))
-  assert_eq_string("Hello, ❤️!", greet("❤️"))
-  assert_eq_string("Hello, 🎉!", greet("🎉"))
-}
-
-test "greet_with_mathematical_symbols" {
-  // 测试包含数学符号的字符串
-  assert_eq_string("Hello, ∑!", greet("∑"))
-  assert_eq_string("Hello, ∆!", greet("∆"))
-  assert_eq_string("Hello, ∏!", greet("∏"))
-  assert_eq_string("Hello, ∫!", greet("∫"))
-}
-
-test "nested_arithmetic_operations" {
-  // 测试嵌套算术运算：(a + b) * (c + d)
-  let a = 10
-  let b = 20
-  let c = 30
-  let d = 40
+test "financial_calculations" {
+  // 测试财务计算场景
+  // 计算贷款月供（简化版）：月供 = (本金 + 总利息) / 月数
+  let principal = 100000
+  let annual_rate = 6  // 6%
+  let years = 10
+  let months = @azimuth.multiply(years, 12)
   
-  let sum1 = add(a, b)
-  let sum2 = add(c, d)
-  let result = multiply(sum1, sum2)
-  assert_eq(2100, result)  // (10 + 20) * (30 + 40) = 30 * 70 = 2100
+  // 简化的利息计算：本金 × 年利率 × 年数
+  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
+  let total_payment = @azimuth.add(principal, total_interest)
+  let monthly_payment = total_payment / months
+  
+  @azimuth.assert_eq(13333, monthly_payment)
+  
+  // 计算投资回报率（简化版）
+  let initial_investment = 50000
+  let final_value = 75000
+  let profit = @azimuth.add(final_value, -initial_investment)
+  let roi_percentage = @azimuth.multiply(profit, 100) / initial_investment
+  
+  @azimuth.assert_eq(50, roi_percentage)
 }
 
-test "area_of_triangle" {
-  // 测试三角形面积计算：底 * 高 / 2
-  let base = 10
-  let height = 8
-  let area = multiply(base, height) / 2
-  assert_eq(40, area)
+test "string_formatting_advanced" {
+  // 测试高级字符串格式化
+  // 模拟货币格式化
+  let amount = 1234567
+  let currency_symbol = "¥"
+  let formatted_amount = currency_symbol + amount.to_string()
   
-  // 测试另一个三角形
-  let base2 = 15
-  let height2 = 12
-  let area2 = multiply(base2, height2) / 2
-  assert_eq(90, area2)
+  @azimuth.assert_eq_string("Hello, ¥1234567!", @azimuth.greet(formatted_amount))
+  
+  // 模拟百分比格式化
+  let percentage_value = 85
+  let percentage_symbol = "%"
+  let formatted_percentage = percentage_value.to_string() + percentage_symbol
+  
+  @azimuth.assert_eq_string("Hello, 85%!", @azimuth.greet(formatted_percentage))
+  
+  // 测试多语言字符串
+  let chinese_greeting = "你好"
+  let english_greeting = "Hello"
+  let japanese_greeting = "こんにちは"
+  
+  @azimuth.assert_eq_string("Hello, 你好!", @azimuth.greet(chinese_greeting))
+  @azimuth.assert_eq_string("Hello, Hello!", @azimuth.greet(english_greeting))
+  @azimuth.assert_eq_string("Hello, こんにちは!", @azimuth.greet(japanese_greeting))
 }
 
-test "time_conversion" {
-  // 测试时间转换：小时转换为分钟
-  let hours = 5
-  let minutes = multiply(hours, 60)
-  assert_eq(300, minutes)
+test "business_logic_integration" {
+  // 测试业务逻辑集成
+  // 计算员工月薪：基本工资 + 绩效奖金 - 扣款
+  let base_salary = 8000
+  let performance_bonus = 2000
+  let deductions = 500
+  let monthly_salary = @azimuth.add(@azimuth.add(base_salary, performance_bonus), -deductions)
   
-  // 测试天转换为小时
-  let days = 3
-  let hours_in_days = multiply(days, 24)
-  assert_eq(72, hours_in_days)
+  @azimuth.assert_eq(9500, monthly_salary)
   
-  // 测试周转换为天
-  let weeks = 2
-  let days_in_weeks = multiply(weeks, 7)
-  assert_eq(14, days_in_weeks)
+  // 计算项目成本：人力成本 + 材料成本 + 其他费用
+  let labor_cost = 50000
+  let material_cost = 30000
+  let other_costs = 15000
+  let total_project_cost = @azimuth.add(@azimuth.add(labor_cost, material_cost), other_costs)
+  
+  @azimuth.assert_eq(95000, total_project_cost)
+  
+  // 计算利润率：(收入 - 成本) / 成本 * 100%
+  let revenue = 150000
+  let cost = 95000
+  let profit = @azimuth.add(revenue, -cost)
+  let profit_margin = @azimuth.multiply(profit, 100) / cost
+  
+  @azimuth.assert_eq(57, profit_margin)
 }
 
-test "speed_distance_calculation" {
-  // 测试速度、距离、时间的关系：距离 = 速度 * 时间
-  let speed = 60  // km/h
-  let time = 2    // hours
-  let distance = multiply(speed, time)
-  assert_eq(120, distance)  // 60 km/h * 2 h = 120 km
+test "extreme_boundary_combinations" {
+  // 测试极值边界组合
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试计算总距离：分段距离相加
-  let distance1 = multiply(50, 1)  // 50 km/h * 1 h = 50 km
-  let distance2 = multiply(80, 2)  // 80 km/h * 2 h = 160 km
-  let total_distance = add(distance1, distance2)
-  assert_eq(210, total_distance)  // 50 + 160 = 210 km
+  // 测试极值与普通值的组合运算
+  let normal_positive = 1000
+  let normal_negative = -1000
+  
+  // 极值与普通值的加减
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, normal_positive))
+  @azimuth.assert_eq(2147482647, @azimuth.add(max_val, normal_negative))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, normal_negative))
+  @azimuth.assert_eq(-2147482648, @azimuth.add(min_val, normal_positive))
+  
+  // 极值与普通值的乘法
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, -1))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(min_val, -1))
+  
+  // 测试连续极值运算
+  let complex_calculation = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, min_val), 1), max_val)
+  @azimuth.assert_eq(max_val, complex_calculation)
+}
+
+test "error_handling_robustness" {
+  // 测试错误处理的健壮性
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试各种溢出情况
+  let positive_overflow = @azimuth.add(max_val, max_val)
+  let negative_overflow = @azimuth.add(min_val, min_val)
+  let multiplication_overflow = @azimuth.multiply(max_val, 100)
+  
+  @azimuth.assert_eq(max_val, positive_overflow)
+  @azimuth.assert_eq(min_val, negative_overflow)
+  @azimuth.assert_eq(max_val, multiplication_overflow)
+  
+  // 测试特殊值的处理
+  let zero_division_avoidance = if (100 != 0) { 100 / 100 } else { 0 }
+  let negative_square_root_handling = @azimuth.multiply(-5, -5)  // 避免负数开方
+  
+  @azimuth.assert_eq(1, zero_division_avoidance)
+  @azimuth.assert_eq(25, negative_square_root_handling)
+  
+  // 测试断言函数的可靠性
+  @azimuth.assert_true(@azimuth.add(100, 200) == 300)
+  @azimuth.assert_false(@azimuth.add(100, 200) == 400)
+  @azimuth.assert_eq(300, @azimuth.add(100, 200))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  
+  // 测试边界条件下的断言
+  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
 }
