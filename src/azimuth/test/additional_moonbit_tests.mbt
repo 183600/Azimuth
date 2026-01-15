@@ -1,306 +1,359 @@
-// 额外的 MoonBit 测试用例
-// 包含10个使用标准 MoonBit 测试语法的测试用例
+// Azimuth 项目额外的 MoonBit 测试用例
+// 补充测试覆盖，确保代码质量和功能完整性
 
-test "integer_division_and_remainder" {
-  // 测试整数除法和取余运算
-  let dividend = 17
-  let divisor = 5
+test "divide_with_ceil_function" {
+  // 测试向上取整除法函数
+  // 正常情况
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(20, 4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
   
-  // 计算商和余数
-  let quotient = dividend / divisor
-  let remainder = dividend % divisor
+  // 边界情况
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(10, @azimuth.divide_with_ceil(100, 10))
   
-  @azimuth.assert_eq(3, quotient)
-  @azimuth.assert_eq(2, remainder)
-  
-  // 验证除法恒等式：dividend = divisor * quotient + remainder
-  let reconstructed = @azimuth.add(@azimuth.multiply(divisor, quotient), remainder)
-  @azimuth.assert_eq(dividend, reconstructed)
-  
-  // 测试负数情况
-  let negative_dividend = -17
-  let negative_quotient = negative_dividend / divisor
-  let negative_remainder = negative_dividend % divisor
-  
-  @azimuth.assert_eq(-3, negative_quotient)
-  @azimuth.assert_eq(-2, negative_remainder)
+  // 负数情况
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-7, 4))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 4))
 }
 
-test "string_case_and_formatting" {
-  // 测试字符串大小写和格式化
-  let lower_case = "hello"
-  let upper_case = "HELLO"
-  let mixed_case = "HeLLo WoRLd"
+test "boundary_condition_combinations" {
+  // 测试边界条件的复杂组合
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试包含不同大小写的字符串
-  @azimuth.assert_eq_string("Hello, hello!", @azimuth.greet(lower_case))
-  @azimuth.assert_eq_string("Hello, HELLO!", @azimuth.greet(upper_case))
-  @azimuth.assert_eq_string("Hello, HeLLo WoRLd!", @azimuth.greet(mixed_case))
+  // 最大值与最小值的运算组合
+  let sum_max_min = @azimuth.add(max_val, min_val)
+  @azimuth.assert_eq(-1, sum_max_min)
   
-  // 测试包含数字和字母混合的字符串
-  let alphanumeric1 = "test123"
-  let alphanumeric2 = "123test"
-  let alphanumeric3 = "1t2e3s4t"
+  // 最大值与自身的运算
+  let sum_max_max = @azimuth.add(max_val, max_val)
+  @azimuth.assert_eq(max_val, sum_max_max)
   
-  @azimuth.assert_eq_string("Hello, test123!", @azimuth.greet(alphanumeric1))
-  @azimuth.assert_eq_string("Hello, 123test!", @azimuth.greet(alphanumeric2))
-  @azimuth.assert_eq_string("Hello, 1t2e3s4t!", @azimuth.greet(alphanumeric3))
+  let mul_max_max = @azimuth.multiply(max_val, max_val)
+  @azimuth.assert_eq(max_val, mul_max_max)
+  
+  // 最小值与自身的运算
+  let sum_min_min = @azimuth.add(min_val, min_val)
+  @azimuth.assert_eq(min_val, sum_min_min)
+  
+  let mul_min_min = @azimuth.multiply(min_val, min_val)
+  @azimuth.assert_eq(min_val, mul_min_min)
+  
+  // 链式运算
+  let chain_result = @azimuth.add(@azimuth.multiply(max_val, 0), min_val)
+  @azimuth.assert_eq(min_val, chain_result)
 }
 
-test "mathematical_series_calculations" {
-  // 测试数学级数计算
-  // 计算斐波那契数列前10项的和
-  // 斐波那契数列：1, 1, 2, 3, 5, 8, 13, 21, 34, 55
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = @azimuth.add(fib1, fib2)  // 2
-  let fib4 = @azimuth.add(fib2, fib3)  // 3
-  let fib5 = @azimuth.add(fib3, fib4)  // 5
-  let fib6 = @azimuth.add(fib4, fib5)  // 8
-  let fib7 = @azimuth.add(fib5, fib6)  // 13
-  let fib8 = @azimuth.add(fib6, fib7)  // 21
-  let fib9 = @azimuth.add(fib7, fib8)  // 34
-  let fib10 = @azimuth.add(fib8, fib9) // 55
+test "discount_calculation_business_logic" {
+  // 测试商业折扣计算逻辑
+  let original_price = 1000
+  let discount_rate = 20  // 20% 折扣
+  let quantity = 5
+  let shipping_fee = 50
   
-  // 计算总和
-  let fib_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(fib1, fib2), fib3), fib4), fib5), @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(fib6, fib7), fib8), fib9), fib10))
-  @azimuth.assert_eq(143, fib_sum)
+  // 计算折扣后的单价
+  let discount_amount = @azimuth.multiply(original_price, discount_rate) / 100
+  let discounted_price = @azimuth.add(original_price, -discount_amount)
   
-  // 计算平方和：1² + 2² + 3² + 4² + 5² = 55
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.add(@azimuth.multiply(4, 4), @azimuth.multiply(5, 5)))
-  @azimuth.assert_eq(55, square_sum)
+  // 计算总价
+  let subtotal = @azimuth.multiply(discounted_price, quantity)
+  let total_cost = @azimuth.add(subtotal, shipping_fee)
+  
+  @azimuth.assert_eq(800, discounted_price)  // 1000 - 200
+  @azimuth.assert_eq(4000, subtotal)         // 800 * 5
+  @azimuth.assert_eq(4050, total_cost)       // 4000 + 50
+  
+  // 测试批量折扣（购买超过一定数量有额外折扣）
+  let bulk_quantity = 10
+  let bulk_discount_rate = 5  // 额外5%折扣
+  let bulk_discount_amount = @azimuth.multiply(discounted_price, bulk_discount_rate) / 100
+  let bulk_price = @azimuth.add(discounted_price, -bulk_discount_amount)
+  let bulk_total = @azimuth.add(@azimuth.multiply(bulk_price, bulk_quantity), shipping_fee)
+  
+  @azimuth.assert_eq(760, bulk_price)  // 800 - 40
+  @azimuth.assert_eq(7650, bulk_total) // 760 * 10 + 50
 }
 
-test "conditional_logic_and_branching" {
-  // 测试条件逻辑和分支
-  let x = 15
-  let y = 10
-  let z = 20
+test "mathematical_sequence_calculations" {
+  // 测试数学序列计算
+  // 等差数列：1, 4, 7, 10, 13, ... (公差为3)
+  let arithmetic_first = 1
+  let arithmetic_diff = 3
+  let arithmetic_n = 5
   
-  // 测试嵌套条件
-  let result1 = if x > y {
-    if x > z { @azimuth.add(x, y) } else { @azimuth.add(x, z) }
+  // 第n项 = 首项 + (n-1) × 公差
+  let arithmetic_nth = @azimuth.add(arithmetic_first, @azimuth.multiply(arithmetic_n - 1, arithmetic_diff))
+  @azimuth.assert_eq(13, arithmetic_nth)
+  
+  // 等比数列：2, 6, 18, 54, ... (公比为3)
+  let geometric_first = 2
+  let geometric_ratio = 3
+  let geometric_n = 4
+  
+  // 第n项 = 首项 × 公比^(n-1)
+  let geometric_nth = @azimuth.multiply(geometric_first, @azimuth.multiply(@azimuth.multiply(3, 3), 3))
+  @azimuth.assert_eq(54, geometric_nth)
+  
+  // 平方数列：1, 4, 9, 16, 25, ...
+  let square_n = 5
+  let square_nth = @azimuth.multiply(square_n, square_n)
+  @azimuth.assert_eq(25, square_nth)
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试各种特殊字符组合
+  let test_cases = [
+    "",                    // 空字符串
+    "a",                   // 单个字符
+    " ",                   // 单个空格
+    "  ",                  // 多个空格
+    "\t",                  // 制表符
+    "\n",                  // 换行符
+    "name\tmiddle\tlast",  // 包含制表符
+    "line1\nline2",        // 包含换行符
+    "   leading",          // 前导空格
+    "trailing   ",         // 尾随空格
+    "  both  ",            // 前后都有空格
+  ]
+  
+  // 测试每种情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(" "))
+  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, \t!", @azimuth.greet("\t"))
+  @azimuth.assert_eq_string("Hello, \n!", @azimuth.greet("\n"))
+  @azimuth.assert_eq_string("Hello, name\tmiddle\tlast!", @azimuth.greet("name\tmiddle\tlast"))
+  @azimuth.assert_eq_string("Hello, line1\nline2!", @azimuth.greet("line1\nline2"))
+  @azimuth.assert_eq_string("Hello,    leading!", @azimuth.greet("   leading"))
+  @azimuth.assert_eq_string("Hello, trailing   !", @azimuth.greet("trailing   "))
+  @azimuth.assert_eq_string("Hello,   both  !", @azimuth.greet("  both  "))
+}
+
+test "numerical_precision_handling" {
+  // 测试数值精度处理
+  // 大数运算
+  let large_num1 = 100000000
+  let large_num2 = 200000000
+  
+  let large_sum = @azimuth.add(large_num1, large_num2)
+  @azimuth.assert_eq(300000000, large_sum)
+  
+  let large_product = @azimuth.multiply(10000, 20000)
+  @azimuth.assert_eq(200000000, large_product)
+  
+  // 小数模拟（使用整数表示）
+  let price_in_cents = 9999  // $99.99
+  let quantity = 3
+  let total_cents = @azimuth.multiply(price_in_cents, quantity)
+  @azimuth.assert_eq(29997, total_cents)
+  
+  // 转换回元（整数除法）
+  let total_dollars = total_cents / 100
+  let remaining_cents = total_cents % 100
+  @azimuth.assert_eq(299, total_dollars)
+  @azimuth.assert_eq(97, remaining_cents)
+  
+  // 百分比计算
+  let total = 1000
+  let percentage = 23  // 23%
+  let percentage_value = @azimuth.multiply(total, percentage) / 100
+  @azimuth.assert_eq(230, percentage_value)
+}
+
+test "conditional_logic_combinations" {
+  // 测试条件逻辑组合
+  // 模拟复杂的业务规则
+  let age = 25
+  let income = 50000
+  let credit_score = 750
+  let is_student = false
+  
+  // 贷款资格评估（简化版）
+  let age_eligible = age >= 18 && age <= 65
+  let income_eligible = income >= 30000
+  let credit_eligible = credit_score >= 700
+  let student_bonus = is_student && credit_score >= 650
+  
+  // 综合评估
+  let base_eligible = if age_eligible && income_eligible && credit_eligible {
+    1
   } else {
-    @azimuth.multiply(x, y)
+    0
   }
   
-  // 由于 15 > 10 为真，但 15 > 20 为假，所以执行 x + z = 15 + 20 = 35
-  @azimuth.assert_eq(35, result1)
+  let final_eligible = @azimuth.add(base_eligible, if student_bonus { 1 } else { 0 })
   
-  // 测试多个条件
-  let result2 = if x > y && x < z {
-    @azimuth.multiply(x, 2)
+  @azimuth.assert_eq(1, final_eligible)
+  
+  // 测试不同情况
+  let age2 = 17
+  let income2 = 60000
+  let credit_score2 = 800
+  let is_student2 = true
+  
+  let age_eligible2 = age2 >= 18 && age2 <= 65
+  let income_eligible2 = income2 >= 30000
+  let credit_eligible2 = credit_score2 >= 700
+  let student_bonus2 = is_student2 && credit_score2 >= 650
+  
+  let base_eligible2 = if age_eligible2 && income_eligible2 && credit_eligible2 {
+    1
   } else {
-    @azimuth.add(y, z)
+    0
   }
   
-  // 由于 15 > 10 && 15 < 20 为真，所以执行 15 * 2 = 30
-  @azimuth.assert_eq(30, result2)
+  let final_eligible2 = @azimuth.add(base_eligible2, if student_bonus2 { 1 } else { 0 })
   
-  // 测试复杂条件表达式
-  let _result3 = if @azimuth.add(x, y) > z {
-    @azimuth.add(x, -y)  // 使用加负数模拟减法
-  } else {
-    @azimuth.multiply(y, z)
-  }
-  
-  // 由于 15 + 10 > 20 为真，所以执行 15 + (-10) = 5
-  @azimuth.assert_eq(5, @azimuth.add(x, -y))
+  @azimuth.assert_eq(1, final_eligible2)  // 学生特殊资格
 }
 
-test "array_index_calculations" {
-  // 测试数组索引计算
-  let rows = 4
-  let cols = 5
+test "algorithm_gcd_calculation" {
+  // 测试算法实现：最大公约数（GCD）
+  // 使用欧几里得算法的模拟实现
   
-  // 二维数组转一维数组的索引计算
-  let row = 2
-  let col = 3
-  let index_1d = @azimuth.add(@azimuth.multiply(row, cols), col)
-  @azimuth.assert_eq(13, index_1d)
-  
-  // 测试边界索引
-  let first_index = @azimuth.add(@azimuth.multiply(0, cols), 0)
-  let last_index = @azimuth.add(@azimuth.multiply(rows - 1, cols - 1), cols - 1)
-  
-  @azimuth.assert_eq(0, first_index)
-  @azimuth.assert_eq(19, last_index)
-  
-  // 三维数组转一维数组的索引计算
-  let z = 1
-  let y = 2
-  let x = 3
-  let index_3d = @azimuth.add(@azimuth.add(@azimuth.multiply(z, rows), y), @azimuth.multiply(x, cols))
-  
-  // 1*4 + 2 + 3*5 = 4 + 2 + 15 = 21
-  @azimuth.assert_eq(21, index_3d)
-}
-
-test "financial_calculations" {
-  // 测试金融计算
-  // 场景：贷款计算
-  let principal = 100000  // 本金
-  let annual_rate = 5     // 年利率5%
-  let years = 10          // 贷款年限
-  
-  // 简化的单利计算：利息 = 本金 × 利率 × 年数
-  let simple_interest = @azimuth.multiply(@azimuth.multiply(principal, annual_rate), years) / 100
-  let total_payment_simple = @azimuth.add(principal, simple_interest)
-  
-  @azimuth.assert_eq(50000, simple_interest)
-  @azimuth.assert_eq(150000, total_payment_simple)
-  
-  // 场景：复利计算（简化版）
-  // 使用近似公式：A = P(1 + r/n)^(nt)，简化为 A = P(1 + r*t)
-  let compound_factor = @azimuth.add(100, @azimuth.multiply(annual_rate, years))
-  let total_payment_compound = @azimuth.multiply(principal, compound_factor) / 100
-  
-  @azimuth.assert_eq(150000, total_payment_compound)
-  
-  // 场景：分期付款计算
-  let monthly_payment = total_payment_simple / (years * 12)
-  @azimuth.assert_eq(1250, monthly_payment)
-}
-
-test "geometry_and_trigonometry" {
-  // 测试几何和三角函数（简化版）
-  // 圆的周长和面积计算
-  let radius = 10
-  let pi_approx = 3  // 简化的π值
-  
-  // 周长 = 2πr
-  let circumference = @azimuth.multiply(@azimuth.multiply(2, pi_approx), radius)
-  @azimuth.assert_eq(60, circumference)
-  
-  // 面积 = πr²
-  let area = @azimuth.multiply(pi_approx, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(300, area)
-  
-  // 矩形周长和面积
-  let length = 12
-  let width = 8
-  
-  // 周长 = 2(l + w)
-  let rect_perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
-  @azimuth.assert_eq(40, rect_perimeter)
-  
-  // 面积 = l × w
-  let rect_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(96, rect_area)
-  
-  // 梯形面积 = (a + b) × h / 2
-  let base1 = 6
-  let base2 = 10
-  let height = 5
-  let trapezoid_area = @azimuth.multiply(@azimuth.add(base1, base2), height) / 2
-  @azimuth.assert_eq(40, trapezoid_area)
-}
-
-test "time_and_date_calculations" {
-  // 测试时间和日期计算
-  // 时间转换
-  let hours = 2
-  let minutes = 45
-  let seconds = 30
-  
-  // 转换为总秒数
-  let total_seconds = @azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.add(@azimuth.multiply(minutes, 60), seconds))
-  @azimuth.assert_eq(9930, total_seconds)
-  
-  // 时间差计算
-  let start_hour = 8
-  let start_min = 30
-  let end_hour = 17
-  let end_min = 45
-  
-  let start_total = @azimuth.add(@azimuth.multiply(start_hour, 60), start_min)
-  let end_total = @azimuth.add(@azimuth.multiply(end_hour, 60), end_min)
-  let duration = @azimuth.add(end_total, -start_total)
-  
-  @azimuth.assert_eq(555, duration)  // 9小时15分钟 = 555分钟
-  
-  // 日期计算（简化版）
-  let day = 15
-  let month = 6
-  
-  // 计算年份中的第几天（简化，不考虑闰年）
-  let day_of_year = @azimuth.add(day, @azimuth.multiply(month - 1, 30))
-  @azimuth.assert_eq(165, day_of_year)
-}
-
-test "statistical_calculations" {
-  // 测试统计计算
-  // 数据集：10, 20, 30, 40, 50
-  let data1 = 10
-  let data2 = 20
-  let data3 = 30
-  let data4 = 40
-  let data5 = 50
-  
-  // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
-  @azimuth.assert_eq(150, sum)
-  
-  // 计算平均值
-  let mean = sum / 5
-  @azimuth.assert_eq(30, mean)
-  
-  // 计算方差（简化版）
-  let diff1 = @azimuth.add(data1, -mean)
-  let diff2 = @azimuth.add(data2, -mean)
-  let diff3 = @azimuth.add(data3, -mean)
-  let diff4 = @azimuth.add(data4, -mean)
-  let diff5 = @azimuth.add(data5, -mean)
-  
-  let sq_diff1 = @azimuth.multiply(diff1, diff1)
-  let sq_diff2 = @azimuth.multiply(diff2, diff2)
-  let sq_diff3 = @azimuth.multiply(diff3, diff3)
-  let sq_diff4 = @azimuth.multiply(diff4, diff4)
-  let sq_diff5 = @azimuth.multiply(diff5, diff5)
-  
-  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(sq_diff1, sq_diff2), sq_diff3), sq_diff4), sq_diff5) / 5
-  @azimuth.assert_eq(200, variance)
-  
-  // 计算标准差（简化版，使用整数近似）
-  let std_dev = 14  // sqrt(200) ≈ 14.14，取整数14
-  @azimuth.assert_eq(14, std_dev)
-}
-
-test "algorithmic_problem_solving" {
-  // 测试算法问题解决
-  // 场景：最大公约数（GCD）- 使用欧几里得算法
+  // GCD(48, 18) = 6
   let a = 48
   let b = 18
   
   // 模拟欧几里得算法
-  let remainder1 = a % b  // 48 % 18 = 12
-  let remainder2 = b % remainder1  // 18 % 12 = 6
-  let _remainder3 = remainder1 % remainder2  // 12 % 6 = 0
+  let step1_a = b        // 18
+  let step1_b = a % b    // 48 % 18 = 12
+  let step2_a = step1_b  // 12
+  let step2_b = step1_a % step1_b  // 18 % 12 = 6
+  let step3_a = step2_b  // 6
+  let step3_b = step2_a % step2_b  // 12 % 6 = 0
   
-  // GCD是最后一个非零余数
-  let gcd = remainder2
-  @azimuth.assert_eq(6, gcd)
+  // 当余数为0时，当前a就是GCD
+  let gcd_result = step3_a
+  @azimuth.assert_eq(6, gcd_result)
   
-  // 场景：最小公倍数（LCM）
-  // LCM(a, b) = (a × b) / GCD(a, b)
-  let lcm = @azimuth.multiply(a, b) / gcd
-  @azimuth.assert_eq(144, lcm)
+  // GCD(100, 25) = 25
+  let c = 100
+  let d = 25
   
-  // 场景：判断素数（简化版）
-  let num = 17
-  let is_prime = if num > 1 {
-    // 简化检查：只检查是否能被2, 3, 5整除
-    let not_div_by_2 = num % 2 != 0
-    let not_div_by_3 = num % 3 != 0
-    let not_div_by_5 = num % 5 != 0
-    not_div_by_2 && not_div_by_3 && not_div_by_5
+  let gcd_step1_a = d      // 25
+  let gcd_step1_b = c % d  // 100 % 25 = 0
+  
+  // 余数为0，GCD就是d
+  let gcd_result2 = gcd_step1_a
+  @azimuth.assert_eq(25, gcd_result2)
+  
+  // GCD(17, 13) = 17 (质数)
+  let e = 17
+  let f = 13
+  
+  let prime_step1_a = f     // 13
+  let prime_step1_b = e % f // 17 % 13 = 4
+  let prime_step2_a = prime_step1_b  // 4
+  let prime_step2_b = prime_step1_a % prime_step1_b  // 13 % 4 = 1
+  let prime_step3_a = prime_step2_b  // 1
+  let prime_step3_b = prime_step2_a % prime_step2_b  // 4 % 1 = 0
+  
+  let gcd_result3 = prime_step3_a
+  @azimuth.assert_eq(1, gcd_result3)
+}
+
+test "algorithm_fibonacci_sequence" {
+  // 测试算法实现：斐波那契数列
+  // F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2)
+  
+  // 计算前几项
+  let f0 = 0
+  let f1 = 1
+  let f2 = @azimuth.add(f1, f0)  // 1
+  let f3 = @azimuth.add(f2, f1)  // 2
+  let f4 = @azimuth.add(f3, f2)  // 3
+  let f5 = @azimuth.add(f4, f3)  // 5
+  let f6 = @azimuth.add(f5, f4)  // 8
+  let f7 = @azimuth.add(f6, f5)  // 13
+  let f8 = @azimuth.add(f7, f6)  // 21
+  
+  @azimuth.assert_eq(0, f0)
+  @azimuth.assert_eq(1, f1)
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  @azimuth.assert_eq(8, f6)
+  @azimuth.assert_eq(13, f7)
+  @azimuth.assert_eq(21, f8)
+  
+  // 计算斐波那契数列的和
+  let sum_first_8 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(f0, f1), f2), f3), f4), f5), f6), f7)
+  @azimuth.assert_eq(33, sum_first_8)
+  
+  // 计算特定项的倍数
+  let f5_times_3 = @azimuth.multiply(f5, 3)
+  @azimuth.assert_eq(15, f5_times_3)
+}
+
+test "comprehensive_application_scenario" {
+  // 测试综合应用场景：电商订单处理系统
+  // 产品信息
+  let product_a_price = 299
+  let product_a_qty = 2
+  let product_b_price = 199
+  let product_b_qty = 3
+  let product_c_price = 99
+  let product_c_qty = 1
+  
+  // 优惠规则
+  let discount_threshold = 800  // 满800减100
+  let discount_amount = 100
+  let vip_discount_rate = 5     // VIP会员额外5%折扣
+  let shipping_fee = 20
+  let free_shipping_threshold = 1000  // 满1000免运费
+  
+  // 计算商品总价
+  let total_a = @azimuth.multiply(product_a_price, product_a_qty)
+  let total_b = @azimuth.multiply(product_b_price, product_b_qty)
+  let total_c = @azimuth.multiply(product_c_price, product_c_qty)
+  let subtotal = @azimuth.add(@azimuth.add(total_a, total_b), total_c)
+  
+  @azimuth.assert_eq(598, total_a)   // 299 * 2
+  @azimuth.assert_eq(597, total_b)   // 199 * 3
+  @azimuth.assert_eq(99, total_c)    // 99 * 1
+  @azimuth.assert_eq(1294, subtotal) // 598 + 597 + 99
+  
+  // 应用满减优惠
+  let discount_applied = if subtotal >= discount_threshold {
+    discount_amount
   } else {
-    false
+    0
   }
   
-  @azimuth.assert_true(is_prime)
+  let after_discount = @azimuth.add(subtotal, -discount_applied)
+  @azimuth.assert_eq(1194, after_discount)  // 1294 - 100
   
-  // 场景：计算平方根（整数部分，使用二分查找简化版）
-  let sqrt_approx = 9  // 已知81的平方根是9
-  @azimuth.assert_eq(9, sqrt_approx)
+  // 应用VIP折扣
+  let is_vip = true
+  let vip_discount = if is_vip {
+    @azimuth.multiply(after_discount, vip_discount_rate) / 100
+  } else {
+    0
+  }
+  
+  let after_vip = @azimuth.add(after_discount, -vip_discount)
+  @azimuth.assert_eq(1134, after_vip)  // 1194 - 60 (5% of 1194 ≈ 60)
+  
+  // 计算运费
+  let final_shipping = if after_vip >= free_shipping_threshold {
+    0
+  } else {
+    shipping_fee
+  }
+  
+  let final_total = @azimuth.add(after_vip, final_shipping)
+  @azimuth.assert_eq(1134, final_total)  // 免运费
+  
+  // 计算订单积分（1元1积分）
+  let points_earned = final_total
+  @azimuth.assert_eq(1134, points_earned)
+  
+  // 计算会员等级提升（每1000积分升一级）
+  let level_increase = points_earned / 1000
+  @azimuth.assert_eq(1, level_increase)
 }
