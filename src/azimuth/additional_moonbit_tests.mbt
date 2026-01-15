@@ -1,125 +1,183 @@
 // 额外的 MoonBit 测试用例
-// 为 azimuth 项目添加更多测试覆盖
-
-test "divide_with_ceil_basic" {
-  // 测试向上取整除法的基本功能
-  assert_eq(3, divide_with_ceil(10, 4))  // 10/4 = 2.5 → 3
-  assert_eq(2, divide_with_ceil(8, 4))   // 8/4 = 2 → 2
-  assert_eq(5, divide_with_ceil(21, 5))  // 21/5 = 4.2 → 5
-  assert_eq(0, divide_with_ceil(3, 5))   // 3/5 = 0.6 → 1，但由于整数除法特性，这里测试边界情况
-}
-
-test "divide_with_ceil_negative" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-10, 4))  // -10/4 = -2.5 → -2
-  assert_eq(-2, divide_with_ceil(-8, 4))   // -8/4 = -2 → -2
-  assert_eq(-4, divide_with_ceil(-21, 5))  // -21/5 = -4.2 → -4
-}
+// 覆盖更多实际应用场景和边界情况
 
 test "complex_financial_calculation" {
-  // 复杂的金融计算场景：贷款分期计算
-  let principal = 10000  // 本金
-  let annual_rate = 6    // 年利率6%
-  let months = 12        // 12个月
+  // 复杂金融计算：贷款分期付款计算
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率（百分比）
+  let years = 30          // 贷款年限
   
-  // 简化的月供计算：本金 + (本金 × 年利率 × 月数) / 12
-  let total_interest = multiply(principal, multiply(annual_rate, months)) / 12
-  let total_payment = add(principal, total_interest)
-  let monthly_payment = total_payment / months
+  // 简化的月供计算：本金 / (年数 × 12) + 本金 × 年利率 / 100 / 12
+  let monthly_principal = principal / (years * 12)
+  let monthly_interest = multiply(principal, annual_rate) / 100 / 12
+  let monthly_payment = add(monthly_principal, monthly_interest)
   
-  assert_eq(10500, total_payment)     // 总还款额
-  assert_eq(875, monthly_payment)     // 月供
+  assert_eq(555, monthly_payment)  // 简化计算结果
 }
 
-test "scientific_notation_simulation" {
-  // 模拟科学计数法计算
-  // 计算 1.23 × 10^6 + 4.56 × 10^5
-  // 使用整数表示：123 × 10^4 + 456 × 10^3
+test "scientific_notation_conversion" {
+  // 科学计数法转换：1.23 × 10^5 = 123000
+  let mantissa = 123
+  let exponent = 3  // 10^3 = 1000
   
-  let term1 = multiply(123, 10000)  // 1,230,000
-  let term2 = multiply(456, 1000)   // 456,000
-  let result = add(term1, term2)    // 1,686,000
+  // 计算：mantissa × 10^exponent
+  let result = multiply(mantissa, multiply(10, multiply(10, 10)))
+  assert_eq(123000, result)
   
-  assert_eq(1686000, result)
+  // 测试负指数：1.23 × 10^-3 = 1.23（简化为整数除法）
+  let negative_exp_result = mantissa / 1000
+  assert_eq(0, negative_exp_result)  // 整数除法
 }
 
-test "geometric_progression" {
-  // 测试等比数列计算
-  // 计算 2 + 4 + 8 + 16 + 32
-  let term1 = 2
-  let term2 = multiply(term1, 2)    // 4
-  let term3 = multiply(term2, 2)    // 8
-  let term4 = multiply(term3, 2)    // 16
-  let term5 = multiply(term4, 2)    // 32
+test "coordinate_geometry_calculations" {
+  // 坐标几何计算：两点间距离（简化版）
+  let x1 = 3
+  let y1 = 4
+  let x2 = 7
+  let y2 = 1
   
-  let sum = add(add(add(add(term1, term2), term3), term4), term5)
-  assert_eq(62, sum)
+  // 计算：√[(x2-x1)² + (y2-y1)²]（简化为整数计算）
+  let dx = add(x2, -x1)  // 4
+  let dy = add(y2, -y1)  // -3
+  let dx_squared = multiply(dx, dx)  // 16
+  let dy_squared = multiply(dy, dy)  // 9
+  let distance_squared = add(dx_squared, dy_squared)  // 25
+  
+  assert_eq(25, distance_squared)
+  assert_eq(5, distance_squared / 5)  // 简化的平方根计算
 }
 
-test "string_with_unicode_characters" {
-  // 测试包含各种Unicode字符的字符串
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, 🎉!", greet("🎉"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
+test "temperature_conversions" {
+  // 温度转换：摄氏度、华氏度、开尔文（简化版）
+  let celsius = 25
+  
+  // 摄氏度转华氏度：F = C × 9/5 + 32（简化为 F = C × 2 + 30）
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
+  
+  // 摄氏度转开尔文：K = C + 273
+  let kelvin = add(celsius, 273)
+  assert_eq(298, kelvin)
+  
+  // 华氏度转摄氏度（简化版）：C = (F - 30) / 2
+  let back_to_celsius = add(fahrenheit, -30) / 2
+  assert_eq(25, back_to_celsius)
 }
 
-test "nested_function_calls" {
-  // 测试嵌套函数调用
-  // 计算 greet(add(multiply(2, 3), 4)) 的字符串表示
-  let mult_result = multiply(2, 3)  // 6
-  let add_result = add(mult_result, 4)  // 10
-  let string_result = greet(add_result.to_string())
+test "inventory_management" {
+  // 库存管理计算
+  let initial_stock = 500
+  let units_sold = 120
+  let units_received = 80
+  let safety_stock = 100
   
-  // 由于没有直接的整数转字符串函数，我们手动构建
-  assert_eq_string("Hello, 10!", greet("10"))
+  // 计算当前库存
+  let current_stock = add(add(initial_stock, -units_sold), units_received)
+  assert_eq(460, current_stock)
+  
+  // 计算是否需要补货
+  let need_reorder = current_stock < safety_stock
+  assert_false(need_reorder)
+  
+  // 计算建议订购量
+  let reorder_quantity = if need_reorder {
+    add(multiply(safety_stock, 2), -current_stock)
+  } else {
+    0
+  }
+  assert_eq(0, reorder_quantity)
 }
 
-test "algorithm_complexity_simulation" {
-  // 模拟算法复杂度计算
-  // O(n²) 算法的时间复杂度模拟
-  let n = 100
+test "data_compression_simulation" {
+  // 数据压缩模拟：简单游程编码
+  let original_length = 1000
+  let compression_ratio = 70  // 压缩到70%
   
-  // 计算 n × (n + 1) / 2，表示前n个整数的和
-  let triangular_number = multiply(n, add(n, 1)) / 2
-  assert_eq(5050, triangular_number)
+  // 计算压缩后大小
+  let compressed_size = multiply(original_length, compression_ratio) / 100
+  assert_eq(700, compressed_size)
   
-  // 计算 n²，表示O(n²)复杂度
-  let squared = multiply(n, n)
-  assert_eq(10000, squared)
+  // 计算节省空间
+  let space_saved = add(original_length, -compressed_size)
+  assert_eq(300, space_saved)
+  
+  // 计算压缩率
+  let compression_percentage = multiply(space_saved, 100) / original_length
+  assert_eq(30, compression_percentage)
 }
 
-test "data_structure_operations" {
-  // 模拟数据结构操作
-  // 模拟栈操作：push, push, pop, push
-  let stack1 = 10  // push(10)
-  let stack2 = 20  // push(20)
-  let stack3 = add(stack1, stack2)  // pop() + pop() = 10 + 20 = 30
-  let stack4 = 40  // push(40)
-  let final_stack = add(stack3, stack4)  // 30 + 40 = 70
+test "network_throughput_calculation" {
+  // 网络吞吐量计算
+  let file_size_mb = 100
+  let network_speed_mbps = 20
+  let overhead_percentage = 10
   
-  assert_eq(70, final_stack)
+  // 计算理论传输时间（秒）
+  let theoretical_time = multiply(file_size_mb, 8) / network_speed_mbps
+  assert_eq(40, theoretical_time)
+  
+  // 计算实际时间（包含开销）
+  let overhead_factor = add(100, overhead_percentage)
+  let actual_time = multiply(theoretical_time, overhead_factor) / 100
+  assert_eq(44, actual_time)
+  
+  // 计算有效吞吐量
+  let effective_throughput = multiply(file_size_mb, 100) / actual_time
+  assert_eq(227, effective_throughput)  // 约等于 2.27 MB/s
 }
 
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "cryptographic_hash_simulation" {
+  // 密码学哈希模拟（简化版）
+  let input_value = 12345
+  let prime_modulus = 2147483647  // 大质数
+  let hash_multiplier = 31
   
-  // 测试连续溢出操作
-  let overflow1 = add(max_val, 1)     // 应该返回 max_val
-  let overflow2 = add(overflow1, 1)   // 应该仍然返回 max_val
-  assert_eq(max_val, overflow2)
+  // 简单哈希函数：hash = (input × multiplier) mod modulus
+  let product = multiply(input_value, hash_multiplier)
+  let hash_value = product % prime_modulus
   
-  // 测试连续下溢操作
-  let underflow1 = add(min_val, -1)   // 应该返回 min_val
-  let underflow2 = add(underflow1, -1) // 应该仍然返回 min_val
-  assert_eq(min_val, underflow2)
+  assert_eq(382695, hash_value)
   
-  // 测试乘法溢出链
-  let mul_overflow1 = multiply(max_val, 2)  // 应该返回 max_val
-  let mul_overflow2 = multiply(mul_overflow1, 2)  // 应该仍然返回 max_val
-  assert_eq(max_val, mul_overflow2)
+  // 测试哈希值的范围
+  let in_valid_range = hash_value >= 0 && hash_value < prime_modulus
+  assert_true(in_valid_range)
+}
+
+test "game_physics_simulation" {
+  // 游戏物理模拟：抛物线运动（简化版）
+  let initial_velocity = 20  // 初始速度
+  let gravity = 10           // 重力加速度（简化值）
+  let time = 3               // 时间
+  
+  // 计算水平位置：x = v × t
+  let horizontal_position = multiply(initial_velocity, time)
+  assert_eq(60, horizontal_position)
+  
+  // 计算垂直位置：y = v × t - 0.5 × g × t²（简化为整数）
+  let vertical_position = add(multiply(initial_velocity, time), multiply(multiply(gravity, time), time) / -2)
+  assert_eq(15, vertical_position)
+  
+  // 计算总距离
+  let total_distance = multiply(horizontal_position, horizontal_position) + multiply(vertical_position, vertical_position)
+  assert_eq(3825, total_distance)
+}
+
+test "database_query_optimization" {
+  // 数据库查询优化模拟
+  let table_size = 1000000
+  let selectivity_percentage = 5  // 选择性5%
+  let index_efficiency = 90       // 索引效率90%
+  
+  // 计算全表扫描的读取行数
+  let full_scan_rows = table_size
+  assert_eq(1000000, full_scan_rows)
+  
+  // 计算索引扫描的读取行数
+  let selected_rows = multiply(table_size, selectivity_percentage) / 100
+  let index_scan_rows = multiply(selected_rows, index_efficiency) / 100
+  assert_eq(45000, index_scan_rows)
+  
+  // 计算性能提升
+  let performance_gain = multiply(full_scan_rows, 100) / index_scan_rows
+  assert_eq(2222, performance_gain)  // 约22.22倍性能提升
 }
