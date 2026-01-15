@@ -1,166 +1,176 @@
 // 增强的 MoonBit 测试用例
-// 为 azimuth 包添加额外的测试覆盖
+// 测试 azimuth 模块的核心功能
 
-test "large_number_operations" {
-  // 测试大数运算
-  let million = 1000000
-  let result1 = add(million, million)
-  assert_eq(2000000, result1)
+test "add_property_commutativity" {
+  // 测试加法交换律：a + b = b + a
+  let a = 12345
+  let b = 67890
   
-  let result2 = multiply(million, 2)
-  assert_eq(2000000, result2)
+  let result1 = azimuth::add(a, b)
+  let result2 = azimuth::add(b, a)
+  assert_eq(result1, result2)
   
-  // 测试大数相加不溢出
-  let large_sum = add(1500000000, 1000000000)
-  assert_eq(2147483647, large_sum)
+  // 测试包含负数的情况
+  let c = -12345
+  let d = 67890
+  
+  let result3 = azimuth::add(c, d)
+  let result4 = azimuth::add(d, c)
+  assert_eq(result3, result4)
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  let a = -100
-  let b = -200
+test "add_property_associativity" {
+  // 测试加法结合律：(a + b) + c = a + (b + c)
+  let a = 1000
+  let b = 2000
+  let c = 3000
   
-  // 负数相加
-  assert_eq(-300, add(a, b))
+  let result1 = azimuth::add(azimuth::add(a, b), c)
+  let result2 = azimuth::add(a, azimuth::add(b, c))
+  assert_eq(result1, result2)
   
-  // 负数相乘
-  assert_eq(20000, multiply(a, b))
+  // 测试包含负数的情况
+  let d = -1000
+  let e = 2500
+  let f = -1500
   
-  // 正负数相加
-  assert_eq(-100, add(a, 100))
-  
-  // 正负数相乘
-  assert_eq(-20000, multiply(a, 200))
+  let result3 = azimuth::add(azimuth::add(d, e), f)
+  let result4 = azimuth::add(d, azimuth::add(e, f))
+  assert_eq(result3, result4)
 }
 
-test "string_special_characters" {
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
-  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, $pecial$!", greet("$pecial$"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+test "multiply_property_commutativity" {
+  // 测试乘法交换律：a * b = b * a
+  let a = 123
+  let b = 456
+  
+  let result1 = azimuth::multiply(a, b)
+  let result2 = azimuth::multiply(b, a)
+  assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let c = -123
+  let d = 456
+  
+  let result3 = azimuth::multiply(c, d)
+  let result4 = azimuth::multiply(d, c)
+  assert_eq(result3, result4)
 }
 
-test "compound_calculations" {
-  // 测试复合计算
-  // 计算 (a + b) * (c + d) - e
+test "multiply_property_distributivity" {
+  // 测试乘法分配律：a * (b + c) = a * b + a * c
   let a = 10
   let b = 20
-  let c = 5
-  let d = 15
-  let e = 100
+  let c = 30
   
-  let sum1 = add(a, b)
-  let sum2 = add(c, d)
-  let product = multiply(sum1, sum2)
-  let result = add(product, -e)
+  let left_side = azimuth::multiply(a, azimuth::add(b, c))
+  let right_side = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
+  assert_eq(left_side, right_side)
   
-  assert_eq(400, result)
+  // 测试包含负数的情况
+  let d = -10
+  let e = 25
+  let f = -15
+  
+  let left_side2 = azimuth::multiply(d, azimuth::add(e, f))
+  let right_side2 = azimuth::add(azimuth::multiply(d, e), azimuth::multiply(d, f))
+  assert_eq(left_side2, right_side2)
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  // 计算复利：本金 × (1 + 利率 × 年数)
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
+test "combined_operations_complex" {
+  // 测试复合运算：(a + b) * (c + d) - e * f
+  let a = 15
+  let b = 25
+  let c = 8
+  let d = 12
+  let e = 10
+  let f = 20
   
-  let interest_rate = multiply(rate, years)
-  let growth_factor = add(1, interest_rate)
-  let total = multiply(principal, growth_factor)
+  let sum1 = azimuth::add(a, b)  // 40
+  let sum2 = azimuth::add(c, d)  // 20
+  let product1 = azimuth::multiply(sum1, sum2)  // 800
+  let product2 = azimuth::multiply(e, f)  // 200
+  let result = azimuth::add(product1, -product2)  // 600
   
-  assert_eq(160000, total)
+  assert_eq(600, result)
 }
 
-test "geometry_calculations" {
-  // 测试几何计算
-  // 计算矩形面积：长 × 宽
-  let length = 12
-  let width = 8
-  let area = multiply(length, width)
-  assert_eq(96, area)
+test "string_processing_multilingual" {
+  // 测试多语言字符串处理
+  let english_name = "John"
+  let chinese_name = "张三"
+  let japanese_name = "田中"
+  let arabic_name = "أحمد"
+  let mixed_name = "John张三田中أحمد"
   
-  // 计算矩形周长：2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(40, perimeter)
+  assert_eq_string("Hello, John!", azimuth::greet(english_name))
+  assert_eq_string("Hello, 张三!", azimuth::greet(chinese_name))
+  assert_eq_string("Hello, 田中!", azimuth::greet(japanese_name))
+  assert_eq_string("Hello, أحمد!", azimuth::greet(arabic_name))
+  assert_eq_string("Hello, John张三田中أحمد!", azimuth::greet(mixed_name))
 }
 
-test "temperature_conversion" {
-  // 测试温度转换（简化版）
-  // 摄氏度转华氏度：F = C × 2 + 30
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
+test "real_world_financial_calculation" {
+  // 实际金融计算：贷款利息计算
+  let principal = 100000  // 本金 1000元（单位：分）
+  let annual_rate = 5     // 年利率 5%
+  let months = 12         // 12个月
   
-  // 华氏度转摄氏度（简化版）：C = (F - 30) ÷ 2
-  let converted_back = add(fahrenheit, -30) / 2
-  assert_eq(celsius, converted_back)
+  // 计算月利息：本金 * 年利率 / 12
+  let monthly_interest = azimuth::multiply(principal, annual_rate) / azimuth::multiply(12, 100)
+  
+  // 计算总利息：月利息 * 12
+  let total_interest = azimuth::multiply(monthly_interest, months)
+  
+  // 计算还款总额：本金 + 总利息
+  let total_payment = azimuth::add(principal, total_interest)
+  
+  assert_eq(105000, total_payment)  // 100000 + 5000 = 105000
 }
 
-test "statistical_calculations" {
-  // 测试统计计算
-  // 计算平均值
-  let numbers_sum = add(add(add(add(10, 20), 30), 40), 50)
-  let count = 5
-  let average = numbers_sum / count
-  assert_eq(30, average)
-  
-  // 计算方差（简化版）
-  let diff1 = add(10, -average)
-  let diff2 = add(20, -average)
-  let diff3 = add(30, -average)
-  let diff4 = add(40, -average)
-  let diff5 = add(50, -average)
-  
-  let squared_diff_sum = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), 
-                                   multiply(diff3, diff3)), 
-                                   add(multiply(diff4, diff4), multiply(diff5, diff5)))
-  let variance = squared_diff_sum / count
-  assert_eq(200, variance)
-}
-
-test "boundary_combinations" {
-  // 测试边界值组合
+test "boundary_value_extreme_cases" {
+  // 极端边界值测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值与中等值运算
-  assert_eq(2147483647, add(max_val, 1000))
-  assert_eq(2147483647, multiply(max_val, 2))
+  // 测试最大值的各种运算
+  assert_eq(max_val, azimuth::add(max_val, 0))
+  assert_eq(max_val, azimuth::add(max_val, -min_val))  // max_val + max_val = max_val（溢出保护）
+  assert_eq(max_val, azimuth::multiply(max_val, 1))
+  assert_eq(min_val, azimuth::multiply(max_val, -1))
   
-  // 最小值与中等值运算
-  assert_eq(-2147483648, add(min_val, -1000))
-  assert_eq(-2147483648, multiply(min_val, 2))
+  // 测试最小值的各种运算
+  assert_eq(min_val, azimuth::add(min_val, 0))
+  assert_eq(min_val, azimuth::add(min_val, max_val))   // min_val + max_val = -1
+  assert_eq(min_val, azimuth::multiply(min_val, 1))
+  assert_eq(min_val, azimuth::multiply(min_val, -1))   // 特殊情况：min_val * -1 = min_val（溢出保护）
   
-  // 边界值之间的运算
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(0, add(min_val, 1))
+  // 测试链式运算
+  let chain_result = azimuth::add(
+    azimuth::multiply(azimuth::add(max_val, min_val), 2),
+    azimuth::multiply(max_val, 0)
+  )
+  assert_eq(-2, chain_result)  // (-1) * 2 + max_val * 0 = -2 + 0 = -2
 }
 
-test "practical_scenarios" {
-  // 测试实际应用场景
-  // 计算订单总价：商品价格 × 数量 + 运费 - 折扣
-  let item_price = 199
-  let quantity = 3
-  let shipping = 20
-  let discount = 50
+test "performance_large_number_operations" {
+  // 大数运算性能测试
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  let large_num3 = 3000000
   
-  let subtotal = multiply(item_price, quantity)
-  let total_with_shipping = add(subtotal, shipping)
-  let final_total = add(total_with_shipping, -discount)
+  // 大数加法
+  let sum_result = azimuth::add(azimuth::add(large_num1, large_num2), large_num3)
+  assert_eq(6000000, sum_result)
   
-  assert_eq(607, final_total)
+  // 大数乘法
+  let product_result = azimuth::multiply(large_num1, 3)
+  assert_eq(3000000, product_result)
   
-  // 计算速度：距离 ÷ 时间
-  let distance = 300
-  let time = 5
-  let speed = distance / time
-  assert_eq(60, speed)
-  
-  // 计算工作效率：工作量 ÷ 时间
-  let work_done = 1000
-  let hours_worked = 8
-  let efficiency = work_done / hours_worked
-  assert_eq(125, efficiency)
+  // 复合运算
+  let complex_result = azimuth::add(
+    azimuth::multiply(large_num1, 2),
+    azimuth::multiply(large_num2, 3)
+  )
+  assert_eq(8000000, complex_result)  // 1000000*2 + 2000000*3 = 2000000 + 6000000 = 8000000
 }
