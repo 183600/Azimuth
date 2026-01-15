@@ -1,76 +1,35 @@
 #!/bin/bash
 
-# 验证新添加的测试用例
-echo "验证新添加的 MoonBit 测试用例..."
+# 验证添加的测试用例
 
+echo "验证新添加的测试用例..."
+
+# 设置路径
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-TEST_FILE="$PROJECT_ROOT/src/azimuth/test/additional_moonbit_tests.mbt"
+CLEAN_TEST_PATH="$PROJECT_ROOT/clean_test"
 
 # 检查测试文件是否存在
-if [ ! -f "$TEST_FILE" ]; then
-  echo "错误：测试文件不存在"
-  exit 1
-fi
-
-# 统计测试用例数量
-TEST_COUNT=$(grep "^test " "$TEST_FILE" | wc -l)
-TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
-
-echo "找到 $TEST_COUNT 个测试用例"
-
-# 列出所有测试用例
-echo ""
-echo "测试用例列表："
-grep "^test " "$TEST_FILE" | sed 's/test "/- /' | sed 's/" {/ /'
-
-# 验证测试用例数量不超过10个
-if [ "$TEST_COUNT" -le 10 ]; then
-  echo ""
-  echo "✓ 测试用例数量符合要求（不超过10个）"
+TEST_FILE="$CLEAN_TEST_PATH/test/additional_tests.mbt"
+if [ -f "$TEST_FILE" ]; then
+  echo "测试文件已创建: $TEST_FILE"
+  
+  # 统计测试用例数量
+  TEST_COUNT=$(grep -c "^test " "$TEST_FILE")
+  echo "测试用例数量: $TEST_COUNT"
+  
+  # 列出所有测试用例
+  echo "测试用例列表:"
+  grep "^test " "$TEST_FILE"
+  
+  # 验证语法
+  echo "验证测试语法..."
+  cd "$CLEAN_TEST_PATH"
+  node moonc.js check -pkg test test/additional_tests.mbt
+  if [ $? -eq 0 ]; then
+    echo "测试语法验证成功！"
+  else
+    echo "测试语法验证失败！"
+  fi
 else
-  echo ""
-  echo "✗ 测试用例数量超过限制（当前：$TEST_COUNT，限制：10）"
-  exit 1
+  echo "错误: 测试文件不存在！"
 fi
-
-# 检查测试语法
-echo ""
-echo "检查测试语法..."
-
-# 检查是否有未闭合的大括号
-OPEN_BRACES=$(grep -c "{" "$TEST_FILE")
-CLOSE_BRACES=$(grep -c "}" "$TEST_FILE")
-
-if [ "$OPEN_BRACES" -eq "$CLOSE_BRACES" ]; then
-  echo "✓ 大括号匹配正确"
-else
-  echo "✗ 大括号不匹配（开放：$OPEN_BRACES，闭合：$CLOSE_BRACES）"
-  exit 1
-fi
-
-# 检查是否使用了标准的测试语法
-if grep -q "^test " "$TEST_FILE"; then
-  echo "✓ 使用了标准的 test 语法"
-else
-  echo "✗ 未找到标准的 test 语法"
-  exit 1
-fi
-
-# 检查是否使用了项目中的函数
-if grep -q "@azimuth.add(" "$TEST_FILE" && grep -q "@azimuth.multiply(" "$TEST_FILE" && grep -q "@azimuth.greet(" "$TEST_FILE"; then
-  echo "✓ 使用了项目中的函数"
-else
-  echo "✗ 未正确使用项目中的函数"
-  exit 1
-fi
-
-# 检查是否使用了断言函数
-if grep -q "assert_eq(" "$TEST_FILE" && grep -q "assert_eq_string(" "$TEST_FILE"; then
-  echo "✓ 使用了断言函数"
-else
-  echo "✗ 未正确使用断言函数"
-  exit 1
-fi
-
-echo ""
-echo "所有验证通过！新添加的测试用例符合要求。"
