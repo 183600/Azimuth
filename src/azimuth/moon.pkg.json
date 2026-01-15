@@ -18,6 +18,7 @@
     "moonbit_test_cases.mbt",
     "test/practical_moonbit_tests.mbt",
     "additional_moonbit_tests.mbt",
-    "new_moonbit_test_examples.mbt"
+    "new_moonbit_test_examples.mbt",
+    "test/new_comprehensive_test_cases.mbt"
   ]
 }
