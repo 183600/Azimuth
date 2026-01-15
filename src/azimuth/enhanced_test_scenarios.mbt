@@ -167,7 +167,7 @@ test "game_mechanics_simulation" {
 test "data_structures_operations" {
   // 数据结构操作模拟：栈和队列的基本操作
   // 模拟栈操作（后进先出）
-  let stack_size = 0
+  let mut stack_size = 0
   
   // push操作
   stack_size = add(stack_size, 1)  // push 1
@@ -181,7 +181,7 @@ test "data_structures_operations" {
   assert_eq(1, stack_size)
   
   // 模拟队列操作（先进先出）
-  let queue_size = 0
+  let mut queue_size = 0
   
   // enqueue操作
   queue_size = add(queue_size, 1)  // enqueue 1
