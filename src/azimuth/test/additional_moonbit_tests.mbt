@@ -1,131 +1,117 @@
 // 额外的 MoonBit 测试用例
-// 测试 azimuth 模块的核心功能
+// 覆盖更多实际应用场景和边界情况
 
-test "add_function_basic" {
-  // 测试基本的加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-3, add(-8, 5))
+test "power_calculation" {
+  // 测试幂运算：2^4 = 16
+  let base = 2
+  let exponent = 4
+  let result = @azimuth.multiply(@azimuth.multiply(base, base), @azimuth.multiply(base, base))
+  @azimuth.assert_eq(16, result)
 }
 
-test "add_function_edge_cases" {
-  // 测试加法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+test "factorial_small_number" {
+  // 测试小数阶乘：4! = 4 × 3 × 2 × 1 = 24
+  let n = 4
+  let result = @azimuth.multiply(n, @azimuth.multiply(n - 1, @azimuth.multiply(n - 2, n - 3)))
+  @azimuth.assert_eq(24, result)
 }
 
-test "multiply_function_basic" {
-  // 测试基本的乘法功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(0, multiply(0, 12345))
+test "average_of_three_numbers" {
+  // 测试三个数的平均值
+  let num1 = 15
+  let num2 = 25
+  let num3 = 35
+  
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(num1, num2), num3)
+  // 计算平均值
+  let average = sum / 3
+  
+  @azimuth.assert_eq(25, average)
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "discount_calculation" {
+  // 测试折扣计算
+  let original_price = 200
+  let discount_percentage = 20  // 20% 折扣
   
-  // 测试特殊值处理
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
+  // 计算折扣金额
+  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
+  // 计算折后价格
+  let final_price = @azimuth.add(original_price, -discount_amount)
+  
+  @azimuth.assert_eq(160, final_price)
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 张三!", greet("张三"))
+test "volume_of_cuboid" {
+  // 测试长方体体积计算
+  let length = 5
+  let width = 4
+  let height = 3
+  
+  // 体积 = 长 × 宽 × 高
+  let base_area = @azimuth.multiply(length, width)
+  let volume = @azimuth.multiply(base_area, height)
+  
+  @azimuth.assert_eq(60, volume)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 计算 (a + b) * c - d
-  let a = 10
-  let b = 5
-  let c = 3
-  let d = 7
+test "speed_distance_time" {
+  // 测试速度、距离、时间关系
+  let distance = 300  // 公里
+  let time = 5        // 小时
   
-  let sum_ab = add(a, b)  // 15
-  let product = multiply(sum_ab, c)  // 45
-  let result = add(product, -d)  // 38
+  // 速度 = 距离 / 时间
+  let speed = distance / time
   
-  assert_eq(38, result)
+  @azimuth.assert_eq(60, speed)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 12
-  let y = 8
+test "currency_exchange" {
+  // 测试货币兑换
+  let usd_amount = 100
+  let exchange_rate = 7  // 1 USD = 7 CNY
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  // 兑换为人民币
+  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
   
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(multiply(x, add(y, 3)), add(multiply(x, y), multiply(x, 3)))
+  @azimuth.assert_eq(700, cny_amount)
 }
 
-test "real_world_application" {
-  // 测试实际应用场景：计算购物车总价
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let shipping = 15
+test "percentage_change" {
+  // 测试百分比变化
+  let original_value = 150
+  let new_value = 180
   
-  // 计算商品总价
-  let total1 = multiply(item1_price, item1_quantity)  // 398
-  let total2 = multiply(item2_price, item2_quantity)  // 299
-  let subtotal = add(total1, total2)  // 697
+  // 计算变化量
+  let change = @azimuth.add(new_value, -original_value)
+  // 计算百分比变化
+  let percentage_change = @azimuth.multiply(change, 100) / original_value
   
-  // 计算最终总价
-  let final_total = add(subtotal, shipping)  // 712
-  
-  assert_eq(712, final_total)
+  @azimuth.assert_eq(20, percentage_change)  // (180-150)/150 * 100 = 20%
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试包含特殊字符的字符串
-  let special_chars = "test@example.com"
-  assert_eq_string("Hello, test@example.com!", greet(special_chars))
+test "triangle_area_calculation" {
+  // 测试三角形面积计算
+  let base = 12
+  let height = 8
   
-  // 测试包含空格的字符串
-  let spaced_name = "John Doe"
-  assert_eq_string("Hello, John Doe!", greet(spaced_name))
+  // 面积 = 底 × 高 ÷ 2
+  let area = @azimuth.multiply(base, height) / 2
   
-  // 测试包含数字的字符串
-  let numeric_name = "User123"
-  assert_eq_string("Hello, User123!", greet(numeric_name))
+  @azimuth.assert_eq(48, area)
 }
 
-test "computation_with_negative_numbers" {
-  // 测试负数的计算
-  let a = -10
-  let b = 15
-  let c = -5
+test "simple_interest_calculation" {
+  // 测试简单利息计算
+  let principal = 1000
+  let rate = 5      // 5% 年利率
+  let time = 3      // 3 年
   
-  // 测试负数加法
-  assert_eq(5, add(a, b))
-  assert_eq(-15, add(a, c))
+  // 利息 = 本金 × 利率 × 时间
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), time)
+  // 总金额 = 本金 + 利息
+  let total_amount = @azimuth.add(principal, interest)
   
-  // 测试负数乘法
-  assert_eq(-150, multiply(a, b))
-  assert_eq(50, multiply(a, c))
-  assert_eq(-75, multiply(b, c))
-  
-  // 测试混合运算
-  let result = add(multiply(a, b), c)  // -10 * 15 + (-5) = -155
-  assert_eq(-155, result)
+  @azimuth.assert_eq(16000, total_amount)  // 1000 + 1000*5*3 = 16000
 }
