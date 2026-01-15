@@ -1,4 +1,4 @@
-// 额外的 MoonBit 测试用例
+// 新的 MoonBit 测试用例示例
 // 包含各种实际应用场景和边界条件测试
 
 test "large_number_calculations" {
