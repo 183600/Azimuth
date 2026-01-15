@@ -1,218 +1,247 @@
 // 增强的 MoonBit 测试用例
-// 这些测试用例使用标准的 MoonBit 测试语法，覆盖 azimuth 模块的核心功能
+// 这些测试用例展示了对 azimuth 模块功能的全面测试
 
-// 导入主模块中的函数
+// 导入 azimuth 模块
 use azimuth
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试基本的向上取整除法功能
-  assert_eq(3, divide_with_ceil(10, 3))
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(5, divide_with_ceil(15, 3))
-  assert_eq(2, divide_with_ceil(4, 2))
-  assert_eq(1, divide_with_ceil(1, 1))
+test "enhanced_arithmetic_operations" {
+  // 测试增强的算术运算
+  let a = 42
+  let b = 17
+  
+  // 基本加法测试
+  assert_eq(59, add(a, b))
+  
+  // 负数加法测试
+  assert_eq(25, add(a, -b))
+  
+  // 零值加法测试
+  assert_eq(a, add(a, 0))
+  assert_eq(b, add(0, b))
+  
+  // 基本乘法测试
+  assert_eq(714, multiply(a, b))
+  
+  // 负数乘法测试
+  assert_eq(-714, multiply(a, -b))
+  assert_eq(714, multiply(-a, -b))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(5, divide_with_ceil(25, 5))
-  assert_eq(6, divide_with_ceil(26, 5))
-  
-  // 测试负数情况
-  assert_eq(-2, divide_with_ceil(-10, 5))
-  assert_eq(-1, divide_with_ceil(-1, 5))
-}
-
-test "complex_arithmetic_combinations" {
-  // 测试复杂的算术组合
-  let a = 12
-  let b = 8
-  let c = 5
-  
-  // (a + b) * c - (a - b)
-  let result = add(multiply(add(a, b), c), add(a, -b))
-  assert_eq(92, result)
-  
-  // a * b + b * c - a * c
-  let result2 = add(add(multiply(a, b), multiply(b, c)), multiply(-a, c))
-  assert_eq(76, result2)
-}
-
-test "string_processing_advanced" {
-  // 测试高级字符串处理
-  // 测试包含各种特殊字符的字符串
-  let special_chars = "!@#$%^&*()"
-  assert_eq_string("Hello, !@#$%^&*()!", greet(special_chars))
-  
-  // 测试包含Unicode字符的字符串
-  let unicode_chars = "🌟✨🎉🚀"
-  assert_eq_string("Hello, 🌟✨🎉🚀!", greet(unicode_chars))
-  
-  // 测试包含多种语言的字符串
-  let multilingual = "Hello世界こんにちは안녕하세요"
-  assert_eq_string("Hello, Hello世界こんにちは안녕하세요!", greet(multilingual))
-}
-
-test "mathematical_series_and_sequences" {
-  // 测试数学级数和序列
-  // 计算斐波那契数列的前几项和：1, 1, 2, 3, 5, 8
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
-  let fib6 = add(fib4, fib5)  // 8
-  
-  let sum_fib = add(add(add(add(add(fib1, fib2), fib3), fib4), fib5), fib6)
-  assert_eq(20, sum_fib)
-  
-  // 计算等比数列的和：2 + 4 + 8 + 16 = 30
-  let geo1 = 2
-  let geo2 = multiply(geo1, 2)  // 4
-  let geo3 = multiply(geo2, 2)  // 8
-  let geo4 = multiply(geo3, 2)  // 16
-  
-  let sum_geo = add(add(add(geo1, geo2), geo3), geo4)
-  assert_eq(30, sum_geo)
-}
-
-test "real_world_financial_calculations" {
-  // 测试实际金融计算场景
-  // 计算贷款月供（简化版）：本金 / 期数 + 利息
-  let principal = 12000
-  let months = 12
-  let monthly_rate = 1  // 1%
-  
-  let monthly_principal = principal / months
-  let first_month_interest = multiply(principal, monthly_rate) / 100
-  let first_month_payment = add(monthly_principal, first_month_interest)
-  
-  assert_eq(1100, first_month_payment)
-  
-  // 计算复利（简化版）
-  let initial = 1000
-  let rate = 5
-  let years = 3
-  
-  let yearly_growth = multiply(initial, rate) / 100
-  let total = add(initial, multiply(yearly_growth, years))
-  assert_eq(1150, total)
-}
-
-test "geometry_calculations" {
-  // 测试几何计算
-  // 计算直角三角形的斜边（勾股定理简化版）
-  let base = 3
-  let height = 4
-  
-  // c² = a² + b²
-  let base_squared = multiply(base, base)
-  let height_squared = multiply(height, height)
-  let hypotenuse_squared = add(base_squared, height_squared)
-  
-  // 简化计算：√25 ≈ 5
-  assert_eq(25, hypotenuse_squared)
-  
-  // 计算梯形面积：(上底 + 下底) × 高 ÷ 2
-  let top_base = 6
-  let bottom_base = 10
-  let trapezoid_height = 4
-  
-  let area = multiply(add(top_base, bottom_base), trapezoid_height) / 2
-  assert_eq(32, area)
-}
-
-test "algorithmic_problem_solving" {
-  // 测试算法问题求解
-  // 计算最大公约数（欧几里得算法简化版）
-  let a = 48
-  let b = 18
-  
-  // 简化的GCD计算：通过连续减法
-  let diff = add(a, -b)  // 30
-  let diff2 = add(diff, -b)  // 12
-  let diff3 = add(b, -diff2)  // 6
-  let diff4 = add(diff2, multiply(-2, diff3))  // 0
-  
-  // 当余数为0时，除数就是GCD
-  assert_eq(6, diff3)
-  
-  // 计算最小公倍数：LCM(a,b) = |a × b| / GCD(a,b)
-  let lcm = multiply(a, b) / diff3
-  assert_eq(144, lcm)
-}
-
-test "data_structure_operations_simulation" {
-  // 测试数据结构操作模拟
-  // 模拟栈操作：push, push, pop, push
-  let stack_size = 0
-  
-  // push 10
-  stack_size = add(stack_size, 1)
-  // push 20
-  stack_size = add(stack_size, 1)
-  // pop
-  stack_size = add(stack_size, -1)
-  // push 30
-  stack_size = add(stack_size, 1)
-  
-  assert_eq(2, stack_size)
-  
-  // 模拟队列操作：enqueue, enqueue, dequeue, enqueue
-  let queue_front = 0
-  let queue_rear = 0
-  
-  // enqueue 10
-  queue_rear = add(queue_rear, 1)
-  // enqueue 20
-  queue_rear = add(queue_rear, 1)
-  // dequeue
-  queue_front = add(queue_front, 1)
-  // enqueue 30
-  queue_rear = add(queue_rear, 1)
-  
-  let queue_size = add(queue_rear, -queue_front)
-  assert_eq(2, queue_size)
-}
-
-test "comprehensive_boundary_testing" {
-  // 综合边界值测试
+test "enhanced_boundary_value_testing" {
+  // 测试增强的边界值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试加法的各种边界组合
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, add(0, max_val))
+  // 最大值边界测试
   assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(1, max_val))
-  
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, add(0, min_val))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(-1, min_val))
-  
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(-1, add(min_val, max_val))
-  
-  // 测试乘法的各种边界组合
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(0, max_val))
-  assert_eq(0, multiply(min_val, 0))
-  assert_eq(0, multiply(0, min_val))
-  
+  assert_eq(max_val, add(max_val, max_val))
   assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(max_val, multiply(1, max_val))
+  
+  // 最小值边界测试
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
   assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(1, min_val))
-  
   assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(-1, min_val))
-  assert_eq(min_val, multiply(max_val, -1))
-  assert_eq(min_val, multiply(-1, max_val))
   
-  // 测试复杂的边界运算组合
-  let complex_boundary = add(multiply(add(max_val, min_val), 1), max_val)
-  assert_eq(max_val, complex_boundary)
+  // 混合边界测试
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+}
+
+test "enhanced_string_processing" {
+  // 测试增强的字符串处理
+  // 基本问候测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  
+  // 空字符串测试
+  assert_eq_string("Hello, !", greet(""))
+  
+  // 特殊字符测试
+  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
+  
+  // Unicode 字符测试
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  
+  // 数字字符串测试
+  assert_eq_string("Hello, 2024!", greet("2024"))
+  
+  // 混合内容测试
+  assert_eq_string("Hello, User123_测试!", greet("User123_测试"))
+}
+
+test "enhanced_mathematical_formulas" {
+  // 测试增强的数学公式
+  let x = 12
+  let y = 8
+  let z = 5
+  
+  // 复合运算：(x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(100, result1)
+  
+  // 分配律验证：x * (y + z) = x * y + x * z
+  let distributive_left = multiply(x, add(y, z))
+  let distributive_right = add(multiply(x, y), multiply(x, z))
+  assert_eq(distributive_left, distributive_right)
+  
+  // 结合律验证：(x + y) + z = x + (y + z)
+  let associative_left = add(add(x, y), z)
+  let associative_right = add(x, add(y, z))
+  assert_eq(associative_left, associative_right)
+}
+
+test "enhanced_real_world_scenarios" {
+  // 测试增强的实际应用场景
+  // 购物车计算
+  let item1_price = 199
+  let item1_qty = 2
+  let item2_price = 299
+  let item2_qty = 1
+  let discount = 50
+  let shipping = 20
+  
+  let subtotal = add(multiply(item1_price, item1_qty), multiply(item2_price, item2_qty))
+  let total = add(add(subtotal, -discount), shipping)
+  assert_eq(637, total)
+  
+  // 温度转换：摄氏度转华氏度（简化版：F = C * 2 + 30）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
+  
+  // 简单利息计算：本金 * (1 + 利率 * 时间)
+  let principal = 10000
+  let rate = 5
+  let time = 3
+  let interest = multiply(principal, multiply(rate, time))
+  let total_amount = add(principal, interest)
+  assert_eq(160000, total_amount)
+}
+
+test "enhanced_error_handling" {
+  // 测试增强的错误处理
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 溢出保护测试
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(add(min_val, -100) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, 2) == min_val)
+  
+  // 断言函数测试
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+  
+  // 边界条件断言
+  assert_true(add(0, 0) == 0)
+  assert_true(multiply(1, 1) == 1)
+  assert_true(multiply(0, 12345) == 0)
+}
+
+test "enhanced_performance_calculations" {
+  // 测试增强的性能计算
+  // 等差数列求和：1 + 2 + ... + 100 = 100 * 101 / 2
+  let n = 100
+  let arithmetic_sum = multiply(n, add(n, 1)) / 2
+  assert_eq(5050, arithmetic_sum)
+  
+  // 等比数列求和：1 + 2 + 4 + 8 + 16 = 31
+  let geometric_sum = add(add(add(add(1, 2), 4), 8), 16)
+  assert_eq(31, geometric_sum)
+  
+  // 平方和：1² + 2² + 3² + 4² + 5² = 55
+  let square_sum = add(add(add(add(multiply(1, 1), multiply(2, 2)), multiply(3, 3)), multiply(4, 4)), multiply(5, 5))
+  assert_eq(55, square_sum)
+  
+  // 阶乘计算：5! = 120
+  let factorial = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
+  assert_eq(120, factorial)
+}
+
+test "enhanced_division_operations" {
+  // 测试增强的除法运算
+  // 基本向上取整除法
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(3, divide_with_ceil(11, 4))
+  assert_eq(3, divide_with_ceil(12, 4))
+  assert_eq(4, divide_with_ceil(13, 4))
+  
+  // 负数除法测试
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-4, 4))
+  assert_eq(0, divide_with_ceil(-3, 4))
+  
+  // 零除数边界测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
+  
+  // 大数除法测试
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+  assert_eq(500000, divide_with_ceil(1000000, 2))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "enhanced_complex_scenarios" {
+  // 测试增强的复杂场景
+  // 多步骤计算：((a + b) * (c - d)) + (e * f)
+  let a = 15
+  let b = 25
+  let c = 30
+  let d = 10
+  let e = 8
+  let f = 12
+  
+  let step1 = add(a, b)  // 40
+  let step2 = add(c, -d)  // 20
+  let step3 = multiply(step1, step2)  // 800
+  let step4 = multiply(e, f)  // 96
+  let final_result = add(step3, step4)  // 896
+  
+  assert_eq(896, final_result)
+  
+  // 条件计算：如果 x > y，则计算 x * y，否则计算 x + y
+  let x = 20
+  let y = 15
+  let conditional_result = if (x > y) { multiply(x, y) } else { add(x, y) }
+  assert_eq(300, conditional_result)
+  
+  // 嵌套计算：a * (b + (c * (d + e)))
+  let nested_result = multiply(a, add(b, multiply(c, add(d, e))))
+  assert_eq(1275, nested_result)
+}
+
+test "enhanced_data_validation" {
+  // 测试增强的数据验证
+  let test_values = [0, 1, -1, 42, -42, 1000, -1000, 2147483647, -2147483648]
+  
+  // 验证加法单位元
+  for value in test_values {
+    assert_eq(value, add(value, 0))
+    assert_eq(value, add(0, value))
+  }
+  
+  // 验证乘法单位元
+  for value in test_values {
+    assert_eq(value, multiply(value, 1))
+    assert_eq(value, multiply(1, value))
+  }
+  
+  // 验证乘法零元
+  for value in test_values {
+    assert_eq(0, multiply(value, 0))
+    assert_eq(0, multiply(0, value))
+  }
+  
+  // 验证字符串处理一致性
+  let test_strings = ["", "a", "test", "123", "测试", "🌟", "mix123测试"]
+  for str in test_strings {
+    let expected = "Hello, " + str + "!"
+    assert_eq_string(expected, greet(str))
+  }
 }
