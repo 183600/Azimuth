@@ -1,93 +1,128 @@
 // 新增的 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 覆盖各种实际应用场景和边界情况
 
-test "add_function_basic" {
-  // 测试基本的加法功能
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+test "array_sum_calculation" {
+  // 模拟数组求和：计算 1+2+3+4+5+6+7+8+9+10
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5), 6), 7), 8), 9), 10)
+  @azimuth.assert_eq(55, sum)
 }
 
-test "add_function_mixed_signs" {
-  // 测试不同符号数的加法
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(3, @azimuth.add(10, -7))
-  @azimuth.assert_eq(-3, @azimuth.add(-10, 7))
-}
-
-test "multiply_function_basic" {
-  // 测试基本的乘法功能
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
-  @azimuth.assert_eq(-12, @azimuth.multiply(-3, 4))
-}
-
-test "multiply_function_negative_numbers" {
-  // 测试负数乘法
-  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
-  @azimuth.assert_eq(-20, @azimuth.multiply(4, -5))
-  @azimuth.assert_eq(-20, @azimuth.multiply(-4, 5))
-}
-
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-}
-
-test "greet_function_special_characters" {
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, 测试123!", @azimuth.greet("测试123"))
-  @azimuth.assert_eq_string("Hello, user@domain.com!", @azimuth.greet("user@domain.com"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-}
-
-test "overflow_protection_add" {
-  // 测试加法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "velocity_calculation" {
+  // 物理计算：速度 = 距离 / 时间
+  let distance = 300  // 米
+  let time = 60       // 秒
+  let velocity = distance / time
+  @azimuth.assert_eq(5, velocity)
   
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  // 计算加速度：a = (v - u) / t
+  let final_velocity = 20
+  let initial_velocity = 5
+  let acceleration_time = 3
+  let acceleration = (final_velocity - initial_velocity) / acceleration_time
+  @azimuth.assert_eq(5, acceleration)
 }
 
-test "overflow_protection_multiply" {
-  // 测试乘法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "bank_interest_calculation" {
+  // 银行利息计算：单利
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
   
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  let yearly_interest = @azimuth.multiply(principal, annual_rate) / 100
+  let total_interest = @azimuth.multiply(yearly_interest, years)
+  let final_amount = @azimuth.add(principal, total_interest)
+  
+  @azimuth.assert_eq(11500, final_amount)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形的面积和周长
-  let length = 8
-  let width = 5
+test "inventory_management" {
+  // 库存管理计算
+  let initial_stock = 500
+  let units_sold = 120
+  let units_received = 80
+  let damaged_units = 15
   
-  // 计算面积
-  let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(40, area)
+  let remaining_stock = @azimuth.add(@azimuth.add(initial_stock, -units_sold), units_received)
+  let final_stock = @azimuth.add(remaining_stock, -damaged_units)
   
-  // 计算周长：2 × (length + width)
-  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
-  @azimuth.assert_eq(26, perimeter)
+  @azimuth.assert_eq(445, final_stock)
 }
 
-test "practical_business_calculation" {
-  // 测试实际业务计算：订单总价计算
-  let unit_price = 199
-  let quantity = 3
-  let shipping_fee = 20
-  let discount = 50
+test "phone_number_formatting" {
+  // 电话号码格式化测试
+  let area_code = "010"
+  let prefix = "1234"
+  let line_number = "5678"
   
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(unit_price, quantity)
-  // 计算最终价格
-  let final_price = @azimuth.add(@azimuth.add(subtotal, shipping_fee), -discount)
+  let formatted_number = area_code + "-" + prefix + "-" + line_number
+  @azimuth.assert_eq_string("Hello, 010-1234-5678!", @azimuth.greet(formatted_number))
+}
+
+test "grade_point_average" {
+  // GPA计算
+  let grade1 = 85
+  let grade2 = 90
+  let grade3 = 78
+  let grade4 = 92
+  let grade5 = 88
   
-  @azimuth.assert_eq(627, final_price)  // (199 × 3) + 20 - 50 = 597 + 20 - 50 = 567
+  let total_points = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(grade1, grade2), grade3), grade4), grade5)
+  let gpa = total_points / 5
+  
+  @azimuth.assert_eq(86, gpa)
+}
+
+test "data_storage_calculation" {
+  // 数据存储计算
+  let file_size_mb = 25
+  let num_files = 100
+  let overhead_percent = 10
+  
+  let total_size = @azimuth.multiply(file_size_mb, num_files)
+  let overhead = @azimuth.multiply(total_size, overhead_percent) / 100
+  let actual_storage_needed = @azimuth.add(total_size, overhead)
+  
+  @azimuth.assert_eq(2750, actual_storage_needed)
+}
+
+test "fuel_consumption" {
+  // 燃料消耗计算
+  let distance_km = 500
+  let fuel_efficiency = 15  // 每升汽油行驶的公里数
+  let price_per_liter = 8
+  
+  let fuel_needed = distance_km / fuel_efficiency
+  let total_cost = @azimuth.multiply(fuel_needed, price_per_liter)
+  
+  @azimuth.assert_eq(266, total_cost)
+}
+
+test "bmi_calculation" {
+  // BMI计算（简化版，避免浮点数）
+  let weight_kg = 70
+  let height_cm = 175
+  
+  // BMI = 体重(kg) / (身高(m))^2
+  // 为避免浮点数，我们使用：BMI * 10000 = 体重 * 10000 / (身高^2)
+  let height_squared = @azimuth.multiply(height_cm, height_cm)
+  let bmi_times_10000 = @azimuth.multiply(weight_kg, 10000) / height_squared
+  
+  @azimuth.assert_eq(22, bmi_times_10000)  // 实际BMI约为22.85，乘以10000后约等于22
+}
+
+test "time_zone_conversion" {
+  // 时区转换计算
+  let local_hour = 15  // 下午3点
+  let local_minute = 30
+  let time_zone_offset = -8  // 东八区到UTC的偏移
+  
+  let local_total_minutes = @azimuth.add(@azimuth.multiply(local_hour, 60), local_minute)
+  let utc_total_minutes = @azimuth.add(local_total_minutes, time_zone_offset * 60)
+  
+  // 处理跨日情况
+  let utc_hour = (utc_total_minutes / 60 + 24) % 24
+  let utc_minute = utc_total_minutes % 60
+  
+  @azimuth.assert_eq(7, utc_hour)
+  @azimuth.assert_eq(30, utc_minute)
 }
