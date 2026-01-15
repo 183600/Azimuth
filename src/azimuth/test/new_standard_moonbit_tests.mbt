@@ -1,144 +1,223 @@
 // 新增的 MoonBit 标准测试用例
-// 测试 azimuth 模块的核心功能和边界情况
+// 测试 azimuth 库的核心功能和边界情况
 
-test "arithmetics_add_comprehensive" {
-  // 综合加法测试：正数、负数、零的组合
-  @azimuth.assert_eq(10, @azimuth.add(7, 3))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
-  @azimuth.assert_eq(100, @azimuth.add(100, 0))
-  @azimuth.assert_eq(-50, @azimuth.add(-25, -25))
+// 测试大数运算
+test "large_number_operations" {
+  // 测试大数相加
+  let large_sum = @azimuth.add(1000000, 2000000)
+  @azimuth.assert_eq(3000000, large_sum)
+  
+  // 测试大数相乘
+  let large_product = @azimuth.multiply(10000, 10000)
+  @azimuth.assert_eq(100000000, large_product)
+  
+  // 测试大负数运算
+  let large_neg_sum = @azimuth.add(-1000000, -2000000)
+  @azimuth.assert_eq(-3000000, large_neg_sum)
 }
 
-test "arithmetics_multiply_edge_cases" {
-  // 乘法边界情况测试：包含0、1、-1的特殊情况
-  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(-12345, 0))
-  @azimuth.assert_eq(12345, @azimuth.multiply(12345, 1))
-  @azimuth.assert_eq(-12345, @azimuth.multiply(12345, -1))
-  @azimuth.assert_eq(12345, @azimuth.multiply(-12345, -1))
+// 测试连续运算
+test "sequential_operations" {
+  // 测试连续加法：(a + b) + c
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  let step1 = @azimuth.add(a, b)  // 30
+  let result = @azimuth.add(step1, c)  // 60
+  @azimuth.assert_eq(60, result)
+  
+  // 测试连续乘法：(a * b) * c
+  let x = 2
+  let y = 3
+  let z = 4
+  
+  let step2 = @azimuth.multiply(x, y)  // 6
+  let result2 = @azimuth.multiply(step2, z)  // 24
+  @azimuth.assert_eq(24, result2)
 }
 
-test "overflow_protection_verification" {
-  // 溢出保护验证测试
+// 测试混合运算
+test "mixed_operations" {
+  // 测试 (a * b) + (c * d)
+  let a = 5
+  let b = 6
+  let c = 7
+  let d = 8
+  
+  let product1 = @azimuth.multiply(a, b)  // 30
+  let product2 = @azimuth.multiply(c, d)  // 56
+  let result = @azimuth.add(product1, product2)  // 86
+  @azimuth.assert_eq(86, result)
+  
+  // 测试 (a + b) * (c + d)
+  let sum1 = @azimuth.add(a, b)  // 11
+  let sum2 = @azimuth.add(c, d)  // 15
+  let result2 = @azimuth.multiply(sum1, sum2)  // 165
+  @azimuth.assert_eq(165, result2)
+}
+
+// 测试极值边界情况
+test "extreme_boundary_values" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 加法溢出保护
+  // 测试最大值与最小值的运算
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  
+  // 测试接近边界的值
+  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
+  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
+  
+  // 测试边界值与0的运算
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+}
+
+// 测试字符串特殊情况
+test "special_string_cases" {
+  // 测试包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  
+  // 测试包含数字的字符串
+  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
+  
+  // 测试包含特殊符号的字符串
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
+  
+  // 测试包含Unicode表情的字符串
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  
+  // 测试包含引号的字符串
+  @azimuth.assert_eq_string("Hello, \"John\"!", @azimuth.greet("\"John\""))
+}
+
+// 测试数学恒等式
+test "mathematical_identities" {
+  let x = 15
+  let y = 25
+  let z = 10
+  
+  // 测试加法恒等式：a + 0 = a
+  @azimuth.assert_eq(x, @azimuth.add(x, 0))
+  @azimuth.assert_eq(y, @azimuth.add(0, y))
+  
+  // 测试乘法恒等式：a * 1 = a
+  @azimuth.assert_eq(x, @azimuth.multiply(x, 1))
+  @azimuth.assert_eq(y, @azimuth.multiply(1, y))
+  
+  // 测试乘法零律：a * 0 = 0
+  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, y))
+  
+  // 测试分配律：a * (b + c) = a * b + a * c
+  let left = @azimuth.multiply(x, @azimuth.add(y, z))
+  let right = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
+  @azimuth.assert_eq(left, right)
+}
+
+// 测试实际应用场景
+test "practical_application_scenarios" {
+  // 场景1：计算购物车总价
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  
+  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)  // 398
+  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)  // 299
+  let total = @azimuth.add(subtotal1, subtotal2)  // 697
+  @azimuth.assert_eq(697, total)
+  
+  // 场景2：计算矩形面积和周长
+  let length = 12
+  let width = 8
+  
+  let area = @azimuth.multiply(length, width)  // 96
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))  // 40
+  @azimuth.assert_eq(96, area)
+  @azimuth.assert_eq(40, perimeter)
+  
+  // 场景3：温度转换（简化版）：F = C * 2 + 30
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)
+}
+
+// 测试错误处理和边界保护
+test "error_handling_and_protection" {
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试加法溢出保护
   @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
   @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
   
-  // 乘法溢出保护
+  // 测试乘法溢出保护
   @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(46341, 46341))  // sqrt(max_val)的平方
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-}
-
-test "string_greeting_variations" {
-  // 字符串问候功能的各种变化测试
-  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
-  @azimuth.assert_eq_string("Hello, Bob123!", @azimuth.greet("Bob123"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
-  @azimuth.assert_eq_string("Hello, user@domain.com!", @azimuth.greet("user@domain.com"))
-}
-
-test "mathematical_formula_applications" {
-  // 数学公式应用测试
-  let a = 6
-  let b = 8
+  @azimuth.assert_eq(min_val, @azimuth.multiply(-46341, 46341))
   
-  // 计算矩形面积和周长
-  let area = @azimuth.multiply(a, b)
-  let perimeter = @azimuth.multiply(2, @azimuth.add(a, b))
-  let total = @azimuth.add(area, perimeter)
-  
-  @azimuth.assert_eq(48, area)        // 6 × 8 = 48
-  @azimuth.assert_eq(28, perimeter)   // 2 × (6 + 8) = 28
-  @azimuth.assert_eq(76, total)       // 48 + 28 = 76
+  // 测试特殊值处理
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))  // 最小值乘-1的特殊情况
 }
 
-test "financial_calculations" {
-  // 金融计算场景测试
+// 测试性能相关的大规模运算
+test "performance_large_scale_operations" {
+  // 测试大量重复运算的累加
+  let base = 1000
+  let count = 100
+  
+  // 使用公式计算：base * count * (count + 1) / 2
+  let sum_formula = @azimuth.multiply(base, @azimuth.multiply(count, @azimuth.add(count, 1)) / 2)
+  @azimuth.assert_eq(5050000, sum_formula)
+  
+  // 测试指数增长计算
+  let initial = 2
+  let power_result = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(initial, 2), 2), 2)  // 2 * 2^3 = 16
+  @azimuth.assert_eq(16, power_result)
+  
+  // 测试大数阶乘的简化计算
+  let factorial_5 = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
+  @azimuth.assert_eq(120, factorial_5)
+}
+
+// 测试复杂业务逻辑
+test "complex_business_logic" {
+  // 场景1：银行利息计算
   let principal = 10000
-  let rate = 5  // 5%
+  let rate_percent = 5
   let years = 3
   
-  // 简单利息计算：本金 + (本金 × 利率 × 年数)
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total_amount = @azimuth.add(principal, interest)
+  // 简化的复利计算：本金 + 本金 * 利率 * 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate_percent, years))
+  let total = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(160000, total)  // 10000 + 10000*5*3 = 160000
   
-  @azimuth.assert_eq(160000, total_amount)  // 10000 + (10000 × 5 × 3) = 160000
-}
-
-test "temperature_conversion_scenarios" {
-  // 温度转换场景测试（简化版：F = C × 2 + 30）
-  let freezing_c = 0
-  let room_c = 20
-  let boiling_c = 100
+  // 场景2：折扣计算
+  let original_price = 500
+  let discount1 = 10  // 第一阶段折扣
+  let discount2 = 5   // 第二阶段折扣
   
-  let freezing_f = @azimuth.add(@azimuth.multiply(freezing_c, 2), 30)
-  let room_f = @azimuth.add(@azimuth.multiply(room_c, 2), 30)
-  let boiling_f = @azimuth.add(@azimuth.multiply(boiling_c, 2), 30)
+  let price_after_first = @azimuth.add(original_price, -@azimuth.multiply(original_price, discount1) / 100)  // 450
+  let final_price = @azimuth.add(price_after_first, -@azimuth.multiply(price_after_first, discount2) / 100)  // 427.5 -> 427 (整数除法)
+  @azimuth.assert_eq(427, final_price)
   
-  @azimuth.assert_eq(30, freezing_f)   // 0 × 2 + 30 = 30
-  @azimuth.assert_eq(70, room_f)       // 20 × 2 + 30 = 70
-  @azimuth.assert_eq(230, boiling_f)   // 100 × 2 + 30 = 230
-}
-
-test "complex_nested_calculations" {
-  // 复杂嵌套计算测试
-  let base = 5
-  let multiplier = 3
-  let offset = 10
-  let divisor = 2
+  // 场景3：分数计算（简化为整数）
+  let numerator = 22
+  let denominator = 7
+  let whole_part = numerator / denominator  // 3
+  let remainder = numerator % denominator  // 1
+  let decimal_approx = @azimuth.multiply(remainder, 10) / denominator  // 1
   
-  // 计算：(base × multiplier + offset) ÷ divisor
-  let product = @azimuth.multiply(base, multiplier)
-  let sum_with_offset = @azimuth.add(product, offset)
-  let final_result = sum_with_offset / divisor
-  
-  @azimuth.assert_eq(12, final_result)  // (5 × 3 + 10) ÷ 2 = 12
-}
-
-test "assertion_functions_validation" {
-  // 断言函数验证测试
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq(-42, -42)
-  @azimuth.assert_eq_string("MoonBit", "MoonBit")
-  @azimuth.assert_eq_string("", "")
-  
-  // 条件断言测试
-  let test_value = @azimuth.add(15, 25)
-  @azimuth.assert_true(test_value == 40)
-  @azimuth.assert_false(test_value != 40)
-}
-
-test "real_world_shopping_cart" {
-  // 真实世界购物车计算测试
-  let item1_price = 299
-  let item1_qty = 2
-  let item2_price = 199
-  let item2_qty = 1
-  let item3_price = 99
-  let item3_qty = 3
-  let shipping_fee = 20
-  
-  // 计算各项总价
-  let item1_total = @azimuth.multiply(item1_price, item1_qty)
-  let item2_total = @azimuth.multiply(item2_price, item2_qty)
-  let item3_total = @azimuth.multiply(item3_price, item3_qty)
-  
-  // 计算购物车总价
-  let subtotal = @azimuth.add(@azimuth.add(item1_total, item2_total), item3_total)
-  let grand_total = @azimuth.add(subtotal, shipping_fee)
-  
-  @azimuth.assert_eq(598, item1_total)  // 299 × 2 = 598
-  @azimuth.assert_eq(199, item2_total)  // 199 × 1 = 199
-  @azimuth.assert_eq(297, item3_total)  // 99 × 3 = 297
-  @azimuth.assert_eq(1094, subtotal)    // 598 + 199 + 297 = 1094
-  @azimuth.assert_eq(1114, grand_total) // 1094 + 20 = 1114
+  @azimuth.assert_eq(3, whole_part)
+  @azimuth.assert_eq(1, remainder)
+  @azimuth.assert_eq(1, decimal_approx)
 }
