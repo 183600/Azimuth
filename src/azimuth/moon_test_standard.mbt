@@ -1,72 +1,51 @@
-// MoonBit 标准测试用例
-// 测试 azimuth 包的核心功能
+// 标准 MoonBit 测试用例
+// 包含10个测试用例，涵盖基本功能测试
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
-  assert_eq(0, add(0, 0))
-  assert_eq(5, add(2, 3))
-  assert_eq(-1, add(-2, 1))
-  assert_eq(100, add(50, 50))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-3, add(-8, 5))
 }
 
-test "add_function_edge_cases" {
-  // 测试 add 函数的边界情况
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 100))
+}
+
+test "greet_basic_functionality" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 用户123!", greet("用户123"))
+}
+
+test "add_overflow_handling" {
+  // 测试加法溢出处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
   assert_eq(max_val, add(max_val, 1))
   assert_eq(min_val, add(min_val, -1))
   assert_eq(-1, add(max_val, min_val))
 }
 
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(0, multiply(0, 5))
-  assert_eq(6, multiply(2, 3))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(25, multiply(5, 5))
-}
-
-test "multiply_function_edge_cases" {
-  // 测试 multiply 函数的边界情况
+test "multiply_overflow_handling" {
+  // 测试乘法溢出处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试特殊值处理
+  assert_eq(max_val, multiply(max_val, 2))
   assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(0, multiply(max_val, 0))
+  assert_eq(min_val, multiply(min_val, 3))
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 123!", greet("123"))
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  let length = 10
-  let width = 5
-  let height = 3
-  
-  // 计算表面积：2 × (长×宽 + 长×高 + 宽×高)
-  let side1 = multiply(length, width)
-  let side2 = multiply(length, height)
-  let side3 = multiply(width, height)
-  let surface_area = multiply(2, add(add(side1, side2), side3))
-  
-  assert_eq(190, surface_area)
-}
-
-test "mathematical_properties_verification" {
-  // 测试数学性质验证
-  let a = 7
-  let b = 11
-  let c = 3
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
@@ -75,50 +54,61 @@ test "mathematical_properties_verification" {
   assert_eq(multiply(a, b), multiply(b, a))
   
   // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
 }
 
-test "real_world_application_calculations" {
-  // 测试实际应用计算
-  // 银行利息计算：本金 × (1 + 利率 × 时间)
-  let principal = 10000
-  let rate = 5  // 5%
-  let time = 2  // 2年
+test "edge_cases" {
+  // 测试边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let interest = multiply(principal, multiply(rate, time))
-  let total = add(principal, interest)
+  // 零值运算
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
   
-  assert_eq(110000, total)  // 10000 + 10000×5×2 = 110000
+  // 单位元运算
+  assert_eq(5, multiply(5, 1))
+  assert_eq(-5, multiply(5, -1))
+  
+  // 边界值运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
+test "complex_calculations" {
+  // 测试复杂计算
+  // 计算矩形的周长：2 × (长 + 宽)
+  let length = 10
+  let width = 5
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(30, perimeter)
+  
+  // 计算三角形的面积：底 × 高 ÷ 2
+  let base = 12
+  let height = 8
+  let area = multiply(base, height) / 2
+  assert_eq(48, area)
+}
+
+test "string_processing" {
+  // 测试字符串处理
   // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
-  assert_eq_string("Hello,   spaced   !", greet("  spaced  "))
+  let special_name = "test@example.com"
+  assert_eq_string("Hello, test@example.com!", greet(special_name))
   
-  // 测试非常长的字符串
-  let long_string = "ThisIsAVeryLongStringForTestingPurposes"
-  assert_eq_string("Hello, " + long_string + "!", greet(long_string))
+  // 测试包含Unicode字符的字符串
+  let unicode_name = "测试用户"
+  assert_eq_string("Hello, 测试用户!", greet(unicode_name))
+  
+  // 测试包含数字的字符串
+  let numeric_name = "user2023"
+  assert_eq_string("Hello, user2023!", greet(numeric_name))
 }
 
-test "comprehensive_function_integration" {
-  // 测试函数综合集成
-  let base_value = 100
-  let multiplier = 5
-  let addition = 20
-  let name = "User"
-  
-  // 计算结果：(base_value × multiplier) + addition
-  let calculated_value = add(multiply(base_value, multiplier), addition)
-  
-  // 验证计算结果
-  assert_eq(520, calculated_value)
-  
-  // 使用计算结果生成问候语
-  let value_string = "520"
-  let personalized_greeting = greet(name + " (score: " + value_string + ")")
-  
-  assert_eq_string("Hello, User (score: 520)!", personalized_greeting)
+test "assert_functions" {
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
 }
