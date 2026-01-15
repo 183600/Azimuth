@@ -11,6 +11,7 @@
     "enhanced_test_cases.mbt",
     "test/comprehensive_moonbit_test_cases.mbt",
     "test_simple_verification.mbt",
-    "test/additional_moonbit_tests.mbt"
+    "test/additional_moonbit_tests.mbt",
+    "standard_moonbit_tests.mbt"
   ]
 }
