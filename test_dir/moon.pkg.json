@@ -1,5 +1,6 @@
 {
   "import": ["moonbitlang/core/builtin"],
   "test-import": ["../azimuth"],
-  "export": []
+  "export": [],
+  "files": ["quality_moonbit_tests.mbt"]
 }
