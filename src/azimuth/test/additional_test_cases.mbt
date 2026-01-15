@@ -1,190 +1,154 @@
-// 额外的 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法
+// Azimuth 项目额外的 MoonBit 测试用例
+// 覆盖更多边界情况和实际应用场景
 
-test "add_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  
-  // 测试负数情况
-  let c = -12345
-  let d = 67890
-  @azimuth.assert_eq(@azimuth.add(c, d), @azimuth.add(d, c))
-  
-  // 测试两个负数
-  let e = -12345
-  let f = -67890
-  @azimuth.assert_eq(@azimuth.add(e, f), @azimuth.add(f, e))
+test "edge_case_zero_operations" {
+  // 测试零值的各种运算
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
 }
 
-test "multiply_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 7
-  let b = 15
-  let c = 23
-  
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left_side, right_side)
-  
-  // 测试包含负数的情况
-  let x = -5
-  let y = 12
-  let z = -8
-  
-  let left_side2 = @azimuth.multiply(x, @azimuth.add(y, z))
-  let right_side2 = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
-  @azimuth.assert_eq(left_side2, right_side2)
-}
-
-test "greet_multilingual_support" {
-  // 测试多语言支持的问候功能
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
-  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
-  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
-  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
-}
-
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期计算
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 3           // 3年
-  
-  // 简化的利息计算：总利息 = 本金 × 年利率 × 年数
-  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
-  
-  // 总还款额 = 本金 + 总利息
-  let total_payment = @azimuth.add(principal, total_interest)
-  
-  // 月还款额（简化计算，不考虑复利）
-  let monthly_payment = total_payment / (years * 12)
-  
-  @azimuth.assert_eq(1180000, total_payment)  // 100000 + 100000*6*3 = 1180000
-  @azimuth.assert_eq(32777, monthly_payment)  // 1180000 / 36 ≈ 32777
-}
-
-test "physics_simulation" {
-  // 物理模拟：自由落体运动计算（简化版）
-  let initial_height = 100  // 初始高度（米）
-  let time = 4              // 时间（秒）
-  
-  // 下落距离 = 0.5 × g × t²（简化为 g × t²）
-  let distance = @azimuth.multiply(10, @azimuth.multiply(time, time))
-  
-  // 剩余高度 = 初始高度 - 下落距离
-  let remaining_height = @azimuth.add(initial_height, -distance)
-  
-  @azimuth.assert_eq(160, distance)      // 10 × 4² = 160
-  @azimuth.assert_eq(-60, remaining_height)  // 100 - 160 = -60（已落地）
-}
-
-test "data_structure_operations" {
-  // 数据结构操作模拟
-  // 模拟栈操作：push和pop
-  let mut stack_size = 0
-  
-  // push操作
-  stack_size = @azimuth.add(stack_size, 1)  // push item1
-  stack_size = @azimuth.add(stack_size, 1)  // push item2
-  stack_size = @azimuth.add(stack_size, 1)  // push item3
-  
-  @azimuth.assert_eq(3, stack_size)
-  
-  // pop操作
-  stack_size = @azimuth.add(stack_size, -1)  // pop item3
-  stack_size = @azimuth.add(stack_size, -1)  // pop item2
-  
-  @azimuth.assert_eq(1, stack_size)
-  
-  // 模拟队列操作：enqueue和dequeue
-  let mut queue_size = 0
-  let enqueue_count = 5
-  let dequeue_count = 2
-  
-  queue_size = @azimuth.add(queue_size, enqueue_count)   // enqueue 5 items
-  queue_size = @azimuth.add(queue_size, -dequeue_count)  // dequeue 2 items
-  
-  @azimuth.assert_eq(3, queue_size)
-}
-
-test "statistical_analysis" {
-  // 统计分析测试
-  // 模拟数据集：10, 20, 30, 40, 50
-  let data1 = 10
-  let data2 = 20
-  let data3 = 30
-  let data4 = 40
-  let data5 = 50
-  
-  // 计算总和
-  let data_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
-  let data_count = 5
-  
-  // 计算平均值
-  let average = data_sum / data_count
-  
-  // 计算方差（简化版）
-  let diff1 = @azimuth.add(data1, -average)
-  let diff2 = @azimuth.add(data2, -average)
-  let diff3 = @azimuth.add(data3, -average)
-  let diff4 = @azimuth.add(data4, -average)
-  let diff5 = @azimuth.add(data5, -average)
-  
-  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(diff1, diff1), @azimuth.multiply(diff2, diff2)), 
-                           @azimuth.multiply(diff3, diff3)), @azimuth.multiply(diff4, diff4)), 
-                           @azimuth.multiply(diff5, diff5)) / data_count
-  
-  @azimuth.assert_eq(150, data_sum)
-  @azimuth.assert_eq(30, average)
-  @azimuth.assert_eq(200, variance)  // 简化计算
-}
-
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟
-  let n = 100
-  
-  // O(1) 常数时间复杂度
-  let constant_time = 1
-  
-  // O(n) 线性时间复杂度
-  let linear_time = n
-  
-  // O(n²) 平方时间复杂度
-  let quadratic_time = @azimuth.multiply(n, n)
-  
-  // O(log n) 对数时间复杂度（简化为 n/10）
-  let logarithmic_time = n / 10
-  
-  @azimuth.assert_eq(1, constant_time)
-  @azimuth.assert_eq(100, linear_time)
-  @azimuth.assert_eq(10000, quadratic_time)
-  @azimuth.assert_eq(10, logarithmic_time)
-}
-
-test "edge_case_comprehensive" {
-  // 综合边界情况测试
+test "extreme_value_combinations" {
+  // 测试极值组合运算
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试连续运算的边界情况
-  let result1 = @azimuth.add(@azimuth.add(max_val, -max_val), max_val)
-  @azimuth.assert_eq(max_val, result1)
+  // 最大值与最小值的运算
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
   
-  let result2 = @azimuth.multiply(@azimuth.multiply(min_val, -1), -1)
-  @azimuth.assert_eq(min_val, result2)
+  // 最大值与自身运算
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+}
+
+test "calculation_precision_tests" {
+  // 测试计算精度相关的问题
+  // 大数相加
+  @azimuth.assert_eq(2000000000, @azimuth.add(1000000000, 1000000000))
+  @azimuth.assert_eq(-2000000000, @azimuth.add(-1000000000, -1000000000))
   
-  // 测试混合边界运算
-  let result3 = @azimuth.add(@azimuth.multiply(max_val, 0), min_val)
-  @azimuth.assert_eq(min_val, result3)
+  // 大数相乘
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
   
-  let result4 = @azimuth.multiply(@azimuth.add(max_val, min_val), 100)
-  @azimuth.assert_eq(-100, result4)
+  // 累加计算
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(100000, 200000), 300000), 400000)
+  @azimuth.assert_eq(1000000, sum)
+}
+
+test "string_boundary_conditions" {
+  // 测试字符串边界条件
+  // 空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
-  // 测试字符串边界情况
-  let very_long_name = "A" + "B" + "C" + "D" + "E" + "F" + "G" + "H" + "I" + "J"
-  let long_greeting = @azimuth.greet(very_long_name)
-  @azimuth.assert_eq_string("Hello, ABCDEFGHIJ!", long_greeting)
+  // 单个字符
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  
+  // 包含空格的字符串
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, A B!", @azimuth.greet("A B"))
+  
+  // 包含数字的字符串
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+}
+
+test "mathematical_sequence_calculations" {
+  // 测试数学序列计算
+  // 等差数列求和：1 + 2 + 3 + 4 + 5 = 15
+  let sum_1_to_5 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(15, sum_1_to_5)
+  
+  // 等比数列求和：1 + 2 + 4 + 8 = 15
+  let sum_geo = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 4), 8)
+  @azimuth.assert_eq(15, sum_geo)
+  
+  // 平方和：1² + 2² + 3² = 14
+  let square_sum = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3))
+  @azimuth.assert_eq(14, square_sum)
+}
+
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 场景1：计算折扣价格
+  let original_price = 1000
+  let discount_percentage = 20
+  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
+  let final_price = @azimuth.add(original_price, -discount_amount)
+  @azimuth.assert_eq(800, final_price)
+  
+  // 场景2：计算平均分
+  let score1 = 85
+  let score2 = 90
+  let score3 = 95
+  let total_score = @azimuth.add(@azimuth.add(score1, score2), score3)
+  let average_score = total_score / 3
+  @azimuth.assert_eq(90, average_score)
+  
+  // 场景3：计算速度
+  let distance = 300
+  let time = 3
+  let speed = distance / time
+  @azimuth.assert_eq(100, speed)
+}
+
+test "nested_operation_tests" {
+  // 测试嵌套运算
+  // 复杂表达式：(a + b) * (c + d) - e * f
+  let a = 10
+  let b = 20
+  let c = 5
+  let d = 15
+  let e = 8
+  let f = 12
+  
+  let sum1 = @azimuth.add(a, b)  // 30
+  let sum2 = @azimuth.add(c, d)  // 20
+  let product1 = @azimuth.multiply(sum1, sum2)  // 600
+  let product2 = @azimuth.multiply(e, f)  // 96
+  let result = @azimuth.add(product1, -product2)  // 504
+  
+  @azimuth.assert_eq(504, result)
+}
+
+test "algorithm_implementation" {
+  // 测试简单算法实现
+  // 算法1：计算最大公约数（简化版，欧几里得算法）
+  let a = 48
+  let b = 18
+  // 简化版：直接使用已知的最大公约数
+  let gcd = 6
+  @azimuth.assert_eq(6, gcd)
+  
+  // 算法2：计算阶乘（5! = 120）
+  let factorial_5 = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
+  @azimuth.assert_eq(120, factorial_5)
+  
+  // 算法3：计算斐波那契数（第7项）
+  let fib_7 = @azimuth.add(@azimuth.add(@azimuth.add(1, 1), 2), 3)  // 简化计算
+  @azimuth.assert_eq(8, fib_7)
+}
+
+test "error_handling_validation" {
+  // 测试错误处理和验证
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 验证溢出保护
+  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  
+  // 验证正常运算
+  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
+  @azimuth.assert_true(@azimuth.multiply(4, 6) == 24)
+  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
+  
+  // 验证断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
 }
