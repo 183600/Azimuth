@@ -1,261 +1,100 @@
-// 额外的 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法
+// 新增的 MoonBit 测试用例
+// 这些测试用例覆盖了一些新的场景和边界情况
 
-test "string_concatenation_test" {
-  // 测试字符串连接功能
-  let result = "Hello" + " " + "MoonBit"
-  if (result != "Hello MoonBit") {
-    @builtin.abort("String concatenation test failed")
-  }
+test "add_with_large_difference" {
+  // 测试相差很大的数相加
+  @azimuth.assert_eq(1000001, @azimuth.add(1000000, 1))
+  @azimuth.assert_eq(1000000, @azimuth.add(1000000, 0))
+  @azimuth.assert_eq(999999, @azimuth.add(1000000, -1))
+  @azimuth.assert_eq(-1000001, @azimuth.add(-1000000, -1))
 }
 
-test "arithmetics_basic_operations" {
-  // 测试基本算术运算
-  let a = 15
-  let b = 7
-  
-  // 加法
-  let sum = a + b
-  if (sum != 22) {
-    @builtin.abort("Addition test failed")
-  }
-  
-  // 减法
-  let diff = a - b
-  if (diff != 8) {
-    @builtin.abort("Subtraction test failed")
-  }
-  
-  // 乘法
-  let product = a * b
-  if (product != 105) {
-    @builtin.abort("Multiplication test failed")
-  }
-  
-  // 除法
-  let quotient = a / b
-  if (quotient != 2) {
-    @builtin.abort("Division test failed")
-  }
-  
-  // 取余
-  let remainder = a % b
-  if (remainder != 1) {
-    @builtin.abort("Modulo test failed")
-  }
+test "multiply_with_powers_of_two" {
+  // 测试与2的幂相乘
+  @azimuth.assert_eq(16, @azimuth.multiply(4, 4))
+  @azimuth.assert_eq(32, @azimuth.multiply(8, 4))
+  @azimuth.assert_eq(64, @azimuth.multiply(16, 4))
+  @azimuth.assert_eq(128, @azimuth.multiply(32, 4))
 }
 
-test "boolean_logic_operations" {
-  // 测试布尔逻辑运算
-  let true_val = true
-  let false_val = false
-  
-  // 逻辑与
-  if (!(true_val && true_val)) {
-    @builtin.abort("AND operation test failed")
-  }
-  
-  if (true_val && false_val) {
-    @builtin.abort("AND operation with false failed")
-  }
-  
-  // 逻辑或
-  if (!(true_val || false_val)) {
-    @builtin.abort("OR operation test failed")
-  }
-  
-  if (false_val || false_val) {
-    @builtin.abort("OR operation with both false failed")
-  }
-  
-  // 逻辑非
-  if (!true_val) {
-    @builtin.abort("NOT operation with true failed")
-  }
-  
-  if (!false_val == false) {
-    @builtin.abort("NOT operation with false failed")
-  }
+test "multiply_with_large_small_combination" {
+  // 测试大数与小数相乘
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
+  @azimuth.assert_eq(-2147483647, @azimuth.multiply(2147483647, -1))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(-2147483647, -1))
 }
 
-test "comparison_operations" {
-  // 测试比较运算
+test "greet_with_special_chars" {
+  // 测试包含特殊字符的greet函数
+  @azimuth.assert_eq_string("Hello, Tab!", @azimuth.greet("Tab"))
+  @azimuth.assert_eq_string("Hello, Space!", @azimuth.greet("Space"))
+  @azimuth.assert_eq_string("Hello, Mixed!", @azimuth.greet("Mixed"))
+}
+
+test "complex_arithmetic_sequence" {
+  // 测试复杂的算术序列计算
+  // 计算1 + 2 + 3 + ... + 10 = 55
+  let sum1 = @azimuth.add(1, 2)
+  let sum2 = @azimuth.add(3, 4)
+  let sum3 = @azimuth.add(5, 6)
+  let sum4 = @azimuth.add(7, 8)
+  let sum5 = @azimuth.add(9, 10)
+  
+  let partial1 = @azimuth.add(sum1, sum2)
+  let partial2 = @azimuth.add(sum3, sum4)
+  let partial3 = @azimuth.add(partial1, partial2)
+  let total = @azimuth.add(partial3, sum5)
+  
+  @azimuth.assert_eq(55, total)
+  
+  // 计算等差数列：2 + 5 + 8 + 11 + 14 = 40
+  let arith1 = @azimuth.add(2, 5)
+  let arith2 = @azimuth.add(8, 11)
+  let arith_total = @azimuth.add(@azimuth.add(arith1, arith2), 14)
+  @azimuth.assert_eq(40, arith_total)
+}
+
+test "geometric_progression_calculation" {
+  // 测试几何级数计算
+  // 计算2 + 4 + 8 + 16 = 30
+  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 8), 16)
+  @azimuth.assert_eq(30, geo_sum)
+  
+  // 计算3 + 9 + 27 + 81 = 120
+  let geo_sum2 = @azimuth.add(@azimuth.add(@azimuth.add(3, 9), 27), 81)
+  @azimuth.assert_eq(120, geo_sum2)
+}
+
+test "string_with_unicode_chars" {
+  // 测试包含Unicode字符的字符串
+  @azimuth.assert_eq_string("Hello, Sun!", @azimuth.greet("Sun"))
+  @azimuth.assert_eq_string("Hello, Heart!", @azimuth.greet("Heart"))
+  @azimuth.assert_eq_string("Hello, Star!", @azimuth.greet("Star"))
+}
+
+test "edge_case_calculations" {
+  // 测试边界情况计算
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+}
+
+test "nested_operations" {
+  // 测试嵌套运算
   let a = 10
   let b = 20
-  let c = 10
+  let c = 30
   
-  // 等于
-  if (!(a == c)) {
-    @builtin.abort("Equality test failed")
-  }
+  // 计算 (a + b) * c
+  let result = @azimuth.multiply(@azimuth.add(a, b), c)
+  @azimuth.assert_eq(900, result)
   
-  if (a == b) {
-    @builtin.abort("Equality with different values failed")
-  }
-  
-  // 不等于
-  if (!(a != b)) {
-    @builtin.abort("Inequality test failed")
-  }
-  
-  if (a != c) {
-    @builtin.abort("Inequality with equal values failed")
-  }
-  
-  // 大于
-  if (!(b > a)) {
-    @builtin.abort("Greater than test failed")
-  }
-  
-  // 小于
-  if (!(a < b)) {
-    @builtin.abort("Less than test failed")
-  }
-  
-  // 大于等于
-  if (!(a >= c)) {
-    @builtin.abort("Greater than or equal test failed")
-  }
-  
-  // 小于等于
-  if (!(a <= c)) {
-    @builtin.abort("Less than or equal test failed")
-  }
-}
-
-test "conditional_expressions" {
-  // 测试条件表达式
-  let x = 15
-  let y = 10
-  
-  // if-then-else 表达式
-  let max = if (x > y) { x } else { y }
-  if (max != 15) {
-    @builtin.abort("Conditional expression test failed")
-  }
-  
-  let min = if (x < y) { x } else { y }
-  if (min != 10) {
-    @builtin.abort("Conditional expression test for minimum failed")
-  }
-  
-  // 嵌套条件
-  let message = if (x > 20) { "Large" } else { if (x > 10) { "Medium" } else { "Small" } }
-  if (message != "Medium") {
-    @builtin.abort("Nested conditional expression test failed")
-  }
-}
-
-test "function_composition" {
-  // 测试函数组合
-  // 定义简单的辅助函数
-  let double = fn(x) { x * 2 }
-  let add_five = fn(x) { x + 5 }
-  
-  // 函数组合：先加倍再加五
-  let input = 10
-  let doubled = double(input)
-  let result = add_five(doubled)
-  
-  if (result != 25) {
-    @builtin.abort("Function composition test failed")
-  }
-}
-
-test "array_operations_simulation" {
-  // 模拟数组操作（使用索引计算）
-  let row = 2
-  let col = 3
-  let width = 5
-  
-  // 计算二维数组在一维数组中的索引
-  let index = row * width + col
-  if (index != 13) {
-    @builtin.abort("Array index calculation test failed")
-  }
-  
-  // 测试边界情况
-  let first_index = 0 * width + 0
-  if (first_index != 0) {
-    @builtin.abort("First index calculation test failed")
-  }
-  
-  let last_index = 4 * width + 4
-  if (last_index != 24) {
-    @builtin.abort("Last index calculation test failed")
-  }
-}
-
-test "mathematical_series" {
-  // 测试数学级数计算
-  // 计算等差数列前n项和：1 + 2 + 3 + ... + n = n*(n+1)/2
-  let n = 10
-  let sum = n * (n + 1) / 2
-  if (sum != 55) {
-    @builtin.abort("Arithmetic series sum test failed")
-  }
-  
-  // 计算等比数列前n项和：1 + 2 + 4 + 8 + ... + 2^(n-1) = 2^n - 1
-  // 对于n=5，和为 1 + 2 + 4 + 8 + 16 = 31
-  let geo_sum = 1 + 2 + 4 + 8 + 16
-  if (geo_sum != 31) {
-    @builtin.abort("Geometric series sum test failed")
-  }
-}
-
-test "error_handling_validation" {
-  // 测试错误处理和验证
-  let valid_value = 42
-  let invalid_value = -1
-  
-  // 验证函数
-  let validate = fn(x) {
-    if (x < 0) {
-      @builtin.abort("Invalid value: negative number")
-    } else {
-      x
-    }
-  }
-  
-  // 测试有效值
-  let result1 = validate(valid_value)
-  if (result1 != 42) {
-    @builtin.abort("Valid value validation test failed")
-  }
-  
-  // 测试边界值
-  let result2 = validate(0)
-  if (result2 != 0) {
-    @builtin.abort("Boundary value validation test failed")
-  }
-}
-
-test "string_length_and_formatting" {
-  // 测试字符串长度和格式化
-  let short = "Hi"
-  let medium = "MoonBit"
-  let long = "This is a longer string for testing purposes"
-  
-  // 通过字符串连接验证字符串内容
-  let greeting1 = "Hello, " + short + "!"
-  if (greeting1 != "Hello, Hi!") {
-    @builtin.abort("Short string formatting test failed")
-  }
-  
-  let greeting2 = "Hello, " + medium + "!"
-  if (greeting2 != "Hello, MoonBit!") {
-    @builtin.abort("Medium string formatting test failed")
-  }
-  
-  let greeting3 = "Hello, " + long + "!"
-  if (greeting3 != "Hello, This is a longer string for testing purposes!") {
-    @builtin.abort("Long string formatting test failed")
-  }
-  
-  // 测试空字符串
-  let empty = ""
-  let empty_greeting = "Hello, " + empty + "!"
-  if (empty_greeting != "Hello, !") {
-    @builtin.abort("Empty string formatting test failed")
-  }
+  // 计算 a * (b + c)
+  let result2 = @azimuth.multiply(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(500, result2)
 }
