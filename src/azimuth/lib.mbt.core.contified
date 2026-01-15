@@ -233,6 +233,25 @@
        ((Cexpr_unit)) Unit))))
    (ty_params_ ()) (is_pub_ true)))
  (Ctop_fn
+  ((binder divide_with_ceil)
+   (func
+    ((params (((binder dividend/0) (ty Int)) ((binder divisor/1) (ty Int))))
+     (body
+      (Cexpr_let quotient/2
+       (Cexpr_prim (Parith I32 Div) (Cexpr_var dividend/0 Int ())
+        (Cexpr_var divisor/1 Int ()))
+       (Cexpr_let remainder/3
+        (Cexpr_prim (Parith I32 Mod) (Cexpr_var dividend/0 Int ())
+         (Cexpr_var divisor/1 Int ()))
+        (Cexpr_if
+         (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var remainder/3 Int ()) 0)
+         (Cexpr_apply add ((Cexpr_var quotient/2 Int ()) 1)
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         ((Cexpr_var quotient/2 Int ())) Int)
+        Int)
+       Int))))
+   (ty_params_ ()) (is_pub_ true)))
+ (Ctop_fn
   ((binder __test_6c69622e6d6274_0)
    (func
     ((params ())
@@ -3168,33 +3187,531 @@
                  (Cexpr_let date_string/8 2023-12-25
                   (Cexpr_let time_string/9 14:30:00
                    (Cexpr_let datetime_string/10 2023-12-25T14:30:00
+                    (Cexpr_prim
+                     (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                     (Cexpr_apply assert_eq_string
+                      ("Hello, 2023-12-25!"
+                       (Cexpr_apply greet
+                        ((Cexpr_var date_string/8 String ()))
+                        (Normal ((String) -> String (generic_ false))) String
+                        ()))
+                      (Normal ((String String) -> Unit (generic_ false)))
+                      Unit ()))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_74)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let n/0 5
+       (Cexpr_let fib1/1 1
+        (Cexpr_let fib2/2 1
+         (Cexpr_let fib3/3
+          (Cexpr_apply add
+           ((Cexpr_var fib1/1 Int ()) (Cexpr_var fib2/2 Int ()))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let fib4/4
+           (Cexpr_apply add
+            ((Cexpr_var fib2/2 Int ()) (Cexpr_var fib3/3 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let fib5/5
+            (Cexpr_apply add
+             ((Cexpr_var fib3/3 Int ()) (Cexpr_var fib4/4 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+             (Cexpr_apply assert_eq (5 (Cexpr_var fib5/5 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_75)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let block_size/0 1024
+       (Cexpr_let block_count/1 10
+        (Cexpr_let header_overhead/2 32
+         (Cexpr_let total_data/3
+          (Cexpr_apply multiply
+           ((Cexpr_var block_size/0 Int ()) (Cexpr_var block_count/1 Int ()))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let total_overhead/4
+           (Cexpr_apply multiply
+            ((Cexpr_var header_overhead/2 Int ())
+             (Cexpr_var block_count/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let total_memory/5
+            (Cexpr_apply add
+             ((Cexpr_var total_data/3 Int ())
+              (Cexpr_var total_overhead/4 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq
+               (10560 (Cexpr_var total_memory/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let utilization/6
+              (Cexpr_prim (Parith I32 Div)
+               (Cexpr_apply multiply ((Cexpr_var total_data/3 Int ()) 100)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_var total_memory/5 Int ()))
+              (Cexpr_prim
+               (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+               (Cexpr_apply assert_eq (97 (Cexpr_var utilization/6 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_76)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let packet_size/0 1500
+       (Cexpr_let data_size/1 10000
+        (Cexpr_let header_size/2 20
+         (Cexpr_let payload_per_packet/3
+          (Cexpr_apply add
+           ((Cexpr_var packet_size/0 Int ())
+            (Cexpr_prim (Parith I32 Neg) (Cexpr_var header_size/2 Int ())))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let packets_needed/4
+           (Cexpr_apply add
+            ((Cexpr_apply divide_with_ceil
+              ((Cexpr_var data_size/1 Int ())
+               (Cexpr_var payload_per_packet/3 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             0)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let total_transmitted/5
+            (Cexpr_apply multiply
+             ((Cexpr_var packets_needed/4 Int ())
+              (Cexpr_var packet_size/0 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+             (Cexpr_apply assert_eq
+              (10500 (Cexpr_var total_transmitted/5 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_77)
+   (func
+    ((params ())
+     (body
+      (Cexpr_letfn divide_with_ceil/0
+       (((binder dividend/1) (ty Int)) ((binder divisor/2) (ty Int)))
+       (Cexpr_let quotient/3
+        (Cexpr_prim (Parith I32 Div) (Cexpr_var dividend/1 Int ())
+         (Cexpr_var divisor/2 Int ()))
+        (Cexpr_let remainder/4
+         (Cexpr_prim (Parith I32 Mod) (Cexpr_var dividend/1 Int ())
+          (Cexpr_var divisor/2 Int ()))
+         (Cexpr_if
+          (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var remainder/4 Int ()) 0)
+          (Cexpr_apply add ((Cexpr_var quotient/3 Int ()) 1)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          ((Cexpr_var quotient/3 Int ())) Int)
+         Int)
+        Int)
+       (Cexpr_sequence
+        ((Cexpr_apply assert_eq
+          (4
+           (Cexpr_apply divide_with_ceil/0 (10 3)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+          (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+         (Cexpr_apply assert_eq
+          (3
+           (Cexpr_apply divide_with_ceil/0 (9 3)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+          (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+         (Cexpr_apply assert_eq
+          (1
+           (Cexpr_apply divide_with_ceil/0 (1 100)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+          (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+        (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+         (Cexpr_apply assert_eq
+          (0
+           (Cexpr_apply divide_with_ceil/0 (0 100)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+          (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_78)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_requests/0 1000
+       (Cexpr_let cache_hits/1 750
+        (Cexpr_let cache_miss_penalty/2 50
+         (Cexpr_let cache_hit_time/3 5
+          (Cexpr_let hit_rate/4
+           (Cexpr_prim (Parith I32 Div)
+            (Cexpr_apply multiply ((Cexpr_var cache_hits/1 Int ()) 100)
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_var total_requests/0 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (75 (Cexpr_var hit_rate/4 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let miss_count/5
+             (Cexpr_apply add
+              ((Cexpr_var total_requests/0 Int ())
+               (Cexpr_prim (Parith I32 Neg) (Cexpr_var cache_hits/1 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_let total_time/6
+              (Cexpr_apply add
+               ((Cexpr_apply multiply
+                 ((Cexpr_var cache_hits/1 Int ())
+                  (Cexpr_var cache_hit_time/3 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_apply multiply
+                 ((Cexpr_var miss_count/5 Int ())
+                  (Cexpr_var cache_miss_penalty/2 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_let avg_time/7
+               (Cexpr_prim (Parith I32 Div) (Cexpr_var total_time/6 Int ())
+                (Cexpr_var total_requests/0 Int ()))
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_eq (16 (Cexpr_var avg_time/7 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_79)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let original_size/0 10000
+       (Cexpr_let compressed_size/1 2500
+        (Cexpr_let compression_ratio/2
+         (Cexpr_prim (Parith I32 Div)
+          (Cexpr_apply multiply ((Cexpr_var compressed_size/1 Int ()) 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_var original_size/0 Int ()))
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (25 (Cexpr_var compression_ratio/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let space_saved/3
+           (Cexpr_apply add
+            ((Cexpr_var original_size/0 Int ())
+             (Cexpr_prim (Parith I32 Neg)
+              (Cexpr_var compressed_size/1 Int ())))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (7500 (Cexpr_var space_saved/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let savings_percent/4
+             (Cexpr_prim (Parith I32 Div)
+              (Cexpr_apply multiply ((Cexpr_var space_saved/3 Int ()) 100)
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_var original_size/0 Int ()))
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq
+               (75 (Cexpr_var savings_percent/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_80)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_requests/0 1000
+       (Cexpr_let server_count/1 4
+        (Cexpr_let base_load/2
+         (Cexpr_prim (Parith I32 Div) (Cexpr_var total_requests/0 Int ())
+          (Cexpr_var server_count/1 Int ()))
+         (Cexpr_let remainder/3
+          (Cexpr_prim (Parith I32 Mod) (Cexpr_var total_requests/0 Int ())
+           (Cexpr_var server_count/1 Int ()))
+          (Cexpr_let server1_load/4
+           (Cexpr_apply add
+            ((Cexpr_var base_load/2 Int ())
+             (Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Gt) (Cexpr_var remainder/3 Int ())
+               0)
+              1 (0) Int))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let server2_load/5
+            (Cexpr_apply add
+             ((Cexpr_var base_load/2 Int ())
+              (Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Gt)
+                (Cexpr_var remainder/3 Int ()) 1)
+               1 (0) Int))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let server3_load/6
+             (Cexpr_apply add
+              ((Cexpr_var base_load/2 Int ())
+               (Cexpr_if
+                (Cexpr_prim (Pcomparison I32 Gt)
+                 (Cexpr_var remainder/3 Int ()) 2)
+                1 (0) Int))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_let server4_load/7 (Cexpr_var base_load/2 Int ())
+              (Cexpr_let total_distributed/8
+               (Cexpr_apply add
+                ((Cexpr_apply add
+                  ((Cexpr_apply add
+                    ((Cexpr_var server1_load/4 Int ())
+                     (Cexpr_var server2_load/5 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var server3_load/6 Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_var server4_load/7 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_sequence
+                ((Cexpr_apply assert_eq
+                  ((Cexpr_var total_requests/0 Int ())
+                   (Cexpr_var total_distributed/8 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (Cexpr_let max_load/9 (Cexpr_var server1_load/4 Int ())
+                 (Cexpr_let min_load/10 (Cexpr_var server4_load/7 Int ())
+                  (Cexpr_let load_difference/11
+                   (Cexpr_apply add
+                    ((Cexpr_var max_load/9 Int ())
+                     (Cexpr_prim (Parith I32 Neg)
+                      (Cexpr_var min_load/10 Int ())))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_prim
+                    (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                    (Cexpr_apply assert_true
+                     ((Cexpr_prim (Pcomparison I32 Le)
+                       (Cexpr_var load_difference/11 Int ()) 1))
+                     (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_81)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let table_size/0 1000000
+       (Cexpr_let index_levels/1 3
+        (Cexpr_let fanout/2 100
+         (Cexpr_let index_lookups/3 (Cexpr_var index_levels/1 Int ())
+          (Cexpr_let table_scan_worst/4 (Cexpr_var table_size/0 Int ())
+           (Cexpr_let performance_gain/5
+            (Cexpr_prim (Parith I32 Div)
+             (Cexpr_var table_scan_worst/4 Int ())
+             (Cexpr_apply multiply
+              ((Cexpr_var fanout/2 Int ()) (Cexpr_var index_levels/1 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq
+               (3333 (Cexpr_var performance_gain/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let index_overhead/6
+              (Cexpr_prim (Parith I32 Div)
+               (Cexpr_apply multiply ((Cexpr_var table_size/0 Int ()) 10)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               100)
+              (Cexpr_prim
+               (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+               (Cexpr_apply assert_eq
+                (100000 (Cexpr_var index_overhead/6 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_82)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let message_length/0 100
+       (Cexpr_let key_length/1 16
+        (Cexpr_let block_size/2 8
+         (Cexpr_let blocks_needed/3
+          (Cexpr_apply add
+           ((Cexpr_apply divide_with_ceil
+             ((Cexpr_var message_length/0 Int ())
+              (Cexpr_var block_size/2 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            0)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let encrypted_length/4
+           (Cexpr_apply multiply
+            ((Cexpr_var blocks_needed/3 Int ())
+             (Cexpr_var block_size/2 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq
+              (104 (Cexpr_var encrypted_length/4 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let iv_size/5 16
+             (Cexpr_let mac_size/6 32
+              (Cexpr_let total_overhead/7
+               (Cexpr_apply add
+                ((Cexpr_var iv_size/5 Int ()) (Cexpr_var mac_size/6 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_let final_length/8
+                (Cexpr_apply add
+                 ((Cexpr_var encrypted_length/4 Int ())
+                  (Cexpr_var total_overhead/7 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_prim
+                 (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                 (Cexpr_apply assert_eq
+                  (152 (Cexpr_var final_length/8 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_83)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let x1/0 10
+       (Cexpr_let x2/1 20
+        (Cexpr_let x3/2 30
+         (Cexpr_let w1/3 2
+          (Cexpr_let w2/4 3
+           (Cexpr_let w3/5 1
+            (Cexpr_let b/6 5
+             (Cexpr_let term1/7
+              (Cexpr_apply multiply
+               ((Cexpr_var w1/3 Int ()) (Cexpr_var x1/0 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_let term2/8
+               (Cexpr_apply multiply
+                ((Cexpr_var w2/4 Int ()) (Cexpr_var x2/1 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_let term3/9
+                (Cexpr_apply multiply
+                 ((Cexpr_var w3/5 Int ()) (Cexpr_var x3/2 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_let prediction/10
+                 (Cexpr_apply add
+                  ((Cexpr_apply add
+                    ((Cexpr_apply add
+                      ((Cexpr_var term1/7 Int ()) (Cexpr_var term2/8 Int ()))
+                      (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                     (Cexpr_var term3/9 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var b/6 Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_sequence
+                  ((Cexpr_apply assert_eq
+                    (135 (Cexpr_var prediction/10 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (Cexpr_let actual_value/11 140
+                   (Cexpr_let error/12
+                    (Cexpr_apply add
+                     ((Cexpr_var actual_value/11 Int ())
+                      (Cexpr_prim (Parith I32 Neg)
+                       (Cexpr_var prediction/10 Int ())))
+                     (Normal ((Int Int) -> Int (generic_ false))) Int ())
                     (Cexpr_sequence
-                     ((Cexpr_apply assert_eq_string
-                       ("Hello, 2023-12-25!"
-                        (Cexpr_apply greet
-                         ((Cexpr_var date_string/8 String ()))
-                         (Normal ((String) -> String (generic_ false)))
-                         String ()))
-                       (Normal ((String String) -> Unit (generic_ false)))
-                       Unit ())
-                      (Cexpr_apply assert_eq_string
-                       ("Hello, 14:30:00!"
-                        (Cexpr_apply greet
-                         ((Cexpr_var time_string/9 String ()))
-                         (Normal ((String) -> String (generic_ false)))
-                         String ()))
-                       (Normal ((String String) -> Unit (generic_ false)))
-                       Unit ()))
-                     (Cexpr_prim
-                      (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
-                      (Cexpr_apply assert_eq_string
-                       ("Hello, 2023-12-25T14:30:00!"
-                        (Cexpr_apply greet
-                         ((Cexpr_var datetime_string/10 String ()))
-                         (Normal ((String) -> String (generic_ false)))
-                         String ()))
-                       (Normal ((String String) -> Unit (generic_ false)))
-                       Unit ()))
+                     ((Cexpr_apply assert_eq (5 (Cexpr_var error/12 Int ()))
+                       (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                     (Cexpr_let mse/13
+                      (Cexpr_apply multiply
+                       ((Cexpr_var error/12 Int ())
+                        (Cexpr_var error/12 Int ()))
+                       (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                      (Cexpr_prim
+                       (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                       (Cexpr_apply assert_eq (25 (Cexpr_var mse/13 Int ()))
+                        (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                        ()))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
                      (T_error_value_result Unit
                       (T_constr Error () (generic_ false))))
                     (T_error_value_result Unit
@@ -3220,7 +3737,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_74)
+  ((binder __test_6c69622e6d6274_84)
    (func
     ((params ())
      (body
@@ -3296,7 +3813,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_75)
+  ((binder __test_6c69622e6d6274_85)
    (func
     ((params ())
      (body
@@ -3476,7 +3993,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_76)
+  ((binder __test_6c69622e6d6274_86)
    (func
     ((params ())
      (body
@@ -3508,7 +4025,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_77)
+  ((binder __test_6c69622e6d6274_87)
    (func
     ((params ())
      (body
@@ -3551,7 +4068,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_78)
+  ((binder __test_6c69622e6d6274_88)
    (func
     ((params ())
      (body
@@ -3631,7 +4148,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_79)
+  ((binder __test_6c69622e6d6274_89)
    (func
     ((params ())
      (body
@@ -3689,7 +4206,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_80)
+  ((binder __test_6c69622e6d6274_90)
    (func
     ((params ())
      (body
@@ -3740,7 +4257,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_81)
+  ((binder __test_6c69622e6d6274_91)
    (func
     ((params ())
      (body
@@ -3772,7 +4289,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_82)
+  ((binder __test_6c69622e6d6274_92)
    (func
     ((params ())
      (body
@@ -3807,7 +4324,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_83)
+  ((binder __test_6c69622e6d6274_93)
    (func
     ((params ())
      (body
@@ -3870,7 +4387,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_84)
+  ((binder __test_6c69622e6d6274_94)
    (func
     ((params ())
      (body
@@ -3912,7 +4429,7 @@
        (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
    (ty_params_ ()) (is_pub_ false)))
  (Ctop_fn
-  ((binder __test_6c69622e6d6274_85)
+  ((binder __test_6c69622e6d6274_95)
    (func
     ((params ())
      (body
@@ -4000,6 +4517,2334 @@
                            (225 (Cexpr_var distance_squared/17 Int ()))
                            (Normal ((Int Int) -> Unit (generic_ false))) Unit
                            ()))
+                         (T_error_value_result Unit
+                          (T_constr Error () (generic_ false))))
+                        (T_error_value_result Unit
+                         (T_constr Error () (generic_ false))))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_96)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let a/0 12
+       (Cexpr_let b/1 10
+        (Cexpr_let bitwise_and/2 8
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (8 (Cexpr_var bitwise_and/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let bitwise_or/3 14
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (14 (Cexpr_var bitwise_or/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let bitwise_xor/4 6
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (6 (Cexpr_var bitwise_xor/4 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let left_shift/5
+               (Cexpr_apply multiply ((Cexpr_var a/0 Int ()) 4)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_sequence
+                ((Cexpr_apply assert_eq (48 (Cexpr_var left_shift/5 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (Cexpr_let right_shift/6
+                 (Cexpr_prim (Parith I32 Div) (Cexpr_var a/0 Int ()) 4)
+                 (Cexpr_prim
+                  (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                  (Cexpr_apply assert_eq (3 (Cexpr_var right_shift/6 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_97)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let data_bits/0 4
+       (Cexpr_let parity_bits/1 3
+        (Cexpr_let total_bits/2
+         (Cexpr_apply add
+          ((Cexpr_var data_bits/0 Int ()) (Cexpr_var parity_bits/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (7 (Cexpr_var total_bits/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let received_data/3 85
+           (Cexpr_let error_position/4 3
+            (Cexpr_let corrected_data/5
+             (Cexpr_apply add
+              ((Cexpr_var received_data/3 Int ())
+               (Cexpr_apply multiply (4 (Cexpr_var error_position/4 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq
+                (97 (Cexpr_var corrected_data/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let redundancy/6
+               (Cexpr_prim (Parith I32 Div)
+                (Cexpr_apply multiply ((Cexpr_var parity_bits/1 Int ()) 100)
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_var total_bits/2 Int ()))
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_eq (42 (Cexpr_var redundancy/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_98)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let sampling_rate/0 44100
+       (Cexpr_let duration/1 5
+        (Cexpr_let bit_depth/2 16
+         (Cexpr_let total_samples/3
+          (Cexpr_apply multiply
+           ((Cexpr_var sampling_rate/0 Int ()) (Cexpr_var duration/1 Int ()))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let bytes_per_sample/4
+           (Cexpr_prim (Parith I32 Div) (Cexpr_var bit_depth/2 Int ()) 8)
+           (Cexpr_let total_bytes/5
+            (Cexpr_apply multiply
+             ((Cexpr_var total_samples/3 Int ())
+              (Cexpr_var bytes_per_sample/4 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq
+               (220500 (Cexpr_var total_samples/3 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq
+               (2 (Cexpr_var bytes_per_sample/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq
+               (441000 (Cexpr_var total_bytes/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let bitrate/6
+              (Cexpr_apply multiply
+               ((Cexpr_var sampling_rate/0 Int ())
+                (Cexpr_var bit_depth/2 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq (705600 (Cexpr_var bitrate/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let compressed_size/7
+                (Cexpr_prim (Parith I32 Div) (Cexpr_var total_bytes/5 Int ())
+                 10)
+                (Cexpr_prim
+                 (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                 (Cexpr_apply assert_eq
+                  (44100 (Cexpr_var compressed_size/7 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_99)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let queue_capacity/0 10
+       (Cexpr_let initial_size/1 0
+        (Cexpr_let enqueue_count/2 7
+         (Cexpr_let dequeue_count/3 3
+          (Cexpr_let after_enqueue/4
+           (Cexpr_apply add
+            ((Cexpr_var initial_size/1 Int ())
+             (Cexpr_var enqueue_count/2 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (7 (Cexpr_var after_enqueue/4 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let after_dequeue/5
+             (Cexpr_apply add
+              ((Cexpr_var after_enqueue/4 Int ())
+               (Cexpr_prim (Parith I32 Neg)
+                (Cexpr_var dequeue_count/3 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (4 (Cexpr_var after_dequeue/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let is_empty/6
+               (Cexpr_prim (Pcomparison I32 Eq)
+                (Cexpr_var after_dequeue/5 Int ()) 0)
+               (Cexpr_let is_full/7
+                (Cexpr_prim (Pcomparison I32 Eq)
+                 (Cexpr_var after_dequeue/5 Int ())
+                 (Cexpr_var queue_capacity/0 Int ()))
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_false ((Cexpr_var is_empty/6 Bool ()))
+                   (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                  (Cexpr_apply assert_false ((Cexpr_var is_full/7 Bool ()))
+                   (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let utilization/8
+                  (Cexpr_prim (Parith I32 Div)
+                   (Cexpr_apply multiply
+                    ((Cexpr_var after_dequeue/5 Int ()) 100)
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var queue_capacity/0 Int ()))
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_apply assert_eq
+                    (40 (Cexpr_var utilization/8 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_100)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let stack_capacity/0 8
+       (Cexpr_let push_operations/1 5
+        (Cexpr_let pop_operations/2 2
+         (Cexpr_let current_size/3
+          (Cexpr_apply add
+           ((Cexpr_var push_operations/1 Int ())
+            (Cexpr_prim (Parith I32 Neg) (Cexpr_var pop_operations/2 Int ())))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (3 (Cexpr_var current_size/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let is_empty/4
+            (Cexpr_prim (Pcomparison I32 Eq)
+             (Cexpr_var current_size/3 Int ()) 0)
+            (Cexpr_let is_full/5
+             (Cexpr_prim (Pcomparison I32 Eq)
+              (Cexpr_var current_size/3 Int ())
+              (Cexpr_var stack_capacity/0 Int ()))
+             (Cexpr_let can_push/6
+              (Cexpr_prim (Pcomparison I32 Le)
+               (Cexpr_apply add ((Cexpr_var current_size/3 Int ()) 1)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_var stack_capacity/0 Int ()))
+              (Cexpr_let can_pop/7
+               (Cexpr_prim (Pcomparison I32 Gt)
+                (Cexpr_var current_size/3 Int ()) 0)
+               (Cexpr_sequence
+                ((Cexpr_apply assert_false ((Cexpr_var is_empty/4 Bool ()))
+                  (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                 (Cexpr_apply assert_false ((Cexpr_var is_full/5 Bool ()))
+                  (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                 (Cexpr_apply assert_true ((Cexpr_var can_push/6 Bool ()))
+                  (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                 (Cexpr_apply assert_true ((Cexpr_var can_pop/7 Bool ()))
+                  (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                (Cexpr_let usage_percentage/8
+                 (Cexpr_prim (Parith I32 Div)
+                  (Cexpr_apply multiply
+                   ((Cexpr_var current_size/3 Int ()) 100)
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                  (Cexpr_var stack_capacity/0 Int ()))
+                 (Cexpr_prim
+                  (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                  (Cexpr_apply assert_eq
+                   (37 (Cexpr_var usage_percentage/8 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_101)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let table_size/0 16
+       (Cexpr_let elements_count/1 10
+        (Cexpr_let collision_resolution_steps/2 3
+         (Cexpr_let load_factor/3
+          (Cexpr_prim (Parith I32 Div)
+           (Cexpr_apply multiply ((Cexpr_var elements_count/1 Int ()) 100)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_var table_size/0 Int ()))
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (62 (Cexpr_var load_factor/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let hash_value/4 7
+            (Cexpr_let collision_count/5 2
+             (Cexpr_let final_index/6
+              (Cexpr_apply add
+               ((Cexpr_var hash_value/4 Int ())
+                (Cexpr_var collision_count/5 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq (9 (Cexpr_var final_index/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let avg_lookup_length/7
+                (Cexpr_apply add
+                 (1
+                  (Cexpr_prim (Parith I32 Div)
+                   (Cexpr_apply multiply
+                    ((Cexpr_var load_factor/3 Int ())
+                     (Cexpr_var collision_resolution_steps/2 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   100))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_prim
+                 (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                 (Cexpr_apply assert_eq
+                  (2 (Cexpr_var avg_lookup_length/7 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_102)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let vertex_count/0 6
+       (Cexpr_let edge_count/1 9
+        (Cexpr_let start_vertex/2 0
+         (Cexpr_let end_vertex/3 5
+          (Cexpr_let max_edges/4
+           (Cexpr_prim (Parith I32 Div)
+            (Cexpr_apply multiply
+             ((Cexpr_var vertex_count/0 Int ())
+              (Cexpr_apply add ((Cexpr_var vertex_count/0 Int ()) -1)
+               (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            2)
+           (Cexpr_let density/5
+            (Cexpr_prim (Parith I32 Div)
+             (Cexpr_apply multiply ((Cexpr_var edge_count/1 Int ()) 100)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_var max_edges/4 Int ()))
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq (60 (Cexpr_var density/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let path_length/6 14
+              (Cexpr_let intermediate_vertices/7 3
+               (Cexpr_sequence
+                ((Cexpr_apply assert_eq (14 (Cexpr_var path_length/6 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                 (Cexpr_apply assert_eq
+                  (3 (Cexpr_var intermediate_vertices/7 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (Cexpr_let connected_components/8 1
+                 (Cexpr_let is_connected/9
+                  (Cexpr_prim (Pcomparison I32 Eq)
+                   (Cexpr_var connected_components/8 Int ()) 1)
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_apply assert_true
+                    ((Cexpr_var is_connected/9 Bool ()))
+                    (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_103)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let tree_height/0 4
+       (Cexpr_let branching_factor/1 3
+        (Cexpr_let max_nodes/2 1
+         (Cexpr_let level1_nodes/3
+          (Cexpr_apply multiply (1 (Cexpr_var branching_factor/1 Int ()))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_let level2_nodes/4
+           (Cexpr_apply multiply
+            ((Cexpr_var level1_nodes/3 Int ())
+             (Cexpr_var branching_factor/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let level3_nodes/5
+            (Cexpr_apply multiply
+             ((Cexpr_var level2_nodes/4 Int ())
+              (Cexpr_var branching_factor/1 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let total_nodes/6
+             (Cexpr_apply add
+              ((Cexpr_apply add
+                ((Cexpr_apply add
+                  ((Cexpr_apply add (1 (Cexpr_var level1_nodes/3 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var level2_nodes/4 Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_var level3_nodes/5 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               1)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (40 (Cexpr_var total_nodes/6 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let leaf_nodes/7
+               (Cexpr_apply multiply
+                (3
+                 (Cexpr_apply multiply (3 3)
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_sequence
+                ((Cexpr_apply assert_eq (27 (Cexpr_var leaf_nodes/7 Int ()))
+                  (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                (Cexpr_let internal_nodes/8
+                 (Cexpr_apply add
+                  ((Cexpr_var total_nodes/6 Int ())
+                   (Cexpr_prim (Parith I32 Neg)
+                    (Cexpr_var leaf_nodes/7 Int ())))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_sequence
+                  ((Cexpr_apply assert_eq
+                    (13 (Cexpr_var internal_nodes/8 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (Cexpr_let is_balanced/9 true
+                   (Cexpr_prim
+                    (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                    (Cexpr_apply assert_true
+                     ((Cexpr_var is_balanced/9 Bool ()))
+                     (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_104)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_apply assert_eq
+         (4
+          (Cexpr_apply divide_with_ceil (10 3)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (3
+          (Cexpr_apply divide_with_ceil (9 3)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (1
+          (Cexpr_apply divide_with_ceil (1 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (0
+          (Cexpr_apply divide_with_ceil (0 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq
+         (5
+          (Cexpr_apply divide_with_ceil (11 2)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_105)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_apply assert_eq
+         (1
+          (Cexpr_apply divide_with_ceil (1 1)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (100
+          (Cexpr_apply divide_with_ceil (100 1)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (1
+          (Cexpr_apply divide_with_ceil (99 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (2
+          (Cexpr_apply divide_with_ceil (101 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq
+         (10
+          (Cexpr_apply divide_with_ceil (91 10)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_106)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_apply assert_eq
+         (-3
+          (Cexpr_apply divide_with_ceil (-10 3)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (-3
+          (Cexpr_apply divide_with_ceil (-9 3)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (0
+          (Cexpr_apply divide_with_ceil (-1 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+        (Cexpr_apply assert_eq
+         (-1
+          (Cexpr_apply divide_with_ceil (-100 100)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+        (Cexpr_apply assert_eq
+         (-5
+          (Cexpr_apply divide_with_ceil (-11 2)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_107)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_resources/0 17
+       (Cexpr_let team_size/1 5
+        (Cexpr_let resources_per_team/2
+         (Cexpr_apply divide_with_ceil
+          ((Cexpr_var total_resources/0 Int ())
+           (Cexpr_var team_size/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (4 (Cexpr_var resources_per_team/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let total_allocated/3
+           (Cexpr_apply multiply
+            ((Cexpr_var resources_per_team/2 Int ())
+             (Cexpr_var team_size/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (20 (Cexpr_var total_allocated/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let remaining/4
+             (Cexpr_apply add
+              ((Cexpr_var total_allocated/3 Int ())
+               (Cexpr_prim (Parith I32 Neg)
+                (Cexpr_var total_resources/0 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq (3 (Cexpr_var remaining/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_108)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_items/0 23
+       (Cexpr_let items_per_page/1 10
+        (Cexpr_let total_pages/2
+         (Cexpr_apply divide_with_ceil
+          ((Cexpr_var total_items/0 Int ())
+           (Cexpr_var items_per_page/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (3 (Cexpr_var total_pages/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let last_page_items/3
+           (Cexpr_prim (Parith I32 Mod) (Cexpr_var total_items/0 Int ())
+            (Cexpr_var items_per_page/1 Int ()))
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_apply assert_eq (3 (Cexpr_var last_page_items/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_109)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_duration/0 65
+       (Cexpr_let slot_duration/1 15
+        (Cexpr_let required_slots/2
+         (Cexpr_apply divide_with_ceil
+          ((Cexpr_var total_duration/0 Int ())
+           (Cexpr_var slot_duration/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (5 (Cexpr_var required_slots/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let total_allocated_time/3
+           (Cexpr_apply multiply
+            ((Cexpr_var required_slots/2 Int ())
+             (Cexpr_var slot_duration/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq
+              (75 (Cexpr_var total_allocated_time/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let idle_time/4
+             (Cexpr_apply add
+              ((Cexpr_var total_allocated_time/3 Int ())
+               (Cexpr_prim (Parith I32 Neg)
+                (Cexpr_var total_duration/0 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq (10 (Cexpr_var idle_time/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_110)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_items/0 37
+       (Cexpr_let container_capacity/1 12
+        (Cexpr_let required_containers/2
+         (Cexpr_apply divide_with_ceil
+          ((Cexpr_var total_items/0 Int ())
+           (Cexpr_var container_capacity/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq
+            (4 (Cexpr_var required_containers/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let total_capacity/3
+           (Cexpr_apply multiply
+            ((Cexpr_var required_containers/2 Int ())
+             (Cexpr_var container_capacity/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (48 (Cexpr_var total_capacity/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let remaining_capacity/4
+             (Cexpr_apply add
+              ((Cexpr_var total_capacity/3 Int ())
+               (Cexpr_prim (Parith I32 Neg) (Cexpr_var total_items/0 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq
+               (11 (Cexpr_var remaining_capacity/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_111)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_bandwidth/0 1000
+       (Cexpr_let min_bandwidth_per_user/1 150
+        (Cexpr_let max_users/2
+         (Cexpr_prim (Parith I32 Div) (Cexpr_var total_bandwidth/0 Int ())
+          (Cexpr_var min_bandwidth_per_user/1 Int ()))
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (6 (Cexpr_var max_users/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let used_bandwidth/3
+           (Cexpr_apply multiply
+            ((Cexpr_var max_users/2 Int ())
+             (Cexpr_var min_bandwidth_per_user/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (900 (Cexpr_var used_bandwidth/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let remaining_bandwidth/4
+             (Cexpr_apply add
+              ((Cexpr_var total_bandwidth/0 Int ())
+               (Cexpr_prim (Parith I32 Neg)
+                (Cexpr_var used_bandwidth/3 Int ())))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq
+               (100 (Cexpr_var remaining_bandwidth/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_112)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let data_size/0 2500
+       (Cexpr_let disk_capacity/1 1000
+        (Cexpr_let required_disks/2
+         (Cexpr_apply divide_with_ceil
+          ((Cexpr_var data_size/0 Int ()) (Cexpr_var disk_capacity/1 Int ()))
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (3 (Cexpr_var required_disks/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let total_storage/3
+           (Cexpr_apply multiply
+            ((Cexpr_var required_disks/2 Int ())
+             (Cexpr_var disk_capacity/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (3000 (Cexpr_var total_storage/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let utilization/4
+             (Cexpr_prim (Parith I32 Div)
+              (Cexpr_apply multiply ((Cexpr_var data_size/0 Int ()) 100)
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_var total_storage/3 Int ()))
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq (83 (Cexpr_var utilization/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_113)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let total_tasks/0 47
+       (Cexpr_let worker_count/1 8
+        (Cexpr_let base_tasks/2
+         (Cexpr_prim (Parith I32 Div) (Cexpr_var total_tasks/0 Int ())
+          (Cexpr_var worker_count/1 Int ()))
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (5 (Cexpr_var base_tasks/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let extra_tasks/3
+           (Cexpr_prim (Parith I32 Mod) (Cexpr_var total_tasks/0 Int ())
+            (Cexpr_var worker_count/1 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (7 (Cexpr_var extra_tasks/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let max_load/4
+             (Cexpr_apply add
+              ((Cexpr_var base_tasks/2 Int ())
+               (Cexpr_if
+                (Cexpr_prim (Pcomparison I32 Gt)
+                 (Cexpr_var extra_tasks/3 Int ()) 0)
+                1 (0) Int))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (6 (Cexpr_var max_load/4 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let min_load/5 (Cexpr_var base_tasks/2 Int ())
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_eq (5 (Cexpr_var min_load/5 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_114)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let short_string/0 Hi
+       (Cexpr_let medium_string/1 MoonBit
+        (Cexpr_let long_string/2
+         "This is a very long string for testing purposes"
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq_string
+            ("Hello, Hi!"
+             (Cexpr_apply greet ((Cexpr_var short_string/0 String ()))
+              (Normal ((String) -> String (generic_ false))) String ()))
+            (Normal ((String String) -> Unit (generic_ false))) Unit ())
+           (Cexpr_apply assert_eq_string
+            ("Hello, MoonBit!"
+             (Cexpr_apply greet ((Cexpr_var medium_string/1 String ()))
+              (Normal ((String) -> String (generic_ false))) String ()))
+            (Normal ((String String) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+           (Cexpr_apply assert_eq_string
+            ("Hello, This is a very long string for testing purposes!"
+             (Cexpr_apply greet ((Cexpr_var long_string/2 String ()))
+              (Normal ((String) -> String (generic_ false))) String ()))
+            (Normal ((String String) -> Unit (generic_ false))) Unit ()))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_115)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let a/0 2
+       (Cexpr_let r/1 3
+        (Cexpr_let n/2 4
+         (Cexpr_let term1/3 (Cexpr_var a/0 Int ())
+          (Cexpr_let term2/4
+           (Cexpr_apply multiply
+            ((Cexpr_var a/0 Int ()) (Cexpr_var r/1 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let term3/5
+            (Cexpr_apply multiply
+             ((Cexpr_var term2/4 Int ()) (Cexpr_var r/1 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let term4/6
+             (Cexpr_apply multiply
+              ((Cexpr_var term3/5 Int ()) (Cexpr_var r/1 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_let sum/7
+              (Cexpr_apply add
+               ((Cexpr_apply add
+                 ((Cexpr_apply add
+                   ((Cexpr_var term1/3 Int ()) (Cexpr_var term2/4 Int ()))
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                  (Cexpr_var term3/5 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_var term4/6 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_prim
+               (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+               (Cexpr_apply assert_eq (80 (Cexpr_var sum/7 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_116)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let decimal_num/0 13
+       (Cexpr_let bit0/1 1
+        (Cexpr_let bit1/2 0
+         (Cexpr_let bit2/3 1
+          (Cexpr_let bit3/4 1
+           (Cexpr_let reconstructed/5
+            (Cexpr_apply add
+             ((Cexpr_apply add
+               ((Cexpr_apply add
+                 ((Cexpr_apply multiply ((Cexpr_var bit3/4 Int ()) 8)
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                  (Cexpr_apply multiply ((Cexpr_var bit2/3 Int ()) 4)
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_apply multiply ((Cexpr_var bit1/2 Int ()) 2)
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_var bit0/1 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+             (Cexpr_apply assert_eq
+              ((Cexpr_var decimal_num/0 Int ())
+               (Cexpr_var reconstructed/5 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_117)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let celsius/0 25
+       (Cexpr_let fahrenheit_approx/1
+        (Cexpr_apply add
+         ((Cexpr_apply add
+           ((Cexpr_apply multiply ((Cexpr_var celsius/0 Int ()) 2)
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            32)
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_apply multiply
+           (-1 (Cexpr_prim (Parith I32 Div) (Cexpr_var celsius/0 Int ()) 5))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+         (Normal ((Int Int) -> Int (generic_ false))) Int ())
+        (Cexpr_sequence
+         ((Cexpr_apply assert_eq (77 (Cexpr_var fahrenheit_approx/1 Int ()))
+           (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+         (Cexpr_let neg_celsius/2 -10
+          (Cexpr_let neg_fahrenheit/3
+           (Cexpr_apply add
+            ((Cexpr_apply add
+              ((Cexpr_apply multiply ((Cexpr_var neg_celsius/2 Int ()) 2)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               32)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_apply multiply
+              (-1
+               (Cexpr_prim (Parith I32 Div) (Cexpr_var neg_celsius/2 Int ())
+                5))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_apply assert_eq (14 (Cexpr_var neg_fahrenheit/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_118)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let principal/0 10000
+       (Cexpr_let annual_rate/1 5
+        (Cexpr_let years/2 3
+         (Cexpr_let compounds_per_year/3 12
+          (Cexpr_let growth_factor/4
+           (Cexpr_apply add
+            (1
+             (Cexpr_apply multiply
+              ((Cexpr_var annual_rate/1 Int ()) (Cexpr_var years/2 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_let final_amount/5
+            (Cexpr_apply multiply
+             ((Cexpr_var principal/0 Int ())
+              (Cexpr_var growth_factor/4 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+             (Cexpr_apply assert_eq
+              (160000 (Cexpr_var final_amount/5 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_119)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let values/0
+       (Cexpr_record
+        (((label ((label_name buf))) (pos 0) (is_mut true)
+          (expr
+           (Cexpr_array (5 8 12 15 20)
+            (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+             (generic_ false)))))
+         ((label ((label_name len))) (pos 1) (is_mut true) (expr 5)))
+        (T_constr Array (Int) (generic_ false)))
+       (Cexpr_let count/1 5
+        (Cexpr_let sum/2
+         (Cexpr_apply add
+          ((Cexpr_apply add
+            ((Cexpr_apply add
+              ((Cexpr_apply add (5 8)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               12)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             15)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           20)
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_let mean/3
+          (Cexpr_prim (Parith I32 Div) (Cexpr_var sum/2 Int ())
+           (Cexpr_var count/1 Int ()))
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (12 (Cexpr_var mean/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let diff1/4
+            (Cexpr_apply add (5 -12)
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let diff2/5
+             (Cexpr_apply add (8 -12)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_let diff3/6
+              (Cexpr_apply add (12 -12)
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_let diff4/7
+               (Cexpr_apply add (15 -12)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_let diff5/8
+                (Cexpr_apply add (20 -12)
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_let variance_sum/9
+                 (Cexpr_apply add
+                  ((Cexpr_apply add
+                    ((Cexpr_apply add
+                      ((Cexpr_apply add
+                        ((Cexpr_apply multiply
+                          ((Cexpr_var diff1/4 Int ())
+                           (Cexpr_var diff1/4 Int ()))
+                          (Normal ((Int Int) -> Int (generic_ false))) Int
+                          ())
+                         (Cexpr_apply multiply
+                          ((Cexpr_var diff2/5 Int ())
+                           (Cexpr_var diff2/5 Int ()))
+                          (Normal ((Int Int) -> Int (generic_ false))) Int
+                          ()))
+                        (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                       (Cexpr_apply multiply
+                        ((Cexpr_var diff3/6 Int ())
+                         (Cexpr_var diff3/6 Int ()))
+                        (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+                      (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                     (Cexpr_apply multiply
+                      ((Cexpr_var diff4/7 Int ()) (Cexpr_var diff4/7 Int ()))
+                      (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_apply multiply
+                    ((Cexpr_var diff5/8 Int ()) (Cexpr_var diff5/8 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_let variance/10
+                  (Cexpr_prim (Parith I32 Div)
+                   (Cexpr_var variance_sum/9 Int ())
+                   (Cexpr_var count/1 Int ()))
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_apply assert_eq (26 (Cexpr_var variance/10 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_120)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let radius/0 5
+       (Cexpr_let pi_approx/1 3
+        (Cexpr_let diameter/2
+         (Cexpr_apply multiply ((Cexpr_var radius/0 Int ()) 2)
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (10 (Cexpr_var diameter/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let circumference/3
+           (Cexpr_apply multiply
+            ((Cexpr_var pi_approx/1 Int ()) (Cexpr_var diameter/2 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (30 (Cexpr_var circumference/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let area/4
+             (Cexpr_apply multiply
+              ((Cexpr_var pi_approx/1 Int ())
+               (Cexpr_apply multiply
+                ((Cexpr_var radius/0 Int ()) (Cexpr_var radius/0 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_apply assert_eq (75 (Cexpr_var area/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_121)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let scores/0
+       (Cexpr_record
+        (((label ((label_name buf))) (pos 0) (is_mut true)
+          (expr
+           (Cexpr_array (850 920 780 950 890)
+            (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+             (generic_ false)))))
+         ((label ((label_name len))) (pos 1) (is_mut true) (expr 5)))
+        (T_constr Array (Int) (generic_ false)))
+       (Cexpr_let player_count/1 5
+        (Cexpr_let total_score/2
+         (Cexpr_apply add
+          ((Cexpr_apply add
+            ((Cexpr_apply add
+              ((Cexpr_apply add (850 920)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               780)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             950)
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           890)
+          (Normal ((Int Int) -> Int (generic_ false))) Int ())
+         (Cexpr_sequence
+          ((Cexpr_apply assert_eq (4390 (Cexpr_var total_score/2 Int ()))
+            (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+          (Cexpr_let average_score/3
+           (Cexpr_prim (Parith I32 Div) (Cexpr_var total_score/2 Int ())
+            (Cexpr_var player_count/1 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (878 (Cexpr_var average_score/3 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let max_score/4 950
+             (Cexpr_let min_score/5 780
+              (Cexpr_let score_range/6
+               (Cexpr_apply add
+                ((Cexpr_var max_score/4 Int ())
+                 (Cexpr_prim (Parith I32 Neg) (Cexpr_var min_score/5 Int ())))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_eq (170 (Cexpr_var score_range/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_122)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let file_size/0 1048576
+       (Cexpr_let bandwidth/1 1048576
+        (Cexpr_let latency/2 50
+         (Cexpr_let packet_size/3 1500
+          (Cexpr_let transfer_time/4
+           (Cexpr_prim (Parith I32 Div) (Cexpr_var file_size/0 Int ())
+            (Cexpr_var bandwidth/1 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (1 (Cexpr_var transfer_time/4 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let packet_count/5
+             (Cexpr_apply divide_with_ceil
+              ((Cexpr_var file_size/0 Int ())
+               (Cexpr_var packet_size/3 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (700 (Cexpr_var packet_count/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let total_latency/6
+               (Cexpr_apply multiply
+                ((Cexpr_var packet_count/5 Int ())
+                 (Cexpr_var latency/2 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_eq
+                 (35000 (Cexpr_var total_latency/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_123)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let row/0 3
+       (Cexpr_let col/1 2
+        (Cexpr_let cols_per_row/2 5
+         (Cexpr_let index_1d/3
+          (Cexpr_apply add
+           ((Cexpr_apply multiply
+             ((Cexpr_var row/0 Int ()) (Cexpr_var cols_per_row/2 Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_var col/1 Int ()))
+           (Normal ((Int Int) -> Int (generic_ false))) Int ())
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (17 (Cexpr_var index_1d/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let first_index/4
+            (Cexpr_apply add
+             ((Cexpr_apply multiply (0 (Cexpr_var cols_per_row/2 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              0)
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let last_index/5
+             (Cexpr_apply add
+              ((Cexpr_apply multiply (9 (Cexpr_var cols_per_row/2 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               4)
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (0 (Cexpr_var first_index/4 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+               (Cexpr_apply assert_eq (49 (Cexpr_var last_index/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let is_valid_index/6
+               (Cexpr_and
+                (Cexpr_prim (Pcomparison I32 Ge)
+                 (Cexpr_var index_1d/3 Int ())
+                 (Cexpr_var first_index/4 Int ()))
+                (Cexpr_prim (Pcomparison I32 Le)
+                 (Cexpr_var index_1d/3 Int ())
+                 (Cexpr_var last_index/5 Int ())))
+               (Cexpr_prim
+                (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                (Cexpr_apply assert_true
+                 ((Cexpr_var is_valid_index/6 Bool ()))
+                 (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_124)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let first_term/0 3
+       (Cexpr_let common_diff/1 4
+        (Cexpr_let num_terms/2 10
+         (Cexpr_let sum_formula/3
+          (Cexpr_prim (Parith I32 Div)
+           (Cexpr_apply multiply
+            ((Cexpr_var num_terms/2 Int ())
+             (Cexpr_apply add
+              ((Cexpr_apply multiply (2 (Cexpr_var first_term/0 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_apply multiply
+                ((Cexpr_prim (Parith I32 Sub) (Cexpr_var num_terms/2 Int ())
+                  1)
+                 (Cexpr_var common_diff/1 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           2)
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (210 (Cexpr_var sum_formula/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let term_5/4
+            (Cexpr_apply add
+             ((Cexpr_var first_term/0 Int ())
+              (Cexpr_apply multiply (4 (Cexpr_var common_diff/1 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq (19 (Cexpr_var term_5/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let term_10/5
+              (Cexpr_apply add
+               ((Cexpr_var first_term/0 Int ())
+                (Cexpr_apply multiply (9 (Cexpr_var common_diff/1 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_prim
+               (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+               (Cexpr_apply assert_eq (39 (Cexpr_var term_10/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_125)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let pattern/0 test
+       (Cexpr_let text1/1 "this is a test string"
+        (Cexpr_let text2/2 "no match here"
+         (Cexpr_let text3/3 "test at beginning"
+          (Cexpr_let text4/4 test
+           (Cexpr_let result1/5
+            (Cexpr_apply greet ((Cexpr_var text1/1 String ()))
+             (Normal ((String) -> String (generic_ false))) String ())
+            (Cexpr_let result2/6
+             (Cexpr_apply greet ((Cexpr_var text2/2 String ()))
+              (Normal ((String) -> String (generic_ false))) String ())
+             (Cexpr_let result3/7
+              (Cexpr_apply greet ((Cexpr_var text3/3 String ()))
+               (Normal ((String) -> String (generic_ false))) String ())
+              (Cexpr_let result4/8
+               (Cexpr_apply greet ((Cexpr_var text4/4 String ()))
+                (Normal ((String) -> String (generic_ false))) String ())
+               (Cexpr_sequence
+                ((Cexpr_apply assert_eq_string
+                  ("Hello, this is a test string!"
+                   (Cexpr_var result1/5 String ()))
+                  (Normal ((String String) -> Unit (generic_ false))) Unit
+                  ())
+                 (Cexpr_apply assert_eq_string
+                  ("Hello, no match here!" (Cexpr_var result2/6 String ()))
+                  (Normal ((String String) -> Unit (generic_ false))) Unit
+                  ())
+                 (Cexpr_apply assert_eq_string
+                  ("Hello, test at beginning!"
+                   (Cexpr_var result3/7 String ()))
+                  (Normal ((String String) -> Unit (generic_ false))) Unit
+                  ())
+                 (Cexpr_apply assert_eq_string
+                  ("Hello, test!" (Cexpr_var result4/8 String ()))
+                  (Normal ((String String) -> Unit (generic_ false))) Unit
+                  ()))
+                (Cexpr_let len1/9 21
+                 (Cexpr_let len2/10 14
+                  (Cexpr_let len3/11 19
+                   (Cexpr_let len4/12 4
+                    (Cexpr_sequence
+                     ((Cexpr_apply assert_true
+                       ((Cexpr_prim (Pcomparison I32 Gt)
+                         (Cexpr_var len1/9 Int ())
+                         (Cexpr_var len2/10 Int ())))
+                       (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                      (Cexpr_apply assert_true
+                       ((Cexpr_prim (Pcomparison I32 Gt)
+                         (Cexpr_var len3/11 Int ())
+                         (Cexpr_var len4/12 Int ())))
+                       (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                     (Cexpr_prim
+                      (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                      (Cexpr_apply assert_eq (4 (Cexpr_var len4/12 Int ()))
+                       (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_126)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let base_address/0 1000
+       (Cexpr_let element_size/1 4
+        (Cexpr_let index1/2 0
+         (Cexpr_let index2/3 5
+          (Cexpr_let index3/4 10
+           (Cexpr_let addr1/5
+            (Cexpr_apply add
+             ((Cexpr_var base_address/0 Int ())
+              (Cexpr_apply multiply
+               ((Cexpr_var index1/2 Int ())
+                (Cexpr_var element_size/1 Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_let addr2/6
+             (Cexpr_apply add
+              ((Cexpr_var base_address/0 Int ())
+               (Cexpr_apply multiply
+                ((Cexpr_var index2/3 Int ())
+                 (Cexpr_var element_size/1 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_let addr3/7
+              (Cexpr_apply add
+               ((Cexpr_var base_address/0 Int ())
+                (Cexpr_apply multiply
+                 ((Cexpr_var index3/4 Int ())
+                  (Cexpr_var element_size/1 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ()))
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq (1000 (Cexpr_var addr1/5 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                (Cexpr_apply assert_eq (1020 (Cexpr_var addr2/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                (Cexpr_apply assert_eq (1040 (Cexpr_var addr3/7 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let offset12/8
+                (Cexpr_apply add
+                 ((Cexpr_var addr2/6 Int ())
+                  (Cexpr_prim (Parith I32 Neg) (Cexpr_var addr1/5 Int ())))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_let offset23/9
+                 (Cexpr_apply add
+                  ((Cexpr_var addr3/7 Int ())
+                   (Cexpr_prim (Parith I32 Neg) (Cexpr_var addr2/6 Int ())))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_sequence
+                  ((Cexpr_apply assert_eq (20 (Cexpr_var offset12/8 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                   (Cexpr_apply assert_eq (20 (Cexpr_var offset23/9 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (Cexpr_let aligned1/10
+                   (Cexpr_prim (Pcomparison I32 Eq)
+                    (Cexpr_prim (Parith I32 Mod) (Cexpr_var addr1/5 Int ())
+                     (Cexpr_var element_size/1 Int ()))
+                    0)
+                   (Cexpr_let aligned2/11
+                    (Cexpr_prim (Pcomparison I32 Eq)
+                     (Cexpr_prim (Parith I32 Mod) (Cexpr_var addr2/6 Int ())
+                      (Cexpr_var element_size/1 Int ()))
+                     0)
+                    (Cexpr_let aligned3/12
+                     (Cexpr_prim (Pcomparison I32 Eq)
+                      (Cexpr_prim (Parith I32 Mod) (Cexpr_var addr3/7 Int ())
+                       (Cexpr_var element_size/1 Int ()))
+                      0)
+                     (Cexpr_prim
+                      (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                      (Cexpr_apply assert_true
+                       ((Cexpr_and (Cexpr_var aligned1/10 Bool ())
+                         (Cexpr_and (Cexpr_var aligned2/11 Bool ())
+                          (Cexpr_var aligned3/12 Bool ()))))
+                       (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_127)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let dice_faces/0 6
+       (Cexpr_let total_outcomes/1
+        (Cexpr_apply multiply
+         ((Cexpr_var dice_faces/0 Int ()) (Cexpr_var dice_faces/0 Int ()))
+         (Normal ((Int Int) -> Int (generic_ false))) Int ())
+        (Cexpr_let sum_7_combinations/2 6
+         (Cexpr_let sum_11_combinations/3 2
+          (Cexpr_let sum_2_combinations/4 1
+           (Cexpr_let sum_12_combinations/5 1
+            (Cexpr_let prob_7/6
+             (Cexpr_prim (Parith I32 Div)
+              (Cexpr_apply multiply
+               ((Cexpr_var sum_7_combinations/2 Int ()) 100)
+               (Normal ((Int Int) -> Int (generic_ false))) Int ())
+              (Cexpr_var total_outcomes/1 Int ()))
+             (Cexpr_let prob_11/7
+              (Cexpr_prim (Parith I32 Div)
+               (Cexpr_apply multiply
+                ((Cexpr_var sum_11_combinations/3 Int ()) 100)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_var total_outcomes/1 Int ()))
+              (Cexpr_let prob_2/8
+               (Cexpr_prim (Parith I32 Div)
+                (Cexpr_apply multiply
+                 ((Cexpr_var sum_2_combinations/4 Int ()) 100)
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_var total_outcomes/1 Int ()))
+               (Cexpr_let prob_12/9
+                (Cexpr_prim (Parith I32 Div)
+                 (Cexpr_apply multiply
+                  ((Cexpr_var sum_12_combinations/5 Int ()) 100)
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_var total_outcomes/1 Int ()))
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_eq (16 (Cexpr_var prob_7/6 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                  (Cexpr_apply assert_eq (5 (Cexpr_var prob_11/7 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                  (Cexpr_apply assert_eq (2 (Cexpr_var prob_2/8 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                  (Cexpr_apply assert_eq (2 (Cexpr_var prob_12/9 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let expected_sum/10 7
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_apply assert_eq
+                    (7 (Cexpr_var expected_sum/10 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_128)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let buffer_size/0 8
+       (Cexpr_let initial_head/1 0
+        (Cexpr_let initial_tail/2 0
+         (Cexpr_let initial_count/3 0
+          (Cexpr_let enqueue_count/4 5
+           (Cexpr_let new_tail/5
+            (Cexpr_prim (Parith I32 Mod)
+             (Cexpr_apply add
+              ((Cexpr_var initial_tail/2 Int ())
+               (Cexpr_var enqueue_count/4 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_var buffer_size/0 Int ()))
+            (Cexpr_let new_count/6
+             (Cexpr_apply add
+              ((Cexpr_var initial_count/3 Int ())
+               (Cexpr_var enqueue_count/4 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_sequence
+              ((Cexpr_apply assert_eq (5 (Cexpr_var new_tail/5 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+               (Cexpr_apply assert_eq (5 (Cexpr_var new_count/6 Int ()))
+                (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+              (Cexpr_let dequeue_count/7 3
+               (Cexpr_let new_head/8
+                (Cexpr_prim (Parith I32 Mod)
+                 (Cexpr_apply add
+                  ((Cexpr_var initial_head/1 Int ())
+                   (Cexpr_var dequeue_count/7 Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_var buffer_size/0 Int ()))
+                (Cexpr_let final_count/9
+                 (Cexpr_apply add
+                  ((Cexpr_var new_count/6 Int ())
+                   (Cexpr_prim (Parith I32 Neg)
+                    (Cexpr_var dequeue_count/7 Int ())))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_sequence
+                  ((Cexpr_apply assert_eq (3 (Cexpr_var new_head/8 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                   (Cexpr_apply assert_eq
+                    (2 (Cexpr_var final_count/9 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (Cexpr_let is_empty/10
+                   (Cexpr_prim (Pcomparison I32 Eq)
+                    (Cexpr_var final_count/9 Int ()) 0)
+                   (Cexpr_let is_full/11
+                    (Cexpr_prim (Pcomparison I32 Eq)
+                     (Cexpr_var final_count/9 Int ())
+                     (Cexpr_var buffer_size/0 Int ()))
+                    (Cexpr_let has_space/12
+                     (Cexpr_prim (Pcomparison I32 Lt)
+                      (Cexpr_var final_count/9 Int ())
+                      (Cexpr_var buffer_size/0 Int ()))
+                     (Cexpr_sequence
+                      ((Cexpr_apply assert_false
+                        ((Cexpr_var is_empty/10 Bool ()))
+                        (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                       (Cexpr_apply assert_false
+                        ((Cexpr_var is_full/11 Bool ()))
+                        (Normal ((Bool) -> Unit (generic_ false))) Unit ())
+                       (Cexpr_apply assert_true
+                        ((Cexpr_var has_space/12 Bool ()))
+                        (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                      (Cexpr_let utilization/13
+                       (Cexpr_prim (Parith I32 Div)
+                        (Cexpr_apply multiply
+                         ((Cexpr_var final_count/9 Int ()) 100)
+                         (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                        (Cexpr_var buffer_size/0 Int ()))
+                       (Cexpr_prim
+                        (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                        (Cexpr_apply assert_eq
+                         (25 (Cexpr_var utilization/13 Int ()))
+                         (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                         ()))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_129)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let r/0 255
+       (Cexpr_let g/1 0
+        (Cexpr_let b/2 0
+         (Cexpr_let max_val/3 255
+          (Cexpr_let min_val/4 0
+           (Cexpr_let delta/5
+            (Cexpr_apply add
+             ((Cexpr_var max_val/3 Int ())
+              (Cexpr_prim (Parith I32 Neg) (Cexpr_var min_val/4 Int ())))
+             (Normal ((Int Int) -> Int (generic_ false))) Int ())
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq (255 (Cexpr_var max_val/3 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq (0 (Cexpr_var min_val/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq (255 (Cexpr_var delta/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let hue/6
+              (Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Eq) (Cexpr_var max_val/3 Int ())
+                (Cexpr_var r/0 Int ()))
+               0 (120) Int)
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq (0 (Cexpr_var hue/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let saturation/7
+                (Cexpr_if
+                 (Cexpr_prim (Pcomparison I32 Eq)
+                  (Cexpr_var max_val/3 Int ()) 0)
+                 0
+                 ((Cexpr_prim (Parith I32 Div)
+                   (Cexpr_apply multiply ((Cexpr_var delta/5 Int ()) 100)
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var max_val/3 Int ())))
+                 Int)
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_eq
+                   (100 (Cexpr_var saturation/7 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let value/8 (Cexpr_var max_val/3 Int ())
+                  (Cexpr_sequence
+                   ((Cexpr_apply assert_eq (255 (Cexpr_var value/8 Int ()))
+                     (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                   (Cexpr_let r2/9 0
+                    (Cexpr_let g2/10 255
+                     (Cexpr_let b2/11 0
+                      (Cexpr_let max_val2/12 255
+                       (Cexpr_let min_val2/13 0
+                        (Cexpr_let delta2/14
+                         (Cexpr_apply add
+                          ((Cexpr_var max_val2/12 Int ())
+                           (Cexpr_prim (Parith I32 Neg)
+                            (Cexpr_var min_val2/13 Int ())))
+                          (Normal ((Int Int) -> Int (generic_ false))) Int
+                          ())
+                         (Cexpr_let hue2/15
+                          (Cexpr_if
+                           (Cexpr_prim (Pcomparison I32 Eq)
+                            (Cexpr_var max_val2/12 Int ())
+                            (Cexpr_var r2/9 Int ()))
+                           0 (120) Int)
+                          (Cexpr_let saturation2/16
+                           (Cexpr_if
+                            (Cexpr_prim (Pcomparison I32 Eq)
+                             (Cexpr_var max_val2/12 Int ()) 0)
+                            0
+                            ((Cexpr_prim (Parith I32 Div)
+                              (Cexpr_apply multiply
+                               ((Cexpr_var delta2/14 Int ()) 100)
+                               (Normal ((Int Int) -> Int (generic_ false)))
+                               Int ())
+                              (Cexpr_var max_val2/12 Int ())))
+                            Int)
+                           (Cexpr_let value2/17
+                            (Cexpr_var max_val2/12 Int ())
+                            (Cexpr_sequence
+                             ((Cexpr_apply assert_eq
+                               (120 (Cexpr_var hue2/15 Int ()))
+                               (Normal ((Int Int) -> Unit (generic_ false)))
+                               Unit ())
+                              (Cexpr_apply assert_eq
+                               (100 (Cexpr_var saturation2/16 Int ()))
+                               (Normal ((Int Int) -> Unit (generic_ false)))
+                               Unit ()))
+                             (Cexpr_prim
+                              (Pmake_value_or_error
+                               (tag (Constr_tag_regular Ok)))
+                              (Cexpr_apply assert_eq
+                               (255 (Cexpr_var value2/17 Int ()))
+                               (Normal ((Int Int) -> Unit (generic_ false)))
+                               Unit ()))
+                             (T_error_value_result Unit
+                              (T_constr Error () (generic_ false))))
+                            (T_error_value_result Unit
+                             (T_constr Error () (generic_ false))))
+                           (T_error_value_result Unit
+                            (T_constr Error () (generic_ false))))
+                          (T_error_value_result Unit
+                           (T_constr Error () (generic_ false))))
+                         (T_error_value_result Unit
+                          (T_constr Error () (generic_ false))))
+                        (T_error_value_result Unit
+                         (T_constr Error () (generic_ false))))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_130)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let data_block1/0 100
+       (Cexpr_let data_block2/1 200
+        (Cexpr_let data_block3/2 300
+         (Cexpr_let data_block4/3 400
+          (Cexpr_let checksum/4
+           (Cexpr_apply add
+            ((Cexpr_apply add
+              ((Cexpr_apply add
+                ((Cexpr_var data_block1/0 Int ())
+                 (Cexpr_var data_block2/1 Int ()))
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_var data_block3/2 Int ()))
+              (Normal ((Int Int) -> Int (generic_ false))) Int ())
+             (Cexpr_var data_block4/3 Int ()))
+            (Normal ((Int Int) -> Int (generic_ false))) Int ())
+           (Cexpr_sequence
+            ((Cexpr_apply assert_eq (1000 (Cexpr_var checksum/4 Int ()))
+              (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+            (Cexpr_let received_block1/5 100
+             (Cexpr_let received_block2/6 200
+              (Cexpr_let received_block3/7 300
+               (Cexpr_let received_block4/8 400
+                (Cexpr_let received_checksum/9
+                 (Cexpr_apply add
+                  ((Cexpr_apply add
+                    ((Cexpr_apply add
+                      ((Cexpr_var received_block1/5 Int ())
+                       (Cexpr_var received_block2/6 Int ()))
+                      (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                     (Cexpr_var received_block3/7 Int ()))
+                    (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                   (Cexpr_var received_block4/8 Int ()))
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_sequence
+                  ((Cexpr_apply assert_eq
+                    (1000 (Cexpr_var received_checksum/9 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (Cexpr_let error_detected/10
+                   (Cexpr_prim (Pcomparison I32 Ne)
+                    (Cexpr_var checksum/4 Int ())
+                    (Cexpr_var received_checksum/9 Int ()))
+                   (Cexpr_sequence
+                    ((Cexpr_apply assert_false
+                      ((Cexpr_var error_detected/10 Bool ()))
+                      (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                    (Cexpr_let corrupted_block3/11 310
+                     (Cexpr_let corrupted_checksum/12
+                      (Cexpr_apply add
+                       ((Cexpr_apply add
+                         ((Cexpr_apply add
+                           ((Cexpr_var data_block1/0 Int ())
+                            (Cexpr_var data_block2/1 Int ()))
+                           (Normal ((Int Int) -> Int (generic_ false))) Int
+                           ())
+                          (Cexpr_var corrupted_block3/11 Int ()))
+                         (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                        (Cexpr_var data_block4/3 Int ()))
+                       (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                      (Cexpr_let actual_error/13
+                       (Cexpr_prim (Pcomparison I32 Ne)
+                        (Cexpr_var checksum/4 Int ())
+                        (Cexpr_var corrupted_checksum/12 Int ()))
+                       (Cexpr_prim
+                        (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                        (Cexpr_apply assert_true
+                         ((Cexpr_var actual_error/13 Bool ()))
+                         (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_131)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let server_count/0 3
+       (Cexpr_let request_count/1 10
+        (Cexpr_let server1_requests/2 0
+         (Cexpr_let server2_requests/3 0
+          (Cexpr_let server3_requests/4 0
+           (Cexpr_let final_server1_requests/5 4
+            (Cexpr_let final_server2_requests/6 3
+             (Cexpr_let final_server3_requests/7 3
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq
+                 (4 (Cexpr_var final_server1_requests/5 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                (Cexpr_apply assert_eq
+                 (3 (Cexpr_var final_server2_requests/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+                (Cexpr_apply assert_eq
+                 (3 (Cexpr_var final_server3_requests/7 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let total_distributed/8
+                (Cexpr_apply add
+                 ((Cexpr_apply add
+                   ((Cexpr_var final_server1_requests/5 Int ())
+                    (Cexpr_var final_server2_requests/6 Int ()))
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                  (Cexpr_var final_server3_requests/7 Int ()))
+                 (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_eq
+                   ((Cexpr_var request_count/1 Int ())
+                    (Cexpr_var total_distributed/8 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let max_requests/9 4
+                  (Cexpr_let min_requests/10 3
+                   (Cexpr_let load_imbalance/11
+                    (Cexpr_apply add
+                     ((Cexpr_var max_requests/9 Int ())
+                      (Cexpr_prim (Parith I32 Neg)
+                       (Cexpr_var min_requests/10 Int ())))
+                     (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                    (Cexpr_sequence
+                     ((Cexpr_apply assert_eq
+                       (1 (Cexpr_var load_imbalance/11 Int ()))
+                       (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                     (Cexpr_let server1_load/12
+                      (Cexpr_prim (Parith I32 Div)
+                       (Cexpr_apply multiply
+                        ((Cexpr_var final_server1_requests/5 Int ()) 100)
+                        (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                       (Cexpr_var request_count/1 Int ()))
+                      (Cexpr_let server2_load/13
+                       (Cexpr_prim (Parith I32 Div)
+                        (Cexpr_apply multiply
+                         ((Cexpr_var final_server2_requests/6 Int ()) 100)
+                         (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                        (Cexpr_var request_count/1 Int ()))
+                       (Cexpr_let server3_load/14
+                        (Cexpr_prim (Parith I32 Div)
+                         (Cexpr_apply multiply
+                          ((Cexpr_var final_server3_requests/7 Int ()) 100)
+                          (Normal ((Int Int) -> Int (generic_ false))) Int
+                          ())
+                         (Cexpr_var request_count/1 Int ()))
+                        (Cexpr_sequence
+                         ((Cexpr_apply assert_eq
+                           (40 (Cexpr_var server1_load/12 Int ()))
+                           (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                           ())
+                          (Cexpr_apply assert_eq
+                           (30 (Cexpr_var server2_load/13 Int ()))
+                           (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                           ()))
+                         (Cexpr_prim
+                          (Pmake_value_or_error
+                           (tag (Constr_tag_regular Ok)))
+                          (Cexpr_apply assert_eq
+                           (30 (Cexpr_var server3_load/14 Int ()))
+                           (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                           ()))
+                         (T_error_value_result Unit
+                          (T_constr Error () (generic_ false))))
+                        (T_error_value_result Unit
+                         (T_constr Error () (generic_ false))))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_132)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let cache_size/0 3
+       (Cexpr_let access_sequence/1
+        (Cexpr_record
+         (((label ((label_name buf))) (pos 0) (is_mut true)
+           (expr
+            (Cexpr_array (1 2 3 4 1 2 5)
+             (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+              (generic_ false)))))
+          ((label ((label_name len))) (pos 1) (is_mut true) (expr 7)))
+         (T_constr Array (Int) (generic_ false)))
+        (Cexpr_let final_cache/2
+         (Cexpr_record
+          (((label ((label_name buf))) (pos 0) (is_mut true)
+            (expr
+             (Cexpr_array (1 2 5)
+              (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+               (generic_ false)))))
+           ((label ((label_name len))) (pos 1) (is_mut true) (expr 3)))
+          (T_constr Array (Int) (generic_ false)))
+         (Cexpr_let cache_hits/3 2
+          (Cexpr_let cache_misses/4 5
+           (Cexpr_let total_accesses/5 7
+            (Cexpr_sequence
+             ((Cexpr_apply assert_eq (2 (Cexpr_var cache_hits/3 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq (5 (Cexpr_var cache_misses/4 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ())
+              (Cexpr_apply assert_eq (7 (Cexpr_var total_accesses/5 Int ()))
+               (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+             (Cexpr_let hit_rate/6
+              (Cexpr_prim (Parith I32 Div)
+               (Cexpr_apply multiply ((Cexpr_var cache_hits/3 Int ()) 100)
+                (Normal ((Int Int) -> Int (generic_ false))) Int ())
+               (Cexpr_var total_accesses/5 Int ()))
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq (28 (Cexpr_var hit_rate/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let miss_rate/7
+                (Cexpr_prim (Parith I32 Div)
+                 (Cexpr_apply multiply
+                  ((Cexpr_var cache_misses/4 Int ()) 100)
+                  (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                 (Cexpr_var total_accesses/5 Int ()))
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_eq (71 (Cexpr_var miss_rate/7 Int ()))
+                   (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let total_rate/8
+                  (Cexpr_apply add
+                   ((Cexpr_var hit_rate/6 Int ())
+                    (Cexpr_var miss_rate/7 Int ()))
+                   (Normal ((Int Int) -> Int (generic_ false))) Int ())
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_apply assert_eq
+                    (99 (Cexpr_var total_rate/8 Int ()))
+                    (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_6c69622e6d6274_133)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let data_byte/0 10110101
+       (Cexpr_let data_bits/1 8
+        (Cexpr_let ones_count/2 5
+         (Cexpr_let parity_bit/3
+          (Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Eq)
+            (Cexpr_prim (Parith I32 Mod) (Cexpr_var ones_count/2 Int ()) 2)
+            0)
+           0 (1) Int)
+          (Cexpr_sequence
+           ((Cexpr_apply assert_eq (1 (Cexpr_var parity_bit/3 Int ()))
+             (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+           (Cexpr_let received_data/4 10100101
+            (Cexpr_let received_ones_count/5 4
+             (Cexpr_let received_parity_bit/6
+              (Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Eq)
+                (Cexpr_prim (Parith I32 Mod)
+                 (Cexpr_var received_ones_count/5 Int ()) 2)
+                0)
+               0 (1) Int)
+              (Cexpr_sequence
+               ((Cexpr_apply assert_eq
+                 (0 (Cexpr_var received_parity_bit/6 Int ()))
+                 (Normal ((Int Int) -> Unit (generic_ false))) Unit ()))
+               (Cexpr_let error_detected/7
+                (Cexpr_prim (Pcomparison I32 Ne)
+                 (Cexpr_var parity_bit/3 Int ())
+                 (Cexpr_var received_parity_bit/6 Int ()))
+                (Cexpr_sequence
+                 ((Cexpr_apply assert_true
+                   ((Cexpr_var error_detected/7 Bool ()))
+                   (Normal ((Bool) -> Unit (generic_ false))) Unit ()))
+                 (Cexpr_let data_block/8 12345
+                  (Cexpr_let divisor/9 123
+                   (Cexpr_let remainder/10
+                    (Cexpr_prim (Parith I32 Mod)
+                     (Cexpr_var data_block/8 Int ())
+                     (Cexpr_var divisor/9 Int ()))
+                    (Cexpr_let crc_value/11 (Cexpr_var remainder/10 Int ())
+                     (Cexpr_sequence
+                      ((Cexpr_apply assert_eq
+                        (45 (Cexpr_var crc_value/11 Int ()))
+                        (Normal ((Int Int) -> Unit (generic_ false))) Unit
+                        ()))
+                      (Cexpr_let received_block/12 12345
+                       (Cexpr_let received_remainder/13
+                        (Cexpr_prim (Parith I32 Mod)
+                         (Cexpr_var received_block/12 Int ())
+                         (Cexpr_var divisor/9 Int ()))
+                        (Cexpr_let received_crc/14
+                         (Cexpr_var received_remainder/13 Int ())
+                         (Cexpr_let crc_error/15
+                          (Cexpr_prim (Pcomparison I32 Ne)
+                           (Cexpr_var crc_value/11 Int ())
+                           (Cexpr_var received_crc/14 Int ()))
+                          (Cexpr_sequence
+                           ((Cexpr_apply assert_false
+                             ((Cexpr_var crc_error/15 Bool ()))
+                             (Normal ((Bool) -> Unit (generic_ false))) Unit
+                             ()))
+                           (Cexpr_let corrupted_block/16 12350
+                            (Cexpr_let corrupted_remainder/17
+                             (Cexpr_prim (Parith I32 Mod)
+                              (Cexpr_var corrupted_block/16 Int ())
+                              (Cexpr_var divisor/9 Int ()))
+                             (Cexpr_let corrupted_crc/18
+                              (Cexpr_var corrupted_remainder/17 Int ())
+                              (Cexpr_let crc_detected/19
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var crc_value/11 Int ())
+                                (Cexpr_var corrupted_crc/18 Int ()))
+                               (Cexpr_prim
+                                (Pmake_value_or_error
+                                 (tag (Constr_tag_regular Ok)))
+                                (Cexpr_apply assert_true
+                                 ((Cexpr_var crc_detected/19 Bool ()))
+                                 (Normal ((Bool) -> Unit (generic_ false)))
+                                 Unit ()))
+                               (T_error_value_result Unit
+                                (T_constr Error () (generic_ false))))
+                              (T_error_value_result Unit
+                               (T_constr Error () (generic_ false))))
+                             (T_error_value_result Unit
+                              (T_constr Error () (generic_ false))))
+                            (T_error_value_result Unit
+                             (T_constr Error () (generic_ false))))
+                           (T_error_value_result Unit
+                            (T_constr Error () (generic_ false))))
+                          (T_error_value_result Unit
+                           (T_constr Error () (generic_ false))))
                          (T_error_value_result Unit
                           (T_constr Error () (generic_ false))))
                         (T_error_value_result Unit

@@ -1,5 +1,19 @@
 ((fns
-  (((binder assert_false) (fn_kind_ (Top_pub assert_false))
+  (((binder divide_with_ceil) (fn_kind_ (Top_pub divide_with_ceil))
+    (fn
+     ((params ((dividend/16 : I32_Int) (divisor/17 : I32_Int)))
+      (body
+       (Llet
+        (((quotient/15 : I32_Int)
+          ((Parith I32 Div) (dividend/16 : I32_Int) (divisor/17 : I32_Int)))
+         ((remainder/18 : I32_Int)
+          ((Parith I32 Mod) (dividend/16 : I32_Int) (divisor/17 : I32_Int))))
+        (Lif ((Pcomparison I32 Gt) (remainder/18 : I32_Int) 0)
+         (Lapply (StaticFn add) ((quotient/15 : I32_Int) 1))
+         (quotient/15 : I32_Int) I32_Int)))
+      (return_type_ I32_Int)))
+    (tid ()))
+   ((binder assert_false) (fn_kind_ (Top_pub assert_false))
     (fn
      ((params ((condition/14 : I32_Bool)))
       (body

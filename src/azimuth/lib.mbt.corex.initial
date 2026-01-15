@@ -1,50 +1,50 @@
-pub fn add (a/448 : Int, b/449 : Int) -> Int {
-  if a/448 == 0 { return b/449 }
-  if b/449 == 0 { return a/448 }
-  let min_val/450 : Int = -2147483648
-  let max_val/451 : Int = 2147483647
-  if a/448 == min_val/450 {
-    if b/449 < 0 { return min_val/450 }
-    return a/448 + b/449
+pub fn add (a/831 : Int, b/832 : Int) -> Int {
+  if a/831 == 0 { return b/832 }
+  if b/832 == 0 { return a/831 }
+  let min_val/833 : Int = -2147483648
+  let max_val/834 : Int = 2147483647
+  if a/831 == min_val/833 {
+    if b/832 < 0 { return min_val/833 }
+    return a/831 + b/832
   }
-  if b/449 == min_val/450 {
-    if a/448 < 0 { return min_val/450 }
-    return a/448 + b/449
+  if b/832 == min_val/833 {
+    if a/831 < 0 { return min_val/833 }
+    return a/831 + b/832
   }
-  if a/448 > 0 && b/449 > 0 { if a/448 > max_val/451 - b/449 { return max_val/451 }  }
-  if a/448 < 0 && b/449 < 0 { if a/448 < min_val/450 - b/449 { return min_val/450 }  }
-  a/448 + b/449
+  if a/831 > 0 && b/832 > 0 { if a/831 > max_val/834 - b/832 { return max_val/834 }  }
+  if a/831 < 0 && b/832 < 0 { if a/831 < min_val/833 - b/832 { return min_val/833 }  }
+  a/831 + b/832
 }
 
-pub fn multiply (a/441 : Int, b/442 : Int) -> Int {
-  let min_val/443 : Int = -2147483648
-  let max_val/444 : Int = 2147483647
-  if a/441 == 0 || b/442 == 0 { return 0 }
-  if a/441 == 1 { return b/442 }
-  if b/442 == 1 { return a/441 }
-  if a/441 == -1 { return if b/442 == min_val/443 { min_val/443 } else { -b/442 } }
-  if b/442 == -1 { return if a/441 == min_val/443 { min_val/443 } else { -a/441 } }
-  if a/441 == min_val/443 {
-    return if b/442 > 1 || b/442 < -1 { min_val/443 } else { a/441 * b/442 }
+pub fn multiply (a/824 : Int, b/825 : Int) -> Int {
+  let min_val/826 : Int = -2147483648
+  let max_val/827 : Int = 2147483647
+  if a/824 == 0 || b/825 == 0 { return 0 }
+  if a/824 == 1 { return b/825 }
+  if b/825 == 1 { return a/824 }
+  if a/824 == -1 { return if b/825 == min_val/826 { min_val/826 } else { -b/825 } }
+  if b/825 == -1 { return if a/824 == min_val/826 { min_val/826 } else { -a/824 } }
+  if a/824 == min_val/826 {
+    return if b/825 > 1 || b/825 < -1 { min_val/826 } else { a/824 * b/825 }
   }
-  if b/442 == min_val/443 {
-    return if a/441 > 1 || a/441 < -1 { min_val/443 } else { a/441 * b/442 }
+  if b/825 == min_val/826 {
+    return if a/824 > 1 || a/824 < -1 { min_val/826 } else { a/824 * b/825 }
   }
-  let sign/445 : Int = if a/441 > 0 && b/442 > 0 || a/441 < 0 && b/442 < 0 { 1 } else { -1 }
-  let abs_a/446 : Int = if a/441 < 0 { -a/441 } else { a/441 }
-  let abs_b/447 : Int = if b/442 < 0 { -b/442 } else { b/442 }
-  if abs_a/446 > max_val/444 / abs_b/447 {
-    return if sign/445 > 0 { max_val/444 } else { min_val/443 }
+  let sign/828 : Int = if a/824 > 0 && b/825 > 0 || a/824 < 0 && b/825 < 0 { 1 } else { -1 }
+  let abs_a/829 : Int = if a/824 < 0 { -a/824 } else { a/824 }
+  let abs_b/830 : Int = if b/825 < 0 { -b/825 } else { b/825 }
+  if abs_a/829 > max_val/827 / abs_b/830 {
+    return if sign/828 > 0 { max_val/827 } else { min_val/826 }
   }
-  a/441 * b/442
+  a/824 * b/825
 }
 
-pub fn greet (name/440 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/440), "!")
+pub fn greet (name/823 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/823), "!")
 }
 
-pub fn assert_eq (expected/438 : Int, actual/439 : Int) -> Unit {
-  if expected/438 == actual/439 {
+pub fn assert_eq (expected/821 : Int, actual/822 : Int) -> Unit {
+  if expected/821 == actual/822 {
     ()
   } else {
     1 / 0
@@ -52,8 +52,8 @@ pub fn assert_eq (expected/438 : Int, actual/439 : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string (expected/436 : String, actual/437 : String) -> Unit {
-  if @stringequal(expected/436, actual/437) {
+pub fn assert_eq_string (expected/819 : String, actual/820 : String) -> Unit {
+  if @stringequal(expected/819, actual/820) {
     ()
   } else {
     1 / 0
@@ -61,8 +61,8 @@ pub fn assert_eq_string (expected/436 : String, actual/437 : String) -> Unit {
   }
 }
 
-pub fn assert_true (condition/435 : Bool) -> Unit {
-  if condition/435 {
+pub fn assert_true (condition/818 : Bool) -> Unit {
+  if condition/818 {
     ()
   } else {
     1 / 0
@@ -70,18 +70,24 @@ pub fn assert_true (condition/435 : Bool) -> Unit {
   }
 }
 
-pub fn assert_false (condition/434 : Bool) -> Unit {
-  if condition/434 {
+pub fn assert_false (condition/817 : Bool) -> Unit {
+  if condition/817 {
     1 / 0
     ()
   } else {
     ()
   }
+}
+
+pub fn divide_with_ceil (dividend/813 : Int, divisor/814 : Int) -> Int {
+  let quotient/815 : Int = dividend/813 / divisor/814
+  let remainder/816 : Int = dividend/813 % divisor/814
+  if remainder/816 > 0 { add(quotient/815, 1) } else { quotient/815 }
 }
 
 fn __test_6c69622e6d6274_0 () -> Unit raise Error {
-  let result/433 : Int = add(2, 3)
-  @make_value(assert_eq(5, result/433))
+  let result/812 : Int = add(2, 3)
+  @make_value(assert_eq(5, result/812))
 }
 
 fn __test_6c69622e6d6274_1 () -> Unit raise Error {
@@ -91,28 +97,28 @@ fn __test_6c69622e6d6274_1 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_2 () -> Unit raise Error {
-  let min_val/432 : Int = -2147483648
-  assert_eq(min_val/432, add(min_val/432, 0))
-  assert_eq(min_val/432, add(0, min_val/432))
-  assert_eq(min_val/432, add(min_val/432, -1))
-  @make_value(assert_eq(-2147483647, add(min_val/432, 1)))
+  let min_val/811 : Int = -2147483648
+  assert_eq(min_val/811, add(min_val/811, 0))
+  assert_eq(min_val/811, add(0, min_val/811))
+  assert_eq(min_val/811, add(min_val/811, -1))
+  @make_value(assert_eq(-2147483647, add(min_val/811, 1)))
 }
 
 fn __test_6c69622e6d6274_3 () -> Unit raise Error {
-  let max_val/431 : Int = 2147483647
-  assert_eq(max_val/431, add(max_val/431, 1))
-  @make_value(assert_eq(max_val/431, add(1000000000, 1500000000)))
+  let max_val/810 : Int = 2147483647
+  assert_eq(max_val/810, add(max_val/810, 1))
+  @make_value(assert_eq(max_val/810, add(1000000000, 1500000000)))
 }
 
 fn __test_6c69622e6d6274_4 () -> Unit raise Error {
-  let min_val/430 : Int = -2147483648
-  assert_eq(min_val/430, add(min_val/430, -1))
-  @make_value(assert_eq(min_val/430, add(-1500000000, -1000000000)))
+  let min_val/809 : Int = -2147483648
+  assert_eq(min_val/809, add(min_val/809, -1))
+  @make_value(assert_eq(min_val/809, add(-1500000000, -1000000000)))
 }
 
 fn __test_6c69622e6d6274_5 () -> Unit raise Error {
-  let result/429 : Int = multiply(2, 3)
-  @make_value(assert_eq(6, result/429))
+  let result/808 : Int = multiply(2, 3)
+  @make_value(assert_eq(6, result/808))
 }
 
 fn __test_6c69622e6d6274_6 () -> Unit raise Error {
@@ -126,30 +132,30 @@ fn __test_6c69622e6d6274_7 () -> Unit raise Error {
   assert_eq(-5, multiply(5, -1))
   assert_eq(-5, multiply(-1, 5))
   assert_eq(5, multiply(-5, -1))
-  let min_val/428 : Int = -2147483648
-  @make_value(assert_eq(min_val/428, multiply(min_val/428, -1)))
+  let min_val/807 : Int = -2147483648
+  @make_value(assert_eq(min_val/807, multiply(min_val/807, -1)))
 }
 
 fn __test_6c69622e6d6274_8 () -> Unit raise Error {
-  let max_val/426 : Int = 2147483647
-  let min_val/427 : Int = -2147483648
-  assert_eq(max_val/426, multiply(46341, 46341))
-  @make_value(assert_eq(min_val/427, multiply(-46341, 46341)))
+  let max_val/805 : Int = 2147483647
+  let min_val/806 : Int = -2147483648
+  assert_eq(max_val/805, multiply(46341, 46341))
+  @make_value(assert_eq(min_val/806, multiply(-46341, 46341)))
 }
 
 fn __test_6c69622e6d6274_9 () -> Unit raise Error {
-  let result/425 : String = greet("World")
-  @make_value(assert_eq_string("Hello, World!", result/425))
+  let result/804 : String = greet("World")
+  @make_value(assert_eq_string("Hello, World!", result/804))
 }
 
 fn __test_6c69622e6d6274_10 () -> Unit raise Error {
-  let result/424 : String = greet("")
-  @make_value(assert_eq_string("Hello, !", result/424))
+  let result/803 : String = greet("")
+  @make_value(assert_eq_string("Hello, !", result/803))
 }
 
 fn __test_6c69622e6d6274_11 () -> Unit raise Error {
-  let result/423 : String = greet("测试@123")
-  @make_value(assert_eq_string("Hello, 测试@123!", result/423))
+  let result/802 : String = greet("测试@123")
+  @make_value(assert_eq_string("Hello, 测试@123!", result/802))
 }
 
 fn __test_6c69622e6d6274_12 () -> Unit raise Error {
@@ -170,12 +176,12 @@ fn __test_6c69622e6d6274_14 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_15 () -> Unit raise Error {
-  let max_val/421 : Int = 2147483647
-  let min_val/422 : Int = -2147483648
-  assert_eq(0, multiply(max_val/421, 0))
-  assert_eq(0, multiply(min_val/422, 0))
-  assert_eq(max_val/421, multiply(max_val/421, 1))
-  @make_value(assert_eq(min_val/422, multiply(min_val/422, 1)))
+  let max_val/800 : Int = 2147483647
+  let min_val/801 : Int = -2147483648
+  assert_eq(0, multiply(max_val/800, 0))
+  assert_eq(0, multiply(min_val/801, 0))
+  assert_eq(max_val/800, multiply(max_val/800, 1))
+  @make_value(assert_eq(min_val/801, multiply(min_val/801, 1)))
 }
 
 fn __test_6c69622e6d6274_16 () -> Unit raise Error {
@@ -197,140 +203,140 @@ fn __test_6c69622e6d6274_18 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_19 () -> Unit raise Error {
-  let length/418 : Int = 10
-  let width/419 : Int = 5
-  let perimeter/420 : Int = add(multiply(2, length/418), multiply(2, width/419))
-  @make_value(assert_eq(30, perimeter/420))
+  let length/797 : Int = 10
+  let width/798 : Int = 5
+  let perimeter/799 : Int = add(multiply(2, length/797), multiply(2, width/798))
+  @make_value(assert_eq(30, perimeter/799))
 }
 
 fn __test_6c69622e6d6274_20 () -> Unit raise Error {
-  let principal/413 : Int = 1000
-  let rate/414 : Int = 5
-  let years/415 : Int = 3
-  let interest/416 : Int = multiply(principal/413, multiply(rate/414, years/415))
-  let total/417 : Int = add(principal/413, interest/416)
-  @make_value(assert_eq(16000, total/417))
+  let principal/792 : Int = 1000
+  let rate/793 : Int = 5
+  let years/794 : Int = 3
+  let interest/795 : Int = multiply(principal/792, multiply(rate/793, years/794))
+  let total/796 : Int = add(principal/792, interest/795)
+  @make_value(assert_eq(16000, total/796))
 }
 
 fn __test_6c69622e6d6274_21 () -> Unit raise Error {
-  let result1/409 : Int = add(add(1, 2), add(3, 4))
-  assert_eq(10, result1/409)
-  let result2/410 : Int = add(add(100, 200), add(300, 400))
-  assert_eq(1000, result2/410)
-  let min_val/411 : Int = -2147483648
-  let result3/412 : Int = add(add(min_val/411, 1), add(1, 1))
-  @make_value(assert_eq(-2147483645, result3/412))
+  let result1/788 : Int = add(add(1, 2), add(3, 4))
+  assert_eq(10, result1/788)
+  let result2/789 : Int = add(add(100, 200), add(300, 400))
+  assert_eq(1000, result2/789)
+  let min_val/790 : Int = -2147483648
+  let result3/791 : Int = add(add(min_val/790, 1), add(1, 1))
+  @make_value(assert_eq(-2147483645, result3/791))
 }
 
 fn __test_6c69622e6d6274_22 () -> Unit raise Error {
-  let result1/406 : Int = multiply(multiply(2, 3), multiply(4, 5))
-  assert_eq(120, result1/406)
-  let result2/407 : Int = multiply(multiply(10, 20), multiply(30, 40))
-  assert_eq(240000, result2/407)
-  let result3/408 : Int = multiply(multiply(-2, 3), multiply(4, -5))
-  @make_value(assert_eq(120, result3/408))
+  let result1/785 : Int = multiply(multiply(2, 3), multiply(4, 5))
+  assert_eq(120, result1/785)
+  let result2/786 : Int = multiply(multiply(10, 20), multiply(30, 40))
+  assert_eq(240000, result2/786)
+  let result3/787 : Int = multiply(multiply(-2, 3), multiply(4, -5))
+  @make_value(assert_eq(120, result3/787))
 }
 
 fn __test_6c69622e6d6274_23 () -> Unit raise Error {
-  let max_val/404 : Int = 2147483647
-  let min_val/405 : Int = -2147483648
-  assert_eq(-1, add(max_val/404, min_val/405))
-  assert_eq(max_val/404, add(max_val/404, 100))
-  assert_eq(min_val/405, add(min_val/405, -100))
-  assert_eq(min_val/405, multiply(min_val/405, 1))
-  @make_value(assert_eq(min_val/405, multiply(min_val/405, -1)))
+  let max_val/783 : Int = 2147483647
+  let min_val/784 : Int = -2147483648
+  assert_eq(-1, add(max_val/783, min_val/784))
+  assert_eq(max_val/783, add(max_val/783, 100))
+  assert_eq(min_val/784, add(min_val/784, -100))
+  assert_eq(min_val/784, multiply(min_val/784, 1))
+  @make_value(assert_eq(min_val/784, multiply(min_val/784, -1)))
 }
 
 fn __test_6c69622e6d6274_24 () -> Unit raise Error {
-  let long_name/398 : String = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let result/399 : String = greet(long_name/398)
-  assert_eq_string(@ccall add_string(@ccall add_string("Hello, ", long_name/398), "!"), result/399)
-  let quoted_name/400 : String = "\"John Doe\""
-  let result2/401 : String = greet(quoted_name/400)
-  assert_eq_string("Hello, \"John Doe\"!", result2/401)
-  let newline_name/402 : String = "Line1\nLine2"
-  let result3/403 : String = greet(newline_name/402)
-  @make_value(assert_eq_string("Hello, Line1\nLine2!", result3/403))
+  let long_name/777 : String = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
+  let result/778 : String = greet(long_name/777)
+  assert_eq_string(@ccall add_string(@ccall add_string("Hello, ", long_name/777), "!"), result/778)
+  let quoted_name/779 : String = "\"John Doe\""
+  let result2/780 : String = greet(quoted_name/779)
+  assert_eq_string("Hello, \"John Doe\"!", result2/780)
+  let newline_name/781 : String = "Line1\nLine2"
+  let result3/782 : String = greet(newline_name/781)
+  @make_value(assert_eq_string("Hello, Line1\nLine2!", result3/782))
 }
 
 fn __test_6c69622e6d6274_25 () -> Unit raise Error {
-  let a/388 : Int = 100
-  let b/389 : Int = 200
-  let c/390 : Int = 300
-  let result1/391 : Int = add(add(a/388, b/389), c/390)
-  let result2/392 : Int = add(a/388, add(b/389, c/390))
-  assert_eq(result1/391, result2/392)
-  let d/393 : Int = -150
-  let e/394 : Int = 250
-  let f/395 : Int = -100
-  let result3/396 : Int = add(add(d/393, e/394), f/395)
-  let result4/397 : Int = add(d/393, add(e/394, f/395))
-  @make_value(assert_eq(result3/396, result4/397))
+  let a/767 : Int = 100
+  let b/768 : Int = 200
+  let c/769 : Int = 300
+  let result1/770 : Int = add(add(a/767, b/768), c/769)
+  let result2/771 : Int = add(a/767, add(b/768, c/769))
+  assert_eq(result1/770, result2/771)
+  let d/772 : Int = -150
+  let e/773 : Int = 250
+  let f/774 : Int = -100
+  let result3/775 : Int = add(add(d/772, e/773), f/774)
+  let result4/776 : Int = add(d/772, add(e/773, f/774))
+  @make_value(assert_eq(result3/775, result4/776))
 }
 
 fn __test_6c69622e6d6274_26 () -> Unit raise Error {
-  let a/376 : Int = 12
-  let b/377 : Int = 15
-  let result1/378 : Int = multiply(a/376, b/377)
-  let result2/379 : Int = multiply(b/377, a/376)
-  assert_eq(result1/378, result2/379)
-  let c/380 : Int = -20
-  let d/381 : Int = 30
-  let result3/382 : Int = multiply(c/380, d/381)
-  let result4/383 : Int = multiply(d/381, c/380)
-  assert_eq(result3/382, result4/383)
-  let e/384 : Int = 0
-  let f/385 : Int = 100
-  let result5/386 : Int = multiply(e/384, f/385)
-  let result6/387 : Int = multiply(f/385, e/384)
-  @make_value(assert_eq(result5/386, result6/387))
+  let a/755 : Int = 12
+  let b/756 : Int = 15
+  let result1/757 : Int = multiply(a/755, b/756)
+  let result2/758 : Int = multiply(b/756, a/755)
+  assert_eq(result1/757, result2/758)
+  let c/759 : Int = -20
+  let d/760 : Int = 30
+  let result3/761 : Int = multiply(c/759, d/760)
+  let result4/762 : Int = multiply(d/760, c/759)
+  assert_eq(result3/761, result4/762)
+  let e/763 : Int = 0
+  let f/764 : Int = 100
+  let result5/765 : Int = multiply(e/763, f/764)
+  let result6/766 : Int = multiply(f/764, e/763)
+  @make_value(assert_eq(result5/765, result6/766))
 }
 
 fn __test_6c69622e6d6274_27 () -> Unit raise Error {
-  let complex_name/370 : String = "John@Doe#123$%^&*()"
-  let result/371 : String = greet(complex_name/370)
-  assert_eq_string("Hello, John@Doe#123$%^&*()!", result/371)
-  let chinese_name/372 : String = "张三"
-  let result2/373 : String = greet(chinese_name/372)
-  assert_eq_string("Hello, 张三!", result2/373)
-  let mixed_name/374 : String = "John张三123"
-  let result3/375 : String = greet(mixed_name/374)
-  @make_value(assert_eq_string("Hello, John张三123!", result3/375))
+  let complex_name/749 : String = "John@Doe#123$%^&*()"
+  let result/750 : String = greet(complex_name/749)
+  assert_eq_string("Hello, John@Doe#123$%^&*()!", result/750)
+  let chinese_name/751 : String = "张三"
+  let result2/752 : String = greet(chinese_name/751)
+  assert_eq_string("Hello, 张三!", result2/752)
+  let mixed_name/753 : String = "John张三123"
+  let result3/754 : String = greet(mixed_name/753)
+  @make_value(assert_eq_string("Hello, John张三123!", result3/754))
 }
 
 fn __test_6c69622e6d6274_28 () -> Unit raise Error {
-  let item1_price/360 : Int = 299
-  let item1_quantity/361 : Int = 2
-  let item2_price/362 : Int = 199
-  let item2_quantity/363 : Int = 3
-  let item3_price/364 : Int = 99
-  let item3_quantity/365 : Int = 1
-  let total1/366 : Int = multiply(item1_price/360, item1_quantity/361)
-  let total2/367 : Int = multiply(item2_price/362, item2_quantity/363)
-  let total3/368 : Int = multiply(item3_price/364, item3_quantity/365)
-  let cart_total/369 : Int = add(add(total1/366, total2/367), total3/368)
-  @make_value(assert_eq(1294, cart_total/369))
+  let item1_price/739 : Int = 299
+  let item1_quantity/740 : Int = 2
+  let item2_price/741 : Int = 199
+  let item2_quantity/742 : Int = 3
+  let item3_price/743 : Int = 99
+  let item3_quantity/744 : Int = 1
+  let total1/745 : Int = multiply(item1_price/739, item1_quantity/740)
+  let total2/746 : Int = multiply(item2_price/741, item2_quantity/742)
+  let total3/747 : Int = multiply(item3_price/743, item3_quantity/744)
+  let cart_total/748 : Int = add(add(total1/745, total2/746), total3/747)
+  @make_value(assert_eq(1294, cart_total/748))
 }
 
 fn __test_6c69622e6d6274_29 () -> Unit raise Error {
-  let celsius_temp/354 : Int = 25
-  let fahrenheit_temp/355 : Int = add(multiply(celsius_temp/354, 2), 30)
-  assert_eq(80, fahrenheit_temp/355)
-  let freezing_celsius/356 : Int = 0
-  let freezing_fahrenheit/357 : Int = add(multiply(freezing_celsius/356, 2), 30)
-  assert_eq(30, freezing_fahrenheit/357)
-  let boiling_celsius/358 : Int = 100
-  let boiling_fahrenheit/359 : Int = add(multiply(boiling_celsius/358, 2), 30)
-  @make_value(assert_eq(230, boiling_fahrenheit/359))
+  let celsius_temp/733 : Int = 25
+  let fahrenheit_temp/734 : Int = add(multiply(celsius_temp/733, 2), 30)
+  assert_eq(80, fahrenheit_temp/734)
+  let freezing_celsius/735 : Int = 0
+  let freezing_fahrenheit/736 : Int = add(multiply(freezing_celsius/735, 2), 30)
+  assert_eq(30, freezing_fahrenheit/736)
+  let boiling_celsius/737 : Int = 100
+  let boiling_fahrenheit/738 : Int = add(multiply(boiling_celsius/737, 2), 30)
+  @make_value(assert_eq(230, boiling_fahrenheit/738))
 }
 
 fn __test_6c69622e6d6274_30 () -> Unit raise Error {
-  let max_val/352 : Int = 2147483647
-  let min_val/353 : Int = -2147483648
-  assert_true(add(max_val/352, 1) == max_val/352)
-  assert_true(add(min_val/353, -1) == min_val/353)
-  assert_true(multiply(max_val/352, 2) == max_val/352)
-  assert_true(multiply(min_val/353, -1) == min_val/353)
+  let max_val/731 : Int = 2147483647
+  let min_val/732 : Int = -2147483648
+  assert_true(add(max_val/731, 1) == max_val/731)
+  assert_true(add(min_val/732, -1) == min_val/732)
+  assert_true(multiply(max_val/731, 2) == max_val/731)
+  assert_true(multiply(min_val/732, -1) == min_val/732)
   assert_true(add(5, 3) == 8)
   assert_true(multiply(4, 6) == 24)
   @make_value(assert_true(@stringequal(greet("Test"), "Hello, Test!")))
@@ -350,34 +356,34 @@ fn __test_6c69622e6d6274_32 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_33 () -> Unit raise Error {
-  let a/350 : Int = 7
-  let b/351 : Int = 11
-  assert_eq(add(a/350, b/351), add(b/351, a/350))
-  assert_eq(multiply(a/350, b/351), multiply(b/351, a/350))
+  let a/729 : Int = 7
+  let b/730 : Int = 11
+  assert_eq(add(a/729, b/730), add(b/730, a/729))
+  assert_eq(multiply(a/729, b/730), multiply(b/730, a/729))
   @make_value(
-    assert_eq(multiply(a/350, add(b/351, 3)), add(multiply(a/350, b/351), multiply(a/350, 3)))
+    assert_eq(multiply(a/729, add(b/730, 3)), add(multiply(a/729, b/730), multiply(a/729, 3)))
   )
 }
 
 fn __test_6c69622e6d6274_34 () -> Unit raise Error {
-  let max_val/348 : Int = 2147483647
-  let min_val/349 : Int = -2147483648
-  assert_eq(max_val/348, add(max_val/348, 1))
-  assert_eq(min_val/349, add(min_val/349, -1))
-  assert_eq(-1, add(max_val/348, min_val/349))
-  assert_eq(0, multiply(max_val/348, 0))
-  @make_value(assert_eq(min_val/349, multiply(min_val/349, -1)))
+  let max_val/727 : Int = 2147483647
+  let min_val/728 : Int = -2147483648
+  assert_eq(max_val/727, add(max_val/727, 1))
+  assert_eq(min_val/728, add(min_val/728, -1))
+  assert_eq(-1, add(max_val/727, min_val/728))
+  assert_eq(0, multiply(max_val/727, 0))
+  @make_value(assert_eq(min_val/728, multiply(min_val/728, -1)))
 }
 
 fn __test_6c69622e6d6274_35 () -> Unit raise Error {
-  let celsius/342 : Int = 20
-  let fahrenheit/343 : Int = add(multiply(celsius/342, 2), 30)
-  assert_eq(70, fahrenheit/343)
-  let principal/344 : Int = 10000
-  let rate/345 : Int = 5
-  let years/346 : Int = 3
-  let total/347 : Int = multiply(principal/344, add(1, multiply(rate/345, years/346)))
-  @make_value(assert_eq(160000, total/347))
+  let celsius/721 : Int = 20
+  let fahrenheit/722 : Int = add(multiply(celsius/721, 2), 30)
+  assert_eq(70, fahrenheit/722)
+  let principal/723 : Int = 10000
+  let rate/724 : Int = 5
+  let years/725 : Int = 3
+  let total/726 : Int = multiply(principal/723, add(1, multiply(rate/724, years/725)))
+  @make_value(assert_eq(160000, total/726))
 }
 
 fn __test_6c69622e6d6274_36 () -> Unit raise Error {
@@ -385,9 +391,9 @@ fn __test_6c69622e6d6274_36 () -> Unit raise Error {
   assert_false(false)
   assert_eq(100, 100)
   assert_eq_string("success", "success")
-  let max_val/341 : Int = 2147483647
-  assert_true(add(max_val/341, 100) == max_val/341)
-  @make_value(assert_true(multiply(max_val/341, 2) == max_val/341))
+  let max_val/720 : Int = 2147483647
+  assert_true(add(max_val/720, 100) == max_val/720)
+  @make_value(assert_true(multiply(max_val/720, 2) == max_val/720))
 }
 
 fn __test_6c69622e6d6274_37 () -> Unit raise Error {
@@ -400,449 +406,449 @@ fn __test_6c69622e6d6274_37 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_38 () -> Unit raise Error {
-  let short_name/335 : String = "Bob"
-  let short_result/336 : String = greet(short_name/335)
-  assert_eq_string("Hello, Bob!", short_result/336)
-  let medium_name/337 : String = "Alexander"
-  let medium_result/338 : String = greet(medium_name/337)
-  assert_eq_string("Hello, Alexander!", medium_result/338)
-  let spaced_name/339 : String = "Mary Jane"
-  let spaced_result/340 : String = greet(spaced_name/339)
-  @make_value(assert_eq_string("Hello, Mary Jane!", spaced_result/340))
+  let short_name/714 : String = "Bob"
+  let short_result/715 : String = greet(short_name/714)
+  assert_eq_string("Hello, Bob!", short_result/715)
+  let medium_name/716 : String = "Alexander"
+  let medium_result/717 : String = greet(medium_name/716)
+  assert_eq_string("Hello, Alexander!", medium_result/717)
+  let spaced_name/718 : String = "Mary Jane"
+  let spaced_result/719 : String = greet(spaced_name/718)
+  @make_value(assert_eq_string("Hello, Mary Jane!", spaced_result/719))
 }
 
 fn __test_6c69622e6d6274_39 () -> Unit raise Error {
-  let a/328 : Int = 5
-  let b/329 : Int = 3
-  let c/330 : Int = 4
-  let d/331 : Int = 10
-  let sum_ab/332 : Int = add(a/328, b/329)
-  let product/333 : Int = multiply(sum_ab/332, c/330)
-  let result/334 : Int = add(product/333, -d/331)
-  @make_value(assert_eq(22, result/334))
+  let a/707 : Int = 5
+  let b/708 : Int = 3
+  let c/709 : Int = 4
+  let d/710 : Int = 10
+  let sum_ab/711 : Int = add(a/707, b/708)
+  let product/712 : Int = multiply(sum_ab/711, c/709)
+  let result/713 : Int = add(product/712, -d/710)
+  @make_value(assert_eq(22, result/713))
 }
 
 fn __test_6c69622e6d6274_40 () -> Unit raise Error {
-  let max_val/326 : Int = 2147483647
-  let min_val/327 : Int = -2147483648
-  assert_eq(max_val/326, add(max_val/326, 100))
-  assert_eq(max_val/326, add(max_val/326, max_val/326))
-  assert_eq(min_val/327, add(min_val/327, -100))
-  assert_eq(min_val/327, add(min_val/327, min_val/327))
-  assert_eq(min_val/327, multiply(max_val/326, -1))
-  @make_value(assert_eq(min_val/327, multiply(min_val/327, 3)))
+  let max_val/705 : Int = 2147483647
+  let min_val/706 : Int = -2147483648
+  assert_eq(max_val/705, add(max_val/705, 100))
+  assert_eq(max_val/705, add(max_val/705, max_val/705))
+  assert_eq(min_val/706, add(min_val/706, -100))
+  assert_eq(min_val/706, add(min_val/706, min_val/706))
+  assert_eq(min_val/706, multiply(max_val/705, -1))
+  @make_value(assert_eq(min_val/706, multiply(min_val/706, 3)))
 }
 
 fn __test_6c69622e6d6274_41 () -> Unit raise Error {
-  let num1/321 : Int = 90
-  let num2/322 : Int = 80
-  let num3/323 : Int = 85
-  let sum/324 : Int = add(add(num1/321, num2/322), num3/323)
-  let average/325 : Int = sum/324 / 3
-  @make_value(assert_eq(85, average/325))
+  let num1/700 : Int = 90
+  let num2/701 : Int = 80
+  let num3/702 : Int = 85
+  let sum/703 : Int = add(add(num1/700, num2/701), num3/702)
+  let average/704 : Int = sum/703 / 3
+  @make_value(assert_eq(85, average/704))
 }
 
 fn __test_6c69622e6d6274_42 () -> Unit raise Error {
-  let length/315 : Int = 12
-  let width/316 : Int = 8
-  let rectangle_area/317 : Int = multiply(length/315, width/316)
-  assert_eq(96, rectangle_area/317)
-  let base/318 : Int = 10
-  let height/319 : Int = 6
-  let triangle_area/320 : Int = multiply(base/318, height/319) / 2
-  @make_value(assert_eq(30, triangle_area/320))
+  let length/694 : Int = 12
+  let width/695 : Int = 8
+  let rectangle_area/696 : Int = multiply(length/694, width/695)
+  assert_eq(96, rectangle_area/696)
+  let base/697 : Int = 10
+  let height/698 : Int = 6
+  let triangle_area/699 : Int = multiply(base/697, height/698) / 2
+  @make_value(assert_eq(30, triangle_area/699))
 }
 
 fn __test_6c69622e6d6274_43 () -> Unit raise Error {
-  let numeric_name/312 : String = "12345"
-  assert_eq_string("Hello, 12345!", greet(numeric_name/312))
-  let mixed_name/313 : String = "user_2023"
-  assert_eq_string("Hello, user_2023!", greet(mixed_name/313))
-  let single_char/314 : String = "A"
-  @make_value(assert_eq_string("Hello, A!", greet(single_char/314)))
+  let numeric_name/691 : String = "12345"
+  assert_eq_string("Hello, 12345!", greet(numeric_name/691))
+  let mixed_name/692 : String = "user_2023"
+  assert_eq_string("Hello, user_2023!", greet(mixed_name/692))
+  let single_char/693 : String = "A"
+  @make_value(assert_eq_string("Hello, A!", greet(single_char/693)))
 }
 
 fn __test_6c69622e6d6274_44 () -> Unit raise Error {
-  let n/305 : Int = 5
-  let square1/306 : Int = multiply(1, 1)
-  let square2/307 : Int = multiply(2, 2)
-  let square3/308 : Int = multiply(3, 3)
-  let square4/309 : Int = multiply(4, 4)
-  let square5/310 : Int = multiply(5, 5)
-  let sum_of_squares/311 : Int = add(
-    add(add(add(square1/306, square2/307), square3/308), square4/309),
-    square5/310
+  let n/684 : Int = 5
+  let square1/685 : Int = multiply(1, 1)
+  let square2/686 : Int = multiply(2, 2)
+  let square3/687 : Int = multiply(3, 3)
+  let square4/688 : Int = multiply(4, 4)
+  let square5/689 : Int = multiply(5, 5)
+  let sum_of_squares/690 : Int = add(
+    add(add(add(square1/685, square2/686), square3/687), square4/688),
+    square5/689
   )
-  @make_value(assert_eq(55, sum_of_squares/311))
+  @make_value(assert_eq(55, sum_of_squares/690))
 }
 
 fn __test_6c69622e6d6274_45 () -> Unit raise Error {
-  let x/299 : Int = 15
-  let y/300 : Int = 20
-  let condition/301 : Bool = x/299 < y/300
-  let result/302 : Int = if condition/301 { add(x/299, y/300) } else { multiply(x/299, y/300) }
-  assert_eq(35, result/302)
-  let condition2/303 : Bool = x/299 > y/300
-  let result2/304 : Int = if condition2/303 { add(x/299, y/300) } else { multiply(x/299, y/300) }
-  @make_value(assert_eq(300, result2/304))
+  let x/678 : Int = 15
+  let y/679 : Int = 20
+  let condition/680 : Bool = x/678 < y/679
+  let result/681 : Int = if condition/680 { add(x/678, y/679) } else { multiply(x/678, y/679) }
+  assert_eq(35, result/681)
+  let condition2/682 : Bool = x/678 > y/679
+  let result2/683 : Int = if condition2/682 { add(x/678, y/679) } else { multiply(x/678, y/679) }
+  @make_value(assert_eq(300, result2/683))
 }
 
 fn __test_6c69622e6d6274_46 () -> Unit raise Error {
-  let number/293 : Int = 42
-  let number_str/294 : String = "42"
-  let result1/295 : String = greet(number_str/294)
-  let result2/296 : String = greet(@ccall add_string("Answer is ", number_str/294))
-  assert_eq_string("Hello, 42!", result1/295)
-  assert_eq_string("Hello, Answer is 42!", result2/296)
-  let true_str/297 : String = "true"
-  let false_str/298 : String = "false"
-  assert_eq_string("Hello, true!", greet(true_str/297))
-  @make_value(assert_eq_string("Hello, false!", greet(false_str/298)))
+  let number/672 : Int = 42
+  let number_str/673 : String = "42"
+  let result1/674 : String = greet(number_str/673)
+  let result2/675 : String = greet(@ccall add_string("Answer is ", number_str/673))
+  assert_eq_string("Hello, 42!", result1/674)
+  assert_eq_string("Hello, Answer is 42!", result2/675)
+  let true_str/676 : String = "true"
+  let false_str/677 : String = "false"
+  assert_eq_string("Hello, true!", greet(true_str/676))
+  @make_value(assert_eq_string("Hello, false!", greet(false_str/677)))
 }
 
 fn __test_6c69622e6d6274_47 () -> Unit raise Error {
-  let n/291 : Int = 5
-  let result/292 : Int = multiply(
-    n/291,
-    multiply(n/291 - 1, multiply(n/291 - 2, multiply(n/291 - 3, n/291 - 4)))
+  let n/670 : Int = 5
+  let result/671 : Int = multiply(
+    n/670,
+    multiply(n/670 - 1, multiply(n/670 - 2, multiply(n/670 - 3, n/670 - 4)))
   )
-  @make_value(assert_eq(120, result/292))
+  @make_value(assert_eq(120, result/671))
 }
 
 fn __test_6c69622e6d6274_48 () -> Unit raise Error {
-  let principal/286 : Int = 1000
-  let rate_percent/287 : Int = 5
-  let years/288 : Int = 3
-  let growth_factor/289 : Int = add(100, multiply(rate_percent/287, years/288))
-  let total/290 : Int = multiply(principal/286, growth_factor/289)
-  @make_value(assert_eq(115000, total/290))
+  let principal/665 : Int = 1000
+  let rate_percent/666 : Int = 5
+  let years/667 : Int = 3
+  let growth_factor/668 : Int = add(100, multiply(rate_percent/666, years/667))
+  let total/669 : Int = multiply(principal/665, growth_factor/668)
+  @make_value(assert_eq(115000, total/669))
 }
 
 fn __test_6c69622e6d6274_49 () -> Unit raise Error {
-  let a/275 : Int = 10
-  let b/276 : Int = 20
-  let c/277 : Int = 5
-  let d/278 : Int = 15
-  let e/279 : Int = 8
-  let f/280 : Int = 12
-  let sum1/281 : Int = add(a/275, b/276)
-  let sum2/282 : Int = add(c/277, d/278)
-  let product1/283 : Int = multiply(sum1/281, sum2/282)
-  let product2/284 : Int = multiply(e/279, f/280)
-  let result/285 : Int = add(product1/283, -product2/284)
-  @make_value(assert_eq(504, result/285))
+  let a/654 : Int = 10
+  let b/655 : Int = 20
+  let c/656 : Int = 5
+  let d/657 : Int = 15
+  let e/658 : Int = 8
+  let f/659 : Int = 12
+  let sum1/660 : Int = add(a/654, b/655)
+  let sum2/661 : Int = add(c/656, d/657)
+  let product1/662 : Int = multiply(sum1/660, sum2/661)
+  let product2/663 : Int = multiply(e/658, f/659)
+  let result/664 : Int = add(product1/662, -product2/663)
+  @make_value(assert_eq(504, result/664))
 }
 
 fn __test_6c69622e6d6274_50 () -> Unit raise Error {
-  let empty/270 : String = ""
-  let single/271 : String = "A"
-  let short/272 : String = "Hi"
-  let medium/273 : String = "MoonBit"
-  let long/274 : String = "ThisIsAVeryLongStringForTestingPurposes"
-  assert_eq_string("Hello, !", greet(empty/270))
-  assert_eq_string("Hello, A!", greet(single/271))
-  assert_eq_string("Hello, Hi!", greet(short/272))
-  assert_eq_string("Hello, MoonBit!", greet(medium/273))
-  @make_value(assert_eq_string("Hello, ThisIsAVeryLongStringForTestingPurposes!", greet(long/274)))
+  let empty/649 : String = ""
+  let single/650 : String = "A"
+  let short/651 : String = "Hi"
+  let medium/652 : String = "MoonBit"
+  let long/653 : String = "ThisIsAVeryLongStringForTestingPurposes"
+  assert_eq_string("Hello, !", greet(empty/649))
+  assert_eq_string("Hello, A!", greet(single/650))
+  assert_eq_string("Hello, Hi!", greet(short/651))
+  assert_eq_string("Hello, MoonBit!", greet(medium/652))
+  @make_value(assert_eq_string("Hello, ThisIsAVeryLongStringForTestingPurposes!", greet(long/653)))
 }
 
 fn __test_6c69622e6d6274_51 () -> Unit raise Error {
-  let n/266 : Int = 10
-  let first/267 : Int = 1
-  let last/268 : Int = 19
-  let sum/269 : Int = multiply(n/266, add(first/267, last/268)) / 2
-  @make_value(assert_eq(100, sum/269))
+  let n/645 : Int = 10
+  let first/646 : Int = 1
+  let last/647 : Int = 19
+  let sum/648 : Int = multiply(n/645, add(first/646, last/647)) / 2
+  @make_value(assert_eq(100, sum/648))
 }
 
 fn __test_6c69622e6d6274_52 () -> Unit raise Error {
-  let power/264 : Int = 8
-  let result/265 : Int = multiply(
+  let power/643 : Int = 8
+  let result/644 : Int = multiply(
     multiply(multiply(2, 2), multiply(2, 2)),
     multiply(multiply(2, 2), multiply(2, 2))
   )
-  @make_value(assert_eq(256, result/265))
+  @make_value(assert_eq(256, result/644))
 }
 
 fn __test_6c69622e6d6274_53 () -> Unit raise Error {
-  let total/260 : Int = 500
-  let percentage/261 : Int = 25
-  let value/262 : Int = multiply(total/260, percentage/261) / 100
-  assert_eq(125, value/262)
-  let increased/263 : Int = add(total/260, value/262)
-  @make_value(assert_eq(625, increased/263))
+  let total/639 : Int = 500
+  let percentage/640 : Int = 25
+  let value/641 : Int = multiply(total/639, percentage/640) / 100
+  assert_eq(125, value/641)
+  let increased/642 : Int = add(total/639, value/641)
+  @make_value(assert_eq(625, increased/642))
 }
 
 fn __test_6c69622e6d6274_54 () -> Unit raise Error {
-  let alphanumeric/257 : String = "Test123"
-  let symbolic/258 : String = "test@example.com"
-  let mixed/259 : String = "User_2023@Project#1"
-  assert_eq_string("Hello, Test123!", greet(alphanumeric/257))
-  assert_eq_string("Hello, test@example.com!", greet(symbolic/258))
-  @make_value(assert_eq_string("Hello, User_2023@Project#1!", greet(mixed/259)))
+  let alphanumeric/636 : String = "Test123"
+  let symbolic/637 : String = "test@example.com"
+  let mixed/638 : String = "User_2023@Project#1"
+  assert_eq_string("Hello, Test123!", greet(alphanumeric/636))
+  assert_eq_string("Hello, test@example.com!", greet(symbolic/637))
+  @make_value(assert_eq_string("Hello, User_2023@Project#1!", greet(mixed/638)))
 }
 
 fn __test_6c69622e6d6274_55 () -> Unit raise Error {
-  let max_val/255 : Int = 2147483647
-  let min_val/256 : Int = -2147483648
-  assert_eq(-1, add(max_val/255, min_val/256))
-  assert_eq(min_val/256, multiply(min_val/256, 1))
-  assert_eq(min_val/256, multiply(min_val/256, -1))
-  assert_eq(min_val/256, add(min_val/256, 0))
-  assert_eq(max_val/255, add(max_val/255, 0))
-  assert_eq(2147483646, add(max_val/255, -1))
-  @make_value(assert_eq(-2147483647, add(min_val/256, 1)))
+  let max_val/634 : Int = 2147483647
+  let min_val/635 : Int = -2147483648
+  assert_eq(-1, add(max_val/634, min_val/635))
+  assert_eq(min_val/635, multiply(min_val/635, 1))
+  assert_eq(min_val/635, multiply(min_val/635, -1))
+  assert_eq(min_val/635, add(min_val/635, 0))
+  assert_eq(max_val/634, add(max_val/634, 0))
+  assert_eq(2147483646, add(max_val/634, -1))
+  @make_value(assert_eq(-2147483647, add(min_val/635, 1)))
 }
 
 fn __test_6c69622e6d6274_56 () -> Unit raise Error {
-  let item_price/248 : Int = 199
-  let quantity/249 : Int = 3
-  let shipping/250 : Int = 15
-  let tax_rate/251 : Int = 10
-  let subtotal/252 : Int = multiply(item_price/248, quantity/249)
-  let tax/253 : Int = multiply(subtotal/252, tax_rate/251) / 100
-  let total/254 : Int = add(add(subtotal/252, tax/253), shipping/250)
-  @make_value(assert_eq(674, total/254))
+  let item_price/627 : Int = 199
+  let quantity/628 : Int = 3
+  let shipping/629 : Int = 15
+  let tax_rate/630 : Int = 10
+  let subtotal/631 : Int = multiply(item_price/627, quantity/628)
+  let tax/632 : Int = multiply(subtotal/631, tax_rate/630) / 100
+  let total/633 : Int = add(add(subtotal/631, tax/632), shipping/629)
+  @make_value(assert_eq(674, total/633))
 }
 
 fn __test_6c69622e6d6274_57 () -> Unit raise Error {
-  let a/243 : Int = 8
-  let b/244 : Int = 3
-  let left_shift/245 : Int = multiply(a/243, 2)
-  assert_eq(16, left_shift/245)
-  let right_shift/246 : Int = a/243 / 2
-  assert_eq(4, right_shift/246)
-  let bit_or_sim/247 : Int = add(a/243, b/244)
-  @make_value(assert_eq(11, bit_or_sim/247))
+  let a/622 : Int = 8
+  let b/623 : Int = 3
+  let left_shift/624 : Int = multiply(a/622, 2)
+  assert_eq(16, left_shift/624)
+  let right_shift/625 : Int = a/622 / 2
+  assert_eq(4, right_shift/625)
+  let bit_or_sim/626 : Int = add(a/622, b/623)
+  @make_value(assert_eq(11, bit_or_sim/626))
 }
 
 fn __test_6c69622e6d6274_58 () -> Unit raise Error {
-  let usd_amount/238 : Int = 100
-  let exchange_rate/239 : Int = 7
-  let cny_amount/240 : Int = multiply(usd_amount/238, exchange_rate/239)
-  assert_eq(700, cny_amount/240)
-  let fee/241 : Int = multiply(cny_amount/240, 5) / 100
-  let total_with_fee/242 : Int = add(cny_amount/240, fee/241)
-  @make_value(assert_eq(735, total_with_fee/242))
+  let usd_amount/617 : Int = 100
+  let exchange_rate/618 : Int = 7
+  let cny_amount/619 : Int = multiply(usd_amount/617, exchange_rate/618)
+  assert_eq(700, cny_amount/619)
+  let fee/620 : Int = multiply(cny_amount/619, 5) / 100
+  let total_with_fee/621 : Int = add(cny_amount/619, fee/620)
+  @make_value(assert_eq(735, total_with_fee/621))
 }
 
 fn __test_6c69622e6d6274_59 () -> Unit raise Error {
-  let radius/234 : Int = 5
-  let circumference/235 : Int = multiply(multiply(2, 3), radius/234)
-  assert_eq(30, circumference/235)
-  let area/236 : Int = multiply(3, multiply(radius/234, radius/234))
-  assert_eq(75, area/236)
-  let volume/237 : Int = multiply(4, multiply(radius/234, multiply(radius/234, radius/234)))
-  @make_value(assert_eq(500, volume/237))
+  let radius/613 : Int = 5
+  let circumference/614 : Int = multiply(multiply(2, 3), radius/613)
+  assert_eq(30, circumference/614)
+  let area/615 : Int = multiply(3, multiply(radius/613, radius/613))
+  assert_eq(75, area/615)
+  let volume/616 : Int = multiply(4, multiply(radius/613, multiply(radius/613, radius/613)))
+  @make_value(assert_eq(500, volume/616))
 }
 
 fn __test_6c69622e6d6274_60 () -> Unit raise Error {
-  let hours/227 : Int = 2
-  let minutes/228 : Int = 30
-  let total_minutes/229 : Int = add(multiply(hours/227, 60), minutes/228)
-  assert_eq(150, total_minutes/229)
-  let total_seconds/230 : Int = multiply(total_minutes/229, 60)
-  assert_eq(9000, total_seconds/230)
-  let start_time/231 : Int = 480
-  let end_time/232 : Int = 1020
-  let duration/233 : Int = add(end_time/232, -start_time/231)
-  @make_value(assert_eq(540, duration/233))
+  let hours/606 : Int = 2
+  let minutes/607 : Int = 30
+  let total_minutes/608 : Int = add(multiply(hours/606, 60), minutes/607)
+  assert_eq(150, total_minutes/608)
+  let total_seconds/609 : Int = multiply(total_minutes/608, 60)
+  assert_eq(9000, total_seconds/609)
+  let start_time/610 : Int = 480
+  let end_time/611 : Int = 1020
+  let duration/612 : Int = add(end_time/611, -start_time/610)
+  @make_value(assert_eq(540, duration/612))
 }
 
 fn __test_6c69622e6d6274_61 () -> Unit raise Error {
-  let sum/224 : Int = add(add(add(add(10, 20), 30), 40), 50)
-  assert_eq(150, sum/224)
-  let average/225 : Int = sum/224 / 5
-  assert_eq(30, average/225)
-  let median/226 : Int = 30
-  @make_value(assert_eq(30, median/226))
+  let sum/603 : Int = add(add(add(add(10, 20), 30), 40), 50)
+  assert_eq(150, sum/603)
+  let average/604 : Int = sum/603 / 5
+  assert_eq(30, average/604)
+  let median/605 : Int = 30
+  @make_value(assert_eq(30, median/605))
 }
 
 fn __test_6c69622e6d6274_62 () -> Unit raise Error {
-  let base_score/214 : Int = 1000
-  let level_multiplier/215 : Int = 3
-  let bonus_points/216 : Int = 500
-  let penalty/217 : Int = 200
-  let level_score/218 : Int = multiply(base_score/214, level_multiplier/215)
-  let total_with_bonus/219 : Int = add(level_score/218, bonus_points/216)
-  let final_score/220 : Int = add(total_with_bonus/219, -penalty/217)
-  assert_eq(3300, final_score/220)
-  let top_percentage/221 : Int = 10
-  let rank_bonus/222 : Int = multiply(final_score/220, top_percentage/221) / 100
-  let rank_total/223 : Int = add(final_score/220, rank_bonus/222)
-  @make_value(assert_eq(3630, rank_total/223))
+  let base_score/593 : Int = 1000
+  let level_multiplier/594 : Int = 3
+  let bonus_points/595 : Int = 500
+  let penalty/596 : Int = 200
+  let level_score/597 : Int = multiply(base_score/593, level_multiplier/594)
+  let total_with_bonus/598 : Int = add(level_score/597, bonus_points/595)
+  let final_score/599 : Int = add(total_with_bonus/598, -penalty/596)
+  assert_eq(3300, final_score/599)
+  let top_percentage/600 : Int = 10
+  let rank_bonus/601 : Int = multiply(final_score/599, top_percentage/600) / 100
+  let rank_total/602 : Int = add(final_score/599, rank_bonus/601)
+  @make_value(assert_eq(3630, rank_total/602))
 }
 
 fn __test_6c69622e6d6274_63 () -> Unit raise Error {
-  let power_rating/206 : Int = 100
-  let hours_used/207 : Int = 24
-  let days_used/208 : Int = 30
-  let cost_per_kwh/209 : Int = 10
-  let daily_consumption/210 : Int = multiply(power_rating/206, hours_used/207)
-  let monthly_consumption/211 : Int = multiply(daily_consumption/210, days_used/208)
-  let kwh_consumption/212 : Int = monthly_consumption/211 / 1000
-  assert_eq(72, kwh_consumption/212)
-  let total_cost/213 : Int = multiply(kwh_consumption/212, cost_per_kwh/209)
-  @make_value(assert_eq(720, total_cost/213))
+  let power_rating/585 : Int = 100
+  let hours_used/586 : Int = 24
+  let days_used/587 : Int = 30
+  let cost_per_kwh/588 : Int = 10
+  let daily_consumption/589 : Int = multiply(power_rating/585, hours_used/586)
+  let monthly_consumption/590 : Int = multiply(daily_consumption/589, days_used/587)
+  let kwh_consumption/591 : Int = monthly_consumption/590 / 1000
+  assert_eq(72, kwh_consumption/591)
+  let total_cost/592 : Int = multiply(kwh_consumption/591, cost_per_kwh/588)
+  @make_value(assert_eq(720, total_cost/592))
 }
 
 fn __test_6c69622e6d6274_64 () -> Unit raise Error {
-  let n/204 : Int = 5
-  let result/205 : Int = multiply(
-    n/204,
-    multiply(n/204 - 1, multiply(n/204 - 2, multiply(n/204 - 3, n/204 - 4)))
+  let n/583 : Int = 5
+  let result/584 : Int = multiply(
+    n/583,
+    multiply(n/583 - 1, multiply(n/583 - 2, multiply(n/583 - 3, n/583 - 4)))
   )
-  @make_value(assert_eq(120, result/205))
+  @make_value(assert_eq(120, result/584))
 }
 
 fn __test_6c69622e6d6274_65 () -> Unit raise Error {
-  let result/203 : Int = multiply(
+  let result/582 : Int = multiply(
     multiply(multiply(2, 2), multiply(2, 2)),
     multiply(multiply(2, 2), multiply(2, 2))
   )
-  @make_value(assert_eq(256, result/203))
+  @make_value(assert_eq(256, result/582))
 }
 
 fn __test_6c69622e6d6274_66 () -> Unit raise Error {
-  let row/193 : Int = 3
-  let col/194 : Int = 4
-  let width/195 : Int = 5
-  let index/196 : Int = add(multiply(row/193, width/195), col/194)
-  assert_eq(19, index/196)
-  let first_row/197 : Int = 0
-  let first_col/198 : Int = 0
-  let first_index/199 : Int = add(multiply(first_row/197, width/195), first_col/198)
-  assert_eq(0, first_index/199)
-  let last_row/200 : Int = 9
-  let last_col/201 : Int = 4
-  let last_index/202 : Int = add(multiply(last_row/200, width/195), last_col/201)
-  @make_value(assert_eq(49, last_index/202))
+  let row/572 : Int = 3
+  let col/573 : Int = 4
+  let width/574 : Int = 5
+  let index/575 : Int = add(multiply(row/572, width/574), col/573)
+  assert_eq(19, index/575)
+  let first_row/576 : Int = 0
+  let first_col/577 : Int = 0
+  let first_index/578 : Int = add(multiply(first_row/576, width/574), first_col/577)
+  assert_eq(0, first_index/578)
+  let last_row/579 : Int = 9
+  let last_col/580 : Int = 4
+  let last_index/581 : Int = add(multiply(last_row/579, width/574), last_col/580)
+  @make_value(assert_eq(49, last_index/581))
 }
 
 fn __test_6c69622e6d6274_67 () -> Unit raise Error {
-  let template/182 : String = "Hello, {name}! Today is {day}."
-  let name/183 : String = "Alice"
-  let day/184 : String = "Monday"
-  let greeting/185 : String = greet(name/183)
-  let day_prefix/186 : String = " Today is "
-  let day_suffix/187 : String = "."
-  let full_message/188 : String = @ccall add_string(
-    @ccall add_string(@ccall add_string(greeting/185, day_prefix/186), day/184),
-    day_suffix/187
+  let template/561 : String = "Hello, {name}! Today is {day}."
+  let name/562 : String = "Alice"
+  let day/563 : String = "Monday"
+  let greeting/564 : String = greet(name/562)
+  let day_prefix/565 : String = " Today is "
+  let day_suffix/566 : String = "."
+  let full_message/567 : String = @ccall add_string(
+    @ccall add_string(@ccall add_string(greeting/564, day_prefix/565), day/563),
+    day_suffix/566
   )
-  assert_eq_string("Hello, Alice! Today is Monday.", full_message/188)
-  let empty_name/189 : String = ""
-  let empty_greeting/190 : String = greet(empty_name/189)
-  assert_eq_string("Hello, !", empty_greeting/190)
-  let special_name/191 : String = "Bob@123"
-  let special_greeting/192 : String = greet(special_name/191)
-  @make_value(assert_eq_string("Hello, Bob@123!", special_greeting/192))
+  assert_eq_string("Hello, Alice! Today is Monday.", full_message/567)
+  let empty_name/568 : String = ""
+  let empty_greeting/569 : String = greet(empty_name/568)
+  assert_eq_string("Hello, !", empty_greeting/569)
+  let special_name/570 : String = "Bob@123"
+  let special_greeting/571 : String = greet(special_name/570)
+  @make_value(assert_eq_string("Hello, Bob@123!", special_greeting/571))
 }
 
 fn __test_6c69622e6d6274_68 () -> Unit raise Error {
-  let a/165 : Int = 7
-  let b/166 : Int = 3
-  let c/167 : Int = 5
-  let left_side/168 : Int = multiply(a/165, add(b/166, c/167))
-  let right_side/169 : Int = add(multiply(a/165, b/166), multiply(a/165, c/167))
-  assert_eq(left_side/168, right_side/169)
-  let sum/170 : Int = add(a/165, b/166)
-  let diff/171 : Int = add(a/165, -b/166)
-  let product/172 : Int = multiply(sum/170, diff/171)
-  let square_diff/173 : Int = add(multiply(a/165, a/165), multiply(-b/166, b/166))
-  assert_eq(product/172, square_diff/173)
-  let a_cubed/174 : Int = multiply(multiply(a/165, a/165), a/165)
-  let b_cubed/175 : Int = multiply(multiply(b/166, b/166), b/166)
-  let sum_of_cubes/176 : Int = add(a_cubed/174, b_cubed/175)
-  let a_squared/177 : Int = multiply(a/165, a/165)
-  let b_squared/178 : Int = multiply(b/166, b/166)
-  let a_times_b/179 : Int = multiply(a/165, b/166)
-  let second_factor/180 : Int = add(add(a_squared/177, multiply(-a_times_b/179, 1)), b_squared/178)
-  let formula_result/181 : Int = multiply(add(a/165, b/166), second_factor/180)
-  @make_value(assert_eq(sum_of_cubes/176, formula_result/181))
+  let a/544 : Int = 7
+  let b/545 : Int = 3
+  let c/546 : Int = 5
+  let left_side/547 : Int = multiply(a/544, add(b/545, c/546))
+  let right_side/548 : Int = add(multiply(a/544, b/545), multiply(a/544, c/546))
+  assert_eq(left_side/547, right_side/548)
+  let sum/549 : Int = add(a/544, b/545)
+  let diff/550 : Int = add(a/544, -b/545)
+  let product/551 : Int = multiply(sum/549, diff/550)
+  let square_diff/552 : Int = add(multiply(a/544, a/544), multiply(-b/545, b/545))
+  assert_eq(product/551, square_diff/552)
+  let a_cubed/553 : Int = multiply(multiply(a/544, a/544), a/544)
+  let b_cubed/554 : Int = multiply(multiply(b/545, b/545), b/545)
+  let sum_of_cubes/555 : Int = add(a_cubed/553, b_cubed/554)
+  let a_squared/556 : Int = multiply(a/544, a/544)
+  let b_squared/557 : Int = multiply(b/545, b/545)
+  let a_times_b/558 : Int = multiply(a/544, b/545)
+  let second_factor/559 : Int = add(add(a_squared/556, multiply(-a_times_b/558, 1)), b_squared/557)
+  let formula_result/560 : Int = multiply(add(a/544, b/545), second_factor/559)
+  @make_value(assert_eq(sum_of_cubes/555, formula_result/560))
 }
 
 fn __test_6c69622e6d6274_69 () -> Unit raise Error {
-  let max_val/159 : Int = 2147483647
-  let min_val/160 : Int = -2147483648
-  let zero/161 : Int = 0
-  let one/162 : Int = 1
-  let neg_one/163 : Int = -1
-  assert_eq(max_val/159, add(max_val/159, zero/161))
-  assert_eq(max_val/159, multiply(max_val/159, one/162))
-  assert_eq(min_val/160, multiply(max_val/159, neg_one/163))
-  assert_eq(min_val/160, add(min_val/160, zero/161))
-  assert_eq(min_val/160, multiply(min_val/160, one/162))
-  assert_eq(max_val/159, multiply(min_val/160, neg_one/163))
-  assert_eq(zero/161, multiply(zero/161, max_val/159))
-  assert_eq(zero/161, multiply(zero/161, min_val/160))
-  assert_eq(max_val/159, add(zero/161, max_val/159))
-  assert_eq(min_val/160, add(zero/161, min_val/160))
-  let chain_result/164 : Int = add(multiply(add(max_val/159, min_val/160), one/162), max_val/159)
-  @make_value(assert_eq(max_val/159, chain_result/164))
+  let max_val/538 : Int = 2147483647
+  let min_val/539 : Int = -2147483648
+  let zero/540 : Int = 0
+  let one/541 : Int = 1
+  let neg_one/542 : Int = -1
+  assert_eq(max_val/538, add(max_val/538, zero/540))
+  assert_eq(max_val/538, multiply(max_val/538, one/541))
+  assert_eq(min_val/539, multiply(max_val/538, neg_one/542))
+  assert_eq(min_val/539, add(min_val/539, zero/540))
+  assert_eq(min_val/539, multiply(min_val/539, one/541))
+  assert_eq(max_val/538, multiply(min_val/539, neg_one/542))
+  assert_eq(zero/540, multiply(zero/540, max_val/538))
+  assert_eq(zero/540, multiply(zero/540, min_val/539))
+  assert_eq(max_val/538, add(zero/540, max_val/538))
+  assert_eq(min_val/539, add(zero/540, min_val/539))
+  let chain_result/543 : Int = add(multiply(add(max_val/538, min_val/539), one/541), max_val/538)
+  @make_value(assert_eq(max_val/538, chain_result/543))
 }
 
 fn __test_6c69622e6d6274_70 () -> Unit raise Error {
-  let product_price/144 : Int = 299
-  let quantity/145 : Int = 3
-  let discount_threshold/146 : Int = 500
-  let discount_rate/147 : Int = 10
-  let shipping_fee/148 : Int = 20
-  let tax_rate/149 : Int = 8
-  let subtotal/150 : Int = multiply(product_price/144, quantity/145)
-  let discount_amount/151 : Int = if subtotal/150 > discount_threshold/146 {
-    multiply(subtotal/150, discount_rate/147) / 100
+  let product_price/523 : Int = 299
+  let quantity/524 : Int = 3
+  let discount_threshold/525 : Int = 500
+  let discount_rate/526 : Int = 10
+  let shipping_fee/527 : Int = 20
+  let tax_rate/528 : Int = 8
+  let subtotal/529 : Int = multiply(product_price/523, quantity/524)
+  let discount_amount/530 : Int = if subtotal/529 > discount_threshold/525 {
+    multiply(subtotal/529, discount_rate/526) / 100
   } else {
     0
   }
-  let discounted_total/152 : Int = add(subtotal/150, -discount_amount/151)
-  let tax_amount/153 : Int = multiply(discounted_total/152, tax_rate/149) / 100
-  let final_total/154 : Int = add(add(discounted_total/152, tax_amount/153), shipping_fee/148)
-  assert_eq(1076, final_total/154)
-  let small_price/155 : Int = 50
-  let small_quantity/156 : Int = 2
-  let small_subtotal/157 : Int = multiply(small_price/155, small_quantity/156)
-  let small_final/158 : Int = add(
-    add(small_subtotal/157, multiply(small_subtotal/157, tax_rate/149) / 100),
-    shipping_fee/148
+  let discounted_total/531 : Int = add(subtotal/529, -discount_amount/530)
+  let tax_amount/532 : Int = multiply(discounted_total/531, tax_rate/528) / 100
+  let final_total/533 : Int = add(add(discounted_total/531, tax_amount/532), shipping_fee/527)
+  assert_eq(1076, final_total/533)
+  let small_price/534 : Int = 50
+  let small_quantity/535 : Int = 2
+  let small_subtotal/536 : Int = multiply(small_price/534, small_quantity/535)
+  let small_final/537 : Int = add(
+    add(small_subtotal/536, multiply(small_subtotal/536, tax_rate/528) / 100),
+    shipping_fee/527
   )
-  @make_value(assert_eq(127, small_final/158))
+  @make_value(assert_eq(127, small_final/537))
 }
 
 fn __test_6c69622e6d6274_71 () -> Unit raise Error {
-  let base_value/136 : Int = 1000
-  let iterations/137 : Int = 100
-  let sum_formula/138 : Int = multiply(
-    base_value/136,
-    multiply(iterations/137, add(iterations/137, 1)) / 2
+  let base_value/515 : Int = 1000
+  let iterations/516 : Int = 100
+  let sum_formula/517 : Int = multiply(
+    base_value/515,
+    multiply(iterations/516, add(iterations/516, 1)) / 2
   )
-  let sum_first_5/139 : Int = multiply(base_value/136, multiply(5, 6) / 2)
-  assert_eq(15000, sum_first_5/139)
-  assert_eq(5050000, sum_formula/138)
-  let growth_factor/140 : Int = 2
-  let periods/141 : Int = 10
-  let initial_amount/142 : Int = 100
-  let exponential_growth/143 : Int = multiply(
-    initial_amount/142,
+  let sum_first_5/518 : Int = multiply(base_value/515, multiply(5, 6) / 2)
+  assert_eq(15000, sum_first_5/518)
+  assert_eq(5050000, sum_formula/517)
+  let growth_factor/519 : Int = 2
+  let periods/520 : Int = 10
+  let initial_amount/521 : Int = 100
+  let exponential_growth/522 : Int = multiply(
+    initial_amount/521,
     multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(2, 2))
   )
-  @make_value(assert_eq(102400, exponential_growth/143))
+  @make_value(assert_eq(102400, exponential_growth/522))
 }
 
 fn __test_6c69622e6d6274_72 () -> Unit raise Error {
-  let max_val/128 : Int = 2147483647
-  let min_val/129 : Int = -2147483648
-  let overflow_add/130 : Int = add(max_val/128, max_val/128)
-  assert_eq(max_val/128, overflow_add/130)
-  let underflow_add/131 : Int = add(min_val/129, min_val/129)
-  assert_eq(min_val/129, underflow_add/131)
-  let overflow_mul/132 : Int = multiply(max_val/128, 2)
-  assert_eq(max_val/128, overflow_mul/132)
-  let underflow_mul/133 : Int = multiply(min_val/129, 2)
-  assert_eq(min_val/129, underflow_mul/133)
-  let special_case_1/134 : Int = multiply(min_val/129, -1)
-  assert_eq(min_val/129, special_case_1/134)
-  let special_case_2/135 : Int = add(max_val/128, 1)
-  assert_eq(max_val/128, special_case_2/135)
+  let max_val/507 : Int = 2147483647
+  let min_val/508 : Int = -2147483648
+  let overflow_add/509 : Int = add(max_val/507, max_val/507)
+  assert_eq(max_val/507, overflow_add/509)
+  let underflow_add/510 : Int = add(min_val/508, min_val/508)
+  assert_eq(min_val/508, underflow_add/510)
+  let overflow_mul/511 : Int = multiply(max_val/507, 2)
+  assert_eq(max_val/507, overflow_mul/511)
+  let underflow_mul/512 : Int = multiply(min_val/508, 2)
+  assert_eq(min_val/508, underflow_mul/512)
+  let special_case_1/513 : Int = multiply(min_val/508, -1)
+  assert_eq(min_val/508, special_case_1/513)
+  let special_case_2/514 : Int = add(max_val/507, 1)
+  assert_eq(max_val/507, special_case_2/514)
   assert_true(add(5, 3) == 8)
   assert_false(add(5, 3) == 9)
   assert_eq(8, add(5, 3))
@@ -850,219 +856,988 @@ fn __test_6c69622e6d6274_72 () -> Unit raise Error {
 }
 
 fn __test_6c69622e6d6274_73 () -> Unit raise Error {
-  let number/117 : Int = 2023
-  let number_as_string/118 : String = "2023"
-  let converted_greeting/119 : String = greet(number_as_string/118)
-  assert_eq_string("Hello, 2023!", converted_greeting/119)
-  let true_as_string/120 : String = "true"
-  let false_as_string/121 : String = "false"
-  assert_eq_string("Hello, true!", greet(true_as_string/120))
-  assert_eq_string("Hello, false!", greet(false_as_string/121))
-  let integer_part/122 : Int = 3
-  let decimal_part/123 : Int = 14
-  let pi_approx_string/124 : String = "3.14"
-  assert_eq_string("Hello, 3.14!", greet(pi_approx_string/124))
-  let date_string/125 : String = "2023-12-25"
-  let time_string/126 : String = "14:30:00"
-  let datetime_string/127 : String = "2023-12-25T14:30:00"
-  assert_eq_string("Hello, 2023-12-25!", greet(date_string/125))
-  assert_eq_string("Hello, 14:30:00!", greet(time_string/126))
-  @make_value(assert_eq_string("Hello, 2023-12-25T14:30:00!", greet(datetime_string/127)))
+  let number/496 : Int = 2023
+  let number_as_string/497 : String = "2023"
+  let converted_greeting/498 : String = greet(number_as_string/497)
+  assert_eq_string("Hello, 2023!", converted_greeting/498)
+  let true_as_string/499 : String = "true"
+  let false_as_string/500 : String = "false"
+  assert_eq_string("Hello, true!", greet(true_as_string/499))
+  assert_eq_string("Hello, false!", greet(false_as_string/500))
+  let integer_part/501 : Int = 3
+  let decimal_part/502 : Int = 14
+  let pi_approx_string/503 : String = "3.14"
+  assert_eq_string("Hello, 3.14!", greet(pi_approx_string/503))
+  let date_string/504 : String = "2023-12-25"
+  let time_string/505 : String = "14:30:00"
+  let datetime_string/506 : String = "2023-12-25T14:30:00"
+  @make_value(assert_eq_string("Hello, 2023-12-25!", greet(date_string/504)))
 }
 
 fn __test_6c69622e6d6274_74 () -> Unit raise Error {
-  let a/107 : Int = 48
-  let b/108 : Int = 18
-  let gcd/109 : Int = 6
-  assert_eq(6, gcd/109)
-  let prime_candidate/110 : Int = 7
-  let is_prime/111 : Bool = true
-  assert_true(is_prime/111)
-  let fib_n/112 : Int = 7
-  let fib_n_plus_1/113 : Int = 13
-  let fib_n/114 : Int = 8
-  assert_eq(8, fib_n/114)
-  assert_eq(13, fib_n_plus_1/113)
-  let sorted_array_sum/115 : Int = add(add(add(add(1, 2), 3), 4), 5)
-  let unsorted_array_sum/116 : Int = add(add(add(add(5, 2), 3), 4), 1)
-  @make_value(assert_eq(sorted_array_sum/115, unsorted_array_sum/116))
+  let n/490 : Int = 5
+  let fib1/491 : Int = 1
+  let fib2/492 : Int = 1
+  let fib3/493 : Int = add(fib1/491, fib2/492)
+  let fib4/494 : Int = add(fib2/492, fib3/493)
+  let fib5/495 : Int = add(fib3/493, fib4/494)
+  @make_value(assert_eq(5, fib5/495))
 }
 
 fn __test_6c69622e6d6274_75 () -> Unit raise Error {
-  let student_count/87 : Int = 30
-  let math_avg/88 : Int = 85
-  let english_avg/89 : Int = 78
-  let science_avg/90 : Int = 92
-  let total_sum/91 : Int = add(add(math_avg/88, english_avg/89), science_avg/90)
-  let overall_avg/92 : Int = total_sum/91 / 3
-  assert_eq(85, overall_avg/92)
-  let math_weighted/93 : Int = multiply(math_avg/88, 40) / 100
-  let english_weighted/94 : Int = multiply(english_avg/89, 30) / 100
-  let science_weighted/95 : Int = multiply(science_avg/90, 30) / 100
-  let weighted_avg/96 : Int = add(add(math_weighted/93, english_weighted/94), science_weighted/95)
-  assert_eq(85, weighted_avg/96)
-  let variance_numerator/97 : Int = add(add(multiply(0, 0), multiply(-7, -7)), multiply(7, 7))
-  let variance/98 : Int = variance_numerator/97 / 3
-  let standard_deviation/99 : Int = 7
-  let excellent_count/100 : Int = multiply(student_count/87, 20) / 100
-  let good_count/101 : Int = multiply(student_count/87, 50) / 100
-  let pass_count/102 : Int = multiply(student_count/87, 25) / 100
-  let fail_count/103 : Int = student_count/87 - excellent_count/100 - good_count/101 - pass_count/102
-  assert_eq(6, excellent_count/100)
-  assert_eq(15, good_count/101)
-  assert_eq(7, pass_count/102)
-  assert_eq(2, fail_count/103)
-  let class_name/104 : String = "Class 2023"
-  let report_header/105 : String = greet(class_name/104)
-  let report_content/106 : String = @ccall add_string(
-    @ccall add_string(
-      @ccall add_string("Average: ", Int::to_string.inner(overall_avg/92, 10)),
-      ", Weighted: "
-    ),
-    Int::to_string.inner(weighted_avg/96, 10)
-  )
-  @make_value(assert_eq_string("Hello, Class 2023!", report_header/105))
+  let block_size/483 : Int = 1024
+  let block_count/484 : Int = 10
+  let header_overhead/485 : Int = 32
+  let total_data/486 : Int = multiply(block_size/483, block_count/484)
+  let total_overhead/487 : Int = multiply(header_overhead/485, block_count/484)
+  let total_memory/488 : Int = add(total_data/486, total_overhead/487)
+  assert_eq(10560, total_memory/488)
+  let utilization/489 : Int = multiply(total_data/486, 100) / total_memory/488
+  @make_value(assert_eq(97, utilization/489))
 }
 
 fn __test_6c69622e6d6274_76 () -> Unit raise Error {
-  let principal/81 : Int = 10000
-  let rate/82 : Int = 5
-  let compounds/83 : Int = 12
-  let years/84 : Int = 3
-  let growth_factor/85 : Int = add(1, multiply(rate/82, years/84))
-  let final_amount/86 : Int = multiply(principal/81, growth_factor/85)
-  @make_value(assert_eq(160000, final_amount/86))
+  let packet_size/477 : Int = 1500
+  let data_size/478 : Int = 10000
+  let header_size/479 : Int = 20
+  let payload_per_packet/480 : Int = add(packet_size/477, -header_size/479)
+  let packets_needed/481 : Int = add(divide_with_ceil(data_size/478, payload_per_packet/480), 0)
+  let total_transmitted/482 : Int = multiply(packets_needed/481, packet_size/477)
+  @make_value(assert_eq(10500, total_transmitted/482))
 }
 
 fn __test_6c69622e6d6274_77 () -> Unit raise Error {
-  let special_chars/75 : String = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result/76 : String = greet(special_chars/75)
-  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result/76)
-  let html_string/77 : String = "<div>Hello</div>"
-  let html_result/78 : String = greet(html_string/77)
-  assert_eq_string("Hello, <div>Hello</div>!", html_result/78)
-  let json_string/79 : String = "{\"name\":\"John\",\"age\":30}"
-  let json_result/80 : String = greet(json_string/79)
-  @make_value(assert_eq_string("Hello, {\"name\":\"John\",\"age\":30}!", json_result/80))
+  fn divide_with_ceil/476 (dividend/472 : Int, divisor/473 : Int) -> Int {
+    let quotient/474 : Int = dividend/472 / divisor/473
+    let remainder/475 : Int = dividend/472 % divisor/473
+    if remainder/475 > 0 { add(quotient/474, 1) } else { quotient/474 }
+  }
+
+  assert_eq(4, divide_with_ceil/476(10, 3))
+  assert_eq(3, divide_with_ceil/476(9, 3))
+  assert_eq(1, divide_with_ceil/476(1, 100))
+  @make_value(assert_eq(0, divide_with_ceil/476(0, 100)))
 }
 
 fn __test_6c69622e6d6274_78 () -> Unit raise Error {
-  let a11/63 : Int = 1
-  let a12/64 : Int = 2
-  let a21/65 : Int = 3
-  let a22/66 : Int = 4
-  let b11/67 : Int = 5
-  let b12/68 : Int = 6
-  let b21/69 : Int = 7
-  let b22/70 : Int = 8
-  let c11/71 : Int = add(multiply(a11/63, b11/67), multiply(a12/64, b21/69))
-  let c12/72 : Int = add(multiply(a11/63, b12/68), multiply(a12/64, b22/70))
-  let c21/73 : Int = add(multiply(a21/65, b11/67), multiply(a22/66, b21/69))
-  let c22/74 : Int = add(multiply(a21/65, b12/68), multiply(a22/66, b22/70))
-  assert_eq(19, c11/71)
-  assert_eq(22, c12/72)
-  assert_eq(43, c21/73)
-  @make_value(assert_eq(50, c22/74))
+  let total_requests/464 : Int = 1000
+  let cache_hits/465 : Int = 750
+  let cache_miss_penalty/466 : Int = 50
+  let cache_hit_time/467 : Int = 5
+  let hit_rate/468 : Int = multiply(cache_hits/465, 100) / total_requests/464
+  assert_eq(75, hit_rate/468)
+  let miss_count/469 : Int = add(total_requests/464, -cache_hits/465)
+  let total_time/470 : Int = add(
+    multiply(cache_hits/465, cache_hit_time/467),
+    multiply(miss_count/469, cache_miss_penalty/466)
+  )
+  let avg_time/471 : Int = total_time/470 / total_requests/464
+  @make_value(assert_eq(16, avg_time/471))
 }
 
 fn __test_6c69622e6d6274_79 () -> Unit raise Error {
-  let plaintext/53 : String = "HELLO"
-  let shift/54 : Int = 3
-  let h_code/55 : Int = 72
-  let e_code/56 : Int = 69
-  let l_code/57 : Int = 76
-  let o_code/58 : Int = 79
-  let h_encrypted/59 : Int = add(h_code/55, shift/54)
-  let e_encrypted/60 : Int = add(e_code/56, shift/54)
-  let l_encrypted/61 : Int = add(l_code/57, shift/54)
-  let o_encrypted/62 : Int = add(o_code/58, shift/54)
-  assert_eq(75, h_encrypted/59)
-  assert_eq(72, e_encrypted/60)
-  assert_eq(79, l_encrypted/61)
-  @make_value(assert_eq(82, o_encrypted/62))
+  let original_size/459 : Int = 10000
+  let compressed_size/460 : Int = 2500
+  let compression_ratio/461 : Int = multiply(compressed_size/460, 100) / original_size/459
+  assert_eq(25, compression_ratio/461)
+  let space_saved/462 : Int = add(original_size/459, -compressed_size/460)
+  assert_eq(7500, space_saved/462)
+  let savings_percent/463 : Int = multiply(space_saved/462, 100) / original_size/459
+  @make_value(assert_eq(75, savings_percent/463))
 }
 
 fn __test_6c69622e6d6274_80 () -> Unit raise Error {
-  let initial_velocity/46 : Int = 10
-  let gravity/47 : Int = 10
-  let time/48 : Int = 5
-  let velocity_component/49 : Int = multiply(initial_velocity/46, time/48)
-  let gravity_component/50 : Int = multiply(gravity/47, multiply(time/48, time/48)) / 2
-  let displacement/51 : Int = add(velocity_component/49, gravity_component/50)
-  assert_eq(175, displacement/51)
-  let final_velocity/52 : Int = add(initial_velocity/46, multiply(gravity/47, time/48))
-  @make_value(assert_eq(60, final_velocity/52))
+  let total_requests/447 : Int = 1000
+  let server_count/448 : Int = 4
+  let base_load/449 : Int = total_requests/447 / server_count/448
+  let remainder/450 : Int = total_requests/447 % server_count/448
+  let server1_load/451 : Int = add(base_load/449, if remainder/450 > 0 { 1 } else { 0 })
+  let server2_load/452 : Int = add(base_load/449, if remainder/450 > 1 { 1 } else { 0 })
+  let server3_load/453 : Int = add(base_load/449, if remainder/450 > 2 { 1 } else { 0 })
+  let server4_load/454 : Int = base_load/449
+  let total_distributed/455 : Int = add(
+    add(add(server1_load/451, server2_load/452), server3_load/453),
+    server4_load/454
+  )
+  assert_eq(total_requests/447, total_distributed/455)
+  let max_load/456 : Int = server1_load/451
+  let min_load/457 : Int = server4_load/454
+  let load_difference/458 : Int = add(max_load/456, -min_load/457)
+  @make_value(assert_true(load_difference/458 <= 1))
 }
 
 fn __test_6c69622e6d6274_81 () -> Unit raise Error {
-  let original_data/41 : Int = 1111000
-  let run_length_1/42 : Int = 4
-  let run_length_0/43 : Int = 3
-  let compressed_size/44 : Int = add(run_length_1/42, run_length_0/43)
-  let compression_ratio/45 : Int = multiply(100, compressed_size/44) / 7
-  assert_eq(7, compressed_size/44)
-  @make_value(assert_eq(100, compression_ratio/45))
+  let table_size/440 : Int = 1000000
+  let index_levels/441 : Int = 3
+  let fanout/442 : Int = 100
+  let index_lookups/443 : Int = index_levels/441
+  let table_scan_worst/444 : Int = table_size/440
+  let performance_gain/445 : Int = table_scan_worst/444 / multiply(fanout/442, index_levels/441)
+  assert_eq(3333, performance_gain/445)
+  let index_overhead/446 : Int = multiply(table_size/440, 10) / 100
+  @make_value(assert_eq(100000, index_overhead/446))
 }
 
 fn __test_6c69622e6d6274_82 () -> Unit raise Error {
-  let packet1/35 : Int = 1000
-  let packet2/36 : Int = 2000
-  let packet3/37 : Int = 3000
-  let packet4/38 : Int = 4000
-  let sum/39 : Int = add(add(add(packet1/35, packet2/36), packet3/37), packet4/38)
-  let checksum/40 : Int = sum/39 / 65535
-  assert_eq(10000, sum/39)
-  @make_value(assert_eq(0, checksum/40))
+  let message_length/431 : Int = 100
+  let key_length/432 : Int = 16
+  let block_size/433 : Int = 8
+  let blocks_needed/434 : Int = add(divide_with_ceil(message_length/431, block_size/433), 0)
+  let encrypted_length/435 : Int = multiply(blocks_needed/434, block_size/433)
+  assert_eq(104, encrypted_length/435)
+  let iv_size/436 : Int = 16
+  let mac_size/437 : Int = 32
+  let total_overhead/438 : Int = add(iv_size/436, mac_size/437)
+  let final_length/439 : Int = add(encrypted_length/435, total_overhead/438)
+  @make_value(assert_eq(152, final_length/439))
 }
 
 fn __test_6c69622e6d6274_83 () -> Unit raise Error {
-  let x1/25 : Int = 1
-  let y1/26 : Int = 3
-  let x2/27 : Int = 2
-  let y2/28 : Int = 5
-  let x3/29 : Int = 3
-  let y3/30 : Int = 7
-  let slope/31 : Int = add(y2/28, -y1/26) / add(x2/27, -x1/25)
-  let intercept/32 : Int = add(y1/26, multiply(-slope/31, x1/25))
-  let x4/33 : Int = 4
-  let y4_predicted/34 : Int = add(multiply(slope/31, x4/33), intercept/32)
-  assert_eq(2, slope/31)
-  assert_eq(1, intercept/32)
-  @make_value(assert_eq(9, y4_predicted/34))
+  let x1/417 : Int = 10
+  let x2/418 : Int = 20
+  let x3/419 : Int = 30
+  let w1/420 : Int = 2
+  let w2/421 : Int = 3
+  let w3/422 : Int = 1
+  let b/423 : Int = 5
+  let term1/424 : Int = multiply(w1/420, x1/417)
+  let term2/425 : Int = multiply(w2/421, x2/418)
+  let term3/426 : Int = multiply(w3/422, x3/419)
+  let prediction/427 : Int = add(add(add(term1/424, term2/425), term3/426), b/423)
+  assert_eq(135, prediction/427)
+  let actual_value/428 : Int = 140
+  let error/429 : Int = add(actual_value/428, -prediction/427)
+  assert_eq(5, error/429)
+  let mse/430 : Int = multiply(error/429, error/429)
+  @make_value(assert_eq(25, mse/430))
 }
 
 fn __test_6c69622e6d6274_84 () -> Unit raise Error {
-  let table_values/19 : Int = add(add(add(add(10, 20), 30), 40), 50)
-  let count/20 : Int = 5
-  let average/21 : Int = table_values/19 / count/20
-  let sum/22 : Int = table_values/19
-  let max_value/23 : Int = 50
-  let min_value/24 : Int = 10
-  assert_eq(30, average/21)
-  assert_eq(150, sum/22)
-  assert_eq(50, max_value/23)
-  @make_value(assert_eq(10, min_value/24))
+  let a/407 : Int = 48
+  let b/408 : Int = 18
+  let gcd/409 : Int = 6
+  assert_eq(6, gcd/409)
+  let prime_candidate/410 : Int = 7
+  let is_prime/411 : Bool = true
+  assert_true(is_prime/411)
+  let fib_n/412 : Int = 7
+  let fib_n_plus_1/413 : Int = 13
+  let fib_n/414 : Int = 8
+  assert_eq(8, fib_n/414)
+  assert_eq(13, fib_n_plus_1/413)
+  let sorted_array_sum/415 : Int = add(add(add(add(1, 2), 3), 4), 5)
+  let unsorted_array_sum/416 : Int = add(add(add(add(5, 2), 3), 4), 1)
+  @make_value(assert_eq(sorted_array_sum/415, unsorted_array_sum/416))
 }
 
 fn __test_6c69622e6d6274_85 () -> Unit raise Error {
-  let rect1_x/1 : Int = 10
-  let rect1_y/2 : Int = 10
-  let rect1_width/3 : Int = 20
-  let rect1_height/4 : Int = 20
-  let rect2_x/5 : Int = 25
-  let rect2_y/6 : Int = 25
-  let rect2_width/7 : Int = 30
-  let rect2_height/8 : Int = 30
-  let rect1_right/9 : Int = add(rect1_x/1, rect1_width/3)
-  let rect1_bottom/10 : Int = add(rect1_y/2, rect1_height/4)
-  let rect2_right/11 : Int = add(rect2_x/5, rect2_width/7)
-  let rect2_bottom/12 : Int = add(rect2_y/6, rect2_height/8)
-  let collision_x/13 : Bool = rect1_right/9 > rect2_x/5 && rect1_x/1 < rect2_right/11
-  let collision_y/14 : Bool = rect1_bottom/10 > rect2_y/6 && rect1_y/2 < rect2_bottom/12
-  let collision/15 : Bool = collision_x/13 && collision_y/14
-  assert_true(collision/15)
-  let dx/16 : Int = add(rect2_x/5, -rect1_x/1)
-  let dy/17 : Int = add(rect2_y/6, -rect1_y/2)
-  let distance_squared/18 : Int = add(multiply(dx/16, dx/16), multiply(dy/17, dy/17))
-  @make_value(assert_eq(225, distance_squared/18))
+  let student_count/387 : Int = 30
+  let math_avg/388 : Int = 85
+  let english_avg/389 : Int = 78
+  let science_avg/390 : Int = 92
+  let total_sum/391 : Int = add(add(math_avg/388, english_avg/389), science_avg/390)
+  let overall_avg/392 : Int = total_sum/391 / 3
+  assert_eq(85, overall_avg/392)
+  let math_weighted/393 : Int = multiply(math_avg/388, 40) / 100
+  let english_weighted/394 : Int = multiply(english_avg/389, 30) / 100
+  let science_weighted/395 : Int = multiply(science_avg/390, 30) / 100
+  let weighted_avg/396 : Int = add(
+    add(math_weighted/393, english_weighted/394),
+    science_weighted/395
+  )
+  assert_eq(85, weighted_avg/396)
+  let variance_numerator/397 : Int = add(add(multiply(0, 0), multiply(-7, -7)), multiply(7, 7))
+  let variance/398 : Int = variance_numerator/397 / 3
+  let standard_deviation/399 : Int = 7
+  let excellent_count/400 : Int = multiply(student_count/387, 20) / 100
+  let good_count/401 : Int = multiply(student_count/387, 50) / 100
+  let pass_count/402 : Int = multiply(student_count/387, 25) / 100
+  let fail_count/403 : Int = student_count/387 - excellent_count/400 - good_count/401 - pass_count/402
+  assert_eq(6, excellent_count/400)
+  assert_eq(15, good_count/401)
+  assert_eq(7, pass_count/402)
+  assert_eq(2, fail_count/403)
+  let class_name/404 : String = "Class 2023"
+  let report_header/405 : String = greet(class_name/404)
+  let report_content/406 : String = @ccall add_string(
+    @ccall add_string(
+      @ccall add_string("Average: ", Int::to_string.inner(overall_avg/392, 10)),
+      ", Weighted: "
+    ),
+    Int::to_string.inner(weighted_avg/396, 10)
+  )
+  @make_value(assert_eq_string("Hello, Class 2023!", report_header/405))
+}
+
+fn __test_6c69622e6d6274_86 () -> Unit raise Error {
+  let principal/381 : Int = 10000
+  let rate/382 : Int = 5
+  let compounds/383 : Int = 12
+  let years/384 : Int = 3
+  let growth_factor/385 : Int = add(1, multiply(rate/382, years/384))
+  let final_amount/386 : Int = multiply(principal/381, growth_factor/385)
+  @make_value(assert_eq(160000, final_amount/386))
+}
+
+fn __test_6c69622e6d6274_87 () -> Unit raise Error {
+  let special_chars/375 : String = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let result/376 : String = greet(special_chars/375)
+  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result/376)
+  let html_string/377 : String = "<div>Hello</div>"
+  let html_result/378 : String = greet(html_string/377)
+  assert_eq_string("Hello, <div>Hello</div>!", html_result/378)
+  let json_string/379 : String = "{\"name\":\"John\",\"age\":30}"
+  let json_result/380 : String = greet(json_string/379)
+  @make_value(assert_eq_string("Hello, {\"name\":\"John\",\"age\":30}!", json_result/380))
+}
+
+fn __test_6c69622e6d6274_88 () -> Unit raise Error {
+  let a11/363 : Int = 1
+  let a12/364 : Int = 2
+  let a21/365 : Int = 3
+  let a22/366 : Int = 4
+  let b11/367 : Int = 5
+  let b12/368 : Int = 6
+  let b21/369 : Int = 7
+  let b22/370 : Int = 8
+  let c11/371 : Int = add(multiply(a11/363, b11/367), multiply(a12/364, b21/369))
+  let c12/372 : Int = add(multiply(a11/363, b12/368), multiply(a12/364, b22/370))
+  let c21/373 : Int = add(multiply(a21/365, b11/367), multiply(a22/366, b21/369))
+  let c22/374 : Int = add(multiply(a21/365, b12/368), multiply(a22/366, b22/370))
+  assert_eq(19, c11/371)
+  assert_eq(22, c12/372)
+  assert_eq(43, c21/373)
+  @make_value(assert_eq(50, c22/374))
+}
+
+fn __test_6c69622e6d6274_89 () -> Unit raise Error {
+  let plaintext/353 : String = "HELLO"
+  let shift/354 : Int = 3
+  let h_code/355 : Int = 72
+  let e_code/356 : Int = 69
+  let l_code/357 : Int = 76
+  let o_code/358 : Int = 79
+  let h_encrypted/359 : Int = add(h_code/355, shift/354)
+  let e_encrypted/360 : Int = add(e_code/356, shift/354)
+  let l_encrypted/361 : Int = add(l_code/357, shift/354)
+  let o_encrypted/362 : Int = add(o_code/358, shift/354)
+  assert_eq(75, h_encrypted/359)
+  assert_eq(72, e_encrypted/360)
+  assert_eq(79, l_encrypted/361)
+  @make_value(assert_eq(82, o_encrypted/362))
+}
+
+fn __test_6c69622e6d6274_90 () -> Unit raise Error {
+  let initial_velocity/346 : Int = 10
+  let gravity/347 : Int = 10
+  let time/348 : Int = 5
+  let velocity_component/349 : Int = multiply(initial_velocity/346, time/348)
+  let gravity_component/350 : Int = multiply(gravity/347, multiply(time/348, time/348)) / 2
+  let displacement/351 : Int = add(velocity_component/349, gravity_component/350)
+  assert_eq(175, displacement/351)
+  let final_velocity/352 : Int = add(initial_velocity/346, multiply(gravity/347, time/348))
+  @make_value(assert_eq(60, final_velocity/352))
+}
+
+fn __test_6c69622e6d6274_91 () -> Unit raise Error {
+  let original_data/341 : Int = 1111000
+  let run_length_1/342 : Int = 4
+  let run_length_0/343 : Int = 3
+  let compressed_size/344 : Int = add(run_length_1/342, run_length_0/343)
+  let compression_ratio/345 : Int = multiply(100, compressed_size/344) / 7
+  assert_eq(7, compressed_size/344)
+  @make_value(assert_eq(100, compression_ratio/345))
+}
+
+fn __test_6c69622e6d6274_92 () -> Unit raise Error {
+  let packet1/335 : Int = 1000
+  let packet2/336 : Int = 2000
+  let packet3/337 : Int = 3000
+  let packet4/338 : Int = 4000
+  let sum/339 : Int = add(add(add(packet1/335, packet2/336), packet3/337), packet4/338)
+  let checksum/340 : Int = sum/339 / 65535
+  assert_eq(10000, sum/339)
+  @make_value(assert_eq(0, checksum/340))
+}
+
+fn __test_6c69622e6d6274_93 () -> Unit raise Error {
+  let x1/325 : Int = 1
+  let y1/326 : Int = 3
+  let x2/327 : Int = 2
+  let y2/328 : Int = 5
+  let x3/329 : Int = 3
+  let y3/330 : Int = 7
+  let slope/331 : Int = add(y2/328, -y1/326) / add(x2/327, -x1/325)
+  let intercept/332 : Int = add(y1/326, multiply(-slope/331, x1/325))
+  let x4/333 : Int = 4
+  let y4_predicted/334 : Int = add(multiply(slope/331, x4/333), intercept/332)
+  assert_eq(2, slope/331)
+  assert_eq(1, intercept/332)
+  @make_value(assert_eq(9, y4_predicted/334))
+}
+
+fn __test_6c69622e6d6274_94 () -> Unit raise Error {
+  let table_values/319 : Int = add(add(add(add(10, 20), 30), 40), 50)
+  let count/320 : Int = 5
+  let average/321 : Int = table_values/319 / count/320
+  let sum/322 : Int = table_values/319
+  let max_value/323 : Int = 50
+  let min_value/324 : Int = 10
+  assert_eq(30, average/321)
+  assert_eq(150, sum/322)
+  assert_eq(50, max_value/323)
+  @make_value(assert_eq(10, min_value/324))
+}
+
+fn __test_6c69622e6d6274_95 () -> Unit raise Error {
+  let rect1_x/301 : Int = 10
+  let rect1_y/302 : Int = 10
+  let rect1_width/303 : Int = 20
+  let rect1_height/304 : Int = 20
+  let rect2_x/305 : Int = 25
+  let rect2_y/306 : Int = 25
+  let rect2_width/307 : Int = 30
+  let rect2_height/308 : Int = 30
+  let rect1_right/309 : Int = add(rect1_x/301, rect1_width/303)
+  let rect1_bottom/310 : Int = add(rect1_y/302, rect1_height/304)
+  let rect2_right/311 : Int = add(rect2_x/305, rect2_width/307)
+  let rect2_bottom/312 : Int = add(rect2_y/306, rect2_height/308)
+  let collision_x/313 : Bool = rect1_right/309 > rect2_x/305 && rect1_x/301 < rect2_right/311
+  let collision_y/314 : Bool = rect1_bottom/310 > rect2_y/306 && rect1_y/302 < rect2_bottom/312
+  let collision/315 : Bool = collision_x/313 && collision_y/314
+  assert_true(collision/315)
+  let dx/316 : Int = add(rect2_x/305, -rect1_x/301)
+  let dy/317 : Int = add(rect2_y/306, -rect1_y/302)
+  let distance_squared/318 : Int = add(multiply(dx/316, dx/316), multiply(dy/317, dy/317))
+  @make_value(assert_eq(225, distance_squared/318))
+}
+
+fn __test_6c69622e6d6274_96 () -> Unit raise Error {
+  let a/294 : Int = 12
+  let b/295 : Int = 10
+  let bitwise_and/296 : Int = 8
+  assert_eq(8, bitwise_and/296)
+  let bitwise_or/297 : Int = 14
+  assert_eq(14, bitwise_or/297)
+  let bitwise_xor/298 : Int = 6
+  assert_eq(6, bitwise_xor/298)
+  let left_shift/299 : Int = multiply(a/294, 4)
+  assert_eq(48, left_shift/299)
+  let right_shift/300 : Int = a/294 / 4
+  @make_value(assert_eq(3, right_shift/300))
+}
+
+fn __test_6c69622e6d6274_97 () -> Unit raise Error {
+  let data_bits/287 : Int = 4
+  let parity_bits/288 : Int = 3
+  let total_bits/289 : Int = add(data_bits/287, parity_bits/288)
+  assert_eq(7, total_bits/289)
+  let received_data/290 : Int = 85
+  let error_position/291 : Int = 3
+  let corrected_data/292 : Int = add(received_data/290, multiply(4, error_position/291))
+  assert_eq(97, corrected_data/292)
+  let redundancy/293 : Int = multiply(parity_bits/288, 100) / total_bits/289
+  @make_value(assert_eq(42, redundancy/293))
+}
+
+fn __test_6c69622e6d6274_98 () -> Unit raise Error {
+  let sampling_rate/279 : Int = 44100
+  let duration/280 : Int = 5
+  let bit_depth/281 : Int = 16
+  let total_samples/282 : Int = multiply(sampling_rate/279, duration/280)
+  let bytes_per_sample/283 : Int = bit_depth/281 / 8
+  let total_bytes/284 : Int = multiply(total_samples/282, bytes_per_sample/283)
+  assert_eq(220500, total_samples/282)
+  assert_eq(2, bytes_per_sample/283)
+  assert_eq(441000, total_bytes/284)
+  let bitrate/285 : Int = multiply(sampling_rate/279, bit_depth/281)
+  assert_eq(705600, bitrate/285)
+  let compressed_size/286 : Int = total_bytes/284 / 10
+  @make_value(assert_eq(44100, compressed_size/286))
+}
+
+fn __test_6c69622e6d6274_99 () -> Unit raise Error {
+  let queue_capacity/270 : Int = 10
+  let initial_size/271 : Int = 0
+  let enqueue_count/272 : Int = 7
+  let dequeue_count/273 : Int = 3
+  let after_enqueue/274 : Int = add(initial_size/271, enqueue_count/272)
+  assert_eq(7, after_enqueue/274)
+  let after_dequeue/275 : Int = add(after_enqueue/274, -dequeue_count/273)
+  assert_eq(4, after_dequeue/275)
+  let is_empty/276 : Bool = after_dequeue/275 == 0
+  let is_full/277 : Bool = after_dequeue/275 == queue_capacity/270
+  assert_false(is_empty/276)
+  assert_false(is_full/277)
+  let utilization/278 : Int = multiply(after_dequeue/275, 100) / queue_capacity/270
+  @make_value(assert_eq(40, utilization/278))
+}
+
+fn __test_6c69622e6d6274_100 () -> Unit raise Error {
+  let stack_capacity/261 : Int = 8
+  let push_operations/262 : Int = 5
+  let pop_operations/263 : Int = 2
+  let current_size/264 : Int = add(push_operations/262, -pop_operations/263)
+  assert_eq(3, current_size/264)
+  let is_empty/265 : Bool = current_size/264 == 0
+  let is_full/266 : Bool = current_size/264 == stack_capacity/261
+  let can_push/267 : Bool = add(current_size/264, 1) <= stack_capacity/261
+  let can_pop/268 : Bool = current_size/264 > 0
+  assert_false(is_empty/265)
+  assert_false(is_full/266)
+  assert_true(can_push/267)
+  assert_true(can_pop/268)
+  let usage_percentage/269 : Int = multiply(current_size/264, 100) / stack_capacity/261
+  @make_value(assert_eq(37, usage_percentage/269))
+}
+
+fn __test_6c69622e6d6274_101 () -> Unit raise Error {
+  let table_size/253 : Int = 16
+  let elements_count/254 : Int = 10
+  let collision_resolution_steps/255 : Int = 3
+  let load_factor/256 : Int = multiply(elements_count/254, 100) / table_size/253
+  assert_eq(62, load_factor/256)
+  let hash_value/257 : Int = 7
+  let collision_count/258 : Int = 2
+  let final_index/259 : Int = add(hash_value/257, collision_count/258)
+  assert_eq(9, final_index/259)
+  let avg_lookup_length/260 : Int = add(
+    1,
+    multiply(load_factor/256, collision_resolution_steps/255) / 100
+  )
+  @make_value(assert_eq(2, avg_lookup_length/260))
+}
+
+fn __test_6c69622e6d6274_102 () -> Unit raise Error {
+  let vertex_count/243 : Int = 6
+  let edge_count/244 : Int = 9
+  let start_vertex/245 : Int = 0
+  let end_vertex/246 : Int = 5
+  let max_edges/247 : Int = multiply(vertex_count/243, add(vertex_count/243, -1)) / 2
+  let density/248 : Int = multiply(edge_count/244, 100) / max_edges/247
+  assert_eq(60, density/248)
+  let path_length/249 : Int = 14
+  let intermediate_vertices/250 : Int = 3
+  assert_eq(14, path_length/249)
+  assert_eq(3, intermediate_vertices/250)
+  let connected_components/251 : Int = 1
+  let is_connected/252 : Bool = connected_components/251 == 1
+  @make_value(assert_true(is_connected/252))
+}
+
+fn __test_6c69622e6d6274_103 () -> Unit raise Error {
+  let tree_height/233 : Int = 4
+  let branching_factor/234 : Int = 3
+  let max_nodes/235 : Int = 1
+  let level1_nodes/236 : Int = multiply(1, branching_factor/234)
+  let level2_nodes/237 : Int = multiply(level1_nodes/236, branching_factor/234)
+  let level3_nodes/238 : Int = multiply(level2_nodes/237, branching_factor/234)
+  let total_nodes/239 : Int = add(
+    add(add(add(1, level1_nodes/236), level2_nodes/237), level3_nodes/238),
+    1
+  )
+  assert_eq(40, total_nodes/239)
+  let leaf_nodes/240 : Int = multiply(3, multiply(3, 3))
+  assert_eq(27, leaf_nodes/240)
+  let internal_nodes/241 : Int = add(total_nodes/239, -leaf_nodes/240)
+  assert_eq(13, internal_nodes/241)
+  let is_balanced/242 : Bool = true
+  @make_value(assert_true(is_balanced/242))
+}
+
+fn __test_6c69622e6d6274_104 () -> Unit raise Error {
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 100))
+  @make_value(assert_eq(5, divide_with_ceil(11, 2)))
+}
+
+fn __test_6c69622e6d6274_105 () -> Unit raise Error {
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(100, divide_with_ceil(100, 1))
+  assert_eq(1, divide_with_ceil(99, 100))
+  assert_eq(2, divide_with_ceil(101, 100))
+  @make_value(assert_eq(10, divide_with_ceil(91, 10)))
+}
+
+fn __test_6c69622e6d6274_106 () -> Unit raise Error {
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-3, divide_with_ceil(-9, 3))
+  assert_eq(0, divide_with_ceil(-1, 100))
+  assert_eq(-1, divide_with_ceil(-100, 100))
+  @make_value(assert_eq(-5, divide_with_ceil(-11, 2)))
+}
+
+fn __test_6c69622e6d6274_107 () -> Unit raise Error {
+  let total_resources/228 : Int = 17
+  let team_size/229 : Int = 5
+  let resources_per_team/230 : Int = divide_with_ceil(total_resources/228, team_size/229)
+  assert_eq(4, resources_per_team/230)
+  let total_allocated/231 : Int = multiply(resources_per_team/230, team_size/229)
+  assert_eq(20, total_allocated/231)
+  let remaining/232 : Int = add(total_allocated/231, -total_resources/228)
+  @make_value(assert_eq(3, remaining/232))
+}
+
+fn __test_6c69622e6d6274_108 () -> Unit raise Error {
+  let total_items/224 : Int = 23
+  let items_per_page/225 : Int = 10
+  let total_pages/226 : Int = divide_with_ceil(total_items/224, items_per_page/225)
+  assert_eq(3, total_pages/226)
+  let last_page_items/227 : Int = total_items/224 % items_per_page/225
+  @make_value(assert_eq(3, last_page_items/227))
+}
+
+fn __test_6c69622e6d6274_109 () -> Unit raise Error {
+  let total_duration/219 : Int = 65
+  let slot_duration/220 : Int = 15
+  let required_slots/221 : Int = divide_with_ceil(total_duration/219, slot_duration/220)
+  assert_eq(5, required_slots/221)
+  let total_allocated_time/222 : Int = multiply(required_slots/221, slot_duration/220)
+  assert_eq(75, total_allocated_time/222)
+  let idle_time/223 : Int = add(total_allocated_time/222, -total_duration/219)
+  @make_value(assert_eq(10, idle_time/223))
+}
+
+fn __test_6c69622e6d6274_110 () -> Unit raise Error {
+  let total_items/214 : Int = 37
+  let container_capacity/215 : Int = 12
+  let required_containers/216 : Int = divide_with_ceil(total_items/214, container_capacity/215)
+  assert_eq(4, required_containers/216)
+  let total_capacity/217 : Int = multiply(required_containers/216, container_capacity/215)
+  assert_eq(48, total_capacity/217)
+  let remaining_capacity/218 : Int = add(total_capacity/217, -total_items/214)
+  @make_value(assert_eq(11, remaining_capacity/218))
+}
+
+fn __test_6c69622e6d6274_111 () -> Unit raise Error {
+  let total_bandwidth/209 : Int = 1000
+  let min_bandwidth_per_user/210 : Int = 150
+  let max_users/211 : Int = total_bandwidth/209 / min_bandwidth_per_user/210
+  assert_eq(6, max_users/211)
+  let used_bandwidth/212 : Int = multiply(max_users/211, min_bandwidth_per_user/210)
+  assert_eq(900, used_bandwidth/212)
+  let remaining_bandwidth/213 : Int = add(total_bandwidth/209, -used_bandwidth/212)
+  @make_value(assert_eq(100, remaining_bandwidth/213))
+}
+
+fn __test_6c69622e6d6274_112 () -> Unit raise Error {
+  let data_size/204 : Int = 2500
+  let disk_capacity/205 : Int = 1000
+  let required_disks/206 : Int = divide_with_ceil(data_size/204, disk_capacity/205)
+  assert_eq(3, required_disks/206)
+  let total_storage/207 : Int = multiply(required_disks/206, disk_capacity/205)
+  assert_eq(3000, total_storage/207)
+  let utilization/208 : Int = multiply(data_size/204, 100) / total_storage/207
+  @make_value(assert_eq(83, utilization/208))
+}
+
+fn __test_6c69622e6d6274_113 () -> Unit raise Error {
+  let total_tasks/198 : Int = 47
+  let worker_count/199 : Int = 8
+  let base_tasks/200 : Int = total_tasks/198 / worker_count/199
+  assert_eq(5, base_tasks/200)
+  let extra_tasks/201 : Int = total_tasks/198 % worker_count/199
+  assert_eq(7, extra_tasks/201)
+  let max_load/202 : Int = add(base_tasks/200, if extra_tasks/201 > 0 { 1 } else { 0 })
+  assert_eq(6, max_load/202)
+  let min_load/203 : Int = base_tasks/200
+  @make_value(assert_eq(5, min_load/203))
+}
+
+fn __test_6c69622e6d6274_114 () -> Unit raise Error {
+  let short_string/195 : String = "Hi"
+  let medium_string/196 : String = "MoonBit"
+  let long_string/197 : String = "This is a very long string for testing purposes"
+  assert_eq_string("Hello, Hi!", greet(short_string/195))
+  assert_eq_string("Hello, MoonBit!", greet(medium_string/196))
+  @make_value(
+    assert_eq_string(
+      "Hello, This is a very long string for testing purposes!",
+      greet(long_string/197)
+    )
+  )
+}
+
+fn __test_6c69622e6d6274_115 () -> Unit raise Error {
+  let a/187 : Int = 2
+  let r/188 : Int = 3
+  let n/189 : Int = 4
+  let term1/190 : Int = a/187
+  let term2/191 : Int = multiply(a/187, r/188)
+  let term3/192 : Int = multiply(term2/191, r/188)
+  let term4/193 : Int = multiply(term3/192, r/188)
+  let sum/194 : Int = add(add(add(term1/190, term2/191), term3/192), term4/193)
+  @make_value(assert_eq(80, sum/194))
+}
+
+fn __test_6c69622e6d6274_116 () -> Unit raise Error {
+  let decimal_num/181 : Int = 13
+  let bit0/182 : Int = 1
+  let bit1/183 : Int = 0
+  let bit2/184 : Int = 1
+  let bit3/185 : Int = 1
+  let reconstructed/186 : Int = add(
+    add(add(multiply(bit3/185, 8), multiply(bit2/184, 4)), multiply(bit1/183, 2)),
+    bit0/182
+  )
+  @make_value(assert_eq(decimal_num/181, reconstructed/186))
+}
+
+fn __test_6c69622e6d6274_117 () -> Unit raise Error {
+  let celsius/177 : Int = 25
+  let fahrenheit_approx/178 : Int = add(
+    add(multiply(celsius/177, 2), 32),
+    multiply(-1, celsius/177 / 5)
+  )
+  assert_eq(77, fahrenheit_approx/178)
+  let neg_celsius/179 : Int = -10
+  let neg_fahrenheit/180 : Int = add(
+    add(multiply(neg_celsius/179, 2), 32),
+    multiply(-1, neg_celsius/179 / 5)
+  )
+  @make_value(assert_eq(14, neg_fahrenheit/180))
+}
+
+fn __test_6c69622e6d6274_118 () -> Unit raise Error {
+  let principal/171 : Int = 10000
+  let annual_rate/172 : Int = 5
+  let years/173 : Int = 3
+  let compounds_per_year/174 : Int = 12
+  let growth_factor/175 : Int = add(1, multiply(annual_rate/172, years/173))
+  let final_amount/176 : Int = multiply(principal/171, growth_factor/175)
+  @make_value(assert_eq(160000, final_amount/176))
+}
+
+fn __test_6c69622e6d6274_119 () -> Unit raise Error {
+  let values/160 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[5, 8, 12, 15, 20],
+    len: 5
+  }
+  let count/161 : Int = 5
+  let sum/162 : Int = add(add(add(add(5, 8), 12), 15), 20)
+  let mean/163 : Int = sum/162 / count/161
+  assert_eq(12, mean/163)
+  let diff1/164 : Int = add(5, -12)
+  let diff2/165 : Int = add(8, -12)
+  let diff3/166 : Int = add(12, -12)
+  let diff4/167 : Int = add(15, -12)
+  let diff5/168 : Int = add(20, -12)
+  let variance_sum/169 : Int = add(
+    add(
+      add(
+        add(multiply(diff1/164, diff1/164), multiply(diff2/165, diff2/165)),
+        multiply(diff3/166, diff3/166)
+      ),
+      multiply(diff4/167, diff4/167)
+    ),
+    multiply(diff5/168, diff5/168)
+  )
+  let variance/170 : Int = variance_sum/169 / count/161
+  @make_value(assert_eq(26, variance/170))
+}
+
+fn __test_6c69622e6d6274_120 () -> Unit raise Error {
+  let radius/155 : Int = 5
+  let pi_approx/156 : Int = 3
+  let diameter/157 : Int = multiply(radius/155, 2)
+  assert_eq(10, diameter/157)
+  let circumference/158 : Int = multiply(pi_approx/156, diameter/157)
+  assert_eq(30, circumference/158)
+  let area/159 : Int = multiply(pi_approx/156, multiply(radius/155, radius/155))
+  @make_value(assert_eq(75, area/159))
+}
+
+fn __test_6c69622e6d6274_121 () -> Unit raise Error {
+  let scores/148 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[850, 920, 780, 950, 890],
+    len: 5
+  }
+  let player_count/149 : Int = 5
+  let total_score/150 : Int = add(add(add(add(850, 920), 780), 950), 890)
+  assert_eq(4390, total_score/150)
+  let average_score/151 : Int = total_score/150 / player_count/149
+  assert_eq(878, average_score/151)
+  let max_score/152 : Int = 950
+  let min_score/153 : Int = 780
+  let score_range/154 : Int = add(max_score/152, -min_score/153)
+  @make_value(assert_eq(170, score_range/154))
+}
+
+fn __test_6c69622e6d6274_122 () -> Unit raise Error {
+  let file_size/141 : Int = 1048576
+  let bandwidth/142 : Int = 1048576
+  let latency/143 : Int = 50
+  let packet_size/144 : Int = 1500
+  let transfer_time/145 : Int = file_size/141 / bandwidth/142
+  assert_eq(1, transfer_time/145)
+  let packet_count/146 : Int = divide_with_ceil(file_size/141, packet_size/144)
+  assert_eq(700, packet_count/146)
+  let total_latency/147 : Int = multiply(packet_count/146, latency/143)
+  @make_value(assert_eq(35000, total_latency/147))
+}
+
+fn __test_6c69622e6d6274_123 () -> Unit raise Error {
+  let row/134 : Int = 3
+  let col/135 : Int = 2
+  let cols_per_row/136 : Int = 5
+  let index_1d/137 : Int = add(multiply(row/134, cols_per_row/136), col/135)
+  assert_eq(17, index_1d/137)
+  let first_index/138 : Int = add(multiply(0, cols_per_row/136), 0)
+  let last_index/139 : Int = add(multiply(9, cols_per_row/136), 4)
+  assert_eq(0, first_index/138)
+  assert_eq(49, last_index/139)
+  let is_valid_index/140 : Bool = index_1d/137 >= first_index/138 && index_1d/137 <= last_index/139
+  @make_value(assert_true(is_valid_index/140))
+}
+
+fn __test_6c69622e6d6274_124 () -> Unit raise Error {
+  let first_term/128 : Int = 3
+  let common_diff/129 : Int = 4
+  let num_terms/130 : Int = 10
+  let sum_formula/131 : Int = multiply(
+    num_terms/130,
+    add(multiply(2, first_term/128), multiply(num_terms/130 - 1, common_diff/129))
+  ) / 2
+  assert_eq(210, sum_formula/131)
+  let term_5/132 : Int = add(first_term/128, multiply(4, common_diff/129))
+  assert_eq(19, term_5/132)
+  let term_10/133 : Int = add(first_term/128, multiply(9, common_diff/129))
+  @make_value(assert_eq(39, term_10/133))
+}
+
+fn __test_6c69622e6d6274_125 () -> Unit raise Error {
+  let pattern/115 : String = "test"
+  let text1/116 : String = "this is a test string"
+  let text2/117 : String = "no match here"
+  let text3/118 : String = "test at beginning"
+  let text4/119 : String = "test"
+  let result1/120 : String = greet(text1/116)
+  let result2/121 : String = greet(text2/117)
+  let result3/122 : String = greet(text3/118)
+  let result4/123 : String = greet(text4/119)
+  assert_eq_string("Hello, this is a test string!", result1/120)
+  assert_eq_string("Hello, no match here!", result2/121)
+  assert_eq_string("Hello, test at beginning!", result3/122)
+  assert_eq_string("Hello, test!", result4/123)
+  let len1/124 : Int = 21
+  let len2/125 : Int = 14
+  let len3/126 : Int = 19
+  let len4/127 : Int = 4
+  assert_true(len1/124 > len2/125)
+  assert_true(len3/126 > len4/127)
+  @make_value(assert_eq(4, len4/127))
+}
+
+fn __test_6c69622e6d6274_126 () -> Unit raise Error {
+  let base_address/102 : Int = 1000
+  let element_size/103 : Int = 4
+  let index1/104 : Int = 0
+  let index2/105 : Int = 5
+  let index3/106 : Int = 10
+  let addr1/107 : Int = add(base_address/102, multiply(index1/104, element_size/103))
+  let addr2/108 : Int = add(base_address/102, multiply(index2/105, element_size/103))
+  let addr3/109 : Int = add(base_address/102, multiply(index3/106, element_size/103))
+  assert_eq(1000, addr1/107)
+  assert_eq(1020, addr2/108)
+  assert_eq(1040, addr3/109)
+  let offset12/110 : Int = add(addr2/108, -addr1/107)
+  let offset23/111 : Int = add(addr3/109, -addr2/108)
+  assert_eq(20, offset12/110)
+  assert_eq(20, offset23/111)
+  let aligned1/112 : Bool = addr1/107 % element_size/103 == 0
+  let aligned2/113 : Bool = addr2/108 % element_size/103 == 0
+  let aligned3/114 : Bool = addr3/109 % element_size/103 == 0
+  @make_value(assert_true(aligned1/112 && aligned2/113 && aligned3/114))
+}
+
+fn __test_6c69622e6d6274_127 () -> Unit raise Error {
+  let dice_faces/91 : Int = 6
+  let total_outcomes/92 : Int = multiply(dice_faces/91, dice_faces/91)
+  let sum_7_combinations/93 : Int = 6
+  let sum_11_combinations/94 : Int = 2
+  let sum_2_combinations/95 : Int = 1
+  let sum_12_combinations/96 : Int = 1
+  let prob_7/97 : Int = multiply(sum_7_combinations/93, 100) / total_outcomes/92
+  let prob_11/98 : Int = multiply(sum_11_combinations/94, 100) / total_outcomes/92
+  let prob_2/99 : Int = multiply(sum_2_combinations/95, 100) / total_outcomes/92
+  let prob_12/100 : Int = multiply(sum_12_combinations/96, 100) / total_outcomes/92
+  assert_eq(16, prob_7/97)
+  assert_eq(5, prob_11/98)
+  assert_eq(2, prob_2/99)
+  assert_eq(2, prob_12/100)
+  let expected_sum/101 : Int = 7
+  @make_value(assert_eq(7, expected_sum/101))
+}
+
+fn __test_6c69622e6d6274_128 () -> Unit raise Error {
+  let buffer_size/77 : Int = 8
+  let initial_head/78 : Int = 0
+  let initial_tail/79 : Int = 0
+  let initial_count/80 : Int = 0
+  let enqueue_count/81 : Int = 5
+  let new_tail/82 : Int = add(initial_tail/79, enqueue_count/81) % buffer_size/77
+  let new_count/83 : Int = add(initial_count/80, enqueue_count/81)
+  assert_eq(5, new_tail/82)
+  assert_eq(5, new_count/83)
+  let dequeue_count/84 : Int = 3
+  let new_head/85 : Int = add(initial_head/78, dequeue_count/84) % buffer_size/77
+  let final_count/86 : Int = add(new_count/83, -dequeue_count/84)
+  assert_eq(3, new_head/85)
+  assert_eq(2, final_count/86)
+  let is_empty/87 : Bool = final_count/86 == 0
+  let is_full/88 : Bool = final_count/86 == buffer_size/77
+  let has_space/89 : Bool = final_count/86 < buffer_size/77
+  assert_false(is_empty/87)
+  assert_false(is_full/88)
+  assert_true(has_space/89)
+  let utilization/90 : Int = multiply(final_count/86, 100) / buffer_size/77
+  @make_value(assert_eq(25, utilization/90))
+}
+
+fn __test_6c69622e6d6274_129 () -> Unit raise Error {
+  let r/59 : Int = 255
+  let g/60 : Int = 0
+  let b/61 : Int = 0
+  let max_val/62 : Int = 255
+  let min_val/63 : Int = 0
+  let delta/64 : Int = add(max_val/62, -min_val/63)
+  assert_eq(255, max_val/62)
+  assert_eq(0, min_val/63)
+  assert_eq(255, delta/64)
+  let hue/65 : Int = if max_val/62 == r/59 { 0 } else { 120 }
+  assert_eq(0, hue/65)
+  let saturation/66 : Int = if max_val/62 == 0 { 0 } else { multiply(delta/64, 100) / max_val/62 }
+  assert_eq(100, saturation/66)
+  let value/67 : Int = max_val/62
+  assert_eq(255, value/67)
+  let r2/68 : Int = 0
+  let g2/69 : Int = 255
+  let b2/70 : Int = 0
+  let max_val2/71 : Int = 255
+  let min_val2/72 : Int = 0
+  let delta2/73 : Int = add(max_val2/71, -min_val2/72)
+  let hue2/74 : Int = if max_val2/71 == r2/68 { 0 } else { 120 }
+  let saturation2/75 : Int = if max_val2/71 == 0 {
+    0
+  } else {
+    multiply(delta2/73, 100) / max_val2/71
+  }
+  let value2/76 : Int = max_val2/71
+  assert_eq(120, hue2/74)
+  assert_eq(100, saturation2/75)
+  @make_value(assert_eq(255, value2/76))
+}
+
+fn __test_6c69622e6d6274_130 () -> Unit raise Error {
+  let data_block1/45 : Int = 100
+  let data_block2/46 : Int = 200
+  let data_block3/47 : Int = 300
+  let data_block4/48 : Int = 400
+  let checksum/49 : Int = add(
+    add(add(data_block1/45, data_block2/46), data_block3/47),
+    data_block4/48
+  )
+  assert_eq(1000, checksum/49)
+  let received_block1/50 : Int = 100
+  let received_block2/51 : Int = 200
+  let received_block3/52 : Int = 300
+  let received_block4/53 : Int = 400
+  let received_checksum/54 : Int = add(
+    add(add(received_block1/50, received_block2/51), received_block3/52),
+    received_block4/53
+  )
+  assert_eq(1000, received_checksum/54)
+  let error_detected/55 : Bool = checksum/49 != received_checksum/54
+  assert_false(error_detected/55)
+  let corrupted_block3/56 : Int = 310
+  let corrupted_checksum/57 : Int = add(
+    add(add(data_block1/45, data_block2/46), corrupted_block3/56),
+    data_block4/48
+  )
+  let actual_error/58 : Bool = checksum/49 != corrupted_checksum/57
+  @make_value(assert_true(actual_error/58))
+}
+
+fn __test_6c69622e6d6274_131 () -> Unit raise Error {
+  let server_count/30 : Int = 3
+  let request_count/31 : Int = 10
+  let server1_requests/32 : Int = 0
+  let server2_requests/33 : Int = 0
+  let server3_requests/34 : Int = 0
+  let final_server1_requests/35 : Int = 4
+  let final_server2_requests/36 : Int = 3
+  let final_server3_requests/37 : Int = 3
+  assert_eq(4, final_server1_requests/35)
+  assert_eq(3, final_server2_requests/36)
+  assert_eq(3, final_server3_requests/37)
+  let total_distributed/38 : Int = add(
+    add(final_server1_requests/35, final_server2_requests/36),
+    final_server3_requests/37
+  )
+  assert_eq(request_count/31, total_distributed/38)
+  let max_requests/39 : Int = 4
+  let min_requests/40 : Int = 3
+  let load_imbalance/41 : Int = add(max_requests/39, -min_requests/40)
+  assert_eq(1, load_imbalance/41)
+  let server1_load/42 : Int = multiply(final_server1_requests/35, 100) / request_count/31
+  let server2_load/43 : Int = multiply(final_server2_requests/36, 100) / request_count/31
+  let server3_load/44 : Int = multiply(final_server3_requests/37, 100) / request_count/31
+  assert_eq(40, server1_load/42)
+  assert_eq(30, server2_load/43)
+  @make_value(assert_eq(30, server3_load/44))
+}
+
+fn __test_6c69622e6d6274_132 () -> Unit raise Error {
+  let cache_size/21 : Int = 3
+  let access_sequence/22 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[1, 2, 3, 4, 1, 2, 5],
+    len: 7
+  }
+  let final_cache/23 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[1, 2, 5],
+    len: 3
+  }
+  let cache_hits/24 : Int = 2
+  let cache_misses/25 : Int = 5
+  let total_accesses/26 : Int = 7
+  assert_eq(2, cache_hits/24)
+  assert_eq(5, cache_misses/25)
+  assert_eq(7, total_accesses/26)
+  let hit_rate/27 : Int = multiply(cache_hits/24, 100) / total_accesses/26
+  assert_eq(28, hit_rate/27)
+  let miss_rate/28 : Int = multiply(cache_misses/25, 100) / total_accesses/26
+  assert_eq(71, miss_rate/28)
+  let total_rate/29 : Int = add(hit_rate/27, miss_rate/28)
+  @make_value(assert_eq(99, total_rate/29))
+}
+
+fn __test_6c69622e6d6274_133 () -> Unit raise Error {
+  let data_byte/1 : Int = 10110101
+  let data_bits/2 : Int = 8
+  let ones_count/3 : Int = 5
+  let parity_bit/4 : Int = if ones_count/3 % 2 == 0 { 0 } else { 1 }
+  assert_eq(1, parity_bit/4)
+  let received_data/5 : Int = 10100101
+  let received_ones_count/6 : Int = 4
+  let received_parity_bit/7 : Int = if received_ones_count/6 % 2 == 0 { 0 } else { 1 }
+  assert_eq(0, received_parity_bit/7)
+  let error_detected/8 : Bool = parity_bit/4 != received_parity_bit/7
+  assert_true(error_detected/8)
+  let data_block/9 : Int = 12345
+  let divisor/10 : Int = 123
+  let remainder/11 : Int = data_block/9 % divisor/10
+  let crc_value/12 : Int = remainder/11
+  assert_eq(45, crc_value/12)
+  let received_block/13 : Int = 12345
+  let received_remainder/14 : Int = received_block/13 % divisor/10
+  let received_crc/15 : Int = received_remainder/14
+  let crc_error/16 : Bool = crc_value/12 != received_crc/15
+  assert_false(crc_error/16)
+  let corrupted_block/17 : Int = 12350
+  let corrupted_remainder/18 : Int = corrupted_block/17 % divisor/10
+  let corrupted_crc/19 : Int = corrupted_remainder/18
+  let crc_detected/20 : Bool = crc_value/12 != corrupted_crc/19
+  @make_value(assert_true(crc_detected/20))
 }

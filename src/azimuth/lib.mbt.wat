@@ -105,6 +105,27 @@
  (i32.const 2)
  (array.new_default $moonbit.string_pool_type)
 )
+(func $divide_with_ceil (param $dividend/16 i32) (param $divisor/17 i32) (result i32)
+ (local $quotient/15 i32)
+ (local $remainder/18 i32)
+ (local.set $quotient/15
+  (i32.div_s
+   (local.get $dividend/16)
+   (local.get $divisor/17)))
+ (if (result i32)
+  (i32.gt_s
+   (local.tee $remainder/18
+    (i32.rem_s
+     (local.get $dividend/16)
+     (local.get $divisor/17)))
+   (i32.const 0))
+  (then
+   (call $add
+    (local.get $quotient/15)
+    (i32.const 1)))
+  (else
+   (local.get $quotient/15))))
+(export "divide_with_ceil" (func $divide_with_ceil))
 (func $assert_false_wrapper/1 (param $condition/14 i32)
  (drop
   (call $assert_false

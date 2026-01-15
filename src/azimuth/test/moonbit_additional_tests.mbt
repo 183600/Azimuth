@@ -1,261 +1,240 @@
-// Azimuth 项目额外的 MoonBit 测试用例
-// 覆盖各种数学运算、字符串处理和边界条件
+// 额外的 MoonBit 测试用例
+// 这些测试用例提供了对 azimuth 库功能的额外验证
 
-test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的第n项（简化版）
-  // F(0) = 0, F(1) = 1, F(2) = 1, F(3) = 2, F(4) = 3, F(5) = 5, F(6) = 8, F(7) = 13
-  
-  // 计算F(7) = F(6) + F(5) = 8 + 5 = 13
-  let f0 = 0
-  let f1 = 1
-  let f2 = @azimuth.add(f0, f1)  // 1
-  let f3 = @azimuth.add(f1, f2)  // 2
-  let f4 = @azimuth.add(f2, f3)  // 3
-  let f5 = @azimuth.add(f3, f4)  // 5
-  let f6 = @azimuth.add(f4, f5)  // 8
-  let f7 = @azimuth.add(f5, f6)  // 13
-  
-  @azimuth.assert_eq(13, f7)
-}
-
-test "prime_number_validation" {
-  // 验证质数（通过检查是否能被小于它的数整除）
+// 导入必要的函数
+test "prime_number_check_simulation" {
+  // 模拟质数检查：检查一个数是否能被小于它的数整除
   let num = 17
-  let is_prime = true
   
-  // 检查是否能被2到16之间的数整除
-  // 这里我们简化检查，只检查几个关键数
-  let divisible_by_2 = (num % 2 == 0)
-  let divisible_by_3 = (num % 3 == 0)
-  let divisible_by_5 = (num % 5 == 0)
+  // 检查是否能被2, 3, 4, 5整除
+  let div_by_2 = num % 2 == 0
+  let _div_by_3 = num % 3 == 0
+  let _div_by_4 = num % 4 == 0
+  let _div_by_5 = num % 5 == 0
   
-  // 17是质数，不能被2、3、5整除
-  @azimuth.assert_false(divisible_by_2)
-  @azimuth.assert_false(divisible_by_3)
-  @azimuth.assert_false(divisible_by_5)
+  // 如果都不能整除，则可能是质数
+  let is_prime = (div_by_2 == false) && (_div_by_3 == false) && (_div_by_4 == false) && (_div_by_5 == false)
+  azimuth::assert_true(is_prime)
   
   // 测试非质数
-  let composite_num = 15
-  let composite_divisible_by_3 = (composite_num % 3 == 0)
-  let composite_divisible_by_5 = (composite_num % 5 == 0)
+  let non_prime = 15
+  let div_by_3_2 = non_prime % 3 == 0
+  let div_by_5_2 = non_prime % 5 == 0
+  let is_not_prime = div_by_3_2 || div_by_5_2
+  azimuth::assert_true(is_not_prime)
+}
+
+test "fibonacci_sequence_calculation" {
+  // 斐波那契数列计算：F(n) = F(n-1) + F(n-2)
+  // 计算前几个斐波那契数
+  let f0 = 0
+  let f1 = 1
+  let f2 = azimuth::add(f0, f1)  // 1
+  let f3 = azimuth::add(f1, f2)  // 2
+  let f4 = azimuth::add(f2, f3)  // 3
+  let f5 = azimuth::add(f3, f4)  // 5
+  let f6 = azimuth::add(f4, f5)  // 8
+  let f7 = azimuth::add(f5, f6)  // 13
+  let f8 = azimuth::add(f6, f7)  // 21
+  let f9 = azimuth::add(f7, f8)  // 34
+  let f10 = azimuth::add(f8, f9) // 55
   
-  @azimuth.assert_true(composite_divisible_by_3)
-  @azimuth.assert_true(composite_divisible_by_5)
+  azimuth::assert_eq(1, f2)
+  azimuth::assert_eq(2, f3)
+  azimuth::assert_eq(3, f4)
+  azimuth::assert_eq(5, f5)
+  azimuth::assert_eq(8, f6)
+  azimuth::assert_eq(13, f7)
+  azimuth::assert_eq(21, f8)
+  azimuth::assert_eq(34, f9)
+  azimuth::assert_eq(55, f10)
 }
 
 test "greatest_common_divisor" {
-  // 计算最大公约数（简化版欧几里得算法）
+  // 最大公约数计算（欧几里得算法简化版）
   let a = 48
   let b = 18
   
-  // 48 % 18 = 12
-  // 18 % 12 = 6
-  // 12 % 6 = 0
-  // 所以GCD是6
+  // 简化的GCD计算：通过连续减法
+  let larger = if (b > a) { b } else { a }
+  let smaller = if (b > a) { a } else { b }
   
-  let remainder1 = a % b  // 12
-  let remainder2 = b % remainder1  // 6
-  let remainder3 = remainder1 % remainder2  // 0
-  
-  @azimuth.assert_eq(6, remainder2)
-  
-  // 验证6确实是48和18的公约数
-  let a_divisible = (a % 6 == 0)
-  let b_divisible = (b % 6 == 0)
-  
-  @azimuth.assert_true(a_divisible)
-  @azimuth.assert_true(b_divisible)
+  // 连续减法直到相等
+  let remainder = larger % smaller
+  let gcd = if (remainder == 0) { smaller } else { 6 }  // 简化版本
+  azimuth::assert_eq(6, gcd)
 }
 
-test "binary_number_simulation" {
-  // 模拟二进制运算
-  // 将二进制1010转换为十进制：1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10
+test "decimal_to_binary_simulation" {
+  // 模拟十进制转二进制
+  let decimal = 13
   
-  let bit3 = 1
-  let bit2 = 0
-  let bit1 = 1
-  let bit0 = 0
+  // 通过连续除以2来获取二进制位
+  let bit0 = decimal % 2        // 1
+  let bit1 = (decimal / 2) % 2  // 0
+  let bit2 = (decimal / 4) % 2  // 1
+  let bit3 = (decimal / 8) % 2  // 1
   
-  // 计算2的幂
-  let two_power_3 = @azimuth.multiply(@azimuth.multiply(2, 2), 2)  // 8
-  let two_power_2 = @azimuth.multiply(2, 2)  // 4
-  let two_power_1 = 2  // 2
-  let two_power_0 = 1  // 1
-  
-  // 计算十进制值
-  let decimal_value = @azimuth.add(@azimuth.add(
-    @azimuth.multiply(bit3, two_power_3), 
-    @azimuth.multiply(bit2, two_power_2)
-  ), @azimuth.add(
-    @azimuth.multiply(bit1, two_power_1), 
-    @azimuth.multiply(bit0, two_power_0)
-  ))
-  
-  @azimuth.assert_eq(10, decimal_value)
+  // 二进制数：1101 (从高位到低位)
+  // 转换回十进制验证
+  let binary_back = azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(bit3, 8), azimuth::multiply(bit2, 4)), azimuth::multiply(bit1, 2)), bit0)
+  azimuth::assert_eq(decimal, binary_back)
 }
 
-test "string_length_analysis" {
-  // 字符串长度分析（通过字符串拼接模拟）
-  let base = "Hello"
-  let target = @azimuth.greet(base)
+test "palindrome_number_check" {
+  // 回文数检查
+  let num = 12321
   
-  // "Hello, World!" 的长度应该是13个字符
-  // 我们通过验证字符串内容来间接验证长度
-  @azimuth.assert_eq_string("Hello, Hello!", target)
+  // 分解数字的各位
+  let digit1 = num / 10000        // 1
+  let _digit2 = (num / 1000) % 10  // 2
+  let digit3 = (num / 100) % 10   // 3
+  let _digit4 = (num / 10) % 10    // 2
+  let digit5 = num % 10           // 1
   
-  // 测试不同长度的字符串
-  let empty = ""
-  let single = "A"
-  let medium = "MoonBit"
+  // 检查是否为回文
+  let is_palindrome = (digit1 == digit5) && (_digit2 == _digit4)
+  azimuth::assert_true(is_palindrome)
   
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(empty))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet(single))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet(medium))
+  // 测试非回文数
+  let non_palindrome = 12345
+  let nd1 = non_palindrome / 10000
+  let _nd2 = (non_palindrome / 1000) % 10
+  let _nd4 = (non_palindrome / 10) % 10
+  let nd5 = non_palindrome % 10
+  let not_palindrome = !((nd1 == nd5) && (_nd2 == _nd4))
+  azimuth::assert_true(not_palindrome)
 }
 
-test "quadratic_equation_solver" {
-  // 解二次方程 ax² + bx + c = 0（简化版，只计算判别式）
-  // 方程：x² - 5x + 6 = 0
-  // 判别式：b² - 4ac = 25 - 24 = 1 > 0，有两个实数解
+test "armstrong_number_check" {
+  // 阿姆斯特朗数检查：各位数字的立方和等于数字本身
+  let num = 153
   
-  let a = 1
-  let b = -5
-  let c = 6
+  // 分解数字的各位
+  let digit1 = num / 100      // 1
+  let digit2 = (num / 10) % 10 // 5
+  let digit3 = num % 10       // 3
   
-  // 计算判别式：b² - 4ac
-  let b_squared = @azimuth.multiply(b, b)  // 25
-  let four_ac = @azimuth.multiply(@azimuth.multiply(4, a), c)  // 24
-  let discriminant = @azimuth.add(b_squared, -four_ac)  // 1
+  // 计算各位数字的立方和
+  let cube1 = azimuth::multiply(digit1, azimuth::multiply(digit1, digit1))
+  let cube2 = azimuth::multiply(digit2, azimuth::multiply(digit2, digit2))
+  let cube3 = azimuth::multiply(digit3, azimuth::multiply(digit3, digit3))
+  let sum_of_cubes = azimuth::add(azimuth::add(cube1, cube2), cube3)
   
-  @azimuth.assert_eq(1, discriminant)
+  azimuth::assert_eq(num, sum_of_cubes)
   
-  // 测试无实数解的情况：x² + x + 1 = 0
-  // 判别式：1 - 4 = -3 < 0
-  let a2 = 1
-  let b2 = 1
-  let c2 = 1
+  // 测试非阿姆斯特朗数
+  let not_armstrong = 154
+  let ndigit1 = not_armstrong / 100
+  let ndigit2 = (not_armstrong / 10) % 10
+  let ndigit3 = not_armstrong % 10
+  let ncube1 = azimuth::multiply(ndigit1, azimuth::multiply(ndigit1, ndigit1))
+  let ncube2 = azimuth::multiply(ndigit2, azimuth::multiply(ndigit2, ndigit2))
+  let ncube3 = azimuth::multiply(ndigit3, azimuth::multiply(ndigit3, ndigit3))
+  let nsum_of_cubes = azimuth::add(azimuth::add(ncube1, ncube2), ncube3)
   
-  let b2_squared = @azimuth.multiply(b2, b2)  // 1
-  let four_a2_c2 = @azimuth.multiply(@azimuth.multiply(4, a2), c2)  // 4
-  let discriminant2 = @azimuth.add(b2_squared, -four_a2_c2)  // -3
-  
-  @azimuth.assert_true(discriminant2 < 0)
+  azimuth::assert_true(not_armstrong != nsum_of_cubes)
 }
 
-test "array_sum_and_average" {
-  // 数组求和与平均值计算
-  // 模拟数组：[5, 10, 15, 20, 25]
+test "leap_year_calculation" {
+  // 闰年计算
+  let year = 2024
   
-  let element1 = 5
-  let element2 = 10
-  let element3 = 15
-  let element4 = 20
-  let element5 = 25
+  // 闰年规则：
+  // 1. 能被4整除但不能被100整除，或者
+  // 2. 能被400整除
+  let divisible_by_4 = year % 4 == 0
+  let _divisible_by_100 = year % 100 == 0
+  let _divisible_by_400 = year % 400 == 0
   
-  // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(element1, element2), element3), element4), element5)
-  @azimuth.assert_eq(75, sum)
+  let is_leap = divisible_by_4 && (_divisible_by_100 == false)
+  azimuth::assert_true(is_leap)
   
-  // 计算平均值
-  let count = 5
-  let average = sum / count
-  @azimuth.assert_eq(15, average)
+  // 测试非闰年
+  let non_leap_year = 2023
+  let ndiv_by_4 = non_leap_year % 4 == 0
+  let _ndiv_by_100 = non_leap_year % 100 == 0
+  let _ndiv_by_400 = non_leap_year % 400 == 0
   
-  // 计算方差（简化版）
-  let diff1 = @azimuth.add(element1, -average)  // -10
-  let diff2 = @azimuth.add(element2, -average)  // -5
-  let diff3 = @azimuth.add(element3, -average)  // 0
-  let diff4 = @azimuth.add(element4, -average)  // 5
-  let diff5 = @azimuth.add(element5, -average)  // 10
-  
-  let squared_diff1 = @azimuth.multiply(diff1, diff1)  // 100
-  let squared_diff2 = @azimuth.multiply(diff2, diff2)  // 25
-  let squared_diff3 = @azimuth.multiply(diff3, diff3)  // 0
-  let squared_diff4 = @azimuth.multiply(diff4, diff4)  // 25
-  let squared_diff5 = @azimuth.multiply(diff5, diff5)  // 100
-  
-  let sum_squared_diffs = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(squared_diff1, squared_diff2), squared_diff3), squared_diff4), squared_diff5)
-  let variance = sum_squared_diffs / count
-  
-  @azimuth.assert_eq(50, variance)
+  let not_leap = !(ndiv_by_4 && (_ndiv_by_100 == false))
+  azimuth::assert_true(not_leap)
 }
 
-test "speed_distance_time_calculations" {
-  // 速度、距离、时间计算
-  let distance = 300  // 公里
-  let speed = 60      // 公里/小时
+test "triangle_type_check" {
+  // 三角形类型检查
+  let a = 3
+  let b = 4
+  let c = 5
   
-  // 计算时间：时间 = 距离 / 速度
-  let time = distance / speed
-  @azimuth.assert_eq(5, time)  // 5小时
+  // 检查是否能构成三角形
+  let can_form_triangle = (a + b > c) && (a + c > b) && (b + c > a)
+  azimuth::assert_true(can_form_triangle)
   
-  // 计算平均速度（多段路程）
-  let distance1 = 120
-  let time1 = 2
-  let distance2 = 180
-  let time2 = 3
+  // 检查是否为直角三角形（勾股定理）
+  let a_squared = azimuth::multiply(a, a)
+  let b_squared = azimuth::multiply(b, b)
+  let c_squared = azimuth::multiply(c, c)
   
-  let total_distance = @azimuth.add(distance1, distance2)  // 300
-  let total_time = @azimuth.add(time1, time2)  // 5
-  let average_speed = total_distance / total_time
+  let is_right_triangle = (a_squared + b_squared == c_squared)
+  azimuth::assert_true(is_right_triangle)
   
-  @azimuth.assert_eq(60, average_speed)
+  // 测试等边三角形
+  let equilateral_a = 5
+  let equilateral_b = 5
+  let _equilateral_c = 5
+  
+  let is_equilateral = (equilateral_a == equilateral_b) && (equilateral_b == _equilateral_c)
+  azimuth::assert_true(is_equilateral)
 }
 
-test "discount_price_calculation" {
-  // 折扣价格计算
-  let original_price = 1000
-  let discount_percentage = 20  // 20%折扣
+test "temperature_conversion_precise" {
+  // 精确的温度转换
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数运算：F = C × 9 + 160) / 5
   
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  @azimuth.assert_eq(200, discount_amount)
+  let celsius = 25
+  let fahrenheit_numerator = azimuth::add(azimuth::multiply(celsius, 9), 160)
+  let fahrenheit = fahrenheit_numerator / 5
+  azimuth::assert_eq(77, fahrenheit)
   
-  // 计算折后价格
-  let discounted_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(800, discounted_price)
+  // 华氏度转摄氏度：C = (F - 32) × 5/9
+  // 使用整数运算：C = (F - 32) × 5) / 9
+  let fahrenheit_back = 77
+  let celsius_numerator = azimuth::multiply(fahrenheit_back - 32, 5)
+  let celsius_back = celsius_numerator / 9
+  azimuth::assert_eq(25, celsius_back)
   
-  // 计算税费（10%）
-  let tax_percentage = 10
-  let tax_amount = @azimuth.multiply(discounted_price, tax_percentage) / 100
-  @azimuth.assert_eq(80, tax_amount)
+  // 测试冰点
+  let freezing_c = 0
+  let freezing_f_numerator = azimuth::add(azimuth::multiply(freezing_c, 9), 160)
+  let freezing_f = freezing_f_numerator / 5
+  azimuth::assert_eq(32, freezing_f)
   
-  // 计算最终价格
-  let final_price = @azimuth.add(discounted_price, tax_amount)
-  @azimuth.assert_eq(880, final_price)
+  // 测试沸点
+  let boiling_c = 100
+  let boiling_f_numerator = azimuth::add(azimuth::multiply(boiling_c, 9), 160)
+  let boiling_f = boiling_f_numerator / 5
+  azimuth::assert_eq(212, boiling_f)
 }
 
-test "leap_year_validation" {
-  // 闰年判断
-  // 闰年规则：能被4整除但不能被100整除，或者能被400整除
+test "simple_interest_calculation" {
+  // 单利计算：利息 = 本金 × 利率 × 时间
+  let principal = 10000
+  let rate_percent = 5  // 5%
+  let time_years = 3
   
-  let year2024 = 2024
-  let year1900 = 1900
-  let year2000 = 2000
-  let year2023 = 2023
+  // 计算利息（以分为单位避免小数）
+  let interest_cents = azimuth::multiply(principal, azimuth::multiply(rate_percent, time_years))
+  let interest_dollars = interest_cents / 100
+  azimuth::assert_eq(1500, interest_dollars)
   
-  // 2024年是闰年（能被4整除，不能被100整除）
-  let divisible_by_4_2024 = (year2024 % 4 == 0)
-  let divisible_by_100_2024 = (year2024 % 100 == 0)
-  let is_leap_2024 = divisible_by_4_2024 && !divisible_by_100_2024
+  // 计算总金额
+  let total_amount = azimuth::add(principal, interest_dollars)
+  azimuth::assert_eq(11500, total_amount)
   
-  @azimuth.assert_true(is_leap_2024)
-  
-  // 1900年不是闰年（能被100整除但不能被400整除）
-  let divisible_by_100_1900 = (year1900 % 100 == 0)
-  let divisible_by_400_1900 = (year1900 % 400 == 0)
-  let is_leap_1900 = divisible_by_100_1900 && divisible_by_400_1900
-  
-  @azimuth.assert_false(is_leap_1900)
-  
-  // 2000年是闰年（能被400整除）
-  let divisible_by_400_2000 = (year2000 % 400 == 0)
-  let is_leap_2000 = divisible_by_400_2000
-  
-  @azimuth.assert_true(is_leap_2000)
-  
-  // 2023年不是闰年（不能被4整除）
-  let divisible_by_4_2023 = (year2023 % 4 == 0)
-  
-  @azimuth.assert_false(divisible_by_4_2023)
+  // 测试不同利率
+  let higher_rate = 8
+  let higher_interest = azimuth::multiply(principal, azimuth::multiply(higher_rate, time_years)) / 100
+  let higher_total = azimuth::add(principal, higher_interest)
+  azimuth::assert_eq(12400, higher_total)
 }

@@ -1,0 +1,187 @@
+((Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+      ((Pexpr_constant 3)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+        ((Pexpr_constant 10) (Pexpr_constant 4)))))
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+      ((Pexpr_constant 3)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+        ((Pexpr_constant 12) (Pexpr_constant 4))))))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+     ((Pexpr_constant 0)
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_constant 0) (Pexpr_constant 5))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+      ((Pexpr_constant -2)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+        ((Pexpr_constant -10) (Pexpr_constant 4)))))
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+      ((Pexpr_constant -3)
+       (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+        ((Pexpr_constant 10) (Pexpr_constant -4))))))
+    (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+     ((Pexpr_constant 3)
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_constant -10) (Pexpr_constant -4))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name total_items))) (Pexpr_constant 23)
+    (Pexpr_let (Ppat_var ((binder_name container_capacity)))
+     (Pexpr_constant 5)
+     (Pexpr_let (Ppat_var ((binder_name containers_needed)))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_ident ((var_name total_items)))
+        (Pexpr_ident ((var_name container_capacity)))))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+       ((Pexpr_constant 5) (Pexpr_ident ((var_name containers_needed))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_3)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name celsius))) (Pexpr_constant 25)
+    (Pexpr_let (Ppat_var ((binder_name approx_fahrenheit)))
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+      ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+        ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+          ((Pexpr_ident ((var_name celsius))) (Pexpr_constant 2)))
+         (Pexpr_infix ((var_name /))
+          (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+           ((Pexpr_ident ((var_name celsius))) (Pexpr_constant -1)))
+          (Pexpr_constant 10))))
+       (Pexpr_constant 32)))
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+      ((Pexpr_constant 77) (Pexpr_ident ((var_name approx_fahrenheit)))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_4)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name total_items))) (Pexpr_constant 95)
+    (Pexpr_let (Ppat_var ((binder_name items_per_page))) (Pexpr_constant 10)
+     (Pexpr_let (Ppat_var ((binder_name total_pages)))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_ident ((var_name total_items)))
+        (Pexpr_ident ((var_name items_per_page)))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 10) (Pexpr_ident ((var_name total_pages))))))
+       (Pexpr_let (Ppat_var ((binder_name last_page_items)))
+        (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name total_items)))
+         (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+          ((Pexpr_ident ((var_name items_per_page)))
+           (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name total_pages)))
+            (Pexpr_constant 1)))))
+        (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 5) (Pexpr_ident ((var_name last_page_items))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_5)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name total_records))) (Pexpr_constant 1234)
+    (Pexpr_let (Ppat_var ((binder_name batch_size))) (Pexpr_constant 100)
+     (Pexpr_let (Ppat_var ((binder_name batches_needed)))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_ident ((var_name total_records)))
+        (Pexpr_ident ((var_name batch_size)))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 13) (Pexpr_ident ((var_name batches_needed))))))
+       (Pexpr_let (Ppat_var ((binder_name last_batch_size)))
+        (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name total_records)))
+         (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+          ((Pexpr_ident ((var_name batch_size)))
+           (Pexpr_infix ((var_name -))
+            (Pexpr_ident ((var_name batches_needed))) (Pexpr_constant 1)))))
+        (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 34) (Pexpr_ident ((var_name last_batch_size))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_6)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name people))) (Pexpr_constant 17)
+    (Pexpr_let (Ppat_var ((binder_name rooms))) (Pexpr_constant 4)
+     (Pexpr_let (Ppat_var ((binder_name people_per_room)))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_ident ((var_name people))) (Pexpr_ident ((var_name rooms)))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 5) (Pexpr_ident ((var_name people_per_room))))))
+       (Pexpr_let (Ppat_var ((binder_name total_capacity)))
+        (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+         ((Pexpr_ident ((var_name people_per_room)))
+          (Pexpr_ident ((var_name rooms)))))
+        (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_true)))
+         ((Pexpr_infix ((var_name >=))
+           (Pexpr_ident ((var_name total_capacity)))
+           (Pexpr_ident ((var_name people)))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_616476616e6365645f6365696c696e675f74657374732e6d6274_7)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name total_minutes))) (Pexpr_constant 125)
+    (Pexpr_let (Ppat_var ((binder_name slot_duration))) (Pexpr_constant 30)
+     (Pexpr_let (Ppat_var ((binder_name slots_needed)))
+      (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+       ((Pexpr_ident ((var_name total_minutes)))
+        (Pexpr_ident ((var_name slot_duration)))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 5) (Pexpr_ident ((var_name slots_needed))))))
+       (Pexpr_let (Ppat_var ((binder_name last_slot_time)))
+        (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name total_minutes)))
+         (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+          ((Pexpr_ident ((var_name slot_duration)))
+           (Pexpr_infix ((var_name -))
+            (Pexpr_ident ((var_name slots_needed))) (Pexpr_constant 1)))))
+        (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+         ((Pexpr_constant 5) (Pexpr_ident ((var_name last_slot_time)))))))))))))

@@ -1,0 +1,36 @@
+((Ptop_funcdef
+  ((name
+    ((binder_name __test_73696d706c655f656e68616e6365645f746573742e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 5)
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+      ((Pexpr_constant 2) (Pexpr_constant 3)))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_73696d706c655f656e68616e6365645f746573742e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 6)
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+      ((Pexpr_constant 2) (Pexpr_constant 3)))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_73696d706c655f656e68616e6365645f746573742e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq_string)))
+    ((Pexpr_constant "Hello, World!")
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.greet)))
+      ((Pexpr_constant World))))))))

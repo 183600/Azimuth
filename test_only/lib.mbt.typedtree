@@ -532,6 +532,168 @@
    (fn
     ((params ())
      (body
+      (Texpr_sequence
+       ((Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 5 Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 5 Int) (Texpr_constant 0 Int)) Int Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 5 Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 0 Int) (Texpr_constant 5 Int)) Int Normal))
+         Unit Normal))
+       (Texpr_apply
+        (Texpr_ident assert_eq () Normal
+         ((Int Int) -> Unit (generic_ false)))
+        ((Texpr_constant 0 Int)
+         (Texpr_apply
+          (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 0 Int) (Texpr_constant 0 Int)) Int Normal))
+        Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_2)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var min_val/0 Int) (Texpr_constant -2147483648 Int)
+       (((binder min_val/0) (binder_typ Int)))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident min_val/0 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident min_val/0 () Normal Int) (Texpr_constant 0 Int))
+            Int Normal))
+          Unit Normal)
+         (Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident min_val/0 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant 0 Int) (Texpr_ident min_val/0 () Normal Int))
+            Int Normal))
+          Unit Normal)
+         (Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident min_val/0 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident min_val/0 () Normal Int) (Texpr_constant -1 Int))
+            Int Normal))
+          Unit Normal))
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant -2147483647 Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_ident min_val/0 () Normal Int) (Texpr_constant 1 Int)) Int
+           Normal))
+         Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_3)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
+       (((binder max_val/0) (binder_typ Int)))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident max_val/0 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 1 Int))
+            Int Normal))
+          Unit Normal))
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_ident max_val/0 () Normal Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 1000000000 Int) (Texpr_constant 1500000000 Int))
+           Int Normal))
+         Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_4)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var min_val/0 Int) (Texpr_constant -2147483648 Int)
+       (((binder min_val/0) (binder_typ Int)))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident min_val/0 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident min_val/0 () Normal Int) (Texpr_constant -1 Int))
+            Int Normal))
+          Unit Normal))
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_ident min_val/0 () Normal Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant -1500000000 Int)
+            (Texpr_constant -1000000000 Int))
+           Int Normal))
+         Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_5)
+   (fn
+    ((params ())
+     (body
       (Texpr_let (Tpat_var result/0 Int)
        (Texpr_apply
         (Texpr_ident multiply () Normal ((Int Int) -> Int (generic_ false)))
@@ -551,7 +713,151 @@
       (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
    (attrs ())))
  (Timpl_fun_decl
-  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_2)
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_6)
+   (fn
+    ((params ())
+     (body
+      (Texpr_sequence
+       ((Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 0 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 5 Int) (Texpr_constant 0 Int)) Int Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 0 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 0 Int) (Texpr_constant 5 Int)) Int Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 5 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 5 Int) (Texpr_constant 1 Int)) Int Normal))
+         Unit Normal))
+       (Texpr_apply
+        (Texpr_ident assert_eq () Normal
+         ((Int Int) -> Unit (generic_ false)))
+        ((Texpr_constant 5 Int)
+         (Texpr_apply
+          (Texpr_ident multiply () Normal
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 1 Int) (Texpr_constant 5 Int)) Int Normal))
+        Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_7)
+   (fn
+    ((params ())
+     (body
+      (Texpr_sequence
+       ((Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant -5 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 5 Int) (Texpr_constant -1 Int)) Int Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant -5 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant -1 Int) (Texpr_constant 5 Int)) Int Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 5 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant -5 Int) (Texpr_constant -1 Int)) Int Normal))
+         Unit Normal))
+       (Texpr_let (Tpat_var min_val/0 Int) (Texpr_constant -2147483648 Int)
+        (((binder min_val/0) (binder_typ Int)))
+        (Texpr_apply
+         (Texpr_ident assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_ident min_val/0 () Normal Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_ident min_val/0 () Normal Int) (Texpr_constant -1 Int))
+           Int Normal))
+         Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_8)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
+       (((binder max_val/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var min_val/1 Int) (Texpr_constant -2147483648 Int)
+        (((binder min_val/1) (binder_typ Int)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident assert_eq () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_ident max_val/0 () Normal Int)
+            (Texpr_apply
+             (Texpr_ident multiply () Normal
+              ((Int Int) -> Int (generic_ false)))
+             ((Texpr_constant 46341 Int) (Texpr_constant 46341 Int)) Int
+             Normal))
+           Unit Normal))
+         (Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_ident min_val/1 () Normal Int)
+           (Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant -46341 Int) (Texpr_constant 46341 Int)) Int
+            Normal))
+          Unit Normal)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_9)
    (fn
     ((params ())
      (body
@@ -566,6 +872,93 @@
         ((Texpr_constant "Hello, World!" String)
          (Texpr_ident result/0 () Normal String))
         Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_10)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result/0 String)
+       (Texpr_apply
+        (Texpr_ident greet () Normal ((String) -> String (generic_ false)))
+        ((Texpr_constant "" String)) String Normal)
+       (((binder result/0) (binder_typ String)))
+       (Texpr_apply
+        (Texpr_ident assert_eq_string () Normal
+         ((String String) -> Unit (generic_ false)))
+        ((Texpr_constant "Hello, !" String)
+         (Texpr_ident result/0 () Normal String))
+        Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_11)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result/0 String)
+       (Texpr_apply
+        (Texpr_ident greet () Normal ((String) -> String (generic_ false)))
+        ((Texpr_constant "\E6\B5\8B\E8\AF\95@123" String)) String Normal)
+       (((binder result/0) (binder_typ String)))
+       (Texpr_apply
+        (Texpr_ident assert_eq_string () Normal
+         ((String String) -> Unit (generic_ false)))
+        ((Texpr_constant "Hello, \E6\B5\8B\E8\AF\95@123!" String)
+         (Texpr_ident result/0 () Normal String))
+        Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder __test_6c69622e6d6274_12)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var length/0 Int) (Texpr_constant 10 Int)
+       (((binder length/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var width/1 Int) (Texpr_constant 5 Int)
+        (((binder width/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var perimeter/2 Int)
+         (Texpr_apply
+          (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+          ((Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant 2 Int) (Texpr_ident length/0 () Normal Int)) Int
+            Normal)
+           (Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant 2 Int) (Texpr_ident width/1 () Normal Int)) Int
+            Normal))
+          Int Normal)
+         (((binder perimeter/2) (binder_typ Int)))
+         (Texpr_apply
+          (Texpr_ident assert_eq () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_constant 30 Int) (Texpr_ident perimeter/2 () Normal Int))
+          Unit Normal)
+         Unit)
+        Unit)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint
