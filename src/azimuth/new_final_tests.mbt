@@ -1,4 +1,4 @@
-// 新的综合 MoonBit 测试用例
+// 新的最终 MoonBit 测试用例
 // 测试 azimuth 包中的核心功能和边界情况
 
 test "arithmetic_sequence_sum" {

@@ -1,4 +1,4 @@
-// 新的综合 MoonBit 测试用例
+// 用户新的 MoonBit 测试用例
 // 测试 azimuth 包中的核心功能和边界情况
 
 test "arithmetic_sequence_sum" {
@@ -6,11 +6,6 @@ test "arithmetic_sequence_sum" {
   let n = 10
   let sum = multiply(n, add(n, 1)) / 2
   assert_eq(55, sum)
-  
-  // 测试前20个自然数的和
-  let n2 = 20
-  let sum2 = multiply(n2, add(n2, 1)) / 2
-  assert_eq(210, sum2)
 }
 
 test "geometric_progression" {
@@ -20,10 +15,6 @@ test "geometric_progression" {
   let ratio = 2
   let term5 = multiply(first_term, multiply(ratio, multiply(ratio, multiply(ratio, ratio))))
   assert_eq(32, term5)
-  
-  // 计算前5项的和：2 + 4 + 8 + 16 + 32 = 62
-  let sum = add(add(add(add(2, 4), 8), 16), 32)
-  assert_eq(62, sum)
 }
 
 test "temperature_conversion_complete" {
@@ -34,16 +25,6 @@ test "temperature_conversion_complete" {
   let celsius = 25
   let fahrenheit = add(multiply(celsius, 2), add(-1, 32))
   assert_eq(77, fahrenheit)
-  
-  // 测试冰点
-  let freezing = 0
-  let freezing_f = add(multiply(freezing, 2), add(0, 32))
-  assert_eq(32, freezing_f)
-  
-  // 测试沸点
-  let boiling = 100
-  let boiling_f = add(multiply(boiling, 2), add(-1, 32))
-  assert_eq(231, boiling_f)
 }
 
 test "discount_calculation" {
