@@ -1,0 +1,18 @@
+clean_test_test/simple_new_test_cases.mbt:4:11-4:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:4:12-4:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:4:42-4:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:5:42-5:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:8:11-8:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:8:12-8:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:8:42-8:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:9:11-9:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:9:12-9:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:9:43-9:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:12:11-12:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:12:12-12:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:12:63-12:64 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:13:11-13:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:13:12-13:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test_cases.mbt:13:58-13:59 [E3001] Lexing error: missing identifier after `.`

@@ -1,0 +1,14 @@
+clean_test_test/new_feature_tests.mbt:5:16-5:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:11:16-11:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:17:16-17:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:23:16-23:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:29:16-29:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:35:13-35:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:36:14-36:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:37:16-37:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:44:16-44:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:51:16-51:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:57:16-57:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:63:15-63:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:64:15-64:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_feature_tests.mbt:65:16-65:23 [E3002] Expected upper case identifier for type name, found lower case identifier.

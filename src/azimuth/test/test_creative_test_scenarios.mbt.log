@@ -1,0 +1,176 @@
+clean_test_test/creative_test_scenarios.mbt:5:7-5:16 [E0002] Warning (unused_value): Unused variable 'start_day'
+clean_test_test/creative_test_scenarios.mbt:6:7-6:18 [E0002] Warning (unused_value): Unused variable 'start_month'
+clean_test_test/creative_test_scenarios.mbt:7:7-7:14 [E0002] Warning (unused_value): Unused variable 'end_day'
+clean_test_test/creative_test_scenarios.mbt:8:7-8:16 [E0002] Warning (unused_value): Unused variable 'end_month'
+clean_test_test/creative_test_scenarios.mbt:11:7-11:26 [E0002] Warning (unused_value): Unused variable 'days_in_start_month'
+clean_test_test/creative_test_scenarios.mbt:12:7-12:29 [E0002] Warning (unused_value): Unused variable 'days_in_between_months'
+clean_test_test/creative_test_scenarios.mbt:12:40-12:41 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:12:41-12:49 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:14:7-14:17 [E0002] Warning (unused_value): Unused variable 'total_days'
+clean_test_test/creative_test_scenarios.mbt:14:28-14:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:14:29-14:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:15:13-15:14 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:22:11-22:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:22:12-22:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:26:7-26:17 [E0002] Warning (unused_value): Unused variable 'item_price'
+clean_test_test/creative_test_scenarios.mbt:27:7-27:15 [E0002] Warning (unused_value): Unused variable 'quantity'
+clean_test_test/creative_test_scenarios.mbt:29:7-29:20 [E0002] Warning (unused_value): Unused variable 'discount_rate'
+clean_test_test/creative_test_scenarios.mbt:32:26-32:27 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:32:27-32:35 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:36:7-36:22 [E0002] Warning (unused_value): Unused variable 'discount_amount'
+clean_test_test/creative_test_scenarios.mbt:37:13-37:14 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:37:14-37:22 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:42:7-42:18 [E0002] Warning (unused_value): Unused variable 'final_total'
+clean_test_test/creative_test_scenarios.mbt:42:29-42:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:42:30-42:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:44:11-44:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:44:12-44:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:45:11-45:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:45:12-45:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:46:11-46:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:46:12-46:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:54:7-54:25 [E0002] Warning (unused_value): Unused variable 'battery_life_hours'
+clean_test_test/creative_test_scenarios.mbt:56:11-56:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:56:12-56:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:60:7-60:29 [E0002] Warning (unused_value): Unused variable 'eco_battery_life_hours'
+clean_test_test/creative_test_scenarios.mbt:62:11-62:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:62:12-62:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:69:7-69:19 [E0002] Warning (unused_value): Unused variable 'file_size_kb'
+clean_test_test/creative_test_scenarios.mbt:69:30-69:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:69:31-69:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:72:7-72:19 [E0002] Warning (unused_value): Unused variable 'file_size_gb'
+clean_test_test/creative_test_scenarios.mbt:74:11-74:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:74:12-74:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:75:11-75:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:75:12-75:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:78:7-78:17 [E0002] Warning (unused_value): Unused variable 'file_count'
+clean_test_test/creative_test_scenarios.mbt:79:7-79:20 [E0002] Warning (unused_value): Unused variable 'total_size_mb'
+clean_test_test/creative_test_scenarios.mbt:79:31-79:32 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:79:32-79:40 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:81:11-81:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:81:12-81:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:85:7-85:34 [E0002] Warning (unused_value): Unused variable 'calories_per_minute_running'
+clean_test_test/creative_test_scenarios.mbt:86:7-86:34 [E0002] Warning (unused_value): Unused variable 'calories_per_minute_walking'
+clean_test_test/creative_test_scenarios.mbt:87:7-87:22 [E0002] Warning (unused_value): Unused variable 'running_minutes'
+clean_test_test/creative_test_scenarios.mbt:88:7-88:22 [E0002] Warning (unused_value): Unused variable 'walking_minutes'
+clean_test_test/creative_test_scenarios.mbt:91:7-91:23 [E0002] Warning (unused_value): Unused variable 'running_calories'
+clean_test_test/creative_test_scenarios.mbt:91:34-91:35 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:91:35-91:43 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:92:7-92:23 [E0002] Warning (unused_value): Unused variable 'walking_calories'
+clean_test_test/creative_test_scenarios.mbt:92:34-92:35 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:92:35-92:43 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:93:7-93:21 [E0002] Warning (unused_value): Unused variable 'total_calories'
+clean_test_test/creative_test_scenarios.mbt:93:32-93:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:93:33-93:41 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:95:11-95:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:95:12-95:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:96:11-96:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:96:12-96:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:97:11-97:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:97:12-97:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:101:7-101:16 [E0002] Warning (unused_value): Unused variable 'principal'
+clean_test_test/creative_test_scenarios.mbt:102:7-102:18 [E0002] Warning (unused_value): Unused variable 'annual_rate'
+clean_test_test/creative_test_scenarios.mbt:103:7-103:17 [E0002] Warning (unused_value): Unused variable 'loan_years'
+clean_test_test/creative_test_scenarios.mbt:106:7-106:22 [E0002] Warning (unused_value): Unused variable 'yearly_interest'
+clean_test_test/creative_test_scenarios.mbt:106:33-106:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:106:34-106:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:109:7-109:21 [E0002] Warning (unused_value): Unused variable 'total_interest'
+clean_test_test/creative_test_scenarios.mbt:109:32-109:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:109:33-109:41 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:112:7-112:22 [E0002] Warning (unused_value): Unused variable 'total_repayment'
+clean_test_test/creative_test_scenarios.mbt:112:33-112:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:112:34-112:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:114:11-114:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:114:12-114:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:115:11-115:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:115:12-115:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:116:11-116:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:116:12-116:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:122:7-122:24 [E0002] Warning (unused_value): Unused variable 'flour_per_serving'
+clean_test_test/creative_test_scenarios.mbt:123:7-123:24 [E0002] Warning (unused_value): Unused variable 'sugar_per_serving'
+clean_test_test/creative_test_scenarios.mbt:126:7-126:18 [E0002] Warning (unused_value): Unused variable 'scale_ratio'
+clean_test_test/creative_test_scenarios.mbt:129:7-129:19 [E0002] Warning (unused_value): Unused variable 'flour_needed'
+clean_test_test/creative_test_scenarios.mbt:129:30-129:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:129:31-129:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:130:7-130:19 [E0002] Warning (unused_value): Unused variable 'sugar_needed'
+clean_test_test/creative_test_scenarios.mbt:130:30-130:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:130:31-130:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:133:7-133:18 [E0002] Warning (unused_value): Unused variable 'flour_total'
+clean_test_test/creative_test_scenarios.mbt:133:29-133:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:133:30-133:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:134:7-134:18 [E0002] Warning (unused_value): Unused variable 'sugar_total'
+clean_test_test/creative_test_scenarios.mbt:134:29-134:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:134:30-134:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:136:11-136:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:136:12-136:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:137:11-137:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:137:12-137:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:141:7-141:18 [E0002] Warning (unused_value): Unused variable 'distance_km'
+clean_test_test/creative_test_scenarios.mbt:142:7-142:23 [E0002] Warning (unused_value): Unused variable 'fuel_consumption'
+clean_test_test/creative_test_scenarios.mbt:143:7-143:27 [E0002] Warning (unused_value): Unused variable 'fuel_price_per_liter'
+clean_test_test/creative_test_scenarios.mbt:144:7-144:25 [E0002] Warning (unused_value): Unused variable 'accommodation_days'
+clean_test_test/creative_test_scenarios.mbt:145:7-145:33 [E0002] Warning (unused_value): Unused variable 'accommodation_cost_per_day'
+clean_test_test/creative_test_scenarios.mbt:148:7-148:18 [E0002] Warning (unused_value): Unused variable 'fuel_needed'
+clean_test_test/creative_test_scenarios.mbt:148:29-148:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:148:30-148:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:149:7-149:16 [E0002] Warning (unused_value): Unused variable 'fuel_cost'
+clean_test_test/creative_test_scenarios.mbt:149:27-149:28 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:149:28-149:36 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:152:7-152:25 [E0002] Warning (unused_value): Unused variable 'accommodation_cost'
+clean_test_test/creative_test_scenarios.mbt:152:36-152:37 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:152:37-152:45 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:155:7-155:17 [E0002] Warning (unused_value): Unused variable 'total_cost'
+clean_test_test/creative_test_scenarios.mbt:155:28-155:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:155:29-155:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:157:11-157:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:157:12-157:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:158:11-158:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:158:12-158:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:159:11-159:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:159:12-159:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:160:11-160:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:160:12-160:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:164:7-164:14 [E0002] Warning (unused_value): Unused variable 'credit1'
+clean_test_test/creative_test_scenarios.mbt:165:7-165:13 [E0002] Warning (unused_value): Unused variable 'grade1'
+clean_test_test/creative_test_scenarios.mbt:166:7-166:14 [E0002] Warning (unused_value): Unused variable 'credit2'
+clean_test_test/creative_test_scenarios.mbt:167:7-167:13 [E0002] Warning (unused_value): Unused variable 'grade2'
+clean_test_test/creative_test_scenarios.mbt:168:7-168:14 [E0002] Warning (unused_value): Unused variable 'credit3'
+clean_test_test/creative_test_scenarios.mbt:169:7-169:13 [E0002] Warning (unused_value): Unused variable 'grade3'
+clean_test_test/creative_test_scenarios.mbt:172:31-172:32 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:172:32-172:40 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:172:53-172:54 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:175:7-175:22 [E0002] Warning (unused_value): Unused variable 'weighted_score1'
+clean_test_test/creative_test_scenarios.mbt:175:33-175:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:175:34-175:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:176:7-176:22 [E0002] Warning (unused_value): Unused variable 'weighted_score2'
+clean_test_test/creative_test_scenarios.mbt:176:33-176:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:176:34-176:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:177:7-177:22 [E0002] Warning (unused_value): Unused variable 'weighted_score3'
+clean_test_test/creative_test_scenarios.mbt:177:33-177:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:177:34-177:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:178:38-178:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:178:39-178:47 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:178:60-178:61 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:181:7-181:10 [E0002] Warning (unused_value): Unused variable 'gpa'
+clean_test_test/creative_test_scenarios.mbt:181:34-181:35 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/creative_test_scenarios.mbt:183:11-183:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:183:12-183:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:184:11-184:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:184:12-184:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:185:11-185:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:185:12-185:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:189:7-189:16 [E0002] Warning (unused_value): Unused variable 'followers'
+clean_test_test/creative_test_scenarios.mbt:190:7-190:12 [E0002] Warning (unused_value): Unused variable 'likes'
+clean_test_test/creative_test_scenarios.mbt:191:7-191:15 [E0002] Warning (unused_value): Unused variable 'comments'
+clean_test_test/creative_test_scenarios.mbt:192:7-192:13 [E0002] Warning (unused_value): Unused variable 'shares'
+clean_test_test/creative_test_scenarios.mbt:195:7-195:23 [E0002] Warning (unused_value): Unused variable 'total_engagement'
+clean_test_test/creative_test_scenarios.mbt:195:34-195:35 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:195:35-195:43 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:195:56-195:57 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:198:7-198:22 [E0002] Warning (unused_value): Unused variable 'engagement_rate'
+clean_test_test/creative_test_scenarios.mbt:198:33-198:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:198:34-198:42 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:200:11-200:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:200:12-200:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/creative_test_scenarios.mbt:201:11-201:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/creative_test_scenarios.mbt:201:12-201:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.

@@ -1,0 +1,205 @@
+clean_test_test/focused_test_cases.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:9:31-9:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:9:40-9:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:9:64-9:65 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:10:31-10:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:10:40-10:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:10:70-10:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:13:31-13:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:13:40-13:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:13:65-13:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:14:31-14:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:14:40-14:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:14:70-14:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:17:26-17:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:17:35-17:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:17:65-17:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:25:31-25:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:25:40-25:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:25:71-25:72 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:26:3-26:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:26:31-26:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:26:40-26:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:26:72-26:73 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:29:3-29:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:29:31-29:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:29:40-29:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:29:70-29:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:30:31-30:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:30:40-30:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:30:69-30:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:33:25-33:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:33:34-33:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:33:63-33:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:34:25-34:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:34:34-34:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:34:63-34:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:39:3-39:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:39:41-39:48 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:39:50-39:58 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:39:68-39:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:42:3-42:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:42:42-42:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:42:51-42:59 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:42:70-42:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:45:7-45:16 [E0002] Warning (unused_value): Unused variable 'long_name'
+clean_test_test/focused_test_cases.mbt:46:3-46:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:46:76-46:83 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:46:85-46:93 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:46:110-46:111 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:49:3-49:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:49:47-49:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:49:56-49:64 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:49:80-49:81 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:54:3-54:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:54:26-54:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:54:35-54:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:54:54-54:55 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:55:3-55:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:55:26-55:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:55:35-55:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:55:54-55:55 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:58:26-58:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:58:35-58:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:58:59-58:60 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:59:26-59:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:59:35-59:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:59:59-59:60 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:60:3-60:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:60:25-60:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:60:34-60:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:60:58-60:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:61:25-61:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:61:34-61:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:61:58-61:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:64:3-64:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:64:27-64:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:64:36-64:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:64:61-64:62 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:65:3-65:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:65:27-65:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:65:36-65:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:65:61-65:62 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:70:14-70:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:70:23-70:31 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:71:3-71:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:74:19-74:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:74:28-74:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:75:3-75:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:78:20-78:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:78:29-78:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:79:3-79:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:84:7-84:18 [E0002] Warning (unused_value): Unused variable 'apple_price'
+clean_test_test/focused_test_cases.mbt:85:7-85:21 [E0002] Warning (unused_value): Unused variable 'apple_quantity'
+clean_test_test/focused_test_cases.mbt:86:7-86:19 [E0002] Warning (unused_value): Unused variable 'orange_price'
+clean_test_test/focused_test_cases.mbt:87:7-87:22 [E0002] Warning (unused_value): Unused variable 'orange_quantity'
+clean_test_test/focused_test_cases.mbt:89:7-89:18 [E0002] Warning (unused_value): Unused variable 'apple_total'
+clean_test_test/focused_test_cases.mbt:89:21-89:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:89:30-89:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:90:7-90:19 [E0002] Warning (unused_value): Unused variable 'orange_total'
+clean_test_test/focused_test_cases.mbt:90:22-90:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:90:31-90:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:91:20-91:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:91:29-91:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:96:7-96:14 [E0002] Warning (unused_value): Unused variable 'celsius'
+clean_test_test/focused_test_cases.mbt:97:20-97:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:97:29-97:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:106:3-106:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:106:3-106:68 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
+clean_test_test/focused_test_cases.mbt:106:24-106:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:106:33-106:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:106:68-106:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:107:3-107:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:107:3-107:69 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
+clean_test_test/focused_test_cases.mbt:107:24-107:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:107:33-107:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:107:69-107:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:108:3-108:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:108:3-108:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
+clean_test_test/focused_test_cases.mbt:108:24-108:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:108:33-108:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:108:73-108:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:109:3-109:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:109:3-109:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
+clean_test_test/focused_test_cases.mbt:109:24-109:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:109:33-109:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:109:74-109:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:112:3-112:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:112:27-112:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:112:36-112:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:112:56-112:57 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:113:3-113:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:113:26-113:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:113:35-113:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:113:58-113:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:118:7-118:17 [E0002] Warning (unused_value): Unused variable 'large_num1'
+clean_test_test/focused_test_cases.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:121:31-121:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:121:40-121:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:121:76-121:77 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:122:3-122:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:122:22-122:35 [E4095] Integer literal 2000000000000 is out of range.
+clean_test_test/focused_test_cases.mbt:122:37-122:44 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:122:46-122:54 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:122:87-122:88 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:125:16-125:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:125:25-125:33 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:126:12-126:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:126:21-126:29 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:127:12-127:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:127:21-127:29 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:128:12-128:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:128:21-128:29 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:129:3-129:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:134:3-134:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:134:43-134:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:134:52-134:60 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:134:72-134:73 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:135:3-135:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:135:43-135:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:135:52-135:60 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:135:72-135:73 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:138:3-138:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:138:46-138:53 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:138:55-138:63 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:138:78-138:79 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:141:3-141:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:141:46-141:53 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:141:55-141:63 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:141:78-141:79 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:144:3-144:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:144:42-144:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:144:51-144:59 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:144:70-144:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:145:3-145:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:145:42-145:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:145:51-145:59 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:145:70-145:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/focused_test_cases.mbt:150:20-150:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:150:29-150:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:151:25-151:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:151:34-151:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:152:22-152:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:152:31-152:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:155:3-155:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:156:3-156:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:157:3-157:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:160:25-160:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:160:34-160:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:161:3-161:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/focused_test_cases.mbt:163:27-163:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/focused_test_cases.mbt:163:36-163:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/focused_test_cases.mbt:164:3-164:21 [E4020] Package "azimuth" not found in the loaded packages.

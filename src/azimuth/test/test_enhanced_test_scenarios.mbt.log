@@ -1,0 +1,131 @@
+clean_test_test/enhanced_test_scenarios.mbt:6:7-6:8 [E0002] Warning (unused_value): Unused variable 'n'
+clean_test_test/enhanced_test_scenarios.mbt:7:7-7:12 [E0002] Warning (unused_value): Unused variable 'first'
+clean_test_test/enhanced_test_scenarios.mbt:8:7-8:11 [E0002] Warning (unused_value): Unused variable 'last'
+clean_test_test/enhanced_test_scenarios.mbt:10:7-10:10 [E0002] Warning (unused_value): Unused variable 'sum'
+clean_test_test/enhanced_test_scenarios.mbt:10:13-10:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:10:22-10:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:11:3-11:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:11:12-11:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:16:7-16:12 [E0002] Warning (unused_value): Unused variable 'term1'
+clean_test_test/enhanced_test_scenarios.mbt:17:7-17:12 [E0002] Warning (unused_value): Unused variable 'term2'
+clean_test_test/enhanced_test_scenarios.mbt:18:7-18:12 [E0002] Warning (unused_value): Unused variable 'term3'
+clean_test_test/enhanced_test_scenarios.mbt:19:7-19:12 [E0002] Warning (unused_value): Unused variable 'term4'
+clean_test_test/enhanced_test_scenarios.mbt:21:7-21:14 [E0002] Warning (unused_value): Unused variable 'product'
+clean_test_test/enhanced_test_scenarios.mbt:21:17-21:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:21:26-21:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:22:12-22:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:26:7-26:16 [E0002] Warning (unused_value): Unused variable 'principal'
+clean_test_test/enhanced_test_scenarios.mbt:27:7-27:11 [E0002] Warning (unused_value): Unused variable 'rate'
+clean_test_test/enhanced_test_scenarios.mbt:28:7-28:12 [E0002] Warning (unused_value): Unused variable 'years'
+clean_test_test/enhanced_test_scenarios.mbt:31:7-31:21 [E0002] Warning (unused_value): Unused variable 'total_interest'
+clean_test_test/enhanced_test_scenarios.mbt:31:24-31:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:31:33-31:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:33:7-33:19 [E0002] Warning (unused_value): Unused variable 'total_amount'
+clean_test_test/enhanced_test_scenarios.mbt:33:22-33:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:33:31-33:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:35:3-35:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:35:12-35:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:39:7-39:21 [E0002] Warning (unused_value): Unused variable 'original_price'
+clean_test_test/enhanced_test_scenarios.mbt:40:7-40:20 [E0002] Warning (unused_value): Unused variable 'discount_rate'
+clean_test_test/enhanced_test_scenarios.mbt:43:7-43:22 [E0002] Warning (unused_value): Unused variable 'discount_amount'
+clean_test_test/enhanced_test_scenarios.mbt:43:25-43:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:43:34-43:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:45:7-45:23 [E0002] Warning (unused_value): Unused variable 'discounted_price'
+clean_test_test/enhanced_test_scenarios.mbt:45:26-45:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:45:35-45:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:47:3-47:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:47:12-47:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:60:9-60:10 [E0002] Warning (unused_value): Unused variable 'c'
+clean_test_test/enhanced_test_scenarios.mbt:61:9-61:17 [E0002] Warning (unused_value): Unused variable 'expected'
+clean_test_test/enhanced_test_scenarios.mbt:62:9-62:15 [E0002] Warning (unused_value): Unused variable 'actual'
+clean_test_test/enhanced_test_scenarios.mbt:62:18-62:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:62:27-62:35 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:63:5-63:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:63:14-63:22 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:64:5-64:6 [E4087] The variable i is not mutable.
+clean_test_test/enhanced_test_scenarios.mbt:64:9-64:16 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:64:18-64:26 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:70:7-70:13 [E0002] Warning (unused_value): Unused variable 'length'
+clean_test_test/enhanced_test_scenarios.mbt:71:7-71:12 [E0002] Warning (unused_value): Unused variable 'width'
+clean_test_test/enhanced_test_scenarios.mbt:72:7-72:13 [E0002] Warning (unused_value): Unused variable 'height'
+clean_test_test/enhanced_test_scenarios.mbt:74:7-74:16 [E0002] Warning (unused_value): Unused variable 'base_area'
+clean_test_test/enhanced_test_scenarios.mbt:74:19-74:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:74:28-74:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:75:7-75:13 [E0002] Warning (unused_value): Unused variable 'volume'
+clean_test_test/enhanced_test_scenarios.mbt:75:16-75:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:75:25-75:33 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:76:3-76:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:76:12-76:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:79:7-79:13 [E0002] Warning (unused_value): Unused variable 'radius'
+clean_test_test/enhanced_test_scenarios.mbt:80:7-80:22 [E0002] Warning (unused_value): Unused variable 'cylinder_height'
+clean_test_test/enhanced_test_scenarios.mbt:81:7-81:17 [E0002] Warning (unused_value): Unused variable 'base_area2'
+clean_test_test/enhanced_test_scenarios.mbt:81:20-81:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:81:29-81:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:82:7-82:14 [E0002] Warning (unused_value): Unused variable 'volume2'
+clean_test_test/enhanced_test_scenarios.mbt:82:17-82:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:82:26-82:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:83:3-83:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:83:12-83:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:90:7-90:13 [E0002] Warning (unused_value): Unused variable 'speed1'
+clean_test_test/enhanced_test_scenarios.mbt:91:7-91:12 [E0002] Warning (unused_value): Unused variable 'time1'
+clean_test_test/enhanced_test_scenarios.mbt:92:7-92:16 [E0002] Warning (unused_value): Unused variable 'distance1'
+clean_test_test/enhanced_test_scenarios.mbt:92:19-92:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:92:28-92:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:93:3-93:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:93:12-93:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:98:7-98:12 [E0002] Warning (unused_value): Unused variable 'time2'
+clean_test_test/enhanced_test_scenarios.mbt:99:3-99:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:99:12-99:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:104:7-104:13 [E0002] Warning (unused_value): Unused variable 'speed3'
+clean_test_test/enhanced_test_scenarios.mbt:105:3-105:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:105:12-105:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:112:7-112:18 [E0002] Warning (unused_value): Unused variable 'spaced_name'
+clean_test_test/enhanced_test_scenarios.mbt:113:3-113:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:113:12-113:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:116:7-116:20 [E0002] Warning (unused_value): Unused variable 'special_chars'
+clean_test_test/enhanced_test_scenarios.mbt:117:3-117:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:117:12-117:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:120:7-120:21 [E0002] Warning (unused_value): Unused variable 'numeric_string'
+clean_test_test/enhanced_test_scenarios.mbt:121:3-121:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:121:12-121:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:124:7-124:21 [E0002] Warning (unused_value): Unused variable 'unicode_string'
+clean_test_test/enhanced_test_scenarios.mbt:125:3-125:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:125:12-125:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:133:7-133:8 [E0002] Warning (unused_value): Unused variable 'k'
+clean_test_test/enhanced_test_scenarios.mbt:134:7-134:9 [E0002] Warning (unused_value): Unused variable 'p1'
+clean_test_test/enhanced_test_scenarios.mbt:135:7-135:9 [E0002] Warning (unused_value): Unused variable 'p2'
+clean_test_test/enhanced_test_scenarios.mbt:135:12-135:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:135:21-135:29 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:136:7-136:9 [E0002] Warning (unused_value): Unused variable 'p3'
+clean_test_test/enhanced_test_scenarios.mbt:136:12-136:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:136:21-136:29 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:137:21-137:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:137:30-137:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:138:3-138:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:138:12-138:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:142:21-142:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:142:30-142:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:143:7-143:18 [E0002] Warning (unused_value): Unused variable 'combination'
+clean_test_test/enhanced_test_scenarios.mbt:143:33-143:34 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/enhanced_test_scenarios.mbt:144:3-144:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:144:12-144:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:150:7-150:25 [E0002] Warning (unused_value): Unused variable 'initial_investment'
+clean_test_test/enhanced_test_scenarios.mbt:151:7-151:18 [E0002] Warning (unused_value): Unused variable 'final_value'
+clean_test_test/enhanced_test_scenarios.mbt:152:7-152:24 [E0002] Warning (unused_value): Unused variable 'investment_period'
+clean_test_test/enhanced_test_scenarios.mbt:155:7-155:19 [E0002] Warning (unused_value): Unused variable 'total_return'
+clean_test_test/enhanced_test_scenarios.mbt:155:22-155:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:155:31-155:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:157:7-157:25 [E0002] Warning (unused_value): Unused variable 'annual_return_rate'
+clean_test_test/enhanced_test_scenarios.mbt:157:28-157:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:157:37-157:45 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:159:3-159:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:159:12-159:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:162:7-162:20 [E0002] Warning (unused_value): Unused variable 'growth_factor'
+clean_test_test/enhanced_test_scenarios.mbt:162:23-162:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:162:32-162:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:163:7-163:18 [E0002] Warning (unused_value): Unused variable 'simple_cagr'
+clean_test_test/enhanced_test_scenarios.mbt:163:21-163:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:163:30-163:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/enhanced_test_scenarios.mbt:164:3-164:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/enhanced_test_scenarios.mbt:164:12-164:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".

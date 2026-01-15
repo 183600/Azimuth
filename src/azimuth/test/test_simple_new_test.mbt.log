@@ -1,0 +1,57 @@
+clean_test_test/simple_new_test.mbt:3:11-3:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:3:12-3:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:3:42-3:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:6:11-6:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:6:12-6:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:6:42-6:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:9:11-9:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:9:12-9:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:9:63-9:64 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:14:11-14:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:14:12-14:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:14:39-14:40 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:14:70-14:71 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:17:11-17:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:17:12-17:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:17:39-17:40 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:17:71-17:72 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:21:7-21:16 [E0002] Warning (unused_value): Unused variable 'left_side'
+clean_test_test/simple_new_test.mbt:21:27-21:28 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:21:28-21:36 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:21:57-21:58 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:22:7-22:17 [E0002] Warning (unused_value): Unused variable 'right_side'
+clean_test_test/simple_new_test.mbt:22:28-22:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:22:29-22:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:22:50-22:51 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:22:84-22:85 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:23:11-23:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:23:12-23:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:27:7-27:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/simple_new_test.mbt:28:7-28:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/simple_new_test.mbt:31:11-31:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:31:12-31:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:31:43-31:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:32:11-32:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:32:12-32:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:32:48-32:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:33:11-33:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:33:12-33:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:33:48-33:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:38:11-38:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:38:12-38:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:38:67-38:68 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:39:11-39:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:39:12-39:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:39:60-39:61 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:40:11-40:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:40:12-40:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:40:62-40:63 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:45:7-45:15 [E0002] Warning (unused_value): Unused variable 'interest'
+clean_test_test/simple_new_test.mbt:45:26-45:27 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:45:27-45:35 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:45:60-45:61 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:46:7-46:12 [E0002] Warning (unused_value): Unused variable 'total'
+clean_test_test/simple_new_test.mbt:46:23-46:24 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:46:24-46:32 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_test.mbt:49:11-49:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test.mbt:49:12-49:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.

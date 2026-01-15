@@ -1,0 +1,46 @@
+clean_test_test/moonbit_new_standard_tests.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:5:43-5:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:6:11-6:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:6:12-6:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:6:42-6:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:7:11-7:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:7:12-7:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:7:44-7:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:11:7-11:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/moonbit_new_standard_tests.mbt:12:7-12:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/moonbit_new_standard_tests.mbt:14:11-14:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:14:12-14:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:14:48-14:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:15:11-15:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:15:12-15:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:15:48-15:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:19:11-19:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:19:12-19:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:19:43-19:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:20:11-20:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:20:12-20:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:20:44-20:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:21:11-21:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:21:12-21:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:21:42-21:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:25:7-25:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/moonbit_new_standard_tests.mbt:26:7-26:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/moonbit_new_standard_tests.mbt:28:11-28:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:28:12-28:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:28:48-28:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:29:11-29:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:29:12-29:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:29:48-29:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:30:11-30:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:30:12-30:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:30:48-30:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:34:11-34:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:34:12-34:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:34:65-34:66 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:35:11-35:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:35:12-35:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:35:58-35:59 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:36:11-36:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/moonbit_new_standard_tests.mbt:36:12-36:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/moonbit_new_standard_tests.mbt:36:61-36:62 [E3001] Lexing error: missing identifier after `.`

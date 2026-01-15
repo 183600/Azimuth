@@ -1,0 +1,119 @@
+clean_test_test/new_advanced_tests.mbt:9:3-9:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:11:3-11:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:13:3-13:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:22:7-22:12 [E0002] Warning (unused_value): Unused variable 'fib_0'
+clean_test_test/new_advanced_tests.mbt:23:7-23:12 [E0002] Warning (unused_value): Unused variable 'fib_1'
+clean_test_test/new_advanced_tests.mbt:24:15-24:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:24:24-24:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:25:15-25:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:25:24-25:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:26:15-26:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:26:24-26:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:27:15-27:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:27:24-27:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:28:15-28:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:28:24-28:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:29:15-29:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:29:24-29:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:30:15-30:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:30:24-30:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:38:3-38:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:48:24-48:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:48:33-48:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:51:24-51:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:51:33-51:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:54:24-54:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:54:33-54:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:63:7-63:16 [E0002] Warning (unused_value): Unused variable 'principal'
+clean_test_test/new_advanced_tests.mbt:64:7-64:19 [E0002] Warning (unused_value): Unused variable 'rate_percent'
+clean_test_test/new_advanced_tests.mbt:67:15-67:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:67:24-67:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:70:15-70:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:70:24-70:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:73:15-73:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:73:24-73:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:75:3-75:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:76:3-76:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:77:3-77:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:82:7-82:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/new_advanced_tests.mbt:83:7-83:8 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/new_advanced_tests.mbt:84:7-84:8 [E0002] Warning (unused_value): Unused variable 'c'
+clean_test_test/new_advanced_tests.mbt:87:7-87:9 [E0002] Warning (unused_value): Unused variable 'x1'
+clean_test_test/new_advanced_tests.mbt:88:7-88:9 [E0002] Warning (unused_value): Unused variable 'x2'
+clean_test_test/new_advanced_tests.mbt:91:17-91:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:91:26-91:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:92:3-92:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:95:17-95:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:95:26-95:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:96:3-96:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:101:7-101:12 [E0002] Warning (unused_value): Unused variable 'data1'
+clean_test_test/new_advanced_tests.mbt:102:7-102:12 [E0002] Warning (unused_value): Unused variable 'data2'
+clean_test_test/new_advanced_tests.mbt:103:7-103:12 [E0002] Warning (unused_value): Unused variable 'data3'
+clean_test_test/new_advanced_tests.mbt:104:7-104:12 [E0002] Warning (unused_value): Unused variable 'data4'
+clean_test_test/new_advanced_tests.mbt:105:7-105:12 [E0002] Warning (unused_value): Unused variable 'data5'
+clean_test_test/new_advanced_tests.mbt:108:13-108:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:108:22-108:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:113:3-113:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:116:22-116:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:116:31-116:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:124:3-124:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:128:7-128:17 [E0002] Warning (unused_value): Unused variable 'usd_amount'
+clean_test_test/new_advanced_tests.mbt:129:7-129:20 [E0002] Warning (unused_value): Unused variable 'exchange_rate'
+clean_test_test/new_advanced_tests.mbt:130:7-130:30 [E0002] Warning (unused_value): Unused variable 'transaction_fee_percent'
+clean_test_test/new_advanced_tests.mbt:133:20-133:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:133:29-133:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:136:13-136:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:136:22-136:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:139:23-139:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:139:32-139:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:141:3-141:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:142:3-142:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:143:3-143:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:152:3-152:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:155:29-155:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:155:38-155:46 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:156:3-156:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:159:19-159:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:159:28-159:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:163:3-163:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:164:3-164:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:165:3-165:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:169:7-169:20 [E0002] Warning (unused_value): Unused variable 'initial_stock'
+clean_test_test/new_advanced_tests.mbt:170:7-170:17 [E0002] Warning (unused_value): Unused variable 'sold_units'
+clean_test_test/new_advanced_tests.mbt:171:7-171:22 [E0002] Warning (unused_value): Unused variable 'restocked_units'
+clean_test_test/new_advanced_tests.mbt:172:7-172:20 [E0002] Warning (unused_value): Unused variable 'damaged_units'
+clean_test_test/new_advanced_tests.mbt:175:7-175:20 [E0002] Warning (unused_value): Unused variable 'current_stock'
+clean_test_test/new_advanced_tests.mbt:175:23-175:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:175:32-175:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:176:29-176:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:176:38-176:46 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:179:23-179:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:179:32-179:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:182:23-182:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:182:32-182:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:185:3-185:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:186:3-186:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:187:3-187:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:188:3-188:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:193:7-193:20 [E0002] Warning (unused_value): Unused variable 'customer_name'
+clean_test_test/new_advanced_tests.mbt:196:7-196:15 [E0002] Warning (unused_value): Unused variable 'quantity'
+clean_test_test/new_advanced_tests.mbt:197:7-197:17 [E0002] Warning (unused_value): Unused variable 'unit_price'
+clean_test_test/new_advanced_tests.mbt:198:7-198:18 [E0002] Warning (unused_value): Unused variable 'total_price'
+clean_test_test/new_advanced_tests.mbt:198:21-198:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:198:30-198:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:201:18-201:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/new_advanced_tests.mbt:201:27-201:35 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/new_advanced_tests.mbt:207:3-207:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:208:3-208:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:209:3-209:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:210:3-210:28 [E4020] Package "azimuth" not found in the loaded packages.

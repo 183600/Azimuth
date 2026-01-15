@@ -1,0 +1,225 @@
+clean_test_test/comprehensive_test_cases.mbt:5:7-5:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/comprehensive_test_cases.mbt:6:7-6:8 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/comprehensive_test_cases.mbt:7:7-7:8 [E0002] Warning (unused_value): Unused variable 'c'
+clean_test_test/comprehensive_test_cases.mbt:8:7-8:8 [E0002] Warning (unused_value): Unused variable 'd'
+clean_test_test/comprehensive_test_cases.mbt:9:7-9:8 [E0002] Warning (unused_value): Unused variable 'e'
+clean_test_test/comprehensive_test_cases.mbt:10:7-10:8 [E0002] Warning (unused_value): Unused variable 'f'
+clean_test_test/comprehensive_test_cases.mbt:12:7-12:13 [E0002] Warning (unused_value): Unused variable 'sum_ab'
+clean_test_test/comprehensive_test_cases.mbt:12:24-12:25 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:12:25-12:33 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:13:7-13:14 [E0002] Warning (unused_value): Unused variable 'diff_cd'
+clean_test_test/comprehensive_test_cases.mbt:13:25-13:26 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:13:26-13:34 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:14:7-14:17 [E0002] Warning (unused_value): Unused variable 'product_ef'
+clean_test_test/comprehensive_test_cases.mbt:14:28-14:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:14:29-14:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:15:7-15:13 [E0002] Warning (unused_value): Unused variable 'result'
+clean_test_test/comprehensive_test_cases.mbt:15:24-15:25 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:15:25-15:33 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:15:46-15:47 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:17:11-17:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:17:12-17:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:22:11-22:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:22:12-22:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:22:67-22:68 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:25:11-25:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:25:12-25:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:25:62-25:63 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:28:11-28:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:28:12-28:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:28:66-28:67 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:31:11-31:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:31:12-31:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:31:60-31:61 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:35:7-35:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/comprehensive_test_cases.mbt:36:7-36:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/comprehensive_test_cases.mbt:39:11-39:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:39:12-39:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:39:43-39:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:40:11-40:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:40:12-40:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:40:48-40:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:43:11-43:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:43:12-43:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:43:48-43:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:44:11-44:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:44:12-44:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:44:48-44:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:47:11-47:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:47:12-47:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:47:48-47:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:48:11-48:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:48:12-48:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:48:48-48:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:53:7-53:18 [E0002] Warning (unused_value): Unused variable 'item1_price'
+clean_test_test/comprehensive_test_cases.mbt:54:7-54:21 [E0002] Warning (unused_value): Unused variable 'item1_quantity'
+clean_test_test/comprehensive_test_cases.mbt:55:7-55:18 [E0002] Warning (unused_value): Unused variable 'item2_price'
+clean_test_test/comprehensive_test_cases.mbt:56:7-56:21 [E0002] Warning (unused_value): Unused variable 'item2_quantity'
+clean_test_test/comprehensive_test_cases.mbt:59:7-59:13 [E0002] Warning (unused_value): Unused variable 'total1'
+clean_test_test/comprehensive_test_cases.mbt:59:24-59:25 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:59:25-59:33 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:60:7-60:13 [E0002] Warning (unused_value): Unused variable 'total2'
+clean_test_test/comprehensive_test_cases.mbt:60:24-60:25 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:60:25-60:33 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:63:7-63:18 [E0002] Warning (unused_value): Unused variable 'order_total'
+clean_test_test/comprehensive_test_cases.mbt:63:29-63:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:63:30-63:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:66:7-66:10 [E0002] Warning (unused_value): Unused variable 'tax'
+clean_test_test/comprehensive_test_cases.mbt:66:21-66:22 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:66:22-66:30 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:69:7-69:19 [E0002] Warning (unused_value): Unused variable 'final_amount'
+clean_test_test/comprehensive_test_cases.mbt:69:30-69:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:69:31-69:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:71:11-71:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:71:12-71:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:76:7-76:13 [E0002] Warning (unused_value): Unused variable 'length'
+clean_test_test/comprehensive_test_cases.mbt:77:7-77:12 [E0002] Warning (unused_value): Unused variable 'width'
+clean_test_test/comprehensive_test_cases.mbt:79:7-79:11 [E0002] Warning (unused_value): Unused variable 'area'
+clean_test_test/comprehensive_test_cases.mbt:79:22-79:23 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:79:23-79:31 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:80:7-80:16 [E0002] Warning (unused_value): Unused variable 'perimeter'
+clean_test_test/comprehensive_test_cases.mbt:80:27-80:28 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:80:28-80:36 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:80:49-80:50 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:80:88-80:89 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:82:11-82:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:82:12-82:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:83:11-83:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:83:12-83:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:86:7-86:11 [E0002] Warning (unused_value): Unused variable 'base'
+clean_test_test/comprehensive_test_cases.mbt:87:7-87:13 [E0002] Warning (unused_value): Unused variable 'height'
+clean_test_test/comprehensive_test_cases.mbt:88:7-88:20 [E0002] Warning (unused_value): Unused variable 'triangle_area'
+clean_test_test/comprehensive_test_cases.mbt:88:31-88:32 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:88:32-88:40 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:90:11-90:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:90:12-90:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:94:7-94:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/comprehensive_test_cases.mbt:95:7-95:8 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/comprehensive_test_cases.mbt:96:7-96:8 [E0002] Warning (unused_value): Unused variable 'c'
+clean_test_test/comprehensive_test_cases.mbt:99:7-99:17 [E0002] Warning (unused_value): Unused variable 'left_assoc'
+clean_test_test/comprehensive_test_cases.mbt:99:28-99:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:99:29-99:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:99:50-99:51 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:100:7-100:18 [E0002] Warning (unused_value): Unused variable 'right_assoc'
+clean_test_test/comprehensive_test_cases.mbt:100:29-100:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:100:30-100:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:100:54-100:55 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:101:11-101:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:101:12-101:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:104:7-104:19 [E0002] Warning (unused_value): Unused variable 'distrib_left'
+clean_test_test/comprehensive_test_cases.mbt:104:30-104:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:104:31-104:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:104:60-104:61 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:105:7-105:20 [E0002] Warning (unused_value): Unused variable 'distrib_right'
+clean_test_test/comprehensive_test_cases.mbt:105:31-105:32 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:105:32-105:40 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:105:53-105:54 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:105:87-105:88 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:106:11-106:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:106:12-106:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:109:11-109:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:109:12-109:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:109:39-109:40 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:109:73-109:74 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:114:7-114:11 [E0002] Warning (unused_value): Unused variable 'base'
+clean_test_test/comprehensive_test_cases.mbt:115:7-115:13 [E0002] Warning (unused_value): Unused variable 'result'
+clean_test_test/comprehensive_test_cases.mbt:115:24-115:25 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:115:25-115:33 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:115:51-115:52 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:115:78-115:79 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:116:11-116:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:116:12-116:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:119:7-119:17 [E0002] Warning (unused_value): Unused variable 'sum_result'
+clean_test_test/comprehensive_test_cases.mbt:119:28-119:29 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:119:29-119:37 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:119:50-119:51 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:119:72-119:73 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:120:11-120:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:120:12-120:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:123:7-123:19 [E0002] Warning (unused_value): Unused variable 'mixed_result'
+clean_test_test/comprehensive_test_cases.mbt:123:30-123:31 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:123:31-123:39 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:123:52-123:53 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:123:87-123:88 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:124:11-124:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:124:12-124:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:129:11-129:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:129:12-129:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:129:42-129:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:130:11-130:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:130:12-130:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:130:42-130:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:131:11-131:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:131:12-131:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:131:51-131:52 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:132:11-132:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:132:12-132:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:132:52-132:53 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:135:11-135:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:135:12-135:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:135:43-135:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:136:11-136:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:136:12-136:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:136:43-136:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:137:11-137:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:137:12-137:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:137:44-137:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:138:11-138:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:138:12-138:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:138:44-138:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:141:11-141:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:141:12-141:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:141:44-141:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:142:11-142:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:142:12-142:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:142:43-142:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:143:11-143:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:143:12-143:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:143:44-143:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:144:11-144:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:144:12-144:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:144:43-144:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:149:7-149:12 [E0002] Warning (unused_value): Unused variable 'hours'
+clean_test_test/comprehensive_test_cases.mbt:150:7-150:14 [E0002] Warning (unused_value): Unused variable 'minutes'
+clean_test_test/comprehensive_test_cases.mbt:151:7-151:14 [E0002] Warning (unused_value): Unused variable 'seconds'
+clean_test_test/comprehensive_test_cases.mbt:153:7-153:20 [E0002] Warning (unused_value): Unused variable 'total_seconds'
+clean_test_test/comprehensive_test_cases.mbt:153:31-153:32 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:153:32-153:40 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:153:53-153:54 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:153:80-153:81 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:154:44-154:45 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:154:66-154:67 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:156:11-156:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:156:12-156:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:159:7-159:17 [E0002] Warning (unused_value): Unused variable 'start_hour'
+clean_test_test/comprehensive_test_cases.mbt:160:7-160:19 [E0002] Warning (unused_value): Unused variable 'start_minute'
+clean_test_test/comprehensive_test_cases.mbt:161:7-161:15 [E0002] Warning (unused_value): Unused variable 'end_hour'
+clean_test_test/comprehensive_test_cases.mbt:162:7-162:17 [E0002] Warning (unused_value): Unused variable 'end_minute'
+clean_test_test/comprehensive_test_cases.mbt:164:7-164:18 [E0002] Warning (unused_value): Unused variable 'start_total'
+clean_test_test/comprehensive_test_cases.mbt:164:29-164:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:164:30-164:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:164:51-164:52 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:165:7-165:16 [E0002] Warning (unused_value): Unused variable 'end_total'
+clean_test_test/comprehensive_test_cases.mbt:165:27-165:28 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:165:28-165:36 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:165:49-165:50 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:166:7-166:15 [E0002] Warning (unused_value): Unused variable 'duration'
+clean_test_test/comprehensive_test_cases.mbt:166:26-166:27 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:166:27-166:35 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:168:11-168:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:168:12-168:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:174:7-174:17 [E0002] Warning (unused_value): Unused variable 'item_price'
+clean_test_test/comprehensive_test_cases.mbt:177:7-177:20 [E0002] Warning (unused_value): Unused variable 'discount_rate'
+clean_test_test/comprehensive_test_cases.mbt:180:7-180:15 [E0002] Warning (unused_value): Unused variable 'subtotal'
+clean_test_test/comprehensive_test_cases.mbt:180:26-180:27 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:180:27-180:35 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:183:7-183:22 [E0002] Warning (unused_value): Unused variable 'discount_amount'
+clean_test_test/comprehensive_test_cases.mbt:184:13-184:14 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:184:14-184:22 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:190:29-190:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:190:30-190:38 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:193:7-193:20 [E0002] Warning (unused_value): Unused variable 'within_budget'
+clean_test_test/comprehensive_test_cases.mbt:195:11-195:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:195:12-195:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/comprehensive_test_cases.mbt:196:11-196:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/comprehensive_test_cases.mbt:196:12-196:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.

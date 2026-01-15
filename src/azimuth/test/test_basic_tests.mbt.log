@@ -1,0 +1,6 @@
+clean_test_test/basic_tests.mbt:4:16-4:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/basic_tests.mbt:5:3-5:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/basic_tests.mbt:9:16-9:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/basic_tests.mbt:10:3-10:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/basic_tests.mbt:14:16-14:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/basic_tests.mbt:15:3-15:10 [E3002] Expected upper case identifier for type name, found lower case identifier.

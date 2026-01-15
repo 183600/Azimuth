@@ -1,0 +1,9 @@
+clean_test_test/simple_test_verify.mbt:3:11-3:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_test_verify.mbt:3:12-3:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_test_verify.mbt:3:42-3:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_test_verify.mbt:4:11-4:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_test_verify.mbt:4:12-4:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_test_verify.mbt:4:42-4:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_test_verify.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_test_verify.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_test_verify.mbt:5:63-5:64 [E3001] Lexing error: missing identifier after `.`

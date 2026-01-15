@@ -1,0 +1,1 @@
+clean_test_test/additional_moonbit_test_cases.mbt:209:7-209:20 [E0002] Warning (unused_value): Unused variable 'invalid_value'

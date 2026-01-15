@@ -1,0 +1,250 @@
+clean_test_test/moonbit_enhanced_test_cases.mbt:5:7-5:14 [E0002] Warning (unused_value): Unused variable 'numbers'
+clean_test_test/moonbit_enhanced_test_cases.mbt:8:13-8:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:8:22-8:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:12:3-12:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:12:12-12:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:15:7-15:14 [E0002] Warning (unused_value): Unused variable 'average'
+clean_test_test/moonbit_enhanced_test_cases.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:16:12-16:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:19:22-19:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:19:31-19:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:24:7-24:23 [E0002] Warning (unused_value): Unused variable 'weighted_average'
+clean_test_test/moonbit_enhanced_test_cases.mbt:25:3-25:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:25:12-25:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:29:7-29:13 [E0002] Warning (unused_value): Unused variable 'radius'
+clean_test_test/moonbit_enhanced_test_cases.mbt:32:7-32:18 [E0002] Warning (unused_value): Unused variable 'circle_area'
+clean_test_test/moonbit_enhanced_test_cases.mbt:32:21-32:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:32:30-32:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:33:3-33:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:33:12-33:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:36:7-36:18 [E0002] Warning (unused_value): Unused variable 'square_side'
+clean_test_test/moonbit_enhanced_test_cases.mbt:37:7-37:18 [E0002] Warning (unused_value): Unused variable 'square_area'
+clean_test_test/moonbit_enhanced_test_cases.mbt:37:21-37:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:37:30-37:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:38:3-38:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:38:12-38:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:41:7-41:23 [E0002] Warning (unused_value): Unused variable 'rectangle_length'
+clean_test_test/moonbit_enhanced_test_cases.mbt:42:7-42:22 [E0002] Warning (unused_value): Unused variable 'rectangle_width'
+clean_test_test/moonbit_enhanced_test_cases.mbt:43:7-43:21 [E0002] Warning (unused_value): Unused variable 'rectangle_area'
+clean_test_test/moonbit_enhanced_test_cases.mbt:43:24-43:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:43:33-43:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:44:3-44:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:44:12-44:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:47:7-47:20 [E0002] Warning (unused_value): Unused variable 'trapezoid_top'
+clean_test_test/moonbit_enhanced_test_cases.mbt:48:7-48:23 [E0002] Warning (unused_value): Unused variable 'trapezoid_bottom'
+clean_test_test/moonbit_enhanced_test_cases.mbt:49:7-49:23 [E0002] Warning (unused_value): Unused variable 'trapezoid_height'
+clean_test_test/moonbit_enhanced_test_cases.mbt:50:7-50:21 [E0002] Warning (unused_value): Unused variable 'trapezoid_area'
+clean_test_test/moonbit_enhanced_test_cases.mbt:50:24-50:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:50:33-50:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:54:3-54:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:54:12-54:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:58:7-58:16 [E0002] Warning (unused_value): Unused variable 'principal'
+clean_test_test/moonbit_enhanced_test_cases.mbt:59:7-59:11 [E0002] Warning (unused_value): Unused variable 'rate'
+clean_test_test/moonbit_enhanced_test_cases.mbt:60:7-60:12 [E0002] Warning (unused_value): Unused variable 'years'
+clean_test_test/moonbit_enhanced_test_cases.mbt:63:7-63:22 [E0002] Warning (unused_value): Unused variable 'simple_interest'
+clean_test_test/moonbit_enhanced_test_cases.mbt:63:25-63:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:63:34-63:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:64:7-64:19 [E0002] Warning (unused_value): Unused variable 'simple_total'
+clean_test_test/moonbit_enhanced_test_cases.mbt:64:22-64:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:64:31-64:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:67:3-67:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:67:12-67:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:71:7-71:18 [E0002] Warning (unused_value): Unused variable 'year1_total'
+clean_test_test/moonbit_enhanced_test_cases.mbt:71:21-71:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:71:30-71:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:73:7-73:18 [E0002] Warning (unused_value): Unused variable 'year2_total'
+clean_test_test/moonbit_enhanced_test_cases.mbt:73:21-73:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:73:30-73:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:75:7-75:18 [E0002] Warning (unused_value): Unused variable 'year3_total'
+clean_test_test/moonbit_enhanced_test_cases.mbt:75:21-75:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:75:30-75:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:77:3-77:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:77:12-77:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:85:7-85:23 [E0002] Warning (unused_value): Unused variable 'celsius_freezing'
+clean_test_test/moonbit_enhanced_test_cases.mbt:86:7-86:26 [E0002] Warning (unused_value): Unused variable 'fahrenheit_freezing'
+clean_test_test/moonbit_enhanced_test_cases.mbt:86:29-86:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:86:38-86:46 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:87:3-87:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:87:12-87:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:90:7-90:22 [E0002] Warning (unused_value): Unused variable 'celsius_boiling'
+clean_test_test/moonbit_enhanced_test_cases.mbt:91:7-91:25 [E0002] Warning (unused_value): Unused variable 'fahrenheit_boiling'
+clean_test_test/moonbit_enhanced_test_cases.mbt:91:28-91:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:91:37-91:45 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:92:3-92:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:92:12-92:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:95:7-95:19 [E0002] Warning (unused_value): Unused variable 'celsius_room'
+clean_test_test/moonbit_enhanced_test_cases.mbt:96:7-96:22 [E0002] Warning (unused_value): Unused variable 'fahrenheit_room'
+clean_test_test/moonbit_enhanced_test_cases.mbt:96:25-96:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:96:34-96:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:97:3-97:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:97:12-97:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:100:7-100:22 [E0002] Warning (unused_value): Unused variable 'fahrenheit_back'
+clean_test_test/moonbit_enhanced_test_cases.mbt:101:7-101:19 [E0002] Warning (unused_value): Unused variable 'celsius_back'
+clean_test_test/moonbit_enhanced_test_cases.mbt:101:22-101:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:101:31-101:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:102:3-102:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:102:12-102:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:109:7-109:23 [E0002] Warning (unused_value): Unused variable 'initial_velocity'
+clean_test_test/moonbit_enhanced_test_cases.mbt:110:7-110:19 [E0002] Warning (unused_value): Unused variable 'acceleration'
+clean_test_test/moonbit_enhanced_test_cases.mbt:111:7-111:11 [E0002] Warning (unused_value): Unused variable 'time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:114:7-114:28 [E0002] Warning (unused_value): Unused variable 'distance_with_initial'
+clean_test_test/moonbit_enhanced_test_cases.mbt:114:31-114:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:114:40-114:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:115:7-115:33 [E0002] Warning (unused_value): Unused variable 'distance_with_acceleration'
+clean_test_test/moonbit_enhanced_test_cases.mbt:115:36-115:43 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:115:45-115:53 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:116:7-116:21 [E0002] Warning (unused_value): Unused variable 'total_distance'
+clean_test_test/moonbit_enhanced_test_cases.mbt:116:24-116:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:116:33-116:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:119:3-119:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:119:12-119:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:122:7-122:21 [E0002] Warning (unused_value): Unused variable 'final_velocity'
+clean_test_test/moonbit_enhanced_test_cases.mbt:122:24-122:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:122:33-122:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:123:3-123:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:123:12-123:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:126:7-126:23 [E0002] Warning (unused_value): Unused variable 'average_velocity'
+clean_test_test/moonbit_enhanced_test_cases.mbt:126:26-126:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:126:35-126:43 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:127:3-127:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:127:12-127:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:131:7-131:17 [E0002] Warning (unused_value): Unused variable 'array_size'
+clean_test_test/moonbit_enhanced_test_cases.mbt:132:7-132:19 [E0002] Warning (unused_value): Unused variable 'element_size'
+clean_test_test/moonbit_enhanced_test_cases.mbt:135:7-135:17 [E0002] Warning (unused_value): Unused variable 'total_size'
+clean_test_test/moonbit_enhanced_test_cases.mbt:135:20-135:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:135:29-135:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:136:3-136:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:136:12-136:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:139:7-139:12 [E0002] Warning (unused_value): Unused variable 'index'
+clean_test_test/moonbit_enhanced_test_cases.mbt:140:7-140:13 [E0002] Warning (unused_value): Unused variable 'offset'
+clean_test_test/moonbit_enhanced_test_cases.mbt:140:16-140:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:140:25-140:33 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:141:3-141:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:141:12-141:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:144:7-144:21 [E0002] Warning (unused_value): Unused variable 'capacity_power'
+clean_test_test/moonbit_enhanced_test_cases.mbt:145:7-145:15 [E0002] Warning (unused_value): Unused variable 'capacity'
+clean_test_test/moonbit_enhanced_test_cases.mbt:145:18-145:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:145:27-145:35 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:146:3-146:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:146:12-146:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:149:7-149:20 [E0002] Warning (unused_value): Unused variable 'element_count'
+clean_test_test/moonbit_enhanced_test_cases.mbt:150:7-150:18 [E0002] Warning (unused_value): Unused variable 'load_factor'
+clean_test_test/moonbit_enhanced_test_cases.mbt:150:21-150:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:150:30-150:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:151:3-151:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:151:12-151:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:155:7-155:17 [E0002] Warning (unused_value): Unused variable 'first_name'
+clean_test_test/moonbit_enhanced_test_cases.mbt:156:7-156:16 [E0002] Warning (unused_value): Unused variable 'last_name'
+clean_test_test/moonbit_enhanced_test_cases.mbt:157:7-157:10 [E0002] Warning (unused_value): Unused variable 'age'
+clean_test_test/moonbit_enhanced_test_cases.mbt:160:7-160:16 [E0002] Warning (unused_value): Unused variable 'full_name'
+clean_test_test/moonbit_enhanced_test_cases.mbt:160:19-160:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:160:28-160:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:161:3-161:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:161:12-161:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:164:7-164:22 [E0002] Warning (unused_value): Unused variable 'name_with_space'
+clean_test_test/moonbit_enhanced_test_cases.mbt:165:7-165:24 [E0002] Warning (unused_value): Unused variable 'result_with_space'
+clean_test_test/moonbit_enhanced_test_cases.mbt:165:27-165:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:165:36-165:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:166:3-166:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:166:12-166:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:169:7-169:23 [E0002] Warning (unused_value): Unused variable 'name_with_number'
+clean_test_test/moonbit_enhanced_test_cases.mbt:170:7-170:25 [E0002] Warning (unused_value): Unused variable 'result_with_number'
+clean_test_test/moonbit_enhanced_test_cases.mbt:170:28-170:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:170:37-170:45 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:171:3-171:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:171:12-171:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:174:7-174:24 [E0002] Warning (unused_value): Unused variable 'name_with_special'
+clean_test_test/moonbit_enhanced_test_cases.mbt:175:7-175:26 [E0002] Warning (unused_value): Unused variable 'result_with_special'
+clean_test_test/moonbit_enhanced_test_cases.mbt:175:29-175:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:175:38-175:46 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:176:3-176:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:176:12-176:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:179:7-179:16 [E0002] Warning (unused_value): Unused variable 'long_name'
+clean_test_test/moonbit_enhanced_test_cases.mbt:180:7-180:18 [E0002] Warning (unused_value): Unused variable 'result_long'
+clean_test_test/moonbit_enhanced_test_cases.mbt:180:21-180:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:180:30-180:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:181:3-181:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:181:12-181:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:185:7-185:8 [E0002] Warning (unused_value): Unused variable 'n'
+clean_test_test/moonbit_enhanced_test_cases.mbt:188:7-188:20 [E0002] Warning (unused_value): Unused variable 'constant_time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:189:3-189:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:189:12-189:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:193:7-193:18 [E0002] Warning (unused_value): Unused variable 'linear_time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:193:21-193:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:193:30-193:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:194:3-194:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:194:12-194:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:198:7-198:21 [E0002] Warning (unused_value): Unused variable 'quadratic_time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:198:24-198:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:198:33-198:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:199:3-199:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:199:12-199:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:203:7-203:15 [E0002] Warning (unused_value): Unused variable 'log_time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:204:3-204:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:204:12-204:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:208:7-208:19 [E0002] Warning (unused_value): Unused variable 'n_log_n_time'
+clean_test_test/moonbit_enhanced_test_cases.mbt:208:22-208:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:208:31-208:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:209:3-209:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:209:12-209:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:213:7-213:21 [E0002] Warning (unused_value): Unused variable 'decimal_number'
+clean_test_test/moonbit_enhanced_test_cases.mbt:217:7-217:18 [E0002] Warning (unused_value): Unused variable 'binary_ones'
+clean_test_test/moonbit_enhanced_test_cases.mbt:218:3-218:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:218:12-218:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:222:7-222:24 [E0002] Warning (unused_value): Unused variable 'octal_calculation'
+clean_test_test/moonbit_enhanced_test_cases.mbt:222:27-222:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:222:36-222:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:226:3-226:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:226:12-226:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:230:7-230:22 [E0002] Warning (unused_value): Unused variable 'hex_calculation'
+clean_test_test/moonbit_enhanced_test_cases.mbt:230:25-230:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:230:34-230:42 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:234:3-234:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:234:12-234:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:237:7-237:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/moonbit_enhanced_test_cases.mbt:238:7-238:8 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/moonbit_enhanced_test_cases.mbt:241:7-241:18 [E0002] Warning (unused_value): Unused variable 'bitwise_and'
+clean_test_test/moonbit_enhanced_test_cases.mbt:242:3-242:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:242:12-242:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:245:7-245:17 [E0002] Warning (unused_value): Unused variable 'bitwise_or'
+clean_test_test/moonbit_enhanced_test_cases.mbt:246:3-246:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:246:12-246:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:249:7-249:18 [E0002] Warning (unused_value): Unused variable 'bitwise_xor'
+clean_test_test/moonbit_enhanced_test_cases.mbt:250:3-250:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:250:12-250:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:254:7-254:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/moonbit_enhanced_test_cases.mbt:255:7-255:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/moonbit_enhanced_test_cases.mbt:258:3-258:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:258:12-258:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:259:3-259:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:259:12-259:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:260:3-260:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:260:12-260:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:261:3-261:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:261:12-261:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:264:3-264:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:264:12-264:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:265:3-265:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:265:12-265:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:266:3-266:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:266:12-266:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:267:3-267:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:267:12-267:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:270:3-270:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:270:12-270:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:271:3-271:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:271:12-271:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:272:3-272:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:272:12-272:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:273:3-273:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:273:12-273:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:276:7-276:15 [E0002] Warning (unused_value): Unused variable 'near_max'
+clean_test_test/moonbit_enhanced_test_cases.mbt:277:7-277:15 [E0002] Warning (unused_value): Unused variable 'near_min'
+clean_test_test/moonbit_enhanced_test_cases.mbt:279:3-279:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:279:12-279:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:280:3-280:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:280:12-280:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:281:3-281:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:281:12-281:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/moonbit_enhanced_test_cases.mbt:282:3-282:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/moonbit_enhanced_test_cases.mbt:282:12-282:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".

@@ -1,0 +1,9 @@
+clean_test_test/builtin_assert_test.mbt:7:20-7:25 [E4021] The value identifier panic is unbound.
+clean_test_test/builtin_assert_test.mbt:13:20-13:25 [E4021] The value identifier panic is unbound.
+clean_test_test/builtin_assert_test.mbt:19:33-19:38 [E4021] The value identifier panic is unbound.
+clean_test_test/builtin_assert_test.mbt:24:20-24:23 [E4021] The value identifier add is unbound.
+clean_test_test/builtin_assert_test.mbt:25:24-25:29 [E4021] The value identifier panic is unbound.
+clean_test_test/builtin_assert_test.mbt:27:25-27:33 [E4021] The value identifier multiply is unbound.
+clean_test_test/builtin_assert_test.mbt:28:29-28:34 [E4021] The value identifier panic is unbound.
+clean_test_test/builtin_assert_test.mbt:30:22-30:27 [E4021] The value identifier greet is unbound.
+clean_test_test/builtin_assert_test.mbt:31:40-31:45 [E4021] The value identifier panic is unbound.

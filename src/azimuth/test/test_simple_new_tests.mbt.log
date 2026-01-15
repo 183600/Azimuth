@@ -1,0 +1,34 @@
+clean_test_test/simple_new_tests.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:5:42-5:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:6:11-6:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:6:12-6:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:6:42-6:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:10:11-10:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:10:12-10:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:10:42-10:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:11:11-11:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:11:12-11:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:11:42-11:43 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:15:11-15:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:15:12-15:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:15:63-15:64 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:16:11-16:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:16:12-16:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:16:58-16:59 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:20:7-20:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/simple_new_tests.mbt:21:7-21:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/simple_new_tests.mbt:23:11-23:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:23:12-23:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:23:48-23:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:24:11-24:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:24:12-24:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:24:48-24:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:28:11-28:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:28:12-28:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:29:11-29:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:29:12-29:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:30:11-30:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:30:12-30:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/simple_new_tests.mbt:31:11-31:12 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_tests.mbt:31:12-31:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.

@@ -1,0 +1,82 @@
+clean_test_test/moon_test_new_cases.mbt:8:20-8:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:20:3-20:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:21:3-21:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:29:26-29:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:30:24-30:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:36:26-36:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:36:44-36:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:46:3-46:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:47:3-47:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:53:5-53:18 [E4087] The variable binary_digits is not mutable.
+clean_test_test/moon_test_new_cases.mbt:54:5-54:9 [E4087] The variable temp is not mutable.
+clean_test_test/moon_test_new_cases.mbt:56:3-56:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:62:7-62:17 [E0002] Warning (unused_value): Unused variable 'queue_size'
+clean_test_test/moon_test_new_cases.mbt:67:23-67:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:67:36-67:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:68:3-68:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:72:7-72:16 [E0002] Warning (unused_value): Unused variable 'new_value'
+clean_test_test/moon_test_new_cases.mbt:76:3-76:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:80:3-80:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:87:7-87:22 [E0002] Warning (unused_value): Unused variable 'target_position'
+clean_test_test/moon_test_new_cases.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:95:3-95:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:101:5-101:30 [E4087] The variable binary_search_comparisons is not mutable.
+clean_test_test/moon_test_new_cases.mbt:102:5-102:14 [E4087] The variable temp_size is not mutable.
+clean_test_test/moon_test_new_cases.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:115:3-115:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:118:7-118:18 [E0002] Warning (unused_value): Unused variable 'test_string'
+clean_test_test/moon_test_new_cases.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:124:7-124:11 [E0002] Warning (unused_value): Unused variable 'str1'
+clean_test_test/moon_test_new_cases.mbt:125:7-125:11 [E0002] Warning (unused_value): Unused variable 'str2'
+clean_test_test/moon_test_new_cases.mbt:128:3-128:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:136:39-136:40 [E4018] Type Char does not implement trait Add: no `impl` is defined
+clean_test_test/moon_test_new_cases.mbt:136:41-136:46 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Char
+clean_test_test/moon_test_new_cases.mbt:137:3-137:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:140:39-140:40 [E4018] Type Char does not implement trait Sub: no `impl` is defined
+clean_test_test/moon_test_new_cases.mbt:140:41-140:46 [E4014] Expr Type Mismatch
+        has type : Int
+        wanted   : Char
+clean_test_test/moon_test_new_cases.mbt:141:3-141:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:144:7-144:19 [E0002] Warning (unused_value): Unused variable 'input_number'
+clean_test_test/moon_test_new_cases.mbt:145:20-145:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:145:33-145:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:145:46-145:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:145:59-145:71 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:146:3-146:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:158:7-158:17 [E0002] Warning (unused_value): Unused variable 'ip_numeric'
+clean_test_test/moon_test_new_cases.mbt:158:20-158:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:158:33-158:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:158:46-158:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:159:5-159:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:160:5-160:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:161:6-161:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:164:15-164:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:165:15-165:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:166:7-166:20 [E0002] Warning (unused_value): Unused variable 'ip_simplified'
+clean_test_test/moon_test_new_cases.mbt:166:23-166:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:166:36-166:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:166:49-166:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:171:3-171:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:176:20-176:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:177:3-177:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:186:3-186:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:187:3-187:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:192:21-192:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:193:3-193:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:199:3-199:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:209:11-209:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:209:24-209:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:210:3-210:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:216:20-216:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:216:49-216:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:217:3-217:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:223:3-223:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:227:3-227:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:231:18-231:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_new_cases.mbt:232:3-232:28 [E4020] Package "azimuth" not found in the loaded packages.
