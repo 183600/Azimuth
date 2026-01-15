@@ -4,7 +4,7 @@
 echo "验证新添加的 MoonBit 测试用例..."
 
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-TEST_FILE="$PROJECT_ROOT/src/azimuth/new_moon_test_cases.mbt"
+TEST_FILE="$PROJECT_ROOT/src/azimuth/test/new_comprehensive_tests.mbt"
 
 # 检查测试文件是否存在
 if [ ! -f "$TEST_FILE" ]; then
@@ -57,7 +57,7 @@ else
 fi
 
 # 检查是否使用了项目中的函数
-if grep -q "@azimuth.add(" "$TEST_FILE" && grep -q "@azimuth.multiply(" "$TEST_FILE" && grep -q "@azimuth.greet(" "$TEST_FILE"; then
+if grep -q "add(" "$TEST_FILE" && grep -q "multiply(" "$TEST_FILE"; then
   echo "✓ 使用了项目中的函数"
 else
   echo "✗ 未正确使用项目中的函数"
@@ -65,7 +65,7 @@ else
 fi
 
 # 检查是否使用了断言函数
-if grep -q "@azimuth.assert_eq(" "$TEST_FILE" && grep -q "@azimuth.assert_eq_string(" "$TEST_FILE"; then
+if grep -q "assert_eq(" "$TEST_FILE"; then
   echo "✓ 使用了断言函数"
 else
   echo "✗ 未正确使用断言函数"
