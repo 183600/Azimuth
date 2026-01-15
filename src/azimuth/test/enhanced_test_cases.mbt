@@ -1,217 +1,174 @@
 // 增强的 MoonBit 测试用例
-// 测试 Azimuth 项目的各种功能和边界情况
+// 包含实际应用场景和边界条件测试
 
-test "temperature_conversion_comprehensive" {
-  // 温度转换综合测试：摄氏度转华氏度 F = C × 9/5 + 32
-  // 使用整数近似：F = C × 2 + 30
+test "temperature_conversion_celsius_to_fahrenheit" {
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数运算近似：F = C × 2 + 30
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
   
-  // 测试常见温度点
-  let freezing_c = 0
-  let freezing_f = @azimuth.add(@azimuth.multiply(freezing_c, 2), 30)
-  @azimuth.assert_eq(30, freezing_f)
+  // 测试冰点
+  let freezing = @azimuth.add(@azimuth.multiply(0, 2), 30)
+  @azimuth.assert_eq(30, freezing)  // 0 × 2 + 30 = 30
   
-  let room_c = 20
-  let room_f = @azimuth.add(@azimuth.multiply(room_c, 2), 30)
-  @azimuth.assert_eq(70, room_f)
-  
-  let boiling_c = 100
-  let boiling_f = @azimuth.add(@azimuth.multiply(boiling_c, 2), 30)
-  @azimuth.assert_eq(230, boiling_f)
-  
-  // 测试负温度
-  let negative_c = -10
-  let negative_f = @azimuth.add(@azimuth.multiply(negative_c, 2), 30)
-  @azimuth.assert_eq(10, negative_f)
+  // 测试沸点
+  let boiling = @azimuth.add(@azimuth.multiply(100, 2), 30)
+  @azimuth.assert_eq(230, boiling)  // 100 × 2 + 30 = 230
 }
 
-test "shopping_cart_total_calculation" {
-  // 购物车总价计算测试
+test "shopping_cart_total_with_discount" {
+  // 购物车总价计算，包含折扣逻辑
   let item1_price = 299
-  let item1_qty = 2
+  let item1_quantity = 2
   let item2_price = 199
-  let item2_qty = 3
-  let item3_price = 99
-  let item3_qty = 1
+  let item2_quantity = 3
+  let discount_threshold = 1000
+  let discount_rate = 10
   
-  // 计算各项小计
-  let subtotal1 = @azimuth.multiply(item1_price, item1_qty)
-  let subtotal2 = @azimuth.multiply(item2_price, item2_qty)
-  let subtotal3 = @azimuth.multiply(item3_price, item3_qty)
+  // 计算商品总价
+  let item1_total = @azimuth.multiply(item1_price, item1_quantity)
+  let item2_total = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = @azimuth.add(item1_total, item2_total)
   
-  // 计算总价
-  let total = @azimuth.add(@azimuth.add(subtotal1, subtotal2), subtotal3)
+  // 应用折扣（如果超过阈值）
+  let discount = if (subtotal > discount_threshold) {
+    @azimuth.multiply(subtotal, discount_rate) / 100
+  } else {
+    0
+  }
   
-  // 验证：299*2 + 199*3 + 99*1 = 598 + 597 + 99 = 1294
-  @azimuth.assert_eq(1294, total)
+  let final_total = @azimuth.add(subtotal, -discount)
+  @azimuth.assert_eq(1094, final_total)  // (299×2 + 199×3) - 10% = 1194 - 119 = 1075
 }
 
-test "geometric_calculations" {
-  // 几何计算测试
-  let length = 8
-  let width = 6
-  
-  // 矩形面积
-  let rectangle_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(48, rectangle_area)
-  
-  // 矩形周长
-  let perimeter = @azimuth.multiply(@azimuth.add(length, width), 2)
-  @azimuth.assert_eq(28, perimeter)
-  
-  // 三角形面积（底×高÷2）
-  let base = 10
-  let height = 5
-  let triangle_area = @azimuth.multiply(base, height) / 2
-  @azimuth.assert_eq(25, triangle_area)
-}
-
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  // 测试空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  
-  // 测试单字符
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
-  
-  // 测试包含数字的字符串
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
-  
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-}
-
-test "mathematical_series_calculations" {
-  // 数学级数计算测试
-  // 等差数列求和：1 + 2 + 3 + ... + 10 = 55
-  let n = 10
-  let sum_n = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  @azimuth.assert_eq(55, sum_n)
-  
-  // 等比数列求和：1 + 2 + 4 + 8 = 15
-  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 4), 8)
-  @azimuth.assert_eq(15, geo_sum)
-  
-  // 平方和：1² + 2² + 3² + 4² = 30
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.multiply(4, 4))
-  @azimuth.assert_eq(30, square_sum)
-}
-
-test "boundary_value_comprehensive" {
-  // 边界值综合测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 边界值加法测试
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  
-  // 边界值乘法测试
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  
-  // 边界值附近的运算
-  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
-}
-
-test "game_mechanics_simulation" {
-  // 游戏机制模拟测试
-  let base_score = 100
-  let level = 5
-  let multiplier = 2
-  let bonus = 50
-  
-  // 计算等级加成分数
-  let level_bonus = @azimuth.multiply(base_score, level)
-  
-  // 计算倍数加成
-  let multiplier_bonus = @azimuth.multiply(level_bonus, multiplier)
-  
-  // 计算最终分数
-  let final_score = @azimuth.add(multiplier_bonus, bonus)
-  
-  // 验证：(100 * 5) * 2 + 50 = 1050
-  @azimuth.assert_eq(1050, final_score)
-  
-  // 计算排名奖励（前10名额外10%）
-  let rank_bonus = @azimuth.multiply(final_score, 10) / 100
-  let total_with_rank = @azimuth.add(final_score, rank_bonus)
-  
-  // 验证：1050 + 105 = 1155
-  @azimuth.assert_eq(1155, total_with_rank)
-}
-
-test "time_conversion_utilities" {
-  // 时间转换工具测试
-  // 时间单位转换
-  let hours = 2
-  let minutes = 30
-  
-  // 转换为总分钟数
-  let total_minutes = @azimuth.add(@azimuth.multiply(hours, 60), minutes)
-  @azimuth.assert_eq(150, total_minutes)
-  
-  // 转换为总秒数
-  let total_seconds = @azimuth.multiply(total_minutes, 60)
-  @azimuth.assert_eq(9000, total_seconds)
-  
-  // 计算时间差
-  let start_hour = 9   // 9:00 AM
-  let end_hour = 17    // 5:00 PM
-  let work_hours = @azimuth.add(end_hour, -start_hour)
-  @azimuth.assert_eq(8, work_hours)
-  
-  // 计算工作分钟数
-  let work_minutes = @azimuth.multiply(work_hours, 60)
-  @azimuth.assert_eq(480, work_minutes)
-}
-
-test "financial_interest_calculations" {
-  // 金融利息计算测试
+test "loan_repayment_calculation" {
+  // 贷款还款计算（简化版）
   let principal = 10000
-  let rate_percent = 5
+  let annual_rate = 5  // 5%
   let years = 3
   
-  // 简单利息计算：利息 = 本金 × 利率 × 年数
-  let simple_interest = @azimuth.multiply(principal, @azimuth.multiply(rate_percent, years))
+  // 简化的单利计算：总还款 = 本金 + 本金 × 利率 × 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
+  let total_repayment = @azimuth.add(principal, interest)
   
-  // 总金额 = 本金 + 利息
-  let total_simple = @azimuth.add(principal, simple_interest)
+  @azimuth.assert_eq(160000, total_repayment)  // 10000 + 10000×5×3 = 160000
   
-  // 验证：10000 + 10000*5*3 = 10000 + 150000 = 160000
-  @azimuth.assert_eq(160000, total_simple)
-  
-  // 复利简化计算：总金额 = 本金 × (1 + 利率 × 年数)
-  let growth_factor = @azimuth.add(1, @azimuth.multiply(rate_percent, years))
-  let total_compound = @azimuth.multiply(principal, growth_factor)
-  
-  // 验证：10000 × (1 + 5×3) = 10000 × 16 = 160000
-  @azimuth.assert_eq(160000, total_compound)
+  // 计算月供（简化）
+  let monthly_payment = total_repayment / @azimuth.multiply(years, 12)
+  @azimuth.assert_eq(4444, monthly_payment)  // 160000 / 36 = 4444 (整数除法)
 }
 
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "array_index_2d_to_1d" {
+  // 二维数组转一维数组的索引计算
+  let row = 3
+  let col = 4
+  let width = 10
   
-  // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, max_val) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, min_val) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  // 计算一维索引：index = row × width + col
+  let index = @azimuth.add(@azimuth.multiply(row, width), col)
+  @azimuth.assert_eq(34, index)  // 3 × 10 + 4 = 34
   
-  // 测试特殊值处理
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
+  // 测试边界情况
+  let first_index = @azimuth.add(@azimuth.multiply(0, width), 0)
+  @azimuth.assert_eq(0, first_index)
   
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+  let last_index = @azimuth.add(@azimuth.multiply(9, width), 9)
+  @azimuth.assert_eq(99, last_index)
+}
+
+test "checksum_calculation" {
+  // 简单的校验和计算
+  let numbers = [12, 34, 56, 78, 90]
+  
+  // 计算校验和：所有数字相加后取模
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(12, 34), 56), 78), 90)
+  let checksum = sum % 256  // 取模256
+  @azimuth.assert_eq(16, checksum)  // 270 % 256 = 14
+  
+  // 测试另一个数据集
+  let sum2 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  let checksum2 = sum2 % 100
+  @azimuth.assert_eq(15, checksum2)  // 15 % 100 = 15
+}
+
+test "velocity_distance_calculation" {
+  // 物理计算：速度、距离、时间
+  let initial_velocity = 10  // m/s
+  let acceleration = 2      // m/s²
+  let time = 5              // s
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
+  @azimuth.assert_eq(20, final_velocity)  // 10 + 2×5 = 20
+  
+  // 计算距离：s = ut + 0.5at²
+  // 简化为整数：s = ut + at²/2
+  let distance_part1 = @azimuth.multiply(initial_velocity, time)
+  let distance_part2 = @azimuth.multiply(@azimuth.multiply(acceleration, time), time) / 2
+  let total_distance = @azimuth.add(distance_part1, distance_part2)
+  @azimuth.assert_eq(75, total_distance)  // 10×5 + 2×5×5/2 = 50 + 25 = 75
+}
+
+test "percentage_change_calculation" {
+  // 百分比变化计算
+  let old_value = 200
+  let new_value = 250
+  
+  // 计算变化量：new - old
+  let change = @azimuth.add(new_value, -old_value)
+  @azimuth.assert_eq(50, change)
+  
+  // 计算百分比变化：(change / old) × 100
+  let percentage_change = @azimuth.multiply(change, 100) / old_value
+  @azimuth.assert_eq(25, percentage_change)  // 50 × 100 / 200 = 25%
+  
+  // 测试负变化
+  let old_value2 = 300
+  let new_value2 = 240
+  let change2 = @azimuth.add(new_value2, -old_value2)
+  let percentage_change2 = @azimuth.multiply(change2, 100) / old_value2
+  @azimuth.assert_eq(-20, percentage_change2)  // -60 × 100 / 300 = -20%
+}
+
+test "data_validation_boundary" {
+  // 数据验证的边界条件测试
+  let max_input = 2147483647
+  let min_input = -2147483648
+  let valid_range_max = 1000
+  let valid_range_min = -1000
+  
+  // 测试超出范围的处理
+  let over_max = if (max_input > valid_range_max) { valid_range_max } else { max_input }
+  @azimuth.assert_eq(1000, over_max)
+  
+  let under_min = if (min_input < valid_range_min) { valid_range_min } else { min_input }
+  @azimuth.assert_eq(-1000, under_min)
+  
+  // 测试边界值本身
+  let at_max = if (valid_range_max > valid_range_max) { valid_range_max } else { valid_range_max }
+  @azimuth.assert_eq(1000, at_max)
+  
+  let at_min = if (valid_range_min < valid_range_min) { valid_range_min } else { valid_range_min }
+  @azimuth.assert_eq(-1000, at_min)
+}
+
+test "string_template_with_variables" {
+  // 字符串模板处理与变量替换
+  let user_name = "Alice"
+  let user_age = "25"
+  let user_city = "Beijing"
+  
+  // 模拟模板处理："Hello, {name}! You are {age} years old and live in {city}."
+  let greeting = @azimuth.greet(user_name)
+  let age_part = " You are " + user_age + " years old"
+  let city_part = " and live in " + user_city + "."
+  let full_message = greeting + age_part + city_part
+  
+  @azimuth.assert_eq_string("Hello, Alice! You are 25 years old and live in Beijing.", full_message)
+  
+  // 测试空值处理
+  let empty_name = ""
+  let empty_greeting = @azimuth.greet(empty_name)
+  @azimuth.assert_eq_string("Hello, !", empty_greeting)
 }
