@@ -1,203 +1,192 @@
-// Azimuth 项目标准 MoonBit 测试用例
-// 包含10个标准测试，覆盖基本功能和边界情况
+// MoonBit 标准测试用例
+// 为 Azimuth 项目添加的标准测试用例
 
-test "addition_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
+test "divide_with_ceil_basic" {
+  // 测试向上取整除法的基本功能
+  // 10 / 3 = 3.333... 向上取整为 4
+  let result1 = @azimuth.divide_with_ceil(10, 3)
+  @azimuth.assert_eq(4, result1)
   
-  let result1 = @azimuth.add(a, b)
-  let result2 = @azimuth.add(b, a)
+  // 15 / 5 = 3.0 向上取整为 3
+  let result2 = @azimuth.divide_with_ceil(15, 5)
+  @azimuth.assert_eq(3, result2)
   
-  @azimuth.assert_eq(result1, result2)
-  
-  // 测试负数情况
-  let c = -54321
-  let d = 9876
-  
-  let result3 = @azimuth.add(c, d)
-  let result4 = @azimuth.add(d, c)
-  
-  @azimuth.assert_eq(result3, result4)
+  // 7 / 2 = 3.5 向上取整为 4
+  let result3 = @azimuth.divide_with_ceil(7, 2)
+  @azimuth.assert_eq(4, result3)
 }
 
-test "multiplication_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 15
-  let b = 25
-  let c = 35
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  // -10 / 3 = -3.333... 向上取整为 -3
+  let result1 = @azimuth.divide_with_ceil(-10, 3)
+  @azimuth.assert_eq(-3, result1)
   
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  // 10 / -3 = -3.333... 向上取整为 -3
+  let result2 = @azimuth.divide_with_ceil(10, -3)
+  @azimuth.assert_eq(-3, result2)
   
-  @azimuth.assert_eq(left_side, right_side)
-  
-  // 测试包含负数的情况
-  let x = -10
-  let y = 20
-  let z = -5
-  
-  let left_side2 = @azimuth.multiply(x, @azimuth.add(y, z))
-  let right_side2 = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
-  
-  @azimuth.assert_eq(left_side2, right_side2)
+  // -10 / -3 = 3.333... 向上取整为 4
+  let result3 = @azimuth.divide_with_ceil(-10, -3)
+  @azimuth.assert_eq(4, result3)
 }
 
-test "string_concatenation_edge_cases" {
-  // 测试字符串连接的边界情况
-  // 测试空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  // 0 / 任何数 = 0
+  let result1 = @azimuth.divide_with_ceil(0, 5)
+  @azimuth.assert_eq(0, result1)
   
-  // 测试单个字符
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  // 任何数 / 1 = 该数本身
+  let result2 = @azimuth.divide_with_ceil(42, 1)
+  @azimuth.assert_eq(42, result2)
   
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
-  
-  // 测试包含数字的字符串
-  @azimuth.assert_eq_string("Hello, 2023!", @azimuth.greet("2023"))
-  
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, $%^&*()!", @azimuth.greet("$%^&*()"))
+  // 1 / 大数 = 1（因为结果小于1，向上取整为1）
+  let result3 = @azimuth.divide_with_ceil(1, 100)
+  @azimuth.assert_eq(1, result3)
 }
 
-test "arithmetic_sequence_sum" {
-  // 测试等差数列求和：1 + 2 + 3 + ... + n = n × (n + 1) / 2
-  let n = 100
+test "add_with_chained_operations" {
+  // 测试链式加法运算
+  let a = 10
+  let b = 20
+  let c = 30
+  let d = 40
   
-  // 使用公式计算
-  let formula_result = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
+  // (a + b) + (c + d)
+  let result1 = @azimuth.add(@azimuth.add(a, b), @azimuth.add(c, d))
+  @azimuth.assert_eq(100, result1)
   
-  // 手动计算前10项验证
-  let manual_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5), 6), 7), 8), 9), 10)
-  @azimuth.assert_eq(55, manual_sum)
+  // a + (b + (c + d))
+  let result2 = @azimuth.add(a, @azimuth.add(b, @azimuth.add(c, d)))
+  @azimuth.assert_eq(100, result2)
   
-  // 验证公式结果
-  @azimuth.assert_eq(5050, formula_result)
+  // ((a + b) + c) + d
+  let result3 = @azimuth.add(@azimuth.add(@azimuth.add(a, b), c), d)
+  @azimuth.assert_eq(100, result3)
 }
 
-test "geometric_sequence_sum" {
-  // 测试等比数列求和：a + ar + ar² + ... + ar^(n-1) = a × (r^n - 1) / (r - 1)
-  let a = 2  // 首项
-  let r = 3  // 公比
-  let n = 4  // 项数
+test "multiply_with_chained_operations" {
+  // 测试链式乘法运算
+  let a = 2
+  let b = 3
+  let c = 4
+  let d = 5
   
-  // 手动计算：2 + 6 + 18 + 54 = 80
-  let term1 = a
-  let term2 = @azimuth.multiply(a, r)
-  let term3 = @azimuth.multiply(term2, r)
-  let term4 = @azimuth.multiply(term3, r)
+  // (a * b) * (c * d)
+  let result1 = @azimuth.multiply(@azimuth.multiply(a, b), @azimuth.multiply(c, d))
+  @azimuth.assert_eq(120, result1)
   
-  let manual_sum = @azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4)
-  @azimuth.assert_eq(80, manual_sum)
+  // a * (b * (c * d))
+  let result2 = @azimuth.multiply(a, @azimuth.multiply(b, @azimuth.multiply(c, d)))
+  @azimuth.assert_eq(120, result2)
+  
+  // ((a * b) * c) * d
+  let result3 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(a, b), c), d)
+  @azimuth.assert_eq(120, result3)
 }
 
-test "temperature_conversion_advanced" {
-  // 测试高级温度转换：华氏度转摄氏度
-  // 简化公式：C = (F - 30) / 2
+test "mixed_operations_complex" {
+  // 测试混合运算的复杂情况
+  // 计算：(a + b) * c - d / e（简化为整数运算）
+  let a = 10
+  let b = 15
+  let c = 4
+  let d = 20
+  let e = 3
   
-  // 测试冰点温度
-  let freezing_fahrenheit = 30
-  let freezing_celsius = @azimuth.add(freezing_fahrenheit, -30) / 2
-  @azimuth.assert_eq(0, freezing_celsius)
+  // (a + b) * c
+  let sum = @azimuth.add(a, b)  // 25
+  let product = @azimuth.multiply(sum, c)  // 100
   
-  // 测试室温
-  let room_fahrenheit = 70
-  let room_celsius = @azimuth.add(room_fahrenheit, -30) / 2
-  @azimuth.assert_eq(20, room_celsius)
+  // d / e 的向上取整
+  let division = @azimuth.divide_with_ceil(d, e)  // 20 / 3 = 6.666... 向上取整为 7
   
-  // 测试沸点
-  let boiling_fahrenheit = 230
-  let boiling_celsius = @azimuth.add(boiling_fahrenheit, -30) / 2
-  @azimuth.assert_eq(100, boiling_celsius)
+  // 最终结果：product - division
+  let result = @azimuth.add(product, -division)  // 100 - 7 = 93
+  @azimuth.assert_eq(93, result)
 }
 
-test "discount_calculation_business" {
-  // 测试商业折扣计算
-  let original_price = 1000
-  let discount_rate = 15  // 15% 折扣
-  let tax_rate = 8        // 8% 税率
+test "string_processing_with_numbers" {
+  // 测试包含数字的字符串处理
+  let number_string = "12345"
+  let mixed_string = "test123abc"
+  let phone_number = "138-0013-8000"
   
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(original_price, discount_rate) / 100
-  @azimuth.assert_eq(150, discount_amount)
-  
-  // 计算折后价格
-  let discounted_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(850, discounted_price)
-  
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_price, tax_rate) / 100
-  @azimuth.assert_eq(68, tax_amount)
-  
-  // 计算最终价格
-  let final_price = @azimuth.add(discounted_price, tax_amount)
-  @azimuth.assert_eq(918, final_price)
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet(number_string))
+  @azimuth.assert_eq_string("Hello, test123abc!", @azimuth.greet(mixed_string))
+  @azimuth.assert_eq_string("Hello, 138-0013-8000!", @azimuth.greet(phone_number))
 }
 
-test "velocity_calculation_physics" {
-  // �物理学速度计算：v = d / t
-  let distance = 300  // 米
-  let time = 60       // 秒
+test "extreme_boundary_combinations" {
+  // 测试极端边界值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  let near_max = 2147483646
+  let near_min = -2147483647
   
-  // 计算速度
-  let velocity = distance / time
-  @azimuth.assert_eq(5, velocity)
+  // 接近最大值的运算
+  @azimuth.assert_eq(max_val, @azimuth.add(near_max, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(near_max, 2))
   
-  // 计算加速度：a = (v_final - v_initial) / t
-  let initial_velocity = 10
-  let final_velocity = 30
-  let acceleration_time = 5
+  // 接近最小值的运算
+  @azimuth.assert_eq(min_val, @azimuth.add(near_min, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(near_min, -2))
   
-  let acceleration = @azimuth.add(final_velocity, -initial_velocity) / acceleration_time
-  @azimuth.assert_eq(4, acceleration)
+  // 最大值与接近最小值的运算
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, near_min))
   
-  // 计算位移：s = v_initial × t + 0.5 × a × t²
-  let motion_time = 3
-  let displacement = @azimuth.add(@azimuth.multiply(initial_velocity, motion_time), @azimuth.multiply(acceleration, @azimuth.multiply(motion_time, motion_time)) / 2)
-  @azimuth.assert_eq(48, displacement)
+  // 边界值的乘法运算
+  @azimuth.assert_eq(max_val, @azimuth.multiply(46340, 46340))  // 接近sqrt(max_val)
+  @azimuth.assert_eq(min_val, @azimuth.multiply(-46340, 46341))
 }
 
-test "array_index_calculation_2d_to_1d" {
-  // 测试二维数组到一维数组的索引转换
-  let row = 3
-  let col = 4
-  let width = 5
+test "real_world_calculator_simulation" {
+  // 模拟实际计算器场景：计算贷款月供
+  // 简化版：月供 = (本金 + 总利息) / 月数
+  let principal = 100000  // 本金 10万
+  let annual_rate = 6     // 年利率 6%
+  let years = 3           // 3年
+  let months = @azimuth.multiply(years, 12)  // 36个月
   
-  // 计算一维索引：index = row × width + col
-  let index = @azimuth.add(@azimuth.multiply(row, width), col)
-  @azimuth.assert_eq(19, index)
+  // 计算总利息（简化计算）
+  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years)) / 100
+  @azimuth.assert_eq(18000, total_interest)  // 100000 * 6 * 3 / 100 = 18000
   
-  // 测试边界情况
-  let first_row = 0
-  let first_col = 0
-  let first_index = @azimuth.add(@azimuth.multiply(first_row, width), first_col)
-  @azimuth.assert_eq(0, first_index)
+  // 计算总还款额
+  let total_payment = @azimuth.add(principal, total_interest)
+  @azimuth.assert_eq(118000, total_payment)
   
-  let last_row = 9
-  let last_col = 4
-  let last_index = @azimuth.add(@azimuth.multiply(last_row, width), last_col)
-  @azimuth.assert_eq(49, last_index)
+  // 计算月供（向上取整）
+  let monthly_payment = @azimuth.divide_with_ceil(total_payment, months)
+  @azimuth.assert_eq(3278, monthly_payment)  // 118000 / 36 = 3277.777... 向上取整为 3278
 }
 
-test "complex_number_simulation" {
-  // 测试复数运算模拟（使用实部和虚部分别计算）
-  // 复数加法：(a + bi) + (c + di) = (a + c) + (b + d)i
-  let real1 = 5
-  let imag1 = 3
-  let real2 = 2
-  let imag2 = 7
+test "algorithm_complexity_simulation" {
+  // 模拟算法复杂度计算
+  // 计算数组操作的时间复杂度模拟
+  let n = 1000
   
-  let sum_real = @azimuth.add(real1, real2)
-  let sum_imag = @azimuth.add(imag1, imag2)
+  // O(1) 操作：常数时间
+  let constant_time = 1
   
-  @azimuth.assert_eq(7, sum_real)  // 5 + 2 = 7
-  @azimuth.assert_eq(10, sum_imag) // 3 + 7 = 10
+  // O(n) 操作：线性时间
+  let linear_time = n
   
-  // 复数乘法（简化版）：(a + bi) × (c + di) = (ac - bd) + (ad + bc)i
-  let product_real = @azimuth.add(@azimuth.multiply(real1, real2), @azimuth.multiply(-imag1, imag2))
-  let product_imag = @azimuth.add(@azimuth.multiply(real1, imag2), @azimuth.multiply(imag1, real2))
+  // O(n²) 操作：二次时间（简化计算）
+  let quadratic_time = @azimuth.multiply(n, n) / 1000  // 缩放以避免溢出
   
-  @azimuth.assert_eq(-11, product_real) // 5×2 - 3×7 = 10 - 21 = -11
-  @azimuth.assert_eq(41, product_imag)  // 5×7 + 3×2 = 35 + 6 = 41
+  // O(log n) 操作：对数时间（简化为整数除法）
+  let logarithmic_time = 10  // 简化为固定值
+  
+  // 验证复杂度关系
+  @azimuth.assert_eq(1, constant_time)
+  @azimuth.assert_eq(1000, linear_time)
+  @azimuth.assert_eq(1000, quadratic_time)  // 1000*1000/1000 = 1000
+  @azimuth.assert_eq(10, logarithmic_time)
+  
+  // 比较不同复杂度的操作次数
+  @azimuth.assert_true(linear_time > constant_time)
+  @azimuth.assert_true(quadratic_time >= linear_time)
+  @azimuth.assert_true(linear_time > logarithmic_time)
 }
