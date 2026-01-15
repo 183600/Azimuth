@@ -1,276 +1,190 @@
-// 增强的 MoonBit 测试用例集合
-// 包含10个新的测试用例，覆盖各种实际应用场景
+// 增强的 MoonBit 测试用例
+// 测试 azimuth 包中的核心功能和边界情况
 
-test "data_structure_simulation" {
-  // 模拟数据结构操作：计算数组元素的总和和平均值
-  // 假设有5个元素的数组：[10, 20, 30, 40, 50]
-  let elem1 = 10
-  let elem2 = 20
-  let elem3 = 30
-  let elem4 = 40
-  let elem5 = 50
+test "arithmetic_sequence_operations" {
+  // 测试等差数列操作
+  // 计算前n个自然数的和：1 + 2 + 3 + ... + n = n × (n + 1) / 2
+  let n = 10
+  let sum = multiply(n, add(n, 1)) / 2
+  assert_eq(55, sum)
   
-  // 计算总和
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(elem1, elem2), elem3), elem4), elem5)
-  assert_eq(150, sum)
-  
-  // 计算平均值
-  let average = sum / 5
-  assert_eq(30, average)
-  
-  // 计算最大值和最小值的差
-  let max_val = 50
-  let min_val = 10
-  let range = azimuth::add(max_val, -min_val)
-  assert_eq(40, range)
+  // 计算前n个偶数的和：2 + 4 + 6 + ... + 2n = n × (n + 1)
+  let even_sum = multiply(n, add(n, 1))
+  assert_eq(110, even_sum)
 }
 
-test "physics_simulation" {
-  // 物理模拟测试：计算自由落体运动（简化版）
-  // 公式：h = v0 * t + 0.5 * g * t^2
-  // 简化为整数计算：h = v0 * t + g * t^2 / 2
-  let initial_velocity = 10  // 初始速度 m/s
-  let time = 5  // 时间 s
-  let gravity = 10  // 重力加速度 m/s^2（简化值）
+test "geometric_sequence_operations" {
+  // 测试等比数列操作
+  // 计算2^0 + 2^1 + 2^2 + 2^3 + 2^4 = 31
+  let term1 = 1
+  let term2 = multiply(2, 1)
+  let term3 = multiply(2, term2)
+  let term4 = multiply(2, term3)
+  let term5 = multiply(2, term4)
+  let geo_sum = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(31, geo_sum)
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试包含各种特殊字符的字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let result1 = greet(special_chars)
+  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result1)
   
-  // 计算位移
-  let term1 = azimuth::multiply(initial_velocity, time)
-  let term2 = azimuth::multiply(azimuth::multiply(gravity, time), time) / 2
-  let displacement = azimuth::add(term1, term2)
+  // 测试包含数字和字母混合的字符串
+  let alphanumeric = "User123ABC456"
+  let result2 = greet(alphanumeric)
+  assert_eq_string("Hello, User123ABC456!", result2)
   
-  assert_eq(175, displacement)  // 10*5 + 10*5*5/2 = 50 + 125 = 175
+  // 测试包含空格的字符串
+  let spaced = "  leading and trailing  "
+  let result3 = greet(spaced)
+  assert_eq_string("Hello,   leading and trailing  !", result3)
+}
+
+test "temperature_conversion_precise" {
+  // 测试精确的温度转换
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数近似：F = C × 2 - C × 2/10 + 32
   
-  // 计算最终速度：v = v0 + g * t
-  let final_velocity = azimuth::add(initial_velocity, azimuth::multiply(gravity, time))
-  assert_eq(60, final_velocity)  // 10 + 10*5 = 60
+  let celsius = 25
+  let approx_fahrenheit = add(add(multiply(celsius, 2), multiply(multiply(celsius, -2), 1) / 10), 32)
+  assert_eq(77, approx_fahrenheit)
+  
+  // 测试冰点
+  let freezing_c = 0
+  let freezing_f = add(add(multiply(freezing_c, 2), multiply(multiply(freezing_c, -2), 1) / 10), 32)
+  assert_eq(32, freezing_f)
+  
+  // 测试沸点
+  let boiling_c = 100
+  let boiling_f = add(add(multiply(boiling_c, 2), multiply(multiply(boiling_c, -2), 1) / 10), 32)
+  assert_eq(212, boiling_f)
 }
 
 test "financial_compound_interest" {
-  // 金融复利计算测试
-  // 公式：A = P * (1 + r/n)^(n*t)
-  // 简化为年度复利：A = P * (1 + r)^t
-  let principal = 10000  // 本金
-  let rate_percent = 5   // 年利率 5%
-  let years = 3          // 年数
+  // 测试金融复利计算
+  // 复利公式：A = P × (1 + r)^n
+  // 简化为整数计算：A = P × (100 + r×100)^n / 100^n
   
-  // 计算增长因子
-  let growth_factor = azimuth::add(100, rate_percent)
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
   
-  // 计算 (1 + r)^t
-  let compounded_factor = azimuth::multiply(growth_factor, azimuth::multiply(growth_factor, growth_factor))
+  // 简化计算：每年增长5%，三年增长约15.76%
+  let year1 = multiply(principal, add(100, rate_percent)) / 100
+  let year2 = multiply(year1, add(100, rate_percent)) / 100
+  let year3 = multiply(year2, add(100, rate_percent)) / 100
   
-  // 计算最终金额
-  let final_amount = azimuth::multiply(principal, compounded_factor) / 10000
-  
-  assert_eq(11576, final_amount)  // 10000 * 105%^3 = 11576（约）
+  assert_eq(11576, year3)
 }
 
-test "algorithm_binary_search_simulation" {
-  // 模拟二分查找的步骤计算
-  // 在有序数组 [1, 3, 5, 7, 9, 11, 13, 15, 17, 19] 中查找 13
-  let array_size = 10
-  let target = 13
+test "combinatorial_calculations" {
+  // 测试组合数学计算
+  // 计算排列数 P(n,k) = n × (n-1) × ... × (n-k+1)
+  // P(5,3) = 5 × 4 × 3 = 60
   
-  // 模拟查找步骤
-  let step1_mid = array_size / 2  // 5
-  let step1_value = 11  // 假设中间值是11
+  let n = 5
+  let k = 3
+  let permutation = multiply(n, multiply(n - 1, n - 2))
+  assert_eq(60, permutation)
   
-  let step2_start = azimuth::add(step1_mid, 1)  // 6
-  let step2_end = array_size  // 10
-  let step2_range = azimuth::add(step2_end, -step2_start)  // 4
-  let step2_mid_offset = step2_range / 2  // 2
-  let step2_mid = azimuth::add(step2_start, step2_mid_offset)  // 8
-  let step2_value = 15  // 假设值是15
-  
-  let step3_start = step2_start  // 6
-  let step3_end = azimuth::add(step2_mid, -1)  // 7
-  let step3_range = azimuth::add(step3_end, -step3_start)  // 1
-  let step3_mid_offset = step3_range / 2  // 0
-  let step3_mid = azimuth::add(step3_start, step3_mid_offset)  // 6
-  let step3_value = target  // 找到目标值
-  
-  assert_eq(13, step3_value)
-  
-  // 计算查找步数
-  let search_steps = 3
-  assert_eq(3, search_steps)
+  // 计算组合数 C(n,k) = P(n,k) / k!
+  // C(5,3) = 60 / (3 × 2 × 1) = 10
+  let factorial_k = multiply(k, multiply(k - 1, k - 2))
+  let combination = permutation / factorial_k
+  assert_eq(10, combination)
 }
 
-test "cryptography_simple_hash" {
-  // 简单哈希算法模拟（用于教学目的）
-  // 对字符串 "Hello" 进行简单哈希
-  let char1 = 72  // 'H'
-  let char2 = 101 // 'e'
-  let char3 = 108 // 'l'
-  let char4 = 108 // 'l'
-  let char5 = 111 // 'o'
+test "physics_kinematics" {
+  // 测试物理运动学计算
+  // 位移公式：s = ut + (1/2)at²
+  // 使用整数近似：s = ut + at²/2
   
-  // 简单哈希函数：sum(char * position) % 1000
-  let hash1 = azimuth::multiply(char1, 1)
-  let hash2 = azimuth::multiply(char2, 2)
-  let hash3 = azimuth::multiply(char3, 3)
-  let hash4 = azimuth::multiply(char4, 4)
-  let hash5 = azimuth::multiply(char5, 5)
+  let initial_velocity = 10  // m/s
+  let acceleration = 2       // m/s²
+  let time = 5               // s
   
-  let total_hash = azimuth::add(azimuth::add(azimuth::add(azimuth::add(hash1, hash2), hash3), hash4), hash5)
-  let final_hash = total_hash % 1000
+  let displacement_part1 = multiply(initial_velocity, time)
+  let displacement_part2 = multiply(acceleration, multiply(time, time)) / 2
+  let total_displacement = add(displacement_part1, displacement_part2)
   
-  assert_eq(520, final_hash)  // (72*1 + 101*2 + 108*3 + 108*4 + 111*5) % 1000 = 520
+  assert_eq(75, total_displacement)  // 10×5 + 2×5²/2 = 50 + 25 = 75
 }
 
-test "network_data_transmission" {
-  // 网络数据传输模拟
-  let packet_size = 1024  // 数据包大小（字节）
-  let transmission_rate = 100000  // 传输速率（字节/秒）
-  let overhead_percent = 10  // 协议开销 10%
-  let number_of_packets = 100  // 数据包数量
+test "statistical_variance_calculation" {
+  // 测试统计方差计算
+  // 数据集：[10, 20, 30, 40, 50]
+  // 平均值 = 30
+  // 方差 = [(10-30)² + (20-30)² + (30-30)² + (40-30)² + (50-30)²] / 5
   
-  // 计算原始数据大小
-  let raw_data_size = azimuth::multiply(packet_size, number_of_packets)
+  let data1 = 10
+  let data2 = 20
+  let data3 = 30
+  let data4 = 40
+  let data5 = 50
   
-  // 计算开销
-  let overhead_size = azimuth::multiply(raw_data_size, overhead_percent) / 100
+  let sum = add(add(add(add(data1, data2), data3), data4), data5)
+  let mean = sum / 5
   
-  // 计算总传输大小
-  let total_size = azimuth::add(raw_data_size, overhead_size)
+  let diff1 = add(data1, -mean)
+  let diff2 = add(data2, -mean)
+  let diff3 = add(data3, -mean)
+  let diff4 = add(data4, -mean)
+  let diff5 = add(data5, -mean)
   
-  // 计算传输时间
-  let transmission_time = total_size / transmission_rate
+  let variance_sum = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5))
+  let variance = variance_sum / 5
   
-  assert_eq(102400, raw_data_size)
-  assert_eq(10240, overhead_size)
-  assert_eq(112640, total_size)
-  assert_eq(1, transmission_time)  // 约1秒
+  assert_eq(200, variance)
 }
 
-test "image_processing_filters" {
-  // 图像处理滤镜模拟（简化版）
-  // 对3x3图像矩阵应用简单滤镜
-  // 原始像素值：
-  // [10, 20, 30]
-  // [40, 50, 60]
-  // [70, 80, 90]
+test "cryptographic_simple_hash" {
+  // 测试简单的哈希函数模拟
+  // 使用多项式滚动哈希：hash = Σ(char_code × prime^i) mod modulus
   
-  let p11 = 10; let p12 = 20; let p13 = 30
-  let p21 = 40; let p22 = 50; let p23 = 60
-  let p31 = 70; let p32 = 80; let p33 = 90
+  let input = "ABC"
+  // 简化处理：A=65, B=66, C=67
+  let char1 = 65
+  let char2 = 66
+  let char3 = 67
+  let prime = 31
+  let modulus = 1000000007
   
-  // 计算中心像素的新值（周围像素的平均值）
-  let surrounding_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(p11, p12), p13), p21), p23), p31), p32), p33)
-  let average_value = surrounding_sum / 8
+  // 计算哈希值（简化版，不取模）
+  let hash_part1 = multiply(char1, multiply(prime, prime))
+  let hash_part2 = multiply(char2, prime)
+  let hash_part3 = char3
+  let hash = add(add(hash_part1, hash_part2), hash_part3)
   
-  assert_eq(50, average_value)  // (10+20+30+40+60+70+80+90)/8 = 50
-  
-  // 应用亮度增强滤镜（增加20%亮度）
-  let brightness_factor = 120  // 120%
-  let enhanced_center = azimuth::multiply(p22, brightness_factor) / 100
-  assert_eq(60, enhanced_center)  // 50 * 120% = 60
+  assert_eq(65644, hash)  // 65×31² + 66×31 + 67 = 62465 + 2046 + 67 = 64578
 }
 
-test "database_query_simulation" {
-  // 数据库查询模拟
-  let table_size = 1000  // 表中记录数
-  let page_size = 100    // 每页记录数
-  let query_page = 3     // 查询第3页
+test "game_logic_battle_simulation" {
+  // 测试游戏战斗逻辑模拟
+  let player_health = 100
+  let player_attack = 20
+  let enemy_health = 80
+  let enemy_attack = 15
   
-  // 计算偏移量
-  let offset = azimuth::multiply(azimuth::add(query_page, -1), page_size)
+  // 第一回合
+  let enemy_health_after_turn1 = add(enemy_health, -player_attack)
+  let player_health_after_turn1 = add(player_health, -enemy_attack)
   
-  // 计算总页数
-  let total_pages = azimuth::divide_with_ceil(table_size, page_size)
+  // 第二回合
+  let enemy_health_after_turn2 = add(enemy_health_after_turn1, -player_attack)
+  let player_health_after_turn2 = add(player_health_after_turn1, -enemy_attack)
   
-  // 计算当前页的记录数
-  let remaining_records = azimuth::add(table_size, -offset)
-  let current_page_records = if (remaining_records >= page_size) { page_size } else { remaining_records }
+  // 第三回合
+  let enemy_health_after_turn3 = add(enemy_health_after_turn2, -player_attack)
+  let player_health_after_turn3 = add(player_health_after_turn2, -enemy_attack)
   
-  assert_eq(200, offset)  // (3-1) * 100 = 200
-  assert_eq(10, total_pages)  // ceil(1000/100) = 10
-  assert_eq(100, current_page_records)  // 第3页有100条记录
+  // 验证战斗结果
+  assert_true(enemy_health_after_turn3 <= 0)
+  assert_true(player_health_after_turn3 > 0)
   
-  // 测试最后一页
-  let last_page = total_pages
-  let last_offset = azimuth::multiply(azimuth::add(last_page, -1), page_size)
-  let last_remaining = azimuth::add(table_size, -last_offset)
-  let last_page_records = if (last_remaining >= page_size) { page_size } else { last_remaining }
-  
-  assert_eq(900, last_offset)  // (10-1) * 100 = 900
-  assert_eq(100, last_page_records)  // 最后一页有100条记录
-}
-
-test "machine_learning_simple_prediction" {
-  // 机器学习简单预测模型（线性回归）
-  // 模型：y = w * x + b
-  // 训练数据点：(1,3), (2,5), (3,7), (4,9)
-  // 理想参数：w = 2, b = 1
-  
-  let weight = 2  // 权重
-  let bias = 1    // 偏置
-  
-  // 对新数据点进行预测
-  let new_x = 5
-  let prediction = azimuth::add(azimuth::multiply(weight, new_x), bias)
-  
-  assert_eq(11, prediction)  // 2 * 5 + 1 = 11
-  
-  // 计算训练误差（MSE - 均方误差）
-  let x1 = 1; let y1 = 3
-  let x2 = 2; let y2 = 5
-  let x3 = 3; let y3 = 7
-  let x4 = 4; let y4 = 9
-  
-  let pred1 = azimuth::add(azimuth::multiply(weight, x1), bias)
-  let pred2 = azimuth::add(azimuth::multiply(weight, x2), bias)
-  let pred3 = azimuth::add(azimuth::multiply(weight, x3), bias)
-  let pred4 = azimuth::add(azimuth::multiply(weight, x4), bias)
-  
-  let err1 = azimuth::add(y1, -pred1)
-  let err2 = azimuth::add(y2, -pred2)
-  let err3 = azimuth::add(y3, -pred3)
-  let err4 = azimuth::add(y4, -pred4)
-  
-  let sq_err1 = azimuth::multiply(err1, err1)
-  let sq_err2 = azimuth::multiply(err2, err2)
-  let sq_err3 = azimuth::multiply(err3, err3)
-  let sq_err4 = azimuth::multiply(err4, err4)
-  
-  let total_error = azimuth::add(azimuth::add(azimuth::add(sq_err1, sq_err2), sq_err3), sq_err4)
-  let mse = total_error / 4
-  
-  assert_eq(0, mse)  // 完美拟合，误差为0
-}
-
-test "compression_algorithm_simulation" {
-  // 压缩算法模拟（简化的游程编码）
-  // 原始数据：AAAABBBCCDAA
-  // 压缩后：4A3B2C1D2A
-  
-  let run1_count = 4; let run1_char = 'A'
-  let run2_count = 3; let run2_char = 'B'
-  let run3_count = 2; let run3_char = 'C'
-  let run4_count = 1; let run4_char = 'D'
-  let run5_count = 2; let run5_char = 'A'
-  
-  // 计算原始数据长度
-  let original_length = azimuth::add(azimuth::add(azimuth::add(azimuth::add(run1_count, run2_count), run3_count), run4_count), run5_count)
-  
-  // 计算压缩后数据长度（每个游程需要2个字符：计数和字符）
-  let compressed_length = azimuth::multiply(5, 2)
-  
-  // 计算压缩率
-  let compression_ratio = azimuth::multiply(100, compressed_length) / original_length
-  
-  assert_eq(12, original_length)
-  assert_eq(10, compressed_length)
-  assert_eq(83, compression_ratio)  // 约83%
-  
-  // 模拟解压缩验证
-  let decompressed_length = original_length
-  assert_eq(12, decompressed_length)
-  
-  // 验证特定位置的字符
-  let position_5 = run2_char  // 第5个字符应该是第一个'B'
-  let position_10 = run5_char  // 第10个字符应该是第一个'A'
-  
-  assert_eq('B', position_5)
-  assert_eq('A', position_10)
+  // 具体验证
+  assert_eq(20, enemy_health_after_turn3)   // 80 - 20×3 = 20
+  assert_eq(55, player_health_after_turn3)  // 100 - 15×3 = 55
 }
