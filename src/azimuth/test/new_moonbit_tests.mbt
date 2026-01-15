@@ -1,104 +1,148 @@
 // 新增的 MoonBit 测试用例
-// 测试 azimuth 库的各种功能和场景
+// 覆盖更多场景和边界情况
 
-test "power_calculation" {
-  // 测试幂运算计算：2^4 = 16
-  let base = 2
-  let exponent = 4
-  let result = @azimuth.multiply(@azimuth.multiply(base, base), @azimuth.multiply(base, base))
-  @azimuth.assert_eq(16, result)
+test "divide_with_ceil_basic" {
+  // 测试基本的向上取整除法
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(8, 4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(3, 4))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
 }
 
-test "geometric_area_calculation" {
-  // 测试几何面积计算
-  let length = 10
-  let width = 5
-  
-  // 矩形面积 = 长 × 宽
-  let rectangle_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(50, rectangle_area)
-  
-  // 三角形面积 = 底 × 高 ÷ 2
-  let base = 8
-  let height = 6
-  let triangle_area = @azimuth.multiply(base, height) / 2
-  @azimuth.assert_eq(24, triangle_area)
+test "divide_with_ceil_negative" {
+  // 测试负数的向上取整除法
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-10, 4))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 4))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(10, -4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(3, -4))
 }
 
-test "shopping_cart_total" {
-  // 测试购物车总价计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let shipping_fee = 20
+test "complex_mathematical_expression" {
+  // 测试复杂的数学表达式：(a + b) * c - d / e
+  let a = 15
+  let b = 25
+  let c = 4
+  let d = 20
+  let e = 5
   
-  // 计算商品总价
-  let item1_total = @azimuth.multiply(item1_price, item1_quantity)
-  let item2_total = @azimuth.multiply(item2_price, item2_quantity)
-  let subtotal = @azimuth.add(item1_total, item2_total)
+  let sum_ab = @azimuth.add(a, b)
+  let product = @azimuth.multiply(sum_ab, c)
+  let division = d / e
+  let result = @azimuth.add(product, -division)
   
-  // 计算最终总价
-  let total = @azimuth.add(subtotal, shipping_fee)
-  @azimuth.assert_eq(717, total)
+  @azimuth.assert_eq(156, result)  // (15 + 25) * 4 - 20 / 5 = 40 * 4 - 4 = 160 - 4 = 156
 }
 
-test "temperature_conversion" {
-  // 测试温度转换（简化版）：摄氏度转华氏度 F = C × 2 + 30
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit)
+test "string_processing_with_numbers" {
+  // 测试字符串与数字混合处理
+  let name = "Alice"
   
-  // 测试冰点
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)
+  // 使用greet函数创建问候语
+  let basic_greeting = @azimuth.greet(name)
+  let age_info = " Your age is 25."
+  let full_greeting = basic_greeting + age_info
+  
+  @azimuth.assert_eq_string("Hello, Alice! Your age is 25.", full_greeting)
 }
 
-test "loan_interest_calculation" {
-  // 测试贷款利息计算
+test "error_boundary_validation" {
+  // 测试错误边界验证
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试接近边界的运算
+  @azimuth.assert_true(@azimuth.add(max_val, -1) == 2147483646)
+  @azimuth.assert_true(@azimuth.add(min_val, 1) == -2147483647)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 0) == 0)
+  @azimuth.assert_true(@azimuth.multiply(min_val, 0) == 0)
+  
+  // 测试边界值的组合运算
+  let boundary_sum = @azimuth.add(max_val, min_val)
+  @azimuth.assert_eq(-1, boundary_sum)
+}
+
+test "algorithm_implementation" {
+  // 测试简单算法实现：计算最大公约数（简化版）
+  let a = 48
+  let b = 36
+  
+  // 使用欧几里得算法的简化版本
+  let temp = a % b
+  let gcd = if (temp == 0) { b } else { temp }
+  
+  @azimuth.assert_eq(12, gcd)
+}
+
+test "data_validation_scenario" {
+  // 测试数据验证场景
+  let input_value = 42
+  let min_allowed = 10
+  let max_allowed = 100
+  
+  // 验证输入值是否在允许范围内
+  let is_valid = @azimuth.add(input_value, -min_allowed) >= 0 && @azimuth.add(max_allowed, -input_value) >= 0
+  @azimuth.assert_true(is_valid)
+  
+  // 测试边界值
+  let at_min = @azimuth.add(min_allowed, -min_allowed) >= 0 && @azimuth.add(max_allowed, -min_allowed) >= 0
+  let at_max = @azimuth.add(max_allowed, -min_allowed) >= 0 && @azimuth.add(max_allowed, -max_allowed) >= 0
+  let over_max = @azimuth.add(max_allowed + 1, -min_allowed) >= 0 && @azimuth.add(max_allowed, -(max_allowed + 1)) >= 0
+  
+  @azimuth.assert_true(at_min)
+  @azimuth.assert_true(at_max)
+  @azimuth.assert_false(over_max)
+}
+
+test "performance_calculation" {
+  // 测试性能相关的计算
+  let base_value = 1000
+  let growth_rate = 5  // 5%
+  let periods = 10
+  
+  // 计算复合增长（简化版）
+  let growth_factor = @azimuth.add(100, growth_rate)
+  let final_value = @azimuth.multiply(base_value, growth_factor)
+  
+  // 更精确的复合计算（简化）
+  let compound_growth = @azimuth.multiply(base_value, @azimuth.add(100, @azimuth.multiply(growth_rate, periods)))
+  
+  @azimuth.assert_eq(105000, final_value)  // 1000 * 105 = 105000
+  @azimuth.assert_eq(150000, compound_growth)  // 1000 * (100 + 5*10) = 1000 * 150 = 150000
+}
+
+test "real_world_financial_calculation" {
+  // 测试实际金融计算场景
   let principal = 10000
-  let annual_rate = 5  // 5%
-  let years = 3
+  let annual_rate = 6  // 6%
+  let years = 5
+  let monthly_contribution = 500
   
-  // 简化利息计算：本金 × 利率 × 年数
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
-  let total = @azimuth.add(principal, interest)
-  @azimuth.assert_eq(160000, total)
+  // 简化的投资计算：本金增长 + 定期存款
+  let principal_growth = @azimuth.multiply(principal, @azimuth.add(100, @azimuth.multiply(annual_rate, years)))
+  let total_contributions = @azimuth.multiply(monthly_contribution, @azimuth.multiply(years, 12))
+  let final_amount = @azimuth.add(principal_growth, total_contributions)
+  
+  @azimuth.assert_eq(160000, final_amount)  // 10000 * (100 + 6*5) + 500 * 5 * 12 = 130000 + 30000 = 160000
 }
 
-test "string_processing_with_special_chars" {
-  // 测试包含特殊字符的字符串处理
-  let email = "user@example.com"
-  let username = "user_123"
-  let hashtag = "#moonbit"
+test "comprehensive_function_combination" {
+  // 测试综合函数组合使用
+  // 计算平均值（手动计算）
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(5, 10), 15), 20), 25)
+  let average = sum / 5
+  @azimuth.assert_eq(15, average)
   
-  @azimuth.assert_eq_string("Hello, user@example.com!", @azimuth.greet(email))
-  @azimuth.assert_eq_string("Hello, user_123!", @azimuth.greet(username))
-  @azimuth.assert_eq_string("Hello, #moonbit!", @azimuth.greet(hashtag))
-}
-
-test "statistical_calculations" {
-  // 测试基础统计计算
-  // 计算平均值：(10 + 20 + 30 + 40 + 50) ÷ 5 = 30
-  let sum1 = @azimuth.add(10, 20)
-  let sum2 = @azimuth.add(30, 40)
-  let sum3 = @azimuth.add(sum1, sum2)
-  let total_sum = @azimuth.add(sum3, 50)
-  let average = total_sum / 5
-  @azimuth.assert_eq(30, average)
-}
-
-test "game_score_system" {
-  // 测试游戏得分系统
-  let base_score = 1000
-  let level_bonus = 500
-  let combo_multiplier = 2
-  let penalty = 200
+  // 计算方差（简化版）
+  let diff1 = @azimuth.add(5, -15)
+  let diff2 = @azimuth.add(10, -15)
+  let diff3 = @azimuth.add(15, -15)
+  let diff4 = @azimuth.add(20, -15)
+  let diff5 = @azimuth.add(25, -15)
   
-  // 计算最终得分
-  let level_score = @azimuth.add(base_score, level_bonus)
-  let combo_score = @azimuth.multiply(level_score, combo_multiplier)
-  let final_score = @azimuth.add(combo_score, @azimuth.multiply(-1, penalty))
-  @azimuth.assert_eq(2800, final_score)
+  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(diff1, diff1), @azimuth.multiply(diff2, diff2)), @azimuth.multiply(diff3, diff3)), @azimuth.multiply(diff4, diff4)), @azimuth.multiply(diff5, diff5)) / 5
+  @azimuth.assert_eq(50, variance)
+  
+  // 测试字符串处理
+  let result1 = @azimuth.greet("User15")
+  @azimuth.assert_eq_string("Hello, User15!", result1)
 }

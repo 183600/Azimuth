@@ -1,187 +1,148 @@
 // 新增的 MoonBit 测试用例
-// 覆盖 azimuth 项目核心功能的不同场景
+// 覆盖更多场景和边界情况
 
-test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
-  let f0 = 0
-  let f1 = 1
-  let f2 = add(f0, f1)  // 1
-  let f3 = add(f1, f2)  // 2
-  let f4 = add(f2, f3)  // 3
-  let f5 = add(f3, f4)  // 5
-  let f6 = add(f4, f5)  // 8
-  
-  assert_eq(1, f2)
-  assert_eq(2, f3)
-  assert_eq(3, f4)
-  assert_eq(5, f5)
-  assert_eq(8, f6)
+test "divide_with_ceil_basic" {
+  // 测试基本的向上取整除法
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(2, divide_with_ceil(8, 4))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "prime_number_validation" {
-  // 验证质数相关计算
-  // 检查一个数是否为质数（通过试除法）
-  let num = 17
-  let is_prime = true
-  // 17不能被2,3,4整除
-  let div_by_2 = (num % 2 == 0)
-  let div_by_3 = (num % 3 == 0)
-  let div_by_4 = (num % 4 == 0)
-  
-  assert_false(div_by_2)
-  assert_false(div_by_3)
-  assert_false(div_by_4)
-  assert_true(is_prime)
+test "divide_with_ceil_negative" {
+  // 测试负数的向上取整除法
+  assert_eq(-2, divide_with_ceil(-10, 4))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(2, divide_with_ceil(10, -4))
+  assert_eq(1, divide_with_ceil(3, -4))
 }
 
-test "bank_interest_calculation" {
-  // 银行利息计算场景
-  let principal = 10000  // 本金
-  let annual_rate = 5    // 年利率5%
-  let years = 3          // 存期3年
+test "complex_mathematical_expression" {
+  // 测试复杂的数学表达式：(a + b) * c - d / e
+  let a = 15
+  let b = 25
+  let c = 4
+  let d = 20
+  let e = 5
   
-  // 简单利息计算：本金 × 利率 × 年数
-  let simple_interest = multiply(principal, multiply(annual_rate, years))
-  // 总金额 = 本金 + 利息
-  let total_amount = add(principal, simple_interest)
+  let sum_ab = add(a, b)
+  let product = multiply(sum_ab, c)
+  let division = d / e
+  let result = add(product, -division)
   
-  assert_eq(150000, total_amount)  // 10000 + 10000×5×3 = 160000
+  assert_eq(160, result)  // (15 + 25) * 4 - 20 / 5 = 40 * 4 - 4 = 160 - 4 = 156
 }
 
-test "discount_price_calculation" {
-  // 折扣价格计算
-  let original_price = 200
-  let discount_percent = 15  // 15%折扣
-  let tax_rate = 8           // 8%税率
+test "string_processing_with_numbers" {
+  // 测试字符串与数字混合处理
+  let name = "Alice"
   
-  // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_percent) / 100
-  // 折后价格
-  let discounted_price = add(original_price, -discount_amount)
-  // 含税价格
-  let final_price = add(discounted_price, multiply(discounted_price, tax_rate) / 100)
+  // 使用greet函数创建问候语
+  let basic_greeting = greet(name)
+  let age_info = " Your age is 25."
+  let full_greeting = basic_greeting + age_info
   
-  assert_eq(183, final_price)  // 200×85%×108% ≈ 183
+  assert_eq_string("Hello, Alice! Your age is 25.", full_greeting)
 }
 
-test "speed_distance_time" {
-  // 速度、距离、时间关系计算
-  let distance = 300  // 距离（公里）
-  let speed = 60      // 速度（公里/小时）
+test "error_boundary_validation" {
+  // 测试错误边界验证
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 时间 = 距离 / 速度
-  let time = distance / speed
-  assert_eq(5, time)  // 300公里 / 60公里/小时 = 5小时
+  // 测试接近边界的运算
+  assert_true(add(max_val, -1) == 2147483646)
+  assert_true(add(min_val, 1) == -2147483647)
+  assert_true(multiply(max_val, 0) == 0)
+  assert_true(multiply(min_val, 0) == 0)
   
-  // 验证：距离 = 速度 × 时间
-  let calculated_distance = multiply(speed, time)
-  assert_eq(distance, calculated_distance)
+  // 测试边界值的组合运算
+  let boundary_sum = add(max_val, min_val)
+  assert_eq(-1, boundary_sum)
 }
 
-test "geometric_progression" {
-  // 等比数列计算
-  let first_term = 2   // 首项
-  let ratio = 3        // 公比
-  let n = 4            // 项数
+test "algorithm_implementation" {
+  // 测试简单算法实现：计算最大公约数（简化版）
+  let a = 48
+  let b = 36
   
-  // 计算前4项：2, 6, 18, 54
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
+  // 使用欧几里得算法的简化版本
+  let temp = a % b
+  let gcd = if (temp == 0) { b } else { temp }
   
-  // 计算前4项和
-  let sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(80, sum)  // 2 + 6 + 18 + 54 = 80
+  assert_eq(12, gcd)
 }
 
-test "string_length_validation" {
-  // 字符串长度验证测试
-  let short_name = "Bob"
-  let medium_name = "MoonBit"
-  let long_name = "VeryLongNameForTestingPurpose"
+test "data_validation_scenario" {
+  // 测试数据验证场景
+  let input_value = 42
+  let min_allowed = 10
+  let max_allowed = 100
   
-  // 测试不同长度字符串的greet函数处理
-  assert_eq_string("Hello, Bob!", greet(short_name))
-  assert_eq_string("Hello, MoonBit!", greet(medium_name))
-  assert_eq_string("Hello, VeryLongNameForTestingPurpose!", greet(long_name))
+  // 验证输入值是否在允许范围内
+  let is_valid = add(input_value, -min_allowed) >= 0 && add(max_allowed, -input_value) >= 0
+  assert_true(is_valid)
   
-  // 测试包含数字和特殊字符的字符串
-  let mixed_name = "User123@Test"
-  assert_eq_string("Hello, User123@Test!", greet(mixed_name))
+  // 测试边界值
+  let at_min = add(min_allowed, -min_allowed) >= 0 && add(max_allowed, -min_allowed) >= 0
+  let at_max = add(max_allowed, -min_allowed) >= 0 && add(max_allowed, -max_allowed) >= 0
+  let over_max = add(max_allowed + 1, -min_allowed) >= 0 && add(max_allowed, -(max_allowed + 1)) >= 0
+  
+  assert_true(at_min)
+  assert_true(at_max)
+  assert_false(over_max)
 }
 
-test "complex_arithmetic_expression" {
-  // 复杂数学表达式计算
-  // 计算：(a + b) × (c - d) + e × f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 7
+test "performance_calculation" {
+  // 测试性能相关的计算
+  let base_value = 1000
+  let growth_rate = 5  // 5%
+  let periods = 10
   
-  let sum_ab = add(a, b)           // 15
-  let diff_cd = add(c, -d)         // 12
-  let product_ef = multiply(e, f)  // 21
-  let product_ab_cd = multiply(sum_ab, diff_cd)  // 180
-  let result = add(product_ab_cd, product_ef)    // 201
+  // 计算复合增长（简化版）
+  let growth_factor = add(100, growth_rate)
+  let final_value = multiply(base_value, growth_factor)
   
-  assert_eq(201, result)
+  // 更精确的复合计算（简化）
+  let compound_growth = multiply(base_value, add(100, multiply(growth_rate, periods)))
+  
+  assert_eq(105000, final_value)  // 1000 * 105 = 105000
+  assert_eq(600000, compound_growth)  // 1000 * (100 + 5*10) = 1000 * 150 = 150000
 }
 
-test "temperature_conversion_extended" {
-  // 扩展温度转换测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 简化为整数运算：F = C × 2 + 30（近似值）
+test "real_world_financial_calculation" {
+  // 测试实际金融计算场景
+  let principal = 10000
+  let annual_rate = 6  // 6%
+  let years = 5
+  let monthly_contribution = 500
   
-  let freezing_celsius = 0    // 冰点
-  let boiling_celsius = 100   // 沸点
-  let room_celsius = 22       // 室温
+  // 简化的投资计算：本金增长 + 定期存款
+  let principal_growth = multiply(principal, add(100, multiply(annual_rate, years)))
+  let total_contributions = multiply(monthly_contribution, multiply(years, 12))
+  let final_amount = add(principal_growth, total_contributions)
   
-  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
-  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
-  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
-  
-  assert_eq(30, freezing_fahrenheit)   // 0°C ≈ 30°F
-  assert_eq(230, boiling_fahrenheit)   // 100°C ≈ 230°F
-  assert_eq(74, room_fahrenheit)       // 22°C ≈ 74°F
+  assert_eq(160000, final_amount)  // 10000 * (100 + 6*5) + 500 * 5 * 12 = 130000 + 30000 = 160000
 }
 
-test "array_sum_and_average" {
-  // 数组求和与平均值计算（模拟数组操作）
-  // 模拟数组：[10, 20, 30, 40, 50]
-  
-  let num1 = 10
-  let num2 = 20
-  let num3 = 30
-  let num4 = 40
-  let num5 = 50
-  
-  // 计算总和
-  let sum = add(add(add(add(num1, num2), num3), num4), num5)
-  // 计算平均值
+test "comprehensive_function_combination" {
+  // 测试综合函数组合使用
+  // 计算平均值（手动计算）
+  let sum = add(add(add(add(5, 10), 15), 20), 25)
   let average = sum / 5
-  
-  assert_eq(150, sum)
-  assert_eq(30, average)
+  assert_eq(15, average)
   
   // 计算方差（简化版）
-  let diff1 = add(num1, -average)
-  let diff2 = add(num2, -average)
-  let diff3 = add(num3, -average)
-  let diff4 = add(num4, -average)
-  let diff5 = add(num5, -average)
+  let diff1 = add(5, -15)
+  let diff2 = add(10, -15)
+  let diff3 = add(15, -15)
+  let diff4 = add(20, -15)
+  let diff5 = add(25, -15)
   
-  let square_diff1 = multiply(diff1, diff1)
-  let square_diff2 = multiply(diff2, diff2)
-  let square_diff3 = multiply(diff3, diff3)
-  let square_diff4 = multiply(diff4, diff4)
-  let square_diff5 = multiply(diff5, diff5)
+  let variance = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5)) / 5
+  assert_eq(50, variance)
   
-  let variance_sum = add(add(add(add(square_diff1, square_diff2), square_diff3), square_diff4), square_diff5)
-  let variance = variance_sum / 5
-  
-  assert_eq(200, variance)  // 方差为200
+  // 测试字符串处理
+  let result1 = greet("User15")
+  assert_eq_string("Hello, User15!", result1)
 }
