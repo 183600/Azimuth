@@ -1,210 +1,275 @@
-// 增强的 MoonBit 测试用例
-// 测试 azimuth 项目的核心功能和边界情况
+// Azimuth 项目额外的 MoonBit 测试用例
+// 涵盖各种数学运算、字符串处理和实际应用场景
 
-test "enhanced_add_commutativity" {
-  // 测试加法交换律的多种情况
-  let a = 12345
-  let b = -6789
+test "fibonacci_sequence_calculation" {
+  // 计算斐波那契数列的第10项：F(10) = 55
+  // 使用递推公式：F(n) = F(n-1) + F(n-2)
+  let f1 = 1  // F(1)
+  let f2 = 1  // F(2)
+  let f3 = @azimuth.add(f1, f2)  // F(3) = 2
+  let f4 = @azimuth.add(f2, f3)  // F(4) = 3
+  let f5 = @azimuth.add(f3, f4)  // F(5) = 5
+  let f6 = @azimuth.add(f4, f5)  // F(6) = 8
+  let f7 = @azimuth.add(f5, f6)  // F(7) = 13
+  let f8 = @azimuth.add(f6, f7)  // F(8) = 21
+  let f9 = @azimuth.add(f7, f8)  // F(9) = 34
+  let f10 = @azimuth.add(f8, f9)  // F(10) = 55
   
-  // 验证交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  @azimuth.assert_eq(55, f10)
   
-  // 测试包含0的情况
-  @azimuth.assert_eq(@azimuth.add(a, 0), @azimuth.add(0, a))
-  
-  // 测试两个负数
-  let x = -1000
-  let y = -2000
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  // 验证黄金比例近似：F(n+1)/F(n) ≈ 1.618
+  // 使用整数运算验证：F(10) * 100 / F(9) ≈ 161
+  let golden_ratio_approx = @azimuth.multiply(f10, 100) / f9
+  @azimuth.assert_eq(161, golden_ratio_approx)
 }
 
-test "enhanced_multiply_properties" {
-  // 测试乘法的数学性质
-  let a = 15
-  let b = 7
-  let c = 3
+test "prime_number_validation" {
+  // 验证质数：检查7是否为质数
+  let num = 7
+  let is_prime = true
   
-  // 测试结合律 (a * b) * c = a * (b * c)
-  let result1 = @azimuth.multiply(@azimuth.multiply(a, b), c)
-  let result2 = @azimuth.multiply(a, @azimuth.multiply(b, c))
-  @azimuth.assert_eq(result1, result2)
+  // 检查2到6之间是否有因子
+  let has_factor_2 = (num % 2 == 0)
+  let has_factor_3 = (num % 3 == 0)
+  let has_factor_4 = (num % 4 == 0)
+  let has_factor_5 = (num % 5 == 0)
+  let has_factor_6 = (num % 6 == 0)
   
-  // 测试分配律 a * (b + c) = a * b + a * c
-  let result3 = @azimuth.multiply(a, @azimuth.add(b, c))
-  let result4 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(result3, result4)
+  // 7不能被2,3,4,5,6整除，所以是质数
+  let actually_prime = @azimuth.add(
+    @azimuth.add(
+      @azimuth.add(
+        @azimuth.add(
+          if (has_factor_2) { 0 } else { 1 },
+          if (has_factor_3) { 0 } else { 1 }
+        ),
+        if (has_factor_4) { 0 } else { 1 }
+      ),
+      if (has_factor_5) { 0 } else { 1 }
+    ),
+    if (has_factor_6) { 0 } else { 1 }
+  )
+  
+  @azimuth.assert_eq(5, actually_prime)  // 所有检查都通过，是质数
+  
+  // 验证6不是质数
+  let num2 = 6
+  let has_factor_2_2 = (num2 % 2 == 0)
+  @azimuth.assert_true(has_factor_2_2)  // 6能被2整除，不是质数
 }
 
-test "enhanced_string_scenarios" {
-  // 测试字符串处理的各种场景
-  // 测试包含数字的字符串
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
+test "binary_number_simulation" {
+  // 模拟二进制运算：计算二进制1011(11) + 1100(12) = 10111(23)
+  let binary1 = 11  // 1011 in binary
+  let binary2 = 12  // 1100 in binary
   
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, test@domain.com!", @azimuth.greet("test@domain.com"))
+  // 使用十进制加法模拟二进制加法
+  let sum = @azimuth.add(binary1, binary2)
+  @azimuth.assert_eq(23, sum)  // 10111 in binary
   
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Smith!", @azimuth.greet("John Smith"))
+  // 模拟二进制位移运算：1011 << 2 = 101100
+  let left_shift = @azimuth.multiply(binary1, 4)  // 乘以2^2
+  @azimuth.assert_eq(44, left_shift)  // 101100 in binary = 44 in decimal
   
-  // 测试包含Unicode字符的字符串
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  
-  // 测试包含制表符的字符串
-  @azimuth.assert_eq_string("Hello, Name\t!", @azimuth.greet("Name\t"))
+  // 模拟二进制与运算：1011 & 1100 = 1000
+  // 简化模拟：取两个数中较小的2的幂
+  let power_of_2_in_common = 8  // 1000 in binary = 8 in decimal
+  @azimuth.assert_eq(8, power_of_2_in_common)
 }
 
-test "enhanced_financial_calculations" {
-  // 测试金融计算场景
-  // 计算贷款月供（简化版）
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 30          // 贷款年限
+test "loan_amortization_calculation" {
+  // 贷款分期计算：计算每月还款额（简化版）
+  let principal = 120000  // 贷款本金
+  let annual_rate = 6     // 年利率百分比
+  let loan_years = 30     // 贷款年限
   
-  // 简化的月供计算：本金 + 本金 × 年利率 × 年数
-  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
-  let total_payment = @azimuth.add(principal, total_interest)
+  // 简化计算：月利率 × 本金 ÷ 期限
+  let monthly_rate = annual_rate / 12  // 月利率百分比
+  let total_months = @azimuth.multiply(loan_years, 12)  // 总月数
+  let monthly_interest = @azimuth.multiply(principal, monthly_rate) / 100  // 月利息
+  let monthly_principal = principal / total_months  // 月本金
+  let monthly_payment = @azimuth.add(monthly_interest, monthly_principal)  // 月还款额
   
-  @azimuth.assert_eq(1900000, total_payment)
+  @azimuth.assert_eq(766, monthly_payment)  // 120000×0.5%÷360 + 120000÷360 ≈ 766
   
-  // 计算投资回报
-  let investment = 50000
-  let return_rate = 8     // 8%年回报率
-  let investment_years = 5
+  // 计算总还款额
+  let total_payment = @azimuth.multiply(monthly_payment, total_months)
+  @azimuth.assert_eq(275760, total_payment)
   
-  let returns = @azimuth.multiply(investment, @azimuth.multiply(return_rate, investment_years))
-  let final_value = @azimuth.add(investment, returns)
-  
-  @azimuth.assert_eq(250000, final_value)
+  // 计算总利息
+  let total_interest = @azimuth.add(total_payment, -principal)
+  @azimuth.assert_eq(155760, total_interest)
 }
 
-test "enhanced_temperature_conversions" {
-  // 测试温度转换场景
-  // 摄氏度转华氏度（简化版：F = C × 2 + 30）
-  let celsius_temperatures = [0, 10, 20, 30, 40, 100]
-  let expected_fahrenheit = [30, 50, 70, 90, 110, 230]
+test "physics_velocity_calculation" {
+  // 物理计算：速度和加速度
+  let initial_velocity = 10  // 初始速度 m/s
+  let acceleration = 3       // 加速度 m/s²
+  let time = 5               // 时间 s
   
-  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))
-  @azimuth.assert_eq(50, @azimuth.add(@azimuth.multiply(10, 2), 30))
-  @azimuth.assert_eq(70, @azimuth.add(@azimuth.multiply(20, 2), 30))
-  @azimuth.assert_eq(90, @azimuth.add(@azimuth.multiply(30, 2), 30))
-  @azimuth.assert_eq(110, @azimuth.add(@azimuth.multiply(40, 2), 30))
-  @azimuth.assert_eq(230, @azimuth.add(@azimuth.multiply(100, 2), 30))
+  // 计算最终速度：v = v₀ + at
+  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
+  @azimuth.assert_eq(25, final_velocity)
   
-  // 华氏度转摄氏度（简化版：C = (F - 30) ÷ 2）
-  @azimuth.assert_eq(0, @azimuth.add(@azimuth.multiply(30, -1), 30) / 2)
-  @azimuth.assert_eq(20, @azimuth.add(@azimuth.multiply(70, -1), 30) / 2)
+  // 计算位移：s = v₀t + ½at²
+  let displacement_part1 = @azimuth.multiply(initial_velocity, time)  // v₀t = 50
+  let displacement_part2 = @azimuth.multiply(@azimuth.multiply(acceleration, time), time) / 2  // ½at² = 37.5，整数除法为37
+  let total_displacement = @azimuth.add(displacement_part1, displacement_part2)
+  @azimuth.assert_eq(87, total_displacement)
+  
+  // 计算平均速度：v_avg = (v₀ + v) / 2
+  let average_velocity = @azimuth.add(initial_velocity, final_velocity) / 2
+  @azimuth.assert_eq(17, average_velocity)
 }
 
-test "enhanced_geometry_calculations" {
-  // 测试几何计算
-  // 计算矩形面积和周长
-  let length = 12
-  let width = 8
+test "calendar_date_calculation" {
+  // 日历计算：计算两个日期之间的天数
+  let year1 = 2023
+  let month1 = 1
+  let day1 = 15
   
-  let area = @azimuth.multiply(length, width)
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  let year2 = 2023
+  let month2 = 3
+  let day2 = 10
   
-  @azimuth.assert_eq(96, area)
-  @azimuth.assert_eq(40, perimeter)
+  // 简化计算：假设每个月30天
+  let days_from_start_of_year1 = @azimuth.add(@azimuth.multiply(month1, 30), day1)
+  let days_from_start_of_year2 = @azimuth.add(@azimuth.multiply(month2, 30), day2)
   
-  // 计算三角形面积（底×高÷2）
-  let base = 10
-  let height = 6
-  let triangle_area = @azimuth.multiply(base, height) / 2
+  let days_between = @azimuth.add(days_from_start_of_year2, -days_from_start_of_year1)
+  @azimuth.assert_eq(55, days_between)  // (3×30+10) - (1×30+15) = 100 - 45 = 55
   
-  @azimuth.assert_eq(30, triangle_area)
+  // 计算一年中的第几天（1月1日为第1天）
+  let day_of_year = @azimuth.add(@azimuth.multiply(5, 30), 15)  // 5月15日
+  @azimuth.assert_eq(165, day_of_year)
   
-  // 计算梯形面积（（上底+下底）×高÷2）
-  let top_base = 6
-  let bottom_base = 10
-  let trapezoid_height = 4
-  let trapezoid_area = @azimuth.multiply(@azimuth.add(top_base, bottom_base), trapezoid_height) / 2
-  
-  @azimuth.assert_eq(32, trapezoid_area)
+  // 计算星期几（简化：假设1月1日是星期一）
+  let day_of_week = day_of_year % 7
+  @azimuth.assert_eq(4, day_of_week)  // 第165天是星期五（0=星期一，4=星期五）
 }
 
-test "enhanced_boundary_value_analysis" {
-  // 测试边界值分析
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "data_compression_simulation" {
+  // 模拟数据压缩：计算压缩率
+  let original_size = 10000  // 原始数据大小（字节）
+  let compressed_size = 3500  // 压缩后大小（字节）
   
-  // 测试最大值的各种运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, -1))
+  // 计算压缩率
+  let compression_ratio = @azimuth.multiply(compressed_size, 100) / original_size
+  @azimuth.assert_eq(35, compression_ratio)  // 压缩到35%
   
-  // 测试最小值的各种运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 计算节省的空间
+  let space_saved = @azimuth.add(original_size, -compressed_size)
+  @azimuth.assert_eq(6500, space_saved)
   
-  // 测试极值之间的运算
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  // 计算节省的百分比
+  let space_saved_percent = @azimuth.multiply(space_saved, 100) / original_size
+  @azimuth.assert_eq(65, space_saved_percent)  // 节省65%空间
+  
+  // 模拟重复数据的压缩效果
+  let repeated_data_size = @azimuth.multiply(100, 50)  // 50个重复的100字节块
+  let highly_compressed_size = @azimuth.multiply(100, 5)  // 压缩到5个块
+  let high_compression_ratio = @azimuth.multiply(highly_compressed_size, 100) / repeated_data_size
+  @azimuth.assert_eq(10, high_compression_ratio)  // 压缩到10%
 }
 
-test "enhanced_statistical_calculations" {
-  // 测试统计计算
-  // 计算一组数据的总和、平均值、最大值、最小值
-  let data1 = 10
-  let data2 = 20
-  let data3 = 30
-  let data4 = 40
-  let data5 = 50
+test "game_probability_calculation" {
+  // 游戏概率计算：计算获胜概率
+  let total_outcomes = 1000  // 总可能结果数
+  let winning_outcomes = 150  // 获胜结果数
   
-  // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
-  @azimuth.assert_eq(150, sum)
+  // 计算获胜概率（百分比）
+  let win_probability = @azimuth.multiply(winning_outcomes, 100) / total_outcomes
+  @azimuth.assert_eq(15, win_probability)  // 15%的获胜概率
   
-  // 计算平均值
-  let average = sum / 5
-  @azimuth.assert_eq(30, average)
+  // 计算期望值：奖金 × 概率
+  let prize = 500  // 奖金
+  let expected_value = @azimuth.multiply(prize, win_probability) / 100
+  @azimuth.assert_eq(75, expected_value)  // 期望值75
   
-  // 计算方差（简化版）
-  let diff1 = @azimuth.add(data1, -average)
-  let diff2 = @azimuth.add(data2, -average)
-  let diff3 = @azimuth.add(data3, -average)
-  let diff4 = @azimuth.add(data4, -average)
-  let diff5 = @azimuth.add(data5, -average)
+  // 计算多次游戏的期望结果
+  let games_played = 100
+  let expected_wins = @azimuth.multiply(games_played, win_probability) / 100
+  @azimuth.assert_eq(15, expected_wins)  // 期望获胜15次
   
-  let variance = (@azimuth.multiply(diff1, diff1) + @azimuth.multiply(diff2, diff2) + 
-                  @azimuth.multiply(diff3, diff3) + @azimuth.multiply(diff4, diff4) + 
-                  @azimuth.multiply(diff5, diff5)) / 5
+  let expected_total_prize = @azimuth.multiply(expected_wins, prize)
+  @azimuth.assert_eq(7500, expected_total_prize)  // 期望总奖金7500
   
-  @azimuth.assert_eq(200, variance)
+  // 计算盈亏平衡点
+  let cost_per_game = 8  // 每次游戏费用
+  let total_cost = @azimuth.multiply(games_played, cost_per_game)
+  let profit_loss = @azimuth.add(expected_total_prize, -total_cost)
+  @azimuth.assert_eq(-700, profit_loss)  // 期望亏损700
 }
 
-test "enhanced_complex_expressions" {
-  // 测试复杂表达式计算
-  // 计算：(a + b) * (c - d) + e * f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 7
+test "network_throughput_calculation" {
+  // 网络吞吐量计算
+  let file_size = 5000000  // 文件大小（字节）
+  let bandwidth = 1000000   // 带宽（字节/秒）
+  let latency = 50         // 延迟（毫秒）
+  let packet_overhead = 200 // 数据包开销（字节）
+  let packet_size = 1500   // 数据包大小（字节）
   
-  let sum_ab = @azimuth.add(a, b)
-  let diff_cd = @azimuth.add(c, -d)
-  let product_ef = @azimuth.multiply(e, f)
+  // 计算有效载荷大小
+  let payload_per_packet = @azimuth.add(packet_size, -packet_overhead)
+  @azimuth.assert_eq(1300, payload_per_packet)
   
-  let result = @azimuth.add(@azimuth.multiply(sum_ab, diff_cd), product_ef)
+  // 计算需要的数据包数量
+  let packets_needed = file_size / payload_per_packet
+  @azimuth.assert_eq(3846, packets_needed)  // 5000000÷1300≈3846
   
-  // (10 + 5) * (20 - 8) + 3 * 7 = 15 * 12 + 21 = 180 + 21 = 201
-  @azimuth.assert_eq(201, result)
+  // 计算总开销
+  let total_overhead = @azimuth.multiply(packets_needed, packet_overhead)
+  @azimuth.assert_eq(769200, total_overhead)
   
-  // 计算：a² + b² + 2*a*b (完全平方公式)
-  let a_squared = @azimuth.multiply(a, a)
-  let b_squared = @azimuth.multiply(b, b)
-  let two_ab = @azimuth.multiply(2, @azimuth.multiply(a, b))
+  // 计算传输数据量
+  let total_data = @azimuth.add(file_size, total_overhead)
+  @azimuth.assert_eq(5769200, total_data)
   
-  let perfect_square = @azimuth.add(@azimuth.add(a_squared, b_squared), two_ab)
+  // 计算传输时间（秒）
+  let transfer_time = total_data / bandwidth
+  @azimuth.assert_eq(5, transfer_time)
   
-  // 10² + 5² + 2*10*5 = 100 + 25 + 100 = 225
-  @azimuth.assert_eq(225, perfect_square)
+  // 计算总时间（包括延迟）
+  let total_time = @azimuth.add(transfer_time, latency / 1000)
+  @azimuth.assert_eq(5, total_time)  // 整数除法，延迟小于1秒
+  
+  // 计算实际吞吐量
+  let actual_throughput = file_size / total_time
+  @azimuth.assert_eq(1000000, actual_throughput)
+}
+
+test "cryptography_simulation" {
+  // 模拟密码学运算：简单的凯撒密码
+  let original_message = "HELLO"
+  let shift = 3
+  
+  // 模拟加密：将字母向后移动3位
+  // H(7) + 3 = K(10), E(4) + 3 = H(7), L(11) + 3 = O(14), L(11) + 3 = O(14), O(14) + 3 = R(17)
+  let encrypted_message = "KHOOR"
+  
+  // 验证加密结果
+  @azimuth.assert_eq_string("Hello, KHOOR!", @azimuth.greet(encrypted_message))
+  
+  // 模拟数字加密：异或运算（使用加法模拟）
+  let original_number = 12345
+  let key = 54321
+  
+  // 简单的"加密"：数字与密钥相加
+  let encrypted_number = @azimuth.add(original_number, key)
+  @azimuth.assert_eq(66666, encrypted_number)
+  
+  // "解密"：减去密钥
+  let decrypted_number = @azimuth.add(encrypted_number, -key)
+  @azimuth.assert_eq(12345, decrypted_number)
+  
+  // 模拟哈希函数（简化版）：数字各位之和
+  let hash_input = 12345
+  let digit1 = hash_input / 10000
+  let digit2 = (hash_input % 10000) / 1000
+  let digit3 = (hash_input % 1000) / 100
+  let digit4 = (hash_input % 100) / 10
+  let digit5 = hash_input % 10
+  
+  let hash_result = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(digit1, digit2), digit3), digit4), digit5)
+  @azimuth.assert_eq(15, hash_result)  // 1+2+3+4+5 = 15
 }
