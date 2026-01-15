@@ -2710,4 +2710,74 @@ test "assertion_function_tests" {
   assert_false(calc_result != 42)
 }
 
+// 标准 MoonBit 测试套件 - 添加9个标准测试用例
+test "standard_add_basic" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+}
+
+test "standard_add_zero" {
+  // 测试与0相加的情况
+  assert_eq(10, add(10, 0))
+  assert_eq(10, add(0, 10))
+  assert_eq(0, add(0, 0))
+}
+
+test "standard_add_negative" {
+  // 测试负数加法
+  assert_eq(0, add(5, -5))
+  assert_eq(-8, add(-3, -5))
+  assert_eq(-2, add(3, -5))
+}
+
+test "standard_multiply_basic" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(1, multiply(1, 1))
+}
+
+test "standard_multiply_negative" {
+  // 测试负数乘法
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(0, multiply(-5, 0))
+}
+
+test "standard_greet_basic" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+}
+
+test "standard_greet_special" {
+  // 测试包含特殊字符的问候
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, User123!", greet("User123"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+}
+
+test "standard_boundary_add" {
+  // 测试边界值的加法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "standard_boundary_multiply" {
+  // 测试边界值的乘法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
 

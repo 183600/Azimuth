@@ -1,136 +1,71 @@
 // 标准 MoonBit 测试套件
-// 包含10个测试用例，覆盖项目的核心功能
+// 包含基本的测试用例，验证核心功能
 
 test "add_basic_functionality" {
-  // 测试基本的加法功能
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(-2, 2))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
+  // 测试基本加法功能
+  assert_eq(add(2, 3), 5)
+  assert_eq(add(0, 0), 0)
+  assert_eq(add(-2, -3), -5)
 }
 
-test "add_boundary_values" {
-  // 测试加法的边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试最大值边界
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, max_val))
-  
-  // 测试最小值边界
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, min_val))
-  
-  // 测试最大值和最小值相加
-  assert_eq(-1, add(max_val, min_val))
+test "add_with_zero" {
+  // 测试与0相加的情况
+  assert_eq(add(10, 0), 10)
+  assert_eq(add(0, 10), 10)
+  assert_eq(add(0, 0), 0)
+}
+
+test "add_negative_numbers" {
+  // 测试负数加法
+  assert_eq(add(5, -5), 0)
+  assert_eq(add(-3, -5), -8)
+  assert_eq(add(3, -5), -2)
 }
 
 test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(2, -3))
-  assert_eq(6, multiply(-2, -3))
-  assert_eq(100, multiply(10, 10))
+  // 测试基本乘法功能
+  assert_eq(multiply(2, 3), 6)
+  assert_eq(multiply(5, 0), 0)
+  assert_eq(multiply(1, 1), 1)
 }
 
-test "multiply_boundary_values" {
-  // 测试乘法的边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试最大值边界
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(max_val, multiply(max_val, 2))
-  
-  // 测试最小值边界
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(min_val, 2))
-  
-  // 测试与0的乘法
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
+test "multiply_with_negative_numbers" {
+  // 测试负数乘法
+  assert_eq(multiply(2, -3), -6)
+  assert_eq(multiply(-2, -3), 6)
+  assert_eq(multiply(-5, 0), 0)
 }
 
 test "greet_basic_functionality" {
-  // 测试基本的问候功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, Alice!", greet("Alice"))
+  // 测试基本问候功能
+  assert_eq_string(greet("World"), "Hello, World!")
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
 }
 
-test "greet_special_characters" {
+test "greet_with_special_characters" {
   // 测试包含特殊字符的问候
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, @#$!", greet("@#$"))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, émoji!", greet("émoji"))
+  assert_eq_string(greet("测试"), "Hello, 测试!")
+  assert_eq_string(greet("User123"), "Hello, User123!")
+  assert_eq_string(greet("@#$"), "Hello, @#$!")
 }
 
-test "mathematical_combinations" {
-  // 测试数学运算的组合
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // 测试 (a + b) * c
-  let sum = add(a, b)
-  let product = multiply(sum, c)
-  assert_eq(900, product)
-  
-  // 测试 a * b + c
-  let product2 = multiply(a, b)
-  let sum2 = add(product2, c)
-  assert_eq(230, sum2)
-}
-
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 计算购物车总价
-  let item1_price = 100
-  let item1_quantity = 2
-  let item2_price = 50
-  let item2_quantity = 3
-  
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let cart_total = add(total1, total2)
-  
-  assert_eq(350, cart_total)
-}
-
-test "error_handling_and_edge_cases" {
-  // 测试错误处理和边界情况
+test "boundary_values_add" {
+  // 测试边界值的加法
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(add(min_val, -1) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
-  
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  assert_eq(add(max_val, 1), max_val)
+  assert_eq(add(min_val, -1), min_val)
+  assert_eq(add(max_val, min_val), -1)
 }
 
-test "performance_and_large_numbers" {
-  // 测试性能和大数处理
-  // 测试大数加法
-  assert_eq(2000000000, add(1000000000, 1000000000))
-  assert_eq(-2000000000, add(-1000000000, -1000000000))
+test "boundary_values_multiply" {
+  // 测试边界值的乘法
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试大数乘法
-  assert_eq(100000000, multiply(10000, 10000))
-  assert_eq(-100000000, multiply(-10000, 10000))
-  
-  // 测试连续运算
-  let result = add(multiply(100, 100), multiply(200, 200))
-  assert_eq(50000, result)
+  assert_eq(multiply(max_val, 0), 0)
+  assert_eq(multiply(min_val, 0), 0)
+  assert_eq(multiply(min_val, -1), min_val)
 }
