@@ -28,6 +28,7 @@
     "test/fresh_moonbit_tests.mbt",
     "fresh_moonbit_test_cases.mbt",
     "new_enhanced_tests.mbt",
-    "simple_verification_test.mbt"
+    "simple_verification_test.mbt",
+    "test/additional_tests.mbt"
   ]
 }
