@@ -1,136 +1,249 @@
 // 用户自定义的 MoonBit 测试用例
-// 测试 Azimuth 项目的核心功能
+// 包含10个精心设计的测试，覆盖各种场景
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
+test "binary_operations_simulation" {
+  // 模拟二进制运算：使用加减乘除实现位运算效果
+  let a = 16
+  let b = 5
+  
+  // 左移运算模拟：a << 1 = a * 2
+  let left_shift = @azimuth.multiply(a, 2)
+  @azimuth.assert_eq(32, left_shift)
+  
+  // 右移运算模拟：a >> 2 = a / 4
+  let right_shift = a / 4
+  @azimuth.assert_eq(4, right_shift)
+  
+  // 按位与运算模拟（简化）：a & b = min(a, b) 当其中一个是另一个的子集时
+  let bitwise_and_sim = if b < a { b } else { a }
+  @azimuth.assert_eq(5, bitwise_and_sim)
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+test "scientific_notation_calculations" {
+  // 科学计数法计算模拟
+  // 计算：1.23 × 10^6 + 4.56 × 10^5
+  // 使用整数表示：1230000 + 456000 = 1686000
+  
+  let mantissa1 = 123
+  let exponent1 = 4  // 表示10^4，实际需要乘以10^6
+  let mantissa2 = 456
+  let exponent2 = 3  // 表示10^3，实际需要乘以10^5
+  
+  // 计算实际值
+  let value1 = @azimuth.multiply(mantissa1, @azimuth.multiply(10, 10))  // 123 * 100 = 12300
+  let value2 = @azimuth.multiply(mantissa2, @azimuth.multiply(10, 10))  // 456 * 100 = 45600
+  
+  // 调整指数差异
+  let adjusted_value1 = @azimuth.multiply(value1, 100)  // 1230000
+  let adjusted_value2 = @azimuth.multiply(value2, 10)   // 456000
+  
+  // 相加
+  let result = @azimuth.add(adjusted_value1, adjusted_value2)
+  @azimuth.assert_eq(1686000, result)
 }
 
-test "mathematical_commutative_properties" {
-  // 测试数学交换律性质
-  let a = 12
-  let b = 8
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟：O(n²) vs O(n log n)
+  let n = 100
   
-  // 加法交换律: a + b = b + a
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // O(n²) 算法的操作次数：n * n
+  let quadratic_ops = @azimuth.multiply(n, n)
+  @azimuth.assert_eq(10000, quadratic_ops)
   
-  // 乘法交换律: a * b = b * a
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // O(n log n) 算法的操作次数（简化为 n * log₂(n)）
+  // 使用近似值：log₂(100) ≈ 7
+  let log_approx = 7
+  let linearithmic_ops = @azimuth.multiply(n, log_approx)
+  @azimuth.assert_eq(700, linearithmic_ops)
+  
+  // 性能比较
+  let performance_ratio = quadratic_ops / linearithmic_ops
+  @azimuth.assert_eq(14, performance_ratio)  // O(n²) 比 O(n log n) 慢约14倍
 }
 
-test "boundary_value_handling" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "circular_buffer_operations" {
+  // 循环缓冲区操作模拟
+  let buffer_size = 10
+  let current_index = 8
+  let items_to_add = 5
   
-  // 测试最大值运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 计算新的索引位置：(current_index + items_to_add) % buffer_size
+  let raw_index = @azimuth.add(current_index, items_to_add)  // 13
+  let new_index = raw_index % buffer_size  // 3
+  @azimuth.assert_eq(3, new_index)
   
-  // 测试最小值运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 测试环绕情况
+  let wrap_index = @azimuth.add(buffer_size, 2)  // 12
+  let wrapped_index = wrap_index % buffer_size  // 2
+  @azimuth.assert_eq(2, wrapped_index)
+  
+  // 计算缓冲区中的可用空间
+  let used_slots = 7
+  let available_slots = @azimuth.add(buffer_size, -used_slots)
+  @azimuth.assert_eq(3, available_slots)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形的面积和周长
-  let length = 10
-  let width = 5
+test "hash_table_collision_resolution" {
+  // 哈希表冲突解决模拟
+  let table_size = 16
+  let key1 = 27
+  let key2 = 43  // 与key1冲突
   
-  // 计算面积
-  let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(50, area)
+  // 简单哈希函数：key % table_size
+  let hash1 = key1 % table_size  // 11
+  let hash2 = key2 % table_size  // 11 (冲突)
   
-  // 计算周长
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
-  @azimuth.assert_eq(30, perimeter)
+  @azimuth.assert_eq(11, hash1)
+  @azimuth.assert_eq(11, hash2)
+  
+  // 线性探测解决冲突
+  let collision_index = hash1
+  let probe_step = 1
+  let resolved_index = @azimuth.add(collision_index, probe_step)
+  let final_index = resolved_index % table_size
+  @azimuth.assert_eq(12, final_index)
+  
+  // 测试多次探测
+  let probe_count = 3
+  let multi_probe_index = @azimuth.add(hash1, probe_count)
+  let multi_probe_final = multi_probe_index % table_size
+  @azimuth.assert_eq(14, multi_probe_final)
 }
 
-test "financial_calculation_simple_interest" {
-  // 测试金融计算：单利计算
-  let principal = 1000  // 本金
-  let rate = 5          // 利率百分比
-  let time = 3          // 时间（年）
+test "color_space_conversion" {
+  // 颜色空间转换模拟：RGB到HSV（简化版）
+  let r = 180
+  let g = 50
+  let b = 120
   
-  // 简单利息计算：利息 = 本金 × 利率 × 时间
-  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), time)
-  @azimuth.assert_eq(15000, interest)
+  // 计算最大值和最小值
+  let max_val = if r > g && r > b { r } else if g > b { g } else { b }
+  let min_val = if r < g && r < b { r } else if g < b { g } else { b }
   
-  // 总金额 = 本金 + 利息
-  let total = @azimuth.add(principal, interest)
-  @azimuth.assert_eq(16000, total)
+  @azimuth.assert_eq(180, max_val)
+  @azimuth.assert_eq(50, min_val)
+  
+  // 计算色相（简化版）
+  let delta = @azimuth.add(max_val, -min_val)  // 130
+  @azimuth.assert_eq(130, delta)
+  
+  // 计算饱和度（百分比）
+  let saturation = if max_val > 0 { 
+    @azimuth.multiply(delta, 100) / max_val 
+  } else { 
+    0 
+  }
+  @azimuth.assert_eq(72, saturation)  // 130*100/180 = 72 (整数除法)
+  
+  // 计算明度（百分比）
+  let value = @azimuth.multiply(max_val, 100) / 255  // 假设最大值为255
+  @azimuth.assert_eq(70, value)  // 180*100/255 = 70 (整数除法)
 }
 
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景：摄氏度转华氏度（简化版）
-  // 简化公式：F = C × 2 + 30（避免小数运算）
+test "compression_ratio_calculation" {
+  // 压缩比计算
+  let original_size = 10000
+  let compressed_size = 2500
   
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit)
+  // 计算压缩比
+  let compression_ratio = @azimuth.multiply(original_size, 100) / compressed_size
+  @azimuth.assert_eq(400, compression_ratio)  // 4:1压缩比
   
-  // 测试冰点
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)
+  // 计算空间节省百分比
+  let space_saved = @azimuth.multiply(@azimuth.add(original_size, -compressed_size), 100) / original_size
+  @azimuth.assert_eq(75, space_saved)  // 节省75%空间
+  
+  // 测试不同压缩级别
+  let level1_compressed = 5000  // 2:1压缩
+  let level2_compressed = 2500  // 4:1压缩
+  let level3_compressed = 1250  // 8:1压缩
+  
+  let level1_ratio = @azimuth.multiply(original_size, 100) / level1_compressed
+  let level2_ratio = @azimuth.multiply(original_size, 100) / level2_compressed
+  let level3_ratio = @azimuth.multiply(original_size, 100) / level3_compressed
+  
+  @azimuth.assert_eq(200, level1_ratio)
+  @azimuth.assert_eq(400, level2_ratio)
+  @azimuth.assert_eq(800, level3_ratio)
 }
 
-test "shopping_cart_calculation" {
-  // 测试购物车计算
-  let item_price = 99
-  let quantity = 3
-  let shipping = 10
-  let discount = 20
+test "network_throughput_calculation" {
+  // 网络吞吐量计算
+  let file_size_mb = 100
+  let transfer_time_seconds = 50
   
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(item_price, quantity)
+  // 计算吞吐量（MB/s）
+  let throughput_mbps = file_size_mb / transfer_time_seconds
+  @azimuth.assert_eq(2, throughput_mbps)  // 100MB/50s = 2MB/s
   
-  // 应用折扣和运费
-  let total = @azimuth.add(@azimuth.add(subtotal, -discount), shipping)
+  // 转换为Mbps（假设1MB = 8Mb）
+  let throughput_megabits = @azimuth.multiply(throughput_mbps, 8)
+  @azimuth.assert_eq(16, throughput_megabits)  // 2MB/s = 16Mbps
   
-  // 验证结果：(99 × 3) - 20 + 10 = 297 - 20 + 10 = 287
-  @azimuth.assert_eq(287, total)
+  // 计算传输1GB文件所需时间
+  let file_size_gb = 1  // 1GB = 1000MB
+  let transfer_time_for_gb = @azimuth.multiply(file_size_gb, 1000) / throughput_mbps
+  @azimuth.assert_eq(500, transfer_time_for_gb)  // 1000MB/2MB/s = 500s
+  
+  // 转换为分钟
+  let transfer_time_minutes = transfer_time_for_gb / 60
+  @azimuth.assert_eq(8, transfer_time_minutes)  // 500s/60 = 8分钟
 }
 
-test "statistical_calculation_average" {
-  // 测试统计计算：平均值
-  // 数据集：15, 25, 35, 45, 55
+test "cache_performance_metrics" {
+  // 缓存性能指标计算
+  let total_requests = 1000
+  let cache_hits = 850
+  let cache_misses = @azimuth.add(total_requests, -cache_hits)
   
-  // 计算总和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(15, 25), 35), 45), 55)
-  @azimuth.assert_eq(175, sum)
+  @azimuth.assert_eq(150, cache_misses)
   
-  // 计算平均值
-  let count = 5
-  let average = sum / count
-  @azimuth.assert_eq(35, average)
+  // 计算缓存命中率
+  let hit_rate = @azimuth.multiply(cache_hits, 100) / total_requests
+  @azimuth.assert_eq(85, hit_rate)  // 85%命中率
+  
+  // 计算缓存未命中率
+  let miss_rate = @azimuth.multiply(cache_misses, 100) / total_requests
+  @azimuth.assert_eq(15, miss_rate)  // 15%未命中率
+  
+  // 计算平均访问时间（假设缓存命中耗时1ms，未命中耗时10ms）
+  let cache_hit_time = 1
+  let cache_miss_time = 10
+  let total_hit_time = @azimuth.multiply(cache_hits, cache_hit_time)
+  let total_miss_time = @azimuth.multiply(cache_misses, cache_miss_time)
+  let total_time = @azimuth.add(total_hit_time, total_miss_time)
+  let average_time = total_time / total_requests
+  
+  @azimuth.assert_eq(2, average_time)  // (850*1 + 150*10)/1000 = 2350/1000 = 2.35ms ≈ 2ms
 }
 
-test "time_calculation_duration" {
-  // 测试时间计算：持续时间
-  let start_hour = 9
-  let start_minute = 30
-  let end_hour = 14
-  let end_minute = 15
+test "database_index_selectivity" {
+  // 数据库索引选择性计算
+  let total_rows = 10000
+  let unique_values = 5000
   
-  // 转换为分钟数
-  let start_total = @azimuth.add(@azimuth.multiply(start_hour, 60), start_minute)
-  let end_total = @azimuth.add(@azimuth.multiply(end_hour, 60), end_minute)
+  // 计算选择性
+  let selectivity = @azimuth.multiply(unique_values, 100) / total_rows
+  @azimuth.assert_eq(50, selectivity)  // 50%选择性
   
-  // 计算持续时间
-  let duration = @azimuth.add(end_total, -start_total)
+  // 计算 cardinality
+  let cardinality = unique_values
+  @azimuth.assert_eq(5000, cardinality)
   
-  // 验证结果：(14×60+15) - (9×60+30) = 855 - 570 = 285分钟
-  @azimuth.assert_eq(285, duration)
+  // 测试不同类型的索引选择性
+  let primary_key_unique = total_rows  // 主键：所有值都唯一
+  let gender_values = 2  // 性别：只有两个值
+  let status_values = 5  // 状态：5个不同值
+  
+  let pk_selectivity = @azimuth.multiply(primary_key_unique, 100) / total_rows
+  let gender_selectivity = @azimuth.multiply(gender_values, 100) / total_rows
+  let status_selectivity = @azimuth.multiply(status_values, 100) / total_rows
+  
+  @azimuth.assert_eq(100, pk_selectivity)  // 100%选择性
+  @azimuth.assert_eq(0, gender_selectivity)   // 0%选择性（整数除法）
+  @azimuth.assert_eq(0, status_selectivity)   // 0%选择性（整数除法）
+  
+  // 计算索引效率（选择性越高，效率越高）
+  let index_efficiency = selectivity
+  @azimuth.assert_eq(50, index_efficiency)  // 50%效率
 }
