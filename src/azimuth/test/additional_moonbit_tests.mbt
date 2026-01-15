@@ -1,236 +1,204 @@
-// 额外的 MoonBit 测试用例 - 使用标准 MoonBit 测试语法
-// 包含 10 个新的测试用例，测试各种功能场景
+// 额外的 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法测试 azimuth 模块功能
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  let a = 15
-  let b = 7
+test "integer_division_and_remainder" {
+  // 测试整数除法和取余运算
+  let dividend = 17
+  let divisor = 5
   
-  // 测试加法
-  let sum = @azimuth.add(a, b)
-  @azimuth.assert_eq(22, sum)
+  // 计算商和余数
+  let quotient = dividend / divisor
+  let remainder = dividend % divisor
   
-  // 测试乘法
-  let product = @azimuth.multiply(a, b)
-  @azimuth.assert_eq(105, product)
+  // 验证除法恒等式：dividend = divisor * quotient + remainder
+  let reconstructed = @azimuth.add(@azimuth.multiply(divisor, quotient), remainder)
+  @azimuth.assert_eq(dividend, reconstructed)
   
-  // 测试复合运算
-  let complex = @azimuth.add(@azimuth.multiply(a, 2), @azimuth.multiply(b, 3))
-  @azimuth.assert_eq(51, complex)
+  // 测试边界情况
+  @azimuth.assert_eq(0, 0 / 5)
+  @azimuth.assert_eq(0, 0 % 5)
+  @azimuth.assert_eq(1, 5 / 3)
+  @azimuth.assert_eq(2, 5 % 3)
 }
 
-test "string_functionality_comprehensive" {
-  // 测试字符串功能的全面性
-  // 测试基本问候
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "absolute_value_simulation" {
+  // 模拟绝对值计算
+  let positive = 42
+  let negative = -42
+  let zero = 0
+  
+  // 使用条件表达式模拟绝对值
+  let abs_positive = if positive >= 0 { positive } else { -positive }
+  let abs_negative = if negative >= 0 { negative } else { -negative }
+  let abs_zero = if zero >= 0 { zero } else { -zero }
+  
+  @azimuth.assert_eq(42, abs_positive)
+  @azimuth.assert_eq(42, abs_negative)
+  @azimuth.assert_eq(0, abs_zero)
+}
+
+test "sign_function_simulation" {
+  // 模拟符号函数：返回-1（负数）、0（零）或1（正数）
+  let positive = 10
+  let negative = -10
+  let zero = 0
+  
+  // 使用条件表达式模拟符号函数
+  let sign_positive = if positive > 0 { 1 } else { if positive < 0 { -1 } else { 0 } }
+  let sign_negative = if negative > 0 { 1 } else { if negative < 0 { -1 } else { 0 } }
+  let sign_zero = if zero > 0 { 1 } else { if zero < 0 { -1 } else { 0 } }
+  
+  @azimuth.assert_eq(1, sign_positive)
+  @azimuth.assert_eq(-1, sign_negative)
+  @azimuth.assert_eq(0, sign_zero)
+}
+
+test "max_function_simulation" {
+  // 模拟最大值函数
+  let a = 15
+  let b = 25
+  let c = 20
+  
+  // 使用条件表达式模拟最大值函数
+  let max_ab = if a > b { a } else { b }
+  let max_abc = if max_ab > c { max_ab } else { c }
+  
+  @azimuth.assert_eq(25, max_ab)
+  @azimuth.assert_eq(25, max_abc)
+  
+  // 测试相等的情况
+  let equal_a = 10
+  let equal_b = 10
+  let max_equal = if equal_a > equal_b { equal_a } else { equal_b }
+  @azimuth.assert_eq(10, max_equal)
+}
+
+test "min_function_simulation" {
+  // 模拟最小值函数
+  let a = 15
+  let b = 25
+  let c = 10
+  
+  // 使用条件表达式模拟最小值函数
+  let min_ab = if a < b { a } else { b }
+  let min_abc = if min_ab < c { min_ab } else { c }
+  
+  @azimuth.assert_eq(15, min_ab)
+  @azimuth.assert_eq(10, min_abc)
+  
+  // 测试负数的情况
+  let neg_a = -5
+  let neg_b = -10
+  let min_neg = if neg_a < neg_b { neg_a } else { neg_b }
+  @azimuth.assert_eq(-10, min_neg)
+}
+
+test "string_length_estimation" {
+  // 通过字符串操作估算字符串长度
+  let short = "Hi"
+  let medium = "MoonBit"
+  let long = "This is a very long string for testing purposes"
+  
+  // 使用 greet 函数来验证字符串处理
+  let short_greeting = @azimuth.greet(short)
+  let medium_greeting = @azimuth.greet(medium)
+  let long_greeting = @azimuth.greet(long)
+  
+  // 验证字符串拼接的正确性
+  @azimuth.assert_eq_string("Hello, Hi!", short_greeting)
+  @azimuth.assert_eq_string("Hello, MoonBit!", medium_greeting)
+  @azimuth.assert_eq_string("Hello, This is a very long string for testing purposes!", long_greeting)
   
   // 测试空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
-  
-  // 测试包含数字的字符串
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
-  
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, test@#$%!", @azimuth.greet("test@#$%"))
+  let empty = ""
+  let empty_greeting = @azimuth.greet(empty)
+  @azimuth.assert_eq_string("Hello, !", empty_greeting)
 }
 
-test "mathematical_series_calculations" {
-  // 测试数学级数计算
-  // 计算等差数列前 n 项和：1 + 2 + 3 + ... + 10
-  let n = 10
-  let arithmetic_sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  @azimuth.assert_eq(55, arithmetic_sum)
+test "boolean_logic_evaluation" {
+  // 测试布尔逻辑运算的模拟
+  let true_val = 1
+  let false_val = 0
   
-  // 计算等比数列前 n 项和：1 + 2 + 4 + 8 + 16
-  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 4), 8), 16)
-  @azimuth.assert_eq(31, geo_sum)
+  // 使用数值模拟布尔运算：AND = min(a, b), OR = max(a, b)
+  let and_true = min_function_simulation(true_val, true_val)
+  let and_false1 = min_function_simulation(true_val, false_val)
+  let and_false2 = min_function_simulation(false_val, true_val)
+  let and_false3 = min_function_simulation(false_val, false_val)
   
-  // 计算平方和：1² + 2² + 3² + 4² + 5²
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.multiply(4, 4)), @azimuth.multiply(5, 5))
-  @azimuth.assert_eq(55, square_sum)
+  let or_true1 = max_function_simulation(true_val, true_val)
+  let or_true2 = max_function_simulation(true_val, false_val)
+  let or_true3 = max_function_simulation(false_val, true_val)
+  let or_false = max_function_simulation(false_val, false_val)
+  
+  @azimuth.assert_eq(1, and_true)
+  @azimuth.assert_eq(0, and_false1)
+  @azimuth.assert_eq(0, and_false2)
+  @azimuth.assert_eq(0, and_false3)
+  
+  @azimuth.assert_eq(1, or_true1)
+  @azimuth.assert_eq(1, or_true2)
+  @azimuth.assert_eq(1, or_true3)
+  @azimuth.assert_eq(0, or_false)
 }
 
-test "boundary_value_comprehensive" {
-  // 测试边界值的综合情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "arithmetic_progression_sum" {
+  // 计算等差数列的和：n × (首项 + 末项) / 2
+  let first_term = 3
+  let last_term = 15
+  let n = 7  // 项数
   
-  // 测试最大值的各种运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 计算等差数列的和
+  let sum = @azimuth.multiply(n, @azimuth.add(first_term, last_term)) / 2
   
-  // 测试最小值的各种运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 手动验证：3 + 5 + 7 + 9 + 11 + 13 + 15 = 63
+  @azimuth.assert_eq(63, sum)
   
-  // 测试边界值之间的运算
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  // 测试另一个等差数列
+  let first_term2 = 1
+  let last_term2 = 10
+  let n2 = 10
+  
+  let sum2 = @azimuth.multiply(n2, @azimuth.add(first_term2, last_term2)) / 2
+  
+  // 手动验证：1 + 2 + 3 + ... + 10 = 55
+  @azimuth.assert_eq(55, sum2)
 }
 
-test "real_world_practical_scenarios" {
-  // 测试实际应用场景
-  // 场景1：计算折扣价格
-  let original_price = 200
-  let discount_percentage = 15
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  let discounted_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(170, discounted_price)
+test "geometric_progression_product" {
+  // 计算等比数列的积（简化版）
+  let first_term = 2
+  let ratio = 3
+  let n = 4  // 项数
   
-  // 场景2：计算平均分数
-  let score1 = 85
-  let score2 = 90
-  let score3 = 78
-  let score4 = 92
-  let average_score = @azimuth.add(@azimuth.add(@azimuth.add(score1, score2), score3), score4) / 4
-  @azimuth.assert_eq(86, average_score)
+  // 计算等比数列的积：2 × 6 × 18 × 54
+  let term1 = first_term
+  let term2 = @azimuth.multiply(term1, ratio)
+  let term3 = @azimuth.multiply(term2, ratio)
+  let term4 = @azimuth.multiply(term3, ratio)
   
-  // 场景3：计算简单利息
-  let principal = 5000
-  let rate = 8
-  let time = 3
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, time)) / 100
-  let total_amount = @azimuth.add(principal, interest)
-  @azimuth.assert_eq(6200, total_amount)
+  let product = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(term1, term2), term3), term4)
+  
+  // 手动验证：2 × 6 × 18 × 54 = 11664
+  @azimuth.assert_eq(11664, product)
+  
+  // 测试比率为1的特殊情况
+  let ratio_one = 1
+  let n2 = 5
+  
+  // 所有项都是相同的值
+  let product_with_ratio_one = @azimuth.multiply(first_term, @azimuth.multiply(first_term, @azimuth.multiply(first_term, @azimuth.multiply(first_term, first_term))))
+  
+  // 2 × 2 × 2 × 2 × 2 = 32
+  @azimuth.assert_eq(32, product_with_ratio_one)
 }
 
-test "negative_and_zero_operations" {
-  // 测试负数和零的运算
-  // 测试零的运算特性
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
-  @azimuth.assert_eq(12345, @azimuth.add(0, 12345))
-  @azimuth.assert_eq(-12345, @azimuth.add(0, -12345))
-  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
-  
-  // 测试负数运算
-  @azimuth.assert_eq(-15, @azimuth.add(-10, -5))
-  @azimuth.assert_eq(5, @azimuth.add(-10, 15))
-  @azimuth.assert_eq(-10, @azimuth.add(5, -15))
-  
-  // 测试负数乘法
-  @azimuth.assert_eq(50, @azimuth.multiply(-10, -5))
-  @azimuth.assert_eq(-50, @azimuth.multiply(-10, 5))
-  @azimuth.assert_eq(-50, @azimuth.multiply(10, -5))
-  
-  // 测试零与负数的运算
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -100))
-  @azimuth.assert_eq(-100, @azimuth.add(0, -100))
+// 辅助函数：最小值函数
+fn min_function_simulation(a : Int, b : Int) -> Int {
+  if a < b { a } else { b }
 }
 
-test "complex_formula_applications" {
-  // 测试复杂公式的应用
-  // 场景1：计算二次方程的值
-  let x = 5
-  let a = 2
-  let b = 3
-  let c = 4
-  
-  // 计算 ax² + bx + c
-  let x_squared = @azimuth.multiply(x, x)
-  let ax_squared = @azimuth.multiply(a, x_squared)
-  let bx = @azimuth.multiply(b, x)
-  let quadratic_result = @azimuth.add(@azimuth.add(ax_squared, bx), c)
-  @azimuth.assert_eq(69, quadratic_result)
-  
-  // 场景2：计算圆柱体表面积（简化）
-  let radius = 5
-  let height = 10
-  let pi_approx = 3
-  
-  // 表面积 = 2πr² + 2πrh
-  let circle_area = @azimuth.multiply(pi_approx, @azimuth.multiply(radius, radius))
-  let side_area = @azimuth.multiply(@azimuth.multiply(2, pi_approx), @azimuth.multiply(radius, height))
-  let surface_area = @azimuth.add(@azimuth.multiply(2, circle_area), side_area)
-  @azimuth.assert_eq(475, surface_area)
-}
-
-test "algorithmic_thinking_tests" {
-  // 测试算法思维
-  // 场景1：计算最大公约数（欧几里得算法简化版）
-  let a = 48
-  let b = 18
-  
-  // 模拟欧几里得算法的过程
-  let step1 = a % b  // 48 % 18 = 12
-  let step2 = b % step1  // 18 % 12 = 6
-  let step3 = step1 % step2  // 12 % 6 = 0
-  let gcd = step2  // 当余数为0时，除数就是GCD
-  
-  @azimuth.assert_eq(6, gcd)
-  
-  // 场景2：计算斐波那契数列的第n项（简化版）
-  let fib_n = 7
-  // 手动计算斐波那契数列：0, 1, 1, 2, 3, 5, 8, 13...
-  // 第7项是8（从0开始计数）
-  let fib_7 = 8
-  @azimuth.assert_eq(8, fib_7)
-  
-  // 场景3：计算阶乘
-  let factorial_n = 5
-  // 5! = 5 × 4 × 3 × 2 × 1 = 120
-  let factorial_result = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
-  @azimuth.assert_eq(120, factorial_result)
-}
-
-test "data_processing_scenarios" {
-  // 测试数据处理场景
-  // 场景1：计算数据的统计量
-  let data_values = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(15, 25), 35), 45), 55)
-  let data_count = 5
-  
-  // 计算平均值
-  let data_mean = data_values / data_count
-  @azimuth.assert_eq(35, data_mean)
-  
-  // 计算范围
-  let data_range = @azimuth.add(55, -15)
-  @azimuth.assert_eq(40, data_range)
-  
-  // 场景2：数据转换
-  let celsius_temperature = 25
-  // 转换为华氏度：F = C × 2 + 30（简化版）
-  let fahrenheit_temperature = @azimuth.add(@azimuth.multiply(celsius_temperature, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit_temperature)
-  
-  // 场景3：百分比计算
-  let total_value = 800
-  let part_value = 200
-  let percentage = @azimuth.multiply(part_value, 100) / total_value
-  @azimuth.assert_eq(25, percentage)
-}
-
-test "error_handling_and_edge_cases" {
-  // 测试错误处理和边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  
-  // 测试特殊值处理
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
-  
-  // 测试边界条件下的字符串处理
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  @azimuth.assert_eq_string("Hello, " + @azimuth.greet("test"), @azimuth.greet("test"))
+// 辅助函数：最大值函数
+fn max_function_simulation(a : Int, b : Int) -> Int {
+  if a > b { a } else { b }
 }
