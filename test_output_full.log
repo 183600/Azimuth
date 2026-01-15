@@ -2,8 +2,10 @@ Running moon test with real execution...
 Compiling azimuth...
 Generating azimuth.wasm...
 Testing azimuth...
-Checking additional_tests.mbt...
-Found 9 tests in additional_tests.mbt
+Checking additional_moonbit_test_cases_v2.mbt...
+Error: additional_moonbit_test_cases_v2.mbt compilation failed
+Checking concise_moonbit_tests.mbt...
+Found 10 tests in concise_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -13,9 +15,9 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking simple_test.mbt...
-Found 9 tests in simple_test.mbt
 test ... ok
+Checking essential_moonbit_tests.mbt...
+Found 10 tests in essential_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -24,10 +26,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking additional_comprehensive_tests.mbt...
-Found 19 tests in additional_comprehensive_tests.mbt
 test ... ok
 test ... ok
+Checking moonbit_user_tests.mbt...
+Found 8 tests in moonbit_user_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -36,6 +38,8 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking new_standard_moonbit_tests.mbt...
+Found 10 tests in new_standard_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -45,9 +49,9 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking comprehensive_tests.mbt...
-Found 20 tests in comprehensive_tests.mbt
 test ... ok
+Checking moon_test_cases.mbt...
+Found 10 tests in moon_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -58,6 +62,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking standard_moonbit_tests_v10.mbt...
+Error: standard_moonbit_tests_v10.mbt compilation failed
+Checking new_standard_tests.mbt...
+Found 10 tests in new_standard_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -67,9 +75,9 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking standard_tests.mbt...
-Found 9 tests in standard_tests.mbt
 test ... ok
+Checking moonbit_standard_test_cases.mbt...
+Found 10 tests in moonbit_standard_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -78,12 +86,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking new_comprehensive_tests.mbt...
-azimuth_test/new_comprehensive_tests.mbt:70:7-70:14 [E0002] Warning (unused_value): Unused variable 'max_val'
-azimuth_test/new_comprehensive_tests.mbt:172:7-172:14 [E0002] Warning (unused_value): Unused variable 'min_val'
-Found 10 tests in new_comprehensive_tests.mbt
 test ... ok
 test ... ok
+Checking new_standard_test_cases.mbt...
+Found 10 tests in new_standard_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -92,10 +98,12 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking additional_test_cases.mbt...
-Found 10 tests in additional_test_cases.mbt
 test ... ok
 test ... ok
+Checking additional_user_tests.mbt...
+Error: additional_user_tests.mbt compilation failed
+Checking standard_moonbit_tests_v8.mbt...
+Found 10 tests in standard_moonbit_tests_v8.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -104,10 +112,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking comprehensive_standard_tests.mbt...
-Found 10 tests in comprehensive_standard_tests.mbt
 test ... ok
 test ... ok
+Checking additional_moonbit_test_cases.mbt...
+Found 10 tests in additional_moonbit_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -116,10 +124,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking enhanced_boundary_tests.mbt...
-Found 10 tests in enhanced_boundary_tests.mbt
 test ... ok
 test ... ok
+Checking essential_test_cases.mbt...
+Found 10 tests in essential_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -128,10 +136,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
 test ... ok
 test ... ok
+Checking new_moon_tests.mbt...
+Found 10 tests in new_moon_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -140,10 +148,10 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking new_moonbit_tests.mbt...
-Found 10 tests in new_moonbit_tests.mbt
 test ... ok
 test ... ok
+Checking standard_moonbit_tests_final.mbt...
+Found 10 tests in standard_moonbit_tests_final.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -152,8 +160,150 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking enhanced_moonbit_tests.mbt...
-Found 10 tests in enhanced_moonbit_tests.mbt
+test ... ok
+test ... ok
+Checking test_enhanced_moonbit.mbt...
+Found 10 tests in test_enhanced_moonbit.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_test_suite_new.mbt...
+Found 10 tests in moonbit_test_suite_new.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking user_standard_tests.mbt...
+Found 10 tests in user_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking comprehensive_moonbit_test_suite.mbt...
+Found 10 tests in comprehensive_moonbit_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_tests_v3.mbt...
+Found 10 tests in standard_moonbit_tests_v3.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_tests_v2.mbt...
+Found 10 tests in standard_moonbit_tests_v2.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_additional_moonbit_tests.mbt...
+Found 10 tests in new_additional_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_tests.mbt...
+Found 8 tests in additional_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking focused_comprehensive_tests.mbt...
+Found 9 tests in focused_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_test_cases_final.mbt...
+Found 10 tests in new_moonbit_test_cases_final.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking azimuth_core_tests.mbt...
+Found 10 tests in azimuth_core_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking user_moonbit_tests.mbt...
+Found 9 tests in user_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_standard_test_suite.mbt...
+Found 10 tests in new_standard_test_suite.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -176,9 +326,92 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking new_test_cases.mbt...
-azimuth_test/new_test_cases.mbt:181:7-181:11 [E0002] Warning (unused_value): Unused variable 'time'
-Found 10 tests in new_test_cases.mbt
+Checking standard_moonbit_test_suite_new.mbt...
+Found 10 tests in standard_moonbit_test_suite_new.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moon_test_standard.mbt...
+Found 10 tests in moon_test_standard.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking custom_moonbit_tests.mbt...
+Error: custom_moonbit_tests.mbt compilation failed
+Checking additional_focused_tests.mbt...
+Found 8 tests in additional_focused_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_test_coverage.mbt...
+Found 10 tests in enhanced_test_coverage.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_azimuth_tests.mbt...
+Found 10 tests in standard_azimuth_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_test_examples.mbt...
+Found 10 tests in standard_moonbit_test_examples.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_test_suite.mbt...
+Found 10 tests in new_moonbit_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moon_test_comprehensive.mbt...
+Found 10 tests in moon_test_comprehensive.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -201,12 +434,116 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking new_comprehensive_tests.mbt...
-azimuth_test/new_comprehensive_tests.mbt:70:7-70:14 [E0002] Warning (unused_value): Unused variable 'max_val'
-azimuth_test/new_comprehensive_tests.mbt:172:7-172:14 [E0002] Warning (unused_value): Unused variable 'min_val'
-Found 10 tests in new_comprehensive_tests.mbt
+Checking azimuth_test.mbt...
+Error: azimuth_test.mbt compilation failed
+Checking concise_test_cases.mbt...
+Found 10 tests in concise_test_cases.mbt
 test ... ok
 test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking comprehensive_moonbit_tests.mbt...
+Found 10 tests in comprehensive_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_test_cases.mbt...
+Error: standard_moonbit_test_cases.mbt compilation failed
+Checking enhanced_moonbit_test_cases.mbt...
+Found 10 tests in enhanced_moonbit_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_test_cases.mbt...
+Found 10 tests in new_moonbit_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking simple_test_cases.mbt...
+Error: simple_test_cases.mbt compilation failed
+Checking standard_moonbit_tests.mbt...
+Found 10 tests in standard_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_test_cases.mbt...
+Found 9 tests in additional_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_tests.mbt...
+Found 10 tests in new_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking focused_test_scenarios.mbt...
+Error: focused_test_scenarios.mbt compilation failed
+Checking xyz123_final_tests.mbt...
+Found 15 tests in xyz123_final_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_tests.mbt...
+Found 8 tests in additional_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -216,18 +553,7 @@ test ... ok
 test ... ok
 test ... ok
 Checking enhanced_test_cases.mbt...
-Found 8 tests in enhanced_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-Checking additional_standard_tests.mbt...
-azimuth_test/additional_standard_tests.mbt:89:7-89:20 [E0002] Warning (unused_value): Unused variable 'discount_rate'
-Found 10 tests in additional_standard_tests.mbt
+Found 10 tests in enhanced_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -238,8 +564,404 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking new_additional_tests.mbt...
-Found 10 tests in new_additional_tests.mbt
+Checking new_comprehensive_tests.mbt...
+Error: new_comprehensive_tests.mbt compilation failed
+Checking new_advanced_tests.mbt...
+Error: new_advanced_tests.mbt compilation failed
+Checking simple_new_test.mbt...
+Error: simple_new_test.mbt compilation failed
+Checking moonbit_new_test_cases.mbt...
+Found 10 tests in moonbit_new_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_new_test_cases_copy.mbt...
+Error: moonbit_new_test_cases_copy.mbt compilation failed
+Checking our_new_tests.mbt...
+Error: our_new_tests.mbt compilation failed
+Checking comprehensive_test_suite.mbt...
+Error: comprehensive_test_suite.mbt compilation failed
+Checking comprehensive_test_cases.mbt...
+Error: comprehensive_test_cases.mbt compilation failed
+Checking advanced_test_cases.mbt...
+Found 10 tests in advanced_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_advanced_test_cases.mbt...
+Error: new_advanced_test_cases.mbt compilation failed
+Checking moonbit_test_examples.mbt...
+Found 10 tests in moonbit_test_examples.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking azimuth_additional_tests.mbt...
+Found 10 tests in azimuth_additional_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_enhanced_test_cases.mbt...
+Found 8 tests in new_enhanced_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking user_new_test_cases.mbt...
+Found 10 tests in user_new_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking user_new_tests.mbt...
+Found 10 tests in user_new_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking practical_application_tests.mbt...
+Error: practical_application_tests.mbt compilation failed
+Checking moonbit_standard_test_suite.mbt...
+Error: moonbit_standard_test_suite.mbt compilation failed
+Checking user_defined_test_cases.mbt...
+Found 10 tests in user_defined_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_standard_tests.mbt...
+Error: additional_moonbit_standard_tests.mbt compilation failed
+Checking simple_test_verify.mbt...
+Error: simple_test_verify.mbt compilation failed
+Test file moonbit_test_enhanced.mbt not found
+Checking moonbit_test_suite.mbt...
+Found 9 tests in moonbit_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_moonbit_test_suite.mbt...
+Found 10 tests in enhanced_moonbit_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_standard_tests.mbt...
+Found 10 tests in moonbit_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking simple_moonbit_tests.mbt...
+Error: simple_moonbit_tests.mbt compilation failed
+Checking new_standard_moonbit_tests.mbt...
+Found 10 tests in new_standard_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking compact_moonbit_tests.mbt...
+Found 10 tests in compact_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_new_tests.mbt...
+Error: moonbit_new_tests.mbt compilation failed
+Checking new_basic_test_suite.mbt...
+Found 10 tests in new_basic_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_test_cases.mbt...
+Found 10 tests in additional_moonbit_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking professional_moonbit_tests.mbt...
+Found 10 tests in professional_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_standard_tests.mbt...
+Found 10 tests in new_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking focused_moonbit_tests.mbt...
+Found 10 tests in focused_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_enhanced_moonbit_tests.mbt...
+Found 19 tests in new_enhanced_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking practical_test_cases.mbt...
+Found 10 tests in practical_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_comprehensive_tests.mbt...
+Error: additional_comprehensive_tests.mbt compilation failed
+Checking enhanced_application_tests.mbt...
+Found 8 tests in enhanced_application_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_additional_test_cases.mbt...
+Found 9 tests in moonbit_additional_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking final_moonbit_tests.mbt...
+Found 10 tests in final_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moonbit_standard_tests.mbt...
+Found 10 tests in new_moonbit_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking extra_moonbit_test_cases.mbt...
+Error: extra_moonbit_test_cases.mbt compilation failed
+Checking new_moonbit_test_examples.mbt...
+Found 10 tests in new_moonbit_test_examples.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_comprehensive_moonbit_tests.mbt...
+Found 10 tests in new_comprehensive_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_tests_final.mbt...
+Found 10 tests in additional_moonbit_tests_final.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_test_cases.mbt...
+Found 10 tests in new_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moon_test_standard.mbt...
+Found 10 tests in moon_test_standard.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking creative_moonbit_tests.mbt...
+Found 10 tests in creative_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_test_suite.mbt...
+Found 10 tests in standard_test_suite.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -262,8 +984,220 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking moonbit_new_tests.mbt...
-Found 10 tests in moonbit_new_tests.mbt
+Checking focused_core_tests.mbt...
+Found 9 tests in focused_core_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking my_additional_tests.mbt...
+Found 10 tests in my_additional_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking additional_moonbit_tests_new.mbt...
+Found 10 tests in additional_moonbit_tests_new.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_standard_test_cases_new.mbt...
+Found 9 tests in moonbit_standard_test_cases_new.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_tests_new.mbt...
+Found 10 tests in standard_moonbit_tests_new.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_moon_test_cases.mbt...
+Found 10 tests in new_moon_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking user_added_tests.mbt...
+Found 11 tests in user_added_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking advanced_ceiling_tests.mbt...
+Found 8 tests in advanced_ceiling_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_practical_tests.mbt...
+Found 10 tests in enhanced_practical_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_enhanced_tests.mbt...
+Found 10 tests in moonbit_enhanced_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking azimuth_extended_tests.mbt...
+Found 10 tests in azimuth_extended_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_moonbit_tests.mbt...
+Found 10 tests in enhanced_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking simple_enhanced_test.mbt...
+Found 3 tests in simple_enhanced_test.mbt
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_simple_tests.mbt...
+Error: moonbit_simple_tests.mbt compilation failed
+Checking moonbit_comprehensive_tests.mbt...
+Found 10 tests in moonbit_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_advanced_moon_tests.mbt...
+Found 10 tests in new_advanced_moon_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking moonbit_enhanced_test_suite.mbt...
+Found 10 tests in moonbit_enhanced_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking practical_moonbit_tests.mbt...
+Found 10 tests in practical_moonbit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking self_contained_tests.mbt...
+Found 10 tests in self_contained_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking new_comprehensive_test_cases.mbt...
+Error: new_comprehensive_test_cases.mbt compilation failed
+Checking additional_moonbit_test_suite.mbt...
+Error: additional_moonbit_test_suite.mbt compilation failed
+Checking simple_additional_tests.mbt...
+Found 10 tests in simple_additional_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -278,7 +1212,15 @@ Compiling clean_test...
 Generating clean_test.wasm...
 Testing clean_test...
 Checking simple_test.mbt...
-Found 3 tests in simple_test.mbt
+Found 11 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -303,6 +1245,6 @@ test ... ok
 test ... ok
 test ... ok
 
-224 tests passed, 0 failed
+957 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!

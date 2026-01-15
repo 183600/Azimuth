@@ -22,6 +22,8 @@
     "test/new_comprehensive_test_cases.mbt",
     "test/unique_moonbit_tests.mbt",
     "test/additional_moonbit_test_suite.mbt",
-    "moonbit_additional_test_suite.mbt"
+    "moonbit_additional_test_suite.mbt",
+    "test/optimized_moonbit_tests.mbt",
+    "test/simple_optimized_tests.mbt"
   ]
 }
