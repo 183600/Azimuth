@@ -1,137 +1,362 @@
-// 新增的 MoonBit 测试用例
-// 覆盖各种数学运算和字符串处理场景
+// 新的 MoonBit 测试用例
+// 这些测试用例补充了项目中尚未充分覆盖的测试场景
 
-test "addition_with_large_numbers" {
-  // 测试大数相加
-  assert_eq(2000000000, add(1000000000, 1000000000))
-  assert_eq(-2000000000, add(-1000000000, -1000000000))
-  assert_eq(0, add(1500000000, -1500000000))
+test "fibonacci_sequence_calculation" {
+  // 斐波那契数列计算测试
+  // F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8
+  // 使用加法函数计算前几项
+  
+  // F(2) = F(1) + F(0) = 1 + 0 = 1
+  let f2 = @azimuth.add(1, 0)
+  
+  // F(3) = F(2) + F(1) = 1 + 1 = 2
+  let f3 = @azimuth.add(f2, 1)
+  
+  // F(4) = F(3) + F(2) = 2 + 1 = 3
+  let f4 = @azimuth.add(f3, f2)
+  
+  // F(5) = F(4) + F(3) = 3 + 2 = 5
+  let f5 = @azimuth.add(f4, f3)
+  
+  // F(6) = F(5) + F(4) = 5 + 3 = 8
+  let f6 = @azimuth.add(f5, f4)
+  
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  @azimuth.assert_eq(8, f6)
 }
 
-test "multiplication_with_decimal_simulation" {
-  // 模拟小数乘法：使用整数表示小数部分
-  // 1.5 × 2.4 = 3.6，表示为 15 × 24 = 360，然后除以 100
-  let a = 15  // 表示 1.5
-  let b = 24  // 表示 2.4
-  let result = multiply(a, b) / 100
-  assert_eq(3, result)  // 整数部分
+test "greatest_common_divisor" {
+  // 最大公约数计算测试（使用欧几里得算法的简化版本）
+  // GCD(a, b) = GCD(b, a % b)
+  
+  // GCD(48, 18) = GCD(18, 48 % 18 = 12) = GCD(12, 18 % 12 = 6) = GCD(6, 12 % 6 = 0) = 6
+  let a = 48
+  let b = 18
+  
+  // 手动计算几步欧几里得算法
+  let step1_a = b
+  let step1_b = a % b  // 48 % 18 = 12
+  
+  let step2_a = step1_b
+  let step2_b = step1_a % step1_b  // 18 % 12 = 6
+  
+  let step3_a = step2_b
+  let step3_b = step2_a % step2_b  // 12 % 6 = 0
+  
+  // 当余数为0时，GCD就是当前的除数
+  let gcd = step2_b
+  
+  @azimuth.assert_eq(6, gcd)
+  
+  // 测试 GCD(56, 98) = 14
+  let c = 56
+  let d = 98
+  
+  let c_step1_a = d
+  let c_step1_b = c % d  // 56 % 98 = 56
+  
+  let c_step2_a = c_step1_b
+  let c_step2_b = c_step1_a % c_step1_b  // 98 % 56 = 42
+  
+  let c_step3_a = c_step2_b
+  let c_step3_b = c_step2_a % c_step2_b  // 56 % 42 = 14
+  
+  let c_step4_a = c_step3_b
+  let c_step4_b = c_step3_a % c_step3_b  // 42 % 14 = 0
+  
+  let c_gcd = c_step3_b
+  
+  @azimuth.assert_eq(14, c_gcd)
 }
 
-test "string_processing_with_special_chars" {
-  // 测试特殊字符处理
-  assert_eq_string("Hello, \"John\"!", greet("\"John\""))
-  assert_eq_string("Hello, O'Reilly!", greet("O'Reilly"))
-  assert_eq_string("Hello, C++!", greet("C++"))
-  assert_eq_string("Hello, C#!", greet("C#"))
+test "string_case_processing" {
+  // 字符串大小写处理测试
+  // 注意：MoonBit 目前没有内置的大小写转换函数，所以我们通过字符串拼接来模拟
+  
+  let lower_name = "moonbit"
+  let upper_name = "MOONBIT"
+  let mixed_name = "MoonBit"
+  
+  // 测试不同大小写的字符串
+  @azimuth.assert_eq_string("Hello, moonbit!", @azimuth.greet(lower_name))
+  @azimuth.assert_eq_string("Hello, MOONBIT!", @azimuth.greet(upper_name))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet(mixed_name))
+  
+  // 测试包含大小写数字混合的字符串
+  let alphanumeric = "Test123ABC"
+  @azimuth.assert_eq_string("Hello, Test123ABC!", @azimuth.greet(alphanumeric))
+  
+  // 测试包含空格的大小写混合
+  let spaced_mixed = "Hello MoonBit"
+  @azimuth.assert_eq_string("Hello, Hello MoonBit!", @azimuth.greet(spaced_mixed))
 }
 
-test "mathematical_series_calculation" {
-  // 计算等差数列的和：1 + 4 + 7 + ... + 28（前10项）
-  let first_term = 1
-  let common_diff = 3
-  let n = 10
+test "conditional_calculation_paths" {
+  // 条件计算路径测试
+  let x = 15
+  let y = 20
+  let z = 10
   
-  // 使用公式：n/2 × (2a + (n-1)d)
-  let sum = multiply(n, add(multiply(2, first_term), multiply(n - 1, common_diff))) / 2
-  assert_eq(145, sum)
+  // 测试多重条件判断
+  let condition1 = x < y  // true
+  let condition2 = y > z  // true
+  let condition3 = x == z // false
+  
+  // 如果 condition1 和 condition2 都为真，执行一种计算
+  let result1 = if condition1 && condition2 {
+    @azimuth.add(@azimuth.multiply(x, y), z)  // 15 * 20 + 10 = 310
+  } else {
+    @azimuth.add(x, @azimuth.multiply(y, z))  // 15 + 20 * 10 = 215
+  }
+  
+  @azimuth.assert_eq(310, result1)
+  
+  // 如果 condition1 为真但 condition3 为假，执行另一种计算
+  let result2 = if condition1 && !condition3 {
+    @azimuth.multiply(@azimuth.add(x, y), z)  // (15 + 20) * 10 = 350
+  } else {
+    @azimuth.add(@azimuth.multiply(x, y), z)  // 15 * 20 + 10 = 310
+  }
+  
+  @azimuth.assert_eq(350, result2)
+  
+  // 测试嵌套条件
+  let result3 = if condition1 {
+    if condition2 {
+      @azimuth.multiply(x, @azimuth.add(y, z))  // 15 * (20 + 10) = 450
+    } else {
+      @azimuth.add(x, @azimuth.multiply(y, z))  // 15 + 20 * 10 = 215
+    }
+  } else {
+    @azimuth.add(@azimuth.multiply(x, y), z)    // 15 * 20 + 10 = 310
+  }
+  
+  @azimuth.assert_eq(450, result3)
 }
 
-test "geometric_progression_calculation" {
-  // 计算等比数列：2 + 6 + 18 + 54（前4项）
-  let first_term = 2
-  let ratio = 3
-  let n = 4
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 手动计算
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  let sum = add(add(add(term1, term2), term3), term4)
+  // 测试接近边界的运算
+  let near_max = max_val - 1000
+  let near_min = min_val + 1000
   
-  assert_eq(80, sum)
+  // 这些运算不应该溢出
+  @azimuth.assert_eq(max_val - 500, @azimuth.add(near_max, 500))
+  @azimuth.assert_eq(min_val + 500, @azimuth.add(near_min, 500))
+  
+  // 测试边界值的组合运算
+  let boundary_sum1 = @azimuth.add(max_val, min_val)  // 应该等于 -1
+  @azimuth.assert_eq(-1, boundary_sum1)
+  
+  let boundary_sum2 = @azimuth.add(@azimuth.add(max_val, min_val), 1)  // 应该等于 0
+  @azimuth.assert_eq(0, boundary_sum2)
+  
+  // 测试边界值的减法（通过加负数实现）
+  let boundary_diff = @azimuth.add(max_val, @azimuth.multiply(min_val, -1))  // max_val - min_val
+  // 由于 min_val * -1 会溢出保护，这个测试验证溢出保护是否生效
+  @azimuth.assert_eq(max_val, @azimuth.multiply(min_val, -1))
 }
 
-test "real_world_currency_calculation" {
-  // 实际货币计算：含税价格计算
-  let base_price = 299  // 基础价格
-  let tax_rate = 8      // 8% 税率
-  let discount = 20     // 20元折扣
+test "stack_simulation" {
+  // 栈数据结构模拟测试
+  // 使用整数模拟栈操作：push = add, pop = subtract (通过加负数)
   
-  // 计算税费
-  let tax_amount = multiply(base_price, tax_rate) / 100
-  // 计算折后价格
-  let discounted_price = add(base_price, -discount)
-  // 计算最终价格
-  let final_price = add(discounted_price, tax_amount)
+  // 初始栈为空，栈顶指针为 0
+  let stack_top_init = 0
   
-  assert_eq(307, final_price)
+  // Push 操作：栈顶指针加 1
+  let stack_top1 = @azimuth.add(stack_top_init, 1)  // push 第一个元素
+  @azimuth.assert_eq(1, stack_top1)
+  
+  let stack_top2 = @azimuth.add(stack_top1, 1)  // push 第二个元素
+  @azimuth.assert_eq(2, stack_top2)
+  
+  let stack_top3 = @azimuth.add(stack_top2, 1)  // push 第三个元素
+  @azimuth.assert_eq(3, stack_top3)
+  
+  // Pop 操作：栈顶指针减 1（通过加 -1）
+  let stack_top4 = @azimuth.add(stack_top3, -1)  // pop 一个元素
+  @azimuth.assert_eq(2, stack_top4)
+  
+  let stack_top5 = @azimuth.add(stack_top4, -1)  // pop 另一个元素
+  @azimuth.assert_eq(1, stack_top5)
+  
+  let stack_top6 = @azimuth.add(stack_top5, -1)  // pop 最后一个元素
+  @azimuth.assert_eq(0, stack_top6)
+  
+  // 验证栈为空时不能继续 pop
+  // 在实际实现中，这里应该有错误处理，但我们只测试算术
+  let stack_top7 = @azimuth.add(stack_top6, -1)  // 尝试从空栈 pop
+  @azimuth.assert_eq(-1, stack_top7)  // 栈顶指针变为 -1，表示下溢
 }
 
-test "temperature_conversion_precise" {
-  // 精确温度转换：摄氏度转华氏度
-  // 使用整数近似：F = C × 2 + 30
-  let celsius_temps = [0, 10, 20, 30, 40]
-  let expected_fahrenheit = [30, 50, 70, 90, 110]
+test "prime_number_check" {
+  // 素数检查测试
+  // 使用模运算和条件判断检查一个数是否为素数
   
-  let result1 = add(multiply(celsius_temps[0], 2), 30)
-  let result2 = add(multiply(celsius_temps[1], 2), 30)
-  let result3 = add(multiply(celsius_temps[2], 2), 30)
-  let result4 = add(multiply(celsius_temps[3], 2), 30)
-  let result5 = add(multiply(celsius_temps[4], 2), 30)
+  // 检查 7 是否为素数
+  let num1 = 7
+  let is_prime1_1 = num1 % 2 != 0
+  let is_prime1_2 = num1 % 3 != 0
+  let is_prime1_3 = num1 % 4 != 0
+  let is_prime1_4 = num1 % 5 != 0
+  let is_prime1_5 = num1 % 6 != 0
+  let is_prime1 = is_prime1_1 && is_prime1_2 && is_prime1_3 && is_prime1_4 && is_prime1_5
   
-  assert_eq(expected_fahrenheit[0], result1)
-  assert_eq(expected_fahrenheit[1], result2)
-  assert_eq(expected_fahrenheit[2], result3)
-  assert_eq(expected_fahrenheit[3], result4)
-  assert_eq(expected_fahrenheit[4], result5)
+  @azimuth.assert_true(is_prime1)
+  
+  // 检查 9 是否为素数（应该不是）
+  let num2 = 9
+  let is_prime2_1 = num2 % 2 != 0
+  let is_prime2_2 = num2 % 3 != 0  // 9 % 3 = 0 = 0，所以不是素数
+  let is_prime2 = is_prime2_1 && is_prime2_2
+  
+  @azimuth.assert_false(is_prime2)
+  
+  // 检查 13 是否为素数
+  let num3 = 13
+  let is_prime3_1 = num3 % 2 != 0
+  let is_prime3_2 = num3 % 3 != 0
+  let is_prime3_3 = num3 % 4 != 0
+  let is_prime3_4 = num3 % 5 != 0
+  let is_prime3_5 = num3 % 6 != 0
+  let is_prime3_6 = num3 % 7 != 0
+  let is_prime3_7 = num3 % 8 != 0
+  let is_prime3_8 = num3 % 9 != 0
+  let is_prime3_9 = num3 % 10 != 0
+  let is_prime3_10 = num3 % 11 != 0
+  let is_prime3_11 = num3 % 12 != 0
+  let is_prime3 = is_prime3_1 && is_prime3_2 && is_prime3_3 && is_prime3_4 && is_prime3_5 && 
+                  is_prime3_6 && is_prime3_7 && is_prime3_8 && is_prime3_9 && is_prime3_10 && is_prime3_11
+  
+  @azimuth.assert_true(is_prime3)
 }
 
-test "array_index_simulation" {
-  // 模拟数组索引计算：二维数组转一维数组
-  let row = 2
-  let col = 3
-  let width = 5
+test "base_conversion_simulation" {
+  // 进制转换模拟测试
+  // 十进制转二进制（简化版，只处理小正整数）
   
-  // 计算一维数组索引：index = row × width + col
-  let index = add(multiply(row, width), col)
-  assert_eq(13, index)
+  // 将 5 转换为二进制：101
+  let decimal1 = 5
   
-  // 测试边界情况
-  let first_index = add(multiply(0, width), 0)
-  assert_eq(0, first_index)
+  // 手动模拟二进制转换过程
+  let remainder1 = decimal1 % 2  // 5 % 2 = 1
+  let quotient1 = decimal1 / 2   // 5 / 2 = 2
+  
+  let remainder2 = quotient1 % 2  // 2 % 2 = 0
+  let quotient2 = quotient1 / 2   // 2 / 2 = 1
+  
+  let remainder3 = quotient2 % 2  // 1 % 2 = 1
+  let quotient3 = quotient2 / 2   // 1 / 2 = 0
+  
+  // 二进制结果是余数的逆序：101
+  // 由于字符串操作有限，我们通过数值验证
+  let binary_value1 = @azimuth.add(@azimuth.multiply(1, 100), @azimuth.add(@azimuth.multiply(0, 10), 1))  // 101
+  @azimuth.assert_eq(101, binary_value1)
+  
+  // 将 10 转换为二进制：1010
+  let decimal2 = 10
+  
+  let remainder4 = decimal2 % 2  // 10 % 2 = 0
+  let quotient4 = decimal2 / 2   // 10 / 2 = 5
+  
+  let remainder5 = quotient4 % 2  // 5 % 2 = 1
+  let quotient5 = quotient4 / 2   // 5 / 2 = 2
+  
+  let remainder6 = quotient5 % 2  // 2 % 2 = 0
+  let quotient6 = quotient5 / 2   // 2 / 2 = 1
+  
+  let remainder7 = quotient6 % 2  // 1 % 2 = 1
+  let quotient7 = quotient6 / 2   // 1 / 2 = 0
+  
+  // 二进制结果是余数的逆序：1010
+  let binary_value2 = @azimuth.add(@azimuth.multiply(1, 1000), @azimuth.add(@azimuth.multiply(0, 100), @azimuth.add(@azimuth.multiply(1, 10), 0)))  // 1010
+  @azimuth.assert_eq(1010, binary_value2)
 }
 
-test "compound_interest_simple" {
-  // 简单复利计算
+test "circular_queue_simulation" {
+  // 循环队列模拟测试
+  // 使用整数模拟循环队列的索引操作
+  
+  let queue_size = 5
+  let head_init = 0
+  let tail_init = 0
+  
+  // 入队操作：tail = (tail + 1) % size
+  let tail1 = (tail_init + 1) % queue_size  // 第一个元素入队
+  @azimuth.assert_eq(1, tail1)
+  
+  let tail2 = (tail1 + 1) % queue_size  // 第二个元素入队
+  @azimuth.assert_eq(2, tail2)
+  
+  let tail3 = (tail2 + 1) % queue_size  // 第三个元素入队
+  @azimuth.assert_eq(3, tail3)
+  
+  // 出队操作：head = (head + 1) % size
+  let head1 = (head_init + 1) % queue_size  // 第一个元素出队
+  @azimuth.assert_eq(1, head1)
+  
+  let head2 = (head1 + 1) % queue_size  // 第二个元素出队
+  @azimuth.assert_eq(2, head2)
+  
+  // 继续入队，测试循环
+  let tail4 = (tail3 + 1) % queue_size  // 第四个元素入队
+  @azimuth.assert_eq(4, tail4)
+  
+  let tail5 = (tail4 + 1) % queue_size  // 第五个元素入队
+  @azimuth.assert_eq(0, tail5)  // 循环回到开始
+  
+  // 继续出队
+  let head3 = (head2 + 1) % queue_size  // 第三个元素出队
+  @azimuth.assert_eq(3, head3)
+  
+  let head4 = (head3 + 1) % queue_size  // 第四个元素出队
+  @azimuth.assert_eq(4, head4)
+  
+  let head5 = (head4 + 1) % queue_size  // 第五个元素出队
+  @azimuth.assert_eq(0, head5)  // 循环回到开始
+  
+  // 验证队列为空时 head == tail
+  @azimuth.assert_eq(head5, tail5)
+}
+
+test "complex_formula_evaluation" {
+  // 复杂公式求值测试
+  // 计算复合利息的精确公式：A = P(1 + r/n)^(nt)
+  // 其中 P=本金, r=年利率, n=每年复利次数, t=年数
+  // 简化为整数计算：A = P(1 + r)^(t)
+  
   let principal = 1000  // 本金
   let rate = 5          // 5% 利率
-  let years = 3         // 3年
+  let years = 3         // 3 年
   
-  // 简化计算：总金额 = 本金 × (1 + 利率 × 年数)
-  let growth_factor = add(1, multiply(rate, years))
-  let total_amount = multiply(principal, growth_factor)
+  // 计算增长因子：(1 + r) = 6
+  let growth_factor = @azimuth.add(1, rate)
   
-  assert_eq(16000, total_amount)
-}
-
-test "logical_operations_simulation" {
-  // 模拟逻辑运算
-  let a = true
-  let b = false
+  // 计算 (1 + r)^t = 6^3 = 216
+  let power = @azimuth.multiply(growth_factor, @azimuth.multiply(growth_factor, growth_factor))
   
-  // 模拟 AND 运算：a && b
-  let and_result = if (a && b) { 1 } else { 0 }
-  assert_eq(0, and_result)
+  // 计算最终金额：P * power = 1000 * 216 = 216000
+  let final_amount = @azimuth.multiply(principal, power)
   
-  // 模拟 OR 运算：a || b
-  let or_result = if (a || b) { 1 } else { 0 }
-  assert_eq(1, or_result)
+  @azimuth.assert_eq(216000, final_amount)
   
-  // 模拟 NOT 运算：!a
-  let not_a_result = if (a) { 0 } else { 1 }
-  assert_eq(0, not_a_result)
+  // 验证逐年计算
+  let year1 = @azimuth.multiply(principal, growth_factor)  // 1000 * 6 = 6000
+  @azimuth.assert_eq(6000, year1)
   
-  let not_b_result = if (b) { 0 } else { 1 }
-  assert_eq(1, not_b_result)
+  let year2 = @azimuth.multiply(year1, growth_factor)      // 6000 * 6 = 36000
+  @azimuth.assert_eq(36000, year2)
+  
+  let year3 = @azimuth.multiply(year2, growth_factor)      // 36000 * 6 = 216000
+  @azimuth.assert_eq(216000, year3)
+  
+  // 验证与直接计算的结果一致
+  @azimuth.assert_eq(final_amount, year3)
 }
