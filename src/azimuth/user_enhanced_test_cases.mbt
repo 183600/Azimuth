@@ -1,4 +1,4 @@
-// 增强的 MoonBit 测试用例
+// 用户增强的 MoonBit 测试用例
 // 基于现有的 azimuth 模块函数创建的测试场景
 
 test "fibonacci_sequence_calculation" {
