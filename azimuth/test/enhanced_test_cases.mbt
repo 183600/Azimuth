@@ -1,85 +1,129 @@
-test "add_mixed_sign_numbers" {
-  // 测试混合符号数的加法
-  @azimuth.assert_eq(10, @azimuth.add(15, -5))
-  @azimuth.assert_eq(-10, @azimuth.add(-15, 5))
-  @azimuth.assert_eq(0, @azimuth.add(100, -100))
-  @azimuth.assert_eq(-5, @azimuth.add(-10, 5))
+test "greet_with_whitespace" {
+  // 测试包含各种空白字符的字符串
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
+  @azimuth.assert_eq_string("Hello, 	\n!", @azimuth.greet("\t\n"))
+  @azimuth.assert_eq_string("Hello,  World !", @azimuth.greet("  World "))
 }
 
-test "multiply_negative_numbers" {
-  // 测试负数乘法
-  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
-  @azimuth.assert_eq(-20, @azimuth.multiply(-4, 5))
-  @azimuth.assert_eq(-30, @azimuth.multiply(6, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(-10, 0))
-}
-
-test "add_min_value_edge_cases" {
-  // 测试最小值的各种边界情况
+test "add_extreme_boundary_values" {
+  // 测试更极端的边界值
+  let max_val = 2147483647
   let min_val = -2147483648
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  
+  // 测试最大值与自身相加
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  
+  // 测试最小值与自身相加
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-}
-
-test "multiply_large_numbers" {
-  // 测试大数乘法
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  @azimuth.assert_eq(-1000000, @azimuth.multiply(1000, -1000))
-  @azimuth.assert_eq(2147483647, @azimuth.multiply(46340, 46341))  // 接近溢出边界
-  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, 1))
-}
-
-test "greet_various_inputs" {
-  // 测试不同输入的greet函数
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, 🌙!", @azimuth.greet("🌙"))
-}
-
-test "complex_arithmetic_sequence" {
-  // 测试复杂的算术序列
-  let result1 = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  let result2 = @azimuth.multiply(@azimuth.add(10, 20), @azimuth.add(5, 3))
-  @azimuth.assert_eq(240, result2)  // (10+20)*(5+3) = 30*8 = 240
-  
-  let result3 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
-  @azimuth.assert_eq(10, result3)  // (1+2)+(3+4) = 3+7 = 10
+  // 测试最大值与最小值相加
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
-test "add_extreme_values" {
-  // 测试极值加法
+test "multiply_extreme_cases" {
+  // 测试更极端的乘法情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值与负数的加法
-  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
-  @azimuth.assert_eq(2147483647 - 1000, @azimuth.add(max_val, -1000))
+  // 测试大数相乘
+  @azimuth.assert_eq(max_val, @azimuth.multiply(46340, 46341))
   
-  // 测试最小值与正数的加法
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
-  @azimuth.assert_eq(-2147483648 + 1000, @azimuth.add(min_val, 1000))
+  // 测试负数相乘的正结果
+  @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
+  
+  // 测试混合符号的乘法
+  @azimuth.assert_eq(-100, @azimuth.multiply(10, -10))
+  @azimuth.assert_eq(-100, @azimuth.multiply(-10, 10))
 }
 
-test "multiply_by_negative_one" {
-  // 测试乘以-1的特殊情况
+test "mathematical_identities" {
+  // 测试数学恒等式
+  
+  // 乘法幂等性：1 * 1 = 1
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  
+  // 加法幂等性：0 + 0 = 0
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  
+  // 负数的性质：-(-a) = a（通过乘法实现）
+  @azimuth.assert_eq(10, @azimuth.multiply(-10, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -1))
+}
+
+test "sequential_operations" {
+  // 测试连续运算的结果
+  let result1 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
+  let result2 = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4)
+  @azimuth.assert_eq(result1, result2)
+  
+  let mul_result1 = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
+  let mul_result2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 3), 4), 5)
+  @azimuth.assert_eq(mul_result1, mul_result2)
+}
+
+test "greet_unicode_characters" {
+  // 测试各种Unicode字符
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, ñáéíóú!", @azimuth.greet("ñáéíóú"))
+  @azimuth.assert_eq_string("Hello, 🚀🌙!", @azimuth.greet("🚀🌙"))
+  @azimuth.assert_eq_string("Hello, Ωβα!", @azimuth.greet("Ωβα"))
+}
+
+test "mixed_arithmetic_operations" {
+  // 测试混合算术运算
+  let a = 15
+  let b = -8
+  let c = 3
+  let d = -2
+  
+  // 复杂表达式：(a + b) * (c - d)
+  let expr1 = @azimuth.multiply(
+    @azimuth.add(a, b),
+    @azimuth.add(c, @azimuth.multiply(d, -1))
+  )
+  
+  // 手动计算：(15 + (-8)) * (3 - (-2)) = 7 * 5 = 35
+  @azimuth.assert_eq(35, expr1)
+  
+  // 另一个复杂表达式：a * b + c * d
+  let expr2 = @azimuth.add(
+    @azimuth.multiply(a, b),
+    @azimuth.multiply(c, d)
+  )
+  
+  // 手动计算：15 * (-8) + 3 * (-2) = -120 + (-6) = -126
+  @azimuth.assert_eq(-126, expr2)
+}
+
+test "boundary_multiply_cases" {
+  // 测试乘法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
-  @azimuth.assert_eq(5, @azimuth.multiply(-5, -1))
-  @azimuth.assert_eq(-2147483647, @azimuth.multiply(max_val, -1))
-  @azimuth.assert_eq(-2147483648, @azimuth.multiply(min_val, -1))  // 最小值特例
+  // 测试2的幂次方乘法
+  @azimuth.assert_eq(1073741824, @azimuth.multiply(32768, 32768))
+  
+  // 测试接近边界的乘法
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  
+  // 测试特殊值乘法
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
 }
 
-test "string_concatenation_edge_cases" {
-  // 测试字符串拼接的边界情况
+test "string_edge_cases" {
+  // 测试字符串的边界情况
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, verylongname!", @azimuth.greet("verylongname"))
+  
+  // 测试包含引号的字符串
+  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
+  
+  // 测试包含转义字符的字符串
+  @azimuth.assert_eq_string("Hello, \\n!", @azimuth.greet("\\n"))
+  
+  // 测试非常长的字符串
+  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
+  let expected = "Hello, " + long_name + "!"
+  @azimuth.assert_eq_string(expected, @azimuth.greet(long_name))
 }
