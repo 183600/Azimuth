@@ -1,317 +1,114 @@
 // 新增的 MoonBit 测试用例
-// 包含10个不同的测试场景，展示 MoonBit 的各种能力
+// 测试 azimuth 包中的核心功能，使用标准 MoonBit 测试语法
 
-test "factorial_calculation" {
-  // 计算5的阶乘：5! = 5 × 4 × 3 × 2 × 1 = 120
-  let n = 5
-  let result = @azimuth.multiply(n, @azimuth.multiply(n - 1, @azimuth.multiply(n - 2, @azimuth.multiply(n - 3, n - 4))))
-  @azimuth.assert_eq(120, result)
-  
-  // 计算3的阶乘：3! = 3 × 2 × 1 = 6
-  let n2 = 3
-  let result2 = @azimuth.multiply(n2, @azimuth.multiply(n2 - 1, n2 - 2))
-  @azimuth.assert_eq(6, result2)
+test "arithmetic_sequence_sum" {
+  // 测试等差数列求和：1 + 2 + 3 + ... + 10 = 55
+  let n = 10
+  let sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
+  @azimuth.assert_eq(55, sum)
 }
 
-test "fibonacci_sequence" {
-  // 计算斐波那契数列的第6项：F(6) = F(5) + F(4) = 5 + 3 = 8
-  // 使用迭代方式计算
-  let a = 1  // F(1)
-  let b = 1  // F(2)
+test "geometric_progression" {
+  // 测试等比数列：2, 4, 8, 16, 32
+  // 计算前5项的和：2 + 4 + 8 + 16 + 32 = 62
+  let term1 = 2
+  let term2 = @azimuth.multiply(term1, 2)
+  let term3 = @azimuth.multiply(term2, 2)
+  let term4 = @azimuth.multiply(term3, 2)
+  let term5 = @azimuth.multiply(term4, 2)
   
-  // 计算F(3) = F(1) + F(2) = 1 + 1 = 2
-  let c = @azimuth.add(a, b)  // 2
-  
-  // 计算F(4) = F(2) + F(3) = 1 + 2 = 3
-  let d = @azimuth.add(b, c)  // 3
-  
-  // 计算F(5) = F(3) + F(4) = 2 + 3 = 5
-  let e = @azimuth.add(c, d)  // 5
-  
-  // 计算F(6) = F(4) + F(5) = 3 + 5 = 8
-  let f = @azimuth.add(d, e)  // 8
-  
-  @azimuth.assert_eq(8, f)
-  
-  // 验证斐波那契性质：F(6) = F(4) + F(5)
-  @azimuth.assert_eq(f, @azimuth.add(d, e))
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
+  @azimuth.assert_eq(62, sum)
 }
 
-test "bitwise_operations_simulation" {
-  // 模拟位运算：使用加减乘除实现位运算效果
-  let a = 8
-  let b = 3
+test "discount_calculation" {
+  // 测试折扣计算场景
+  let original_price = 1000
+  let discount_percentage = 15
+  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
+  let final_price = @azimuth.add(original_price, -discount_amount)
   
-  // 左移运算模拟：a << 1 = a * 2
-  let left_shift = @azimuth.multiply(a, 2)
-  @azimuth.assert_eq(16, left_shift)
-  
-  // 右移运算模拟：a >> 1 = a / 2
-  let right_shift = a / 2
-  @azimuth.assert_eq(4, right_shift)
-  
-  // 位与运算模拟（简化）：a & b = min(a, b) 当a和b是2的幂时
-  let a_power = 8  // 2^3
-  let b_power = 4  // 2^2
-  let bit_and_sim = b_power  // 8 & 4 = 0，但这里简化为较小的幂
-  @azimuth.assert_eq(4, bit_and_sim)
-  
-  // 位或运算模拟（简化）：a | b = a + b 当a和b是2的幂且不相等时
-  let bit_or_sim = @azimuth.add(a_power, b_power)
-  @azimuth.assert_eq(12, bit_or_sim)
+  @azimuth.assert_eq(850, final_price)
 }
 
-test "stack_operations_simulation" {
-  // 模拟栈操作：push和pop
-  // 初始栈为空，用变量模拟栈顶和栈大小
-  let stack_size = 0
-  let stack_top = 0
+test "compound_interest_simplified" {
+  // 测试简化的复利计算
+  let principal = 5000
+  let rate = 5
+  let years = 3
+  // 简化计算：本金 + 本金 × 利率 × 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let total = @azimuth.add(principal, interest)
   
-  // Push操作1：压入值10
-  let value1 = 10
-  stack_size = @azimuth.add(stack_size, 1)  // size = 1
-  stack_top = value1  // top = 10
-  @azimuth.assert_eq(1, stack_size)
-  @azimuth.assert_eq(10, stack_top)
-  
-  // Push操作2：压入值20
-  let value2 = 20
-  stack_size = @azimuth.add(stack_size, 1)  // size = 2
-  stack_top = value2  // top = 20
-  @azimuth.assert_eq(2, stack_size)
-  @azimuth.assert_eq(20, stack_top)
-  
-  // Pop操作：弹出栈顶值
-  stack_size = @azimuth.add(stack_size, -1)  // size = 1
-  let popped_value = stack_top  // popped = 20
-  // 栈顶变为前一个值（这里简化处理）
-  stack_top = value1  // top = 10
-  @azimuth.assert_eq(1, stack_size)
-  @azimuth.assert_eq(10, stack_top)
-  @azimuth.assert_eq(20, popped_value)
+  @azimuth.assert_eq(80000, total)
 }
 
-test "binary_search_simulation" {
-  // 模拟二分查找：在有序数组 [1, 3, 5, 7, 9, 11, 13] 中查找7
-  let target = 7
+test "perimeter_calculation" {
+  // 测试周长计算
+  let length = 12
+  let width = 8
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
   
-  // 模拟数组元素
-  let arr_0 = 1
-  let arr_1 = 3
-  let arr_2 = 5
-  let arr_3 = 7
-  let arr_4 = 9
-  let arr_5 = 11
-  let arr_6 = 13
-  
-  // 二分查找过程
-  let left = 0
-  let right = 6
-  let mid = @azimuth.add(left, right) / 2  // (0 + 6) / 2 = 3
-  let mid_value = arr_3  // arr[3] = 7
-  
-  // 第一次比较：arr[3] == target，找到目标
-  let found = if (mid_value == target) { true } else { false }
-  @azimuth.assert_true(found)
-  @azimuth.assert_eq(3, mid)  // 目标在索引3处
-  
-  // 测试查找不存在的元素
-  let target2 = 8
-  left = 0
-  right = 6
-  
-  // 第一次比较：arr[3] = 7 < 8，查找右半部分
-  left = @azimuth.add(mid, 1)  // left = 4
-  mid = @azimuth.add(left, right) / 2  // (4 + 6) / 2 = 5
-  mid_value = arr_5  // arr[5] = 11
-  
-  // 第二次比较：arr[5] = 11 > 8，查找左半部分
-  right = @azimuth.add(mid, -1)  // right = 4
-  mid = @azimuth.add(left, right) / 2  // (4 + 4) / 2 = 4
-  mid_value = arr_4  // arr[4] = 9
-  
-  // 第三次比较：arr[4] = 9 > 8，查找左半部分
-  right = @azimuth.add(mid, -1)  // right = 3
-  // 此时 left > right，查找结束，未找到
-  let found2 = if (left <= right) { true } else { false }
-  @azimuth.assert_false(found2)
+  @azimuth.assert_eq(40, perimeter)
 }
 
-test "string_reversal_simulation" {
-  // 模拟字符串反转：通过字符索引访问
-  let original = "hello"
-  
-  // 模拟字符访问（简化处理）
-  let char_0 = "h"
-  let char_1 = "e"
-  let char_2 = "l"
-  let char_3 = "l"
-  let char_4 = "o"
-  
-  // 构建反转后的字符串
-  let reversed = char_4 + char_3 + char_2 + char_1 + char_0
-  @azimuth.assert_eq_string("olleh", reversed)
-  
-  // 测试奇数长度字符串的反转
-  let odd_original = "abc"
-  
-  // 模拟字符访问
-  let odd_char_0 = "a"
-  let odd_char_1 = "b"
-  let odd_char_2 = "c"
-  
-  // 构建反转后的字符串
-  let odd_reversed = odd_char_2 + odd_char_1 + odd_char_0
-  @azimuth.assert_eq_string("cba", odd_reversed)
-  
-  // 测试通过greet函数验证字符串处理
-  let greet_result = @azimuth.greet(reversed)
-  @azimuth.assert_eq_string("Hello, olleh!", greet_result)
+test "string_with_special_characters" {
+  // 测试包含特殊字符的字符串处理
+  let special_name = "User@123#Test"
+  let result = @azimuth.greet(special_name)
+  @azimuth.assert_eq_string("Hello, User@123#Test!", result)
 }
 
-test "pi_approximation_calculation" {
-  // 使用莱布尼茨公式近似计算π：π/4 = 1 - 1/3 + 1/5 - 1/7 + 1/9 - ...
-  // 使用整数运算模拟，计算前几项
+test "negative_number_operations" {
+  // 测试负数运算
+  let a = -15
+  let b = -7
   
-  // 计算前4项：π/4 ≈ 1 - 1/3 + 1/5 - 1/7
-  // 转换为整数运算：使用公分母105
-  let term1 = 105 / 1      // 105
-  let term2 = 105 / 3      // 35
-  let term3 = 105 / 5      // 21
-  let term4 = 105 / 7      // 15
+  // 负数加法
+  @azimuth.assert_eq(-22, @azimuth.add(a, b))
   
-  // 计算分子：105 - 35 + 21 - 15 = 76
-  let numerator = @azimuth.add(@azimuth.add(@azimuth.add(105, -35), 21), -15)
-  @azimuth.assert_eq(76, numerator)
+  // 负数乘法
+  @azimuth.assert_eq(105, @azimuth.multiply(a, b))
   
-  // π/4 ≈ 76/105，所以 π ≈ 4 × 76/105 = 304/105 ≈ 2.895
-  // 使用整数除法近似
-  let pi_approx_times_100 = @azimuth.multiply(304, 100) / 105  // 289
-  @azimuth.assert_eq(289, pi_approx_times_100)  // 表示π ≈ 2.89
-  
-  // 使用更精确的近似：π ≈ 22/7
-  let pi_better_times_100 = @azimuth.multiply(22, 100) / 7  // 314
-  @azimuth.assert_eq(314, pi_better_times_100)  // 表示π ≈ 3.14
+  // 正负数混合运算
+  @azimuth.assert_eq(-8, @azimuth.add(a, 7))
+  @azimuth.assert_eq(21, @azimuth.multiply(-3, -7))
 }
 
-test "checksum_calculation" {
-  // 模拟校验和计算：对数字序列计算校验和
-  // 使用简单的求和模10算法
+test "boundary_value_division_simulation" {
+  // 使用现有函数模拟除法运算
+  let dividend = 100
+  let divisor = 8
+  // 使用 divide_with_ceil 函数进行向上取整除法
+  let quotient = @azimuth.divide_with_ceil(dividend, divisor)
   
-  // 数字序列：1, 2, 3, 4, 5
-  let num1 = 1
-  let num2 = 2
-  let num3 = 3
-  let num4 = 4
-  let num5 = 5
-  
-  // 计算总和：1 + 2 + 3 + 4 + 5 = 15
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5)
-  @azimuth.assert_eq(15, sum)
-  
-  // 计算校验和：sum % 10
-  let checksum = sum % 10
-  @azimuth.assert_eq(5, checksum)
-  
-  // 测试另一个序列：9, 8, 7, 6
-  let seq1 = 9
-  let seq2 = 8
-  let seq3 = 7
-  let seq4 = 6
-  
-  // 计算总和：9 + 8 + 7 + 6 = 30
-  let sum2 = @azimuth.add(@azimuth.add(@azimuth.add(seq1, seq2), seq3), seq4)
-  @azimuth.assert_eq(30, sum2)
-  
-  // 计算校验和：sum % 10
-  let checksum2 = sum2 % 10
-  @azimuth.assert_eq(0, checksum2)
-  
-  // 验证校验和的用途：如果其中一个数字错误，校验和不匹配
-  // 假设第三个数字从7变为8，新的总和是31，校验和是1，与原来的0不匹配
-  let wrong_sum = @azimuth.add(@azimuth.add(@azimuth.add(seq1, seq2), @azimuth.add(seq3, 1)), seq4)
-  let wrong_checksum = wrong_sum % 10
-  @azimuth.assert_eq(1, wrong_checksum)
-  @azimuth.assert_false(checksum2 == wrong_checksum)
+  @azimuth.assert_eq(13, quotient)  // 100 / 8 = 12.5，向上取整为 13
 }
 
-test "rock_paper_scissors_game" {
-  // 模拟石头剪刀布游戏逻辑
-  // 0: 石头, 1: 布, 2: 剪刀
+test "mixed_type_calculations" {
+  // 测试混合类型计算（通过字符串表示）
+  let numeric_string = "42"
+  let greeting_result = @azimuth.greet(numeric_string)
+  @azimuth.assert_eq_string("Hello, 42!", greeting_result)
   
-  // 游戏规则：石头胜剪刀，剪刀胜布，布胜石头
-  // 使用数学公式：(player1 - player2 + 3) % 3
-  // 结果：0 = 平局, 1 = 玩家1胜, 2 = 玩家2胜
-  
-  // 测试1：石头(0) vs 剪刀(2) = 玩家1胜
-  let player1_rock = 0
-  let player2_scissors = 2
-  let result1 = @azimuth.add(player1_rock, @azimuth.add(-player2_scissors, 3)) % 3
-  @azimuth.assert_eq(1, result1)  // 玩家1胜
-  
-  // 测试2：剪刀(2) vs 布(1) = 玩家1胜
-  let player1_scissors = 2
-  let player2_paper = 1
-  let result2 = @azimuth.add(player1_scissors, @azimuth.add(-player2_paper, 3)) % 3
-  @azimuth.assert_eq(1, result2)  // 玩家1胜
-  
-  // 测试3：布(1) vs 石头(0) = 玩家1胜
-  let player1_paper = 1
-  let player2_rock = 0
-  let result3 = @azimuth.add(player1_paper, @azimuth.add(-player2_rock, 3)) % 3
-  @azimuth.assert_eq(1, result3)  // 玩家1胜
-  
-  // 测试4：石头(0) vs 石头(0) = 平局
-  let result4 = @azimuth.add(player1_rock, @azimuth.add(-player1_rock, 3)) % 3
-  @azimuth.assert_eq(0, result4)  // 平局
-  
-  // 测试5：石头(0) vs 布(1) = 玩家2胜
-  let player2_paper_2 = 1
-  let result5 = @azimuth.add(player1_rock, @azimuth.add(-player2_paper_2, 3)) % 3
-  @azimuth.assert_eq(2, result5)  // 玩家2胜
+  // 测试计算结果与字符串的结合
+  let calculation_result = @azimuth.add(10, 20)
+  let result_string = "Result: " + calculation_result.to_string()
+  @azimuth.assert_true(result_string.length() > 0)
 }
 
-test "caesar_cipher_encryption" {
-  // 模拟凯撒密码加密：字母位移
-  // 简化处理：只处理大写字母A-Z（A=0, B=1, ..., Z=25）
+test "error_boundary_handling" {
+  // 测试错误边界处理
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 加密"HELLO"，位移3
-  // H=7, E=4, L=11, L=11, O=14
-  let h_val = 7
-  let e_val = 4
-  let l_val = 11
-  let o_val = 14
+  // 测试溢出保护是否正常工作
+  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
   
-  // 位移3：(原值 + 3) % 26
-  let shift = 3
-  let h_enc = @azimuth.add(h_val, shift) % 26  // 10 = K
-  let e_enc = @azimuth.add(e_val, shift) % 26  // 7 = H
-  let l_enc = @azimuth.add(l_val, shift) % 26  // 14 = O
-  let o_enc = @azimuth.add(o_val, shift) % 26  // 17 = R
-  
-  @azimuth.assert_eq(10, h_enc)
-  @azimuth.assert_eq(7, e_enc)
-  @azimuth.assert_eq(14, l_enc)
-  @azimuth.assert_eq(17, o_enc)
-  
-  // 解密：位移-3
-  let h_dec = @azimuth.add(h_enc, @azimuth.add(-shift, 26)) % 26  // 7 = H
-  let e_dec = @azimuth.add(e_enc, @azimuth.add(-shift, 26)) % 26  // 4 = E
-  let l_dec = @azimuth.add(l_enc, @azimuth.add(-shift, 26)) % 26  // 11 = L
-  let o_dec = @azimuth.add(o_enc, @azimuth.add(-shift, 26)) % 26  // 14 = O
-  
-  @azimuth.assert_eq(h_val, h_dec)
-  @azimuth.assert_eq(e_val, e_dec)
-  @azimuth.assert_eq(l_val, l_dec)
-  @azimuth.assert_eq(o_val, o_dec)
-  
-  // 测试环绕情况：Z(25) + 3 = C(2)
-  let z_val = 25
-  let z_enc = @azimuth.add(z_val, shift) % 26  // 2 = C
-  @azimuth.assert_eq(2, z_enc)
-  
-  // 测试边界情况：A(0) - 3 = X(23)
-  let a_val = 0
-  let a_dec = @azimuth.add(a_val, @azimuth.add(-shift, 26)) % 26  // 23 = X
-  @azimuth.assert_eq(23, a_dec)
+  // 测试正常运算不受影响
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(25, @azimuth.multiply(5, 5))
 }
