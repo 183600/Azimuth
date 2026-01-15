@@ -13,6 +13,7 @@
     "test_simple_verification.mbt",
     "test/additional_moonbit_tests.mbt",
     "standard_moonbit_tests.mbt",
-    "test/new_moonbit_test_cases.mbt"
+    "test/new_moonbit_test_cases.mbt",
+    "comprehensive_moonbit_test_cases.mbt"
   ]
 }
