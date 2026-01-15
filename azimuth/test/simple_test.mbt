@@ -184,3 +184,62 @@ test "complex_arithmetic_expressions" {
   )
   @azimuth.assert_eq(190, result2)  // 10 * 20 + (-5) * 2 = 200 - 10 = 190
 }
+
+test "comprehensive_add_test" {
+  // 测试加法函数的基本情况
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
+  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
+  @azimuth.assert_eq(100, @azimuth.add(0, 100))
+  @azimuth.assert_eq(-50, @azimuth.add(-50, 0))
+}
+
+test "comprehensive_add_edge_cases" {
+  // 测试加法函数的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出边界
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(1000000000, 1500000000))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(-1000000000, -1500000000))
+  
+  // 测试特殊值组合
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+}
+
+test "comprehensive_multiply_test" {
+  // 测试乘法函数的基本情况
+  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
+  @azimuth.assert_eq(16, @azimuth.multiply(-4, -4))
+  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
+  @azimuth.assert_eq(-7, @azimuth.multiply(7, -1))
+}
+
+test "comprehensive_greet_test" {
+  // 测试问候函数的各种输入
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+}
+
+test "comprehensive_math_calculations" {
+  // 测试数学计算场景
+  let x = 15
+  let y = 25
+  
+  // 计算表达式：(x + y) * 2 - 10
+  let sum = @azimuth.add(x, y)
+  let product = @azimuth.multiply(sum, 2)
+  let result = @azimuth.add(product, -10)
+  @azimuth.assert_eq(70, result)
+  
+  // 计算平方：x²
+  let square = @azimuth.multiply(x, x)
+  @azimuth.assert_eq(225, square)
+}
