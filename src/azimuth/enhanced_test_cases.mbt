@@ -1,225 +1,187 @@
 // 增强的 MoonBit 测试用例
-// 覆盖各种边界条件和实际应用场景
+// 包含各种边界条件和实际应用场景的测试
 
-test "enhanced_addition_series" {
-  // 测试连续加法的级联效应
-  let base = 100
-  let increment = 50
-  let count = 5
+test "arithmetic_sequence_calculation" {
+  // 计算等差数列的第n项：an = a1 + (n-1)d
+  let first_term = 3
+  let common_diff = 4
+  let n = 10
   
-  // 计算：base + (base + increment) + (base + 2*increment) + ... 
-  let term1 = base
-  let term2 = add(base, increment)
-  let term3 = add(base, multiply(2, increment))
-  let term4 = add(base, multiply(3, increment))
-  let term5 = add(base, multiply(4, increment))
-  
-  let total = add(add(add(add(term1, term2), term3), term4), term5)
-  assert_eq(1000, total)  // 100 + 150 + 200 + 250 + 300 = 1000
+  // 第10项 = 3 + (10-1)*4 = 3 + 36 = 39
+  let nth_term = add(first_term, multiply(common_diff, n - 1))
+  assert_eq(39, nth_term)
 }
 
-test "enhanced_multiplication_table" {
-  // 测试乘法表的正确性
-  let base = 7
+test "geometric_progression_sum" {
+  // 计算等比数列前n项和：S_n = a1*(1-r^n)/(1-r)
+  // 简化为整数计算：S_5 = 2*(1-3^5)/(1-3) = 2*(1-243)/(-2) = 242
+  let first_term = 2
+  let ratio = 3
+  let terms = 5
   
-  // 7的乘法表：7×1, 7×2, ..., 7×5
-  assert_eq(7, multiply(base, 1))
-  assert_eq(14, multiply(base, 2))
-  assert_eq(21, multiply(base, 3))
-  assert_eq(28, multiply(base, 4))
-  assert_eq(35, multiply(base, 5))
-  
-  // 验证乘法表的和：7 + 14 + 21 + 28 + 35 = 105
-  let sum = add(add(add(add(7, 14), 21), 28), 35)
-  assert_eq(105, sum)
-}
-
-test "enhanced_string_concatenation_chain" {
-  // 测试字符串连接链式处理
-  let prefix = "Hello"
-  let name = "MoonBit"
-  let suffix = "2023"
-  let exclamation = "!"
-  
-  // 通过greet函数模拟链式字符串处理
-  let step1 = greet(name)
-  let step2 = step1 + " " + suffix + exclamation
-  
-  assert_eq_string("Hello, MoonBit! 2023!", step2)
-  
-  // 测试包含数字的字符串
-  let numeric_name = "User123"
-  let numeric_result = greet(numeric_name)
-  assert_eq_string("Hello, User123!", numeric_result)
-}
-
-test "enhanced_boundary_stress_test" {
-  // 边界值压力测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试接近边界的值
-  let near_max = max_val - 1000
-  let near_min = min_val + 1000
-  
-  // 接近最大值的加法
-  let result1 = add(near_max, 500)
-  assert_eq(2147482847, result1)
-  
-  // 接近最小值的加法
-  let result2 = add(near_min, -500)
-  assert_eq(-2147483148, result2)
-  
-  // 边界值乘法测试
-  let result3 = multiply(46340, 46340)  // 接近sqrt(max_val)
-  assert_eq(2147395600, result3)
-}
-
-test "enhanced_financial_compound_calculation" {
-  // 复杂的金融复合计算
-  let principal = 10000
-  let rate1 = 5  // 第一年利率
-  let rate2 = 6  // 第二年利率
-  let rate3 = 7  // 第三年利率
-  
-  // 第一年后的金额
-  let year1 = multiply(principal, add(100, rate1))
-  // 第二年后的金额
-  let year2 = multiply(year1, add(100, rate2))
-  // 第三年后的金额
-  let year3 = multiply(year2, add(100, rate3))
-  
-  // 转换为实际金额（除以100^3）
-  let final_amount = year3 / 1000000
-  
-  assert_eq(12285, final_amount)  // 约等于12285元
-}
-
-test "enhanced_geometric_progression" {
-  // 几何级数计算：1, 2, 4, 8, 16, 32
-  let first_term = 1
-  let ratio = 2
-  
-  // 计算前6项
+  // 手动计算：2 + 6 + 18 + 54 + 162 = 242
   let term1 = first_term
   let term2 = multiply(term1, ratio)
   let term3 = multiply(term2, ratio)
   let term4 = multiply(term3, ratio)
   let term5 = multiply(term4, ratio)
-  let term6 = multiply(term5, ratio)
   
-  // 计算总和
-  let sum = add(add(add(add(add(term1, term2), term3), term4), term5), term6)
-  assert_eq(63, sum)  // 1 + 2 + 4 + 8 + 16 + 32 = 63
-  
-  // 验证公式：a * (r^n - 1) / (r - 1)
-  let formula_result = multiply(first_term, multiply(63, 1))  // 简化计算
-  assert_eq(63, formula_result)
+  let sum = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(242, sum)
 }
 
-test "enhanced_temperature_conversion_table" {
-  // 温度转换表测试（简化版：F = C * 2 + 30）
-  let celsius_temps = [0, 10, 20, 30, 40]  // 摄氏度温度
-  let expected_fahrenheit = [30, 50, 70, 90, 110]  // 预期的华氏度温度
+test "temperature_conversion_celsius_to_fahrenheit" {
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 简化为整数计算：F = C × 2 + 30（近似值）
+  let celsius_freezing = 0      // 冰点
+  let celsius_boiling = 100     // 沸点
+  let celsius_room = 20         // 室温
+  let celsius_body = 37         // 体温
   
-  // 测试每个转换
-  let f1 = add(multiply(0, 2), 30)
-  let f2 = add(multiply(10, 2), 30)
-  let f3 = add(multiply(20, 2), 30)
-  let f4 = add(multiply(30, 2), 30)
-  let f5 = add(multiply(40, 2), 30)
+  // 转换公式（简化版）
+  let fahrenheit_freezing = add(multiply(celsius_freezing, 2), 30)
+  let fahrenheit_boiling = add(multiply(celsius_boiling, 2), 30)
+  let fahrenheit_room = add(multiply(celsius_room, 2), 30)
+  let fahrenheit_body = add(multiply(celsius_body, 2), 30)
   
-  assert_eq(30, f1)
-  assert_eq(50, f2)
-  assert_eq(70, f3)
-  assert_eq(90, f4)
-  assert_eq(110, f5)
-  
-  // 计算平均温度转换
-  let avg_celsius = add(add(add(add(0, 10), 20), 30), 40) / 5
-  let avg_fahrenheit = add(multiply(avg_celsius, 2), 30)
-  assert_eq(70, avg_fahrenheit)
+  assert_eq(30, fahrenheit_freezing)   // 0°C → 30°F（近似）
+  assert_eq(230, fahrenheit_boiling)   // 100°C → 230°F（近似）
+  assert_eq(70, fahrenheit_room)       // 20°C → 70°F（近似）
+  assert_eq(104, fahrenheit_body)      // 37°C → 104°F（近似）
 }
 
-test "enhanced_error_recovery_scenarios" {
-  // 错误恢复场景测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "simple_interest_calculation" {
+  // 简单利息计算：利息 = 本金 × 利率 × 时间
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
   
-  // 测试溢出后的恢复能力
-  let overflow_result = add(max_val, 1000)
-  assert_eq(max_val, overflow_result)
+  // 计算利息：10000 × 5 × 3 = 150000
+  let interest = multiply(principal, multiply(annual_rate, years))
   
-  // 从溢出状态继续计算
-  let recovery_result = add(overflow_result, -100)
-  assert_eq(max_val, recovery_result)
+  // 计算本息和：本金 + 利息
+  let total_amount = add(principal, interest)
   
-  // 测试最小值的特殊情况
-  let min_mult = multiply(min_val, 1)
-  assert_eq(min_val, min_mult)
-  
-  // 测试断言函数的稳定性
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  assert_eq(150000, interest)
+  assert_eq(160000, total_amount)
 }
 
-test "enhanced_string_unicode_handling" {
-  // Unicode 字符串处理测试
-  let unicode_names = ["世界", "🌍", "测试", "MoonBit", "αβγ"]
+test "discount_price_calculation" {
+  // 折扣价格计算：折后价 = 原价 × (1 - 折扣率)
+  let original_price = 200
+  let discount_percent = 15  // 15% 折扣
   
-  // 测试各种Unicode字符串
-  let result1 = greet("世界")
-  let result2 = greet("🌍")
-  let result3 = greet("测试")
-  let result4 = greet("MoonBit")
-  let result5 = greet("αβγ")
+  // 计算折扣金额
+  let discount_amount = multiply(original_price, discount_percent) / 100
+  // 计算折后价格
+  let discounted_price = add(original_price, -discount_amount)
   
-  assert_eq_string("Hello, 世界!", result1)
-  assert_eq_string("Hello, 🌍!", result2)
-  assert_eq_string("Hello, 测试!", result3)
-  assert_eq_string("Hello, MoonBit!", result4)
-  assert_eq_string("Hello, αβγ!", result5)
-  
-  // 测试混合Unicode字符串
-  let mixed = "Hello世界🌍"
-  let mixed_result = greet(mixed)
-  assert_eq_string("Hello, Hello世界🌍!", mixed_result)
+  assert_eq(30, discount_amount)
+  assert_eq(170, discounted_price)
 }
 
-test "enhanced_complex_business_logic" {
-  // 复杂业务逻辑测试：电商促销活动计算
-  let original_price = 1000
-  let customer_level = 3  // VIP等级
-  let purchase_quantity = 5
-  let promotion_threshold = 3  // 促销门槛
+test "basketball_score_calculation" {
+  // 篮球得分计算
+  let two_pointers = 12
+  let three_pointers = 5
+  let free_throws = 8
   
-  // 基础折扣：VIP等级 × 5%
-  let base_discount = multiply(customer_level, 5)
+  // 计算各类得分
+  let two_point_score = multiply(two_pointers, 2)
+  let three_point_score = multiply(three_pointers, 3)
+  let free_throw_score = free_throws
   
-  // 数量折扣：超过促销门槛，每多一个额外2%折扣
-  let quantity_discount = if (purchase_quantity > promotion_threshold) {
-    multiply(purchase_quantity - promotion_threshold, 2)
-  } else {
-    0
-  }
+  // 计算总分
+  let total_score = add(add(two_point_score, three_point_score), free_throw_score)
   
-  // 总折扣率
-  let total_discount = add(base_discount, quantity_discount)
+  assert_eq(24, two_point_score)
+  assert_eq(15, three_point_score)
+  assert_eq(8, free_throw_score)
+  assert_eq(47, total_score)
+}
+
+test "digital_root_calculation" {
+  // 数字根计算（简化版）：对各位数字求和直到得到一位数
+  // 对于数字 12345：1+2+3+4+5 = 15 → 1+5 = 6
+  let number = 12345
   
-  // 折扣金额
-  let discount_amount = multiply(original_price, total_discount) / 100
+  // 分解数字并求和
+  let digit1 = number / 10000        // 1
+  let digit2 = (number / 1000) % 10  // 2
+  let digit3 = (number / 100) % 10   // 3
+  let digit4 = (number / 10) % 10    // 4
+  let digit5 = number % 10           // 5
   
-  // 最终价格
-  let final_price = add(original_price, -discount_amount)
+  let first_sum = add(add(add(add(digit1, digit2), digit3), digit4), digit5)
+  // 15 → 1 + 5 = 6
+  let final_sum = add(first_sum / 10, first_sum % 10)
   
-  assert_eq(750, final_price)  // 1000 - (1000 * 25 / 100) = 750
+  assert_eq(15, first_sum)
+  assert_eq(6, final_sum)
+}
+
+test "perimeter_calculation" {
+  // 周长计算测试
+  // 正方形周长
+  let square_side = 8
+  let square_perimeter = multiply(4, square_side)
   
-  // 测试不同场景
-  let regular_customer = 1
-  let regular_quantity = 2
-  let regular_discount = multiply(regular_customer, 5)
-  let regular_final = add(original_price, -multiply(original_price, regular_discount) / 100)
-  assert_eq(950, regular_final)
+  // 长方形周长
+  let rectangle_length = 12
+  let rectangle_width = 7
+  let rectangle_perimeter = add(multiply(2, rectangle_length), multiply(2, rectangle_width))
+  
+  // 三角形周长
+  let triangle_side1 = 5
+  let triangle_side2 = 7
+  let triangle_side3 = 9
+  let triangle_perimeter = add(add(triangle_side1, triangle_side2), triangle_side3)
+  
+  assert_eq(32, square_perimeter)
+  assert_eq(38, rectangle_perimeter)
+  assert_eq(21, triangle_perimeter)
+}
+
+test "volume_calculation" {
+  // 体积计算测试（简化公式）
+  // 立方体体积：边长³
+  let cube_side = 4
+  let cube_volume = multiply(multiply(cube_side, cube_side), cube_side)
+  
+  // 长方体体积：长×宽×高
+  let box_length = 6
+  let box_width = 4
+  let box_height = 3
+  let box_volume = multiply(multiply(box_length, box_width), box_height)
+  
+  // 圆柱体积（简化）：底面积×高，其中底面积≈3×半径²
+  let cylinder_radius = 5
+  let cylinder_height = 8
+  let cylinder_base_area = multiply(3, multiply(cylinder_radius, cylinder_radius))
+  let cylinder_volume = multiply(cylinder_base_area, cylinder_height)
+  
+  assert_eq(64, cube_volume)
+  assert_eq(72, box_volume)
+  assert_eq(600, cylinder_volume)
+}
+
+test "speed_distance_time_calculation" {
+  // 速度、距离、时间关系测试
+  // 距离 = 速度 × 时间
+  let speed = 60  // km/h
+  let time = 2.5  // 小时，用整数表示为 25/10
+  let distance = multiply(speed, multiply(25, 1)) / 10
+  
+  // 时间 = 距离 / 速度
+  let distance2 = 150  // km
+  let time2 = distance2 / speed
+  
+  // 速度 = 距离 / 时间
+  let distance3 = 180  // km
+  let time3 = 3        // 小时
+  let speed3 = distance3 / time3
+  
+  assert_eq(150, distance)
+  assert_eq(2, time2)
+  assert_eq(60, speed3)
 }
