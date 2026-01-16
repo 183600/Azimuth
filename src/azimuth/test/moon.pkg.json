@@ -144,6 +144,6 @@
     "../simple_verification_test.mbt",
     "my_new_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
-    "azimuth_comprehensive_test_suite.mbt"
-  ]
-}
+      "azimuth_comprehensive_test_suite.mbt",
+      "comprehensive_standard_tests.mbt"
+    ]}
