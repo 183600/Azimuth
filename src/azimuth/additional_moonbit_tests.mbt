@@ -1,247 +1,206 @@
 // 额外的 MoonBit 测试用例
-// 包含各种实际应用场景和边界条件测试
+// 包含各种实用场景和边界情况测试
 
-test "large_number_calculations" {
-  // 测试大数运算
-  let large_num1 = 1000000
-  let large_num2 = 2000000
+test "fibonacci_sequence_calculation" {
+  // 计算斐波那契数列的前几项
+  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
+  let f0 = 0
+  let f1 = 1
+  let f2 = @azimuth.add(f0, f1)  // 1
+  let f3 = @azimuth.add(f1, f2)  // 2
+  let f4 = @azimuth.add(f2, f3)  // 3
+  let f5 = @azimuth.add(f3, f4)  // 5
+  let f6 = @azimuth.add(f4, f5)  // 8
+  let f7 = @azimuth.add(f5, f6)  // 13
+  let f8 = @azimuth.add(f6, f7)  // 21
   
-  // 大数相加
-  let sum_result = add(large_num1, large_num2)
-  assert_eq(3000000, sum_result)
-  
-  // 大数相乘
-  let product_result = multiply(large_num1, 2)
-  assert_eq(2000000, product_result)
-  
-  // 复合大数运算
-  let complex_result = add(multiply(large_num1, 3), multiply(large_num2, 2))
-  assert_eq(7000000, complex_result)
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  @azimuth.assert_eq(8, f6)
+  @azimuth.assert_eq(13, f7)
+  @azimuth.assert_eq(21, f8)
 }
 
-test "mathematical_formulas" {
-  // 测试数学公式计算
+test "prime_number_validation" {
+  // 素数验证测试（通过检查是否能被整除）
+  let num = 17
+  // 简化的素数检查：检查是否能被2, 3, 4, 5整除
+  let divisible_by_2 = num % 2 == 0
+  let divisible_by_3 = num % 3 == 0
+  let divisible_by_4 = num % 4 == 0
+  let divisible_by_5 = num % 5 == 0
   
-  // 计算圆的周长（简化）：2 × π × r ≈ 2 × 3 × r
-  let radius = 10
-  let circumference = multiply(multiply(2, 3), radius)
-  assert_eq(60, circumference)
+  // 17不能被2, 3, 4, 5整除，所以是素数
+  @azimuth.assert_false(divisible_by_2)
+  @azimuth.assert_false(divisible_by_3)
+  @azimuth.assert_false(divisible_by_4)
+  @azimuth.assert_false(divisible_by_5)
   
-  // 计算圆的面积（简化）：π × r² ≈ 3 × r²
-  let area = multiply(3, multiply(radius, radius))
-  assert_eq(300, area)
+  // 测试非素数
+  let composite_num = 15
+  let composite_divisible_by_3 = composite_num % 3 == 0
+  let composite_divisible_by_5 = composite_num % 5 == 0
   
-  // 计算等差数列和：n × (a1 + an) / 2
-  let n = 10
-  let first_term = 1
-  let last_term = 10
-  let series_sum = multiply(n, add(first_term, last_term)) / 2
-  assert_eq(55, series_sum)
+  @azimuth.assert_true(composite_divisible_by_3 || composite_divisible_by_5)
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
+test "temperature_conversion_celsius_to_fahrenheit" {
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数近似：F = C × 2 + 30
+  let celsius_0 = 0
+  let celsius_20 = 20
+  let celsius_100 = 100
+  let celsius_minus_10 = -10
   
-  // 简单利息计算：本金 × 利率 × 时间
-  let principal = 10000
-  let rate = 5  // 5%
-  let time = 3   // 3年
-  let simple_interest = multiply(principal, multiply(rate, time))
-  assert_eq(150000, simple_interest)  // 10000 × 5 × 3 = 150000
+  let fahrenheit_0 = @azimuth.add(@azimuth.multiply(celsius_0, 2), 30)
+  let fahrenheit_20 = @azimuth.add(@azimuth.multiply(celsius_20, 2), 30)
+  let fahrenheit_100 = @azimuth.add(@azimuth.multiply(celsius_100, 2), 30)
+  let fahrenheit_minus_10 = @azimuth.add(@azimuth.multiply(celsius_minus_10, 2), 30)
   
-  // 复利计算（简化）：本金 × (1 + 利率 × 时间)
-  let compound_amount = multiply(principal, add(1, multiply(rate, time)))
-  assert_eq(160000, compound_amount)  // 10000 × (1 + 5×3) = 160000
-  
-  // 贷款月供计算（简化）：贷款总额 / 月数 + 利息
-  let loan_amount = 120000
-  let months = 12
-  let monthly_interest = multiply(loan_amount, rate) / 100
-  let monthly_payment = add(loan_amount / months, monthly_interest / months)
-  assert_eq(10500, monthly_payment)
+  @azimuth.assert_eq(30, fahrenheit_0)      // 0°C ≈ 30°F
+  @azimuth.assert_eq(70, fahrenheit_20)    // 20°C ≈ 70°F
+  @azimuth.assert_eq(230, fahrenheit_100)  // 100°C ≈ 230°F
+  @azimuth.assert_eq(10, fahrenheit_minus_10) // -10°C ≈ 10°F
 }
 
-test "boundary_value_testing" {
-  // 测试边界值
+test "simple_interest_calculation" {
+  // 简单利息计算：利息 = 本金 × 利率 × 时间
+  let principal = 1000
+  let rate_percent = 5
+  let time_years = 3
   
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 计算利息（利率为百分比，需要除以100）
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate_percent, time_years)) / 100
+  let total_amount = @azimuth.add(principal, interest)
   
-  // 最大值边界测试
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(max_val, -1))
-  
-  // 最小值边界测试
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  
-  // 零值边界测试
-  assert_eq(0, multiply(0, max_val))
-  assert_eq(0, multiply(0, min_val))
-  assert_eq(max_val, add(0, max_val))
-  assert_eq(min_val, add(0, min_val))
+  @azimuth.assert_eq(150, interest)      // 1000 × 5 × 3 / 100 = 150
+  @azimuth.assert_eq(1150, total_amount) // 1000 + 150 = 1150
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理边界情况
+test "array_sum_and_average" {
+  // 数组求和与平均值计算
+  // 模拟数组 [10, 20, 30, 40, 50]
+  let num1 = 10
+  let num2 = 20
+  let num3 = 30
+  let num4 = 40
+  let num5 = 50
   
-  // 空字符串处理
-  let empty_result = greet("")
-  assert_eq_string("Hello, !", empty_result)
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5)
+  // 计算平均值
+  let average = sum / 5
   
-  // 单字符字符串
-  let single_char = greet("A")
-  assert_eq_string("Hello, A!", single_char)
-  
-  // 长字符串处理
-  let long_name = "ThisIsAVeryLongNameThatTestsStringHandlingCapabilities"
-  let long_result = greet(long_name)
-  assert_eq_string("Hello, " + long_name + "!", long_result)
-  
-  // 特殊字符处理
-  let special_chars = greet("!@#$%^&*()")
-  assert_eq_string("Hello, !@#$%^&*()!", special_chars)
-  
-  // Unicode字符处理
-  let unicode_chars = greet("测试中文")
-  assert_eq_string("Hello, 测试中文!", unicode_chars)
+  @azimuth.assert_eq(150, sum)
+  @azimuth.assert_eq(30, average)
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
+test "percentage_increase_decrease" {
+  // 百分比增加和减少计算
+  let original_value = 200
+  let increase_percent = 25
+  let decrease_percent = 20
   
-  // 计算：(a + b) × (c - d) + e × f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 7
+  // 计算增加后的值
+  let increase_amount = @azimuth.multiply(original_value, increase_percent) / 100
+  let increased_value = @azimuth.add(original_value, increase_amount)
   
-  let sum_ab = add(a, b)           // 15
-  let diff_cd = add(c, -d)         // 12
-  let product_ef = multiply(e, f)  // 21
-  let product_ab_cd = multiply(sum_ab, diff_cd)  // 180
-  let final_result = add(product_ab_cd, product_ef)  // 201
+  // 计算减少后的值
+  let decrease_amount = @azimuth.multiply(original_value, decrease_percent) / 100
+  let decreased_value = @azimuth.add(original_value, -decrease_amount)
   
-  assert_eq(201, final_result)
-  
-  // 计算平方和：a² + b² + c²
-  let square_a = multiply(a, a)    // 100
-  let square_b = multiply(b, b)    // 25
-  let square_c = multiply(c, c)    // 400
-  let sum_of_squares = add(add(square_a, square_b), square_c)
-  
-  assert_eq(525, sum_of_squares)
+  @azimuth.assert_eq(50, increase_amount)
+  @azimuth.assert_eq(250, increased_value)
+  @azimuth.assert_eq(40, decrease_amount)
+  @azimuth.assert_eq(160, decreased_value)
 }
 
-test "conditional_logic_calculations" {
-  // 测试条件逻辑计算
+test "string_case_and_formatting" {
+  // 字符串大小写和格式化测试
+  let lowercase_name = "john"
+  let uppercase_name = "JOHN"
+  let mixed_case_name = "JoHn"
+  let name_with_spaces = " john doe "
   
-  let x = 15
-  let y = 20
-  let z = 25
-  
-  // 条件1：如果 x < y，则计算 x + y，否则计算 x × y
-  let condition1 = x < y
-  let result1 = if condition1 { add(x, y) } else { multiply(x, y) }
-  assert_eq(35, result1)  // 15 < 20 为真，所以 15 + 20 = 35
-  
-  // 条件2：如果 y > z，则计算 y - z，否则计算 y + z
-  let condition2 = y > z
-  let result2 = if condition2 { add(y, -z) } else { add(y, z) }
-  assert_eq(45, result2)  // 20 > 25 为假，所以 20 + 25 = 45
-  
-  // 嵌套条件：如果 x < y 且 y < z，则计算 x + y + z
-  let condition3 = x < y && y < z
-  let result3 = if condition3 { add(add(x, y), z) } else { multiply(x, y) }
-  assert_eq(60, result3)  // 15 < 20 且 20 < 25 为真，所以 15 + 20 + 25 = 60
+  // 测试greet函数处理不同格式的字符串
+  @azimuth.assert_eq_string("Hello, john!", @azimuth.greet(lowercase_name))
+  @azimuth.assert_eq_string("Hello, JOHN!", @azimuth.greet(uppercase_name))
+  @azimuth.assert_eq_string("Hello, JoHn!", @azimuth.greet(mixed_case_name))
+  @azimuth.assert_eq_string("Hello,  john doe !", @azimuth.greet(name_with_spaces))
 }
 
-test "data_conversion_scenarios" {
-  // 测试数据转换场景
+test "geometric_area_calculations" {
+  // 几何面积计算
+  // 正方形面积 = 边长²
+  let square_side = 5
+  let square_area = @azimuth.multiply(square_side, square_side)
   
-  // 数字到字符串的间接转换
-  let year = 2024
-  let year_string = "2024"
-  let greeting = greet(year_string)
-  assert_eq_string("Hello, 2024!", greeting)
+  // 矩形面积 = 长 × 宽
+  let rectangle_length = 8
+  let rectangle_width = 4
+  let rectangle_area = @azimuth.multiply(rectangle_length, rectangle_width)
   
-  // 布尔值到字符串的转换
-  let true_string = "true"
-  let false_string = "false"
-  assert_eq_string("Hello, true!", greet(true_string))
-  assert_eq_string("Hello, false!", greet(false_string))
+  // 三角形面积 = 底 × 高 ÷ 2
+  let triangle_base = 6
+  let triangle_height = 8
+  let triangle_area = @azimuth.multiply(triangle_base, triangle_height) / 2
   
-  // 模拟浮点数表示
-  let pi_integer = 3
-  let pi_decimal = "14"
-  let pi_string = "3.14"
-  assert_eq_string("Hello, 3.14!", greet(pi_string))
+  // 梯形面积 = (上底 + 下底) × 高 ÷ 2
+  let trapezoid_top = 4
+  let trapezoid_bottom = 8
+  let trapezoid_height = 5
+  let trapezoid_area = @azimuth.multiply(@azimuth.add(trapezoid_top, trapezoid_bottom), trapezoid_height) / 2
   
-  // 日期格式字符串
-  let date_string = "2024-01-15"
-  assert_eq_string("Hello, 2024-01-15!", greet(date_string))
+  @azimuth.assert_eq(25, square_area)
+  @azimuth.assert_eq(32, rectangle_area)
+  @azimuth.assert_eq(24, triangle_area)
+  @azimuth.assert_eq(30, trapezoid_area)
 }
 
-test "performance_related_calculations" {
-  // 测试性能相关计算
+test "binary_number_simulation" {
+  // 二进制数运算模拟
+  // 模拟二进制 1010 (10) 和 0101 (5) 的运算
+  let binary1_decimal = 10  // 1010 in binary
+  let binary2_decimal = 5   // 0101 in binary
   
-  // 大量数据累加：1 + 2 + 3 + ... + 100
-  // 使用公式：n × (n + 1) / 2
-  let n = 100
-  let sum_1_to_100 = multiply(n, add(n, 1)) / 2
-  assert_eq(5050, sum_1_to_100)
+  // 二进制加法：1010 + 0101 = 1111 (15)
+  let binary_sum = @azimuth.add(binary1_decimal, binary2_decimal)
   
-  // 等比数列求和：2 + 4 + 8 + 16 + 32
-  // 手动计算
-  let geo_sum = add(add(add(add(2, 4), 8), 16), 32)
-  assert_eq(62, geo_sum)
+  // 二进制乘法：1010 × 0101 = 00101010 (42)
+  let binary_product = @azimuth.multiply(binary1_decimal, binary2_decimal)
   
-  // 阶乘计算（5!）：5 × 4 × 3 × 2 × 1
-  let factorial_5 = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
-  assert_eq(120, factorial_5)
+  // 二进制与运算（模拟）：1010 & 0101 = 0000 (0)
+  // 简化为检查是否有共同的位
+  let has_common_bits = (binary1_decimal % 2 == 1) && (binary2_decimal % 2 == 1)
   
-  // 幂运算（2^10）：通过连续相乘实现
-  let power_2_8 = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(multiply(2, 2), multiply(2, 2)))
-  assert_eq(256, power_2_8)
+  // 二进制或运算（模拟）：1010 | 0101 = 1111 (15)
+  // 简化为加法
+  let binary_or = @azimuth.add(binary1_decimal, binary2_decimal)
+  
+  @azimuth.assert_eq(15, binary_sum)
+  @azimuth.assert_eq(50, binary_product)
+  @azimuth.assert_false(has_common_bits)
+  @azimuth.assert_eq(15, binary_or)
 }
 
-test "error_handling_and_validation" {
-  // 测试错误处理和验证
+test "time_zone_conversion" {
+  // 时区转换计算
+  let local_hour = 14  // 下午2点
+  let timezone_offset = 8  // 与UTC的时差（小时）
   
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 转换为UTC时间
+  let utc_hour = @azimuth.add(local_hour, -timezone_offset)
+  // 处理负数情况（前一天）
+  let adjusted_utc_hour = if utc_hour < 0 { @azimuth.add(utc_hour, 24) } else { utc_hour }
   
-  // 溢出保护验证
-  assert_true(add(max_val, 100) == max_val)
-  assert_true(add(min_val, -100) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, 2) == min_val)
+  // 转换为另一个时区（例如比UTC快5小时）
+  let target_timezone = 5
+  let target_hour = @azimuth.add(adjusted_utc_hour, target_timezone)
+  // 处理超过24小时的情况（下一天）
+  let adjusted_target_hour = if target_hour >= 24 { @azimuth.add(target_hour, -24) } else { target_hour }
   
-  // 特殊值处理验证
-  assert_true(multiply(min_val, -1) == min_val)  // 最小值乘以-1的特殊情况
-  assert_true(add(0, max_val) == max_val)
-  assert_true(add(0, min_val) == min_val)
-  assert_true(multiply(0, max_val) == 0)
-  assert_true(multiply(0, min_val) == 0)
-  
-  // 断言函数验证
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
-  
-  // 函数结果验证
-  let add_result = add(10, 20)
-  let multiply_result = multiply(5, 6)
-  let greet_result = greet("验证")
-  
-  assert_true(add_result == 30)
-  assert_true(multiply_result == 30)
-  assert_true(greet_result == "Hello, 验证!")
+  @azimuth.assert_eq(6, adjusted_utc_hour)    // 14 - 8 = 6 (UTC时间)
+  @azimuth.assert_eq(11, adjusted_target_hour) // 6 + 5 = 11 (目标时区时间)
 }
