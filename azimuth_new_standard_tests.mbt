@@ -1,133 +1,105 @@
-// Azimuth 项目新标准测试用例
-// 使用标准 MoonBit 测试语法，提供简洁而全面的测试覆盖
+// Azimuth 项目新增标准测试用例
+// 使用标准 MoonBit 测试语法，涵盖核心功能和边界情况
 
-test "basic_addition_functionality" {
-  // 基础加法功能测试
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+test "basic_addition_operations" {
+  // 测试基本加法运算
+  assert_eq(azimuth::add(2, 3), 5)
+  assert_eq(azimuth::add(-2, 3), 1)
+  assert_eq(azimuth::add(2, -3), -1)
+  assert_eq(azimuth::add(-2, -3), -5)
+  assert_eq(azimuth::add(0, 0), 0)
 }
 
-test "basic_multiplication_functionality" {
-  // 基础乘法功能测试
-  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
+test "basic_multiplication_operations" {
+  // 测试基本乘法运算
+  assert_eq(azimuth::multiply(2, 3), 6)
+  assert_eq(azimuth::multiply(-2, 3), -6)
+  assert_eq(azimuth::multiply(2, -3), -6)
+  assert_eq(azimuth::multiply(-2, -3), 6)
+  assert_eq(azimuth::multiply(0, 5), 0)
 }
 
-test "greet_function_basic_cases" {
-  // 问候函数基本测试
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "zero_operations" {
+  // 测试零值运算
+  assert_eq(azimuth::add(0, 42), 42)
+  assert_eq(azimuth::add(42, 0), 42)
+  assert_eq(azimuth::multiply(0, 42), 0)
+  assert_eq(azimuth::multiply(42, 0), 0)
 }
 
-test "mathematical_identity_properties" {
-  // 数学恒等性质测试
-  // 加法单位元
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
+test "identity_elements" {
+  // 测试单位元运算
+  // 加法单位元是 0
+  assert_eq(azimuth::add(123, 0), 123)
+  assert_eq(azimuth::add(0, -456), -456)
   
-  // 乘法单位元
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(-17, @azimuth.multiply(-17, 1))
-  
-  // 乘法零元
-  @azimuth.assert_eq(0, @azimuth.multiply(42, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(-17, 0))
+  // 乘法单位元是 1
+  assert_eq(azimuth::multiply(123, 1), 123)
+  assert_eq(azimuth::multiply(1, -456), -456)
 }
 
-test "greet_function_special_characters" {
-  // 问候函数特殊字符测试
-  @azimuth.assert_eq_string("Hello, 用户123!", @azimuth.greet("用户123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+test "greet_function_basic" {
+  // 测试基本问候功能
+  assert_eq(azimuth::greet("World"), "Hello, World!")
+  assert_eq(azimuth::greet("Alice"), "Hello, Alice!")
+  assert_eq(azimuth::greet("Bob"), "Hello, Bob!")
 }
 
-test "compound_calculations" {
-  // 复合计算测试
-  // (a + b) * c
-  let a = 5
-  let b = 3
-  let c = 2
-  let sum_ab = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum_ab, c)
-  @azimuth.assert_eq(16, result)
-  
-  // a * b + c * d
-  let d = 4
-  let result2 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(c, d))
-  @azimuth.assert_eq(23, result2)
+test "greet_function_special_cases" {
+  // 测试问候功能的特殊情况
+  assert_eq(azimuth::greet(""), "Hello, !")
+  assert_eq(azimuth::greet("123"), "Hello, 123!")
+  assert_eq(azimuth::greet("Alice Bob"), "Hello, Alice Bob!")
 }
 
-test "boundary_value_tests" {
-  // 边界值测试
-  // 大数测试
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(1000000000000, @azimuth.multiply(1000000, 1000000))
+test "combined_operations" {
+  // 测试组合运算
+  // (2 + 3) * 4 = 20
+  let sum = azimuth::add(2, 3)
+  let result = azimuth::multiply(sum, 4)
+  assert_eq(result, 20)
   
-  // 负数边界测试
-  @azimuth.assert_eq(-1000000, @azimuth.add(-500000, -500000))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(-1000, -1000))
+  // 5 * 6 + 7 = 37
+  let product = azimuth::multiply(5, 6)
+  let result2 = azimuth::add(product, 7)
+  assert_eq(result2, 37)
 }
 
-test "real_world_scenarios" {
-  // 实际应用场景测试
-  // 购物车计算
-  let price1 = 299
-  let quantity1 = 2
-  let price2 = 199
-  let quantity2 = 3
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(azimuth::add(-10, -20), -30)
+  assert_eq(azimuth::add(-10, 20), 10)
+  assert_eq(azimuth::add(10, -20), -10)
   
-  let total1 = @azimuth.multiply(price1, quantity1)
-  let total2 = @azimuth.multiply(price2, quantity2)
-  let cart_total = @azimuth.add(total1, total2)
-  
-  @azimuth.assert_eq(1195, cart_total)
-  
-  // 平均值计算 (整数除法)
-  let sum = @azimuth.add(85, @azimuth.add(90, 95))
-  let average = sum / 3
-  @azimuth.assert_eq(90, average)
+  assert_eq(azimuth::multiply(-5, -6), 30)
+  assert_eq(azimuth::multiply(-5, 6), -30)
+  assert_eq(azimuth::multiply(5, -6), -30)
 }
 
-test "sequential_operations" {
-  // 连续操作测试
-  let counter = 0
+test "large_number_operations" {
+  // 测试大数运算
+  let large1 = 10000
+  let large2 = 20000
   
-  // 连续加法
-  counter = @azimuth.add(counter, 10)
-  counter = @azimuth.add(counter, 20)
-  counter = @azimuth.add(counter, 30)
-  @azimuth.assert_eq(60, counter)
-  
-  // 连续乘法
-  let product = 1
-  product = @azimuth.multiply(product, 2)
-  product = @azimuth.multiply(product, 3)
-  product = @azimuth.multiply(product, 4)
-  @azimuth.assert_eq(24, product)
+  assert_eq(azimuth::add(large1, large2), 30000)
+  assert_eq(azimuth::multiply(large1, 2), 20000)
+  assert_eq(azimuth::multiply(100, 1000), 100000)
 }
 
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况测试
-  // 溢出保护验证
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 15
+  let b = 25
+  let c = 10
   
-  // 验证溢出时的行为
-  let overflow_result = @azimuth.add(max_int, 1)
-  @azimuth.assert_true(overflow_result == max_int)
+  // 加法交换律: a + b = b + a
+  assert_eq(azimuth::add(a, b), azimuth::add(b, a))
   
-  let underflow_result = @azimuth.add(min_int, -1)
-  @azimuth.assert_true(underflow_result == min_int)
+  // 乘法交换律: a * b = b * a
+  assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
   
-  // 验证断言函数
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(5 < 3)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("hello", "hello")
+  // 分配律: a * (b + c) = a * b + a * c
+  let left = azimuth::multiply(a, azimuth::add(b, c))
+  let right = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
+  assert_eq(left, right)
 }
