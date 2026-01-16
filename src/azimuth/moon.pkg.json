@@ -53,6 +53,7 @@
     "test/user_focused_tests.mbt",
     "test_simple_user.mbt",
     "test/additional_moonbit_test_cases.mbt",
-    "standard_moonbit_test_examples.mbt"
+    "standard_moonbit_test_examples.mbt",
+    "../../azimuth_new_standard_tests.mbt"
   ]
 }
