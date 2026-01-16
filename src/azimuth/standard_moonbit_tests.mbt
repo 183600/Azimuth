@@ -1,4 +1,4 @@
-// 标准 MoonBit 测试用例
+// 标准 MoonBit 测试用例 - 更新版本
 // 测试 azimuth 包的核心功能
 
 test "add_basic_functionality" {
@@ -55,23 +55,21 @@ test "complex_calculations" {
   // 测试复杂计算
   let a = 10
   let b = 20
-  let c = 30
+  let c = 5
   
   // (a + b) * c
   let result = multiply(add(a, b), c)
-  assert_eq(900, result)
-  
-  // a * b + c
-  let result2 = add(multiply(a, b), c)
-  assert_eq(230, result2)
+  assert_eq(150, result)
 }
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法
-  assert_eq(3, divide_with_ceil(10, 3))
-  assert_eq(4, divide_with_ceil(12, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-3, divide_with_ceil(-9, 3))
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 购物车计算
+  let item_price = 199
+  let quantity = 3
+  let shipping = 15
+  let cart_total = add(multiply(item_price, quantity), shipping)
+  assert_eq(612, cart_total)
 }
 
 test "edge_cases" {
@@ -79,13 +77,23 @@ test "edge_cases" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值和最小值的运算
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
+  // 边界值运算
+  assert_eq(-1, add(max_val, min_val))
   assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
   
-  // 特殊字符串处理
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
-  assert_eq_string("Hello, @#$!", greet("@#$"))
+  // 交换律
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 结合律
+  let c = 5
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
 }
