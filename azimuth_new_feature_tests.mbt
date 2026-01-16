@@ -1,115 +1,163 @@
-// Azimuth 项目新增功能测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 项目新功能测试用例
+// 使用标准 MoonBit 测试语法，包含多样化的测试场景
 
-test "add_large_numbers" {
-  // 测试大数相加
+test "large_number_operations" {
+  // 大数运算测试
+  assert_eq(azimuth::add(1000000, 2000000), 3000000)
   assert_eq(azimuth::add(999999, 1), 1000000)
-  assert_eq(azimuth::add(500000, 500000), 1000000)
-  assert_eq(azimuth::add(1000000, -1000000), 0)
+  assert_eq(azimuth::multiply(10000, 1000), 10000000)
+  assert_eq(azimuth::multiply(12345, 6789), 83810205)
 }
 
-test "multiply_by_negative_one" {
-  // 测试乘以-1的性质
-  assert_eq(azimuth::multiply(42, -1), -42)
-  assert_eq(azimuth::multiply(-17, -1), 17)
-  assert_eq(azimuth::multiply(0, -1), 0)
+test "string_length_edge_cases" {
+  // 字符串长度边界测试
+  assert_eq(azimuth::greet("A"), "Hello, A!")
+  assert_eq(azimuth::greet("AB"), "Hello, AB!")
+  assert_eq(azimuth::greet("ABC"), "Hello, ABC!")
+  assert_eq(azimuth::greet("VeryLongNameForTesting"), "Hello, VeryLongNameForTesting!")
 }
 
-test "add_sequence_pattern" {
-  // 测试序列模式相加
-  // 斐波那契数列前几项: 1, 1, 2, 3, 5, 8
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = azimuth::add(fib1, fib2)  // 2
-  let fib4 = azimuth::add(fib2, fib3)  // 3
-  let fib5 = azimuth::add(fib3, fib4)  // 5
+test "mathematical_formulas" {
+  // 数学公式测试
   
-  assert_eq(fib3, 2)
-  assert_eq(fib4, 3)
-  assert_eq(fib5, 5)
-}
-
-test "multiply_power_of_two" {
-  // 测试2的幂次方乘法
-  assert_eq(azimuth::multiply(8, 2), 16)
-  assert_eq(azimuth::multiply(16, 2), 32)
-  assert_eq(azimuth::multiply(32, 2), 64)
-  assert_eq(azimuth::multiply(64, 2), 128)
-}
-
-test "greet_with_special_names" {
-  // 测试特殊名称的问候
-  assert_eq(azimuth::greet("Alice"), "Hello, Alice!")
-  assert_eq(azimuth::greet("Bob"), "Hello, Bob!")
-  assert_eq(azimuth::greet("Charlie"), "Hello, Charlie!")
-}
-
-test "add_temperature_conversion" {
-  // 测试温度转换计算
-  // 摄氏度转华氏度: F = C * 9/5 + 32，简化为整数运算
-  let celsius = 20
-  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 9) / 5, 32)
-  assert_eq(68, fahrenheit)
+  // 二次方程求根公式的一部分：b²-4ac
+  let a = 1
+  let b = 5
+  let c = 6
+  let discriminant = azimuth::add(azimuth::multiply(b, b), azimuth::multiply(-4, azimuth::multiply(a, c)))
+  assert_eq(1, discriminant)
   
-  // 华氏度转摄氏度: C = (F - 32) * 5/9，简化为整数运算
-  let fahrenheit2 = 100
-  let celsius2 = azimuth::multiply(azimuth::add(fahrenheit2, -32), 5) / 9
-  assert_eq(37, celsius2)
+  // 勾股定理：a² + b² = c²
+  let side_a = 3
+  let side_b = 4
+  let side_c_squared = azimuth::add(azimuth::multiply(side_a, side_a), azimuth::multiply(side_b, side_b))
+  assert_eq(25, side_c_squared)
 }
 
-test "multiply_area_calculation" {
-  // 测试面积计算
-  // 正方形面积: 边长 × 边长
-  let side = 7
-  let square_area = azimuth::multiply(side, side)
-  assert_eq(49, square_area)
+test "real_world_calculations" {
+  // 实际应用场景测试
   
-  // 三角形面积: 底 × 高 ÷ 2，简化为整数运算
-  let base = 10
-  let height = 6
-  let triangle_area = azimuth::multiply(base, height) / 2
-  assert_eq(30, triangle_area)
+  // 购物车总价计算
+  let item1_price = 25
+  let item1_quantity = 2
+  let item2_price = 15
+  let item2_quantity = 3
+  let total = azimuth::add(azimuth::multiply(item1_price, item1_quantity), azimuth::multiply(item2_price, item2_quantity))
+  assert_eq(95, total)
+  
+  // 速度距离时间计算：距离 = 速度 × 时间
+  let speed = 60  // km/h
+  let time = 2.5  // hours (使用整数近似)
+  let distance = azimuth::divide_with_ceil(azimuth::multiply(speed, 25), 10)
+  assert_eq(150, distance)
 }
 
-test "add_time_calculations" {
-  // 测试时间计算
-  // 计算总秒数: 小时 × 3600 + 分钟 × 60 + 秒
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
+test "boundary_value_analysis" {
+  // 边界值分析测试
   
-  let total_seconds = azimuth::add(
-    azimuth::add(azimuth::multiply(hours, 3600), azimuth::multiply(minutes, 60)),
-    seconds
-  )
-  assert_eq(9045, total_seconds)
+  // 测试零值附近的运算
+  assert_eq(azimuth::add(-1, 1), 0)
+  assert_eq(azimuth::add(1, -1), 0)
+  assert_eq(azimuth::multiply(0, 99999), 0)
+  assert_eq(azimuth::multiply(99999, 0), 0)
+  
+  // 测试单位值附近的运算
+  assert_eq(azimuth::multiply(1, 1), 1)
+  assert_eq(azimuth::add(1, 0), 1)
+  assert_eq(azimuth::add(0, 1), 1)
 }
 
-test "multiply_volume_calculation" {
-  // 测试体积计算
-  // 长方体体积: 长 × 宽 × 高
-  let length = 5
-  let width = 4
-  let height = 3
+test "calculation_precision" {
+  // 计算精度测试
   
-  let base_area = azimuth::multiply(length, width)
-  let volume = azimuth::multiply(base_area, height)
-  assert_eq(60, volume)
+  // 累加计算
+  let accumulator = 0
+  accumulator = azimuth::add(accumulator, 10)
+  accumulator = azimuth::add(accumulator, 20)
+  accumulator = azimuth::add(accumulator, 30)
+  accumulator = azimuth::add(accumulator, 40)
+  assert_eq(100, accumulator)
+  
+  // 累乘计算
+  let product = 1
+  product = azimuth::multiply(product, 2)
+  product = azimuth::multiply(product, 3)
+  product = azimuth::multiply(product, 4)
+  assert_eq(24, product)
 }
 
-test "complex_arithmetic_expression" {
-  // 测试复合算术表达式
-  // 计算: (a × b + c) × d - e
-  let a = 3
-  let b = 4
-  let c = 5
-  let d = 2
-  let e = 10
+test "special_string_formats" {
+  // 特殊字符串格式测试
   
-  let step1 = azimuth::multiply(a, b)  // 12
-  let step2 = azimuth::add(step1, c)   // 17
-  let step3 = azimuth::multiply(step2, d)  // 34
-  let result = azimuth::add(step3, -e)     // 24
+  // 数字字符串
+  assert_eq(azimuth::greet("123"), "Hello, 123!")
+  assert_eq(azimuth::greet("456789"), "Hello, 456789!")
   
-  assert_eq(24, result)
+  // 符号字符串
+  assert_eq(azimuth::greet("!@#$"), "Hello, !@#$!")
+  assert_eq(azimuth::greet("()[]{}"), "Hello, ()[]{}!")
+  
+  // 混合字符串
+  assert_eq(azimuth::greet("Test123!"), "Hello, Test123!")
+}
+
+test "complex_arithmetic_sequences" {
+  // 复杂数学序列测试
+  
+  // 计算阶乘：5! = 5 × 4 × 3 × 2 × 1 = 120
+  let factorial_5 = azimuth::multiply(azimuth::multiply(azimuth::multiply(azimuth::multiply(5, 4), 3), 2), 1)
+  assert_eq(120, factorial_5)
+  
+  // 计算组合数：C(5,2) = 5! / (2! × 3!) = 10
+  let n = 5
+  let k = 2
+  let numerator = azimuth::multiply(azimuth::multiply(azimuth::multiply(azimuth::multiply(n, n-1), n-2), n-3), n-4)
+  let denominator = azimuth::multiply(azimuth::multiply(k, k-1), azimuth::multiply(azimuth::multiply(3, 2), 1))
+  let combination = azimuth::divide_with_ceil(numerator, denominator)
+  assert_eq(10, combination)
+}
+
+test "statistical_calculations" {
+  // 统计计算测试
+  
+  // 计算平均值：(10 + 20 + 30 + 40 + 50) / 5 = 30
+  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(10, 20), 30), 40), 50)
+  let count = 5
+  let average = azimuth::divide_with_ceil(sum, count)
+  assert_eq(30, average)
+  
+  // 计算加权平均：10×0.2 + 20×0.3 + 30×0.5 = 23
+  let value1 = 10
+  let weight1 = 2
+  let value2 = 20
+  let weight2 = 3
+  let value3 = 30
+  let weight3 = 5
+  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(value1, weight1), azimuth::multiply(value2, weight2)), azimuth::multiply(value3, weight3))
+  let total_weight = azimuth::add(azimuth::add(weight1, weight2), weight3)
+  let weighted_average = azimuth::divide_with_ceil(weighted_sum, total_weight)
+  assert_eq(23, weighted_average)
+}
+
+test "error_prone_scenarios" {
+  // 容易出错的场景测试
+  
+  // 连续减法（通过加负数实现）
+  let result = 100
+  result = azimuth::add(result, -10)  // 90
+  result = azimuth::add(result, -20)  // 70
+  result = azimuth::add(result, -30)  // 40
+  assert_eq(40, result)
+  
+  // 混合运算优先级
+  let a = 2
+  let b = 3
+  let c = 4
+  // 先乘后加：a + b × c = 2 + 3 × 4 = 14
+  let mixed_result = azimuth::add(a, azimuth::multiply(b, c))
+  assert_eq(14, mixed_result)
+  
+  // 先加后乘：(a + b) × c = (2 + 3) × 4 = 20
+  let mixed_result2 = azimuth::multiply(azimuth::add(a, b), c)
+  assert_eq(20, mixed_result2)
 }
