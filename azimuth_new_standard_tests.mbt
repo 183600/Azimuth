@@ -1,105 +1,93 @@
-// Azimuth 项目新增标准测试用例
-// 使用标准 MoonBit 测试语法，涵盖核心功能和边界情况
+// Azimuth 额外测试用例
+// 使用标准 MoonBit 测试语法
 
-test "basic_addition_operations" {
-  // 测试基本加法运算
-  assert_eq(azimuth::add(2, 3), 5)
-  assert_eq(azimuth::add(-2, 3), 1)
-  assert_eq(azimuth::add(2, -3), -1)
-  assert_eq(azimuth::add(-2, -3), -5)
-  assert_eq(azimuth::add(0, 0), 0)
+test "add_basic_functionality" {
+  // 基本加法功能测试
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
+  @azimuth.assert_eq(10, @azimuth.add(-3, 13))
 }
 
-test "basic_multiplication_operations" {
-  // 测试基本乘法运算
-  assert_eq(azimuth::multiply(2, 3), 6)
-  assert_eq(azimuth::multiply(-2, 3), -6)
-  assert_eq(azimuth::multiply(2, -3), -6)
-  assert_eq(azimuth::multiply(-2, -3), 6)
-  assert_eq(azimuth::multiply(0, 5), 0)
+test "multiply_basic_functionality" {
+  // 基本乘法功能测试
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
+  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
+}
+
+test "greet_basic_functionality" {
+  // 基本问候功能测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
+  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet("Bob"))
 }
 
 test "zero_operations" {
-  // 测试零值运算
-  assert_eq(azimuth::add(0, 42), 42)
-  assert_eq(azimuth::add(42, 0), 42)
-  assert_eq(azimuth::multiply(0, 42), 0)
-  assert_eq(azimuth::multiply(42, 0), 0)
+  // 零值运算测试
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
 }
 
-test "identity_elements" {
-  // 测试单位元运算
-  // 加法单位元是 0
-  assert_eq(azimuth::add(123, 0), 123)
-  assert_eq(azimuth::add(0, -456), -456)
-  
-  // 乘法单位元是 1
-  assert_eq(azimuth::multiply(123, 1), 123)
-  assert_eq(azimuth::multiply(1, -456), -456)
-}
-
-test "greet_function_basic" {
-  // 测试基本问候功能
-  assert_eq(azimuth::greet("World"), "Hello, World!")
-  assert_eq(azimuth::greet("Alice"), "Hello, Alice!")
-  assert_eq(azimuth::greet("Bob"), "Hello, Bob!")
-}
-
-test "greet_function_special_cases" {
-  // 测试问候功能的特殊情况
-  assert_eq(azimuth::greet(""), "Hello, !")
-  assert_eq(azimuth::greet("123"), "Hello, 123!")
-  assert_eq(azimuth::greet("Alice Bob"), "Hello, Alice Bob!")
-}
-
-test "combined_operations" {
-  // 测试组合运算
-  // (2 + 3) * 4 = 20
-  let sum = azimuth::add(2, 3)
-  let result = azimuth::multiply(sum, 4)
-  assert_eq(result, 20)
-  
-  // 5 * 6 + 7 = 37
-  let product = azimuth::multiply(5, 6)
-  let result2 = azimuth::add(product, 7)
-  assert_eq(result2, 37)
+test "identity_operations" {
+  // 单位元素运算测试
+  @azimuth.assert_eq(7, @azimuth.add(7, 0))
+  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
+  @azimuth.assert_eq(-3, @azimuth.multiply(-3, 1))
 }
 
 test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(azimuth::add(-10, -20), -30)
-  assert_eq(azimuth::add(-10, 20), 10)
-  assert_eq(azimuth::add(10, -20), -10)
-  
-  assert_eq(azimuth::multiply(-5, -6), 30)
-  assert_eq(azimuth::multiply(-5, 6), -30)
-  assert_eq(azimuth::multiply(5, -6), -30)
+  // 负数运算测试
+  @azimuth.assert_eq(-8, @azimuth.add(-5, -3))
+  @azimuth.assert_eq(2, @azimuth.add(-5, 7))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
 }
 
 test "large_number_operations" {
-  // 测试大数运算
-  let large1 = 10000
-  let large2 = 20000
-  
-  assert_eq(azimuth::add(large1, large2), 30000)
-  assert_eq(azimuth::multiply(large1, 2), 20000)
-  assert_eq(azimuth::multiply(100, 1000), 100000)
+  // 大数运算测试
+  @azimuth.assert_eq(20000, @azimuth.add(10000, 10000))
+  @azimuth.assert_eq(100000000, @azimuth.multiply(10000, 10000))
+  @azimuth.assert_eq(1, @azimuth.add(1000000, -999999))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
+test "string_edge_cases" {
+  // 字符串边界情况测试
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+  @azimuth.assert_eq_string("Hello, !@#$!", @azimuth.greet("!@#$"))
+}
+
+test "combined_operations" {
+  // 组合运算测试
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // (a + b) * c
+  let sum = @azimuth.add(a, b)
+  let product = @azimuth.multiply(sum, c)
+  @azimuth.assert_eq(900, product)
+  
+  // a * b + c
+  let product2 = @azimuth.multiply(a, b)
+  let sum2 = @azimuth.add(product2, c)
+  @azimuth.assert_eq(230, sum2)
+}
+
+test "commutative_property" {
+  // 交换律测试
   let a = 15
-  let b = 25
-  let c = 10
+  let b = 27
   
-  // 加法交换律: a + b = b + a
-  assert_eq(azimuth::add(a, b), azimuth::add(b, a))
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  // 乘法交换律: a * b = b * a
-  assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
-  
-  // 分配律: a * (b + c) = a * b + a * c
-  let left = azimuth::multiply(a, azimuth::add(b, c))
-  let right = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
-  assert_eq(left, right)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
