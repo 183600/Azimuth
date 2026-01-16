@@ -32,6 +32,8 @@
     "test/additional_tests.mbt",
     "focused_test_suite.mbt",
     "test/advanced_moonbit_test_scenarios.mbt",
-    "standard_moonbit_test_suite.mbt"
+    "standard_moonbit_test_suite.mbt",
+    "concise_essential_tests.mbt",
+    "my_concise_test_cases.mbt"
   ]
 }
