@@ -42,6 +42,7 @@
     "test_simple_new.mbt",
     "test/user_requested_tests.mbt",
     "user_requested_tests.mbt",
-    "../../azimuth_extended_tests.mbt"
+    "../../azimuth_extended_tests.mbt",
+    "new_comprehensive_moonbit_tests.mbt"
   ]
 }
