@@ -39,6 +39,7 @@
     "test/standard_moonbit_test_suite.mbt",
     "standard_moonbit_test_suite_new.mbt",
     "concise_test_suite.mbt",
-    "test_simple_new.mbt"
+    "test_simple_new.mbt",
+    "test/user_requested_tests.mbt"
   ]
 }
