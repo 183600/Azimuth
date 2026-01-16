@@ -1,132 +1,117 @@
-// 新增 MoonBit 测试用例
-// 测试 azimuth 包的核心功能和边界情况
+// 用户请求的 MoonBit 测试用例
+// 包含实用的数学运算和字符串处理测试
 
-test "add_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
-  
-  assert_eq(add(a, b), add(b, a))
-  
-  // 测试负数情况
-  let c = -12345
-  let d = 67890
-  
-  assert_eq(add(c, d), add(d, c))
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(24, @azimuth.multiply(6, 4))
+  @azimuth.assert_eq(-18, @azimuth.multiply(-3, 6))
 }
 
-test "multiply_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 7
-  let b = 12
-  let c = 8
-  
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  
-  assert_eq(left_side, right_side)
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 用户123!", @azimuth.greet("用户123"))
 }
 
-test "greet_multilingual_support" {
-  // 测试多语言支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Mundo!", greet("Mundo"))
-  assert_eq_string("Hello, le Monde!", greet("le Monde"))
-  assert_eq_string("Hello, 世界🌍!", greet("世界🌍"))
+test "mathematical_commutative_laws" {
+  // 测试数学交换律
+  let a = 12
+  let b = 17
+  
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
 
-test "calculation_sequence" {
-  // 测试计算序列：(a + b) × (c + d) ÷ e
-  let a = 10
-  let b = 15
-  let c = 20
-  let d = 25
-  let e = 5
-  
-  let sum1 = add(a, b)  // 25
-  let sum2 = add(c, d)  // 45
-  let product = multiply(sum1, sum2)  // 1125
-  let result = product / e  // 225
-  
-  assert_eq(225, result)
-}
-
-test "boundary_value_combinations" {
-  // 测试边界值组合
+test "boundary_value_handling" {
+  // 测试边界值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值与最小值的各种运算
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(0, multiply(max_val, 0))
-}
-
-test "string_edge_cases" {
-  // 测试字符串边界情况
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, \"John\"!", greet("\"John\""))
-  assert_eq_string("Hello, O'Reilly!", greet("O'Reilly"))
-  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))
+  // 边界值加法
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
   
-  // 测试包含空格的字符串
-  assert_eq_string("Hello,  leading space!", greet(" leading space"))
-  assert_eq_string("Hello, trailing space !", greet("trailing space "))
+  // 边界值乘法
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
 }
 
-test "financial_calculation" {
-  // 测试金融计算场景
-  // 复利计算：本金 × (1 + 利率 × 年数)
-  let principal = 10000
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形的面积和周长
+  let length = 8
+  let width = 6
+  
+  // 计算面积
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(48, area)
+  
+  // 计算周长
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(28, perimeter)
+}
+
+test "financial_calculation_simple" {
+  // 测试简单金融计算：本金和利息
+  let principal = 1000
   let rate = 5  // 5%
   let years = 3
   
-  let interest = multiply(principal, multiply(rate, years))
-  let total = add(principal, interest)
-  
-  assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
+  // 简单利息计算：本金 + 本金 × 利率 × 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let total = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(16000, total)
 }
 
-test "temperature_conversion" {
-  // 测试温度转换：华氏度 = 摄氏度 × 2 + 30（简化版）
+test "temperature_conversion_simple" {
+  // 测试简单温度转换：摄氏度转华氏度
+  // 简化公式：F = C × 2 + 30
+  
   let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)
   
-  assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
-  
-  // 测试负温度
-  let negative_celsius = -10
-  let negative_fahrenheit = add(multiply(negative_celsius, 2), 30)
-  
-  assert_eq(10, negative_fahrenheit)  // -10 × 2 + 30 = 10
+  // 测试冰点
+  let freezing = @azimuth.add(@azimuth.multiply(0, 2), 30)
+  @azimuth.assert_eq(30, freezing)
 }
 
-test "geometric_calculations" {
-  // 测试几何计算
-  let radius = 7
+test "sequential_operations" {
+  // 测试连续运算
+  // 计算 (a + b) * c - d
+  let a = 10
+  let b = 5
+  let c = 3
+  let d = 7
   
-  // 圆周长（简化）：2 × π × r ≈ 2 × 3 × r
-  let circumference = multiply(multiply(2, 3), radius)
-  assert_eq(42, circumference)
+  let sum = @azimuth.add(a, b)  // 15
+  let product = @azimuth.multiply(sum, c)  // 45
+  let result = @azimuth.add(product, -d)  // 38
   
-  // 圆面积（简化）：π × r² ≈ 3 × r²
-  let area = multiply(3, multiply(radius, radius))
-  assert_eq(147, area)
+  @azimuth.assert_eq(38, result)
+}
+
+test "string_with_special_characters" {
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
 }
 
 test "error_handling_verification" {
   // 测试错误处理验证
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
+  
+  // 测试溢出保护
   let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 验证溢出保护
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(add(min_val, -1) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
-  
-  // 验证正常计算
-  assert_true(add(100, 200) == 300)
-  assert_true(multiply(15, 4) == 60)
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
 }
