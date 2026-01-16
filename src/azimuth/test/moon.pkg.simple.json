@@ -1,0 +1,9 @@
+{
+  "test-import": [
+    "azimuth"
+  ],
+  "export": [],
+  "test": [
+    "user_standard_tests.mbt"
+  ]
+}
