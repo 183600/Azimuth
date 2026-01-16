@@ -49,6 +49,8 @@
     "../../azimuth_comprehensive_tests.mbt",
     "azimuth_simple_tests.mbt",
     "simple_test.mbt",
-    "enhanced_moonbit_test_cases.mbt"
+    "enhanced_moonbit_test_cases.mbt",
+    "test/user_focused_tests.mbt",
+    "test_simple_user.mbt"
   ]
 }
