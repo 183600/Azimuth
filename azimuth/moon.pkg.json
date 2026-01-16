@@ -1,6 +1,6 @@
 {
   "name": "azimuth",
-  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false"],
+  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": ["lib.mbt", "additional_tests.mbt"],
   "link": {
     "azimuth/test": "self"
