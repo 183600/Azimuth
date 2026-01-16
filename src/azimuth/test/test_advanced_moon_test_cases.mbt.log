@@ -1,0 +1,161 @@
+clean_test_test/advanced_moon_test_cases.mbt:11:12-11:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:12:3-12:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:15:12-15:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:19:12-19:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:23:12-23:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:27:12-27:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:28:3-28:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:41:17-41:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:42:3-42:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:46:17-46:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:46:30-46:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:47:3-47:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:51:20-51:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:52:17-52:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:53:3-53:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:57:17-57:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:57:30-57:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:58:3-58:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:61:20-61:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:62:17-62:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:63:3-63:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases.mbt:78:16-78:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:79:5-79:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:79:27-79:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:80:5-80:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:81:7-81:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:85:3-85:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:91:16-91:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:92:5-92:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:92:27-92:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:93:5-93:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:94:7-94:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:104:16-104:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:105:5-105:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:105:27-105:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:106:5-106:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:107:7-107:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:111:3-111:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:125:23-125:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:126:5-126:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:127:7-127:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:128:7-128:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:130:5-130:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:131:7-131:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:132:7-132:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:135:3-135:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:143:24-143:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:144:5-144:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:145:7-145:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:146:7-146:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:148:5-148:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:149:7-149:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:150:7-150:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:153:3-153:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:162:13-162:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:162:26-162:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:162:39-162:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:162:52-162:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:164:3-164:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:167:15-167:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:168:15-168:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:169:15-169:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:170:15-170:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:171:15-171:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:173:18-173:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:174:18-174:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:175:18-175:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:176:18-176:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:177:18-177:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:180:22-180:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:180:35-180:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:180:48-180:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:180:61-180:73 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:181:3-181:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:185:3-185:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:190:3-190:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:199:7-199:16 [E0002] Warning (unused_value): Unused variable 'base_year'
+clean_test_test/advanced_moon_test_cases.mbt:200:7-200:17 [E0002] Warning (unused_value): Unused variable 'base_month'
+clean_test_test/advanced_moon_test_cases.mbt:202:7-202:19 [E0002] Warning (unused_value): Unused variable 'base_weekday'
+clean_test_test/advanced_moon_test_cases.mbt:206:25-206:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:208:3-208:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:212:26-212:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:214:3-214:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:218:7-218:20 [E0002] Warning (unused_value): Unused variable 'target_month3'
+clean_test_test/advanced_moon_test_cases.mbt:220:26-220:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:221:5-221:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:225:3-225:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:242:7-242:17 [E0002] Warning (unused_value): Unused variable 'remainder3'
+clean_test_test/advanced_moon_test_cases.mbt:246:3-246:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:257:7-257:17 [E0002] Warning (unused_value): Unused variable 'remainder6'
+clean_test_test/advanced_moon_test_cases.mbt:260:3-260:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:263:3-263:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:264:3-264:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:265:3-265:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:266:3-266:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:277:7-277:12 [E0002] Warning (unused_value): Unused variable 'mask4'
+clean_test_test/advanced_moon_test_cases.mbt:280:20-280:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:280:33-280:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:281:3-281:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:292:3-292:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:298:3-298:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:305:17-305:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:307:15-307:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:309:15-309:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:309:37-309:43 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases.mbt:311:3-311:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:312:3-312:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:325:13-325:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:331:3-331:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:334:13-334:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:340:3-340:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:345:15-345:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:347:3-347:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:348:3-348:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:353:3-353:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:354:3-354:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:362:11-362:15 [E0015] Error Warning (unused_mut): The mutability of 'fib0' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:363:11-363:15 [E0015] Error Warning (unused_mut): The mutability of 'fib1' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:364:11-364:15 [E0015] Error Warning (unused_mut): The mutability of 'fib2' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:364:18-364:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:365:11-365:15 [E0015] Error Warning (unused_mut): The mutability of 'fib3' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:365:18-365:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:366:11-366:15 [E0015] Error Warning (unused_mut): The mutability of 'fib4' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:366:18-366:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:367:11-367:15 [E0015] Error Warning (unused_mut): The mutability of 'fib5' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:367:18-367:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:370:3-370:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:371:3-371:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:372:3-372:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:373:3-373:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:374:3-374:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:375:3-375:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:378:11-378:15 [E0015] Error Warning (unused_mut): The mutability of 'fib6' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:378:18-378:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:379:11-379:15 [E0015] Error Warning (unused_mut): The mutability of 'fib7' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:379:18-379:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:380:11-380:15 [E0015] Error Warning (unused_mut): The mutability of 'fib8' is never used, try remove `mut`.
+clean_test_test/advanced_moon_test_cases.mbt:380:18-380:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:383:3-383:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:384:3-384:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:385:3-385:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:388:3-388:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:388:28-388:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:389:3-389:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:389:28-389:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:390:3-390:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:390:28-390:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:393:21-393:22 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases.mbt:394:21-394:22 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases.mbt:395:3-395:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:396:3-396:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:399:24-399:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:399:52-399:53 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases.mbt:400:24-400:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:400:52-400:53 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases.mbt:401:3-401:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_moon_test_cases.mbt:402:3-402:21 [E4020] Package "azimuth" not found in the loaded packages.

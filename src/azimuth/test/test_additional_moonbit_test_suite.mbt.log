@@ -1,0 +1,143 @@
+clean_test_test/additional_moonbit_test_suite.mbt:6:7-6:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/additional_moonbit_test_suite.mbt:7:7-7:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/additional_moonbit_test_suite.mbt:10:3-10:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:10:12-10:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:11:3-11:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:11:12-11:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:12:3-12:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:12:12-12:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:15:3-15:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:15:12-15:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:16:12-16:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:19:3-19:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:19:12-19:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:20:12-20:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:23:3-23:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:23:12-23:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:24:12-24:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:29:7-29:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/additional_moonbit_test_suite.mbt:30:7-30:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+clean_test_test/additional_moonbit_test_suite.mbt:33:3-33:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:33:12-33:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:34:3-34:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:34:12-34:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:35:3-35:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:35:12-35:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:38:3-38:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:38:12-38:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:39:3-39:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:39:12-39:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:40:3-40:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:40:12-40:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:41:3-41:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:41:12-41:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:44:3-44:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:44:12-44:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:45:3-45:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:45:12-45:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:51:3-51:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:51:12-51:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:54:3-54:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:54:12-54:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:55:3-55:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:55:12-55:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:58:3-58:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:58:12-58:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:59:3-59:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:59:12-59:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:62:3-62:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:62:12-62:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:63:3-63:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:63:12-63:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:66:7-66:16 [E0002] Warning (unused_value): Unused variable 'long_name'
+clean_test_test/additional_moonbit_test_suite.mbt:67:3-67:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:67:12-67:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:78:18-78:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:79:31-79:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:80:21-80:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:82:3-82:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:88:23-88:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:88:39-88:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:89:22-89:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:98:21-98:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:98:42-98:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:99:3-99:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:102:20-102:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:102:33-102:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:102:46-102:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:103:3-103:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:106:20-106:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:106:33-106:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:106:46-106:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:106:59-106:71 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:107:5-107:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:107:30-107:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:107:56-107:73 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:108:5-108:22 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:108:31-108:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:118:14-118:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:119:19-119:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:119:40-119:52 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:122:3-122:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:126:7-126:14 [E0002] Warning (unused_value): Unused variable 'gravity'
+clean_test_test/additional_moonbit_test_suite.mbt:127:18-127:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:127:36-127:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:129:3-129:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:135:7-135:13 [E0002] Warning (unused_value): Unused variable 'values'
+clean_test_test/additional_moonbit_test_suite.mbt:138:13-138:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:138:26-138:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:138:39-138:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:138:52-138:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:141:3-141:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:142:3-142:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:148:3-148:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:149:3-149:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:152:15-152:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:153:3-153:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:162:3-162:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:162:24-162:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:163:3-163:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:163:24-163:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:164:3-164:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:164:24-164:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:165:3-165:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:165:24-165:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:168:3-168:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:168:12-168:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:169:3-169:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:169:12-169:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:170:3-170:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:170:12-170:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:171:3-171:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/additional_moonbit_test_suite.mbt:171:12-171:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/additional_moonbit_test_suite.mbt:174:3-174:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:174:24-174:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:175:3-175:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:175:24-175:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:185:16-185:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:186:16-186:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:187:16-187:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:189:3-189:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:190:3-190:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:191:3-191:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:195:15-195:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:196:15-196:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:197:15-197:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:198:15-198:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:199:15-199:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:201:3-201:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:212:18-212:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:212:36-212:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:213:22-213:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:215:3-215:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:216:3-216:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:221:20-221:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:221:33-221:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:223:3-223:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:229:3-229:21 [E4020] Package "azimuth" not found in the loaded packages.

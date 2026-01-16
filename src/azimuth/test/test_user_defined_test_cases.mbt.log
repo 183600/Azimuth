@@ -1,60 +1,96 @@
-clean_test_test/user_defined_test_cases.mbt:10:13-10:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:10:25-10:28 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:18:15-18:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:19:15-19:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:20:15-20:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:21:17-21:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:21:26-21:34 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:21:35-21:43 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:28:16-28:21 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:29:3-29:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:32:17-32:22 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:33:3-33:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:44:14-44:17 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:45:14-45:17 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:46:16-46:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:56:23-56:26 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:60:22-60:25 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:64:22-64:25 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:65:3-65:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:65:16-65:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:76:18-76:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:78:20-78:23 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:80:13-80:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:82:21-82:24 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:93:13-93:16 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:94:14-94:17 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:95:19-95:27 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:97:19-97:27 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:98:19-98:27 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:99:20-99:23 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:99:35-99:43 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:101:3-101:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:110:29-110:32 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:110:33-110:41 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:111:3-111:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:115:25-115:28 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:115:29-115:37 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:120:28-120:31 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:120:32-120:40 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/user_defined_test_cases.mbt:128:3-128:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:128:36-128:41 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:131:3-131:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:131:41-131:46 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:134:3-134:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:134:42-134:47 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:137:3-137:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/user_defined_test_cases.mbt:137:42-137:47 [E4021] The value identifier greet is unbound.
-clean_test_test/user_defined_test_cases.mbt:147:23-147:26 [E4021] The value identifier add is unbound.
-clean_test_test/user_defined_test_cases.mbt:147:30-147:38 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:148:22-148:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/user_defined_test_cases.mbt:150:3-150:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/user_defined_test_cases.mbt:8:14-8:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:8:35-8:52 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:8:53-8:70 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:9:14-9:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:9:35-9:52 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:10:14-10:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:11:14-11:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:13:23-13:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:13:36-13:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:13:49-13:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:21-17:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:34-17:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:47-17:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:72-17:89 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:98-17:110 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:17:111-17:128 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:30:23-30:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:31:22-31:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:31:40-31:57 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:32:24-32:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:37:23-37:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:37:41-37:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:38:3-38:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:48:15-48:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:48:28-48:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:49:3-49:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:54:21-54:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:54:34-54:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:55:3-55:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:59:20-59:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:59:33-59:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:60:3-60:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:71:23-71:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:74:25-74:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:77:23-77:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:79:3-79:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:82:23-82:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:83:3-83:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:93:25-93:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:93:43-93:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:94:22-94:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:96:3-96:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:99:25-99:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:99:41-99:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:100:24-100:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:102:3-102:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:116:20-116:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:116:33-116:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:116:64-116:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:116:77-116:94 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:117:20-117:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:117:33-117:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:117:64-117:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:117:77-117:94 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:119:22-119:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:119:47-119:58 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/user_defined_test_cases.mbt:122:3-122:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:131:21-131:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:131:51-131:63 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:135:3-135:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:139:20-139:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:140:3-140:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:150:24-150:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:151:25-151:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:152:23-152:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:154:3-154:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:155:3-155:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:156:3-156:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:159:24-159:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:160:30-160:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:162:3-162:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:163:3-163:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:171:13-171:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:171:26-171:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:171:39-171:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:171:52-171:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:171:65-171:77 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:174:3-174:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:177:27-177:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:178:3-178:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:181:24-181:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:183:21-183:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:183:64-183:65 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/user_defined_test_cases.mbt:184:3-184:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:195:27-195:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:198:3-198:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:201:28-201:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:201:41-201:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:204:3-204:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:207:22-207:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:208:3-208:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:210:24-210:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/user_defined_test_cases.mbt:211:3-211:21 [E4020] Package "azimuth" not found in the loaded packages.

@@ -1,0 +1,489 @@
+clean_test_test/advanced_moon_test_cases_final.mbt:11:8-11:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:11:3-11:26 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:12:3-12:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:12:25-12:27 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:15:8-15:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:15:3-15:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:15:21-15:23 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:16:25-16:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:19:8-19:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:19:3-19:28 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:19:21-19:23 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:19:25-19:27 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:20:25-20:27 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:23:8-23:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:23:3-23:28 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:23:21-23:23 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:23:25-23:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:24:25-24:27 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:27:8-27:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:27:3-27:28 [E4021] The value identifier f6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:27:21-27:23 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:27:25-27:27 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:28:3-28:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:28:25-28:27 [E4021] The value identifier f6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:40:3-40:10 [E4021] The value identifier x1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:41:13-41:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:41:3-41:38 [E4021] The value identifier result1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:41:31-41:33 [E4021] The value identifier x1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:41:35-41:37 [E4021] The value identifier x1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:42:3-42:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:42:26-42:33 [E4021] The value identifier result1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:45:3-45:9 [E4021] The value identifier x2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:46:13-46:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:46:26-46:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:46:3-46:54 [E4021] The value identifier result2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:46:47-46:49 [E4021] The value identifier x2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:47:3-47:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:47:26-47:33 [E4021] The value identifier result2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:50:3-50:10 [E4021] The value identifier x3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:51:16-51:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:51:3-51:41 [E4021] The value identifier x3_squared is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:51:34-51:36 [E4021] The value identifier x3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:51:38-51:40 [E4021] The value identifier x3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:52:13-52:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:52:3-52:42 [E4021] The value identifier result3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:52:26-52:36 [E4021] The value identifier x3_squared is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:53:3-53:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:53:27-53:34 [E4021] The value identifier result3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:56:3-56:9 [E4021] The value identifier x4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:57:13-57:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:57:26-57:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:57:3-57:54 [E4021] The value identifier result4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:57:47-57:49 [E4021] The value identifier x4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:58:3-58:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:58:25-58:32 [E4021] The value identifier result4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:60:3-60:10 [E4021] The value identifier x5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:61:16-61:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:61:3-61:41 [E4021] The value identifier x5_squared is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:61:34-61:36 [E4021] The value identifier x5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:61:38-61:40 [E4021] The value identifier x5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:62:13-62:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:62:3-62:42 [E4021] The value identifier result5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:62:26-62:36 [E4021] The value identifier x5_squared is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:63:3-63:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:63:26-63:33 [E4021] The value identifier result5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:71:3-71:14 [E4021] The value identifier width_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:72:3-72:14 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:75:3-75:9 [E4021] The value identifier x1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:76:3-76:9 [E4021] The value identifier y1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:77:3-77:9 [E4021] The value identifier z1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:78:12-78:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:79:5-79:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:79:27-79:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:80:5-80:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:81:7-81:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:78:3-84:4 [E4021] The value identifier index1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:79:23-79:25 [E4021] The value identifier x1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:79:45-79:52 [E4021] The value identifier width_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:79:54-79:61 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:81:25-81:27 [E4021] The value identifier y1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:81:29-81:36 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:82:7-82:9 [E4021] The value identifier z1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:85:3-85:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:85:26-85:32 [E4021] The value identifier index1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:88:3-88:9 [E4021] The value identifier x2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:89:3-89:9 [E4021] The value identifier y2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:90:3-90:9 [E4021] The value identifier z2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:91:12-91:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:92:5-92:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:92:27-92:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:93:5-93:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:94:7-94:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:91:3-97:4 [E4021] The value identifier index2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:92:23-92:25 [E4021] The value identifier x2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:92:45-92:52 [E4021] The value identifier width_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:92:54-92:61 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:94:25-94:27 [E4021] The value identifier y2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:94:29-94:36 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:95:7-95:9 [E4021] The value identifier z2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:98:3-98:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:98:25-98:31 [E4021] The value identifier index2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:101:3-101:9 [E4021] The value identifier x3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:102:3-102:9 [E4021] The value identifier y3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:103:3-103:9 [E4021] The value identifier z3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:104:12-104:19 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:105:5-105:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:105:27-105:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:106:5-106:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:107:7-107:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:104:3-110:4 [E4021] The value identifier index3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:105:23-105:25 [E4021] The value identifier x3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:105:45-105:52 [E4021] The value identifier width_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:105:54-105:61 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:107:25-107:27 [E4021] The value identifier y3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:107:29-107:36 [E4021] The value identifier width_z is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:108:7-108:9 [E4021] The value identifier z3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:111:3-111:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:111:26-111:32 [E4021] The value identifier index3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:120:3-120:11 [E4021] The value identifier bit3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:121:3-121:11 [E4021] The value identifier bit2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:122:3-122:11 [E4021] The value identifier bit1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:123:3-123:11 [E4021] The value identifier bit0 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:125:19-125:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:126:5-126:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:127:7-127:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:128:7-128:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:130:5-130:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:131:7-131:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:132:7-132:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:125:3-134:4 [E4021] The value identifier decimal_value is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:127:25-127:29 [E4021] The value identifier bit3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:128:25-128:29 [E4021] The value identifier bit2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:131:25-131:29 [E4021] The value identifier bit1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:132:25-132:29 [E4021] The value identifier bit0 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:135:3-135:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:135:26-135:39 [E4021] The value identifier decimal_value is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:138:3-138:13 [E4021] The value identifier bit3_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:139:3-139:13 [E4021] The value identifier bit2_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:140:3-140:13 [E4021] The value identifier bit1_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:141:3-141:13 [E4021] The value identifier bit0_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:143:20-143:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:144:5-144:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:145:7-145:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:146:7-146:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:148:5-148:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:149:7-149:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:150:7-150:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:143:3-152:4 [E4021] The value identifier decimal_value2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:145:25-145:31 [E4021] The value identifier bit3_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:146:25-146:31 [E4021] The value identifier bit2_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:149:25-149:31 [E4021] The value identifier bit1_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:150:25-150:31 [E4021] The value identifier bit0_2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:153:3-153:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:153:26-153:40 [E4021] The value identifier decimal_value2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:162:9-162:16 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:162:22-162:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:162:35-162:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:162:48-162:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:162:3-162:79 [E4021] The value identifier sum is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:163:3-163:17 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:163:10-163:13 [E4021] The value identifier sum is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:164:3-164:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:164:25-164:29 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:167:11-167:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:167:3-167:33 [E4021] The value identifier diff1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:167:28-167:32 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:167:27-167:32 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:168:11-168:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:168:3-168:33 [E4021] The value identifier diff2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:168:28-168:32 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:168:27-168:32 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:169:11-169:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:169:3-169:33 [E4021] The value identifier diff3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:169:28-169:32 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:169:27-169:32 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:170:11-170:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:170:3-170:33 [E4021] The value identifier diff4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:170:28-170:32 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:170:27-170:32 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:171:11-171:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:171:3-171:34 [E4021] The value identifier diff5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:171:29-171:33 [E4021] The value identifier mean is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:171:28-171:33 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:173:14-173:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:173:3-173:45 [E4021] The value identifier sq_diff1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:173:32-173:37 [E4021] The value identifier diff1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:173:39-173:44 [E4021] The value identifier diff1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:174:14-174:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:174:3-174:45 [E4021] The value identifier sq_diff2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:174:32-174:37 [E4021] The value identifier diff2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:174:39-174:44 [E4021] The value identifier diff2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:175:14-175:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:175:3-175:45 [E4021] The value identifier sq_diff3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:175:32-175:37 [E4021] The value identifier diff3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:175:39-175:44 [E4021] The value identifier diff3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:176:14-176:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:176:3-176:45 [E4021] The value identifier sq_diff4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:176:32-176:37 [E4021] The value identifier diff4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:176:39-176:44 [E4021] The value identifier diff4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:177:14-177:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:177:3-177:45 [E4021] The value identifier sq_diff5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:177:32-177:37 [E4021] The value identifier diff5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:177:39-177:44 [E4021] The value identifier diff5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:18-180:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:31-180:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:44-180:51 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:57-180:64 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:3-180:122 [E4021] The value identifier sum_sq_diffs is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:70-180:78 [E4021] The value identifier sq_diff1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:80-180:88 [E4021] The value identifier sq_diff2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:91-180:99 [E4021] The value identifier sq_diff3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:102-180:110 [E4021] The value identifier sq_diff4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:180:113-180:121 [E4021] The value identifier sq_diff5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:181:3-181:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:181:26-181:38 [E4021] The value identifier sum_sq_diffs is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:184:3-184:30 [E4021] The value identifier variance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:184:14-184:26 [E4021] The value identifier sum_sq_diffs is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:185:3-185:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:185:25-185:33 [E4021] The value identifier variance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:189:3-189:14 [E4021] The value identifier std_dev is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:190:3-190:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:190:25-190:32 [E4021] The value identifier std_dev is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:199:3-199:15 [E4021] The value identifier base_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:200:3-200:19 [E4021] The value identifier base_weekday is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:203:3-203:18 [E4021] The value identifier target_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:204:21-204:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:204:3-204:56 [E4021] The value identifier days_difference is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:204:34-204:44 [E4021] The value identifier target_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:204:47-204:55 [E4021] The value identifier base_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:204:46-204:55 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:205:3-205:32 [E4021] The value identifier weekday is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:205:13-205:28 [E4021] The value identifier days_difference is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:206:3-206:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:206:25-206:32 [E4021] The value identifier weekday is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:209:3-209:19 [E4021] The value identifier target_day2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:210:22-210:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:210:3-210:58 [E4021] The value identifier days_difference2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:210:35-210:46 [E4021] The value identifier target_day2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:210:49-210:57 [E4021] The value identifier base_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:210:48-210:57 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:211:3-211:34 [E4021] The value identifier weekday2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:211:14-211:30 [E4021] The value identifier days_difference2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:212:3-212:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:212:25-212:33 [E4021] The value identifier weekday2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:215:3-215:18 [E4021] The value identifier target_day3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:216:3-216:19 [E4021] The value identifier days_in_jan is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:217:22-217:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:218:5-218:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:217:3-220:4 [E4021] The value identifier days_difference3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:218:18-218:29 [E4021] The value identifier days_in_jan is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:218:32-218:40 [E4021] The value identifier base_day is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:219:5-219:16 [E4021] The value identifier target_day3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:218:31-218:40 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:221:3-221:34 [E4021] The value identifier weekday3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:221:14-221:30 [E4021] The value identifier days_difference3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:222:3-222:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:222:25-222:33 [E4021] The value identifier weekday3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:231:3-231:10 [E4021] The value identifier a1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:232:3-232:10 [E4021] The value identifier b1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:235:3-235:23 [E4021] The value identifier remainder1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:235:16-235:18 [E4021] The value identifier a1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:235:21-235:23 [E4021] The value identifier b1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:235:19-235:20 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:237:3-237:31 [E4021] The value identifier remainder2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:237:16-237:18 [E4021] The value identifier b1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:237:21-237:31 [E4021] The value identifier remainder1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:237:19-237:20 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:239:3-239:39 [E4021] The value identifier remainder3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:239:16-239:26 [E4021] The value identifier remainder1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:239:29-239:39 [E4021] The value identifier remainder2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:239:27-239:28 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:242:3-242:20 [E4021] The value identifier gcd1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:242:10-242:20 [E4021] The value identifier remainder2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:243:3-243:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:243:25-243:29 [E4021] The value identifier gcd1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:246:3-246:12 [E4021] The value identifier a2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:247:3-247:11 [E4021] The value identifier b2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:250:3-250:23 [E4021] The value identifier remainder4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:250:16-250:18 [E4021] The value identifier a2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:250:21-250:23 [E4021] The value identifier b2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:250:19-250:20 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:252:3-252:31 [E4021] The value identifier remainder5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:252:16-252:18 [E4021] The value identifier b2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:252:21-252:31 [E4021] The value identifier remainder4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:252:19-252:20 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:254:3-254:39 [E4021] The value identifier remainder6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:254:16-254:26 [E4021] The value identifier remainder4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:254:29-254:39 [E4021] The value identifier remainder5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:254:27-254:28 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:256:3-256:20 [E4021] The value identifier gcd2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:256:10-256:20 [E4021] The value identifier remainder5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:257:3-257:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:257:26-257:30 [E4021] The value identifier gcd2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:260:3-260:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:260:25-260:27 [E4021] The value identifier a1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:260:28-260:29 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:260:30-260:34 [E4021] The value identifier gcd1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:261:3-261:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:261:25-261:27 [E4021] The value identifier b1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:261:28-261:29 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:261:30-261:34 [E4021] The value identifier gcd1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:262:3-262:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:262:25-262:27 [E4021] The value identifier a2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:262:28-262:29 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:262:30-262:34 [E4021] The value identifier gcd2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:263:3-263:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:263:25-263:27 [E4021] The value identifier b2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:263:28-263:29 [E4018] Type Unit does not implement trait Mod: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:263:30-263:34 [E4021] The value identifier gcd2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:271:3-271:12 [E4021] The value identifier mask1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:272:3-272:12 [E4021] The value identifier mask2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:273:3-273:12 [E4021] The value identifier mask3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:16-277:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:29-277:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:3-277:63 [E4021] The value identifier bitwise_or is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:42-277:47 [E4021] The value identifier mask1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:49-277:54 [E4021] The value identifier mask2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:277:57-277:62 [E4021] The value identifier mask3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:278:3-278:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:278:25-278:35 [E4021] The value identifier bitwise_or is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:282:3-282:12 [E4021] The value identifier value is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:283:3-283:16 [E4021] The value identifier check_bit is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:287:3-287:40 [E4021] The value identifier bitwise_and is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:287:17-287:22 [E4021] The value identifier value is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:287:26-287:35 [E4021] The value identifier check_bit is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:288:3-288:40 [E4021] The value identifier is_bit_set is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:288:16-288:27 [E4021] The value identifier bitwise_and is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:288:31-288:40 [E4021] The value identifier check_bit is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:289:3-289:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:289:24-289:34 [E4021] The value identifier is_bit_set is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:292:3-292:17 [E4021] The value identifier check_bit2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:293:3-293:42 [E4021] The value identifier bitwise_and2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:293:18-293:23 [E4021] The value identifier value is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:293:27-293:37 [E4021] The value identifier check_bit2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:294:3-294:43 [E4021] The value identifier is_bit_set2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:294:17-294:29 [E4021] The value identifier bitwise_and2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:294:33-294:43 [E4021] The value identifier check_bit2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:295:3-295:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:295:25-295:36 [E4021] The value identifier is_bit_set2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:298:3-298:8 [E4021] The value identifier x is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:299:3-299:9 [E4021] The value identifier y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:302:13-302:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:302:3-302:31 [E4021] The value identifier x_xor_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:302:26-302:27 [E4021] The value identifier x is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:302:29-302:30 [E4021] The value identifier y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:304:11-304:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:304:3-304:36 [E4021] The value identifier y_new is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:304:24-304:31 [E4021] The value identifier x_xor_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:304:34-304:35 [E4021] The value identifier x is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:304:33-304:35 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:306:11-306:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:306:3-306:40 [E4021] The value identifier x_new is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:306:24-306:31 [E4021] The value identifier x_xor_y is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:306:34-306:39 [E4021] The value identifier y_new is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:306:33-306:39 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:308:3-308:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:308:26-308:31 [E4021] The value identifier x_new is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:309:3-309:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:309:25-309:30 [E4021] The value identifier y_new is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:317:3-317:13 [E4021] The value identifier price is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:318:3-318:6 [E3002] Parse error, unexpected token `mut`, you may expect simple expression.
+clean_test_test/advanced_moon_test_cases_final.mbt:319:3-319:6 [E3002] Parse error, unexpected token `mut`, you may expect simple expression.
+clean_test_test/advanced_moon_test_cases_final.mbt:322:13-322:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:322:3-322:38 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:322:26-322:33 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:323:7-323:14 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:323:18-323:23 [E4021] The value identifier price is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:324:5-324:14 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:326:5-326:14 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:328:3-328:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:328:25-328:30 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:331:13-331:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:331:3-331:38 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:331:26-331:33 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:332:7-332:14 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:332:18-332:23 [E4021] The value identifier price is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:333:5-333:14 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:335:5-335:14 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:337:3-337:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:337:25-337:30 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:340:7-340:12 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:341:5-341:14 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:342:15-342:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:342:5-342:44 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:342:28-342:35 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:342:38-342:43 [E4021] The value identifier price is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:342:37-342:43 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:344:3-344:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:344:25-344:30 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:345:3-345:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:345:25-345:32 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:348:3-348:12 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:349:3-349:14 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:350:3-350:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:350:25-350:30 [E4021] The value identifier state is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:351:3-351:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:351:25-351:32 [E4021] The value identifier balance is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:359:3-359:11 [E4021] The value identifier fib0 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:360:3-360:11 [E4021] The value identifier fib1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:361:10-361:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:361:3-361:34 [E4021] The value identifier fib2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:361:23-361:27 [E4021] The value identifier fib0 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:361:29-361:33 [E4021] The value identifier fib1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:362:10-362:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:362:3-362:34 [E4021] The value identifier fib3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:362:23-362:27 [E4021] The value identifier fib1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:362:29-362:33 [E4021] The value identifier fib2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:363:10-363:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:363:3-363:34 [E4021] The value identifier fib4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:363:23-363:27 [E4021] The value identifier fib2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:363:29-363:33 [E4021] The value identifier fib3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:364:10-364:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:364:3-364:34 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:364:23-364:27 [E4021] The value identifier fib3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:364:29-364:33 [E4021] The value identifier fib4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:367:3-367:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:367:25-367:29 [E4021] The value identifier fib0 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:368:3-368:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:368:25-368:29 [E4021] The value identifier fib1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:369:3-369:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:369:25-369:29 [E4021] The value identifier fib2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:370:3-370:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:370:25-370:29 [E4021] The value identifier fib3 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:371:3-371:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:371:25-371:29 [E4021] The value identifier fib4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:372:3-372:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:372:25-372:29 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:375:10-375:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:375:3-375:34 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:375:23-375:27 [E4021] The value identifier fib4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:375:29-375:33 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:376:10-376:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:376:3-376:34 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:376:23-376:27 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:376:29-376:33 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:377:10-377:17 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:377:3-377:34 [E4021] The value identifier fib8 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:377:23-377:27 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:377:29-377:33 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:380:3-380:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:380:25-380:29 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:381:3-381:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:381:26-381:30 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:382:3-382:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:382:26-382:30 [E4021] The value identifier fib8 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:385:3-385:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:385:22-385:26 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:385:28-385:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:385:41-385:45 [E4021] The value identifier fib4 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:385:47-385:51 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:386:3-386:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:386:22-386:26 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:386:28-386:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:386:41-386:45 [E4021] The value identifier fib5 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:386:47-386:51 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:387:3-387:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:387:22-387:26 [E4021] The value identifier fib8 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:387:28-387:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:387:41-387:45 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:387:47-387:51 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:390:3-390:23 [E4021] The value identifier ratio1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:390:12-390:16 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:390:19-390:23 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:390:17-390:18 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:391:3-391:23 [E4021] The value identifier ratio2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:391:12-391:16 [E4021] The value identifier fib8 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:391:19-391:23 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:391:17-391:18 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:392:3-392:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:392:25-392:31 [E4021] The value identifier ratio1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:393:3-393:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:393:25-393:31 [E4021] The value identifier ratio2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:396:20-396:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:396:3-396:54 [E4021] The value identifier precise_ratio1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:396:38-396:42 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:396:50-396:54 [E4021] The value identifier fib6 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:396:48-396:49 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:397:20-397:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:397:3-397:54 [E4021] The value identifier precise_ratio2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:397:38-397:42 [E4021] The value identifier fib8 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:397:50-397:54 [E4021] The value identifier fib7 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:397:48-397:49 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_final.mbt:398:3-398:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:398:26-398:40 [E4021] The value identifier precise_ratio1 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:399:3-399:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_final.mbt:399:26-399:40 [E4021] The value identifier precise_ratio2 is unbound.

@@ -1,0 +1,165 @@
+clean_test_test/advanced_moon_test_cases_fixed.mbt:11:8-11:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:11:3-11:26 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:12:3-12:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:12:25-12:27 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:15:8-15:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:15:3-15:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:15:21-15:23 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:16:3-16:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:16:25-16:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:19:8-19:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:19:3-19:28 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:19:21-19:23 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:19:25-19:27 [E4021] The value identifier f2 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:20:25-20:27 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:23:8-23:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:23:3-23:28 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:23:21-23:23 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:23:25-23:27 [E4021] The value identifier f3 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:24:25-24:27 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:27:8-27:15 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:27:3-27:28 [E4021] The value identifier f6 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:27:21-27:23 [E4021] The value identifier f5 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:27:25-27:27 [E4021] The value identifier f4 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:28:3-28:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:28:25-28:27 [E4021] The value identifier f6 is unbound.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:41:17-41:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:42:3-42:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:46:17-46:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:46:30-46:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:47:3-47:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:51:20-51:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:52:17-52:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:53:3-53:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:57:17-57:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:57:30-57:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:58:3-58:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:61:20-61:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:62:17-62:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:63:3-63:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:78:16-78:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:79:5-79:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:79:27-79:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:80:5-80:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:81:7-81:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:85:3-85:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:91:16-91:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:92:5-92:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:92:27-92:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:93:5-93:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:94:7-94:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:98:3-98:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:104:16-104:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:105:5-105:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:105:27-105:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:106:5-106:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:107:7-107:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:111:3-111:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:125:23-125:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:126:5-126:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:127:7-127:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:128:7-128:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:130:5-130:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:131:7-131:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:132:7-132:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:135:3-135:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:143:24-143:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:144:5-144:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:145:7-145:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:146:7-146:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:148:5-148:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:149:7-149:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:150:7-150:14 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:153:3-153:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:162:13-162:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:162:26-162:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:162:39-162:46 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:162:52-162:59 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:164:3-164:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:167:15-167:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:168:15-168:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:169:15-169:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:170:15-170:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:171:15-171:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:173:18-173:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:174:18-174:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:175:18-175:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:176:18-176:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:177:18-177:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:180:22-180:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:180:35-180:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:180:48-180:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:180:61-180:68 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:181:3-181:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:185:3-185:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:190:3-190:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:200:7-200:19 [E0002] Warning (unused_value): Unused variable 'base_weekday'
+clean_test_test/advanced_moon_test_cases_fixed.mbt:204:25-204:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:206:3-206:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:210:26-210:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:212:3-212:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:217:26-217:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:218:5-218:12 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:222:3-222:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:239:7-239:17 [E0002] Warning (unused_value): Unused variable 'remainder3'
+clean_test_test/advanced_moon_test_cases_fixed.mbt:243:3-243:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:254:7-254:17 [E0002] Warning (unused_value): Unused variable 'remainder6'
+clean_test_test/advanced_moon_test_cases_fixed.mbt:257:3-257:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:260:3-260:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:261:3-261:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:262:3-262:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:263:3-263:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:277:20-277:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:277:33-277:40 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:278:3-278:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:289:3-289:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:295:3-295:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:302:17-302:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:304:15-304:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:306:15-306:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:306:37-306:43 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_fixed.mbt:308:3-308:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:309:3-309:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:322:13-322:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:328:3-328:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:331:13-331:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:337:3-337:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:342:15-342:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:344:3-344:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:345:3-345:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:350:3-350:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:351:3-351:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:361:14-361:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:362:14-362:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:363:14-363:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:364:14-364:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:367:3-367:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:368:3-368:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:369:3-369:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:370:3-370:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:371:3-371:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:372:3-372:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:375:14-375:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:376:14-376:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:377:14-377:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:380:3-380:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:381:3-381:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:382:3-382:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:385:3-385:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:385:28-385:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:386:3-386:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:386:28-386:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:387:3-387:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:387:28-387:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:390:21-390:22 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_fixed.mbt:391:21-391:22 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_fixed.mbt:392:3-392:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:393:3-393:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:396:24-396:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:396:52-396:53 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_fixed.mbt:397:24-397:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:397:52-397:53 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/advanced_moon_test_cases_fixed.mbt:398:3-398:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:399:3-399:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
