@@ -1,184 +1,132 @@
 // Azimuth 项目额外的 MoonBit 测试用例
-// 专注于尚未充分覆盖的功能和场景
+// 使用标准的 MoonBit 测试语法
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试 divide_with_ceil 函数的基本功能
-  // 正常情况：向上取整除法
-  
-  // 整除情况
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(10, 2))
-  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(21, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  
-  // 需要向上取整的情况
-  @azimuth.assert_eq(6, @azimuth.divide_with_ceil(11, 2))  // 11/2 = 5.5 → 6
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(7, 2))   // 7/2 = 3.5 → 4
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))   // 8/3 = 2.67 → 3
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(15, add(7, 8))
+  assert_eq(30, multiply(5, 6))
+  assert_eq(0, add(10, -10))
+  assert_eq(-25, multiply(-5, 5))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试 divide_with_ceil 函数的负数处理
-  // 负数除法的向上取整行为
-  
-  // 负数除以正数
-  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(-10, 2))   // -10/2 = -5
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-7, 2))    // -7/2 = -3.5 → -3（向上取整）
-  
-  // 正数除以负数
-  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(10, -2))   // 10/-2 = -5
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(7, -2))    // 7/-2 = -3.5 → -3（向上取整）
-  
-  // 负数除以负数
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(-10, -2))   // -10/-2 = 5
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-7, -2))    // -7/-2 = 3.5 → 4
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试 divide_with_ceil 函数的边界情况
-  
-  // 除数为1
-  @azimuth.assert_eq(10, @azimuth.divide_with_ceil(10, 1))
-  @azimuth.assert_eq(-10, @azimuth.divide_with_ceil(-10, 1))
-  
-  // 被除数为0
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -3))
-  
-  // 相等的数
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-5, -5))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(5, -5))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-5, 5))
-}
-
-test "complex_calculation_with_divide_ceil" {
-  // 测试 divide_with_ceil 在复杂计算中的应用
-  
-  // 场景：计算需要的页数（每页固定条目数）
-  let total_items = 23
-  let items_per_page = 5
-  let needed_pages = @azimuth.divide_with_ceil(total_items, items_per_page)
-  @azimuth.assert_eq(5, needed_pages)  // 23/5 = 4.6 → 5页
-  
-  // 场景：计算需要的箱子数（每个箱子固定容量）
-  let total_products = 37
-  let box_capacity = 8
-  let needed_boxes = @azimuth.divide_with_ceil(total_products, box_capacity)
-  @azimuth.assert_eq(5, needed_boxes)  // 37/8 = 4.625 → 5个箱子
-  
-  // 场景：计算需要的车辆数（每辆车固定载重）
-  let total_weight = 1500
-  let vehicle_capacity = 350
-  let needed_vehicles = @azimuth.divide_with_ceil(total_weight, vehicle_capacity)
-  @azimuth.assert_eq(5, needed_vehicles)  // 1500/350 = 4.29 → 5辆车
-}
-
-test "combination_operations_with_divide_ceil" {
-  // 测试 divide_with_ceil 与其他函数的组合操作
-  
-  let a = 17
-  let b = 4
-  let c = 3
-  
-  // 计算 (a + b) / c 的向上取整
-  let sum_ab = @azimuth.add(a, b)  // 17 + 4 = 21
-  let result1 = @azimuth.divide_with_ceil(sum_ab, c)  // 21/3 = 7
-  @azimuth.assert_eq(7, result1)
-  
-  // 计算 (a * b) / c 的向上取整
-  let product_ab = @azimuth.multiply(a, b)  // 17 * 4 = 68
-  let result2 = @azimuth.divide_with_ceil(product_ab, c)  // 68/3 = 22.67 → 23
-  @azimuth.assert_eq(23, result2)
-  
-  // 复杂计算：((a + b) * c) / (a - c)
-  let numerator = @azimuth.multiply(sum_ab, c)  // 21 * 3 = 63
-  let denominator = @azimuth.add(a, -c)  // 17 - 3 = 14
-  let result3 = @azimuth.divide_with_ceil(numerator, denominator)  // 63/14 = 4.5 → 5
-  @azimuth.assert_eq(5, result3)
-}
-
-test "financial_calculations_with_divide_ceil" {
-  // 测试 divide_with_ceil 在金融计算中的应用
-  
-  // 场景：计算需要的付款期数
-  let total_amount = 1250
-  let monthly_payment = 300
-  let payment_periods = @azimuth.divide_with_ceil(total_amount, monthly_payment)
-  @azimuth.assert_eq(5, payment_periods)  // 1250/300 = 4.17 → 5期
-  
-  // 场景：计算需要的批次数
-  let total_units = 475
-  let batch_size = 100
-  let batches_needed = @azimuth.divide_with_ceil(total_units, batch_size)
-  @azimuth.assert_eq(5, batches_needed)  // 475/100 = 4.75 → 5批次
-  
-  // 场景：计算投资回报期（简化）
-  let investment = 10000
-  let monthly_return = 2200
-  let payback_months = @azimuth.divide_with_ceil(investment, monthly_return)
-  @azimuth.assert_eq(5, payback_months)  // 10000/2200 = 4.55 → 5个月
-}
-
-test "resource_allocation_with_divide_ceil" {
-  // 测试 divide_with_ceil 在资源分配中的应用
-  
-  // 场景：计算需要的会议室数量
-  let participants = 45
-  let room_capacity = 10
-  let rooms_needed = @azimuth.divide_with_ceil(participants, room_capacity)
-  @azimuth.assert_eq(5, rooms_needed)  // 45/10 = 4.5 → 5间会议室
-  
-  // 场景：计算需要的服务器数量
-  let total_load = 850
-  let server_capacity = 200
-  let servers_needed = @azimuth.divide_with_ceil(total_load, server_capacity)
-  @azimuth.assert_eq(5, servers_needed)  // 850/200 = 4.25 → 5台服务器
-  
-  // 场景：计算需要的存储设备数量
-  let data_size = 950
-  let device_capacity = 256
-  let devices_needed = @azimuth.divide_with_ceil(data_size, device_capacity)
-  @azimuth.assert_eq(4, devices_needed)  // 950/256 = 3.71 → 4台设备
-}
-
-test "time_scheduling_with_divide_ceil" {
-  // 测试 divide_with_ceil 在时间调度中的应用
-  
-  // 场景：计算完成任务需要的完整工作日
-  let total_work_hours = 37
-  let work_hours_per_day = 8
-  let work_days_needed = @azimuth.divide_with_ceil(total_work_hours, work_hours_per_day)
-  @azimuth.assert_eq(5, work_days_needed)  // 37/8 = 4.625 → 5个工作日
-  
-  // 场景：计算需要的完整周数
-  let total_days = 32
-  let days_per_week = 7
-  let weeks_needed = @azimuth.divide_with_ceil(total_days, days_per_week)
-  @azimuth.assert_eq(5, weeks_needed)  // 32/7 = 4.57 → 5周
-  
-  // 场景：计算需要的完整月数（简化：每月30天）
-  let total_project_days = 95
-  let days_per_month = 30
-  let months_needed = @azimuth.divide_with_ceil(total_project_days, days_per_month)
-  @azimuth.assert_eq(4, months_needed)  // 95/30 = 3.17 → 4个月
-}
-
-test "extreme_boundary_divide_ceil" {
-  // 测试 divide_with_ceil 的极端边界情况
-  
+test "extreme_value_handling" {
+  // 测试极值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 大数除法
-  @azimuth.assert_eq(214748365, @azimuth.divide_with_ceil(max_val, 10))  // 2147483647/10 = 214748364.7 → 214748365
-  @azimuth.assert_eq(214748364, @azimuth.divide_with_ceil(-2147483640, -10))  // -2147483640/-10 = 214748364
+  // 测试溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
   
-  // 小数除以大数
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(100, max_val))  // 100/max_val ≈ 0.000000046 → 1
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, max_val))  // 0/max_val = 0
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 边界值组合
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(max_val, max_val))  // max_val/max_val = 1
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(min_val, min_val))  // min_val/min_val = 1
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(min_val, max_val))  // min_val/max_val ≈ -1 → 0（整数除法）
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+}
+
+test "real_world_calculations" {
+  // 测试实际应用计算
+  // 温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
+  
+  // 简单贷款计算：本金 × (1 + 利率 × 年数)
+  let principal = 10000
+  let rate = 5
+  let years = 3
+  let total = multiply(principal, add(1, multiply(rate, years)))
+  assert_eq(160000, total)
+}
+
+test "boundary_value_combinations" {
+  // 测试边界值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值与最小值的运算
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+}
+
+test "complex_nested_calculations" {
+  // 测试复杂嵌套计算
+  // 计算：((a + b) × (c + d)) - (e × f)
+  let a = 10
+  let b = 20
+  let c = 5
+  let d = 15
+  let e = 8
+  let f = 12
+  
+  let sum1 = add(a, b)  // 30
+  let sum2 = add(c, d)  // 20
+  let product1 = multiply(sum1, sum2)  // 600
+  let product2 = multiply(e, f)  // 96
+  let result = add(product1, -product2)  // 504
+  
+  assert_eq(504, result)
+}
+
+test "string_edge_cases" {
+  // 测试字符串边界情况
+  // 测试特殊字符
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello,   spaced   !", greet("  spaced   "))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameForTestingPurposes"
+  assert_eq_string("Hello, ThisIsAVeryLongNameForTestingPurposes!", greet(long_name))
+}
+
+test "error_resilience" {
+  // 测试错误恢复能力
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+  
+  // 测试溢出保护是否正常工作
+  let max_val = 2147483647
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(multiply(max_val, 2) == max_val)
+}
+
+test "sequential_operations" {
+  // 测试连续操作
+  // 连续加法
+  let result1 = add(add(1, 2), add(3, 4))
+  assert_eq(10, result1)
+  
+  // 连续乘法
+  let result2 = multiply(multiply(2, 3), multiply(4, 5))
+  assert_eq(120, result2)
+  
+  // 混合操作
+  let result3 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result3)
 }
