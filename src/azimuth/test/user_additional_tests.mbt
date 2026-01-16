@@ -1,101 +1,104 @@
-// 用户添加的额外 MoonBit 测试用例
-// 包含对 divide_with_ceil 函数和复杂场景的测试
+// 用户额外的 MoonBit 测试用例
+// 测试基本功能：add, multiply, greet
 
-test "divide_with_ceil_basic" {
-  // 测试基本的向上取整除法
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(2, divide_with_ceil(8, 4))
-  assert_eq(5, divide_with_ceil(21, 5))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
 }
 
-test "divide_with_ceil_exact_division" {
-  // 测试能够整除的情况
-  assert_eq(4, divide_with_ceil(12, 3))
-  assert_eq(7, divide_with_ceil(14, 2))
-  assert_eq(1, divide_with_ceil(5, 5))
-}
-
-test "divide_with_ceil_with_remainder" {
-  // 测试有余数的情况
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(6, divide_with_ceil(25, 5))
-  assert_eq(8, divide_with_ceil(15, 2))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-7, 4))
-  assert_eq(-3, divide_with_ceil(-10, 4))
-  assert_eq(-1, divide_with_ceil(-3, 4))
-}
-
-test "complex_calculation_with_divide" {
-  // 测试包含除法的复杂计算
-  // 计算平均值并向上取整
-  let numbers_sum = add(add(add(15, 25), 35), 45)
-  let count = 4
-  let average_ceil = divide_with_ceil(numbers_sum, count)
-  assert_eq(31, average_ceil)
-}
-
-test "page_calculation_scenario" {
-  // 实际应用场景：分页计算
-  let total_items = 95
-  let items_per_page = 10
-  let needed_pages = divide_with_ceil(total_items, items_per_page)
-  assert_eq(10, needed_pages)
+test "add_edge_cases" {
+  // 测试加法边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试刚好整除的情况
-  let exact_items = 100
-  let exact_pages = divide_with_ceil(exact_items, items_per_page)
-  assert_eq(10, exact_pages)
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.add(max_val, min_val))
 }
 
-test "resource_allocation" {
-  // 资源分配场景测试
-  let total_resources = 57
-  let group_size = 8
-  let needed_groups = divide_with_ceil(total_resources, group_size)
-  assert_eq(8, needed_groups)
-  
-  // 测试资源刚好分配完的情况
-  let exact_resources = 48
-  let exact_groups = divide_with_ceil(exact_resources, group_size)
-  assert_eq(6, exact_groups)
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
 }
 
-test "time_slot_calculation" {
-  // 时间槽计算测试
-  let total_minutes = 125
-  let slot_duration = 30
-  let needed_slots = divide_with_ceil(total_minutes, slot_duration)
-  assert_eq(5, needed_slots)
+test "multiply_edge_cases" {
+  // 测试乘法边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试时间刚好用完的情况
-  let exact_minutes = 120
-  let exact_slots = divide_with_ceil(exact_minutes, slot_duration)
-  assert_eq(4, exact_slots)
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
 }
 
-test "mixed_operations_complex" {
-  // 混合运算复杂测试
-  let base = 100
-  let multiplier = 3
-  let divisor = 4
+test "greet_functionality" {
+  // 测试问候功能
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+}
+
+test "greet_special_characters" {
+  // 测试包含特殊字符的问候
+  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  @azimuth.assert_eq_string("Hello, @#$!", @azimuth.greet("@#$"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+}
+
+test "complex_calculation" {
+  // 测试复合计算
+  let a = 10
+  let b = 20
+  let c = 5
   
-  // 计算 (base * multiplier) / divisor 的向上取整
-  let product = multiply(base, multiplier)
-  let result = divide_with_ceil(product, divisor)
-  assert_eq(75, result)
+  // (a + b) * c
+  let result = @azimuth.multiply(@azimuth.add(a, b), c)
+  @azimuth.assert_eq(150, result)
   
-  // 更复杂的计算：((a + b) * c) / d
-  let a = 15
-  let b = 25
-  let c = 6
-  let d = 8
+  // a * b + c
+  let result2 = @azimuth.add(@azimuth.multiply(a, b), c)
+  @azimuth.assert_eq(205, result2)
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 8
+  let y = 12
   
-  let sum_ab = add(a, b)
-  let product_abc = multiply(sum_ab, c)
-  let complex_result = divide_with_ceil(product_abc, d)
-  assert_eq(31, complex_result)
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  
+  // 分配律
+  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
+}
+
+test "real_world_scenario" {
+  // 实际应用场景：计算购物车总价
+  let price1 = 199
+  let quantity1 = 2
+  let price2 = 99
+  let quantity2 = 3
+  
+  // 计算总价
+  let total1 = @azimuth.multiply(price1, quantity1)
+  let total2 = @azimuth.multiply(price2, quantity2)
+  let final_total = @azimuth.add(total1, total2)
+  
+  @azimuth.assert_eq(695, final_total)  // 199*2 + 99*3 = 398 + 297 = 695
+}
+
+test "assert_functions" {
+  // 测试断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
 }
