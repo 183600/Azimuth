@@ -1,28 +1,47 @@
 // 用户自定义的 MoonBit 测试用例
-// 包含不超过10个标准测试用例，使用标准的 MoonBit 测试语法
+// 包含不超过10个标准测试用例
 
 test "add_basic_functionality" {
   // 测试基本的加法功能
   assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-3, add(-8, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
 }
 
 test "multiply_basic_functionality" {
   // 测试基本的乘法功能
   assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(-3, 4))
   assert_eq(0, multiply(0, 100))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(25, multiply(-5, -5))
 }
 
 test "greet_basic_functionality" {
   // 测试基本的问候功能
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 张三!", greet("张三"))
 }
 
-test "add_with_boundary_values" {
-  // 测试边界值的加法
+test "add_with_large_numbers" {
+  // 测试大数加法
+  assert_eq(2000000000, add(1000000000, 1000000000))
+  assert_eq(-2000000000, add(-1000000000, -1000000000))
+}
+
+test "multiply_with_boundary_values" {
+  // 测试边界值乘法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
+}
+
+test "add_overflow_protection" {
+  // 测试加法溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
   
@@ -31,13 +50,12 @@ test "add_with_boundary_values" {
   assert_eq(-1, add(max_val, min_val))
 }
 
-test "multiply_with_boundary_values" {
-  // 测试边界值的乘法
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
   
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(max_val, multiply(max_val, 2))
   assert_eq(min_val, multiply(min_val, -1))
 }
 
@@ -55,23 +73,11 @@ test "complex_calculation_scenario" {
   assert_eq(26, perimeter)
 }
 
-test "string_processing_with_special_chars" {
-  // 测试包含特殊字符的字符串处理
-  let special_name = "User@123"
-  let result = greet(special_name)
-  assert_eq_string("Hello, User@123!", result)
-  
-  let unicode_name = "测试"
-  let unicode_result = greet(unicode_name)
-  assert_eq_string("Hello, 测试!", unicode_result)
-}
-
-test "assert_functions_validation" {
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
 test "mathematical_properties" {
@@ -87,21 +93,4 @@ test "mathematical_properties" {
   
   // 分配律
   assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
-}
-
-test "real_world_application" {
-  // 测试实际应用场景：计算订单总价
-  let item_price = 199
-  let quantity = 2
-  let shipping = 15
-  let discount = 20
-  
-  // 计算商品总价
-  let subtotal = multiply(item_price, quantity)
-  // 计算折扣后的价格
-  let discounted_price = add(subtotal, -discount)
-  // 计算最终总价（含运费）
-  let total_price = add(discounted_price, shipping)
-  
-  assert_eq(403, total_price)  // (199×2) - 20 + 15 = 398 - 20 + 15 = 403
 }
