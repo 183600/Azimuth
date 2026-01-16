@@ -1,179 +1,161 @@
-// Azimuth 项目的新增 MoonBit 测试用例
-// 包含多种场景的测试，使用标准 MoonBit 测试语法
+// Azimuth 项目新测试用例
+// 使用标准 MoonBit 测试语法
 
-// 测试用例 1: 复杂数学运算场景
-test "complex_mathematical_scenarios" {
-  // 测试多项式计算: 3x² + 2x + 1，其中 x = 5
-  let x = 5
-  let x_squared = azimuth::multiply(x, x)  // x² = 25
-  let term1 = azimuth::multiply(3, x_squared)  // 3x² = 75
-  let term2 = azimuth::multiply(2, x)  // 2x = 10
-  let result = azimuth::add(azimuth::add(term1, term2), 1)  // 75 + 10 + 1 = 86
-  assert_eq(result, 86)
+test "fibonacci_sequence_calculation" {
+  // 使用加法计算斐波那契数列前几项
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = azimuth::add(fib1, fib2)  // 2
+  let fib4 = azimuth::add(fib2, fib3)  // 3
+  let fib5 = azimuth::add(fib3, fib4)  // 5
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
 }
 
-// 测试用例 2: 字符串处理边界情况
-test "string_processing_edge_cases" {
-  // 测试包含各种特殊字符的字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result = azimuth::greet(special_chars)
-  assert_eq(result, "Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!")
+test "factorial_calculation" {
+  // 使用乘法计算阶乘
+  let fact1 = 1
+  let fact2 = azimuth::multiply(2, fact1)    // 2
+  let fact3 = azimuth::multiply(3, fact2)    // 6
+  let fact4 = azimuth::multiply(4, fact3)    // 24
+  let fact5 = azimuth::multiply(5, fact4)    // 120
   
-  // 测试包含数字的字符串
-  let numeric_string = "1234567890"
-  let result2 = azimuth::greet(numeric_string)
-  assert_eq(result2, "Hello, 1234567890!")
+  assert_eq(2, fact2)
+  assert_eq(6, fact3)
+  assert_eq(24, fact4)
+  assert_eq(120, fact5)
 }
 
-// 测试用例 3: 实际应用场景 - 购物车计算
-test "shopping_cart_calculations" {
-  // 模拟购物车计算: 商品价格 × 数量 + 运费 - 折扣
-  let item_price = 199
-  let quantity = 3
-  let shipping = 20
-  let discount = 50
+test "power_calculation" {
+  // 使用乘法计算幂运算
+  // 2^3 = 2 * 2 * 2 = 8
+  let power_2_3 = azimuth::multiply(azimuth::multiply(2, 2), 2)
+  assert_eq(8, power_2_3)
   
-  let subtotal = azimuth::multiply(item_price, quantity)  // 199 × 3 = 597
-  let total_before_discount = azimuth::add(subtotal, shipping)  // 597 + 20 = 617
-  let final_total = azimuth::add(total_before_discount, -discount)  // 617 - 50 = 567
+  // 3^4 = 3 * 3 * 3 * 3 = 81
+  let power_3_4 = azimuth::multiply(azimuth::multiply(azimuth::multiply(3, 3), 3), 3)
+  assert_eq(81, power_3_4)
   
-  assert_eq(final_total, 567)
+  // 5^2 = 5 * 5 = 25
+  let power_5_2 = azimuth::multiply(5, 5)
+  assert_eq(25, power_5_2)
 }
 
-// 测试用例 4: 边界值组合测试
-test "boundary_value_combinations" {
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "greet_name_length_categories" {
+  // 测试不同长度名称的问候
+  let short_name = "AI"
+  let medium_name = "MoonBit"
+  let long_name = "Artificial Intelligence"
   
-  // 测试最大值与最小值的运算
-  let sum_result = azimuth::add(max_val, min_val)
-  assert_eq(sum_result, -1)
-  
-  // 测试最大值与1的乘法
-  let max_mul_result = azimuth::multiply(max_val, 1)
-  assert_eq(max_mul_result, max_val)
-  
-  // 测试最小值与1的乘法
-  let min_mul_result = azimuth::multiply(min_val, 1)
-  assert_eq(min_mul_result, min_val)
+  assert_eq("Hello, AI!", azimuth::greet(short_name))
+  assert_eq("Hello, MoonBit!", azimuth::greet(medium_name))
+  assert_eq("Hello, Artificial Intelligence!", azimuth::greet(long_name))
 }
 
-// 测试用例 5: 温度转换计算
+test "mathematical_identities" {
+  // 测试数学恒等式
+  let x = 7
+  let y = 13
+  
+  // (x + y)² = x² + 2xy + y²
+  let x_plus_y = azimuth::add(x, y)
+  let left_side = azimuth::multiply(x_plus_y, x_plus_y)
+  
+  let x_squared = azimuth::multiply(x, x)
+  let y_squared = azimuth::multiply(y, y)
+  let two_xy = azimuth::multiply(azimuth::multiply(2, x), y)
+  let right_side = azimuth::add(azimuth::add(x_squared, two_xy), y_squared)
+  
+  assert_eq(left_side, right_side)
+}
+
 test "temperature_conversion" {
-  // 摄氏度转华氏度: F = C × 9/5 + 32
-  // 使用整数运算近似: F = C × 2 + 30
+  // 测试温度转换计算
+  // 摄氏度转华氏度: F = C * 9/5 + 32
   let celsius = 25
-  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
-  assert_eq(fahrenheit, 80)
+  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 9) / 5, 32)
+  assert_eq(77, fahrenheit)
   
-  // 测试冰点
-  let freezing_celsius = 0
-  let freezing_fahrenheit = azimuth::add(azimuth::multiply(freezing_celsius, 2), 30)
-  assert_eq(freezing_fahrenheit, 30)
-  
-  // 测试沸点
-  let boiling_celsius = 100
-  let boiling_fahrenheit = azimuth::add(azimuth::multiply(boiling_celsius, 2), 30)
-  assert_eq(boiling_fahrenheit, 230)
+  // 华氏度转摄氏度: C = (F - 32) * 5/9
+  let fahrenheit2 = 212  // 沸点
+  let celsius2 = azimuth::multiply(azimuth::add(fahrenheit2, -32), 5) / 9
+  assert_eq(100, celsius2)
 }
 
-// 测试用例 6: 数列计算
-test "sequence_calculations" {
-  // 计算等差数列前n项和: 1 + 3 + 5 + ... + 19 (前10个奇数)
-  let n = 10
-  let first_term = 1
-  let last_term = 19
+test "geometric_calculations" {
+  // 测试几何计算
+  // 正方形面积 = 边长²
+  let square_side = 6
+  let square_area = azimuth::multiply(square_side, square_side)
+  assert_eq(36, square_area)
   
-  // 使用公式: n × (首项 + 末项) / 2
-  let sum = azimuth::multiply(n, azimuth::add(first_term, last_term)) / 2
-  assert_eq(sum, 100)
+  // 长方形周长 = 2 * (长 + 宽)
+  let rect_length = 8
+  let rect_width = 5
+  let rect_perimeter = azimuth::multiply(2, azimuth::add(rect_length, rect_width))
+  assert_eq(26, rect_perimeter)
   
-  // 计算等比数列: 2 + 4 + 8 + 16
-  let term1 = 2
-  let term2 = azimuth::multiply(term1, 2)  // 4
-  let term3 = azimuth::multiply(term2, 2)  // 8
-  let term4 = azimuth::multiply(term3, 2)  // 16
-  let geometric_sum = azimuth::add(azimuth::add(azimuth::add(term1, term2), term3), term4)
-  assert_eq(geometric_sum, 30)
+  // 三角形面积 = 底 * 高 / 2
+  let triangle_base = 10
+  let triangle_height = 6
+  let triangle_area = azimuth::multiply(triangle_base, triangle_height) / 2
+  assert_eq(30, triangle_area)
 }
 
-// 测试用例 7: 面积和体积计算
-test "area_and_volume_calculations" {
-  // 计算矩形面积: 长 × 宽
-  let length = 12
-  let width = 8
-  let rectangle_area = azimuth::multiply(length, width)
-  assert_eq(rectangle_area, 96)
+test "time_calculations" {
+  // 测试时间计算
+  // 计算总分钟数
+  let hours = 3
+  let minutes = 45
+  let total_minutes = azimuth::add(azimuth::multiply(hours, 60), minutes)
+  assert_eq(225, total_minutes)
   
-  // 计算三角形面积: 底 × 高 / 2
-  let base = 10
-  let height = 6
-  let triangle_area = azimuth::multiply(base, height) / 2
-  assert_eq(triangle_area, 30)
-  
-  // 计算立方体体积: 边长³
-  let side = 5
-  let cube_volume = azimuth::multiply(azimuth::multiply(side, side), side)
-  assert_eq(cube_volume, 125)
+  // 计算总秒数
+  let hours2 = 2
+  let minutes2 = 30
+  let seconds2 = 15
+  let total_seconds = azimuth::add(azimuth::add(azimuth::multiply(hours2, 3600), azimuth::multiply(minutes2, 60)), seconds2)
+  assert_eq(9015, total_seconds)
 }
 
-// 测试用例 8: 金融计算场景
-test "financial_calculations" {
-  // 简单利息计算: 本金 × (1 + 利率 × 时间)
-  let principal = 10000
+test "percentage_calculations" {
+  // 测试百分比计算
+  // 计算百分比值
+  let total = 200
+  let percentage = 25
+  let value = azimuth::multiply(total, percentage) / 100
+  assert_eq(50, value)
+  
+  // 计算折扣价格
+  let original_price = 120
+  let discount = 20
+  let discount_amount = azimuth::multiply(original_price, discount) / 100
+  let final_price = azimuth::add(original_price, -discount_amount)
+  assert_eq(96, final_price)
+}
+
+test "compound_interest_simple" {
+  // 测试简单复利计算
+  // 本金、利率、时间
+  let principal = 1000
   let rate = 5  // 5%
   let years = 3
   
-  let interest_rate = azimuth::multiply(rate, years)  // 5 × 3 = 15
-  let growth_factor = azimuth::add(1, interest_rate)  // 1 + 15 = 16
-  let total_amount = azimuth::multiply(principal, growth_factor)
-  assert_eq(total_amount, 160000)
+  // 第一年
+  let year1_interest = azimuth::multiply(principal, rate) / 100
+  let year1_total = azimuth::add(principal, year1_interest)
   
-  // 复利计算(简化版): 本金 × (1 + 利率)^年数
-  // 简化为: 本金 × (1 + 利率 × 年数)
-  let compound_total = azimuth::multiply(principal, azimuth::add(1, azimuth::multiply(rate, years)))
-  assert_eq(compound_total, 160000)
-}
-
-// 测试用例 9: 游戏得分计算
-test "game_score_calculations" {
-  // 基础得分计算: 基础分 × 等级倍数 + 奖励分 - 惩罚分
-  let base_score = 1000
-  let level_multiplier = 3
-  let bonus_points = 500
-  let penalty_points = 200
+  // 第二年
+  let year2_interest = azimuth::multiply(year1_total, rate) / 100
+  let year2_total = azimuth::add(year1_total, year2_interest)
   
-  let level_score = azimuth::multiply(base_score, level_multiplier)  // 1000 × 3 = 3000
-  let score_with_bonus = azimuth::add(level_score, bonus_points)  // 3000 + 500 = 3500
-  let final_score = azimuth::add(score_with_bonus, -penalty_points)  // 3500 - 200 = 3300
+  // 第三年
+  let year3_interest = azimuth::multiply(year2_total, rate) / 100
+  let year3_total = azimuth::add(year2_total, year3_interest)
   
-  assert_eq(final_score, 3300)
-  
-  // 排名加分: 前10%额外加10%
-  let top_percentage = 10
-  let rank_bonus = azimuth::multiply(final_score, top_percentage) / 100
-  let rank_total = azimuth::add(final_score, rank_bonus)
-  assert_eq(rank_total, 3630)
-}
-
-// 测试用例 10: 时间和日期计算
-test "time_and_date_calculations" {
-  // 时间计算: 小时转分钟和秒
-  let hours = 2
-  let minutes = 30
-  
-  // 转换为总分钟数
-  let total_minutes = azimuth::add(azimuth::multiply(hours, 60), minutes)
-  assert_eq(total_minutes, 150)
-  
-  // 转换为总秒数
-  let total_seconds = azimuth::multiply(total_minutes, 60)
-  assert_eq(total_seconds, 9000)
-  
-  // 计算时间差
-  let start_hour = 8   // 8:00 AM
-  let end_hour = 17    // 5:00 PM
-  let duration_hours = azimuth::add(end_hour, -start_hour)
-  let duration_minutes = azimuth::multiply(duration_hours, 60)
-  assert_eq(duration_minutes, 540)
+  assert_eq(1050, year1_total)
+  assert_eq(1102, year2_total)
+  assert_eq(1157, year3_total)
 }
