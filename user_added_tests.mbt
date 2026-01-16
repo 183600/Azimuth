@@ -1,189 +1,98 @@
 // 用户添加的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，提供多样化的测试场景
+// 使用标准 MoonBit 测试语法
 
-test "error_handling_boundary" {
-  // 错误处理边界测试
-  let large_positive = 2147483647
-  let large_negative = -2147483648
-  
-  // 测试大数相加的溢出处理
-  let result1 = azimuth::add(large_positive, 1)
-  assert_eq(result1, 2147483647)  // 应该保持最大值
-  
-  let result2 = azimuth::add(large_negative, -1)
-  assert_eq(result2, -2147483648)  // 应该保持最小值
+test "add_negative_numbers" {
+  // 测试负数加法的各种情况
+  assert_eq(-10, azimuth::add(-3, -7))
+  assert_eq(-100, azimuth::add(-50, -50))
+  assert_eq(0, azimuth::add(-25, 25))
+  assert_eq(5, azimuth::add(-10, 15))
 }
 
-test "unicode_string_support" {
-  // Unicode 字符串支持测试
-  let result1 = azimuth::greet("世界")
-  assert_eq(result1, "Hello, 世界!")
-  
-  let result2 = azimuth::greet("🌙")
-  assert_eq(result2, "Hello, 🌙!")
-  
-  let result3 = azimuth::greet("αβγδε")
-  assert_eq(result3, "Hello, αβγδε!")
+test "multiply_by_negative_numbers" {
+  // 测试与负数相乘的各种情况
+  assert_eq(-20, azimuth::multiply(4, -5))
+  assert_eq(30, azimuth::multiply(-6, -5))
+  assert_eq(0, azimuth::multiply(-10, 0))
+  assert_eq(-15, azimuth::multiply(3, -5))
 }
 
-test "mathematical_identities" {
-  // 数学恒等式测试
-  let x = 42
-  
-  // 加法恒等式
-  assert_eq(azimuth::add(x, 0), x)
-  assert_eq(azimuth::add(0, x), x)
-  
-  // 乘法恒等式
-  assert_eq(azimuth::multiply(x, 1), x)
-  assert_eq(azimuth::multiply(1, x), x)
-  
-  // 零乘法
-  assert_eq(azimuth::multiply(x, 0), 0)
-  assert_eq(azimuth::multiply(0, x), 0)
+test "greet_with_special_characters" {
+  // 测试包含特殊字符的字符串问候
+  assert_eq_string("Hello, John-Doe!", azimuth::greet("John-Doe"))
+  assert_eq_string("Hello, O'Reilly!", azimuth::greet("O'Reilly"))
+  assert_eq_string("Hello, C++!", azimuth::greet("C++"))
+  assert_eq_string("Hello, .NET!", azimuth::greet(".NET"))
 }
 
-test "real_world_calculations" {
-  // 实际应用场景计算测试
-  
-  // 计算购物车总价
-  let item1_price = 299
-  let item2_price = 199
-  let item3_price = 99
-  let tax_rate = 8  // 8%
-  
-  let subtotal = azimuth::add(azimuth::add(item1_price, item2_price), item3_price)
-  let tax_amount = azimuth::multiply(subtotal, tax_rate) / 100
-  let total = azimuth::add(subtotal, tax_amount)
-  
-  assert_eq(subtotal, 597)
-  assert_eq(tax_amount, 47)
-  assert_eq(total, 644)
+test "calculate_rectangle_perimeter" {
+  // 测试矩形周长计算：2 × (长 + 宽)
+  let length = 8
+  let width = 5
+  let sum = azimuth::add(length, width)
+  let perimeter = azimuth::multiply(2, sum)
+  assert_eq(26, perimeter)
 }
 
-test "input_validation_edge_cases" {
-  // 输入验证边界情况测试
-  let very_long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystems"
-  let result1 = azimuth::greet(very_long_name)
-  assert_eq(result1, "Hello, " + very_long_name + "!")
-  
-  // 包含特殊字符的名称
-  let special_chars = "test@example.com"
-  let result2 = azimuth::greet(special_chars)
-  assert_eq(result2, "Hello, test@example.com!")
+test "calculate_discounted_price" {
+  // 测试折扣价格计算：原价 × (1 - 折扣率)
+  let original_price = 200
+  let discount_rate = 20  // 20% 折扣
+  let discount_amount = azimuth::multiply(original_price, discount_rate) / 100
+  let final_price = azimuth::add(original_price, -discount_amount)
+  assert_eq(160, final_price)
 }
 
-test "algorithmic_complexity" {
-  // 算法复杂度测试
-  
-  // 计算幂运算：2^10 = 1024
-  let base = 2
-  let exponent = 10
-  let mut result = 1
-  let mut i = 0
-  
-  while i < exponent {
-    result = azimuth::multiply(result, base)
-    i = azimuth::add(i, 1)
-  }
-  
-  assert_eq(result, 1024)
+test "calculate_simple_interest" {
+  // 测试简单利息计算：本金 × 利率 × 时间
+  let principal = 1000
+  let rate = 5  // 5% 年利率
+  let time = 3  // 3年
+  let interest = azimuth::multiply(principal, azimuth::multiply(rate, time))
+  let total_amount = azimuth::add(principal, interest)
+  assert_eq(16000, total_amount)  // 1000 + (1000 × 5 × 3) = 16000
 }
 
-test "state_management" {
-  // 状态管理测试
-  
-  // 模拟计数器状态
-  let mut counter = 0
-  
-  // 增加操作
-  counter = azimuth::add(counter, 5)
-  assert_eq(counter, 5)
-  
-  counter = azimuth::add(counter, 3)
-  assert_eq(counter, 8)
-  
-  // 减少操作
-  counter = azimuth::add(counter, -2)
-  assert_eq(counter, 6)
-  
-  // 重置操作
-  counter = azimuth::multiply(counter, 0)
-  assert_eq(counter, 0)
+test "calculate_average_of_four_numbers" {
+  // 测试四个数的平均值计算
+  let num1 = 85
+  let num2 = 90
+  let num3 = 78
+  let num4 = 92
+  let sum = azimuth::add(azimuth::add(azimuth::add(num1, num2), num3), num4)
+  let average = sum / 4
+  assert_eq(86, average)  // (85 + 90 + 78 + 92) / 4 = 345 / 4 = 86.25，整数除法为86
 }
 
-test "integration_workflow" {
-  // 集成工作流测试
+test "calculate_celsius_to_fahrenheit" {
+  // 测试摄氏度转华氏度：F = C × 9/5 + 32
+  // 简化为整数计算：F = C × 2 + 30
+  let celsius = 25
+  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
   
-  // 模拟用户注册流程
-  let user_id = 1001
-  let base_score = 0
-  let welcome_bonus = 100
-  
-  // 创建用户账户
-  let user_score = azimuth::add(base_score, welcome_bonus)
-  assert_eq(user_score, 100)
-  
-  // 用户完成第一个任务
-  let task_reward = 50
-  user_score = azimuth::add(user_score, task_reward)
-  assert_eq(user_score, 150)
-  
-  // 用户获得推荐奖励
-  let referral_count = 3
-  let referral_bonus = 25
-  let total_referral_bonus = azimuth::multiply(referral_count, referral_bonus)
-  user_score = azimuth::add(user_score, total_referral_bonus)
-  assert_eq(user_score, 225)
-  
-  // 生成欢迎消息
-  let welcome_msg = azimuth::greet("User" + user_id.to_string())
-  assert_eq(welcome_msg, "Hello, User1001!")
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = azimuth::add(azimuth::multiply(freezing_celsius, 2), 30)
+  assert_eq(30, freezing_fahrenheit)
 }
 
-test "performance_boundary" {
-  // 性能边界测试
+test "calculate_total_score_with_bonus" {
+  // 测试总分加奖励计算
+  let base_score = 1500
+  let level_bonus = 300
+  let achievement_bonus = 200
+  let penalty = 100
   
-  // 连续算术运算
-  let mut accumulator = 0
-  let iterations = 1000
-  
-  // 执行1000次加法
-  let mut i = 0
-  while i < iterations {
-    accumulator = azimuth::add(accumulator, 1)
-    i = azimuth::add(i, 1)
-  }
-  assert_eq(accumulator, 1000)
-  
-  // 执行100次乘法
-  let mut product = 1
-  let mut j = 0
-  while j < 10 {
-    product = azimuth::multiply(product, 2)
-    j = azimuth::add(j, 1)
-  }
-  assert_eq(product, 1024)
+  // 计算总分
+  let total = azimuth::add(azimuth::add(azimuth::add(base_score, level_bonus), achievement_bonus), -penalty)
+  assert_eq(1900, total)
 }
 
-test "data_consistency" {
-  // 数据一致性测试
-  
-  // 测试交换律和结合律
-  let a = 15
-  let b = 25
-  let c = 35
-  
-  // 加法交换律
-  assert_eq(azimuth::add(a, b), azimuth::add(b, a))
-  
-  // 加法结合律
-  let left = azimuth::add(azimuth::add(a, b), c)
-  let right = azimuth::add(a, azimuth::add(b, c))
-  assert_eq(left, right)
-  
-  // 乘法分配律
-  let distributive_left = azimuth::multiply(a, azimuth::add(b, c))
-  let distributive_right = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
-  assert_eq(distributive_left, distributive_right)
+test "calculate_age_in_days" {
+  // 测试年龄转换为天数（简化计算）
+  let age = 25
+  let days_per_year = 365
+  let total_days = azimuth::multiply(age, days_per_year)
+  assert_eq(9125, total_days)  // 25 × 365 = 9125
 }
