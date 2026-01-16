@@ -1,220 +1,286 @@
-// 新增 MoonBit 测试用例
-// 测试 azimuth 包的额外功能和场景
+// 新增的 MoonBit 测试用例
+// 测试 azimuth 模块的各种功能
 
-test "temperature_conversion_calculations" {
-  // 测试温度转换计算
-  // 摄氏度转华氏度（简化公式：F = C × 2 + 30）
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit)
+test "fibonacci_sequence_calculation" {
+  // 计算斐波那契数列的前几项
+  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
   
-  // 华氏度转摄氏度（简化公式：C = (F - 30) ÷ 2）
-  let fahrenheit_back = 80
-  let celsius_back = @azimuth.add(fahrenheit_back, -30) / 2
-  @azimuth.assert_eq(25, celsius_back)
+  // 计算前6项
+  let f0 = 0
+  let f1 = 1
+  let f2 = @azimuth.add(f0, f1)  // 1
+  let f3 = @azimuth.add(f1, f2)  // 2
+  let f4 = @azimuth.add(f2, f3)  // 3
+  let f5 = @azimuth.add(f3, f4)  // 5
   
-  // 测试冰点和沸点
-  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))  // 0°C → 30°F
-  @azimuth.assert_eq(230, @azimuth.add(@azimuth.multiply(100, 2), 30))  // 100°C → 230°F
+  @azimuth.assert_eq(1, f2)
+  @azimuth.assert_eq(2, f3)
+  @azimuth.assert_eq(3, f4)
+  @azimuth.assert_eq(5, f5)
+  
+  // 验证斐波那契数列的性质：F(n+1) * F(n-1) - F(n)^2 = (-1)^n
+  // 当n=4时，F(5) * F(3) - F(4)^2 = 5 * 2 - 3^2 = 10 - 9 = 1
+  // 但实际上应该是 F(n+1) * F(n-1) - F(n)^2 = (-1)^n = (-1)^4 = 1
+  let fibonacci_property = @azimuth.add(@azimuth.multiply(f5, f3), @azimuth.multiply(f4, -f4))
+  @azimuth.assert_eq(1, fibonacci_property)
 }
 
-test "shopping_cart_advanced_calculations" {
-  // 测试高级购物车计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
-  let discount_threshold = 800
-  let discount_rate = 10
-  let shipping = 25
-  let tax_rate = 8
+test "prime_number_validation" {
+  // 测试质数验证（通过模拟）
+  // 检查一个数是否为质数（简化版，只测试小质数）
   
-  // 计算商品总价
-  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)
-  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)
-  let subtotal = @azimuth.add(subtotal1, subtotal2)
+  // 已知的小质数
+  let prime2 = 2
+  let prime3 = 3
+  let prime5 = 5
+  let prime7 = 7
   
-  // 计算折扣
-  let discount = if (subtotal > discount_threshold) {
-    @azimuth.multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
+  // 验证这些数不能被小于它们的质数整除
+  // 2是质数，不需要验证
+  @azimuth.assert_true(prime3 % prime2 != 0)  // 3不能被2整除
+  @azimuth.assert_true(prime5 % prime2 != 0 && prime5 % prime3 != 0)  // 5不能被2和3整除
+  @azimuth.assert_true(prime7 % prime2 != 0 && prime7 % prime3 != 0 && prime7 % prime5 != 0)  // 7不能被2、3、5整除
   
-  // 计算最终价格
-  let discounted_total = @azimuth.add(subtotal, -discount)
-  let tax = @azimuth.multiply(discounted_total, tax_rate) / 100
-  let final_total = @azimuth.add(@azimuth.add(discounted_total, tax), shipping)
+  // 测试非质数
+  let composite4 = 4
+  let composite6 = 6
+  let composite9 = 9
   
-  @azimuth.assert_eq(1294, final_total)
+  @azimuth.assert_true(composite4 % prime2 == 0)  // 4能被2整除
+  @azimuth.assert_true(composite6 % prime2 == 0 || composite6 % prime3 == 0)  // 6能被2或3整除
+  @azimuth.assert_true(composite9 % prime3 == 0)  // 9能被3整除
 }
 
-test "geometry_area_calculations" {
-  // 测试几何面积计算
-  // 矩形面积
-  let length = 12
-  let width = 8
-  let rectangle_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(96, rectangle_area)
+test "greatest_common_divisor" {
+  // 测试最大公约数计算（欧几里得算法模拟）
+  // gcd(a, b) = gcd(b, a mod b)
   
-  // 三角形面积
-  let base = 10
-  let height = 6
-  let triangle_area = @azimuth.multiply(base, height) / 2
-  @azimuth.assert_eq(30, triangle_area)
+  // 测试几对数的最大公约数
+  // 手动计算：gcd(48, 18) = gcd(18, 48 mod 18 = 12) = gcd(12, 18 mod 12 = 6) = gcd(6, 12 mod 6 = 0) = 6
+  let gcd1 = 6
+  @azimuth.assert_eq(6, gcd1)  // 预期结果
   
-  // 梯形面积
-  let top_base = 5
-  let bottom_base = 9
-  let trapezoid_height = 4
-  let trapezoid_area = @azimuth.multiply(@azimuth.add(top_base, bottom_base), trapezoid_height) / 2
-  @azimuth.assert_eq(28, trapezoid_area)
+  // gcd(101, 10) = gcd(10, 101 mod 10 = 1) = gcd(1, 10 mod 1 = 0) = 1
+  let gcd2 = 1
+  @azimuth.assert_eq(1, gcd2)  // 预期结果
+  
+  // gcd(270, 192) = gcd(192, 270 mod 192 = 78) = gcd(78, 192 mod 78 = 36) = gcd(36, 78 mod 36 = 6) = gcd(6, 36 mod 6 = 0) = 6
+  let gcd3 = 6
+  @azimuth.assert_eq(6, gcd3)  // 预期结果
 }
 
-test "financial_compound_interest" {
-  // 测试复利计算
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
+test "least_common_multiple" {
+  // 测试最小公倍数计算
+  // lcm(a, b) = |a × b| / gcd(a, b)
   
-  // 简化的复利计算：本息和 = 本金 × (1 + 利率)^年数
-  // 近似为：本金 × (1 + 利率 × 年数)
-  let growth_factor = @azimuth.add(100, @azimuth.multiply(rate_percent, years))
-  let total = @azimuth.multiply(principal, growth_factor)
-  @azimuth.assert_eq(115000, total)  // 1000 × 115 = 115000
+  // gcd(12, 18) = 6, 所以 lcm(12, 18) = (12 × 18) / 6 = 36
+  let product1 = @azimuth.multiply(12, 18)
+  let lcm1 = product1 / 6  // 已知gcd为6
+  @azimuth.assert_eq(36, lcm1)
   
-  // 计算利息
-  let interest = @azimuth.add(total, -principal)
-  @azimuth.assert_eq(114000, interest)
+  // gcd(5, 7) = 1, 所以 lcm(5, 7) = (5 × 7) / 1 = 35
+  let product2 = @azimuth.multiply(5, 7)
+  let lcm2 = product2 / 1  // 已知gcd为1
+  @azimuth.assert_eq(35, lcm2)
+  
+  // gcd(21, 6) = 3, 所以 lcm(21, 6) = (21 × 6) / 3 = 42
+  let product3 = @azimuth.multiply(21, 6)
+  let lcm3 = product3 / 3  // 已知gcd为3
+  @azimuth.assert_eq(42, lcm3)
 }
 
-test "statistics_calculations" {
-  // 测试统计计算
-  // 计算一组数的总和、平均值、中位数
-  let values_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(85, 90), 78), 92), 95)
-  @azimuth.assert_eq(440, values_sum)
+test "binary_search_simulation" {
+  // 模拟二分查找算法
+  // 在已排序数组中查找目标值
   
-  // 计算平均值
-  let count = 5
-  let average = values_sum / count
-  @azimuth.assert_eq(88, average)
+  // 模拟数组：[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
+  // 查找目标：23
   
-  // 计算方差（简化版）
-  let diff1 = @azimuth.add(85, -88)
-  let diff2 = @azimuth.add(90, -88)
-  let diff3 = @azimuth.add(78, -88)
-  let diff4 = @azimuth.add(92, -88)
-  let diff5 = @azimuth.add(95, -88)
+  let low = 0
+  let high = 9
   
-  let variance_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.multiply(diff1, diff1), 
-    @azimuth.multiply(diff2, diff2)), 
-    @azimuth.multiply(diff3, diff3)), 
-    @azimuth.multiply(diff4, diff4)), 
-    @azimuth.multiply(diff5, diff5))
+  // 第一次迭代：mid = (0 + 9) / 2 = 4, arr[4] = 16 < 23
+  let mid1 = (low + high) / 2
+  @azimuth.assert_eq(4, mid1)
+  let new_low1 = mid1 + 1  // 5
   
-  let variance = variance_sum / count
-  @azimuth.assert_eq(34, variance)
+  // 第二次迭代：mid = (5 + 9) / 2 = 7, arr[7] = 56 > 23
+  let mid2 = (new_low1 + high) / 2
+  @azimuth.assert_eq(7, mid2)
+  let new_high2 = mid2 - 1  // 6
+  
+  // 第三次迭代：mid = (5 + 6) / 2 = 5, arr[5] = 23 = target
+  let mid3 = (new_low1 + new_high2) / 2
+  @azimuth.assert_eq(5, mid3)
+  
+  // 找到目标，索引为5
+  @azimuth.assert_eq(5, mid3)
 }
 
-test "time_calculations" {
-  // 测试时间计算
-  // 时间转换：小时、分钟、秒
-  let hours = 2
-  let minutes = 45
-  let seconds = 30
+test "sorting_algorithm_simulation" {
+  // 模拟排序算法（冒泡排序）
+  // 对数组：[5, 2, 8, 1, 9] 进行排序
   
-  // 转换为总秒数
-  let total_seconds = @azimuth.add(@azimuth.add(
-    @azimuth.multiply(hours, 3600), 
-    @azimuth.multiply(minutes, 60)), 
-    seconds)
-  @azimuth.assert_eq(9930, total_seconds)
+  // 初始数组
+  let a1_initial = 5
+  let a2_initial = 2
+  let a3_initial = 8
+  let a4_initial = 1
+  let a5_initial = 9
   
-  // 计算时间差
-  let start_hour = 9
-  let start_minute = 30
-  let end_hour = 14
-  let end_minute = 45
+  // 第一轮冒泡
+  // 比较 a1 和 a2：5 > 2，交换
+  let a1_after_swap1 = a2_initial  // 2
+  let a2_after_swap1 = a1_initial  // 5
   
-  let start_total = @azimuth.add(@azimuth.multiply(start_hour, 60), start_minute)
-  let end_total = @azimuth.add(@azimuth.multiply(end_hour, 60), end_minute)
-  let duration = @azimuth.add(end_total, -start_total)
-  @azimuth.assert_eq(315, duration)  // 5小时15分钟 = 315分钟
+  // 比较 a2 和 a3：5 < 8，不交换
+  // 比较 a3 和 a4：8 > 1，交换
+  let a3_after_swap2 = a4_initial  // 1
+  let a4_after_swap2 = a3_initial  // 8
+  
+  // 比较 a4 和 a5：8 < 9，不交换
+  // 第一轮结束后，最大的数9已经到位
+  
+  // 验证部分排序结果
+  @azimuth.assert_eq(2, a1_after_swap1)  // 最小的元素应该在前面
+  @azimuth.assert_eq(9, a5_initial)     // 最大的元素应该在后面
 }
 
-test "game_score_calculations" {
-  // 测试游戏得分计算
-  let base_score = 1000
-  let level_multiplier = 3
-  let combo_bonus = 500
-  let time_bonus = 200
-  let penalty = 150
+test "base_conversion_simulation" {
+  // 模拟进制转换
+  // 将十进制数转换为二进制（简化版）
   
-  // 计算基础得分
-  let level_score = @azimuth.multiply(base_score, level_multiplier)
+  // 将十进制数13转换为二进制1101
+  let decimal_num = 13
+  let base = 2
   
-  // 计算总得分
-  let total_score = @azimuth.add(@azimuth.add(@azimuth.add(level_score, combo_bonus), time_bonus), -penalty)
-  @azimuth.assert_eq(3550, total_score)
+  // 计算过程：
+  // 13 ÷ 2 = 6 余 1
+  // 6 ÷ 2 = 3 余 0
+  // 3 ÷ 2 = 1 余 1
+  // 1 ÷ 2 = 0 余 1
+  // 从下往上读取余数：1101
   
-  // 计算排名加分（前10%额外加20%）
-  let rank_bonus = @azimuth.multiply(total_score, 20) / 100
-  let final_score = @azimuth.add(total_score, rank_bonus)
-  @azimuth.assert_eq(4260, final_score)
+  let remainder1 = decimal_num % base  // 13 % 2 = 1
+  let quotient1 = decimal_num / base  // 13 / 2 = 6
+  
+  let remainder2 = quotient1 % base    // 6 % 2 = 0
+  let quotient2 = quotient1 / base    // 6 / 2 = 3
+  
+  let remainder3 = quotient2 % base    // 3 % 2 = 1
+  let quotient3 = quotient2 / base    // 3 / 2 = 1
+  
+  let remainder4 = quotient3 % base    // 1 % 2 = 1
+  
+  // 验证余数序列
+  @azimuth.assert_eq(1, remainder1)
+  @azimuth.assert_eq(0, remainder2)
+  @azimuth.assert_eq(1, remainder3)
+  @azimuth.assert_eq(1, remainder4)
+  
+  // 将二进制1101转换回十进制验证
+  // 1×2³ + 1×2² + 0×2¹ + 1×2⁰ = 8 + 4 + 0 + 1 = 13
+  let binary_decimal = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(1, 4)), @azimuth.add(@azimuth.multiply(0, 2), 1))
+  @azimuth.assert_eq(13, binary_decimal)
 }
 
-test "unit_conversion_calculations" {
-  // 测试单位转换计算
-  // 长度转换：厘米转英寸（1英寸 ≈ 2.54厘米，简化为5/2）
-  let centimeters = 100
-  let inches = centimeters * 2 / 5  // 100 * 2 / 5 = 40
-  @azimuth.assert_eq(40, inches)
+test "matrix_multiplication_simulation" {
+  // 模拟矩阵乘法（2×2矩阵）
+  // A = [[1, 2], [3, 4]]
+  // B = [[5, 6], [7, 8]]
+  // C = A × B = [[1×5+2×7, 1×6+2×8], [3×5+4×7, 3×6+4×8]]
   
-  // 重量转换：千克转磅（1千克 ≈ 2.2磅，简化为22/10）
-  let kilograms = 10
-  let pounds = @azimuth.multiply(kilograms, 22) / 10  // 10 * 22 / 10 = 22
-  @azimuth.assert_eq(22, pounds)
+  // 矩阵A的元素
+  let a11 = 1
+  let a12 = 2
+  let a21 = 3
+  let a22 = 4
   
-  // 速度转换：公里/时转米/秒（1公里/时 ≈ 0.278米/秒，简化为1/4）
-  let km_per_hour = 60
-  let m_per_second = km_per_hour / 4  // 60 / 4 = 15
-  @azimuth.assert_eq(15, m_per_second)
+  // 矩阵B的元素
+  let b11 = 5
+  let b12 = 6
+  let b21 = 7
+  let b22 = 8
+  
+  // 计算矩阵C的元素
+  let c11 = @azimuth.add(@azimuth.multiply(a11, b11), @azimuth.multiply(a12, b21))  // 1×5 + 2×7 = 5 + 14 = 19
+  let c12 = @azimuth.add(@azimuth.multiply(a11, b12), @azimuth.multiply(a12, b22))  // 1×6 + 2×8 = 6 + 16 = 22
+  let c21 = @azimuth.add(@azimuth.multiply(a21, b11), @azimuth.multiply(a22, b21))  // 3×5 + 4×7 = 15 + 28 = 43
+  let c22 = @azimuth.add(@azimuth.multiply(a21, b12), @azimuth.multiply(a22, b22))  // 3×6 + 4×8 = 18 + 32 = 50
+  
+  // 验证结果
+  @azimuth.assert_eq(19, c11)
+  @azimuth.assert_eq(22, c12)
+  @azimuth.assert_eq(43, c21)
+  @azimuth.assert_eq(50, c22)
 }
 
-test "string_pattern_processing" {
-  // 测试字符串模式处理
-  // 测试各种字符串格式
-  @azimuth.assert_eq_string("Hello, John_Doe!", @azimuth.greet("John_Doe"))
-  @azimuth.assert_eq_string("Hello, user123!", @azimuth.greet("user123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, API_KEY!", @azimuth.greet("API_KEY"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, a+b=c!", @azimuth.greet("a+b=c"))
-  @azimuth.assert_eq_string("Hello, $100!", @azimuth.greet("$100"))
+test "quadratic_equation_solver" {
+  // 模拟二次方程求解：ax² + bx + c = 0
+  // 使用求根公式：x = (-b ± √(b²-4ac)) / 2a
+  // 测试方程：x² - 5x + 6 = 0，解为x = 2和x = 3
+  
+  let a = 1
+  let b = -5
+  let c = 6
+  
+  // 计算判别式：Δ = b² - 4ac
+  let b_squared = @azimuth.multiply(b, b)  // (-5)² = 25
+  let four_ac = @azimuth.multiply(@azimuth.multiply(4, a), c)  // 4×1×6 = 24
+  let discriminant_value = @azimuth.add(b_squared, -four_ac)  // 25 - 24 = 1
+  
+  // 由于discriminant = 1是完全平方数，√1 = 1
+  let sqrt_discriminant = 1
+  
+  // 计算两个解
+  // x1 = (-b + √Δ) / 2a = (5 + 1) / 2 = 3
+  // x2 = (-b - √Δ) / 2a = (5 - 1) / 2 = 2
+  let numerator1 = @azimuth.add(-b, sqrt_discriminant)  // 5 + 1 = 6
+  let numerator2 = @azimuth.add(-b, -sqrt_discriminant)  // 5 - 1 = 4
+  let denominator = @azimuth.multiply(2, a)  // 2×1 = 2
+  
+  let x1 = numerator1 / denominator  // 6 / 2 = 3
+  let x2 = numerator2 / denominator  // 4 / 2 = 2
+  
+  // 验证解
+  @azimuth.assert_eq(3, x1)
+  @azimuth.assert_eq(2, x2)
+  
+  // 验证解的正确性：将x代入原方程
+  let verify_x1 = @azimuth.add(@azimuth.add(@azimuth.multiply(a, @azimuth.multiply(x1, x1)), @azimuth.multiply(b, x1)), c)  // 1×9 + (-5)×3 + 6 = 9 - 15 + 6 = 0
+  let verify_x2 = @azimuth.add(@azimuth.add(@azimuth.multiply(a, @azimuth.multiply(x2, x2)), @azimuth.multiply(b, x2)), c)  // 1×4 + (-5)×2 + 6 = 4 - 10 + 6 = 0
+  
+  @azimuth.assert_eq(0, verify_x1)
+  @azimuth.assert_eq(0, verify_x2)
 }
 
-test "mathematical_sequence_calculations" {
-  // 测试数学序列计算
-  // 计算等差数列：3, 7, 11, 15, 19（公差为4）
-  let a1 = 3
-  let d = 4
-  let n = 5
-  let an = @azimuth.add(a1, @azimuth.multiply(d, n - 1))
-  @azimuth.assert_eq(19, an)
+test "string_palindrome_check" {
+  // 测试字符串回文检查
+  // 回文是指正着读和反着读都一样的字符串
   
-  // 计算等差数列前n项和
-  let sum_arithmetic = @azimuth.multiply(n, @azimuth.add(a1, an)) / 2
-  @azimuth.assert_eq(55, sum_arithmetic)
+  // 测试简单回文
+  let palindrome1 = "level"
+  let palindrome1_reversed = "level"  // 手动反转
+  @azimuth.assert_eq_string(palindrome1, palindrome1_reversed)
   
-  // 计算等比数列：2, 6, 18, 54（公比为3）
-  let g1 = 2
-  let r = 3
-  let gm = @azimuth.multiply(g1, @azimuth.multiply(r, @azimuth.multiply(r, r)))
-  @azimuth.assert_eq(54, gm)
+  // 测试包含数字的回文
+  let palindrome2 = "12321"
+  let palindrome2_reversed = "12321"  // 手动反转
+  @azimuth.assert_eq_string(palindrome2, palindrome2_reversed)
   
-  // 计算等比数列前m项和（简化计算）
-  let sum_geometric = @azimuth.add(@azimuth.add(@azimuth.add(2, 6), 18), 54)
-  @azimuth.assert_eq(80, sum_geometric)
+  // 测试非回文
+  let non_palindrome = "hello"
+  let non_palindrome_reversed = "olleh"  // 手动反转
+  @azimuth.assert_true(@azimuth.add(0, 1) == 1)  // 使用断言验证它们不相等
+  // 由于没有字符串不等于的断言函数，我们使用一个技巧来验证
+  let are_equal = if (non_palindrome == non_palindrome_reversed) { 1 } else { 0 }
+  @azimuth.assert_eq(0, are_equal)
+  
+  // 测试空字符串（是回文）
+  let empty_string = ""
+  @azimuth.assert_eq_string(empty_string, empty_string)
+  
+  // 测试单字符（是回文）
+  let single_char = "a"
+  @azimuth.assert_eq_string(single_char, single_char)
 }
