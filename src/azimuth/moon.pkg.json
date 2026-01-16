@@ -51,6 +51,7 @@
     "simple_test.mbt",
     "enhanced_moonbit_test_cases.mbt",
     "test/user_focused_tests.mbt",
-    "test_simple_user.mbt"
+    "test_simple_user.mbt",
+    "test/additional_moonbit_test_cases.mbt"
   ]
 }
