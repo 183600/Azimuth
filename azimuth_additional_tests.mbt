@@ -1,223 +1,153 @@
 // Azimuth 项目附加测试用例
-// 使用标准 MoonBit 测试语法，提供额外的测试场景
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
-test "number_theory_operations" {
-  // 数论运算测试
+test "error_handling_with_negative_inputs" {
+  // 测试负数输入的错误处理
+  let result1 = azimuth::add(-100, -200)
+  assert_eq(result1, -300)
   
-  // 质数测试相关
-  let prime_2 = 2
-  let prime_3 = 3
-  let prime_5 = 5
-  let prime_7 = 7
+  let result2 = azimuth::multiply(-15, -4)
+  assert_eq(result2, 60)
   
-  // 质数和
-  let prime_sum = @azimuth.add(@azimuth.add(@azimuth.add(prime_2, prime_3), prime_5), prime_7)
-  @azimuth.assert_eq(17, prime_sum)
-  
-  // 质数积
-  let prime_product = @azimuth.multiply(@azimuth.multiply(prime_2, prime_3), prime_5)
-  @azimuth.assert_eq(30, prime_product)
-  
-  // 最大公约数相关测试 (欧几里得算法模拟)
-  let a = 48
-  let b = 18
-  // 简化的GCD计算步骤
-  let remainder1 = @azimuth.multiply(2, b)  // 36
-  let remainder2 = @azimuth.add(a, -remainder1)  // 12
-  @azimuth.assert_eq(6, @azimuth.add(remainder2, -6))  // 确认GCD为6
+  let result3 = azimuth::multiply(-8, 7)
+  assert_eq(result3, -56)
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
+test "unicode_string_processing" {
+  // 测试 Unicode 字符串处理
+  let result1 = azimuth::greet("世界")
+  assert_eq(result1, "Hello, 世界!")
   
-  // 平均值计算: (10 + 20 + 30 + 40 + 50) / 5 = 30
-  let numbers_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
-  let average = numbers_sum / 5
-  @azimuth.assert_eq(30, average)
+  let result2 = azimuth::greet("🚀")
+  assert_eq(result2, "Hello, 🚀!")
   
-  // 方差计算 (简化版)
-  let data_point = 25
-  let mean = 20
-  let deviation = @azimuth.add(data_point, -mean)
-  let variance = @azimuth.multiply(deviation, deviation)
-  @azimuth.assert_eq(25, variance)
-  
-  // 标准差相关计算
-  let std_dev_base = 16
-  let std_dev = @azimuth.multiply(4, 4)  // 4的平方
-  @azimuth.assert_eq(std_dev_base, std_dev)
+  let result3 = azimuth::greet("Café")
+  assert_eq(result3, "Hello, Café!")
 }
 
-test "boolean_logic_simulation" {
-  // 布尔逻辑模拟测试 (使用数值表示)
+test "mathematical_power_calculations" {
+  // 测试幂运算（通过重复乘法实现）
+  let base = 3
   
-  // 使用1表示true，0表示false
-  let true_val = 1
-  let false_val = 0
+  // 3^2 = 9
+  let power2 = azimuth::multiply(base, base)
+  assert_eq(power2, 9)
   
-  // AND操作: true AND false = false
-  let and_result = @azimuth.multiply(true_val, false_val)
-  @azimuth.assert_eq(false_val, and_result)
+  // 3^3 = 27
+  let power3 = azimuth::multiply(power2, base)
+  assert_eq(power3, 27)
   
-  // OR操作: true OR false = true
-  let or_result = @azimuth.add(@azimuth.multiply(true_val, true_val), @azimuth.multiply(true_val, false_val))
-  @azimuth.assert_eq(true_val, or_result)
-  
-  // NOT操作: NOT true = false
-  let not_true = @azimuth.add(1, -true_val)
-  @azimuth.assert_eq(false_val, not_true)
-  
-  let not_false = @azimuth.add(1, -false_val)
-  @azimuth.assert_eq(true_val, not_false)
+  // 3^4 = 81
+  let power4 = azimuth::multiply(power3, base)
+  assert_eq(power4, 81)
 }
 
-test "cryptography_basic" {
-  // 基础密码学测试
+test "statistical_operations" {
+  // 测试统计运算
   
-  // 凯撒密码模拟 (位移3)
-  let original_char = 65  // 'A'的ASCII码
-  let shift = 3
-  let encrypted_char = @azimuth.add(original_char, shift)
-  @azimuth.assert_eq(68, encrypted_char)  // 'D'的ASCII码
+  // 计算平均值: (10 + 20 + 30) / 3 = 20
+  let sum = azimuth::add(azimuth::add(10, 20), 30)
+  let count = 3
+  let average = sum / count
+  assert_eq(average, 20)
   
-  // 解密
-  let decrypted_char = @azimuth.add(encrypted_char, -shift)
-  @azimuth.assert_eq(original_char, decrypted_char)
-  
-  // 简单的XOR操作模拟
-  let message = 42
-  let key = 7
-  let encrypted = @azimuth.add(message, key)  // 简化的XOR
-  let decrypted = @azimuth.add(encrypted, -key)
-  @azimuth.assert_eq(message, decrypted)
+  // 计算范围: max - min = 50 - 5 = 45
+  let max_val = 50
+  let min_val = 5
+  let range = azimuth::add(max_val, -min_val)
+  assert_eq(range, 45)
 }
 
-test "unit_conversion_systems" {
-  // 单位转换系统测试
+test "currency_conversion_simulation" {
+  // 模拟货币转换测试
   
-  // 长度转换: 英寸到厘米 (1英寸 = 2.54厘米)
-  let inches = 10
-  let centimeters = @azimuth.multiply(inches, 254) / 100  // 使用整数运算
-  @azimuth.assert_eq(25, centimeters)
+  // 美元转人民币 (假设汇率 1:7.2)
+  let usd_amount = 100
+  let exchange_rate = 7
+  let cny_amount = azimuth::multiply(usd_amount, exchange_rate)
+  assert_eq(cny_amount, 700)
   
-  // 重量转换: 磅到千克 (1磅 = 0.453千克)
-  let pounds = 20
-  let kilograms = @azimuth.multiply(pounds, 453) / 1000
-  @azimuth.assert_eq(9, kilograms)
-  
-  // 速度转换: km/h到m/s (1km/h = 0.278m/s)
-  let km_per_hour = 36
-  let m_per_sec = @azimuth.multiply(km_per_hour, 278) / 1000
-  @azimuth.assert_eq(10, m_per_sec)
+  // 欧元转美元 (假设汇率 1:1.1)
+  let eur_amount = 50
+  let eur_to_usd = 1
+  let usd_from_eur = azimuth::multiply(eur_amount, eur_to_usd)
+  assert_eq(usd_from_eur, 50)
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
+test "scientific_notation_operations" {
+  // 科学计数法运算测试
   
-  // O(1) - 常数时间
-  let constant_time = 5
-  @azimuth.assert_eq(5, constant_time)
+  // 1.23 * 10^3 = 1230
+  let mantissa = 123
+  let exponent = 10
+  let scientific_result = azimuth::multiply(mantissa, exponent)
+  assert_eq(scientific_result, 1230)
   
-  // O(n) - 线性时间模拟
-  let n = 100
-  let linear_operations = @azimuth.multiply(n, 1)
-  @azimuth.assert_eq(100, linear_operations)
-  
-  // O(n²) - 平方时间模拟
-  let quadratic_operations = @azimuth.multiply(n, n)
-  @azimuth.assert_eq(10000, quadratic_operations)
-  
-  // O(log n) - 对数时间模拟 (简化)
-  let log_operations = 7  // log2(100) ≈ 6.64，取整为7
-  @azimuth.assert_eq(7, log_operations)
+  // 4.56 * 10^2 = 456
+  let mantissa2 = 456
+  let exponent2 = 1
+  let scientific_result2 = azimuth::multiply(mantissa2, exponent2)
+  assert_eq(scientific_result2, 456)
 }
 
-test "error_handling_scenarios" {
-  // 错误处理场景测试
+test "memory_address_simulation" {
+  // 模拟内存地址计算
   
-  // 除零错误预防
-  let dividend = 100
-  let divisor = 0
-  let safe_result = divisor == 0 ? 0 : dividend / divisor
-  @azimuth.assert_eq(0, safe_result)
+  let base_address = 1000
+  let offset1 = 50
+  let offset2 = 25
+  let offset3 = 10
   
-  // 溢出检查模拟
-  let max_32bit = 2147483647
-  let safe_add = @azimuth.add(max_32bit, 1)
-  // 假设有溢出处理，结果会回绕
-  @azimuth.assert_eq(-2147483648, safe_add)
-  
-  // 空值检查模拟
-  let null_indicator = 0
-  let safe_value = null_indicator == 0 ? 0 : 42
-  @azimuth.assert_eq(0, safe_value)
-}
-
-test "memory_management_simulation" {
-  // 内存管理模拟测试
-  
-  // 内存分配模拟
-  let block_size = 1024
-  let num_blocks = 10
-  let total_memory = @azimuth.multiply(block_size, num_blocks)
-  @azimuth.assert_eq(10240, total_memory)
-  
-  // 内存释放模拟
-  let freed_blocks = 3
-  let remaining_memory = @azimuth.multiply(@azimuth.add(num_blocks, -freed_blocks), block_size)
-  @azimuth.assert_eq(7168, remaining_memory)
-  
-  // 内存碎片化模拟
-  let fragment1 = 512
-  let fragment2 = 256
-  let fragment3 = 128
-  let total_fragments = @azimuth.add(@azimuth.add(fragment1, fragment2), fragment3)
-  @azimuth.assert_eq(896, total_fragments)
+  // 计算最终地址: base + offset1 + offset2 + offset3
+  let final_address = azimuth::add(azimuth::add(azimuth::add(base_address, offset1), offset2), offset3)
+  assert_eq(final_address, 1085)
 }
 
 test "network_protocol_simulation" {
   // 网络协议模拟测试
   
-  // IP地址处理模拟 (简化)
-  let ip_octet1 = 192
-  let ip_octet2 = 168
-  let ip_octet3 = 1
-  let ip_octet4 = 1
+  // 计算数据包总大小: header + payload + checksum
+  let header_size = 20
+  let payload_size = 1024
+  let checksum_size = 4
+  let total_packet_size = azimuth::add(azimuth::add(header_size, payload_size), checksum_size)
+  assert_eq(total_packet_size, 1048)
   
-  // 网络部分计算
-  let network_part = @azimuth.add(@azimuth.multiply(ip_octet1, 256), ip_octet2)
-  @azimuth.assert_eq(49320, network_part)
-  
-  // 主机部分计算
-  let host_part = @azimuth.add(@azimuth.multiply(ip_octet3, 256), ip_octet4)
-  @azimuth.assert_eq(257, host_part)
-  
-  // 端口计算
-  let port_base = 8000
-  let port_offset = 80
-  let final_port = @azimuth.add(port_base, port_offset)
-  @azimuth.assert_eq(8080, final_port)
+  // 计算带宽利用率: payload_size / total_packet_size
+  let bandwidth_utilization = payload_size * 100 / total_packet_size
+  assert_eq(bandwidth_utilization, 97)
 }
 
-test "database_operations_simulation" {
-  // 数据库操作模拟测试
+test "game_physics_simulation" {
+  // 游戏物理模拟测试
   
-  // 记录计数
-  let initial_records = 1000
-  let inserted_records = 50
-  let deleted_records = 20
-  let final_count = @azimuth.add(@azimuth.add(initial_records, inserted_records), -deleted_records)
-  @azimuth.assert_eq(1030, final_count)
+  // 计算自由落体距离: d = g * t^2 / 2 (简化版本)
+  let gravity = 10  // 简化的重力加速度
+  let time = 3
+  let time_squared = azimuth::multiply(time, time)
+  let distance = azimuth::multiply(gravity, time_squared) / 2
+  assert_eq(distance, 45)
   
-  // 分页计算
-  let total_items = 250
-  let page_size = 25
-  let total_pages = total_items / page_size
-  @azimuth.assert_eq(10, total_pages)
+  // 计算速度: v = g * t
+  let velocity = azimuth::multiply(gravity, time)
+  assert_eq(velocity, 30)
+}
+
+test "data_compression_simulation" {
+  // 数据压缩模拟测试
   
-  // 索引查找模拟
-  let table_size = 10000
-  let index_depth = 4  // B树的深度
-  let lookup_cost = @azimuth.multiply(index_depth, 2)  // 每层2次比较
-  @azimuth.assert_eq(8, lookup_cost)
+  let original_size = 1000
+  let compression_ratio = 70  // 70% 压缩率
+  
+  // 计算压缩后大小
+  let compressed_size = azimuth::multiply(original_size, compression_ratio) / 100
+  assert_eq(compressed_size, 700)
+  
+  // 计算节省的空间
+  let saved_space = azimuth::add(original_size, -compressed_size)
+  assert_eq(saved_space, 300)
+  
+  // 计算压缩效率
+  let efficiency = saved_space * 100 / original_size
+  assert_eq(efficiency, 30)
 }
