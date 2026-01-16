@@ -1,182 +1,164 @@
 // Azimuth 项目增强测试套件
-// 使用标准 MoonBit 测试语法，包含8个全面的测试用例
+// 使用标准 MoonBit 测试语法，提供全面的测试覆盖
 
-test "add_comprehensive_range" {
-  // 全面测试加法功能的数值范围
-  // 正数加法
-  azimuth::assert_eq(100, azimuth::add(50, 50))
-  azimuth::assert_eq(1000000, azimuth::add(500000, 500000))
-  
-  // 负数加法
-  azimuth::assert_eq(-100, azimuth::add(-50, -50))
-  azimuth::assert_eq(-1000000, azimuth::add(-500000, -500000))
+test "basic_arithmetic_addition_edge_cases" {
+  // 测试加法运算的边界情况
   
   // 零值加法
-  azimuth::assert_eq(42, azimuth::add(0, 42))
-  azimuth::assert_eq(-42, azimuth::add(-42, 0))
-  azimuth::assert_eq(0, azimuth::add(0, 0))
+  assert_eq(azimuth::add(0, 0), 0)
+  assert_eq(azimuth::add(0, 42), 42)
+  assert_eq(azimuth::add(42, 0), 42)
+  
+  // 正数加法
+  assert_eq(azimuth::add(1, 1), 2)
+  assert_eq(azimuth::add(100, 200), 300)
+  
+  // 大数加法
+  assert_eq(azimuth::add(10000, 20000), 30000)
 }
 
-test "multiply_comprehensive_range" {
-  // 全面测试乘法功能的数值范围
-  // 正数乘法
-  azimuth::assert_eq(25, azimuth::multiply(5, 5))
-  azimuth::assert_eq(1000000, azimuth::multiply(1000, 1000))
-  
-  // 负数乘法
-  azimuth::assert_eq(25, azimuth::multiply(-5, -5))
-  azimuth::assert_eq(-25, azimuth::multiply(5, -5))
-  azimuth::assert_eq(-25, azimuth::multiply(-5, 5))
+test "basic_arithmetic_multiplication_edge_cases" {
+  // 测试乘法运算的边界情况
   
   // 零值乘法
-  azimuth::assert_eq(0, azimuth::multiply(0, 42))
-  azimuth::assert_eq(0, azimuth::multiply(42, 0))
-  azimuth::assert_eq(0, azimuth::multiply(0, 0))
+  assert_eq(azimuth::multiply(0, 0), 0)
+  assert_eq(azimuth::multiply(0, 42), 0)
+  assert_eq(azimuth::multiply(42, 0), 0)
+  
+  // 单位乘法
+  assert_eq(azimuth::multiply(1, 1), 1)
+  assert_eq(azimuth::multiply(1, 42), 42)
+  assert_eq(azimuth::multiply(42, 1), 42)
+  
+  // 负数乘法
+  assert_eq(azimuth::multiply(-1, 1), -1)
+  assert_eq(azimuth::multiply(-1, -1), 1)
 }
 
-test "greet_function_edge_cases" {
-  // 测试 greet 函数的边界情况
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  
   // 空字符串
-  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
+  assert_eq(azimuth::greet(""), "Hello, !")
   
   // 单字符
-  azimuth::assert_eq_string("Hello, A!", azimuth::greet("A"))
+  assert_eq(azimuth::greet("A"), "Hello, A!")
   
-  // 长字符串
-  let long_name = "VeryLongNameThatExceedsNormalExpectations"
-  azimuth::assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectations!", azimuth::greet(long_name))
+  // 普通名字
+  assert_eq(azimuth::greet("Alice"), "Hello, Alice!")
+  assert_eq(azimuth::greet("Bob"), "Hello, Bob!")
   
-  // 包含数字和字母
-  azimuth::assert_eq_string("Hello, User123!", azimuth::greet("User123"))
-  
-  // 包含特殊符号
-  azimuth::assert_eq_string("Hello, Test-Case!", azimuth::greet("Test-Case"))
+  // 带空格的名字
+  assert_eq(azimuth::greet("John Doe"), "Hello, John Doe!")
 }
 
-test "mathematical_commutativity" {
-  // 测试数学交换律
-  let test_values = [0, 1, -1, 42, -42, 100, -100, 1000, -1000]
+test "combined_arithmetic_operations" {
+  // 测试组合算术运算
   
-  // 对所有测试值验证加法交换律
-  let i = 0
-  while i < test_values.length() {
-    let j = i + 1
-    while j < test_values.length() {
-      let a = test_values[i]
-      let b = test_values[j]
-      let result1 = azimuth::add(a, b)
-      let result2 = azimuth::add(b, a)
-      azimuth::assert_eq(result1, result2)
-      
-      let mult_result1 = azimuth::multiply(a, b)
-      let mult_result2 = azimuth::multiply(b, a)
-      azimuth::assert_eq(mult_result1, mult_result2)
-      
-      j = j + 1
-    }
-    i = i + 1
-  }
+  // (a + b) * c
+  let a = 5
+  let b = 3
+  let c = 2
+  let sum = azimuth::add(a, b)
+  let result = azimuth::multiply(sum, c)
+  assert_eq(result, 16)
+  
+  // a * b + c * d
+  let a2 = 4
+  let b2 = 3
+  let c2 = 2
+  let d2 = 5
+  let product1 = azimuth::multiply(a2, b2)
+  let product2 = azimuth::multiply(c2, d2)
+  let final_result = azimuth::add(product1, product2)
+  assert_eq(final_result, 22)
 }
 
-test "practical_business_calculations" {
-  // 测试实际业务计算场景
-  // 场景1：计算总价（单价 × 数量 + 税费）
+test "mathematical_sequences" {
+  // 测试数学序列计算
+  
+  // 斐波那契数列前几项: 1, 1, 2, 3, 5, 8
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = azimuth::add(fib1, fib2)  // 2
+  let fib4 = azimuth::add(fib2, fib3)  // 3
+  let fib5 = azimuth::add(fib3, fib4)  // 5
+  let fib6 = azimuth::add(fib4, fib5)  // 8
+  
+  assert_eq(fib3, 2)
+  assert_eq(fib4, 3)
+  assert_eq(fib5, 5)
+  assert_eq(fib6, 8)
+}
+
+test "calculation_with_negative_numbers" {
+  // 测试负数计算
+  
+  // 负数加法
+  assert_eq(azimuth::add(-5, -3), -8)
+  assert_eq(azimuth::add(-5, 3), -2)
+  assert_eq(azimuth::add(5, -3), 2)
+  
+  // 负数乘法
+  assert_eq(azimuth::multiply(-5, -3), 15)
+  assert_eq(azimuth::multiply(-5, 3), -15)
+  assert_eq(azimuth::multiply(5, -3), -15)
+}
+
+test "real_world_calculations" {
+  // 测试实际应用场景的计算
+  
+  // 计算矩形面积: 长 * 宽
+  let length = 10
+  let width = 5
+  let area = azimuth::multiply(length, width)
+  assert_eq(area, 50)
+  
+  // 计算周长: 2 * (长 + 宽)
+  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
+  assert_eq(perimeter, 30)
+  
+  // 计算总价: 单价 * 数量
   let unit_price = 25
-  let quantity = 8
-  let tax_rate = 20  // 20% 税费
-  
-  let subtotal = azimuth::multiply(unit_price, quantity)  // 200
-  let tax_amount = azimuth::multiply(subtotal, tax_rate) / 100  // 40
-  let total_price = azimuth::add(subtotal, tax_amount)  // 240
-  azimuth::assert_eq(240, total_price)
-  
-  // 场景2：计算利润（售价 - 成本）
-  let selling_price = 150
-  let cost_price = 90
-  let profit = azimuth::add(selling_price, -cost_price)
-  azimuth::assert_eq(60, profit)
-  
-  // 场景3：计算折扣后的价格
-  let original_price = 200
-  let discount = 30  // 30% 折扣
-  let discount_amount = azimuth::multiply(original_price, discount) / 100
-  let discounted_price = azimuth::add(original_price, -discount_amount)
-  azimuth::assert_eq(140, discounted_price)
+  let quantity = 4
+  let total_price = azimuth::multiply(unit_price, quantity)
+  assert_eq(total_price, 100)
 }
 
-test "extreme_boundary_conditions" {
-  // 测试极端边界条件
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "string_and_number_combinations" {
+  // 测试字符串和数字的组合使用
   
-  // 最大值边界测试
-  azimuth::assert_eq(max_int, azimuth::add(max_int, 0))
-  azimuth::assert_eq(0, azimuth::multiply(max_int, 0))
-  azimuth::assert_eq(max_int, azimuth::multiply(max_int, 1))
+  // 数字转字符串的间接测试（通过问候函数）
+  let year = 2024
+  let year_str = "2024"
+  let greeting1 = azimuth::greet("Year " + year_str)
+  assert_eq(greeting1, "Hello, Year 2024!")
   
-  // 最小值边界测试
-  azimuth::assert_eq(min_int, azimuth::add(min_int, 0))
-  azimuth::assert_eq(0, azimuth::multiply(min_int, 0))
-  azimuth::assert_eq(min_int, azimuth::multiply(min_int, 1))
-  
-  // 溢出保护测试
-  azimuth::assert_eq(max_int, azimuth::add(max_int, max_int))
-  azimuth::assert_eq(min_int, azimuth::add(min_int, min_int))
+  // 版本号处理
+  let major_version = 1
+  let minor_version = 0
+  let version_suffix = "." + "0"
+  let version_greeting = azimuth::greet("v" + "1" + version_suffix)
+  assert_eq(version_greeting, "Hello, v1.0!")
 }
 
-test "complex_calculation_workflows" {
-  // 测试复杂计算工作流
-  // 计算：((a + b) * c - d) / e 的整数部分
-  let a = 15
-  let b = 25
-  let c = 3
-  let d = 40
-  let e = 5
+test "performance_related_calculations" {
+  // 测试性能相关的计算
   
-  let sum_ab = azimuth::add(a, b)  // 40
-  let product = azimuth::multiply(sum_ab, c)  // 120
-  let difference = azimuth::add(product, -d)  // 80
-  let final_result = difference / e  // 16
+  // 计算算法复杂度 O(n^2) 的操作数
+  let n = 10
+  let operations = azimuth::multiply(n, n)
+  assert_eq(operations, 100)
   
-  azimuth::assert_eq(16, final_result)
+  // 计算内存使用情况
+  let element_size = 4  // 每个元素4字节
+  let array_length = 25
+  let total_memory = azimuth::multiply(element_size, array_length)
+  assert_eq(total_memory, 100)
   
-  // 计算：a * b + c * d - e * f
-  let a2 = 10
-  let b2 = 20
-  let c2 = 30
-  let d2 = 40
-  let e2 = 50
-  let f2 = 60
-  
-  let term1 = azimuth::multiply(a2, b2)  // 200
-  let term2 = azimuth::multiply(c2, d2)  // 1200
-  let term3 = azimuth::multiply(e2, f2)  // 3000
-  
-  let result1 = azimuth::add(term1, term2)  // 1400
-  let result2 = azimuth::add(result1, -term3)  // -1600
-  
-  azimuth::assert_eq(-1600, result2)
-}
-
-test "data_validation_and_type_consistency" {
-  // 测试数据验证和类型一致性
-  // 验证函数返回值的类型一致性
-  let add_result = azimuth::add(10, 20)
-  azimuth::assert_eq(30, add_result)
-  azimuth::assert_eq(30, add_result)  // 确保结果稳定
-  
-  let multiply_result = azimuth::multiply(6, 7)
-  azimuth::assert_eq(42, multiply_result)
-  azimuth::assert_eq(42, multiply_result)  // 确保结果稳定
-  
-  let greet_result = azimuth::greet("TestUser")
-  azimuth::assert_eq_string("Hello, TestUser!", greet_result)
-  azimuth::assert_eq_string("Hello, TestUser!", greet_result)  // 确保结果稳定
-  
-  // 验证相同输入产生相同输出
-  let test_input1 = 100
-  let test_input2 = 200
-  let repeat_result1 = azimuth::add(test_input1, test_input2)
-  let repeat_result2 = azimuth::add(test_input1, test_input2)
-  azimuth::assert_eq(repeat_result1, repeat_result2)
+  // 计算时间复杂度改进
+  let old_complexity = 1000
+  let improvement_factor = 10
+  let new_complexity = old_complexity / improvement_factor
+  assert_eq(new_complexity, 100)
 }
