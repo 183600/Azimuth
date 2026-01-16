@@ -62,7 +62,7 @@
     "../../azimuth_enhanced_test_cases.mbt",
     "test/standard_moonbit_tests.mbt",
     "azimuth_standard_tests.mbt",
-    "user_new_standard_tests.mbt",
-    "my_custom_tests.mbt"
-  ]
+      "user_new_standard_tests.mbt",
+      "my_custom_tests.mbt",
+      "test/concise_standard_tests.mbt"  ]
 }
