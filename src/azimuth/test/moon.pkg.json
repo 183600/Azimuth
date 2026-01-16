@@ -150,5 +150,6 @@
       "azimuth_new_unit_tests.mbt",
       "standard_moonbit_tests.mbt",
       "self_contained_standard_tests.mbt",
-      "user_moonbit_standard_tests.mbt"
+      "user_moonbit_standard_tests.mbt",
+    "standard_moonbit_core_tests.mbt"
     ]}
