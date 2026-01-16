@@ -65,5 +65,6 @@
       "user_new_standard_tests.mbt",
       "my_custom_tests.mbt",
       "test/concise_standard_tests.mbt",
-      "../../azimuth_new_comprehensive_tests.mbt"  ]
+      "../../azimuth_new_comprehensive_tests.mbt",
+      "test/user_standard_tests.mbt"  ]
 }
