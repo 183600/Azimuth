@@ -16,7 +16,7 @@ test "add_associative_property" {
   
   let result1 = azimuth::add(azimuth::add(a, b), c)
   let result2 = azimuth::add(a, azimuth::add(b, c))
-  assert_eq(result1, result2)
+  azimuth::assert_eq(result1, result2)
 }
 
 test "multiply_distributive_property" {
@@ -27,22 +27,22 @@ test "multiply_distributive_property" {
   
   let result1 = azimuth::multiply(a, azimuth::add(b, c))
   let result2 = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
-  assert_eq(result1, result2)
+  azimuth::assert_eq(result1, result2)
 }
 
 test "multiply_negative_numbers" {
   // 测试负数乘法
-  assert_eq(azimuth::multiply(-5, 3), -15)
-  assert_eq(azimuth::multiply(5, -3), -15)
-  assert_eq(azimuth::multiply(-5, -3), 15)
-  assert_eq(azimuth::multiply(-1, 100), -100)
+  azimuth::assert_eq(azimuth::multiply(-5, 3), -15)
+  azimuth::assert_eq(azimuth::multiply(5, -3), -15)
+  azimuth::assert_eq(azimuth::multiply(-5, -3), 15)
+  azimuth::assert_eq(azimuth::multiply(-1, 100), -100)
 }
 
 test "greet_function_with_special_strings" {
   // 测试包含特殊字符的字符串
-  assert_eq(azimuth::greet("Hello\nWorld"), "Hello, Hello\nWorld!")
-  assert_eq(azimuth::greet("Tab\tSeparated"), "Hello, Tab\tSeparated!")
-  assert_eq(azimuth::greet("Quote: \"Test\""), "Hello, Quote: \"Test\"!")
+  azimuth::assert_eq_string(azimuth::greet("Hello\nWorld"), "Hello, Hello\nWorld!")
+  azimuth::assert_eq_string(azimuth::greet("Tab\tSeparated"), "Hello, Tab\tSeparated!")
+  azimuth::assert_eq_string(azimuth::greet("Quote: \"Test\""), "Hello, Quote: \"Test\"!")
 }
 
 test "complex_calculations" {
@@ -57,26 +57,27 @@ test "complex_calculations" {
   let year2 = azimuth::add(year1, azimuth::divide_with_ceil(azimuth::multiply(year1, rate), 100))
   let year3 = azimuth::add(year2, azimuth::divide_with_ceil(azimuth::multiply(year2, rate), 100))
   
-  assert_eq(1157, year3)
+  azimuth::assert_eq(1157, year3)
 }
 
 test "geometric_progression" {
   // 测试等比数列计算
+  // 计算第n项：a × r^(n-1)
   let first_term = 2
   let ratio = 3
   let n = 4
   
-  // 计算第n项：a × r^(n-1)
+  // 计算前n项和：a × (r^n - 1) / (r - 1)
   let term1 = first_term
   let term2 = azimuth::multiply(term1, ratio)
   let term3 = azimuth::multiply(term2, ratio)
   let term4 = azimuth::multiply(term3, ratio)
   
-  // 计算前n项和：a × (r^n - 1) / (r - 1)
+  // 计算前n项和
   let sum = azimuth::add(azimuth::add(azimuth::add(term1, term2), term3), term4)
   
-  assert_eq(54, term4)  // 第4项
-  assert_eq(80, sum)    // 前4项和
+  azimuth::assert_eq(54, term4)  // 第4项
+  azimuth::assert_eq(80, sum)    // 前4项和
 }
 
 test "time_calculations" {
@@ -85,11 +86,11 @@ test "time_calculations" {
   let hours = 3
   let minutes = 45
   let total_minutes = azimuth::add(azimuth::multiply(hours, 60), minutes)
-  assert_eq(225, total_minutes)
+  azimuth::assert_eq(225, total_minutes)
   
   // 计算总秒数：总分钟数 × 60
   let total_seconds = azimuth::multiply(total_minutes, 60)
-  assert_eq(13500, total_seconds)
+  azimuth::assert_eq(13500, total_seconds)
 }
 
 test "statistical_analysis" {
@@ -110,10 +111,10 @@ test "statistical_analysis" {
     azimuth::multiply(values[4], values[4]))
   
   let mean_of_squares = squared_sum / 5
-  let variance = azimuth::add(mean_of_squares, -azimuth::multiply(mean, mean))
+  let variance = azimuth::add(mean_of_squares, azimuth::multiply(mean, -mean))
   
-  assert_eq(20, mean)
-  assert_eq(50, variance)
+  azimuth::assert_eq(20, mean)
+  azimuth::assert_eq(50, variance)
 }
 
 test "boundary_testing" {
@@ -122,12 +123,12 @@ test "boundary_testing" {
   let min_int = -2147483648
   
   // 测试接近边界的加法
-  assert_eq(azimuth::add(max_int, -1), 2147483646)
-  assert_eq(azimuth::add(min_int, 1), -2147483647)
+  azimuth::assert_eq(azimuth::add(max_int, -1), 2147483646)
+  azimuth::assert_eq(azimuth::add(min_int, 1), -2147483647)
   
   // 测试零值运算
-  assert_eq(azimuth::add(0, 0), 0)
-  assert_eq(azimuth::multiply(0, 0), 0)
-  assert_eq(azimuth::multiply(0, max_int), 0)
-  assert_eq(azimuth::multiply(min_int, 0), 0)
+  azimuth::assert_eq(azimuth::add(0, 0), 0)
+  azimuth::assert_eq(azimuth::multiply(0, 0), 0)
+  azimuth::assert_eq(azimuth::multiply(0, max_int), 0)
+  azimuth::assert_eq(azimuth::multiply(min_int, 0), 0)
 }
