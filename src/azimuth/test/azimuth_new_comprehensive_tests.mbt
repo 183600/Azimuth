@@ -1,182 +1,178 @@
-// Azimuth 项目新增综合测试用例
-// 使用标准 MoonBit 测试语法，覆盖新的测试场景
-
-test "advanced_arithmetic_properties" {
-  // 测试高级算术性质
-  
-  // 零元素性质
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(42, @azimuth.add(0, 42))
-  @azimuth.assert_eq(0, @azimuth.multiply(42, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 42))
-  
-  // 单位元素性质
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(42, @azimuth.multiply(1, 42))
-  
-  // 负数性质
-  @azimuth.assert_eq(0, @azimuth.add(42, -42))
-  @azimuth.assert_eq(-42, @azimuth.multiply(42, -1))
-  @azimuth.assert_eq(42, @azimuth.multiply(-42, -1))
-}
-
-test "scientific_notation_calculations" {
-  // 测试科学计数法相关的计算
-  
-  // 计算 2^10 = 1024 (通过连乘模拟)
-  let power_of_2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2), @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2))
-  @azimuth.assert_eq(1024, power_of_2)
-  
-  // 计算 5! = 120 (阶乘)
-  let factorial_5 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(1, 2), 3), 4), 5)
-  @azimuth.assert_eq(120, factorial_5)
-  
-  // 计算 3^4 = 81
-  let power_of_3 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(3, 3), 3), 3)
-  @azimuth.assert_eq(81, power_of_3)
-}
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
 test "statistical_calculations" {
-  // 测试统计计算
+  // 统计学计算测试
   
-  // 计算平均值: (10 + 20 + 30 + 40 + 50) / 5 = 30
-  let numbers_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
-  let count = 5
-  let average = numbers_sum / count
-  @azimuth.assert_eq(30, average)
+  // 计算平均数: (a + b + c + d) / 4
+  let values_sum = azimuth::add(azimuth::add(azimuth::add(85, 90), 78), 92)
+  let average = values_sum / 4
+  assert_eq(86, average)
   
-  // 计算加权平均: (10*2 + 20*3 + 30*5) / (2+3+5) = 23
-  let weighted_sum = @azimuth.add(@azimuth.add(@azimuth.multiply(10, 2), @azimuth.multiply(20, 3)), @azimuth.multiply(30, 5))
-  let total_weight = @azimuth.add(@azimuth.add(2, 3), 5)
+  // 计算加权平均: (a*权重1 + b*权重2 + c*权重3) / (权重1+权重2+权重3)
+  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(80, 3), azimuth::multiply(90, 2)), azimuth::multiply(85, 5))
+  let total_weight = azimuth::add(azimuth::add(3, 2), 5)
   let weighted_average = weighted_sum / total_weight
-  @azimuth.assert_eq(23, weighted_average)
-  
-  // 计算方差简化版: (1-3)^2 + (2-3)^2 + (3-3)^2 + (4-3)^2 + (5-3)^2 = 10
-  let variance_sum = 10  // 直接使用预计算的结果
-  @azimuth.assert_eq(10, variance_sum)
+  assert_eq(84, weighted_average)
 }
 
-test "physics_simulations" {
-  // 测试物理模拟计算
+test "physics_calculations" {
+  // 物理公式计算测试
   
-  // 计算动能: KE = 1/2 * m * v^2
+  // 动能计算: E = 0.5 * m * v² (使用整数近似)
   let mass = 10
-  let velocity = 5
-  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(mass, velocity), velocity) / 2
-  @azimuth.assert_eq(125, kinetic_energy)
+  let velocity = 8
+  let kinetic_energy = azimuth::multiply(azimuth::multiply(mass, velocity), velocity) / 2
+  assert_eq(320, kinetic_energy)
   
-  // 计算势能: PE = m * g * h
-  let height = 20
-  let gravity = 10  // 简化重力加速度
-  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)
-  @azimuth.assert_eq(2000, potential_energy)
+  // 势能计算: E = m * g * h (g ≈ 10 m/s²)
+  let height = 15
+  let potential_energy = azimuth::multiply(azimuth::multiply(mass, 10), height)
+  assert_eq(1500, potential_energy)
   
-  // 计算总机械能
-  let total_energy = @azimuth.add(kinetic_energy, potential_energy)
-  @azimuth.assert_eq(2125, total_energy)
+  // 牛顿第二定律: F = m * a
+  let acceleration = 5
+  let force = azimuth::multiply(mass, acceleration)
+  assert_eq(50, force)
 }
 
-test "cryptography_simulations" {
-  // 测试密码学模拟计算
+test "percentage_calculations" {
+  // 百分比计算测试
   
-  // 简单的凯撒密码模拟（数字版本）
-  let original_number = 123
-  let shift_key = 5
-  let encrypted = @azimuth.add(original_number, shift_key)
-  let decrypted = @azimuth.add(encrypted, -shift_key)
-  @azimuth.assert_eq(123, decrypted)
+  // 计算百分比: 部分 / 总数 * 100
+  let part = 25
+  let total = 200
+  let percentage = azimuth::multiply(part, 100) / total
+  assert_eq(12, percentage)
   
-  // 简单的校验和计算
-  let data_block1 = 100
-  let data_block2 = 200
-  let data_block3 = 300
-  let checksum = @azimuth.add(@azimuth.add(data_block1, data_block2), data_block3) / 3
-  @azimuth.assert_eq(200, checksum)
+  // 百分比增加: 原值 * (1 + 百分比/100)
+  let original = 150
+  let increase_percent = 20
+  let increased = azimuth::add(azimuth::multiply(original, 100), azimuth::multiply(original, increase_percent)) / 100
+  assert_eq(180, increased)
   
-  // 简单的哈希模拟
-  let input_value = 42
-  let hash_result = @azimuth.multiply(@azimuth.add(input_value, 17), 31)
-  @azimuth.assert_eq(1829, hash_result)
+  // 百分比减少: 原值 * (1 - 百分比/100)
+  let decrease_percent = 30
+  let decreased = azimuth::add(azimuth::multiply(original, 100), azimuth::multiply(original, -decrease_percent)) / 100
+  assert_eq(105, decreased)
 }
 
-test "string_formatting_validation" {
-  // 测试字符串格式化和验证
+test "number_system_conversions" {
+  // 数制转换计算测试
   
-  // 测试不同语言的问候
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, a1b2c3!", @azimuth.greet("a1b2c3"))
+  // 二进制转十进制: 1101 = 1*2³ + 1*2² + 0*2¹ + 1*2⁰ = 13
+  let binary_1101 = azimuth::add(azimuth::add(azimuth::multiply(1, 8), azimuth::multiply(1, 4)), azimuth::multiply(1, 1))
+  assert_eq(13, binary_1101)
   
-  // 测试特殊格式字符串
-  @azimuth.assert_eq_string("Hello, [Test]!", @azimuth.greet("[Test]"))
-  @azimuth.assert_eq_string("Hello, (Test)!", @azimuth.greet("(Test)"))
-  @azimuth.assert_eq_string("Hello, {Test}!", @azimuth.greet("{Test}"))
+  // 十进制转八进制计算: 65 ÷ 8 = 8 余 1, 8 ÷ 8 = 1 余 0, 1 ÷ 8 = 0 余 1 → 101
+  let decimal_65 = 65
+  let octal_65 = azimuth::add(azimuth::multiply(1, 64), azimuth::multiply(0, 8), 1)
+  assert_eq(65, octal_65)
   
-  // 测试包含引号的字符串
-  @azimuth.assert_eq_string("Hello, \"Test\"!", @azimuth.greet("\"Test\""))
-  @azimuth.assert_eq_string("Hello, 'Test'!", @azimuth.greet("'Test'"))
+  // 十六进制转十进制: 1A = 1*16 + 10 = 26
+  let hex_1A = azimuth::add(azimuth::multiply(1, 16), 10)
+  assert_eq(26, hex_1A)
 }
 
-test "algorithm_complexity_tests" {
-  // 测试算法复杂度相关的计算
+test "recursive_calculations" {
+  // 递归计算模拟测试
   
-  // O(n) 线性时间复杂度模拟 - 求和
-  let n = 100
-  let linear_sum = @azimuth.multiply(@azimuth.add(n, 1), n) / 2  // 1+2+...+100 = 5050
-  @azimuth.assert_eq(5050, linear_sum)
+  // 阶乘计算: 4! = 4 * 3 * 2 * 1
+  let factorial_4 = azimuth::multiply(azimuth::multiply(azimuth::multiply(4, 3), 2), 1)
+  assert_eq(24, factorial_4)
   
-  // O(n²) 平方时间复杂度模拟 - 嵌套循环和
-  let nested_sum = @azimuth.multiply(n, @azimuth.add(n, 1))  // 简化的双重循环
-  @azimuth.assert_eq(10100, nested_sum)
+  // 幂运算: 3³ = 3 * 3 * 3
+  let power_3_3 = azimuth::multiply(azimuth::multiply(3, 3), 3)
+  assert_eq(27, power_3_3)
   
-  // O(log n) 对数时间复杂度模拟 - 二分查找步骤
-  // 模拟二分查找的步骤数 (log₂100 ≈ 7)
-  let simulated_log_steps = 7
-  @azimuth.assert_true(simulated_log_steps > 0 && simulated_log_steps < 10)
+  // 最大公约数模拟: gcd(48, 18) = 6
+  // 使用欧几里得算法的简化版本
+  let a = 48
+  let b = 18
+  let remainder = azimuth::add(a, azimuth::multiply(-2, b))  // 48 - 2*18 = 12
+  let gcd = azimuth::add(b, azimuth::multiply(-1, remainder))  // 18 - 1*12 = 6
+  assert_eq(6, gcd)
 }
 
-test "edge_case_robustness" {
-  // 测试边界情况的健壮性
+test "combinatorial_calculations" {
+  // 组合数学计算测试
   
-  // 极大数运算
-  let very_large = 10000
-  @azimuth.assert_eq(20000, @azimuth.add(very_large, very_large))
-  @azimuth.assert_eq(100000000, @azimuth.multiply(very_large, very_large))
+  // 排列数: P(5,3) = 5! / (5-3)! = 5*4*3 = 60
+  let permutation = azimuth::multiply(azimuth::multiply(5, 4), 3)
+  assert_eq(60, permutation)
   
-  // 极小数运算
-  let very_small = -10000
-  @azimuth.assert_eq(-20000, @azimuth.add(very_small, very_small))
-  @azimuth.assert_eq(100000000, @azimuth.multiply(very_small, very_small))
+  // 组合数: C(6,2) = 6! / (2! * 4!) = (6*5)/(2*1) = 15
+  let combination = azimuth::multiply(azimuth::multiply(6, 5), 1) / azimuth::multiply(2, 1)
+  assert_eq(15, combination)
   
-  // 交替符号运算
-  let alternating_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, -2), 3), -4), 5)
-  @azimuth.assert_eq(3, alternating_sum)
-  
-  // 零附近运算
-  @azimuth.assert_eq(0, @azimuth.add(@azimuth.add(-1, 1), @azimuth.add(-2, 2)))
-  @azimuth.assert_eq(0, @azimuth.multiply(@azimuth.add(5, -5), 100))
+  // 二项式系数展开: (x+y)³ = x³ + 3x²y + 3xy² + y³ 的系数之和
+  let binomial_coeffs_sum = azimuth::add(azimuth::add(azimuth::add(1, 3), 3), 1)
+  assert_eq(8, binomial_coeffs_sum)
 }
 
-test "business_logic_calculations" {
-  // 测试业务逻辑计算
+test "advanced_string_processing" {
+  // 高级字符串处理测试
   
-  // 计算利润: 收入 - 成本
-  let revenue = 50000
-  let cost = 35000
-  let profit = @azimuth.add(revenue, -cost)
-  @azimuth.assert_eq(15000, profit)
+  // 字符串长度计算（模拟）
+  let short_name = "Bob"
+  assert_eq(azimuth::greet(short_name), "Hello, Bob!")
   
-  // 计算利润率: (利润 / 收入) * 100%
-  let profit_rate = @azimuth.multiply(profit, 100) / revenue
-  @azimuth.assert_eq(30, profit_rate)
+  // 包含空格的字符串
+  let full_name = "John Doe"
+  assert_eq(azimuth::greet(full_name), "Hello, John Doe!")
   
-  // 计算税费: 利润 * 税率
-  let tax_rate = 20  // 20%
-  let tax_amount = @azimuth.multiply(profit, tax_rate) / 100
-  @azimuth.assert_eq(3000, tax_amount)
+  // 包含数字的字符串
+  let alphanumeric = "User123"
+  assert_eq(azimuth::greet(alphanumeric), "Hello, User123!")
   
-  // 计算净利润
-  let net_profit = @azimuth.add(profit, -tax_amount)
-  @azimuth.assert_eq(12000, net_profit)
+  // 特殊符号字符串
+  let symbols = "!@#$%^&*()"
+  assert_eq(azimuth::greet(symbols), "Hello, !@#$%^&*()!")
+}
+
+test "real_world_applications" {
+  // 实际应用场景测试
+  
+  // 银行复利计算: A = P(1 + r/n)^(nt) 简化版本
+  let principal = 1000
+  let rate = 5  // 5%
+  let years = 3
+  let simple_compound = azimuth::add(principal, azimuth::multiply(azimuth::multiply(principal, rate), years) / 100)
+  assert_eq(1150, simple_compound)
+  
+  // 贷款月供计算简化版: 本金 + 利息 / 月数
+  let loan_amount = 12000
+  let interest_rate = 6  // 6%
+  let months = 12
+  let total_interest = azimuth::multiply(loan_amount, interest_rate) / 100
+  let monthly_payment = azimuth::add(loan_amount, total_interest) / months
+  assert_eq(1060, monthly_payment)
+  
+  // BMI计算简化版: 体重(kg) / (身高(m))²
+  let weight = 70  // kg
+  let height = 175  // cm
+  let height_in_meters = height / 100
+  let bmi = azimuth::multiply(weight, 10000) / azimuth::multiply(height, height)
+  assert_eq(22, bmi)
+}
+
+test "edge_case_error_handling" {
+  // 边界情况和错误处理测试
+  
+  // 极大数相加
+  let huge_num1 = 1000000000
+  let huge_num2 = 2000000000
+  assert_eq(3000000000, azimuth::add(huge_num1, huge_num2))
+  
+  // 极大数相乘
+  let large_multiply = azimuth::multiply(100000, 10000)
+  assert_eq(1000000000, large_multiply)
+  
+  // 负数边界
+  let negative_boundary = azimuth::add(-1000000, 999999)
+  assert_eq(-1, negative_boundary)
+  
+  // 零的多次运算
+  let zero_operations = azimuth::multiply(azimuth::add(0, 0), azimuth::multiply(0, 0))
+  assert_eq(0, zero_operations)
 }
