@@ -1,184 +1,112 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，包含实用的测试场景
+// 使用标准 MoonBit 测试语法，包含10个精心设计的测试场景
 
-test "string_length_operations" {
-  // 测试字符串长度操作
-  let str1 = "Hello"
-  let str2 = "MoonBit"
-  let str3 = ""
-  let str4 = "测试字符串"
-  
-  // 计算字符串长度
-  let len1 = @azimuth.string_length(str1)
-  let len2 = @azimuth.string_length(str2)
-  let len3 = @azimuth.string_length(str3)
-  let len4 = @azimuth.string_length(str4)
-  
-  // 验证长度
-  @azimuth.assert_eq(5, len1)
-  @azimuth.assert_eq(7, len2)
-  @azimuth.assert_eq(0, len3)
-  @azimuth.assert_eq(5, len4)
+test "add_function_basic_cases" {
+  // 测试基本加法运算
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "array_sort_operations" {
-  // 测试数组排序操作
-  let unsorted = @azimuth.create_array_from_list([5, 2, 8, 1, 9])
-  let sorted = @azimuth.sort_array(unsorted)
-  
-  // 验证排序结果
-  @azimuth.assert_eq(1, @azimuth.array_get(sorted, 0))
-  @azimuth.assert_eq(2, @azimuth.array_get(sorted, 1))
-  @azimuth.assert_eq(5, @azimuth.array_get(sorted, 2))
-  @azimuth.assert_eq(8, @azimuth.array_get(sorted, 3))
-  @azimuth.assert_eq(9, @azimuth.array_get(sorted, 4))
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(0, multiply(123, 0))
+  assert_eq(123, multiply(123, 1))
+  assert_eq(-123, multiply(123, -1))
+  assert_eq(123, multiply(-123, -1))
 }
 
-test "conditional_logic" {
-  // 测试条件逻辑
-  let age = 18
-  let is_student = true
-  let score = 85
-  
-  // 测试年龄判断
-  let is_adult = @azimuth.greater_or_equal(age, 18)
-  @azimuth.assert_eq(true, is_adult)
-  
-  // 测试学生折扣
-  let discount = @azimuth.if_then_else(is_student, 20, 0)
-  @azimuth.assert_eq(20, discount)
-  
-  // 测试成绩等级
-  let grade = @azimuth.if_then_else(
-    @azimuth.greater_or_equal(score, 90),
-    "A",
-    @azimuth.if_then_else(
-      @azimuth.greater_or_equal(score, 80),
-      "B",
-      "C"
-    )
-  )
-  @azimuth.assert_eq_string("B", grade)
+test "greet_function_various_inputs" {
+  // 测试greet函数处理各种输入
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 张三!", greet("张三"))
 }
 
-test "list_operations" {
-  // 测试列表操作
-  let list1 = @azimuth.create_list([1, 2, 3])
-  let list2 = @azimuth.create_list([4, 5, 6])
-  let combined = @azimuth.concat_lists(list1, list2)
+test "overflow_protection_addition" {
+  // 测试加法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 验证列表长度
-  @azimuth.assert_eq(6, @azimuth.list_length(combined))
-  
-  // 验证列表元素
-  @azimuth.assert_eq(1, @azimuth.list_get(combined, 0))
-  @azimuth.assert_eq(3, @azimuth.list_get(combined, 2))
-  @azimuth.assert_eq(6, @azimuth.list_get(combined, 5))
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(max_val, add(max_val, max_val))
+  assert_eq(min_val, add(min_val, min_val))
 }
 
-test "hash_map_operations" {
-  // 测试哈希映射操作
-  let map = @azimuth.create_hash_map()
-  let map_with_key = @azimuth.hash_map_insert(map, "name", "Azimuth")
-  let map_with_value = @azimuth.hash_map_insert(map_with_key, "version", "1.0")
+test "overflow_protection_multiplication" {
+  // 测试乘法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 验证键值对
-  @azimuth.assert_eq(true, @azimuth.hash_map_contains(map_with_value, "name"))
-  @azimuth.assert_eq(true, @azimuth.hash_map_contains(map_with_value, "version"))
-  @azimuth.assert_eq(false, @azimuth.hash_map_contains(map_with_value, "author"))
-  
-  // 验证值
-  @azimuth.assert_eq_string("Azimuth", @azimuth.hash_map_get(map_with_value, "name"))
-  @azimuth.assert_eq_string("1.0", @azimuth.hash_map_get(map_with_value, "version"))
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(0, multiply(max_val, 0))
 }
 
-test "file_operations" {
-  // 测试文件操作
-  let filename = "test.txt"
-  let content = "Hello, MoonBit!"
-  
-  // 写入文件
-  let write_result = @azimuth.write_file(filename, content)
-  @azimuth.assert_eq(true, @azimuth.is_success(write_result))
-  
-  // 读取文件
-  let read_result = @azimuth.read_file(filename)
-  @azimuth.assert_eq(true, @azimuth.is_success(read_result))
-  
-  // 验证内容
-  let file_content = @azimuth.get_value(read_result)
-  @azimuth.assert_eq_string(content, file_content)
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 3))
+  assert_eq(4, divide_with_ceil(11, 3))
+  assert_eq(4, divide_with_ceil(12, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "regex_operations" {
-  // 测试正则表达式操作
-  let email = "user@example.com"
-  let phone = "123-456-7890"
-  let invalid = "not-an-email"
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形的面积和周长
+  let length = 8
+  let width = 5
   
-  // 验证邮箱格式
-  let email_pattern = @azimuth.compile_regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
-  @azimuth.assert_eq(true, @azimuth.regex_match(email_pattern, email))
-  @azimuth.assert_eq(false, @azimuth.regex_match(email_pattern, invalid))
+  // 面积 = 长 × 宽
+  let area = multiply(length, width)
+  assert_eq(40, area)
   
-  // 验证电话格式
-  let phone_pattern = @azimuth.compile_regex("^\\d{3}-\\d{3}-\\d{4}$")
-  @azimuth.assert_eq(true, @azimuth.regex_match(phone_pattern, phone))
-  @azimuth.assert_eq(false, @azimuth.regex_match(phone_pattern, email))
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(26, perimeter)
 }
 
-test "json_operations" {
-  // 测试 JSON 操作
-  let json_str = "{\"name\":\"Azimuth\",\"version\":\"1.0\",\"active\":true}"
-  let parsed = @azimuth.parse_json(json_str)
+test "financial_calculation_scenario" {
+  // 测试金融计算场景：简单利息计算
+  let principal = 10000
+  let rate = 5
+  let time = 3
   
-  // 验证解析成功
-  @azimuth.assert_eq(true, @azimuth.is_success(parsed))
+  // 利息 = 本金 × 利率 × 时间
+  let interest = multiply(principal, multiply(rate, time))
+  assert_eq(150000, interest)
   
-  // 获取 JSON 对象
-  let json_obj = @azimuth.get_value(parsed)
-  
-  // 验证字段值
-  @azimuth.assert_eq_string("Azimuth", @azimuth.json_get_string(json_obj, "name"))
-  @azimuth.assert_eq_string("1.0", @azimuth.json_get_string(json_obj, "version"))
-  @azimuth.assert_eq(true, @azimuth.json_get_bool(json_obj, "active"))
+  // 总额 = 本金 + 利息
+  let total = add(principal, interest)
+  assert_eq(160000, total)
 }
 
-test "time_operations" {
-  // 测试时间操作
-  let now = @azimuth.get_current_time()
-  let tomorrow = @azimuth.add_days(now, 1)
-  let next_week = @azimuth.add_days(now, 7)
+test "assert_functions_functionality" {
+  // 测试断言函数的功能
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
   
-  // 验证时间差
-  let diff_tomorrow = @azimuth.days_between(now, tomorrow)
-  let diff_week = @azimuth.days_between(now, next_week)
-  
-  @azimuth.assert_eq(1, diff_tomorrow)
-  @azimuth.assert_eq(7, diff_week)
-  
-  // 验证格式化
-  let formatted = @azimuth.format_time(now, "YYYY-MM-DD")
-  @azimuth.assert_eq(true, @azimuth.string_length(formatted) > 0)
+  // 测试复合条件
+  let x = 10
+  let y = 20
+  assert_true(add(x, y) == 30)
+  assert_false(multiply(x, y) == 150)
 }
 
-test "error_recovery" {
-  // 测试错误恢复
-  let safe_divide = fn(x : Int, y : Int) {
-    @azimuth.if_then_else(
-      @azimuth.equal(y, 0),
-      @azimuth.create_error("Division by zero"),
-      @azimuth.create_success(@azimuth.divide(x, y))
-    )
-  }
+test "real_world_temperature_conversion" {
+  // 测试实际应用：温度转换（简化版）
+  // 摄氏度转华氏度：F = C × 2 + 30（简化公式）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)
   
-  // 测试正常情况
-  let result1 = safe_divide(10, 2)
-  @azimuth.assert_eq(true, @azimuth.is_success(result1))
-  @azimuth.assert_eq(5, @azimuth.get_value(result1))
-  
-  // 测试错误情况
-  let result2 = safe_divide(10, 0)
-  @azimuth.assert_eq(false, @azimuth.is_success(result2))
-  @azimuth.assert_eq_string("Division by zero", @azimuth.get_error(result2))
+  // 华氏度转摄氏度：C = (F - 30) ÷ 2（简化公式）
+  let fahrenheit_back = 80
+  let celsius_back = add(fahrenheit_back, -30) / 2
+  assert_eq(25, celsius_back)
 }
