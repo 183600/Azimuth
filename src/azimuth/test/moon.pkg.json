@@ -153,5 +153,6 @@
       "user_moonbit_standard_tests.mbt",
     "standard_moonbit_core_tests.mbt",
     "user_additional_tests.mbt",
-    "user_moonbit_test_cases.mbt"
+    "user_moonbit_test_cases.mbt",
+    "user_focused_moonbit_tests.mbt"
     ]}
