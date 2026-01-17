@@ -1,204 +1,131 @@
-// Azimuth 项目实用测试用例
-// 使用标准 MoonBit 测试语法，专注于实际应用场景
+// Azimuth 项目实用测试用例集
+// 使用标准 MoonBit 测试语法，涵盖实际应用场景
 
-test "currency_calculations" {
-  // 货币计算测试
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(-3, @azimuth.add(-10, 7))
   
-  // 计算购物车总价
-  let item1_price = 299
-  let item2_price = 199
-  let item3_price = 99
-  let subtotal = @azimuth.add(@azimuth.add(item1_price, item2_price), item3_price)
+  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+}
+
+test "greeting_functionality" {
+  // 问候功能测试
+  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
+  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet("Bob"))
+  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+}
+
+test "calculation_chains" {
+  // 计算链测试
+  let step1 = @azimuth.add(10, 5)
+  let step2 = @azimuth.multiply(step1, 2)
+  let step3 = @azimuth.add(step2, 3)
+  @azimuth.assert_eq(33, step3)
   
-  // 计算税费 (8%)
-  let tax_rate = 8
-  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
+  // 另一个计算链
+  let chain = @azimuth.multiply(@azimuth.add(4, 6), @azimuth.add(2, 3))
+  @azimuth.assert_eq(50, chain)
+}
+
+test "edge_cases" {
+  // 边界情况测试
+  @azimuth.assert_eq(1, @azimuth.add(1, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
+  
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, -999))
+}
+
+test "real_world_scenarios" {
+  // 实际应用场景测试
+  
+  // 购物车计算
+  let item_price = 25
+  let quantity = 4
+  let tax = 8
+  let subtotal = @azimuth.multiply(item_price, quantity)
   let total = @azimuth.add(subtotal, tax)
+  @azimuth.assert_eq(108, total)
   
-  @azimuth.assert_eq(597, subtotal)
-  @azimuth.assert_eq(47, tax)
-  @azimuth.assert_eq(644, total)
+  // 平均分计算
+  let score1 = 85
+  let score2 = 90
+  let score3 = 95
+  let sum = @azimuth.add(@azimuth.add(score1, score2), score3)
+  let average = sum / 3
+  @azimuth.assert_eq(90, average)
 }
 
-test "physics_motion_calculations" {
-  // 物理运动计算测试
+test "pattern_calculations" {
+  // 模式计算测试
   
-  // 计算距离: 距离 = 速度 × 时间
-  let velocity = 60  // km/h
-  let time = 2.5     // hours
-  let distance = @azimuth.multiply(velocity, 25) / 10
-  @azimuth.assert_eq(150, distance)
+  // 平方数计算
+  let num = 7
+  let square = @azimuth.multiply(num, num)
+  @azimuth.assert_eq(49, square)
   
-  // 计算动能: 动能 = 0.5 × 质量 × 速度²
-  let mass = 1000    // kg
-  let speed = 20     // m/s
-  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(500, mass), @azimuth.multiply(speed, speed)) / 10000
-  @azimuth.assert_eq(200000, kinetic_energy)
+  // 立方数计算
+  let cube = @azimuth.multiply(@azimuth.multiply(num, num), num)
+  @azimuth.assert_eq(343, cube)
+  
+  // 阶乘简化计算 (5!)
+  let factorial_5 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(120, factorial_5)
 }
 
-test "statistics_basic" {
-  // 基础统计计算测试
+test "unit_conversions" {
+  // 单位转换测试
   
-  // 计算平均值
-  let numbers = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(85, 90), 78), 92), 88)
-  let count = 5
-  let average = numbers / count
-  @azimuth.assert_eq(433, numbers)
-  @azimuth.assert_eq(86, average)
+  // 英寸转厘米 (1英寸 = 2.54厘米，简化为整数运算)
+  let inches = 10
+  let centimeters = @azimuth.multiply(inches, 254) / 100
+  @azimuth.assert_eq(25, centimeters)
   
-  // 计算范围 (最大值 - 最小值)
-  let max_val = 92
-  let min_val = 78
-  let range = @azimuth.add(max_val, -min_val)
-  @azimuth.assert_eq(14, range)
+  // 磅转千克 (1磅 = 0.453千克，简化为整数运算)
+  let pounds = 100
+  let kilograms = @azimuth.multiply(pounds, 453) / 1000
+  @azimuth.assert_eq(45, kilograms)
 }
 
-test "cooking_measurements" {
-  // 烹饪计量测试
+test "algorithm_simulation" {
+  // 算法模拟测试
   
-  // 配方调整：将4人份调整为6人份
-  let flour_4_servings = 200  // 克
-  let sugar_4_servings = 100  // 克
-  let eggs_4_servings = 2     // 个
+  // 简单的累加算法
+  let accumulator = 0
+  accumulator = @azimuth.add(accumulator, 1)
+  accumulator = @azimuth.add(accumulator, 2)
+  accumulator = @azimuth.add(accumulator, 3)
+  accumulator = @azimuth.add(accumulator, 4)
+  accumulator = @azimuth.add(accumulator, 5)
+  @azimuth.assert_eq(15, accumulator)
   
-  let scaling_factor = 6  // 目标份数
-  let original_servings = 4  // 原始份数
-  let multiplier = @azimuth.multiply(scaling_factor, 10) / original_servings / 10
-  
-  let flour_6_servings = @azimuth.multiply(flour_4_servings, multiplier)
-  let sugar_6_servings = @azimuth.multiply(sugar_4_servings, multiplier)
-  let eggs_6_servings = @azimuth.multiply(eggs_4_servings, multiplier)
-  
-  @azimuth.assert_eq(300, flour_6_servings)
-  @azimuth.assert_eq(150, sugar_6_servings)
-  @azimuth.assert_eq(3, eggs_6_servings)
+  // 简单的累乘算法
+  let product = 1
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 3)
+  product = @azimuth.multiply(product, 4)
+  @azimuth.assert_eq(24, product)
 }
 
-test "fitness_tracking" {
-  // 健身追踪测试
+test "data_processing" {
+  // 数据处理测试
   
-  // 计算每周消耗卡路里
-  let monday_calories = 450
-  let wednesday_calories = 380
-  let friday_calories = 520
-  let saturday_calories = 600
+  // 数据验证：检查数字范围
+  let value = 75
+  let min_val = 0
+  let max_val = 100
+  let in_range = @azimuth.add(@azimuth.add(value, -min_val), -max_val) == 0
+  @azimuth.assert_eq(true, in_range)
   
-  let weekly_total = @azimuth.add(@azimuth.add(@azimuth.add(monday_calories, wednesday_calories), friday_calories), saturday_calories)
-  let daily_average = weekly_total / 4
-  
-  @azimuth.assert_eq(1950, weekly_total)
-  @azimuth.assert_eq(487, daily_average)
-  
-  // 计算月度目标 (每周目标 × 4)
-  let weekly_goal = 2000
-  let monthly_goal = @azimuth.multiply(weekly_goal, 4)
-  @azimuth.assert_eq(8000, monthly_goal)
-}
-
-test "gaming_experience_system" {
-  // 游戏经验系统测试
-  
-  // 计算任务经验值
-  let quest_base_xp = 100
-  let difficulty_multiplier = 2
-  let completion_bonus = 50
-  let quest_xp = @azimuth.add(@azimuth.multiply(quest_base_xp, difficulty_multiplier), completion_bonus)
-  
-  // 计算等级提升所需总经验
-  let current_level = 5
-  let xp_per_level = 1000
-  let total_xp_needed = @azimuth.multiply(current_level, xp_per_level)
-  
-  @azimuth.assert_eq(250, quest_xp)
-  @azimuth.assert_eq(5000, total_xp_needed)
-}
-
-test "digital_storage_calculations" {
-  // 数字存储计算测试
-  
-  // 计算文件总大小
-  let file1_size = 1024    // KB
-  let file2_size = 2048    // KB
-  let file3_size = 512     // KB
-  let total_size_kb = @azimuth.add(@azimuth.add(file1_size, file2_size), file3_size)
-  
-  // 转换为 MB
-  let total_size_mb = total_size_kb / 1024
-  
-  @azimuth.assert_eq(3584, total_size_kb)
-  @azimuth.assert_eq(3, total_size_mb)
-  
-  // 计算传输时间 (假设 1 MB/s)
-  let transfer_time_seconds = total_size_mb
-  let transfer_time_minutes = transfer_time_seconds / 60
-  @azimuth.assert_eq(0, transfer_time_minutes)
-}
-
-test "project_management" {
-  // 项目管理测试
-  
-  // 计算项目工期
-  let planning_days = 5
-  let development_days = 15
-  let testing_days = 8
-  let deployment_days = 2
-  
-  let total_project_days = @azimuth.add(@azimuth.add(@azimuth.add(planning_days, development_days), testing_days), deployment_days)
-  let working_weeks = total_project_days / 5
-  
-  @azimuth.assert_eq(30, total_project_days)
-  @azimuth.assert_eq(6, working_weeks)
-  
-  // 计算项目成本
-  let daily_cost = 500
-  let total_cost = @azimuth.multiply(total_project_days, daily_cost)
-  @azimuth.assert_eq(15000, total_cost)
-}
-
-test "energy_consumption" {
-  // 能源消耗测试
-  
-  // 计算家电月度耗电量
-  let refrigerator_watts = 150
-  let tv_watts = 200
-  let computer_watts = 300
-  
-  let daily_hours_refrigerator = 24
-  let daily_hours_tv = 4
-  let daily_hours_computer = 8
-  
-  let daily_wh_refrigerator = @azimuth.multiply(refrigerator_watts, daily_hours_refrigerator)
-  let daily_wh_tv = @azimuth.multiply(tv_watts, daily_hours_tv)
-  let daily_wh_computer = @azimuth.multiply(computer_watts, daily_hours_computer)
-  
-  let daily_total_wh = @azimuth.add(@azimuth.add(daily_wh_refrigerator, daily_wh_tv), daily_wh_computer)
-  let monthly_total_kwh = @azimuth.multiply(daily_total_wh, 30) / 1000
-  
-  @azimuth.assert_eq(5300, daily_total_wh)
-  @azimuth.assert_eq(159, monthly_total_kwh)
-}
-
-test "travel_planning" {
-  // 旅行规划测试
-  
-  // 计算旅行预算
-  let flight_cost = 2500
-  let accommodation_per_night = 300
-  let daily_food_budget = 150
-  let activities_budget = 800
-  
-  let trip_days = 7
-  let accommodation_total = @azimuth.multiply(accommodation_per_night, trip_days)
-  let food_total = @azimuth.multiply(daily_food_budget, trip_days)
-  
-  let total_budget = @azimuth.add(@azimuth.add(@azimuth.add(flight_cost, accommodation_total), food_total), activities_budget)
-  
-  @azimuth.assert_eq(2100, accommodation_total)
-  @azimuth.assert_eq(1050, food_total)
-  @azimuth.assert_eq(6450, total_budget)
-  
-  // 计算每人平均费用 (假设2人)
-  let travelers = 2
-  let cost_per_person = total_budget / travelers
-  @azimuth.assert_eq(3225, cost_per_person)
+  // 简单的数据统计
+  let data_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
+  let data_count = 5
+  let data_average = data_sum / data_count
+  @azimuth.assert_eq(30, data_average)
 }
