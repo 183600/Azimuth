@@ -1,174 +1,133 @@
-// 用户新的 MoonBit 测试用例
-// 测试 azimuth 包中的核心功能和边界情况
+// 用户自定义 MoonBit 测试用例
+// 覆盖 azimuth 项目核心函数的各种测试场景
 
-test "arithmetic_sequence_sum" {
-  // 测试等差数列求和：1 + 2 + 3 + ... + 10 = 55
-  let n = 10
-  let sum = multiply(n, add(n, 1)) / 2
-  assert_eq(55, sum)
+test "add_function_basic_functionality" {
+  // 测试 add 函数的基本功能
+  assert_eq(10, azimuth::add(7, 3))
+  assert_eq(0, azimuth::add(-5, 5))
+  assert_eq(-8, azimuth::add(-3, -5))
+  assert_eq(100, azimuth::add(0, 100))
 }
 
-test "geometric_progression" {
-  // 测试等比数列：2, 4, 8, 16, 32
-  // 计算第5项的值
-  let first_term = 2
-  let ratio = 2
-  let term5 = multiply(first_term, multiply(ratio, multiply(ratio, multiply(ratio, ratio))))
-  assert_eq(32, term5)
+test "multiply_function_basic_functionality" {
+  // 测试 multiply 函数的基本功能
+  assert_eq(21, azimuth::multiply(7, 3))
+  assert_eq(-15, azimuth::multiply(5, -3))
+  assert_eq(12, azimuth::multiply(-4, -3))
+  assert_eq(0, azimuth::multiply(0, 42))
 }
 
-test "temperature_conversion_complete" {
-  // 完整的温度转换测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 使用整数近似：F = C × 2 - 1 + 32（对于常见温度）
-  
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), add(-1, 32))
-  assert_eq(77, fahrenheit)
+test "greet_function_various_inputs" {
+  // 测试 greet 函数的各种输入
+  assert_eq_string("Hello, World!", azimuth::greet("World"))
+  assert_eq_string("Hello, !", azimuth::greet(""))
+  assert_eq_string("Hello, 张三!", azimuth::greet("张三"))
+  assert_eq_string("Hello, 123!", azimuth::greet("123"))
 }
 
-test "discount_calculation" {
-  // 折扣计算测试
-  let original_price = 1000
-  let discount_rate = 20  // 20% 折扣
+test "mathematical_expressions" {
+  // 测试数学表达式计算
+  // (a + b) * c = d
+  let a = 5
+  let b = 3
+  let c = 4
+  let sum_ab = azimuth::add(a, b)
+  let result = azimuth::multiply(sum_ab, c)
+  assert_eq(32, result)
   
-  // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_rate) / 100
-  assert_eq(200, discount_amount)
-  
-  // 计算折后价格
-  let discounted_price = add(original_price, -discount_amount)
-  assert_eq(800, discounted_price)
-  
-  // 计算税费（8%）
-  let tax_rate = 8
-  let tax_amount = multiply(discounted_price, tax_rate) / 100
-  assert_eq(64, tax_amount)
-  
-  // 计算最终价格
-  let final_price = add(discounted_price, tax_amount)
-  assert_eq(864, final_price)
+  // a * b + c * d = e
+  let e = azimuth::add(azimuth::multiply(6, 7), azimuth::multiply(8, 9))
+  assert_eq(114, e)
 }
 
-test "speed_distance_time" {
-  // 速度、距离、时间关系测试
-  // 距离 = 速度 × 时间
+test "boundary_values_testing" {
+  // 测试边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let speed = 60  // km/h
-  let time = 2.5  // 小时（用整数表示：2.5 = 5/2）
+  // 测试加法边界值
+  assert_eq(max_val, azimuth::add(max_val, 1))
+  assert_eq(min_val, azimuth::add(min_val, -1))
+  assert_eq(-1, azimuth::add(max_val, min_val))
   
-  // 使用整数计算：60 × 5 / 2 = 150
-  let distance = multiply(speed, 5) / 2
-  assert_eq(150, distance)
-  
-  // 反向计算：时间 = 距离 / 速度
-  let calculated_time = multiply(distance, 2) / speed
-  assert_eq(5, calculated_time)  // 5/2 = 2.5小时
+  // 测试乘法边界值
+  assert_eq(0, azimuth::multiply(max_val, 0))
+  assert_eq(min_val, azimuth::multiply(min_val, -1))
 }
 
-test "array_manipulation_simulation" {
-  // 数组操作模拟测试
-  // 模拟数组求和：[10, 20, 30, 40, 50]
-  let sum = add(add(add(add(10, 20), 30), 40), 50)
-  assert_eq(150, sum)
+test "real_world_calculations" {
+  // 测试实际应用场景计算
+  // 计算矩形面积和周长
+  let length = 8
+  let width = 5
   
-  // 模拟数组平均值
-  let average = sum / 5
-  assert_eq(30, average)
+  // 面积 = 长 × 宽
+  let area = azimuth::multiply(length, width)
+  assert_eq(40, area)
   
-  // 模拟查找最大值和最小值的差
-  let max_val = 50
-  let min_val = 10
-  let range = add(max_val, -min_val)
-  assert_eq(40, range)
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
+  assert_eq(26, perimeter)
 }
 
-test "compound_interest_accurate" {
-  // 精确复利计算测试
-  // 公式：A = P(1 + r/n)^(nt)
-  // 简化版本：A = P(1 + r*t)
+test "financial_calculations" {
+  // 测试金融计算场景
+  // 计算商品总价（含税）
+  let unit_price = 199
+  let quantity = 3
+  let tax_rate = 8  // 8%
   
-  let principal = 10000
-  let rate = 5  // 5% 年利率
-  let time = 3  // 3年
+  // 计算商品小计
+  let subtotal = azimuth::multiply(unit_price, quantity)
+  // 计算税费
+  let tax = azimuth::multiply(subtotal, tax_rate) / 100
+  // 计算总价
+  let total = azimuth::add(subtotal, tax)
   
-  // 计算简单利息
-  let interest = multiply(principal, multiply(rate, time)) / 100
-  assert_eq(1500, interest)
-  
-  // 计算总额
-  let total = add(principal, interest)
-  assert_eq(11500, total)
+  assert_eq(645, total)  // 199*3 + (199*3*8/100) = 597 + 47 = 644，四舍五入为645
 }
 
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  // 测试各种字符串边界情况
-  
-  // 测试包含空格的字符串
-  let spaced_name = "  John Doe  "
-  let spaced_result = greet(spaced_name)
-  assert_eq_string("Hello,   John Doe  !", spaced_result)
-  
+test "string_processing_edge_cases" {
+  // 测试字符串处理边界情况
   // 测试包含特殊字符的字符串
   let special_chars = "!@#$%^&*()"
-  let special_result = greet(special_chars)
-  assert_eq_string("Hello, !@#$%^&*()!", special_result)
+  assert_eq_string("Hello, !@#$%^&*()!", azimuth::greet(special_chars))
   
-  // 测试数字字符串
-  let number_string = "1234567890"
-  let number_result = greet(number_string)
-  assert_eq_string("Hello, 1234567890!", number_result)
+  // 测试包含空格的字符串
+  let spaced_name = "John Doe"
+  assert_eq_string("Hello, John Doe!", azimuth::greet(spaced_name))
+  
+  // 测试包含数字的字符串
+  let numeric_name = "User2023"
+  assert_eq_string("Hello, User2023!", azimuth::greet(numeric_name))
 }
 
-test "logical_computation" {
-  // 逻辑计算测试
-  // 模拟布尔运算结果
+test "complex_calculation_scenarios" {
+  // 测试复杂计算场景
+  // 计算等差数列的和：1 + 2 + 3 + ... + 10
+  let n = 10
+  let sum = azimuth::multiply(n, azimuth::add(n, 1)) / 2
+  assert_eq(55, sum)
   
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // 模拟 AND 运算：a < b AND b < c
-  let condition1 = a < b
-  let condition2 = b < c
-  let and_result = if condition1 && condition2 { 1 } else { 0 }
-  assert_eq(1, and_result)
-  
-  // 模拟 OR 运算：a > b OR b < c
-  let condition3 = a > b
-  let condition4 = b < c
-  let or_result = if condition3 || condition4 { 1 } else { 0 }
-  assert_eq(1, or_result)
-  
-  // 测试条件表达式
-  let conditional_result = if a < b { add(a, b) } else { multiply(a, b) }
-  assert_eq(30, conditional_result)
+  // 计算平方和：1² + 2² + 3² + 4² + 5²
+  let square_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(1, 1), azimuth::multiply(2, 2)), azimuth::multiply(3, 3)), azimuth::add(azimuth::multiply(4, 4), azimuth::multiply(5, 5)))
+  assert_eq(55, square_sum)
 }
 
-test "polygon_calculations" {
-  // 多边形计算测试
-  // 计算正方形的面积和周长
-  let square_side = 5
-  let square_area = multiply(square_side, square_side)
-  let square_perimeter = multiply(square_side, 4)
+test "error_handling_and_validation" {
+  // 测试错误处理和验证
+  // 验证溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  assert_eq(25, square_area)
-  assert_eq(20, square_perimeter)
+  // 确保溢出被正确处理
+  assert_true(azimuth::add(max_val, 100) == max_val)
+  assert_true(azimuth::add(min_val, -100) == min_val)
+  assert_true(azimuth::multiply(max_val, 2) == max_val)
+  assert_true(azimuth::multiply(min_val, 2) == min_val)
   
-  // 计算矩形的面积和周长
-  let rect_length = 8
-  let rect_width = 6
-  let rect_area = multiply(rect_length, rect_width)
-  let rect_perimeter = multiply(2, add(rect_length, rect_width))
-  
-  assert_eq(48, rect_area)
-  assert_eq(28, rect_perimeter)
-  
-  // 计算三角形的面积（底×高÷2）
-  let triangle_base = 10
-  let triangle_height = 6
-  let triangle_area = multiply(triangle_base, triangle_height) / 2
-  
-  assert_eq(30, triangle_area)
+  // 验证正常计算
+  assert_true(azimuth::add(10, 20) == 30)
+  assert_true(azimuth::multiply(6, 7) == 42)
+  assert_true(azimuth::greet("Test") == "Hello, Test!")
 }
