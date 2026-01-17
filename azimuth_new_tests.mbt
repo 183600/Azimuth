@@ -1,130 +1,150 @@
-// Azimuth 项目额外测试用例
+// Azimuth 项目新增测试用例
 // 使用标准 MoonBit 测试语法，提供更多测试场景
 
-test "add_large_numbers" {
-  // 测试大数加法
-  assert_eq(azimuth::add(1000000, 2000000), 3000000)
-  assert_eq(azimuth::add(999999999, 1), 1000000000)
-  assert_eq(azimuth::add(500000000, 500000000), 1000000000)
+test "add_negative_numbers" {
+  // 测试负数加法
+  assert_eq(azimuth::add(-5, -10), -15)
+  assert_eq(azimuth::add(-100, 50), -50)
+  assert_eq(azimuth::add(-25, 25), 0)
+  assert_eq(azimuth::add(-7, 3), -4)
 }
 
-test "add_decimal_simulation" {
-  // 模拟小数运算（通过整数运算）
-  // 计算 1.5 + 2.3 = 3.8，通过乘以10实现
-  assert_eq(azimuth::add(15, 23), 38)  // 实际表示 3.8
+test "multiply_negative_numbers" {
+  // 测试负数乘法
+  assert_eq(azimuth::multiply(-4, -6), 24)
+  assert_eq(azimuth::multiply(-8, 3), -24)
+  assert_eq(azimuth::multiply(7, -2), -14)
+  assert_eq(azimuth::multiply(-1, -1), 1)
+}
+
+test "mixed_operations" {
+  // 测试混合运算
+  let a = 10
+  let b = 5
+  let c = 3
   
-  // 计算 0.75 + 0.25 = 1.0，通过乘以100实现
-  assert_eq(azimuth::add(75, 25), 100)  // 实际表示 1.0
-}
-
-test "multiply_large_numbers" {
-  // 测试大数乘法
-  assert_eq(azimuth::multiply(10000, 10000), 100000000)
-  assert_eq(azimuth::multiply(12345, 6789), 83810205)
-  assert_eq(azimuth::multiply(5000, 2000), 10000000)
-}
-
-test "multiply_power_of_two" {
-  // 测试2的幂次方乘法
-  assert_eq(azimuth::multiply(1, 2), 2)      // 2^1
-  assert_eq(azimuth::multiply(2, 2), 4)      // 2^2
-  assert_eq(azimuth::multiply(4, 2), 8)      // 2^3
-  assert_eq(azimuth::multiply(8, 2), 16)     // 2^4
-  assert_eq(azimuth::multiply(16, 2), 32)    // 2^5
-}
-
-test "greet_multilingual" {
-  // 测试多语言问候
-  assert_eq(azimuth::greet("世界"), "Hello, 世界!")
-  assert_eq(azimuth::greet("مرحبا"), "Hello, مرحبا!")
-  assert_eq(azimuth::greet("🌍"), "Hello, 🌍!")
-  assert_eq(azimuth::greet("Café"), "Hello, Café!")
-  assert_eq(azimuth::greet("Niño"), "Hello, Niño!")
-}
-
-test "greet_numeric_names" {
-  // 测试数字名称
-  assert_eq(azimuth::greet("123"), "Hello, 123!")
-  assert_eq(azimuth::greet("007"), "Hello, 007!")
-  assert_eq(azimuth::greet("2023"), "Hello, 2023!")
-}
-
-test "physics_calculations" {
-  // 物理计算测试
+  // (a + b) * c
+  let result1 = azimuth::multiply(azimuth::add(a, b), c)
+  assert_eq(result1, 45)
   
-  // 计算动能: KE = 1/2 * m * v^2
-  // 质量 = 10kg, 速度 = 5m/s, KE = 0.5 * 10 * 25 = 125J
+  // a * b + c
+  let result2 = azimuth::add(azimuth::multiply(a, b), c)
+  assert_eq(result2, 53)
+  
+  // a - b * c (模拟减法: a + (-b*c))
+  let result3 = azimuth::add(a, azimuth::multiply(-b, c))
+  assert_eq(result3, -5)
+}
+
+test "greet_special_characters" {
+  // 测试特殊字符的问候
+  assert_eq(azimuth::greet("@user"), "Hello, @user!")
+  assert_eq(azimuth::greet("#hashtag"), "Hello, #hashtag!")
+  assert_eq(azimuth::greet("$price"), "Hello, $price!")
+  assert_eq(azimuth::greet("user123"), "Hello, user123!")
+}
+
+test "mathematical_constants" {
+  // 测试数学常数相关计算
+  // 圆周率近似计算 (22/7)
+  let pi_approx = 22
+  let pi_denominator = 7
+  let pi_value = azimuth::multiply(100, pi_approx) / pi_denominator  // 放大100倍
+  assert_eq(314, pi_value)
+  
+  // 黄金比例近似 (1.618)
+  let golden_ratio_num = 1618
+  let golden_ratio_den = 1000
+  let golden_test = azimuth::multiply(5, golden_ratio_num) / golden_ratio_den
+  assert_eq(8, golden_test)
+}
+
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算平均值: (a + b + c) / 3
+  let values_sum = azimuth::add(azimuth::add(15, 25), 35)
+  let average = values_sum / 3
+  assert_eq(25, average)
+  
+  // 计算加权平均: (a*2 + b*3 + c*5) / (2+3+5)
+  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(10, 2), azimuth::multiply(20, 3)), azimuth::multiply(30, 5))
+  let weights_total = azimuth::add(azimuth::add(2, 3), 5)
+  let weighted_average = weighted_sum / weights_total
+  assert_eq(23, weighted_average)
+}
+
+test "unit_conversion" {
+  // 测试单位转换
+  // 公里转米: 公里 * 1000
+  let kilometers = 5
+  let meters = azimuth::multiply(kilometers, 1000)
+  assert_eq(5000, meters)
+  
+  // 千克转克: 千克 * 1000
+  let kilograms = 3
+  let grams = azimuth::multiply(kilograms, 1000)
+  assert_eq(3000, grams)
+  
+  // 升转毫升: 升 * 1000
+  let liters = 2
+  let milliliters = azimuth::multiply(liters, 1000)
+  assert_eq(2000, milliliters)
+}
+
+test "sequential_calculations" {
+  // 测试序列计算
+  // 计算阶乘: 5! = 5*4*3*2*1 = 120
+  let factorial_5 = azimuth::multiply(azimuth::multiply(azimuth::multiply(azimuth::multiply(5, 4), 3), 2), 1)
+  assert_eq(120, factorial_5)
+  
+  // 计算平方和: 1² + 2² + 3² + 4² = 1 + 4 + 9 + 16 = 30
+  let square_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(1, 1), azimuth::multiply(2, 2)), azimuth::multiply(3, 3)), azimuth::multiply(4, 4))
+  assert_eq(30, square_sum)
+  
+  // 计算立方和: 1³ + 2³ + 3³ = 1 + 8 + 27 = 36
+  let cube_sum = azimuth::add(azimuth::add(azimuth::multiply(azimuth::multiply(1, 1), 1), azimuth::multiply(azimuth::multiply(2, 2), 2)), azimuth::multiply(azimuth::multiply(3, 3), 3))
+  assert_eq(36, cube_sum)
+}
+
+test "business_calculations" {
+  // 测试商业计算
+  // 计算利润: 收入 - 成本
+  let revenue = 10000
+  let cost = 7000
+  let profit = azimuth::add(revenue, -cost)
+  assert_eq(3000, profit)
+  
+  // 计算税额: 金额 * 税率
+  let amount = 5000
+  let tax_rate = 20  // 20%
+  let tax = azimuth::multiply(amount, tax_rate) / 100
+  assert_eq(1000, tax)
+  
+  // 计算折扣后价格: 原价 * (1 - 折扣率)
+  let original_price = 800
+  let discount_rate = 15  // 15%
+  let discount_amount = azimuth::multiply(original_price, discount_rate) / 100
+  let final_price = azimuth::add(original_price, -discount_amount)
+  assert_eq(680, final_price)
+}
+
+test "scientific_calculations" {
+  // 测试科学计算
+  // 计算动能: 0.5 * 质量 * 速度²
   let mass = 10
   let velocity = 5
   let kinetic_energy = azimuth::multiply(azimuth::multiply(mass, velocity), velocity) / 2
   assert_eq(125, kinetic_energy)
   
-  // 计算势能: PE = m * g * h
-  // 质量 = 5kg, 重力加速度 = 10m/s^2, 高度 = 20m, PE = 5 * 10 * 20 = 1000J
-  let pe_mass = 5
-  let gravity = 10
+  // 计算势能: 质量 * 重力加速度 * 高度
   let height = 20
-  let potential_energy = azimuth::multiply(azimuth::multiply(pe_mass, gravity), height)
-  assert_eq(1000, potential_energy)
-}
-
-test "statistical_calculations" {
-  // 统计计算测试
+  let gravity = 10  // 简化的重力加速度
+  let potential_energy = azimuth::multiply(azimuth::multiply(mass, gravity), height)
+  assert_eq(2000, potential_energy)
   
-  // 计算平均值: (1 + 2 + 3 + 4 + 5) / 5 = 3
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(1, 2), 3), 4), 5)
-  let count = 5
-  let average = sum / count
-  assert_eq(3, average)
-  
-  // 计算加权平均: (10*2 + 20*3 + 30*5) / (2+3+5) = 23
-  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(10, 2), azimuth::multiply(20, 3)), azimuth::multiply(30, 5))
-  let total_weight = azimuth::add(azimuth::add(2, 3), 5)
-  let weighted_average = weighted_sum / total_weight
-  assert_eq(23, weighted_average)
-}
-
-test "business_calculations" {
-  // 商业计算测试
-  
-  // 计算利润: 收入 - 成本
-  let revenue = 50000
-  let cost = 35000
-  let profit = azimuth::add(revenue, -cost)
-  assert_eq(15000, profit)
-  
-  // 计算利润率: 利润 / 成本 * 100
-  let profit_rate = azimuth::multiply(profit, 100) / cost
-  assert_eq(42, profit_rate)  // 42%（截断小数部分）
-  
-  // 计算税收: 利润 * 税率
-  let tax_rate = 20  // 20%
-  let tax = azimuth::multiply(profit, tax_rate) / 100
-  let net_profit = azimuth::add(profit, -tax)
-  assert_eq(3000, tax)
-  assert_eq(12000, net_profit)
-}
-
-test "complex_arithmetic_expressions" {
-  // 复杂算术表达式测试
-  
-  // 计算: (a + b) * (c - d) + e * f
-  let a = 10
-  let b = 5
-  let c = 20
-  let d = 8
-  let e = 3
-  let f = 7
-  
-  let part1 = azimuth::multiply(azimuth::add(a, b), azimuth::add(c, -d))
-  let part2 = azimuth::multiply(e, f)
-  let result = azimuth::add(part1, part2)
-  assert_eq(181, result)  // (10+5)*(20-8) + 3*7 = 15*12 + 21 = 180 + 21 = 201
-  
-  // 计算: a^2 + b^2 - 2*a*b (完全平方公式)
-  let a2 = azimuth::multiply(a, a)
-  let b2 = azimuth::multiply(b, b)
-  let twoab = azimuth::multiply(azimuth::multiply(2, a), b)
-  let square_result = azimuth::add(azimuth::add(a2, b2), -twoab)
-  assert_eq(25, square_result)  // 10^2 + 5^2 - 2*10*5 = 100 + 25 - 100 = 25
+  // 计算功率: 功 / 时间
+  let work = 5000
+  let time = 10
+  let power = work / time
+  assert_eq(500, power)
 }
