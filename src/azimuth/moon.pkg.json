@@ -59,6 +59,7 @@
     "test/standard_moonbit_test_examples.mbt",
     "../../azimuth_new_standard_tests.mbt",
     "azimuth_standard_moonbit_tests.mbt",
+    "azimuth_new_standard_tests.mbt",
   "test/azimuth_standard_moonbit_tests.mbt",
     "../../azimuth_enhanced_test_cases.mbt",
     "test/standard_moonbit_tests.mbt",
