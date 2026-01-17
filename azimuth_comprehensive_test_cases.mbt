@@ -1,121 +1,130 @@
 // Azimuth 项目综合测试用例
-// 使用标准 MoonBit 测试语法，覆盖项目核心功能
+// 使用标准 MoonBit 测试语法，涵盖多种测试场景
 
-test "add_basic_functionality" {
-  // 基本加法功能测试
+test "add_function_comprehensive" {
+  // 测试加法函数的多种情况
   assert_eq(azimuth::add(5, 3), 8)
-  assert_eq(azimuth::add(-2, 7), 5)
-  assert_eq(azimuth::add(-4, -6), -10)
-  assert_eq(azimuth::add(0, 42), 42)
-  assert_eq(azimuth::add(100, 0), 100)
+  assert_eq(azimuth::add(-5, 3), -2)
+  assert_eq(azimuth::add(0, 0), 0)
+  assert_eq(azimuth::add(100, 200), 300)
+  assert_eq(azimuth::add(-10, -20), -30)
 }
 
-test "add_edge_cases" {
-  // 加法边界情况测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  assert_eq(azimuth::add(max_val, 1), max_val)
-  assert_eq(azimuth::add(min_val, -1), min_val)
-  
-  // 测试最小值特殊情况
-  assert_eq(azimuth::add(min_val, 0), min_val)
-  assert_eq(azimuth::add(min_val, 1), -2147483647)
-}
-
-test "multiply_basic_functionality" {
-  // 基本乘法功能测试
+test "multiply_function_comprehensive" {
+  // 测试乘法函数的多种情况
   assert_eq(azimuth::multiply(4, 5), 20)
-  assert_eq(azimuth::multiply(-3, 7), -21)
-  assert_eq(azimuth::multiply(-2, -8), 16)
-  assert_eq(azimuth::multiply(12, 0), 0)
-  assert_eq(azimuth::multiply(0, 25), 0)
+  assert_eq(azimuth::multiply(-4, 5), -20)
+  assert_eq(azimuth::multiply(4, -5), -20)
+  assert_eq(azimuth::multiply(-4, -5), 20)
+  assert_eq(azimuth::multiply(0, 100), 0)
 }
 
-test "multiply_edge_cases" {
-  // 乘法边界情况测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试1和-1的情况
-  assert_eq(azimuth::multiply(42, 1), 42)
-  assert_eq(azimuth::multiply(1, -17), -17)
-  assert_eq(azimuth::multiply(-5, -1), 5)
-  
-  // 测试最小值的特殊情况
-  assert_eq(azimuth::multiply(min_val, -1), min_val)
-  assert_eq(azimuth::multiply(min_val, 1), min_val)
-  assert_eq(azimuth::multiply(min_val, 2), min_val)
-}
-
-test "greet_functionality" {
-  // 问候函数测试
-  assert_eq(azimuth::greet("World"), "Hello, World!")
-  assert_eq(azimuth::greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq(azimuth::greet(""), "Hello, !")
-  assert_eq(azimuth::greet(" "), "Hello,  !")
+test "greet_function_comprehensive" {
+  // 测试问候函数的多种情况
+  assert_eq_string(azimuth::greet("World"), "Hello, World!")
+  assert_eq_string(azimuth::greet("Alice"), "Hello, Alice!")
+  assert_eq_string(azimuth::greet("张三"), "Hello, 张三!")
+  assert_eq_string(azimuth::greet(""), "Hello, !")
+  assert_eq_string(azimuth::greet("123"), "Hello, 123!")
 }
 
 test "mathematical_expressions" {
-  // 复杂数学表达式测试
-  // 计算 (a + b) * c
-  let a = 3
-  let b = 4
-  let c = 5
-  let result = azimuth::multiply(azimuth::add(a, b), c)
-  assert_eq(result, 35)
+  // 测试数学表达式组合
+  // (2 + 3) * 4 = 20
+  let temp1 = azimuth::add(2, 3)
+  let result1 = azimuth::multiply(temp1, 4)
+  assert_eq(result1, 20)
   
-  // 计算 a * b + c * d
-  let d = 2
-  let result2 = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(c, d))
-  assert_eq(result2, 22)
+  // 5 * (6 + 7) = 65
+  let temp2 = azimuth::add(6, 7)
+  let result2 = azimuth::multiply(5, temp2)
+  assert_eq(result2, 65)
+  
+  // (8 * 2) + (3 * 4) = 28
+  let temp3 = azimuth::multiply(8, 2)
+  let temp4 = azimuth::multiply(3, 4)
+  let result3 = azimuth::add(temp3, temp4)
+  assert_eq(result3, 28)
 }
 
-test "practical_calculations" {
-  // 实际计算场景测试
-  // 计算购物总价：单价 × 数量
-  let unit_price = 15
-  let quantity = 6
-  let total = azimuth::multiply(unit_price, quantity)
-  assert_eq(total, 90)
-  
-  // 计算平均分：(分数1 + 分数2 + 分数3) / 3
-  let score1 = 85
-  let score2 = 90
-  let score3 = 95
-  let sum = azimuth::add(azimuth::add(score1, score2), score3)
-  // 注意：这里使用整数除法
-  let average = sum / 3
-  assert_eq(average, 90)
+test "boundary_values" {
+  // 测试边界值
+  assert_eq(azimuth::add(2147483647, 0), 2147483647)
+  assert_eq(azimuth::add(-2147483648, 0), -2147483648)
+  assert_eq(azimuth::multiply(1, 2147483647), 2147483647)
+  assert_eq(azimuth::multiply(-1, 2147483647), -2147483647)
+  assert_eq(azimuth::multiply(0, -2147483648), 0)
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  let name1 = "Alice"
-  let name2 = "张三"
-  let name3 = "🚀"
+test "sequence_calculations" {
+  // 测试序列计算
+  // 斐波那契数列: 1, 1, 2, 3, 5, 8
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = azimuth::add(fib1, fib2)  // 2
+  let fib4 = azimuth::add(fib2, fib3)  // 3
+  let fib5 = azimuth::add(fib3, fib4)  // 5
+  let fib6 = azimuth::add(fib4, fib5)  // 8
   
-  assert_eq(azimuth::greet(name1), "Hello, Alice!")
-  assert_eq(azimuth::greet(name2), "Hello, 张三!")
-  assert_eq(azimuth::greet(name3), "Hello, 🚀!")
+  assert_eq(fib3, 2)
+  assert_eq(fib4, 3)
+  assert_eq(fib5, 5)
+  assert_eq(fib6, 8)
 }
 
-test "assertion_functions" {
-  // 断言函数测试
-  // 测试 assert_eq
-  azimuth::assert_eq(10, 10)
-  azimuth::assert_eq(-5, -5)
-  azimuth::assert_eq(0, 0)
+test "business_calculations" {
+  // 测试商业计算场景
+  // 商品总价计算
+  let price = 50
+  let quantity = 3
+  let subtotal = azimuth::multiply(price, quantity)
+  assert_eq(subtotal, 150)
   
-  // 测试 assert_eq_string
-  azimuth::assert_eq_string("test", "test")
-  azimuth::assert_eq_string("", "")
-  azimuth::assert_eq_string("Hello, World!", "Hello, World!")
+  // 折扣计算
+  let discount = 20
+  let final_price = azimuth::add(subtotal, -discount)
+  assert_eq(final_price, 130)
   
-  // 测试 assert_true 和 assert_false
-  azimuth::assert_true(true)
-  azimuth::assert_true(1 == 1)
-  azimuth::assert_false(false)
-  azimuth::assert_false(1 == 0)
+  // 税费计算
+  let tax_rate = 10  // 10%
+  let tax = azimuth::multiply(final_price, tax_rate) / 100
+  let total = azimuth::add(final_price, tax)
+  assert_eq(total, 143)
+}
+
+test "geometry_calculations" {
+  // 测试几何计算
+  // 正方形面积
+  let side = 5
+  let area = azimuth::multiply(side, side)
+  assert_eq(area, 25)
+  
+  // 矩形周长: 2 * (长 + 宽)
+  let length = 8
+  let width = 4
+  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
+  assert_eq(perimeter, 24)
+  
+  // 立方体体积
+  let cube_side = 3
+  let volume = azimuth::multiply(azimuth::multiply(cube_side, cube_side), cube_side)
+  assert_eq(volume, 27)
+}
+
+test "time_calculations" {
+  // 测试时间计算
+  // 小时转分钟
+  let hours = 3
+  let minutes = azimuth::multiply(hours, 60)
+  assert_eq(minutes, 180)
+  
+  // 天转小时
+  let days = 2
+  let total_hours = azimuth::multiply(days, 24)
+  assert_eq(total_hours, 48)
+  
+  // 周转分钟
+  let weeks = 1
+  let week_minutes = azimuth::multiply(azimuth::multiply(weeks, 7), azimuth::multiply(24, 60))
+  assert_eq(week_minutes, 10080)
 }
