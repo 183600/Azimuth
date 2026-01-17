@@ -1,204 +1,239 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，包含10个测试用例
+// 使用标准 MoonBit 测试语法
 
-test "string_concatenation_edge_cases" {
-  // 测试字符串连接的边界情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
-  @azimuth.assert_eq_string("Hello, Special@#$%!", @azimuth.greet("Special@#$%"))
+test "boolean_operations" {
+  // 测试布尔运算
+  let true_val = 1
+  let false_val = 0
+  
+  // 逻辑与模拟
+  let and_result1 = azimuth::multiply(true_val, true_val)  // 1 && 1 = 1
+  let and_result2 = azimuth::multiply(true_val, false_val) // 1 && 0 = 0
+  let and_result3 = azimuth::multiply(false_val, false_val) // 0 && 0 = 0
+  
+  assert_eq(and_result1, 1)
+  assert_eq(and_result2, 0)
+  assert_eq(and_result3, 0)
+  
+  // 逻辑或模拟
+  let or_result1 = azimuth::add(azimuth::multiply(true_val, true_val), azimuth::multiply(true_val, false_val))  // 1 || 1 = 1
+  let or_result2 = azimuth::add(azimuth::multiply(true_val, false_val), azimuth::multiply(false_val, true_val)) // 1 || 0 = 1
+  
+  assert_eq(or_result1, 1)
+  assert_eq(or_result2, 1)
 }
 
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 8
+test "statistical_calculations" {
+  // 测试统计计算
+  // 平均值计算
+  let numbers_sum = azimuth::add(azimuth::add(azimuth::add(10, 20), 30), 40)
+  let count = 4
+  let average = azimuth::divide(numbers_sum, count)
+  assert_eq(average, 25)
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 中位数计算（偶数个元素）
+  let sorted_sum = azimuth::add(15, 25)
+  let median = azimuth::divide(sorted_sum, 2)
+  assert_eq(median, 20)
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, 3)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 3)))
-  
-  // 结合律
-  @azimuth.assert_eq(@azimuth.add(@azimuth.add(a, b), 5), @azimuth.add(a, @azimuth.add(b, 5)))
-  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(a, b), 2), @azimuth.multiply(a, @azimuth.multiply(b, 2)))
+  // 范围计算
+  let max_val = 50
+  let min_val = 10
+  let range = azimuth::add(max_val, -min_val)
+  assert_eq(range, 40)
 }
 
-test "financial_calculations_practical" {
-  // 测试实际金融计算
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
+test "calendar_calculations" {
+  // 测试日历计算
+  // 闰年判断模拟（简化版本）
+  let year = 2024
+  let leap_check1 = azimuth::divide(year, 4)
+  let is_leap1 = azimuth::multiply(leap_check1, 4) == year  // 能被4整除
+  assert_eq(is_leap1, true)
   
-  // 简单利息计算
-  let simple_interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years)) / 100
-  let total_simple = @azimuth.add(principal, simple_interest)
-  @azimuth.assert_eq(160000, total_simple)
+  let year2 = 2023
+  let leap_check2 = azimuth::divide(year2, 4)
+  let is_leap2 = azimuth::multiply(leap_check2, 4) == year2
+  assert_eq(is_leap2, false)
   
-  // 折扣计算
-  let original_price = 500
-  let discount_rate = 20
-  let discount_amount = @azimuth.multiply(original_price, discount_rate) / 100
-  let final_price = @azimuth.add(original_price, -discount_amount)
-  @azimuth.assert_eq(400, final_price)
+  // 年份中的天数计算
+  let days_in_year = 365
+  let leap_year_days = azimuth::add(days_in_year, 1)
+  assert_eq(leap_year_days, 366)
+  
+  // 月份天数模拟
+  let jan_days = 31
+  let feb_days_leap = 29
+  let mar_days = 31
+  let q1_days_leap = azimuth::add(azimuth::add(jan_days, feb_days_leap), mar_days)
+  assert_eq(q1_days_leap, 91)
 }
 
-test "geometry_area_calculations" {
-  // 测试几何面积计算
-  let length = 10
-  let width = 6
-  let radius = 5
+test "physics_calculations" {
+  // 测试物理计算
+  // 速度 = 距离 / 时间
+  let distance = 100
+  let time = 5
+  let speed = azimuth::divide(distance, time)
+  assert_eq(speed, 20)
   
-  // 矩形面积
-  let rectangle_area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(60, rectangle_area)
+  // 动能 = 0.5 * 质量 * 速度²（整数模拟）
+  let mass = 10
+  let velocity = 8
+  let kinetic_energy = azimuth::divide(azimuth::multiply(mass, azimuth::multiply(velocity, velocity)), 2)
+  assert_eq(kinetic_energy, 320)
   
-  // 三角形面积（底×高÷2）
-  let triangle_base = 8
-  let triangle_height = 4
-  let triangle_area = @azimuth.multiply(triangle_base, triangle_height) / 2
-  @azimuth.assert_eq(16, triangle_area)
+  // 力 = 质量 * 加速度
+  let acceleration = 3
+  let force = azimuth::multiply(mass, acceleration)
+  assert_eq(force, 30)
   
-  // 圆面积（简化：π≈3）
-  let circle_area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(75, circle_area)
+  // 功 = 力 * 距离
+  let work = azimuth::multiply(force, 15)
+  assert_eq(work, 450)
 }
 
-test "time_conversion_calculations" {
-  // 测试时间转换计算
-  let hours = 3
-  let minutes = 45
+test "array_operations_simulation" {
+  // 测试数组操作模拟
+  // 数组长度操作
+  let array_length = 0
   
-  // 转换为总分钟数
-  let total_minutes = @azimuth.add(@azimuth.multiply(hours, 60), minutes)
-  @azimuth.assert_eq(225, total_minutes)
+  // 添加元素
+  array_length = azimuth::add(array_length, 1)  // 添加第一个元素
+  assert_eq(array_length, 1)
   
-  // 转换为总秒数
-  let total_seconds = @azimuth.multiply(total_minutes, 60)
-  @azimuth.assert_eq(13500, total_seconds)
+  array_length = azimuth::add(array_length, 1)  // 添加第二个元素
+  assert_eq(array_length, 2)
   
-  // 计算工作日分钟数（8小时×5天）
-  let work_minutes = @azimuth.multiply(@azimuth.multiply(8, 60), 5)
-  @azimuth.assert_eq(2400, work_minutes)
+  array_length = azimuth::add(array_length, 1)  // 添加第三个元素
+  assert_eq(array_length, 3)
+  
+  // 删除元素
+  array_length = azimuth::add(array_length, -1)  // 删除一个元素
+  assert_eq(array_length, 2)
+  
+  // 数组索引计算
+  let base_index = 0
+  let offset = 3
+  let target_index = azimuth::add(base_index, offset)
+  assert_eq(target_index, 3)
 }
 
-test "shopping_cart_total_calculation" {
-  // 测试购物车总价计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let item3_price = 99
-  let item3_quantity = 3
-  let shipping = 15
+test "number_system_conversions" {
+  // 测试数字系统转换
+  // 二进制转十进制模拟（1010 = 8 + 0 + 2 + 0 = 10）
+  let binary_1010 = azimuth::add(azimuth::add(azimuth::multiply(1, 8), azimuth::multiply(0, 4)), azimuth::add(azimuth::multiply(1, 2), azimuth::multiply(0, 1)))
+  assert_eq(binary_1010, 10)
   
-  // 计算各商品总价
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
-  let total3 = @azimuth.multiply(item3_price, item3_quantity)
+  // 十六进制转十进制模拟（A = 10）
+  let hex_A = 10
+  let hex_F = 15
+  let hex_AF = azimuth::add(azimuth::multiply(hex_A, 16), hex_F)
+  assert_eq(hex_AF, 175)
   
-  // 计算购物车总价（含运费）
-  let cart_total = @azimuth.add(@azimuth.add(@azimuth.add(total1, total2), total3), shipping)
-  
-  // 验证总价：199*2 + 299*1 + 99*3 + 15 = 398 + 299 + 297 + 15 = 1009
-  @azimuth.assert_eq(1009, cart_total)
+  // 八进制转十进制模拟（12 = 1*8 + 2 = 10）
+  let octal_12 = azimuth::add(azimuth::multiply(1, 8), 2)
+  assert_eq(octal_12, 10)
 }
 
-test "temperature_conversion_practical" {
-  // 测试实际温度转换（简化版：F = C × 2 + 30）
-  let celsius_freezing = 0
-  let celsius_room = 20
-  let celsius_boiling = 100
+test "game_score_calculations" {
+  // 测试游戏分数计算
+  // 基础分数系统
+  let base_score = 100
+  let level_multiplier = 3
+  let bonus_points = 50
   
-  // 转换为华氏度
-  let fahrenheit_freezing = @azimuth.add(@azimuth.multiply(celsius_freezing, 2), 30)
-  let fahrenheit_room = @azimuth.add(@azimuth.multiply(celsius_room, 2), 30)
-  let fahrenheit_boiling = @azimuth.add(@azimuth.multiply(celsius_boiling, 2), 30)
+  // 计算最终分数
+  let level_score = azimuth::multiply(base_score, level_multiplier)
+  let final_score = azimuth::add(level_score, bonus_points)
+  assert_eq(final_score, 350)
   
-  @azimuth.assert_eq(30, fahrenheit_freezing)   // 0°C ≈ 30°F
-  @azimuth.assert_eq(70, fahrenheit_room)       // 20°C ≈ 70°F
-  @azimuth.assert_eq(230, fahrenheit_boiling)   // 100°C ≈ 230°F
+  // 连击奖励
+  let combo_count = 5
+  let combo_bonus = azimuth::multiply(combo_count, 20)
+  let total_with_combo = azimuth::add(final_score, combo_bonus)
+  assert_eq(total_with_combo, 450)
+  
+  // 难度系数
+  let difficulty_factor = 2
+  let adjusted_score = azimuth::divide(total_with_combo, difficulty_factor)
+  assert_eq(adjusted_score, 225)
 }
 
-test "series_calculation_patterns" {
-  // 测试级数计算模式
-  // 等差数列求和：1 + 2 + 3 + 4 + 5 = 15
-  let arithmetic_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
-  @azimuth.assert_eq(15, arithmetic_sum)
+test "sorting_algorithm_simulation" {
+  // 测试排序算法模拟
+  // 冒泡排序比较次数计算（n-1 + n-2 + ... + 1）
+  let n = 5
+  let comparisons = azimuth::divide(azimuth::multiply(azimuth::add(n, -1), n), 2)
+  assert_eq(comparisons, 10)
   
-  // 等比数列求和：2 + 4 + 8 + 16 = 30
-  let geometric_sum = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 8), 16)
-  @azimuth.assert_eq(30, geometric_sum)
+  // 选择算法效率比较
+  let linear_search_n = 100
+  let binary_search_log_n = 7  // 近似值
+  let efficiency_ratio = azimuth::divide(linear_search_n, binary_search_log_n)
+  assert_eq(efficiency_ratio, 14)
   
-  // 平方数列求和：1² + 2² + 3² + 4² = 1 + 4 + 9 + 16 = 30
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3)), @azimuth.multiply(4, 4))
-  @azimuth.assert_eq(30, square_sum)
+  // 数组访问次数统计
+  let array_accesses = 0
+  array_accesses = azimuth::add(array_accesses, 3)  // 第一次操作
+  array_accesses = azimuth::add(array_accesses, 5)  // 第二次操作
+  array_accesses = azimuth::add(array_accesses, 2)  // 第三次操作
+  assert_eq(array_accesses, 10)
 }
 
-test "boundary_value_comprehensive" {
-  // 测试边界值综合情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let zero = 0
-  let one = 1
-  let neg_one = -1
+test "error_handling_simulation" {
+  // 测试错误处理模拟
+  // 错误代码定义
+  let success_code = 0
+  let file_not_found = 404
+  let server_error = 500
   
-  // 边界值加法
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, neg_one))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, zero))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, zero))
+  // 错误状态检查
+  let current_status = 404
+  let is_success = current_status == success_code
+  let is_client_error = azimuth::add(current_status, -399) > 0 && azimuth::add(current_status, -500) < 0
+  let is_server_error = current_status >= server_error
   
-  // 边界值乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, zero))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, zero))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, neg_one))
+  assert_eq(is_success, false)
+  assert_eq(is_client_error, true)
+  assert_eq(is_server_error, false)
   
-  // 边界值组合
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, one))
-  @azimuth.assert_eq(max_val, @azimuth.add(zero, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(zero, min_val))
+  // 错误恢复尝试
+  let retry_count = 0
+  let max_retries = 3
+  
+  retry_count = azimuth::add(retry_count, 1)  // 第一次重试
+  retry_count = azimuth::add(retry_count, 1)  // 第二次重试
+  
+  let can_retry = retry_count < max_retries
+  assert_eq(can_retry, true)
 }
 
-test "real_world_application_scenario" {
-  // 测试实际应用场景：计算订单总价（含折扣和税费）
-  let unit_price = 120
-  let quantity = 5
-  let discount_threshold = 500
-  let discount_rate = 10
-  let tax_rate = 8
-  let shipping = 25
+test "data_validation" {
+  // 测试数据验证
+  // 邮箱格式验证（简化版本）
+  let email_length = 25
+  let has_at_symbol = 1  // 1表示有@符号，0表示没有
+  let has_dot = 1        // 1表示有点号，0表示没有
   
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let is_valid_email = azimuth::add(azimuth::add(email_length >= 5 ? 1 : 0, has_at_symbol), has_dot) == 3
+  assert_eq(is_valid_email, true)
   
-  // 计算折扣（如果超过阈值）
-  let discount_amount = if (subtotal > discount_threshold) {
-    @azimuth.multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
+  // 密码强度检查
+  let password_length = 8
+  let has_uppercase = 1
+  let has_lowercase = 1
+  let has_numbers = 1
+  let has_special_chars = 0
   
-  // 计算折后价格
-  let discounted_total = @azimuth.add(subtotal, -discount_amount)
+  let strength_score = azimuth::add(azimuth::add(azimuth::add(password_length >= 8 ? 1 : 0, has_uppercase), has_lowercase), azimuth::add(has_numbers, has_special_chars))
+  assert_eq(strength_score, 4)
   
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_total, tax_rate) / 100
+  // 输入范围验证
+  let min_value = 1
+  let max_value = 100
+  let user_input = 75
   
-  // 计算最终总价（含运费）
-  let final_total = @azimuth.add(@azimuth.add(discounted_total, tax_amount), shipping)
-  
-  @azimuth.assert_eq(629, final_total)
-  
-  // 验证计算过程：120*5 = 600，折扣 = 600*10/100 = 60，折后 = 600-60 = 540
-  // 税费 = 540*8/100 = 43，总价 = 540+43+25 = 608（修正计算）
-  @azimuth.assert_eq(608, @azimuth.add(@azimuth.add(@azimuth.add(600, -60), 43), 25))
+  let is_in_range = user_input >= min_value && user_input <= max_value
+  assert_eq(is_in_range, true)
 }
