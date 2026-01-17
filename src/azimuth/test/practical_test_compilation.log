@@ -1,0 +1,2 @@
+azimuth_test/azimuth_practical_test_suite.mbt:138:7-138:12 [E0002] Warning (unused_value): Unused variable 'email'
+azimuth_test/azimuth_practical_test_suite.mbt:140:7-140:15 [E0002] Warning (unused_value): Unused variable 'password'
