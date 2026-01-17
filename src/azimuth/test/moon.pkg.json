@@ -158,5 +158,6 @@
     "azimuth_new_comprehensive_tests.mbt",
     "simple_user_tests.mbt",
     "simple_azimuth_new_tests.mbt",
-    "azimuth_new_tests.mbt"
+    "azimuth_new_tests.mbt",
+    "azimuth_new_practical_tests.mbt"
     ]}
