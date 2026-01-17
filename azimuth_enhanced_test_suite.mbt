@@ -1,89 +1,88 @@
-// Azimuth 项目增强测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 项目增强测试套件
+// 使用标准 MoonBit 测试语法，专注于边界条件和错误处理
 
-test "add_identity_elements" {
-  // 测试加法单位元
-  assert_eq(azimuth::add(0, 0), 0)
-  assert_eq(azimuth::add(42, 0), 42)
-  assert_eq(azimuth::add(0, 42), 42)
-  assert_eq(azimuth::add(-100, 0), -100)
+test "add_large_numbers" {
+  // 测试大数加法
+  assert_eq(azimuth::add(1000000, 2000000), 3000000)
+  assert_eq(azimuth::add(999999, 1), 1000000)
+  assert_eq(azimuth::add(-1000000, 1000000), 0)
 }
 
-test "add_negative_numbers" {
-  // 测试负数加法
-  assert_eq(azimuth::add(-10, -20), -30)
-  assert_eq(azimuth::add(-15, 25), 10)
-  assert_eq(azimuth::add(30, -45), -15)
-  assert_eq(azimuth::add(-50, 50), 0)
+test "add_extreme_values" {
+  // 测试极值加法
+  assert_eq(azimuth::add(2147483647, 0), 2147483647)  // 接近Int32最大值
+  assert_eq(azimuth::add(-2147483648, 0), -2147483648) // 接近Int32最小值
 }
 
-test "multiply_identity_elements" {
-  // 测试乘法单位元
-  assert_eq(azimuth::multiply(1, 1), 1)
-  assert_eq(azimuth::multiply(42, 1), 42)
-  assert_eq(azimuth::multiply(1, 42), 42)
-  assert_eq(azimuth::multiply(0, 1), 0)
+test "multiply_large_numbers" {
+  // 测试大数乘法
+  assert_eq(azimuth::multiply(1000, 1000), 1000000)
+  assert_eq(azimuth::multiply(123, 456), 56088)
+  assert_eq(azimuth::multiply(-1000, 1000), -1000000)
 }
 
-test "multiply_zero_property" {
-  // 测试乘法零性质
-  assert_eq(azimuth::multiply(0, 0), 0)
-  assert_eq(azimuth::multiply(123, 0), 0)
-  assert_eq(azimuth::multiply(0, 456), 0)
-  assert_eq(azimuth::multiply(-789, 0), 0)
+test "multiply_negative_combinations" {
+  // 测试负数乘法的各种组合
+  assert_eq(azimuth::multiply(-10, -20), 200)    // 负负得正
+  assert_eq(azimuth::multiply(15, -3), -45)      // 正负得负
+  assert_eq(azimuth::multiply(-7, 8), -56)       // 负正得负
 }
 
-test "multiply_negative_numbers" {
-  // 测试负数乘法
-  assert_eq(azimuth::multiply(-5, -5), 25)
-  assert_eq(azimuth::multiply(-6, 7), -42)
-  assert_eq(azimuth::multiply(8, -9), -72)
-  assert_eq(azimuth::multiply(-10, -10), 100)
+test "greet_edge_cases" {
+  // 测试问候功能的边界情况
+  assert_eq(azimuth::greet(""), "Hello, !")      // 空字符串
+  assert_eq(azimuth::greet(" "), "Hello,  !")    // 空格
+  assert_eq(azimuth::greet("123"), "Hello, 123!") // 数字字符串
 }
 
-test "greet_various_names" {
-  // 测试各种名称的问候
-  assert_eq(azimuth::greet("Alice"), "Hello, Alice!")
-  assert_eq(azimuth::greet("Bob"), "Hello, Bob!")
-  assert_eq(azimuth::greet("Charlie"), "Hello, Charlie!")
-  assert_eq(azimuth::greet("David"), "Hello, David!")
+test "greet_unicode_characters" {
+  // 测试Unicode字符处理
+  assert_eq(azimuth::greet("张三"), "Hello, 张三!")
+  assert_eq(azimuth::greet("José"), "Hello, José!")
+  assert_eq(azimuth::greet("🌟"), "Hello, 🌟!")
 }
 
-test "greet_numbers_and_symbols" {
-  // 测试包含数字和符号的名称
-  assert_eq(azimuth::greet("User123"), "Hello, User123!")
-  assert_eq(azimuth::greet("test_user"), "Hello, test_user!")
-  assert_eq(azimuth::greet("admin@site"), "Hello, admin@site!")
-}
-
-test "combined_operations_simple" {
-  // 测试简单的组合运算
-  // 计算 (2 + 3) * 4
-  let temp = azimuth::add(2, 3)
-  let result = azimuth::multiply(temp, 4)
-  assert_eq(result, 20)
+test "mathematical_properties" {
+  // 测试数学性质
+  // 交换律
+  let a = 17
+  let b = 23
+  assert_eq(azimuth::add(a, b), azimuth::add(b, a))
+  assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
   
-  // 计算 5 * (6 + 7)
-  let temp2 = azimuth::add(6, 7)
-  let result2 = azimuth::multiply(5, temp2)
-  assert_eq(result2, 65)
+  // 结合律
+  let c = 31
+  assert_eq(azimuth::add(azimuth::add(a, b), c), azimuth::add(a, azimuth::add(b, c)))
+  assert_eq(azimuth::multiply(azimuth::multiply(a, b), c), azimuth::multiply(a, azimuth::multiply(b, c)))
 }
 
-test "practical_business_calculations" {
-  // 测试实际业务计算
-  // 计算总价：单价 × 数量
-  let unit_price = 15
-  let quantity = 8
-  let subtotal = azimuth::multiply(unit_price, quantity)
+test "zero_and_identity_properties" {
+  // 测试零和单位元的性质
+  let x = 42
   
-  // 计算税费（假设税率为10%，使用整数运算）
-  let tax_rate = 10
-  let tax_amount = azimuth::multiply(subtotal, tax_rate) / 100
+  // 加法零元
+  assert_eq(azimuth::add(x, 0), x)
+  assert_eq(azimuth::add(0, x), x)
   
-  // 计算总价
-  let total = azimuth::add(subtotal, tax_amount)
+  // 乘法单位元
+  assert_eq(azimuth::multiply(x, 1), x)
+  assert_eq(azimuth::multiply(1, x), x)
   
-  assert_eq(subtotal, 120)
-  assert_eq(tax_amount, 12)
-  assert_eq(total, 132)
+  // 乘法零元
+  assert_eq(azimuth::multiply(x, 0), 0)
+  assert_eq(azimuth::multiply(0, x), 0)
+}
+
+test "mixed_operations_stress" {
+  // 混合运算压力测试
+  let a = 100
+  let b = -50
+  let c = 25
+  
+  // 复合运算
+  let result1 = azimuth::add(a, azimuth::multiply(b, c))  // 100 + (-50 * 25) = 100 - 1250 = -1150
+  assert_eq(result1, -1150)
+  
+  let result2 = azimuth::multiply(azimuth::add(a, b), c)  // (100 + (-50)) * 25 = 50 * 25 = 1250
+  assert_eq(result2, 1250)
 }
