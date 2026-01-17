@@ -86,4 +86,5 @@
   "azimuth_standard_test_cases.mbt",
             "simple_azimuth_tests.mbt",
             "basic_test.mbt",
-            "test/user_moonbit_test_examples.mbt"]}
+            "test/user_moonbit_test_examples.mbt",
+            "test/azimuth_new_test_cases.mbt"]}
