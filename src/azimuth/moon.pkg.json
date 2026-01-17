@@ -78,4 +78,5 @@
           "test/simple_user_tests.mbt",
     "test/standard_moonbit_tests.mbt",
           "test/user_new_test_cases.mbt",
-          "user_simple_tests.mbt"  ]}
+          "user_simple_tests.mbt",
+          "standard_moonbit_test_cases.mbt"  ]}
