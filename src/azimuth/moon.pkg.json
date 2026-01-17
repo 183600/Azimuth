@@ -70,5 +70,6 @@
       "test/additional_standard_tests.mbt",
       "user_added_tests.mbt",
       "user_moonbit_test_examples.mbt",
-      "test/azimuth_new_tests.mbt"  ]
+      "test/azimuth_new_tests.mbt",
+      "test/standard_moonbit_core_tests.mbt"  ]
 }
