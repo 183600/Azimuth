@@ -95,4 +95,5 @@
   "test/user_new_addition_tests.mbt",
   "user_new_standard_tests.mbt",
           "additional_moonbit_test_cases.mbt",
-  "user_standard_tests_new.mbt"]}
+  "user_standard_tests_new.mbt",
+          "user_additional_moonbit_tests.mbt"]}
