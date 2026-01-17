@@ -90,4 +90,5 @@
             "test/user_moonbit_test_examples.mbt",
             "test/azimuth_new_test_cases.mbt",
   "test/user_enhanced_tests.mbt",
-            "test/simple_user_test.mbt"]}
+            "test/simple_user_test.mbt",
+  "test/user_new_addition_tests.mbt"]}
