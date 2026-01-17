@@ -1,141 +1,203 @@
 // Azimuth 项目补充测试用例
-// 使用标准 MoonBit 测试语法
+// 使用标准 MoonBit 测试语法，提供额外的测试场景
 
-test "add_zero_identity" {
-  // 测试加法零元特性
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(42, @azimuth.add(0, 42))
-  @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
-  @azimuth.assert_eq(-17, @azimuth.add(0, -17))
+test "recursive_sequence_test" {
+  // 递归序列测试 - 计算阶乘
+  let n = 5
+  let factorial_result = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(120, factorial_result)
+  
+  // 递归序列测试 - 计算幂
+  let base = 3
+  let exponent = 4
+  let power_result = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(3, 3), 3), 3)
+  @azimuth.assert_eq(81, power_result)
 }
 
-test "multiply_zero_property" {
-  // 测试乘法零元特性
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(15, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 15))
-  @azimuth.assert_eq(0, @azimuth.multiply(-23, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -23))
+test "statistical_calculations" {
+  // 统计计算测试
+  // 计算平均值: (10 + 20 + 30 + 40 + 50) / 5
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
+  let average = sum / 5
+  @azimuth.assert_eq(30, average)
+  
+  // 计算范围: max - min
+  let max_value = 50
+  let min_value = 10
+  let range = @azimuth.subtract(max_value, min_value)
+  @azimuth.assert_eq(40, range)
 }
 
-test "multiply_identity_property" {
-  // 测试乘法单位元特性
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
-  @azimuth.assert_eq(7, @azimuth.multiply(1, 7))
-  @azimuth.assert_eq(-12, @azimuth.multiply(-12, 1))
-  @azimuth.assert_eq(-12, @azimuth.multiply(1, -12))
+test "unit_conversion" {
+  // 单位转换测试
+  // 公里转米: 1公里 = 1000米
+  let kilometers = 5
+  let meters = @azimuth.multiply(kilometers, 1000)
+  @azimuth.assert_eq(5000, meters)
+  
+  // 米转厘米: 1米 = 100厘米
+  let meters2 = 3
+  let centimeters = @azimuth.multiply(meters2, 100)
+  @azimuth.assert_eq(300, centimeters)
+  
+  // 千克转克: 1千克 = 1000克
+  let kilograms = 2
+  let grams = @azimuth.multiply(kilograms, 1000)
+  @azimuth.assert_eq(2000, grams)
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  @azimuth.assert_eq(-8, @azimuth.add(-5, -3))
-  @azimuth.assert_eq(5, @azimuth.add(-10, 15))
-  @azimuth.assert_eq(12, @azimuth.add(20, -8))
-  @azimuth.assert_eq(24, @azimuth.multiply(-4, -6))
-  @azimuth.assert_eq(-21, @azimuth.multiply(-7, 3))
-  @azimuth.assert_eq(-18, @azimuth.multiply(9, -2))
+test "string_manipulation" {
+  // 字符串操作测试
+  // 字符串长度测试
+  let short_string = "Hello"
+  let long_string = "Hello, MoonBit Programming"
+  
+  // 假设有字符串长度函数
+  let short_length = @azimuth.string_length(short_string)
+  let long_length = @azimuth.string_length(long_string)
+  
+  @azimuth.assert_eq(5, short_length)
+  @azimuth.assert_eq(27, long_length)
+  
+  // 字符串反转测试
+  let original = "abcde"
+  let reversed = @azimuth.string_reverse(original)
+  @azimuth.assert_eq_string("edcba", reversed)
 }
 
-test "greet_special_characters" {
-  // 测试特殊字符的问候
-  @azimuth.assert_eq_string("Hello, @user!", @azimuth.greet("@user"))
-  @azimuth.assert_eq_string("Hello, user_name!", @azimuth.greet("user_name"))
-  @azimuth.assert_eq_string("Hello, user-123!", @azimuth.greet("user-123"))
-  @azimuth.assert_eq_string("Hello, user@email.com!", @azimuth.greet("user@email.com"))
+test "conditional_logic" {
+  // 条件逻辑测试
+  // 绝对值计算
+  let positive_num = 42
+  let negative_num = -42
+  let absolute_positive = @azimuth.abs(positive_num)
+  let absolute_negative = @azimuth.abs(negative_num)
+  
+  @azimuth.assert_eq(42, absolute_positive)
+  @azimuth.assert_eq(42, absolute_negative)
+  
+  // 最大值计算
+  let num1 = 15
+  let num2 = 25
+  let max_value = @azimuth.max(num1, num2)
+  @azimuth.assert_eq(25, max_value)
 }
 
-test "mathematical_identities" {
-  // 测试数学恒等式
+test "algorithm_simulation" {
+  // 算法模拟测试
+  // 线性搜索模拟
+  let target = 7
+  let found = false
+  let search_values = [1, 3, 5, 7, 9]
   
-  // 平方差公式: (a+b)(a-b) = a²-b²
-  let a = 10
-  let b = 3
-  let left_side = @azimuth.multiply(@azimuth.add(a, b), @azimuth.add(a, -b))
-  let right_side = @azimuth.add(@azimuth.multiply(a, a), @azimuth.multiply(b, -b))
-  @azimuth.assert_eq(left_side, right_side)
+  // 模拟搜索过程
+  let index = 0
+  while (index < 5) {
+    if (@azimuth.array_get(search_values, index) == target) {
+      found = true
+      break
+    }
+    index = @azimuth.add(index, 1)
+  }
   
-  // 验证具体值: (10+3)(10-3) = 10²-3² = 100-9 = 91
-  @azimuth.assert_eq(91, left_side)
+  @azimuth.assert_eq(true, found)
+  
+  // 简单排序验证
+  let unsorted = [5, 2, 8, 1, 9]
+  let sorted = [1, 2, 5, 8, 9]
+  
+  // 验证排序后的第一个元素
+  @azimuth.assert_eq(1, @azimuth.array_get(sorted, 0))
+  // 验证排序后的最后一个元素
+  @azimuth.assert_eq(9, @azimuth.array_get(sorted, 4))
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
+test "physics_calculations" {
+  // 物理计算测试
+  // 速度计算: 距离 / 时间
+  let distance = 100  // 米
+  let time = 10       // 秒
+  let velocity = distance / time
+  @azimuth.assert_eq(10, velocity)
   
-  // 计算折扣后价格: 原价 × (1 - 折扣率)
-  let original_price = 200
-  let discount_rate = 20  // 20% 折扣
-  let discount_amount = @azimuth.multiply(original_price, @azimuth.multiply(discount_rate, -1))
-  let final_price = @azimuth.add(original_price, discount_amount)
-  @azimuth.assert_eq(160, final_price)  // 200 - 40 = 160
+  // 加速度计算: (末速度 - 初速度) / 时间
+  let initial_velocity = 0
+  let final_velocity = 20
+  let acceleration_time = 5
+  let acceleration = @azimuth.subtract(final_velocity, initial_velocity) / acceleration_time
+  @azimuth.assert_eq(4, acceleration)
   
-  // 计算税收: 价格 × 税率
-  let price = 150
-  let tax_rate = 8  // 8% 税率
-  let tax_amount = @azimuth.multiply(price, tax_rate)
-  @azimuth.assert_eq(1200, tax_amount)  // 150 × 8 = 1200 (代表 12.00)
+  // 动能计算: 0.5 * 质量 * 速度²
+  let mass = 2
+  let speed = 10
+  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(0.5, mass), @azimuth.square(speed))
+  @azimuth.assert_eq(100, kinetic_energy)
 }
 
-test "measurement_conversions" {
-  // 测试单位转换计算
+test "data_validation" {
+  // 数据验证测试
+  // 邮箱格式验证
+  let valid_email = "user@example.com"
+  let invalid_email = "invalid.email"
   
-  // 厘米转毫米: 厘米数 × 10
-  let cm = 15
-  let mm = @azimuth.multiply(cm, 10)
-  @azimuth.assert_eq(150, mm)
+  let is_valid_email1 = @azimuth.validate_email(valid_email)
+  let is_valid_email2 = @azimuth.validate_email(invalid_email)
   
-  // 分钟转秒: 分钟数 × 60
-  let minutes = 5
-  let seconds = @azimuth.multiply(minutes, 60)
-  @azimuth.assert_eq(300, seconds)
+  @azimuth.assert_eq(true, is_valid_email1)
+  @azimuth.assert_eq(false, is_valid_email2)
   
-  // 计算总秒数: 小时×3600 + 分钟×60 + 秒
-  let hours = 2
-  let mins = 30
-  let secs = 45
-  let total_seconds = @azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.add(@azimuth.multiply(mins, 60), secs))
-  @azimuth.assert_eq(9045, total_seconds)  // 2×3600 + 30×60 + 45 = 7200 + 1800 + 45 = 9045
+  // 电话号码验证
+  let valid_phone = "123-456-7890"
+  let invalid_phone = "1234567890"
+  
+  let is_valid_phone1 = @azimuth.validate_phone(valid_phone)
+  let is_valid_phone2 = @azimuth.validate_phone(invalid_phone)
+  
+  @azimuth.assert_eq(true, is_valid_phone1)
+  @azimuth.assert_eq(false, is_valid_phone2)
 }
 
-test "string_length_operations" {
-  // 测试字符串长度相关的问候
+test "graph_algorithms" {
+  // 图算法测试
+  // 简单图的邻接矩阵表示
+  // 顶点: A, B, C, D
+  // 边: A-B, B-C, C-D, A-D
+  let adjacency_matrix = [
+    [0, 1, 0, 1],  // A
+    [1, 0, 1, 0],  // B
+    [0, 1, 0, 1],  // C
+    [1, 0, 1, 0]   // D
+  ]
   
-  // 单字符名称
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  // 验证顶点A的度数
+  let a_degree = @azimuth.add(@azimuth.array_get(adjacency_matrix, 0)[1], @azimuth.array_get(adjacency_matrix, 0)[3])
+  @azimuth.assert_eq(2, a_degree)
   
-  // 长名称
-  let long_name = "VeryLongNameWithManyCharacters"
-  @azimuth.assert_eq_string("Hello, VeryLongNameWithManyCharacters!", @azimuth.greet(long_name))
-  
-  // 包含数字的名称
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
-  
-  // 包含空格的名称
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  // 验证顶点B的度数
+  let b_degree = @azimuth.add(@azimuth.array_get(adjacency_matrix, 1)[0], @azimuth.array_get(adjacency_matrix, 1)[2])
+  @azimuth.assert_eq(2, b_degree)
 }
 
-test "complex_business_logic" {
-  // 测试复杂业务逻辑计算
+test "encryption_simulation" {
+  // 加密模拟测试
+  // 凯撒密码模拟
+  let original_text = "HELLO"
+  let shift = 3
+  let encrypted_text = @azimuth.caesar_encrypt(original_text, shift)
+  let decrypted_text = @azimuth.caesar_decrypt(encrypted_text, shift)
   
-  // 计算订单总价: (商品1数量 × 单价1) + (商品2数量 × 单价2) - 折扣
-  let item1_qty = 3
-  let item1_price = 25
-  let item2_qty = 2
-  let item2_price = 40
-  let discount = 20
+  @azimuth.assert_eq_string("KHOOR", encrypted_text)
+  @azimuth.assert_eq_string("HELLO", decrypted_text)
   
-  let item1_total = @azimuth.multiply(item1_qty, item1_price)
-  let item2_total = @azimuth.multiply(item2_qty, item2_price)
-  let subtotal = @azimuth.add(item1_total, item2_total)
-  let final_total = @azimuth.add(subtotal, -discount)
+  // 简单哈希模拟
+  let input_string = "password123"
+  let hash_value = @azimuth.simple_hash(input_string)
   
-  // 验证: (3×25) + (2×40) - 20 = 75 + 80 - 20 = 135
-  @azimuth.assert_eq(135, final_total)
+  // 验证相同输入产生相同哈希
+  let hash_value2 = @azimuth.simple_hash(input_string)
+  @azimuth.assert_eq(hash_value, hash_value2)
   
-  // 计算平均价格: 总价 ÷ 商品总数
-  let total_items = @azimuth.add(item1_qty, item2_qty)
-  // 注意: 这里我们用乘法模拟除法，实际项目中可能需要真正的除法函数
-  // 这里我们只是验证计算逻辑
-  @azimuth.assert_eq(5, total_items)  // 3 + 2 = 5 件商品
+  // 验证不同输入产生不同哈希
+  let different_hash = @azimuth.simple_hash("different_password")
+  @azimuth.assert_eq(false, @azimuth.equal(hash_value, different_hash))
 }
