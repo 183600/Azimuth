@@ -1,93 +1,124 @@
-// 用户新增的标准 MoonBit 测试用例
-// 测试 azimuth 模块的核心功能
+// 用户新增标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "user_add_basic" {
-  // 基本加法测试
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
+test "add_function_comprehensive" {
+  // 测试加法函数的综合功能
+  @azimuth.assert_eq(10, @azimuth.add(7, 3))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
+  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 100))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, -100))
 }
 
-test "user_multiply_basic" {
-  // 基本乘法测试
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(25, multiply(5, 5))
+test "multiply_function_comprehensive" {
+  // 测试乘法函数的综合功能
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 2))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, 2))
 }
 
-test "user_greet_basic" {
-  // 基本问候函数测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, 用户!", @azimuth.greet("用户"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
 }
 
-test "user_math_commutativity" {
-  // 数学交换律验证
-  let a = 15
-  let b = 25
+test "complex_mathematical_operations" {
+  // 测试复杂数学运算
+  let a = 12
+  let b = 8
+  let c = 5
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 计算 (a + b) * c
+  let sum = @azimuth.add(a, b)
+  let product = @azimuth.multiply(sum, c)
+  @azimuth.assert_eq(100, product)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 计算 a * b + c
+  let product2 = @azimuth.multiply(a, b)
+  let result = @azimuth.add(product2, c)
+  @azimuth.assert_eq(101, result)
 }
 
-test "user_math_identities" {
-  // 数学恒等式验证
-  let x = 42
+test "boundary_value_operations" {
+  // 测试边界值运算
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  assert_eq(x, add(0, x))
+  // 边界值加法
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
   
-  // 乘法恒等式
-  assert_eq(x, multiply(x, 1))
-  assert_eq(x, multiply(1, x))
+  // 边界值乘法
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
 }
 
-test "user_negative_operations" {
-  // 负数运算测试
-  let positive = 10
-  let negative = -5
-  
-  // 正负数加法
-  assert_eq(5, add(positive, negative))
-  assert_eq(-15, add(negative, -positive))
-  
-  // 负数乘法
-  assert_eq(-50, multiply(positive, negative))
-  assert_eq(50, multiply(negative, -positive))
+test "assert_functions_test" {
+  // 测试断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
 }
 
-test "user_calculation_scenarios" {
-  // 实际计算场景测试
+test "real_world_calculation_scenario" {
+  // 测试实际应用计算场景：计算矩形的面积和周长
+  let length = 15
+  let width = 8
   
-  // 计算矩形面积
-  let length = 8
-  let width = 6
-  let area = multiply(length, width)
-  assert_eq(48, area)
+  // 计算面积
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(120, area)
   
   // 计算周长
-  let perimeter = multiply(add(length, width), 2)
-  assert_eq(28, perimeter)
+  let perimeter = @azimuth.add(@azimuth.multiply(length, 2), @azimuth.multiply(width, 2))
+  @azimuth.assert_eq(46, perimeter)
 }
 
-test "user_string_operations" {
-  // 字符串操作测试
-  let name1 = "Alice"
-  let name2 = "Bob"
-  let empty = ""
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  let long_string = "ThisIsAVeryLongStringThatContainsManyCharactersAndShouldStillWorkCorrectly"
+  let result = @azimuth.greet(long_string)
+  @azimuth.assert_eq_string("Hello, " + long_string + "!", result)
   
-  // 基本问候
-  assert_eq_string("Hello, Alice!", greet(name1))
-  assert_eq_string("Hello, Bob!", greet(name2))
-  assert_eq_string("Hello, !", greet(empty))
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let result2 = @azimuth.greet(special_chars)
+  @azimuth.assert_eq_string("Hello, " + special_chars + "!", result2)
+}
+
+test "divide_with_ceil_function" {
+  // 测试向上取整除法函数
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-9, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+}
+
+test "mathematical_property_validation" {
+  // 测试数学性质验证
+  let x = 13
+  let y = 7
+  let z = 5
   
-  // 包含空格的名称
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  
+  // 分配律
+  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, z)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z)))
+  
+  // 结合律
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(x, y), z), @azimuth.add(x, @azimuth.add(y, z)))
+  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(x, y), z), @azimuth.multiply(x, @azimuth.multiply(y, z)))
 }
