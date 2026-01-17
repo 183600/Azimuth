@@ -1,106 +1,93 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，覆盖多样化的测试场景
+// 使用标准 MoonBit 测试语法，只使用已存在的函数
 
-test "add_zero_identity" {
-  // 测试加法零元特性
-  assert_eq(azimuth::add(0, 0), 0)
-  assert_eq(azimuth::add(5, 0), 5)
-  assert_eq(azimuth::add(0, -3), -3)
-  assert_eq(azimuth::add(-7, 0), -7)
+test "add_large_numbers" {
+  // 测试大数相加
+  @azimuth.assert_eq(@azimuth.add(1000000, 2000000), 3000000)
+  @azimuth.assert_eq(@azimuth.add(-1000000, -2000000), -3000000)
+  @azimuth.assert_eq(@azimuth.add(2147483647, 0), 2147483647)
+  @azimuth.assert_eq(@azimuth.add(-2147483648, 0), -2147483648)
 }
 
-test "add_negative_numbers" {
-  // 测试负数加法
-  assert_eq(azimuth::add(-1, -1), -2)
-  assert_eq(azimuth::add(-5, 3), -2)
-  assert_eq(azimuth::add(7, -10), -3)
-  assert_eq(azimuth::add(-8, -2), -10)
+test "add_mixed_signs" {
+  // 测试不同符号的数相加
+  @azimuth.assert_eq(@azimuth.add(100, -100), 0)
+  @azimuth.assert_eq(@azimuth.add(100, -150), -50)
+  @azimuth.assert_eq(@azimuth.add(-100, 150), 50)
+  @azimuth.assert_eq(@azimuth.add(2147483647, -1), 2147483646)
 }
 
-test "multiply_zero_property" {
-  // 测试乘法零元特性
-  assert_eq(azimuth::multiply(0, 0), 0)
-  assert_eq(azimuth::multiply(5, 0), 0)
-  assert_eq(azimuth::multiply(0, -3), 0)
-  assert_eq(azimuth::multiply(-7, 0), 0)
+test "multiply_large_numbers" {
+  // 测试大数相乘
+  @azimuth.assert_eq(@azimuth.multiply(1000, 1000), 1000000)
+  @azimuth.assert_eq(@azimuth.multiply(-1000, 1000), -1000000)
+  @azimuth.assert_eq(@azimuth.multiply(-1000, -1000), 1000000)
+  @azimuth.assert_eq(@azimuth.multiply(46341, 46341), 2147483647)
 }
 
-test "multiply_identity_property" {
-  // 测试乘法单位元特性
-  assert_eq(azimuth::multiply(1, 1), 1)
-  assert_eq(azimuth::multiply(5, 1), 5)
-  assert_eq(azimuth::multiply(1, -3), -3)
-  assert_eq(azimuth::multiply(-7, 1), -7)
-}
-
-test "multiply_negative_numbers" {
-  // 测试负数乘法
-  assert_eq(azimuth::multiply(-1, -1), 1)
-  assert_eq(azimuth::multiply(-5, 3), -15)
-  assert_eq(azimuth::multiply(7, -10), -70)
-  assert_eq(azimuth::multiply(-8, -2), 16)
+test "multiply_boundary_combinations" {
+  // 测试边界值组合的乘法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 0), 0)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, 0), 0)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 1), max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, 1), min_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1), min_val)
 }
 
 test "greet_special_characters" {
-  // 测试特殊字符的问候
-  assert_eq(azimuth::greet("\n"), "Hello, \n!")
-  assert_eq(azimuth::greet("@#$"), "Hello, @#$!")
-  assert_eq(azimuth::greet("[]{}"), "Hello, []{}!")
-  assert_eq(azimuth::greet("()"), "Hello, ()!")
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string(@azimuth.greet("测试@123"), "Hello, 测试@123!")
+  @azimuth.assert_eq_string(@azimuth.greet("🌙"), "Hello, 🌙!")
+  @azimuth.assert_eq_string(@azimuth.greet(" spaces "), "Hello, spaces !")
+  @azimuth.assert_eq_string(@azimuth.greet(""), "Hello, !")
 }
 
-test "greet_multilingual" {
-  // 测试多语言问候
-  assert_eq(azimuth::greet("中文"), "Hello, 中文!")
-  assert_eq(azimuth::greet("العربية"), "Hello, العربية!")
-  assert_eq(azimuth::greet("Русский"), "Hello, Русский!")
-  assert_eq(azimuth::greet("Español"), "Hello, Español!")
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形的周长
+  let length = 10
+  let width = 5
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(30, perimeter)
 }
 
-test "arithmetic_combinations" {
-  // 测试算术组合运算
-  
-  // 计算 (a + b) * (c + d)
-  let a = 2
-  let b = 3
-  let c = 4
-  let d = 5
-  let result = azimuth::multiply(azimuth::add(a, b), azimuth::add(c, d))
-  assert_eq(45, result)
-  
-  // 计算 a * b + c * d + e * f
-  let e = 6
-  let f = 7
-  let result2 = azimuth::add(azimuth::add(azimuth::multiply(a, b), azimuth::multiply(c, d)), azimuth::multiply(e, f))
-  assert_eq(68, result2)
+test "divide_with_ceil_function" {
+  // 测试向上取整除法函数
+  @azimuth.assert_eq(@azimuth.divide_with_ceil(10, 3), 4)
+  @azimuth.assert_eq(@azimuth.divide_with_ceil(15, 3), 5)
+  @azimuth.assert_eq(@azimuth.divide_with_ceil(0, 5), 0)
+  @azimuth.assert_eq(@azimuth.divide_with_ceil(9, 2), 5)
+  @azimuth.assert_eq(@azimuth.divide_with_ceil(-7, 3), -2)
 }
 
-test "number_theory_examples" {
-  // 测试数论例子
+test "mathematical_sequences" {
+  // 测试数学序列计算
   
-  // 计算最小公倍数的简单情况: lcm(a,b) = a * b / gcd(a,b)
-  // 对于互质的数 3 和 4, gcd = 1, 所以 lcm = 3 * 4 = 12
-  let lcm_3_4 = azimuth::multiply(3, 4)
-  assert_eq(12, lcm_3_4)
+  // 计算前 5 个自然数的和: 1+2+3+4+5 = 15
+  let sum_first_5 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(15, sum_first_5)
   
-  // 对于 5 和 7, gcd = 1, 所以 lcm = 5 * 7 = 35
-  let lcm_5_7 = azimuth::multiply(5, 7)
-  assert_eq(35, lcm_5_7)
+  // 计算前 4 个偶数的和: 2+4+6+8 = 20
+  let sum_even_4 = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8)
+  @azimuth.assert_eq(20, sum_even_4)
 }
 
-test "practical_word_problems" {
-  // 测试实际应用问题
+test "temperature_conversion" {
+  // 测试温度转换场景 (摄氏度到华氏度)
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9) / 5, 32)
+  @azimuth.assert_eq(77, fahrenheit)
   
-  // 问题: 一个农民有 12 只鸡，每只鸡每天下 2 个蛋，一周能下多少个蛋？
-  let chickens = 12
-  let eggs_per_day = azimuth::multiply(chickens, 2)
-  let days_in_week = 7
-  let total_eggs = azimuth::multiply(eggs_per_day, days_in_week)
-  assert_eq(168, total_eggs)
-  
-  // 问题: 买了 3 本书，每本 25 元，又买了 5 支笔，每支 8 元，总共花了多少钱？
-  let books = azimuth::multiply(3, 25)
-  let pens = azimuth::multiply(5, 8)
-  let total_cost = azimuth::add(books, pens)
-  assert_eq(115, total_cost)
+  let celsius2 = 0
+  let fahrenheit2 = @azimuth.add(@azimuth.multiply(celsius2, 9) / 5, 32)
+  @azimuth.assert_eq(32, fahrenheit2)
+}
+
+test "assert_functions_test" {
+  // 测试断言函数本身
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
 }
