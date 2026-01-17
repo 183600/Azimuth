@@ -1,0 +1,100 @@
+clean_test_test/simple_user_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:7:25-7:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:10:25-10:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:13:25-13:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:16:25-16:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:19:26-19:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:29:12-29:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:30:12-30:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:31:12-31:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:32:12-32:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:38:3-38:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:39:3-39:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:57:15-57:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:57:36-57:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:60:15-60:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:63:15-63:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:65:3-65:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:66:3-66:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:68:3-68:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:69:3-69:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:70:3-70:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:83:7-83:9 [E0002] Warning (unused_value): Unused variable 'r3'
+clean_test_test/simple_user_tests.mbt:87:3-87:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:93:7-93:9 [E0002] Warning (unused_value): Unused variable 's2'
+clean_test_test/simple_user_tests.mbt:95:3-95:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:111:5-111:15 [E4087] The variable is_prime_7 is not mutable.
+clean_test_test/simple_user_tests.mbt:113:5-113:15 [E4087] The variable is_prime_7 is not mutable.
+clean_test_test/simple_user_tests.mbt:115:3-115:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:127:5-127:15 [E4087] The variable is_prime_9 is not mutable.
+clean_test_test/simple_user_tests.mbt:129:5-129:15 [E4087] The variable is_prime_9 is not mutable.
+clean_test_test/simple_user_tests.mbt:131:3-131:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:144:16-144:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:144:29-144:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:145:3-145:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:149:16-149:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:149:29-149:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:150:3-150:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:154:16-154:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:154:29-154:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:155:3-155:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:158:20-158:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:159:3-159:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:166:7-166:14 [E0002] Warning (unused_value): Unused variable 'decimal'
+clean_test_test/simple_user_tests.mbt:167:21-167:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:167:34-167:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:167:62-167:74 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:167:75-167:92 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:167:102-167:114 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:167:115-167:132 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:168:3-168:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:27-171:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:40-171:52 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:53-171:70 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:78-171:95 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:104-171:116 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:171:117-171:134 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:172:3-172:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:175:7-175:15 [E0002] Warning (unused_value): Unused variable 'decimal2'
+clean_test_test/simple_user_tests.mbt:176:18-176:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:176:31-176:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:177:3-177:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:180:26-180:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:180:39-180:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:181:3-181:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:189:7-189:22 [E0002] Warning (unused_value): Unused variable 'months_per_year'
+clean_test_test/simple_user_tests.mbt:193:30-193:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:194:3-194:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:202:15-202:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:202:28-202:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:203:15-203:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:203:28-203:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:204:22-204:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:204:42-204:48 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/simple_user_tests.mbt:205:3-205:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:208:7-208:16 [E0002] Warning (unused_value): Unused variable 'start_day'
+clean_test_test/simple_user_tests.mbt:212:3-212:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:228:7-228:15 [E0002] Warning (unused_value): Unused variable 'c1_after'
+clean_test_test/simple_user_tests.mbt:234:3-234:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:235:3-235:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:236:3-236:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:237:3-237:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:238:3-238:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:245:3-245:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:246:3-246:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:258:13-258:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:265:3-265:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:268:7-268:14 [E0002] Warning (unused_value): Unused variable 'target2'
+clean_test_test/simple_user_tests.mbt:272:15-272:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:274:14-274:26 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:279:16-279:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_tests.mbt:283:3-283:21 [E4020] Package "azimuth" not found in the loaded packages.

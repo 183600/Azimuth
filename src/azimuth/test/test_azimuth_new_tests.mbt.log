@@ -1,77 +1,91 @@
-clean_test_test/azimuth_new_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:6:13-6:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:7:13-7:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:8:13-8:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:9:13-9:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:14:13-14:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:15:13-15:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:16:13-16:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:17:13-17:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:22:13-22:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:23:13-23:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:24:13-24:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:25:13-25:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:30:13-30:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:31:13-31:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:32:13-32:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:33:13-33:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:38:13-38:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:39:13-39:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:40:13-40:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:41:13-41:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:46:13-46:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:47:13-47:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:48:13-48:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:49:13-49:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:54:13-54:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:55:13-55:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:56:3-56:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:56:13-56:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:57:13-57:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:68:16-68:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:68:34-68:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:68:54-68:61 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:74:17-74:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:74:30-74:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:74:43-74:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:74:68-74:75 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:74:94-74:101 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:75:3-75:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:83:17-83:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:87:17-87:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:96:22-96:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:98:20-98:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:99:3-99:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_new_tests.mbt:102:15-102:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:103:14-103:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:104:20-104:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_new_tests.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_new_tests.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:6:27-6:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:7:27-7:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:8:25-8:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:9:26-9:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:14:26-14:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:15:27-15:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:16:27-16:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:17:25-17:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:27:17-27:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:27:35-27:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:28:3-28:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:31:17-31:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:31:30-31:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:35:17-35:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:35:33-35:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:41:3-41:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:41:46-41:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:42:3-42:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:42:49-42:63 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:43:3-43:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:43:47-43:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:44:3-44:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:44:48-44:62 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:52:18-52:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:58:21-58:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:65:20-65:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:65:33-65:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:22-70:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:35-70:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:48-70:65 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:74-70:91 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:101-70:118 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:71:23-71:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:71:36-71:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:72:39-72:40 [E4018] Type Unit does not implement trait Div: no `impl` is defined
+clean_test_test/azimuth_new_tests.mbt:73:3-73:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:80:16-80:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:81:3-81:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:85:15-85:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:90:21-90:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:97:21-97:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:97:39-97:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:97:57-97:74 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:97:75-97:92 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:20-101:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:33-101:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:46-101:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:59-101:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:84-101:101 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:110-101:127 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:101:136-101:153 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:102:3-102:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:18-105:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:31-105:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:44-105:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:62-105:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:91-105:108 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:109-105:126 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:139-105:156 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:105:157-105:174 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:114:16-114:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:115:3-115:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:120:13-120:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:126:25-126:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:127:21-127:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:128:3-128:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:136:24-136:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:136:42-136:59 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:137:3-137:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:142:26-142:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:142:44-142:61 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:143:3-143:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:149:3-149:21 [E4020] Package "azimuth" not found in the loaded packages.

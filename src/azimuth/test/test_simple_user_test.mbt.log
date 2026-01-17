@@ -1,0 +1,2 @@
+clean_test_test/simple_user_test.mbt:3:3-3:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_user_test.mbt:3:25-3:37 [E4020] Package "azimuth" not found in the loaded packages.

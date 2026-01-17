@@ -1,0 +1,3 @@
+clean_test_test/azimuth_new_practical_tests.mbt:6:7-6:14 [E0002] Warning (unused_value): Unused variable 'numbers'
+clean_test_test/azimuth_new_practical_tests.mbt:33:7-33:13 [E0002] Warning (unused_value): Unused variable 'values'
+clean_test_test/azimuth_new_practical_tests.mbt:83:7-83:12 [E0002] Warning (unused_value): Unused variable 'years'
