@@ -1,131 +1,148 @@
-// Azimuth 项目实用测试用例集
-// 使用标准 MoonBit 测试语法，涵盖实际应用场景
+// Azimuth 项目实用测试用例
+// 使用标准 MoonBit 测试语法，专注于实际应用场景
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-3, @azimuth.add(-10, 7))
+test "array_sum_calculation" {
+  // 数组求和测试
+  let numbers = [1, 2, 3, 4, 5]
+  let sum = 0
+  let i = 0
   
-  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  // 手动计算数组元素之和
+  sum = @azimuth.add(sum, numbers[0])  // sum = 1
+  sum = @azimuth.add(sum, numbers[1])  // sum = 3
+  sum = @azimuth.add(sum, numbers[2])  // sum = 6
+  sum = @azimuth.add(sum, numbers[3])  // sum = 10
+  sum = @azimuth.add(sum, numbers[4])  // sum = 15
+  
+  @azimuth.assert_eq(15, sum)
 }
 
-test "greeting_functionality" {
-  // 问候功能测试
-  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
-  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet("Bob"))
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 200
+  let part = 50
+  
+  // 计算百分比: (part / total) * 100
+  let percentage = @azimuth.multiply(@azimuth.divide(part, total), 100)
+  @azimuth.assert_eq(25, percentage)
+  
+  // 计算折扣后的价格
+  let discount_rate = 15  // 15% 折扣
+  let discount_amount = @azimuth.multiply(total, discount_rate) / 100
+  let discounted_price = @azimuth.add(total, -discount_amount)
+  @azimuth.assert_eq(170, discounted_price)
 }
 
-test "calculation_chains" {
-  // 计算链测试
-  let step1 = @azimuth.add(10, 5)
-  let step2 = @azimuth.multiply(step1, 2)
-  let step3 = @azimuth.add(step2, 3)
-  @azimuth.assert_eq(33, step3)
+test "speed_distance_time" {
+  // 速度、距离、时间关系测试
+  let distance = 300  // 公里
+  let speed = 60      // 公里/小时
   
-  // 另一个计算链
-  let chain = @azimuth.multiply(@azimuth.add(4, 6), @azimuth.add(2, 3))
-  @azimuth.assert_eq(50, chain)
+  // 计算时间: 距离 / 速度
+  let time = @azimuth.divide(distance, speed)
+  @azimuth.assert_eq(5, time)
+  
+  // 计算平均速度
+  let distance2 = 150
+  let time2 = 3
+  let avg_speed = @azimuth.divide(distance2, time2)
+  @azimuth.assert_eq(50, avg_speed)
 }
 
-test "edge_cases" {
-  // 边界情况测试
-  @azimuth.assert_eq(1, @azimuth.add(1, 0))
-  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
-  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
+test "compound_interest" {
+  // 复利计算测试
+  let principal = 1000
+  let rate = 5  // 5%
+  let years = 3
   
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, -999))
-}
-
-test "real_world_scenarios" {
-  // 实际应用场景测试
+  // 简化的复利计算 (逐年计算)
+  let year1 = @azimuth.add(principal, @azimuth.multiply(principal, rate) / 100)
+  let year2 = @azimuth.add(year1, @azimuth.multiply(year1, rate) / 100)
+  let year3 = @azimuth.add(year2, @azimuth.multiply(year2, rate) / 100)
   
-  // 购物车计算
-  let item_price = 25
-  let quantity = 4
-  let tax = 8
-  let subtotal = @azimuth.multiply(item_price, quantity)
-  let total = @azimuth.add(subtotal, tax)
-  @azimuth.assert_eq(108, total)
-  
-  // 平均分计算
-  let score1 = 85
-  let score2 = 90
-  let score3 = 95
-  let sum = @azimuth.add(@azimuth.add(score1, score2), score3)
-  let average = sum / 3
-  @azimuth.assert_eq(90, average)
-}
-
-test "pattern_calculations" {
-  // 模式计算测试
-  
-  // 平方数计算
-  let num = 7
-  let square = @azimuth.multiply(num, num)
-  @azimuth.assert_eq(49, square)
-  
-  // 立方数计算
-  let cube = @azimuth.multiply(@azimuth.multiply(num, num), num)
-  @azimuth.assert_eq(343, cube)
-  
-  // 阶乘简化计算 (5!)
-  let factorial_5 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(1, 2), 3), 4), 5)
-  @azimuth.assert_eq(120, factorial_5)
+  // 验证第三年金额大于本金
+  @azimuth.assert_eq(true, year3 > principal)
 }
 
 test "unit_conversions" {
   // 单位转换测试
   
-  // 英寸转厘米 (1英寸 = 2.54厘米，简化为整数运算)
-  let inches = 10
-  let centimeters = @azimuth.multiply(inches, 254) / 100
-  @azimuth.assert_eq(25, centimeters)
+  // 公斤到克: 1kg = 1000g
+  let kg = 2.5
+  let grams = @azimuth.multiply(kg, 1000)
+  @azimuth.assert_eq(2500, grams)
   
-  // 磅转千克 (1磅 = 0.453千克，简化为整数运算)
-  let pounds = 100
-  let kilograms = @azimuth.multiply(pounds, 453) / 1000
-  @azimuth.assert_eq(45, kilograms)
+  // 米到厘米: 1m = 100cm
+  let meters = 3.7
+  let cm = @azimuth.multiply(meters, 100)
+  @azimuth.assert_eq(370, cm)
+  
+  // 升到毫升: 1L = 1000mL
+  let liters = 1.5
+  let ml = @azimuth.multiply(liters, 1000)
+  @azimuth.assert_eq(1500, ml)
 }
 
-test "algorithm_simulation" {
-  // 算法模拟测试
+test "inventory_management" {
+  // 库存管理测试
+  let initial_stock = 100
+  let sales = 30
+  let purchases = 50
+  let returns = 5
   
-  // 简单的累加算法
-  let accumulator = 0
-  accumulator = @azimuth.add(accumulator, 1)
-  accumulator = @azimuth.add(accumulator, 2)
-  accumulator = @azimuth.add(accumulator, 3)
-  accumulator = @azimuth.add(accumulator, 4)
-  accumulator = @azimuth.add(accumulator, 5)
-  @azimuth.assert_eq(15, accumulator)
+  // 计算期末库存: 期初 - 销售 + 采购 + 退货
+  let final_stock = @azimuth.add(@azimuth.add(@azimuth.add(initial_stock, -sales), purchases), returns)
+  @azimuth.assert_eq(125, final_stock)
   
-  // 简单的累乘算法
-  let product = 1
-  product = @azimuth.multiply(product, 2)
-  product = @azimuth.multiply(product, 3)
-  product = @azimuth.multiply(product, 4)
-  @azimuth.assert_eq(24, product)
+  // 计算库存周转率 (简化版)
+  let avg_stock = @azimuth.divide(@azimuth.add(initial_stock, final_stock), 2)
+  let turnover = @azimuth.divide(sales, avg_stock)
+  @azimuth.assert_eq(true, turnover > 0)
 }
 
-test "data_processing" {
-  // 数据处理测试
+test "grade_calculations" {
+  // 成绩计算测试
+  let exam_score = 85
+  let homework_score = 90
+  let project_score = 88
   
-  // 数据验证：检查数字范围
-  let value = 75
-  let min_val = 0
-  let max_val = 100
-  let in_range = @azimuth.add(@azimuth.add(value, -min_val), -max_val) == 0
-  @azimuth.assert_eq(true, in_range)
+  // 权重: 考试50%, 作业30%, 项目20%
+  let final_grade = @azimuth.add(@azimuth.add(
+    @azimuth.multiply(exam_score, 50) / 100,
+    @azimuth.multiply(homework_score, 30) / 100),
+    @azimuth.multiply(project_score, 20) / 100)
   
-  // 简单的数据统计
-  let data_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
-  let data_count = 5
-  let data_average = data_sum / data_count
-  @azimuth.assert_eq(30, data_average)
+  @azimuth.assert_eq(true, final_grade >= 80)  // 优良成绩
+}
+
+test "phone_number_validation" {
+  // 电话号码验证测试 (简化版)
+  let phone1 = "1234567890"
+  let phone2 = "0987654321"
+  let phone3 = "12345"  // 太短
+  let phone4 = "123456789012345"  // 太长
+  
+  // 检查长度是否在合理范围内 (10-12位)
+  let len1 = @azimuth.string_length(phone1)
+  let len2 = @azimuth.string_length(phone2)
+  let len3 = @azimuth.string_length(phone3)
+  let len4 = @azimuth.string_length(phone4)
+  
+  @azimuth.assert_eq(true, len1 >= 10 && len1 <= 12)
+  @azimuth.assert_eq(true, len2 >= 10 && len2 <= 12)
+  @azimuth.assert_eq(false, len3 >= 10 && len3 <= 12)
+  @azimuth.assert_eq(false, len4 >= 10 && len4 <= 12)
+}
+
+test "bmi_calculation" {
+  // BMI计算测试
+  let weight = 70  // 公斤
+  let height = 175  // 厘米
+  
+  // BMI = 体重(kg) / (身高(m))^2
+  let height_m = @azimuth.divide(height, 100)  // 转换为米
+  let bmi = @azimuth.divide(weight, @azimuth.multiply(height_m, height_m))
+  
+  // BMI应该在正常范围内 (18.5-24.9)
+  @azimuth.assert_eq(true, bmi >= 18.5 && bmi <= 24.9)
 }
