@@ -1,133 +1,152 @@
 // Azimuth 项目增强测试用例
-// 使用标准 MoonBit 测试语法，提供多样化的测试场景
+// 使用标准 MoonBit 测试语法，包含9个测试用例
 
-test "add_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  azimuth::assert_eq(azimuth::add(15, 27), azimuth::add(27, 15))
-  azimuth::assert_eq(azimuth::add(-10, 25), azimuth::add(25, -10))
-  azimuth::assert_eq(azimuth::add(0, 100), azimuth::add(100, 0))
+// 导入必要的模块
+use azimuth
+
+test "add_function_comprehensive" {
+  // 全面测试加法函数
+  assert_eq(10, add(3, 7))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(5, add(8, -3))
+  assert_eq(7, add(7, 0))
+  assert_eq(0, add(0, 0))
+  assert_eq(-3, add(0, -3))
 }
 
-test "add_associative_property" {
-  // 测试加法结合律：(a + b) + c = a + (b + c)
-  let a = 10
-  let b = 20
-  let c = 30
+test "add_function_overflow_protection" {
+  // 测试加法函数的溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let result1 = azimuth::add(azimuth::add(a, b), c)
-  let result2 = azimuth::add(a, azimuth::add(b, c))
-  assert_eq(result1, result2)
-}
-
-test "multiply_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 5
-  let b = 8
-  let c = 12
+  // 正数溢出测试
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, 100))
   
-  let result1 = azimuth::multiply(a, azimuth::add(b, c))
-  let result2 = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
-  assert_eq(result1, result2)
+  // 负数溢出测试
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, -100))
+  
+  // 最小值特殊处理
+  assert_eq(min_val + 5, add(min_val, 5))
+  assert_eq(min_val + 100, add(min_val, 100))
 }
 
-test "multiply_negative_numbers" {
-  // 测试负数乘法
-  assert_eq(azimuth::multiply(-5, 3), -15)
-  assert_eq(azimuth::multiply(5, -3), -15)
-  assert_eq(azimuth::multiply(-5, -3), 15)
-  assert_eq(azimuth::multiply(-1, 100), -100)
+test "multiply_function_comprehensive" {
+  // 全面测试乘法函数
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(0, multiply(7, 0))
+  assert_eq(7, multiply(7, 1))
+  assert_eq(-7, multiply(7, -1))
 }
 
-test "greet_function_with_special_strings" {
-  // 测试包含特殊字符的字符串
-  assert_eq(azimuth::greet("Hello\nWorld"), "Hello, Hello\nWorld!")
-  assert_eq(azimuth::greet("Tab\tSeparated"), "Hello, Tab\tSeparated!")
-  assert_eq(azimuth::greet("Quote: \"Test\""), "Hello, Quote: \"Test\"!")
+test "multiply_function_overflow_protection" {
+  // 测试乘法函数的溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最小值与-1相乘的特殊情况
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(min_val, multiply(-1, min_val))
+  
+  // 最小值与其他值相乘
+  assert_eq(min_val, multiply(min_val, 2))
+  assert_eq(min_val, multiply(min_val, -2))
+  assert_eq(0, multiply(min_val, 0))
+  
+  // 最大值溢出测试
+  assert_eq(max_val, multiply(max_val, 1))
 }
 
-test "complex_calculations" {
+test "greet_function_various_inputs" {
+  // 测试greet函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+}
+
+test "complex_calculation_scenarios" {
   // 测试复杂计算场景
-  // 计算复合利率：本金 × (1 + 利率)^年数（简化版本）
-  let principal = 1000
-  let rate = 5  // 5%
-  let years = 3
+  // 场景1: (a + b) * c
+  let a = 5
+  let b = 3
+  let c = 4
+  let sum = add(a, b)
+  let result1 = multiply(sum, c)
+  assert_eq(32, result1)
   
-  // 简化计算：每年增加 principal × rate
-  let year1 = azimuth::add(principal, azimuth::divide_with_ceil(azimuth::multiply(principal, rate), 100))
-  let year2 = azimuth::add(year1, azimuth::divide_with_ceil(azimuth::multiply(year1, rate), 100))
-  let year3 = azimuth::add(year2, azimuth::divide_with_ceil(azimuth::multiply(year2, rate), 100))
-  
-  assert_eq(1157, year3)
+  // 场景2: a * b + c * d
+  let x = 6
+  let y = 7
+  let z = 8
+  let w = 9
+  let product1 = multiply(x, y)
+  let product2 = multiply(z, w)
+  let result2 = add(product1, product2)
+  assert_eq(114, result2)
 }
 
-test "geometric_progression" {
-  // 测试等比数列计算
-  let first_term = 2
-  let ratio = 3
-  let n = 4
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 12
+  let y = 8
   
-  // 计算第n项：a × r^(n-1)
-  let term1 = first_term
-  let term2 = azimuth::multiply(term1, ratio)
-  let term3 = azimuth::multiply(term2, ratio)
-  let term4 = azimuth::multiply(term3, ratio)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 计算前n项和：a × (r^n - 1) / (r - 1)
-  let sum = azimuth::add(azimuth::add(azimuth::add(term1, term2), term3), term4)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  assert_eq(54, term4)  // 第4项
-  assert_eq(80, sum)    // 前4项和
+  // 分配律: a * (b + c) = a * b + a * c
+  let z = 5
+  let sum = add(y, z)
+  let left = multiply(x, sum)
+  let right = add(multiply(x, y), multiply(x, z))
+  assert_eq(left, right)
 }
 
-test "time_calculations" {
-  // 测试时间计算
-  // 计算总分钟数：小时 × 60 + 分钟
-  let hours = 3
-  let minutes = 45
-  let total_minutes = azimuth::add(azimuth::multiply(hours, 60), minutes)
-  assert_eq(225, total_minutes)
+test "edge_cases_and_boundary_values" {
+  // 测试边界值和边缘情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 计算总秒数：总分钟数 × 60
-  let total_seconds = azimuth::multiply(total_minutes, 60)
-  assert_eq(13500, total_seconds)
+  // 边界值加法
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(-1, add(max_val, min_val))
+  
+  // 边界值乘法
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
 }
 
-test "statistical_analysis" {
-  // 测试统计分析
-  // 计算方差：平方的平均值减去平均值的平方
-  let values = [10, 15, 20, 25, 30]
+test "real_world_application_scenarios" {
+  // 测试实际应用场景
+  // 场景1: 计算购物车总价
+  let item_price = 199
+  let quantity = 3
+  let shipping_cost = 20
+  let discount = 50
   
-  // 计算平均值
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(values[0], values[1]), values[2]), values[3]), values[4])
-  let mean = sum / 5
+  let subtotal = multiply(item_price, quantity)
+  let total_before_discount = add(subtotal, shipping_cost)
+  let final_total = add(total_before_discount, -discount)
+  assert_eq(607, final_total)
   
-  // 计算平方和
-  let squared_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(
-    azimuth::multiply(values[0], values[0]),
-    azimuth::multiply(values[1], values[1])),
-    azimuth::multiply(values[2], values[2])),
-    azimuth::multiply(values[3], values[3])),
-    azimuth::multiply(values[4], values[4]))
+  // 场景2: 计算矩形面积和周长
+  let length = 10
+  let width = 5
   
-  let mean_of_squares = squared_sum / 5
-  let variance = azimuth::add(mean_of_squares, -azimuth::multiply(mean, mean))
-  
-  assert_eq(20, mean)
-  assert_eq(50, variance)
-}
-
-test "boundary_testing" {
-  // 测试边界条件
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  // 测试接近边界的加法
-  assert_eq(azimuth::add(max_int, -1), 2147483646)
-  assert_eq(azimuth::add(min_int, 1), -2147483647)
-  
-  // 测试零值运算
-  assert_eq(azimuth::add(0, 0), 0)
-  assert_eq(azimuth::multiply(0, 0), 0)
-  assert_eq(azimuth::multiply(0, max_int), 0)
-  assert_eq(azimuth::multiply(min_int, 0), 0)
+  let area = multiply(length, width)
+  let perimeter_sum = add(length, width)
+  let perimeter = multiply(perimeter_sum, 2)
+  assert_eq(50, area)
+  assert_eq(30, perimeter)
 }
