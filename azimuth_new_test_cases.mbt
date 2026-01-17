@@ -1,148 +1,163 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，提供多样化的测试场景
+// 使用标准 MoonBit 测试语法，覆盖更多场景
 
-test "factorial_calculation" {
-  // 阶乘计算测试: 5! = 5 × 4 × 3 × 2 × 1 = 120
-  let fact_5 = azimuth::multiply(azimuth::multiply(azimuth::multiply(azimuth::multiply(5, 4), 3), 2), 1)
-  assert_eq(120, fact_5)
+test "add_boundary_values" {
+  // 测试加法边界值
   
-  // 4! = 4 × 3 × 2 × 1 = 24
-  let fact_4 = azimuth::multiply(azimuth::multiply(azimuth::multiply(4, 3), 2), 1)
-  assert_eq(24, fact_4)
-}
-
-test "power_operations" {
-  // 幂运算测试
-  // 2³ = 2 × 2 × 2 = 8
-  let power_2_3 = azimuth::multiply(azimuth::multiply(2, 2), 2)
-  assert_eq(8, power_2_3)
+  // 最大值测试
+  assert_eq(2147483647, azimuth::add(2147483646, 1))
   
-  // 3² = 3 × 3 = 9
-  let power_3_2 = azimuth::multiply(3, 3)
-  assert_eq(9, power_3_2)
+  // 最小值测试
+  assert_eq(-2147483648, azimuth::add(-2147483647, -1))
   
-  // 5² = 5 × 5 = 25
-  let power_5_2 = azimuth::multiply(5, 5)
-  assert_eq(25, power_5_2)
+  // 零值测试
+  assert_eq(0, azimuth::add(0, 0))
+  assert_eq(100, azimuth::add(0, 100))
+  assert_eq(-50, azimuth::add(-50, 0))
 }
 
-test "greet_multilingual_names" {
-  // 多语言名称测试
-  assert_eq(azimuth::greet("张三"), "Hello, 张三!")
-  assert_eq(azimuth::greet("李四"), "Hello, 李四!")
-  assert_eq(azimuth::greet("José"), "Hello, José!")
-  assert_eq(azimuth::greet("François"), "Hello, François!")
-  assert_eq(azimuth::greet("Müller"), "Hello, Müller!")
+test "multiply_boundary_values" {
+  // 测试乘法边界值
+  
+  // 单位元素测试
+  assert_eq(100, azimuth::multiply(100, 1))
+  assert_eq(100, azimuth::multiply(1, 100))
+  assert_eq(0, azimuth::multiply(100, 0))
+  assert_eq(0, azimuth::multiply(0, 100))
+  
+  // 负数乘法测试
+  assert_eq(-100, azimuth::multiply(-10, 10))
+  assert_eq(100, azimuth::multiply(-10, -10))
 }
 
-test "greet_with_numbers_and_symbols" {
-  // 包含数字和符号的名称测试
-  assert_eq(azimuth::greet("User123"), "Hello, User123!")
-  assert_eq(azimuth::greet("test_user"), "Hello, test_user!")
-  assert_eq(azimuth::greet("admin@site"), "Hello, admin@site!")
-  assert_eq(azimuth::greet("C++"), "Hello, C++!")
-  assert_eq(azimuth::greet("Node.js"), "Hello, Node.js!")
+test "greet_special_characters" {
+  // 测试特殊字符的问候功能
+  
+  assert_eq("Hello, @user!", azimuth::greet("@user"))
+  assert_eq("Hello, #hashtag!", azimuth::greet("#hashtag"))
+  assert_eq("Hello, $price!", azimuth::greet("$price"))
+  assert_eq("Hello, %percent!", azimuth::greet("%percent"))
+  assert_eq("Hello, &amp!", azimuth::greet("&amp"))
 }
 
-test "compound_interest_calculation" {
-  // 复利计算测试
-  // 本金 × (1 + 利率)^年数
+test "complex_calculations" {
+  // 测试复杂计算场景
+  
+  // 复利计算: 本金 * (1 + 利率)^年数
   let principal = 1000
   let rate = 5  // 5%
   let years = 2
   
-  // 第一年后: 1000 × (1 + 0.05) = 1050
-  let year1 = azimuth::multiply(principal, azimuth::add(100, rate)) / 100
+  // 第一年: 1000 * (1 + 0.05) = 1050
+  let year1 = azimuth::add(principal, azimuth::multiply(principal, rate) / 100)
   assert_eq(1050, year1)
   
-  // 第二年后: 1050 × (1 + 0.05) = 1102.5 ≈ 1102 (整数运算)
-  let year2 = azimuth::multiply(year1, azimuth::add(100, rate)) / 100
+  // 第二年: 1050 * (1 + 0.05) = 1102.5 ≈ 1102 (整数)
+  let year2 = azimuth::add(year1, azimuth::multiply(year1, rate) / 100)
   assert_eq(1102, year2)
 }
 
+test "physics_calculations" {
+  // 测试物理计算
+  
+  // 速度计算: 距离 / 时间
+  let distance = 300  // 米
+  let time = 10       // 秒
+  let speed = azimuth::multiply(distance, 1) / time
+  assert_eq(30, speed)
+  
+  // 动能计算: 0.5 * 质量 * 速度^2
+  let mass = 10       // kg
+  let velocity = 5    // m/s
+  let kinetic_energy = azimuth::multiply(azimuth::multiply(mass, velocity), velocity) / 2
+  assert_eq(125, kinetic_energy)
+}
+
 test "statistical_calculations" {
-  // 统计计算测试
-  // 平均数计算: (1 + 2 + 3 + 4 + 5) / 5 = 3
+  // 测试统计计算
+  
+  // 平均值计算: (1 + 2 + 3 + 4 + 5) / 5 = 3
   let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(1, 2), 3), 4), 5)
-  let average = sum / 5
+  let average = azimuth::multiply(sum, 1) / 5
   assert_eq(3, average)
   
-  // 加权平均: (1×2 + 2×3 + 3×5) / (2+3+5) = 22/10 = 2
-  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(1, 2), azimuth::multiply(2, 3)), azimuth::multiply(3, 5))
-  let weights_sum = azimuth::add(azimuth::add(2, 3), 5)
-  let weighted_average = weighted_sum / weights_sum
-  assert_eq(2, weighted_average)
+  // 加权平均: (90*3 + 80*2 + 70*1) / (3+2+1) = 83.33 ≈ 83
+  let weighted_sum = azimuth::add(azimuth::add(azimuth::multiply(90, 3), azimuth::multiply(80, 2)), azimuth::multiply(70, 1))
+  let total_weight = azimuth::add(azimuth::add(3, 2), 1)
+  let weighted_average = azimuth::multiply(weighted_sum, 1) / total_weight
+  assert_eq(83, weighted_average)
 }
 
-test "large_number_operations" {
-  // 大数运算测试
-  let large1 = 10000
-  let large2 = 20000
-  let large3 = 30000
+test "number_theory" {
+  // 测试数论计算
   
-  // 大数加法
-  assert_eq(30000, azimuth::add(large1, large2))
-  assert_eq(50000, azimuth::add(large2, large3))
-  assert_eq(60000, azimuth::add(large1, azimuth::add(large2, large3)))
+  // 最大公约数模拟 (欧几里得算法简化版)
+  let a = 48
+  let b = 18
   
-  // 大数乘法
-  assert_eq(200000000, azimuth::multiply(large1, large2))
+  // 48 % 18 = 12
+  let remainder1 = azimuth::multiply(a, 1) - azimuth::multiply(azimuth::multiply(a, 1) / b, b)
+  assert_eq(12, remainder1)
+  
+  // 18 % 12 = 6
+  let remainder2 = azimuth::multiply(b, 1) - azimuth::multiply(azimuth::multiply(b, 1) / remainder1, remainder1)
+  assert_eq(6, remainder2)
+  
+  // 12 % 6 = 0
+  let remainder3 = azimuth::multiply(remainder1, 1) - azimuth::multiply(azimuth::multiply(remainder1, 1) / remainder2, remainder2)
+  assert_eq(0, remainder3)
 }
 
-test "speed_distance_time_calculations" {
-  // 速度、距离、时间计算测试
-  // 距离 = 速度 × 时间
-  let speed = 60  // km/h
-  let time = 2    // hours
-  let distance = azimuth::multiply(speed, time)
-  assert_eq(120, distance)
+test "combinatorial_calculations" {
+  // 测试组合计算
   
-  // 速度 = 距离 / 时间
-  let distance2 = 180  // km
-  let time2 = 3        // hours
-  let speed2 = distance2 / time2
-  assert_eq(60, speed2)
+  // 排列数 P(n,k) = n!/(n-k)!
+  // P(5,2) = 5!/(5-2)! = 5*4 = 20
+  let n = 5
+  let k = 2
+  let permutation = azimuth::multiply(azimuth::multiply(azimuth::multiply(azimuth::multiply(5, 4), 3), 2), 1) / azimuth::multiply(azimuth::multiply(azimuth::multiply(3, 2), 1), 1)
+  assert_eq(20, azimuth::multiply(5, 4))
   
-  // 时间 = 距离 / 速度
-  let distance3 = 240  // km
-  let speed3 = 80      // km/h
-  let time3 = distance3 / speed3
-  assert_eq(3, time3)
+  // 组合数 C(n,k) = P(n,k)/k!
+  // C(5,2) = 20/2! = 10
+  let combination = azimuth::multiply(5, 4) / azimuth::multiply(2, 1)
+  assert_eq(10, combination)
 }
 
-test "area_perimeter_calculations" {
-  // 面积和周长计算测试
-  // 圆的面积 (简化版，使用 π≈3): π × r²
-  let radius = 5
-  let circle_area = azimuth::multiply(3, azimuth::multiply(radius, radius))
-  assert_eq(75, circle_area)
+test "algorithm_simulation" {
+  // 测试算法模拟
   
-  // 梯形面积: (上底 + 下底) × 高 / 2
-  let top_base = 6
-  let bottom_base = 10
-  let height = 4
-  let trapezoid_area = azimuth::multiply(azimuth::add(top_base, bottom_base), height) / 2
-  assert_eq(32, trapezoid_area)
+  // 二分查找模拟 (在有序数组中查找)
+  let array_size = 16
+  let target_index = 7
+  let steps = 0
   
-  // 菱形面积: 对角线1 × 对角线2 / 2
-  let diagonal1 = 8
-  let diagonal2 = 6
-  let rhombus_area = azimuth::multiply(diagonal1, diagonal2) / 2
-  assert_eq(24, rhombus_area)
-}
-
-test "binary_operations_simulation" {
-  // 二进制操作模拟测试
-  // 左移操作 (× 2^n): 5 << 2 = 5 × 4 = 20
-  let left_shift = azimuth::multiply(5, azimuth::multiply(2, 2))
-  assert_eq(20, left_shift)
+  // 模拟二分查找步骤
+  let left = 0
+  let right = azimuth::add(array_size, -1)
   
-  // 右移操作 (÷ 2^n): 20 >> 2 = 20 ÷ 4 = 5
-  let right_shift = 20 / azimuth::multiply(2, 2)
-  assert_eq(5, right_shift)
+  // 第一次查找: (0 + 15) / 2 = 7
+  let mid1 = azimuth::multiply(azimuth::add(left, right), 1) / 2
+  steps = azimuth::add(steps, 1)
+  assert_eq(7, mid1)
   
-  // 位与操作模拟 (简化): 3 & 5 = 1
-  // 这里用模运算模拟位操作
-  let bit_and = azimuth::multiply(3, 5) % 4
-  assert_eq(3, bit_and)
+  // 如果找到目标，总共需要1步
+  assert_eq(1, steps)
+  
+  // 如果目标在边界，需要更多步骤
+  let target_at_edge = 15
+  steps = 0
+  
+  // 第一次: (0 + 15) / 2 = 7
+  steps = azimuth::add(steps, 1)
+  // 第二次: (8 + 15) / 2 = 11
+  steps = azimuth::add(steps, 1)
+  // 第三次: (12 + 15) / 2 = 13
+  steps = azimuth::add(steps, 1)
+  // 第四次: (14 + 15) / 2 = 14
+  steps = azimuth::add(steps, 1)
+  // 第五次: (15 + 15) / 2 = 15
+  steps = azimuth::add(steps, 1)
+  
+  assert_eq(5, steps)
 }
