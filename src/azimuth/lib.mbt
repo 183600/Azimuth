@@ -3017,6 +3017,89 @@ test "multiply_boundary_combinations_v2" {
   assert_eq(multiply(min_val, -1), min_val)
 }
 
+// 用户标准测试用例 - 不超过10个测试
+// 测试项目的基本功能：add, multiply, greet等
+
+test "user_add_basic_functionality" {
+  // 测试基本的加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
+}
+
+test "user_add_with_zero" {
+  // 测试与0相加的情况
+  assert_eq(5, add(5, 0))
+  assert_eq(5, add(0, 5))
+  assert_eq(0, add(0, 0))
+}
+
+test "user_multiply_basic_functionality" {
+  // 测试基本的乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+}
+
+test "user_multiply_with_zero_and_one" {
+  // 测试与0和1相乘的情况
+  assert_eq(0, multiply(5, 0))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(-5, multiply(-5, 1))
+}
+
+test "user_greet_basic_functionality" {
+  // 测试基本的问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+}
+
+test "user_greet_edge_cases" {
+  // 测试问候功能的边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "user_overflow_handling" {
+  // 测试溢出处理
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 2))
+}
+
+test "user_assert_functions" {
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+}
+
+test "user_complex_calculations" {
+  // 测试复合计算
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // (a + b) * c
+  let result = multiply(add(a, b), c)
+  assert_eq(900, result)
+  
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(230, result2)
+}
+
+test "user_divide_with_ceil_function" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(3, divide_with_ceil(12, 4))
+  assert_eq(4, divide_with_ceil(11, 3))
+}
+
 test "greet_special_characters_v2" {
   // 测试包含特殊字符的字符串
   assert_eq_string(greet("测试@123"), "Hello, 测试@123!")
