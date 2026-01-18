@@ -128,4 +128,6 @@
   "test/user_final_additional_tests.mbt",
   "azimuth_enhanced_unit_tests.mbt",
   "test_simple_enhanced.mbt",
-  "test/user_specified_moonbit_tests.mbt"]}
+  "test/user_specified_moonbit_tests.mbt",
+  "../../azimuth_simple_test_cases.mbt",
+  "azimuth_simple_test_cases.mbt"]}

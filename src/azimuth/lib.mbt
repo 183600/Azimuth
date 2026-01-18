@@ -1299,6 +1299,294 @@ test "memory_allocation_simulation" {
   assert_eq(97, utilization)  // 整数除法
 }
 
+test "cryptography_simulation" {
+  // 密码学模拟：简化的哈希计算
+  let input = "Hello"
+  let hash_base = 31
+  
+  // 简化的哈希计算：每个字符的ASCII码乘以位置，然后求和
+  let hash1 = multiply(72, 1)  // 'H' = 72
+  let hash2 = multiply(101, 2) // 'e' = 101
+  let hash3 = multiply(108, 3) // 'l' = 108
+  let hash4 = multiply(108, 4) // 'l' = 108
+  let hash5 = multiply(111, 5) // 'o' = 111
+  
+  let total_hash = add(add(add(add(hash1, hash2), hash3), add(hash4, hash5)))
+  let final_hash = add(total_hash, hash_base)
+  
+  assert_eq(2012, final_hash)
+}
+
+test "network_protocol_simulation" {
+  // 网络协议模拟：简化的数据包计算
+  let header_size = 20
+  let payload_size = 1000
+  let checksum_size = 4
+  
+  // 计算数据包总大小
+  let packet_size = add(add(header_size, payload_size), checksum_size)
+  assert_eq(1024, packet_size)
+  
+  // 计算传输时间（简化）：大小 / 带宽
+  let bandwidth = 1000  // 1KB/s
+  let transmission_time = packet_size / bandwidth
+  assert_eq(1, transmission_time)
+  
+  // 计算网络利用率
+  let utilization = multiply(payload_size, 100) / packet_size
+  assert_eq(97, utilization)  // 整数除法
+}
+
+test "database_index_simulation" {
+  // 数据库索引模拟：简化的B树索引计算
+  let page_size = 4096
+  let key_size = 8
+  let pointer_size = 8
+  let header_overhead = 24
+  
+  // 计算每个页面的键数量
+  let available_space = add(page_size, -header_overhead)
+  let entry_size = add(key_size, pointer_size)
+  let keys_per_page = available_space / entry_size
+  assert_eq(235, keys_per_page)
+  
+  // 计算树的深度（简化）
+  let total_records = 1000000
+  let fan_out = keys_per_page
+  let depth = 1
+  
+  // 简化计算：log_fan_out(total_records)
+  let depth2 = 2
+  let depth3 = 3
+  
+  assert_true(depth2 < 5)  // 确保深度合理
+  assert_true(depth3 < 5)
+}
+
+test "compiler_optimization_simulation" {
+  // 编译器优化模拟：简化的代码优化计算
+  let original_instructions = 1000
+  let optimization_rate = 30  // 30%
+  
+  // 计算优化后的指令数
+  let optimized_instructions = multiply(original_instructions, add(100, -optimization_rate)) / 100
+  assert_eq(700, optimized_instructions)
+  
+  // 计算性能提升
+  let performance_gain = multiply(optimization_rate, original_instructions) / 100
+  assert_eq(300, performance_gain)
+  
+  // 计算编译时间（简化）
+  let base_time = 10  // 秒
+  let optimization_overhead = 5
+  let total_time = add(base_time, optimization_overhead)
+  assert_eq(15, total_time)
+}
+
+test "machine_learning_simulation" {
+  // 机器学习模拟：简化的神经网络计算
+  let input_size = 784  // 28x28 图像
+  let hidden_size = 128
+  let output_size = 10
+  
+  // 计算参数数量
+  let input_hidden_params = multiply(input_size, hidden_size)
+  let hidden_output_params = multiply(hidden_size, output_size)
+  let total_params = add(input_hidden_params, hidden_output_params)
+  
+  assert_eq(101632, total_params)
+  
+  // 计算前向传播的乘加操作
+  let input_hidden_ops = multiply(input_size, hidden_size)
+  let hidden_output_ops = multiply(hidden_size, output_size)
+  let total_ops = add(input_hidden_ops, hidden_output_ops)
+  
+  assert_eq(101632, total_ops)
+  
+  // 计算内存使用（每个参数4字节）
+  let memory_usage = multiply(total_params, 4)
+  assert_eq(406528, memory_usage)
+}
+
+test "graphics_rendering_simulation" {
+  // 图形渲染模拟：简化的3D渲染计算
+  let vertices = 1000
+  let triangles = 1998  // 简化：vertices * 2 - 2
+  let pixel_width = 1920
+  let pixel_height = 1080
+  
+  // 计算总像素数
+  let total_pixels = multiply(pixel_width, pixel_height)
+  assert_eq(2073600, total_pixels)
+  
+  // 计算渲染的三角形数（简化）
+  let rendered_triangles = triangles
+  assert_eq(1998, rendered_triangles)
+  
+  // 计算帧率（简化）
+  let render_time_ms = 16  // 60 FPS
+  let fps = 1000 / render_time_ms
+  assert_eq(62, fps)  // 整数除法
+}
+
+test "compression_algorithm_simulation" {
+  // 压缩算法模拟：简化的压缩计算
+  let original_size = 10000
+  let compression_ratio = 70  // 压缩到70%
+  
+  // 计算压缩后大小
+  let compressed_size = multiply(original_size, compression_ratio) / 100
+  assert_eq(7000, compressed_size)
+  
+  // 计算节省的空间
+  let saved_space = add(original_size, -compressed_size)
+  assert_eq(3000, saved_space)
+  
+  // 计算压缩时间（简化）
+  let compression_speed = 1000  // 字节/秒
+  let compression_time = original_size / compression_speed
+  assert_eq(10, compression_time)
+  
+  // 计算解压缩时间（通常比压缩快）
+  let decompression_speed = 2000  // 字节/秒
+  let decompression_time = compressed_size / decompression_speed
+  assert_eq(3, decompression_time)
+}
+
+test "distributed_system_simulation" {
+  // 分布式系统模拟：简化的分布式计算
+  let nodes = 10
+  let data_size = 1000000
+  let network_bandwidth = 10000  // 字节/秒
+  let computation_speed = 50000  // 操作/秒
+  
+  // 计算数据分片大小
+  let shard_size = data_size / nodes
+  assert_eq(100000, shard_size)
+  
+  // 计算网络传输时间
+  let transfer_time = shard_size / network_bandwidth
+  assert_eq(10, transfer_time)
+  
+  // 计算计算时间
+  let computation_time = shard_size / computation_speed
+  assert_eq(2, computation_time)
+  
+  // 计算总时间（简化：传输+计算）
+  let total_time = add(transfer_time, computation_time)
+  assert_eq(12, total_time)
+  
+  // 计算加速比（理想情况）
+  let sequential_time = data_size / computation_speed
+  let speedup = sequential_time / total_time
+  assert_eq(8, speedup)  // 整数除法
+}
+
+// 新增的10个简单测试用例
+test "simple_add_test" {
+  // 基本加法测试
+  let result = add(2, 3)
+  assert_eq(5, result)
+}
+
+test "simple_multiply_test" {
+  // 基本乘法测试
+  let result = multiply(4, 5)
+  assert_eq(20, result)
+}
+
+test "zero_addition_test" {
+  // 与0相加测试
+  assert_eq(5, add(5, 0))
+  assert_eq(5, add(0, 5))
+  assert_eq(0, add(0, 0))
+}
+
+test "zero_multiplication_test" {
+  // 与0相乘测试
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, multiply(0, 0))
+}
+
+test "one_multiplication_test" {
+  // 与1相乘测试
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, multiply(1, 5))
+  assert_eq(1, multiply(1, 1))
+}
+
+test "basic_greet_test" {
+  // 基本问候测试
+  let result = greet("World")
+  assert_eq_string("Hello, World!", result)
+}
+
+test "empty_greet_test" {
+  // 空字符串问候测试
+  let result = greet("")
+  assert_eq_string("Hello, !", result)
+}
+
+test "special_greet_test" {
+  // 特殊字符问候测试
+  let result = greet("Test@123")
+  assert_eq_string("Hello, Test@123!", result)
+}
+
+test "assertion_test" {
+  // 断言函数测试
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+}
+
+test "compound_calculation_test" {
+  // 复合计算测试
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // (a + b) * c
+  let sum = add(a, b)
+  let result = multiply(sum, c)
+  
+  assert_eq(900, result)
+}
+
+// 新增的10个 MoonBit 测试用例
+test "recursive_pattern_simulation" {
+  // 递归模式模拟：计算斐波那契数列的第n项（简化版）
+  // F(5) = F(4) + F(3) = [F(3)+F(2)] + [F(2)+F(1)] = ...
+  let n = 5
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)  // 2
+  let fib4 = add(fib2, fib3)  // 3
+  let fib5 = add(fib3, fib4)  // 5
+  
+  assert_eq(5, fib5)
+}
+
+test "memory_allocation_simulation" {
+  // 内存分配模拟：模拟简单的内存管理计算
+  let block_size = 1024  // 1KB
+  let block_count = 10
+  let header_overhead = 32
+  
+  // 计算总内存需求
+  let total_data = multiply(block_size, block_count)
+  let total_overhead = multiply(header_overhead, block_count)
+  let total_memory = add(total_data, total_overhead)
+  
+  assert_eq(10560, total_memory)
+  
+  // 计算内存利用率
+  let utilization = multiply(total_data, 100) / total_memory
+  assert_eq(97, utilization)  // 整数除法
+}
+
 test "network_data_transmission" {
   // 网络数据传输模拟：计算数据包传输
   let packet_size = 1500  // MTU

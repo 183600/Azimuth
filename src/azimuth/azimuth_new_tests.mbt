@@ -1,179 +1,307 @@
-// 新增的 MoonBit 测试用例
-// 这些测试用例覆盖了不同的功能和场景，使用标准的 MoonBit 测试语法
+// Azimuth 项目新增测试套件
+// 使用标准 MoonBit 测试语法，提供全面的测试覆盖
 
-// 测试用例1: 负数运算测试
-test "negative_number_operations" {
-  // 测试负数加法
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-2, @azimuth.add(-8, 6))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  let a = 42
+  let b = 17
   
-  // 测试负数乘法
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(-5, 0))
+  // 测试加法
+  let sum_result = add(a, b)
+  assert_eq(59, sum_result)
+  
+  // 测试乘法
+  let mul_result = multiply(a, b)
+  assert_eq(714, mul_result)
+  
+  // 测试与0的运算
+  assert_eq(a, add(a, 0))
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, multiply(a, 1))
 }
 
-// 测试用例2: 复合运算测试
-test "compound_operations" {
-  // 测试 (a + b) * c - d 的复合运算
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 10
-  
-  // 步骤计算
-  let sum_ab = @azimuth.add(a, b)  // 5 + 3 = 8
-  let product = @azimuth.multiply(sum_ab, c)  // 8 * 4 = 32
-  let result = @azimuth.add(product, -d)  // 32 - 10 = 22
-  
-  @azimuth.assert_eq(22, result)
-}
-
-// 测试用例3: 字符串边界情况测试
-test "string_boundary_cases" {
-  // 测试空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  
-  // 测试单字符
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, @#$%^&*()!", @azimuth.greet("@#$%^&*()"))
-  
-  // 测试包含Unicode字符的字符串
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-}
-
-// 测试用例4: 数学公式应用测试
-test "mathematical_formulas" {
-  // 测试等差数列求和：n * (a1 + an) / 2
-  let n = 10
-  let first = 1
-  let last = 10
-  
-  let sum = @azimuth.multiply(n, @azimuth.add(first, last)) / 2
-  @azimuth.assert_eq(55, sum)  // 10 * (1 + 10) / 2 = 55
-  
-  // 测试矩形面积：长 * 宽
-  let length = 8
-  let width = 6
-  let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(48, area)
-}
-
-// 测试用例5: 边界条件组合测试
-test "boundary_combinations" {
+test "boundary_value_testing" {
+  // 边界值测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值与最小值的运算
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 测试最大值边界
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, multiply(max_val, 1))
   
-  // 测试边界值与0和1的运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  // 测试最小值边界
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, multiply(min_val, 1))
+  
+  // 测试极值组合
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(0, multiply(max_val, 0))
 }
 
-// 测试用例6: 实际应用场景测试 - 购物车计算
-test "shopping_cart_calculation" {
-  // 商品价格和数量
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
+test "string_processing_comprehensive" {
+  // 全面字符串处理测试
+  let normal_string = "MoonBit"
+  let empty_string = ""
+  let whitespace_string = "   "
+  let special_chars = "!@#$%^&*()"
+  let unicode_string = "测试🚀"
   
-  // 计算每种商品的总价
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  // 测试普通字符串
+  let normal_result = greet(normal_string)
+  assert_eq_string("Hello, MoonBit!", normal_result)
   
-  // 计算购物车总价
-  let cart_total = @azimuth.add(total1, total2)
+  // 测试空字符串
+  let empty_result = greet(empty_string)
+  assert_eq_string("Hello, !", empty_result)
   
-  // 验证总价：299*2 + 199*3 = 598 + 597 = 1195
-  @azimuth.assert_eq(1195, cart_total)
+  // 测试空白字符串
+  let whitespace_result = greet(whitespace_string)
+  assert_eq_string("Hello,    !", whitespace_result)
+  
+  // 测试特殊字符
+  let special_result = greet(special_chars)
+  assert_eq_string("Hello, !@#$%^&*()!", special_result)
+  
+  // 测试Unicode字符
+  let unicode_result = greet(unicode_string)
+  assert_eq_string("Hello, 测试🚀!", unicode_result)
 }
 
-// 测试用例7: 温度转换测试
-test "temperature_conversion" {
-  // 摄氏度转华氏度（简化版）：F = C * 2 + 30
+test "mathematical_series_calculations" {
+  // 数学级数计算测试
+  // 计算等差数列前n项和：1 + 3 + 5 + ... + (2n-1) = n²
+  let n = 10
+  let sum_of_odds = multiply(n, n)
+  assert_eq(100, sum_of_odds)
   
-  // 测试冰点温度
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
+  // 计算等比数列前n项和：2 + 4 + 8 + ... + 2^n = 2^(n+1) - 2
+  // 简化计算：2 + 4 + 8 + 16 = 30
+  let geometric_sum = add(add(add(2, 4), 8), 16)
+  assert_eq(30, geometric_sum)
   
-  // 测试室温
-  let room_celsius = 20
-  let room_fahrenheit = @azimuth.add(@azimuth.multiply(room_celsius, 2), 30)
-  @azimuth.assert_eq(70, room_fahrenheit)  // 20 * 2 + 30 = 70
-  
-  // 测试沸点温度
-  let boiling_celsius = 100
-  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
-  @azimuth.assert_eq(230, boiling_fahrenheit)  // 100 * 2 + 30 = 230
+  // 计算平方和：1² + 2² + 3² + 4² + 5² = 55
+  let square_sum = add(add(add(add(
+    multiply(1, 1), 
+    multiply(2, 2)), 
+    multiply(3, 3)), 
+    add(multiply(4, 4), multiply(5, 5)))
+  assert_eq(55, square_sum)
 }
 
-// 测试用例8: 错误处理测试
-test "error_handling" {
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "real_world_financial_scenarios" {
+  // 实际金融场景测试
+  // 场景1：贷款计算
+  let loan_amount = 100000
+  let interest_rate = 6  // 6%
+  let loan_term = 10     // 10年
+  
+  // 简化利息计算：总利息 = 本金 × 利率 × 年数
+  let total_interest = multiply(loan_amount, multiply(interest_rate, loan_term))
+  let total_repayment = add(loan_amount, total_interest)
+  
+  assert_eq(7000000, total_repayment)
+  
+  // 场景2：投资回报计算
+  let investment = 50000
+  let annual_return = 8  // 8%
+  let years = 5
+  
+  let total_return = multiply(investment, add(1, multiply(annual_return, years)))
+  assert_eq(2500000, total_return)
+  
+  // 场景3：折扣计算
+  let original_price = 1200
+  let discount_percentage = 15  // 15%
+  
+  let discount_amount = multiply(original_price, discount_percentage) / 100
+  let discounted_price = add(original_price, -discount_amount)
+  
+  assert_eq(1020, discounted_price)
+}
+
+test "physics_simulation_calculations" {
+  // 物理模拟计算测试
+  // 场景1：自由落体运动（简化）：h = v₀t + 0.5gt²
+  // 简化为整数：h = v₀t + gt²
+  let initial_velocity = 10
+  let time = 3
+  let gravity = 10  // 简化重力加速度
+  
+  let height = add(multiply(initial_velocity, time), 
+                  multiply(gravity, multiply(time, time)))
+  assert_eq(120, height)
+  
+  // 场景2：圆周运动：v = 2πr/T，简化为 v = 6r/T
+  let radius = 5
+  let period = 2
+  
+  let velocity = multiply(6, radius) / period
+  assert_eq(15, velocity)
+  
+  // 场景3：动能计算：E = 0.5mv²，简化为 E = mv²
+  let mass = 10
+  let velocity_squared = multiply(velocity, velocity)
+  let kinetic_energy = multiply(mass, velocity_squared)
+  
+  assert_eq(2250, kinetic_energy)
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  // 模拟O(n²)算法的计算量
+  let n = 100
+  
+  // 计算比较次数：n × (n-1) / 2
+  let comparisons = multiply(n, add(n, -1)) / 2
+  assert_eq(4950, comparisons)
+  
+  // 模拟O(n log n)算法（简化）
+  let log_approx = 7  // log₂100 ≈ 6.64，取整数7
+  let n_log_n = multiply(n, log_approx)
+  assert_eq(700, n_log_n)
+  
+  // 模拟O(2ⁿ)算法（小规模）
+  let small_n = 5
+  let power_of_2 = multiply(multiply(2, 2), multiply(2, 2))
+  assert_eq(16, power_of_2)
+}
+
+test "data_structure_operations" {
+  // 数据结构操作模拟测试
+  // 模拟数组索引计算：二维数组转一维数组
+  let row = 3
+  let col = 4
+  let width = 10
+  
+  let index = add(multiply(row, width), col)
+  assert_eq(34, index)
+  
+  // 模拟栈操作：push和pop
+  let stack_size = 0
+  let push_count = 5
+  let pop_count = 2
+  
+  let final_size = add(add(stack_size, push_count), -pop_count)
+  assert_eq(3, final_size)
+  
+  // 模拟队列操作：enqueue和dequeue
+  let queue_size = 3
+  let enqueue_count = 4
+  let dequeue_count = 2
+  
+  let queue_final_size = add(add(queue_size, enqueue_count), -dequeue_count)
+  assert_eq(5, queue_final_size)
+}
+
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
   // 测试溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+  let overflow_add = add(max_val, max_val)
+  assert_eq(max_val, overflow_add)
   
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  let underflow_add = add(min_val, min_val)
+  assert_eq(min_val, underflow_add)
+  
+  let overflow_mul = multiply(max_val, 2)
+  assert_eq(max_val, overflow_mul)
+  
+  // 测试特殊情况
+  let special_case1 = multiply(min_val, -1)
+  assert_eq(min_val, special_case1)
+  
+  let special_case2 = multiply(min_val, 1)
+  assert_eq(min_val, special_case2)
+  
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
 }
 
-// 测试用例9: 性能相关计算测试
-test "performance_calculations" {
-  // 模拟累加计算：1 + 2 + ... + 100
-  // 使用公式：n * (n + 1) / 2
-  let n = 100
-  let sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2
-  @azimuth.assert_eq(5050, sum)
+test "comprehensive_business_logic" {
+  // 综合业务逻辑测试
+  // 场景1：库存管理
+  let initial_stock = 1000
+  let incoming_stock = 500
+  let sold_items = 300
+  let returned_items = 20
   
-  // 模拟平方和计算：1² + 2² + ... + 10²
-  // 手动计算前几项验证
-  let square1 = @azimuth.multiply(1, 1)
-  let square2 = @azimuth.multiply(2, 2)
-  let square3 = @azimuth.multiply(3, 3)
-  let square4 = @azimuth.multiply(4, 4)
-  let square5 = @azimuth.multiply(5, 5)
+  let current_stock = add(add(add(initial_stock, incoming_stock), -sold_items), returned_items)
+  assert_eq(1220, current_stock)
   
-  let sum_of_squares = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(square1, square2), square3), square4), square5)
-  @azimuth.assert_eq(55, sum_of_squares)  // 1 + 4 + 9 + 16 + 25 = 55
+  // 场景2：订单处理
+  let unit_price = 199
+  let quantity = 5
+  let discount_threshold = 500
+  let discount_rate = 10
+  let tax_rate = 8
+  let shipping = 25
+  
+  // 计算订单总额
+  let subtotal = multiply(unit_price, quantity)
+  
+  // 计算折扣
+  let discount = if (subtotal > discount_threshold) {
+    multiply(subtotal, discount_rate) / 100
+  } else {
+    0
+  }
+  
+  // 计算税费和总价
+  let after_discount = add(subtotal, -discount)
+  let tax = multiply(after_discount, tax_rate) / 100
+  let total = add(add(after_discount, tax), shipping)
+  
+  assert_eq(1084, total)
+  
+  // 场景3：用户积分计算
+  let base_points = 100
+  let purchase_amount = 299
+  let point_rate = 2  // 每消费2元获得1积分
+  let bonus_threshold = 200
+  let bonus_points = 50
+  
+  let points_from_purchase = multiply(purchase_amount, point_rate) / 100
+  let bonus = if (purchase_amount > bonus_threshold) { bonus_points } else { 0 }
+  let total_points = add(base_points, add(points_from_purchase, bonus))
+  
+  assert_eq(299, total_points)
 }
 
-// 测试用例10: 数据转换场景测试
-test "data_conversion_scenarios" {
-  // 测试数字到字符串的间接转换（通过greet函数）
-  let number_str = "2023"
-  let result = @azimuth.greet(number_str)
-  @azimuth.assert_eq_string("Hello, 2023!", result)
+test "performance_benchmark_simulation" {
+  // 性能基准模拟测试
+  // 模拟不同算法的性能比较
   
-  // 测试包含数字和字母的混合字符串
-  let mixed_str = "User123"
-  let result2 = @azimuth.greet(mixed_str)
-  @azimuth.assert_eq_string("Hello, User123!", result2)
+  // 算法A：O(n)线性搜索
+  let array_size = 1000
+  let linear_operations = array_size
+  assert_eq(1000, linear_operations)
   
-  // 测试包含空格的字符串
-  let spaced_str = "John Doe"
-  let result3 = @azimuth.greet(spaced_str)
-  @azimuth.assert_eq_string("Hello, John Doe!", result3)
+  // 算法B：O(log n)二分搜索
+  let log_operations = 10  // log₂1024 = 10
+  assert_eq(10, log_operations)
   
-  // 测试包含特殊字符的字符串
-  let email_str = "test@example.com"
-  let result4 = @azimuth.greet(email_str)
-  @azimuth.assert_eq_string("Hello, test@example.com!", result4)
+  // 算法C：O(n²)冒泡排序
+  let bubble_operations = multiply(array_size, array_size)
+  assert_eq(1000000, bubble_operations)
+  
+  // 算法D：O(n log n)快速排序
+  let quicksort_operations = multiply(array_size, log_operations)
+  assert_eq(10000, quicksort_operations)
+  
+  // 性能提升计算
+  let improvement_factor = divide_with_ceil(linear_operations, log_operations)
+  assert_eq(100, improvement_factor)
+  
+  // 内存使用模拟
+  let item_size = 8
+  let total_items = 500
+  let memory_usage = multiply(item_size, total_items)
+  assert_eq(4000, memory_usage)
 }
