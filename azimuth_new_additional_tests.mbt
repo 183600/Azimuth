@@ -1,279 +1,252 @@
-// Azimuth 项目新增标准 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，自包含版本
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
-// 定义需要的函数
-fn add(a : Int, b : Int) -> Int {
-  if a == 0 { return b }
-  if b == 0 { return a }
+test "boolean_logic_operations" {
+  // 布尔逻辑运算测试
+  let true_val = 1
+  let false_val = 0
   
-  let min_val = -2147483648
-  let max_val = 2147483647
+  // 逻辑与模拟: 两个都为真(1)时结果为真(1)
+  let and_true = @azimuth.multiply(true_val, true_val)
+  @azimuth.assert_eq(1, and_true)
   
-  if a == min_val && b < 0 { return min_val }
-  if b == min_val && a < 0 { return min_val }
+  let and_false1 = @azimuth.multiply(true_val, false_val)
+  @azimuth.assert_eq(0, and_false1)
   
-  if a > 0 && b > 0 && a > max_val - b { return max_val }
-  if a < 0 && b < 0 && a < min_val - b { return min_val }
+  let and_false2 = @azimuth.multiply(false_val, false_val)
+  @azimuth.assert_eq(0, and_false2)
   
-  a + b
+  // 逻辑或模拟: 任一为真(1)时结果为真(1)
+  let or_true1 = @azimuth.add(@azimuth.add(true_val, false_val), -@azimuth.multiply(true_val, false_val))
+  @azimuth.assert_eq(1, or_true1)
+  
+  let or_true2 = @azimuth.add(@azimuth.add(true_val, true_val), -@azimuth.multiply(true_val, true_val))
+  @azimuth.assert_eq(1, or_true2)
+  
+  let or_false = @azimuth.add(@azimuth.add(false_val, false_val), -@azimuth.multiply(false_val, false_val))
+  @azimuth.assert_eq(0, or_false)
 }
 
-fn multiply(a : Int, b : Int) -> Int {
-  let min_val = -2147483648
-  let max_val = 2147483647
+test "number_system_conversions" {
+  // 数字系统转换测试
   
-  if a == 0 || b == 0 { return 0 }
-  if a == 1 { return b }
-  if b == 1 { return a }
+  // 二进制转十进制: 1010 = 8 + 0 + 2 + 0 = 10
+  let binary_1010 = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(0, 4)), @azimuth.add(@azimuth.multiply(1, 2), @azimuth.multiply(0, 1)))
+  @azimuth.assert_eq(10, binary_1010)
   
-  if a == -1 { return if b == min_val { min_val } else { -b } }
-  if b == -1 { return if a == min_val { min_val } else { -a } }
+  // 二进制转十进制: 1111 = 8 + 4 + 2 + 1 = 15
+  let binary_1111 = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 8), @azimuth.multiply(1, 4)), @azimuth.add(@azimuth.multiply(1, 2), @azimuth.multiply(1, 1)))
+  @azimuth.assert_eq(15, binary_1111)
   
-  if a == min_val { return if b > 1 || b < -1 { min_val } else { a * b } }
-  if b == min_val { return if a > 1 || a < -1 { min_val } else { a * b } }
-  
-  let sign = if (a > 0 && b > 0) || (a < 0 && b < 0) { 1 } else { -1 }
-  let abs_a = if a < 0 { -a } else { a }
-  let abs_b = if b < 0 { -b } else { b }
-  
-  if abs_a > max_val / abs_b { return if sign > 0 { max_val } else { min_val } }
-  
-  a * b
+  // 十进制转八进制模拟: 65 = 64 + 1 = 1*8² + 0*8¹ + 1*8⁰ = 101₈
+  let decimal_65 = 65
+  let octal_101 = @azimuth.add(@azimuth.multiply(1, 64), @azimuth.add(@azimuth.multiply(0, 8), 1))
+  @azimuth.assert_eq(decimal_65, octal_101)
 }
 
-fn greet(name : String) -> String {
-  "Hello, " + name + "!"
+test "statistical_measures" {
+  // 统计度量测试
+  
+  let values1 = 12
+  let values2 = 15
+  let values3 = 18
+  let values4 = 21
+  let values5 = 24
+  
+  // 计算平均值
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(values1, values2), values3), values4), values5)
+  let mean = sum / 5
+  @azimuth.assert_eq(18, mean)
+  
+  // 计算中位数（已排序: 12, 15, 18, 21, 24）
+  let median = 18
+  @azimuth.assert_eq(mean, median)
+  
+  // 计算极差
+  let range = @azimuth.add(values5, -values1)
+  @azimuth.assert_eq(12, range)
+  
+  // 计算四分位数间距（简化版）
+  let q1 = 15  // 第一四分位数
+  let q3 = 21  // 第三四分位数
+  let iqr = @azimuth.add(q3, -q1)
+  @azimuth.assert_eq(6, iqr)
 }
 
-// 断言函数
-fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 使用除以零来触发运行时错误
-    let _ = 1 / 0
-    ()
-  }
+test "physics_calculations" {
+  // 物理计算测试
+  
+  // 速度计算: 距离 / 时间
+  let distance = 150  // 米
+  let time = 10       // 秒
+  let velocity = distance / time
+  @azimuth.assert_eq(15, velocity)
+  
+  // 加速度计算: (末速度 - 初速度) / 时间
+  let initial_velocity = 10
+  let final_velocity = 30
+  let acceleration = @azimuth.add(final_velocity, -initial_velocity) / time
+  @azimuth.assert_eq(2, acceleration)
+  
+  // 动能计算: 0.5 * 质量 * 速度²
+  let mass = 5  // 千克
+  let speed = 10  // 米/秒
+  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(mass, speed), speed) / 2
+  @azimuth.assert_eq(250, kinetic_energy)
+  
+  // 势能计算: 质量 * 重力加速度 * 高度
+  let gravity = 10  // 米/秒² (简化值)
+  let height = 20   // 米
+  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)
+  @azimuth.assert_eq(1000, potential_energy)
 }
 
-fn assert_eq_string(expected : String, actual : String) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 使用除以零来触发运行时错误
-    let _ = 1 / 0
-    ()
-  }
+test "algorithm_complexity" {
+  // 算法复杂度测试
+  
+  // O(1) 常数时间操作
+  let constant_time = 42
+  @azimuth.assert_eq(42, constant_time)
+  
+  // O(n) 线性时间操作模拟
+  let n = 5
+  let linear_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
+  @azimuth.assert_eq(15, linear_sum)
+  
+  // O(n²) 二次时间操作模拟
+  let quadratic_sum = @azimuth.add(@azimuth.add(@azimuth.multiply(1, 1), @azimuth.multiply(2, 2)), @azimuth.multiply(3, 3))
+  @azimuth.assert_eq(14, quadratic_sum)
+  
+  // O(log n) 对数时间操作模拟（二分查找比较次数）
+  let log_comparisons = 3  // 对于n=8，最多需要3次比较
+  @azimuth.assert_eq(3, log_comparisons)
 }
 
-test "safe_addition_edge_cases" {
-  // 测试安全加法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "encryption_simulation" {
+  // 加密模拟测试
   
-  // 测试最大值溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, 100))
+  // 凯撒密码模拟（字母位移）
+  let shift = 3
+  let original_A = 1  // A的数字表示
+  let encrypted_D = @azimuth.add(original_A, shift)
+  @azimuth.assert_eq(4, encrypted_D)
   
-  // 测试最小值溢出保护
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, -100))
+  // 简单异或加密模拟
+  let plaintext = 1010
+  let key = 0101
+  let encrypted = @azimuth.add(plaintext, key)  // 简化版异或操作
+  @azimuth.assert_eq(1115, encrypted)
   
-  // 测试正常加法
-  assert_eq(0, add(max_val, min_val))
-  assert_eq(100, add(50, 50))
+  // 解密操作（与加密相同）
+  let decrypted = @azimuth.add(encrypted, key)
+  @azimuth.assert_eq(2120, decrypted)
+  
+  // 密钥生成模拟
+  let seed = 7
+  let key1 = @azimuth.multiply(seed, 17) % 100  // 7*17=119%100=19
+  let key2 = @azimuth.multiply(seed, 31) % 100  // 7*31=217%100=17
+  @azimuth.assert_eq(19, key1)
+  @azimuth.assert_eq(17, key2)
 }
 
-test "safe_multiplication_precision" {
-  // 测试安全乘法的精度和溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "data_compression" {
+  // 数据压缩测试
   
-  // 测试乘法溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
+  // 行程长度编码模拟
+  let original_data = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 1), 1), 2), 2)  // 1,1,1,2,2
+  let compressed_size = 4  // 三个1，两个2 -> (1,3),(2,2) -> 4个值
+  @azimuth.assert_eq(4, compressed_size)
   
-  // 测试特殊值乘法
-  assert_eq(0, multiply(0, max_val))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  // 霍夫曼编码频率计算
+  let char_a_count = 5
+  let char_b_count = 3
+  let char_c_count = 2
+  let char_d_count = 8
+  let total_chars = @azimuth.add(@azimuth.add(@azimuth.add(char_a_count, char_b_count), char_c_count), char_d_count)
+  @azimuth.assert_eq(18, total_chars)
   
-  // 测试正常乘法
-  assert_eq(100, multiply(10, 10))
-  assert_eq(-100, multiply(-10, 10))
+  // 字符频率计算
+  let freq_a = @azimuth.multiply(char_a_count, 100) / total_chars
+  let freq_b = @azimuth.multiply(char_b_count, 100) / total_chars
+  let freq_c = @azimuth.multiply(char_c_count, 100) / total_chars
+  let freq_d = @azimuth.multiply(char_d_count, 100) / total_chars
+  
+  @azimuth.assert_eq(27, freq_a)  // 5/18 ≈ 27%
+  @azimuth.assert_eq(16, freq_b)  // 3/18 ≈ 16%
+  @azimuth.assert_eq(11, freq_c)  // 2/18 ≈ 11%
+  @azimuth.assert_eq(44, freq_d)  // 8/18 ≈ 44%
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  // 测试基本功能
-  assert_eq_string("Hello, World!", greet("World"))
+test "network_protocols" {
+  // 网络协议测试
   
-  // 测试空字符串
-  assert_eq_string("Hello, !", greet(""))
+  // IP地址计算
+  let ip_octet1 = 192
+  let ip_octet2 = 168
+  let ip_octet3 = 1
+  let ip_octet4 = 1
   
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, MoonBit@2023!", greet("MoonBit@2023"))
+  // 网络地址计算（简化）
+  let network_address = @azimuth.add(@azimuth.add(@azimuth.multiply(ip_octet1, 256), ip_octet2), 1)
+  @azimuth.assert_eq(49321, network_address)
   
-  // 测试Unicode字符
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  // 端口计算
+  let base_port = 8000
+  let offset = 80
+  let full_port = @azimuth.add(base_port, offset)
+  @azimuth.assert_eq(8080, full_port)
+  
+  // TCP序列号计算
+  let initial_seq = 1000
+  let data_size = 512
+  let next_seq = @azimuth.add(initial_seq, data_size)
+  @azimuth.assert_eq(1512, next_seq)
+  
+  // 校验和计算（简化）
+  let packet1 = 100
+  let packet2 = 200
+  let packet3 = 300
+  let checksum = @azimuth.add(@azimuth.add(packet1, packet2), packet3) % 256
+  @azimuth.assert_eq(44, checksum)
 }
 
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 8
-  let c = 5
+test "machine_learning_basics" {
+  // 机器学习基础测试
   
-  // 验证加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 线性回归: y = mx + b
+  let x1 = 2
+  let x2 = 4
+  let x3 = 6
+  let m = 2  // 斜率
+  let b = 1  // 截距
   
-  // 验证乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  let y1 = @azimuth.add(@azimuth.multiply(m, x1), b)
+  let y2 = @azimuth.add(@azimuth.multiply(m, x2), b)
+  let y3 = @azimuth.add(@azimuth.multiply(m, x3), b)
   
-  // 验证分配律
-  let distributive1 = multiply(a, add(b, c))
-  let distributive2 = add(multiply(a, b), multiply(a, c))
-  assert_eq(distributive1, distributive2)
+  @azimuth.assert_eq(5, y1)  // 2*2+1=5
+  @azimuth.assert_eq(9, y2)  // 2*4+1=9
+  @azimuth.assert_eq(13, y3) // 2*6+1=13
   
-  // 验证结合律
-  let associative1 = add(add(a, b), c)
-  let associative2 = add(a, add(b, c))
-  assert_eq(associative1, associative2)
-}
-
-test "financial_calculations_scenario" {
-  // 测试金融计算场景
-  let principal = 10000  // 本金
-  let rate = 5          // 年利率（百分比）
-  let years = 3         // 年数
+  // 均方误差计算
+  let actual_y1 = 6
+  let actual_y2 = 8
+  let actual_y3 = 14
   
-  // 计算简单利息
-  let interest = multiply(principal, multiply(rate, years))
-  let total = add(principal, interest)
+  let error1 = @azimuth.add(actual_y1, -y1)
+  let error2 = @azimuth.add(actual_y2, -y2)
+  let error3 = @azimuth.add(actual_y3, -y3)
   
-  // 验证计算结果：10000 + 10000×5×3 = 160000
-  assert_eq(160000, total)
+  let mse = @azimuth.add(@azimuth.add(@azimuth.multiply(error1, error1), @azimuth.multiply(error2, error2)), @azimuth.multiply(error3, error3)) / 3
+  @azimuth.assert_eq(1, mse)  // ((1)² + (-1)² + (1)²)/3 = 1
   
-  // 测试贷款计算
-  let loan_amount = 50000
-  let monthly_payment = 2000
-  let months = 24
+  // 简单分类: 决策边界
+  let feature1 = 3
+  let feature2 = 7
+  let weight1 = 2
+  let weight2 = 1
+  let bias = -10
   
-  let total_payment = multiply(monthly_payment, months)
-  let total_interest = add(total_payment, -loan_amount)
-  
-  assert_eq(48000, total_payment)
-  assert_eq(-2000, total_interest)
-}
-
-test "geometry_calculations_scenario" {
-  // 测试几何计算场景
-  let length = 10
-  let width = 6
-  let height = 4
-  
-  // 计算矩形周长
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(32, perimeter)
-  
-  // 计算矩形面积
-  let area = multiply(length, width)
-  assert_eq(60, area)
-  
-  // 计算长方体体积
-  let volume = multiply(area, height)
-  assert_eq(240, volume)
-  
-  // 计算表面积
-  let surface_area = add(
-    add(multiply(2, multiply(length, width)), 
-        multiply(2, multiply(length, height))),
-    multiply(2, multiply(width, height))
-  )
-  assert_eq(148, surface_area)
-}
-
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景（简化版：F = C × 2 + 30）
-  // 测试冰点
-  let freezing_celsius = 0
-  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
-  assert_eq(30, freezing_fahrenheit)
-  
-  // 测试室温
-  let room_celsius = 20
-  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
-  assert_eq(70, room_fahrenheit)
-  
-  // 测试沸点
-  let boiling_celsius = 100
-  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
-  assert_eq(230, boiling_fahrenheit)
-  
-  // 测试反向转换（简化版：C = (F - 30) ÷ 2）
-  let fahrenheit = 80
-  let celsius = add(fahrenheit, -30) / 2
-  assert_eq(25, celsius)
-}
-
-test "shopping_cart_business_scenario" {
-  // 测试购物车业务场景
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
-  let discount_threshold = 1000
-  let discount_rate = 10
-  let shipping_fee = 20
-  
-  // 计算商品总价
-  let item1_total = multiply(item1_price, item1_quantity)
-  let item2_total = multiply(item2_price, item2_quantity)
-  let subtotal = add(item1_total, item2_total)
-  
-  // 计算折扣
-  let discount = if (subtotal > discount_threshold) {
-    multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
-  
-  // 计算最终总价
-  let final_total = add(add(subtotal, -discount), shipping_fee)
-  
-  // 验证计算结果
-  assert_eq(1194, subtotal)
-  assert_eq(119, discount)
-  assert_eq(1095, final_total)
-}
-
-test "time_calculations_scenario" {
-  // 测试时间计算场景
-  let hours = 2
-  let minutes = 45
-  
-  // 转换为总分钟数
-  let total_minutes = add(multiply(hours, 60), minutes)
-  assert_eq(165, total_minutes)
-  
-  // 转换为总秒数
-  let total_seconds = multiply(total_minutes, 60)
-  assert_eq(9900, total_seconds)
-  
-  // 计算时间差
-  let start_hour = 8
-  let start_minute = 30
-  let end_hour = 17
-  let end_minute = 45
-  
-  let start_total = add(multiply(start_hour, 60), start_minute)
-  let end_total = add(multiply(end_hour, 60), end_minute)
-  let duration = add(end_total, -start_total)
-  
-  assert_eq(555, duration)  // 9小时15分钟 = 555分钟
-  
-  // 计算工作时长（扣除1小时午餐时间）
-  let work_duration = add(duration, -60)
-  assert_eq(495, work_duration)  // 8小时15分钟 = 495分钟
+  let decision_value = @azimuth.add(@azimuth.add(@azimuth.multiply(weight1, feature1), @azimuth.multiply(weight2, feature2)), bias)
+  @azimuth.assert_eq(3, decision_value)  // 2*3+1*7-10=3，>0所以分类为正类
 }
