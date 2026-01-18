@@ -1,254 +1,214 @@
-// 增强的 MoonBit 测试用例
-// 覆盖各种边界情况和实际应用场景
+// Azimuth 项目增强测试套件
+// 包含10个新的 MoonBit 测试用例，使用标准 MoonBit 测试语法
 
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期付款计算
-  // 公式：月供 = [本金 × 月利率 × (1+月利率)^还款月数] / [(1+月利率)^还款月数 - 1]
-  // 简化为整数计算
-  
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 30          // 30年
-  let months = azimuth::multiply(years, 12)  // 总月数
-  
-  // 简化计算：月供 ≈ 本金 / 总月数 + 利息
-  let monthly_principal = principal / months
-  let monthly_rate = annual_rate / 12  // 月利率
-  let monthly_interest = azimuth::multiply(principal, monthly_rate) / 100
-  
-  let monthly_payment = azimuth::add(monthly_principal, monthly_interest)
-  
-  // 验证计算结果
-  assert_true(monthly_payment > 0)
-  assert_true(monthly_payment < principal)  // 月供应该小于本金
-}
+// 导入必要的模块
+use azimuth
 
-test "geometry_area_calculations" {
-  // 几何面积计算测试
-  // 圆面积 = π × r² (简化使用 π ≈ 3)
-  let radius = 10
-  let circle_area = azimuth::multiply(3, azimuth::multiply(radius, radius))
-  assert_eq(300, circle_area)
-  
-  // 矩形面积 = 长 × 宽
-  let length = 15
-  let width = 8
-  let rectangle_area = azimuth::multiply(length, width)
-  assert_eq(120, rectangle_area)
-  
-  // 梯形面积 = (上底 + 下底) × 高 ÷ 2
-  let top_base = 6
-  let bottom_base = 10
-  let height = 5
-  let trapezoid_area = azimuth::multiply(azimuth::add(top_base, bottom_base), height) / 2
-  assert_eq(40, trapezoid_area)
-}
-
-test "temperature_conversion_comprehensive" {
-  // 温度转换综合测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32 (简化为 F = C × 2 + 30)
-  let celsius_temps = [0, 10, 20, 30, 40, 100]
-  let expected_fahrenheit = [30, 50, 70, 90, 110, 230]
-  
-  // 测试冰点
-  assert_eq(30, azimuth::add(azimuth::multiply(0, 2), 30))
-  
-  // 测试室温
-  assert_eq(70, azimuth::add(azimuth::multiply(20, 2), 30))
-  
-  // 测试沸点
-  assert_eq(230, azimuth::add(azimuth::multiply(100, 2), 30))
-  
-  // 华氏度转摄氏度（简化）：C = (F - 30) ÷ 2
-  let fahrenheit = 70
-  let celsius = azimuth::add(fahrenheit, -30) / 2
-  assert_eq(20, celsius)
-}
-
-test "shopping_cart_with_discounts" {
-  // 购物车折扣计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
-  let item3_price = 99
-  let item3_quantity = 1
-  
-  // 计算商品总价
-  let subtotal1 = azimuth::multiply(item1_price, item1_quantity)
-  let subtotal2 = azimuth::multiply(item2_price, item2_quantity)
-  let subtotal3 = azimuth::multiply(item3_price, item3_quantity)
-  let total_subtotal = azimuth::add(azimuth::add(subtotal1, subtotal2), subtotal3)
-  
-  // 计算折扣：满500减50，满1000减150
-  let discount = if (total_subtotal >= 1000) {
-    150
-  } else if (total_subtotal >= 500) {
-    50
-  } else {
-    0
-  }
-  
-  // 计算最终价格
-  let final_total = azimuth::add(total_subtotal, -discount)
-  
-  assert_eq(1144, final_total)  // 1294 - 150 = 1144
-}
-
-test "statistical_analysis" {
-  // 统计分析测试
-  // 数据集：[12, 15, 18, 21, 24, 27, 30]
-  
-  // 计算总和
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(12, 15), 18), 21), 24), 27), 30)
-  assert_eq(147, sum)
-  
-  // 计算平均值
-  let count = 7
-  let average = sum / count
-  assert_eq(21, average)
-  
-  // 计算方差（简化）：各数据点与平均值差的平方和
-  let diff1 = azimuth::add(12, -21)  // -9
-  let diff2 = azimuth::add(15, -21)  // -6
-  let diff3 = azimuth::add(18, -21)  // -3
-  let diff4 = azimuth::add(21, -21)  // 0
-  let diff5 = azimuth::add(24, -21)  // 3
-  let diff6 = azimuth::add(27, -21)  // 6
-  let diff7 = azimuth::add(30, -21)  // 9
-  
-  let variance_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(diff1, diff1), azimuth::multiply(diff2, diff2)), azimuth::multiply(diff3, diff3)), azimuth::multiply(diff4, diff4)), azimuth::multiply(diff5, diff5)), azimuth::multiply(diff6, diff6)), azimuth::multiply(diff7, diff7))
-  let variance = variance_sum / count
-  
-  assert_eq(36, variance)
-}
-
-test "game_mechanics_simulation" {
-  // 游戏机制模拟
-  let base_health = 100
-  let base_attack = 20
-  let base_defense = 10
-  
-  // 玩家升级
-  let level = 5
-  let health_multiplier = azimuth::add(1, azimuth::multiply(level, 10))  // 每级增加10%生命值
-  let attack_multiplier = azimuth::add(1, azimuth::multiply(level, 8))   // 每级增加8%攻击力
-  let defense_multiplier = azimuth::add(1, azimuth::multiply(level, 5))  // 每级增加5%防御力
-  
-  let final_health = azimuth::multiply(base_health, health_multiplier) / 100
-  let final_attack = azimuth::multiply(base_attack, attack_multiplier) / 100
-  let final_defense = azimuth::multiply(base_defense, defense_multiplier) / 100
-  
-  // 战斗模拟：伤害 = 攻击力 - 防御力
-  let damage = azimuth::add(final_attack, -final_defense)
-  if (damage < 0) {
-    damage = 0
-  }
-  
-  assert_true(final_health > base_health)
-  assert_true(final_attack > base_attack)
-  assert_true(final_defense > base_defense)
-  assert_true(damage >= 0)
-}
-
-test "energy_efficiency_calculation" {
-  // 能效计算测试
-  let appliance_power = 2000  // 瓦特
-  let daily_usage_hours = 4   // 每天使用小时数
-  let days_in_month = 30
-  let electricity_rate = 8    // 每千瓦时费用（分）
-  
-  // 计算月度用电量（千瓦时）
-  let daily_consumption = azimuth::multiply(appliance_power, daily_usage_hours) / 1000
-  let monthly_consumption = azimuth::multiply(daily_consumption, days_in_month)
-  
-  // 计算月度电费
-  let monthly_cost = azimuth::multiply(monthly_consumption, electricity_rate)
-  
-  // 计算能效等级（简化）：基于功率消耗
-  let efficiency_grade = if (appliance_power < 1000) {
-    "A"
-  } else if (appliance_power < 2000) {
-    "B"
-  } else {
-    "C"
-  }
-  
-  assert_eq(240, monthly_consumption)  // 8 kWh × 30 天
-  assert_eq(1920, monthly_cost)       // 240 kWh × 8 分
-  assert_eq_string("Hello, C!", azimuth::greet(efficiency_grade))
-}
-
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  // 测试各种格式的用户名
-  let usernames = ["user123", "john.doe", "user_2023", "test@email.com", "中文用户"]
-  
-  // 测试每种用户名的问候
-  assert_eq_string("Hello, user123!", azimuth::greet("user123"))
-  assert_eq_string("Hello, john.doe!", azimuth::greet("john.doe"))
-  assert_eq_string("Hello, user_2023!", azimuth::greet("user_2023"))
-  assert_eq_string("Hello, test@email.com!", azimuth::greet("test@email.com"))
-  assert_eq_string("Hello, 中文用户!", azimuth::greet("中文用户"))
-  
-  // 测试特殊字符处理
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", azimuth::greet(special_chars))
-  
-  // 测试长字符串
-  let long_string = "ThisIsAVeryLongUserNameThatMightBeUsedInSomeEnterpriseApplicationSystem"
-  assert_eq_string("Hello, ThisIsAVeryLongUserNameThatMightBeUsedInSomeEnterpriseApplicationSystem!", azimuth::greet(long_string))
-}
-
-test "mathematical_series_evaluation" {
-  // 数学级数求值测试
-  
-  // 等差数列求和：1 + 4 + 7 + 10 + 13（公差为3）
-  let a1 = 1
-  let d = 3
+test "recursive_factorial_simulation" {
+  // 递归阶乘模拟测试
+  // 计算5的阶乘：5! = 5 × 4 × 3 × 2 × 1 = 120
   let n = 5
-  let arithmetic_sum = azimuth::multiply(n, azimuth::add(azimuth::multiply(2, a1), azimuth::multiply(n - 1, d))) / 2
-  assert_eq(35, arithmetic_sum)
   
-  // 等比数列求和：2 + 6 + 18 + 54（公比为3）
-  let g1 = 2
-  let r = 3
-  let m = 4
-  let geometric_sum = azimuth::multiply(g1, azimuth::add(azimuth::multiply(azimuth::multiply(r, r), r), -1)) / azimuth::add(r, -1)
-  // 简化计算：2 + 6 + 18 + 54 = 80
-  let manual_sum = azimuth::add(azimuth::add(azimuth::add(2, 6), 18), 54)
-  assert_eq(80, manual_sum)
+  // 模拟递归计算
+  let step1 = azimuth.multiply(n, n - 1)        // 5 × 4 = 20
+  let step2 = azimuth.multiply(step1, n - 2)    // 20 × 3 = 60
+  let step3 = azimuth.multiply(step2, n - 3)    // 60 × 2 = 120
+  let step4 = azimuth.multiply(step3, n - 4)    // 120 × 1 = 120
   
-  // 平方数求和：1² + 2² + 3² + 4² + 5²
-  let square_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::multiply(1, 1), azimuth::multiply(2, 2)), azimuth::multiply(3, 3)), azimuth::multiply(4, 4)), azimuth::multiply(5, 5))
-  assert_eq(55, square_sum)
+  @assertion.assert_eq(120, step4)?
 }
 
-test "boundary_stress_testing" {
-  // 边界压力测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "binary_search_simulation" {
+  // 二分查找模拟测试
+  // 模拟在有序数组中查找元素的位置
+  let array_size = 16
+  let target = 7
   
-  // 连续运算压力测试
-  let chain_result = azimuth::add(azimuth::multiply(azimuth::add(max_val, min_val), 100), azimuth::add(max_val, min_val))
-  assert_eq(-101, chain_result)
+  // 模拟二分查找的步骤
+  let low = 0
+  let high = array_size - 1
+  let mid = azimuth.add(low, high) / 2  // (0 + 15) / 2 = 7
   
-  // 边界值组合运算
-  let complex_calculation = azimuth::add(azimuth::multiply(azimuth::add(max_val, -1000), 2), azimuth::multiply(azimuth::add(min_val, 1000), -2))
-  assert_eq(4000, complex_calculation)
+  // 检查是否找到目标
+  let found = azimuth.eq(mid, target)
+  @assertion.assert_true(found)?
   
-  // 极值字符串处理
-  let max_number_string = "2147483647"
-  let min_number_string = "-2147483648"
-  let zero_string = "0"
+  // 测试查找其他元素
+  let target2 = 3
+  let mid2 = azimuth.add(low, high) / 4  // 模拟第二次查找
+  @assertion.assert_eq(3, mid2)?
+}
+
+test "currency_exchange_calculation" {
+  // 货币兑换计算测试
+  let usd_amount = 1000
+  let eur_rate = 92    // 1 USD = 0.92 EUR (简化为整数)
+  let gbp_rate = 79    // 1 USD = 0.79 GBP (简化为整数)
+  let jpy_rate = 110   // 1 USD = 110 JPY
   
-  assert_eq_string("Hello, 2147483647!", azimuth::greet(max_number_string))
-  assert_eq_string("Hello, -2147483648!", azimuth::greet(min_number_string))
-  assert_eq_string("Hello, 0!", azimuth::greet(zero_string))
+  // 计算兑换金额（使用整数除法模拟小数）
+  let eur_amount = azimuth.multiply(usd_amount, eur_rate) / 100
+  let gbp_amount = azimuth.multiply(usd_amount, gbp_rate) / 100
+  let jpy_amount = azimuth.multiply(usd_amount, jpy_rate)
   
-  // 边界条件断言测试
-  assert_true(azimuth::add(max_val, 1) == max_val)  // 溢出保护
-  assert_true(azimuth::add(min_val, -1) == min_val) // 下溢保护
-  assert_true(azimuth::multiply(max_val, 2) == max_val)  // 乘法溢出保护
-  assert_true(azimuth::multiply(min_val, -1) == min_val) // 特殊情况处理
+  @assertion.assert_eq(920, eur_amount)?   // 1000 × 92 / 100 = 920
+  @assertion.assert_eq(790, gbp_amount)?   // 1000 × 79 / 100 = 790
+  @assertion.assert_eq(110000, jpy_amount)? // 1000 × 110 = 110000
+}
+
+test "physics_motion_calculation" {
+  // 物理运动计算测试
+  // 模拟自由落体运动：s = v₀t + ½gt²
+  let initial_velocity = 10  // 初始速度 (m/s)
+  let time = 5               // 时间 (s)
+  let gravity = 10           // 重力加速度 (m/s²，简化)
+  
+  // 计算位移：s = 10×5 + ½×10×5² = 50 + 5×25 = 50 + 125 = 175
+  let velocity_distance = azimuth.multiply(initial_velocity, time)
+  let gravity_distance = azimuth.multiply(azimuth.multiply(gravity, time), time) / 2
+  let total_distance = azimuth.add(velocity_distance, gravity_distance)
+  
+  @assertion.assert_eq(175, total_distance)?
+  
+  // 计算最终速度：v = v₀ + gt = 10 + 10×5 = 60
+  let final_velocity = azimuth.add(initial_velocity, azimuth.multiply(gravity, time))
+  @assertion.assert_eq(60, final_velocity)?
+}
+
+test "data_structure_operations" {
+  // 数据结构操作测试
+  // 模拟栈操作：push和pop
+  let stack_size = 0
+  
+  // push操作
+  stack_size := azimuth.add(stack_size, 1)  // push 1
+  stack_size := azimuth.add(stack_size, 1)  // push 2
+  stack_size := azimuth.add(stack_size, 1)  // push 3
+  @assertion.assert_eq(3, stack_size)?
+  
+  // pop操作
+  stack_size := azimuth.add(stack_size, -1)  // pop 1
+  @assertion.assert_eq(2, stack_size)?
+  
+  // 模拟队列操作：enqueue和dequeue
+  let queue_head = 0
+  let queue_tail = 0
+  
+  // enqueue操作
+  queue_tail := azimuth.add(queue_tail, 1)  // enqueue 1
+  queue_tail := azimuth.add(queue_tail, 1)  // enqueue 2
+  @assertion.assert_eq(2, azimuth.add(queue_tail, -queue_head))?
+  
+  // dequeue操作
+  queue_head := azimuth.add(queue_head, 1)  // dequeue 1
+  @assertion.assert_eq(1, azimuth.add(queue_tail, -queue_head))?
+}
+
+test "compression_algorithm_simulation" {
+  // 压缩算法模拟测试
+  // 模拟简单的行程长度编码压缩
+  let original_size = 100
+  let repeated_char_count = 80
+  let unique_char_count = 20
+  
+  // 压缩后的大小 = 唯一字符数 + 重复字符对数
+  let compressed_size = azimuth.add(unique_char_count, repeated_char_count / 2)
+  
+  @assertion.assert_eq(60, compressed_size)?
+  
+  // 计算压缩率
+  let compression_ratio = azimuth.multiply(compressed_size, 100) / original_size
+  @assertion.assert_eq(60, compression_ratio)?  // 60%压缩率
+}
+
+test "network_data_transfer" {
+  // 网络数据传输测试
+  let file_size = 1048576  // 1MB = 1024×1024 bytes
+  let bandwidth = 1048576  // 1MB/s带宽
+  let latency = 50         // 50ms延迟
+  let packet_size = 1400   // 1400字节包大小
+  
+  // 计算传输时间（不包括延迟）
+  let transfer_time = azimuth.divide(file_size, bandwidth)
+  @assertion.assert_eq(1, transfer_time)?  // 1秒
+  
+  // 计算包数量
+  let packet_count = azimuth.divide(file_size, packet_size)
+  @assertion.assert_eq(749, packet_count)?  // 1048576 / 1400 ≈ 749
+  
+  // 计算总延迟时间
+  let total_latency = azimuth.multiply(packet_count, latency)
+  @assertion.assert_eq(37450, total_latency)?  // 749 × 50 = 37450ms
+}
+
+test "database_index_calculation" {
+  // 数据库索引计算测试
+  let table_size = 10000
+  let index_selectivity = 10  // 10%的选择性
+  let page_size = 100
+  
+  // 计算索引扫描的行数
+  let indexed_rows = azimuth.multiply(table_size, index_selectivity) / 100
+  @assertion.assert_eq(1000, indexed_rows)?
+  
+  // 计算全表扫描的页数
+  let full_scan_pages = azimuth.divide(table_size, page_size)
+  @assertion.assert_eq(100, full_scan_pages)?
+  
+  // 计算索引扫描的页数
+  let index_scan_pages = azimuth.divide(indexed_rows, page_size)
+  @assertion.assert_eq(10, index_scan_pages)?
+  
+  // 计算性能提升倍数
+  let performance_gain = azimuth.divide(full_scan_pages, index_scan_pages)
+  @assertion.assert_eq(10, performance_gain)?
+}
+
+test "machine_learning_prediction" {
+  // 机器学习预测模拟测试
+  let feature1 = 5
+  let feature2 = 3
+  let feature3 = 2
+  let weight1 = 2
+  let weight2 = 4
+  let weight3 = 6
+  let bias = 1
+  
+  // 计算线性回归预测值：y = w1×x1 + w2×x2 + w3×x3 + b
+  let weighted_sum1 = azimuth.multiply(feature1, weight1)
+  let weighted_sum2 = azimuth.multiply(feature2, weight2)
+  let weighted_sum3 = azimuth.multiply(feature3, weight3)
+  
+  let prediction = azimuth.add(azimuth.add(azimuth.add(weighted_sum1, weighted_sum2), weighted_sum3), bias)
+  @assertion.assert_eq(41, prediction)?  // 5×2 + 3×4 + 2×6 + 1 = 10 + 12 + 12 + 1 = 35
+  
+  // 计算激活函数（ReLU）
+  let activated_prediction = azimuth.max(0, prediction)
+  @assertion.assert_eq(41, activated_prediction)?
+  
+  // 测试负值情况
+  let negative_prediction = -10
+  let activated_negative = azimuth.max(0, negative_prediction)
+  @assertion.assert_eq(0, activated_negative)?
+}
+
+test "cryptography_simulation" {
+  // 密码学模拟测试
+  let message = 12345
+  let key = 54321
+  let modulo = 100000  // 简化的模数
+  
+  // 模拟简单的加密：(message + key) % modulo
+  let encrypted = azimuth.modulo(azimuth.add(message, key), modulo)
+  @assertion.assert_eq(66666, encrypted)?  // (12345 + 54321) % 100000 = 66666
+  
+  // 模拟解密：(encrypted - key) % modulo
+  let decrypted = azimuth.modulo(azimuth.add(encrypted, -key), modulo)
+  @assertion.assert_eq(12345, decrypted)?
+  
+  // 模拟哈希函数（简化版）
+  let hash_input = 98765
+  let hash_prime = 31
+  let hash_result = azimuth.modulo(azimuth.multiply(hash_input, hash_prime), modulo)
+  @assertion.assert_eq(57015, hash_result)?  // (98765 × 31) % 100000 = 57015
 }
