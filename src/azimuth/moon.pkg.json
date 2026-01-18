@@ -123,4 +123,5 @@
   "test/standard_core_tests.mbt",
   "test/user_specified_standard_tests.mbt",
   "concise_test_cases.mbt",
-  "azimuth_enhanced_tests.mbt"]}
+  "azimuth_enhanced_tests.mbt",
+  "test/standard_comprehensive_tests.mbt"]}
