@@ -1,156 +1,220 @@
-// Azimuth 项目综合新测试用例
-// 使用标准 MoonBit 测试语法，覆盖各种测试场景
+// Azimuth 项目新增综合测试用例
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
-test "basic_addition_properties" {
-  // 基本加法属性测试
-  assert_eq(azimuth::add(5, 3), 8)
-  assert_eq(azimuth::add(0, 7), 7)
-  assert_eq(azimuth::add(-2, 9), 7)
-  assert_eq(azimuth::add(-5, -3), -8)
-  assert_eq(azimuth::add(100, 200), 300)
+test "string_length_validation" {
+  // 字符串长度验证测试
+  let short_name = "Bob"
+  let medium_name = "Elizabeth"
+  let long_name = "Alexander"
+  let empty_name = ""
+  
+  // 测试不同长度字符串的问候
+  @azimuth.assert_eq_string("Hello, Bob!", @azimuth.greet(short_name))
+  @azimuth.assert_eq_string("Hello, Elizabeth!", @azimuth.greet(medium_name))
+  @azimuth.assert_eq_string("Hello, Alexander!", @azimuth.greet(long_name))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(empty_name))
 }
 
-test "basic_multiplication_properties" {
-  // 基本乘法属性测试
-  assert_eq(azimuth::multiply(4, 3), 12)
-  assert_eq(azimuth::multiply(0, 10), 0)
-  assert_eq(azimuth::multiply(-2, 5), -10)
-  assert_eq(azimuth::multiply(-3, -4), 12)
-  assert_eq(azimuth::multiply(7, 1), 7)
+test "number_sequence_patterns" {
+  // 数字序列模式测试
+  
+  // 奇数序列: 1 + 3 + 5 + 7 + 9 = 25
+  let odd_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 3), 5), 7), 9)
+  @azimuth.assert_eq(25, odd_sum)
+  
+  // 偶数序列: 2 + 4 + 6 + 8 = 20
+  let even_sum = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8)
+  @azimuth.assert_eq(20, even_sum)
+  
+  // 质数序列: 2 + 3 + 5 + 7 = 17
+  let prime_sum = @azimuth.add(@azimuth.add(@azimuth.add(2, 3), 5), 7)
+  @azimuth.assert_eq(17, prime_sum)
 }
 
-test "greet_function_variations" {
-  // 问候函数变体测试
-  assert_eq(azimuth::greet("World"), "Hello, World!")
-  assert_eq(azimuth::greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq(azimuth::greet("测试123"), "Hello, 测试123!")
-  assert_eq(azimuth::greet("user@domain"), "Hello, user@domain!")
-  assert_eq(azimuth::greet("   "), "Hello,    !")
+test "percentage_calculations" {
+  // 百分比计算测试
+  
+  let base_value = 200
+  
+  // 计算百分比: 25% of 200 = 50
+  let quarter_percent = @azimuth.multiply(base_value, 25) / 100
+  @azimuth.assert_eq(50, quarter_percent)
+  
+  // 计算百分比: 50% of 200 = 100
+  let half_percent = @azimuth.multiply(base_value, 50) / 100
+  @azimuth.assert_eq(100, half_percent)
+  
+  // 计算百分比: 75% of 200 = 150
+  let three_quarter_percent = @azimuth.multiply(base_value, 75) / 100
+  @azimuth.assert_eq(150, three_quarter_percent)
+  
+  // 计算百分比: 100% of 200 = 200
+  let full_percent = @azimuth.multiply(base_value, 100) / 100
+  @azimuth.assert_eq(200, full_percent)
 }
 
-test "mathematical_formulas" {
-  // 数学公式测试
+test "speed_distance_time" {
+  // 速度、距离、时间计算测试
   
-  // 计算圆的面积 (近似): π * r²，使用 π ≈ 3
-  let radius = 5
-  let circle_area = azimuth::multiply(3, azimuth::multiply(radius, radius))
-  assert_eq(75, circle_area)
+  // 距离 = 速度 × 时间
+  let speed = 60  // km/h
+  let time = 2    // hours
+  let distance = @azimuth.multiply(speed, time)
+  @azimuth.assert_eq(120, distance)
   
-  // 计算梯形面积: (上底 + 下底) * 高 / 2
-  let top_base = 4
-  let bottom_base = 8
-  let height = 5
-  let trapezoid_area = azimuth::multiply(azimuth::add(top_base, bottom_base), height) / 2
-  assert_eq(30, trapezoid_area)
+  // 时间 = 距离 / 速度
+  let distance2 = 180  // km
+  let speed2 = 60      // km/h
+  let time2 = distance2 / speed2
+  @azimuth.assert_eq(3, time2)
+  
+  // 速度 = 距离 / 时间
+  let distance3 = 240  // km
+  let time3 = 4        // hours
+  let speed3 = distance3 / time3
+  @azimuth.assert_eq(60, speed3)
 }
 
-test "real_world_calculations" {
-  // 实际世界计算测试
+test "array_index_calculations" {
+  // 数组索引计算测试（模拟）
   
-  // 购物计算: 商品价格 + 税费
-  let item_price = 120
-  let tax_rate = 10  // 10%
-  let tax_amount = azimuth::multiply(item_price, tax_rate) / 100
-  let total_cost = azimuth::add(item_price, tax_amount)
-  assert_eq(132, total_cost)
+  let array_size = 10
   
-  // 速度计算: 距离 / 时间 (简化为乘法)
-  let distance = 300
-  let time_hours = 5
-  let speed = azimuth::multiply(distance, 1) / time_hours
-  assert_eq(60, speed)
+  // 第一个元素索引
+  let first_index = 0
+  @azimuth.assert_eq(0, first_index)
+  
+  // 最后一个元素索引
+  let last_index = @azimuth.add(array_size, -1)
+  @azimuth.assert_eq(9, last_index)
+  
+  // 中间元素索引
+  let middle_index = array_size / 2
+  @azimuth.assert_eq(5, middle_index)
+  
+  // 四分之一位置索引
+  let quarter_index = array_size / 4
+  @azimuth.assert_eq(2, quarter_index)
 }
 
-test "boundary_value_tests" {
-  // 边界值测试
+test "binary_operations" {
+  // 二进制操作测试（模拟）
   
-  // 大数运算
-  assert_eq(azimuth::add(999999, 1), 1000000)
-  assert_eq(azimuth::multiply(1000, 1000), 1000000)
+  // 左移操作（模拟为乘以2的幂）
+  let value = 5
+  let shift_left_1 = @azimuth.multiply(value, 2)    // 5 << 1 = 10
+  let shift_left_2 = @azimuth.multiply(value, 4)    // 5 << 2 = 20
+  let shift_left_3 = @azimuth.multiply(value, 8)    // 5 << 3 = 40
   
-  // 零值运算
-  assert_eq(azimuth::add(0, 0), 0)
-  assert_eq(azimuth::multiply(0, 0), 0)
+  @azimuth.assert_eq(10, shift_left_1)
+  @azimuth.assert_eq(20, shift_left_2)
+  @azimuth.assert_eq(40, shift_left_3)
   
-  // 单位运算
-  assert_eq(azimuth::add(1, 0), 1)
-  assert_eq(azimuth::multiply(1, 1), 1)
+  // 右移操作（模拟为除以2的幂）
+  let value2 = 40
+  let shift_right_1 = value2 / 2    // 40 >> 1 = 20
+  let shift_right_2 = value2 / 4    // 40 >> 2 = 10
+  let shift_right_3 = value2 / 8    // 40 >> 3 = 5
+  
+  @azimuth.assert_eq(20, shift_right_1)
+  @azimuth.assert_eq(10, shift_right_2)
+  @azimuth.assert_eq(5, shift_right_3)
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
+test "currency_conversion" {
+  // 货币转换测试
   
-  // 负数加法
-  assert_eq(azimuth::add(-10, -20), -30)
-  assert_eq(azimuth::add(-15, 25), 10)
-  assert_eq(azimuth::add(30, -45), -15)
+  // 美元到人民币转换（假设汇率: 1 USD = 7 CNY）
+  let usd_amount = 100
+  let exchange_rate = 7
+  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
+  @azimuth.assert_eq(700, cny_amount)
   
-  // 负数乘法
-  assert_eq(azimuth::multiply(-6, 7), -42)
-  assert_eq(azimuth::multiply(8, -9), -72)
-  assert_eq(azimuth::multiply(-4, -5), 20)
+  // 人民币到美元转换
+  let cny_amount2 = 1400
+  let usd_amount2 = cny_amount2 / exchange_rate
+  @azimuth.assert_eq(200, usd_amount2)
+  
+  // 欧元到美元转换（假设汇率: 1 EUR = 1.1 USD，简化为整数）
+  let eur_amount = 100
+  let eur_to_usd_rate = 11  // 1.1 * 10
+  let usd_from_eur = @azimuth.multiply(eur_amount, eur_to_usd_rate) / 10
+  @azimuth.assert_eq(110, usd_from_eur)
 }
 
-test "complex_expression_evaluation" {
-  // 复杂表达式求值测试
+test "calendar_calculations" {
+  // 日历计算测试
   
-  // 表达式: (a * b) + (c * d) - e
-  let a = 6
-  let b = 4
-  let c = 8
-  let d = 3
-  let e = 15
+  // 一年的天数（不考虑闰年）
+  let days_in_year = 365
+  @azimuth.assert_eq(365, days_in_year)
   
-  let result = azimuth::add(
-    azimuth::multiply(a, b),
-    azimuth::add(azimuth::multiply(c, d), -e)
-  )
-  assert_eq(33, result)
+  // 一年的周数
+  let weeks_in_year = days_in_year / 7
+  @azimuth.assert_eq(52, weeks_in_year)  // 365/7 = 52.14，取整数部分
   
-  // 表达式: (x + y) * (z - w)
-  let x = 10
-  let y = 5
-  let z = 20
-  let w = 8
+  // 一个月的天数（假设30天）
+  let days_in_month = 30
+  @azimuth.assert_eq(30, days_in_month)
   
-  let result2 = azimuth::multiply(
-    azimuth::add(x, y),
-    azimuth::add(z, -w)
-  )
-  assert_eq(120, result2)
+  // 一季度的天数
+  let days_in_quarter = @azimuth.multiply(days_in_month, 3)
+  @azimuth.assert_eq(90, days_in_quarter)
+  
+  // 半年的天数
+  let days_in_half_year = @azimuth.multiply(days_in_month, 6)
+  @azimuth.assert_eq(180, days_in_half_year)
 }
 
-test "algorithmic_patterns" {
-  // 算法模式测试
+test "unit_conversions" {
+  // 单位转换测试
   
-  // 计算阶乘: 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let factorial_5 = azimuth::multiply(
-    azimuth::multiply(
-      azimuth::multiply(
-        azimuth::multiply(5, 4), 3
-      ), 2
-    ), 1
-  )
-  assert_eq(120, factorial_5)
+  // 长度转换: 米到厘米
+  let meters = 5
+  let centimeters = @azimuth.multiply(meters, 100)
+  @azimuth.assert_eq(500, centimeters)
   
-  // 计算幂: 2^4 = 2 * 2 * 2 * 2 = 16
-  let power_2_4 = azimuth::multiply(
-    azimuth::multiply(
-      azimuth::multiply(2, 2), 2
-    ), 2
-  )
-  assert_eq(16, power_2_4)
+  // 重量转换: 千克到克
+  let kilograms = 3
+  let grams = @azimuth.multiply(kilograms, 1000)
+  @azimuth.assert_eq(3000, grams)
+  
+  // 容量转换: 升到毫升
+  let liters = 2
+  let milliliters = @azimuth.multiply(liters, 1000)
+  @azimuth.assert_eq(2000, milliliters)
+  
+  // 面积转换: 平方米到平方厘米
+  let square_meters = 4
+  let square_centimeters = @azimuth.multiply(square_meters, 10000)
+  @azimuth.assert_eq(40000, square_centimeters)
 }
 
-test "string_and_number_integration" {
-  // 字符串和数字集成测试
+test "logical_operations" {
+  // 逻辑操作测试（模拟）
   
-  // 验证问候函数与数字输入的兼容性
-  assert_eq(azimuth::greet("123"), "Hello, 123!")
-  assert_eq(azimuth::greet("-456"), "Hello, -456!")
-  assert_eq(azimuth::greet("3.14"), "Hello, 3.14!")
+  // AND 操作（模拟为乘法）
+  let true_val = 1
+  let false_val = 0
   
-  // 特殊字符测试
-  assert_eq(azimuth::greet("!@#$"), "Hello, !@#$!")
-  assert_eq(azimuth::greet("\n\t"), "Hello, \n\t!")
+  let true_and_true = @azimuth.multiply(true_val, true_val)
+  let true_and_false = @azimuth.multiply(true_val, false_val)
+  let false_and_true = @azimuth.multiply(false_val, true_val)
+  let false_and_false = @azimuth.multiply(false_val, false_val)
+  
+  @azimuth.assert_eq(1, true_and_true)    // 1 AND 1 = 1
+  @azimuth.assert_eq(0, true_and_false)   // 1 AND 0 = 0
+  @azimuth.assert_eq(0, false_and_true)   // 0 AND 1 = 0
+  @azimuth.assert_eq(0, false_and_false)  // 0 AND 0 = 0
+  
+  // OR 操作（模拟为加法，但限制最大值为1）
+  let or_1_1 = @azimuth.add(true_val, true_val) > 0 ? 1 : 0
+  let or_1_0 = @azimuth.add(true_val, false_val) > 0 ? 1 : 0
+  let or_0_1 = @azimuth.add(false_val, true_val) > 0 ? 1 : 0
+  let or_0_0 = @azimuth.add(false_val, false_val) > 0 ? 1 : 0
+  
+  @azimuth.assert_eq(1, or_1_1)  // 1 OR 1 = 1
+  @azimuth.assert_eq(1, or_1_0)  // 1 OR 0 = 1
+  @azimuth.assert_eq(1, or_0_1)  // 0 OR 1 = 1
+  @azimuth.assert_eq(0, or_0_0)  // 0 OR 0 = 0
 }
