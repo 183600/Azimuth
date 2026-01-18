@@ -1,212 +1,279 @@
-// Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，补充测试覆盖
+// Azimuth 项目新增标准 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，自包含版本
 
-test "arithmetic_operations_advanced" {
-  // 高级算术运算测试
-  let a = 15
-  let b = 7
+// 定义需要的函数
+fn add(a : Int, b : Int) -> Int {
+  if a == 0 { return b }
+  if b == 0 { return a }
   
-  // 测试加法
-  let sum_result = a + b
-  let _ = sum_result  // 22
+  let min_val = -2147483648
+  let max_val = 2147483647
   
-  // 测试乘法
-  let multiply_result = a * b
-  let _ = multiply_result  // 105
+  if a == min_val && b < 0 { return min_val }
+  if b == min_val && a < 0 { return min_val }
   
-  // 复合运算：(a + b) * a
-  let compound_result = (a + b) * a
-  let _ = compound_result  // 330
+  if a > 0 && b > 0 && a > max_val - b { return max_val }
+  if a < 0 && b < 0 && a < min_val - b { return min_val }
+  
+  a + b
 }
 
-test "mathematical_series_fibonacci" {
-  // 斐波那契数列测试
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = fib1 + fib2  // 2
-  let fib4 = fib2 + fib3  // 3
-  let fib5 = fib3 + fib4  // 5
-  let fib6 = fib4 + fib5  // 8
-  let fib7 = fib5 + fib6  // 13
-  let fib8 = fib6 + fib7  // 21
+fn multiply(a : Int, b : Int) -> Int {
+  let min_val = -2147483648
+  let max_val = 2147483647
   
-  // 验证斐波那契数列的黄金比例特性
-  let ratio1 = fib8 * 100 / fib7  // 约161
-  let ratio2 = fib7 * 100 / fib6  // 约162
+  if a == 0 || b == 0 { return 0 }
+  if a == 1 { return b }
+  if b == 1 { return a }
   
-  let _ = fib8  // 21
-  let _ = ratio1  // 约161
-  let _ = ratio2  // 约162
+  if a == -1 { return if b == min_val { min_val } else { -b } }
+  if b == -1 { return if a == min_val { min_val } else { -a } }
+  
+  if a == min_val { return if b > 1 || b < -1 { min_val } else { a * b } }
+  if b == min_val { return if a > 1 || a < -1 { min_val } else { a * b } }
+  
+  let sign = if (a > 0 && b > 0) || (a < 0 && b < 0) { 1 } else { -1 }
+  let abs_a = if a < 0 { -a } else { a }
+  let abs_b = if b < 0 { -b } else { b }
+  
+  if abs_a > max_val / abs_b { return if sign > 0 { max_val } else { min_val } }
+  
+  a * b
 }
 
-test "geometry_calculations_extended" {
-  // 扩展几何计算测试
-  let radius = 5
-  
-  // 圆的周长（近似值）：2 * π * r (π ≈ 22/7)
-  let circumference = 2 * 22 * radius / 7
-  let _ = circumference  // 31 整数近似
-  
-  // 圆的面积（近似值）：π * r² (π ≈ 22/7)
-  let area = 22 * radius * radius / 7
-  let _ = area  // 78 整数近似
-  
-  // 球体体积（近似值）：4/3 * π * r³ (π ≈ 22/7)
-  let volume = 4 * 22 * radius * radius * radius / 21
-  let _ = volume  // 523 整数近似
+fn greet(name : String) -> String {
+  "Hello, " + name + "!"
 }
 
-test "time_calculations_comprehensive" {
-  // 综合时间计算测试
-  let days = 365
-  let hours_per_day = 24
-  let minutes_per_hour = 60
-  let seconds_per_minute = 60
-  
-  // 一年的总小时数
-  let hours_in_year = days * hours_per_day
-  let _ = hours_in_year  // 8760
-  
-  // 一年的总分钟数
-  let minutes_in_year = hours_in_year * minutes_per_hour
-  let _ = minutes_in_year  // 525600
-  
-  // 一年的总秒数
-  let seconds_in_year = minutes_in_year * seconds_per_minute
-  let _ = seconds_in_year  // 31536000
-  
-  // 闰年计算（366天）
-  let leap_year_hours = 366 * hours_per_day
-  let _ = leap_year_hours  // 8784
+// 断言函数
+fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if expected == actual {
+    ()
+  } else {
+    // 使用除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  }
 }
 
-test "financial_compound_interest" {
-  // 复利计算测试
-  let principal = 1000
-  let rate = 5  // 5% 年利率
-  let years = 3
-  
-  // 第一年：1000 * 1.05 = 1050
-  let year1 = principal + principal * rate / 100
-  let _ = year1  // 1050
-  
-  // 第二年：1050 * 1.05 = 1102.5 ≈ 1102
-  let year2 = year1 + year1 * rate / 100
-  let _ = year2  // 1102
-  
-  // 第三年：1102 * 1.05 = 1157.1 ≈ 1157
-  let year3 = year2 + year2 * rate / 100
-  let _ = year3  // 1157
+fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if expected == actual {
+    ()
+  } else {
+    // 使用除以零来触发运行时错误
+    let _ = 1 / 0
+    ()
+  }
 }
 
-test "physics_calculations" {
-  // 物理计算测试
-  let mass = 10  // kg
-  let acceleration = 5  // m/s²
+test "safe_addition_edge_cases" {
+  // 测试安全加法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 牛顿第二定律：F = m * a
-  let force = mass * acceleration
-  let _ = force  // 50
+  // 测试最大值溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, 100))
   
-  // 动能：KE = 0.5 * m * v² (假设速度为 10 m/s)
-  let velocity = 10
-  let kinetic_energy = mass * velocity * velocity / 2
-  let _ = kinetic_energy  // 500
+  // 测试最小值溢出保护
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, -100))
   
-  // 势能：PE = m * g * h (g = 9.8 ≈ 10, h = 20)
-  let gravity = 10  // 简化重力加速度
-  let height = 20
-  let potential_energy = mass * gravity * height
-  let _ = potential_energy  // 2000
+  // 测试正常加法
+  assert_eq(0, add(max_val, min_val))
+  assert_eq(100, add(50, 50))
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  let numbers = [12, 15, 18, 21, 24, 27, 30]
+test "safe_multiplication_precision" {
+  // 测试安全乘法的精度和溢出处理
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 计算总和
-  let sum = 12 + 15 + 18 + 21 + 24 + 27 + 30
-  let _ = sum  // 147
+  // 测试乘法溢出保护
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
   
-  // 计算平均值
-  let count = 7
-  let average = sum / count
-  let _ = average  // 21
+  // 测试特殊值乘法
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
   
-  // 计算方差（简化版）
-  let variance_sum = (12 - 21) * (12 - 21) + (15 - 21) * (15 - 21) + (18 - 21) * (18 - 21) + (21 - 21) * (21 - 21) + (24 - 21) * (24 - 21) + (27 - 21) * (27 - 21) + (30 - 21) * (30 - 21)
-  
-  let variance = variance_sum / count
-  let _ = variance  // 36
+  // 测试正常乘法
+  assert_eq(100, multiply(10, 10))
+  assert_eq(-100, multiply(-10, 10))
 }
 
-test "string_operations_advanced" {
-  // 高级字符串操作测试
-  let first_name = "John"
-  let last_name = "Doe"
-  let age = "30"
-  
-  // 测试字符串拼接
-  let full_greeting = "Hello, " + first_name + "!"
-  let _ = full_greeting  // "Hello, John!"
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  // 测试基本功能
+  assert_eq_string("Hello, World!", greet("World"))
   
   // 测试空字符串
-  let empty_greeting = "Hello, " + "" + "!"
-  let _ = empty_greeting  // "Hello, !"
+  assert_eq_string("Hello, !", greet(""))
   
-  // 测试数字字符串
-  let number_greeting = "Hello, " + age + "!"
-  let _ = number_greeting  // "Hello, 30!"
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, MoonBit@2023!", greet("MoonBit@2023"))
   
-  // 测试特殊字符字符串
-  let special_greeting = "Hello, " + "test@example.com" + "!"
-  let _ = special_greeting  // "Hello, test@example.com!"
+  // 测试Unicode字符
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "algorithm_efficiency" {
-  // 算法效率测试
-  let n = 100
+test "mathematical_properties_validation" {
+  // 测试数学性质验证
+  let a = 12
+  let b = 8
+  let c = 5
   
-  // 线性时间复杂度 O(n)：1 + 2 + 3 + ... + n = n*(n+1)/2
-  let linear_sum = n * (n + 1) / 2
-  let _ = linear_sum  // 5050
+  // 验证加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 平方时间复杂度 O(n²)：1² + 2² + 3² + ... + n² = n*(n+1)*(2n+1)/6
-  let square_sum = n * (n + 1) * (2 * n + 1) / 6
-  let _ = square_sum  // 338350
+  // 验证乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 立方时间复杂度 O(n³)：1³ + 2³ + 3³ + ... + n³ = (n*(n+1)/2)²
-  let cube_sum = linear_sum * linear_sum
-  let _ = cube_sum  // 25502500
+  // 验证分配律
+  let distributive1 = multiply(a, add(b, c))
+  let distributive2 = add(multiply(a, b), multiply(a, c))
+  assert_eq(distributive1, distributive2)
+  
+  // 验证结合律
+  let associative1 = add(add(a, b), c)
+  let associative2 = add(a, add(b, c))
+  assert_eq(associative1, associative2)
 }
 
-test "boundary_conditions_extreme" {
-  // 极端边界条件测试
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "financial_calculations_scenario" {
+  // 测试金融计算场景
+  let principal = 10000  // 本金
+  let rate = 5          // 年利率（百分比）
+  let years = 3         // 年数
   
-  // 测试最大值加法
-  let max_add_result = max_int + 0
-  let _ = max_add_result  // max_int
+  // 计算简单利息
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
   
-  // 测试最小值加法
-  let min_add_result = min_int + 0
-  let _ = min_add_result  // min_int
+  // 验证计算结果：10000 + 10000×5×3 = 160000
+  assert_eq(160000, total)
   
-  // 测试最大值乘法
-  let max_multiply_result = max_int * 1
-  let _ = max_multiply_result  // max_int
+  // 测试贷款计算
+  let loan_amount = 50000
+  let monthly_payment = 2000
+  let months = 24
   
-  // 测试最小值乘法
-  let min_multiply_result = min_int * 1
-  let _ = min_multiply_result  // min_int
+  let total_payment = multiply(monthly_payment, months)
+  let total_interest = add(total_payment, -loan_amount)
   
-  // 测试零值运算
-  let zero_add_max = max_int + 0
-  let zero_add_min = min_int + 0
-  let zero_multiply_any = 12345 * 0
+  assert_eq(48000, total_payment)
+  assert_eq(-2000, total_interest)
+}
+
+test "geometry_calculations_scenario" {
+  // 测试几何计算场景
+  let length = 10
+  let width = 6
+  let height = 4
   
-  let _ = zero_add_max  // max_int
-  let _ = zero_add_min  // min_int
-  let _ = zero_multiply_any  // 0
+  // 计算矩形周长
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(32, perimeter)
+  
+  // 计算矩形面积
+  let area = multiply(length, width)
+  assert_eq(60, area)
+  
+  // 计算长方体体积
+  let volume = multiply(area, height)
+  assert_eq(240, volume)
+  
+  // 计算表面积
+  let surface_area = add(
+    add(multiply(2, multiply(length, width)), 
+        multiply(2, multiply(length, height))),
+    multiply(2, multiply(width, height))
+  )
+  assert_eq(148, surface_area)
+}
+
+test "temperature_conversion_scenario" {
+  // 测试温度转换场景（简化版：F = C × 2 + 30）
+  // 测试冰点
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
+  assert_eq(30, freezing_fahrenheit)
+  
+  // 测试室温
+  let room_celsius = 20
+  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
+  assert_eq(70, room_fahrenheit)
+  
+  // 测试沸点
+  let boiling_celsius = 100
+  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
+  assert_eq(230, boiling_fahrenheit)
+  
+  // 测试反向转换（简化版：C = (F - 30) ÷ 2）
+  let fahrenheit = 80
+  let celsius = add(fahrenheit, -30) / 2
+  assert_eq(25, celsius)
+}
+
+test "shopping_cart_business_scenario" {
+  // 测试购物车业务场景
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
+  let discount_threshold = 1000
+  let discount_rate = 10
+  let shipping_fee = 20
+  
+  // 计算商品总价
+  let item1_total = multiply(item1_price, item1_quantity)
+  let item2_total = multiply(item2_price, item2_quantity)
+  let subtotal = add(item1_total, item2_total)
+  
+  // 计算折扣
+  let discount = if (subtotal > discount_threshold) {
+    multiply(subtotal, discount_rate) / 100
+  } else {
+    0
+  }
+  
+  // 计算最终总价
+  let final_total = add(add(subtotal, -discount), shipping_fee)
+  
+  // 验证计算结果
+  assert_eq(1194, subtotal)
+  assert_eq(119, discount)
+  assert_eq(1095, final_total)
+}
+
+test "time_calculations_scenario" {
+  // 测试时间计算场景
+  let hours = 2
+  let minutes = 45
+  
+  // 转换为总分钟数
+  let total_minutes = add(multiply(hours, 60), minutes)
+  assert_eq(165, total_minutes)
+  
+  // 转换为总秒数
+  let total_seconds = multiply(total_minutes, 60)
+  assert_eq(9900, total_seconds)
+  
+  // 计算时间差
+  let start_hour = 8
+  let start_minute = 30
+  let end_hour = 17
+  let end_minute = 45
+  
+  let start_total = add(multiply(start_hour, 60), start_minute)
+  let end_total = add(multiply(end_hour, 60), end_minute)
+  let duration = add(end_total, -start_total)
+  
+  assert_eq(555, duration)  // 9小时15分钟 = 555分钟
+  
+  // 计算工作时长（扣除1小时午餐时间）
+  let work_duration = add(duration, -60)
+  assert_eq(495, work_duration)  // 8小时15分钟 = 495分钟
 }
