@@ -1,92 +1,115 @@
-// 额外的核心功能测试
-// 测试 azimuth 项目的主要功能和边界情况
+// 额外的核心 MoonBit 测试用例
+// 测试 azimuth 库的核心功能和边界情况
 
-test "add_with_large_numbers" {
-  // 测试大数相加
-  @azimuth.assert_eq(2000000000, @azimuth.add(1000000000, 1000000000))
-  @azimuth.assert_eq(-2000000000, @azimuth.add(-1000000000, -1000000000))
-  @azimuth.assert_eq(0, @azimuth.add(1500000000, -1500000000))
+test "arithmatic_sequence_sum" {
+  // 测试等差数列求和：1 + 2 + 3 + ... + 10 = 55
+  let n = 10
+  let sum = multiply(n, add(n, 1)) / 2  // n × (n + 1) / 2
+  assert_eq(55, sum)
 }
 
-test "multiply_with_large_numbers" {
-  // 测试大数相乘
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  @azimuth.assert_eq(-1000000, @azimuth.multiply(-1000, 1000))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(-1000, -1000))
+test "geometric_sequence_sum" {
+  // 测试等比数列求和：2 + 4 + 8 + 16 = 30
+  // 通过连续相加实现
+  let term1 = 2
+  let term2 = multiply(term1, 2)
+  let term3 = multiply(term2, 2)
+  let term4 = multiply(term3, 2)
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(30, sum)
 }
 
-test "add_chained_operations" {
-  // 测试链式加法运算
-  let result = @azimuth.add(@azimuth.add(10, 20), @azimuth.add(30, 40))
-  @azimuth.assert_eq(100, result)
+test "factorial_calculation" {
+  // 测试阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
+  let n = 5
+  let result = multiply(n, multiply(n - 1, multiply(n - 2, multiply(n - 3, n - 4))))
+  assert_eq(120, result)
 }
 
-test "multiply_chained_operations" {
-  // 测试链式乘法运算
-  let result = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(120, result)
+test "power_calculation" {
+  // 测试幂运算：3^4 = 3 × 3 × 3 × 3 = 81
+  let base = 3
+  let exponent = 4
+  let result = multiply(multiply(base, base), multiply(base, base))
+  assert_eq(81, result)
 }
 
-test "greet_with_special_characters" {
-  // 测试包含特殊字符的问候
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, \t\n!", @azimuth.greet("\t\n"))
+test "temperature_conversion" {
+  // 测试温度转换：摄氏度转华氏度（简化版 F = C × 2 + 30）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形的周长
-  let length = 15
-  let width = 8
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
-  @azimuth.assert_eq(46, perimeter)
+test "simple_interest_calculation" {
+  // 测试简单利息计算：利息 = 本金 × 利率 × 时间
+  let principal = 1000
+  let rate = 5  // 5%
+  let time = 3
+  let interest = multiply(principal, multiply(rate, time))
+  let total = add(principal, interest)
+  assert_eq(16000, total)  // 1000 + 1000×5×3 = 16000
 }
 
-test "financial_calculation_scenario" {
-  // 测试金融计算场景：简化版复利计算
-  let principal = 5000
-  let rate = 6  // 6%
-  let years = 4
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
-  let total = @azimuth.add(principal, interest)
-  @azimuth.assert_eq(125000, total)  // 5000 + 5000*6*4 = 125000
-}
-
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景：摄氏度转华氏度（简化版）
-  let celsius = 30
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(90, fahrenheit)  // 30 * 2 + 30 = 90
-}
-
-test "mixed_operations_test" {
-  // 测试混合运算：((a + b) * c) - d
-  let a = 12
-  let b = 8
-  let c = 5
-  let d = 25
+test "area_perimeter_calculation" {
+  // 测试面积和周长计算
+  let length = 10
+  let width = 5
   
-  let sum = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum, c)
-  let result = @azimuth.add(product, -d)
+  // 矩形面积
+  let area = multiply(length, width)
+  assert_eq(50, area)
   
-  @azimuth.assert_eq(75, result)
+  // 矩形周长
+  let perimeter = add(multiply(2, length), multiply(2, width))
+  assert_eq(30, perimeter)
 }
 
-test "edge_case_boundary_values" {
-  // 测试边界值的边缘情况
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试空字符串
+  assert_eq_string("Hello, !", greet(""))
+  
+  // 测试单字符
+  assert_eq_string("Hello, A!", greet("A"))
+  
+  // 测试包含数字和字母的字符串
+  assert_eq_string("Hello, Test123!", greet("Test123"))
+  
+  // 测试包含空格的字符串
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+}
+
+test "boundary_value_operations" {
+  // 测试边界值运算
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值与负数相加
-  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
-  @azimuth.assert_eq(2147482647, @azimuth.add(max_val, -1000))
+  // 最大值与1的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
   
-  // 最小值与正数相加
-  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
-  @azimuth.assert_eq(-2147482648, @azimuth.add(min_val, 1000))
+  // 最小值与1的运算
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
   
-  // 边界值乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  // 最大值与最小值的和
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "complex_nested_calculations" {
+  // 测试复杂嵌套计算：(a + b) × (c - d) + e × f
+  let a = 10
+  let b = 5
+  let c = 20
+  let d = 8
+  let e = 3
+  let f = 7
+  
+  let sum_ab = add(a, b)  // 15
+  let diff_cd = add(c, -d)  // 12
+  let product_ef = multiply(e, f)  // 21
+  
+  let result = add(multiply(sum_ab, diff_cd), product_ef)
+  assert_eq(201, result)  // 15 × 12 + 21 = 180 + 21 = 201
 }
