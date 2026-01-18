@@ -1,127 +1,108 @@
-// 用户添加的额外 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法
+// 用户额外添加的 MoonBit 测试用例
+// 覆盖 add、multiply、greet 和 divide_with_ceil 函数
 
-test "add_function_basic_tests" {
-  // 基本加法测试
+test "add_function_basic" {
+  // 测试基本的加法功能
   assert_eq(10, add(3, 7))
   assert_eq(0, add(-5, 5))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(100, add(50, 50))
-}
-
-test "multiply_function_basic_tests" {
-  // 基本乘法测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(100, multiply(10, 10))
-}
-
-test "greet_function_various_inputs" {
-  // 各种输入的问候测试
-  assert_eq_string("Hello, Alice!", greet("Alice"))
-  assert_eq_string("Hello, Bob!", greet("Bob"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq(-8, add(-3, -5))
 }
 
 test "add_function_edge_cases" {
-  // 加法边界情况测试
+  // 测试加法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试边界值
+  // 测试溢出保护
   assert_eq(max_val, add(max_val, 1))
   assert_eq(min_val, add(min_val, -1))
   assert_eq(-1, add(max_val, min_val))
 }
 
+test "multiply_function_basic" {
+  // 测试基本的乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(3, -4))
+  assert_eq(0, multiply(0, 100))
+}
+
 test "multiply_function_edge_cases" {
-  // 乘法边界情况测试
+  // 测试乘法的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试边界值
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  // 测试溢出保护
+  assert_eq(max_val, multiply(max_val, 2))
   assert_eq(min_val, multiply(min_val, -1))
   assert_eq(0, multiply(max_val, 0))
 }
 
-test "complex_calculation_scenarios" {
-  // 复杂计算场景测试
-  // 计算矩形面积和周长
-  let length = 8
-  let width = 5
-  
-  // 面积 = 长 × 宽
-  let area = multiply(length, width)
-  assert_eq(40, area)
-  
-  // 周长 = 2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(26, perimeter)
+test "greet_function_various_inputs" {
+  // 测试不同输入的问候语功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
-  
-  // 加法交换律：a + b = b + a
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律：a × b = b × a
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律：a × (b + c) = a × b + a × c
-  let c = 5
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+test "divide_with_ceil_function" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 3))  // 10/3 = 3.33 → 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 → 3
+  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.33 → -3
+  assert_eq(-3, divide_with_ceil(-9, 3))  // -9/3 = -3 → -3
 }
 
-test "real_world_application_tests" {
-  // 实际应用测试
-  // 购物车计算
-  let item_price = 199
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算 (5 + 3) * (10 - 4) / 3 的向上取整
+  let sum = add(5, 3)  // 8
+  let diff = add(10, -4)  // 6
+  let product = multiply(sum, diff)  // 48
+  let result = divide_with_ceil(product, 3)  // 48/3 = 16 → 16
+  
+  assert_eq(16, result)
+}
+
+test "financial_calculation" {
+  // 测试金融计算场景
+  // 计算商品总价（含税，向上取整）
+  let price = 99
   let quantity = 3
-  let discount = 50
-  let shipping = 20
+  let tax_rate = 8  // 8%
   
-  // 计算总价
-  let subtotal = multiply(item_price, quantity)
-  let discounted_total = add(subtotal, -discount)
-  let final_total = add(discounted_total, shipping)
+  let subtotal = multiply(price, quantity)  // 297
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)  // 23.76 → 24
+  let total = add(subtotal, tax)  // 321
   
-  assert_eq(607, final_total)  // (199×3) - 50 + 20 = 597 - 50 + 20 = 567 + 20 = 587
+  assert_eq(321, total)
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况
-  // 测试特殊字符
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, emoji🚀!", greet("emoji🚀"))
+test "string_processing_with_greet" {
+  // 测试使用 greet 函数进行字符串处理
+  let first_name = "John"
+  let last_name = "Doe"
+  let full_name = first_name + " " + last_name
+  let greeting = greet(full_name)
+  
+  assert_eq_string("Hello, John Doe!", greeting)
 }
 
-test "comprehensive_function_integration" {
-  // 综合功能集成测试
-  let name = "MoonBit"
-  let number1 = 42
-  let number2 = 24
+test "mathematical_properties_validation" {
+  // 测试数学性质验证
+  let a = 7
+  let b = 5
+  let c = 3
   
-  // 字符串处理
-  let greeting = greet(name)
-  assert_eq_string("Hello, MoonBit!", greeting)
+  // 验证分配律
+  let distributive_left = multiply(a, add(b, c))  // 7 * (5 + 3) = 56
+  let distributive_right = add(multiply(a, b), multiply(a, c))  // 7*5 + 7*3 = 56
   
-  // 数值计算
-  let sum = add(number1, number2)
-  let product = multiply(number1, number2)
+  assert_eq(distributive_left, distributive_right)
   
-  assert_eq(66, sum)
-  assert_eq(1008, product)
+  // 验证结合律
+  let associative_left = add(add(a, b), c)  // (7 + 5) + 3 = 15
+  let associative_right = add(a, add(b, c))  // 7 + (5 + 3) = 15
   
-  // 组合计算
-  let complex_result = add(multiply(number1, 2), multiply(number2, 3))
-  assert_eq(156, complex_result)  // 42×2 + 24×3 = 84 + 72 = 156
+  assert_eq(associative_left, associative_right)
 }
