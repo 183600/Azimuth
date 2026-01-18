@@ -1,11 +1,111 @@
-// Enhanced test cases for Azimuth project
-// 增强的测试用例，涵盖各种场景
+// Standalone test cases for Azimuth project
+// 独立测试用例，包含所有必要的函数定义
 
+// 函数定义
+fn add(a : Int, b : Int) -> Int {
+  if a == 0 { return b }
+  if b == 0 { return a }
+  
+  let min_val = -2147483648
+  let max_val = 2147483647
+  
+  if a == min_val {
+    if b < 0 { return min_val }
+    return a + b
+  }
+  if b == min_val {
+    if a < 0 { return min_val }
+    return a + b
+  }
+  
+  if a > 0 && b > 0 {
+    if a > max_val - b { return max_val }
+  }
+  
+  if a < 0 && b < 0 {
+    if a < min_val - b { return min_val }
+  }
+  
+  return a + b
+}
+
+fn multiply(a : Int, b : Int) -> Int {
+  let min_val = -2147483648
+  let max_val = 2147483647
+  
+  if a == 0 || b == 0 { return 0 }
+  if a == 1 { return b }
+  if b == 1 { return a }
+  
+  if a == -1 {
+    return if b == min_val { min_val } else { -b }
+  }
+  if b == -1 {
+    return if a == min_val { min_val } else { -a }
+  }
+  
+  if a == min_val {
+    return if b > 1 || b < -1 { min_val } else { a * b }
+  }
+  if b == min_val {
+    return if a > 1 || a < -1 { min_val } else { a * b }
+  }
+  
+  let sign = if (a > 0 && b > 0) || (a < 0 && b < 0) { 1 } else { -1 }
+  let abs_a = if a < 0 { -a } else { a }
+  let abs_b = if b < 0 { -b } else { b }
+  
+  if abs_a > max_val / abs_b {
+    return if sign > 0 { max_val } else { min_val }
+  }
+  
+  return a * b
+}
+
+fn greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+// 断言函数
+fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if (expected == actual) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
+}
+
+fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if (expected == actual) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
+}
+
+fn assert_true(condition : Bool) -> Unit {
+  if (condition) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
+}
+
+fn assert_false(condition : Bool) -> Unit {
+  if (condition) {
+    let _ = 1 / 0
+    ()
+  } else {
+    ()
+  }
+}
+
+// 测试用例
 test "fibonacci_sequence_calculation" {
   // 计算斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
-  
-  // 手动计算前几个斐波那契数
   let f0 = 0
   let f1 = 1
   let f2 = add(f0, f1)  // 1
@@ -27,27 +127,21 @@ test "fibonacci_sequence_calculation" {
 
 test "prime_number_validation" {
   // 质数验证测试
-  // 通过检查因数来验证质数
-  
-  // 检查7是否为质数（只需要检查2到sqrt(7)之间的数）
   let num = 7
-  let is_prime = true  // 假设是质数
+  let mut is_prime = true
   
-  // 检查能否被2整除
   if (num % 2 == 0) {
     is_prime = false
   }
   
-  // 检查能否被3整除
   if (num % 3 == 0) {
     is_prime = false
   }
   
   assert_true(is_prime)
   
-  // 检查9是否为质数
   let num2 = 9
-  let is_prime2 = true
+  let mut is_prime2 = true
   
   if (num2 % 2 == 0) {
     is_prime2 = false
@@ -62,41 +156,31 @@ test "prime_number_validation" {
 
 test "bank_interest_calculation" {
   // 银行利息计算测试
-  // 简单利息：本金 × 利率 × 时间
+  let principal = 10000
+  let rate = 5
+  let years = 3
   
-  let principal = 10000  // 本金
-  let rate = 5          // 年利率5%
-  let years = 3         // 3年
-  
-  // 计算简单利息
   let interest = multiply(principal, multiply(rate, years)) / 100
   let total = add(principal, interest)
   
-  assert_eq(1500, interest)  // 10000 × 5 × 3 / 100 = 1500
-  assert_eq(11500, total)   // 10000 + 1500 = 11500
+  assert_eq(1500, interest)
+  assert_eq(11500, total)
   
-  // 计算复利（简化版）
   let compound_total = multiply(principal, add(100, multiply(rate, years))) / 100
   assert_eq(11500, compound_total)
 }
 
 test "temperature_conversion_complete" {
   // 完整的温度转换测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 华氏度转摄氏度：C = (F - 32) × 5/9
-  
-  // 摄氏度转华氏度（使用整数近似）
   let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9), 160) / 5  // 25 × 9/5 + 32 = 77
+  let fahrenheit = add(multiply(celsius, 9), 160) / 5
   
   assert_eq(77, fahrenheit)
   
-  // 测试冰点
   let freezing_c = 0
   let freezing_f = add(multiply(freezing_c, 9), 160) / 5
   assert_eq(32, freezing_f)
   
-  // 测试沸点
   let boiling_c = 100
   let boiling_f = add(multiply(boiling_c, 9), 160) / 5
   assert_eq(212, boiling_f)
@@ -104,24 +188,18 @@ test "temperature_conversion_complete" {
 
 test "speed_distance_time_calculation" {
   // 速度、距离、时间计算测试
-  // 距离 = 速度 × 时间
-  // 速度 = 距离 / 时间
-  // 时间 = 距离 / 速度
-  
-  let speed = 60  // km/h
-  let time = 2    // hours
+  let speed = 60
+  let time = 2
   let distance = multiply(speed, time)
   
   assert_eq(120, distance)
   
-  // 计算平均速度
   let total_distance = 300
   let total_time = 5
   let average_speed = total_distance / total_time
   
   assert_eq(60, average_speed)
   
-  // 计算旅行时间
   let planned_distance = 180
   let planned_speed = 90
   let travel_time = planned_distance / planned_speed
@@ -131,13 +209,9 @@ test "speed_distance_time_calculation" {
 
 test "geometric_progression_sum" {
   // 等比数列求和测试
-  // S = a × (r^n - 1) / (r - 1)
+  let first_term = 2
+  let ratio = 3
   
-  let first_term = 2    // 首项
-  let ratio = 3         // 公比
-  let terms = 4         // 项数
-  
-  // 手动计算：2 + 6 + 18 + 54 = 80
   let term1 = first_term
   let term2 = multiply(term1, ratio)
   let term3 = multiply(term2, ratio)
@@ -153,21 +227,18 @@ test "geometric_progression_sum" {
 
 test "discount_price_calculation" {
   // 折扣价格计算测试
-  
   let original_price = 200
-  let discount_percent = 15  // 15% 折扣
+  let discount_percent = 15
   
-  // 计算折扣金额
   let discount_amount = multiply(original_price, discount_percent) / 100
   let discounted_price = add(original_price, -discount_amount)
   
   assert_eq(30, discount_amount)
   assert_eq(170, discounted_price)
   
-  // 计算多级折扣
   let price = 500
-  let first_discount = 10   // 第一级10%
-  let second_discount = 5   // 第二级5%
+  let first_discount = 10
+  let second_discount = 5
   
   let first_amount = multiply(price, first_discount) / 100
   let after_first = add(price, -first_amount)
@@ -176,18 +247,15 @@ test "discount_price_calculation" {
   
   assert_eq(50, first_amount)
   assert_eq(450, after_first)
-  assert_eq(22, second_amount)  // 450 × 5% = 22.5，取整为22
+  assert_eq(22, second_amount)
   assert_eq(428, final_price)
 }
 
 test "array_manipulation_simulation" {
-  // 数组操作模拟测试（使用基本运算）
-  
-  // 模拟数组求和
+  // 数组操作模拟测试
   let sum = add(add(add(add(1, 2), 3), 4), 5)
   assert_eq(15, sum)
   
-  // 模拟查找最大值
   let a = 10
   let b = 25
   let c = 15
@@ -201,7 +269,6 @@ test "array_manipulation_simulation" {
   
   assert_eq(30, max4)
   
-  // 模拟查找最小值
   let min1 = if (a < b) { a } else { b }
   let min2 = if (min1 < c) { min1 } else { c }
   let min3 = if (min2 < d) { min2 } else { d }
@@ -212,13 +279,10 @@ test "array_manipulation_simulation" {
 
 test "string_processing_advanced" {
   // 高级字符串处理测试
-  
-  // 测试包含各种字符的字符串
   let mixed_string = "Hello123世界!@#"
   let result = greet(mixed_string)
   assert_eq_string("Hello, Hello123世界!@#!", result)
   
-  // 测试连续字符串处理
   let name1 = "Alice"
   let name2 = "Bob"
   let separator = " and "
@@ -228,9 +292,8 @@ test "string_processing_advanced" {
   
   assert_eq_string("Hello, Alice and Bob!", combined_greeting)
   
-  // 测试空格处理
   let spaced_name = "  John  Doe  "
-  let trimmed_name = "John  Doe"  // 简化的trim操作
+  let trimmed_name = "John  Doe"
   let trimmed_greeting = greet(trimmed_name)
   
   assert_eq_string("Hello, John  Doe!", trimmed_greeting)
@@ -238,21 +301,15 @@ test "string_processing_advanced" {
 
 test "complex_business_logic" {
   // 复杂业务逻辑测试
-  
-  // 计算员工工资
   let base_salary = 5000
   let overtime_hours = 10
-  let overtime_rate = 50  // 每小时加班费
+  let overtime_rate = 50
   let bonus = 1000
-  let tax_rate = 10       // 税率10%
+  let tax_rate = 10
   
-  // 计算加班费
   let overtime_pay = multiply(overtime_hours, overtime_rate)
-  // 计算税前总收入
   let gross_income = add(add(base_salary, overtime_pay), bonus)
-  // 计算税款
   let tax_amount = multiply(gross_income, tax_rate) / 100
-  // 计算净收入
   let net_income = add(gross_income, -tax_amount)
   
   assert_eq(500, overtime_pay)
@@ -260,19 +317,14 @@ test "complex_business_logic" {
   assert_eq(650, tax_amount)
   assert_eq(5850, net_income)
   
-  // 计算项目成本
   let material_cost = 10000
   let labor_cost = 8000
-  let overhead_rate = 15  // 管理费用率15%
-  let profit_margin = 20  // 利润率20%
+  let overhead_rate = 15
+  let profit_margin = 20
   
-  // 计算直接成本
   let direct_cost = add(material_cost, labor_cost)
-  // 计算管理费用
   let overhead_cost = multiply(direct_cost, overhead_rate) / 100
-  // 计算总成本
   let total_cost = add(direct_cost, overhead_cost)
-  // 计算售价
   let selling_price = multiply(total_cost, add(100, profit_margin)) / 100
   
   assert_eq(18000, direct_cost)
