@@ -1,153 +1,126 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，包含多样化的测试场景
+// 使用标准 MoonBit 测试语法，包含实用的测试场景
 
-test "integer_addition_edge_cases" {
-  // 整数加法边界值测试
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
-  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
-  @azimuth.assert_eq(0, @azimuth.add(100, -100))
-  @azimuth.assert_eq(1, @azimuth.add(2147483647, -2147483646))
+test "add_function_large_numbers" {
+  // 测试大数加法
+  let result = add(1000000, 2000000)
+  assert_eq(3000000, result)
 }
 
-test "integer_multiplication_edge_cases" {
-  // 整数乘法边界值测试
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
-  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
+test "multiply_function_large_numbers" {
+  // 测试大数乘法
+  let result = multiply(10000, 10000)
+  assert_eq(100000000, result)
 }
 
-test "complex_arithmetic_expressions" {
-  // 复杂算术表达式测试
-  let a = 5
-  let b = 3
-  let c = 2
+test "mixed_operations" {
+  // 测试混合运算
+  let a = 10
+  let b = 20
+  let c = 5
   
-  // (a + b) * c
-  @azimuth.assert_eq(16, @azimuth.multiply(@azimuth.add(a, b), c))
+  let result1 = add(multiply(a, b), c)  // 10*20+5 = 205
+  let result2 = multiply(add(a, b), c)  // (10+20)*5 = 150
   
-  // a * b + c
-  @azimuth.assert_eq(17, @azimuth.add(@azimuth.multiply(a, b), c))
-  
-  // (a - b) * (a + b)
-  @azimuth.assert_eq(16, @azimuth.multiply(@azimuth.add(a, -b), @azimuth.add(a, b)))
+  assert_eq(205, result1)
+  assert_eq(150, result2)
 }
 
-test "string_operations_advanced" {
-  // 高级字符串操作测试
-  let prefix = "Azimuth"
-  let suffix = "Project"
-  let space = " "
+test "chain_operations" {
+  // 测试链式操作
+  let start = 1
+  let step1 = add(start, 2)    // 3
+  let step2 = multiply(step1, 3)  // 9
+  let step3 = add(step2, 4)    // 13
+  let step4 = multiply(step3, 2)  // 26
   
-  @azimuth.assert_eq_string("Azimuth Project", @azimuth.add(@azimuth.add(prefix, space), suffix))
-  @azimuth.assert_eq_string("AzimuthAzimuth", @azimuth.add(prefix, prefix))
-  @azimuth.assert_eq_string("ProjectProject", @azimuth.add(suffix, suffix))
+  assert_eq(26, step4)
 }
 
-test "mathematical_series" {
-  // 数学级数测试
-  // 等差数列: 1, 3, 5, 7, 9 的和
-  let sum1 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 3), 5), 7), 9)
-  @azimuth.assert_eq(25, sum1)
+test "negative_number_operations" {
+  // 测试负数运算
+  let a = -10
+  let b = 5
   
-  // 等比数列: 1, 2, 4, 8 的和
-  let sum2 = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 4), 8)
-  @azimuth.assert_eq(15, sum2)
+  let add_result = add(a, b)      // -5
+  let mul_result = multiply(a, b)  // -50
   
-  // 平方数: 1, 4, 9, 16 的和
-  let sum3 = @azimuth.add(@azimuth.add(@azimuth.add(1, 4), 9), 16)
-  @azimuth.assert_eq(30, sum3)
+  assert_eq(-5, add_result)
+  assert_eq(-50, mul_result)
 }
 
-test "business_calculations_comprehensive" {
-  // 综合商业计算测试
-  let product_a_price = 25
-  let product_b_price = 30
-  let product_a_quantity = 3
-  let product_b_quantity = 2
-  let discount_rate = 10
-  let tax_rate = 8
+test "string_concatenation_multiple" {
+  // 测试多字符串连接
+  let part1 = "Moon"
+  let part2 = "Bit"
+  let part3 = " "
+  let part4 = "Testing"
   
-  // 计算小计
-  let subtotal_a = @azimuth.multiply(product_a_price, product_a_quantity)
-  let subtotal_b = @azimuth.multiply(product_b_price, product_b_quantity)
-  let total_subtotal = @azimuth.add(subtotal_a, subtotal_b)
-  
-  // 计算折扣
-  let discount = @azimuth.multiply(total_subtotal, discount_rate) / 100
-  let discounted_total = @azimuth.add(total_subtotal, -discount)
-  
-  // 计算税费
-  let tax = @azimuth.multiply(discounted_total, tax_rate) / 100
-  let final_total = @azimuth.add(discounted_total, tax)
-  
-  @azimuth.assert_eq(75, subtotal_a)
-  @azimuth.assert_eq(60, subtotal_b)
-  @azimuth.assert_eq(135, total_subtotal)
-  @azimuth.assert_eq(13, discount)
-  @azimuth.assert_eq(122, discounted_total)
-  @azimuth.assert_eq(9, tax)
-  @azimuth.assert_eq(131, final_total)
+  let result = add(add(add(part1, part2), part3), part4)
+  assert_eq_string("MoonBit Testing", result)
 }
 
-test "time_calculations" {
-  // 时间计算测试
-  let days = 5
-  let hours_per_day = 24
-  let minutes_per_hour = 60
+test "calculation_with_constants" {
+  // 测试使用常量的计算
+  let PI = 3  // 简化值
+  let radius = 10
   
-  // 计算总小时数
-  let total_hours = @azimuth.multiply(days, hours_per_day)
-  @azimuth.assert_eq(120, total_hours)
+  let circumference = multiply(multiply(2, PI), radius)
+  let area = multiply(multiply(radius, radius), PI)
   
-  // 计算总分钟数
-  let total_minutes = @azimuth.multiply(total_hours, minutes_per_hour)
-  @azimuth.assert_eq(7200, total_minutes)
-  
-  // 计算工作小时数 (假设每天8小时)
-  let work_hours_per_day = 8
-  let total_work_hours = @azimuth.multiply(days, work_hours_per_day)
-  @azimuth.assert_eq(40, total_work_hours)
+  assert_eq(60, circumference)
+  assert_eq(300, area)
 }
 
-test "geometry_calculations_extended" {
-  // 扩展几何计算测试
-  let rectangle_length = 8
-  let rectangle_width = 6
-  let square_side = 5
-  let triangle_base = 10
-  let triangle_height = 6
+test "business_calculation_complex" {
+  // 测试复杂商业计算
+  let unit_price = 100
+  let quantity = 5
+  let discount_rate = 10  // 10%
+  let tax_rate = 8        // 8%
   
-  // 矩形面积和周长
-  let rectangle_area = @azimuth.multiply(rectangle_length, rectangle_width)
-  let rectangle_perimeter = @azimuth.multiply(2, @azimuth.add(rectangle_length, rectangle_width))
+  let subtotal = multiply(unit_price, quantity)  // 500
+  let discount = multiply(subtotal, discount_rate) / 100  // 50
+  let after_discount = subtract(subtotal, discount)  // 450
+  let tax = multiply(after_discount, tax_rate) / 100  // 36
+  let total = add(after_discount, tax)  // 486
   
-  // 正方形面积和周长
-  let square_area = @azimuth.multiply(square_side, square_side)
-  let square_perimeter = @azimuth.multiply(4, square_side)
-  
-  // 三角形面积 (近似值: 底 × 高 ÷ 2)
-  let triangle_area = @azimuth.multiply(triangle_base, triangle_height) / 2
-  
-  @azimuth.assert_eq(48, rectangle_area)
-  @azimuth.assert_eq(28, rectangle_perimeter)
-  @azimuth.assert_eq(25, square_area)
-  @azimuth.assert_eq(20, square_perimeter)
-  @azimuth.assert_eq(30, triangle_area)
+  assert_eq(500, subtotal)
+  assert_eq(50, discount)
+  assert_eq(450, after_discount)
+  assert_eq(36, tax)
+  assert_eq(486, total)
 }
 
-test "temperature_conversions" {
-  // 温度转换测试 (近似值)
-  let celsius = 25
+test "sequence_pattern" {
+  // 测试序列模式计算
   
-  // 摄氏度转华氏度 (近似公式: F = C * 9/5 + 32)
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9) / 5, 32)
+  // 计算 1 + 2 + 3 + 4 + 5
+  let sum1 = add(1, add(2, add(3, add(4, 5))))
   
-  // 华氏度转摄氏度 (近似公式: C = (F - 32) * 5/9)
-  let celsius_back = @azimuth.multiply(@azimuth.add(fahrenheit, -32), 5) / 9
+  // 计算 1*2 + 2*3 + 3*4 + 4*5
+  let term1 = multiply(1, 2)
+  let term2 = multiply(2, 3)
+  let term3 = multiply(3, 4)
+  let term4 = multiply(4, 5)
+  let sum2 = add(add(term1, term2), add(term3, term4))
   
-  @azimuth.assert_eq(77, fahrenheit)
-  @azimuth.assert_eq(25, celsius_back)
+  assert_eq(15, sum1)
+  assert_eq(40, sum2)
+}
+
+test "edge_case_operations" {
+  // 测试边界情况操作
+  let max_small = 127
+  let min_small = -128
+  
+  let result1 = add(max_small, 1)    // 溢出测试
+  let result2 = add(min_small, -1)   // 下溢测试
+  let result3 = multiply(max_small, 1)
+  let result4 = multiply(min_small, 1)
+  
+  assert_eq(128, result1)
+  assert_eq(-129, result2)
+  assert_eq(127, result3)
+  assert_eq(-128, result4)
 }
