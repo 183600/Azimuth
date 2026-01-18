@@ -1,196 +1,229 @@
 // Azimuth 项目综合测试套件
-// 使用标准 MoonBit 测试语法，覆盖核心功能场景
-// 自包含版本，不依赖外部函数
+// 使用标准 MoonBit 测试语法，覆盖多种测试场景
 
-// 定义基本的加法函数
-fn add(a : Int, b : Int) -> Int {
-  a + b
+// 导入必要的模块
+use azimuth
+
+test "arithmetic_operations_basic" {
+  // 基本算术运算测试
+  let a = 15
+  let b = 7
+  
+  // 测试加法
+  let add_result = azimuth.add(a, b)
+  @assertion.assert_eq(22, add_result)?
+  
+  // 测试乘法
+  let mul_result = azimuth.multiply(a, b)
+  @assertion.assert_eq(105, mul_result)?
+  
+  // 测试负数运算
+  let negative_a = -15
+  let add_negative = azimuth.add(negative_a, b)
+  @assertion.assert_eq(-8, add_negative)?
+  
+  let mul_negative = azimuth.multiply(negative_a, b)
+  @assertion.assert_eq(-105, mul_negative)?
 }
 
-// 定义基本的乘法函数
-fn multiply(a : Int, b : Int) -> Int {
-  a * b
+test "greeting_functionality" {
+  // 问候功能测试
+  let name1 = "Alice"
+  let name2 = "Bob"
+  let name3 = ""
+  
+  // 测试基本问候
+  let greeting1 = azimuth.greet(name1)
+  @assertion.assert_eq_string("Hello, Alice!", greeting1)?
+  
+  let greeting2 = azimuth.greet(name2)
+  @assertion.assert_eq_string("Hello, Bob!", greeting2)?
+  
+  // 测试空字符串
+  let greeting3 = azimuth.greet(name3)
+  @assertion.assert_eq_string("Hello, !", greeting3)?
 }
 
-// 定义问候函数
-fn greet(name : String) -> String {
-  "Hello, " + name + "!"
+test "mathematical_identities" {
+  // 数学恒等式测试
+  let x = 42
+  
+  // 测试加法单位元
+  let add_identity1 = azimuth.add(x, 0)
+  let add_identity2 = azimuth.add(0, x)
+  @assertion.assert_eq(x, add_identity1)?
+  @assertion.assert_eq(x, add_identity2)?
+  
+  // 测试乘法单位元
+  let mul_identity1 = azimuth.multiply(x, 1)
+  let mul_identity2 = azimuth.multiply(1, x)
+  @assertion.assert_eq(x, mul_identity1)?
+  @assertion.assert_eq(x, mul_identity2)?
+  
+  // 测试乘法零元
+  let mul_zero = azimuth.multiply(x, 0)
+  @assertion.assert_eq(0, mul_zero)?
 }
 
-// 定义断言函数
-fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 简单的错误处理
-    @builtin.abort("Assertion failed")
-  }
+test "edge_cases_and_boundaries" {
+  // 边界情况测试
+  let zero = 0
+  let one = 1
+  let negative_one = -1
+  
+  // 测试零值运算
+  let zero_add = azimuth.add(zero, zero)
+  @assertion.assert_eq(0, zero_add)?
+  
+  let zero_mul = azimuth.multiply(zero, zero)
+  @assertion.assert_eq(0, zero_mul)?
+  
+  // 测试单位元运算
+  let one_add = azimuth.add(one, zero)
+  @assertion.assert_eq(1, one_add)?
+  
+  let one_mul = azimuth.multiply(one, one)
+  @assertion.assert_eq(1, one_mul)?
+  
+  // 测试负单位元运算
+  let neg_one_mul = azimuth.multiply(negative_one, one)
+  @assertion.assert_eq(-1, neg_one_mul)?
 }
 
-fn assert_eq_string(expected : String, actual : String) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 简单的错误处理
-    @builtin.abort("String assertion failed")
-  }
+test "real_world_scenarios" {
+  // 真实世界场景测试
+  let price_per_item = 25
+  let quantity = 8
+  let tax_rate = 7  // 7%
+  let discount = 15
+  
+  // 计算商品总价
+  let subtotal = azimuth.multiply(price_per_item, quantity)
+  @assertion.assert_eq(200, subtotal)?
+  
+  // 计算折扣
+  let discount_amount = azimuth.multiply(subtotal, discount) / 100
+  @assertion.assert_eq(30, discount_amount)?
+  
+  // 计算折后价格
+  let discounted_price = azimuth.add(subtotal, -discount_amount)
+  @assertion.assert_eq(170, discounted_price)?
+  
+  // 计算税费
+  let tax_amount = azimuth.multiply(discounted_price, tax_rate) / 100
+  @assertion.assert_eq(11, tax_amount)?
+  
+  // 计算最终价格
+  let final_price = azimuth.add(discounted_price, tax_amount)
+  @assertion.assert_eq(181, final_price)?
 }
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-8, add(-3, -5))
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况测试
+  let long_name = "Alexander Bartholomew Montgomery III"
+  let special_chars = "@#$%^&*()"
+  let mixed_case = "JohnDoe"
   
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(3, -4))
-  assert_eq(0, multiply(8, 0))
+  // 测试长名字
+  let long_greeting = azimuth.greet(long_name)
+  @assertion.assert_eq_string("Hello, Alexander Bartholomew Montgomery III!", long_greeting)?
+  
+  // 测试特殊字符
+  let special_greeting = azimuth.greet(special_chars)
+  @assertion.assert_eq_string("Hello, @#$%^&*()!", special_greeting)?
+  
+  // 测试大小写混合
+  let mixed_greeting = azimuth.greet(mixed_case)
+  @assertion.assert_eq_string("Hello, JohnDoe!", mixed_greeting)?
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
-  assert_eq_string("Hello, 用户!", greet("用户"))
-  assert_eq_string("Hello, 2024!", greet("2024"))
-  assert_eq_string("Hello, !", greet(""))
+test "calculation_chains" {
+  // 计算链测试
+  let base = 5
+  
+  // 建立计算链：((5 + 3) * 2) + 1
+  let step1 = azimuth.add(base, 3)  // 5 + 3 = 8
+  let step2 = azimuth.multiply(step1, 2)  // 8 * 2 = 16
+  let step3 = azimuth.add(step2, 1)  // 16 + 1 = 17
+  
+  @assertion.assert_eq(8, step1)?
+  @assertion.assert_eq(16, step2)?
+  @assertion.assert_eq(17, step3)?
+  
+  // 更复杂的计算链：(10 * 5) + (3 * 7) - (2 * 4)
+  let chain1 = azimuth.multiply(10, 5)  // 50
+  let chain2 = azimuth.multiply(3, 7)   // 21
+  let chain3 = azimuth.multiply(2, 4)   // 8
+  let result = azimuth.add(azimuth.add(chain1, chain2), -chain3)  // 50 + 21 - 8 = 63
+  
+  @assertion.assert_eq(63, result)?
 }
 
-test "mathematical_formulas" {
-  // 测试数学公式
+test "performance_patterns" {
+  // 性能模式测试
+  let base = 10
   
-  // 圆的周长: 2 * π * r (简化使用 π ≈ 3)
-  let radius = 5
-  let circumference = multiply(2, multiply(3, radius))
-  assert_eq(30, circumference)
+  // 重复加法 vs 乘法
+  let repeated_add = azimuth.add(azimuth.add(azimuth.add(azimuth.add(base, base), base), base), base)
+  let efficient_mul = azimuth.multiply(base, 5)
   
-  // 梯形面积: (上底 + 下底) * 高 / 2
-  let top_base = 6
-  let bottom_base = 10
-  let height = 4
-  let trapezoid_area = multiply(add(top_base, bottom_base), height) / 2
-  assert_eq(32, trapezoid_area)
+  @assertion.assert_eq(50, repeated_add)?
+  @assertion.assert_eq(50, efficient_mul)?
+  @assertion.assert_eq(repeated_add, efficient_mul)?
+  
+  // 嵌套计算
+  let nested1 = azimuth.multiply(azimuth.add(2, 3), azimuth.add(4, 5))  // (2+3)*(4+5) = 5*9 = 45
+  let nested2 = azimuth.add(azimuth.multiply(2, 3), azimuth.multiply(4, 5))  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  @assertion.assert_eq(45, nested1)?
+  @assertion.assert_eq(26, nested2)?
 }
 
-test "business_calculations" {
-  // 测试商业计算
+test "error_handling_scenarios" {
+  // 错误处理场景测试
+  let normal_value = 100
+  let zero_value = 0
   
-  // 利润计算: 收入 - 成本
-  let revenue = 5000
-  let cost = 3200
-  let profit = add(revenue, -cost)
-  assert_eq(1800, profit)
+  // 测试正常运算
+  let normal_add = azimuth.add(normal_value, normal_value)
+  let normal_mul = azimuth.multiply(normal_value, normal_value)
   
-  // 利润率: 利润 / 成本 * 100
-  let profit_rate = multiply(profit, 100) / cost
-  assert_eq(56, profit_rate)
+  @assertion.assert_eq(200, normal_add)?
+  @assertion.assert_eq(10000, normal_mul)?
+  
+  // 测试与零的运算
+  let add_zero = azimuth.add(normal_value, zero_value)
+  let mul_zero = azimuth.multiply(normal_value, zero_value)
+  
+  @assertion.assert_eq(100, add_zero)?
+  @assertion.assert_eq(0, mul_zero)?
+  
+  // 测试自反运算
+  let self_add = azimuth.add(normal_value, normal_value)
+  let self_mul = azimuth.multiply(normal_value, 1)
+  
+  @assertion.assert_eq(200, self_add)?
+  @assertion.assert_eq(100, self_mul)?
 }
 
-test "unit_conversions" {
-  // 测试单位转换
-  
-  // 公斤转克: 公斤 * 1000
-  let kg = 3
-  let grams = multiply(kg, 1000)
-  assert_eq(3000, grams)
-  
-  // 米转厘米: 米 * 100
-  let meters = 5
-  let cm = multiply(meters, 100)
-  assert_eq(500, cm)
-  
-  // 升转毫升: 升 * 1000
-  let liters = 2
-  let ml = multiply(liters, 1000)
-  assert_eq(2000, ml)
-}
-
-test "statistical_calculations" {
-  // 测试统计计算
-  
-  // 平均值计算: (值1 + 值2 + 值3) / 3
-  let val1 = 80
-  let val2 = 90
-  let val3 = 85
-  let sum = add(add(val1, val2), val3)
-  let average = sum / 3
-  assert_eq(85, average)
-  
-  // 总和计算
-  let numbers_sum = add(add(add(10, 20), 30), 40)
-  assert_eq(100, numbers_sum)
-}
-
-test "time_unit_calculations" {
-  // 测试时间单位计算
-  
-  // 秒转分钟: 秒 / 60
-  let seconds = 3600
-  let minutes = seconds / 60
-  assert_eq(60, minutes)
-  
-  // 分钟转小时: 分钟 / 60
-  let hours = minutes / 60
-  assert_eq(1, hours)
-  
-  // 一天的总秒数
-  let day_seconds = multiply(24, multiply(60, 60))
-  assert_eq(86400, day_seconds)
-}
-
-test "array_operations_simulation" {
-  // 测试数组操作模拟
-  
-  // 模拟数组长度变化
-  let array_length = 0
-  
-  // 添加元素
-  let array_length1 = add(array_length, 1)  // 添加第一个元素
-  assert_eq(1, array_length1)
-  
-  let array_length2 = add(array_length1, 1)  // 添加第二个元素
-  assert_eq(2, array_length2)
-  
-  let array_length3 = add(array_length2, 1)  // 添加第三个元素
-  assert_eq(3, array_length3)
-  
-  // 移除元素
-  let array_length4 = add(array_length3, -1)  // 移除一个元素
-  assert_eq(2, array_length4)
-}
-
-test "game_score_calculations" {
-  // 测试游戏得分计算
-  
-  // 基础得分系统
+test "integration_test" {
+  // 集成测试
+  let user_name = "Developer"
   let base_score = 100
-  let combo_multiplier = 2
+  let multiplier = 3
   let bonus = 50
   
-  // 计算最终得分: (基础得分 * 连击倍数) + 奖励
-  let final_score = add(multiply(base_score, combo_multiplier), bonus)
-  assert_eq(250, final_score)
+  // 计算得分
+  let multiplied_score = azimuth.multiply(base_score, multiplier)
+  let total_score = azimuth.add(multiplied_score, bonus)
   
-  // 多轮游戏总分
-  let round1_score = 150
-  let round2_score = 200
-  let round3_score = 175
-  let total_score = add(add(round1_score, round2_score), round3_score)
-  assert_eq(525, total_score)
-}
-
-test "boundary_value_tests" {
-  // 测试边界值
+  @assertion.assert_eq(350, total_score)?
   
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(5, 0))
+  // 生成用户消息
+  let greeting = azimuth.greet(user_name)
+  @assertion.assert_eq_string("Hello, Developer!", greeting)?
   
-  // 单值测试
-  assert_eq(1, add(1, 0))
-  assert_eq(1, multiply(1, 1))
-  
-  // 负值边界测试
-  assert_eq(-1, add(0, -1))
-  assert_eq(1, multiply(-1, -1))
+  // 组合测试：验证得分和问候都能正常工作
+  let score_check = azimuth.add(total_score, 0)  // 确保得分可以正常参与运算
+  @assertion.assert_eq(350, score_check)?
 }
