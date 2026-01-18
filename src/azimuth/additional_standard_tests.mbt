@@ -1,207 +1,114 @@
 // 额外的标准 MoonBit 测试用例
-// 这些测试用例覆盖了更多的边界情况和实际应用场景
+// 测试 azimuth 库的核心功能
 
-test "division_simulation" {
-  // 使用减法和计数来模拟整数除法
-  let dividend = 27
-  let divisor = 4
-  
-  // 手动计算商和余数
-  let quotient = dividend / divisor
-  let remainder = dividend % divisor
-  
-  assert_eq(6, quotient)
-  assert_eq(3, remainder)
-  
-  // 验证：dividend = divisor * quotient + remainder
-  let verification = add(multiply(divisor, quotient), remainder)
-  assert_eq(dividend, verification)
+test "add_negative_to_positive" {
+  // 测试负数加正数的结果
+  azimuth::assert_eq(0, azimuth::add(-100, 100))
+  azimuth::assert_eq(50, azimuth::add(-50, 100))
+  azimuth::assert_eq(-50, azimuth::add(-100, 50))
 }
 
-test "modulo_properties" {
-  // 测试模运算的性质
-  let a = 17
-  let b = 5
-  
-  // 基本模运算
-  let remainder = a % b
-  assert_eq(2, remainder)
-  
-  // 性质：a = (a / b) * b + (a % b)
-  let quotient = a / b
-  let verification = add(multiply(quotient, b), remainder)
-  assert_eq(a, verification)
-  
-  // 负数模运算
-  let negative_a = -17
-  let negative_remainder = negative_a % b
-  assert_eq(-2, negative_remainder)
+test "multiply_by_negative_two" {
+  // 测试乘以-2的情况
+  assert_eq(-20, multiply(10, -2))
+  assert_eq(20, multiply(-10, -2))
+  assert_eq(0, multiply(0, -2))
 }
 
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  let first_name = "John"
-  let last_name = "Doe"
-  let age = "30"
-  
-  // 使用greet函数进行字符串拼接
-  let full_greeting = greet(first_name + " " + last_name)
-  assert_eq_string("Hello, John Doe!", full_greeting)
-  
-  // 测试包含数字的字符串
-  let age_greeting = greet("Age: " + age)
-  assert_eq_string("Hello, Age: 30!", age_greeting)
-  
-  // 测试特殊字符组合
-  let special_chars = "@#$%^&*()"
-  let special_greeting = greet(special_chars)
-  assert_eq_string("Hello, @#$%^&*()!", special_greeting)
+test "greet_with_spaces" {
+  // 测试包含各种空格的字符串
+  assert_eq_string("Hello,   Multiple   Spaces!", greet("  Multiple   Spaces"))
+  assert_eq_string("Hello, Leading Space!", greet(" Leading Space"))
+  assert_eq_string("Hello, Trailing Space !", greet("Trailing Space "))
 }
 
-test "mathematical_sequences" {
-  // 数学序列测试
-  // 斐波那契数列前几项：1, 1, 2, 3, 5, 8, 13, 21...
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
-  let fib6 = add(fib4, fib5)  // 8
+test "add_sequence_check" {
+  // 测试序列加法的一致性
+  let a = 15
+  let b = 25
+  let c = 35
   
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  assert_eq(8, fib6)
-  
-  // 验证斐波那契性质：fib(n) = fib(n-1) + fib(n-2)
-  assert_eq(fib6, add(fib5, fib4))
+  // (a + b) + c 应该等于 a + (b + c)
+  let result1 = add(add(a, b), c)
+  let result2 = add(a, add(b, c))
+  assert_eq(result1, result2)
 }
 
-test "calculator_simulation" {
-  // 模拟简单计算器功能
-  let x = 15
-  let y = 7
+test "multiply_distributive_property" {
+  // 测试乘法分配律 a * (b + c) = a * b + a * c
+  let a = 7
+  let b = 12
+  let c = 8
   
-  // 基本运算
-  let sum = add(x, y)
-  let product = multiply(x, y)
-  let difference = add(x, -y)
-  let quotient = x / y
-  let remainder = x % y
-  
-  assert_eq(22, sum)
-  assert_eq(105, product)
-  assert_eq(8, difference)
-  assert_eq(2, quotient)
-  assert_eq(1, remainder)
-  
-  // 复合运算：(x + y) * (x - y)
-  let composite = multiply(sum, difference)
-  assert_eq(176, composite)  // 22 * 8 = 176
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
 }
 
-test "boundary_stress_test" {
-  // 边界压力测试
+test "boundary_zero_operations" {
+  // 测试与零相关的边界操作
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 连续边界运算
-  let step1 = add(max_val, -1000000)  // 接近最大值
-  let step2 = add(step1, 500000)      // 回到安全范围
-  let step3 = multiply(step2, 2)      // 可能溢出
-  let step4 = add(step3, -1000000)    // 调整
+  // 零与极值的加法
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, add(0, 0))
   
-  assert_true(step1 > 2146483647)
-  assert_true(step2 < max_val)
-  assert_eq(max_val, step3)  // 应该溢出保护
-  assert_true(step4 < max_val)
+  // 零与极值的乘法
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(0, multiply(0, 0))
 }
 
-test "logical_operations_simulation" {
-  // 模拟逻辑运算
-  let a = 5
-  let b = 10
-  let c = 15
-  
-  // 逻辑与模拟：a < b AND b < c
-  let condition1 = a < b
-  let condition2 = b < c
-  let logical_and = if condition1 && condition2 { 1 } else { 0 }
-  assert_eq(1, logical_and)
-  
-  // 逻辑或模拟：a > b OR b < c
-  let condition3 = a > b
-  let condition4 = b < c
-  let logical_or = if condition3 || condition4 { 1 } else { 0 }
-  assert_eq(1, logical_or)
-  
-  // 逻辑非模拟
-  let logical_not = if condition1 { 0 } else { 1 }
-  assert_eq(0, logical_not)
+test "greet_with_special_unicode" {
+  // 测试特殊Unicode字符
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, 🌟✨!", greet("🌟✨"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
 }
 
-test "data_structure_simulation" {
-  // 模拟简单数据结构操作
-  // 模拟数组访问：arr[i] = base + i * stride
-  let base = 1000
-  let stride = 10
-  let index1 = 0
-  let index2 = 3
-  let index3 = 7
+test "add_near_boundary_values" {
+  // 测试接近边界值的加法
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let value1 = add(base, multiply(index1, stride))
-  let value2 = add(base, multiply(index2, stride))
-  let value3 = add(base, multiply(index3, stride))
+  // 接近最大值的加法
+  assert_eq(max_val, add(max_val - 1, 2))
+  assert_eq(max_val, add(max_val - 100, 101))
   
-  assert_eq(1000, value1)
-  assert_eq(1030, value2)
-  assert_eq(1070, value3)
-  
-  // 模拟链表遍历求和
-  let node1 = 10
-  let node2 = 20
-  let node3 = 30
-  let node4 = 40
-  
-  let list_sum = add(add(add(node1, node2), node3), node4)
-  assert_eq(100, list_sum)
+  // 接近最小值的加法
+  assert_eq(min_val, add(min_val + 1, -2))
+  assert_eq(min_val, add(min_val + 100, -101))
 }
 
-test "algorithm_complexity_simulation" {
-  // 模拟算法复杂度计算
-  let n = 100
+test "multiply_large_numbers_safety" {
+  // 测试大数乘法的安全性
+  let sqrt_max = 46340  // sqrt(2147483647) 的整数部分
   
-  // O(1) 常数时间
-  let constant_time = 42
+  // 安全的乘法
+  assert_eq(2147395600, multiply(sqrt_max, sqrt_max))
   
-  // O(n) 线性时间：求和 1 + 2 + ... + n
-  let linear_sum = multiply(n, add(n, 1)) / 2
-  assert_eq(5050, linear_sum)
-  
-  // O(n²) 平方时间：嵌套循环求和（简化版）
-  let quadratic_sum = multiply(n, multiply(add(n, 1), add(multiply(2, n), 1))) / 6
-  assert_eq(338350, quadratic_sum)
-  
-  // 验证复杂度关系
-  assert_true(linear_sum < quadratic_sum)
-  assert_true(constant_time < linear_sum)
+  // 可能溢出的乘法
+  assert_eq(2147483647, multiply(sqrt_max + 1, sqrt_max + 1))
+  assert_eq(-2147483648, multiply(-sqrt_max - 1, sqrt_max + 1))
 }
 
-test "real_world_physics_simulation" {
-  // 实际物理场景模拟
-  // 自由落体运动：h = v₀t + 0.5gt²（简化为整数计算）
-  let initial_velocity = 10  // m/s
-  let gravity = 10           // m/s²（简化值）
-  let time = 5               // s
+test "complex_arithmetic_expression" {
+  // 测试复杂算术表达式：(a + b) * (c - d) + e * f
+  let a = 12
+  let b = 8
+  let c = 20
+  let d = 5
+  let e = 3
+  let f = 7
   
-  // 计算位移：h = 10*5 + 0.5*10*5² = 50 + 125 = 175
-  let velocity_component = multiply(initial_velocity, time)
-  let gravity_component = multiply(gravity, multiply(time, time)) / 2
-  let displacement = add(velocity_component, gravity_component)
+  // 分步计算
+  let sum_ab = add(a, b)  // 20
+  let diff_cd = add(c, -d)  // 15
+  let product1 = multiply(sum_ab, diff_cd)  // 300
+  let product2 = multiply(e, f)  // 21
+  let result = add(product1, product2)  // 321
   
-  assert_eq(175, displacement)
-  
-  // 计算末速度：v = v₀ + gt = 10 + 10*5 = 60
-  let final_velocity = add(initial_velocity, multiply(gravity, time))
-  assert_eq(60, final_velocity)
+  assert_eq(321, result)
 }

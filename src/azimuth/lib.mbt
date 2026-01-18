@@ -1311,7 +1311,7 @@ test "cryptography_simulation" {
   let hash4 = multiply(108, 4) // 'l' = 108
   let hash5 = multiply(111, 5) // 'o' = 111
   
-  let total_hash = add(add(add(add(hash1, hash2), hash3), add(hash4, hash5)))
+  let total_hash = add(add(add(hash1, hash2), hash3), add(hash4, hash5))
   let final_hash = add(total_hash, hash_base)
   
   assert_eq(2012, final_hash)
@@ -1516,7 +1516,7 @@ test "one_multiplication_test" {
   assert_eq(1, multiply(1, 1))
 }
 
-test "basic_greet_test" {
+test "basic_greet_test_v2" {
   // 基本问候测试
   let result = greet("World")
   assert_eq_string("Hello, World!", result)
@@ -1556,7 +1556,7 @@ test "compound_calculation_test" {
 }
 
 // 新增的10个 MoonBit 测试用例
-test "recursive_pattern_simulation" {
+test "recursive_pattern_simulation_v2" {
   // 递归模式模拟：计算斐波那契数列的第n项（简化版）
   // F(5) = F(4) + F(3) = [F(3)+F(2)] + [F(2)+F(1)] = ...
   let n = 5
@@ -1569,7 +1569,7 @@ test "recursive_pattern_simulation" {
   assert_eq(5, fib5)
 }
 
-test "memory_allocation_simulation" {
+test "memory_allocation_simulation_v2" {
   // 内存分配模拟：模拟简单的内存管理计算
   let block_size = 1024  // 1KB
   let block_count = 10
@@ -1942,7 +1942,7 @@ test "data_compression_simulation" {
   assert_eq(100, compression_ratio)  // 在这种情况下没有压缩
 }
 
-test "network_protocol_simulation" {
+test "network_protocol_simulation_v2" {
   // 网络协议模拟测试
   // 简单的TCP校验和计算
   let packet1 = 1000
