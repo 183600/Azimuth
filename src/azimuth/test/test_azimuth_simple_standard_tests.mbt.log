@@ -1,0 +1,2 @@
+clean_test_test/azimuth_simple_standard_tests.mbt:204:7-204:14 [E0002] Warning (unused_value): Unused variable 'numbers'
+clean_test_test/azimuth_simple_standard_tests.mbt:240:7-240:20 [E0002] Warning (unused_value): Unused variable 'initial_state'

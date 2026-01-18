@@ -189,7 +189,6 @@ clean_test_test/azimuth_test.mbt:404:30-404:42 [E4020] Package "azimuth" not fou
 clean_test_test/azimuth_test.mbt:405:3-405:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_test.mbt:407:30-407:42 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_test.mbt:408:3-408:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_test.mbt:411:16-411:26 [E4095] Integer literal 2147483648 is out of range.
 clean_test_test/azimuth_test.mbt:413:31-413:43 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_test.mbt:414:3-414:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_test.mbt:417:7-417:19 [E0002] Warning (unused_value): Unused variable 'digit_string'
