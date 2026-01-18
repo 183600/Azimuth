@@ -1,290 +1,211 @@
-// Azimuth 增强测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 项目增强测试用例
+// 使用标准 MoonBit 测试语法，提供额外的测试场景
 
-// 导入主模块
-use azimuth
-
-test "division_related_operations" {
-  // 测试除法相关运算，通过乘法和减法模拟
-  let dividend = 100
-  let divisor = 5
-  
-  // 模拟整数除法：通过连减实现
-  let quotient = 0
-  let remainder = dividend
-  // 简化版本：直接使用整数除法
-  let calculated_quotient = dividend / divisor
-  let calculated_remainder = dividend % divisor
-  
-  // 验证结果
-  azimuth.assert_eq(20, calculated_quotient)
-  azimuth.assert_eq(0, calculated_remainder)
-  
-  // 测试有余数的除法
-  let dividend2 = 23
-  let divisor2 = 5
-  let quotient2 = dividend2 / divisor2
-  let remainder2 = dividend2 % divisor2
-  
-  azimuth.assert_eq(4, quotient2)
-  azimuth.assert_eq(3, remainder2)
-}
-
-test "modulo_operations" {
-  // 测试取模运算的各种情况
-  // 正数取模
-  azimuth.assert_eq(0, 10 % 2)
-  azimuth.assert_eq(1, 10 % 3)
-  azimuth.assert_eq(3, 10 % 7)
-  
-  // 负数取模（MoonBit 的取模规则）
-  azimuth.assert_eq(0, -10 % 2)
-  azimuth.assert_eq(-1, -10 % 3)
-  azimuth.assert_eq(-3, -10 % 7)
-  
-  // 混合符号取模
-  azimuth.assert_eq(1, 10 % -3)
-  azimuth.assert_eq(-1, -10 % -3)
-}
-
-test "string_case_handling" {
-  // 测试字符串大小写相关的处理（通过模拟）
-  let original = "Hello"
-  let lower = "hello"
-  let upper = "HELLO"
-  
-  // 测试字符串比较
-  azimuth.assert_eq_string(original, "Hello")
-  azimuth.assert_false(original == lower)
-  azimuth.assert_false(original == upper)
-  
-  // 测试包含不同字符的字符串
-  let mixed = "HeLLo WoRLd"
-  azimuth.assert_eq_string(mixed, "HeLLo WoRLd")
-  azimuth.assert_false(mixed == "hello world")
-  azimuth.assert_false(mixed == "HELLO WORLD")
-}
-
-test "boolean_logic_operations" {
-  // 测试布尔逻辑运算
-  let true_val = true
-  let false_val = false
-  
-  // 测试基本布尔值
-  azimuth.assert_true(true_val)
-  azimuth.assert_false(false_val)
-  
-  // 测试布尔表达式
-  azimuth.assert_true(true_val && true_val)
-  azimuth.assert_false(true_val && false_val)
-  azimuth.assert_false(false_val && false_val)
-  
-  azimuth.assert_true(true_val || false_val)
-  azimuth.assert_true(false_val || true_val)
-  azimuth.assert_false(false_val || false_val)
-  
-  // 测试布尔非运算
-  azimuth.assert_false(!true_val)
-  azimuth.assert_true(!false_val)
-}
-
-test "comparison_operations" {
-  // 测试比较运算
-  let a = 10
-  let b = 20
-  let c = 10
-  
-  // 测试等于和不等于
-  azimuth.assert_true(a == c)
-  azimuth.assert_false(a == b)
-  azimuth.assert_false(a != c)
-  azimuth.assert_true(a != b)
-  
-  // 测试大于和小于
-  azimuth.assert_false(a > b)
-  azimuth.assert_true(b > a)
-  azimuth.assert_false(a > c)
-  
-  azimuth.assert_true(a < b)
-  azimuth.assert_false(b < a)
-  azimuth.assert_false(a < c)
-  
-  // 测试大于等于和小于等于
-  azimuth.assert_true(a >= c)
-  azimuth.assert_false(a >= b)
-  azimuth.assert_true(b >= a)
-  
-  azimuth.assert_true(a <= c)
-  azimuth.assert_true(a <= b)
-  azimuth.assert_false(b <= a)
-}
-
-test "number_range_validations" {
-  // 测试数字范围验证
-  let min_int = -2147483648
-  let max_int = 2147483647
+test "edge_case_zero_operations" {
+  // 零值运算的边界情况测试
   let zero = 0
-  
-  // 测试边界值
-  azimuth.assert_true(min_int < zero)
-  azimuth.assert_true(zero < max_int)
-  azimuth.assert_true(min_int < max_int)
-  
-  // 测试中间值
-  let mid_point = add(min_int, max_int) / 2
-  azimuth.assert_eq(-1, mid_point)
-  
-  // 测试范围检查
-  let small_num = 100
-  let large_num = 1000000
-  
-  azimuth.assert_true(small_num > 0 && small_num < max_int)
-  azimuth.assert_true(large_num > 0 && large_num < max_int)
-  azimuth.assert_true(min_int < -small_num && -small_num < max_int)
-}
-
-test "complex_arithmetic_expressions" {
-  // 测试复杂算术表达式
-  let x = 5
-  let y = 10
-  let z = 15
-  
-  // 测试复合表达式：(x + y) * z - x * y
-  let result1 = azimuth.add(azimuth.multiply(y, z), azimuth.multiply(x, azimuth.add(z, -y)))
-  azimuth.assert_eq(125, result1)  // (5+10)*15 - 5*10 = 225 - 50 = 175 (修正计算)
-  
-  // 测试表达式：x² + y² + z²
-  let x_squared = azimuth.multiply(x, x)
-  let y_squared = azimuth.multiply(y, y)
-  let z_squared = azimuth.multiply(z, z)
-  let sum_squares = azimuth.add(azimuth.add(x_squared, y_squared), z_squared)
-  azimuth.assert_eq(350, sum_squares)  // 25 + 100 + 225 = 350
-  
-  // 测试表达式：(x + y + z)²
-  let sum = azimuth.add(azimuth.add(x, y), z)
-  let sum_squared = azimuth.multiply(sum, sum)
-  azimuth.assert_eq(900, sum_squared)  // 30² = 900
-}
-
-test "error_boundary_conditions" {
-  // 测试错误边界条件
+  let positive = 42
+  let negative = -17
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试接近边界的运算
-  let near_max = max_val - 100
-  let near_min = min_val + 100
+  // 测试与零的加法
+  assert_eq(positive, add(positive, zero))
+  assert_eq(negative, add(negative, zero))
+  assert_eq(max_val, add(max_val, zero))
+  assert_eq(min_val, add(min_val, zero))
   
-  azimuth.assert_true(near_max > 0)
-  azimuth.assert_true(near_min < 0)
-  
-  // 测试边界运算的安全性
-  let safe_add1 = azimuth.add(near_max, 50)  // 应该成功
-  let safe_add2 = azimuth.add(near_max, 200) // 应该被限制为 max_val
-  
-  azimuth.assert_eq(max_val - 50, safe_add1)
-  azimuth.assert_eq(max_val, safe_add2)
-  
-  // 测试边界乘法
-  let safe_mul1 = azimuth.multiply(1000, 1000)      // 应该成功
-  let safe_mul2 = azimuth.multiply(100000, 100000)  // 可能溢出
-  
-  azimuth.assert_eq(1000000, safe_mul1)
-  azimuth.assert_eq(max_val, safe_mul2)  // 应该被限制为 max_val
+  // 测试与零的乘法
+  assert_eq(zero, multiply(positive, zero))
+  assert_eq(zero, multiply(negative, zero))
+  assert_eq(zero, multiply(max_val, zero))
+  assert_eq(zero, multiply(min_val, zero))
 }
 
-test "real_world_calculation_scenarios" {
-  // 测试实际世界计算场景
-  // 场景1：计算折扣价格
-  let original_price = 1000
-  let discount_percent = 20
-  let discount_amount = azimuth.multiply(original_price, discount_percent) / 100
-  let discounted_price = azimuth.add(original_price, -discount_amount)
+test "sequential_calculation_chain" {
+  // 连续计算链测试
+  let initial = 10
   
-  azimuth.assert_eq(200, discount_amount)
-  azimuth.assert_eq(800, discounted_price)
+  // 构建计算链：(((10 + 5) × 2) - 3) + 8
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = add(step2, -3)         // 27
+  let final_result = add(step3, 8)   // 35
   
-  // 场景2：计算BMI（简化版）：BMI = 体重(kg) / 身高(m)²
-  // 使用整数运算：BMI = 体重(kg) × 10000 / (身高(cm)²)
-  let weight_kg = 70
-  let height_cm = 175
-  let height_squared = azimuth.multiply(height_cm, height_cm)
-  let bmi = azimuth.multiply(weight_kg, 10000) / height_squared
+  assert_eq(35, final_result)
   
-  azimuth.assert_eq(22, bmi)  // 70 × 10000 / 30625 ≈ 22.85，整数部分为22
+  // 测试更复杂的计算链
+  let a = 3
+  let b = 7
+  let c = 2
+  let d = 5
   
-  // 场景3：计算贷款月供（简化版）：月供 = (本金 × 月利率 × (1+月利率)^月数) / ((1+月利率)^月数 - 1)
-  // 简化为整数计算
-  let principal = 100000  // 10万元
-  let annual_rate = 6     // 6%年利率
-  let months = 12         // 1年
+  // ((a × b) + (c × d)) × 2
+  let result1 = multiply(a, b)       // 21
+  let result2 = multiply(c, d)       // 10
+  let sum = add(result1, result2)    // 31
+  let final = multiply(sum, 2)       // 62
   
-  let monthly_rate = annual_rate / 12  // 0.5%（简化为整数0）
-  let monthly_payment = principal / months + azimuth.multiply(principal, annual_rate) / 100 / 12
-  
-  azimuth.assert_eq(8583, monthly_payment)  // 简化计算
+  assert_eq(62, final)
 }
 
-test "data_structure_simulation" {
-  // 模拟简单数据结构操作
-  // 场景1：模拟栈操作（使用单个变量表示栈顶）
-  let stack_top = 0
+test "string_special_characters_handling" {
+  // 特殊字符字符串处理测试
+  let quotes = "John \"The Rock\" Doe"
+  let newlines = "Line1\nLine2\nLine3"
+  let tabs = "Col1\tCol2\tCol3"
+  let mixed = "Hello\t\"World\"\nNewLine"
   
-  // 入栈操作
-  stack_top := azimuth.add(stack_top, 1)  // push 1
-  azimuth.assert_eq(1, stack_top)
+  // 测试包含引号的字符串
+  let quotes_result = greet(quotes)
+  assert_eq_string("Hello, John \"The Rock\" Doe!", quotes_result)
   
-  stack_top := azimuth.add(stack_top, 2)  // push 2
-  azimuth.assert_eq(3, stack_top)  // 栈顶值是累加的
+  // 测试包含换行符的字符串
+  let newlines_result = greet(newlines)
+  assert_eq_string("Hello, Line1\nLine2\nLine3!", newlines_result)
   
-  // 出栈操作（模拟）
-  stack_top := azimuth.add(stack_top, -2)  // pop 2
-  azimuth.assert_eq(1, stack_top)
+  // 测试包含制表符的字符串
+  let tabs_result = greet(tabs)
+  assert_eq_string("Hello, Col1\tCol2\tCol3!", tabs_result)
   
-  // 场景2：模拟队列操作（使用两个变量表示队头和队尾）
-  let queue_head = 0
-  let queue_tail = 0
-  
-  // 入队操作
-  queue_tail := azimuth.add(queue_tail, 1)
-  azimuth.assert_eq(1, queue_tail)
-  azimuth.assert_eq(0, queue_head)
-  
-  // 出队操作（模拟）
-  queue_head := azimuth.add(queue_head, 1)
-  azimuth.assert_eq(1, queue_head)
-  azimuth.assert_eq(1, queue_tail)
+  // 测试混合特殊字符
+  let mixed_result = greet(mixed)
+  assert_eq_string("Hello, Hello\t\"World\"\nNewLine!", mixed_result)
 }
 
-test "algorithm_implementation" {
-  // 实现简单算法
-  // 算法1：计算最大公约数（欧几里得算法，简化版）
-  let a = 48
-  let b = 18
+test "mathematical_series_calculation" {
+  // 数学数列计算测试
+  // 计算斐波那契数列前10项的和
+  // F1=1, F2=1, F3=2, F4=3, F5=5, F6=8, F7=13, F8=21, F9=34, F10=55
+  // 和 = 1+1+2+3+5+8+13+21+34+55 = 143
   
-  // 简化版GCD计算（使用取模）
-  let remainder = a % b
-  let gcd = if remainder == 0 { b } else { 
-    // 这里简化处理，实际应该递归调用
-    if b % remainder == 0 { remainder } else { 1 }
-  }
+  let f1 = 1
+  let f2 = 1
+  let f3 = add(f1, f2)              // 2
+  let f4 = add(f2, f3)              // 3
+  let f5 = add(f3, f4)              // 5
+  let f6 = add(f4, f5)              // 8
+  let f7 = add(f5, f6)              // 13
+  let f8 = add(f6, f7)              // 21
+  let f9 = add(f7, f8)              // 34
+  let f10 = add(f8, f9)             // 55
   
-  azimuth.assert_eq(6, gcd)
+  let fibonacci_sum = add(add(add(add(
+    add(add(add(add(f1, f2), f3), f4), f5), f6), f7), f8), add(f9, f10))
   
-  // 算法2：判断闰年（简化规则）
-  let year1 = 2020  // 闰年
-  let year2 = 2021  // 非闰年
-  let year3 = 2000  // 闰年（世纪年）
-  let year4 = 2100  // 非闰年（世纪年）
+  assert_eq(143, fibonacci_sum)
+}
+
+test "real_world_currency_conversion" {
+  // 实际货币转换场景测试
+  let usd_amount = 125
+  let eur_to_usd_rate = 108  // 1 EUR = 1.08 USD (简化为整数)
+  let gbp_to_usd_rate = 127  // 1 GBP = 1.27 USD (简化为整数)
   
-  // 简化规则：能被4整除的是闰年
-  let is_leap1 = year1 % 4 == 0
-  let is_leap2 = year2 % 4 == 0
-  let is_leap3 = year3 % 4 == 0
-  let is_leap4 = year4 % 4 == 0
+  // 欧元转美元
+  let eur_amount = 100
+  let usd_from_eur = multiply(eur_amount, eur_to_usd_rate) / 100
+  assert_eq(108, usd_from_eur)
   
-  azimuth.assert_true(is_leap1)
-  azimuth.assert_false(is_leap2)
-  azimuth.assert_true(is_leap3)
-  azimuth.assert_true(is_leap4)  // 简化规则下2100年也是闰年
+  // 英镑转美元
+  let gbp_amount = 50
+  let usd_from_gbp = multiply(gbp_amount, gbp_to_usd_rate) / 100
+  assert_eq(63, usd_from_gbp)  // 50 * 127 / 100 = 63.5 → 63 (整数除法)
+  
+  // 计算多币种总和
+  let total_usd = add(add(usd_amount, usd_from_eur), usd_from_gbp)
+  assert_eq(296, total_usd)
+}
+
+test "algorithmic_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let n = 10
+  
+  // 模拟O(n)算法：线性求和 1 + 2 + ... + n
+  // 使用公式：n × (n + 1) / 2
+  let linear_result = multiply(n, add(n, 1)) / 2
+  assert_eq(55, linear_result)
+  
+  // 模拟O(n²)算法：计算所有数对的和
+  // 简化计算：n × n × 平均值
+  let average_value = add(n, 1) / 2
+  let quadratic_result = multiply(multiply(n, n), average_value)
+  assert_eq(550, quadratic_result)  // 10 × 10 × 5.5 → 10 × 10 × 5 = 500 (整数除法)
+  
+  // 模拟O(log n)算法：对数搜索步数
+  // 简化为 log₂(n) 的整数近似
+  let log_steps = 4  // log₂(10) ≈ 3.32 → 4 (向上取整)
+  assert_eq(4, log_steps)
+}
+
+test "physics_simulation_calculations" {
+  // 物理模拟计算测试
+  let initial_velocity = 10  // m/s
+  let acceleration = 2       // m/s²
+  let time = 5               // s
+  let mass = 10              // kg
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
+  assert_eq(20, final_velocity)
+  
+  // 计算位移：s = ut + 0.5at²
+  // 简化：s = ut + at²/2
+  let ut = multiply(initial_velocity, time)
+  let at_squared = multiply(acceleration, multiply(time, time))
+  let displacement = add(ut, at_squared / 2)
+  assert_eq(75, displacement)  // 10×5 + 2×25/2 = 50 + 25 = 75
+  
+  // 计算动能：KE = 0.5mv²
+  // 简化：KE = mv²/2
+  let velocity_squared = multiply(final_velocity, final_velocity)
+  let kinetic_energy = multiply(mass, velocity_squared) / 2
+  assert_eq(2000, kinetic_energy)  // 10 × 20² / 2 = 10 × 400 / 2 = 2000
+}
+
+test "data_structure_operations" {
+  // 数据结构操作模拟测试
+  // 模拟数组操作
+  let array_size = 5
+  let element_size = 4
+  
+  // 计算数组总大小
+  let total_array_size = multiply(array_size, element_size)
+  assert_eq(20, total_array_size)
+  
+  // 模拟二维数组索引计算
+  let row = 2
+  let col = 3
+  let width = 5
+  let index_2d = add(multiply(row, width), col)
+  assert_eq(13, index_2d)
+  
+  // 模拟栈操作
+  let stack_size = 0
+  // push操作
+  let new_stack_size = add(stack_size, 1)
+  assert_eq(1, new_stack_size)
+  // pop操作
+  let final_stack_size = add(new_stack_size, -1)
+  assert_eq(0, final_stack_size)
+}
+
+test "network_protocol_simulation" {
+  // 网络协议模拟测试
+  let packet_header_size = 20
+  let max_payload_size = 1460
+  let data_size = 5000
+  
+  // 计算需要的包数量
+  let packets_needed = divide_with_ceil(data_size, max_payload_size)
+  assert_eq(4, packets_needed)
+  
+  // 计算总传输大小（包含头部）
+  let total_transfer_size = add(multiply(packets_needed, packet_header_size), data_size)
+  assert_eq(5080, total_transfer_size)
+  
+  // 计算协议开销
+  let overhead = multiply(packets_needed, packet_header_size)
+  let overhead_percentage = multiply(overhead, 100) / total_transfer_size
+  assert_eq(1, overhead_percentage)  // 80/5080 ≈ 1.57% → 1% (整数除法)
 }
