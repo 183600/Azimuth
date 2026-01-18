@@ -100,6 +100,7 @@
             "test/simple_user_test.mbt",
   "test/user_new_addition_tests.mbt",
   "user_new_standard_tests.mbt",
+  "test/user_new_standard_tests.mbt",
           "additional_moonbit_test_cases.mbt",
   "user_standard_tests_new.mbt",
           "test/user_standard_test_cases.mbt",
