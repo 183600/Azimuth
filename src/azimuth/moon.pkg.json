@@ -125,4 +125,6 @@
   "concise_test_cases.mbt",
   "azimuth_enhanced_tests.mbt",
   "test/standard_comprehensive_tests.mbt",
-  "test/user_final_additional_tests.mbt"]}
+  "test/user_final_additional_tests.mbt",
+  "azimuth_enhanced_unit_tests.mbt",
+  "test_simple_enhanced.mbt"]}
