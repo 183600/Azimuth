@@ -1,218 +1,342 @@
-// Azimuth 项目新测试套件
-// 使用标准 MoonBit 测试语法，包含多样化的实用测试场景
+// Azimuth 项目新增 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，专注于边界条件和错误处理
 
-test "string_length_validation" {
-  // 字符串长度验证测试
-  // 测试字符串长度计算（通过字符数估算）
-  let short_length = @azimuth.multiply(2, 1)  // "Hi" 有2个字符
-  let medium_length = @azimuth.multiply(20, 1)  // "MoonBit Programming" 有20个字符
-  let long_length = @azimuth.multiply(67, 1)  // 长文本有67个字符
-  let empty_length = @azimuth.multiply(0, 1)  // 空字符串有0个字符
+test "add_zero_handling" {
+  // 加法零值处理测试
+  let result1 = @azimuth.add(0, 5)
+  if (result1 != 5) {
+    @builtin.abort("Test failed: add(0, 5) should be 5")
+  }
   
-  @azimuth.assert_eq(2, short_length)
-  @azimuth.assert_eq(20, medium_length)
-  @azimuth.assert_eq(67, long_length)
-  @azimuth.assert_eq(0, empty_length)
+  let result2 = @azimuth.add(5, 0)
+  if (result2 != 5) {
+    @builtin.abort("Test failed: add(5, 0) should be 5")
+  }
+  
+  let result3 = @azimuth.add(0, 0)
+  if (result3 != 0) {
+    @builtin.abort("Test failed: add(0, 0) should be 0")
+  }
+  
+  let result4 = @azimuth.add(0, -3)
+  if (result4 != -3) {
+    @builtin.abort("Test failed: add(0, -3) should be -3")
+  }
+  
+  let result5 = @azimuth.add(-3, 0)
+  if (result5 != -3) {
+    @builtin.abort("Test failed: add(-3, 0) should be -3")
+  }
 }
 
-test "array_operations_simulation" {
-  // 数组操作模拟测试
-  let mut array_size = 0
+test "multiply_zero_handling" {
+  // 乘法零值处理测试
+  let result1 = @azimuth.multiply(0, 5)
+  if (result1 != 0) {
+    @builtin.abort("Test failed: multiply(0, 5) should be 0")
+  }
   
-  // 模拟添加元素
-  array_size = @azimuth.add(array_size, 1)  // 添加第1个元素
-  @azimuth.assert_eq(1, array_size)
+  let result2 = @azimuth.multiply(5, 0)
+  if (result2 != 0) {
+    @builtin.abort("Test failed: multiply(5, 0) should be 0")
+  }
   
-  array_size = @azimuth.add(array_size, 1)  // 添加第2个元素
-  @azimuth.assert_eq(2, array_size)
+  let result3 = @azimuth.multiply(0, 0)
+  if (result3 != 0) {
+    @builtin.abort("Test failed: multiply(0, 0) should be 0")
+  }
   
-  array_size = @azimuth.add(array_size, 1)  // 添加第3个元素
-  @azimuth.assert_eq(3, array_size)
+  let result4 = @azimuth.multiply(0, -3)
+  if (result4 != 0) {
+    @builtin.abort("Test failed: multiply(0, -3) should be 0")
+  }
   
-  // 模拟删除元素
-  array_size = @azimuth.add(array_size, -1)  // 删除1个元素
-  @azimuth.assert_eq(2, array_size)
-  
-  // 模拟批量添加
-  array_size = @azimuth.add(array_size, 5)  // 批量添加5个元素
-  @azimuth.assert_eq(7, array_size)
+  let result5 = @azimuth.multiply(-3, 0)
+  if (result5 != 0) {
+    @builtin.abort("Test failed: multiply(-3, 0) should be 0")
+  }
 }
 
-test "calculator_basic_operations" {
-  // 计算器基本操作测试
-  let num1 = 42
-  let num2 = 17
+test "multiply_one_handling" {
+  // 乘法一值处理测试
+  let result1 = @azimuth.multiply(1, 5)
+  if (result1 != 5) {
+    @builtin.abort("Test failed: multiply(1, 5) should be 5")
+  }
   
-  // 加法
-  let sum = @azimuth.add(num1, num2)
-  @azimuth.assert_eq(59, sum)
+  let result2 = @azimuth.multiply(5, 1)
+  if (result2 != 5) {
+    @builtin.abort("Test failed: multiply(5, 1) should be 5")
+  }
   
-  // 减法（通过加负数实现）
-  let difference = @azimuth.add(num1, -num2)
-  @azimuth.assert_eq(25, difference)
+  let result3 = @azimuth.multiply(1, -3)
+  if (result3 != -3) {
+    @builtin.abort("Test failed: multiply(1, -3) should be -3")
+  }
   
-  // 乘法
-  let product = @azimuth.multiply(num1, num2)
-  @azimuth.assert_eq(714, product)
+  let result4 = @azimuth.multiply(-3, 1)
+  if (result4 != -3) {
+    @builtin.abort("Test failed: multiply(-3, 1) should be -3")
+  }
   
-  // 平方
-  let square = @azimuth.multiply(num1, num1)
-  @azimuth.assert_eq(1764, square)
-  
-  // 立方
-  let cube = @azimuth.multiply(@azimuth.multiply(num1, num1), num1)
-  @azimuth.assert_eq(74088, cube)
+  let result5 = @azimuth.multiply(1, 1)
+  if (result5 != 1) {
+    @builtin.abort("Test failed: multiply(1, 1) should be 1")
+  }
 }
 
-test "currency_conversion" {
-  // 货币转换测试
-  let usd_amount = 100
-  let eur_rate = 85  // 假设1美元=0.85欧元（简化为整数计算，乘以100）
-  let gbp_rate = 75  // 假设1美元=0.75英镑
-  let jpy_rate = 110   // 假设1美元=110日元
+test "multiply_negative_one_handling" {
+  // 乘法负一处理测试
+  let result1 = @azimuth.multiply(-1, 5)
+  if (result1 != -5) {
+    @builtin.abort("Test failed: multiply(-1, 5) should be -5")
+  }
   
-  // 转换为欧元（简化计算）
-  let eur_amount = @azimuth.multiply(usd_amount, eur_rate) / 100
-  @azimuth.assert_eq(85, eur_amount)
+  let result2 = @azimuth.multiply(5, -1)
+  if (result2 != -5) {
+    @builtin.abort("Test failed: multiply(5, -1) should be -5")
+  }
   
-  // 转换为英镑（简化计算）
-  let gbp_amount = @azimuth.multiply(usd_amount, gbp_rate) / 100
-  @azimuth.assert_eq(75, gbp_amount)
+  let result3 = @azimuth.multiply(-1, -3)
+  if (result3 != 3) {
+    @builtin.abort("Test failed: multiply(-1, -3) should be 3")
+  }
   
-  // 转换为日元
-  let jpy_amount = @azimuth.multiply(usd_amount, jpy_rate)
-  @azimuth.assert_eq(11000, jpy_amount)
+  let result4 = @azimuth.multiply(-3, -1)
+  if (result4 != 3) {
+    @builtin.abort("Test failed: multiply(-3, -1) should be 3")
+  }
+  
+  let result5 = @azimuth.multiply(-1, -1)
+  if (result5 != 1) {
+    @builtin.abort("Test failed: multiply(-1, -1) should be 1")
+  }
 }
 
-test "grade_calculator" {
-  // 成绩计算器测试
-  let exam_score = 85
-  let homework_score = 90
-  let quiz_score = 78
-  let project_score = 92
+test "min_value_addition_edge_cases" {
+  // 最小值加法边界情况测试
+  let min_val = -2147483648
   
-  // 权重（百分比）
-  let exam_weight = 40
-  let homework_weight = 20
-  let quiz_weight = 20
-  let project_weight = 20
+  // 最小值与0相加
+  let result1 = @azimuth.add(min_val, 0)
+  if (result1 != min_val) {
+    @builtin.abort("Test failed: add(min_val, 0) should be min_val")
+  }
   
-  // 计算加权分数
-  let weighted_exam = @azimuth.multiply(exam_score, exam_weight) / 100
-  let weighted_homework = @azimuth.multiply(homework_score, homework_weight) / 100
-  let weighted_quiz = @azimuth.multiply(quiz_score, quiz_weight) / 100
-  let weighted_project = @azimuth.multiply(project_score, project_weight) / 100
+  let result2 = @azimuth.add(0, min_val)
+  if (result2 != min_val) {
+    @builtin.abort("Test failed: add(0, min_val) should be min_val")
+  }
   
-  // 计算总分
-  let total_score = @azimuth.add(@azimuth.add(@azimuth.add(
-    weighted_exam, weighted_homework), weighted_quiz), weighted_project)
+  // 最小值与正数相加
+  let result3 = @azimuth.add(min_val, 1)
+  if (result3 != -2147483647) {
+    @builtin.abort("Test failed: add(min_val, 1) should be -2147483647")
+  }
   
-  @azimuth.assert_eq(86, total_score)  // (85×0.4 + 90×0.2 + 78×0.2 + 92×0.2) = 34 + 18 + 15.6 + 18.4 = 86
+  let result4 = @azimuth.add(min_val, 2)
+  if (result4 != -2147483646) {
+    @builtin.abort("Test failed: add(min_val, 2) should be -2147483646")
+  }
+  
+  // 最小值与负数相加（应返回最小值防止溢出）
+  let result5 = @azimuth.add(min_val, -1)
+  if (result5 != min_val) {
+    @builtin.abort("Test failed: add(min_val, -1) should be min_val")
+  }
+  
+  let result6 = @azimuth.add(min_val, -2)
+  if (result6 != min_val) {
+    @builtin.abort("Test failed: add(min_val, -2) should be min_val")
+  }
 }
 
-test "speed_unit_conversion" {
-  // 速度单位转换测试
-  let kmh_speed = 60  // 公里/小时
+test "min_value_multiplication_edge_cases" {
+  // 最小值乘法边界情况测试
+  let min_val = -2147483648
   
-  // 转换为米/秒：km/h × 1000 / 3600 ≈ km/h × 5/18
-  let ms_speed = @azimuth.multiply(kmh_speed, 5) / 18
-  @azimuth.assert_eq(16, ms_speed)  // 60 × 5/18 = 16.67 ≈ 16（取整）
+  // 最小值乘以1
+  let result1 = @azimuth.multiply(min_val, 1)
+  if (result1 != min_val) {
+    @builtin.abort("Test failed: multiply(min_val, 1) should be min_val")
+  }
   
-  // 转换为英里/小时：km/h × 0.621371 ≈ km/h × 62/100
-  let mph_speed = @azimuth.multiply(kmh_speed, 62) / 100
-  @azimuth.assert_eq(37, mph_speed)  // 60 × 0.62 = 37.2 ≈ 37（取整）
+  let result2 = @azimuth.multiply(1, min_val)
+  if (result2 != min_val) {
+    @builtin.abort("Test failed: multiply(1, min_val) should be min_val")
+  }
   
-  // 转换为节：km/h × 0.539957 ≈ km/h × 54/100
-  let knot_speed = @azimuth.multiply(kmh_speed, 54) / 100
-  @azimuth.assert_eq(32, knot_speed)  // 60 × 0.54 = 32.4 ≈ 32（取整）
+  // 最小值乘以-1（应返回最小值防止溢出）
+  let result3 = @azimuth.multiply(min_val, -1)
+  if (result3 != min_val) {
+    @builtin.abort("Test failed: multiply(min_val, -1) should be min_val")
+  }
+  
+  let result4 = @azimuth.multiply(-1, min_val)
+  if (result4 != min_val) {
+    @builtin.abort("Test failed: multiply(-1, min_val) should be min_val")
+  }
+  
+  // 最小值乘以大于1的数（应返回最小值防止溢出）
+  let result5 = @azimuth.multiply(min_val, 2)
+  if (result5 != min_val) {
+    @builtin.abort("Test failed: multiply(min_val, 2) should be min_val")
+  }
+  
+  let result6 = @azimuth.multiply(2, min_val)
+  if (result6 != min_val) {
+    @builtin.abort("Test failed: multiply(2, min_val) should be min_val")
+  }
 }
 
-test "inventory_management" {
-  // 库存管理测试
-  let initial_stock = 500
-  let daily_sales = 25
-  let weekly_shipment = 200
-  let days_in_week = 7
+test "greet_function_edge_cases" {
+  // 问候函数边界情况测试
+  // 空字符串
+  let result1 = @azimuth.greet("")
+  if (result1 != "Hello, !") {
+    @builtin.abort("Test failed: greet(\"\") should be \"Hello, !\"")
+  }
   
-  // 计算一周销售量
-  let weekly_sales = @azimuth.multiply(daily_sales, days_in_week)
-  @azimuth.assert_eq(175, weekly_sales)
+  // 单字符
+  let result2 = @azimuth.greet("A")
+  if (result2 != "Hello, A!") {
+    @builtin.abort("Test failed: greet(\"A\") should be \"Hello, A!\"")
+  }
   
-  // 计算一周后库存
-  let ending_stock = @azimuth.add(@azimuth.add(initial_stock, weekly_shipment), -weekly_sales)
-  @azimuth.assert_eq(525, ending_stock)  // 500 + 200 - 175 = 525
+  let result3 = @azimuth.greet("中")
+  if (result3 != "Hello, 中!") {
+    @builtin.abort("Test failed: greet(\"中\") should be \"Hello, 中!\"")
+  }
   
-  // 计算库存周转率
-  let turnover_rate = @azimuth.multiply(weekly_sales, 100) / initial_stock
-  @azimuth.assert_eq(35, turnover_rate)  // 175 × 100 / 500 = 35
+  // 长字符串
+  let long_name = "VeryLongNameThatExceedsNormalExpectations"
+  let result4 = @azimuth.greet(long_name)
+  if (result4 != "Hello, VeryLongNameThatExceedsNormalExpectations!") {
+    @builtin.abort("Test failed: greet(long_name) should be \"Hello, VeryLongNameThatExceedsNormalExpectations!\"")
+  }
+  
+  // 特殊字符
+  let result5 = @azimuth.greet("@#$%")
+  if (result5 != "Hello, @#$%!") {
+    @builtin.abort("Test failed: greet(\"@#$%\") should be \"Hello, @#$%!\"")
+  }
+  
+  let result6 = @azimuth.greet("   ")  // 空格
+  if (result6 != "Hello,    !") {
+    @builtin.abort("Test failed: greet(\"   \") should be \"Hello,    !\"")
+  }
 }
 
-test "fitness_tracker" {
-  // 健身追踪测试
-  let steps_per_day = 8000
-  let days_in_month = 30
-  let calories_per_step = 4  // 每步消耗卡路里（简化为整数计算，乘以100）
-  let distance_per_step = 8  // 每步公里数（简化为整数计算，乘以10000）
+test "overflow_boundary_addition" {
+  // 加法溢出边界测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 计算月总步数
-  let monthly_steps = @azimuth.multiply(steps_per_day, days_in_month)
-  @azimuth.assert_eq(240000, monthly_steps)
+  // 接近最大值的正数相加
+  let result1 = @azimuth.add(2147483646, 1)  // max_val - 1 + 1 = max_val
+  if (result1 != max_val) {
+    @builtin.abort("Test failed: add(2147483646, 1) should be max_val")
+  }
   
-  // 计算月总卡路里消耗（简化计算）
-  let monthly_calories = @azimuth.multiply(monthly_steps, calories_per_step) / 100
-  @azimuth.assert_eq(9600, monthly_calories)  // 240000 × 0.04 = 9600
+  let result2 = @azimuth.add(2147483645, 2)  // max_val - 2 + 2 = max_val
+  if (result2 != max_val) {
+    @builtin.abort("Test failed: add(2147483645, 2) should be max_val")
+  }
   
-  // 计算月总距离（公里）（简化计算）
-  let monthly_distance = @azimuth.multiply(monthly_steps, distance_per_step) / 10000
-  @azimuth.assert_eq(192, monthly_distance)  // 240000 × 0.0008 = 192
+  let result3 = @azimuth.add(2147483640, 7)  // 不溢出
+  if (result3 != 2147483647) {
+    @builtin.abort("Test failed: add(2147483640, 7) should be 2147483647")
+  }
   
-  // 计算每周平均步数
-  let weekly_average = @azimuth.multiply(steps_per_day, 7)
-  @azimuth.assert_eq(56000, weekly_average)
+  let result4 = @azimuth.add(2147483640, 8)  // 溢出
+  if (result4 != max_val) {
+    @builtin.abort("Test failed: add(2147483640, 8) should be max_val")
+  }
+  
+  // 接近最小值的负数相加
+  let result5 = @azimuth.add(-2147483647, -1)  // min_val + 1 - 1 = min_val
+  if (result5 != min_val) {
+    @builtin.abort("Test failed: add(-2147483647, -1) should be min_val")
+  }
+  
+  let result6 = @azimuth.add(-2147483646, -2)  // min_val + 2 - 2 = min_val
+  if (result6 != min_val) {
+    @builtin.abort("Test failed: add(-2147483646, -2) should be min_val")
+  }
+  
+  let result7 = @azimuth.add(-2147483640, -1)  // 不溢出
+  if (result7 != -2147483641) {
+    @builtin.abort("Test failed: add(-2147483640, -1) should be -2147483641")
+  }
+  
+  let result8 = @azimuth.add(-2147483640, -8)  // 溢出
+  if (result8 != min_val) {
+    @builtin.abort("Test failed: add(-2147483640, -8) should be min_val")
+  }
 }
 
-test "data_compression_simulation" {
-  // 数据压缩模拟测试
-  let original_size = 10000  // 原始数据大小（字节）
-  let compression_ratio = 70  // 压缩率（百分比）
-  let overhead = 50  // 压缩开销（字节）
+test "mixed_sign_operations" {
+  // 混合符号运算测试
+  // 正负数加法
+  let result1 = @azimuth.add(5, -5)
+  if (result1 != 0) {
+    @builtin.abort("Test failed: add(5, -5) should be 0")
+  }
   
-  // 计算压缩后大小
-  let compressed_size = @azimuth.multiply(original_size, compression_ratio) / 100
-  @azimuth.assert_eq(7000, compressed_size)
+  let result2 = @azimuth.add(-5, 5)
+  if (result2 != 0) {
+    @builtin.abort("Test failed: add(-5, 5) should be 0")
+  }
   
-  // 计算最终大小（含开销）
-  let final_size = @azimuth.add(compressed_size, overhead)
-  @azimuth.assert_eq(7050, final_size)
+  let result3 = @azimuth.add(8, -5)
+  if (result3 != 3) {
+    @builtin.abort("Test failed: add(8, -5) should be 3")
+  }
   
-  // 计算节省的空间
-  let saved_space = @azimuth.add(original_size, -final_size)
-  @azimuth.assert_eq(2950, saved_space)
+  let result4 = @azimuth.add(-8, 5)
+  if (result4 != -3) {
+    @builtin.abort("Test failed: add(-8, 5) should be -3")
+  }
   
-  // 计算压缩效率
-  let efficiency = @azimuth.multiply(saved_space, 100) / original_size
-  @azimuth.assert_eq(29, efficiency)  // 2950 × 100 / 10000 = 29.5 ≈ 29（取整）
-}
-
-test "network_bandwidth_calculation" {
-  // 网络带宽计算测试
-  let file_size_mb = 500  // 文件大小（MB）
-  let bandwidth_mbps = 50  // 带宽（Mbps）
-  let network_overhead = 10  // 网络开销（百分比）
+  // 正负数乘法
+  let result5 = @azimuth.multiply(5, -5)
+  if (result5 != -25) {
+    @builtin.abort("Test failed: multiply(5, -5) should be -25")
+  }
   
-  // 计算有效带宽（考虑开销）
-  let effective_bandwidth = @azimuth.multiply(bandwidth_mbps, @azimuth.add(100, -network_overhead)) / 100
-  @azimuth.assert_eq(45, effective_bandwidth)  // 50 × 0.9 = 45
+  let result6 = @azimuth.multiply(-5, 5)
+  if (result6 != -25) {
+    @builtin.abort("Test failed: multiply(-5, 5) should be -25")
+  }
   
-  // 计算下载时间（秒）
-  let download_time = @azimuth.multiply(file_size_mb, 8) / effective_bandwidth
-  @azimuth.assert_eq(88, download_time)  // 500 × 8 / 45 = 88.89 ≈ 88（取整）
+  let result7 = @azimuth.multiply(8, -5)
+  if (result7 != -40) {
+    @builtin.abort("Test failed: multiply(8, -5) should be -40")
+  }
   
-  // 转换为分钟
-  let download_minutes = download_time / 60
-  @azimuth.assert_eq(1, download_minutes)  // 88 / 60 = 1.47 ≈ 1（取整）
+  let result8 = @azimuth.multiply(-8, -5)
+  if (result8 != 40) {
+    @builtin.abort("Test failed: multiply(-8, -5) should be 40")
+  }
   
-  // 计算剩余秒数
-  let remaining_seconds = @azimuth.add(download_time, -@azimuth.multiply(download_minutes, 60))
-  @azimuth.assert_eq(28, remaining_seconds)  // 88 - 1×60 = 28
+  // 零与正负数运算
+  let result9 = @azimuth.add(0, -5)
+  if (result9 != -5) {
+    @builtin.abort("Test failed: add(0, -5) should be -5")
+  }
+  
+  let result10 = @azimuth.add(0, 5)
+  if (result10 != 5) {
+    @builtin.abort("Test failed: add(0, 5) should be 5")
+  }
+  
+  let result11 = @azimuth.multiply(0, -5)
+  if (result11 != 0) {
+    @builtin.abort("Test failed: multiply(0, -5) should be 0")
+  }
+  
+  let result12 = @azimuth.multiply(0, 5)
+  if (result12 != 0) {
+    @builtin.abort("Test failed: multiply(0, 5) should be 0")
+  }
 }

@@ -1,132 +1,151 @@
-// Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 项目新增 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，专注于边界条件和错误处理
 
-// 定义需要的函数
-fn subtract(a : Int, b : Int) -> Int {
-  a + -b
+// 导入必要的模块
+use azimuth
+
+test "add_zero_handling" {
+  // 加法零值处理测试
+  @assertion.assert_eq(5, azimuth.add(0, 5))?
+  @assertion.assert_eq(5, azimuth.add(5, 0))?
+  @assertion.assert_eq(0, azimuth.add(0, 0))?
+  @assertion.assert_eq(-3, azimuth.add(0, -3))?
+  @assertion.assert_eq(-3, azimuth.add(-3, 0))?
 }
 
-fn divide(a : Int, b : Int) -> Int {
-  a / b
+test "multiply_zero_handling" {
+  // 乘法零值处理测试
+  @assertion.assert_eq(0, azimuth.multiply(0, 5))?
+  @assertion.assert_eq(0, azimuth.multiply(5, 0))?
+  @assertion.assert_eq(0, azimuth.multiply(0, 0))?
+  @assertion.assert_eq(0, azimuth.multiply(0, -3))?
+  @assertion.assert_eq(0, azimuth.multiply(-3, 0))?
 }
 
-fn mod(a : Int, b : Int) -> Int {
-  a % b
+test "multiply_one_handling" {
+  // 乘法一值处理测试
+  @assertion.assert_eq(5, azimuth.multiply(1, 5))?
+  @assertion.assert_eq(5, azimuth.multiply(5, 1))?
+  @assertion.assert_eq(-3, azimuth.multiply(1, -3))?
+  @assertion.assert_eq(-3, azimuth.multiply(-3, 1))?
+  @assertion.assert_eq(1, azimuth.multiply(1, 1))?
 }
 
-fn max(a : Int, b : Int) -> Int {
-  if a > b { a } else { b }
+test "multiply_negative_one_handling" {
+  // 乘法负一处理测试
+  @assertion.assert_eq(-5, azimuth.multiply(-1, 5))?
+  @assertion.assert_eq(-5, azimuth.multiply(5, -1))?
+  @assertion.assert_eq(3, azimuth.multiply(-1, -3))?
+  @assertion.assert_eq(3, azimuth.multiply(-3, -1))?
+  @assertion.assert_eq(1, azimuth.multiply(-1, -1))?
 }
 
-fn min(a : Int, b : Int) -> Int {
-  if a < b { a } else { b }
+test "min_value_addition_edge_cases" {
+  // 最小值加法边界情况测试
+  let min_val = -2147483648
+  
+  // 最小值与0相加
+  @assertion.assert_eq(min_val, azimuth.add(min_val, 0))?
+  @assertion.assert_eq(min_val, azimuth.add(0, min_val))?
+  
+  // 最小值与正数相加
+  @assertion.assert_eq(-2147483647, azimuth.add(min_val, 1))?
+  @assertion.assert_eq(-2147483646, azimuth.add(min_val, 2))?
+  
+  // 最小值与负数相加（应返回最小值防止溢出）
+  @assertion.assert_eq(min_val, azimuth.add(min_val, -1))?
+  @assertion.assert_eq(min_val, azimuth.add(min_val, -2))?
 }
 
-fn abs(a : Int) -> Int {
-  if a < 0 { -a } else { a }
+test "min_value_multiplication_edge_cases" {
+  // 最小值乘法边界情况测试
+  let min_val = -2147483648
+  
+  // 最小值乘以1
+  @assertion.assert_eq(min_val, azimuth.multiply(min_val, 1))?
+  @assertion.assert_eq(min_val, azimuth.multiply(1, min_val))?
+  
+  // 最小值乘以-1（应返回最小值防止溢出）
+  @assertion.assert_eq(min_val, azimuth.multiply(min_val, -1))?
+  @assertion.assert_eq(min_val, azimuth.multiply(-1, min_val))?
+  
+  // 最小值乘以大于1的数（应返回最小值防止溢出）
+  @assertion.assert_eq(min_val, azimuth.multiply(min_val, 2))?
+  @assertion.assert_eq(min_val, azimuth.multiply(2, min_val))?
+  @assertion.assert_eq(min_val, azimuth.multiply(min_val, 3))?
+  @assertion.assert_eq(min_val, azimuth.multiply(3, min_val))?
 }
 
-fn string_length(s : String) -> Int {
-  // 简化的字符串长度计算，仅用于演示
-  let len = 0
-  // 在实际实现中，这里会遍历字符串
-  // 这里我们直接返回一个示例值
-  match s {
-    "MoonBit" => 7
-    "Hello" => 5
-    "Test" => 4
-    _ => 0
-  }
+test "greet_function_edge_cases" {
+  // 问候函数边界情况测试
+  // 空字符串
+  @assertion.assert_eq_string("Hello, !", azimuth.greet(""))?
+  
+  // 单字符
+  @assertion.assert_eq_string("Hello, A!", azimuth.greet("A"))?
+  @assertion.assert_eq_string("Hello, 中!", azimuth.greet("中"))?
+  
+  // 长字符串
+  let long_name = "VeryLongNameThatExceedsNormalExpectations"
+  @assertion.assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectations!", azimuth.greet(long_name))?
+  
+  // 特殊字符
+  @assertion.assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))?
+  @assertion.assert_eq_string("Hello,   !", azimuth.greet("   "))?  // 空格
 }
 
-fn is_even(n : Int) -> Bool {
-  n % 2 == 0
+test "overflow_boundary_addition" {
+  // 加法溢出边界测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 接近最大值的正数相加
+  @assertion.assert_eq(max_val, azimuth.add(2147483646, 1))?  // max_val - 1 + 1 = max_val
+  @assertion.assert_eq(max_val, azimuth.add(2147483645, 2))?  // max_val - 2 + 2 = max_val
+  @assertion.assert_eq(max_val, azimuth.add(2147483640, 7))?  // 不溢出
+  @assertion.assert_eq(max_val, azimuth.add(2147483640, 8))?  // 溢出
+  
+  // 接近最小值的负数相加
+  @assertion.assert_eq(min_val, azimuth.add(-2147483647, -1))?  // min_val + 1 - 1 = min_val
+  @assertion.assert_eq(min_val, azimuth.add(-2147483646, -2))?  // min_val + 2 - 2 = min_val
+  @assertion.assert_eq(-2147483641, azimuth.add(-2147483640, -1))?  // 不溢出
+  @assertion.assert_eq(min_val, azimuth.add(-2147483640, -8))?  // 溢出
 }
 
-// 断言函数
-fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 当断言失败时，抛出一个错误
-    let _ = 1 / 0
-    ()
-  }
+test "overflow_boundary_multiplication" {
+  // 乘法溢出边界测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 接近最大值的乘法
+  @assertion.assert_eq(2147483646, azimuth.multiply(1073741823, 2))?  // 不溢出
+  @assertion.assert_eq(max_val, azimuth.multiply(1073741824, 2))?     // 溢出
+  
+  @assertion.assert_eq(46340, azimuth.multiply(46340, 1))?           // 不溢出
+  @assertion.assert_eq(max_val, azimuth.multiply(46341, 46341))?     // 溢出
+  
+  // 负数乘法边界
+  @assertion.assert_eq(-2147483646, azimuth.multiply(-1073741823, 2))?  // 不溢出
+  @assertion.assert_eq(min_val, azimuth.multiply(-1073741824, 2))?     // 溢出
 }
 
-fn assert_eq_string(expected : String, actual : String) -> Unit {
-  if expected == actual {
-    ()
-  } else {
-    // 当断言失败时，抛出一个错误
-    let _ = 1 / 0
-    ()
-  }
-}
-
-// 测试用例
-test "subtract_function_basic" {
-  // 测试基本减法功能
-  let result = subtract(10, 3)
-  assert_eq(7, result)
-}
-
-test "subtract_function_with_negative" {
-  // 测试负数减法
-  let result1 = subtract(5, -3)
-  let result2 = subtract(-5, 3)
-  assert_eq(8, result1)
-  assert_eq(-8, result2)
-}
-
-test "divide_function_basic" {
-  // 测试基本除法功能
-  let result = divide(20, 4)
-  assert_eq(5, result)
-}
-
-test "divide_function_with_remainder" {
-  // 测试有余数的除法
-  let result = divide(10, 3)
-  assert_eq(3, result)
-}
-
-test "mod_function_basic" {
-  // 测试取模运算
-  let result = mod(10, 3)
-  assert_eq(1, result)
-}
-
-test "max_function_basic" {
-  // 测试最大值函数
-  let result = max(15, 8)
-  assert_eq(15, result)
-}
-
-test "min_function_basic" {
-  // 测试最小值函数
-  let result = min(15, 8)
-  assert_eq(8, result)
-}
-
-test "abs_function_basic" {
-  // 测试绝对值函数
-  let result1 = abs(5)
-  let result2 = abs(-5)
-  assert_eq(5, result1)
-  assert_eq(5, result2)
-}
-
-test "string_length_function" {
-  // 测试字符串长度函数
-  let result = string_length("MoonBit")
-  assert_eq(7, result)
-}
-
-test "is_even_function" {
-  // 测试偶数判断函数
-  let result1 = is_even(4)
-  let result2 = is_even(5)
-  assert_eq(if result1 { 1 } else { 0 }, 1)
-  assert_eq(if result2 { 1 } else { 0 }, 0)
+test "mixed_sign_operations" {
+  // 混合符号运算测试
+  // 正负数加法
+  @assertion.assert_eq(0, azimuth.add(5, -5))?
+  @assertion.assert_eq(0, azimuth.add(-5, 5))?
+  @assertion.assert_eq(3, azimuth.add(8, -5))?
+  @assertion.assert_eq(-3, azimuth.add(-8, 5))?
+  
+  // 正负数乘法
+  @assertion.assert_eq(-25, azimuth.multiply(5, -5))?
+  @assertion.assert_eq(-25, azimuth.multiply(-5, 5))?
+  @assertion.assert_eq(-40, azimuth.multiply(8, -5))?
+  @assertion.assert_eq(40, azimuth.multiply(-8, -5))?
+  
+  // 零与正负数运算
+  @assertion.assert_eq(-5, azimuth.add(0, -5))?
+  @assertion.assert_eq(5, azimuth.add(0, 5))?
+  @assertion.assert_eq(0, azimuth.multiply(0, -5))?
+  @assertion.assert_eq(0, azimuth.multiply(0, 5))?
 }
