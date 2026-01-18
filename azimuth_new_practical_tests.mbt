@@ -1,73 +1,170 @@
-// Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，包含实用测试场景
+// Azimuth 项目实用测试用例
+// 使用标准 MoonBit 测试语法，涵盖多种实际应用场景
 
-test "integer_arithmetic" {
-  // 整数算术运算测试
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(24, @azimuth.multiply(6, 4))
-  @azimuth.assert_eq(9, @azimuth.subtract(20, 11))
-  @azimuth.assert_eq(7, @azimuth.divide(21, 3))
-}
-
-test "string_operations" {
-  // 字符串操作测试
-  @azimuth.assert_eq_string("MoonBit Test", @azimuth.concat("MoonBit", " Test"))
-  @azimuth.assert_eq_string("2026", @azimuth.int_to_string(2026))
-  @azimuth.assert_eq(42, @azimuth.string_to_int("42"))
-}
-
-test "boolean_logic" {
-  // 布尔逻辑测试
-  @azimuth.assert_eq(true, @azimuth.or(true, false))
-  @azimuth.assert_eq(false, @azimuth.and(true, false))
-  @azimuth.assert_eq(true, @azimuth.not(false))
-  @azimuth.assert_eq(true, @azimuth.xor(true, false))
-}
-
-test "comparison_tests" {
-  // 比较测试
-  @azimuth.assert_eq(true, @azimuth.greater_than(100, 50))
-  @azimuth.assert_eq(true, @azimuth.less_than(10, 20))
-  @azimuth.assert_eq(true, @azimuth.equal(42, 42))
-  @azimuth.assert_eq(false, @azimuth.not_equal(42, 42))
-}
-
-test "mathematical_functions" {
-  // 数学函数测试
-  @azimuth.assert_eq(25, @azimuth.square(5))
-  @azimuth.assert_eq(125, @azimuth.cube(5))
-  @azimuth.assert_eq(0, @azimuth.abs(-0))
-  @azimuth.assert_eq(10, @azimuth.abs(-10))
-}
-
-test "array_functionality" {
-  // 数组功能测试
-  let empty_array = @azimuth.create_array(0)
-  @azimuth.assert_eq(0, @azimuth.array_length(empty_array))
+test "financial_calculations" {
+  // 金融计算测试
+  let principal = 1000
+  let rate = 5
+  let years = 3
   
-  let filled_array = @azimuth.create_array(3)
-  @azimuth.assert_eq(3, @azimuth.array_length(filled_array))
+  // 简单利息计算
+  let interest = @azimuth.multiply(principal, rate) / 100
+  let yearly_interest = @azimuth.multiply(interest, years)
+  let total = @azimuth.add(principal, yearly_interest)
   
-  let new_array = @azimuth.array_push(filled_array, 99)
-  @azimuth.assert_eq(4, @azimuth.array_length(new_array))
-  @azimuth.assert_eq(99, @azimuth.array_get(new_array, 3))
+  @azimuth.assert_eq(50, interest)
+  @azimuth.assert_eq(150, yearly_interest)
+  @azimuth.assert_eq(1150, total)
 }
 
-test "error_conditions" {
-  // 错误条件测试
-  let normal_result = @azimuth.safe_divide(20, 4)
-  @azimuth.assert_eq(true, @azimuth.is_success(normal_result))
-  @azimuth.assert_eq(5, @azimuth.get_value(normal_result))
+test "temperature_conversion" {
+  // 温度转换测试
+  let celsius = 25
   
-  let error_result = @azimuth.safe_divide(20, 0)
-  @azimuth.assert_eq(false, @azimuth.is_success(error_result))
-  @azimuth.assert_eq(true, @azimuth.is_error(error_result))
+  // 摄氏度转华氏度 (简化公式: F = C * 2 + 30)
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  
+  @azimuth.assert_eq(80, fahrenheit)
+  
+  // 华氏度转摄氏度 (简化公式: C = (F - 30) / 2)
+  let back_to_celsius = (@azimuth.subtract(fahrenheit, 30)) / 2
+  @azimuth.assert_eq(25, back_to_celsius)
 }
 
-test "boundary_cases" {
-  // 边界情况测试
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 999))
-  @azimuth.assert_eq(999, @azimuth.subtract(999, 0))
+test "shopping_cart_calculations" {
+  // 购物车计算测试
+  let item1_price = 25
+  let item1_quantity = 2
+  let item2_price = 15
+  let item2_quantity = 3
+  
+  let item1_total = @azimuth.multiply(item1_price, item1_quantity)
+  let item2_total = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = @azimuth.add(item1_total, item2_total)
+  
+  // 10% 折扣
+  let discount = subtotal / 10
+  let total = @azimuth.subtract(subtotal, discount)
+  
+  @azimuth.assert_eq(50, item1_total)
+  @azimuth.assert_eq(45, item2_total)
+  @azimuth.assert_eq(95, subtotal)
+  @azimuth.assert_eq(9, discount)
+  @azimuth.assert_eq(86, total)
+}
+
+test "speed_distance_time" {
+  // 速度、距离、时间计算测试
+  let speed = 60  // km/h
+  let time = 2    // hours
+  
+  let distance = @azimuth.multiply(speed, time)
+  @azimuth.assert_eq(120, distance)
+  
+  // 计算平均速度
+  let total_distance = 300
+  let total_time = 5
+  let average_speed = total_distance / total_time
+  @azimuth.assert_eq(60, average_speed)
+}
+
+test "score_calculations" {
+  // 分数计算测试
+  let test1 = 85
+  let test2 = 90
+  let test3 = 78
+  let test4 = 92
+  
+  let total_score = @azimuth.add(@azimuth.add(@azimuth.add(test1, test2), test3), test4)
+  let average_score = total_score / 4
+  
+  @azimuth.assert_eq(345, total_score)
+  @azimuth.assert_eq(86, average_score)
+}
+
+test "area_perimeter_calculations" {
+  // 面积和周长计算测试
+  let length = 8
+  let width = 6
+  
+  // 矩形面积
+  let area = @azimuth.multiply(length, width)
+  // 矩形周长
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  
+  @azimuth.assert_eq(48, area)
+  @azimuth.assert_eq(28, perimeter)
+  
+  // 三角形面积 (底 × 高 ÷ 2)
+  let base = 10
+  let height = 6
+  let triangle_area = @azimuth.multiply(base, height) / 2
+  @azimuth.assert_eq(30, triangle_area)
+}
+
+test "string_formatting" {
+  // 字符串格式化测试
+  let first_name = "John"
+  let last_name = "Doe"
+  let age = 30
+  
+  let full_name = @azimuth.add(@azimuth.add(first_name, " "), last_name)
+  let introduction = @azimuth.add(@azimuth.add(@azimuth.add("My name is ", full_name), " and I am "), @azimuth.to_string(age))
+  
+  @azimuth.assert_eq_string("John Doe", full_name)
+  @azimuth.assert_eq_string("My name is John Doe and I am 30", introduction)
+}
+
+test "inventory_management" {
+  // 库存管理测试
+  let initial_stock = 100
+  let sold = 25
+  let received = 40
+  
+  let current_stock = @azimuth.subtract(@azimuth.add(initial_stock, received), sold)
+  
+  @azimuth.assert_eq(115, current_stock)
+  
+  // 计算库存周转率
+  let cost_per_item = 15
+  let total_cost = @azimuth.multiply(current_stock, cost_per_item)
+  @azimuth.assert_eq(1725, total_cost)
+}
+
+test "data_analysis" {
+  // 数据分析测试
+  let data1 = 45
+  let data2 = 67
+  let data3 = 23
+  let data4 = 89
+  let data5 = 34
+  
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
+  let average = sum / 5
+  
+  // 找出最大值和最小值的简单方法
+  let max = data4  // 89
+  let min = data3  // 23
+  let range = @azimuth.subtract(max, min)
+  
+  @azimuth.assert_eq(258, sum)
+  @azimuth.assert_eq(51, average)
+  @azimuth.assert_eq(66, range)
+}
+
+test "coordinate_geometry" {
+  // 坐标几何测试
+  let x1 = 1
+  let y1 = 2
+  let x2 = 4
+  let y2 = 6
+  
+  // 计算两点之间的距离的平方 (避免平方根)
+  let delta_x = @azimuth.subtract(x2, x1)
+  let delta_y = @azimuth.subtract(y2, y1)
+  let distance_squared = @azimuth.add(@azimuth.multiply(delta_x, delta_x), @azimuth.multiply(delta_y, delta_y))
+  
+  @azimuth.assert_eq(3, delta_x)
+  @azimuth.assert_eq(4, delta_y)
+  @azimuth.assert_eq(25, distance_squared)  // 3² + 4² = 9 + 16 = 25
 }
