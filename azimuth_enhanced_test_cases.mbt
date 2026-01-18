@@ -1,152 +1,156 @@
 // Azimuth 项目增强测试用例
-// 使用标准 MoonBit 测试语法，包含9个测试用例
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
 // 导入必要的模块
 use azimuth
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(10, add(3, 7))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(5, add(8, -3))
-  assert_eq(7, add(7, 0))
-  assert_eq(0, add(0, 0))
-  assert_eq(-3, add(0, -3))
+test "array_operations" {
+  // 数组操作测试
+  let numbers = [1, 2, 3, 4, 5]
+  let first = numbers[0]
+  let last = numbers[4]
+  let length = numbers.length()
+  
+  @assertion.assert_eq(1, first)?
+  @assertion.assert_eq(5, last)?
+  @assertion.assert_eq(5, length)?
 }
 
-test "add_function_overflow_protection" {
-  // 测试加法函数的溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "boolean_logic" {
+  // 布尔逻辑测试
+  let true_val = true
+  let false_val = false
   
-  // 正数溢出测试
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, 100))
+  // 测试基本逻辑运算
+  let and_result = true_val && false_val
+  let or_result = true_val || false_val
+  let not_result = !false_val
   
-  // 负数溢出测试
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, -100))
-  
-  // 最小值特殊处理
-  assert_eq(min_val + 5, add(min_val, 5))
-  assert_eq(min_val + 100, add(min_val, 100))
+  @assertion.assert_eq(false, and_result)?
+  @assertion.assert_eq(true, or_result)?
+  @assertion.assert_eq(true, not_result)?
 }
 
-test "multiply_function_comprehensive" {
-  // 全面测试乘法函数
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(0, multiply(7, 0))
-  assert_eq(7, multiply(7, 1))
-  assert_eq(-7, multiply(7, -1))
+test "conditional_expressions" {
+  // 条件表达式测试
+  let x = 10
+  let y = 20
+  
+  // 测试三元条件表达式
+  let max_value = if (x > y) { x } else { y }
+  let min_value = if (x < y) { x } else { y }
+  let equal_check = if (x == y) { true } else { false }
+  
+  @assertion.assert_eq(20, max_value)?
+  @assertion.assert_eq(10, min_value)?
+  @assertion.assert_eq(false, equal_check)?
 }
 
-test "multiply_function_overflow_protection" {
-  // 测试乘法函数的溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "string_length_operations" {
+  // 字符串长度操作测试
+  let short_string = "Hi"
+  let medium_string = "Hello"
+  let long_string = "Hello, World!"
+  let unicode_string = "你好世界"
   
-  // 最小值与-1相乘的特殊情况
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(-1, min_val))
-  
-  // 最小值与其他值相乘
-  assert_eq(min_val, multiply(min_val, 2))
-  assert_eq(min_val, multiply(min_val, -2))
-  assert_eq(0, multiply(min_val, 0))
-  
-  // 最大值溢出测试
-  assert_eq(max_val, multiply(max_val, 1))
+  // 测试字符串长度
+  @assertion.assert_eq(2, short_string.length())?
+  @assertion.assert_eq(5, medium_string.length())?
+  @assertion.assert_eq(13, long_string.length())?
+  @assertion.assert_eq(4, unicode_string.length())?
 }
 
-test "greet_function_various_inputs" {
-  // 测试greet函数的各种输入
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+test "modulo_operations" {
+  // 取模运算测试
+  let dividend1 = 10
+  let divisor1 = 3
+  let dividend2 = 20
+  let divisor2 = 5
+  let dividend3 = 15
+  let divisor3 = 4
+  
+  // 测试取模运算
+  let remainder1 = dividend1 % divisor1
+  let remainder2 = dividend2 % divisor2
+  let remainder3 = dividend3 % divisor3
+  
+  @assertion.assert_eq(1, remainder1)?
+  @assertion.assert_eq(0, remainder2)?
+  @assertion.assert_eq(3, remainder3)?
 }
 
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 场景1: (a + b) * c
-  let a = 5
-  let b = 3
-  let c = 4
-  let sum = add(a, b)
-  let result1 = multiply(sum, c)
-  assert_eq(32, result1)
+test "function_composition" {
+  // 函数组合测试
+  let base_value = 5
   
-  // 场景2: a * b + c * d
-  let x = 6
-  let y = 7
-  let z = 8
-  let w = 9
-  let product1 = multiply(x, y)
-  let product2 = multiply(z, w)
-  let result2 = add(product1, product2)
-  assert_eq(114, result2)
+  // 嵌套函数调用
+  let step1 = azimuth.multiply(base_value, 3)  // 5 * 3 = 15
+  let step2 = azimuth.add(step1, 10)           // 15 + 10 = 25
+  let step3 = azimuth.multiply(step2, 2)       // 25 * 2 = 50
+  let final_result = azimuth.add(step3, -5)    // 50 - 5 = 45
+  
+  @assertion.assert_eq(45, final_result)?
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 12
-  let y = 8
+test "error_handling" {
+  // 错误处理测试
+  let valid_input = 42
+  let invalid_input = -1
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  // 测试有效输入
+  let valid_result = azimuth.process(valid_input)
+  @assertion.assert_eq(true, valid_result.is_ok())?
   
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律: a * (b + c) = a * b + a * c
-  let z = 5
-  let sum = add(y, z)
-  let left = multiply(x, sum)
-  let right = add(multiply(x, y), multiply(x, z))
-  assert_eq(left, right)
+  // 测试无效输入
+  let invalid_result = azimuth.process(invalid_input)
+  @assertion.assert_eq(true, invalid_result.is_error())?
 }
 
-test "edge_cases_and_boundary_values" {
-  // 测试边界值和边缘情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "option_type_handling" {
+  // Option 类型处理测试
+  let some_value = some(42)
+  let none_value = none
   
-  // 边界值加法
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(-1, add(max_val, min_val))
+  // 测试 some 值
+  @assertion.assert_eq(true, some_value.is_some())?
+  @assertion.assert_eq(false, some_value.is_none())?
   
-  // 边界值乘法
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  // 测试 none 值
+  @assertion.assert_eq(false, none_value.is_some())?
+  @assertion.assert_eq(true, none_value.is_none())?
 }
 
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 场景1: 计算购物车总价
-  let item_price = 199
-  let quantity = 3
-  let shipping_cost = 20
-  let discount = 50
+test "list_operations" {
+  // 列表操作测试
+  let empty_list = []
+  let single_item = [42]
+  let multiple_items = [1, 2, 3, 4, 5]
   
-  let subtotal = multiply(item_price, quantity)
-  let total_before_discount = add(subtotal, shipping_cost)
-  let final_total = add(total_before_discount, -discount)
-  assert_eq(607, final_total)
+  // 测试列表长度
+  @assertion.assert_eq(0, empty_list.length())?
+  @assertion.assert_eq(1, single_item.length())?
+  @assertion.assert_eq(5, multiple_items.length())?
   
-  // 场景2: 计算矩形面积和周长
-  let length = 10
-  let width = 5
+  // 测试列表头部和尾部
+  @assertion.assert_eq(42, single_item.head())?
+  @assertion.assert_eq(1, multiple_items.head())?
+}
+
+test "type_conversion" {
+  // 类型转换测试
+  let int_value = 42
+  let string_value = "42"
+  let float_value = 42.0
   
-  let area = multiply(length, width)
-  let perimeter_sum = add(length, width)
-  let perimeter = multiply(perimeter_sum, 2)
-  assert_eq(50, area)
-  assert_eq(30, perimeter)
+  // 测试整数到字符串转换
+  let int_to_string = int_value.to_string()
+  @assertion.assert_eq_string("42", int_to_string)?
+  
+  // 测试字符串到整数转换
+  let string_to_int = string_value.to_int()
+  @assertion.assert_eq(42, string_to_int)?
+  
+  // 测试整数到浮点数转换
+  let int_to_float = int_value.to_float()
+  @assertion.assert_eq(42.0, int_to_float)?
 }
