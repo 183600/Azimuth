@@ -1,157 +1,145 @@
 // 额外的标准 MoonBit 测试用例
-// 测试 Azimuth 项目的核心功能
+// 测试实际应用场景和边缘情况
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(-3, @azimuth.add(5, -8))
-  @azimuth.assert_eq(0, @azimuth.add(10, -10))
+test "temperature_conversion" {
+  // 测试温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)  // 25 * 2 + 30 = 80
   
-  @azimuth.assert_eq(42, @azimuth.multiply(6, 7))
-  @azimuth.assert_eq(-24, @azimuth.multiply(4, -6))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  // 测试冰点温度
+  let freezing_celsius = 0
+  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
+  @azimuth.assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
 }
 
-test "string_concatenation_basic" {
-  // 测试基本字符串连接功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "bank_interest_calculation" {
+  // 测试银行利息计算：本金 + 本金 × 利率 × 年数
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  
+  // 计算利息
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  // 计算总额
+  let total = @azimuth.add(principal, interest)
+  
+  @azimuth.assert_eq(160000, total)  // 10000 + 10000 * 5 * 3 = 160000
 }
 
-test "mathematical_commutativity" {
-  // 测试数学交换律
-  let a = 17
-  let b = 23
+test "shopping_cart_total" {
+  // 测试购物车总价计算
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 计算每种商品的总价
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // 计算购物车总价
+  let cart_total = @azimuth.add(total1, total2)
   
-  // 测试负数的交换律
-  let x = -15
-  let y = 8
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  @azimuth.assert_eq(1195, cart_total)  // 299*2 + 199*3 = 598 + 597 = 1195
 }
 
-test "edge_case_zero_operations" {
-  // 测试零值边界情况
-  @azimuth.assert_eq(100, @azimuth.add(100, 0))
-  @azimuth.assert_eq(100, @azimuth.add(0, 100))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+test "area_perimeter_calculation" {
+  // 测试面积和周长计算
+  let length = 10
+  let width = 5
   
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
-  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  // 计算矩形面积
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(50, area)  // 10 * 5 = 50
   
-  @azimuth.assert_eq(-100, @azimuth.multiply(-100, 1))
-  @azimuth.assert_eq(100, @azimuth.multiply(-100, -1))
+  // 计算矩形周长
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(30, perimeter)  // 2*10 + 2*5 = 20 + 10 = 30
 }
 
-test "negative_number_calculations" {
-  // 测试负数计算
-  @azimuth.assert_eq(-25, @azimuth.add(-10, -15))
-  @azimuth.assert_eq(5, @azimuth.add(-10, 15))
-  @azimuth.assert_eq(-5, @azimuth.add(10, -15))
+test "score_calculation" {
+  // 测试得分计算
+  let base_score = 1000
+  let level_multiplier = 3
+  let bonus = 500
+  let penalty = 200
   
-  @azimuth.assert_eq(150, @azimuth.multiply(-10, -15))
-  @azimuth.assert_eq(-150, @azimuth.multiply(-10, 15))
-  @azimuth.assert_eq(-150, @azimuth.multiply(10, -15))
+  // 计算最终得分
+  let level_score = @azimuth.multiply(base_score, level_multiplier)
+  let final_score = @azimuth.add(@azimuth.add(level_score, bonus), -penalty)
+  
+  @azimuth.assert_eq(3300, final_score)  // 1000*3 + 500 - 200 = 3000 + 500 - 200 = 3300
 }
 
-test "large_number_handling" {
-  // 测试大数处理
-  let large_num1 = 1000000
-  let large_num2 = 2000000
+test "time_conversion" {
+  // 测试时间转换
+  let hours = 2
+  let minutes = 30
   
-  @azimuth.assert_eq(3000000, @azimuth.add(large_num1, large_num2))
-  @azimuth.assert_eq(2000000, @azimuth.multiply(large_num1, 2))
+  // 转换为总分钟数
+  let total_minutes = @azimuth.add(@azimuth.multiply(hours, 60), minutes)
+  @azimuth.assert_eq(150, total_minutes)  // 2*60 + 30 = 120 + 30 = 150
   
-  // 测试与边界值的大数运算
-  let max_val = 2147483647
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1000000))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 转换为总秒数
+  let total_seconds = @azimuth.multiply(total_minutes, 60)
+  @azimuth.assert_eq(9000, total_seconds)  // 150 * 60 = 9000
 }
 
-test "overflow_protection" {
-  // 测试溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "average_calculation" {
+  // 测试平均值计算
+  let score1 = 85
+  let score2 = 90
+  let score3 = 95
+  let score4 = 80
+  let score5 = 100
   
-  // 加法溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+  // 计算总分
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(score1, score2), score3), score4), score5)
+  // 计算平均值
+  let average = sum / 5
   
-  // 乘法溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+  @azimuth.assert_eq(90, average)  // (85+90+95+80+100)/5 = 450/5 = 90
 }
 
-test "real_world_application" {
-  // 测试实际应用场景：计算折扣价格
-  let original_price = 299
-  let discount_percentage = 20
-  let quantity = 3
+test "percentage_calculation" {
+  // 测试百分比计算
+  let total = 500
+  let percentage = 25  // 25%
   
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(original_price, discount_percentage) / 100
-  // 计算折扣后价格
-  let discounted_price = @azimuth.add(original_price, -discount_amount)
-  // 计算总价
-  let total_price = @azimuth.multiply(discounted_price, quantity)
+  // 计算百分比值
+  let value = @azimuth.multiply(total, percentage) / 100
+  @azimuth.assert_eq(125, value)  // 500 * 25 / 100 = 125
   
-  @azimuth.assert_eq(717, total_price)  // (299 - 60) * 3 = 239 * 3 = 717
+  // 计算增加后的值
+  let increased = @azimuth.add(total, value)
+  @azimuth.assert_eq(625, increased)  // 500 + 125 = 625
 }
 
-test "boundary_value_combinations" {
-  // 测试边界值组合
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let one = 1
-  let neg_one = -1
+test "fuel_consumption" {
+  // 测试燃油消耗计算
+  let distance = 300  // 公里
+  let fuel_efficiency = 15  // 每升汽油行驶的公里数
+  let fuel_price = 8  // 每升汽油价格
   
-  // 最大值与特殊值的运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(max_val, neg_one))
+  // 计算所需燃油量
+  let fuel_needed = distance / fuel_efficiency
+  // 计算总费用
+  let total_cost = @azimuth.multiply(fuel_needed, fuel_price)
   
-  // 最小值与特殊值的运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, one))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, neg_one))
-  
-  // 特殊值之间的运算
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, min_val))
+  @azimuth.assert_eq(160, total_cost)  // (300/15) * 8 = 20 * 8 = 160
 }
 
-test "error_handling_validation" {
-  // 测试错误处理验证
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "data_storage_calculation" {
+  // 测试数据存储计算
+  let file_size = 1024  // KB
+  let file_count = 100
+  let redundancy_factor = 3  // 冗余因子
   
-  // 验证断言函数正常工作
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(100, 100)
-  @azimuth.assert_eq_string("test", "test")
+  // 计算原始存储需求
+  let raw_storage = @azimuth.multiply(file_size, file_count)
+  // 计算包含冗余的总存储需求
+  let total_storage = @azimuth.multiply(raw_storage, redundancy_factor)
   
-  // 验证溢出处理正确性
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
-  
-  // 验证基本运算正确性
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_true(@azimuth.multiply(4, 6) == 24)
-  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
+  @azimuth.assert_eq(307200, total_storage)  // 1024 * 100 * 3 = 307200 KB
 }
