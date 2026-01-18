@@ -110,4 +110,6 @@
   "standard_moonbit_test_suite.mbt",
   "user_added_standard_tests.mbt",
   "azimuth_new_standard_test_cases.mbt",
+  "standard_moonbit_test_cases.mbt",
+  "new_standard_tests.mbt",
   "test/quality_moonbit_tests.mbt"]}
