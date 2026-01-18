@@ -1,162 +1,126 @@
-// Azimuth 项目简单单元测试用例
-// 使用标准 MoonBit 测试语法，返回 Unit 类型
+// Azimuth 项目简单单元测试
+// 使用标准 MoonBit 测试语法，不依赖外部模块
 
-test "basic_addition" {
-  // 测试基本加法
-  let result1 = 1 + 1
+test "basic_addition_tests" {
+  // 测试基本加法运算
+  let result1 = 2 + 3
   let result2 = 10 + 20
   let result3 = -5 + 15
   let result4 = 0 + 42
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
-  let _ = result4
+  // 验证结果
+  @assert_eq(5, result1)
+  @assert_eq(30, result2)
+  @assert_eq(10, result3)
+  @assert_eq(42, result4)
 }
 
-test "basic_multiplication" {
-  // 测试基本乘法
+test "basic_multiplication_tests" {
+  // 测试基本乘法运算
   let result1 = 2 * 3
   let result2 = 10 * 10
   let result3 = -5 * 4
   let result4 = 0 * 42
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
-  let _ = result4
+  // 验证结果
+  @assert_eq(6, result1)
+  @assert_eq(100, result2)
+  @assert_eq(-20, result3)
+  @assert_eq(0, result4)
 }
 
-test "mathematical_expressions" {
-  // 测试数学表达式
-  let x = 2
-  let y = 3
+test "mixed_operations_tests" {
+  // 测试混合运算
   let a = 5
-  let b = 6
-  let c = 7
-  let d = 8
+  let b = 3
+  let c = 2
   
-  let result1 = (2 + 3) * 4
-  let result2 = 10 * (5 + 3)
-  let result3 = (x - y) * (x + y)
-  let result4 = a * b + c * d
+  // (a + b) * c
+  let result1 = (a + b) * c
+  @assert_eq(16, result1)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
-  let _ = result4
+  // a * b + c
+  let result2 = a * b + c
+  @assert_eq(17, result2)
 }
 
-test "series_calculations" {
-  // 测试级数计算
-  let result1 = 1 + 2 + 3 + 4 + 5
-  let result2 = 2 + 4 + 6 + 8
-  let result3 = 1 + 4 + 9 + 16
-  let result4 = 1 + 1 + 2 + 3 + 5
+test "negative_number_tests" {
+  // 测试负数运算
+  let neg_a = -10
+  let neg_b = -5
+  let pos_c = 8
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
-  let _ = result4
+  // 负数加法
+  let neg_sum = neg_a + neg_b
+  @assert_eq(-15, neg_sum)
+  
+  // 正负数乘法
+  let mixed_product = neg_a * pos_c
+  @assert_eq(-80, mixed_product)
+  
+  // 负数乘法
+  let neg_product = neg_a * neg_b
+  @assert_eq(50, neg_product)
 }
 
-test "business_scenarios" {
-  // 测试商业场景
-  let price = 50
-  let quantity = 3
-  let discount = 10
-  let tax = 5
+test "zero_operations_tests" {
+  // 测试零值运算
+  let zero = 0
+  let positive = 42
+  let negative = -17
   
-  let subtotal = price * quantity
-  let total = subtotal - discount + tax
+  // 与零的加法
+  @assert_eq(positive, positive + zero)
+  @assert_eq(negative, negative + zero)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = subtotal
-  let _ = total
+  // 与零的乘法
+  @assert_eq(0, positive * zero)
+  @assert_eq(0, negative * zero)
+  @assert_eq(0, zero * zero)
 }
 
-test "geometry_calculations" {
-  // 测试几何计算
-  let length = 10
-  let width = 5
-  let height = 3
+test "string_concatenation_tests" {
+  // 测试字符串连接
+  let hello = "Hello"
+  let world = "World"
+  let exclamation = "!"
   
-  let area = length * width
-  let perimeter = 2 * (length + width)
-  let volume = length * width * height
+  let result1 = hello + ", " + world + exclamation
+  @assert_eq_string("Hello, World!", result1)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = area
-  let _ = perimeter
-  let _ = volume
+  // 空字符串测试
+  let empty = ""
+  let result2 = hello + empty + world
+  @assert_eq_string("HelloWorld", result2)
 }
 
-test "string_operations" {
-  // 测试字符串操作
-  let greeting = "Hello"
-  let name = "World"
-  let punctuation = "!"
+test "boolean_tests" {
+  // 测试布尔运算
+  let true_val = true
+  let false_val = false
   
-  let message = greeting + ", " + name + punctuation
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = message
+  // 基本断言
+  @assert_true(true_val)
+  @assert_false(false_val)
 }
 
-test "boundary_values" {
-  // 测试边界值
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "comparison_tests" {
+  // 测试比较运算
+  let a = 10
+  let b = 20
+  let c = 10
   
-  let result1 = max_int + 0
-  let result2 = min_int + 0
-  let result3 = max_int * 1
-  let result4 = min_int * 1
+  // 相等比较
+  @assert_true(a == c)
+  @assert_false(a == b)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
-  let _ = result4
-}
-
-test "complex_calculations" {
-  // 测试复杂计算
-  let a = 3
-  let b = 4
-  let c = 5
+  // 不等比较
+  @assert_true(a != b)
+  @assert_false(a != c)
   
-  // 计算二次方程 ax² + bx + c
-  let x = 2
-  let result = a * x * x + b * x + c
-  
-  // 计算勾股定理 a² + b² = c²
-  let pythagoras = a * a + b * b
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result
-  let _ = pythagoras
-}
-
-test "performance_patterns" {
-  // 测试性能模式
-  let base = 5
-  
-  // 重复加法
-  let result1 = base + base + base + base + base
-  
-  // 嵌套运算
-  let result2 = (2 * 3) * (4 * 5)
-  
-  // 混合运算
-  let result3 = 10 * 2 + (5 + 3) * 4
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = result1
-  let _ = result2
-  let _ = result3
+  // 大小比较
+  @assert_true(b > a)
+  @assert_true(a < b)
+  @assert_true(a >= c)
+  @assert_true(a <= c)
 }
