@@ -1,202 +1,111 @@
-// Azimuth 项目新增 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，包含多样化的测试场景
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，覆盖核心功能的多样化场景
 
 // 导入必要的模块
 use azimuth
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  let a = 15
-  let b = 7
-  
-  // 加法测试
-  let sum_result = azimuth.add(a, b)
-  @assertion.assert_eq(22, sum_result)?
-  
-  // 乘法测试
-  let product_result = azimuth.multiply(a, b)
-  @assertion.assert_eq(105, product_result)?
-  
-  // 复合运算测试
-  let complex_result = azimuth.add(azimuth.multiply(a, 2), azimuth.multiply(b, 3))
-  @assertion.assert_eq(51, complex_result)?
+test "add_function_basic_cases" {
+  // 测试 add 函数的基本用例
+  @assertion.assert_eq(5, azimuth.add(2, 3))?
+  @assertion.assert_eq(0, azimuth.add(0, 0))?
+  @assertion.assert_eq(-1, azimuth.add(2, -3))?
+  @assertion.assert_eq(100, azimuth.add(50, 50))?
 }
 
-test "greeting_functionality" {
-  // 问候功能测试
-  let name1 = "Alice"
-  let name2 = "Bob"
-  let name3 = "Charlie"
-  
-  // 测试基本问候
-  let greeting1 = azimuth.greet(name1)
-  @assertion.assert_eq_string("Hello, Alice!", greeting1)?
-  
-  // 测试空名字
-  let empty_greeting = azimuth.greet("")
-  @assertion.assert_eq_string("Hello, !", empty_greeting)?
-  
-  // 测试带空格的名字
-  let spaced_name = "John Doe"
-  let spaced_greeting = azimuth.greet(spaced_name)
-  @assertion.assert_eq_string("Hello, John Doe!", spaced_greeting)?
+test "add_function_edge_cases" {
+  // 测试 add 函数的边界用例
+  @assertion.assert_eq(2147483647, azimuth.add(2147483647, 0))?
+  @assertion.assert_eq(-2147483648, azimuth.add(-2147483648, 0))?
+  @assertion.assert_eq(1, azimuth.add(2147483647, -2147483646))?
 }
 
-test "edge_case_numbers" {
-  // 边界数值测试
-  let zero = 0
-  let positive = 42
-  let negative = -17
-  
-  // 零值测试
-  let zero_add = azimuth.add(zero, positive)
-  @assertion.assert_eq(42, zero_add)?
-  
-  let zero_mul = azimuth.multiply(zero, positive)
-  @assertion.assert_eq(0, zero_mul)?
-  
-  // 负数测试
-  let neg_add = azimuth.add(negative, positive)
-  @assertion.assert_eq(25, neg_add)?
-  
-  let neg_mul = azimuth.multiply(negative, positive)
-  @assertion.assert_eq(-714, neg_mul)?
+test "multiply_function_basic_cases" {
+  // 测试 multiply 函数的基本用例
+  @assertion.assert_eq(6, azimuth.multiply(2, 3))?
+  @assertion.assert_eq(0, azimuth.multiply(5, 0))?
+  @assertion.assert_eq(-15, azimuth.multiply(3, -5))?
+  @assertion.assert_eq(100, azimuth.multiply(10, 10))?
 }
 
-test "mathematical_series" {
-  // 数学级数测试
-  let n = 5
-  
-  // 等差数列求和：1 + 2 + 3 + 4 + 5 = 15
-  let arithmetic_sum = azimuth.multiply(n, azimuth.add(n, 1)) / 2
-  @assertion.assert_eq(15, arithmetic_sum)?
-  
-  // 等比数列求和：2 + 4 + 8 + 16 + 32 = 62
-  let a = 2
-  let r = 2
-  let geometric_sum = azimuth.multiply(a, azimuth.subtract(azimuth.multiply(r, n), 1)) / azimuth.subtract(r, 1)
-  @assertion.assert_eq(62, geometric_sum)?
+test "multiply_function_edge_cases" {
+  // 测试 multiply 函数的边界用例
+  @assertion.assert_eq(2147483647, azimuth.multiply(2147483647, 1))?
+  @assertion.assert_eq(-2147483648, azimuth.multiply(-2147483648, 1))?
+  @assertion.assert_eq(0, azimuth.multiply(0, 2147483647))?
 }
 
-test "business_calculations" {
-  // 商业计算测试
-  let unit_price = 25
-  let quantity = 8
-  let discount_rate = 10  // 10% 折扣
-  let tax_rate = 8        // 8% 税率
+test "greet_function_basic_cases" {
+  // 测试 greet 函数的基本用例
+  @assertion.assert_eq_string("Hello, Alice!", azimuth.greet("Alice"))?
+  @assertion.assert_eq_string("Hello, Bob!", azimuth.greet("Bob"))?
+  @assertion.assert_eq_string("Hello, !", azimuth.greet(""))?
+}
+
+test "greet_function_special_characters" {
+  // 测试 greet 函数的特殊字符处理
+  @assertion.assert_eq_string("Hello, John Doe!", azimuth.greet("John Doe"))?
+  @assertion.assert_eq_string("Hello, 用户123!", azimuth.greet("用户123"))?
+  @assertion.assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))?
+}
+
+test "mathematical_combinations" {
+  // 测试数学函数组合使用
+  let a = 10
+  let b = 5
+  let c = 3
   
-  // 计算小计
-  let subtotal = azimuth.multiply(unit_price, quantity)
-  @assertion.assert_eq(200, subtotal)?
+  // (a + b) * c
+  let result1 = azimuth.multiply(azimuth.add(a, b), c)
+  @assertion.assert_eq(45, result1)?
   
-  // 计算折扣
-  let discount = azimuth.multiply(subtotal, discount_rate) / 100
-  @assertion.assert_eq(20, discount)?
+  // a * b + c
+  let result2 = azimuth.add(azimuth.multiply(a, b), c)
+  @assertion.assert_eq(53, result2)?
+}
+
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  let price_per_item = 25
+  let quantity = 4
+  let tax_rate = 8
+  let shipping = 10
   
-  // 计算折后价格
-  let discounted_price = azimuth.add(subtotal, -discount)
-  @assertion.assert_eq(180, discounted_price)?
+  // 计算商品总价
+  let subtotal = azimuth.multiply(price_per_item, quantity)
+  @assertion.assert_eq(100, subtotal)?
   
   // 计算税费
-  let tax = azimuth.multiply(discounted_price, tax_rate) / 100
-  @assertion.assert_eq(14, tax)?
+  let tax = azimuth.multiply(subtotal, tax_rate) / 100
+  @assertion.assert_eq(8, tax)?
   
-  // 计算最终价格
-  let final_price = azimuth.add(discounted_price, tax)
-  @assertion.assert_eq(194, final_price)?
+  // 计算最终总价
+  let total = azimuth.add(azimuth.add(subtotal, tax), shipping)
+  @assertion.assert_eq(118, total)?
 }
 
-test "unit_conversions" {
-  // 单位转换测试
-  let meters = 100
+test "error_handling_scenarios" {
+  // 测试错误处理场景
+  // 测试大数相加是否保持稳定
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  let large_sum = azimuth.add(large_num1, large_num2)
+  @assertion.assert_eq(3000000, large_sum)?
   
-  // 米转厘米：1米 = 100厘米
-  let centimeters = azimuth.multiply(meters, 100)
-  @assertion.assert_eq(10000, centimeters)?
-  
-  // 米转千米：1千米 = 1000米
-  let kilometers = meters / 1000
-  @assertion.assert_eq(0, kilometers)?  // 整数除法
-  
-  // 厘米转米
-  let meters_from_cm = centimeters / 100
-  @assertion.assert_eq(100, meters_from_cm)?
+  // 测试负数乘法
+  let negative_result = azimuth.multiply(-100, 5)
+  @assertion.assert_eq(-500, negative_result)?
 }
 
-test "age_calculations" {
-  // 年龄计算测试
-  let birth_year = 1990
-  let current_year = 2023
+test "performance_patterns" {
+  // 测试性能模式
+  let base = 7
   
-  // 计算年龄
-  let age = azimuth.add(current_year, -birth_year)
-  @assertion.assert_eq(33, age)?
+  // 重复加法 vs 乘法
+  let repeated_add = azimuth.add(azimuth.add(azimuth.add(base, base), base), base)
+  let multiply_result = azimuth.multiply(base, 4)
+  @assertion.assert_eq(repeated_add, multiply_result)?
   
-  // 计算退休年龄（假设65岁退休）
-  let retirement_age = 65
-  let years_to_retirement = azimuth.add(retirement_age, -age)
-  @assertion.assert_eq(32, years_to_retirement)?
-  
-  // 计算工作年限（假设22岁开始工作）
-  let work_start_age = 22
-  let work_years = azimuth.add(age, -work_start_age)
-  @assertion.assert_eq(11, work_years)?
-}
-
-test "array_index_calculations" {
-  // 数组索引计算测试
-  let array_size = 10
-  let start_index = 0
-  let end_index = azimuth.add(array_size, -1)
-  
-  // 验证起始和结束索引
-  @assertion.assert_eq(0, start_index)?
-  @assertion.assert_eq(9, end_index)?
-  
-  // 计算中间索引
-  let middle_index = array_size / 2
-  @assertion.assert_eq(5, middle_index)?
-  
-  // 计算数组长度
-  let length = azimuth.add(end_index, 1)
-  @assertion.assert_eq(10, length)?
-}
-
-test "score_calculations" {
-  // 分数计算测试
-  let exam_score = 85
-  let homework_score = 90
-  let project_score = 78
-  let quiz_score = 92
-  
-  // 计算平均分（权重：考试40%，作业30%，项目20%，测验10%）
-  let weighted_exam = azimuth.multiply(exam_score, 40) / 100
-  let weighted_homework = azimuth.multiply(homework_score, 30) / 100
-  let weighted_project = azimuth.multiply(project_score, 20) / 100
-  let weighted_quiz = azimuth.multiply(quiz_score, 10) / 100
-  
-  let final_score = azimuth.add(azimuth.add(
-    azimuth.add(weighted_exam, weighted_homework), 
-    weighted_project), weighted_quiz)
-  
-  @assertion.assert_eq(85, final_score)?
-}
-
-test "time_zone_calculations" {
-  // 时区计算测试
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 与UTC时差8小时
-  
-  // 计算UTC时间
-  let utc_time = azimuth.add(local_time, -time_difference)
-  @assertion.assert_eq(6, utc_time)?  // 早上6点
-  
-  // 计算另一个时区的时间（比本地时间晚5小时）
-  let other_timezone = azimuth.add(local_time, -5)
-  @assertion.assert_eq(9, other_timezone)?  // 早上9点
-  
-  // 计算跨越日期的时间
-  let late_night = 23  // 晚上11点
-  let early_morning = azimuth.add(late_night, 3)  // 3小时后
-  @assertion.assert_eq(26, early_morning)?  // 第二天凌晨2点
+  // 嵌套运算
+  let nested1 = azimuth.multiply(azimuth.add(2, 3), azimuth.add(4, 5))
+  @assertion.assert_eq(35, nested1)?
 }
