@@ -178,5 +178,6 @@
     "azimuth_standard_test_suite.mbt",
           "standard_test_cases.mbt",
           "standard_moonbit_tests_v15.mbt",
-          "standard_moonbit_tests_v16.mbt"
+          "standard_moonbit_tests_v16.mbt",
+          "azimuth_additional_edge_case_tests.mbt"
         ]}
