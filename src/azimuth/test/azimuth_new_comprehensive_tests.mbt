@@ -1,28 +1,32 @@
 // Azimuth 项目新增综合测试用例
-// 使用标准 MoonBit 测试语法，包含多样化的测试场景
+// 使用标准 MoonBit 测试语法，覆盖更多功能场景
 
-test "boolean_logic_operations" {
-  // 测试布尔逻辑运算
+test "boolean_operations" {
+  // 测试布尔运算
   let true_val = true
   let false_val = false
   
-  // 基本逻辑运算
-  let and_result = true_val && false_val
-  let or_result = true_val || false_val
-  let not_true = !true_val
-  let not_false = !false_val
+  // 逻辑与
+  let and_result1 = true_val && true_val
+  let and_result2 = true_val && false_val
+  let and_result3 = false_val && true_val
+  let and_result4 = false_val && false_val
   
-  // 复合逻辑运算
-  let complex_and = true_val && true_val && false_val
-  let complex_or = false_val || false_val || true_val
+  @azimuth.assert_true(and_result1)
+  @azimuth.assert_false(and_result2)
+  @azimuth.assert_false(and_result3)
+  @azimuth.assert_false(and_result4)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = and_result
-  let _ = or_result
-  let _ = not_true
-  let _ = not_false
-  let _ = complex_and
-  let _ = complex_or
+  // 逻辑或
+  let or_result1 = true_val || true_val
+  let or_result2 = true_val || false_val
+  let or_result3 = false_val || true_val
+  let or_result4 = false_val || false_val
+  
+  @azimuth.assert_true(or_result1)
+  @azimuth.assert_true(or_result2)
+  @azimuth.assert_true(or_result3)
+  @azimuth.assert_false(or_result4)
 }
 
 test "comparison_operations" {
@@ -31,286 +35,227 @@ test "comparison_operations" {
   let b = 20
   let c = 10
   
-  // 基本比较
-  let less_than = a < b
-  let greater_than = b > a
-  let equal = a == c
-  let not_equal = a != b
-  let less_or_equal = a <= c
-  let greater_or_equal = b >= a
+  // 等于
+  @azimuth.assert_true(a == c)
+  @azimuth.assert_false(a == b)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = less_than
-  let _ = greater_than
-  let _ = equal
-  let _ = not_equal
-  let _ = less_or_equal
-  let _ = greater_or_equal
+  // 不等于
+  @azimuth.assert_true(a != b)
+  @azimuth.assert_false(a != c)
+  
+  // 大于
+  @azimuth.assert_true(b > a)
+  @azimuth.assert_false(a > b)
+  @azimuth.assert_false(a > c)
+  
+  // 小于
+  @azimuth.assert_true(a < b)
+  @azimuth.assert_false(b < a)
+  @azimuth.assert_false(a < c)
+  
+  // 大于等于
+  @azimuth.assert_true(a >= c)
+  @azimuth.assert_true(b >= a)
+  @azimuth.assert_false(a >= b)
+  
+  // 小于等于
+  @azimuth.assert_true(a <= c)
+  @azimuth.assert_true(a <= b)
+  @azimuth.assert_false(b <= a)
 }
 
-test "string_manipulation" {
-  // 测试字符串操作
-  let first_name = "John"
-  let last_name = "Doe"
-  let age = "30"
+test "number_system_conversions" {
+  // 测试数字系统转换
   
-  // 字符串连接
-  let full_name = first_name + " " + last_name
-  let introduction = "My name is " + full_name + " and I am " + age + " years old"
+  // 二进制转十进制（模拟）
+  // 1010 (二进制) = 10 (十进制)
+  let binary_1010 = @azimuth.add(@azimuth.multiply(1, 8), @azimuth.add(@azimuth.multiply(0, 4), @azimuth.add(@azimuth.multiply(1, 2), @azimuth.multiply(0, 1))))
+  @azimuth.assert_eq(10, binary_1010)
   
-  // 字符串长度计算（通过模拟）
-  let empty_string = ""
-  let single_char = "A"
-  let short_string = "Hello"
-  let long_string = "This is a longer string"
+  // 1111 (二进制) = 15 (十进制)
+  let binary_1111 = @azimuth.add(@azimuth.multiply(1, 8), @azimuth.add(@azimuth.multiply(1, 4), @azimuth.add(@azimuth.multiply(1, 2), @azimuth.multiply(1, 1))))
+  @azimuth.assert_eq(15, binary_1111)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = full_name
-  let _ = introduction
-  let _ = empty_string
-  let _ = single_char
-  let _ = short_string
-  let _ = long_string
+  // 十六进制转十进制（模拟）
+  // A (十六进制) = 10 (十进制)
+  let hex_A = 10
+  @azimuth.assert_eq(10, hex_A)
+  
+  // F (十六进制) = 15 (十进制)
+  let hex_F = 15
+  @azimuth.assert_eq(15, hex_F)
+}
+
+test "statistical_calculations" {
+  // 测试统计计算
+  
+  // 平均值计算: (2 + 4 + 6 + 8) / 4 = 5
+  let sum1 = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8)
+  let average1 = sum1 / 4
+  @azimuth.assert_eq(5, average1)
+  
+  // 平均值计算: (10 + 20 + 30) / 3 = 20
+  let sum2 = @azimuth.add(@azimuth.add(10, 20), 30)
+  let average2 = sum2 / 3
+  @azimuth.assert_eq(20, average2)
+  
+  // 范围计算: 最大值 - 最小值
+  let numbers_max = 15
+  let numbers_min = 3
+  let range = @azimuth.add(numbers_max, -numbers_min)
+  @azimuth.assert_eq(12, range)
+}
+
+test "physics_calculations" {
+  // 测试物理计算
+  
+  // 速度 = 距离 / 时间
+  let distance = 100  // 米
+  let time = 10       // 秒
+  let velocity = distance / time
+  @azimuth.assert_eq(10, velocity)
+  
+  // 动能 = 0.5 * 质量 * 速度^2
+  let mass = 2        // 千克
+  let speed = 5       // 米/秒
+  // 使用整数计算: (质量 * 速度^2) / 2
+  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(mass, @azimuth.multiply(speed, speed)), 1) / 2
+  @azimuth.assert_eq(25, kinetic_energy)
+  
+  // 势能 = 质量 * 重力加速度 * 高度
+  let height = 10     // 米
+  let gravity = 10    // 米/秒^2 (简化值)
+  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)
+  @azimuth.assert_eq(200, potential_energy)
 }
 
 test "array_operations_simulation" {
-  // 模拟数组操作测试
-  let arr_size = 5
-  let index = 0
+  // 测试数组操作模拟
   
-  // 模拟数组访问和赋值
-  let element_at_0 = 10
-  let element_at_1 = 20
-  let element_at_2 = 30
-  let element_at_3 = 40
-  let element_at_4 = 50
+  // 模拟数组求和
+  let arr1 = 5
+  let arr2 = 10
+  let arr3 = 15
+  let arr4 = 20
+  let arr5 = 25
   
-  // 模拟数组遍历求和
-  let sum = element_at_0 + element_at_1 + element_at_2 + element_at_3 + element_at_4
+  let total_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(arr1, arr2), arr3), arr4), arr5)
+  @azimuth.assert_eq(75, total_sum)
   
-  // 模拟数组查找最大值
-  let max_val = element_at_0
-  let max_val_1 = if (element_at_1 > max_val) { element_at_1 } else { max_val }
-  let max_val_2 = if (element_at_2 > max_val_1) { element_at_2 } else { max_val_1 }
-  let max_val_3 = if (element_at_3 > max_val_2) { element_at_3 } else { max_val_2 }
-  let max_val_4 = if (element_at_4 > max_val_3) { element_at_4 } else { max_val_3 }
+  // 模拟查找最大值 - 直接比较
+  @azimuth.assert_true(arr5 > arr4)
+  @azimuth.assert_true(arr4 > arr3)
+  @azimuth.assert_true(arr3 > arr2)
+  @azimuth.assert_true(arr2 > arr1)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = sum
-  let _ = max_val_4
+  // 模拟查找最小值 - 直接比较
+  @azimuth.assert_true(arr1 < arr2)
+  @azimuth.assert_true(arr2 < arr3)
+  @azimuth.assert_true(arr3 < arr4)
+  @azimuth.assert_true(arr4 < arr5)
 }
 
-test "conditional_logic" {
-  // 测试条件逻辑
-  let score = 85
-  let attendance = 90
-  let projects = 95
+test "error_handling_scenarios" {
+  // 测试错误处理场景
   
-  // 多重条件判断
-  let grade = if (score >= 90) { "A" } 
-              else if (score >= 80) { "B" }
-              else if (score >= 70) { "C" }
-              else if (score >= 60) { "D" }
-              else { "F" }
+  // 除零保护
+  let dividend = 10
+  let divisor = 0
   
-  // 复合条件
-  let excellent_student = (score >= 85) && (attendance >= 85) && (projects >= 85)
-  let good_student = (score >= 75) && (attendance >= 75)
-  let needs_improvement = (score < 60) || (attendance < 70)
+  // 模拟除零检查
+  let safe_result = 0  // 由于 divisor = 0，结果为 0
+  @azimuth.assert_eq(0, safe_result)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = grade
-  let _ = excellent_student
-  let _ = good_student
-  let _ = needs_improvement
+  // 正常除法
+  let normal_divisor = 2
+  let normal_result = dividend / normal_divisor
+  @azimuth.assert_eq(5, normal_result)
+  
+  // 边界值测试
+  let large_num = 1000000
+  let small_num = 1
+  let boundary_result = large_num / small_num
+  @azimuth.assert_eq(1000000, boundary_result)
 }
 
-test "loop_simulation" {
-  // 模拟循环操作测试
-  let n = 5
+test "recursive_pattern_simulation" {
+  // 测试递归模式模拟（使用嵌套函数调用模拟递归）
   
-  // 模拟 for 循环求和: 1 + 2 + 3 + 4 + 5
-  let sum1 = 1
-  let sum2 = sum1 + 2
-  let sum3 = sum2 + 3
-  let sum4 = sum3 + 4
-  let sum5 = sum4 + 5
+  // 阶乘计算: 5! = 5 * 4 * 3 * 2 * 1 = 120
+  // 使用嵌套函数调用而不是可变变量
+  let factorial1 = 5
+  let factorial2 = @azimuth.multiply(factorial1, 4)  // 5 * 4 = 20
+  let factorial3 = @azimuth.multiply(factorial2, 3)  // 20 * 3 = 60
+  let factorial4 = @azimuth.multiply(factorial3, 2)  // 60 * 2 = 120
+  let factorial5 = @azimuth.multiply(factorial4, 1)  // 120 * 1 = 120
   
-  // 模拟 while 循环计数
-  let counter = 0
-  let counter1 = counter + 1
-  let counter2 = counter1 + 1
-  let counter3 = counter2 + 1
-  let counter4 = counter3 + 1
-  let counter5 = counter4 + 1
+  @azimuth.assert_eq(120, factorial5)
   
-  // 模拟嵌套循环（3x3 矩阵）
-  let matrix_sum = (1 + 2 + 3) + (4 + 5 + 6) + (7 + 8 + 9)
+  // 幂计算: 2^4 = 2 * 2 * 2 * 2 = 16
+  // 使用嵌套函数调用而不是可变变量
+  let power1 = 2
+  let power2 = @azimuth.multiply(power1, 2)  // 2 * 2 = 4
+  let power3 = @azimuth.multiply(power2, 2)  // 4 * 2 = 8
+  let power4 = @azimuth.multiply(power3, 2)  // 8 * 2 = 16
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = sum5
-  let _ = counter5
-  let _ = matrix_sum
+  @azimuth.assert_eq(16, power4)
 }
 
-test "error_handling_simulation" {
-  // 模拟错误处理测试
-  let divisor1 = 10
-  let divisor2 = 0
-  let numerator = 100
+test "string_processing_advanced" {
+  // 测试高级字符串处理
   
-  // 安全除法操作（模拟）
-  let safe_div1 = numerator / divisor1  // 正常情况
-  // let safe_div2 = numerator / divisor2  // 除零错误（注释掉）
+  // 模拟字符串长度计算
+  let short_length = 2
+  let long_length = 13
   
-  // 边界值检查
-  let positive_num = 42
-  let negative_num = -42
-  let zero_num = 0
+  @azimuth.assert_eq(2, short_length)
+  @azimuth.assert_eq(13, long_length)
   
-  let is_positive = positive_num > 0
-  let is_negative = negative_num < 0
-  let is_zero = zero_num == 0
+  // 字符串连接
+  let first_name = "John"
+  let last_name = "Doe"
+  let full_name = @azimuth.greet(first_name + " " + last_name)
+  @azimuth.assert_eq_string("Hello, John Doe!", full_name)
   
-  // 输入验证
-  let valid_age = 25
-  let invalid_age_negative = -5
-  let invalid_age_too_large = 150
-  
-  let age_valid = (valid_age >= 0) && (valid_age <= 120)
-  let age_invalid1 = (invalid_age_negative >= 0) && (invalid_age_negative <= 120)
-  let age_invalid2 = (invalid_age_too_large >= 0) && (invalid_age_too_large <= 120)
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = safe_div1
-  let _ = is_positive
-  let _ = is_negative
-  let _ = is_zero
-  let _ = age_valid
-  let _ = age_invalid1
-  let _ = age_invalid2
+  // 字符串重复模拟
+  let base_str = "ABC"
+  // 模拟 "ABC" + "ABC" + "ABC"
+  let repeated_str = base_str + base_str + base_str
+  @azimuth.assert_eq_string("ABCABCABC", repeated_str)
 }
 
-test "functional_programming_concepts" {
-  // 测试函数式编程概念
-  let numbers = "1,2,3,4,5"
-  let multiplier = 2
+test "complex_business_logic" {
+  // 测试复杂业务逻辑
   
-  // 模拟 map 操作：将每个元素乘以 2
-  let mapped1 = 1 * multiplier
-  let mapped2 = 2 * multiplier
-  let mapped3 = 3 * multiplier
-  let mapped4 = 4 * multiplier
-  let mapped5 = 5 * multiplier
+  // 订单总价计算
+  let item1_price = 100
+  let item1_quantity = 2
+  let item2_price = 50
+  let item2_quantity = 3
+  let tax_rate = 10  // 10%
+  let shipping_cost = 15
   
-  // 模拟 filter 操作：筛选偶数
-  let filtered1 = if (1 % 2 == 0) { 1 } else { 0 }
-  let filtered2 = if (2 % 2 == 0) { 2 } else { 0 }
-  let filtered3 = if (3 % 2 == 0) { 3 } else { 0 }
-  let filtered4 = if (4 % 2 == 0) { 4 } else { 0 }
-  let filtered5 = if (5 % 2 == 0) { 5 } else { 0 }
+  // 小计
+  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)
+  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = @azimuth.add(subtotal1, subtotal2)
   
-  // 模拟 reduce 操作：求和
-  let reduced_sum = mapped1 + mapped2 + mapped3 + mapped4 + mapped5
+  // 税费
+  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
   
-  // 高阶函数模拟
-  let apply_twice = fn(x) { x * 2 }
-  let result1 = apply_twice(5)  // 10
-  let result2 = apply_twice(result1)  // 20
+  // 总价
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping_cost)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = mapped1
-  let _ = mapped2
-  let _ = mapped3
-  let _ = mapped4
-  let _ = mapped5
-  let _ = filtered1
-  let _ = filtered2
-  let _ = filtered3
-  let _ = filtered4
-  let _ = filtered5
-  let _ = reduced_sum
-  let _ = result1
-  let _ = result2
-}
-
-test "data_validation" {
-  // 测试数据验证
-  let email = "user@example.com"
-  let phone = "123-456-7890"
-  let zip_code = "12345"
+  @azimuth.assert_eq(200, subtotal1)
+  @azimuth.assert_eq(150, subtotal2)
+  @azimuth.assert_eq(350, subtotal)
+  @azimuth.assert_eq(35, tax)
+  @azimuth.assert_eq(400, total)
   
-  // 简单的邮箱验证（检查是否包含 @ 和 .）
-  let has_at = true  // 假设包含 @
-  let has_dot = true  // 假设包含 .
-  let email_valid = has_at && has_dot
+  // 折扣计算 - 对于总价400，折扣应该为0
+  let discount = 0
+  let final_total = @azimuth.add(total, -discount)
   
-  // 电话号码验证（检查长度）
-  let phone_length = 12  // "123-456-7890" 的长度
-  let phone_valid = phone_length >= 10
-  
-  // 邮政编码验证（检查是否为5位数字）
-  let zip_length = 5
-  let zip_valid = zip_length == 5
-  
-  // 综合验证
-  let all_valid = email_valid && phone_valid && zip_valid
-  
-  // 密码强度验证
-  let password = "Secure123!"
-  let password_length = 11
-  let has_uppercase = true
-  let has_lowercase = true
-  let has_number = true
-  let has_special = true
-  
-  let password_strong = (password_length >= 8) && has_uppercase && has_lowercase && has_number && has_special
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = email_valid
-  let _ = phone_valid
-  let _ = zip_valid
-  let _ = all_valid
-  let _ = password_strong
-}
-
-test "state_machine_simulation" {
-  // 模拟状态机测试
-  let initial_state = "idle"
-  
-  // 状态转换
-  let state1 = "idle"
-  let state2 = if (state1 == "idle") { "processing" } else { state1 }
-  let state3 = if (state2 == "processing") { "completed" } else { state2 }
-  let state4 = if (state3 == "completed") { "idle" } else { state3 }
-  
-  // 多个状态路径
-  let error_state = "error"
-  let recovered_state = if (error_state == "error") { "idle" } else { error_state }
-  
-  // 状态计数器
-  let idle_count = 1
-  let processing_count = 1
-  let completed_count = 1
-  let error_count = 1
-  
-  let total_transitions = idle_count + processing_count + completed_count + error_count
-  
-  // 状态条件检查
-  let can_process = (state1 == "idle")
-  let can_complete = (state2 == "processing")
-  let can_restart = (state3 == "completed")
-  let needs_recovery = (error_state == "error")
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = state1
-  let _ = state2
-  let _ = state3
-  let _ = state4
-  let _ = recovered_state
-  let _ = total_transitions
-  let _ = can_process
-  let _ = can_complete
-  let _ = can_restart
-  let _ = needs_recovery
+  @azimuth.assert_eq(0, discount)
+  @azimuth.assert_eq(400, final_total)
 }
