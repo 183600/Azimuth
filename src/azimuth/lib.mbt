@@ -3244,4 +3244,182 @@ test "statistical_analysis_functions" {
   assert_eq(40, range)
 }
 
+// 新增的10个 MoonBit 测试用例
+test "addition_commutativity" {
+  // 测试正数加法交换律
+  assert_eq(15, add(7, 8))
+  assert_eq(15, add(8, 7))
+  
+  // 测试负数加法交换律
+  assert_eq(-15, add(-7, -8))
+  assert_eq(-15, add(-8, -7))
+  
+  // 测试混合符号加法交换律
+  assert_eq(-1, add(7, -8))
+  assert_eq(-1, add(-8, 7))
+}
+
+test "multiplication_distributivity" {
+  // 测试 a × (b + c) = a × b + a × c
+  let a = 5
+  let b = 3
+  let c = 2
+  
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+  
+  // 测试 (a + b) × c = a × c + b × c
+  let d = 4
+  let left_side2 = multiply(add(a, b), d)
+  let right_side2 = add(multiply(a, d), multiply(b, d))
+  assert_eq(left_side2, right_side2)
+}
+
+test "string_processing_edge_cases" {
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, &%$#@!", greet("&%$#@"))
+  
+  // 测试包含空格的字符串
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  
+  // 测试包含数字的字符串
+  assert_eq_string("Hello, 2023!", greet("2023"))
+  
+  // 测试包含Unicode字符的字符串
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+}
+
+test "boundary_value_operations" {
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值与1的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  
+  // 测试最小值与0的运算
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  
+  // 测试最大值与最小值的运算
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "discount_price_calculation" {
+  let original_price = 1000
+  let discount_percent = 20
+  
+  // 计算折扣金额
+  let discount_amount = multiply(original_price, discount_percent) / 100
+  // 计算折后价格
+  let discounted_price = add(original_price, -discount_amount)
+  
+  assert_eq(200, discount_amount)
+  assert_eq(800, discounted_price)
+  
+  // 测试多件商品的总折扣
+  let quantity = 3
+  let total_original = multiply(original_price, quantity)
+  let total_discount = multiply(discount_amount, quantity)
+  let total_final = add(total_original, -total_discount)
+  
+  assert_eq(2400, total_final)
+}
+
+test "average_score_calculation" {
+  // 计算五个科目的平均分
+  let score1 = 85
+  let score2 = 90
+  let score3 = 78
+  let score4 = 92
+  let score5 = 88
+  
+  // 计算总分
+  let total_score = add(add(add(add(score1, score2), score3), score4), score5)
+  // 计算平均分
+  let average_score = total_score / 5
+  
+  assert_eq(433, total_score)
+  assert_eq(86, average_score)  // 整数除法，向下取整
+}
+
+test "compound_calculations" {
+  // 计算 (a + b) × (c - d) + e × f
+  let a = 10
+  let b = 5
+  let c = 20
+  let d = 8
+  let e = 3
+  let f = 7
+  
+  let sum_ab = add(a, b)  // 15
+  let diff_cd = add(c, -d)  // 12
+  let product_ab_cd = multiply(sum_ab, diff_cd)  // 180
+  let product_ef = multiply(e, f)  // 21
+  let result = add(product_ab_cd, product_ef)  // 201
+  
+  assert_eq(201, result)
+}
+
+test "conditional_logic" {
+  // 根据条件选择不同的计算方式
+  let x = 15
+  let y = 10
+  
+  // 如果 x > y，计算 x + y，否则计算 x × y
+  let condition1 = x > y
+  let result1 = if condition1 { add(x, y) } else { multiply(x, y) }
+  assert_eq(25, result1)
+  
+  // 如果 x < y，计算 x + y，否则计算 x × y
+  let a = 5
+  let b = 10
+  let condition2 = a < b
+  let result2 = if condition2 { add(a, b) } else { multiply(a, b) }
+  assert_eq(15, result2)
+}
+
+test "sequence_calculations" {
+  // 计算等差数列的和：1 + 2 + 3 + ... + 10
+  let n = 10
+  // 使用公式：n × (n + 1) / 2
+  let arithmetic_sum = multiply(n, add(n, 1)) / 2
+  assert_eq(55, arithmetic_sum)
+  
+  // 计算等比数列的和：1 + 2 + 4 + 8 + 16
+  // 手动计算
+  let term1 = 1
+  let term2 = multiply(term1, 2)
+  let term3 = multiply(term2, 2)
+  let term4 = multiply(term3, 2)
+  let term5 = multiply(term4, 2)
+  let geometric_sum = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(31, geometric_sum)
+}
+
+test "error_handling_and_boundary_checks" {
+  // 测试断言函数的正确使用
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+  
+  // 测试溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 确保溢出被正确处理
+  assert_true(add(max_val, 1) == max_val)
+  assert_true(add(min_val, -1) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, -1) == min_val)
+  
+  // 测试边界值附近的运算
+  assert_eq(2147483646, add(max_val, -1))
+  assert_eq(-2147483647, add(min_val, 1))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+}
+
 
