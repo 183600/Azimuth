@@ -190,5 +190,6 @@
         "azimuth_standard_unit_tests.mbt",
         "simple_test_add.mbt",
         "standard_moonbit_tests_v19.mbt",
-        "azimuth_standard_tests.mbt"
+        "azimuth_standard_tests.mbt",
+        "standard_tests.mbt"
         ]}
