@@ -32,6 +32,7 @@
     "test_enhanced_moonbit.mbt",
     "moonbit_test_suite_new.mbt",
     "user_standard_tests.mbt",
+    "user_standard_moonbit_tests.mbt",
     "comprehensive_moonbit_test_suite.mbt",
     "standard_moonbit_tests_v3.mbt",
     "standard_moonbit_tests_v2.mbt",
