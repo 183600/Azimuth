@@ -1,136 +1,133 @@
-// Azimuth 项目标准测试用例
-// 使用标准 MoonBit 测试语法，测试核心功能
+// Azimuth 项目标准测试用例集
+// 使用标准 MoonBit 测试语法，覆盖核心功能
 
-test "add_function_basic_addition" {
-  // 测试基本的加法功能
-  let result1 = azimuth::add(5, 3)
-  assert_eq(result1, 8)
-  
-  let result2 = azimuth::add(10, 20)
-  assert_eq(result2, 30)
-  
-  let result3 = azimuth::add(0, 7)
-  assert_eq(result3, 7)
+test "basic_addition_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "add_function_with_negative_numbers" {
-  // 测试负数加法
-  let result1 = azimuth::add(-5, 3)
-  assert_eq(result1, -2)
-  
-  let result2 = azimuth::add(10, -3)
-  assert_eq(result2, 7)
-  
-  let result3 = azimuth::add(-8, -2)
-  assert_eq(result3, -10)
+test "basic_multiplication_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(6, multiply(-2, -3))
 }
 
-test "multiply_function_basic_multiplication" {
-  // 测试基本的乘法功能
-  let result1 = azimuth::multiply(4, 5)
-  assert_eq(result1, 20)
-  
-  let result2 = azimuth::multiply(7, 3)
-  assert_eq(result2, 21)
-  
-  let result3 = azimuth::multiply(10, 0)
-  assert_eq(result3, 0)
+test "greet_function_basic" {
+  // 测试greet函数基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "multiply_function_with_negative_numbers" {
-  // 测试负数乘法
-  let result1 = azimuth::multiply(-4, 5)
-  assert_eq(result1, -20)
+test "mathematical_expressions" {
+  // 测试数学表达式
+  // (2 + 3) * 4 = 20
+  let result1 = multiply(add(2, 3), 4)
+  assert_eq(20, result1)
   
-  let result2 = azimuth::multiply(6, -3)
-  assert_eq(result2, -18)
-  
-  let result3 = azimuth::multiply(-2, -4)
-  assert_eq(result3, 8)
+  // 5 * (6 + 7) = 65
+  let result2 = multiply(5, add(6, 7))
+  assert_eq(65, result2)
 }
 
-test "greet_function_with_different_names" {
-  // 测试问候功能
-  let result1 = azimuth::greet("World")
-  assert_eq_string(result1, "Hello, World!")
+test "boundary_values" {
+  // 测试边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let result2 = azimuth::greet("Alice")
-  assert_eq_string(result2, "Hello, Alice!")
+  // 测试最大值加法
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
   
-  let result3 = azimuth::greet("")
-  assert_eq_string(result3, "Hello, !")
+  // 测试最小值加法
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+  
+  // 测试最大值乘法
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(max_val, multiply(1, max_val))
+  
+  // 测试最小值乘法
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(1, min_val))
 }
 
-test "edge_case_zero_operations" {
-  // 测试零的边界情况
-  let add_result1 = azimuth::add(0, 0)
-  assert_eq(add_result1, 0)
+test "string_operations_edge_cases" {
+  // 测试字符串操作边界情况
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, Test@123!", greet("Test@123"))
+  assert_eq_string("Hello, 用户测试!", greet("用户测试"))
+  assert_eq_string("Hello,   spaced   !", greet("  spaced  "))
   
-  let add_result2 = azimuth::add(0, 15)
-  assert_eq(add_result2, 15)
-  
-  let add_result3 = azimuth::add(15, 0)
-  assert_eq(add_result3, 15)
-  
-  let mul_result1 = azimuth::multiply(0, 0)
-  assert_eq(mul_result1, 0)
-  
-  let mul_result2 = azimuth::multiply(0, 15)
-  assert_eq(mul_result2, 0)
-  
-  let mul_result3 = azimuth::multiply(15, 0)
-  assert_eq(mul_result3, 0)
-}
-
-test "edge_case_one_operations" {
-  // 测试一的边界情况
-  let mul_result1 = azimuth::multiply(1, 15)
-  assert_eq(mul_result1, 15)
-  
-  let mul_result2 = azimuth::multiply(15, 1)
-  assert_eq(mul_result2, 15)
-  
-  let mul_result3 = azimuth::multiply(1, 1)
-  assert_eq(mul_result3, 1)
+  // 测试包含引号的字符串
+  assert_eq_string("Hello, \"Quoted\"!", greet("\"Quoted\""))
 }
 
 test "complex_calculations" {
   // 测试复杂计算
-  // (2 + 3) * 4 = 5 * 4 = 20
-  let step1 = azimuth::add(2, 3)
-  let result1 = azimuth::multiply(step1, 4)
-  assert_eq(result1, 20)
+  // 计算矩形周长：2 * (长 + 宽)
+  let length = 10
+  let width = 5
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(30, perimeter)
   
-  // 5 * (6 + 7) = 5 * 13 = 65
-  let step2 = azimuth::add(6, 7)
-  let result2 = azimuth::multiply(5, step2)
-  assert_eq(result2, 65)
-  
-  // (8 * 2) + (3 * 4) = 16 + 12 = 28
-  let step3 = azimuth::multiply(8, 2)
-  let step4 = azimuth::multiply(3, 4)
-  let result3 = azimuth::add(step3, step4)
-  assert_eq(result3, 28)
+  // 计算梯形面积：(上底 + 下底) * 高 / 2
+  let top_base = 6
+  let bottom_base = 10
+  let height = 4
+  let trapezoid_area = multiply(add(top_base, bottom_base), height) / 2
+  assert_eq(32, trapezoid_area)
 }
 
-test "boolean_logic_simulation" {
-  // 使用数字模拟布尔逻辑测试
-  let true_val = 1
-  let false_val = 0
+test "sequential_operations" {
+  // 测试连续操作
+  // 连续加法：1 + 2 + 3 + 4 + 5 = 15
+  let sum_result = add(add(add(add(1, 2), 3), 4), 5)
+  assert_eq(15, sum_result)
   
-  // 模拟 AND: true AND false = false
-  let and_result = azimuth::multiply(true_val, false_val)
-  assert_eq(and_result, 0)
+  // 连续乘法：1 * 2 * 3 * 4 = 24
+  let product_result = multiply(multiply(multiply(1, 2), 3), 4)
+  assert_eq(24, product_result)
   
-  // 模拟 OR: true OR false = true (使用加法，如果结果>0则为真)
-  let or_result = azimuth::add(true_val, false_val)
-  assert_true(or_result > 0)
+  // 混合操作：(1 + 2) * (3 + 4) = 21
+  let mixed_result = multiply(add(1, 2), add(3, 4))
+  assert_eq(21, mixed_result)
+}
+
+test "real_world_scenarios" {
+  // 测试真实世界场景
+  // 场景1：计算购物车总价
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
   
-  // 模拟 NOT: NOT true = false (1 - true = false)
-  let not_true = azimuth::add(1, -true_val)
-  assert_eq(not_true, 0)
+  let total1 = multiply(item1_price, item1_quantity)
+  let total2 = multiply(item2_price, item2_quantity)
+  let cart_total = add(total1, total2)
   
-  // 模拟 NOT: NOT false = true (1 - false = true)
-  let not_false = azimuth::add(1, -false_val)
-  assert_eq(not_false, 1)
+  assert_eq(697, cart_total)  // 199*2 + 299*1 = 398 + 299 = 697
+  
+  // 场景2：温度转换（摄氏度转华氏度，简化版：F = C * 2 + 30）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(80, fahrenheit)  // 25 * 2 + 30 = 80
+}
+
+test "assert_functions" {
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
+  
+  // 测试数学运算的断言
+  assert_true(add(2, 3) == 5)
+  assert_true(multiply(4, 5) == 20)
+  assert_false(add(2, 3) == 6)
 }
