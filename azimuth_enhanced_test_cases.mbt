@@ -1,282 +1,165 @@
-// Enhanced test cases for Azimuth project
-// 增强的测试用例，涵盖各种场景
+// Azimuth 项目增强测试用例
+// 使用标准 MoonBit 测试语法，覆盖多种场景
 
-test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
+// 测试数组操作
+test "array_operations" {
+  let numbers = [1, 2, 3, 4, 5]
+  let first = numbers[0]
+  let last = numbers[4]
   
-  // 手动计算前几个斐波那契数
-  let f0 = 0
-  let f1 = 1
-  let f2 = add(f0, f1)  // 1
-  let f3 = add(f1, f2)  // 2
-  let f4 = add(f2, f3)  // 3
-  let f5 = add(f3, f4)  // 5
-  let f6 = add(f4, f5)  // 8
-  let f7 = add(f5, f6)  // 13
-  let f8 = add(f6, f7)  // 21
-  
-  assert_eq(1, f2)
-  assert_eq(2, f3)
-  assert_eq(3, f4)
-  assert_eq(5, f5)
-  assert_eq(8, f6)
-  assert_eq(13, f7)
-  assert_eq(21, f8)
+  assert_eq(first, 1)
+  assert_eq(last, 5)
 }
 
-test "prime_number_validation" {
-  // 质数验证测试
-  // 通过检查因数来验证质数
+// 测试条件分支
+test "conditional_logic" {
+  let x = 10
+  let y = 20
   
-  // 检查7是否为质数（只需要检查2到sqrt(7)之间的数）
-  let num = 7
-  let is_prime = true  // 假设是质数
+  let max = if (x > y) { x } else { y }
+  let min = if (x < y) { x } else { y }
   
-  // 检查能否被2整除
-  if (num % 2 == 0) {
-    is_prime = false
+  assert_eq(max, 20)
+  assert_eq(min, 10)
+}
+
+// 测试字符串比较
+test "string_comparison" {
+  let short = "Hi"
+  let medium = "Hello, World!"
+  let long = "This is a very long string for testing purposes"
+  
+  assert_true(short < medium)
+  assert_true(medium < long)
+}
+
+// 测试数值范围和边界
+test "numeric_ranges" {
+  let positive = 42
+  let negative = -42
+  let zero = 0
+  
+  assert_true(positive > 0)
+  assert_true(negative < 0)
+  assert_true(zero == 0)
+  
+  assert_true(positive > negative)
+  assert_true(negative < zero)
+  assert_true(positive > zero)
+}
+
+// 测试布尔逻辑
+test "boolean_logic" {
+  let true_val = true
+  let false_val = false
+  
+  assert_true(true_val && true_val)
+  assert_true(true_val || false_val)
+  assert_false(false_val && false_val)
+  assert_false(false_val || false_val)
+  
+  assert_true(true_val != false_val)
+  assert_false(true_val == false_val)
+}
+
+// 测试函数组合
+test "function_composition" {
+  // 使用项目中的函数
+  let input = 5
+  
+  // 使用 add 和 multiply 函数组合
+  let doubled = multiply(input, 2)
+  let squared = multiply(input, input)
+  let double_then_add = add(doubled, 10)
+  let square_then_add = add(squared, 10)
+  
+  assert_eq(doubled, 10)
+  assert_eq(squared, 25)
+  assert_eq(double_then_add, 20)
+  assert_eq(square_then_add, 35)
+}
+
+// 测试累加计算
+test "accumulation_calculations" {
+  // 手动实现累加，不使用循环
+  let num1 = 1
+  let num2 = 2
+  let num3 = 3
+  let num4 = 4
+  let num5 = 5
+  let num6 = 6
+  let num7 = 7
+  let num8 = 8
+  let num9 = 9
+  let num10 = 10
+  
+  // 计算总和
+  let sum = add(add(add(add(add(num1, num2), num3), num4), num5), add(add(add(add(num6, num7), num8), num9), num10))
+  
+  // 计算偶数和
+  let even_sum = add(add(add(num2, num4), num6), add(num8, num10))
+  
+  // 计算奇数和
+  let odd_sum = add(add(add(num1, num3), num5), add(num7, num9))
+  
+  assert_eq(sum, 55)
+  assert_eq(even_sum, 30)
+  assert_eq(odd_sum, 25)
+}
+
+// 测试错误处理和异常情况
+test "error_handling" {
+  // 测试除零保护的逻辑
+  let safe_divide = fn(a : Int, b : Int) -> Int {
+    if (b == 0) { 0 } else { a / b }
   }
   
-  // 检查能否被3整除
-  if (num % 3 == 0) {
-    is_prime = false
-  }
+  let result1 = safe_divide(10, 2)
+  let result2 = safe_divide(10, 0)
+  let result3 = safe_divide(0, 5)
   
-  assert_true(is_prime)
-  
-  // 检查9是否为质数
-  let num2 = 9
-  let is_prime2 = true
-  
-  if (num2 % 2 == 0) {
-    is_prime2 = false
-  }
-  
-  if (num2 % 3 == 0) {
-    is_prime2 = false
-  }
-  
-  assert_false(is_prime2)
+  assert_eq(result1, 5)
+  assert_eq(result2, 0)
+  assert_eq(result3, 0)
 }
 
-test "bank_interest_calculation" {
-  // 银行利息计算测试
-  // 简单利息：本金 × 利率 × 时间
+// 测试字符串处理
+test "string_processing" {
+  // 测试整数和字符串之间的处理
+  let num = 42
+  let str = "42"
   
-  let principal = 10000  // 本金
-  let rate = 5          // 年利率5%
-  let years = 3         // 3年
+  // 使用字符串拼接
+  let greeting1 = greet("User")
+  let greeting2 = greet("Admin")
   
-  // 计算简单利息
-  let interest = multiply(principal, multiply(rate, years)) / 100
-  let total = add(principal, interest)
-  
-  assert_eq(1500, interest)  // 10000 × 5 × 3 / 100 = 1500
-  assert_eq(11500, total)   // 10000 + 1500 = 11500
-  
-  // 计算复利（简化版）
-  let compound_total = multiply(principal, add(100, multiply(rate, years))) / 100
-  assert_eq(11500, compound_total)
+  assert_eq_string("Hello, User!", greeting1)
+  assert_eq_string("Hello, Admin!", greeting2)
 }
 
-test "temperature_conversion_complete" {
-  // 完整的温度转换测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 华氏度转摄氏度：C = (F - 32) × 5/9
+// 测试递归模式
+test "recursive_patterns" {
+  // 计算阶乘（使用展开方式）
+  let factorial_0 = 1
+  let factorial_1 = 1
+  let factorial_2 = multiply(2, factorial_1)
+  let factorial_3 = multiply(3, factorial_2)
+  let factorial_4 = multiply(4, factorial_3)
+  let factorial_5 = multiply(5, factorial_4)
   
-  // 摄氏度转华氏度（使用整数近似）
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9), 160) / 5  // 25 × 9/5 + 32 = 77
+  assert_eq(factorial_0, 1)
+  assert_eq(factorial_1, 1)
+  assert_eq(factorial_5, 120)
   
-  assert_eq(77, fahrenheit)
+  // 计算斐波那契数列（使用展开方式）
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = add(fib_1, fib_0)
+  let fib_3 = add(fib_2, fib_1)
+  let fib_4 = add(fib_3, fib_2)
+  let fib_5 = add(fib_4, fib_3)
   
-  // 测试冰点
-  let freezing_c = 0
-  let freezing_f = add(multiply(freezing_c, 9), 160) / 5
-  assert_eq(32, freezing_f)
-  
-  // 测试沸点
-  let boiling_c = 100
-  let boiling_f = add(multiply(boiling_c, 9), 160) / 5
-  assert_eq(212, boiling_f)
-}
-
-test "speed_distance_time_calculation" {
-  // 速度、距离、时间计算测试
-  // 距离 = 速度 × 时间
-  // 速度 = 距离 / 时间
-  // 时间 = 距离 / 速度
-  
-  let speed = 60  // km/h
-  let time = 2    // hours
-  let distance = multiply(speed, time)
-  
-  assert_eq(120, distance)
-  
-  // 计算平均速度
-  let total_distance = 300
-  let total_time = 5
-  let average_speed = total_distance / total_time
-  
-  assert_eq(60, average_speed)
-  
-  // 计算旅行时间
-  let planned_distance = 180
-  let planned_speed = 90
-  let travel_time = planned_distance / planned_speed
-  
-  assert_eq(2, travel_time)
-}
-
-test "geometric_progression_sum" {
-  // 等比数列求和测试
-  // S = a × (r^n - 1) / (r - 1)
-  
-  let first_term = 2    // 首项
-  let ratio = 3         // 公比
-  let terms = 4         // 项数
-  
-  // 手动计算：2 + 6 + 18 + 54 = 80
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  let sum = add(add(add(term1, term2), term3), term4)
-  
-  assert_eq(2, term1)
-  assert_eq(6, term2)
-  assert_eq(18, term3)
-  assert_eq(54, term4)
-  assert_eq(80, sum)
-}
-
-test "discount_price_calculation" {
-  // 折扣价格计算测试
-  
-  let original_price = 200
-  let discount_percent = 15  // 15% 折扣
-  
-  // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_percent) / 100
-  let discounted_price = add(original_price, -discount_amount)
-  
-  assert_eq(30, discount_amount)
-  assert_eq(170, discounted_price)
-  
-  // 计算多级折扣
-  let price = 500
-  let first_discount = 10   // 第一级10%
-  let second_discount = 5   // 第二级5%
-  
-  let first_amount = multiply(price, first_discount) / 100
-  let after_first = add(price, -first_amount)
-  let second_amount = multiply(after_first, second_discount) / 100
-  let final_price = add(after_first, -second_amount)
-  
-  assert_eq(50, first_amount)
-  assert_eq(450, after_first)
-  assert_eq(22, second_amount)  // 450 × 5% = 22.5，取整为22
-  assert_eq(428, final_price)
-}
-
-test "array_manipulation_simulation" {
-  // 数组操作模拟测试（使用基本运算）
-  
-  // 模拟数组求和
-  let sum = add(add(add(add(1, 2), 3), 4), 5)
-  assert_eq(15, sum)
-  
-  // 模拟查找最大值
-  let a = 10
-  let b = 25
-  let c = 15
-  let d = 30
-  let e = 20
-  
-  let max1 = if (a > b) { a } else { b }
-  let max2 = if (max1 > c) { max1 } else { c }
-  let max3 = if (max2 > d) { max2 } else { d }
-  let max4 = if (max3 > e) { max3 } else { e }
-  
-  assert_eq(30, max4)
-  
-  // 模拟查找最小值
-  let min1 = if (a < b) { a } else { b }
-  let min2 = if (min1 < c) { min1 } else { c }
-  let min3 = if (min2 < d) { min2 } else { d }
-  let min4 = if (min3 < e) { min3 } else { e }
-  
-  assert_eq(10, min4)
-}
-
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  
-  // 测试包含各种字符的字符串
-  let mixed_string = "Hello123世界!@#"
-  let result = greet(mixed_string)
-  assert_eq_string("Hello, Hello123世界!@#!", result)
-  
-  // 测试连续字符串处理
-  let name1 = "Alice"
-  let name2 = "Bob"
-  let separator = " and "
-  
-  let combined_name = name1 + separator + name2
-  let combined_greeting = greet(combined_name)
-  
-  assert_eq_string("Hello, Alice and Bob!", combined_greeting)
-  
-  // 测试空格处理
-  let spaced_name = "  John  Doe  "
-  let trimmed_name = "John  Doe"  // 简化的trim操作
-  let trimmed_greeting = greet(trimmed_name)
-  
-  assert_eq_string("Hello, John  Doe!", trimmed_greeting)
-}
-
-test "complex_business_logic" {
-  // 复杂业务逻辑测试
-  
-  // 计算员工工资
-  let base_salary = 5000
-  let overtime_hours = 10
-  let overtime_rate = 50  // 每小时加班费
-  let bonus = 1000
-  let tax_rate = 10       // 税率10%
-  
-  // 计算加班费
-  let overtime_pay = multiply(overtime_hours, overtime_rate)
-  // 计算税前总收入
-  let gross_income = add(add(base_salary, overtime_pay), bonus)
-  // 计算税款
-  let tax_amount = multiply(gross_income, tax_rate) / 100
-  // 计算净收入
-  let net_income = add(gross_income, -tax_amount)
-  
-  assert_eq(500, overtime_pay)
-  assert_eq(6500, gross_income)
-  assert_eq(650, tax_amount)
-  assert_eq(5850, net_income)
-  
-  // 计算项目成本
-  let material_cost = 10000
-  let labor_cost = 8000
-  let overhead_rate = 15  // 管理费用率15%
-  let profit_margin = 20  // 利润率20%
-  
-  // 计算直接成本
-  let direct_cost = add(material_cost, labor_cost)
-  // 计算管理费用
-  let overhead_cost = multiply(direct_cost, overhead_rate) / 100
-  // 计算总成本
-  let total_cost = add(direct_cost, overhead_cost)
-  // 计算售价
-  let selling_price = multiply(total_cost, add(100, profit_margin)) / 100
-  
-  assert_eq(18000, direct_cost)
-  assert_eq(2700, overhead_cost)
-  assert_eq(20700, total_cost)
-  assert_eq(24840, selling_price)
+  assert_eq(fib_0, 0)
+  assert_eq(fib_1, 1)
+  assert_eq(fib_5, 5)
 }

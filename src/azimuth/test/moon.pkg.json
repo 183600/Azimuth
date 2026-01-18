@@ -192,5 +192,6 @@
         "standard_moonbit_tests_v19.mbt",
         "azimuth_standard_tests.mbt",
         "standard_tests.mbt",
-        "user_new_additional_tests.mbt"
+        "user_new_additional_tests.mbt",
+        "../../azimuth_enhanced_test_cases.mbt"
         ]}
