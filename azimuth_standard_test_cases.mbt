@@ -1,139 +1,140 @@
-// Azimuth 项目标准测试用例
-// 使用标准 MoonBit 测试语法，包含10个实用测试用例
+// 标准 MoonBit 测试用例
+// 测试 azimuth 包的核心功能
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(10, add(3, 7))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, add(5, -5))
-  assert_eq(-6, multiply(2, -3))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "greeting_functionality" {
-  // 测试问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 8
-  let b = 6
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 零元素特性
-  assert_eq(a, add(a, 0))
-  assert_eq(0, multiply(a, 0))
-}
-
-test "boundary_values" {
-  // 测试边界值
+test "add_overflow_protection" {
+  // 测试加法溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值测试
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
+  // 正数溢出测试
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
+  assert_eq(max_val, add(1000000000, 1500000000))
   
-  // 最小值测试
+  // 负数溢出测试
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+  assert_eq(min_val, add(-1000000000, -1500000000))
+}
+
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 正数溢出测试
+  assert_eq(max_val, multiply(46341, 46341))
+  assert_eq(max_val, multiply(max_val, 2))
+  
+  // 负数溢出测试
+  assert_eq(min_val, multiply(-46341, 46341))
+  assert_eq(min_val, multiply(min_val, 2))
+  
+  // 特殊情况：最小值与-1相乘
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "greet_function_variations" {
+  // 测试 greet 函数的各种情况
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+}
+
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 3))
+  assert_eq(4, divide_with_ceil(11, 3))
+  assert_eq(4, divide_with_ceil(12, 3))
+  assert_eq(5, divide_with_ceil(13, 3))
+  
+  // 测试负数
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-3, divide_with_ceil(-11, 3))
+  assert_eq(-4, divide_with_ceil(-12, 3))
+  
+  // 测试整除情况
+  assert_eq(5, divide_with_ceil(15, 3))
+  assert_eq(-5, divide_with_ceil(-15, 3))
+}
+
+test "complex_calculation_scenarios" {
+  // 测试复杂计算场景
+  // 场景1：计算矩形周长
+  let length = 10
+  let width = 5
+  let perimeter = add(multiply(2, length), multiply(2, width))
+  assert_eq(30, perimeter)
+  
+  // 场景2：计算三角形面积
+  let base = 8
+  let height = 6
+  let area = multiply(base, height) / 2
+  assert_eq(24, area)
+  
+  // 场景3：计算平均值
+  let num1 = 85
+  let num2 = 90
+  let num3 = 95
+  let sum = add(add(num1, num2), num3)
+  let average = sum / 3
+  assert_eq(90, average)
+}
+
+test "edge_cases_and_boundary_values" {
+  // 测试边界情况和特殊值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试与0的运算
+  assert_eq(max_val, add(max_val, 0))
   assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  
+  // 测试与1的运算
+  assert_eq(max_val, multiply(max_val, 1))
   assert_eq(min_val, multiply(min_val, 1))
   
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
+  // 测试极值组合
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(0, add(max_val, -max_val))
 }
 
-test "complex_calculations" {
-  // 测试复杂计算
-  // 计算矩形的面积和周长
-  let length = 10
-  let width = 4
-  let area = multiply(length, width)
-  let perimeter = add(multiply(2, length), multiply(2, width))
-  
-  assert_eq(40, area)
-  assert_eq(28, perimeter)
-  
-  // 计算立方体体积
-  let side = 3
-  let volume = multiply(multiply(side, side), side)
-  assert_eq(27, volume)
-}
-
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-10, add(-3, -7))
-  assert_eq(10, multiply(-2, -5))
-  assert_eq(-8, multiply(4, -2))
-  assert_eq(0, add(-5, 5))
-}
-
-test "sequential_operations" {
-  // 测试序列运算
-  // 斐波那契数列计算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
-  
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  
-  // 累加求和
-  let sum = add(add(add(1, 2), 3), 4)  // 1+2+3+4 = 10
-  assert_eq(10, sum)
-}
-
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 购物计算
-  let price = 50
-  let quantity = 3
-  let tax = 15
-  let total = add(multiply(price, quantity), tax)
-  assert_eq(165, total)
-  
-  // 温度转换简化版 (F = C × 2 + 30)
-  let celsius = 20
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(70, fahrenheit)
-}
-
-test "boolean_assertions" {
-  // 测试布尔断言
+test "assertion_functions_verification" {
+  // 测试断言函数本身
   assert_true(true)
-  assert_true(10 > 5)
-  assert_true(0 == 0)
-  assert_true(-5 < 0)
-  
   assert_false(false)
-  assert_false(3 > 10)
-  assert_false(1 == 0)
-  assert_false(-3 > 0)
-}
-
-test "divide_with_ceil_operations" {
-  // 测试向上取整除法
-  // 整除情况
-  assert_eq(5, divide_with_ceil(10, 2))
-  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
   
-  // 需要向上取整
-  assert_eq(4, divide_with_ceil(7, 2))
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(2, divide_with_ceil(3, 2))
+  // 测试复合断言
+  let result = add(5, 3)
+  assert_true(result == 8)
+  assert_false(result == 9)
+  assert_eq(8, result)
   
-  // 特殊情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 1))
+  let greeting = greet("Test")
+  assert_true(greeting == "Hello, Test!")
+  assert_eq_string("Hello, Test!", greeting)
 }
