@@ -188,5 +188,6 @@
           "../test_simple_enhanced.mbt",
         "additional_moonbit_tests_v4.mbt",
         "azimuth_standard_unit_tests.mbt",
-        "simple_test_add.mbt"
+        "simple_test_add.mbt",
+        "standard_moonbit_tests_v19.mbt"
         ]}
