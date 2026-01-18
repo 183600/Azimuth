@@ -3,6 +3,8 @@
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
     "lib.mbt",
+    "../user_new_moonbit_tests.mbt",
+    "simple_user_test.mbt",
     "moonbit_standard_tests.mbt",
     "azimuth_test_suite.mbt",
     "new_moonbit_tests.mbt",
@@ -101,4 +103,5 @@
   "azimuth_comprehensive_test_suite.mbt",
   "test/user_final_tests.mbt",
   "test/user_new_test_cases.mbt",
-  "test/additional_standard_moonbit_tests.mbt"]}
+  "test/additional_standard_moonbit_tests.mbt",
+  "user_new_moonbit_tests.mbt"]}

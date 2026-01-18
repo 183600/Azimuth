@@ -1,7 +1,5 @@
-// 简单的用户测试
-test "simple_addition" {
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-}
+// 用户新增的 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法
 
 test "add_basic_functionality" {
   // 测试基本的加法功能
