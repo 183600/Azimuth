@@ -84,6 +84,7 @@
           "user_simple_tests.mbt",
           "standard_moonbit_test_cases.mbt",
     "azimuth_focused_tests.mbt",
+    "test/additional_standard_tests.mbt",
   "test/standard_moonbit_test_cases_new.mbt",
   "user_additional_tests.mbt",
   "test/user_additional_tests.mbt",
