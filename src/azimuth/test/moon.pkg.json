@@ -171,5 +171,6 @@
     "additional_standard_tests.mbt",
     "azimuth_standard_tests_enhanced.mbt",
     "azimuth_practical_unit_tests.mbt",
-    "additional_moonbit_tests_v3.mbt"
+    "additional_moonbit_tests_v3.mbt",
+    "user_comprehensive_standard_tests.mbt"
     ]}
