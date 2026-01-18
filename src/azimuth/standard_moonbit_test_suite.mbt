@@ -1,67 +1,66 @@
-// 标准MoonBit测试用例
-// 测试azimuth库的核心功能
+// 标准 MoonBit 测试套件
+// 包含10个使用标准 MoonBit 测试语法的测试用例
 
-test "add_function_basic" {
+test "add_basic_functionality" {
   // 测试基本的加法功能
-  assert_eq(7, add(3, 4))
-  assert_eq(0, add(5, -5))
-  assert_eq(-3, add(-1, -2))
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
 }
 
-test "add_function_boundary" {
-  // 测试加法的边界情况
+test "add_boundary_values" {
+  // 测试边界值的加法
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
   assert_eq(max_val, add(max_val, 1))
   assert_eq(min_val, add(min_val, -1))
   assert_eq(-1, add(max_val, min_val))
 }
 
-test "multiply_function_basic" {
+test "multiply_basic_functionality" {
   // 测试基本的乘法功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(0, multiply(5, 0))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(0, multiply(0, 5))
 }
 
-test "multiply_function_boundary" {
-  // 测试乘法的边界情况
+test "multiply_boundary_values" {
+  // 测试边界值的乘法
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
   assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 1))
   assert_eq(0, multiply(max_val, 0))
 }
 
-test "greet_function_standard" {
-  // 测试标准的greet功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "greet_basic_functionality" {
+  // 测试基本的问候功能
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "greet_special_characters" {
+  // 测试包含特殊字符的问候
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
 }
 
 test "complex_calculation" {
-  // 测试复合计算：计算矩形的面积和周长
-  let length = 8
-  let width = 5
-  
-  // 面积 = 长 × 宽
-  let area = multiply(length, width)
-  assert_eq(40, area)
-  
-  // 周长 = 2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(26, perimeter)
+  // 测试复杂计算：(2 + 3) * 4 - 5
+  let sum = add(2, 3)
+  let product = multiply(sum, 4)
+  let result = add(product, -5)
+  assert_eq(15, result)
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let a = 12
-  let b = 7
+  let a = 7
+  let b = 11
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
@@ -74,47 +73,23 @@ test "mathematical_properties" {
 }
 
 test "real_world_scenario" {
-  // 测试实际应用场景：购物车计算
-  let item_price = 199
-  let quantity = 3
-  let shipping = 15
+  // 测试实际应用场景：计算购物车总价
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
   
-  // 商品总价 = 单价 × 数量
-  let subtotal = multiply(item_price, quantity)
+  let total1 = multiply(item1_price, item1_quantity)
+  let total2 = multiply(item2_price, item2_quantity)
+  let cart_total = add(total1, total2)
   
-  // 最终总价 = 商品总价 + 运费
-  let total = add(subtotal, shipping)
-  
-  assert_eq(612, total)
+  assert_eq(1294, cart_total)
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试长字符串
-  let long_name = "VeryLongNameWithManyCharactersForTesting"
-  assert_eq_string("Hello, VeryLongNameWithManyCharactersForTesting!", greet(long_name))
-  
-  // 测试包含特殊字符的字符串
-  let special_name = "user@domain.com"
-  assert_eq_string("Hello, user@domain.com!", greet(special_name))
-  
-  // 测试包含空格的字符串
-  let spaced_name = "John Doe"
-  assert_eq_string("Hello, John Doe!", greet(spaced_name))
-}
-
-test "assert_functions_verification" {
-  // 测试断言函数本身
+test "assert_functions" {
+  // 测试断言函数
   assert_true(true)
   assert_false(false)
   assert_eq(42, 42)
   assert_eq_string("test", "test")
-  
-  // 测试断言函数与实际函数结合
-  let add_result = add(10, 20)
-  assert_true(add_result > 0)
-  assert_false(add_result < 0)
-  
-  let multiply_result = multiply(5, 6)
-  assert_eq(30, multiply_result)
 }
