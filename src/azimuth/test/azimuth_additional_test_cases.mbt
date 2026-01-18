@@ -1,123 +1,140 @@
-// Azimuth 项目额外测试用例
-// 覆盖更多边界情况和实际应用场景
+// Azimuth 项目新增 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，提供额外的测试覆盖
 
-test "extreme_values_addition" {
-  // 测试极大值和极小值加法
-  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
-  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(-2000000, @azimuth.add(-1000000, -1000000))
+test "negative_number_operations" {
+  // 测试负数运算
+  @azimuth.assert_eq(-10, @azimuth.add(-5, -5))
+  @azimuth.assert_eq(10, @azimuth.multiply(-5, -2))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-5, 3))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
 }
 
-test "extreme_values_multiplication" {
-  // 测试极大值和极小值乘法
-  @azimuth.assert_eq(2147395956, @azimuth.multiply(46340, 46340))
-  @azimuth.assert_eq(-2147395956, @azimuth.multiply(-46340, 46340))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  @azimuth.assert_eq(-1000000, @azimuth.multiply(-1000, 1000))
+test "zero_operations" {
+  // 测试零值运算
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(-5, @azimuth.add(0, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -5))
 }
 
-test "greet_edge_cases" {
-  // 测试更多字符串边界情况
-  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, !@#$!", @azimuth.greet("!@#$"))
+test "large_number_operations" {
+  // 测试大数运算
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  
+  @azimuth.assert_eq(3000000, @azimuth.add(large_num1, large_num2))
+  @azimuth.assert_eq(2000000, @azimuth.multiply(1000, 2000))
+  
+  let large_num3 = 100000
+  let large_num4 = 10000
+  @azimuth.assert_eq(1000000000, @azimuth.multiply(large_num3, large_num4))
 }
 
-test "mathematical_series" {
-  // 测试数学级数计算
+test "string_edge_cases" {
+  // 测试字符串边界情况
+  let result1 = @azimuth.greet("A")
+  @azimuth.assert_eq_string("Hello, A!", result1)
   
-  // 等差数列求和: 2 + 4 + 6 + 8 + 10 = 30
-  let arithmetic_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8), 10)
-  @azimuth.assert_eq(30, arithmetic_sum)
+  let result2 = @azimuth.greet(" ")
+  @azimuth.assert_eq_string("Hello,  !", result2)
   
-  // 等比数列求和: 2 + 4 + 8 + 16 = 30
-  let geometric_sum = @azimuth.add(@azimuth.add(@azimuth.add(2, 4), 8), 16)
-  @azimuth.assert_eq(30, geometric_sum)
+  let result3 = @azimuth.greet("VeryLongNameThatExceedsNormalLengthExpectations")
+  @azimuth.assert_eq_string("Hello, VeryLongNameThatExceedsNormalLengthExpectations!", result3)
 }
 
-test "business_calculations" {
-  // 测试商业计算场景
+test "decimal_simulation" {
+  // 模拟小数运算（使用整数表示）
+  // 将 3.5 表示为 35，0.1 表示为 1，然后除以 10
+  let num1 = 35  // 3.5
+  let num2 = 20  // 2.0
   
-  // 计算折扣价: 原价 * 折扣率
-  let original_price = 200
-  let discount_rate = 8  // 80% 折扣，用整数表示
-  let discounted_price = @azimuth.multiply(original_price, discount_rate)
-  @azimuth.assert_eq(1600, discounted_price)  // 实际应用中需要除以100
+  let sum = @azimuth.add(num1, num2)  // 55，代表 5.5
+  @azimuth.assert_eq(55, sum)
   
-  // 计算总价: 单价 * 数量 + 运费
-  let unit_price = 50
-  let quantity = 3
-  let shipping = 20
-  let total = @azimuth.add(@azimuth.multiply(unit_price, quantity), shipping)
-  @azimuth.assert_eq(170, total)
+  let product = @azimuth.multiply(num1, num2)  // 700，代表 70.0
+  @azimuth.assert_eq(700, product)
 }
 
-test "scientific_calculations" {
-  // 测试科学计算场景
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000  // 本金
+  let rate = 5  // 利率 5%
+  let years = 3  // 年数
   
-  // 计算正方形面积: 边长 * 边长
-  let side_length = 7
-  let square_area = @azimuth.multiply(side_length, side_length)
-  @azimuth.assert_eq(49, square_area)
+  // 简单利息计算: principal * rate * years / 100
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), years) / 100
+  @azimuth.assert_eq(1500, interest)
   
-  // 计算立方体表面积: 6 * 边长 * 边长
-  let cube_surface_area = @azimuth.multiply(6, square_area)
-  @azimuth.assert_eq(294, cube_surface_area)
+  // 总金额
+  let total = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(11500, total)
 }
 
-test "pattern_calculations" {
-  // 测试模式计算
+test "physics_calculations" {
+  // 测试物理计算场景
+  // 计算速度: distance / time
+  let distance = 300  // 米
+  let time = 10  // 秒
+  let velocity = distance / time
+  @azimuth.assert_eq(30, velocity)
   
-  // 斐波那契数列前几项的和: 1 + 1 + 2 + 3 + 5 = 12
-  let fibonacci_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 1), 2), 3), 5)
-  @azimuth.assert_eq(12, fibonacci_sum)
-  
-  // 平方数序列: 1² + 2² + 3² + 4² = 1 + 4 + 9 + 16 = 30
-  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(1, 4), 9), 16)
-  @azimuth.assert_eq(30, square_sum)
+  // 计算加速度: (final_velocity - initial_velocity) / time
+  let initial_velocity = 10
+  let final_velocity = 50
+  let acceleration = @azimuth.add(final_velocity, -initial_velocity) / time
+  @azimuth.assert_eq(4, acceleration)
 }
 
-test "complex_greeting_scenarios" {
-  // 测试复杂问候场景
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算平均值: (sum of values) / count
+  let values_sum = @azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40)  // 10+20+30+40
+  let count = 4
+  let average = values_sum / count
+  @azimuth.assert_eq(25, average)
   
-  // 测试包含各种特殊字符的名称
-  @azimuth.assert_eq_string("Hello, John-Doe_O'Reilly!", @azimuth.greet("John-Doe_O'Reilly"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
-  @azimuth.assert_eq_string("Hello, España!", @azimuth.greet("España"))
-  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  // 计算加权平均
+  let weighted_sum = @azimuth.add(@azimuth.add(@azimuth.multiply(10, 1), @azimuth.multiply(20, 2)), @azimuth.multiply(30, 3))
+  let total_weight = @azimuth.add(@azimuth.add(1, 2), 3)
+  let weighted_average = weighted_sum / total_weight
+  @azimuth.assert_eq(23, weighted_average)  // (10+40+90)/6 = 140/6 = 23.33 -> 23
 }
 
-test "algebraic_expressions" {
-  // 测试代数表达式
+test "time_calculations" {
+  // 测试时间计算
+  // 计算总秒数: hours * 3600 + minutes * 60 + seconds
+  let hours = 2
+  let minutes = 30
+  let seconds = 45
   
-  // 计算 (x + y)² = x² + 2xy + y²
-  let x = 3
-  let y = 4
-  let left_side = @azimuth.multiply(@azimuth.add(x, y), @azimuth.add(x, y))
-  let right_side = @azimuth.add(@azimuth.add(@azimuth.multiply(x, x), @azimuth.multiply(2, @azimuth.multiply(x, y))), @azimuth.multiply(y, y))
-  @azimuth.assert_eq(left_side, right_side)
+  let total_seconds = @azimuth.add(@azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.multiply(minutes, 60)), seconds)
+  @azimuth.assert_eq(9045, total_seconds)
   
-  // 计算 (x - y)² = x² - 2xy + y²
-  let diff_left = @azimuth.multiply(@azimuth.add(x, -y), @azimuth.add(x, -y))
-  let diff_right = @azimuth.add(@azimuth.add(@azimuth.multiply(x, x), @azimuth.multiply(-2, @azimuth.multiply(x, y))), @azimuth.multiply(y, y))
-  @azimuth.assert_eq(diff_left, diff_right)
+  // 计算时间差
+  let start_time = 480  // 8:00 AM in minutes
+  let end_time = 1020   // 5:00 PM in minutes
+  let duration = @azimuth.add(end_time, -start_time)
+  @azimuth.assert_eq(540, duration)  // 9 hours
 }
 
-test "performance_oriented_calculations" {
-  // 测试性能相关的计算
+test "complex_expressions" {
+  // 测试复杂表达式
+  let a = 5
+  let b = 3
+  let c = 2
+  let d = 4
   
-  // 大量重复计算
-  let base = 5
-  let result1 = @azimuth.add(base, @azimuth.add(base, @azimuth.add(base, @azimuth.add(base, base))))
-  @azimuth.assert_eq(25, result1)
+  // 计算 (a + b) * (c + d)
+  let expr1 = @azimuth.multiply(@azimuth.add(a, b), @azimuth.add(c, d))
+  @azimuth.assert_eq(56, expr1)  // (5+3)*(2+4) = 8*6 = 48
   
-  // 嵌套乘法计算
-  let nested_result = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(120, nested_result)
+  // 计算 a * b + c * d
+  let expr2 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(c, d))
+  @azimuth.assert_eq(23, expr2)  // 5*3 + 2*4 = 15 + 8 = 23
   
-  // 混合运算链
-  let chain_result = @azimuth.add(@azimuth.multiply(10, 2), @azimuth.multiply(@azimuth.add(5, 3), 4))
-  @azimuth.assert_eq(52, chain_result)
+  // 计算 (a * b) + (a * c) + (a * d)
+  let expr3 = @azimuth.add(@azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c)), @azimuth.multiply(a, d))
+  @azimuth.assert_eq(45, expr3)  // 5*3 + 5*2 + 5*4 = 15 + 10 + 20 = 45
 }
