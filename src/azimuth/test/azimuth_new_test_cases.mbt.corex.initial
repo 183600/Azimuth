@@ -1,0 +1,135 @@
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_0 () -> Unit raise Error {
+  let true_val/52 : Bool = true
+  let false_val/53 : Bool = false
+  let and_result/54 : Bool = true_val/52 && false_val/53
+  let or_result/55 : Bool = true_val/52 || false_val/53
+  let not_true/56 : Bool = !true_val/52
+  let not_false/57 : Bool = !false_val/53
+  and_result/54
+  or_result/55
+  not_true/56
+  not_false/57
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_1 () -> Unit raise Error {
+  let a/43 : Int = 10
+  let b/44 : Int = 20
+  let c/45 : Int = 10
+  let equal_result/46 : Bool = a/43 == c/45
+  let not_equal_result/47 : Bool = a/43 != b/44
+  let less_result/48 : Bool = a/43 < b/44
+  let greater_result/49 : Bool = b/44 > a/43
+  let less_equal_result/50 : Bool = a/43 <= c/45
+  let greater_equal_result/51 : Bool = b/44 >= a/43
+  equal_result/46
+  not_equal_result/47
+  less_result/48
+  greater_result/49
+  less_equal_result/50
+  greater_equal_result/51
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_2 () -> Unit raise Error {
+  let index1/36 : Int = 0
+  let index2/37 : Int = 1
+  let index3/38 : Int = 2
+  let array_value1/39 : Int = index1/36 + 5
+  let array_value2/40 : Int = index2/37 + 10
+  let array_value3/41 : Int = index3/38 + 15
+  let total/42 : Int = array_value1/39 + array_value2/40 + array_value3/41
+  array_value1/39
+  array_value2/40
+  array_value3/41
+  total/42
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_3 () -> Unit raise Error {
+  let score/31 : Int = 85
+  let passing_grade/32 : Int = 60
+  let is_passing/33 : Bool = score/31 >= passing_grade/32
+  let is_excellent/34 : Bool = score/31 >= 90
+  let needs_improvement/35 : Bool = score/31 < 70
+  is_passing/33
+  is_excellent/34
+  needs_improvement/35
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_4 () -> Unit raise Error {
+  let len1/27 : Int = 5
+  let len2/28 : Int = 5
+  let len3/29 : Int = 7
+  let total_length/30 : Int = len1/27 + len2/28 + len3/29
+  len1/27
+  len2/28
+  len3/29
+  total_length/30
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_5 () -> Unit raise Error {
+  let a/19 : Int = 17
+  let b/20 : Int = 5
+  let c/21 : Int = 10
+  let d/22 : Int = 3
+  let mod1/23 : Int = a/19 % b/20
+  let mod2/24 : Int = c/21 % d/22
+  let mod3/25 : Int = 2
+  let mod4/26 : Int = 3
+  mod1/23
+  mod2/24
+  mod3/25
+  mod4/26
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_6 () -> Unit raise Error {
+  let a/13 : Int = 5
+  let b/14 : Int = 3
+  let and_result/15 : Int = a/13 & b/14
+  let or_result/16 : Int = a/13 | b/14
+  let xor_result/17 : Int = a/13 ^ b/14
+  let not_a/18 : Int = 0 - a/13 - 1
+  and_result/15
+  or_result/16
+  xor_result/17
+  not_a/18
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_7 () -> Unit raise Error {
+  let base/8 : Int = 2
+  let power1/9 : Int = base/8
+  let power2/10 : Int = base/8 * base/8
+  let power3/11 : Int = base/8 * base/8 * base/8
+  let power4/12 : Int = base/8 * base/8 * base/8 * base/8
+  power1/9
+  power2/10
+  power3/11
+  power4/12
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_8 () -> Unit raise Error {
+  let factorial_5/5 : Int = 120
+  let factorial_4/6 : Int = 24
+  let factorial_3/7 : Int = 6
+  factorial_5/5
+  factorial_4/6
+  factorial_3/7
+  @make_value(())
+}
+
+fn __test_617a696d7574685f6e65775f746573745f63617365732e6d6274_9 () -> Unit raise Error {
+  let sum/1 : Int = 150
+  let count/2 : Int = 5
+  let average/3 : Int = sum/1 / count/2
+  let median/4 : Int = 30
+  sum/1
+  average/3
+  median/4
+  @make_value(())
+}

@@ -1,0 +1,356 @@
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_0 () -> Unit raise Error {
+  let item1_price/90 : Int = 299
+  let item1_quantity/91 : Int = 2
+  let item2_price/92 : Int = 199
+  let item2_quantity/93 : Int = 1
+  let item3_price/94 : Int = 99
+  let item3_quantity/95 : Int = 3
+  let total1/96 : Int = item1_price/90 * item1_quantity/91
+  let total2/97 : Int = item2_price/92 * item2_quantity/93
+  let total3/98 : Int = item3_price/94 * item3_quantity/95
+  let subtotal/99 : Int = total1/96 + total2/97 + total3/98
+  let discount_threshold/100 : Int = 500
+  let discount_rate/101 : Int = 10
+  let discount_amount/102 : Int = if subtotal/99 > discount_threshold/100 {
+    subtotal/99 * discount_rate/101 / 100
+  } else {
+    0
+  }
+  let discounted_total/103 : Int = subtotal/99 - discount_amount/102
+  let tax_rate/104 : Int = 8
+  let tax_amount/105 : Int = discounted_total/103 * tax_rate/104 / 100
+  let final_total/106 : Int = discounted_total/103 + tax_amount/105
+  let expected_subtotal/107 : Int = 1195
+  let expected_discount/108 : Int = 109
+  let expected_discounted/109 : Int = 985
+  let expected_tax/110 : Int = 78
+  let expected_final/111 : Int = 1063
+  if expected_subtotal/107 != subtotal/99 {
+    $builtin.abort(
+      "Test failed: expected_subtotal",
+      "@:user_requested_moonbit_tests.mbt:50:5-50:53"
+    )
+  }
+  if expected_discount/108 != discount_amount/102 {
+    $builtin.abort(
+      "Test failed: expected_discount",
+      "@:user_requested_moonbit_tests.mbt:53:5-53:53"
+    )
+  }
+  if expected_discounted/109 != discounted_total/103 {
+    $builtin.abort(
+      "Test failed: expected_discounted",
+      "@:user_requested_moonbit_tests.mbt:56:5-56:55"
+    )
+  }
+  if expected_tax/110 != tax_amount/105 {
+    $builtin.abort("Test failed: expected_tax", "@:user_requested_moonbit_tests.mbt:59:5-59:48")
+  }
+  @make_value(
+    if expected_final/111 != final_total/106 {
+      $builtin.abort("Test failed: expected_final", "@:user_requested_moonbit_tests.mbt:62:5-62:50")
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_1 () -> Unit raise Error {
+  let celsius1/84 : Int = 0
+  let fahrenheit1/85 : Int = celsius1/84 * 2 + 32
+  if 32 != fahrenheit1/85 {
+    $builtin.abort("Test failed: 0°C conversion", "@:user_requested_moonbit_tests.mbt:75:5-75:50")
+  }
+  let celsius2/86 : Int = 100
+  let fahrenheit2/87 : Int = celsius2/86 * 2 + 32
+  if 232 != fahrenheit2/87 {
+    $builtin.abort(
+      "Test failed: 100°C conversion",
+      "@:user_requested_moonbit_tests.mbt:82:5-82:52"
+    )
+  }
+  let celsius3/88 : Int = -10
+  let fahrenheit3/89 : Int = celsius3/88 * 2 + 32
+  @make_value(
+    if 12 != fahrenheit3/89 {
+      $builtin.abort(
+        "Test failed: -10°C conversion",
+        "@:user_requested_moonbit_tests.mbt:89:5-89:52"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_2 () -> Unit raise Error {
+  let principal/76 : Int = 10000
+  let annual_rate/77 : Int = 5
+  let years/78 : Int = 3
+  let total_interest/79 : Int = principal/76 * annual_rate/77 * years/78
+  let total_repayment/80 : Int = principal/76 + total_interest/79
+  if 150000 != total_interest/79 {
+    $builtin.abort("Test failed: total_interest", "@:user_requested_moonbit_tests.mbt:109:5-109:50")
+  }
+  if 160000 != total_repayment/80 {
+    $builtin.abort(
+      "Test failed: total_repayment",
+      "@:user_requested_moonbit_tests.mbt:112:5-112:51"
+    )
+  }
+  let early_payment_years/81 : Int = 2
+  let early_interest/82 : Int = principal/76 * annual_rate/77 * early_payment_years/81
+  let early_repayment/83 : Int = principal/76 + early_interest/82
+  if 100000 != early_interest/82 {
+    $builtin.abort("Test failed: early_interest", "@:user_requested_moonbit_tests.mbt:122:5-122:50")
+  }
+  @make_value(
+    if 110000 != early_repayment/83 {
+      $builtin.abort(
+        "Test failed: early_repayment",
+        "@:user_requested_moonbit_tests.mbt:125:5-125:51"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_3 () -> Unit raise Error {
+  let weight_kg/65 : Int = 70
+  let height_cm/66 : Int = 175
+  let height_m/67 : Int = height_cm/66 / 100
+  let height_squared/68 : Int = height_m/67 * height_m/67
+  let _bmi/69 : Int = weight_kg/65 / height_squared/68
+  let height_squared_cm/70 : Int = height_cm/66 * height_cm/66
+  let bmi_approx/71 : Int = weight_kg/65 * 10000 / height_squared_cm/70
+  if 22 != bmi_approx/71 {
+    $builtin.abort("Test failed: bmi_approx", "@:user_requested_moonbit_tests.mbt:150:5-150:46")
+  }
+  let weight_kg2/72 : Int = 80
+  let height_cm2/73 : Int = 180
+  let height_squared_cm2/74 : Int = height_cm2/73 * height_cm2/73
+  let bmi_approx2/75 : Int = weight_kg2/72 * 10000 / height_squared_cm2/74
+  @make_value(
+    if 24 != bmi_approx2/75 {
+      $builtin.abort("Test failed: bmi_approx2", "@:user_requested_moonbit_tests.mbt:161:5-161:47")
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_4 () -> Unit raise Error {
+  let radius/57 : Int = 10
+  let radius_squared/58 : Int = radius/57 * radius/57
+  let area/59 : Int = 3 * radius_squared/58
+  if 300 != area/59 {
+    $builtin.abort("Test failed: area", "@:user_requested_moonbit_tests.mbt:177:5-177:40")
+  }
+  let circumference/60 : Int = 6 * radius/57
+  if 60 != circumference/60 {
+    $builtin.abort("Test failed: circumference", "@:user_requested_moonbit_tests.mbt:183:5-183:49")
+  }
+  let radius2/61 : Int = 5
+  let radius_squared2/62 : Int = radius2/61 * radius2/61
+  let area2/63 : Int = 3 * radius_squared2/62
+  let circumference2/64 : Int = 6 * radius2/61
+  if 75 != area2/63 {
+    $builtin.abort("Test failed: area2", "@:user_requested_moonbit_tests.mbt:193:5-193:41")
+  }
+  @make_value(
+    if 30 != circumference2/64 {
+      $builtin.abort(
+        "Test failed: circumference2",
+        "@:user_requested_moonbit_tests.mbt:196:5-196:50"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_5 () -> Unit raise Error {
+  let row/43 : Int = 3
+  let col/44 : Int = 4
+  let width/45 : Int = 5
+  let index/46 : Int = row/43 * width/45 + col/44
+  if 19 != index/46 {
+    $builtin.abort("Test failed: index", "@:user_requested_moonbit_tests.mbt:211:5-211:41")
+  }
+  let first_row/47 : Int = 0
+  let first_col/48 : Int = 0
+  let first_index/49 : Int = first_row/47 * width/45 + first_col/48
+  if 0 != first_index/49 {
+    $builtin.abort("Test failed: first_index", "@:user_requested_moonbit_tests.mbt:219:5-219:47")
+  }
+  let last_row/50 : Int = 9
+  let last_col/51 : Int = 4
+  let last_index/52 : Int = last_row/50 * width/45 + last_col/51
+  if 49 != last_index/52 {
+    $builtin.abort("Test failed: last_index", "@:user_requested_moonbit_tests.mbt:226:5-226:46")
+  }
+  let width2/53 : Int = 10
+  let row2/54 : Int = 2
+  let col2/55 : Int = 7
+  let index2/56 : Int = row2/54 * width2/53 + col2/55
+  @make_value(
+    if 27 != index2/56 {
+      $builtin.abort("Test failed: index2", "@:user_requested_moonbit_tests.mbt:235:5-235:42")
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_6 () -> Unit raise Error {
+  let principal/33 : Int = 1000
+  let annual_rate/34 : Int = 5
+  let years/35 : Int = 3
+  let growth_factor/36 : Int = 1 + annual_rate/34 * years/35
+  let total_amount/37 : Int = principal/33 * growth_factor/36
+  if 16 != growth_factor/36 {
+    $builtin.abort("Test failed: growth_factor", "@:user_requested_moonbit_tests.mbt:254:5-254:49")
+  }
+  if 16000 != total_amount/37 {
+    $builtin.abort("Test failed: total_amount", "@:user_requested_moonbit_tests.mbt:257:5-257:48")
+  }
+  let principal2/38 : Int = 5000
+  let annual_rate2/39 : Int = 8
+  let years2/40 : Int = 5
+  let growth_factor2/41 : Int = 1 + annual_rate2/39 * years2/40
+  let total_amount2/42 : Int = principal2/38 * growth_factor2/41
+  if 41 != growth_factor2/41 {
+    $builtin.abort("Test failed: growth_factor2", "@:user_requested_moonbit_tests.mbt:270:5-270:50")
+  }
+  @make_value(
+    if 205000 != total_amount2/42 {
+      $builtin.abort(
+        "Test failed: total_amount2",
+        "@:user_requested_moonbit_tests.mbt:273:5-273:49"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_7 () -> Unit raise Error {
+  let simple_name/21 : String = "john"
+  let formatted_simple/22 : String = @ccall add_string(
+    @ccall add_string("Hello, ", simple_name/21),
+    "!"
+  )
+  if Eq::not_equal|$default_impl|("Hello, john!", formatted_simple/22) {
+    $builtin.abort(
+      "Test failed: formatted_simple",
+      "@:user_requested_moonbit_tests.mbt:285:5-285:52"
+    )
+  }
+  let spaced_name/23 : String = "john doe"
+  let formatted_spaced/24 : String = @ccall add_string(
+    @ccall add_string("Hello, ", spaced_name/23),
+    "!"
+  )
+  if Eq::not_equal|$default_impl|("Hello, john doe!", formatted_spaced/24) {
+    $builtin.abort(
+      "Test failed: formatted_spaced",
+      "@:user_requested_moonbit_tests.mbt:292:5-292:52"
+    )
+  }
+  let numbered_name/25 : String = "john123"
+  let formatted_numbered/26 : String = @ccall add_string(
+    @ccall add_string("Hello, ", numbered_name/25),
+    "!"
+  )
+  if Eq::not_equal|$default_impl|("Hello, john123!", formatted_numbered/26) {
+    $builtin.abort(
+      "Test failed: formatted_numbered",
+      "@:user_requested_moonbit_tests.mbt:299:5-299:54"
+    )
+  }
+  let special_name/27 : String = "john_doe@email.com"
+  let formatted_special/28 : String = @ccall add_string(
+    @ccall add_string("Hello, ", special_name/27),
+    "!"
+  )
+  if Eq::not_equal|$default_impl|("Hello, john_doe@email.com!", formatted_special/28) {
+    $builtin.abort(
+      "Test failed: formatted_special",
+      "@:user_requested_moonbit_tests.mbt:306:5-306:53"
+    )
+  }
+  let empty_name/29 : String = ""
+  let formatted_empty/30 : String = @ccall add_string(
+    @ccall add_string("Hello, ", empty_name/29),
+    "!"
+  )
+  if Eq::not_equal|$default_impl|("Hello, !", formatted_empty/30) {
+    $builtin.abort(
+      "Test failed: formatted_empty",
+      "@:user_requested_moonbit_tests.mbt:313:5-313:51"
+    )
+  }
+  let long_name/31 : String = "this_is_a_very_long_username_that_might_be_used_in_some_systems"
+  let formatted_long/32 : String = @ccall add_string(
+    @ccall add_string("Hello, ", long_name/31),
+    "!"
+  )
+  @make_value(
+    if Eq::not_equal|$default_impl|(
+      "Hello, this_is_a_very_long_username_that_might_be_used_in_some_systems!",
+      formatted_long/32
+    ) {
+      $builtin.abort(
+        "Test failed: formatted_long",
+        "@:user_requested_moonbit_tests.mbt:320:5-320:50"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_8 () -> Unit raise Error {
+  let score1/8 : Int = 85
+  let score2/9 : Int = 90
+  let score3/10 : Int = 78
+  let total_score/11 : Int = score1/8 + score2/9 + score3/10
+  let average_score/12 : Int = total_score/11 / 3
+  if 84 != average_score/12 {
+    $builtin.abort("Test failed: average_score", "@:user_requested_moonbit_tests.mbt:339:5-339:49")
+  }
+  let sum_5/13 : Int = 425
+  let average_5/14 : Int = sum_5/13 / 5
+  if 85 != average_5/14 {
+    $builtin.abort("Test failed: average_5", "@:user_requested_moonbit_tests.mbt:346:5-346:45")
+  }
+  let weighted_score1/15 : Int = 255
+  let weighted_score2/16 : Int = 180
+  let weighted_score3/17 : Int = 78
+  let weighted_total/18 : Int = weighted_score1/15 + weighted_score2/16 + weighted_score3/17
+  let total_weight/19 : Int = 6
+  let weighted_average/20 : Int = weighted_total/18 / total_weight/19
+  @make_value(
+    if 85 != weighted_average/20 {
+      $builtin.abort(
+        "Test failed: weighted_average",
+        "@:user_requested_moonbit_tests.mbt:359:5-359:52"
+      )
+    }
+  )
+}
+
+fn __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_9 () -> Unit raise Error {
+  let n/1 : Int = 5
+  let factorial_5/2 : Int = n/1 * (n/1 - 1) * (n/1 - 2) * (n/1 - 3) * (n/1 - 4)
+  if 120 != factorial_5/2 {
+    $builtin.abort("Test failed: factorial_5", "@:user_requested_moonbit_tests.mbt:371:5-371:47")
+  }
+  let factorial_4/3 : Int = 24
+  if 24 != factorial_4/3 {
+    $builtin.abort("Test failed: factorial_4", "@:user_requested_moonbit_tests.mbt:377:5-377:47")
+  }
+  let factorial_3/4 : Int = 6
+  if 6 != factorial_3/4 {
+    $builtin.abort("Test failed: factorial_3", "@:user_requested_moonbit_tests.mbt:383:5-383:47")
+  }
+  let factorial_2/5 : Int = 2
+  if 2 != factorial_2/5 {
+    $builtin.abort("Test failed: factorial_2", "@:user_requested_moonbit_tests.mbt:389:5-389:47")
+  }
+  let factorial_1/6 : Int = 1
+  if 1 != factorial_1/6 {
+    $builtin.abort("Test failed: factorial_1", "@:user_requested_moonbit_tests.mbt:395:5-395:47")
+  }
+  let factorial_0/7 : Int = 1
+  @make_value(
+    if 1 != factorial_0/7 {
+      $builtin.abort("Test failed: factorial_0", "@:user_requested_moonbit_tests.mbt:401:5-401:47")
+    }
+  )
+}

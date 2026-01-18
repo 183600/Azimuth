@@ -1,0 +1,179 @@
+pub fn add (a/55 : Int, b/56 : Int) -> Int {
+  if a/55 == 0 { return b/56 }
+  if b/56 == 0 { return a/55 }
+  let min_val/57 : Int = -2147483648
+  let max_val/58 : Int = 2147483647
+  if a/55 == min_val/57 {
+    if b/56 < 0 { return min_val/57 }
+    return a/55 + b/56
+  }
+  if b/56 == min_val/57 {
+    if a/55 < 0 { return min_val/57 }
+    return a/55 + b/56
+  }
+  if a/55 > 0 && b/56 > 0 { if a/55 > max_val/58 - b/56 { return max_val/58 }  }
+  if a/55 < 0 && b/56 < 0 { if a/55 < min_val/57 - b/56 { return min_val/57 }  }
+  a/55 + b/56
+}
+
+pub fn multiply (a/48 : Int, b/49 : Int) -> Int {
+  let min_val/50 : Int = -2147483648
+  let max_val/51 : Int = 2147483647
+  if a/48 == 0 || b/49 == 0 { return 0 }
+  if a/48 == 1 { return b/49 }
+  if b/49 == 1 { return a/48 }
+  if a/48 == -1 { return if b/49 == min_val/50 { min_val/50 } else { -b/49 } }
+  if b/49 == -1 { return if a/48 == min_val/50 { min_val/50 } else { -a/48 } }
+  if a/48 == min_val/50 { return if b/49 > 1 || b/49 < -1 { min_val/50 } else { a/48 * b/49 } }
+  if b/49 == min_val/50 { return if a/48 > 1 || a/48 < -1 { min_val/50 } else { a/48 * b/49 } }
+  let sign/52 : Int = if a/48 > 0 && b/49 > 0 || a/48 < 0 && b/49 < 0 { 1 } else { -1 }
+  let abs_a/53 : Int = if a/48 < 0 { -a/48 } else { a/48 }
+  let abs_b/54 : Int = if b/49 < 0 { -b/49 } else { b/49 }
+  if abs_a/53 > max_val/51 / abs_b/54 { return if sign/52 > 0 { max_val/51 } else { min_val/50 } }
+  a/48 * b/49
+}
+
+pub fn greet (name/47 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/47), "!")
+}
+
+pub fn assert_eq (expected/45 : Int, actual/46 : Int) -> Unit {
+  if expected/45 == actual/46 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_eq_string (expected/43 : String, actual/44 : String) -> Unit {
+  if @stringequal(expected/43, actual/44) {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_true (condition/42 : Bool) -> Unit {
+  if condition/42 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_false (condition/41 : Bool) -> Unit {
+  if condition/41 {
+    1 / 0
+    ()
+  } else {
+    ()
+  }
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_0 () -> Unit raise Error {
+  let a/37 : Int = 123
+  let b/38 : Int = 456
+  assert_eq(add(a/37, b/38), add(b/38, a/37))
+  let c/39 : Int = -789
+  let d/40 : Int = 321
+  @make_value(assert_eq(add(c/39, d/40), add(d/40, c/39)))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_1 () -> Unit raise Error {
+  let a/32 : Int = 2
+  let b/33 : Int = 3
+  let c/34 : Int = 4
+  let result1/35 : Int = multiply(multiply(a/32, b/33), c/34)
+  let result2/36 : Int = multiply(a/32, multiply(b/33, c/34))
+  @make_value(assert_eq(result1/35, result2/36))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_2 () -> Unit raise Error {
+  let a/27 : Int = 10
+  let b/28 : Int = 5
+  let c/29 : Int = 3
+  let result1/30 : Int = multiply(add(a/27, b/28), c/29)
+  assert_eq(45, result1/30)
+  let result2/31 : Int = add(multiply(a/27, b/28), c/29)
+  @make_value(assert_eq(53, result2/31))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_3 () -> Unit raise Error {
+  let max_val/25 : Int = 2147483647
+  let min_val/26 : Int = -2147483648
+  assert_eq(max_val/25, add(max_val/25, 0))
+  assert_eq(min_val/26, add(min_val/26, 0))
+  assert_eq(max_val/25, multiply(max_val/25, 1))
+  assert_eq(min_val/26, multiply(min_val/26, 1))
+  assert_eq(2147483646, add(max_val/25, -1))
+  @make_value(assert_eq(min_val/26, multiply(min_val/26, -1)))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_4 () -> Unit raise Error {
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 🎉!", greet("🎉"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  @make_value(assert_eq_string("Hello, العربية!", greet("العربية")))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_5 () -> Unit raise Error {
+  let principal/19 : Int = 10000
+  let rate/20 : Int = 5
+  let years/21 : Int = 3
+  let interest/22 : Int = multiply(principal/19, multiply(rate/20, years/21))
+  let total/23 : Int = add(principal/19, interest/22)
+  assert_eq(160000, total/23)
+  let compound_total/24 : Int = multiply(principal/19, add(1, multiply(rate/20, years/21)))
+  @make_value(assert_eq(160000, compound_total/24))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_6 () -> Unit raise Error {
+  let radius/15 : Int = 5
+  let circumference/16 : Int = multiply(multiply(2, 3), radius/15)
+  assert_eq(30, circumference/16)
+  let area/17 : Int = multiply(3, multiply(radius/15, radius/15))
+  assert_eq(75, area/17)
+  let volume/18 : Int = multiply(4, multiply(radius/15, multiply(radius/15, radius/15)))
+  @make_value(assert_eq(500, volume/18))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_7 () -> Unit raise Error {
+  let freezing_c/9 : Int = 0
+  let freezing_f/10 : Int = add(multiply(freezing_c/9, 2), 30)
+  assert_eq(30, freezing_f/10)
+  let boiling_c/11 : Int = 100
+  let boiling_f/12 : Int = add(multiply(boiling_c/11, 2), 30)
+  assert_eq(230, boiling_f/12)
+  let room_c/13 : Int = 25
+  let room_f/14 : Int = add(multiply(room_c/13, 2), 30)
+  @make_value(assert_eq(80, room_f/14))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_8 () -> Unit raise Error {
+  let row/3 : Int = 3
+  let col/4 : Int = 4
+  let width/5 : Int = 10
+  let index/6 : Int = add(multiply(row/3, width/5), col/4)
+  assert_eq(34, index/6)
+  let first_index/7 : Int = add(multiply(0, width/5), 0)
+  assert_eq(0, first_index/7)
+  let last_index/8 : Int = add(multiply(9, width/5), 9)
+  @make_value(assert_eq(99, last_index/8))
+}
+
+fn __test_6164646974696f6e616c5f6d6f6f6e6269745f74657374732e6d6274_9 () -> Unit raise Error {
+  let max_val/1 : Int = 2147483647
+  let min_val/2 : Int = -2147483648
+  assert_eq(max_val/1, add(max_val/1, 1))
+  assert_eq(max_val/1, add(max_val/1, max_val/1))
+  assert_eq(min_val/2, add(min_val/2, -1))
+  assert_eq(min_val/2, add(min_val/2, min_val/2))
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  @make_value(assert_eq_string("test", "test"))
+}

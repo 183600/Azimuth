@@ -1,0 +1,70 @@
+pub fn add (a/55 : Int, b/56 : Int) -> Int {
+  if a/55 == 0 { return b/56 }
+  if b/56 == 0 { return a/55 }
+  if a/55 == -2147483648 {
+    if b/56 < 0 { return -2147483648 }
+    return a/55 + b/56
+  }
+  if b/56 == -2147483648 {
+    if a/55 < 0 { return -2147483648 }
+    return a/55 + b/56
+  }
+  if a/55 > 0 && b/56 > 0 { if a/55 > 2147483647 - b/56 { return 2147483647 }  }
+  if a/55 < 0 && b/56 < 0 { if a/55 < -2147483648 - b/56 { return -2147483648 }  }
+  a/55 + b/56
+}
+
+pub fn multiply (a/48 : Int, b/49 : Int) -> Int {
+  if a/48 == 0 || b/49 == 0 { return 0 }
+  if a/48 == 1 { return b/49 }
+  if b/49 == 1 { return a/48 }
+  if a/48 == -1 { return if b/49 == -2147483648 { -2147483648 } else { -b/49 } }
+  if b/49 == -1 { return if a/48 == -2147483648 { -2147483648 } else { -a/48 } }
+  if a/48 == -2147483648 { return if b/49 > 1 || b/49 < -1 { -2147483648 } else { a/48 * b/49 } }
+  if b/49 == -2147483648 { return if a/48 > 1 || a/48 < -1 { -2147483648 } else { a/48 * b/49 } }
+  let sign/52 : Int = if a/48 > 0 && b/49 > 0 || a/48 < 0 && b/49 < 0 { 1 } else { -1 }
+  let abs_a/53 : Int = if a/48 < 0 { -a/48 } else { a/48 }
+  let abs_b/54 : Int = if b/49 < 0 { -b/49 } else { b/49 }
+  if abs_a/53 > 2147483647 / abs_b/54 { return if sign/52 > 0 { 2147483647 } else { -2147483648 } }
+  a/48 * b/49
+}
+
+pub fn greet (name/47 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/47), "!")
+}
+
+pub fn assert_eq (expected/45 : Int, actual/46 : Int) -> Unit {
+  if expected/45 == actual/46 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_eq_string (expected/43 : String, actual/44 : String) -> Unit {
+  if @stringequal(expected/43, actual/44) {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_true (condition/42 : Bool) -> Unit {
+  if condition/42 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_false (condition/41 : Bool) -> Unit {
+  if condition/41 {
+    1 / 0
+    ()
+  } else {
+    ()
+  }
+}

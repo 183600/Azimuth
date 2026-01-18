@@ -1,0 +1,141 @@
+pub fn add (a/71 : Int, b/72 : Int) -> Int { a/71 + b/72 }
+
+pub fn multiply (a/69 : Int, b/70 : Int) -> Int { a/69 * b/70 }
+
+pub fn greet (name/68 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/68), "!")
+}
+
+pub fn assert_eq (expected/66 : Int, actual/67 : Int) -> Unit {
+  if expected/66 == actual/67 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_eq_string (expected/64 : String, actual/65 : String) -> Unit {
+  if @stringequal(expected/64, actual/65) {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_0 () -> Unit raise Error {
+  let celsius/60 : Int = 25
+  let fahrenheit/61 : Int = add(multiply(celsius/60, 2), 30)
+  assert_eq(80, fahrenheit/61)
+  let freezing/62 : Int = add(multiply(0, 2), 30)
+  assert_eq(30, freezing/62)
+  let boiling/63 : Int = add(multiply(100, 2), 30)
+  @make_value(assert_eq(230, boiling/63))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_1 () -> Unit raise Error {
+  let original_price/56 : Int = 1000
+  let discount_percent/57 : Int = 20
+  let discount_amount/58 : Int = multiply(original_price/56, discount_percent/57) / 100
+  let final_price/59 : Int = add(original_price/56, -discount_amount/58)
+  assert_eq(200, discount_amount/58)
+  @make_value(assert_eq(800, final_price/59))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_2 () -> Unit raise Error {
+  let principal/51 : Int = 10000
+  let rate/52 : Int = 5
+  let years/53 : Int = 3
+  let interest/54 : Int = multiply(principal/51, multiply(rate/52, years/53))
+  let total/55 : Int = add(principal/51, interest/54)
+  @make_value(assert_eq(160000, total/55))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_3 () -> Unit raise Error {
+  let length/41 : Int = 10
+  let width/42 : Int = 6
+  let rectangle_area/43 : Int = multiply(length/41, width/42)
+  assert_eq(60, rectangle_area/43)
+  let base/44 : Int = 8
+  let height/45 : Int = 5
+  let triangle_area/46 : Int = multiply(base/44, height/45) / 2
+  assert_eq(20, triangle_area/46)
+  let top_base/47 : Int = 4
+  let bottom_base/48 : Int = 10
+  let trapezoid_height/49 : Int = 5
+  let trapezoid_area/50 : Int = multiply(add(top_base/47, bottom_base/48), trapezoid_height/49) / 2
+  @make_value(assert_eq(35, trapezoid_area/50))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_4 () -> Unit raise Error {
+  let item1_price/30 : Int = 299
+  let item1_quantity/31 : Int = 2
+  let item2_price/32 : Int = 199
+  let item2_quantity/33 : Int = 1
+  let item3_price/34 : Int = 99
+  let item3_quantity/35 : Int = 3
+  let shipping_fee/36 : Int = 15
+  let total1/37 : Int = multiply(item1_price/30, item1_quantity/31)
+  let total2/38 : Int = multiply(item2_price/32, item2_quantity/33)
+  let total3/39 : Int = multiply(item3_price/34, item3_quantity/35)
+  let cart_total/40 : Int = add(add(add(total1/37, total2/38), total3/39), shipping_fee/36)
+  @make_value(assert_eq(1109, cart_total/40))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_5 () -> Unit raise Error {
+  let hours/25 : Int = 3
+  let minutes/26 : Int = multiply(hours/25, 60)
+  assert_eq(180, minutes/26)
+  let mins/27 : Int = 45
+  let seconds/28 : Int = multiply(mins/27, 60)
+  assert_eq(2700, seconds/28)
+  let total_seconds/29 : Int = add(multiply(hours/25, 3600), multiply(mins/27, 60))
+  @make_value(assert_eq(13500, total_seconds/29))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_6 () -> Unit raise Error {
+  let num1/18 : Int = 85
+  let num2/19 : Int = 90
+  let num3/20 : Int = 78
+  let num4/21 : Int = 92
+  let num5/22 : Int = 88
+  let sum/23 : Int = add(add(add(add(num1/18, num2/19), num3/20), num4/21), num5/22)
+  let average/24 : Int = sum/23 / 5
+  assert_eq(433, sum/23)
+  @make_value(assert_eq(86, average/24))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_7 () -> Unit raise Error {
+  let speed/13 : Int = 60
+  let time_minutes/14 : Int = 150
+  let distance/15 : Int = multiply(speed/13, time_minutes/14) / 60
+  assert_eq(150, distance/15)
+  let distance2/16 : Int = 180
+  let time2/17 : Int = multiply(distance2/16, 60) / speed/13
+  @make_value(assert_eq(180, time2/17))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_8 () -> Unit raise Error {
+  let usd_amount/7 : Int = 100
+  let exchange_rate/8 : Int = 7
+  let cny_amount/9 : Int = multiply(usd_amount/7, exchange_rate/8)
+  assert_eq(700, cny_amount/9)
+  let fee_rate/10 : Int = 3
+  let fee/11 : Int = multiply(cny_amount/9, fee_rate/10) / 100
+  let total_with_fee/12 : Int = add(cny_amount/9, fee/11)
+  assert_eq(21, fee/11)
+  @make_value(assert_eq(721, total_with_fee/12))
+}
+
+fn __test_73656c665f636f6e7461696e65645f74657374732e6d6274_9 () -> Unit raise Error {
+  let row/1 : Int = 4
+  let col/2 : Int = 3
+  let width/3 : Int = 5
+  let index/4 : Int = add(multiply(row/1, width/3), col/2)
+  assert_eq(23, index/4)
+  let first_index/5 : Int = add(multiply(0, 5), 0)
+  assert_eq(0, first_index/5)
+  let last_index/6 : Int = add(multiply(9, 5), 4)
+  @make_value(assert_eq(49, last_index/6))
+}

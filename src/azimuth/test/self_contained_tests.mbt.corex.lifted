@@ -1,0 +1,25 @@
+pub fn add (a/71 : Int, b/72 : Int) -> Int { a/71 + b/72 }
+
+pub fn multiply (a/69 : Int, b/70 : Int) -> Int { a/69 * b/70 }
+
+pub fn greet (name/68 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/68), "!")
+}
+
+pub fn assert_eq (expected/66 : Int, actual/67 : Int) -> Unit {
+  if expected/66 == actual/67 {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}
+
+pub fn assert_eq_string (expected/64 : String, actual/65 : String) -> Unit {
+  if @stringequal(expected/64, actual/65) {
+    ()
+  } else {
+    1 / 0
+    ()
+  }
+}

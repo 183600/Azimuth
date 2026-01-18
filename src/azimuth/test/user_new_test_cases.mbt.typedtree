@@ -8,33 +8,49 @@
        ((Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Unit) -> Unit (generic_ false)))
-         ((Texpr_constant 2000000000 Int)
+         ((Texpr_constant 10 Int)
           (Texpr_apply
            (Texpr_ident $azimuth.add () Normal
             ((Int Int) -> Unit (generic_ false)))
-           ((Texpr_constant 1000000000 Int) (Texpr_constant 1000000000 Int))
-           Unit Normal))
+           ((Texpr_constant 7 Int) (Texpr_constant 3 Int)) Unit Normal))
          Unit Normal)
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Unit) -> Unit (generic_ false)))
-         ((Texpr_constant -2000000000 Int)
+         ((Texpr_constant -5 Int)
           (Texpr_apply
            (Texpr_ident $azimuth.add () Normal
             ((Int Int) -> Unit (generic_ false)))
-           ((Texpr_constant -1000000000 Int)
-            (Texpr_constant -1000000000 Int))
-           Unit Normal))
+           ((Texpr_constant -8 Int) (Texpr_constant 3 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant 0 Int)
+          (Texpr_apply
+           (Texpr_ident $azimuth.add () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 5 Int) (Texpr_constant -5 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant 2147483647 Int)
+          (Texpr_apply
+           (Texpr_ident $azimuth.add () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 2147483646 Int) (Texpr_constant 1 Int)) Unit
+           Normal))
          Unit Normal))
        (Texpr_apply
         (Texpr_ident $azimuth.assert_eq () Normal
          ((Int Unit) -> Unit (generic_ false)))
-        ((Texpr_constant 0 Int)
+        ((Texpr_constant -2147483648 Int)
          (Texpr_apply
           (Texpr_ident $azimuth.add () Normal
            ((Int Int) -> Unit (generic_ false)))
-          ((Texpr_constant 1500000000 Int) (Texpr_constant -1500000000 Int))
-          Unit Normal))
+          ((Texpr_constant -2147483647 Int) (Texpr_constant -1 Int)) Unit
+          Normal))
         Unit Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
@@ -54,38 +70,48 @@
        ((Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Unit) -> Unit (generic_ false)))
-         ((Texpr_constant 25 Int)
+         ((Texpr_constant 15 Int)
           (Texpr_apply
            (Texpr_ident $azimuth.multiply () Normal
             ((Int Int) -> Unit (generic_ false)))
-           ((Texpr_constant -5 Int) (Texpr_constant -5 Int)) Unit Normal))
+           ((Texpr_constant 3 Int) (Texpr_constant 5 Int)) Unit Normal))
          Unit Normal)
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Unit) -> Unit (generic_ false)))
-         ((Texpr_constant -30 Int)
+         ((Texpr_constant -20 Int)
           (Texpr_apply
            (Texpr_ident $azimuth.multiply () Normal
             ((Int Int) -> Unit (generic_ false)))
-           ((Texpr_constant 6 Int) (Texpr_constant -5 Int)) Unit Normal))
+           ((Texpr_constant 4 Int) (Texpr_constant -5 Int)) Unit Normal))
          Unit Normal)
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Unit) -> Unit (generic_ false)))
-         ((Texpr_constant -42 Int)
+         ((Texpr_constant 0 Int)
           (Texpr_apply
            (Texpr_ident $azimuth.multiply () Normal
             ((Int Int) -> Unit (generic_ false)))
-           ((Texpr_constant -6 Int) (Texpr_constant 7 Int)) Unit Normal))
+           ((Texpr_constant 0 Int) (Texpr_constant 12345 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant 100 Int)
+          (Texpr_apply
+           (Texpr_ident $azimuth.multiply () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 10 Int) (Texpr_constant 10 Int)) Unit Normal))
          Unit Normal))
        (Texpr_apply
         (Texpr_ident $azimuth.assert_eq () Normal
          ((Int Unit) -> Unit (generic_ false)))
-        ((Texpr_constant 0 Int)
+        ((Texpr_constant 2147483647 Int)
          (Texpr_apply
           (Texpr_ident $azimuth.multiply () Normal
            ((Int Int) -> Unit (generic_ false)))
-          ((Texpr_constant -100 Int) (Texpr_constant 0 Int)) Unit Normal))
+          ((Texpr_constant 46341 Int) (Texpr_constant 46341 Int)) Unit
+          Normal))
         Unit Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
@@ -105,11 +131,11 @@
        ((Texpr_apply
          (Texpr_ident $azimuth.assert_eq_string () Normal
           ((String Unit) -> Unit (generic_ false)))
-         ((Texpr_constant "Hello, John@Doe!" String)
+         ((Texpr_constant "Hello, MoonBit!" String)
           (Texpr_apply
            (Texpr_ident $azimuth.greet () Normal
             ((String) -> Unit (generic_ false)))
-           ((Texpr_constant John@Doe String)) Unit Normal))
+           ((Texpr_constant MoonBit String)) Unit Normal))
          Unit Normal)
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq_string () Normal
@@ -123,21 +149,29 @@
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq_string () Normal
           ((String Unit) -> Unit (generic_ false)))
-         ((Texpr_constant "Hello, test@example.com!" String)
+         ((Texpr_constant "Hello, !" String)
           (Texpr_apply
            (Texpr_ident $azimuth.greet () Normal
             ((String) -> Unit (generic_ false)))
-           ((Texpr_constant test@example.com String)) Unit Normal))
+           ((Texpr_constant "" String)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq_string () Normal
+          ((String Unit) -> Unit (generic_ false)))
+         ((Texpr_constant "Hello, \F0\9F\8C\9F!" String)
+          (Texpr_apply
+           (Texpr_ident $azimuth.greet () Normal
+            ((String) -> Unit (generic_ false)))
+           ((Texpr_constant "\F0\9F\8C\9F" String)) Unit Normal))
          Unit Normal))
        (Texpr_apply
         (Texpr_ident $azimuth.assert_eq_string () Normal
          ((String Unit) -> Unit (generic_ false)))
-        ((Texpr_constant "Hello, \F0\9F\8C\9FMoonBit\F0\9F\8C\9F!" String)
+        ((Texpr_constant "Hello, Space Test!" String)
          (Texpr_apply
           (Texpr_ident $azimuth.greet () Normal
            ((String) -> Unit (generic_ false)))
-          ((Texpr_constant "\F0\9F\8C\9FMoonBit\F0\9F\8C\9F" String)) Unit
-          Normal))
+          ((Texpr_constant "Space Test" String)) Unit Normal))
         Unit Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
@@ -153,64 +187,52 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
-       (((binder max_val/0) (binder_typ Int)))
-       (Texpr_let (Tpat_var min_val/1 Int) (Texpr_constant -2147483648 Int)
-        (((binder min_val/1) (binder_typ Int)))
-        (Texpr_sequence
-         ((Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_ident max_val/0 () Normal Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.add () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 1 Int))
-             Unit Normal))
-           Unit Normal)
+      (Texpr_sequence
+       ((Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant 3 Int)
           (Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_ident min_val/1 () Normal Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.add () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident min_val/1 () Normal Int) (Texpr_constant -1 Int))
-             Unit Normal))
-           Unit Normal)
+           (Texpr_ident $azimuth.divide_with_ceil () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 10 Int) (Texpr_constant 3 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant 4 Int)
           (Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_constant -1 Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.add () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident max_val/0 () Normal Int)
-              (Texpr_ident min_val/1 () Normal Int))
-             Unit Normal))
-           Unit Normal)
+           (Texpr_ident $azimuth.divide_with_ceil () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 12 Int) (Texpr_constant 3 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant -3 Int)
           (Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_constant 2147483646 Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.add () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant -1 Int))
-             Unit Normal))
-           Unit Normal))
+           (Texpr_ident $azimuth.divide_with_ceil () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant -10 Int) (Texpr_constant 3 Int)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Unit) -> Unit (generic_ false)))
+         ((Texpr_constant -3 Int)
+          (Texpr_apply
+           (Texpr_ident $azimuth.divide_with_ceil () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 10 Int) (Texpr_constant -3 Int)) Unit Normal))
+         Unit Normal))
+       (Texpr_apply
+        (Texpr_ident $azimuth.assert_eq () Normal
+         ((Int Unit) -> Unit (generic_ false)))
+        ((Texpr_constant 0 Int)
          (Texpr_apply
-          (Texpr_ident $azimuth.assert_eq () Normal
-           ((Int Unit) -> Unit (generic_ false)))
-          ((Texpr_constant -2147483647 Int)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Unit (generic_ false)))
-            ((Texpr_ident min_val/1 () Normal Int) (Texpr_constant 1 Int))
-            Unit Normal))
-          Unit Normal)
-         Unit)
-        Unit)
+          (Texpr_ident $azimuth.divide_with_ceil () Normal
+           ((Int Int) -> Unit (generic_ false)))
+          ((Texpr_constant 0 Int) (Texpr_constant 5 Int)) Unit Normal))
+        Unit Normal)
        Unit))
      (ret_constraint ((Tname ((lid Unit)) () Unit)))
      (err_constraint
@@ -225,63 +247,76 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var a/0 Int) (Texpr_constant 10 Int)
+      (Texpr_let (Tpat_var a/0 Int) (Texpr_constant 15 Int)
        (((binder a/0) (binder_typ Int)))
-       (Texpr_let (Tpat_var b/1 Int) (Texpr_constant 20 Int)
+       (Texpr_let (Tpat_var b/1 Int) (Texpr_constant 4 Int)
         (((binder b/1) (binder_typ Int)))
-        (Texpr_let (Tpat_var c/2 Int) (Texpr_constant 30 Int)
+        (Texpr_let (Tpat_var c/2 Int) (Texpr_constant 7 Int)
          (((binder c/2) (binder_typ Int)))
-         (Texpr_let (Tpat_var d/3 Int) (Texpr_constant 40 Int)
-          (((binder d/3) (binder_typ Int)))
-          (Texpr_let (Tpat_var sum_ab/4 Unit)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Unit (generic_ false)))
-            ((Texpr_ident a/0 () Normal Int) (Texpr_ident b/1 () Normal Int))
-            Unit Normal)
-           (((binder sum_ab/4) (binder_typ Unit)))
-           (Texpr_let (Tpat_var diff_cd/5 Unit)
-            (Texpr_apply
+         (Texpr_let (Tpat_var result1/3 Unit)
+          (Texpr_apply
+           (Texpr_ident $azimuth.multiply () Normal
+            ((Unit Int) -> Unit (generic_ false)))
+           ((Texpr_apply
              (Texpr_ident $azimuth.add () Normal
               ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident c/2 () Normal Int)
-              (Texpr_apply
-               (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
-                ((Int) -> Int (generic_ true)))
-               ((Texpr_ident d/3 () Normal Int)) Int Normal))
+             ((Texpr_ident a/0 () Normal Int)
+              (Texpr_ident b/1 () Normal Int))
              Unit Normal)
-            (((binder diff_cd/5) (binder_typ Unit)))
-            (Texpr_let (Tpat_var product_ab_cd/6 Unit)
-             (Texpr_apply
-              (Texpr_ident $azimuth.multiply () Normal
-               ((Unit Unit) -> Unit (generic_ false)))
-              ((Texpr_ident sum_ab/4 () Normal Unit)
-               (Texpr_ident diff_cd/5 () Normal Unit))
-              Unit Normal)
-             (((binder product_ab_cd/6) (binder_typ Unit)))
-             (Texpr_let (Tpat_var product_ab/7 Unit)
-              (Texpr_apply
+            (Texpr_ident c/2 () Normal Int))
+           Unit Normal)
+          (((binder result1/3) (binder_typ Unit)))
+          (Texpr_sequence
+           ((Texpr_apply
+             (Texpr_ident $azimuth.assert_eq () Normal
+              ((Int Unit) -> Unit (generic_ false)))
+             ((Texpr_constant 133 Int)
+              (Texpr_ident result1/3 () Normal Unit))
+             Unit Normal))
+           (Texpr_let (Tpat_var result2/4 Unit)
+            (Texpr_apply
+             (Texpr_ident $azimuth.add () Normal
+              ((Unit Int) -> Unit (generic_ false)))
+             ((Texpr_apply
                (Texpr_ident $azimuth.multiply () Normal
                 ((Int Int) -> Unit (generic_ false)))
                ((Texpr_ident a/0 () Normal Int)
                 (Texpr_ident b/1 () Normal Int))
                Unit Normal)
-              (((binder product_ab/7) (binder_typ Unit)))
-              (Texpr_let (Tpat_var result/8 Unit)
-               (Texpr_apply
-                (Texpr_ident $azimuth.add () Normal
-                 ((Unit Unit) -> Unit (generic_ false)))
-                ((Texpr_ident product_ab_cd/6 () Normal Unit)
-                 (Texpr_ident product_ab/7 () Normal Unit))
-                Unit Normal)
-               (((binder result/8) (binder_typ Unit)))
-               (Texpr_apply
-                (Texpr_ident $azimuth.assert_eq () Normal
-                 ((Int Unit) -> Unit (generic_ false)))
-                ((Texpr_constant 0 Int)
-                 (Texpr_ident result/8 () Normal Unit))
-                Unit Normal)
-               Unit)
+              (Texpr_ident c/2 () Normal Int))
+             Unit Normal)
+            (((binder result2/4) (binder_typ Unit)))
+            (Texpr_sequence
+             ((Texpr_apply
+               (Texpr_ident $azimuth.assert_eq () Normal
+                ((Int Unit) -> Unit (generic_ false)))
+               ((Texpr_constant 67 Int)
+                (Texpr_ident result2/4 () Normal Unit))
+               Unit Normal))
+             (Texpr_let (Tpat_var result3/5 Unit)
+              (Texpr_apply
+               (Texpr_ident $azimuth.divide_with_ceil () Normal
+                ((Unit Int) -> Unit (generic_ false)))
+               ((Texpr_apply
+                 (Texpr_ident $azimuth.add () Normal
+                  ((Unit Int) -> Unit (generic_ false)))
+                 ((Texpr_apply
+                   (Texpr_ident $azimuth.add () Normal
+                    ((Int Int) -> Unit (generic_ false)))
+                   ((Texpr_ident a/0 () Normal Int)
+                    (Texpr_ident b/1 () Normal Int))
+                   Unit Normal)
+                  (Texpr_ident c/2 () Normal Int))
+                 Unit Normal)
+                (Texpr_constant 2 Int))
+               Unit Normal)
+              (((binder result3/5) (binder_typ Unit)))
+              (Texpr_apply
+               (Texpr_ident $azimuth.assert_eq () Normal
+                ((Int Unit) -> Unit (generic_ false)))
+               ((Texpr_constant 13 Int)
+                (Texpr_ident result3/5 () Normal Unit))
+               Unit Normal)
               Unit)
              Unit)
             Unit)
@@ -303,246 +338,6 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var item1_price/0 Int) (Texpr_constant 299 Int)
-       (((binder item1_price/0) (binder_typ Int)))
-       (Texpr_let (Tpat_var item1_quantity/1 Int) (Texpr_constant 2 Int)
-        (((binder item1_quantity/1) (binder_typ Int)))
-        (Texpr_let (Tpat_var item2_price/2 Int) (Texpr_constant 199 Int)
-         (((binder item2_price/2) (binder_typ Int)))
-         (Texpr_let (Tpat_var item2_quantity/3 Int) (Texpr_constant 3 Int)
-          (((binder item2_quantity/3) (binder_typ Int)))
-          (Texpr_let (Tpat_var discount/4 Int) (Texpr_constant 50 Int)
-           (((binder discount/4) (binder_typ Int)))
-           (Texpr_let (Tpat_var total1/5 Unit)
-            (Texpr_apply
-             (Texpr_ident $azimuth.multiply () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident item1_price/0 () Normal Int)
-              (Texpr_ident item1_quantity/1 () Normal Int))
-             Unit Normal)
-            (((binder total1/5) (binder_typ Unit)))
-            (Texpr_let (Tpat_var total2/6 Unit)
-             (Texpr_apply
-              (Texpr_ident $azimuth.multiply () Normal
-               ((Int Int) -> Unit (generic_ false)))
-              ((Texpr_ident item2_price/2 () Normal Int)
-               (Texpr_ident item2_quantity/3 () Normal Int))
-              Unit Normal)
-             (((binder total2/6) (binder_typ Unit)))
-             (Texpr_let (Tpat_var subtotal/7 Unit)
-              (Texpr_apply
-               (Texpr_ident $azimuth.add () Normal
-                ((Unit Unit) -> Unit (generic_ false)))
-               ((Texpr_ident total1/5 () Normal Unit)
-                (Texpr_ident total2/6 () Normal Unit))
-               Unit Normal)
-              (((binder subtotal/7) (binder_typ Unit)))
-              (Texpr_let (Tpat_var final_total/8 Unit)
-               (Texpr_apply
-                (Texpr_ident $azimuth.add () Normal
-                 ((Unit Int) -> Unit (generic_ false)))
-                ((Texpr_ident subtotal/7 () Normal Unit)
-                 (Texpr_apply
-                  (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
-                   ((Int) -> Int (generic_ true)))
-                  ((Texpr_ident discount/4 () Normal Int)) Int Normal))
-                Unit Normal)
-               (((binder final_total/8) (binder_typ Unit)))
-               (Texpr_apply
-                (Texpr_ident $azimuth.assert_eq () Normal
-                 ((Int Unit) -> Unit (generic_ false)))
-                ((Texpr_constant 1094 Int)
-                 (Texpr_ident final_total/8 () Normal Unit))
-                Unit Normal)
-               Unit)
-              Unit)
-             Unit)
-            Unit)
-           Unit)
-          Unit)
-         Unit)
-        Unit)
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint
-      (Error_typ
-       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
-     (ty
-      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
-   (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular)
-   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_6)
-   (fn
-    ((params ())
-     (body
-      (Texpr_let (Tpat_var x/0 Int) (Texpr_constant 12 Int)
-       (((binder x/0) (binder_typ Int)))
-       (Texpr_let (Tpat_var y/1 Int) (Texpr_constant 8 Int)
-        (((binder y/1) (binder_typ Int)))
-        (Texpr_let (Tpat_var z/2 Int) (Texpr_constant 5 Int)
-         (((binder z/2) (binder_typ Int)))
-         (Texpr_let (Tpat_var left_side/3 Unit)
-          (Texpr_apply
-           (Texpr_ident $azimuth.multiply () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_ident x/0 () Normal Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.add () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident y/1 () Normal Int)
-              (Texpr_ident z/2 () Normal Int))
-             Unit Normal))
-           Unit Normal)
-          (((binder left_side/3) (binder_typ Unit)))
-          (Texpr_let (Tpat_var right_side/4 Unit)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Unit Unit) -> Unit (generic_ false)))
-            ((Texpr_apply
-              (Texpr_ident $azimuth.multiply () Normal
-               ((Int Int) -> Unit (generic_ false)))
-              ((Texpr_ident x/0 () Normal Int)
-               (Texpr_ident y/1 () Normal Int))
-              Unit Normal)
-             (Texpr_apply
-              (Texpr_ident $azimuth.multiply () Normal
-               ((Int Int) -> Unit (generic_ false)))
-              ((Texpr_ident x/0 () Normal Int)
-               (Texpr_ident z/2 () Normal Int))
-              Unit Normal))
-            Unit Normal)
-           (((binder right_side/4) (binder_typ Unit)))
-           (Texpr_sequence
-            ((Texpr_apply
-              (Texpr_ident $azimuth.assert_eq () Normal
-               ((Unit Unit) -> Unit (generic_ false)))
-              ((Texpr_ident left_side/3 () Normal Unit)
-               (Texpr_ident right_side/4 () Normal Unit))
-              Unit Normal))
-            (Texpr_let (Tpat_var sum_left/5 Unit)
-             (Texpr_apply
-              (Texpr_ident $azimuth.add () Normal
-               ((Unit Int) -> Unit (generic_ false)))
-              ((Texpr_apply
-                (Texpr_ident $azimuth.add () Normal
-                 ((Int Int) -> Unit (generic_ false)))
-                ((Texpr_ident x/0 () Normal Int)
-                 (Texpr_ident y/1 () Normal Int))
-                Unit Normal)
-               (Texpr_ident z/2 () Normal Int))
-              Unit Normal)
-             (((binder sum_left/5) (binder_typ Unit)))
-             (Texpr_let (Tpat_var sum_right/6 Unit)
-              (Texpr_apply
-               (Texpr_ident $azimuth.add () Normal
-                ((Int Unit) -> Unit (generic_ false)))
-               ((Texpr_ident x/0 () Normal Int)
-                (Texpr_apply
-                 (Texpr_ident $azimuth.add () Normal
-                  ((Int Int) -> Unit (generic_ false)))
-                 ((Texpr_ident y/1 () Normal Int)
-                  (Texpr_ident z/2 () Normal Int))
-                 Unit Normal))
-               Unit Normal)
-              (((binder sum_right/6) (binder_typ Unit)))
-              (Texpr_apply
-               (Texpr_ident $azimuth.assert_eq () Normal
-                ((Unit Unit) -> Unit (generic_ false)))
-               ((Texpr_ident sum_left/5 () Normal Unit)
-                (Texpr_ident sum_right/6 () Normal Unit))
-               Unit Normal)
-              Unit)
-             Unit)
-            Unit)
-           Unit)
-          Unit)
-         Unit)
-        Unit)
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint
-      (Error_typ
-       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
-     (ty
-      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
-   (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular)
-   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_7)
-   (fn
-    ((params ())
-     (body
-      (Texpr_let (Tpat_var empty_string/0 String) (Texpr_constant "" String)
-       (((binder empty_string/0) (binder_typ String)))
-       (Texpr_let (Tpat_var single_char/1 String) (Texpr_constant A String)
-        (((binder single_char/1) (binder_typ String)))
-        (Texpr_let (Tpat_var long_string/2 String)
-         (Texpr_constant
-          ThisIsAVeryLongStringThatTestsTheGreetFunctionWithExtendedLength
-          String)
-         (((binder long_string/2) (binder_typ String)))
-         (Texpr_let (Tpat_var whitespace_string/3 String)
-          (Texpr_constant "   " String)
-          (((binder whitespace_string/3) (binder_typ String)))
-          (Texpr_sequence
-           ((Texpr_apply
-             (Texpr_ident $azimuth.assert_eq_string () Normal
-              ((String Unit) -> Unit (generic_ false)))
-             ((Texpr_constant "Hello, !" String)
-              (Texpr_apply
-               (Texpr_ident $azimuth.greet () Normal
-                ((String) -> Unit (generic_ false)))
-               ((Texpr_ident empty_string/0 () Normal String)) Unit Normal))
-             Unit Normal)
-            (Texpr_apply
-             (Texpr_ident $azimuth.assert_eq_string () Normal
-              ((String Unit) -> Unit (generic_ false)))
-             ((Texpr_constant "Hello, A!" String)
-              (Texpr_apply
-               (Texpr_ident $azimuth.greet () Normal
-                ((String) -> Unit (generic_ false)))
-               ((Texpr_ident single_char/1 () Normal String)) Unit Normal))
-             Unit Normal)
-            (Texpr_apply
-             (Texpr_ident $azimuth.assert_eq_string () Normal
-              ((String Unit) -> Unit (generic_ false)))
-             ((Texpr_constant
-               "Hello, ThisIsAVeryLongStringThatTestsTheGreetFunctionWithExtendedLength!"
-               String)
-              (Texpr_apply
-               (Texpr_ident $azimuth.greet () Normal
-                ((String) -> Unit (generic_ false)))
-               ((Texpr_ident long_string/2 () Normal String)) Unit Normal))
-             Unit Normal))
-           (Texpr_apply
-            (Texpr_ident $azimuth.assert_eq_string () Normal
-             ((String Unit) -> Unit (generic_ false)))
-            ((Texpr_constant "Hello,    !" String)
-             (Texpr_apply
-              (Texpr_ident $azimuth.greet () Normal
-               ((String) -> Unit (generic_ false)))
-              ((Texpr_ident whitespace_string/3 () Normal String)) Unit
-              Normal))
-            Unit Normal)
-           Unit)
-          Unit)
-         Unit)
-        Unit)
-       Unit))
-     (ret_constraint ((Tname ((lid Unit)) () Unit)))
-     (err_constraint
-      (Error_typ
-       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
-     (ty
-      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
-   (attrs ())))
- (Timpl_fun_decl
-  ((kind Fun_kind_regular)
-   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_8)
-   (fn
-    ((params ())
-     (body
       (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
        (((binder max_val/0) (binder_typ Int)))
        (Texpr_let (Tpat_var min_val/1 Int) (Texpr_constant -2147483648 Int)
@@ -551,31 +346,11 @@
          ((Texpr_apply
            (Texpr_ident $azimuth.assert_eq () Normal
             ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_constant 0 Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.multiply () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 0 Int))
-             Unit Normal))
-           Unit Normal)
-          (Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
-           ((Texpr_constant 0 Int)
-            (Texpr_apply
-             (Texpr_ident $azimuth.multiply () Normal
-              ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident min_val/1 () Normal Int) (Texpr_constant 0 Int))
-             Unit Normal))
-           Unit Normal)
-          (Texpr_apply
-           (Texpr_ident $azimuth.assert_eq () Normal
-            ((Int Unit) -> Unit (generic_ false)))
            ((Texpr_ident max_val/0 () Normal Int)
             (Texpr_apply
-             (Texpr_ident $azimuth.multiply () Normal
+             (Texpr_ident $azimuth.add () Normal
               ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 1 Int))
+             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 100 Int))
              Unit Normal))
            Unit Normal)
           (Texpr_apply
@@ -583,9 +358,31 @@
             ((Int Unit) -> Unit (generic_ false)))
            ((Texpr_ident min_val/1 () Normal Int)
             (Texpr_apply
+             (Texpr_ident $azimuth.add () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident min_val/1 () Normal Int)
+              (Texpr_constant -100 Int))
+             Unit Normal))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_eq () Normal
+            ((Int Unit) -> Unit (generic_ false)))
+           ((Texpr_constant -1 Int)
+            (Texpr_apply
+             (Texpr_ident $azimuth.add () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident max_val/0 () Normal Int)
+              (Texpr_ident min_val/1 () Normal Int))
+             Unit Normal))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_eq () Normal
+            ((Int Unit) -> Unit (generic_ false)))
+           ((Texpr_constant 0 Int)
+            (Texpr_apply
              (Texpr_ident $azimuth.multiply () Normal
               ((Int Int) -> Unit (generic_ false)))
-             ((Texpr_ident min_val/1 () Normal Int) (Texpr_constant 1 Int))
+             ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 0 Int))
              Unit Normal))
            Unit Normal)
           (Texpr_apply
@@ -605,10 +402,327 @@
            (Texpr_apply
             (Texpr_ident $azimuth.multiply () Normal
              ((Int Int) -> Unit (generic_ false)))
-            ((Texpr_ident max_val/0 () Normal Int)
-             (Texpr_ident max_val/0 () Normal Int))
+            ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 1 Int))
             Unit Normal))
           Unit Normal)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_6)
+   (fn
+    ((params ())
+     (body
+      (Texpr_sequence
+       ((Texpr_apply
+         (Texpr_ident $azimuth.assert_eq_string () Normal
+          ((String Unit) -> Unit (generic_ false)))
+         ((Texpr_constant "Hello, !" String)
+          (Texpr_apply
+           (Texpr_ident $azimuth.greet () Normal
+            ((String) -> Unit (generic_ false)))
+           ((Texpr_constant "" String)) Unit Normal))
+         Unit Normal)
+        (Texpr_apply
+         (Texpr_ident $azimuth.assert_eq_string () Normal
+          ((String Unit) -> Unit (generic_ false)))
+         ((Texpr_constant "Hello, A!" String)
+          (Texpr_apply
+           (Texpr_ident $azimuth.greet () Normal
+            ((String) -> Unit (generic_ false)))
+           ((Texpr_constant A String)) Unit Normal))
+         Unit Normal))
+       (Texpr_let (Tpat_var long_string/0 String)
+        (Texpr_constant ThisIsAVeryLongStringForTestingPurposes String)
+        (((binder long_string/0) (binder_typ String)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident $azimuth.assert_eq_string () Normal
+            ((String Unit) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_ident Add::add|String| () (Prim @add_string)
+              ((String String) -> String (generic_ false)))
+             ((Texpr_apply
+               (Texpr_ident Add::add|String| () (Prim @add_string)
+                ((String String) -> String (generic_ false)))
+               ((Texpr_constant "Hello, " String)
+                (Texpr_ident long_string/0 () Normal String))
+               String Infix)
+              (Texpr_constant ! String))
+             String Infix)
+            (Texpr_apply
+             (Texpr_ident $azimuth.greet () Normal
+              ((String) -> Unit (generic_ false)))
+             ((Texpr_ident long_string/0 () Normal String)) Unit Normal))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_eq_string () Normal
+            ((String Unit) -> Unit (generic_ false)))
+           ((Texpr_constant "Hello, @#$%^&*()!" String)
+            (Texpr_apply
+             (Texpr_ident $azimuth.greet () Normal
+              ((String) -> Unit (generic_ false)))
+             ((Texpr_constant "@#$%^&*()" String)) Unit Normal))
+           Unit Normal))
+         (Texpr_apply
+          (Texpr_ident $azimuth.assert_eq_string () Normal
+           ((String Unit) -> Unit (generic_ false)))
+          ((Texpr_constant "Hello, \E4\B8\AD\E6\96\87\E5\AD\97\E7\AC\A6!"
+            String)
+           (Texpr_apply
+            (Texpr_ident $azimuth.greet () Normal
+             ((String) -> Unit (generic_ false)))
+            ((Texpr_constant "\E4\B8\AD\E6\96\87\E5\AD\97\E7\AC\A6" String))
+            Unit Normal))
+          Unit Normal)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_7)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var x/0 Int) (Texpr_constant 12 Int)
+       (((binder x/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var y/1 Int) (Texpr_constant 8 Int)
+        (((binder y/1) (binder_typ Int)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident $azimuth.assert_eq () Normal
+            ((Unit Unit) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_ident $azimuth.add () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident x/0 () Normal Int)
+              (Texpr_ident y/1 () Normal Int))
+             Unit Normal)
+            (Texpr_apply
+             (Texpr_ident $azimuth.add () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident y/1 () Normal Int)
+              (Texpr_ident x/0 () Normal Int))
+             Unit Normal))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_eq () Normal
+            ((Unit Unit) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_ident $azimuth.multiply () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident x/0 () Normal Int)
+              (Texpr_ident y/1 () Normal Int))
+             Unit Normal)
+            (Texpr_apply
+             (Texpr_ident $azimuth.multiply () Normal
+              ((Int Int) -> Unit (generic_ false)))
+             ((Texpr_ident y/1 () Normal Int)
+              (Texpr_ident x/0 () Normal Int))
+             Unit Normal))
+           Unit Normal))
+         (Texpr_let (Tpat_var z/2 Int) (Texpr_constant 5 Int)
+          (((binder z/2) (binder_typ Int)))
+          (Texpr_sequence
+           ((Texpr_apply
+             (Texpr_ident $azimuth.assert_eq () Normal
+              ((Unit Unit) -> Unit (generic_ false)))
+             ((Texpr_apply
+               (Texpr_ident $azimuth.add () Normal
+                ((Unit Int) -> Unit (generic_ false)))
+               ((Texpr_apply
+                 (Texpr_ident $azimuth.add () Normal
+                  ((Int Int) -> Unit (generic_ false)))
+                 ((Texpr_ident x/0 () Normal Int)
+                  (Texpr_ident y/1 () Normal Int))
+                 Unit Normal)
+                (Texpr_ident z/2 () Normal Int))
+               Unit Normal)
+              (Texpr_apply
+               (Texpr_ident $azimuth.add () Normal
+                ((Int Unit) -> Unit (generic_ false)))
+               ((Texpr_ident x/0 () Normal Int)
+                (Texpr_apply
+                 (Texpr_ident $azimuth.add () Normal
+                  ((Int Int) -> Unit (generic_ false)))
+                 ((Texpr_ident y/1 () Normal Int)
+                  (Texpr_ident z/2 () Normal Int))
+                 Unit Normal))
+               Unit Normal))
+             Unit Normal)
+            (Texpr_apply
+             (Texpr_ident $azimuth.assert_eq () Normal
+              ((Unit Unit) -> Unit (generic_ false)))
+             ((Texpr_apply
+               (Texpr_ident $azimuth.multiply () Normal
+                ((Unit Int) -> Unit (generic_ false)))
+               ((Texpr_apply
+                 (Texpr_ident $azimuth.multiply () Normal
+                  ((Int Int) -> Unit (generic_ false)))
+                 ((Texpr_ident x/0 () Normal Int)
+                  (Texpr_ident y/1 () Normal Int))
+                 Unit Normal)
+                (Texpr_ident z/2 () Normal Int))
+               Unit Normal)
+              (Texpr_apply
+               (Texpr_ident $azimuth.multiply () Normal
+                ((Int Unit) -> Unit (generic_ false)))
+               ((Texpr_ident x/0 () Normal Int)
+                (Texpr_apply
+                 (Texpr_ident $azimuth.multiply () Normal
+                  ((Int Int) -> Unit (generic_ false)))
+                 ((Texpr_ident y/1 () Normal Int)
+                  (Texpr_ident z/2 () Normal Int))
+                 Unit Normal))
+               Unit Normal))
+             Unit Normal))
+           (Texpr_apply
+            (Texpr_ident $azimuth.assert_eq () Normal
+             ((Unit Unit) -> Unit (generic_ false)))
+            ((Texpr_apply
+              (Texpr_ident $azimuth.multiply () Normal
+               ((Int Unit) -> Unit (generic_ false)))
+              ((Texpr_ident x/0 () Normal Int)
+               (Texpr_apply
+                (Texpr_ident $azimuth.add () Normal
+                 ((Int Int) -> Unit (generic_ false)))
+                ((Texpr_ident y/1 () Normal Int)
+                 (Texpr_ident z/2 () Normal Int))
+                Unit Normal))
+              Unit Normal)
+             (Texpr_apply
+              (Texpr_ident $azimuth.add () Normal
+               ((Unit Unit) -> Unit (generic_ false)))
+              ((Texpr_apply
+                (Texpr_ident $azimuth.multiply () Normal
+                 ((Int Int) -> Unit (generic_ false)))
+                ((Texpr_ident x/0 () Normal Int)
+                 (Texpr_ident y/1 () Normal Int))
+                Unit Normal)
+               (Texpr_apply
+                (Texpr_ident $azimuth.multiply () Normal
+                 ((Int Int) -> Unit (generic_ false)))
+                ((Texpr_ident x/0 () Normal Int)
+                 (Texpr_ident z/2 () Normal Int))
+                Unit Normal))
+              Unit Normal))
+            Unit Normal)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f6e65775f746573745f63617365732e6d6274_8)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var item_price/0 Int) (Texpr_constant 199 Int)
+       (((binder item_price/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var quantity/1 Int) (Texpr_constant 3 Int)
+        (((binder quantity/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var shipping/2 Int) (Texpr_constant 15 Int)
+         (((binder shipping/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var subtotal/3 Unit)
+          (Texpr_apply
+           (Texpr_ident $azimuth.multiply () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_ident item_price/0 () Normal Int)
+            (Texpr_ident quantity/1 () Normal Int))
+           Unit Normal)
+          (((binder subtotal/3) (binder_typ Unit)))
+          (Texpr_let (Tpat_var total/4 Unit)
+           (Texpr_apply
+            (Texpr_ident $azimuth.add () Normal
+             ((Unit Int) -> Unit (generic_ false)))
+            ((Texpr_ident subtotal/3 () Normal Unit)
+             (Texpr_ident shipping/2 () Normal Int))
+            Unit Normal)
+           (((binder total/4) (binder_typ Unit)))
+           (Texpr_sequence
+            ((Texpr_apply
+              (Texpr_ident $azimuth.assert_eq () Normal
+               ((Int Unit) -> Unit (generic_ false)))
+              ((Texpr_constant 612 Int) (Texpr_ident total/4 () Normal Unit))
+              Unit Normal))
+            (Texpr_let (Tpat_var celsius/5 Int) (Texpr_constant 25 Int)
+             (((binder celsius/5) (binder_typ Int)))
+             (Texpr_let (Tpat_var fahrenheit/6 Unit)
+              (Texpr_apply
+               (Texpr_ident $azimuth.add () Normal
+                ((Unit Int) -> Unit (generic_ false)))
+               ((Texpr_apply
+                 (Texpr_ident $azimuth.multiply () Normal
+                  ((Int Int) -> Unit (generic_ false)))
+                 ((Texpr_ident celsius/5 () Normal Int)
+                  (Texpr_constant 2 Int))
+                 Unit Normal)
+                (Texpr_constant 30 Int))
+               Unit Normal)
+              (((binder fahrenheit/6) (binder_typ Unit)))
+              (Texpr_sequence
+               ((Texpr_apply
+                 (Texpr_ident $azimuth.assert_eq () Normal
+                  ((Int Unit) -> Unit (generic_ false)))
+                 ((Texpr_constant 80 Int)
+                  (Texpr_ident fahrenheit/6 () Normal Unit))
+                 Unit Normal))
+               (Texpr_let (Tpat_var content_width/7 Int)
+                (Texpr_constant 800 Int)
+                (((binder content_width/7) (binder_typ Int)))
+                (Texpr_let (Tpat_var margin/8 Int) (Texpr_constant 20 Int)
+                 (((binder margin/8) (binder_typ Int)))
+                 (Texpr_let (Tpat_var total_width/9 Unit)
+                  (Texpr_apply
+                   (Texpr_ident $azimuth.add () Normal
+                    ((Unit Int) -> Unit (generic_ false)))
+                   ((Texpr_apply
+                     (Texpr_ident $azimuth.multiply () Normal
+                      ((Int Int) -> Unit (generic_ false)))
+                     ((Texpr_ident margin/8 () Normal Int)
+                      (Texpr_constant 2 Int))
+                     Unit Normal)
+                    (Texpr_ident content_width/7 () Normal Int))
+                   Unit Normal)
+                  (((binder total_width/9) (binder_typ Unit)))
+                  (Texpr_apply
+                   (Texpr_ident $azimuth.assert_eq () Normal
+                    ((Int Unit) -> Unit (generic_ false)))
+                   ((Texpr_constant 840 Int)
+                    (Texpr_ident total_width/9 () Normal Unit))
+                   Unit Normal)
+                  Unit)
+                 Unit)
+                Unit)
+               Unit)
+              Unit)
+             Unit)
+            Unit)
+           Unit)
+          Unit)
          Unit)
         Unit)
        Unit))
@@ -625,60 +739,86 @@
    (fn
     ((params ())
      (body
-      (Texpr_let (Tpat_var loan_amount/0 Int) (Texpr_constant 100000 Int)
-       (((binder loan_amount/0) (binder_typ Int)))
-       (Texpr_let (Tpat_var annual_rate/1 Int) (Texpr_constant 6 Int)
-        (((binder annual_rate/1) (binder_typ Int)))
-        (Texpr_let (Tpat_var loan_years/2 Int) (Texpr_constant 30 Int)
-         (((binder loan_years/2) (binder_typ Int)))
-         (Texpr_let (Tpat_var total_interest/3 Int)
-          (Texpr_apply
-           (Texpr_unresolved_method (Tname_trait (name Div)) div Int
-            ((Int Int) -> Int (generic_ true)))
+      (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
+       (((binder max_val/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var min_val/1 Int) (Texpr_constant -2147483648 Int)
+        (((binder min_val/1) (binder_typ Int)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident $azimuth.assert_true () Normal
+            ((Bool) -> Unit (generic_ false)))
            ((Texpr_apply
-             (Texpr_ident $azimuth.multiply () Normal
-              ((Int Unit) -> Int (generic_ false)))
-             ((Texpr_ident loan_amount/0 () Normal Int)
-              (Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) equal Int
+              ((Int Int) -> Bool (generic_ true)))
+             ((Texpr_apply
+               (Texpr_ident $azimuth.add () Normal
+                ((Int Int) -> Int (generic_ false)))
+               ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 1 Int))
+               Int Normal)
+              (Texpr_ident max_val/0 () Normal Int))
+             Bool Infix))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_true () Normal
+            ((Bool) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) equal Int
+              ((Int Int) -> Bool (generic_ true)))
+             ((Texpr_apply
+               (Texpr_ident $azimuth.add () Normal
+                ((Int Int) -> Int (generic_ false)))
+               ((Texpr_ident min_val/1 () Normal Int)
+                (Texpr_constant -1 Int))
+               Int Normal)
+              (Texpr_ident min_val/1 () Normal Int))
+             Bool Infix))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_true () Normal
+            ((Bool) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) equal Int
+              ((Int Int) -> Bool (generic_ true)))
+             ((Texpr_apply
                (Texpr_ident $azimuth.multiply () Normal
-                ((Int Int) -> Unit (generic_ false)))
-               ((Texpr_ident annual_rate/1 () Normal Int)
-                (Texpr_ident loan_years/2 () Normal Int))
-               Unit Normal))
-             Int Normal)
-            (Texpr_constant 100 Int))
-           Int Infix)
-          (((binder total_interest/3) (binder_typ Int)))
-          (Texpr_let (Tpat_var total_payment/4 Unit)
-           (Texpr_apply
-            (Texpr_ident $azimuth.add () Normal
-             ((Int Int) -> Unit (generic_ false)))
-            ((Texpr_ident loan_amount/0 () Normal Int)
-             (Texpr_ident total_interest/3 () Normal Int))
-            Unit Normal)
-           (((binder total_payment/4) (binder_typ Unit)))
-           (Texpr_let (Tpat_var monthly_payment/5 Unit)
-            (Texpr_apply
-             (Texpr_unresolved_method (Tname_trait (name Div)) div Unit
-              ((Unit Unit) -> Unit (generic_ true)))
-             ((Texpr_ident total_payment/4 () Normal Unit)
-              (Texpr_apply
+                ((Int Int) -> Int (generic_ false)))
+               ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 2 Int))
+               Int Normal)
+              (Texpr_ident max_val/0 () Normal Int))
+             Bool Infix))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_true () Normal
+            ((Bool) -> Unit (generic_ false)))
+           ((Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) equal Int
+              ((Int Int) -> Bool (generic_ true)))
+             ((Texpr_apply
                (Texpr_ident $azimuth.multiply () Normal
-                ((Int Int) -> Unit (generic_ false)))
-               ((Texpr_ident loan_years/2 () Normal Int)
-                (Texpr_constant 12 Int))
-               Unit Normal))
-             Unit Infix)
-            (((binder monthly_payment/5) (binder_typ Unit)))
-            (Texpr_apply
-             (Texpr_ident $azimuth.assert_eq () Normal
-              ((Int Unit) -> Unit (generic_ false)))
-             ((Texpr_constant 277 Int)
-              (Texpr_ident monthly_payment/5 () Normal Unit))
-             Unit Normal)
-            Unit)
-           Unit)
-          Unit)
+                ((Int Int) -> Int (generic_ false)))
+               ((Texpr_ident min_val/1 () Normal Int)
+                (Texpr_constant -2 Int))
+               Int Normal)
+              (Texpr_ident min_val/1 () Normal Int))
+             Bool Infix))
+           Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_true () Normal
+            ((Bool) -> Unit (generic_ false)))
+           ((Texpr_constant true Bool)) Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_false () Normal
+            ((Bool) -> Unit (generic_ false)))
+           ((Texpr_constant false Bool)) Unit Normal)
+          (Texpr_apply
+           (Texpr_ident $azimuth.assert_eq () Normal
+            ((Int Int) -> Unit (generic_ false)))
+           ((Texpr_constant 42 Int) (Texpr_constant 42 Int)) Unit Normal))
+         (Texpr_apply
+          (Texpr_ident $azimuth.assert_eq_string () Normal
+           ((String String) -> Unit (generic_ false)))
+          ((Texpr_constant test String) (Texpr_constant test String)) Unit
+          Normal)
          Unit)
         Unit)
        Unit))

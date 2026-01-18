@@ -1,0 +1,39 @@
+pub fn add (a/27 : Int, b/28 : Int) -> Int { a/27 + b/28 }
+
+pub fn multiply (a/25 : Int, b/26 : Int) -> Int { a/25 * b/26 }
+
+pub fn greet (name/24 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/24), "!")
+}
+
+pub fn assert_eq (expected/22 : Int, actual/23 : Int) -> Unit {
+  if expected/22 == actual/23 {
+    ()
+  } else {
+    $builtin.abort("Assertion failed", "@:self_contained_standard_tests.mbt:21:5-21:39")
+  }
+}
+
+pub fn assert_eq_string (expected/20 : String, actual/21 : String) -> Unit {
+  if @stringequal(expected/20, actual/21) {
+    ()
+  } else {
+    $builtin.abort("Assertion failed", "@:self_contained_standard_tests.mbt:29:5-29:39")
+  }
+}
+
+pub fn assert_true (condition/19 : Bool) -> Unit {
+  if condition/19 {
+    ()
+  } else {
+    $builtin.abort("Assertion failed", "@:self_contained_standard_tests.mbt:37:5-37:39")
+  }
+}
+
+pub fn assert_false (condition/18 : Bool) -> Unit {
+  if condition/18 {
+    $builtin.abort("Assertion failed", "@:self_contained_standard_tests.mbt:43:5-43:39")
+  } else {
+    ()
+  }
+}

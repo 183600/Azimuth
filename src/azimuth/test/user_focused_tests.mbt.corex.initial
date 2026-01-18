@@ -1,0 +1,177 @@
+pub fn add (a/43 : Int, b/44 : Int) -> Int {
+  if a/43 == 0 { return b/44 }
+  if b/44 == 0 { return a/43 }
+  let min_val/45 : Int = -2147483648
+  let max_val/46 : Int = 2147483647
+  if a/43 == min_val/45 {
+    if b/44 < 0 { return min_val/45 }
+    return a/43 + b/44
+  }
+  if b/44 == min_val/45 {
+    if a/43 < 0 { return min_val/45 }
+    return a/43 + b/44
+  }
+  if a/43 > 0 && b/44 > 0 { if a/43 > max_val/46 - b/44 { return max_val/46 }  }
+  if a/43 < 0 && b/44 < 0 { if a/43 < min_val/45 - b/44 { return min_val/45 }  }
+  a/43 + b/44
+}
+
+pub fn multiply (a/36 : Int, b/37 : Int) -> Int {
+  let min_val/38 : Int = -2147483648
+  let max_val/39 : Int = 2147483647
+  if a/36 == 0 || b/37 == 0 { return 0 }
+  if a/36 == 1 { return b/37 }
+  if b/37 == 1 { return a/36 }
+  if a/36 == -1 { return if b/37 == min_val/38 { min_val/38 } else { -b/37 } }
+  if b/37 == -1 { return if a/36 == min_val/38 { min_val/38 } else { -a/36 } }
+  if a/36 == min_val/38 { return if b/37 > 1 || b/37 < -1 { min_val/38 } else { a/36 * b/37 } }
+  if b/37 == min_val/38 { return if a/36 > 1 || a/36 < -1 { min_val/38 } else { a/36 * b/37 } }
+  let sign/40 : Int = if a/36 > 0 && b/37 > 0 || a/36 < 0 && b/37 < 0 { 1 } else { -1 }
+  let abs_a/41 : Int = if a/36 < 0 { -a/36 } else { a/36 }
+  let abs_b/42 : Int = if b/37 < 0 { -b/37 } else { b/37 }
+  if abs_a/41 > max_val/39 / abs_b/42 { return if sign/40 > 0 { max_val/39 } else { min_val/38 } }
+  a/36 * b/37
+}
+
+pub fn greet (name/35 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/35), "!")
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_0 () -> Unit raise Error {
+  let result1/31 : Int = add(7, 8)
+  if result1/31 != 15 {
+    $builtin.abort("addition test 1 failed", "@:user_focused_tests.mbt:121:22-121:62")
+  }
+  let result2/32 : Int = add(123, -123)
+  if result2/32 != 0 {
+    $builtin.abort("addition test 2 failed", "@:user_focused_tests.mbt:124:21-124:61")
+  }
+  let result3/33 : Int = add(-50, -50)
+  if result3/33 != -100 {
+    $builtin.abort("addition test 3 failed", "@:user_focused_tests.mbt:127:24-127:64")
+  }
+  let result4/34 : Int = add(500, 500)
+  @make_value(
+    if result4/34 != 1000 {
+      $builtin.abort("addition test 4 failed", "@:user_focused_tests.mbt:130:24-130:64")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_1 () -> Unit raise Error {
+  let result1/27 : Int = multiply(6, 6)
+  if result1/27 != 36 {
+    $builtin.abort("multiplication test 1 failed", "@:user_focused_tests.mbt:136:22-136:68")
+  }
+  let result2/28 : Int = multiply(7, 7)
+  if result2/28 != 49 {
+    $builtin.abort("multiplication test 2 failed", "@:user_focused_tests.mbt:139:22-139:68")
+  }
+  let result3/29 : Int = multiply(8, 8)
+  if result3/29 != 64 {
+    $builtin.abort("multiplication test 3 failed", "@:user_focused_tests.mbt:142:22-142:68")
+  }
+  let result4/30 : Int = multiply(9, 9)
+  @make_value(
+    if result4/30 != 81 {
+      $builtin.abort("multiplication test 4 failed", "@:user_focused_tests.mbt:145:22-145:68")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_2 () -> Unit raise Error {
+  let result1/23 : String = greet("Alice")
+  if Eq::not_equal|$default_impl|(result1/23, "Hello, Alice!") {
+    $builtin.abort("greet test 1 failed", "@:user_focused_tests.mbt:151:35-151:72")
+  }
+  let result2/24 : String = greet("Bob123")
+  if Eq::not_equal|$default_impl|(result2/24, "Hello, Bob123!") {
+    $builtin.abort("greet test 2 failed", "@:user_focused_tests.mbt:154:36-154:73")
+  }
+  let result3/25 : String = greet("张三")
+  if Eq::not_equal|$default_impl|(result3/25, "Hello, 张三!") {
+    $builtin.abort("greet test 3 failed", "@:user_focused_tests.mbt:157:32-157:69")
+  }
+  let result4/26 : String = greet("user@domain.com")
+  @make_value(
+    if Eq::not_equal|$default_impl|(result4/26, "Hello, user@domain.com!") {
+      $builtin.abort("greet test 4 failed", "@:user_focused_tests.mbt:160:45-160:82")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_3 () -> Unit raise Error {
+  let length/19 : Int = 12
+  let width/20 : Int = 8
+  let sum/21 : Int = add(length/19, width/20)
+  let perimeter/22 : Int = multiply(2, sum/21)
+  @make_value(
+    if perimeter/22 != 40 {
+      $builtin.abort("rectangle perimeter test failed", "@:user_focused_tests.mbt:169:24-169:73")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_4 () -> Unit raise Error {
+  let original_price/15 : Int = 200
+  let discount_percentage/16 : Int = 15
+  let discount_amount/17 : Int = multiply(original_price/15, discount_percentage/16) / 100
+  let final_price/18 : Int = add(original_price/15, -discount_amount/17)
+  @make_value(
+    if final_price/18 != 170 {
+      $builtin.abort("discounted price test failed", "@:user_focused_tests.mbt:178:27-178:73")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_5 () -> Unit raise Error {
+  let celsius/13 : Int = 20
+  let fahrenheit/14 : Int = add(multiply(celsius/13, 9) / 5 + 32, 0)
+  @make_value(
+    if fahrenheit/14 != 68 {
+      $builtin.abort("temperature conversion test failed", "@:user_focused_tests.mbt:185:25-185:77")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_6 () -> Unit raise Error {
+  let principal/8 : Int = 1000
+  let rate/9 : Int = 5
+  let years/10 : Int = 3
+  let growth_factor/11 : Int = add(1, multiply(rate/9, years/10))
+  let total/12 : Int = multiply(principal/8, growth_factor/11)
+  @make_value(
+    if total/12 != 16000 {
+      $builtin.abort("compound interest test failed", "@:user_focused_tests.mbt:195:23-195:70")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_7 () -> Unit raise Error {
+  let n/6 : Int = 10
+  let sum/7 : Int = multiply(n/6, add(n/6, 1)) / 2
+  @make_value(
+    if sum/7 != 55 {
+      $builtin.abort("sum of natural numbers test failed", "@:user_focused_tests.mbt:202:18-202:70")
+    }
+  )
+}
+
+fn __test_757365725f666f63757365645f74657374732e6d6274_8 () -> Unit raise Error {
+  let max_val/1 : Int = 2147483647
+  let min_val/2 : Int = -2147483648
+  let result1/3 : Int = add(max_val/1, 100)
+  if result1/3 != max_val/1 {
+    $builtin.abort("boundary test 1 failed", "@:user_focused_tests.mbt:212:27-212:67")
+  }
+  let result2/4 : Int = add(min_val/2, -100)
+  if result2/4 != min_val/2 {
+    $builtin.abort("boundary test 2 failed", "@:user_focused_tests.mbt:216:27-216:67")
+  }
+  let result3/5 : Int = multiply(max_val/1, -1)
+  @make_value(
+    if result3/5 != min_val/2 {
+      $builtin.abort("boundary test 3 failed", "@:user_focused_tests.mbt:220:27-220:67")
+    }
+  )
+}

@@ -22,4 +22,55 @@
        (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
      (ty
       (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_73696d706c655f6e65775f746573742e6d6274_1)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result/0 Unit)
+       (Texpr_apply
+        (Texpr_ident $azimuth.multiply () Normal
+         ((Int Int) -> Unit (generic_ false)))
+        ((Texpr_constant 4 Int) (Texpr_constant 5 Int)) Unit Normal)
+       (((binder result/0) (binder_typ Unit)))
+       (Texpr_apply
+        (Texpr_ident $azimuth.assert_eq () Normal
+         ((Int Unit) -> Unit (generic_ false)))
+        ((Texpr_constant 20 Int) (Texpr_ident result/0 () Normal Unit)) Unit
+        Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_73696d706c655f6e65775f746573742e6d6274_2)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result/0 Unit)
+       (Texpr_apply
+        (Texpr_ident $azimuth.greet () Normal
+         ((String) -> Unit (generic_ false)))
+        ((Texpr_constant Test String)) Unit Normal)
+       (((binder result/0) (binder_typ Unit)))
+       (Texpr_apply
+        (Texpr_ident $azimuth.assert_eq_string () Normal
+         ((String Unit) -> Unit (generic_ false)))
+        ((Texpr_constant "Hello, Test!" String)
+         (Texpr_ident result/0 () Normal Unit))
+        Unit Normal)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
    (attrs ()))))

@@ -1,0 +1,1074 @@
+((Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder add)
+   (fn
+    ((params
+      ((Param a/0 ((Tname ((lid Int)) () Int)) Int)
+       (Param b/1 ((Tname ((lid Int)) () Int)) Int)))
+     (body
+      (Texpr_sequence
+       ((Texpr_if
+         (Texpr_apply
+          (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+           ((Int Int) -> Bool (generic_ false)))
+          ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+          Infix)
+         (Texpr_return ((Texpr_ident b/1 () Normal Int)) Unit) () Unit)
+        (Texpr_if
+         (Texpr_apply
+          (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+           ((Int Int) -> Bool (generic_ false)))
+          ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+          Infix)
+         (Texpr_return ((Texpr_ident a/0 () Normal Int)) Unit) () Unit))
+       (Texpr_let (Tpat_var min_val/2 Int) (Texpr_constant -2147483648 Int)
+        (((binder min_val/2) (binder_typ Int)))
+        (Texpr_let (Tpat_var max_val/3 Int) (Texpr_constant 2147483647 Int)
+         (((binder max_val/3) (binder_typ Int)))
+         (Texpr_sequence
+          ((Texpr_if
+            (Texpr_apply
+             (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident a/0 () Normal Int)
+              (Texpr_ident min_val/2 () Normal Int))
+             Bool Infix)
+            (Texpr_sequence
+             ((Texpr_if
+               (Texpr_apply
+                (Texpr_ident Compare::op_lt|Int| ()
+                 (Prim (Pcomparison I32 Lt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+                Infix)
+               (Texpr_return ((Texpr_ident min_val/2 () Normal Int)) Unit) ()
+               Unit))
+             (Texpr_return
+              ((Texpr_apply
+                (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Unit)
+             Unit)
+            () Unit)
+           (Texpr_if
+            (Texpr_apply
+             (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident b/1 () Normal Int)
+              (Texpr_ident min_val/2 () Normal Int))
+             Bool Infix)
+            (Texpr_sequence
+             ((Texpr_if
+               (Texpr_apply
+                (Texpr_ident Compare::op_lt|Int| ()
+                 (Prim (Pcomparison I32 Lt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+                Infix)
+               (Texpr_return ((Texpr_ident min_val/2 () Normal Int)) Unit) ()
+               Unit))
+             (Texpr_return
+              ((Texpr_apply
+                (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Unit)
+             Unit)
+            () Unit)
+           (Texpr_if
+            (Texpr_and
+             (Texpr_apply
+              (Texpr_ident Compare::op_gt|Int| () (Prim (Pcomparison I32 Gt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             (Texpr_apply
+              (Texpr_ident Compare::op_gt|Int| () (Prim (Pcomparison I32 Gt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             36:12-36:14)
+            (Texpr_if
+             (Texpr_apply
+              (Texpr_ident Compare::op_gt|Int| () (Prim (Pcomparison I32 Gt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_apply
+                (Texpr_ident Sub::sub|Int| () (Prim (Parith I32 Sub))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident max_val/3 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Bool Infix)
+             (Texpr_return ((Texpr_ident max_val/3 () Normal Int)) Unit) ()
+             Unit)
+            () Unit)
+           (Texpr_if
+            (Texpr_and
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             44:12-44:14)
+            (Texpr_if
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_apply
+                (Texpr_ident Sub::sub|Int| () (Prim (Parith I32 Sub))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident min_val/2 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Bool Infix)
+             (Texpr_return ((Texpr_ident min_val/2 () Normal Int)) Unit) ()
+             Unit)
+            () Unit))
+          (Texpr_return
+           ((Texpr_apply
+             (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+              ((Int Int) -> Int (generic_ false)))
+             ((Texpr_ident a/0 () Normal Int)
+              (Texpr_ident b/1 () Normal Int))
+             Int Infix))
+           Int)
+          Int)
+         Int)
+        Int)
+       Int))
+     (ret_constraint ((Tname ((lid Int)) () Int)))
+     (err_constraint No_error_typ) (ty ((Int Int) -> Int (generic_ false)))))
+   (is_pub true) (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder multiply)
+   (fn
+    ((params
+      ((Param a/0 ((Tname ((lid Int)) () Int)) Int)
+       (Param b/1 ((Tname ((lid Int)) () Int)) Int)))
+     (body
+      (Texpr_let (Tpat_var min_val/2 Int) (Texpr_constant -2147483648 Int)
+       (((binder min_val/2) (binder_typ Int)))
+       (Texpr_let (Tpat_var max_val/3 Int) (Texpr_constant 2147483647 Int)
+        (((binder max_val/3) (binder_typ Int)))
+        (Texpr_sequence
+         ((Texpr_if
+           (Texpr_or
+            (Texpr_apply
+             (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+             Infix)
+            (Texpr_apply
+             (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+             Infix)
+            62:13-62:15)
+           (Texpr_return ((Texpr_constant 0 Int)) Unit) () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident a/0 () Normal Int) (Texpr_constant 1 Int)) Bool
+            Infix)
+           (Texpr_return ((Texpr_ident b/1 () Normal Int)) Unit) () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident b/1 () Normal Int) (Texpr_constant 1 Int)) Bool
+            Infix)
+           (Texpr_return ((Texpr_ident a/0 () Normal Int)) Unit) () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident a/0 () Normal Int) (Texpr_constant -1 Int)) Bool
+            Infix)
+           (Texpr_return
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident b/1 () Normal Int)
+                (Texpr_ident min_val/2 () Normal Int))
+               Bool Infix)
+              (Texpr_ident min_val/2 () Normal Int)
+              ((Texpr_apply
+                (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
+                 ((Int) -> Int (generic_ true)))
+                ((Texpr_ident b/1 () Normal Int)) Int Normal))
+              Int))
+            Unit)
+           () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident b/1 () Normal Int) (Texpr_constant -1 Int)) Bool
+            Infix)
+           (Texpr_return
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident a/0 () Normal Int)
+                (Texpr_ident min_val/2 () Normal Int))
+               Bool Infix)
+              (Texpr_ident min_val/2 () Normal Int)
+              ((Texpr_apply
+                (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
+                 ((Int) -> Int (generic_ true)))
+                ((Texpr_ident a/0 () Normal Int)) Int Normal))
+              Int))
+            Unit)
+           () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident a/0 () Normal Int)
+             (Texpr_ident min_val/2 () Normal Int))
+            Bool Infix)
+           (Texpr_return
+            ((Texpr_if
+              (Texpr_or
+               (Texpr_apply
+                (Texpr_ident Compare::op_gt|Int| ()
+                 (Prim (Pcomparison I32 Gt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident b/1 () Normal Int) (Texpr_constant 1 Int)) Bool
+                Infix)
+               (Texpr_apply
+                (Texpr_ident Compare::op_lt|Int| ()
+                 (Prim (Pcomparison I32 Lt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident b/1 () Normal Int) (Texpr_constant -1 Int))
+                Bool Infix)
+               87:21-87:23)
+              (Texpr_ident min_val/2 () Normal Int)
+              ((Texpr_apply
+                (Texpr_ident Mul::mul|Int| () (Prim (Parith I32 Mul))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Int))
+            Unit)
+           () Unit)
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Eq::equal|Int| () (Prim (Pcomparison I32 Eq))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident b/1 () Normal Int)
+             (Texpr_ident min_val/2 () Normal Int))
+            Bool Infix)
+           (Texpr_return
+            ((Texpr_if
+              (Texpr_or
+               (Texpr_apply
+                (Texpr_ident Compare::op_gt|Int| ()
+                 (Prim (Pcomparison I32 Gt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int) (Texpr_constant 1 Int)) Bool
+                Infix)
+               (Texpr_apply
+                (Texpr_ident Compare::op_lt|Int| ()
+                 (Prim (Pcomparison I32 Lt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int) (Texpr_constant -1 Int))
+                Bool Infix)
+               91:21-91:23)
+              (Texpr_ident min_val/2 () Normal Int)
+              ((Texpr_apply
+                (Texpr_ident Mul::mul|Int| () (Prim (Parith I32 Mul))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Int))
+            Unit)
+           () Unit))
+         (Texpr_let (Tpat_var sign/4 Int)
+          (Texpr_if
+           (Texpr_or
+            (Texpr_and
+             (Texpr_apply
+              (Texpr_ident Compare::op_gt|Int| () (Prim (Pcomparison I32 Gt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             (Texpr_apply
+              (Texpr_ident Compare::op_gt|Int| () (Prim (Pcomparison I32 Gt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             95:24-95:26)
+            (Texpr_and
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             95:44-95:46)
+            95:34-95:36)
+           (Texpr_constant 1 Int) ((Texpr_constant -1 Int)) Int)
+          (((binder sign/4) (binder_typ Int)))
+          (Texpr_let (Tpat_var abs_a/5 Int)
+           (Texpr_if
+            (Texpr_apply
+             (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident a/0 () Normal Int) (Texpr_constant 0 Int)) Bool
+             Infix)
+            (Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
+              ((Int) -> Int (generic_ true)))
+             ((Texpr_ident a/0 () Normal Int)) Int Normal)
+            ((Texpr_ident a/0 () Normal Int)) Int)
+           (((binder abs_a/5) (binder_typ Int)))
+           (Texpr_let (Tpat_var abs_b/6 Int)
+            (Texpr_if
+             (Texpr_apply
+              (Texpr_ident Compare::op_lt|Int| () (Prim (Pcomparison I32 Lt))
+               ((Int Int) -> Bool (generic_ false)))
+              ((Texpr_ident b/1 () Normal Int) (Texpr_constant 0 Int)) Bool
+              Infix)
+             (Texpr_apply
+              (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
+               ((Int) -> Int (generic_ true)))
+              ((Texpr_ident b/1 () Normal Int)) Int Normal)
+             ((Texpr_ident b/1 () Normal Int)) Int)
+            (((binder abs_b/6) (binder_typ Int)))
+            (Texpr_sequence
+             ((Texpr_if
+               (Texpr_apply
+                (Texpr_ident Compare::op_gt|Int| ()
+                 (Prim (Pcomparison I32 Gt))
+                 ((Int Int) -> Bool (generic_ false)))
+                ((Texpr_ident abs_a/5 () Normal Int)
+                 (Texpr_apply
+                  (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+                   ((Int Int) -> Int (generic_ false)))
+                  ((Texpr_ident max_val/3 () Normal Int)
+                   (Texpr_ident abs_b/6 () Normal Int))
+                  Int Infix))
+                Bool Infix)
+               (Texpr_return
+                ((Texpr_if
+                  (Texpr_apply
+                   (Texpr_ident Compare::op_gt|Int| ()
+                    (Prim (Pcomparison I32 Gt))
+                    ((Int Int) -> Bool (generic_ false)))
+                   ((Texpr_ident sign/4 () Normal Int)
+                    (Texpr_constant 0 Int))
+                   Bool Infix)
+                  (Texpr_ident max_val/3 () Normal Int)
+                  ((Texpr_ident min_val/2 () Normal Int)) Int))
+                Unit)
+               () Unit))
+             (Texpr_return
+              ((Texpr_apply
+                (Texpr_ident Mul::mul|Int| () (Prim (Parith I32 Mul))
+                 ((Int Int) -> Int (generic_ false)))
+                ((Texpr_ident a/0 () Normal Int)
+                 (Texpr_ident b/1 () Normal Int))
+                Int Infix))
+              Int)
+             Int)
+            Int)
+           Int)
+          Int)
+         Int)
+        Int)
+       Int))
+     (ret_constraint ((Tname ((lid Int)) () Int)))
+     (err_constraint No_error_typ) (ty ((Int Int) -> Int (generic_ false)))))
+   (is_pub true) (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular) (fn_binder greet)
+   (fn
+    ((params ((Param name/0 ((Tname ((lid String)) () String)) String)))
+     (body
+      (Texpr_apply
+       (Texpr_ident Add::add|String| () (Prim @add_string)
+        ((String String) -> String (generic_ false)))
+       ((Texpr_apply
+         (Texpr_ident Add::add|String| () (Prim @add_string)
+          ((String String) -> String (generic_ false)))
+         ((Texpr_constant "Hello, " String)
+          (Texpr_ident name/0 () Normal String))
+         String Infix)
+        (Texpr_constant ! String))
+       String Infix))
+     (ret_constraint ((Tname ((lid String)) () String)))
+     (err_constraint No_error_typ)
+     (ty ((String) -> String (generic_ false)))))
+   (is_pub true) (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_0)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result1/0 Int)
+       (Texpr_apply
+        (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+        ((Texpr_constant 7 Int) (Texpr_constant 8 Int)) Int Normal)
+       (((binder result1/0) (binder_typ Int)))
+       (Texpr_sequence
+        ((Texpr_if
+          (Texpr_apply
+           (Texpr_ident Compare::not_equal|Int| ()
+            (Prim (Pcomparison I32 Ne)) ((Int Int) -> Bool (generic_ false)))
+           ((Texpr_ident result1/0 () Normal Int) (Texpr_constant 15 Int))
+           Bool Infix)
+          (Texpr_apply
+           (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+            ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+             (generic_ false)))
+           ((Texpr_constant "addition test 1 failed" String)) Unit Normal)
+          () Unit))
+        (Texpr_let (Tpat_var result2/1 Int)
+         (Texpr_apply
+          (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 123 Int) (Texpr_constant -123 Int)) Int Normal)
+         (((binder result2/1) (binder_typ Int)))
+         (Texpr_sequence
+          ((Texpr_if
+            (Texpr_apply
+             (Texpr_ident Compare::not_equal|Int| ()
+              (Prim (Pcomparison I32 Ne))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident result2/1 () Normal Int) (Texpr_constant 0 Int))
+             Bool Infix)
+            (Texpr_apply
+             (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             ((Texpr_constant "addition test 2 failed" String)) Unit Normal)
+            () Unit))
+          (Texpr_let (Tpat_var result3/2 Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant -50 Int) (Texpr_constant -50 Int)) Int Normal)
+           (((binder result3/2) (binder_typ Int)))
+           (Texpr_sequence
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result3/2 () Normal Int)
+                (Texpr_constant -100 Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "addition test 3 failed" String)) Unit
+               Normal)
+              () Unit))
+            (Texpr_let (Tpat_var result4/3 Int)
+             (Texpr_apply
+              (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+              ((Texpr_constant 500 Int) (Texpr_constant 500 Int)) Int Normal)
+             (((binder result4/3) (binder_typ Int)))
+             (Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result4/3 () Normal Int)
+                (Texpr_constant 1000 Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "addition test 4 failed" String)) Unit
+               Normal)
+              () Unit)
+             Unit)
+            Unit)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_1)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result1/0 Int)
+       (Texpr_apply
+        (Texpr_ident multiply () Normal ((Int Int) -> Int (generic_ false)))
+        ((Texpr_constant 6 Int) (Texpr_constant 6 Int)) Int Normal)
+       (((binder result1/0) (binder_typ Int)))
+       (Texpr_sequence
+        ((Texpr_if
+          (Texpr_apply
+           (Texpr_ident Compare::not_equal|Int| ()
+            (Prim (Pcomparison I32 Ne)) ((Int Int) -> Bool (generic_ false)))
+           ((Texpr_ident result1/0 () Normal Int) (Texpr_constant 36 Int))
+           Bool Infix)
+          (Texpr_apply
+           (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+            ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+             (generic_ false)))
+           ((Texpr_constant "multiplication test 1 failed" String)) Unit
+           Normal)
+          () Unit))
+        (Texpr_let (Tpat_var result2/1 Int)
+         (Texpr_apply
+          (Texpr_ident multiply () Normal
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_constant 7 Int) (Texpr_constant 7 Int)) Int Normal)
+         (((binder result2/1) (binder_typ Int)))
+         (Texpr_sequence
+          ((Texpr_if
+            (Texpr_apply
+             (Texpr_ident Compare::not_equal|Int| ()
+              (Prim (Pcomparison I32 Ne))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident result2/1 () Normal Int) (Texpr_constant 49 Int))
+             Bool Infix)
+            (Texpr_apply
+             (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             ((Texpr_constant "multiplication test 2 failed" String)) Unit
+             Normal)
+            () Unit))
+          (Texpr_let (Tpat_var result3/2 Int)
+           (Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_constant 8 Int) (Texpr_constant 8 Int)) Int Normal)
+           (((binder result3/2) (binder_typ Int)))
+           (Texpr_sequence
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result3/2 () Normal Int)
+                (Texpr_constant 64 Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "multiplication test 3 failed" String)) Unit
+               Normal)
+              () Unit))
+            (Texpr_let (Tpat_var result4/3 Int)
+             (Texpr_apply
+              (Texpr_ident multiply () Normal
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_constant 9 Int) (Texpr_constant 9 Int)) Int Normal)
+             (((binder result4/3) (binder_typ Int)))
+             (Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result4/3 () Normal Int)
+                (Texpr_constant 81 Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "multiplication test 4 failed" String)) Unit
+               Normal)
+              () Unit)
+             Unit)
+            Unit)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_2)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var result1/0 String)
+       (Texpr_apply
+        (Texpr_ident greet () Normal ((String) -> String (generic_ false)))
+        ((Texpr_constant Alice String)) String Normal)
+       (((binder result1/0) (binder_typ String)))
+       (Texpr_sequence
+        ((Texpr_if
+          (Texpr_apply
+           (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal String
+            ((String String) -> Bool (generic_ true)))
+           ((Texpr_ident result1/0 () Normal String)
+            (Texpr_constant "Hello, Alice!" String))
+           Bool Infix)
+          (Texpr_apply
+           (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+            ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+             (generic_ false)))
+           ((Texpr_constant "greet test 1 failed" String)) Unit Normal)
+          () Unit))
+        (Texpr_let (Tpat_var result2/1 String)
+         (Texpr_apply
+          (Texpr_ident greet () Normal ((String) -> String (generic_ false)))
+          ((Texpr_constant Bob123 String)) String Normal)
+         (((binder result2/1) (binder_typ String)))
+         (Texpr_sequence
+          ((Texpr_if
+            (Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal
+              String ((String String) -> Bool (generic_ true)))
+             ((Texpr_ident result2/1 () Normal String)
+              (Texpr_constant "Hello, Bob123!" String))
+             Bool Infix)
+            (Texpr_apply
+             (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             ((Texpr_constant "greet test 2 failed" String)) Unit Normal)
+            () Unit))
+          (Texpr_let (Tpat_var result3/2 String)
+           (Texpr_apply
+            (Texpr_ident greet () Normal
+             ((String) -> String (generic_ false)))
+            ((Texpr_constant "\E5\BC\A0\E4\B8\89" String)) String Normal)
+           (((binder result3/2) (binder_typ String)))
+           (Texpr_sequence
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal
+                String ((String String) -> Bool (generic_ true)))
+               ((Texpr_ident result3/2 () Normal String)
+                (Texpr_constant "Hello, \E5\BC\A0\E4\B8\89!" String))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "greet test 3 failed" String)) Unit Normal)
+              () Unit))
+            (Texpr_let (Tpat_var result4/3 String)
+             (Texpr_apply
+              (Texpr_ident greet () Normal
+               ((String) -> String (generic_ false)))
+              ((Texpr_constant user@domain.com String)) String Normal)
+             (((binder result4/3) (binder_typ String)))
+             (Texpr_if
+              (Texpr_apply
+               (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal
+                String ((String String) -> Bool (generic_ true)))
+               ((Texpr_ident result4/3 () Normal String)
+                (Texpr_constant "Hello, user@domain.com!" String))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "greet test 4 failed" String)) Unit Normal)
+              () Unit)
+             Unit)
+            Unit)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_3)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var length/0 Int) (Texpr_constant 12 Int)
+       (((binder length/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var width/1 Int) (Texpr_constant 8 Int)
+        (((binder width/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var sum/2 Int)
+         (Texpr_apply
+          (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+          ((Texpr_ident length/0 () Normal Int)
+           (Texpr_ident width/1 () Normal Int))
+          Int Normal)
+         (((binder sum/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var perimeter/3 Int)
+          (Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 2 Int) (Texpr_ident sum/2 () Normal Int)) Int
+           Normal)
+          (((binder perimeter/3) (binder_typ Int)))
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Compare::not_equal|Int| ()
+             (Prim (Pcomparison I32 Ne))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident perimeter/3 () Normal Int) (Texpr_constant 40 Int))
+            Bool Infix)
+           (Texpr_apply
+            (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+             ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+              (generic_ false)))
+            ((Texpr_constant "rectangle perimeter test failed" String)) Unit
+            Normal)
+           () Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_4)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var original_price/0 Int) (Texpr_constant 200 Int)
+       (((binder original_price/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var discount_percentage/1 Int)
+        (Texpr_constant 15 Int)
+        (((binder discount_percentage/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var discount_amount/2 Int)
+         (Texpr_apply
+          (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+           ((Int Int) -> Int (generic_ false)))
+          ((Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident original_price/0 () Normal Int)
+             (Texpr_ident discount_percentage/1 () Normal Int))
+            Int Normal)
+           (Texpr_constant 100 Int))
+          Int Infix)
+         (((binder discount_amount/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var final_price/3 Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_ident original_price/0 () Normal Int)
+            (Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Neg)) neg Int
+              ((Int) -> Int (generic_ true)))
+             ((Texpr_ident discount_amount/2 () Normal Int)) Int Normal))
+           Int Normal)
+          (((binder final_price/3) (binder_typ Int)))
+          (Texpr_if
+           (Texpr_apply
+            (Texpr_ident Compare::not_equal|Int| ()
+             (Prim (Pcomparison I32 Ne))
+             ((Int Int) -> Bool (generic_ false)))
+            ((Texpr_ident final_price/3 () Normal Int)
+             (Texpr_constant 170 Int))
+            Bool Infix)
+           (Texpr_apply
+            (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+             ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+              (generic_ false)))
+            ((Texpr_constant "discounted price test failed" String)) Unit
+            Normal)
+           () Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_5)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var celsius/0 Int) (Texpr_constant 20 Int)
+       (((binder celsius/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var fahrenheit/1 Int)
+        (Texpr_apply
+         (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+         ((Texpr_apply
+           (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_apply
+             (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+              ((Int Int) -> Int (generic_ false)))
+             ((Texpr_apply
+               (Texpr_ident multiply () Normal
+                ((Int Int) -> Int (generic_ false)))
+               ((Texpr_ident celsius/0 () Normal Int) (Texpr_constant 9 Int))
+               Int Normal)
+              (Texpr_constant 5 Int))
+             Int Infix)
+            (Texpr_constant 32 Int))
+           Int Infix)
+          (Texpr_constant 0 Int))
+         Int Normal)
+        (((binder fahrenheit/1) (binder_typ Int)))
+        (Texpr_if
+         (Texpr_apply
+          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
+           ((Int Int) -> Bool (generic_ false)))
+          ((Texpr_ident fahrenheit/1 () Normal Int) (Texpr_constant 68 Int))
+          Bool Infix)
+         (Texpr_apply
+          (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+           ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+            (generic_ false)))
+          ((Texpr_constant "temperature conversion test failed" String)) Unit
+          Normal)
+         () Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_6)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var principal/0 Int) (Texpr_constant 1000 Int)
+       (((binder principal/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var rate/1 Int) (Texpr_constant 5 Int)
+        (((binder rate/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var years/2 Int) (Texpr_constant 3 Int)
+         (((binder years/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var growth_factor/3 Int)
+          (Texpr_apply
+           (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+           ((Texpr_constant 1 Int)
+            (Texpr_apply
+             (Texpr_ident multiply () Normal
+              ((Int Int) -> Int (generic_ false)))
+             ((Texpr_ident rate/1 () Normal Int)
+              (Texpr_ident years/2 () Normal Int))
+             Int Normal))
+           Int Normal)
+          (((binder growth_factor/3) (binder_typ Int)))
+          (Texpr_let (Tpat_var total/4 Int)
+           (Texpr_apply
+            (Texpr_ident multiply () Normal
+             ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident principal/0 () Normal Int)
+             (Texpr_ident growth_factor/3 () Normal Int))
+            Int Normal)
+           (((binder total/4) (binder_typ Int)))
+           (Texpr_if
+            (Texpr_apply
+             (Texpr_ident Compare::not_equal|Int| ()
+              (Prim (Pcomparison I32 Ne))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident total/4 () Normal Int) (Texpr_constant 16000 Int))
+             Bool Infix)
+            (Texpr_apply
+             (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             ((Texpr_constant "compound interest test failed" String)) Unit
+             Normal)
+            () Unit)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_7)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var n/0 Int) (Texpr_constant 10 Int)
+       (((binder n/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var sum/1 Int)
+        (Texpr_apply
+         (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+          ((Int Int) -> Int (generic_ false)))
+         ((Texpr_apply
+           (Texpr_ident multiply () Normal
+            ((Int Int) -> Int (generic_ false)))
+           ((Texpr_ident n/0 () Normal Int)
+            (Texpr_apply
+             (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+             ((Texpr_ident n/0 () Normal Int) (Texpr_constant 1 Int)) Int
+             Normal))
+           Int Normal)
+          (Texpr_constant 2 Int))
+         Int Infix)
+        (((binder sum/1) (binder_typ Int)))
+        (Texpr_if
+         (Texpr_apply
+          (Texpr_ident Compare::not_equal|Int| () (Prim (Pcomparison I32 Ne))
+           ((Int Int) -> Bool (generic_ false)))
+          ((Texpr_ident sum/1 () Normal Int) (Texpr_constant 55 Int)) Bool
+          Infix)
+         (Texpr_apply
+          (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+           ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+            (generic_ false)))
+          ((Texpr_constant "sum of natural numbers test failed" String)) Unit
+          Normal)
+         () Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_757365725f666f63757365645f74657374732e6d6274_8)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var max_val/0 Int) (Texpr_constant 2147483647 Int)
+       (((binder max_val/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var min_val/1 Int) (Texpr_constant -2147483648 Int)
+        (((binder min_val/1) (binder_typ Int)))
+        (Texpr_let (Tpat_var result1/2 Int)
+         (Texpr_apply
+          (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+          ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant 100 Int))
+          Int Normal)
+         (((binder result1/2) (binder_typ Int)))
+         (Texpr_sequence
+          ((Texpr_if
+            (Texpr_apply
+             (Texpr_ident Compare::not_equal|Int| ()
+              (Prim (Pcomparison I32 Ne))
+              ((Int Int) -> Bool (generic_ false)))
+             ((Texpr_ident result1/2 () Normal Int)
+              (Texpr_ident max_val/0 () Normal Int))
+             Bool Infix)
+            (Texpr_apply
+             (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             ((Texpr_constant "boundary test 1 failed" String)) Unit Normal)
+            () Unit))
+          (Texpr_let (Tpat_var result2/3 Int)
+           (Texpr_apply
+            (Texpr_ident add () Normal ((Int Int) -> Int (generic_ false)))
+            ((Texpr_ident min_val/1 () Normal Int) (Texpr_constant -100 Int))
+            Int Normal)
+           (((binder result2/3) (binder_typ Int)))
+           (Texpr_sequence
+            ((Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result2/3 () Normal Int)
+                (Texpr_ident min_val/1 () Normal Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "boundary test 2 failed" String)) Unit
+               Normal)
+              () Unit))
+            (Texpr_let (Tpat_var result3/4 Int)
+             (Texpr_apply
+              (Texpr_ident multiply () Normal
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_ident max_val/0 () Normal Int) (Texpr_constant -1 Int))
+              Int Normal)
+             (((binder result3/4) (binder_typ Int)))
+             (Texpr_if
+              (Texpr_apply
+               (Texpr_ident Compare::not_equal|Int| ()
+                (Prim (Pcomparison I32 Ne))
+                ((Int Int) -> Bool (generic_ false)))
+               ((Texpr_ident result3/4 () Normal Int)
+                (Texpr_ident min_val/1 () Normal Int))
+               Bool Infix)
+              (Texpr_apply
+               (Texpr_ident $builtin.abort (Unit) ((_ (auto loc))) Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               ((Texpr_constant "boundary test 3 failed" String)) Unit
+               Normal)
+              () Unit)
+             Unit)
+            Unit)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ()))))

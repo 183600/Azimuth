@@ -1,0 +1,514 @@
+((Ptop_funcdef
+  ((name ((binder_name add)))
+   (decl_params
+    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
+      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_if
+      (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+       (Pexpr_constant 0))
+      (Pexpr_return ((Pexpr_ident ((var_name b))))) ())
+     (Pexpr_if
+      (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+       (Pexpr_constant 0))
+      (Pexpr_return ((Pexpr_ident ((var_name a))))) ()))
+    (Pexpr_let (Ppat_var ((binder_name min_val)))
+     (Pexpr_constant -2147483648)
+     (Pexpr_let (Ppat_var ((binder_name max_val)))
+      (Pexpr_constant 2147483647)
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+          (Pexpr_ident ((var_name min_val))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant 0))
+            (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+          (Pexpr_ident ((var_name min_val))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant 0))
+            (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name max_val)))
+            (Pexpr_ident ((var_name b)))))
+          (Pexpr_return ((Pexpr_ident ((var_name max_val))))) ())
+         ())
+        (Pexpr_if
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_infix ((var_name -)) (Pexpr_ident ((var_name min_val)))
+            (Pexpr_ident ((var_name b)))))
+          (Pexpr_return ((Pexpr_ident ((var_name min_val))))) ())
+         ()))
+       (Pexpr_return
+        ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name a)))
+          (Pexpr_ident ((var_name b))))))))))))
+ (Ptop_funcdef
+  ((name ((binder_name multiply)))
+   (decl_params
+    (((((binder_name a)) ((Ptype_name ((lid Int)) ())))
+      (((binder_name b)) ((Ptype_name ((lid Int)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid Int)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name min_val))) (Pexpr_constant -2147483648)
+    (Pexpr_let (Ppat_var ((binder_name max_val))) (Pexpr_constant 2147483647)
+     (Pexpr_sequence
+      ((Pexpr_if
+        (Pexpr_infix ((var_name ||))
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+          (Pexpr_constant 0))
+         (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+          (Pexpr_constant 0)))
+        (Pexpr_return ((Pexpr_constant 0))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_constant 1))
+        (Pexpr_return ((Pexpr_ident ((var_name b))))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_constant 1))
+        (Pexpr_return ((Pexpr_ident ((var_name a))))) ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_constant -1))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_apply
+             (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+              ((label_name neg)))
+             ((Pexpr_ident ((var_name b)))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_constant -1))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_apply
+             (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+              ((label_name neg)))
+             ((Pexpr_ident ((var_name a)))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name a)))
+         (Pexpr_ident ((var_name min_val))))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ||))
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant 1))
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+             (Pexpr_constant -1)))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b))))))))
+        ())
+       (Pexpr_if
+        (Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name b)))
+         (Pexpr_ident ((var_name min_val))))
+        (Pexpr_return
+         ((Pexpr_if
+           (Pexpr_infix ((var_name ||))
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant 1))
+            (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+             (Pexpr_constant -1)))
+           (Pexpr_ident ((var_name min_val)))
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b))))))))
+        ()))
+      (Pexpr_let (Ppat_var ((binder_name sign)))
+       (Pexpr_if
+        (Pexpr_infix ((var_name ||))
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0)))
+         (Pexpr_infix ((var_name &&))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+           (Pexpr_constant 0))
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0))))
+        (Pexpr_constant 1) ((Pexpr_constant -1)))
+       (Pexpr_let (Ppat_var ((binder_name abs_a)))
+        (Pexpr_if
+         (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name a)))
+          (Pexpr_constant 0))
+         (Pexpr_apply
+          (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+           ((label_name neg)))
+          ((Pexpr_ident ((var_name a)))))
+         ((Pexpr_ident ((var_name a)))))
+        (Pexpr_let (Ppat_var ((binder_name abs_b)))
+         (Pexpr_if
+          (Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name b)))
+           (Pexpr_constant 0))
+          (Pexpr_apply
+           (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+            ((label_name neg)))
+           ((Pexpr_ident ((var_name b)))))
+          ((Pexpr_ident ((var_name b)))))
+         (Pexpr_sequence
+          ((Pexpr_if
+            (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name abs_a)))
+             (Pexpr_infix ((var_name /)) (Pexpr_ident ((var_name max_val)))
+              (Pexpr_ident ((var_name abs_b)))))
+            (Pexpr_return
+             ((Pexpr_if
+               (Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name sign)))
+                (Pexpr_constant 0))
+               (Pexpr_ident ((var_name max_val)))
+               ((Pexpr_ident ((var_name min_val)))))))
+            ()))
+          (Pexpr_return
+           ((Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name a)))
+             (Pexpr_ident ((var_name b)))))))))))))))
+ (Ptop_funcdef
+  ((name ((binder_name greet)))
+   (decl_params (((((binder_name name)) ((Ptype_name ((lid String)) ()))))))
+   (quantifiers ()) (return_type ((Ptype_name ((lid String)) ())))
+   (error_type No_error_typ) (vis (Vis_pub ())))
+  (Decl_body
+   (Pexpr_infix ((var_name +))
+    (Pexpr_infix ((var_name +)) (Pexpr_constant "Hello, ")
+     (Pexpr_ident ((var_name name))))
+    (Pexpr_constant !))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result1)))
+    (Pexpr_apply (Pexpr_ident ((var_name add)))
+     ((Pexpr_constant 7) (Pexpr_constant 8)))
+    (Pexpr_sequence
+     ((Pexpr_if
+       (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result1)))
+        (Pexpr_constant 15))
+       (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+        ((Pexpr_constant "addition test 1 failed")))
+       ()))
+     (Pexpr_let (Ppat_var ((binder_name result2)))
+      (Pexpr_apply (Pexpr_ident ((var_name add)))
+       ((Pexpr_constant 123) (Pexpr_constant -123)))
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result2)))
+          (Pexpr_constant 0))
+         (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+          ((Pexpr_constant "addition test 2 failed")))
+         ()))
+       (Pexpr_let (Ppat_var ((binder_name result3)))
+        (Pexpr_apply (Pexpr_ident ((var_name add)))
+         ((Pexpr_constant -50) (Pexpr_constant -50)))
+        (Pexpr_sequence
+         ((Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result3)))
+            (Pexpr_constant -100))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "addition test 3 failed")))
+           ()))
+         (Pexpr_let (Ppat_var ((binder_name result4)))
+          (Pexpr_apply (Pexpr_ident ((var_name add)))
+           ((Pexpr_constant 500) (Pexpr_constant 500)))
+          (Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result4)))
+            (Pexpr_constant 1000))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "addition test 4 failed")))
+           ()))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result1)))
+    (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+     ((Pexpr_constant 6) (Pexpr_constant 6)))
+    (Pexpr_sequence
+     ((Pexpr_if
+       (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result1)))
+        (Pexpr_constant 36))
+       (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+        ((Pexpr_constant "multiplication test 1 failed")))
+       ()))
+     (Pexpr_let (Ppat_var ((binder_name result2)))
+      (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+       ((Pexpr_constant 7) (Pexpr_constant 7)))
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result2)))
+          (Pexpr_constant 49))
+         (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+          ((Pexpr_constant "multiplication test 2 failed")))
+         ()))
+       (Pexpr_let (Ppat_var ((binder_name result3)))
+        (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+         ((Pexpr_constant 8) (Pexpr_constant 8)))
+        (Pexpr_sequence
+         ((Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result3)))
+            (Pexpr_constant 64))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "multiplication test 3 failed")))
+           ()))
+         (Pexpr_let (Ppat_var ((binder_name result4)))
+          (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+           ((Pexpr_constant 9) (Pexpr_constant 9)))
+          (Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result4)))
+            (Pexpr_constant 81))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "multiplication test 4 failed")))
+           ()))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name result1)))
+    (Pexpr_apply (Pexpr_ident ((var_name greet))) ((Pexpr_constant Alice)))
+    (Pexpr_sequence
+     ((Pexpr_if
+       (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result1)))
+        (Pexpr_constant "Hello, Alice!"))
+       (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+        ((Pexpr_constant "greet test 1 failed")))
+       ()))
+     (Pexpr_let (Ppat_var ((binder_name result2)))
+      (Pexpr_apply (Pexpr_ident ((var_name greet)))
+       ((Pexpr_constant Bob123)))
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result2)))
+          (Pexpr_constant "Hello, Bob123!"))
+         (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+          ((Pexpr_constant "greet test 2 failed")))
+         ()))
+       (Pexpr_let (Ppat_var ((binder_name result3)))
+        (Pexpr_apply (Pexpr_ident ((var_name greet)))
+         ((Pexpr_constant "\E5\BC\A0\E4\B8\89")))
+        (Pexpr_sequence
+         ((Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result3)))
+            (Pexpr_constant "Hello, \E5\BC\A0\E4\B8\89!"))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "greet test 3 failed")))
+           ()))
+         (Pexpr_let (Ppat_var ((binder_name result4)))
+          (Pexpr_apply (Pexpr_ident ((var_name greet)))
+           ((Pexpr_constant user@domain.com)))
+          (Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result4)))
+            (Pexpr_constant "Hello, user@domain.com!"))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "greet test 4 failed")))
+           ()))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_3)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name length))) (Pexpr_constant 12)
+    (Pexpr_let (Ppat_var ((binder_name width))) (Pexpr_constant 8)
+     (Pexpr_let (Ppat_var ((binder_name sum)))
+      (Pexpr_apply (Pexpr_ident ((var_name add)))
+       ((Pexpr_ident ((var_name length))) (Pexpr_ident ((var_name width)))))
+      (Pexpr_let (Ppat_var ((binder_name perimeter)))
+       (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+        ((Pexpr_constant 2) (Pexpr_ident ((var_name sum)))))
+       (Pexpr_if
+        (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name perimeter)))
+         (Pexpr_constant 40))
+        (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+         ((Pexpr_constant "rectangle perimeter test failed")))
+        ())))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_4)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name original_price))) (Pexpr_constant 200)
+    (Pexpr_let (Ppat_var ((binder_name discount_percentage)))
+     (Pexpr_constant 15)
+     (Pexpr_let (Ppat_var ((binder_name discount_amount)))
+      (Pexpr_infix ((var_name /))
+       (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+        ((Pexpr_ident ((var_name original_price)))
+         (Pexpr_ident ((var_name discount_percentage)))))
+       (Pexpr_constant 100))
+      (Pexpr_let (Ppat_var ((binder_name final_price)))
+       (Pexpr_apply (Pexpr_ident ((var_name add)))
+        ((Pexpr_ident ((var_name original_price)))
+         (Pexpr_apply
+          (Pexpr_method ((name @moonbitlang/core/builtin.Neg))
+           ((label_name neg)))
+          ((Pexpr_ident ((var_name discount_amount)))))))
+       (Pexpr_if
+        (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name final_price)))
+         (Pexpr_constant 170))
+        (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+         ((Pexpr_constant "discounted price test failed")))
+        ())))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_5)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name celsius))) (Pexpr_constant 20)
+    (Pexpr_let (Ppat_var ((binder_name fahrenheit)))
+     (Pexpr_apply (Pexpr_ident ((var_name add)))
+      ((Pexpr_infix ((var_name +))
+        (Pexpr_infix ((var_name /))
+         (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+          ((Pexpr_ident ((var_name celsius))) (Pexpr_constant 9)))
+         (Pexpr_constant 5))
+        (Pexpr_constant 32))
+       (Pexpr_constant 0)))
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name fahrenheit)))
+       (Pexpr_constant 68))
+      (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+       ((Pexpr_constant "temperature conversion test failed")))
+      ())))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_6)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name principal))) (Pexpr_constant 1000)
+    (Pexpr_let (Ppat_var ((binder_name rate))) (Pexpr_constant 5)
+     (Pexpr_let (Ppat_var ((binder_name years))) (Pexpr_constant 3)
+      (Pexpr_let (Ppat_var ((binder_name growth_factor)))
+       (Pexpr_apply (Pexpr_ident ((var_name add)))
+        ((Pexpr_constant 1)
+         (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+          ((Pexpr_ident ((var_name rate))) (Pexpr_ident ((var_name years)))))))
+       (Pexpr_let (Ppat_var ((binder_name total)))
+        (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+         ((Pexpr_ident ((var_name principal)))
+          (Pexpr_ident ((var_name growth_factor)))))
+        (Pexpr_if
+         (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name total)))
+          (Pexpr_constant 16000))
+         (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+          ((Pexpr_constant "compound interest test failed")))
+         ()))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_7)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name n))) (Pexpr_constant 10)
+    (Pexpr_let (Ppat_var ((binder_name sum)))
+     (Pexpr_infix ((var_name /))
+      (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+       ((Pexpr_ident ((var_name n)))
+        (Pexpr_apply (Pexpr_ident ((var_name add)))
+         ((Pexpr_ident ((var_name n))) (Pexpr_constant 1)))))
+      (Pexpr_constant 2))
+     (Pexpr_if
+      (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name sum)))
+       (Pexpr_constant 55))
+      (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+       ((Pexpr_constant "sum of natural numbers test failed")))
+      ())))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_757365725f666f63757365645f74657374732e6d6274_8)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name max_val))) (Pexpr_constant 2147483647)
+    (Pexpr_let (Ppat_var ((binder_name min_val)))
+     (Pexpr_constant -2147483648)
+     (Pexpr_let (Ppat_var ((binder_name result1)))
+      (Pexpr_apply (Pexpr_ident ((var_name add)))
+       ((Pexpr_ident ((var_name max_val))) (Pexpr_constant 100)))
+      (Pexpr_sequence
+       ((Pexpr_if
+         (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result1)))
+          (Pexpr_ident ((var_name max_val))))
+         (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+          ((Pexpr_constant "boundary test 1 failed")))
+         ()))
+       (Pexpr_let (Ppat_var ((binder_name result2)))
+        (Pexpr_apply (Pexpr_ident ((var_name add)))
+         ((Pexpr_ident ((var_name min_val))) (Pexpr_constant -100)))
+        (Pexpr_sequence
+         ((Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result2)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "boundary test 2 failed")))
+           ()))
+         (Pexpr_let (Ppat_var ((binder_name result3)))
+          (Pexpr_apply (Pexpr_ident ((var_name multiply)))
+           ((Pexpr_ident ((var_name max_val))) (Pexpr_constant -1)))
+          (Pexpr_if
+           (Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name result3)))
+            (Pexpr_ident ((var_name min_val))))
+           (Pexpr_apply (Pexpr_ident ((var_name @builtin.abort)))
+            ((Pexpr_constant "boundary test 3 failed")))
+           ())))))))))))

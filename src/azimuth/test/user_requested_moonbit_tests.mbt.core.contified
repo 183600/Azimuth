@@ -1,0 +1,1057 @@
+((Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let item1_price/0 299
+       (Cexpr_let item1_quantity/1 2
+        (Cexpr_let item2_price/2 199
+         (Cexpr_let item2_quantity/3 1
+          (Cexpr_let item3_price/4 99
+           (Cexpr_let item3_quantity/5 3
+            (Cexpr_let total1/6
+             (Cexpr_prim (Parith I32 Mul) (Cexpr_var item1_price/0 Int ())
+              (Cexpr_var item1_quantity/1 Int ()))
+             (Cexpr_let total2/7
+              (Cexpr_prim (Parith I32 Mul) (Cexpr_var item2_price/2 Int ())
+               (Cexpr_var item2_quantity/3 Int ()))
+              (Cexpr_let total3/8
+               (Cexpr_prim (Parith I32 Mul) (Cexpr_var item3_price/4 Int ())
+                (Cexpr_var item3_quantity/5 Int ()))
+               (Cexpr_let subtotal/9
+                (Cexpr_prim (Parith I32 Add)
+                 (Cexpr_prim (Parith I32 Add) (Cexpr_var total1/6 Int ())
+                  (Cexpr_var total2/7 Int ()))
+                 (Cexpr_var total3/8 Int ()))
+                (Cexpr_let discount_threshold/10 500
+                 (Cexpr_let discount_rate/11 10
+                  (Cexpr_let discount_amount/12
+                   (Cexpr_if
+                    (Cexpr_prim (Pcomparison I32 Gt)
+                     (Cexpr_var subtotal/9 Int ())
+                     (Cexpr_var discount_threshold/10 Int ()))
+                    (Cexpr_prim (Parith I32 Div)
+                     (Cexpr_prim (Parith I32 Mul)
+                      (Cexpr_var subtotal/9 Int ())
+                      (Cexpr_var discount_rate/11 Int ()))
+                     100)
+                    (0) Int)
+                   (Cexpr_let discounted_total/13
+                    (Cexpr_prim (Parith I32 Sub)
+                     (Cexpr_var subtotal/9 Int ())
+                     (Cexpr_var discount_amount/12 Int ()))
+                    (Cexpr_let tax_rate/14 8
+                     (Cexpr_let tax_amount/15
+                      (Cexpr_prim (Parith I32 Div)
+                       (Cexpr_prim (Parith I32 Mul)
+                        (Cexpr_var discounted_total/13 Int ())
+                        (Cexpr_var tax_rate/14 Int ()))
+                       100)
+                      (Cexpr_let final_total/16
+                       (Cexpr_prim (Parith I32 Add)
+                        (Cexpr_var discounted_total/13 Int ())
+                        (Cexpr_var tax_amount/15 Int ()))
+                       (Cexpr_let expected_subtotal/17 1195
+                        (Cexpr_let expected_discount/18 109
+                         (Cexpr_let expected_discounted/19 985
+                          (Cexpr_let expected_tax/20 78
+                           (Cexpr_let expected_final/21 1063
+                            (Cexpr_sequence
+                             ((Cexpr_if
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var expected_subtotal/17 Int ())
+                                (Cexpr_var subtotal/9 Int ()))
+                               (Cexpr_apply $builtin.abort
+                                ("Test failed: expected_subtotal"
+                                 @:user_requested_moonbit_tests.mbt:50:5-50:53)
+                                (Normal
+                                 ((String
+                                   (T_constr SourceLoc () (generic_ false)))
+                                  -> Unit (generic_ false)))
+                                Unit (Unit))
+                               () Unit)
+                              (Cexpr_if
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var expected_discount/18 Int ())
+                                (Cexpr_var discount_amount/12 Int ()))
+                               (Cexpr_apply $builtin.abort
+                                ("Test failed: expected_discount"
+                                 @:user_requested_moonbit_tests.mbt:53:5-53:53)
+                                (Normal
+                                 ((String
+                                   (T_constr SourceLoc () (generic_ false)))
+                                  -> Unit (generic_ false)))
+                                Unit (Unit))
+                               () Unit)
+                              (Cexpr_if
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var expected_discounted/19 Int ())
+                                (Cexpr_var discounted_total/13 Int ()))
+                               (Cexpr_apply $builtin.abort
+                                ("Test failed: expected_discounted"
+                                 @:user_requested_moonbit_tests.mbt:56:5-56:55)
+                                (Normal
+                                 ((String
+                                   (T_constr SourceLoc () (generic_ false)))
+                                  -> Unit (generic_ false)))
+                                Unit (Unit))
+                               () Unit)
+                              (Cexpr_if
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var expected_tax/20 Int ())
+                                (Cexpr_var tax_amount/15 Int ()))
+                               (Cexpr_apply $builtin.abort
+                                ("Test failed: expected_tax"
+                                 @:user_requested_moonbit_tests.mbt:59:5-59:48)
+                                (Normal
+                                 ((String
+                                   (T_constr SourceLoc () (generic_ false)))
+                                  -> Unit (generic_ false)))
+                                Unit (Unit))
+                               () Unit))
+                             (Cexpr_prim
+                              (Pmake_value_or_error
+                               (tag (Constr_tag_regular Ok)))
+                              (Cexpr_if
+                               (Cexpr_prim (Pcomparison I32 Ne)
+                                (Cexpr_var expected_final/21 Int ())
+                                (Cexpr_var final_total/16 Int ()))
+                               (Cexpr_apply $builtin.abort
+                                ("Test failed: expected_final"
+                                 @:user_requested_moonbit_tests.mbt:62:5-62:50)
+                                (Normal
+                                 ((String
+                                   (T_constr SourceLoc () (generic_ false)))
+                                  -> Unit (generic_ false)))
+                                Unit (Unit))
+                               () Unit))
+                             (T_error_value_result Unit
+                              (T_constr Error () (generic_ false))))
+                            (T_error_value_result Unit
+                             (T_constr Error () (generic_ false))))
+                           (T_error_value_result Unit
+                            (T_constr Error () (generic_ false))))
+                          (T_error_value_result Unit
+                           (T_constr Error () (generic_ false))))
+                         (T_error_value_result Unit
+                          (T_constr Error () (generic_ false))))
+                        (T_error_value_result Unit
+                         (T_constr Error () (generic_ false))))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let celsius1/0 0
+       (Cexpr_let fahrenheit1/1
+        (Cexpr_prim (Parith I32 Add)
+         (Cexpr_prim (Parith I32 Mul) (Cexpr_var celsius1/0 Int ()) 2) 32)
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Ne) 32
+            (Cexpr_var fahrenheit1/1 Int ()))
+           (Cexpr_apply $builtin.abort
+            ("Test failed: 0\C2\B0C conversion"
+             @:user_requested_moonbit_tests.mbt:75:5-75:50)
+            (Normal
+             ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+              (generic_ false)))
+            Unit (Unit))
+           () Unit))
+         (Cexpr_let celsius2/2 100
+          (Cexpr_let fahrenheit2/3
+           (Cexpr_prim (Parith I32 Add)
+            (Cexpr_prim (Parith I32 Mul) (Cexpr_var celsius2/2 Int ()) 2) 32)
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 232
+               (Cexpr_var fahrenheit2/3 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: 100\C2\B0C conversion"
+                @:user_requested_moonbit_tests.mbt:82:5-82:52)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let celsius3/4 -10
+             (Cexpr_let fahrenheit3/5
+              (Cexpr_prim (Parith I32 Add)
+               (Cexpr_prim (Parith I32 Mul) (Cexpr_var celsius3/4 Int ()) 2)
+               32)
+              (Cexpr_prim
+               (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+               (Cexpr_if
+                (Cexpr_prim (Pcomparison I32 Ne) 12
+                 (Cexpr_var fahrenheit3/5 Int ()))
+                (Cexpr_apply $builtin.abort
+                 ("Test failed: -10\C2\B0C conversion"
+                  @:user_requested_moonbit_tests.mbt:89:5-89:52)
+                 (Normal
+                  ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                   (generic_ false)))
+                 Unit (Unit))
+                () Unit))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let principal/0 10000
+       (Cexpr_let annual_rate/1 5
+        (Cexpr_let years/2 3
+         (Cexpr_let total_interest/3
+          (Cexpr_prim (Parith I32 Mul)
+           (Cexpr_prim (Parith I32 Mul) (Cexpr_var principal/0 Int ())
+            (Cexpr_var annual_rate/1 Int ()))
+           (Cexpr_var years/2 Int ()))
+          (Cexpr_let total_repayment/4
+           (Cexpr_prim (Parith I32 Add) (Cexpr_var principal/0 Int ())
+            (Cexpr_var total_interest/3 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 150000
+               (Cexpr_var total_interest/3 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: total_interest"
+                @:user_requested_moonbit_tests.mbt:109:5-109:50)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit)
+             (Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 160000
+               (Cexpr_var total_repayment/4 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: total_repayment"
+                @:user_requested_moonbit_tests.mbt:112:5-112:51)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let early_payment_years/5 2
+             (Cexpr_let early_interest/6
+              (Cexpr_prim (Parith I32 Mul)
+               (Cexpr_prim (Parith I32 Mul) (Cexpr_var principal/0 Int ())
+                (Cexpr_var annual_rate/1 Int ()))
+               (Cexpr_var early_payment_years/5 Int ()))
+              (Cexpr_let early_repayment/7
+               (Cexpr_prim (Parith I32 Add) (Cexpr_var principal/0 Int ())
+                (Cexpr_var early_interest/6 Int ()))
+               (Cexpr_sequence
+                ((Cexpr_if
+                  (Cexpr_prim (Pcomparison I32 Ne) 100000
+                   (Cexpr_var early_interest/6 Int ()))
+                  (Cexpr_apply $builtin.abort
+                   ("Test failed: early_interest"
+                    @:user_requested_moonbit_tests.mbt:122:5-122:50)
+                   (Normal
+                    ((String (T_constr SourceLoc () (generic_ false))) ->
+                     Unit (generic_ false)))
+                   Unit (Unit))
+                  () Unit))
+                (Cexpr_prim
+                 (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                 (Cexpr_if
+                  (Cexpr_prim (Pcomparison I32 Ne) 110000
+                   (Cexpr_var early_repayment/7 Int ()))
+                  (Cexpr_apply $builtin.abort
+                   ("Test failed: early_repayment"
+                    @:user_requested_moonbit_tests.mbt:125:5-125:51)
+                   (Normal
+                    ((String (T_constr SourceLoc () (generic_ false))) ->
+                     Unit (generic_ false)))
+                   Unit (Unit))
+                  () Unit))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_3)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let weight_kg/0 70
+       (Cexpr_let height_cm/1 175
+        (Cexpr_let height_m/2
+         (Cexpr_prim (Parith I32 Div) (Cexpr_var height_cm/1 Int ()) 100)
+         (Cexpr_let height_squared/3
+          (Cexpr_prim (Parith I32 Mul) (Cexpr_var height_m/2 Int ())
+           (Cexpr_var height_m/2 Int ()))
+          (Cexpr_let _bmi/4
+           (Cexpr_prim (Parith I32 Div) (Cexpr_var weight_kg/0 Int ())
+            (Cexpr_var height_squared/3 Int ()))
+           (Cexpr_let height_squared_cm/5
+            (Cexpr_prim (Parith I32 Mul) (Cexpr_var height_cm/1 Int ())
+             (Cexpr_var height_cm/1 Int ()))
+            (Cexpr_let bmi_approx/6
+             (Cexpr_prim (Parith I32 Div)
+              (Cexpr_prim (Parith I32 Mul) (Cexpr_var weight_kg/0 Int ())
+               10000)
+              (Cexpr_var height_squared_cm/5 Int ()))
+             (Cexpr_sequence
+              ((Cexpr_if
+                (Cexpr_prim (Pcomparison I32 Ne) 22
+                 (Cexpr_var bmi_approx/6 Int ()))
+                (Cexpr_apply $builtin.abort
+                 ("Test failed: bmi_approx"
+                  @:user_requested_moonbit_tests.mbt:150:5-150:46)
+                 (Normal
+                  ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                   (generic_ false)))
+                 Unit (Unit))
+                () Unit))
+              (Cexpr_let weight_kg2/7 80
+               (Cexpr_let height_cm2/8 180
+                (Cexpr_let height_squared_cm2/9
+                 (Cexpr_prim (Parith I32 Mul) (Cexpr_var height_cm2/8 Int ())
+                  (Cexpr_var height_cm2/8 Int ()))
+                 (Cexpr_let bmi_approx2/10
+                  (Cexpr_prim (Parith I32 Div)
+                   (Cexpr_prim (Parith I32 Mul)
+                    (Cexpr_var weight_kg2/7 Int ()) 10000)
+                   (Cexpr_var height_squared_cm2/9 Int ()))
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_if
+                    (Cexpr_prim (Pcomparison I32 Ne) 24
+                     (Cexpr_var bmi_approx2/10 Int ()))
+                    (Cexpr_apply $builtin.abort
+                     ("Test failed: bmi_approx2"
+                      @:user_requested_moonbit_tests.mbt:161:5-161:47)
+                     (Normal
+                      ((String (T_constr SourceLoc () (generic_ false))) ->
+                       Unit (generic_ false)))
+                     Unit (Unit))
+                    () Unit))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_4)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let radius/0 10
+       (Cexpr_let radius_squared/1
+        (Cexpr_prim (Parith I32 Mul) (Cexpr_var radius/0 Int ())
+         (Cexpr_var radius/0 Int ()))
+        (Cexpr_let area/2
+         (Cexpr_prim (Parith I32 Mul) 3 (Cexpr_var radius_squared/1 Int ()))
+         (Cexpr_sequence
+          ((Cexpr_if
+            (Cexpr_prim (Pcomparison I32 Ne) 300 (Cexpr_var area/2 Int ()))
+            (Cexpr_apply $builtin.abort
+             ("Test failed: area"
+              @:user_requested_moonbit_tests.mbt:177:5-177:40)
+             (Normal
+              ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+               (generic_ false)))
+             Unit (Unit))
+            () Unit))
+          (Cexpr_let circumference/3
+           (Cexpr_prim (Parith I32 Mul) 6 (Cexpr_var radius/0 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 60
+               (Cexpr_var circumference/3 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: circumference"
+                @:user_requested_moonbit_tests.mbt:183:5-183:49)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let radius2/4 5
+             (Cexpr_let radius_squared2/5
+              (Cexpr_prim (Parith I32 Mul) (Cexpr_var radius2/4 Int ())
+               (Cexpr_var radius2/4 Int ()))
+              (Cexpr_let area2/6
+               (Cexpr_prim (Parith I32 Mul) 3
+                (Cexpr_var radius_squared2/5 Int ()))
+               (Cexpr_let circumference2/7
+                (Cexpr_prim (Parith I32 Mul) 6 (Cexpr_var radius2/4 Int ()))
+                (Cexpr_sequence
+                 ((Cexpr_if
+                   (Cexpr_prim (Pcomparison I32 Ne) 75
+                    (Cexpr_var area2/6 Int ()))
+                   (Cexpr_apply $builtin.abort
+                    ("Test failed: area2"
+                     @:user_requested_moonbit_tests.mbt:193:5-193:41)
+                    (Normal
+                     ((String (T_constr SourceLoc () (generic_ false))) ->
+                      Unit (generic_ false)))
+                    Unit (Unit))
+                   () Unit))
+                 (Cexpr_prim
+                  (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                  (Cexpr_if
+                   (Cexpr_prim (Pcomparison I32 Ne) 30
+                    (Cexpr_var circumference2/7 Int ()))
+                   (Cexpr_apply $builtin.abort
+                    ("Test failed: circumference2"
+                     @:user_requested_moonbit_tests.mbt:196:5-196:50)
+                    (Normal
+                     ((String (T_constr SourceLoc () (generic_ false))) ->
+                      Unit (generic_ false)))
+                    Unit (Unit))
+                   () Unit))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_5)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let row/0 3
+       (Cexpr_let col/1 4
+        (Cexpr_let width/2 5
+         (Cexpr_let index/3
+          (Cexpr_prim (Parith I32 Add)
+           (Cexpr_prim (Parith I32 Mul) (Cexpr_var row/0 Int ())
+            (Cexpr_var width/2 Int ()))
+           (Cexpr_var col/1 Int ()))
+          (Cexpr_sequence
+           ((Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Ne) 19 (Cexpr_var index/3 Int ()))
+             (Cexpr_apply $builtin.abort
+              ("Test failed: index"
+               @:user_requested_moonbit_tests.mbt:211:5-211:41)
+              (Normal
+               ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                (generic_ false)))
+              Unit (Unit))
+             () Unit))
+           (Cexpr_let first_row/4 0
+            (Cexpr_let first_col/5 0
+             (Cexpr_let first_index/6
+              (Cexpr_prim (Parith I32 Add)
+               (Cexpr_prim (Parith I32 Mul) (Cexpr_var first_row/4 Int ())
+                (Cexpr_var width/2 Int ()))
+               (Cexpr_var first_col/5 Int ()))
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_prim (Pcomparison I32 Ne) 0
+                  (Cexpr_var first_index/6 Int ()))
+                 (Cexpr_apply $builtin.abort
+                  ("Test failed: first_index"
+                   @:user_requested_moonbit_tests.mbt:219:5-219:47)
+                  (Normal
+                   ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                    (generic_ false)))
+                  Unit (Unit))
+                 () Unit))
+               (Cexpr_let last_row/7 9
+                (Cexpr_let last_col/8 4
+                 (Cexpr_let last_index/9
+                  (Cexpr_prim (Parith I32 Add)
+                   (Cexpr_prim (Parith I32 Mul) (Cexpr_var last_row/7 Int ())
+                    (Cexpr_var width/2 Int ()))
+                   (Cexpr_var last_col/8 Int ()))
+                  (Cexpr_sequence
+                   ((Cexpr_if
+                     (Cexpr_prim (Pcomparison I32 Ne) 49
+                      (Cexpr_var last_index/9 Int ()))
+                     (Cexpr_apply $builtin.abort
+                      ("Test failed: last_index"
+                       @:user_requested_moonbit_tests.mbt:226:5-226:46)
+                      (Normal
+                       ((String (T_constr SourceLoc () (generic_ false))) ->
+                        Unit (generic_ false)))
+                      Unit (Unit))
+                     () Unit))
+                   (Cexpr_let width2/10 10
+                    (Cexpr_let row2/11 2
+                     (Cexpr_let col2/12 7
+                      (Cexpr_let index2/13
+                       (Cexpr_prim (Parith I32 Add)
+                        (Cexpr_prim (Parith I32 Mul)
+                         (Cexpr_var row2/11 Int ())
+                         (Cexpr_var width2/10 Int ()))
+                        (Cexpr_var col2/12 Int ()))
+                       (Cexpr_prim
+                        (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                        (Cexpr_if
+                         (Cexpr_prim (Pcomparison I32 Ne) 27
+                          (Cexpr_var index2/13 Int ()))
+                         (Cexpr_apply $builtin.abort
+                          ("Test failed: index2"
+                           @:user_requested_moonbit_tests.mbt:235:5-235:42)
+                          (Normal
+                           ((String (T_constr SourceLoc () (generic_ false)))
+                            -> Unit (generic_ false)))
+                          Unit (Unit))
+                         () Unit))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_6)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let principal/0 1000
+       (Cexpr_let annual_rate/1 5
+        (Cexpr_let years/2 3
+         (Cexpr_let growth_factor/3
+          (Cexpr_prim (Parith I32 Add) 1
+           (Cexpr_prim (Parith I32 Mul) (Cexpr_var annual_rate/1 Int ())
+            (Cexpr_var years/2 Int ())))
+          (Cexpr_let total_amount/4
+           (Cexpr_prim (Parith I32 Mul) (Cexpr_var principal/0 Int ())
+            (Cexpr_var growth_factor/3 Int ()))
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 16
+               (Cexpr_var growth_factor/3 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: growth_factor"
+                @:user_requested_moonbit_tests.mbt:254:5-254:49)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit)
+             (Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 16000
+               (Cexpr_var total_amount/4 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: total_amount"
+                @:user_requested_moonbit_tests.mbt:257:5-257:48)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let principal2/5 5000
+             (Cexpr_let annual_rate2/6 8
+              (Cexpr_let years2/7 5
+               (Cexpr_let growth_factor2/8
+                (Cexpr_prim (Parith I32 Add) 1
+                 (Cexpr_prim (Parith I32 Mul)
+                  (Cexpr_var annual_rate2/6 Int ())
+                  (Cexpr_var years2/7 Int ())))
+                (Cexpr_let total_amount2/9
+                 (Cexpr_prim (Parith I32 Mul) (Cexpr_var principal2/5 Int ())
+                  (Cexpr_var growth_factor2/8 Int ()))
+                 (Cexpr_sequence
+                  ((Cexpr_if
+                    (Cexpr_prim (Pcomparison I32 Ne) 41
+                     (Cexpr_var growth_factor2/8 Int ()))
+                    (Cexpr_apply $builtin.abort
+                     ("Test failed: growth_factor2"
+                      @:user_requested_moonbit_tests.mbt:270:5-270:50)
+                     (Normal
+                      ((String (T_constr SourceLoc () (generic_ false))) ->
+                       Unit (generic_ false)))
+                     Unit (Unit))
+                    () Unit))
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_if
+                    (Cexpr_prim (Pcomparison I32 Ne) 205000
+                     (Cexpr_var total_amount2/9 Int ()))
+                    (Cexpr_apply $builtin.abort
+                     ("Test failed: total_amount2"
+                      @:user_requested_moonbit_tests.mbt:273:5-273:49)
+                     (Normal
+                      ((String (T_constr SourceLoc () (generic_ false))) ->
+                       Unit (generic_ false)))
+                     Unit (Unit))
+                    () Unit))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_7)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let simple_name/0 john
+       (Cexpr_let formatted_simple/1
+        (Cexpr_prim @add_string
+         (Cexpr_prim @add_string "Hello, "
+          (Cexpr_var simple_name/0 String ()))
+         !)
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_apply Eq::not_equal|$default_impl|
+            ("Hello, john!" (Cexpr_var formatted_simple/1 String ()))
+            (Normal ((String String) -> Bool (generic_ true))) Bool
+            ((String (Eq))))
+           (Cexpr_apply $builtin.abort
+            ("Test failed: formatted_simple"
+             @:user_requested_moonbit_tests.mbt:285:5-285:52)
+            (Normal
+             ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+              (generic_ false)))
+            Unit (Unit))
+           () Unit))
+         (Cexpr_let spaced_name/2 "john doe"
+          (Cexpr_let formatted_spaced/3
+           (Cexpr_prim @add_string
+            (Cexpr_prim @add_string "Hello, "
+             (Cexpr_var spaced_name/2 String ()))
+            !)
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_apply Eq::not_equal|$default_impl|
+               ("Hello, john doe!" (Cexpr_var formatted_spaced/3 String ()))
+               (Normal ((String String) -> Bool (generic_ true))) Bool
+               ((String (Eq))))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: formatted_spaced"
+                @:user_requested_moonbit_tests.mbt:292:5-292:52)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let numbered_name/4 john123
+             (Cexpr_let formatted_numbered/5
+              (Cexpr_prim @add_string
+               (Cexpr_prim @add_string "Hello, "
+                (Cexpr_var numbered_name/4 String ()))
+               !)
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_apply Eq::not_equal|$default_impl|
+                  ("Hello, john123!"
+                   (Cexpr_var formatted_numbered/5 String ()))
+                  (Normal ((String String) -> Bool (generic_ true))) Bool
+                  ((String (Eq))))
+                 (Cexpr_apply $builtin.abort
+                  ("Test failed: formatted_numbered"
+                   @:user_requested_moonbit_tests.mbt:299:5-299:54)
+                  (Normal
+                   ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                    (generic_ false)))
+                  Unit (Unit))
+                 () Unit))
+               (Cexpr_let special_name/6 john_doe@email.com
+                (Cexpr_let formatted_special/7
+                 (Cexpr_prim @add_string
+                  (Cexpr_prim @add_string "Hello, "
+                   (Cexpr_var special_name/6 String ()))
+                  !)
+                 (Cexpr_sequence
+                  ((Cexpr_if
+                    (Cexpr_apply Eq::not_equal|$default_impl|
+                     ("Hello, john_doe@email.com!"
+                      (Cexpr_var formatted_special/7 String ()))
+                     (Normal ((String String) -> Bool (generic_ true))) Bool
+                     ((String (Eq))))
+                    (Cexpr_apply $builtin.abort
+                     ("Test failed: formatted_special"
+                      @:user_requested_moonbit_tests.mbt:306:5-306:53)
+                     (Normal
+                      ((String (T_constr SourceLoc () (generic_ false))) ->
+                       Unit (generic_ false)))
+                     Unit (Unit))
+                    () Unit))
+                  (Cexpr_let empty_name/8 ""
+                   (Cexpr_let formatted_empty/9
+                    (Cexpr_prim @add_string
+                     (Cexpr_prim @add_string "Hello, "
+                      (Cexpr_var empty_name/8 String ()))
+                     !)
+                    (Cexpr_sequence
+                     ((Cexpr_if
+                       (Cexpr_apply Eq::not_equal|$default_impl|
+                        ("Hello, !" (Cexpr_var formatted_empty/9 String ()))
+                        (Normal ((String String) -> Bool (generic_ true)))
+                        Bool ((String (Eq))))
+                       (Cexpr_apply $builtin.abort
+                        ("Test failed: formatted_empty"
+                         @:user_requested_moonbit_tests.mbt:313:5-313:51)
+                        (Normal
+                         ((String (T_constr SourceLoc () (generic_ false)))
+                          -> Unit (generic_ false)))
+                        Unit (Unit))
+                       () Unit))
+                     (Cexpr_let long_name/10
+                      this_is_a_very_long_username_that_might_be_used_in_some_systems
+                      (Cexpr_let formatted_long/11
+                       (Cexpr_prim @add_string
+                        (Cexpr_prim @add_string "Hello, "
+                         (Cexpr_var long_name/10 String ()))
+                        !)
+                       (Cexpr_prim
+                        (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                        (Cexpr_if
+                         (Cexpr_apply Eq::not_equal|$default_impl|
+                          ("Hello, this_is_a_very_long_username_that_might_be_used_in_some_systems!"
+                           (Cexpr_var formatted_long/11 String ()))
+                          (Normal ((String String) -> Bool (generic_ true)))
+                          Bool ((String (Eq))))
+                         (Cexpr_apply $builtin.abort
+                          ("Test failed: formatted_long"
+                           @:user_requested_moonbit_tests.mbt:320:5-320:50)
+                          (Normal
+                           ((String (T_constr SourceLoc () (generic_ false)))
+                            -> Unit (generic_ false)))
+                          Unit (Unit))
+                         () Unit))
+                       (T_error_value_result Unit
+                        (T_constr Error () (generic_ false))))
+                      (T_error_value_result Unit
+                       (T_constr Error () (generic_ false))))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_8)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let score1/0 85
+       (Cexpr_let score2/1 90
+        (Cexpr_let score3/2 78
+         (Cexpr_let total_score/3
+          (Cexpr_prim (Parith I32 Add)
+           (Cexpr_prim (Parith I32 Add) (Cexpr_var score1/0 Int ())
+            (Cexpr_var score2/1 Int ()))
+           (Cexpr_var score3/2 Int ()))
+          (Cexpr_let average_score/4
+           (Cexpr_prim (Parith I32 Div) (Cexpr_var total_score/3 Int ()) 3)
+           (Cexpr_sequence
+            ((Cexpr_if
+              (Cexpr_prim (Pcomparison I32 Ne) 84
+               (Cexpr_var average_score/4 Int ()))
+              (Cexpr_apply $builtin.abort
+               ("Test failed: average_score"
+                @:user_requested_moonbit_tests.mbt:339:5-339:49)
+               (Normal
+                ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                 (generic_ false)))
+               Unit (Unit))
+              () Unit))
+            (Cexpr_let sum_5/5 425
+             (Cexpr_let average_5/6
+              (Cexpr_prim (Parith I32 Div) (Cexpr_var sum_5/5 Int ()) 5)
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_prim (Pcomparison I32 Ne) 85
+                  (Cexpr_var average_5/6 Int ()))
+                 (Cexpr_apply $builtin.abort
+                  ("Test failed: average_5"
+                   @:user_requested_moonbit_tests.mbt:346:5-346:45)
+                  (Normal
+                   ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                    (generic_ false)))
+                  Unit (Unit))
+                 () Unit))
+               (Cexpr_let weighted_score1/7 255
+                (Cexpr_let weighted_score2/8 180
+                 (Cexpr_let weighted_score3/9 78
+                  (Cexpr_let weighted_total/10
+                   (Cexpr_prim (Parith I32 Add)
+                    (Cexpr_prim (Parith I32 Add)
+                     (Cexpr_var weighted_score1/7 Int ())
+                     (Cexpr_var weighted_score2/8 Int ()))
+                    (Cexpr_var weighted_score3/9 Int ()))
+                   (Cexpr_let total_weight/11 6
+                    (Cexpr_let weighted_average/12
+                     (Cexpr_prim (Parith I32 Div)
+                      (Cexpr_var weighted_total/10 Int ())
+                      (Cexpr_var total_weight/11 Int ()))
+                     (Cexpr_prim
+                      (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                      (Cexpr_if
+                       (Cexpr_prim (Pcomparison I32 Ne) 85
+                        (Cexpr_var weighted_average/12 Int ()))
+                       (Cexpr_apply $builtin.abort
+                        ("Test failed: weighted_average"
+                         @:user_requested_moonbit_tests.mbt:359:5-359:52)
+                        (Normal
+                         ((String (T_constr SourceLoc () (generic_ false)))
+                          -> Unit (generic_ false)))
+                        Unit (Unit))
+                       () Unit))
+                     (T_error_value_result Unit
+                      (T_constr Error () (generic_ false))))
+                    (T_error_value_result Unit
+                     (T_constr Error () (generic_ false))))
+                   (T_error_value_result Unit
+                    (T_constr Error () (generic_ false))))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_757365725f7265717565737465645f6d6f6f6e6269745f74657374732e6d6274_9)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let n/0 5
+       (Cexpr_let factorial_5/1
+        (Cexpr_prim (Parith I32 Mul)
+         (Cexpr_prim (Parith I32 Mul)
+          (Cexpr_prim (Parith I32 Mul)
+           (Cexpr_prim (Parith I32 Mul) (Cexpr_var n/0 Int ())
+            (Cexpr_prim (Parith I32 Sub) (Cexpr_var n/0 Int ()) 1))
+           (Cexpr_prim (Parith I32 Sub) (Cexpr_var n/0 Int ()) 2))
+          (Cexpr_prim (Parith I32 Sub) (Cexpr_var n/0 Int ()) 3))
+         (Cexpr_prim (Parith I32 Sub) (Cexpr_var n/0 Int ()) 4))
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_prim (Pcomparison I32 Ne) 120
+            (Cexpr_var factorial_5/1 Int ()))
+           (Cexpr_apply $builtin.abort
+            ("Test failed: factorial_5"
+             @:user_requested_moonbit_tests.mbt:371:5-371:47)
+            (Normal
+             ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+              (generic_ false)))
+            Unit (Unit))
+           () Unit))
+         (Cexpr_let factorial_4/2 24
+          (Cexpr_sequence
+           ((Cexpr_if
+             (Cexpr_prim (Pcomparison I32 Ne) 24
+              (Cexpr_var factorial_4/2 Int ()))
+             (Cexpr_apply $builtin.abort
+              ("Test failed: factorial_4"
+               @:user_requested_moonbit_tests.mbt:377:5-377:47)
+              (Normal
+               ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                (generic_ false)))
+              Unit (Unit))
+             () Unit))
+           (Cexpr_let factorial_3/3 6
+            (Cexpr_sequence
+             ((Cexpr_if
+               (Cexpr_prim (Pcomparison I32 Ne) 6
+                (Cexpr_var factorial_3/3 Int ()))
+               (Cexpr_apply $builtin.abort
+                ("Test failed: factorial_3"
+                 @:user_requested_moonbit_tests.mbt:383:5-383:47)
+                (Normal
+                 ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                  (generic_ false)))
+                Unit (Unit))
+               () Unit))
+             (Cexpr_let factorial_2/4 2
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_prim (Pcomparison I32 Ne) 2
+                  (Cexpr_var factorial_2/4 Int ()))
+                 (Cexpr_apply $builtin.abort
+                  ("Test failed: factorial_2"
+                   @:user_requested_moonbit_tests.mbt:389:5-389:47)
+                  (Normal
+                   ((String (T_constr SourceLoc () (generic_ false))) -> Unit
+                    (generic_ false)))
+                  Unit (Unit))
+                 () Unit))
+               (Cexpr_let factorial_1/5 1
+                (Cexpr_sequence
+                 ((Cexpr_if
+                   (Cexpr_prim (Pcomparison I32 Ne) 1
+                    (Cexpr_var factorial_1/5 Int ()))
+                   (Cexpr_apply $builtin.abort
+                    ("Test failed: factorial_1"
+                     @:user_requested_moonbit_tests.mbt:395:5-395:47)
+                    (Normal
+                     ((String (T_constr SourceLoc () (generic_ false))) ->
+                      Unit (generic_ false)))
+                    Unit (Unit))
+                   () Unit))
+                 (Cexpr_let factorial_0/6 1
+                  (Cexpr_prim
+                   (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+                   (Cexpr_if
+                    (Cexpr_prim (Pcomparison I32 Ne) 1
+                     (Cexpr_var factorial_0/6 Int ()))
+                    (Cexpr_apply $builtin.abort
+                     ("Test failed: factorial_0"
+                      @:user_requested_moonbit_tests.mbt:401:5-401:47)
+                     (Normal
+                      ((String (T_constr SourceLoc () (generic_ false))) ->
+                       Unit (generic_ false)))
+                     Unit (Unit))
+                    () Unit))
+                  (T_error_value_result Unit
+                   (T_constr Error () (generic_ false))))
+                 (T_error_value_result Unit
+                  (T_constr Error () (generic_ false))))
+                (T_error_value_result Unit
+                 (T_constr Error () (generic_ false))))
+               (T_error_value_result Unit
+                (T_constr Error () (generic_ false))))
+              (T_error_value_result Unit
+               (T_constr Error () (generic_ false))))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false))))
