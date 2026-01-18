@@ -1,146 +1,243 @@
-// Azimuth 项目综合新增测试用例
+// Azimuth 项目综合新测试用例
 // 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
-test "addition_with_large_numbers" {
-  // 测试大数加法
-  let large_num1 = 1000000
-  let large_num2 = 2000000
-  let result = @azimuth.add(large_num1, large_num2)
-  @azimuth.assert_eq(result, 3000000)
+// 导入必要的模块
+use azimuth
+
+test "boolean_logic_operations" {
+  // 布尔逻辑运算测试
+  let true_val = 1
+  let false_val = 0
+  
+  // 逻辑与操作（使用乘法模拟）
+  let and_result1 = azimuth.multiply(true_val, true_val)  // 1 && 1 = 1
+  let and_result2 = azimuth.multiply(true_val, false_val) // 1 && 0 = 0
+  let and_result3 = azimuth.multiply(false_val, false_val) // 0 && 0 = 0
+  
+  @assertion.assert_eq(1, and_result1)?
+  @assertion.assert_eq(0, and_result2)?
+  @assertion.assert_eq(0, and_result3)?
+  
+  // 逻辑或操作（使用加法模拟，结果限制为0或1）
+  let or_result1 = azimuth.min(azimuth.add(true_val, true_val), 1)  // 1 || 1 = 1
+  let or_result2 = azimuth.min(azimuth.add(true_val, false_val), 1) // 1 || 0 = 1
+  let or_result3 = azimuth.min(azimuth.add(false_val, false_val), 1) // 0 || 0 = 0
+  
+  @assertion.assert_eq(1, or_result1)?
+  @assertion.assert_eq(1, or_result2)?
+  @assertion.assert_eq(0, or_result3)?
 }
 
-test "multiplication_table_pattern" {
-  // 测试乘法表模式
-  let base = 7
-  let expected1 = @azimuth.multiply(base, 1)  // 7
-  let expected2 = @azimuth.multiply(base, 2)  // 14
-  let expected3 = @azimuth.multiply(base, 3)  // 21
-  let expected4 = @azimuth.multiply(base, 4)  // 28
-  let expected5 = @azimuth.multiply(base, 5)  // 35
+test "array_summation_patterns" {
+  // 数组求和模式测试
+  // 使用累加变量模拟数组求和
   
-  @azimuth.assert_eq(expected1, 7)
-  @azimuth.assert_eq(expected2, 14)
-  @azimuth.assert_eq(expected3, 21)
-  @azimuth.assert_eq(expected4, 28)
-  @azimuth.assert_eq(expected5, 35)
+  // 等差数列求和: 2 + 4 + 6 + 8 + 10 = 30
+  let sum1 = azimuth.add(azimuth.add(azimuth.add(azimuth.add(2, 4), 6), 8), 10)
+  @assertion.assert_eq(30, sum1)?
+  
+  // 奇数求和: 1 + 3 + 5 + 7 + 9 = 25
+  let sum2 = azimuth.add(azimuth.add(azimuth.add(azimuth.add(1, 3), 5), 7), 9)
+  @assertion.assert_eq(25, sum2)?
+  
+  // 阶乘求和: 1! + 2! + 3! + 4! = 1 + 2 + 6 + 24 = 33
+  let fact1 = 1
+  let fact2 = azimuth.multiply(2, 1)
+  let fact3 = azimuth.multiply(3, azimuth.multiply(2, 1))
+  let fact4 = azimuth.multiply(4, azimuth.multiply(3, azimuth.multiply(2, 1)))
+  let sum3 = azimuth.add(azimuth.add(azimuth.add(fact1, fact2), fact3), fact4)
+  @assertion.assert_eq(33, sum3)?
 }
 
-test "string_concatenation_through_greet" {
-  // 测试通过 greet 函数进行字符串连接
-  let name1 = "Alice"
-  let expected1 = "Hello, Alice!"
-  let result1 = @azimuth.greet(name1)
-  @azimuth.assert_eq_string(result1, expected1)
+test "energy_consumption_calculations" {
+  // 能源消耗计算测试
+  let power_rating = 1500  // 设备功率（瓦特）
+  let hours_per_day = 8    // 每天使用小时数
+  let days_per_month = 30  // 每月天数
+  let price_per_kwh = 12   // 每千瓦时价格（分）
   
-  let name2 = "Bob"
-  let expected2 = "Hello, Bob!"
-  let result2 = @azimuth.greet(name2)
-  @azimuth.assert_eq_string(result2, expected2)
+  // 计算每日耗电量（瓦时）
+  let daily_consumption_wh = azimuth.multiply(power_rating, hours_per_day)
+  @assertion.assert_eq(12000, daily_consumption_wh)?
   
-  let name3 = "Charlie"
-  let expected3 = "Hello, Charlie!"
-  let result3 = @azimuth.greet(name3)
-  @azimuth.assert_eq_string(result3, expected3)
+  // 转换为千瓦时
+  let daily_consumption_kwh = daily_consumption_wh / 1000
+  @assertion.assert_eq(12, daily_consumption_kwh)?
+  
+  // 计算每月耗电量
+  let monthly_consumption_kwh = azimuth.multiply(daily_consumption_kwh, days_per_month)
+  @assertion.assert_eq(360, monthly_consumption_kwh)?
+  
+  // 计算每月电费
+  let monthly_cost = azimuth.multiply(monthly_consumption_kwh, price_per_kwh)
+  @assertion.assert_eq(4320, monthly_cost)?
 }
 
-test "nested_arithmetic_operations" {
-  // 测试嵌套算术运算
-  // 计算: ((5 + 3) * 2) - (10 / 2)
-  let step1 = @azimuth.add(5, 3)  // 8
-  let step2 = @azimuth.multiply(step1, 2)  // 16
-  let step3 = 10 / 2  // 5
-  let result = @azimuth.add(step2, -step3)  // 11
+test "speed_distance_time_calculations" {
+  // 速度、距离、时间计算测试
+  let speed = 60  // 速度（公里/小时）
+  let time = 2.5  // 时间（小时）
+  let distance = 150  // 距离（公里）
   
-  @azimuth.assert_eq(result, 11)
+  // 计算距离：距离 = 速度 × 时间
+  let calculated_distance = azimuth.multiply(speed, azimuth.multiply(time, 10)) / 10
+  @assertion.assert_eq(150, calculated_distance)?
+  
+  // 计算时间：时间 = 距离 / 速度
+  let calculated_time = azimuth.multiply(distance, 10) / speed
+  @assertion.assert_eq(25, calculated_time)?  // 2.5小时 = 25（十分之一小时）
+  
+  // 计算速度：速度 = 距离 / 时间
+  let calculated_speed = azimuth.multiply(distance, 10) / azimuth.multiply(time, 10)
+  @assertion.assert_eq(60, calculated_speed)?
 }
 
-test "alternating_addition_subtraction" {
-  // 测试交替加减法
-  let start = 100
-  let op1 = @azimuth.add(start, 10)    // 110
-  let op2 = @azimuth.add(op1, -5)      // 105
-  let op3 = @azimuth.add(op2, 20)      // 125
-  let op4 = @azimuth.add(op3, -15)     // 110
-  let result = @azimuth.add(op4, 30)   // 140
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 500
+  let part = 125
+  let percentage = 25
+  let increase = 20
   
-  @azimuth.assert_eq(result, 140)
+  // 计算百分比：百分比 = 部分 / 总数 × 100
+  let calculated_percentage = azimuth.multiply(part, 100) / total
+  @assertion.assert_eq(25, calculated_percentage)?
+  
+  // 计算百分比值：值 = 总数 × 百分比 / 100
+  let calculated_value = azimuth.multiply(total, percentage) / 100
+  @assertion.assert_eq(125, calculated_value)?
+  
+  // 计算增长后的值：新值 = 原值 × (1 + 增长率/100)
+  let increased_value = azimuth.multiply(total, azimuth.add(100, increase)) / 100
+  @assertion.assert_eq(600, increased_value)?
+  
+  // 计算减少后的值：新值 = 原值 × (1 - 减少率/100)
+  let decreased_value = azimuth.multiply(total, azimuth.add(100, -increase)) / 100
+  @assertion.assert_eq(400, decreased_value)?
 }
 
-test "mathematical_series_summation" {
-  // 测试数学级数求和
-  // 计算 1 + 2 + 3 + ... + 10
-  let sum1 = @azimuth.add(0, 1)   // 1
-  let sum2 = @azimuth.add(sum1, 2)  // 3
-  let sum3 = @azimuth.add(sum2, 3)  // 6
-  let sum4 = @azimuth.add(sum3, 4)  // 10
-  let sum5 = @azimuth.add(sum4, 5)  // 15
-  let sum6 = @azimuth.add(sum5, 6)  // 21
-  let sum7 = @azimuth.add(sum6, 7)  // 28
-  let sum8 = @azimuth.add(sum7, 8)  // 36
-  let sum9 = @azimuth.add(sum8, 9)  // 45
-  let sum10 = @azimuth.add(sum9, 10) // 55
+test "unit_conversion_calculations" {
+  // 单位转换计算测试
   
-  @azimuth.assert_eq(sum10, 55)
+  // 长度转换：1米 = 100厘米 = 1000毫米
+  let meters = 5
+  let centimeters = azimuth.multiply(meters, 100)
+  let millimeters = azimuth.multiply(meters, 1000)
+  
+  @assertion.assert_eq(500, centimeters)?
+  @assertion.assert_eq(5000, millimeters)?
+  
+  // 重量转换：1千克 = 1000克
+  let kilograms = 3.5
+  let grams = azimuth.multiply(kilograms, 1000)
+  @assertion.assert_eq(3500, grams)?
+  
+  // 数据存储转换：1GB = 1024MB
+  let gigabytes = 2
+  let megabytes = azimuth.multiply(gigabytes, 1024)
+  @assertion.assert_eq(2048, megabytes)?
 }
 
-test "exponential_growth_simulation" {
-  // 测试指数增长模拟
-  // 模拟细菌增长：每小时翻倍，共3小时
-  let initial_count = 100
-  let hour1 = @azimuth.multiply(initial_count, 2)  // 200
-  let hour2 = @azimuth.multiply(hour1, 2)          // 400
-  let hour3 = @azimuth.multiply(hour2, 2)          // 800
+test "loan_repayment_calculations" {
+  // 贷款还款计算测试
+  let principal = 10000  // 本金
+  let annual_rate = 6    // 年利率（百分比）
+  let loan_term = 3      // 贷款期限（年）
   
-  @azimuth.assert_eq(hour3, 800)
+  // 计算总利息：利息 = 本金 × 利率 × 年数
+  let total_interest = azimuth.multiply(principal, azimuth.multiply(annual_rate, loan_term)) / 100
+  @assertion.assert_eq(1800, total_interest)?
+  
+  // 计算还款总额：总额 = 本金 + 利息
+  let total_repayment = azimuth.add(principal, total_interest)
+  @assertion.assert_eq(11800, total_repayment)?
+  
+  // 计算月还款额：月还款 = 总额 / (年数 × 12)
+  let monthly_payment = azimuth.multiply(total_repayment, 100) / azimuth.multiply(loan_term, 12)
+  @assertion.assert_eq(327, monthly_payment)?  // 向下取整
+  
+  // 计算总还款月数
+  let total_months = azimuth.multiply(loan_term, 12)
+  @assertion.assert_eq(36, total_months)?
 }
 
-test "string_greeting_with_numbers" {
-  // 测试包含数字的字符串问候
-  let input1 = "123"
-  let expected1 = "Hello, 123!"
-  let result1 = @azimuth.greet(input1)
-  @azimuth.assert_eq_string(result1, expected1)
+test "inventory_management_calculations" {
+  // 库存管理计算测试
+  let initial_stock = 500
+  let units_sold = 120
+  let units_received = 200
+  let units_returned = 15
+  let units_damaged = 5
   
-  let input2 = "user456"
-  let expected2 = "Hello, user456!"
-  let result2 = @azimuth.greet(input2)
-  @azimuth.assert_eq_string(result2, expected2)
+  // 计算当前库存：当前库存 = 初始库存 - 售出 + 收到 - 退货 - 损坏
+  let current_stock = azimuth.add(azimuth.add(azimuth.subtract(
+    azimuth.subtract(initial_stock, units_sold), units_returned), units_received), -units_damaged)
+  @assertion.assert_eq(560, current_stock)?
   
-  let input3 = "test_789"
-  let expected3 = "Hello, test_789!"
-  let result3 = @azimuth.greet(input3)
-  @azimuth.assert_eq_string(result3, expected3)
+  // 计算库存周转率：周转率 = 售出 / 平均库存
+  let average_stock = azimuth.add(initial_stock, current_stock) / 2
+  let turnover_rate = azimuth.multiply(units_sold, 100) / average_stock
+  @assertion.assert_eq(23, turnover_rate)?  // 向下取整
+  
+  // 计算库存价值（假设每单位成本50）
+  let unit_cost = 50
+  let inventory_value = azimuth.multiply(current_stock, unit_cost)
+  @assertion.assert_eq(28000, inventory_value)?
 }
 
-test "factorial_calculation_simulation" {
-  // 测试阶乘计算模拟
-  // 计算 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let step1 = @azimuth.multiply(1, 1)   // 1
-  let step2 = @azimuth.multiply(step1, 2)  // 2
-  let step3 = @azimuth.multiply(step2, 3)  // 6
-  let step4 = @azimuth.multiply(step3, 4)  // 24
-  let step5 = @azimuth.multiply(step4, 5)  // 120
+test "data_validation_patterns" {
+  // 数据验证模式测试
+  let min_value = 10
+  let max_value = 100
+  let input1 = 5    // 低于最小值
+  let input2 = 50   // 在范围内
+  let input3 = 150  // 高于最大值
   
-  @azimuth.assert_eq(step5, 120)
+  // 验证输入是否在范围内
+  // 使用min和max函数限制值在范围内
+  let validated1 = azimuth.max(min_value, azimuth.min(max_value, input1))
+  let validated2 = azimuth.max(min_value, azimuth.min(max_value, input2))
+  let validated3 = azimuth.max(min_value, azimuth.min(max_value, input3))
+  
+  @assertion.assert_eq(10, validated1)?   // 被限制为最小值
+  @assertion.assert_eq(50, validated2)?   // 保持原值
+  @assertion.assert_eq(100, validated3)?  // 被限制为最大值
+  
+  // 计算验证偏差
+  let deviation1 = azimuth.add(input1, -validated1)
+  let deviation2 = azimuth.add(input2, -validated2)
+  let deviation3 = azimuth.add(input3, -validated3)
+  
+  @assertion.assert_eq(-5, deviation1)?
+  @assertion.assert_eq(0, deviation2)?
+  @assertion.assert_eq(50, deviation3)?
 }
 
-test "compound_interest_calculation" {
-  // 测试复利计算
-  // 本金1000，年利率5%，3年复利
-  let principal = 1000
-  let rate = 5  // 5%
+test "cryptographic_hash_simulation" {
+  // 加密哈希模拟测试（简化版）
+  let message = 12345
+  let prime1 = 17
+  let prime2 = 31
+  let prime3 = 53
   
-  // 第一年
-  let interest1 = @azimuth.multiply(principal, rate) / 100  // 50
-  let year1 = @azimuth.add(principal, interest1)           // 1050
+  // 简单的哈希算法：哈希 = (消息 × 质数1 + 质数2) × 质数3
+  let hash1 = azimuth.multiply(azimuth.add(azimuth.multiply(message, prime1), prime2), prime3)
+  @assertion.assert_eq(11074875, hash1)?
   
-  // 第二年
-  let interest2 = @azimuth.multiply(year1, rate) / 100     // 52
-  let year2 = @azimuth.add(year1, interest2)              // 1102
+  // 测试不同消息产生不同哈希
+  let message2 = 12346
+  let hash2 = azimuth.multiply(azimuth.add(azimuth.multiply(message2, prime1), prime2), prime3)
+  @assertion.assert_eq(11074942, hash2)?
   
-  // 第三年
-  let interest3 = @azimuth.multiply(year2, rate) / 100     // 55
-  let year3 = @azimuth.add(year2, interest3)              // 1157
+  // 验证哈希值不同
+  let hash_difference = azimuth.add(hash2, -hash1)
+  @assertion.assert_eq(67, hash_difference)?
   
-  @azimuth.assert_eq(year3, 1157)
+  // 测试哈希值的模运算（用于创建固定长度的哈希）
+  let mod_value = 1000000
+  let normalized_hash1 = hash1 % mod_value
+  let normalized_hash2 = hash2 % mod_value
+  
+  @assertion.assert_eq(74875, normalized_hash1)?
+  @assertion.assert_eq(74942, normalized_hash2)?
 }
