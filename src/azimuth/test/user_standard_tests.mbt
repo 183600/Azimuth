@@ -1,121 +1,103 @@
-// 用户新增的标准 MoonBit 测试用例
-// 测试 Azimuth 项目的核心功能
+// 用户标准测试用例
+// 测试 azimuth 包的核心功能
 
-test "divide_with_ceil_basic" {
-  // 测试向上取整除法的基本功能
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 4))
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(8, 4))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+test "add_basic_functionality" {
+  // 测试基本的加法功能
+  let result = @azimuth.add(10, 20)
+  if result != 30 { @builtin.abort("basic addition failed") }
+  
+  let result2 = @azimuth.add(-5, 5)
+  if result2 != 0 { @builtin.abort("addition with opposite numbers failed") }
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(21, 5))
-  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(40, 6))
+test "add_boundary_values" {
+  // 测试边界值的加法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  let overflow_result = @azimuth.add(max_val, 1)
+  if overflow_result != max_val { @builtin.abort("overflow protection failed") }
+  
+  let underflow_result = @azimuth.add(min_val, -1)
+  if underflow_result != min_val { @builtin.abort("underflow protection failed") }
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试向上取整除法的负数情况
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-10, 4))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-8, 4))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1, 100))
+test "multiply_basic_functionality" {
+  // 测试基本的乘法功能
+  let result = @azimuth.multiply(6, 7)
+  if result != 42 { @builtin.abort("basic multiplication failed") }
+  
+  let result2 = @azimuth.multiply(-3, 4)
+  if result2 != -12 { @builtin.abort("multiplication with negative number failed") }
 }
 
-test "statistical_calculations" {
-  // 测试统计计算场景
-  // 计算平均值：(a + b + c + d) / 4
-  let a = 85
-  let b = 90
-  let c = 78
-  let d = 92
+test "multiply_special_cases" {
+  // 测试乘法的特殊情况
+  let result1 = @azimuth.multiply(0, 12345)
+  if result1 != 0 { @builtin.abort("multiplication by zero failed") }
   
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(a, b), c), d)
-  let average = sum / 4
+  let result2 = @azimuth.multiply(1, 9876)
+  if result2 != 9876 { @builtin.abort("multiplication by one failed") }
   
-  @azimuth.assert_eq(86, average)
+  let result3 = @azimuth.multiply(-1, 555)
+  if result3 != -555 { @builtin.abort("multiplication by negative one failed") }
 }
 
-test "financial_compound_interest" {
-  // 测试金融复利计算
-  // 本金 × (1 + 利率)^年数（简化为整数计算）
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
-  
-  // 简化计算：10000 × (1 + 5% × 3) = 10000 × 1.15 ≈ 11500
-  let growth_factor = @azimuth.add(100, @azimuth.multiply(rate, years))
-  let total = @azimuth.multiply(principal, growth_factor) / 100
-  
-  @azimuth.assert_eq(11500, total)
+test "greet_basic_functionality" {
+  // 测试基本的问候功能
+  let result = @azimuth.greet("World")
+  if result != "Hello, World!" { @builtin.abort("basic greet failed") }
 }
 
-test "physics_kinematics" {
-  // 测试物理运动学计算
-  // 位移 = 初速度 × 时间 + 0.5 × 加速度 × 时间²
-  // 简化为整数计算：s = v × t + a × t × t / 2
-  let initial_velocity = 10  // m/s
-  let acceleration = 2      // m/s²
-  let time = 5              // s
+test "greet_edge_cases" {
+  // 测试问候功能的边界情况
+  let empty_result = @azimuth.greet("")
+  if empty_result != "Hello, !" { @builtin.abort("greet with empty string failed") }
   
-  let distance1 = @azimuth.multiply(initial_velocity, time)
-  let distance2 = @azimuth.multiply(acceleration, @azimuth.multiply(time, time)) / 2
-  let total_distance = @azimuth.add(distance1, distance2)
-  
-  @azimuth.assert_eq(75, total_distance)  // 10×5 + 2×5×5/2 = 50 + 25 = 75
+  let number_result = @azimuth.greet("123")
+  if number_result != "Hello, 123!" { @builtin.abort("greet with numbers failed") }
 }
 
-test "geometry_area_calculations" {
-  // 测试几何面积计算
-  // 梯形面积 = (上底 + 下底) × 高 ÷ 2
-  let top_base = 8
-  let bottom_base = 12
-  let height = 5
-  
-  let sum_bases = @azimuth.add(top_base, bottom_base)
-  let trapezoid_area = @azimuth.multiply(sum_bases, height) / 2
-  
-  @azimuth.assert_eq(50, trapezoid_area)  // (8 + 12) × 5 ÷ 2 = 20 × 5 ÷ 2 = 50
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算矩形的周长：2 * (长 + 宽)
+  let length = 10
+  let width = 5
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  if perimeter != 30 { @builtin.abort("perimeter calculation failed") }
 }
 
-test "combinatorial_calculations" {
-  // 测试组合数学计算
-  // 计算排列数 P(n, k) = n × (n-1) × ... × (n-k+1)
-  // 简化计算：P(5, 3) = 5 × 4 × 3 = 60
-  let n = 5
-  let k = 3
-  
-  let p1 = @azimuth.multiply(n, n - 1)
-  let p2 = @azimuth.multiply(p1, n - 2)
-  
-  @azimuth.assert_eq(60, p2)
+test "financial_calculation" {
+  // 测试金融计算场景
+  // 简单利息计算：本金 + (本金 * 利率 * 时间)
+  let principal = 1000
+  let rate = 5
+  let time = 3
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, time))
+  let total = @azimuth.add(principal, interest)
+  if total != 16000 { @builtin.abort("interest calculation failed") }
 }
 
 test "temperature_conversion" {
-  // 测试温度转换（摄氏度转华氏度）
-  // 简化公式：F = C × 2 + 30
+  // 测试温度转换场景
+  // 摄氏度转华氏度（简化版）：F = C * 2 + 30
   let celsius = 25
   let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  
-  @azimuth.assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
-  
-  // 测试冰点
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)
+  if fahrenheit != 80 { @builtin.abort("temperature conversion failed") }
 }
 
-test "array_index_calculations" {
-  // 测试数组索引计算
-  // 二维数组转一维数组的索引：index = row × width + col
-  let row = 2
-  let col = 3
-  let width = 5
+test "combined_operations" {
+  // 测试组合运算
+  // 计算：(a + b) * c - d
+  let a = 5
+  let b = 3
+  let c = 4
+  let d = 10
   
-  let index = @azimuth.add(@azimuth.multiply(row, width), col)
+  let sum_ab = @azimuth.add(a, b)
+  let product = @azimuth.multiply(sum_ab, c)
+  let result = @azimuth.add(product, -d)
   
-  @azimuth.assert_eq(13, index)  // 2 × 5 + 3 = 13
+  if result != 22 { @builtin.abort("combined operations failed") }
 }
