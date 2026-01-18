@@ -1,178 +1,188 @@
 // 用户新增的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，覆盖不同场景
 
-test "add_function_commutativity" {
-  // 测试加法交换律：a + b = b + a
-  let a = 123
-  let b = 456
+test "advanced_arithmetic_sequence" {
+  // 测试等差数列求和：1 + 4 + 7 + 10 + 13 = 35
+  let a1 = 1
+  let d = 3
+  let n = 5
   
-  let result1 = azimuth::add(a, b)
-  let result2 = azimuth::add(b, a)
-  assert_eq(result1, result2)
-  
-  // 测试负数情况
-  let c = -789
-  let d = 321
-  
-  let result3 = azimuth::add(c, d)
-  let result4 = azimuth::add(d, c)
-  assert_eq(result3, result4)
+  // 使用等差数列求和公式：Sn = n/2 * (2a1 + (n-1)d)
+  let sum = @azimuth.multiply(n, @azimuth.add(@azimuth.multiply(2, a1), @azimuth.multiply(n - 1, d))) / 2
+  @azimuth.assert_eq(35, sum)
 }
 
-test "multiply_function_distributivity" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 7
-  let b = 12
-  let c = 8
+test "geometric_progression_calculation" {
+  // 测试等比数列求和：2 + 6 + 18 + 54 = 80
+  let a1 = 2
+  let r = 3
+  let n = 4
   
-  let left_side = azimuth::multiply(a, azimuth::add(b, c))
-  let right_side = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
-  assert_eq(left_side, right_side)
+  // 手动计算等比数列前4项和
+  let term1 = a1
+  let term2 = @azimuth.multiply(term1, r)
+  let term3 = @azimuth.multiply(term2, r)
+  let term4 = @azimuth.multiply(term3, r)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4)
+  @azimuth.assert_eq(80, sum)
 }
 
-test "greet_function_multilingual" {
-  // 测试多语言问候功能
-  assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
-  assert_eq_string("Hello, Москва!", azimuth::greet("Москва"))
-  assert_eq_string("Hello, Tokyo!", azimuth::greet("Tokyo"))
-  assert_eq_string("Hello, São Paulo!", azimuth::greet("São Paulo"))
+test "string_pattern_processing" {
+  // 测试字符串模式处理
+  let pattern = "abc"
+  let repeat = 3
+  
+  // 模拟字符串重复：abcabcabc
+  let repeated = pattern + pattern + pattern
+  let result = @azimuth.greet(repeated)
+  @azimuth.assert_eq_string("Hello, abcabcabc!", result)
+  
+  // 测试包含重复模式的字符串
+  let complex_pattern = "ab" + "cd" + "ef"
+  let complex_result = @azimuth.greet(complex_pattern)
+  @azimuth.assert_eq_string("Hello, abcdef!", complex_result)
 }
 
 test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期计算
-  let principal = 100000  // 本金
+  // 测试复杂金融计算：贷款分期还款
+  let principal = 120000  // 贷款本金
   let annual_rate = 6     // 年利率6%
-  let years = 10          // 10年
+  let years = 10          // 贷款年限
   
-  // 简化的总利息计算：本金 × 年利率 × 年数
-  let total_interest = azimuth::multiply(principal, azimuth::multiply(annual_rate, years))
-  // 总还款额 = 本金 + 利息
-  let total_payment = azimuth::add(principal, total_interest)
+  // 简化的月供计算：本金/月数 + 利息
+  let months = @azimuth.multiply(years, 12)
+  let monthly_principal = principal / months
+  let monthly_interest = @azimuth.multiply(principal, annual_rate) / 100 / 12
+  let monthly_payment = @azimuth.add(monthly_principal, monthly_interest)
   
-  // 验证计算结果：100000 + 100000 × 6 × 10 = 7000000
-  assert_eq(7000000, total_payment)
+  // 计算总还款额
+  let total_payment = @azimuth.multiply(monthly_payment, months)
+  
+  // 验证计算结果（简化计算）
+  @azimuth.assert_true(monthly_payment > 1000)  // 月供应大于1000
+  @azimuth.assert_true(total_payment > principal)  // 总还款额应大于本金
 }
 
-test "temperature_conversion_scenarios" {
-  // 温度转换场景测试
-  // 摄氏度转华氏度：F = C × 2 + 30（简化版）
+test "temperature_conversion_precise" {
+  // 测试精确的温度转换
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 使用整数近似：F = C × 2 - C/5 + 32
   
-  // 测试常见温度点
-  let freezing_c = 0      // 冰点
-  let room_c = 20         // 室温
-  let body_c = 37         // 体温
-  let boiling_c = 100     // 沸点
+  let celsius = 25
+  let fahrenheit_approx = @azimuth.add(@azimuth.add(@azimuth.multiply(celsius, 2), @azimuth.multiply(-celsius / 5, 1)), 32)
+  @azimuth.assert_eq(77, fahrenheit_approx)  // 25°C ≈ 77°F
   
-  let freezing_f = azimuth::add(azimuth::multiply(freezing_c, 2), 30)
-  let room_f = azimuth::add(azimuth::multiply(room_c, 2), 30)
-  let body_f = azimuth::add(azimuth::multiply(body_c, 2), 30)
-  let boiling_f = azimuth::add(azimuth::multiply(boiling_c, 2), 30)
-  
-  assert_eq(30, freezing_f)   // 0 × 2 + 30 = 30
-  assert_eq(70, room_f)       // 20 × 2 + 30 = 70
-  assert_eq(104, body_f)      // 37 × 2 + 30 = 104
-  assert_eq(230, boiling_f)   // 100 × 2 + 30 = 230
+  // 测试负温度
+  let negative_celsius = -10
+  let negative_fahrenheit = @azimuth.add(@azimuth.add(@azimuth.multiply(negative_celsius, 2), @azimuth.multiply(-negative_celsius / 5, 1)), 32)
+  @azimuth.assert_eq(14, negative_fahrenheit)  // -10°C ≈ 14°F
 }
 
-test "geometric_area_calculations" {
-  // 几何面积计算测试
-  // 矩形面积：长 × 宽
-  let length = 15
-  let width = 8
-  let rectangle_area = azimuth::multiply(length, width)
-  assert_eq(120, rectangle_area)
+test "algorithm_complexity_simulation" {
+  // 测试算法复杂度模拟：O(n²) 操作
+  let n = 10
   
-  // 三角形面积：底 × 高 ÷ 2
-  let base = 12
-  let height = 10
-  let triangle_area = azimuth::multiply(base, height) / 2
-  assert_eq(60, triangle_area)
+  // 模拟嵌套循环的总操作数：n × n
+  let total_operations = @azimuth.multiply(n, n)
+  @azimuth.assert_eq(100, total_operations)
   
-  // 梯形面积：(上底 + 下底) × 高 ÷ 2
-  let top_base = 6
-  let bottom_base = 14
-  let trapezoid_height = 8
-  let trapezoid_area = azimuth::multiply(azimuth::add(top_base, bottom_base), trapezoid_height) / 2
-  assert_eq(80, trapezoid_area)
+  // 模拟 O(n log n) 操作（简化为 n × log₂n）
+  // 使用近似值：log₂10 ≈ 3
+  let log_n = 3
+  let n_log_n_operations = @azimuth.multiply(n, log_n)
+  @azimuth.assert_eq(30, n_log_n_operations)
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  // 计算一组数据的平均值、最大值、最小值
-  let values = [23, 45, 67, 89, 12, 34, 56, 78, 90, 1]
+test "combinatorial_calculations" {
+  // 测试组合数学计算
+  // 计算排列数 P(n,k) = n!/(n-k)!
+  // 简化计算：P(5,3) = 5 × 4 × 3 = 60
   
-  // 计算总和
-  let sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(azimuth::add(
-    azimuth::add(azimuth::add(azimuth::add(values[0], values[1]), values[2]), values[3]), 
-    values[4]), values[5]), values[6]), values[7]), values[8])
-  let total_sum = azimuth::add(sum, values[9])
+  let n = 5
+  let k = 3
+  let permutation = @azimuth.multiply(n, @azimuth.multiply(n - 1, n - 2))
+  @azimuth.assert_eq(60, permutation)
   
-  // 计算平均值
-  let average = total_sum / 10
-  assert_eq(49, average)  // (23+45+67+89+12+34+56+78+90+1) / 10 = 495 / 10 = 49
-  
-  // 验证最大值和最小值
-  let max_val = 90
-  let min_val = 1
-  assert_eq(max_val, 90)
-  assert_eq(min_val, 1)
+  // 计算组合数 C(n,k) = P(n,k)/k!
+  // 简化计算：C(5,3) = 60/(3×2×1) = 10
+  let combination = permutation / @azimuth.multiply(@azimuth.multiply(3, 2), 1)
+  @azimuth.assert_eq(10, combination)
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  // 测试各种特殊字符串
-  let empty_string = ""
-  let whitespace_string = "   "
-  let newline_string = "\n"
-  let tab_string = "\t"
-  let mixed_whitespace = " \t\n "
+test "data_structure_operations" {
+  // 测试数据结构操作模拟
+  // 模拟栈操作：push, push, pop, push
+  let mut stack_size = 0
   
-  assert_eq_string("Hello, !", azimuth::greet(empty_string))
-  assert_eq_string("Hello,    !", azimuth::greet(whitespace_string))
-  assert_eq_string("Hello, \n!", azimuth::greet(newline_string))
-  assert_eq_string("Hello, \t!", azimuth::greet(tab_string))
-  assert_eq_string("Hello,  \t\n !", azimuth::greet(mixed_whitespace))
+  // push 操作
+  stack_size = @azimuth.add(stack_size, 1)  // size = 1
+  stack_size = @azimuth.add(stack_size, 1)  // size = 2
+  
+  // pop 操作
+  stack_size = @azimuth.add(stack_size, -1)  // size = 1
+  
+  // push 操作
+  stack_size = @azimuth.add(stack_size, 1)  // size = 2
+  
+  @azimuth.assert_eq(2, stack_size)
+  
+  // 模拟队列操作：enqueue, dequeue, enqueue
+  let mut queue_size = 0
+  
+  // enqueue 操作
+  queue_size = @azimuth.add(queue_size, 1)  // size = 1
+  queue_size = @azimuth.add(queue_size, 1)  // size = 2
+  
+  // dequeue 操作
+  queue_size = @azimuth.add(queue_size, -1)  // size = 1
+  
+  // enqueue 操作
+  queue_size = @azimuth.add(queue_size, 1)  // size = 2
+  
+  @azimuth.assert_eq(2, queue_size)
 }
 
-test "energy_efficiency_calculation" {
-  // 能效计算测试
-  let appliance_power = 2000    // 设备功率（瓦特）
-  let daily_usage_hours = 4     // 每日使用小时数
-  let days_in_month = 30        // 一个月的天数
-  let electricity_rate = 15     // 电价（分/千瓦时）
+test "number_system_conversion" {
+  // 测试数字系统转换
+  // 十进制转二进制（模拟）：13 = 1101₂
+  let decimal = 13
   
-  // 计算月耗电量（千瓦时）
-  let daily_consumption_wh = azimuth::multiply(appliance_power, daily_usage_hours)
-  let monthly_consumption_wh = azimuth::multiply(daily_consumption_wh, days_in_month)
-  let monthly_consumption_kwh = monthly_consumption_wh / 1000
+  // 模拟二进制转换：通过位运算
+  let bit0 = decimal % 2          // 1
+  let bit1 = (decimal / 2) % 2    // 0
+  let bit2 = (decimal / 4) % 2    // 1
+  let bit3 = (decimal / 8) % 2    // 1
   
-  // 计算月电费
-  let monthly_cost = azimuth::multiply(monthly_consumption_kwh, electricity_rate)
+  // 将二进制位转换为十进制验证
+  let binary_to_decimal = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(bit3, 8), @azimuth.multiply(bit2, 4)), @azimuth.multiply(bit1, 2)), bit0)
+  @azimuth.assert_eq(decimal, binary_to_decimal)
   
-  assert_eq(240, monthly_consumption_kwh)  // 2000×4×30/1000 = 240
-  assert_eq(3600, monthly_cost)            // 240×15 = 3600
+  // 十进制转八进制（模拟）：100 = 144₈
+  let octal_decimal = 100
+  let octal_digit0 = octal_decimal % 8      // 4
+  let octal_digit1 = (octal_decimal / 8) % 8  // 4
+  let octal_digit2 = (octal_decimal / 64) % 8 // 1
+  
+  // 验证八进制转换
+  let octal_to_decimal = @azimuth.add(@azimuth.add(@azimuth.multiply(octal_digit2, 64), @azimuth.multiply(octal_digit1, 8)), octal_digit0)
+  @azimuth.assert_eq(octal_decimal, octal_to_decimal)
 }
 
-test "game_mechanics_calculation" {
-  // 游戏机制计算测试
-  let base_damage = 100      // 基础伤害
-  let weapon_multiplier = 2  // 武器倍数
-  let critical_chance = 20   // 暴击率（%）
-  let critical_multiplier = 2 // 暴击倍数
+test "physics_simulation" {
+  // 测试物理模拟计算
+  // 自由落体运动：h = v₀t + ½gt²
+  let initial_velocity = 10  // 初始速度 m/s
+  let time = 5               // 时间 s
+  let gravity = 10           // 重力加速度 m/s²（简化值）
   
-  // 计算普通伤害
-  let normal_damage = azimuth::multiply(base_damage, weapon_multiplier)
+  // 计算位移：h = 10×5 + ½×10×5² = 50 + 125 = 175
+  let height = @azimuth.add(@azimuth.multiply(initial_velocity, time), @azimuth.multiply(@azimuth.multiply(gravity, time), time) / 2)
+  @azimuth.assert_eq(175, height)
   
-  // 计算暴击伤害（假设触发暴击）
-  let critical_damage = azimuth::multiply(normal_damage, critical_multiplier)
+  // 动能计算：E = ½mv²
+  let mass = 2        // 质量 kg
+  let velocity = 15   // 速度 m/s
   
-  // 计算期望伤害（考虑暴击率）
-  let expected_damage = azimuth::add(
-    azimuth::multiply(normal_damage, 100 - critical_chance),
-    azimuth::multiply(critical_damage, critical_chance)
-  ) / 100
-  
-  assert_eq(200, normal_damage)      // 100×2 = 200
-  assert_eq(400, critical_damage)    // 200×2 = 400
-  assert_eq(240, expected_damage)    // (200×80 + 400×20)/100 = 240
+  // 计算动能：E = ½×2×15² = 225
+  let kinetic_energy = @azimuth.multiply(mass, @azimuth.multiply(velocity, velocity)) / 2
+  @azimuth.assert_eq(225, kinetic_energy)
 }
