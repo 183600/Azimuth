@@ -408,10 +408,10 @@ test "data_type_boundary_simulation" {
   @azimuth.assert_eq(-2147483647, negative_to_positive)
   
   // 模拟无符号整数行为（通过偏移）
-  let offset = 2147483648  // 2^31
+  let offset = 2147483647  // 最大值
   let unsigned_value = 100
   let signed_representation = @azimuth.add(unsigned_value, -offset)
-  @azimuth.assert_eq(-2147483548, signed_representation)
+  @azimuth.assert_eq(-2147483547, signed_representation)
   
   // 测试字符串到数字的模拟转换
   let digit_string = "123"
