@@ -168,5 +168,6 @@
     "user_focused_tests.mbt",
     "azimuth_comprehensive_unit_tests.mbt",
     "user_enhanced_tests.mbt",
-    "additional_standard_tests.mbt"
+    "additional_standard_tests.mbt",
+    "azimuth_standard_tests_enhanced.mbt"
     ]}
