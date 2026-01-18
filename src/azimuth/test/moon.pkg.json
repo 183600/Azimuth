@@ -164,5 +164,6 @@
     "user_new_addition_tests.mbt",
     "user_comprehensive_tests.mbt",
     "azimuth_new_standard_tests.mbt",
-    "azimuth_practical_test_suite.mbt"
+    "azimuth_practical_test_suite.mbt",
+    "user_focused_tests.mbt"
     ]}
