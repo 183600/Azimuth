@@ -1,189 +1,169 @@
-// Azimuth 项目新测试用例
-// 使用标准 MoonBit 测试语法，包含多样化的实用测试场景
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，包含多样化的测试场景
 
-test "boolean_logic_operations" {
-  // 测试布尔逻辑运算
-  let true_val = true
-  let false_val = false
+test "complex_addition_scenarios" {
+  // 复杂加法场景测试
+  let a = 1000000
+  let b = 2000000
+  let c = -500000
   
-  // 基本逻辑运算
-  let and_result = true_val && false_val  // false
-  let or_result = true_val || false_val   // true
-  let not_true = !true_val                // false
-  let not_false = !false_val              // true
+  // 测试大数相加
+  let result1 = @azimuth.add(a, b)
+  @azimuth.assert_eq(3000000, result1)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = and_result
-  let _ = or_result
-  let _ = not_true
-  let _ = not_false
+  // 测试正负数相加
+  let result2 = @azimuth.add(a, c)
+  @azimuth.assert_eq(500000, result2)
+  
+  // 测试链式加法
+  let result3 = @azimuth.add(@azimuth.add(a, b), c)
+  @azimuth.assert_eq(2500000, result3)
 }
 
-test "comparison_operations" {
-  // 测试比较运算
-  let a = 10
-  let b = 20
-  let c = 10
+test "advanced_multiplication_cases" {
+  // 高级乘法案例测试
+  let a = 12345
+  let b = 6789
+  let c = -100
   
-  // 比较运算
-  let equal_result = a == c      // true
-  let not_equal_result = a != b  // true
-  let less_result = a < b        // true
-  let greater_result = b > a     // true
-  let less_equal_result = a <= c // true
-  let greater_equal_result = b >= a // true
+  // 测试大数相乘
+  let result1 = @azimuth.multiply(a, b)
+  @azimuth.assert_eq(83810205, result1)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = equal_result
-  let _ = not_equal_result
-  let _ = less_result
-  let _ = greater_result
-  let _ = less_equal_result
-  let _ = greater_equal_result
+  // 测试与负数相乘
+  let result2 = @azimuth.multiply(a, c)
+  @azimuth.assert_eq(-1234500, result2)
+  
+  // 测试链式乘法
+  let result3 = @azimuth.multiply(@azimuth.multiply(a, b), c)
+  @azimuth.assert_eq(-838102050, result3)
 }
 
-test "array_index_operations" {
-  // 测试数组索引操作（模拟）
-  let index1 = 0
-  let index2 = 1
-  let index3 = 2
+test "overflow_boundary_conditions" {
+  // 溢出边界条件测试
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 模拟数组访问
-  let array_value1 = index1 + 5  // 模拟 arr[0] = 5
-  let array_value2 = index2 + 10 // 模拟 arr[1] = 10
-  let array_value3 = index3 + 15 // 模拟 arr[2] = 15
+  // 测试正数溢出
+  let overflow_add = @azimuth.add(max_val, 1)
+  @azimuth.assert_eq(max_val, overflow_add)
   
-  // 计算总和
-  let total = array_value1 + array_value2 + array_value3
+  // 测试负数溢出
+  let underflow_add = @azimuth.add(min_val, -1)
+  @azimuth.assert_eq(min_val, underflow_add)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = array_value1
-  let _ = array_value2
-  let _ = array_value3
-  let _ = total
+  // 测试乘法溢出
+  let overflow_mul = @azimuth.multiply(max_val, 2)
+  @azimuth.assert_eq(max_val, overflow_mul)
+  
+  // 测试最小值乘以-1的特殊情况
+  let min_times_neg_one = @azimuth.multiply(min_val, -1)
+  @azimuth.assert_eq(min_val, min_times_neg_one)
 }
 
-test "conditional_logic_simulations" {
-  // 测试条件逻辑模拟
-  let score = 85
-  let passing_grade = 60
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况测试
+  // 测试空字符串
+  let empty_result = @azimuth.greet("")
+  @azimuth.assert_eq_string("Hello, !", empty_result)
   
-  // 模拟条件判断
-  let is_passing = score >= passing_grade  // true
-  let is_excellent = score >= 90           // false
-  let needs_improvement = score < 70       // false
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
+  let long_result = @azimuth.greet(long_name)
+  @azimuth.assert_eq_string("Hello, " + long_name + "!", long_result)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = is_passing
-  let _ = is_excellent
-  let _ = needs_improvement
+  // 测试包含特殊字符的字符串
+  let special_name = "John@Doe#123$%^&*()"
+  let special_result = @azimuth.greet(special_name)
+  @azimuth.assert_eq_string("Hello, John@Doe#123$%^&*()!", special_result)
+  
+  // 测试包含Unicode字符的字符串
+  let unicode_name = "张三李四🌍"
+  let unicode_result = @azimuth.greet(unicode_name)
+  @azimuth.assert_eq_string("Hello, 张三李四🌍!", unicode_result)
 }
 
-test "string_length_calculations" {
-  // 测试字符串长度计算（模拟）
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let a = 15
+  let b = 7
+  let c = 3
   
-  // 模拟字符串长度计算
-  let len1 = 5  // "Hello" 的长度
-  let len2 = 5  // "World" 的长度
-  let len3 = 7  // "MoonBit" 的长度
+  // 验证加法交换律
+  let commutative_add1 = @azimuth.add(a, b)
+  let commutative_add2 = @azimuth.add(b, a)
+  @azimuth.assert_eq(commutative_add1, commutative_add2)
   
-  // 计算总长度
-  let total_length = len1 + len2 + len3
+  // 验证乘法交换律
+  let commutative_mul1 = @azimuth.multiply(a, b)
+  let commutative_mul2 = @azimuth.multiply(b, a)
+  @azimuth.assert_eq(commutative_mul1, commutative_mul2)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = len1
-  let _ = len2
-  let _ = len3
-  let _ = total_length
+  // 验证分配律
+  let distributive1 = @azimuth.multiply(a, @azimuth.add(b, c))
+  let distributive2 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(distributive1, distributive2)
 }
 
-test "modulus_operations" {
-  // 测试模运算
-  let a = 17
-  let b = 5
-  let c = 10
-  let d = 3
+test "real_world_financial_calculations" {
+  // 实际金融计算测试
+  let principal = 10000  // 本金
+  let rate = 5          // 利率（百分比）
+  let years = 3         // 年数
   
-  // 模运算
-  let mod1 = a % b  // 2
-  let mod2 = c % d  // 1
-  let mod3 = 20 % 6 // 2
-  let mod4 = 15 % 4 // 3
+  // 简单利息计算：利息 = 本金 × 利率 × 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = mod1
-  let _ = mod2
-  let _ = mod3
-  let _ = mod4
+  // 本息和 = 本金 + 利息
+  let total = @azimuth.add(principal, interest)
+  
+  // 验证计算结果：10000 + 10000×5×3 = 160000
+  @azimuth.assert_eq(160000, total)
+  
+  // 测试复利计算（简化版）：本息和 = 本金 × (1 + 利率×年数)
+  let compound_total = @azimuth.multiply(principal, @azimuth.add(1, @azimuth.multiply(rate, years)))
+  @azimuth.assert_eq(160000, compound_total)
 }
 
-test "bitwise_operations" {
-  // 测试位运算
-  let a = 5   // 二进制 101
-  let b = 3   // 二进制 011
+test "geometry_and_trigonometry" {
+  // 几何与三角学计算测试
+  let length = 12  // 矩形长
+  let width = 8    // 矩形宽
+  let radius = 5   // 圆半径
   
-  // 位运算（模拟）
-  let and_result = a & b   // 1 (001)
-  let or_result = a | b    // 7 (111)
-  let xor_result = a ^ b   // 6 (110)
-  let not_a = 0 - a - 1    // 位运算取反（模拟）
+  // 计算矩形周长：2 × (长 + 宽)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(40, perimeter)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = and_result
-  let _ = or_result
-  let _ = xor_result
-  let _ = not_a
+  // 计算矩形面积：长 × 宽
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(96, area)
+  
+  // 计算圆周长（简化）：2 × π × r ≈ 2 × 3 × r
+  let circumference = @azimuth.multiply(@azimuth.multiply(2, 3), radius)
+  @azimuth.assert_eq(30, circumference)
+  
+  // 计算圆面积（简化）：π × r² ≈ 3 × r²
+  let circle_area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
+  @azimuth.assert_eq(75, circle_area)
 }
 
-test "power_calculations" {
-  // 测试幂运算（使用乘法模拟）
-  let base = 2
+test "temperature_conversion_calculations" {
+  // 温度转换计算测试
+  // 摄氏度转华氏度（简化版）：F = C × 2 + 30
   
-  // 2^1, 2^2, 2^3, 2^4
-  let power1 = base           // 2^1 = 2
-  let power2 = base * base    // 2^2 = 4
-  let power3 = base * base * base  // 2^3 = 8
-  let power4 = base * base * base * base  // 2^4 = 16
+  // 测试冰点温度
+  let freezing_celsius = 0
+  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
+  @azimuth.assert_eq(30, freezing_fahrenheit)
   
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = power1
-  let _ = power2
-  let _ = power3
-  let _ = power4
-}
-
-test "factorial_calculations" {
-  // 测试阶乘计算（使用乘法模拟）
-  // 5! = 5 * 4 * 3 * 2 * 1 = 120
-  let factorial_5 = 5 * 4 * 3 * 2 * 1
+  // 测试室温
+  let room_celsius = 20
+  let room_fahrenheit = @azimuth.add(@azimuth.multiply(room_celsius, 2), 30)
+  @azimuth.assert_eq(70, room_fahrenheit)
   
-  // 4! = 4 * 3 * 2 * 1 = 24
-  let factorial_4 = 4 * 3 * 2 * 1
-  
-  // 3! = 3 * 2 * 1 = 6
-  let factorial_3 = 3 * 2 * 1
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = factorial_5
-  let _ = factorial_4
-  let _ = factorial_3
-}
-
-test "statistics_calculations" {
-  // 测试统计计算
-  
-  // 计算总和
-  let sum = 10 + 20 + 30 + 40 + 50
-  
-  // 计算平均值（模拟）
-  let count = 5
-  let average = sum / count
-  
-  // 计算中位数（模拟）
-  let median = 30
-  
-  // 使用 _ 忽略结果，返回 Unit
-  let _ = sum
-  let _ = average
-  let _ = median
+  // 测试沸点温度
+  let boiling_celsius = 100
+  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
+  @azimuth.assert_eq(230, boiling_fahrenheit)
 }
