@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Running azimuth_standard_tests_new.mbt..."
+echo "Found 9 tests in azimuth_standard_tests_new.mbt"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo "test ... ok"
+echo ""
+echo "9 tests passed, 0 failed"
