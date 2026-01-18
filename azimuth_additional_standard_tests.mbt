@@ -1,121 +1,136 @@
-// Azimuth 项目附加标准测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 额外标准测试用例
+// 包含溢出处理、特殊字符和复杂运算的测试
 
-test "add_with_floating_point_conversion" {
-  // 测试整数加法的精度
-  let result1 = azimuth::add(1000, 2000)
-  assert_eq(result1, 3000)
+test "add_function_positive_overflow" {
+  // 测试加法函数的正数溢出处理
+  let max_val = 2147483647
   
-  let result2 = azimuth::add(-500, 250)
-  assert_eq(result2, -250)
+  // 两个大正数相加应该返回最大值
+  @azimuth.assert_eq(max_val, @azimuth.add(1500000000, 1500000000))
+  @azimuth.assert_eq(max_val, @azimuth.add(2000000000, 2000000000))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
 }
 
-test "multiply_by_negative_one" {
-  // 测试乘以-1的符号变化
-  let positive = 42
-  let negative = -42
+test "add_function_negative_overflow" {
+  // 测试加法函数的负数溢出处理
+  let min_val = -2147483648
   
-  let result1 = azimuth::multiply(positive, -1)
-  assert_eq(result1, -42)
-  
-  let result2 = azimuth::multiply(negative, -1)
-  assert_eq(result2, 42)
+  // 两个大负数相加应该返回最小值
+  @azimuth.assert_eq(min_val, @azimuth.add(-1500000000, -1500000000))
+  @azimuth.assert_eq(min_val, @azimuth.add(-2000000000, -2000000000))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
 }
 
-test "greet_with_whitespace" {
-  // 测试包含空格的字符串
-  let result1 = azimuth::greet("John Doe")
-  assert_eq(result1, "Hello, John Doe!")
+test "multiply_function_overflow_handling" {
+  // 测试乘法函数的溢出处理
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let result2 = azimuth::greet("  spaced  ")
-  assert_eq(result2, "Hello,   spaced  !")
+  // 大数相乘应该返回边界值
+  @azimuth.assert_eq(max_val, @azimuth.multiply(50000, 50000))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(-50000, 50000))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(100000, 30000))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(-100000, 30000))
 }
 
-test "sequential_operations" {
-  // 测试连续运算
-  let start = 10
-  let step1 = azimuth::add(start, 5)  // 15
-  let step2 = azimuth::multiply(step1, 2)  // 30
-  let step3 = azimuth::add(step2, -10)  // 20
-  
-  assert_eq(step3, 20)
+test "greet_function_empty_string" {
+  // 测试问候函数的空字符串处理
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
-test "identity_operations" {
-  // 测试单位元运算
-  let value = 123
-  
-  // 加法单位元
-  let add_identity = azimuth::add(value, 0)
-  assert_eq(add_identity, value)
-  
-  // 乘法单位元
-  let mult_identity = azimuth::multiply(value, 1)
-  assert_eq(mult_identity, value)
+test "greet_function_special_characters" {
+  // 测试问候函数的特殊字符处理
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, &*()!", @azimuth.greet("&*()"))
+  @azimuth.assert_eq_string("Hello, []{}!", @azimuth.greet("[]{}"))
+  @azimuth.assert_eq_string("Hello, \\|/-!", @azimuth.greet("\\|/-"))
 }
 
-test "string_length_cases" {
-  // 测试不同长度的字符串
-  let short = "Hi"
-  let medium = "MoonBit"
-  let long = "This is a very long string for testing purposes"
+test "add_function_chained_operations" {
+  // 测试加法函数的连续运算
+  let result1 = @azimuth.add(10, 20)
+  let result2 = @azimuth.add(result1, 30)
+  let result3 = @azimuth.add(result2, 40)
   
-  let result1 = azimuth::greet(short)
-  assert_eq(result1, "Hello, Hi!")
+  @azimuth.assert_eq(100, result3)
   
-  let result2 = azimuth::greet(medium)
-  assert_eq(result2, "Hello, MoonBit!")
+  // 测试负数的连续运算
+  let neg_result1 = @azimuth.add(-10, -20)
+  let neg_result2 = @azimuth.add(neg_result1, -30)
+  let neg_result3 = @azimuth.add(neg_result2, 40)
   
-  let result3 = azimuth::greet(long)
-  assert_eq(result3, "Hello, This is a very long string for testing purposes!")
+  @azimuth.assert_eq(-20, neg_result3)
 }
 
-test "negative_zero_operations" {
-  // 测试负零相关运算
-  let positive = 15
-  let negative = -15
+test "multiply_function_chained_operations" {
+  // 测试乘法函数的连续运算
+  let result1 = @azimuth.multiply(2, 3)
+  let result2 = @azimuth.multiply(result1, 4)
+  let result3 = @azimuth.multiply(result2, 5)
   
-  let result1 = azimuth::add(positive, -15)
-  assert_eq(result1, 0)
+  @azimuth.assert_eq(120, result3)
   
-  let result2 = azimuth::add(negative, 15)
-  assert_eq(result2, 0)
+  // 测试包含负数的连续运算
+  let neg_result1 = @azimuth.multiply(-2, 3)
+  let neg_result2 = @azimuth.multiply(neg_result1, -4)
+  let neg_result3 = @azimuth.multiply(neg_result2, 5)
+  
+  @azimuth.assert_eq(120, neg_result3)
 }
 
-test "multiply_by_zero_variations" {
-  // 测试各种零的乘法
-  let positive = 100
-  let negative = -100
+test "complex_mixed_arithmetic" {
+  // 测试混合运算的复杂场景
+  let a = 15
+  let b = -5
+  let c = 8
+  let d = -3
   
-  let result1 = azimuth::multiply(positive, 0)
-  assert_eq(result1, 0)
+  // 计算 (a * b) + (c * d)
+  let term1 = @azimuth.multiply(a, b)
+  let term2 = @azimuth.multiply(c, d)
+  let result1 = @azimuth.add(term1, term2)
   
-  let result2 = azimuth::multiply(negative, 0)
-  assert_eq(result2, 0)
+  @azimuth.assert_eq(-99, result1)
   
-  let result3 = azimuth::multiply(0, 0)
-  assert_eq(result3, 0)
+  // 计算 (a + b) * (c + d)
+  let sum1 = @azimuth.add(a, b)
+  let sum2 = @azimuth.add(c, d)
+  let result2 = @azimuth.multiply(sum1, sum2)
+  
+  @azimuth.assert_eq(50, result2)
 }
 
-test "greet_with_special_characters" {
-  // 测试特殊字符处理
-  let result1 = azimuth::greet("Café")
-  assert_eq(result1, "Hello, Café!")
+test "boundary_value_special_cases" {
+  // 测试边界值的特殊情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let result2 = azimuth::greet("测试")
-  assert_eq(result2, "Hello, 测试!")
+  // 测试最小值与2的乘法
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
   
-  let result3 = azimuth::greet("🌙")
-  assert_eq(result3, "Hello, 🌙!")
+  // 测试最小值与-2的乘法
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -2))
+  
+  // 测试最大值与最大值的加法
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  
+  // 测试最小值与最小值的加法
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
 }
 
-test "additive_inverse_property" {
-  // 测试加法逆元性质
-  let values = [0, 1, -1, 42, -100, 999999]
+test "assert_functions_functionality" {
+  // 测试断言函数的功能
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
   
-  for value in values {
-    let inverse = azimuth::multiply(value, -1)
-    let result = azimuth::add(value, inverse)
-    assert_eq(result, 0)
-  }
+  // 测试布尔表达式的断言
+  @azimuth.assert_true(1 > 0)
+  @azimuth.assert_false(1 < 0)
+  @azimuth.assert_true(0 == 0)
+  @azimuth.assert_false(0 != 0)
 }
