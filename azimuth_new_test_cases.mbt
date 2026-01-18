@@ -1,250 +1,248 @@
-// Azimuth 项目新增测试用例
+// Azimuth 项目新增 MoonBit 测试用例
 // 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
-test "physics_calculations" {
-  // 物理计算测试
-  let mass = 10        // 质量 (kg)
-  let acceleration = 5 // 加速度 (m/s²)
-  let height = 20      // 高度 (m)
-  let gravity = 10     // 重力加速度 (m/s²)
+// 导入必要的模块
+use azimuth
+
+test "error_handling_scenarios" {
+  // 错误处理场景测试
+  let valid_input = 10
+  let zero_input = 0
+  let negative_input = -5
   
-  // 计算力: F = m × a
-  let force = @azimuth.multiply(mass, acceleration)
-  @azimuth.assert_eq(50, force)?
+  // 测试正常输入
+  let normal_result = azimuth.add(valid_input, valid_input)
+  @assertion.assert_eq(20, normal_result)?
   
-  // 计算势能: PE = m × g × h
-  let potential_energy = @azimuth.multiply(@azimuth.multiply(mass, gravity), height)
-  @azimuth.assert_eq(2000, potential_energy)?
+  // 测试零值输入
+  let zero_result = azimuth.multiply(zero_input, valid_input)
+  @assertion.assert_eq(0, zero_result)?
   
-  // 计算动能: KE = 0.5 × m × v² (简化为整数计算)
-  let velocity = 15
-  let kinetic_energy = @azimuth.multiply(@azimuth.multiply(mass, velocity), velocity) / 2
-  @azimuth.assert_eq(1125, kinetic_energy)?
+  // 测试负值输入
+  let negative_result = azimuth.add(negative_input, valid_input)
+  @assertion.assert_eq(5, negative_result)?
+  
+  // 测试混合运算
+  let mixed_result = azimuth.multiply(negative_input, negative_input)
+  @assertion.assert_eq(25, mixed_result)?
 }
 
-test "unit_conversions" {
-  // 单位转换测试
-  let meters = 1000
+test "data_type_compatibility" {
+  // 数据类型兼容性测试
+  let small_int = 127
+  let medium_int = 32767
+  let large_int = 2147483647
   
-  // 米转千米
-  let kilometers = meters / 1000
-  @azimuth.assert_eq(1, kilometers)?
+  // 测试不同大小整数的运算
+  let result1 = azimuth.add(small_int, medium_int)
+  @assertion.assert_eq(32894, result1)?
   
-  // 千米转米
-  let meters_back = @azimuth.multiply(kilometers, 1000)
-  @azimuth.assert_eq(1000, meters_back)?
+  let result2 = azimuth.multiply(small_int, 2)
+  @assertion.assert_eq(254, result2)?
   
-  // 千克转克
-  let kilograms = 5
-  let grams = @azimuth.multiply(kilograms, 1000)
-  @azimuth.assert_eq(5000, grams)?
+  // 测试边界值
+  let result3 = azimuth.add(large_int, 0)
+  @assertion.assert_eq(2147483647, result3)?
   
-  // 升转毫升
-  let liters = 3
-  let milliliters = @azimuth.multiply(liters, 1000)
-  @azimuth.assert_eq(3000, milliliters)?
+  let result4 = azimuth.multiply(large_int, 1)
+  @assertion.assert_eq(2147483647, result4)?
 }
 
-test "array_summation_patterns" {
-  // 数组求和模式测试
-  // 模拟数组求和: 1+2+3+4+5+6+7+8+9+10 = 55
-  let sum1to10 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5), 6), 7), 8), 9), 10)
-  @azimuth.assert_eq(55, sum1to10)?
+test "string_edge_cases" {
+  // 字符串边界情况测试
+  let empty_string = ""
+  let single_char = "A"
+  let long_string = "This is a very long string with many characters"
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
   
-  // 模拟偶数求和: 2+4+6+8+10 = 30
-  let even_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8), 10)
-  @azimuth.assert_eq(30, even_sum)?
+  // 测试空字符串
+  let empty_result = azimuth.greet(empty_string)
+  @assertion.assert_eq_string("Hello, !", empty_result)?
   
-  // 模拟奇数求和: 1+3+5+7+9 = 25
-  let odd_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 3), 5), 7), 9)
-  @azimuth.assert_eq(25, odd_sum)?
+  // 测试单字符
+  let single_result = azimuth.greet(single_char)
+  @assertion.assert_eq_string("Hello, A!", single_result)?
+  
+  // 测试长字符串
+  let long_result = azimuth.greet(long_string)
+  @assertion.assert_eq_string("Hello, This is a very long string with many characters!", long_result)?
+  
+  // 测试特殊字符
+  let special_result = azimuth.greet(special_chars)
+  @assertion.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", special_result)?
 }
 
-test "binary_operations" {
-  // 二进制操作模拟测试
-  let num1 = 12  // 二进制: 1100
-  let num2 = 10  // 二进制: 1010
+test "algorithmic_patterns" {
+  // 算法模式测试
+  let base = 2
+  let exponent = 10
   
-  // 模拟位与操作: 1100 & 1010 = 1000 (8)
-  let bitwise_and = 8
-  @azimuth.assert_eq(8, bitwise_and)?
+  // 测试指数运算（通过重复乘法）
+  let power_result = azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(azimuth.multiply(base, base), base), base), base), base), base), base), base)
+  @assertion.assert_eq(1024, power_result)?
   
-  // 模拟位或操作: 1100 | 1010 = 1110 (14)
-  let bitwise_or = 14
-  @azimuth.assert_eq(14, bitwise_or)?
+  // 测试斐波那契数列（前几项）
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = azimuth.add(fib1, fib2)
+  let fib4 = azimuth.add(fib2, fib3)
+  let fib5 = azimuth.add(fib3, fib4)
+  @assertion.assert_eq(5, fib5)?
   
-  // 模拟位异或操作: 1100 ^ 1010 = 0110 (6)
-  let bitwise_xor = 6
-  @azimuth.assert_eq(6, bitwise_xor)?
-  
-  // 模拟左移操作: 12 << 2 = 48
-  let left_shift = @azimuth.multiply(12, 4)
-  @azimuth.assert_eq(48, left_shift)?
+  // 测试阶乘（简化版）
+  let factorial_input = 5
+  let factorial_result = azimuth.multiply(factorial_input, azimuth.multiply(azimuth.add(factorial_input, -1), azimuth.multiply(azimuth.add(factorial_input, -2), azimuth.multiply(azimuth.add(factorial_input, -3), azimuth.add(factorial_input, -4)))))
+  @assertion.assert_eq(120, factorial_result)?
 }
 
-test "calendar_calculations" {
-  // 日历计算测试
-  let year = 2024
-  let month = 6
-  let day = 15
+test "business_logic_validation" {
+  // 业务逻辑验证测试
+  let product_price = 199
+  let discount_rate = 15
+  let customer_points = 1200
+  let points_rate = 10
   
-  // 计算年份中的天数（简化计算，不考虑闰年）
-  let days_in_year = 365
-  @azimuth.assert_eq(365, days_in_year)?
+  // 计算折扣金额
+  let discount_amount = azimuth.multiply(product_price, discount_rate) / 100
+  let discounted_price = azimuth.add(product_price, -discount_amount)
   
-  // 计算月份中的天数（6月有30天）
-  let days_in_june = 30
-  @azimuth.assert_eq(30, days_in_june)?
+  // 计算积分抵扣
+  let points_discount = azimuth.multiply(customer_points, points_rate) / 100
+  let final_price = azimuth.add(discounted_price, -points_discount)
   
-  // 计算从年初到当前日期的总天数（简化）
-  let jan_days = 31
-  let feb_days = 29  // 2024是闰年
-  let mar_days = 31
-  let apr_days = 30
-  let may_days = 31
+  // 验证最终价格：199 - 199×15/100 - 1200×10/100 = 199 - 29 - 120 = 50
+  @assertion.assert_eq(50, final_price)?
   
-  let total_days = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    jan_days, feb_days), mar_days), apr_days), may_days), day)
-  @azimuth.assert_eq(167, total_days)?
+  // 测试会员等级加成
+  let member_level = 3
+  let member_bonus = azimuth.multiply(final_price, member_level) / 100
+  let member_price = azimuth.add(final_price, -member_bonus)
+  
+  // 验证会员价格：50 - 50×3/100 = 50 - 1 = 49
+  @assertion.assert_eq(49, member_price)?
 }
 
-test "network_calculations" {
-  // 网络计算测试
-  let file_size_mb = 50
-  let network_speed_mbps = 10
+test "scientific_computing" {
+  // 科学计算测试
+  let mass = 1000  // kg
+  let acceleration = 9.8  // m/s² (简化为整数)
+  let time = 10  // seconds
   
-  // 计算下载时间（秒）
-  let download_time_seconds = @azimuth.multiply(file_size_mb, 8) / network_speed_mbps
-  @azimuth.assert_eq(40, download_time_seconds)?
+  // 计算力：F = m × a
+  let force = azimuth.multiply(mass, acceleration)
+  @assertion.assert_eq(9800, force)?
   
-  // 转换为分钟
-  let download_time_minutes = download_time_seconds / 60
-  @azimuth.assert_eq(0, download_time_minutes)?  // 整数除法
+  // 计算功：W = F × d (假设距离 = a × t² / 2，简化为整数)
+  let distance = azimuth.multiply(acceleration, azimuth.multiply(time, time)) / 2
+  let work = azimuth.multiply(force, distance)
+  @assertion.assert_eq(490000, work)?
   
-  // 计算数据包数量（每个数据包1KB）
-  let packet_size_kb = 1
-  let file_size_kb = @azimuth.multiply(file_size_mb, 1024)
-  let packet_count = file_size_kb / packet_size_kb
-  @azimuth.assert_eq(51200, packet_count)?
+  // 计算功率：P = W / t
+  let power = work / time
+  @assertion.assert_eq(49000, power)?
   
-  // 计算总开销（假设每个数据包有20字节开销）
-  let overhead_bytes = 20
-  let total_overhead = @azimuth.multiply(packet_count, overhead_bytes)
-  @azimuth.assert_eq(1024000, total_overhead)?
+  // 计算动能：KE = 0.5 × m × v² (假设 v = a × t)
+  let velocity = azimuth.multiply(acceleration, time)
+  let kinetic_energy = azimuth.multiply(mass, azimuth.multiply(velocity, velocity)) / 2
+  @assertion.assert_eq(4802000, kinetic_energy)?
 }
 
-test "statistical_variance" {
-  // 统计方差计算测试
-  // 数据集: 10, 15, 20, 25, 30
-  let data1 = 10
-  let data2 = 15
-  let data3 = 20
-  let data4 = 25
-  let data5 = 30
+test "date_time_calculations" {
+  // 日期时间计算测试
+  let days_in_month = 30
+  let months_in_year = 12
+  let hours_in_day = 24
+  let minutes_in_hour = 60
   
-  // 计算平均值
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
-  let mean = sum / 5
-  @azimuth.assert_eq(20, mean)?
+  // 计算一年中的天数
+  let days_in_year = azimuth.multiply(days_in_month, months_in_year)
+  @assertion.assert_eq(360, days_in_year)?
   
-  // 计算方差
-  let diff1 = @azimuth.add(data1, -mean)
-  let diff2 = @azimuth.add(data2, -mean)
-  let diff3 = @azimuth.add(data3, -mean)
-  let diff4 = @azimuth.add(data4, -mean)
-  let diff5 = @azimuth.add(data5, -mean)
+  // 计算一年中的小时数
+  let hours_in_year = azimuth.multiply(days_in_year, hours_in_day)
+  @assertion.assert_eq(8640, hours_in_year)?
   
-  let variance = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.multiply(diff1, diff1), 
-    @azimuth.multiply(diff2, diff2)), 
-    @azimuth.multiply(diff3, diff3)), 
-    @azimuth.add(@azimuth.multiply(diff4, diff4), @azimuth.multiply(diff5, diff5))) / 5
+  // 计算一年中的分钟数
+  let minutes_in_year = azimuth.multiply(hours_in_year, minutes_in_hour)
+  @assertion.assert_eq(518400, minutes_in_year)?
   
-  @azimuth.assert_eq(50, variance)?
+  // 计算工作日（假设一周5天，一年52周）
+  let work_days_per_week = 5
+  let weeks_in_year = 52
+  let work_days_in_year = azimuth.multiply(work_days_per_week, weeks_in_year)
+  @assertion.assert_eq(260, work_days_in_year)?
+}
+
+test "network_protocol_simulation" {
+  // 网络协议模拟测试
+  let packet_size = 1500  // bytes
+  let overhead = 20  // bytes header
+  let number_of_packets = 100
+  let error_rate = 2  // 2%
   
-  // 计算标准差（简化为整数）
-  let std_dev = 7  // sqrt(50) ≈ 7.07，取整数部分
-  @azimuth.assert_eq(7, std_dev)?
+  // 计算有效载荷
+  let payload_size = azimuth.add(packet_size, -overhead)
+  @assertion.assert_eq(1480, payload_size)?
+  
+  // 计算总传输量
+  let total_transfer = azimuth.multiply(packet_size, number_of_packets)
+  @assertion.assert_eq(150000, total_transfer)?
+  
+  // 计算有效数据量
+  let effective_data = azimuth.multiply(payload_size, number_of_packets)
+  @assertion.assert_eq(148000, effective_data)?
+  
+  // 计算错误数据包数
+  let error_packets = azimuth.multiply(number_of_packets, error_rate) / 100
+  @assertion.assert_eq(2, error_packets)?
+  
+  // 计算重传数据量
+  let retransmission = azimuth.multiply(error_packets, packet_size)
+  @assertion.assert_eq(3000, retransmission)?
+  
+  // 计算实际传输效率
+  let efficiency = azimuth.multiply(effective_data, 100) / azimuth.add(total_transfer, retransmission)
+  @assertion.assert_eq(97, efficiency)?
 }
 
 test "cryptography_simulation" {
   // 密码学模拟测试
-  let message = 12345
+  let plaintext = 12345
   let key1 = 7
   let key2 = 13
+  let key3 = 17
   
-  // 简单的凯撒密码加密
-  let encrypted1 = @azimuth.add(message, key1)
-  @azimuth.assert_eq(12352, encrypted1)?
+  // 简单的多层加密（异或的加法模拟）
+  let encrypted1 = azimuth.add(plaintext, key1)
+  let encrypted2 = azimuth.add(encrypted1, key2)
+  let encrypted3 = azimuth.add(encrypted2, key3)
   
-  // 双重加密
-  let encrypted2 = @azimuth.add(encrypted1, key2)
-  @azimuth.assert_eq(12365, encrypted2)?
+  // 验证加密结果
+  @assertion.assert_eq(12382, encrypted3)?
   
-  // 解密（逆操作）
-  let decrypted1 = @azimuth.add(encrypted2, -key2)
-  @azimuth.assert_eq(12352, decrypted1)?
+  // 解密过程
+  let decrypted1 = azimuth.add(encrypted3, -key3)
+  let decrypted2 = azimuth.add(decrypted1, -key2)
+  let decrypted3 = azimuth.add(decrypted2, -key1)
   
-  let decrypted2 = @azimuth.add(decrypted1, -key1)
-  @azimuth.assert_eq(12345, decrypted2)?
+  // 验证解密结果
+  @assertion.assert_eq(plaintext, decrypted3)?
   
-  // 模拟简单的哈希函数
-  let hash_input = 42
-  let hash_result1 = @azimuth.add(@azimuth.multiply(hash_input, 3), 7)
-  let hash_result2 = @azimuth.add(@azimuth.multiply(hash_result1, 2), 1)
-  @azimuth.assert_eq(260, hash_result2)?
-}
-
-test "database_indexing" {
-  // 数据库索引模拟测试
-  let table_size = 1000
-  let page_size = 100
-  let index_levels = 3
+  // 测试密钥交换（简化版）
+  let alice_secret = 42
+  let bob_secret = 58
+  let public_base = 5
+  let public_modulus = 97
   
-  // 计算总页数
-  let total_pages = table_size / page_size
-  @azimuth.assert_eq(10, total_pages)?
+  // Alice的计算
+  let alice_public = azimuth.multiply(public_base, alice_secret) % public_modulus
+  // Bob的计算
+  let bob_public = azimuth.multiply(public_base, bob_secret) % public_modulus
   
-  // 计算索引节点数（简化：每层1个索引节点）
-  let index_nodes = index_levels
-  @azimuth.assert_eq(3, index_nodes)?
+  // 共享密钥计算
+  let alice_shared = azimuth.multiply(bob_public, alice_secret) % public_modulus
+  let bob_shared = azimuth.multiply(alice_public, bob_secret) % public_modulus
   
-  // 模拟B树查找的IO次数
-  let io_operations = @azimuth.add(index_levels, 1)  // 索引层 + 数据页
-  @azimuth.assert_eq(4, io_operations)?
-  
-  // 计算索引空间开销（假设每个索引项10字节）
-  let index_entry_size = 10
-  let index_space = @azimuth.multiply(table_size, index_entry_size)
-  @azimuth.assert_eq(10000, index_space)?
-}
-
-test "game_economy_system" {
-  // 游戏经济系统测试
-  let player_gold = 1000
-  let item_price = 150
-  let quantity = 3
-  let tax_rate = 5  // 5%
-  
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(item_price, quantity)
-  @azimuth.assert_eq(450, subtotal)?
-  
-  // 计算税费
-  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
-  @azimuth.assert_eq(22, tax)?  // 整数除法
-  
-  // 计算总费用
-  let total_cost = @azimuth.add(subtotal, tax)
-  @azimuth.assert_eq(472, total_cost)?
-  
-  // 计算剩余金币
-  let remaining_gold = @azimuth.add(player_gold, -total_cost)
-  @azimuth.assert_eq(528, remaining_gold)?
-  
-  // 模拟出售物品获得80%回报
-  let sell_price = @azimuth.multiply(subtotal, 80) / 100
-  let gold_after_sell = @azimuth.add(remaining_gold, sell_price)
-  @azimuth.assert_eq(888, gold_after_sell)?
+  // 验证共享密钥相同
+  @assertion.assert_eq(alice_shared, bob_shared)?
 }
