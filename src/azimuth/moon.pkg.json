@@ -99,4 +99,5 @@
   "../../azimuth_new_tests.mbt",
   "azimuth_comprehensive_test_suite.mbt",
   "test/user_final_tests.mbt",
-  "test/user_new_test_cases.mbt"]}
+  "test/user_new_test_cases.mbt",
+  "test/additional_standard_moonbit_tests.mbt"]}
