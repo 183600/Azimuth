@@ -4088,4 +4088,274 @@ test "user_mathematical_properties" {
   assert_eq(mul_commutative1, mul_commutative2)
 }
 
+// 新增的10个测试用例
+test "enhanced_boundary_value_operations" {
+  // 增强的边界值操作测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值与负数的乘法
+  let max_neg_mul = multiply(max_val, -1)
+  assert_eq(min_val, max_neg_mul)
+  
+  // 测试最小值与正数的乘法
+  let min_pos_mul = multiply(min_val, 1)
+  assert_eq(min_val, min_pos_mul)
+  
+  // 测试最大值与自身的加法
+  let max_add_self = add(max_val, max_val)
+  assert_eq(max_val, max_add_self)
+  
+  // 测试最小值与自身的加法
+  let min_add_self = add(min_val, min_val)
+  assert_eq(min_val, min_add_self)
+}
+
+test "enhanced_string_edge_cases" {
+  // 增强的字符串边界情况测试
+  // 测试空字符串
+  let empty_result = greet("")
+  assert_eq_string("Hello, !", empty_result)
+  
+  // 测试单个字符
+  let single_char = greet("A")
+  assert_eq_string("Hello, A!", single_char)
+  
+  // 测试包含空格的字符串
+  let spaced = greet("  ")
+  assert_eq_string("Hello,   !", spaced)
+  
+  // 测试包含特殊字符的字符串
+  let special = greet("@#$%")
+  assert_eq_string("Hello, @#$%!", special)
+}
+
+test "enhanced_mathematical_series" {
+  // 增强的数学级数测试
+  // 计算斐波那契数列前几项
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)  // 2
+  let fib4 = add(fib2, fib3)  // 3
+  let fib5 = add(fib3, fib4)  // 5
+  let fib6 = add(fib4, fib5)  // 8
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+  
+  // 计算等差数列的和
+  let first_term = 3
+  let common_diff = 2
+  let num_terms = 5
+  let last_term = add(first_term, multiply(common_diff, num_terms - 1))  // 3 + 2*4 = 11
+  let series_sum = multiply(num_terms, add(first_term, last_term)) / 2  // 5*(3+11)/2 = 35
+  
+  assert_eq(35, series_sum)
+}
+
+test "enhanced_financial_calculations" {
+  // 增强的金融计算测试
+  // 计算折扣价格
+  let original_price = 1000
+  let discount_rate = 15  // 15%
+  let discount_amount = multiply(original_price, discount_rate) / 100
+  let discounted_price = add(original_price, -discount_amount)
+  
+  assert_eq(850, discounted_price)
+  
+  // 计算税费
+  let net_price = 850
+  let tax_rate = 8  // 8%
+  let tax_amount = multiply(net_price, tax_rate) / 100
+  let total_price = add(net_price, tax_amount)
+  
+  assert_eq(918, total_price)  // 850 + 68 = 918
+  
+  // 计算利润率
+  let cost_price = 700
+  let selling_price = 918
+  let profit = add(selling_price, -cost_price)
+  let profit_margin = multiply(profit, 100) / selling_price
+  
+  assert_eq(23, profit_margin)  // 整数除法
+}
+
+test "enhanced_geometry_calculations" {
+  // 增强的几何计算测试
+  // 计算立方体表面积和体积
+  let cube_side = 5
+  let cube_surface_area = multiply(6, multiply(cube_side, cube_side))  // 6 * 5^2
+  let cube_volume = multiply(cube_side, multiply(cube_side, cube_side))  // 5^3
+  
+  assert_eq(150, cube_surface_area)
+  assert_eq(125, cube_volume)
+  
+  // 计算圆柱体表面积和体积（简化）
+  let cylinder_radius = 3
+  let cylinder_height = 10
+  let pi_approx = 3
+  
+  // 圆柱体侧面积：2 * π * r * h
+  let cylinder_lateral_area = multiply(2, multiply(pi_approx, multiply(cylinder_radius, cylinder_height)))
+  // 圆柱体体积：π * r^2 * h
+  let cylinder_volume = multiply(pi_approx, multiply(multiply(cylinder_radius, cylinder_radius), cylinder_height))
+  
+  assert_eq(180, cylinder_lateral_area)  // 2 * 3 * 3 * 10 = 180
+  assert_eq(270, cylinder_volume)  // 3 * 9 * 10 = 270
+}
+
+test "enhanced_time_calculations" {
+  // 增强的时间计算测试
+  // 计算时间间隔
+  let start_hour = 9
+  let start_minute = 30
+  let end_hour = 17
+  let end_minute = 45
+  
+  let start_total = add(multiply(start_hour, 60), start_minute)
+  let end_total = add(multiply(end_hour, 60), end_minute)
+  let duration = add(end_total, -start_total)
+  
+  assert_eq(495, duration)  // 8小时15分钟 = 495分钟
+  
+  // 转换为小时和分钟
+  let duration_hours = duration / 60
+  let duration_minutes = duration % 60
+  
+  assert_eq(8, duration_hours)
+  assert_eq(15, duration_minutes)
+  
+  // 计算秒数
+  let total_seconds = multiply(duration, 60)
+  assert_eq(29700, total_seconds)  // 495 * 60 = 29700
+}
+
+test "enhanced_data_structure_simulation" {
+  // 增强的数据结构模拟测试
+  // 模拟队列操作
+  let queue_size = 0
+  let enqueue_count = 5
+  let dequeue_count = 3
+  
+  // 入队操作
+  let after_enqueue = add(queue_size, enqueue_count)
+  assert_eq(5, after_enqueue)
+  
+  // 出队操作
+  let after_dequeue = add(after_enqueue, -dequeue_count)
+  assert_eq(2, after_dequeue)
+  
+  // 模拟栈操作
+  let stack_size = 0
+  let push_count = 4
+  let pop_count = 2
+  
+  // 入栈操作
+  let after_push = add(stack_size, push_count)
+  assert_eq(4, after_push)
+  
+  // 出栈操作
+  let after_pop = add(after_push, -pop_count)
+  assert_eq(2, after_pop)
+}
+
+test "enhanced_error_boundary_conditions" {
+  // 增强的错误边界条件测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试连续溢出操作
+  let overflow1 = add(max_val, 1)
+  let overflow2 = add(overflow1, 100)
+  let overflow3 = multiply(overflow2, 2)
+  
+  assert_eq(max_val, overflow1)
+  assert_eq(max_val, overflow2)
+  assert_eq(max_val, overflow3)
+  
+  // 测试连续下溢操作
+  let underflow1 = add(min_val, -1)
+  let underflow2 = add(underflow1, -100)
+  let underflow3 = multiply(underflow2, -2)
+  
+  assert_eq(min_val, underflow1)
+  assert_eq(min_val, underflow2)
+  assert_eq(min_val, underflow3)
+  
+  // 测试混合运算
+  let mixed1 = add(max_val, min_val)
+  let mixed2 = multiply(mixed1, -1)
+  
+  assert_eq(-1, mixed1)
+  assert_eq(1, mixed2)
+}
+
+test "enhanced_performance_simulation" {
+  // 增强的性能模拟测试
+  // 模拟缓存命中率
+  let total_requests = 1000
+  let cache_hits = 850
+  let hit_rate = multiply(cache_hits, 100) / total_requests
+  
+  assert_eq(85, hit_rate)
+  
+  // 模拟响应时间优化
+  let original_time = 500  // 毫秒
+  let optimization_factor = 4
+  let optimized_time = original_time / optimization_factor
+  
+  assert_eq(125, optimized_time)
+  
+  // 计算性能提升百分比
+  let improvement = multiply(add(original_time, -optimized_time), 100) / original_time
+  assert_eq(75, improvement)
+  
+  // 模拟并发处理
+  let single_thread_time = 1000
+  let thread_count = 4
+  let parallel_time = single_thread_time / thread_count
+  
+  assert_eq(250, parallel_time)
+}
+
+test "enhanced_real_world_scenario" {
+  // 增强的真实世界场景测试
+  // 模拟电商订单处理
+  let product_price = 199
+  let quantity = 3
+  let shipping_fee = 20
+  let tax_rate = 8
+  let discount_threshold = 500
+  let discount_rate = 10
+  
+  // 计算商品总价
+  let subtotal = multiply(product_price, quantity)
+  
+  // 计算折扣（如果超过阈值）
+  let discount_amount = if (subtotal > discount_threshold) {
+    multiply(subtotal, discount_rate) / 100
+  } else {
+    0
+  }
+  
+  // 应用折扣
+  let discounted_total = add(subtotal, -discount_amount)
+  
+  // 计算税费
+  let tax_amount = multiply(discounted_total, tax_rate) / 100
+  
+  // 计算最终总价
+  let final_total = add(add(discounted_total, tax_amount), shipping_fee)
+  
+  assert_eq(634, final_total)  // (199*3 - 10%) + 8% + 20 = 597 - 60 + 43 + 20 = 600
+  
+  // 生成订单确认消息
+  let customer_name = "张三"
+  let greeting_msg = greet(customer_name)
+  
+  assert_eq_string("Hello, 张三!", greeting_msg)
+}
+
 
