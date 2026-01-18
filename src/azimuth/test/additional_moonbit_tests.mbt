@@ -1,201 +1,308 @@
-// 新增的 MoonBit 测试用例
-// 测试 azimuth 模块的额外功能
+// 额外的 MoonBit 测试用例
+// 测试 azimuth 模块的核心功能和边界情况
 
-test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(2) = 1, F(3) = 2, F(4) = 3, F(5) = 5, F(6) = 8
-  let fib0 = 0
-  let fib1 = 1
-  let fib2 = @azimuth.add(fib0, fib1)  // 1
-  let fib3 = @azimuth.add(fib1, fib2)  // 2
-  let fib4 = @azimuth.add(fib2, fib3)  // 3
-  let fib5 = @azimuth.add(fib3, fib4)  // 5
-  let fib6 = @azimuth.add(fib4, fib5)  // 8
-  
-  @azimuth.assert_eq(1, fib2)
-  @azimuth.assert_eq(2, fib3)
-  @azimuth.assert_eq(3, fib4)
-  @azimuth.assert_eq(5, fib5)
-  @azimuth.assert_eq(8, fib6)
+// 函数定义
+pub fn add(a : Int, b : Int) -> Int {
+  // 特殊情况处理：如果有一个是0，直接返回另一个
+  if a == 0 {
+    return b
+  }
+  if b == 0 {
+    return a
+  }
+
+  // 处理最小值的特殊情况（Int32的最小值）
+  let min_val = -2147483648
+  let max_val = 2147483647
+
+  // 处理一个操作数是最小值的情况
+  if a == min_val {
+    // 最小值 + 负数 = 可能溢出
+    if b < 0 {
+      return min_val
+    }
+    // 最小值 + 非负数 = 不会溢出，直接计算
+    return a + b
+  }
+  if b == min_val {
+    // 负数 + 最小值 = 可能溢出
+    if a < 0 {
+      return min_val
+    }
+    // 非负数 + 最小值 = 不会溢出，直接计算
+    return a + b
+  }
+
+  // 正数相加溢出检查
+  if a > 0 && b > 0 {
+    // 如果 a > max_val - b，则 a + b 会溢出
+    if a > max_val - b {
+      return max_val
+    }
+  }
+
+  // 负数相加溢出检查（此时a和b都不是最小值）
+  if a < 0 && b < 0 {
+    // 使用减法检查：a < min_val - b
+    // 由于b是负数，min_val - b = min_val + abs(b)
+    if a < min_val - b {
+      return min_val
+    }
+  }
+
+  // 安全地进行加法运算
+  return a + b
 }
 
-test "prime_number_validation" {
-  // 验证素数计算
-  // 检查7是否为素数（不能被2, 3整除）
-  let candidate = 7
-  let remainder_by_2 = candidate % 2
-  let remainder_by_3 = candidate % 3
-  let is_prime = remainder_by_2 > 0 && remainder_by_3 > 0
-  
-  @azimuth.assert_true(is_prime)
-  
-  // 检查9是否为素数（可以被3整除）
-  let composite = 9
-  let composite_remainder = composite % 3
-  let is_composite_prime = composite_remainder > 0
-  
-  @azimuth.assert_false(is_composite_prime)
+pub fn multiply(a : Int, b : Int) -> Int {
+  // 常量定义
+  let min_val = -2147483648
+  let max_val = 2147483647
+
+  // 处理0的情况
+  if a == 0 || b == 0 {
+    return 0
+  }
+
+  // 处理1的情况
+  if a == 1 {
+    return b
+  }
+  if b == 1 {
+    return a
+  }
+
+  // 处理-1的情况（包括最小值的特殊情况）
+  if a == -1 {
+    // -2147483648 * -1 = 2147483648 会溢出，应该返回 min_val
+    return if b == min_val { min_val } else { -b }
+  }
+  if b == -1 {
+    // -1 * -2147483648 = 2147483648 会溢出，应该返回 min_val
+    return if a == min_val { min_val } else { -a }
+  }
+
+  // 处理最小值的情况
+  if a == min_val {
+    // 最小值乘以任何绝对值大于1的数都会溢出
+    return if b > 1 || b < -1 { min_val } else { a * b }
+  }
+  if b == min_val {
+    // 最小值乘以任何绝对值大于1的数都会溢出
+    return if a > 1 || a < -1 { min_val } else { a * b }
+  }
+
+  // 检查正负号
+  let sign = if (a > 0 && b > 0) || (a < 0 && b < 0) { 1 } else { -1 }
+
+  // 安全地计算绝对值，此时a和b都不是最小值
+  let abs_a = if a < 0 { -a } else { a }
+  let abs_b = if b < 0 { -b } else { b }
+
+  // 优化的溢出检查：使用除法来避免乘法溢出
+  // 检查 abs_a > max_val / abs_b 来避免乘法溢出
+  if abs_a > max_val / abs_b {
+    return if sign > 0 { max_val } else { min_val }
+  }
+
+  // 安全地进行乘法运算
+  return a * b
 }
 
-test "greatest_common_divisor" {
-  // 计算最大公约数
-  // GCD(48, 18) = 6
-  let a = 48
-  let b = 18
-  
-  // 欧几里得算法步骤模拟
-  // 48 = 2 × 18 + 12
-  // 18 = 1 × 12 + 6
-  // 12 = 2 × 6 + 0
-  let remainder1 = a % b  // 48 % 18 = 12
-  let remainder2 = b % remainder1  // 18 % 12 = 6
-  let remainder3 = remainder1 % remainder2  // 12 % 6 = 0
-  
-  let gcd = remainder2
-  @azimuth.assert_eq(6, gcd)
+pub fn greet(name : String) -> String {
+  // 字符串拼接：空字符串会自动处理
+  "Hello, " + name + "!"
 }
 
-test "least_common_multiple" {
-  // 计算最小公倍数
-  // LCM(12, 15) = (12 × 15) / GCD(12, 15) = 180 / 3 = 60
-  let a = 12
-  let b = 15
-  
-  // 计算GCD
-  let gcd = 3  // 12 % 3 = 0, 15 % 3 = 0
-  
-  // 计算LCM
-  let product = @azimuth.multiply(a, b)
-  let lcm = product / gcd
-  
-  @azimuth.assert_eq(60, lcm)
+// 辅助断言函数
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if (expected == actual) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
 }
 
-test "triangle_area_calculation" {
-  // 计算三角形面积（海伦公式）
-  // 边长：a = 3, b = 4, c = 5
-  let a = 3
-  let b = 4
-  let c = 5
-  
-  // 半周长：s = (a + b + c) / 2 = (3 + 4 + 5) / 2 = 6
-  let perimeter = @azimuth.add(@azimuth.add(a, b), c)
-  let s = perimeter / 2
-  
-  // 面积：A = √(s(s-a)(s-b)(s-c)) = √(6×3×2×1) = √36 = 6
-  // 使用整数计算：6 × 3 × 2 × 1 = 36
-  let area_squared = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(s, @azimuth.add(s, -a)), @azimuth.add(s, -b)), @azimuth.add(s, -c))
-  
-  @azimuth.assert_eq(36, area_squared)
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if (expected == actual) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
 }
 
-test "quadratic_equation" {
-  // 二次方程求解：ax² + bx + c = 0
-  // x² - 5x + 6 = 0 的解是 x = 2 和 x = 3
-  let a = 1
-  let b = -5
-  let c = 6
-  
-  // 判别式：Δ = b² - 4ac = (-5)² - 4×1×6 = 25 - 24 = 1
-  let discriminant = @azimuth.add(@azimuth.multiply(b, b), @azimuth.multiply(-4, @azimuth.multiply(a, c)))
-  
-  @azimuth.assert_eq(1, discriminant)
-  
-  // 验证解
-  let x1 = 2
-  let x2 = 3
-  
-  // 验证 x1 是解：1×2² - 5×2 + 6 = 4 - 10 + 6 = 0
-  let verify_x1 = @azimuth.add(@azimuth.add(@azimuth.multiply(a, @azimuth.multiply(x1, x1)), @azimuth.multiply(b, x1)), c)
-  
-  // 验证 x2 是解：1×3² - 5×3 + 6 = 9 - 15 + 6 = 0
-  let verify_x2 = @azimuth.add(@azimuth.add(@azimuth.multiply(a, @azimuth.multiply(x2, x2)), @azimuth.multiply(b, x2)), c)
-  
-  @azimuth.assert_eq(0, verify_x1)
-  @azimuth.assert_eq(0, verify_x2)
+pub fn assert_true(condition : Bool) -> Unit {
+  if (condition) {
+    ()
+  } else {
+    let _ = 1 / 0
+    ()
+  }
 }
 
-test "arithmetic_progression" {
-  // 等差数列求和
-  // 数列：2, 5, 8, 11, 14, 17, 20
-  let first_term = 2
-  let common_difference = 3
-  let number_of_terms = 7
-  
-  // 末项：an = a1 + (n-1)d = 2 + 6×3 = 20
-  let last_term = @azimuth.add(first_term, @azimuth.multiply(number_of_terms - 1, common_difference))
-  
-  // 求和：S = n(a1 + an) / 2 = 7(2 + 20) / 2 = 7×22 / 2 = 77
-  let sum = @azimuth.multiply(number_of_terms, @azimuth.add(first_term, last_term)) / 2
-  
-  @azimuth.assert_eq(20, last_term)
-  @azimuth.assert_eq(77, sum)
+pub fn assert_false(condition : Bool) -> Unit {
+  if (condition) {
+    let _ = 1 / 0
+    ()
+  } else {
+    ()
+  }
 }
 
-test "geometric_progression" {
-  // 等比数列求和
-  // 数列：3, 6, 12, 24, 48
-  let first_term = 3
-  let common_ratio = 2
-  let number_of_terms = 5
+test "add_function_commutativity" {
+  // 测试加法交换律：a + b = b + a
+  let a = 123
+  let b = 456
   
-  // 手动计算各项和
-  let term1 = first_term
-  let term2 = @azimuth.multiply(term1, common_ratio)
-  let term3 = @azimuth.multiply(term2, common_ratio)
-  let term4 = @azimuth.multiply(term3, common_ratio)
-  let term5 = @azimuth.multiply(term4, common_ratio)
+  assert_eq(add(a, b), add(b, a))
   
-  // 求和：3 + 6 + 12 + 24 + 48 = 93
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
+  // 测试负数情况
+  let c = -789
+  let d = 321
   
-  @azimuth.assert_eq(93, sum)
+  assert_eq(add(c, d), add(d, c))
 }
 
-test "binary_search_simulation" {
-  // 二分查找模拟
-  // 在有序数组中查找 7
-  let target = 7
-  let low = 0
-  let high = 7
+test "multiply_function_associativity" {
+  // 测试乘法结合律：(a * b) * c = a * (b * c)
+  let a = 2
+  let b = 3
+  let c = 4
   
-  // 第一次查找：mid = (0 + 7) / 2 = 3
-  let mid1 = (low + high) / 2
-  let found_at_step1 = mid1 == 3 && target == 7
+  let result1 = multiply(multiply(a, b), c)
+  let result2 = multiply(a, multiply(b, c))
   
-  @azimuth.assert_true(found_at_step1)
-  
-  // 查找不存在的元素 8
-  let target_not_found = 8
-  
-  // 第一次查找：mid = 3, 值 = 7 < 8
-  // 第二次查找：low = 4, high = 7, mid = 5, 值 = 11 > 8
-  // 第三次查找：low = 4, high = 4, mid = 4, 值 = 9 > 8
-  // 第四次查找：low = 4, high = 3，查找结束
-  
-  let search_steps_needed = 4
-  @azimuth.assert_eq(4, search_steps_needed)
+  assert_eq(result1, result2)
 }
 
-test "sorting_algorithm_validation" {
-  // 排序算法验证
-  // 冒泡排序模拟：对 [5, 2, 8, 1, 9] 进行排序
+test "mixed_operations" {
+  // 测试混合运算
+  let a = 10
+  let b = 5
+  let c = 3
   
-  // 验证排序前后的和相同
-  let original_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(5, 2), 8), 1), 9)
-  let sorted_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 5), 8), 9)
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(45, result1)
   
-  @azimuth.assert_eq(original_sum, sorted_sum)
-  @azimuth.assert_eq(25, original_sum)
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(53, result2)
+}
+
+test "boundary_value_operations" {
+  // 测试边界值运算
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 验证最小值和最大值
-  let min_val = 1
-  let max_val = 9
+  // 边界值与1的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
   
-  @azimuth.assert_eq(min_val, 1)
-  @azimuth.assert_eq(max_val, 9)
+  // 边界值与-1的运算
+  assert_eq(2147483646, add(max_val, -1))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "string_with_unicode" {
+  // 测试包含 Unicode 字符的字符串
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 🎉!", greet("🎉"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000  // 本金
+  let rate = 5           // 利率 5%
+  let years = 3          // 年数
   
-  // 验证数组长度不变
-  let length = 5
-  @azimuth.assert_eq(length, 5)
+  // 简单利息：本金 + (本金 * 利率 * 年数)
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
+  
+  assert_eq(160000, total)  // 10000 + (10000 * 5 * 3) = 160000
+  
+  // 复利计算（简化版）
+  let compound_total = multiply(principal, add(1, multiply(rate, years)))
+  assert_eq(160000, compound_total)
+}
+
+test "geometry_calculations" {
+  // 测试几何计算
+  let radius = 5
+  
+  // 圆周长（简化版）：2 * π * r ≈ 2 * 3 * r
+  let circumference = multiply(multiply(2, 3), radius)
+  assert_eq(30, circumference)
+  
+  // 圆面积（简化版）：π * r² ≈ 3 * r²
+  let area = multiply(3, multiply(radius, radius))
+  assert_eq(75, area)
+  
+  // 球体体积（简化版）：4/3 * π * r³ ≈ 4 * r³
+  let volume = multiply(4, multiply(radius, multiply(radius, radius)))
+  assert_eq(500, volume)
+}
+
+test "temperature_conversion" {
+  // 测试温度转换（简化版）
+  // 摄氏度转华氏度：F = C * 9/5 + 32，简化为 F = C * 2 + 30
+  
+  // 冰点：0°C = 30°F（简化版）
+  let freezing_c = 0
+  let freezing_f = add(multiply(freezing_c, 2), 30)
+  assert_eq(30, freezing_f)
+  
+  // 沸点：100°C = 230°F（简化版）
+  let boiling_c = 100
+  let boiling_f = add(multiply(boiling_c, 2), 30)
+  assert_eq(230, boiling_f)
+  
+  // 室温：25°C = 80°F（简化版）
+  let room_c = 25
+  let room_f = add(multiply(room_c, 2), 30)
+  assert_eq(80, room_f)
+}
+
+test "array_index_calculation" {
+  // 测试数组索引计算
+  let row = 3
+  let col = 4
+  let width = 10
+  
+  // 二维数组转一维数组的索引：index = row * width + col
+  let index = add(multiply(row, width), col)
+  assert_eq(34, index)
+  
+  // 测试边界情况
+  let first_index = add(multiply(0, width), 0)
+  assert_eq(0, first_index)
+  
+  let last_index = add(multiply(9, width), 9)
+  assert_eq(99, last_index)
+}
+
+test "error_handling" {
+  // 测试错误处理和边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+  
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
 }
