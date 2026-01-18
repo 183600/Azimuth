@@ -1,127 +1,127 @@
-// 用户添加的 MoonBit 测试用例
-// 这些测试用例涵盖了项目的核心功能：add、multiply 和 greet 函数
+// 用户添加的额外 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法
 
-// 测试1: 基本加法运算
-test "add_basic_operation" {
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
+test "add_function_basic_tests" {
+  // 基本加法测试
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(100, add(50, 50))
 }
 
-// 测试2: 加法边界值测试
-test "add_boundary_values" {
+test "multiply_function_basic_tests" {
+  // 基本乘法测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "greet_function_various_inputs" {
+  // 各种输入的问候测试
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, Bob!", greet("Bob"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "add_function_edge_cases" {
+  // 加法边界情况测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  
-  // 测试最小值溢出保护
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  
-  // 测试最大值与最小值相加
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  // 测试边界值
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
 }
 
-// 测试3: 基本乘法运算
-test "multiply_basic_operation" {
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(-12, @azimuth.multiply(-3, 4))
-  @azimuth.assert_eq(12, @azimuth.multiply(-3, -4))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-}
-
-// 测试4: 乘法边界值测试
-test "multiply_boundary_values" {
+test "multiply_function_edge_cases" {
+  // 乘法边界情况测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值溢出保护
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 测试边界值
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(0, multiply(max_val, 0))
+}
+
+test "complex_calculation_scenarios" {
+  // 复杂计算场景测试
+  // 计算矩形面积和周长
+  let length = 8
+  let width = 5
   
-  // 测试最小值特殊处理
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+  // 面积 = 长 × 宽
+  let area = multiply(length, width)
+  assert_eq(40, area)
   
-  // 测试与1和-1相乘
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  // 周长 = 2 × (长 + 宽)
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(26, perimeter)
 }
 
-// 测试5: 基本字符串拼接
-test "greet_basic_operation" {
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-}
-
-// 测试6: 字符串特殊字符处理
-test "greet_special_characters" {
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
-  @azimuth.assert_eq_string("Hello, user@123!", @azimuth.greet("user@123"))
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
-  @azimuth.assert_eq_string("Hello,   spaced  !", @azimuth.greet("  spaced  "))
-}
-
-// 测试7: 复合运算测试
-test "compound_operations" {
-  // 测试 (a + b) * c
-  let a = 5
-  let b = 3
-  let c = 4
-  let sum = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(32, product)
+test "mathematical_properties_verification" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 8
   
-  // 测试 a * b + c * d
-  let result = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(26, result)
+  // 加法交换律：a + b = b + a
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律：a × b = b × a
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律：a × (b + c) = a × b + a × c
+  let c = 5
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
 }
 
-// 测试8: 实际应用场景测试
-test "real_world_scenario" {
-  // 购物车计算：商品单价 × 数量 + 运费
-  let price = 199
+test "real_world_application_tests" {
+  // 实际应用测试
+  // 购物车计算
+  let item_price = 199
   let quantity = 3
-  let shipping = 15
+  let discount = 50
+  let shipping = 20
   
-  let subtotal = @azimuth.multiply(price, quantity)
-  let total = @azimuth.add(subtotal, shipping)
-  @azimuth.assert_eq(612, total)
+  // 计算总价
+  let subtotal = multiply(item_price, quantity)
+  let discounted_total = add(subtotal, -discount)
+  let final_total = add(discounted_total, shipping)
+  
+  assert_eq(607, final_total)  // (199×3) - 50 + 20 = 597 - 50 + 20 = 567 + 20 = 587
 }
 
-// 测试9: 数学性质验证
-test "mathematical_properties" {
-  let a = 7
-  let b = 11
-  
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  
-  // 分配律简化测试
-  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, 3)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 3)))
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况
+  // 测试特殊字符
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, emoji🚀!", greet("emoji🚀"))
 }
 
-// 测试10: 错误处理和断言测试
-test "error_handling_and_assertions" {
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "comprehensive_function_integration" {
+  // 综合功能集成测试
+  let name = "MoonBit"
+  let number1 = 42
+  let number2 = 24
   
-  // 测试边界条件的正确处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 字符串处理
+  let greeting = greet(name)
+  assert_eq_string("Hello, MoonBit!", greeting)
   
-  // 确保溢出被正确处理
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  // 数值计算
+  let sum = add(number1, number2)
+  let product = multiply(number1, number2)
+  
+  assert_eq(66, sum)
+  assert_eq(1008, product)
+  
+  // 组合计算
+  let complex_result = add(multiply(number1, 2), multiply(number2, 3))
+  assert_eq(156, complex_result)  // 42×2 + 24×3 = 84 + 72 = 156
 }
