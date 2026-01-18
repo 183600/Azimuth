@@ -3,237 +3,221 @@
 
 test "add_commutative_property" {
   // 测试加法交换律：a + b = b + a
-  let a = 15
-  let b = 27
+  let a = 12345
+  let b = 67890
   
-  let result1 = @azimuth.add(a, b)
-  let result2 = @azimuth.add(b, a)
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  if (result1 != result2) {
-    @builtin.abort("Addition commutative property test failed")
-  }
+  // 测试负数情况
+  let c = -12345
+  let d = 67890
+  
+  @azimuth.assert_eq(@azimuth.add(c, d), @azimuth.add(d, c))
+  
+  // 测试两个负数
+  let e = -12345
+  let f = -67890
+  
+  @azimuth.assert_eq(@azimuth.add(e, f), @azimuth.add(f, e))
+}
+
+test "add_associative_property" {
+  // 测试加法结合律：(a + b) + c = a + (b + c)
+  let a = 100
+  let b = 200
+  let c = 300
+  
+  let result1 = @azimuth.add(@azimuth.add(a, b), c)
+  let result2 = @azimuth.add(a, @azimuth.add(b, c))
+  
+  @azimuth.assert_eq(result1, result2)
+  
+  // 测试包含负数的情况
+  let d = -150
+  let e = 250
+  let f = -100
+  
+  let result3 = @azimuth.add(@azimuth.add(d, e), f)
+  let result4 = @azimuth.add(d, @azimuth.add(e, f))
+  
+  @azimuth.assert_eq(result3, result4)
 }
 
 test "multiply_distributive_property" {
   // 测试乘法分配律：a × (b + c) = a × b + a × c
   let a = 5
-  let b = 8
-  let c = 3
+  let b = 10
+  let c = 15
   
   let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
   let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
   
-  if (left_side != right_side) {
-    @builtin.abort("Multiplication distributive property test failed")
-  }
-}
-
-test "add_identity_element" {
-  // 测试加法单位元：a + 0 = a
-  let value1 = 0
-  let value2 = 1
-  let value3 = -1
-  let value4 = 100
-  let value5 = -100
-  let value6 = 2147483647
-  let value7 = -2147483648
+  @azimuth.assert_eq(left_side, right_side)
   
-  if (@azimuth.add(value1, 0) != value1) {
-    @builtin.abort("Addition identity element test failed for value: 0")
-  }
-  if (@azimuth.add(value2, 0) != value2) {
-    @builtin.abort("Addition identity element test failed for value: 1")
-  }
-  if (@azimuth.add(value3, 0) != value3) {
-    @builtin.abort("Addition identity element test failed for value: -1")
-  }
-  if (@azimuth.add(value4, 0) != value4) {
-    @builtin.abort("Addition identity element test failed for value: 100")
-  }
-  if (@azimuth.add(value5, 0) != value5) {
-    @builtin.abort("Addition identity element test failed for value: -100")
-  }
-  if (@azimuth.add(value6, 0) != value6) {
-    @builtin.abort("Addition identity element test failed for value: 2147483647")
-  }
-  if (@azimuth.add(value7, 0) != value7) {
-    @builtin.abort("Addition identity element test failed for value: -2147483648")
-  }
+  // 测试包含负数的情况
+  let d = -3
+  let e = 8
+  let f = -2
+  
+  let left_side2 = @azimuth.multiply(d, @azimuth.add(e, f))
+  let right_side2 = @azimuth.add(@azimuth.multiply(d, e), @azimuth.multiply(d, f))
+  
+  @azimuth.assert_eq(left_side2, right_side2)
 }
 
-test "multiply_identity_element" {
+test "multiply_identity_property" {
   // 测试乘法单位元：a × 1 = a
-  let value1 = 0
-  let value2 = 1
-  let value3 = -1
-  let value4 = 100
-  let value5 = -100
-  let value6 = 2147483647
-  let value7 = -2147483648
+  let a = 123456
+  @azimuth.assert_eq(a, @azimuth.multiply(a, 1))
+  @azimuth.assert_eq(a, @azimuth.multiply(1, a))
   
-  if (@azimuth.multiply(value1, 1) != value1) {
-    @builtin.abort("Multiplication identity element test failed for value: 0")
-  }
-  if (@azimuth.multiply(value2, 1) != value2) {
-    @builtin.abort("Multiplication identity element test failed for value: 1")
-  }
-  if (@azimuth.multiply(value3, 1) != value3) {
-    @builtin.abort("Multiplication identity element test failed for value: -1")
-  }
-  if (@azimuth.multiply(value4, 1) != value4) {
-    @builtin.abort("Multiplication identity element test failed for value: 100")
-  }
-  if (@azimuth.multiply(value5, 1) != value5) {
-    @builtin.abort("Multiplication identity element test failed for value: -100")
-  }
-  if (@azimuth.multiply(value6, 1) != value6) {
-    @builtin.abort("Multiplication identity element test failed for value: 2147483647")
-  }
-  if (@azimuth.multiply(value7, 1) != value7) {
-    @builtin.abort("Multiplication identity element test failed for value: -2147483648")
-  }
+  // 测试负数情况
+  let b = -123456
+  @azimuth.assert_eq(b, @azimuth.multiply(b, 1))
+  @azimuth.assert_eq(b, @azimuth.multiply(1, b))
+  
+  // 测试零的情况
+  let c = 0
+  @azimuth.assert_eq(c, @azimuth.multiply(c, 1))
+  @azimuth.assert_eq(c, @azimuth.multiply(1, c))
 }
 
 test "multiply_zero_property" {
-  // 测试乘法零元素：a × 0 = 0
-  let value1 = 1
-  let value2 = -1
-  let value3 = 100
-  let value4 = -100
-  let value5 = 2147483647
-  let value6 = -2147483648
+  // 测试乘法零元：a × 0 = 0
+  let a = 123456
+  @azimuth.assert_eq(0, @azimuth.multiply(a, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, a))
   
-  if (@azimuth.multiply(value1, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: 1")
-  }
-  if (@azimuth.multiply(value2, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: -1")
-  }
-  if (@azimuth.multiply(value3, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: 100")
-  }
-  if (@azimuth.multiply(value4, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: -100")
-  }
-  if (@azimuth.multiply(value5, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: 2147483647")
-  }
-  if (@azimuth.multiply(value6, 0) != 0) {
-    @builtin.abort("Multiplication zero property test failed for value: -2147483648")
-  }
+  // 测试负数情况
+  let b = -123456
+  @azimuth.assert_eq(0, @azimuth.multiply(b, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, b))
+  
+  // 测试最大值和最小值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, min_val))
 }
 
-test "greet_multilingual_support" {
-  // 测试多语言支持
-  let name1 = "World"
-  let name2 = "世界"
-  let name3 = "Мир"
-  let name4 = "العالم"
-  let name5 = "🌍"
+test "greet_unicode_handling" {
+  // 测试 greet 函数的 Unicode 处理能力
+  // 测试中文字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
   
-  let result1 = @azimuth.greet(name1)
-  let expected1 = "Hello, " + name1 + "!"
-  if (result1 != expected1) {
-    @builtin.abort("Multilingual support test failed for name: " + name1)
-  }
+  // 测试日文字符
+  @azimuth.assert_eq_string("Hello, こんにちは!", @azimuth.greet("こんにちは"))
   
-  let result2 = @azimuth.greet(name2)
-  let expected2 = "Hello, " + name2 + "!"
-  if (result2 != expected2) {
-    @builtin.abort("Multilingual support test failed for name: " + name2)
-  }
+  // 测试韩文字符
+  @azimuth.assert_eq_string("Hello, 안녕하세요!", @azimuth.greet("안녕하세요"))
   
-  let result3 = @azimuth.greet(name3)
-  let expected3 = "Hello, " + name3 + "!"
-  if (result3 != expected3) {
-    @builtin.abort("Multilingual support test failed for name: " + name3)
-  }
+  // 测试阿拉伯文字符
+  @azimuth.assert_eq_string("Hello, مرحبا!", @azimuth.greet("مرحبا"))
   
-  let result4 = @azimuth.greet(name4)
-  let expected4 = "Hello, " + name4 + "!"
-  if (result4 != expected4) {
-    @builtin.abort("Multilingual support test failed for name: " + name4)
-  }
-  
-  let result5 = @azimuth.greet(name5)
-  let expected5 = "Hello, " + name5 + "!"
-  if (result5 != expected5) {
-    @builtin.abort("Multilingual support test failed for name: " + name5)
-  }
+  // 测试表情符号
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, 🎉!", @azimuth.greet("🎉"))
+  @azimuth.assert_eq_string("Hello, 👍!", @azimuth.greet("👍"))
 }
 
-test "add_negative_numbers" {
-  // 测试负数加法
-  let result1 = @azimuth.add(-5, -3)
-  if (result1 != -8) {
-    @builtin.abort("Negative numbers addition test failed for: -5 + -3")
-  }
+test "complex_financial_calculation" {
+  // 测试复杂金融计算场景
+  // 计算贷款月供：P × [r(1+r)^n] / [(1+r)^n-1]
+  // 简化为整数计算
   
-  let result2 = @azimuth.add(-10, 5)
-  if (result2 != -5) {
-    @builtin.abort("Negative numbers addition test failed for: -10 + 5")
-  }
+  let principal = 100000  // 本金
+  let annual_rate = 6     // 年利率6%
+  let years = 30          // 贷款年限
   
-  let result3 = @azimuth.add(-100, -200)
-  if (result3 != -300) {
-    @builtin.abort("Negative numbers addition test failed for: -100 + -200")
-  }
+  // 简化计算：月供 ≈ 本金 / 月数 + 利息
+  let months = @azimuth.multiply(years, 12)
+  let monthly_principal = principal / months
   
-  let result4 = @azimuth.add(-2147483648, 1)
-  if (result4 != -2147483647) {
-    @builtin.abort("Negative numbers addition test failed for: -2147483648 + 1")
-  }
+  // 简化的利息计算
+  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years)) / 100
+  let monthly_interest = total_interest / months
+  
+  let monthly_payment = @azimuth.add(monthly_principal, monthly_interest)
+  
+  // 验证月供在合理范围内
+  @azimuth.assert_true(monthly_payment > 500)
+  @azimuth.assert_true(monthly_payment < 1000)
 }
 
-test "multiply_negative_numbers" {
-  // 测试负数乘法
-  let result1 = @azimuth.multiply(-5, 3)
-  if (result1 != -15) {
-    @builtin.abort("Negative numbers multiplication test failed for: -5 × 3")
-  }
+test "scientific_calculation" {
+  // 测试科学计算场景
+  // 计算自由落体距离：s = 0.5 × g × t²
+  // 简化为整数计算：s ≈ 5 × t² (g ≈ 10 m/s²)
   
-  let result2 = @azimuth.multiply(5, -3)
-  if (result2 != -15) {
-    @builtin.abort("Negative numbers multiplication test failed for: 5 × -3")
-  }
+  let time1 = 1  // 1秒
+  let distance1 = @azimuth.multiply(5, @azimuth.multiply(time1, time1))
+  @azimuth.assert_eq(5, distance1)
   
-  let result3 = @azimuth.multiply(-5, -3)
-  if (result3 != 15) {
-    @builtin.abort("Negative numbers multiplication test failed for: -5 × -3")
-  }
+  let time2 = 2  // 2秒
+  let distance2 = @azimuth.multiply(5, @azimuth.multiply(time2, time2))
+  @azimuth.assert_eq(20, distance2)
   
-  let result4 = @azimuth.multiply(-1, 2147483647)
-  if (result4 != -2147483647) {
-    @builtin.abort("Negative numbers multiplication test failed for: -1 × 2147483647")
-  }
+  let time3 = 3  // 3秒
+  let distance3 = @azimuth.multiply(5, @azimuth.multiply(time3, time3))
+  @azimuth.assert_eq(45, distance3)
+  
+  // 计算速度：v = g × t
+  let velocity1 = @azimuth.multiply(10, time1)  // 10 m/s
+  let velocity2 = @azimuth.multiply(10, time2)  // 20 m/s
+  let velocity3 = @azimuth.multiply(10, time3)  // 30 m/s
+  
+  @azimuth.assert_eq(10, velocity1)
+  @azimuth.assert_eq(20, velocity2)
+  @azimuth.assert_eq(30, velocity3)
 }
 
-test "arithmetic_sequence_sum" {
-  // 测试等差数列求和：(首项 + 末项) × 项数 / 2
-  let first_term = 1
-  let last_term = 100
-  let number_of_terms = 100
+test "string_length_validation" {
+  // 测试字符串长度验证
+  // 测试空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
-  let expected_sum = @azimuth.multiply(@azimuth.add(first_term, last_term), number_of_terms) / 2
-  let calculated_sum = 5050  // 1+2+3+...+100 = 5050
+  // 测试单字符字符串
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
   
-  if (expected_sum != calculated_sum) {
-    @builtin.abort("Arithmetic sequence sum test failed")
-  }
+  // 测试短字符串
+  @azimuth.assert_eq_string("Hello, Hi!", @azimuth.greet("Hi"))
+  
+  // 测试中等长度字符串
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameForTestingPurposes"
+  @azimuth.assert_eq_string("Hello, " + long_name + "!", @azimuth.greet(long_name))
+  
+  // 测试包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  @azimuth.assert_eq_string("Hello,  Space Test !", @azimuth.greet(" Space Test "))
 }
 
-test "compound_interest_calculation" {
-  // 测试复利计算：本金 × (1 + 利率)^年数
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
+test "extreme_boundary_combinations" {
+  // 测试极端边界值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 简化的复利计算，避免浮点数
-  let growth_factor = @azimuth.add(100, @azimuth.multiply(rate_percent, years))
-  let total = @azimuth.multiply(principal, growth_factor)
-  let expected = 115000  // 1000 × (100 + 5×3) = 1000 × 115 = 115000
+  // 测试最大值与最小值的运算
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
   
-  if (total != expected) {
-    @builtin.abort("Compound interest calculation test failed")
-  }
+  // 测试连续边界运算
+  let chain1 = @azimuth.add(@azimuth.multiply(max_val, 0), max_val)
+  @azimuth.assert_eq(max_val, chain1)
+  
+  let chain2 = @azimuth.add(@azimuth.multiply(min_val, 0), min_val)
+  @azimuth.assert_eq(min_val, chain2)
+  
+  // 测试复杂边界表达式
+  let complex1 = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, min_val), 1), max_val)
+  @azimuth.assert_eq(max_val, complex1)
+  
+  let complex2 = @azimuth.multiply(@azimuth.add(max_val, 1), 0)
+  @azimuth.assert_eq(0, complex2)
 }
