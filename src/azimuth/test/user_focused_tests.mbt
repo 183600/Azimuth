@@ -1,221 +1,162 @@
-// 用户指定的 MoonBit 测试用例
-// 包含函数定义和测试
+// 用户聚焦测试用例
+// 专门针对 azimuth 库核心功能的测试，使用标准 MoonBit 测试语法
 
-// 函数定义
-pub fn add(a : Int, b : Int) -> Int {
-  // 特殊情况处理：如果有一个是0，直接返回另一个
-  if a == 0 {
-    return b
-  }
-  if b == 0 {
-    return a
-  }
-
-  // 处理最小值的特殊情况（Int32的最小值）
-  let min_val = -2147483648
+test "addition_overflow_protection" {
+  // 测试正数溢出保护
   let max_val = 2147483647
-
-  // 处理一个操作数是最小值的情况
-  if a == min_val {
-    // 最小值 + 负数 = 可能溢出
-    if b < 0 {
-      return min_val
-    }
-    // 最小值 + 非负数 = 不会溢出，直接计算
-    return a + b
-  }
-  if b == min_val {
-    // 负数 + 最小值 = 可能溢出
-    if a < 0 {
-      return min_val
-    }
-    // 非负数 + 最小值 = 不会溢出，直接计算
-    return a + b
-  }
-
-  // 正数相加溢出检查
-  if a > 0 && b > 0 {
-    // 如果 a > max_val - b，则 a + b 会溢出
-    if a > max_val - b {
-      return max_val
-    }
-  }
-
-  // 负数相加溢出检查（此时a和b都不是最小值）
-  if a < 0 && b < 0 {
-    // 使用减法检查：a < min_val - b
-    // 由于b是负数，min_val - b = min_val + abs(b)
-    if a < min_val - b {
-      return min_val
-    }
-  }
-
-  // 安全地进行加法运算
-  return a + b
-}
-
-pub fn multiply(a : Int, b : Int) -> Int {
-  // 常量定义
+  let overflow_result = @azimuth.add(max_val, 100)
+  @azimuth.assert_eq(max_val, overflow_result)
+  
+  // 测试负数溢出保护
   let min_val = -2147483648
-  let max_val = 2147483647
-
-  // 处理0的情况
-  if a == 0 || b == 0 {
-    return 0
-  }
-
-  // 处理1的情况
-  if a == 1 {
-    return b
-  }
-  if b == 1 {
-    return a
-  }
-
-  // 处理-1的情况（包括最小值的特殊情况）
-  if a == -1 {
-    // -2147483648 * -1 = 2147483648 会溢出，应该返回 min_val
-    return if b == min_val { min_val } else { -b }
-  }
-  if b == -1 {
-    // -1 * -2147483648 = 2147483648 会溢出，应该返回 min_val
-    return if a == min_val { min_val } else { -a }
-  }
-
-  // 处理最小值的情况
-  if a == min_val {
-    // 最小值乘以任何绝对值大于1的数都会溢出
-    return if b > 1 || b < -1 { min_val } else { a * b }
-  }
-  if b == min_val {
-    // 最小值乘以任何绝对值大于1的数都会溢出
-    return if a > 1 || a < -1 { min_val } else { a * b }
-  }
-
-  // 检查正负号
-  let sign = if (a > 0 && b > 0) || (a < 0 && b < 0) { 1 } else { -1 }
-
-  // 安全地计算绝对值，此时a和b都不是最小值
-  let abs_a = if a < 0 { -a } else { a }
-  let abs_b = if b < 0 { -b } else { b }
-
-  // 优化的溢出检查：使用除法来避免乘法溢出
-  // 检查 abs_a > max_val / abs_b 来避免乘法溢出
-  if abs_a > max_val / abs_b {
-    return if sign > 0 { max_val } else { min_val }
-  }
-
-  // 安全地进行乘法运算
-  return a * b
+  let underflow_result = @azimuth.add(min_val, -100)
+  @azimuth.assert_eq(min_val, underflow_result)
 }
 
-pub fn greet(name : String) -> String {
-  // 字符串拼接：空字符串会自动处理
-  "Hello, " + name + "!"
+test "multiplication_overflow_edge_cases" {
+  // 测试大数相乘的溢出处理
+  let large_num1 = 46341
+  let large_num2 = 46341
+  let overflow_result = @azimuth.multiply(large_num1, large_num2)
+  @azimuth.assert_eq(2147483647, overflow_result)
+  
+  // 测试最小值与负数相乘
+  let min_val = -2147483648
+  let neg_result = @azimuth.multiply(min_val, -2)
+  @azimuth.assert_eq(min_val, neg_result)
 }
 
-// 测试用例
-test "addition_with_various_numbers" {
-  // 测试不同类型数字的加法
-  let result1 = add(7, 8)
-  if result1 != 15 { @builtin.abort("addition test 1 failed") }
+test "greet_function_unicode_handling" {
+  // 测试 Unicode 字符串处理
+  let unicode_name = "张三李四"
+  let unicode_result = @azimuth.greet(unicode_name)
+  @azimuth.assert_eq_string("Hello, 张三李四!", unicode_result)
   
-  let result2 = add(123, -123)
-  if result2 != 0 { @builtin.abort("addition test 2 failed") }
-  
-  let result3 = add(-50, -50)
-  if result3 != -100 { @builtin.abort("addition test 3 failed") }
-  
-  let result4 = add(500, 500)
-  if result4 != 1000 { @builtin.abort("addition test 4 failed") }
+  // 测试 emoji 表情符号
+  let emoji_name = "🚀🌟"
+  let emoji_result = @azimuth.greet(emoji_name)
+  @azimuth.assert_eq_string("Hello, 🚀🌟!", emoji_result)
 }
 
-test "multiplication_table_test" {
-  // 测试乘法表中的常见组合
-  let result1 = multiply(6, 6)
-  if result1 != 36 { @builtin.abort("multiplication test 1 failed") }
-  
-  let result2 = multiply(7, 7)
-  if result2 != 49 { @builtin.abort("multiplication test 2 failed") }
-  
-  let result3 = multiply(8, 8)
-  if result3 != 64 { @builtin.abort("multiplication test 3 failed") }
-  
-  let result4 = multiply(9, 9)
-  if result4 != 81 { @builtin.abort("multiplication test 4 failed") }
-}
-
-test "greet_function_with_different_inputs" {
-  // 测试不同输入的问候函数
-  let result1 = greet("Alice")
-  if result1 != "Hello, Alice!" { @builtin.abort("greet test 1 failed") }
-  
-  let result2 = greet("Bob123")
-  if result2 != "Hello, Bob123!" { @builtin.abort("greet test 2 failed") }
-  
-  let result3 = greet("张三")
-  if result3 != "Hello, 张三!" { @builtin.abort("greet test 3 failed") }
-  
-  let result4 = greet("user@domain.com")
-  if result4 != "Hello, user@domain.com!" { @builtin.abort("greet test 4 failed") }
-}
-
-test "calculation_of_rectangle_perimeter" {
-  // 测试矩形周长计算：2 × (长 + 宽)
-  let length = 12
-  let width = 8
-  let sum = add(length, width)
-  let perimeter = multiply(2, sum)
-  if perimeter != 40 { @builtin.abort("rectangle perimeter test failed") }
-}
-
-test "calculation_of_discounted_price" {
-  // 测试折扣价格计算：原价 - 折扣金额
-  let original_price = 200
-  let discount_percentage = 15
-  let discount_amount = multiply(original_price, discount_percentage) / 100
-  let final_price = add(original_price, -discount_amount)
-  if final_price != 170 { @builtin.abort("discounted price test failed") }
-}
-
-test "temperature_conversion_celsius_to_fahrenheit" {
-  // 测试温度转换：华氏度 = 摄氏度 × 9/5 + 32（简化为整数计算）
-  let celsius = 20
-  let fahrenheit = add(multiply(celsius, 9) / 5 + 32, 0)
-  if fahrenheit != 68 { @builtin.abort("temperature conversion test failed") }
-}
-
-test "compound_interest_simple_calculation" {
-  // 测试简单复利计算：本金 × (1 + 利率 × 年数)
-  let principal = 1000
-  let rate = 5  // 5%
+test "complex_financial_calculation" {
+  // 测试复杂金融计算场景
+  let principal = 10000
+  let rate = 5
   let years = 3
-  let growth_factor = add(1, multiply(rate, years))
-  let total = multiply(principal, growth_factor)
-  if total != 16000 { @builtin.abort("compound interest test failed") }  // 1000 × (1 + 5×3) = 1000 × 16 = 16000
+  let fee = 50
+  
+  // 计算复利：本金 + 本金 × 利率 × 年数
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let subtotal = @azimuth.add(principal, interest)
+  let total = @azimuth.add(subtotal, fee)
+  
+  @azimuth.assert_eq(160050, total)
 }
 
-test "sum_of_first_n_natural_numbers" {
-  // 测试前n个自然数之和：n × (n + 1) / 2
-  let n = 10
-  let sum = multiply(n, add(n, 1)) / 2
-  if sum != 55 { @builtin.abort("sum of natural numbers test failed") }  // 10 × 11 / 2 = 55
+test "geometric_calculations" {
+  // 测试几何计算
+  let radius = 7
+  
+  // 计算圆周长（简化）：2 × 3 × r
+  let circumference = @azimuth.multiply(@azimuth.multiply(2, 3), radius)
+  @azimuth.assert_eq(42, circumference)
+  
+  // 计算圆面积（简化）：3 × r²
+  let area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
+  @azimuth.assert_eq(147, area)
 }
 
-test "boundary_value_handling" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "temperature_conversion_scenarios" {
+  // 测试温度转换场景
+  // 摄氏度转华氏度（简化）：F = C × 2 + 30
   
-  // 测试最大值与正数相加的溢出保护
-  let result1 = add(max_val, 100)
-  if result1 != max_val { @builtin.abort("boundary test 1 failed") }
+  // 测试冰点
+  let freezing_c = 0
+  let freezing_f = @azimuth.add(@azimuth.multiply(freezing_c, 2), 30)
+  @azimuth.assert_eq(30, freezing_f)
   
-  // 测试最小值与负数相加的溢出保护
-  let result2 = add(min_val, -100)
-  if result2 != min_val { @builtin.abort("boundary test 2 failed") }
+  // 测试沸点
+  let boiling_c = 100
+  let boiling_f = @azimuth.add(@azimuth.multiply(boiling_c, 2), 30)
+  @azimuth.assert_eq(230, boiling_f)
   
-  // 测试最大值与-1相乘
-  let result3 = multiply(max_val, -1)
-  if result3 != min_val { @builtin.abort("boundary test 3 failed") }
+  // 测试室温
+  let room_c = 22
+  let room_f = @azimuth.add(@azimuth.multiply(room_c, 2), 30)
+  @azimuth.assert_eq(74, room_f)
+}
+
+test "statistical_analysis" {
+  // 测试统计分析功能
+  // 计算一组数的平均值
+  let numbers_sum = @azimuth.add(@azimuth.add(@azimuth.add(85, 90), 78), 92)
+  let count = 4
+  let average = numbers_sum / count
+  @azimuth.assert_eq(86, average)
+  
+  // 计算标准差（简化版）
+  let variance_numerator = @azimuth.add(
+    @azimuth.add(@azimuth.multiply(85-86, 85-86), @azimuth.multiply(90-86, 90-86)),
+    @azimuth.add(@azimuth.multiply(78-86, 78-86), @azimuth.multiply(92-86, 92-86))
+  )
+  let variance = variance_numerator / count
+  @azimuth.assert_eq(26, variance)
+}
+
+test "time_based_calculations" {
+  // 测试基于时间的计算
+  // 计算工作时长（分钟）
+  let start_hour = 9
+  let start_min = 30
+  let end_hour = 17
+  let end_min = 45
+  
+  let start_total = @azimuth.add(@azimuth.multiply(start_hour, 60), start_min)
+  let end_total = @azimuth.add(@azimuth.multiply(end_hour, 60), end_min)
+  let work_duration = @azimuth.add(end_total, -start_total)
+  
+  @azimuth.assert_eq(495, work_duration)
+  
+  // 转换为小时
+  let work_hours = work_duration / 60
+  let remaining_mins = work_duration % 60
+  @azimuth.assert_eq(8, work_hours)
+  @azimuth.assert_eq(15, remaining_mins)
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试各种特殊字符组合
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_result = @azimuth.greet(special_chars)
+  @azimuth.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", special_result)
+  
+  // 测试数字字符串
+  let numeric_string = "1234567890"
+  let numeric_result = @azimuth.greet(numeric_string)
+  @azimuth.assert_eq_string("Hello, 1234567890!", numeric_result)
+}
+
+test "comprehensive_business_scenario" {
+  // 测试综合业务场景：电商订单计算
+  let product_price = 299
+  let quantity = 2
+  let discount_rate = 10
+  let tax_rate = 8
+  let shipping = 20
+  
+  // 计算商品总价
+  let subtotal = @azimuth.multiply(product_price, quantity)
+  
+  // 计算折扣
+  let discount_amount = @azimuth.multiply(subtotal, discount_rate) / 100
+  let discounted_price = @azimuth.add(subtotal, -discount_amount)
+  
+  // 计算税费
+  let tax_amount = @azimuth.multiply(discounted_price, tax_rate) / 100
+  
+  // 计算最终总价
+  let final_total = @azimuth.add(@azimuth.add(discounted_price, tax_amount), shipping)
+  
+  @azimuth.assert_eq(610, final_total)
 }
