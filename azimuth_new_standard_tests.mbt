@@ -1,286 +1,150 @@
-// Azimuth 项目新增标准 MoonBit 测试用例
-// 自包含版本，直接定义函数而不依赖外部包
+// Azimuth 项目新的标准测试用例
+// 使用标准 MoonBit 测试语法，测试核心功能
 
-// 定义测试所需的函数
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if (expected == actual) {
-    ()
-  } else {
-    @builtin.abort("Assertion failed")
-  }
+// 导入必要的模块
+use azimuth
+
+test "add_function_basic_cases" {
+  // 测试 add 函数的基本情况
+  @assertion.assert_eq(5, azimuth.add(2, 3))?
+  @assertion.assert_eq(0, azimuth.add(0, 0))?
+  @assertion.assert_eq(-2, azimuth.add(-5, 3))?
+  @assertion.assert_eq(10, azimuth.add(10, 0))?
+  @assertion.assert_eq(7, azimuth.add(0, 7))?
 }
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  if (expected == actual) {
-    ()
-  } else {
-    @builtin.abort("Assertion failed")
-  }
+test "add_function_edge_cases" {
+  // 测试 add 函数的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  @assertion.assert_eq(max_val, azimuth.add(max_val, 1))?
+  @assertion.assert_eq(max_val, azimuth.add(max_val, max_val))?
+  @assertion.assert_eq(min_val, azimuth.add(min_val, -1))?
+  @assertion.assert_eq(min_val, azimuth.add(min_val, min_val))?
+  
+  // 测试边界值加法
+  @assertion.assert_eq(max_val, azimuth.add(max_val, 0))?
+  @assertion.assert_eq(min_val, azimuth.add(min_val, 0))?
 }
 
-pub fn assert_true(condition : Bool) -> Unit {
-  if (condition) {
-    ()
-  } else {
-    @builtin.abort("Assertion failed")
-  }
+test "multiply_function_basic_cases" {
+  // 测试 multiply 函数的基本情况
+  @assertion.assert_eq(6, azimuth.multiply(2, 3))?
+  @assertion.assert_eq(0, azimuth.multiply(5, 0))?
+  @assertion.assert_eq(0, azimuth.multiply(0, 10))?
+  @assertion.assert_eq(-15, azimuth.multiply(-3, 5))?
+  @assertion.assert_eq(20, azimuth.multiply(-4, -5))?
 }
 
-pub fn assert_false(condition : Bool) -> Unit {
-  if (condition) {
-    @builtin.abort("Assertion failed")
-  } else {
-    ()
-  }
+test "multiply_function_edge_cases" {
+  // 测试 multiply 函数的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  @assertion.assert_eq(max_val, azimuth.multiply(max_val, 2))?
+  @assertion.assert_eq(min_val, azimuth.multiply(min_val, -1))?
+  @assertion.assert_eq(min_val, azimuth.multiply(max_val, -2))?
+  
+  // 测试特殊值
+  @assertion.assert_eq(5, azimuth.multiply(5, 1))?
+  @assertion.assert_eq(5, azimuth.multiply(1, 5))?
+  @assertion.assert_eq(-5, azimuth.multiply(5, -1))?
+  @assertion.assert_eq(-5, azimuth.multiply(-1, 5))?
 }
 
-// 辅助函数：实现三元运算符的功能
-pub fn conditional_int(condition : Bool, true_val : Int, false_val : Int) -> Int {
-  if (condition) {
-    true_val
-  } else {
-    false_val
-  }
+test "greet_function_basic_cases" {
+  // 测试 greet 函数的基本情况
+  @assertion.assert_eq_string("Hello, World!", azimuth.greet("World"))?
+  @assertion.assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))?
+  @assertion.assert_eq_string("Hello, !", azimuth.greet(""))?
+  @assertion.assert_eq_string("Hello, 123!", azimuth.greet("123"))?
 }
 
-pub fn conditional_string(condition : Bool, true_val : String, false_val : String) -> String {
-  if (condition) {
-    true_val
-  } else {
-    false_val
-  }
+test "greet_function_special_characters" {
+  // 测试 greet 函数的特殊字符处理
+  @assertion.assert_eq_string("Hello, 中文!", azimuth.greet("中文"))?
+  @assertion.assert_eq_string("Hello, 🌙!", azimuth.greet("🌙"))?
+  @assertion.assert_eq_string("Hello, Hello-World!", azimuth.greet("Hello-World"))?
+  @assertion.assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))?
 }
 
-// 测试用例
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  let a = 15
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 10
   let b = 7
   
-  // 加法测试
-  let add_result = a + b
-  assert_eq(22, add_result)
+  // 加法交换律
+  @assertion.assert_eq(azimuth.add(a, b), azimuth.add(b, a))?
   
-  // 减法测试
-  let sub_result = a - b
-  assert_eq(8, sub_result)
+  // 乘法交换律
+  @assertion.assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))?
   
-  // 乘法测试
-  let mul_result = a * b
-  assert_eq(105, mul_result)
+  // 加法单位元
+  @assertion.assert_eq(a, azimuth.add(a, 0))?
+  @assertion.assert_eq(a, azimuth.add(0, a))?
   
-  // 除法测试
-  let div_result = a / b
-  assert_eq(2, div_result)
-  
-  // 取余测试
-  let mod_result = a % b
-  assert_eq(1, mod_result)
+  // 乘法单位元
+  @assertion.assert_eq(a, azimuth.multiply(a, 1))?
+  @assertion.assert_eq(a, azimuth.multiply(1, a))?
 }
 
-test "boolean_logic_operations" {
-  // 布尔逻辑运算测试
-  let true_val = true
-  let false_val = false
+test "complex_calculations" {
+  // 测试复杂计算
+  let a = 3
+  let b = 4
+  let c = 5
   
-  // 与运算测试
-  let and_result1 = true_val && true_val
-  let and_result2 = true_val && false_val
-  assert_true(and_result1)
-  assert_false(and_result2)
+  // (a + b) * c
+  let result1 = azimuth.multiply(azimuth.add(a, b), c)
+  @assertion.assert_eq(35, result1)?
   
-  // 或运算测试
-  let or_result1 = true_val || false_val
-  let or_result2 = false_val || false_val
-  assert_true(or_result1)
-  assert_false(or_result2)
+  // a * b + a * c
+  let result2 = azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
+  @assertion.assert_eq(27, result2)?
   
-  // 非运算测试
-  let not_result1 = !true_val
-  let not_result2 = !false_val
-  assert_false(not_result1)
-  assert_true(not_result2)
+  // (a + b + c) * 2
+  let result3 = azimuth.multiply(azimuth.add(azimuth.add(a, b), c), 2)
+  @assertion.assert_eq(24, result3)?
 }
 
-test "string_manipulation" {
-  // 字符串操作测试
-  let first_name = "John"
-  let last_name = "Doe"
-  let age = "30"
+test "real_world_scenarios" {
+  // 测试真实世界场景
+  // 购物车计算
+  let item_price = 299
+  let quantity = 3
+  let shipping = 20
+  let total = azimuth.add(azimuth.multiply(item_price, quantity), shipping)
+  @assertion.assert_eq(917, total)?
   
-  // 字符串连接测试
-  let full_name = first_name + " " + last_name
-  assert_eq_string("John Doe", full_name)
+  // 面积计算
+  let length = 10
+  let width = 5
+  let area = azimuth.multiply(length, width)
+  @assertion.assert_eq(50, area)?
   
-  // 复合字符串测试
-  let description = "Name: " + full_name + ", Age: " + age
-  assert_eq_string("Name: John Doe, Age: 30", description)
-  
-  // 空字符串处理测试
-  let empty_string = ""
-  let with_empty = first_name + empty_string + last_name
-  assert_eq_string("JohnDoe", with_empty)
+  // 周长计算
+  let perimeter = azimuth.multiply(2, azimuth.add(length, width))
+  @assertion.assert_eq(30, perimeter)?
 }
 
-test "comparison_operations" {
-  // 比较运算测试
-  let x = 10
-  let y = 20
-  let z = 10
+test "error_handling_scenarios" {
+  // 测试错误处理场景
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 等于测试
-  assert_true(x == z)
-  assert_false(x == y)
+  // 确保溢出时不会崩溃
+  let overflow_result = azimuth.add(max_val, max_val)
+  @assertion.assert_eq(max_val, overflow_result)?
   
-  // 不等于测试
-  assert_false(x != z)
-  assert_true(x != y)
+  let underflow_result = azimuth.add(min_val, min_val)
+  @assertion.assert_eq(min_val, underflow_result)?
   
-  // 大于测试
-  assert_false(x > y)
-  assert_false(x > z)
-  assert_true(y > x)
+  let mul_overflow_result = azimuth.multiply(max_val, max_val)
+  @assertion.assert_eq(max_val, mul_overflow_result)?
   
-  // 小于测试
-  assert_true(x < y)
-  assert_false(x < z)
-  assert_false(y < x)
-  
-  // 大于等于测试
-  assert_true(x >= z)
-  assert_false(x >= y)
-  assert_true(y >= x)
-  
-  // 小于等于测试
-  assert_true(x <= z)
-  assert_true(x <= y)
-  assert_false(y <= x)
-}
-
-test "array_operations" {
-  // 数组操作测试
-  let numbers = [1, 2, 3, 4, 5]
-  let strings = ["apple", "banana", "cherry"]
-  
-  // 数组长度测试
-  assert_eq(5, numbers.length())
-  assert_eq(3, strings.length())
-  
-  // 数组索引访问测试
-  assert_eq(1, numbers[0])
-  assert_eq(3, numbers[2])
-  assert_eq(5, numbers[4])
-  
-  assert_eq_string("apple", strings[0])
-  assert_eq_string("cherry", strings[2])
-}
-
-test "mathematical_functions" {
-  // 数学函数测试
-  let base = 2
-  let number = 16
-  
-  // 幂运算（通过重复乘法模拟）
-  let power_result = base * base * base * base * base * base * base * base
-  assert_eq(256, power_result)
-  
-  // 平方根测试（通过整数除法模拟）
-  let sqrt_result = number / 4  // 简化的平方根计算
-  assert_eq(4, sqrt_result)
-  
-  // 绝对值测试
-  let positive = 10
-  let negative = -10
-  let abs_positive = conditional_int(positive > 0, positive, -positive)
-  let abs_negative = conditional_int(negative > 0, negative, -negative)
-  assert_eq(10, abs_positive)
-  assert_eq(10, abs_negative)
-}
-
-test "conditional_expressions" {
-  // 条件表达式测试
-  let score = 85
-  let age = 18
-  let temperature = 25
-  
-  // 条件测试（使用辅助函数替代三元运算符）
-  let grade = conditional_string(score >= 90, "A", 
-               conditional_string(score >= 80, "B", 
-               conditional_string(score >= 70, "C", "D")))
-  assert_eq_string("B", grade)
-  
-  // 嵌套条件测试
-  let can_vote = age >= 18
-  assert_true(can_vote)
-  
-  // 复合条件测试
-  let weather_status = conditional_string(temperature > 30, "Hot",
-                        conditional_string(temperature >= 20, "Warm",
-                        conditional_string(temperature >= 10, "Cool", "Cold")))
-  assert_eq_string("Warm", weather_status)
-}
-
-test "loop_simulation" {
-  // 循环模拟测试（通过递归或展开）
-  
-  // 模拟累加循环：1 + 2 + 3 + 4 + 5
-  let sum_result = 1 + 2 + 3 + 4 + 5
-  assert_eq(15, sum_result)
-  
-  // 模拟阶乘计算：5! = 5 × 4 × 3 × 2 × 1
-  let factorial_result = 5 * 4 * 3 * 2 * 1
-  assert_eq(120, factorial_result)
-  
-  // 模拟等差数列求和：2 + 4 + 6 + 8 + 10
-  let arithmetic_sum = 2 + 4 + 6 + 8 + 10
-  assert_eq(30, arithmetic_sum)
-  
-  // 模拟等比数列求和：1 + 2 + 4 + 8 + 16
-  let geometric_sum = 1 + 2 + 4 + 8 + 16
-  assert_eq(31, geometric_sum)
-}
-
-test "type_conversion" {
-  // 类型转换测试
-  let integer_val = 42
-  let string_val = "123"
-  
-  // 整数到字符串的转换模拟
-  let int_to_string = "The value is: " + integer_val.to_string()
-  assert_eq_string("The value is: 42", int_to_string)
-  
-  // 字符串到整数的转换模拟（简化）
-  let string_to_int_result = string_val.length()  // 简化处理
-  assert_eq(3, string_to_int_result)
-  
-  // 布尔值到字符串转换
-  let bool_to_string_true = true.to_string()
-  let bool_to_string_false = false.to_string()
-  assert_eq_string("true", bool_to_string_true)
-  assert_eq_string("false", bool_to_string_false)
-}
-
-test "error_handling_simulation" {
-  // 错误处理模拟测试
-  let divisor = 0
-  let array_index = 5
-  let array_size = 3
-  
-  // 除零错误处理模拟
-  let division_result = conditional_int(divisor == 0, -1, 10 / divisor)
-  assert_eq(-1, division_result)
-  
-  // 数组越界检查模拟
-  let is_valid_index = array_index >= 0 && array_index < array_size
-  assert_false(is_valid_index)
-  
-  // 空值检查模拟
-  let nullable_value = ""  // 模拟空值
-  let is_not_null = nullable_value.length() > 0
-  assert_false(is_not_null)
-  
-  // 负数输入检查
-  let input_value = -5
-  let is_positive = input_value >= 0
-  assert_false(is_positive)
+  let mul_underflow_result = azimuth.multiply(min_val, min_val)
+  @assertion.assert_eq(max_val, mul_underflow_result)?  // 负负得正，但会溢出
 }
