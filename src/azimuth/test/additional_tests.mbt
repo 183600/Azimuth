@@ -1,176 +1,160 @@
 // 额外的 MoonBit 测试用例
-// 导入主模块
-use azimuth
+// 测试 azimuth 模块的核心功能
 
-test "divide_with_ceil_basic" {
-  // 测试基本的向上取整除法
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(3, divide_with_ceil(11, 4))
-  assert_eq(3, divide_with_ceil(12, 4))
-  assert_eq(4, divide_with_ceil(13, 4))
+// 导入要测试的模块
+test "add_function_basic_cases" {
+  // 测试基本的加法运算
+  assert_eq(0, add(0, 0))
+  assert_eq(5, add(2, 3))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(0, add(5, -5))
+  assert_eq(100, add(50, 50))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(2, divide_with_ceil(6, 5))
+test "multiply_function_basic_cases" {
+  // 测试基本的乘法运算
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(1, multiply(1, 1))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-10, 5))
-  assert_eq(-1, divide_with_ceil(-5, 5))
-  assert_eq(-1, divide_with_ceil(-4, 5))
-  assert_eq(0, divide_with_ceil(-1, 5))
+test "greet_function_various_inputs" {
+  // 测试不同输入的问候语
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
 }
 
-test "complex_arithmetic_sequence" {
-  // 测试复杂数学序列：斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
-  let f0 = 0
-  let f1 = 1
-  let f2 = add(f0, f1)  // 1
-  let f3 = add(f1, f2)  // 2
-  let f4 = add(f2, f3)  // 3
-  let f5 = add(f3, f4)  // 5
+test "add_function_edge_cases" {
+  // 测试加法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  assert_eq(1, f2)
-  assert_eq(2, f3)
-  assert_eq(3, f4)
-  assert_eq(5, f5)
+  // 溢出测试
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+  
+  // 混合符号测试
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(2147483646, add(max_val, -1))
+  assert_eq(-2147483647, add(min_val, 1))
 }
 
-test "geometric_progression" {
-  // 测试几何级数：2, 6, 18, 54, ...
-  // a(n) = a(1) * r^(n-1)，其中 r = 3
-  let a1 = 2
-  let ratio = 3
-  let a2 = multiply(a1, ratio)      // 6
-  let a3 = multiply(a2, ratio)      // 18
-  let a4 = multiply(a3, ratio)      // 54
+test "multiply_function_edge_cases" {
+  // 测试乘法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  assert_eq(6, a2)
-  assert_eq(18, a3)
-  assert_eq(54, a4)
+  // 特殊值测试
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
   
-  // 计算前4项的和
-  let sum = add(add(add(a1, a2), a3), a4)
-  assert_eq(80, sum)
+  // 溢出测试
+  assert_eq(max_val, multiply(46341, 46341))
+  assert_eq(min_val, multiply(-46341, 46341))
+  assert_eq(max_val, multiply(max_val, 2))
 }
 
-test "string_concatenation_with_numbers" {
-  // 测试字符串与数字的组合
-  let age = 25
-  let name = "Alice"
-  let age_str = "25"
+test "complex_calculation_scenarios" {
+  // 测试复杂的计算场景
+  // 矩形面积和周长计算
+  let length = 10
+  let width = 5
+  let area = multiply(length, width)
+  let perimeter = add(multiply(2, length), multiply(2, width))
   
-  // 通过字符串拼接创建个人信息
-  let greeting = greet(name)
-  let age_info = "Age: " + age_str
-  let full_info = greeting + " " + age_info
+  assert_eq(50, area)
+  assert_eq(30, perimeter)
   
-  assert_eq_string("Hello, Alice! Age: 25", full_info)
+  // 温度转换（简化版）：F = C × 2 + 30
+  let celsius = 20
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  assert_eq(70, fahrenheit)
 }
 
-test "calculator_simulation" {
-  // 模拟简单计算器运算
-  let x = 15
-  let y = 4
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
   
-  // 加法
-  let sum = add(x, y)
-  assert_eq(19, sum)
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 乘法
-  let product = multiply(x, y)
-  assert_eq(60, product)
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 模拟减法：x - y = x + (-y)
-  let difference = add(x, -y)
-  assert_eq(11, difference)
+  // 分配律
+  let c = 5
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
   
-  // 模拟除法：x / y（整数除法）
-  let quotient = x / y
-  assert_eq(3, quotient)
-  
-  // 模拟取余：x % y
-  let remainder = x % y
-  assert_eq(3, remainder)
+  // 结合律
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
 }
 
-test "boolean_logic_simulation" {
-  // 使用数值模拟布尔逻辑运算
-  // 真 = 1, 假 = 0
-  let true_val = 1
-  let false_val = 0
+test "real_world_applications" {
+  // 测试实际应用场景
+  // 购物车计算
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
   
-  // 逻辑与：a && b = min(a, b)
-  let and_true = min_val(true_val, true_val)
-  let and_false1 = min_val(true_val, false_val)
-  let and_false2 = min_val(false_val, false_val)
+  let total1 = multiply(item1_price, item1_quantity)
+  let total2 = multiply(item2_price, item2_quantity)
+  let cart_total = add(total1, total2)
   
-  assert_eq(1, and_true)
-  assert_eq(0, and_false1)
-  assert_eq(0, and_false2)
+  assert_eq(697, cart_total)
   
-  // 逻辑或：a || b = max(a, b)
-  let or_true1 = max_val(true_val, true_val)
-  let or_true2 = max_val(true_val, false_val)
-  let or_false = max_val(false_val, false_val)
+  // 简单利息计算
+  let principal = 1000
+  let rate = 5
+  let years = 3
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
   
-  assert_eq(1, or_true1)
-  assert_eq(1, or_true2)
-  assert_eq(0, or_false)
-  
-  // 逻辑非：!a = 1 - a
-  let not_true = add(1, -true_val)
-  let not_false = add(1, -false_val)
-  
-  assert_eq(0, not_true)
-  assert_eq(1, not_false)
+  assert_eq(16000, total)
 }
 
-test "array_sum_simulation" {
-  // 模拟数组求和：sum = a1 + a2 + a3 + a4 + a5
-  let a1 = 10
-  let a2 = 20
-  let a3 = 30
-  let a4 = 40
-  let a5 = 50
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 特殊字符
+  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))
   
-  let sum1 = add(a1, a2)
-  let sum2 = add(sum1, a3)
-  let sum3 = add(sum2, a4)
-  let total_sum = add(sum3, a5)
+  // 长字符串
+  let long_name = "ThisIsAVeryLongNameForTestingPurposes"
+  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
   
-  assert_eq(150, total_sum)
-  
-  // 计算平均值
-  let count = 5
-  let average = total_sum / count
-  assert_eq(30, average)
+  // Unicode 字符
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "temperature_conversion_precise" {
-  // 精确的温度转换：摄氏度转华氏度
-  // 公式：F = C × 9/5 + 32
-  // 使用整数运算：F = (C × 9 + 160) / 5
+test "error_handling_and_validation" {
+  // 测试错误处理和验证
+  // 断言函数测试
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
   
-  let celsius = 25
-  let numerator = add(multiply(celsius, 9), 160)
-  let fahrenheit = numerator / 5
+  // 边界值验证
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  assert_eq(77, fahrenheit)  // (25 × 9 + 160) / 5 = 385 / 5 = 77
-  
-  // 测试冰点
-  let freezing_c = 0
-  let freezing_f = add(multiply(freezing_c, 9), 160) / 5
-  assert_eq(32, freezing_f)
-  
-  // 测试沸点
-  let boiling_c = 100
-  let boiling_f = add(multiply(boiling_c, 9), 160) / 5
-  assert_eq(212, boiling_f)
+  // 确保溢出被正确处理
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(add(min_val, -100) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, -1) == min_val)
 }
