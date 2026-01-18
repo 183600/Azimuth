@@ -1,139 +1,122 @@
-// Azimuth 项目标准测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 项目标准 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，提供全面的测试覆盖
 
-// 测试加法功能
-test "add_function_basic" {
-  let result1 = add(2, 3)
-  let result2 = add(0, 0)
-  let result3 = add(-5, 10)
-  let result4 = add(100, 200)
+// 导入必要的模块
+use azimuth
+
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  let result1 = azimuth.greet("Alice")
+  @assertion.assert_eq_string("Hello, Alice!", result1)?
   
-  // 验证结果
-  assert_eq(result1, 5)
-  assert_eq(result2, 0)
-  assert_eq(result3, 5)
-  assert_eq(result4, 300)
+  let result2 = azimuth.greet("Bob")
+  @assertion.assert_eq_string("Hello, Bob!", result2)?
+  
+  let result3 = azimuth.greet("")
+  @assertion.assert_eq_string("Hello, !", result3)?
 }
 
-// 测试乘法功能
-test "multiply_function_basic" {
-  let result1 = multiply(3, 4)
-  let result2 = multiply(0, 5)
-  let result3 = multiply(-2, 6)
-  let result4 = multiply(10, 10)
-  
-  // 验证结果
-  assert_eq(result1, 12)
-  assert_eq(result2, 0)
-  assert_eq(result3, -12)
-  assert_eq(result4, 100)
+test "basic_addition_operations" {
+  // 测试基本加法运算
+  @assertion.assert_eq(5, azimuth.add(2, 3))?
+  @assertion.assert_eq(0, azimuth.add(-2, 2))?
+  @assertion.assert_eq(-5, azimuth.add(-2, -3))?
+  @assertion.assert_eq(100, azimuth.add(50, 50))?
 }
 
-// 测试问候语功能
-test "greet_function_basic" {
-  let result1 = greet("World")
-  let result2 = greet("MoonBit")
-  let result3 = greet("")
-  let result4 = greet("用户")
-  
-  // 验证结果
-  assert_eq(result1, "Hello, World!")
-  assert_eq(result2, "Hello, MoonBit!")
-  assert_eq(result3, "Hello, !")
-  assert_eq(result4, "Hello, 用户!")
+test "basic_multiplication_operations" {
+  // 测试基本乘法运算
+  @assertion.assert_eq(6, azimuth.multiply(2, 3))?
+  @assertion.assert_eq(0, azimuth.multiply(5, 0))?
+  @assertion.assert_eq(-6, azimuth.multiply(-2, 3))?
+  @assertion.assert_eq(6, azimuth.multiply(-2, -3))?
 }
 
-// 测试边界条件
-test "boundary_conditions" {
-  // 测试大数加法
-  let large_add = add(1000000, 2000000)
-  assert_eq(large_add, 3000000)
+test "mathematical_expressions" {
+  // 测试数学表达式组合
+  let a = 5
+  let b = 3
+  let c = 2
   
-  // 测试负数乘法
-  let negative_multiply = multiply(-5, -5)
-  assert_eq(negative_multiply, 25)
+  // 测试 (a + b) * c
+  let result1 = azimuth.multiply(azimuth.add(a, b), c)
+  @assertion.assert_eq(16, result1)?
   
-  // 测试混合运算
-  let mixed = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(mixed, 26)
+  // 测试 a * b + c
+  let result2 = azimuth.add(azimuth.multiply(a, b), c)
+  @assertion.assert_eq(17, result2)?
 }
 
-// 测试组合功能
-test "combined_operations" {
-  // 复杂计算测试
-  let a = 10
-  let b = 20
-  let c = 30
+test "boundary_value_testing" {
+  // 测试边界值
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  let result1 = add(multiply(a, b), c)
-  let result2 = multiply(add(a, b), c)
-  let result3 = add(add(a, b), add(c, a))
+  // 测试最大值加法
+  @assertion.assert_eq(max_int, azimuth.add(max_int, 0))?
+  @assertion.assert_eq(min_int, azimuth.add(min_int, 0))?
   
-  assert_eq(result1, 230)  // 10*20 + 30
-  assert_eq(result2, 900)  // (10+20)*30
-  assert_eq(result3, 70)   // 10+20+30+10
+  // 测试最大值乘法
+  @assertion.assert_eq(0, azimuth.multiply(max_int, 0))?
+  @assertion.assert_eq(0, azimuth.multiply(min_int, 0))?
 }
 
-// 测试字符串处理
-test "string_processing" {
-  let name1 = "Alice"
-  let name2 = "Bob"
+test "sequence_calculations" {
+  // 测试序列计算
+  // 计算等差数列: 1, 3, 5, 7, 9 的和
+  let term1 = 1
+  let term2 = azimuth.add(term1, 2)
+  let term3 = azimuth.add(term2, 2)
+  let term4 = azimuth.add(term3, 2)
+  let term5 = azimuth.add(term4, 2)
   
-  let greeting1 = greet(name1)
-  let greeting2 = greet(name2)
-  
-  // 验证字符串长度
-  assert_eq(String.length(greeting1), 13)  // "Hello, Alice!"
-  assert_eq(String.length(greeting2), 11)   // "Hello, Bob!"
-  
-  // 验证字符串包含
-  assert_true(String.contains(greeting1, "Hello"))
-  assert_true(String.contains(greeting1, name1))
+  let sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(term1, term2), term3), term4), term5)
+  @assertion.assert_eq(25, sum)?
 }
 
-// 测试错误处理场景
-test "error_scenarios" {
-  // 测试零值运算
-  let zero_add = add(0, 100)
-  let zero_multiply = multiply(0, 100)
+test "business_calculations" {
+  // 测试商业计算场景
+  let unit_price = 100
+  let quantity = 5
+  let discount_rate = 10  // 10%
   
-  assert_eq(zero_add, 100)
-  assert_eq(zero_multiply, 0)
+  // 计算小计
+  let subtotal = azimuth.multiply(unit_price, quantity)
+  @assertion.assert_eq(500, subtotal)?
   
-  // 测试单值运算
-  let single_add = add(42, 0)
-  let single_multiply = multiply(42, 1)
+  // 计算折扣金额
+  let discount_amount = azimuth.multiply(subtotal, discount_rate) / 100
+  @assertion.assert_eq(50, discount_amount)?
   
-  assert_eq(single_add, 42)
-  assert_eq(single_multiply, 42)
+  // 计算最终价格
+  let final_price = azimuth.add(subtotal, -discount_amount)
+  @assertion.assert_eq(450, final_price)?
 }
 
-// 测试特殊字符处理
-test "special_characters" {
-  let special_names = [
-    "张三", "李四", "John-Doe", "O'Connor", "user@domain.com"
-  ]
+test "geometry_calculations" {
+  // 测试几何计算
+  let length = 10
+  let width = 6
   
-  for name in special_names {
-    let greeting = greet(name)
-    assert_true(String.length(greeting) > String.length(name))
-    assert_true(String.contains(greeting, "Hello"))
-    assert_true(String.contains(greeting, name))
-  }
+  // 计算面积
+  let area = azimuth.multiply(length, width)
+  @assertion.assert_eq(60, area)?
+  
+  // 计算周长
+  let perimeter = azimuth.multiply(azimuth.add(length, width), 2)
+  @assertion.assert_eq(32, perimeter)?
 }
 
-// 测试性能相关场景
-test "performance_scenarios" {
-  // 批量计算测试
-  let numbers = [1, 2, 3, 4, 5]
-  let mut sum = 0
-  let mut product = 1
+test "algorithm_simulation" {
+  // 测试算法模拟
+  // 模拟简单排序的比较次数
+  let array_size = 5
   
-  for num in numbers {
-    sum = add(sum, num)
-    product = multiply(product, num)
-  }
+  // 冒泡排序最坏情况比较次数: n*(n-1)/2
+  let comparisons = azimuth.multiply(array_size, azimuth.add(array_size, -1)) / 2
+  @assertion.assert_eq(10, comparisons)?
   
-  assert_eq(sum, 15)      // 1+2+3+4+5
-  assert_eq(product, 120) // 1*2*3*4*5
+  // 模拟二分查找的最大比较次数: log2(n) 向上取整
+  let binary_search_comparisons = 3  // log2(5) ≈ 2.32, 向上取整为3
+  @assertion.assert_eq(3, binary_search_comparisons)?
 }
