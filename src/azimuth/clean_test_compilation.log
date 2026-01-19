@@ -54,3 +54,4 @@ clean_test/lib.mbt:2858:7-2858:18 [E0002] Warning (unused_value): Unused variabl
 clean_test/lib.mbt:2884:7-2884:16 [E0002] Warning (unused_value): Unused variable 'data_byte'
 clean_test/lib.mbt:2885:7-2885:16 [E0002] Warning (unused_value): Unused variable 'data_bits'
 clean_test/lib.mbt:2894:7-2894:20 [E0002] Warning (unused_value): Unused variable 'received_data'
+clean_test/lib.mbt:4564:7-4564:14 [E0002] Warning (unused_value): Unused variable 'max_val'
