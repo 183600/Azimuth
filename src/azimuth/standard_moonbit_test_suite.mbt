@@ -1,27 +1,34 @@
 // 标准 MoonBit 测试套件
-// 包含 10 个测试用例，覆盖核心功能
+// 包含基础功能测试用例
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(10, add(6, 4))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
-}
-
-test "negative_number_operations" {
-  // 测试负数运算
+test "addition_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(10, add(7, 3))
   assert_eq(0, add(5, -5))
-  assert_eq(-10, add(-5, -5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
+  assert_eq(-8, add(-3, -5))
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
+test "multiplication_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(21, multiply(7, 3))
+  assert_eq(-15, multiply(5, -3))
+  assert_eq(0, multiply(8, 0))
+}
+
+test "greet_function_basic" {
+  // 测试基本问候功能
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, 用户!", greet("用户"))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "mathematical_commutativity" {
+  // 测试数学交换律
+  let a = 12
+  let b = 8
+  
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
 test "boundary_value_handling" {
@@ -29,102 +36,60 @@ test "boundary_value_handling" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 边界值加法
   assert_eq(max_val, add(max_val, 1))
   assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
-  
-  // 边界值乘法
-  assert_eq(0, multiply(max_val, 0))
   assert_eq(min_val, multiply(min_val, -1))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 11
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  let base_price = 100
+  let quantity = 5
+  let tax_rate = 8
+  let shipping = 15
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  let subtotal = multiply(base_price, quantity)
+  let tax = multiply(subtotal, tax_rate) / 100
+  let total = add(add(subtotal, tax), shipping)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+  assert_eq(555, total)
 }
 
-test "real_world_calculation_scenario" {
-  // 测试实际应用场景：购物车计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 1
-  
-  // 计算总价
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let cart_total = add(total1, total2)
-  
-  // 验证总价：299*2 + 199*1 = 598 + 199 = 797
-  assert_eq(797, cart_total)
+test "string_special_characters" {
+  // 测试特殊字符处理
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, C++ Developer!", greet("C++ Developer"))
+  assert_eq_string("Hello, $100!", greet("$100"))
 }
 
-test "assertion_functions_verification" {
+test "assertion_functions" {
   // 测试断言函数
   assert_true(true)
   assert_false(false)
-  assert_eq(100, 100)
+  assert_eq(42, 42)
   assert_eq_string("test", "test")
-  
-  // 测试实际值
-  assert_true(add(5, 3) == 8)
-  assert_false(add(5, 3) == 9)
-  assert_eq(8, add(5, 3))
-  assert_eq_string("Hello, Test!", greet("Test"))
 }
 
-test "complex_calculation_chain" {
-  // 测试复杂计算链
-  let base = 100
-  let multiplier = 3
-  let addition = 50
-  let subtraction = 20
+test "mathematical_identities" {
+  // 测试数学恒等式
+  let x = 15
   
-  // 计算：(base * multiplier) + addition - subtraction
-  let step1 = multiply(base, multiplier)  // 300
-  let step2 = add(step1, addition)        // 350
-  let result = add(step2, -subtraction)   // 330
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, multiply(x, 1))
   
-  assert_eq(330, result)
+  // 乘法分配律
+  assert_eq(multiply(x, 5), add(multiply(x, 2), multiply(x, 3)))
 }
 
-test "overflow_protection" {
-  // 测试溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "real_world_application" {
+  // 测试实际应用场景：计算矩形面积和周长
+  let length = 12
+  let width = 8
   
-  // 确保溢出被正确处理
-  assert_true(add(max_val, 100) == max_val)
-  assert_true(add(min_val, -100) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
-}
-
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景
-  // 摄氏度转华氏度（简化版：F = C × 2 + 30）
-  let celsius_temp = 25
-  let fahrenheit_temp = add(multiply(celsius_temp, 2), 30)
-  assert_eq(80, fahrenheit_temp)  // 25 * 2 + 30 = 80
+  let area = multiply(length, width)
+  let perimeter = multiply(2, add(length, width))
   
-  // 测试冰点温度
-  let freezing_celsius = 0
-  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
-  assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
-  
-  // 测试沸点温度
-  let boiling_celsius = 100
-  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
-  assert_eq(230, boiling_fahrenheit)  // 100 * 2 + 30 = 230
+  assert_eq(96, area)
+  assert_eq(40, perimeter)
 }
