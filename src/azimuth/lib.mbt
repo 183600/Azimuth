@@ -4719,4 +4719,222 @@ test "standard_assert_functions_verification" {
   assert_eq_string("test", "test")
 }
 
+// 新增的10个 MoonBit 测试用例
+test "geometry_calculations_circle" {
+  // 几何计算：圆的周长和面积
+  let radius = 5
+  let pi_approx = 3  // 简化的π值
+  
+  // 圆周长：2 × π × r
+  let circumference = multiply(multiply(2, pi_approx), radius)
+  assert_eq(30, circumference)
+  
+  // 圆面积：π × r²
+  let area = multiply(pi_approx, multiply(radius, radius))
+  assert_eq(75, area)
+}
+
+test "string_length_boundary_tests" {
+  // 字符串长度边界测试
+  let empty = ""
+  let single_char = "A"
+  let short_word = "Hi"
+  let medium_word = "MoonBit"
+  let long_phrase = "ThisIsAVeryLongPhraseForTestingPurposes"
+  
+  assert_eq_string("Hello, !", greet(empty))
+  assert_eq_string("Hello, A!", greet(single_char))
+  assert_eq_string("Hello, Hi!", greet(short_word))
+  assert_eq_string("Hello, MoonBit!", greet(medium_word))
+  assert_eq_string("Hello, ThisIsAVeryLongPhraseForTestingPurposes!", greet(long_phrase))
+}
+
+test "conditional_calculation_logic" {
+  // 条件计算逻辑测试
+  let score = 85
+  let passing_grade = 60
+  
+  // 根据分数计算等级
+  let grade = if score >= 90 { "A" }
+              else if score >= 80 { "B" }
+              else if score >= 70 { "C" }
+              else if score >= 60 { "D" }
+              else { "F" }
+  
+  assert_eq_string("B", grade)
+  
+  // 计算是否通过
+  let passed = score >= passing_grade
+  assert_true(passed)
+  
+  // 计算加分：如果分数 >= 80，加5分，否则加10分
+  let bonus = if score >= 80 { 5 } else { 10 }
+  let final_score = add(score, bonus)
+  assert_eq(90, final_score)
+}
+
+test "matrix_index_calculation" {
+  // 矩阵索引计算：二维数组转一维数组
+  let row = 3
+  let col = 4
+  let width = 5
+  
+  // 计算一维数组索引：index = row × width + col
+  let index = add(multiply(row, width), col)
+  assert_eq(19, index)
+  
+  // 测试边界情况
+  let first_index = add(multiply(0, 0), 0)
+  assert_eq(0, first_index)
+  
+  let last_index = add(multiply(9, 4), 4)
+  assert_eq(40, last_index)
+}
+
+test "currency_exchange_calculation" {
+  // 货币兑换计算
+  let usd_amount = 100
+  let exchange_rate = 7  // 1 USD = 7 CNY
+  let fee_percentage = 2  // 2% 手续费
+  
+  // 计算兑换金额
+  let local_amount = multiply(usd_amount, exchange_rate)
+  assert_eq(700, local_amount)
+  
+  // 计算手续费
+  let fee = multiply(local_amount, fee_percentage) / 100
+  assert_eq(14, fee)
+  
+  // 计算最终到账金额
+  let final_amount = add(local_amount, -fee)
+  assert_eq(686, final_amount)
+}
+
+test "time_unit_conversion" {
+  // 时间单位转换测试
+  let hours = 2
+  let minutes = 30
+  let seconds = 45
+  
+  // 转换为总秒数
+  let total_seconds = add(add(multiply(hours, 3600), multiply(minutes, 60)), seconds)
+  assert_eq(9045, total_seconds)
+  
+  // 计算时间差（秒）
+  let start_hour = 8
+  let start_min = 0
+  let end_hour = 17
+  let end_min = 30
+  
+  let start_seconds = multiply(start_hour, 3600)
+  let end_seconds = add(multiply(end_hour, 3600), multiply(end_min, 60))
+  let duration = add(end_seconds, -start_seconds)
+  
+  assert_eq(34200, duration)
+}
+
+test "statistical_calculations" {
+  // 统计计算测试
+  // 数据集：10, 20, 30, 40, 50, 60, 70, 80, 90, 100
+  let sum = add(add(add(add(add(10, 20), add(30, 40)), add(50, 60)), add(70, 80)), add(90, 100))
+  assert_eq(550, sum)
+  
+  // 计算平均值
+  let count = 10
+  let average = sum / count
+  assert_eq(55, average)
+  
+  // 计算中位数（偶数个数据，取中间两个的平均值）
+  let median = add(50, 60) / 2
+  assert_eq(55, median)
+  
+  // 计算范围（最大值 - 最小值）
+  let range = add(100, -10)
+  assert_eq(90, range)
+}
+
+test "game_scoring_system" {
+  // 游戏计分系统测试
+  let base_score = 1000
+  let level_multiplier = 3
+  let combo_bonus = 500
+  let time_penalty = 200
+  let difficulty_bonus = 300
+  
+  // 计算基础得分
+  let level_score = multiply(base_score, level_multiplier)
+  assert_eq(3000, level_score)
+  
+  // 计算连击奖励
+  let combo_score = add(level_score, combo_bonus)
+  assert_eq(3500, combo_score)
+  
+  // 扣除时间惩罚
+  let time_score = add(combo_score, -time_penalty)
+  assert_eq(3300, time_score)
+  
+  // 添加难度奖励
+  let final_score = add(time_score, difficulty_bonus)
+  assert_eq(3600, final_score)
+  
+  // 计算排名加分（前10%加20%）
+  let rank_bonus = multiply(final_score, 20) / 100
+  let total_score = add(final_score, rank_bonus)
+  assert_eq(4320, total_score)
+}
+
+test "energy_consumption_calculation" {
+  // 能耗计算测试
+  let power_rating = 150  // 瓦特
+  let daily_hours = 8
+  let days_in_month = 30
+  let price_per_kwh = 12  // 每千瓦时价格
+  
+  // 计算每日能耗（瓦时）
+  let daily_consumption = multiply(power_rating, daily_hours)
+  assert_eq(1200, daily_consumption)
+  
+  // 计算月度能耗（瓦时）
+  let monthly_consumption = multiply(daily_consumption, days_in_month)
+  assert_eq(36000, monthly_consumption)
+  
+  // 转换为千瓦时
+  let kwh_consumption = monthly_consumption / 1000
+  assert_eq(36, kwh_consumption)
+  
+  // 计算月度电费
+  let monthly_cost = multiply(kwh_consumption, price_per_kwh)
+  assert_eq(432, monthly_cost)
+}
+
+test "data_conversion_simulation" {
+  // 数据类型转换模拟测试
+  // 模拟整数转字符串
+  let number = 2023
+  let number_str = "2023"
+  let greeting_number = greet(number_str)
+  assert_eq_string("Hello, 2023!", greeting_number)
+  
+  // 模拟布尔值转字符串
+  let bool_true_str = "true"
+  let bool_false_str = "false"
+  assert_eq_string("Hello, true!", greet(bool_true_str))
+  assert_eq_string("Hello, false!", greet(bool_false_str))
+  
+  // 模拟浮点数表示（使用整数部分和小数部分）
+  let integer_part = 3
+  let decimal_part = 1415
+  let pi_str = "3.1415"
+  assert_eq_string("Hello, 3.1415!", greet(pi_str))
+  
+  // 模拟特殊数据格式
+  let date_str = "2023-12-25"
+  let time_str = "14:30:00"
+  let coordinate_str = "39.9042°N, 116.4074°E"
+  
+  assert_eq_string("Hello, 2023-12-25!", greet(date_str))
+  assert_eq_string("Hello, 14:30:00!", greet(time_str))
+  assert_eq_string("Hello, 39.9042°N, 116.4074°E!", greet(coordinate_str))
+}
+
 
