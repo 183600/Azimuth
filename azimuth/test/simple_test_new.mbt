@@ -1,7 +1,6 @@
-test "simple_test" {
-  // 测试基本语法
-  let result = 2 + 3
-  if (result != 5) {
-    @builtin.abort("Test failed")
-  }
+// 简单测试
+use azimuth
+
+test "simple_test_1" {
+  assert_eq(5, azimuth.add(2, 3))
 }
