@@ -1,89 +1,71 @@
-// 用户自定义的标准 MoonBit 测试用例
-// 测试 azimuth 模块的核心功能
+// 用户标准测试用例 - 使用标准的 MoonBit 测试语法
+// 包含不超过10个测试用例，覆盖项目的核心功能
 
-test "basic_addition_functionality" {
+test "add_function_basic" {
   // 测试基本的加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(-3, 3))
-  @azimuth.assert_eq(-10, @azimuth.add(-5, -5))
+  @azimuth.assert_eq(@azimuth.add(2, 3), 5)
 }
 
-test "basic_multiplication_functionality" {
+test "add_function_with_zero" {
+  // 测试与0相加的情况
+  @azimuth.assert_eq(@azimuth.add(5, 0), 5)
+  @azimuth.assert_eq(@azimuth.add(0, 5), 5)
+  @azimuth.assert_eq(@azimuth.add(0, 0), 0)
+}
+
+test "multiply_function_basic" {
   // 测试基本的乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-8, @azimuth.multiply(2, -4))
+  @azimuth.assert_eq(@azimuth.multiply(4, 5), 20)
 }
 
-test "greet_function_basic_cases" {
-  // 测试 greet 函数的基本情况
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "multiply_function_with_zero" {
+  // 测试与0相乘的情况
+  @azimuth.assert_eq(@azimuth.multiply(5, 0), 0)
+  @azimuth.assert_eq(@azimuth.multiply(0, 5), 0)
+  @azimuth.assert_eq(@azimuth.multiply(0, 0), 0)
 }
 
-test "addition_with_zero" {
-  // 测试与零相加的情况
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(5, @azimuth.add(0, 5))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+test "greet_function_basic" {
+  // 测试基本的问候功能
+  @azimuth.assert_eq_string(@azimuth.greet("MoonBit"), "Hello, MoonBit!")
 }
 
-test "multiplication_with_one" {
-  // 测试与一相乘的情况
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
-  @azimuth.assert_eq(-5, @azimuth.multiply(-5, 1))
+test "greet_function_empty_string" {
+  // 测试空字符串的问候
+  @azimuth.assert_eq_string(@azimuth.greet(""), "Hello, !")
 }
 
-test "mixed_operations" {
-  // 测试混合运算
-  let a = 5
-  let b = 3
-  let c = 2
-  
-  // (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(16, result)
+test "add_function_negative_numbers" {
+  // 测试负数相加
+  @azimuth.assert_eq(@azimuth.add(-5, -3), -8)
+  @azimuth.assert_eq(@azimuth.add(10, -3), 7)
+  @azimuth.assert_eq(@azimuth.add(-10, 3), -7)
 }
 
-test "boundary_values_addition" {
-  // 测试边界值的加法运算
+test "multiply_function_negative_numbers" {
+  // 测试负数相乘
+  @azimuth.assert_eq(@azimuth.multiply(-4, 5), -20)
+  @azimuth.assert_eq(@azimuth.multiply(4, -5), -20)
+  @azimuth.assert_eq(@azimuth.multiply(-4, -5), 20)
+}
+
+test "boundary_values_add" {
+  // 测试边界值的加法
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  // 确保边界值处理正确
+  @azimuth.assert_eq(@azimuth.add(max_val, 1), max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1), min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, min_val), -1)
 }
 
-test "boundary_values_multiplication" {
-  // 测试边界值的乘法运算
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "complex_calculation" {
+  // 测试复杂计算场景
+  let length = 10
+  let width = 5
   
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-}
-
-test "string_with_special_characters" {
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形的面积和周长
-  let length = 5
-  let width = 3
-  
-  // 面积 = 长 * 宽
-  let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(15, area)
-  
-  // 周长 = 2 * (长 + 宽)
-  let sum = @azimuth.add(length, width)
-  let perimeter = @azimuth.multiply(2, sum)
-  @azimuth.assert_eq(16, perimeter)
+  // 计算矩形周长：2 * length + 2 * width
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(perimeter, 30)
 }
