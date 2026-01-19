@@ -12,7 +12,8 @@ echo "Testing azimuth_new_standard_tests.mbt..."
 cd "$PROJECT_ROOT"
 
 # 编译测试文件
-node "$PROJECT_ROOT/moonc.js" check -pkg new_standard_test -std-path "$CORE_PATH" azimuth_new_standard_tests.mbt
+cd "$PROJECT_ROOT/azimuth"
+node "$PROJECT_ROOT/azimuth/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" azimuth_new_standard_tests.mbt
 if [ $? -ne 0 ]; then
   echo "Error: azimuth_new_standard_tests.mbt compilation failed"
   exit 1
