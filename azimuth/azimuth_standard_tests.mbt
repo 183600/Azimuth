@@ -111,3 +111,59 @@ test "complex_operations" {
   let result2 = @azimuth.multiply(a, sum)
   @azimuth.assert_eq(150, result2)
 }
+
+test "add_negative_numbers" {
+  // 测试负数加法的各种情况
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
+  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-1073741824, -1073741824))
+  @azimuth.assert_eq(5, @azimuth.add(-10, 15))
+  @azimuth.assert_eq(-5, @azimuth.add(10, -15))
+}
+
+test "multiply_by_zero_and_one" {
+  // 测试乘法中的0和1的特殊处理
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -12345))
+  @azimuth.assert_eq(0, @azimuth.multiply(-12345, 0))
+  @azimuth.assert_eq(12345, @azimuth.multiply(12345, 1))
+  @azimuth.assert_eq(12345, @azimuth.multiply(1, 12345))
+  @azimuth.assert_eq(-12345, @azimuth.multiply(-12345, 1))
+  @azimuth.assert_eq(-12345, @azimuth.multiply(1, -12345))
+}
+
+test "multiply_negative_one" {
+  // 测试乘法中的-1特殊处理
+  @azimuth.assert_eq(-12345, @azimuth.multiply(12345, -1))
+  @azimuth.assert_eq(-12345, @azimuth.multiply(-1, 12345))
+  @azimuth.assert_eq(12345, @azimuth.multiply(-12345, -1))
+  @azimuth.assert_eq(12345, @azimuth.multiply(-1, -12345))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, -1))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-1, -2147483648))
+}
+
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-9, 3))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-5, 3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+}
+
+test "boolean_assertions" {
+  // 测试布尔断言函数
+  @azimuth.assert_true(1 == 1)
+  @azimuth.assert_true(0 == 0)
+  @azimuth.assert_true(-1 == -1)
+  @azimuth.assert_true(2147483647 == 2147483647)
+  @azimuth.assert_true(-2147483648 == -2147483648)
+  
+  @azimuth.assert_false(1 == 0)
+  @azimuth.assert_false(0 == 1)
+  @azimuth.assert_false(-1 == 1)
+  @azimuth.assert_false(2147483647 == -2147483648)
+  @azimuth.assert_false(-2147483648 == 2147483647)
+}
