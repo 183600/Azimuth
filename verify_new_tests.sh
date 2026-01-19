@@ -1,76 +1,40 @@
 #!/bin/bash
 
-# 验证新添加的测试用例
-echo "验证新添加的 MoonBit 测试用例..."
+# 验证新创建的测试文件
 
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-TEST_FILE="$PROJECT_ROOT/src/azimuth/test/practical_core_tests.mbt"
+CORE_PATH="$PROJECT_ROOT/core"
+AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
 
-# 检查测试文件是否存在
-if [ ! -f "$TEST_FILE" ]; then
-  echo "错误：测试文件不存在"
+echo "验证新创建的测试文件..."
+cd "$AZIMUTH_PATH"
+
+# 编译 azimuth 包
+echo "编译 azimuth 包..."
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt -o azimuth.mi
+if [ $? -ne 0 ]; then
+  echo "错误：azimuth/lib.mbt 编译失败"
   exit 1
 fi
 
-# 统计测试用例数量
-TEST_COUNT=$(grep "^test " "$TEST_FILE" | wc -l)
+# 编译新的测试文件（与 lib.mbt 一起编译）
+echo "编译新的测试文件..."
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt standard_moonbit_test_cases_new.mbt
+if [ $? -ne 0 ]; then
+  echo "错误：测试文件编译失败"
+  exit 1
+fi
+
+# 统计测试数量
+TEST_COUNT=$(grep "^test " standard_moonbit_test_cases_new.mbt 2>/dev/null | wc -l)
 TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
 
-echo "找到 $TEST_COUNT 个测试用例"
-
-# 列出所有测试用例
+echo ""
+echo "测试验证成功！"
+echo "测试文件：standard_moonbit_test_cases_new.mbt"
+echo "测试用例数量：$TEST_COUNT"
 echo ""
 echo "测试用例列表："
-grep "^test " "$TEST_FILE" | sed 's/test "/- /' | sed 's/" {/ /'
+grep "^test " standard_moonbit_test_cases_new.mbt
 
-# 验证测试用例数量不超过10个
-if [ "$TEST_COUNT" -le 10 ]; then
-  echo ""
-  echo "✓ 测试用例数量符合要求（不超过10个）"
-else
-  echo ""
-  echo "✗ 测试用例数量超过限制（当前：$TEST_COUNT，限制：10）"
-  exit 1
-fi
-
-# 检查测试语法
-echo ""
-echo "检查测试语法..."
-
-# 检查是否有未闭合的大括号
-OPEN_BRACES=$(grep -c "{" "$TEST_FILE")
-CLOSE_BRACES=$(grep -c "}" "$TEST_FILE")
-
-if [ "$OPEN_BRACES" -eq "$CLOSE_BRACES" ]; then
-  echo "✓ 大括号匹配正确"
-else
-  echo "✗ 大括号不匹配（开放：$OPEN_BRACES，闭合：$CLOSE_BRACES）"
-  exit 1
-fi
-
-# 检查是否使用了标准的测试语法
-if grep -q "^test " "$TEST_FILE"; then
-  echo "✓ 使用了标准的 test 语法"
-else
-  echo "✗ 未找到标准的 test 语法"
-  exit 1
-fi
-
-# 检查是否使用了项目中的函数
-if grep -q "add(" "$TEST_FILE" && grep -q "multiply(" "$TEST_FILE" && grep -q "greet(" "$TEST_FILE"; then
-  echo "✓ 使用了项目中的函数"
-else
-  echo "✗ 未正确使用项目中的函数"
-  exit 1
-fi
-
-# 检查是否使用了断言函数
-if grep -q "assert_eq(" "$TEST_FILE" && grep -q "assert_eq_string(" "$TEST_FILE"; then
-  echo "✓ 使用了断言函数"
-else
-  echo "✗ 未正确使用断言函数"
-  exit 1
-fi
-
-echo ""
-echo "所有验证通过！新添加的测试用例符合要求。"
+exit 0
