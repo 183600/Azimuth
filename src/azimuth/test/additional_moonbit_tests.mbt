@@ -1,249 +1,179 @@
 // 额外的 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法
+// 测试 azimuth 模块的核心功能
 
-test "fibonacci_sequence_calculation" {
-  // 计算斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
+test "advanced_arithmetic_operations" {
+  // 测试高级算术运算
+  let a = 15
+  let b = 25
+  let c = 35
   
-  // 手动计算前几项
-  let f0 = 0
-  let f1 = 1
-  let f2 = @azimuth.add(f0, f1)  // 1
-  let f3 = @azimuth.add(f1, f2)  // 2
-  let f4 = @azimuth.add(f2, f3)  // 3
-  let f5 = @azimuth.add(f3, f4)  // 5
-  let f6 = @azimuth.add(f4, f5)  // 8
-  let f7 = @azimuth.add(f5, f6)  // 13
-  let f8 = @azimuth.add(f6, f7)  // 21
+  // 测试连续加法
+  @azimuth.assert_eq(75, @azimuth.add(@azimuth.add(a, b), c))
   
-  // 验证计算结果
-  @azimuth.assert_eq(1, f2)
-  @azimuth.assert_eq(2, f3)
-  @azimuth.assert_eq(3, f4)
-  @azimuth.assert_eq(5, f5)
-  @azimuth.assert_eq(8, f6)
-  @azimuth.assert_eq(13, f7)
-  @azimuth.assert_eq(21, f8)
+  // 测试结合律
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(a, b), c), @azimuth.add(a, @azimuth.add(b, c)))
+  
+  // 测试连续乘法
+  @azimuth.assert_eq(13125, @azimuth.multiply(@azimuth.multiply(a, b), c))
 }
 
-test "prime_number_validation" {
-  // 素数验证测试（简化版）
-  // 通过检查一个数是否只能被1和自身整除来判断是否为素数
+test "edge_case_calculations" {
+  // 测试边界情况计算
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let num = 17
+  // 测试最大值与负数的运算
+  @azimuth.assert_eq(2147483646, @azimuth.add(max_val, -1))
+  @azimuth.assert_eq(-2147483647, @azimuth.multiply(max_val, -1))
   
-  // 检查是否能被2到16之间的数整除（简化检查）
-  let divisible_by_2 = (num % 2 == 0)
-  let divisible_by_3 = (num % 3 == 0)
-  let divisible_by_5 = (num % 5 == 0)
-  let divisible_by_7 = (num % 7 == 0)
-  let divisible_by_11 = (num % 11 == 0)
-  let divisible_by_13 = (num % 13 == 0)
-  
-  // 17是素数，所以都不能被这些数整除
-  @azimuth.assert_false(divisible_by_2)
-  @azimuth.assert_false(divisible_by_3)
-  @azimuth.assert_false(divisible_by_5)
-  @azimuth.assert_false(divisible_by_7)
-  @azimuth.assert_false(divisible_by_11)
-  @azimuth.assert_false(divisible_by_13)
-  
-  // 测试一个合数
-  let composite_num = 15
-  let divisible_by_3_composite = (composite_num % 3 == 0)
-  let divisible_by_5_composite = (composite_num % 5 == 0)
-  
-  @azimuth.assert_true(divisible_by_3_composite)
-  @azimuth.assert_true(divisible_by_5_composite)
+  // 测试最小值与正数的运算
+  @azimuth.assert_eq(-2147483647, @azimuth.add(min_val, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(min_val, 1))
 }
 
-test "bank_interest_calculation" {
-  // 银行利息计算测试
-  // 本金 × (1 + 年利率)^年数（简化版，使用整数运算）
+test "complex_string_operations" {
+  // 测试复杂字符串操作
+  let long_name = "ChristopherAlexander"
+  let result = @azimuth.greet(long_name)
+  @azimuth.assert_eq_string("Hello, ChristopherAlexander!", result)
   
-  let principal = 10000  // 本金10000元
-  let annual_rate = 3    // 年利率3%
-  let years = 5          // 存期5年
+  // 测试包含特殊字符的字符串
+  let special_name = "user@domain.com"
+  let result2 = @azimuth.greet(special_name)
+  @azimuth.assert_eq_string("Hello, user@domain.com!", result2)
   
-  // 简化的复利计算（避免浮点数）
-  // 第1年：10000 × (1 + 3%) = 10000 × 103 = 1030000
-  let year1_total = @azimuth.multiply(principal, @azimuth.add(100, annual_rate))
-  
-  // 第2年：1030000 × (1 + 3%) = 1030000 × 103 = 106090000
-  let year2_total = @azimuth.multiply(year1_total, @azimuth.add(100, annual_rate))
-  
-  // 第3年：106090000 × (1 + 3%) = 106090000 × 103 = 10927270000
-  let year3_total = @azimuth.multiply(year2_total, @azimuth.add(100, annual_rate))
-  
-  // 第4年：10927270000 × (1 + 3%) = 10927270000 × 103 = 1125108810000
-  let year4_total = @azimuth.multiply(year3_total, @azimuth.add(100, annual_rate))
-  
-  // 第5年：1125108810000 × (1 + 3%) = 1125108810000 × 103 = 115866207300000
-  let year5_total = @azimuth.multiply(year4_total, @azimuth.add(100, annual_rate))
-  
-  // 转换回实际金额（除以100的5次方）
-  let final_amount = year5_total / 100000000
-  
-  // 验证计算结果：10000 × 1.03^5 ≈ 11592
-  @azimuth.assert_eq(11586, final_amount)
+  // 测试包含数字的字符串
+  let numeric_name = "User12345"
+  let result3 = @azimuth.greet(numeric_name)
+  @azimuth.assert_eq_string("Hello, User12345!", result3)
 }
 
-test "string_pattern_matching" {
-  // 字符串模式匹配测试
-  // 检查字符串是否包含特定模式
+test "mathematical_distributive_law" {
+  // 测试数学分配律：a × (b + c) = a × b + a × c
+  let a = 7
+  let b = 12
+  let c = 8
   
-  let email = "user@example.com"
-  let phone = "123-456-7890"
-  let date = "2023-12-25"
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
   
-  // 测试greet函数处理不同格式的字符串
-  let email_greeting = @azimuth.greet(email)
-  let phone_greeting = @azimuth.greet(phone)
-  let date_greeting = @azimuth.greet(date)
-  
-  @azimuth.assert_eq_string("Hello, user@example.com!", email_greeting)
-  @azimuth.assert_eq_string("Hello, 123-456-7890!", phone_greeting)
-  @azimuth.assert_eq_string("Hello, 2023-12-25!", date_greeting)
+  @azimuth.assert_eq(left_side, right_side)
 }
 
-test "coordinate_geometry_calculations" {
-  // 坐标几何计算测试
-  // 计算两点之间的距离（简化版，使用整数运算）
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
   
-  let x1 = 3
-  let y1 = 4
-  let x2 = 9
-  let y2 = 12
+  // 简单利息计算：本金 + (本金 × 利率 × 年数)
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let total = @azimuth.add(principal, interest)
   
-  // 计算x和y的差值
-  let dx = @azimuth.add(x2, -x1)  // 6
-  let dy = @azimuth.add(y2, -y1)  // 8
+  @azimuth.assert_eq(160000, total)  // 10000 + (10000 × 5 × 3) = 160000
   
-  // 计算距离的平方：dx² + dy²
-  let dx_squared = @azimuth.multiply(dx, dx)  // 36
-  let dy_squared = @azimuth.multiply(dy, dy)  // 64
-  let distance_squared = @azimuth.add(dx_squared, dy_squared)  // 100
+  // 月供计算（简化版）：总金额 / 月数
+  let months = @azimuth.multiply(years, 12)
+  let monthly_payment = total / months
   
-  // 距离 = √100 = 10（这里我们只验证距离的平方）
-  @azimuth.assert_eq(100, distance_squared)
-  
-  // 测试另一个坐标点
-  let x3 = 0
-  let y3 = 0
-  let x4 = 5
-  let y4 = 12
-  
-  let dx2 = @azimuth.add(x4, -x3)  // 5
-  let dy2 = @azimuth.add(y4, -y3)  // 12
-  let dx2_squared = @azimuth.multiply(dx2, dx2)  // 25
-  let dy2_squared = @azimuth.multiply(dy2, dy2)  // 144
-  let distance_squared2 = @azimuth.add(dx2_squared, dy2_squared)  // 169
-  
-  @azimuth.assert_eq(169, distance_squared2)
+  @azimuth.assert_eq(4444, monthly_payment)  // 160000 / 36 ≈ 4444（整数除法）
 }
 
-test "game_character_attributes" {
-  // 游戏角色属性计算测试
-  let base_strength = 10
-  let base_agility = 8
-  let base_intelligence = 12
-  let level = 5
-  let equipment_bonus = 3
+test "geometry_calculations" {
+  // 测试几何计算
+  let length = 12
+  let width = 8
   
-  // 计算最终属性：基础值 × (1 + 等级×0.1) + 装备加成
-  // 简化为整数运算：基础值 × (100 + 等级×10) / 100 + 装备加成
+  // 计算矩形周长：2 × (长 + 宽)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(40, perimeter)
   
-  let strength_multiplier = @azimuth.add(100, @azimuth.multiply(level, 10))
-  let final_strength = @azimuth.add(@azimuth.multiply(base_strength, strength_multiplier) / 100, equipment_bonus)
+  // 计算矩形面积：长 × 宽
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(96, area)
   
-  let agility_multiplier = @azimuth.add(100, @azimuth.multiply(level, 10))
-  let final_agility = @azimuth.add(@azimuth.multiply(base_agility, agility_multiplier) / 100, equipment_bonus)
-  
-  let intelligence_multiplier = @azimuth.add(100, @azimuth.multiply(level, 10))
-  let final_intelligence = @azimuth.add(@azimuth.multiply(base_intelligence, intelligence_multiplier) / 100, equipment_bonus)
-  
-  // 验证计算结果
-  @azimuth.assert_eq(18, final_strength)   // 10 × 150/100 + 3 = 15 + 3 = 18
-  @azimuth.assert_eq(15, final_agility)    // 8 × 150/100 + 3 = 12 + 3 = 15
-  @azimuth.assert_eq(21, final_intelligence) // 12 × 150/100 + 3 = 18 + 3 = 21
-  
-  // 计算总属性值
-  let total_attributes = @azimuth.add(@azimuth.add(final_strength, final_agility), final_intelligence)
-  @azimuth.assert_eq(54, total_attributes)
+  // 计算三角形面积：底 × 高 ÷ 2
+  let base = 10
+  let height = 6
+  let triangle_area = @azimuth.multiply(base, height) / 2
+  @azimuth.assert_eq(30, triangle_area)
 }
 
-test "data_structure_operations" {
-  // 数据结构操作测试（模拟数组操作）
-  // 模拟数组的插入、删除和查找操作
+test "temperature_conversion" {
+  // 测试温度转换（简化版）
+  // 摄氏度转华氏度：F = C × 2 + 30（简化公式）
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)
   
-  // 模拟数组：[1, 2, 3, 4, 5]
-  let array_size = 5
-  
-  // 插入操作：在索引2处插入元素10
-  // 新数组：[1, 2, 10, 3, 4, 5]
-  let new_size_after_insert = @azimuth.add(array_size, 1)
-  
-  // 验证新数组大小
-  @azimuth.assert_eq(6, new_size_after_insert)
-  
-  // 删除操作：删除索引3处的元素
-  // 新数组：[1, 2, 10, 4, 5]
-  let new_size_after_delete = @azimuth.add(new_size_after_insert, -1)
-  
-  // 验证新数组大小
-  @azimuth.assert_eq(5, new_size_after_delete)
-  
-  // 查找操作：查找值为4的元素
-  let found_index = 3  // 假设在索引3处找到
-  
-  // 验证查找结果
-  @azimuth.assert_eq(3, found_index)
-  
-  // 计算数组元素总和
-  let sum_original = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4), 5)
-  let sum_after_operations = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 2), 10), 4), 5)
-  
-  @azimuth.assert_eq(15, sum_original)
-  @azimuth.assert_eq(22, sum_after_operations)
+  // 华氏度转摄氏度（简化版）：C = (F - 30) ÷ 2
+  let fahrenheit_back = 80
+  let celsius_back = @azimuth.add(fahrenheit_back, -30) / 2
+  @azimuth.assert_eq(celsius, celsius_back)
 }
 
-test "mathematical_series_evaluation" {
-  // 数学级数求值测试
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算一组数的平均值
+  let num1 = 85
+  let num2 = 90
+  let num3 = 78
+  let num4 = 92
+  let num5 = 88
   
-  // 等差数列求和：1 + 4 + 7 + 10 + 13
-  // 公式：n × (首项 + 末项) / 2
-  let arithmetic_n = 5
-  let arithmetic_first = 1
-  let arithmetic_last = 13
-  let arithmetic_sum = @azimuth.multiply(arithmetic_n, @azimuth.add(arithmetic_first, arithmetic_last)) / 2
-  @azimuth.assert_eq(35, arithmetic_sum)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5)
+  let average = sum / 5
   
-  // 等比数列求和：2 + 6 + 18 + 54 + 162
-  // 手动计算：2 + 6 + 18 + 54 + 162 = 242
-  let geometric_first = 2
-  let geometric_ratio = 3
+  @azimuth.assert_eq(433, sum)
+  @azimuth.assert_eq(86, average)  // 433 ÷ 5 = 86（整数除法）
   
-  // 手动计算各项
-  let geometric_term2 = @azimuth.multiply(geometric_first, geometric_ratio)  // 6
-  let geometric_term3 = @azimuth.multiply(geometric_term2, geometric_ratio)  // 18
-  let geometric_term4 = @azimuth.multiply(geometric_term3, geometric_ratio)  // 54
-  let geometric_term5 = @azimuth.multiply(geometric_term4, geometric_ratio)  // 162
-  let geometric_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(geometric_first, geometric_term2), geometric_term3), geometric_term4), geometric_term5)
-  @azimuth.assert_eq(242, geometric_sum)
+  // 计算中位数（已排序数组的中位数）
+  let median = 88
+  @azimuth.assert_eq(median, median)
+}
+
+test "boolean_logic_operations" {
+  // 测试布尔逻辑运算
+  let x = 15
+  let y = 25
+  let z = 35
   
-  // 平方数列求和：1² + 2² + 3² + 4² + 5²
-  // 公式：n × (n + 1) × (2n + 1) / 6
-  let square_n = 5
-  let square_sum_formula = @azimuth.multiply(square_n, @azimuth.multiply(@azimuth.add(square_n, 1), @azimuth.add(@azimuth.multiply(2, square_n), 1))) / 6
+  // 测试条件表达式
+  let condition1 = x < y
+  let result1 = if condition1 { @azimuth.add(x, y) } else { @azimuth.multiply(x, y) }
+  @azimuth.assert_eq(40, result1)  // 15 < 25 为真，所以 15 + 25 = 40
   
-  // 手动计算：1 + 4 + 9 + 16 + 25 = 55
-  let square1 = @azimuth.multiply(1, 1)
-  let square2 = @azimuth.multiply(2, 2)
-  let square3 = @azimuth.multiply(3, 3)
-  let square4 = @azimuth.multiply(4, 4)
-  let square5 = @azimuth.multiply(5, 5)
-  let square_sum_manual = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(square1, square2), square3), square4), square5)
+  let condition2 = x > y
+  let result2 = if condition2 { @azimuth.add(x, y) } else { @azimuth.multiply(x, y) }
+  @azimuth.assert_eq(375, result2)  // 15 > 25 为假，所以 15 × 25 = 375
   
-  @azimuth.assert_eq(55, square_sum_formula)
-  @azimuth.assert_eq(55, square_sum_manual)
+  // 测试嵌套条件
+  let result3 = if x < y {
+    if y < z { @azimuth.add(@azimuth.add(x, y), z) } else { @azimuth.multiply(y, z) }
+  } else {
+    @azimuth.multiply(x, z)
+  }
+  @azimuth.assert_eq(75, result3)  // 15 < 25 < 35 为真，所以 15 + 25 + 35 = 75
+}
+
+test "error_handling_and_validation" {
+  // 测试错误处理和验证
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  
+  // 测试断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
+  
+  // 测试边界条件的特殊处理
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
 }

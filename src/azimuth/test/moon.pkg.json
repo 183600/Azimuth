@@ -41,6 +41,7 @@
     "standard_moonbit_tests_v2.mbt",
     "new_additional_moonbit_tests.mbt",
     "additional_moonbit_tests.mbt",
+    "additional_moonbit_tests_new.mbt",
     "focused_comprehensive_tests.mbt",
     "new_moonbit_test_cases_final.mbt",
     "azimuth_core_tests.mbt",
