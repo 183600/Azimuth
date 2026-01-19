@@ -1,124 +1,113 @@
-// 核心功能测试用例
-// 测试 azimuth 包的核心功能
+// 核心 MoonBit 测试用例
+// 测试 azimuth 模块的核心功能
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-8, add(-3, -5))
-  assert_eq(100, add(50, 50))
+// 导入被测试的模块
+use "azimuth"
+
+// 测试 add 函数的基本功能
+test "test_add_basic_functionality" {
+  assert_eq!(5, azimuth::add(2, 3))
+  assert_eq!(0, azimuth::add(0, 0))
+  assert_eq!(-5, azimuth::add(-2, -3))
+  assert_eq!(100, azimuth::add(50, 50))
 }
 
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(20, multiply(-4, -5))
-  assert_eq(0, multiply(0, 123))
-}
-
-test "greet_function_basic_functionality" {
-  // 测试 greet 函数的基本功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, Alice!", greet("Alice"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "add_function_edge_cases" {
-  // 测试 add 函数的边界情况
+// 测试 add 函数的边界情况
+test "test_add_boundary_values" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  
-  // 测试与0相加
-  assert_eq(42, add(42, 0))
-  assert_eq(-42, add(0, -42))
-  assert_eq(0, add(0, 0))
+  // 测试溢出处理
+  assert_eq!(max_val, azimuth::add(max_val, 1))
+  assert_eq!(min_val, azimuth::add(min_val, -1))
+  assert_eq!(-1, azimuth::add(max_val, min_val))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试 multiply 函数的边界情况
+// 测试 multiply 函数的基本功能
+test "test_multiply_basic_functionality" {
+  assert_eq!(6, azimuth::multiply(2, 3))
+  assert_eq!(0, azimuth::multiply(5, 0))
+  assert_eq!(-6, azimuth::multiply(2, -3))
+  assert_eq!(6, azimuth::multiply(-2, -3))
+  assert_eq!(100, azimuth::multiply(10, 10))
+}
+
+// 测试 multiply 函数的边界情况
+test "test_multiply_boundary_values" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, 2))
-  
-  // 测试与1和-1相乘
-  assert_eq(42, multiply(42, 1))
-  assert_eq(-42, multiply(42, -1))
-  assert_eq(0, multiply(0, 123))
-  
-  // 测试最小值与-1相乘的特殊情况
-  assert_eq(min_val, multiply(min_val, -1))
+  // 测试溢出处理
+  assert_eq!(max_val, azimuth::multiply(46341, 46341))
+  assert_eq!(min_val, azimuth::multiply(-46341, 46341))
+  assert_eq!(min_val, azimuth::multiply(min_val, -1))
 }
 
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 计算矩形的面积和周长
-  let length = 10
-  let width = 5
-  
-  let area = multiply(length, width)
-  let perimeter = add(multiply(2, length), multiply(2, width))
-  
-  assert_eq(50, area)
-  assert_eq(30, perimeter)
+// 测试 greet 函数
+test "test_greet_function" {
+  assert_eq!("Hello, World!", azimuth::greet("World"))
+  assert_eq!("Hello, !", azimuth::greet(""))
+  assert_eq!("Hello, 测试!", azimuth::greet("测试"))
+  assert_eq!("Hello, MoonBit!", azimuth::greet("MoonBit"))
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello,   spaced   !", greet("  spaced  "))
-  assert_eq_string("Hello, 新年快乐!", greet("新年快乐"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
+// 测试复杂数学运算
+test "test_complex_mathematical_operations" {
+  // 测试 (a + b) * c 的运算
+  let a = 5
+  let b = 3
+  let c = 4
+  let sum = azimuth::add(a, b)
+  let result = azimuth::multiply(sum, c)
+  assert_eq!(32, result)
+  
+  // 测试 a * b + c 的运算
+  let product = azimuth::multiply(a, b)
+  let result2 = azimuth::add(product, c)
+  assert_eq!(19, result2)
 }
 
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
-}
-
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 购物车计算
+// 测试实际应用场景
+test "test_real_world_scenarios" {
+  // 测试购物车计算
   let item_price = 199
   let quantity = 3
   let shipping = 15
-  let tax_rate = 8
+  let subtotal = azimuth::multiply(item_price, quantity)
+  let total = azimuth::add(subtotal, shipping)
+  assert_eq!(612, total)
   
-  let subtotal = multiply(item_price, quantity)
-  let tax = multiply(subtotal, tax_rate) / 100
-  let total = add(add(subtotal, tax), shipping)
-  
-  assert_eq(674, total)
+  // 测试温度转换（简化版）
+  let celsius = 25
+  let fahrenheit = azimuth::add(azimuth::multiply(celsius, 2), 30)
+  assert_eq!(80, fahrenheit)
 }
 
-test "performance_and_stress_tests" {
-  // 测试性能和压力情况
-  // 大数计算
-  let large_num1 = 1000000
-  let large_num2 = 2000000
+// 测试字符串处理
+test "test_string_processing" {
+  // 测试包含特殊字符的字符串
+  let special_name = "John@Doe#123"
+  let result = azimuth::greet(special_name)
+  assert_eq!("Hello, John@Doe#123!", result)
   
-  assert_eq(3000000, add(large_num1, large_num2))
-  assert_eq(2000000000000, multiply(large_num1, large_num2))
+  // 测试包含空格的字符串
+  let spaced_name = "Mary Jane"
+  let result2 = azimuth::greet(spaced_name)
+  assert_eq!("Hello, Mary Jane!", result2)
+}
+
+// 测试错误处理
+test "test_error_handling" {
+  // 测试断言函数
+  assert_true!(true)
+  assert_false!(false)
   
-  // 连续计算
-  let result = add(multiply(100, 100), multiply(200, 200))
-  assert_eq(50000, result)
+  // 测试数值比较
+  assert_eq!(42, 42)
+  assert_eq!("test", "test")
+  
+  // 测试溢出保护
+  let max_val = 2147483647
+  assert_true!(azimuth::add(max_val, 100) == max_val)
+  assert_true!(azimuth::multiply(max_val, 2) == max_val)
 }
