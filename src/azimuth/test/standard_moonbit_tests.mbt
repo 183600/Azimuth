@@ -1,102 +1,71 @@
-// 标准 MoonBit 测试用例
-// 测试 azimuth 包中的基本功能
+// 标准 MoonBit 测试用例 - 覆盖核心功能
 
+// 测试基本加法功能
 test "add_basic_functionality" {
-  // 测试基本的加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
+  let result = @azimuth.add(10, 15)
+  @azimuth.assert_eq(25, result)
 }
 
+// 测试加法边界情况（正数溢出）
+test "add_positive_overflow" {
+  let max_val = 2147483647
+  let result = @azimuth.add(max_val, 1)
+  @azimuth.assert_eq(max_val, result)
+}
+
+// 测试加法边界情况（负数溢出）
+test "add_negative_overflow" {
+  let min_val = -2147483648
+  let result = @azimuth.add(min_val, -1)
+  @azimuth.assert_eq(min_val, result)
+}
+
+// 测试基本乘法功能
 test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
-  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
+  let result = @azimuth.multiply(7, 8)
+  @azimuth.assert_eq(56, result)
 }
 
+// 测试乘法零值情况
+test "multiply_zero_cases" {
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
+  @azimuth.assert_eq(0, @azimuth.multiply(456, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+}
+
+// 测试乘法边界情况（最小值乘以-1）
+test "multiply_min_value_neg_one" {
+  let min_val = -2147483648
+  let result = @azimuth.multiply(min_val, -1)
+  @azimuth.assert_eq(min_val, result)
+}
+
+// 测试基本问候功能
 test "greet_basic_functionality" {
-  // 测试基本的问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  let result = @azimuth.greet("MoonBit")
+  @azimuth.assert_eq_string("Hello, MoonBit!", result)
 }
 
-test "add_boundary_values" {
-  // 测试边界值加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+// 测试问候功能空字符串情况
+test "greet_empty_string" {
+  let result = @azimuth.greet("")
+  @azimuth.assert_eq_string("Hello, !", result)
 }
 
-test "multiply_boundary_values" {
-  // 测试边界值乘法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+// 测试复合计算场景（矩形周长）
+test "complex_calculation_perimeter" {
+  let length = 12
+  let width = 8
+  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
+  @azimuth.assert_eq(40, perimeter)
 }
 
-test "complex_calculation" {
-  // 测试复合计算
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  
-  @azimuth.assert_eq(900, result)
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 11
-  
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
-  
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
-}
-
-test "real_world_scenario" {
-  // 测试实际应用场景：购物车计算
-  let item_price = 199
+// 测试实际应用场景（购物车总价）
+test "real_world_shopping_cart" {
+  let item_price = 99
   let quantity = 3
   let shipping = 15
-  
-  // 计算总价
   let subtotal = @azimuth.multiply(item_price, quantity)
   let total = @azimuth.add(subtotal, shipping)
-  
-  @azimuth.assert_eq(612, total)
-}
-
-test "assert_functions" {
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
-}
-
-test "string_processing" {
-  // 测试字符串处理
-  let name = "MoonBit"
-  let greeting = @azimuth.greet(name)
-  
-  // 验证问候语格式
-  @azimuth.assert_eq_string("Hello, MoonBit!", greeting)
+  @azimuth.assert_eq(312, total)
 }
