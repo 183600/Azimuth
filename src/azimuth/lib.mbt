@@ -4527,4 +4527,94 @@ test "real_world_calculation" {
   assert_eq(764, final_total)  // (299*2 + 199*1 - 50) * 1.1 = 694 * 1.1 = 763.4 ≈ 763
 }
 
+// 新增的标准 MoonBit 测试用例
+// 测试 azimuth 包中的核心函数
+
+test "add_function_basic" {
+  // 测试基本的加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-10, add(-3, -7))
+}
+
+test "add_function_edge_cases" {
+  // 测试加法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试与0相加
+  assert_eq(42, add(42, 0))
+  assert_eq(42, add(0, 42))
+  
+  // 测试溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+}
+
+test "multiply_function_basic" {
+  // 测试基本的乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(0, multiply(5, 0))
+}
+
+test "multiply_function_edge_cases" {
+  // 测试乘法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试与1相乘
+  assert_eq(42, multiply(42, 1))
+  assert_eq(42, multiply(1, 42))
+  
+  // 测试与-1相乘
+  assert_eq(-42, multiply(42, -1))
+  assert_eq(-42, multiply(-1, 42))
+  
+  // 测试最小值的特殊情况
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "greet_function_standard" {
+  // 测试标准的问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+}
+
+test "greet_function_special_cases" {
+  // 测试问候函数的特殊情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "complex_calculation" {
+  // 测试复杂计算：(a + b) * c - d
+  let a = 5
+  let b = 3
+  let c = 4
+  let d = 10
+  
+  let sum = add(a, b)  // 8
+  let product = multiply(sum, c)  // 32
+  let result = add(product, -d)  // 22
+  
+  assert_eq(22, result)
+}
+
+test "real_world_scenario" {
+  // 测试实际应用场景：计算购物车总价
+  let item1_price = 100
+  let item1_quantity = 2
+  let item2_price = 50
+  let item2_quantity = 3
+  
+  let total1 = multiply(item1_price, item1_quantity)  // 200
+  let total2 = multiply(item2_price, item2_quantity)  // 150
+  let cart_total = add(total1, total2)  // 350
+  
+  assert_eq(350, cart_total)
+}
+
 
