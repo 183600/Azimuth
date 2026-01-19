@@ -1,150 +1,136 @@
 // 标准 MoonBit 测试用例
-// 为 Azimuth 项目添加的综合测试
+// 测试 azimuth 模块的核心功能
 
-test "arithmetic_sequence_sum" {
-  // 测试等差数列求和：1 + 2 + 3 + 4 + 5 = 15
-  let sum = add(add(add(add(1, 2), 3), 4), 5)
-  assert_eq(15, sum)
-  
-  // 测试更复杂的等差数列：10 + 20 + 30 + 40 = 100
-  let complex_sum = add(add(add(10, 20), 30), 40)
-  assert_eq(100, complex_sum)
+// 导入 azimuth 模块
+use azimuth
+
+test "add_function_basic_functionality" {
+  // 测试 add 函数的基本功能
+  assert_eq(10, azimuth.add(3, 7))
+  assert_eq(0, azimuth.add(5, -5))
+  assert_eq(-3, azimuth.add(-8, 5))
 }
 
-test "geometric_progression" {
-  // 测试等比数列：2 × 2 × 2 × 2 = 16
-  let product = multiply(multiply(multiply(2, 2), 2), 2)
-  assert_eq(16, product)
-  
-  // 测试混合符号的等比数列：-2 × 2 × -2 × 2 = 16
-  let mixed_product = multiply(multiply(multiply(-2, 2), -2), 2)
-  assert_eq(16, mixed_product)
-}
-
-test "string_processing_variations" {
-  // 测试不同类型的字符串处理
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 2024!", greet("2024"))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
-  assert_eq_string("Hello,   spaced   !", greet("  spaced  "))
-  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
-}
-
-test "boundary_value_combinations" {
-  // 测试边界值的组合运算
+test "add_function_edge_cases" {
+  // 测试 add 函数的边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试最大值与最小值的运算
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
+  // 测试零值
+  assert_eq(5, azimuth.add(5, 0))
+  assert_eq(5, azimuth.add(0, 5))
+  assert_eq(0, azimuth.add(0, 0))
   
-  // 测试边界值附近的运算
-  assert_eq(2147483646, add(max_val, -1))
-  assert_eq(-2147483647, add(min_val, 1))
-  assert_eq(0, multiply(max_val, 0))
+  // 测试溢出保护
+  assert_eq(max_val, azimuth.add(max_val, 1))
+  assert_eq(min_val, azimuth.add(min_val, -1))
+}
+
+test "multiply_function_basic_functionality" {
+  // 测试 multiply 函数的基本功能
+  assert_eq(15, azimuth.multiply(3, 5))
+  assert_eq(-12, azimuth.multiply(3, -4))
+  assert_eq(12, azimuth.multiply(-3, -4))
+}
+
+test "multiply_function_edge_cases" {
+  // 测试 multiply 函数的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试零值和一值
+  assert_eq(0, azimuth.multiply(5, 0))
+  assert_eq(5, azimuth.multiply(5, 1))
+  assert_eq(-5, azimuth.multiply(5, -1))
+  
+  // 测试溢出保护
+  assert_eq(max_val, azimuth.multiply(46341, 46341))
+  assert_eq(min_val, azimuth.multiply(min_val, -1))
+}
+
+test "greet_function_various_inputs" {
+  // 测试 greet 函数的各种输入
+  assert_eq_string("Hello, World!", azimuth.greet("World"))
+  assert_eq_string("Hello, !", azimuth.greet(""))
+  assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
+  assert_eq_string("Hello, 测试!", azimuth.greet("测试"))
+}
+
+test "complex_calculation_scenarios" {
+  // 测试复杂计算场景
+  // 计算矩形面积和周长
+  let length = 8
+  let width = 5
+  
+  let area = azimuth.multiply(length, width)
+  let perimeter = azimuth.add(azimuth.multiply(2, length), azimuth.multiply(2, width))
+  
+  assert_eq(40, area)
+  assert_eq(26, perimeter)
 }
 
 test "mathematical_properties" {
-  // 测试数学性质：交换律和结合律
+  // 测试数学性质
   let a = 12
-  let b = 8
-  let c = 5
+  let b = 7
   
-  // 加法交换律：a + b = b + a
-  assert_eq(add(a, b), add(b, a))
+  // 加法交换律
+  assert_eq(azimuth.add(a, b), azimuth.add(b, a))
   
-  // 乘法交换律：a × b = b × a
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 乘法交换律
+  assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
   
-  // 加法结合律：(a + b) + c = a + (b + c)
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律：(a × b) × c = a × (b × c)
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  // 分配律
+  let c = 3
+  assert_eq(
+    azimuth.multiply(a, azimuth.add(b, c)),
+    azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
+  )
 }
 
-test "real_world_calculations" {
+test "real_world_application" {
   // 测试实际应用场景：购物车计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let shipping = 20
+  let item_price = 199
+  let quantity = 3
+  let shipping = 15
+  let tax_rate = 10
   
   // 计算商品总价
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let subtotal = add(total1, total2)
-  let final_total = add(subtotal, shipping)
+  let subtotal = azimuth.multiply(item_price, quantity)
+  // 计算税费
+  let tax = azimuth.multiply(subtotal, tax_rate) / 100
+  // 计算最终总价
+  let total = azimuth.add(azimuth.add(subtotal, tax), shipping)
   
-  // 验证总价：199×2 + 299×1 + 20 = 398 + 299 + 20 = 717
-  assert_eq(717, final_total)
+  assert_eq(674, total)
 }
 
-test "error_handling_validation" {
-  // 测试错误处理和边界情况
+test "boundary_value_combinations" {
+  // 测试边界值组合
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  // 测试极值组合
+  assert_eq(-1, azimuth.add(max_val, min_val))
+  assert_eq(0, azimuth.multiply(max_val, 0))
+  assert_eq(min_val, azimuth.multiply(min_val, 1))
   
-  // 测试溢出保护
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(add(min_val, -1) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
+  // 测试连续运算
+  let result = azimuth.add(
+    azimuth.multiply(1000, 2),
+    azimuth.multiply(500, 3)
+  )
+  assert_eq(3500, result)
 }
 
-test "algorithmic_complexity" {
-  // 测试算法复杂度计算：阶乘和幂运算
-  // 计算 5! = 5 × 4 × 3 × 2 × 1 = 120
-  let factorial = multiply(multiply(multiply(multiply(5, 4), 3), 2), 1)
-  assert_eq(120, factorial)
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))
+  assert_eq_string("Hello, 12345!", azimuth.greet("12345"))
+  assert_eq_string("Hello, spaces   !", azimuth.greet("spaces  "))
   
-  // 计算 2^6 = 2 × 2 × 2 × 2 × 2 × 2 = 64
-  let power = multiply(multiply(multiply(multiply(multiply(2, 2), 2), 2), 2), 2)
-  assert_eq(64, power)
-}
-
-test "data_structure_simulation" {
-  // 模拟数据结构操作：数组索引计算
-  let row = 3
-  let col = 4
-  let width = 10
-  
-  // 计算二维数组在一维数组中的索引：index = row × width + col
-  let index = add(multiply(row, width), col)
-  assert_eq(34, index)
-  
-  // 测试边界索引
-  let first_index = add(multiply(0, width), 0)
-  let last_index = add(multiply(9, width), 9)
-  assert_eq(0, first_index)
-  assert_eq(99, last_index)
-}
-
-test "comprehensive_integration" {
-  // 综合集成测试：多个函数的组合使用
-  let base_value = 100
-  let multiplier = 3
-  let increment = 50
-  let name = "MoonBit"
-  
-  // 计算最终值：(base_value × multiplier) + increment
-  let calculated_value = add(multiply(base_value, multiplier), increment)
-  assert_eq(350, calculated_value)
-  
-  // 生成最终消息
-  let final_message = greet(name)
-  assert_eq_string("Hello, MoonBit!", final_message)
-  
-  // 验证计算结果的属性
-  assert_true(calculated_value > base_value)
-  assert_true(calculated_value % 10 == 0)
+  // 测试长字符串
+  let long_string = "ThisIsAVeryLongStringForTestingPurposes"
+  assert_eq_string("Hello, " + long_string + "!", azimuth.greet(long_string))
 }
