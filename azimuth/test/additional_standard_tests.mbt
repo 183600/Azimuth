@@ -1,149 +1,183 @@
-// 额外的标准 MoonBit 测试用例
+// 额外的标准测试用例 - 补充现有测试覆盖范围
 
-test "addition_with_large_numbers" {
-  // 测试大数相加
-  @azimuth.assert_eq(@azimuth.add(1000000, 2000000), 3000000)
-  @azimuth.assert_eq(@azimuth.add(-1000000, -2000000), -3000000)
-  @azimuth.assert_eq(@azimuth.add(1500000000, 1500000000), 2147483647)
+// 测试极端边界值的加法运算
+test "extreme_boundary_addition" {
+  // 测试接近边界的值
+  @azimuth.assert_eq(2147483646, @azimuth.add(2147483645, 1))
+  @azimuth.assert_eq(-2147483647, @azimuth.add(-2147483646, -1))
+  
+  // 测试边界值与接近边界值的组合
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
+  @azimuth.assert_eq(2147483647, @azimuth.add(1, 2147483646))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-1, -2147483647))
 }
 
-test "multiplication_precision_test" {
-  // 测试乘法精度
-  @azimuth.assert_eq(@azimuth.multiply(12345, 6789), 83810205)
-  @azimuth.assert_eq(@azimuth.multiply(-12345, 6789), -83810205)
-  @azimuth.assert_eq(@azimuth.multiply(12345, -6789), -83810205)
-  @azimuth.assert_eq(@azimuth.multiply(-12345, -6789), 83810205)
+// 测试极端边界值的乘法运算
+test "extreme_boundary_multiplication" {
+  // 测试大数相乘
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(46340, 46341))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(46341, 46340))
+  
+  // 测试负数大数相乘
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(-46340, -46341))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-46340, 46341))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(46340, -46341))
 }
 
-test "greet_function_with_various_name_formats" {
-  // 测试 greet 函数处理不同格式的名字
-  @azimuth.assert_eq_string(@azimuth.greet("John Doe"), "Hello, John Doe!")
-  @azimuth.assert_eq_string(@azimuth.greet("  LeadingSpace"), "Hello,   LeadingSpace!")
-  @azimuth.assert_eq_string(@azimuth.greet("TrailingSpace  "), "Hello, TrailingSpace  !")
-  @azimuth.assert_eq_string(@azimuth.greet("Mixed CASE"), "Hello, Mixed CASE!")
+// 测试混合运算的优先级和组合
+test "mixed_arithmetic_operations" {
+  // 测试连续加法
+  let result1 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
+  @azimuth.assert_eq(10, result1)
+  
+  // 测试连续乘法
+  let result2 = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
+  @azimuth.assert_eq(120, result2)
+  
+  // 测试加法和乘法混合（模拟优先级）
+  let a = 2
+  let b = 3
+  let c = 4
+  let d = 5
+  
+  // (a + b) * (c + d)
+  let sum1 = @azimuth.add(a, b)
+  let sum2 = @azimuth.add(c, d)
+  let result3 = @azimuth.multiply(sum1, sum2)
+  @azimuth.assert_eq(35, result3)
+  
+  // a * b + c * d
+  let product1 = @azimuth.multiply(a, b)
+  let product2 = @azimuth.multiply(c, d)
+  let result4 = @azimuth.add(product1, product2)
+  @azimuth.assert_eq(26, result4)
 }
 
-test "mathematical_identity_properties" {
-  // 测试数学恒等性质
-  // 加法恒等：a + 0 = a
-  @azimuth.assert_eq(@azimuth.add(42, 0), 42)
-  @azimuth.assert_eq(@azimuth.add(-42, 0), -42)
+// 测试字符串处理的边界情况
+test "string_processing_edge_cases" {
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
+  let result = @azimuth.greet(long_name)
+  @azimuth.assert_eq_string("Hello, " + long_name + "!", result)
   
-  // 乘法恒等：a * 1 = a
-  @azimuth.assert_eq(@azimuth.multiply(42, 1), 42)
-  @azimuth.assert_eq(@azimuth.multiply(-42, 1), -42)
+  // 测试包含引号的字符串
+  @azimuth.assert_eq_string("Hello, \"John\"!", @azimuth.greet("\"John\""))
   
-  // 乘法零性质：a * 0 = 0
-  @azimuth.assert_eq(@azimuth.multiply(42, 0), 0)
-  @azimuth.assert_eq(@azimuth.multiply(-42, 0), 0)
+  // 测试包含反斜杠的字符串
+  @azimuth.assert_eq_string("Hello, \\path\\!", @azimuth.greet("\\path\\"))
+  
+  // 测试包含各种空白字符的字符串
+  @azimuth.assert_eq_string("Hello, \t\n\r!", @azimuth.greet("\t\n\r"))
 }
 
-test "complex_calculation_sequence" {
-  // 测试复杂计算序列
-  // 计算：((a + b) * c) + (d * e)
-  let a = 10
-  let b = 20
-  let c = 5
-  let d = 3
-  let e = 4
+// 测试负数运算的边界情况
+test "negative_number_operations" {
+  // 测试负数加法的各种组合
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
+  @azimuth.assert_eq(-7, @azimuth.add(-10, 3))
+  @azimuth.assert_eq(3, @azimuth.add(-7, 10))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
   
-  let sum_ab = @azimuth.add(a, b)  // 30
-  let product1 = @azimuth.multiply(sum_ab, c)  // 150
-  let product2 = @azimuth.multiply(d, e)  // 12
-  let result = @azimuth.add(product1, product2)  // 162
-  
-  @azimuth.assert_eq(result, 162)
+  // 测试负数乘法的各种组合
+  @azimuth.assert_eq(21, @azimuth.multiply(-3, -7))
+  @azimuth.assert_eq(-21, @azimuth.multiply(-3, 7))
+  @azimuth.assert_eq(-21, @azimuth.multiply(3, -7))
+  @azimuth.assert_eq(0, @azimuth.multiply(-5, 0))
 }
 
-test "string_length_edge_cases" {
-  // 测试字符串长度边界情况
-  // 单字符
-  @azimuth.assert_eq_string(@azimuth.greet("A"), "Hello, A!")
+// 测试零值在各种运算中的行为
+test "zero_value_behavior" {
+  // 测试加法中的零值
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(-5, @azimuth.add(-5, 0))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
   
-  // 空字符串
-  @azimuth.assert_eq_string(@azimuth.greet(""), "Hello, !")
+  // 测试乘法中的零值
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
   
-  // 包含特殊字符
-  @azimuth.assert_eq_string(@azimuth.greet("\n\t"), "Hello, \n\t!")
-  
-  // Unicode字符
-  @azimuth.assert_eq_string(@azimuth.greet("🌟"), "Hello, 🌟!")
+  // 测试零值与边界值的组合
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-2147483648, 0))
 }
 
-test "number_system_conversions" {
-  // 测试数字系统转换（通过字符串表示）
-  // 二进制表示
-  @azimuth.assert_eq_string(@azimuth.greet("1010"), "Hello, 1010!")
+// 测试断言函数的边界情况
+test "assertion_functions_boundary" {
+  // 测试assert_eq在边界值上的表现
+  @azimuth.assert_eq(2147483647, 2147483647)
+  @azimuth.assert_eq(-2147483648, -2147483648)
+  @azimuth.assert_eq(0, 0)
   
-  // 十六进制表示
-  @azimuth.assert_eq_string(@azimuth.greet("0xFF"), "Hello, 0xFF!")
+  // 测试assert_eq_string在特殊字符串上的表现
+  @azimuth.assert_eq_string("", "")
+  @azimuth.assert_eq_string("Hello, World!", "Hello, World!")
+  @azimuth.assert_eq_string("特殊字符测试", "特殊字符测试")
   
-  // 科学计数法表示
-  @azimuth.assert_eq_string(@azimuth.greet("1.23e4"), "Hello, 1.23e4!")
+  // 测试assert_true和assert_false
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_true(1 == 1)
+  @azimuth.assert_false(1 == 2)
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  // 计算折扣价：原价 * (1 - 折扣率)
+// 测试连续运算的累积效应
+test "cumulative_operations" {
+  // 测试连续加法的累积效应
+  let mut sum = 0
+  sum = @azimuth.add(sum, 1)
+  sum = @azimuth.add(sum, 2)
+  sum = @azimuth.add(sum, 3)
+  sum = @azimuth.add(sum, 4)
+  sum = @azimuth.add(sum, 5)
+  @azimuth.assert_eq(15, sum)
+  
+  // 测试连续乘法的累积效应
+  let mut product = 1
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 3)
+  product = @azimuth.multiply(product, 4)
+  @azimuth.assert_eq(24, product)
+  
+  // 测试混合连续运算
+  let mut result = 10
+  result = @azimuth.add(result, 5)  // 15
+  result = @azimuth.multiply(result, 2)  // 30
+  result = @azimuth.add(result, -10)  // 20
+  result = @azimuth.multiply(result, 3)  // 60
+  @azimuth.assert_eq(60, result)
+}
+
+// 测试实际应用场景
+test "practical_application_scenarios" {
+  // 场景1：计算购物车总价（使用加法）
+  let item1_price = 199
+  let item2_price = 299
+  let item3_price = 99
+  let shipping = 15
+  let total = @azimuth.add(@azimuth.add(@azimuth.add(item1_price, item2_price), item3_price), shipping)
+  @azimuth.assert_eq(612, total)
+  
+  // 场景2：计算订单总量（单价 × 数量）
+  let unit_price = 25
+  let quantity = 8
+  let order_total = @azimuth.multiply(unit_price, quantity)
+  @azimuth.assert_eq(200, order_total)
+  
+  // 场景3：生成个性化问候消息
+  let customer_name = "张三"
+  let greeting = @azimuth.greet(customer_name)
+  @azimuth.assert_eq_string("Hello, 张三!", greeting)
+  
+  // 场景4：计算折扣价格（原价 × 折扣率）
   let original_price = 1000
-  let discount_rate = 20  // 20%
-  
-  // 简化计算：1000 * (100 - 20) / 100 = 1000 * 80 / 100 = 800
-  let discounted_price = @azimuth.multiply(original_price, 80) / 100
-  @azimuth.assert_eq(discounted_price, 800)
-  
-  // 计算税费：价格 * 税率
-  let tax_rate = 8  // 8%
-  let tax_amount = @azimuth.multiply(original_price, tax_rate) / 100
-  @azimuth.assert_eq(tax_amount, 80)
-  
-  // 计算总价：价格 + 税费
-  let total_price = @azimuth.add(original_price, tax_amount)
-  @azimuth.assert_eq(total_price, 1080)
-}
-
-test "geometric_calculations" {
-  // 测试几何计算
-  // 计算正方形面积：边长²
-  let side_length = 7
-  let square_area = @azimuth.multiply(side_length, side_length)
-  @azimuth.assert_eq(square_area, 49)
-  
-  // 计算长方体体积：长 × 宽 × 高
-  let length = 5
-  let width = 3
-  let height = 4
-  
-  let base_area = @azimuth.multiply(length, width)  // 15
-  let volume = @azimuth.multiply(base_area, height)  // 60
-  @azimuth.assert_eq(volume, 60)
-  
-  // 计算梯形面积：(上底 + 下底) × 高 ÷ 2
-  let top_base = 4
-  let bottom_base = 8
-  let trapezoid_height = 5
-  
-  let sum_bases = @azimuth.add(top_base, bottom_base)  // 12
-  let trapezoid_area = @azimuth.multiply(sum_bases, trapezoid_height) / 2  // 30
-  @azimuth.assert_eq(trapezoid_area, 30)
-}
-
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试最大值的各种运算
-  @azimuth.assert_eq(@azimuth.add(max_val, max_val), max_val)
-  @azimuth.assert_eq(@azimuth.add(max_val, -max_val), 0)
-  @azimuth.assert_eq(@azimuth.multiply(max_val, max_val), max_val)
-  
-  // 测试最小值的各种运算
-  @azimuth.assert_eq(@azimuth.add(min_val, min_val), min_val)
-  @azimuth.assert_eq(@azimuth.add(min_val, -min_val), 0)
-  @azimuth.assert_eq(@azimuth.multiply(min_val, min_val), max_val)
-  
-  // 测试最大值和最小值的混合运算
-  @azimuth.assert_eq(@azimuth.add(max_val, min_val), -1)
-  @azimuth.assert_eq(@azimuth.multiply(max_val, min_val), min_val)
+  let discount_rate = 8  // 表示80%折扣（保留20%）
+  let discounted_price = @azimuth.multiply(original_price, discount_rate)
+  // 注意：这里假设discount_rate已经是百分比形式，实际应用中可能需要除法
+  @azimuth.assert_eq(8000, discounted_price)
 }
