@@ -200,5 +200,6 @@
         "../../azimuth_enhanced_test_cases.mbt",
         "azimuth_additional_test_cases.mbt",
         "azimuth_additional_standard_tests.mbt",
-        "azimuth_new_user_tests.mbt"
+        "azimuth_new_user_tests.mbt",
+        "azimuth_standard_moonbit_tests.mbt"
         ]}
