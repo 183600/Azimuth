@@ -56,8 +56,37 @@ azimuth/lib.mbt:2858:7-2858:18 [E0002] Warning (unused_value): Unused variable '
 azimuth/lib.mbt:2884:7-2884:16 [E0002] Warning (unused_value): Unused variable 'data_byte'
 azimuth/lib.mbt:2885:7-2885:16 [E0002] Warning (unused_value): Unused variable 'data_bits'
 azimuth/lib.mbt:2894:7-2894:20 [E0002] Warning (unused_value): Unused variable 'received_data'
+azimuth/lib.mbt:4564:7-4564:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+azimuth/lib.mbt:4825:7-4825:16 [E0002] Warning (unused_value): Unused variable 'start_min'
+azimuth/lib.mbt:4913:7-4913:13 [E0002] Warning (unused_value): Unused variable 'number'
+azimuth/lib.mbt:4925:7-4925:19 [E0002] Warning (unused_value): Unused variable 'integer_part'
+azimuth/lib.mbt:4926:7-4926:19 [E0002] Warning (unused_value): Unused variable 'decimal_part'
 Generating azimuth.wasm...
 Testing azimuth...
+Checking standard_azimuth_test_suite.mbt...
+Found 10 tests in standard_azimuth_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_moonbit_test_suite.mbt...
+Found 10 tests in standard_moonbit_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking azimuth_new_test_cases.mbt...
 azimuth_test/azimuth_new_test_cases.mbt:10:7-10:10 [E0002] Warning (unused_value): Unused variable 'sum'
 azimuth_test/azimuth_new_test_cases.mbt:11:7-11:16 [E0002] Warning (unused_value): Unused variable 'check_sum'
@@ -173,7 +202,8 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_core_tests.mbt...
-Found 9 tests in standard_core_tests.mbt
+Found 10 tests in standard_core_tests.mbt
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -4848,6 +4878,18 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking azimuth_standard_tests.mbt...
+Found 10 tests in azimuth_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking user_new_additional_tests.mbt...
 Found 9 tests in user_new_additional_tests.mbt
 test ... ok
@@ -4946,6 +4988,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1559 tests passed, 0 failed
+1590 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
