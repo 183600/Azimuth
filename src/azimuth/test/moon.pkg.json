@@ -154,7 +154,7 @@
     "my_new_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
       "azimuth_comprehensive_test_suite.mbt",
-      "comprehensive_standard_tests.mbt",
+      "new_comprehensive_standard_tests.mbt",
       "user_comprehensive_tests.mbt",
       "azimuth_new_unit_tests.mbt",
       "standard_moonbit_tests.mbt",

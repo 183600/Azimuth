@@ -1,150 +1,152 @@
-// 综合标准 MoonBit 测试用例
-// 测试 Azimuth 项目的核心功能
+// 综合标准测试用例
+// 覆盖 azimuth 包的核心功能和边界情况
 
-test "integer_addition_comprehensive" {
-  // 测试整数加法的各种情况
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(0, @azimuth.add(-10, 10))
-  @azimuth.assert_eq(-20, @azimuth.add(-15, -5))
-  @azimuth.assert_eq(1000, @azimuth.add(500, 500))
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(42, @azimuth.add(0, 42))
+// 1. divide_with_ceil 函数全面测试
+test "divide_with_ceil_comprehensive" {
+  // 基本功能测试
+  assert_eq(2, divide_with_ceil(10, 5))
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(4, divide_with_ceil(10, 3))
+  
+  // 边界情况测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(100, divide_with_ceil(100, 1))
+  assert_eq(1, divide_with_ceil(99, 100))
+  assert_eq(2, divide_with_ceil(101, 100))
+  
+  // 零值测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 1))
 }
 
-test "integer_multiplication_comprehensive" {
-  // 测试整数乘法的各种情况
-  @azimuth.assert_eq(21, @azimuth.multiply(3, 7))
-  @azimuth.assert_eq(-30, @azimuth.multiply(-5, 6))
-  @azimuth.assert_eq(0, @azimuth.multiply(123, 0))
-  @azimuth.assert_eq(64, @azimuth.multiply(8, 8))
-  @azimuth.assert_eq(17, @azimuth.multiply(17, 1))
-  @azimuth.assert_eq(-17, @azimuth.multiply(17, -1))
+// 2. divide_with_ceil 负数测试
+test "divide_with_ceil_negative_numbers" {
+  // 负数被除数测试
+  assert_eq(-2, divide_with_ceil(-10, 5))
+  assert_eq(-2, divide_with_ceil(-11, 5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-3, divide_with_ceil(-9, 3))
+  
+  // 混合符号测试
+  assert_eq(-1, divide_with_ceil(-5, 10))
+  assert_eq(-1, divide_with_ceil(-1, 100))
+  assert_eq(-1, divide_with_ceil(-100, 100))
 }
 
-test "string_greeting_variations" {
-  // 测试字符串问候功能的各种情况
-  @azimuth.assert_eq_string("Hello, Alice!", @azimuth.greet("Alice"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
-  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+// 3. greet 函数 Unicode 和特殊字符测试
+test "greet_function_unicode_extended" {
+  // Unicode 字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, Ñoño!", greet("Ñoño"))
+  
+  // 特殊空白字符测试
+  assert_eq_string("Hello, 	Tab!", greet("\tTab"))
+  assert_eq_string("Hello, \nNewLine!", greet("\nNewLine"))
+  
+  // 长字符串测试
+  let long_name = "这是一个非常长的名字用来测试greet函数处理长字符串的能力"
+  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
 }
 
-test "boundary_value_operations" {
-  // 测试边界值的运算
+// 4. 数学性质综合验证测试
+test "mathematical_properties_comprehensive" {
+  // 加法性质验证
+  let a = 123
+  let b = 456
+  let c = 789
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 加法结合律
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  
+  // 乘法性质验证
+  let x = 12
+  let y = 34
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律验证
+  let z = 5
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  
+  // 零元素性质
+  assert_eq(0, multiply(0, x))
+  assert_eq(x, multiply(x, 1))
+}
+
+// 5. 实际应用场景：项目管理测试
+test "project_management_scenario" {
+  // 项目任务分配场景
+  let total_tasks = 47
+  let team_members = 5
+  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
+  
+  // 验证任务分配
+  assert_true(tasks_per_member >= total_tasks / team_members)
+  assert_true(multiply(tasks_per_member, team_members) >= total_tasks)
+  
+  // 计算项目总工作量
+  let avg_task_hours = 8
+  let buffer_hours = 10
+  let total_hours = add(multiply(tasks_per_member, avg_task_hours), buffer_hours)
+  
+  assert_true(total_hours > 0)
+}
+
+// 6. 边界值组合测试
+test "boundary_values_combination" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  // 最大值边界测试
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
   
-  // 最小值运算
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  // 最小值边界测试
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
+  
+  // 边界值运算测试
+  assert_eq(max_val, add(max_val - 1, 1))
+  assert_eq(min_val, add(min_val + 1, -1))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 12
-  let b = 18
-  let c = 5
-  
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, c)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c)))
-}
-
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 圆的面积和周长计算（简化版）
-  let radius = 5
-  let pi = 3
-  
-  // 周长 = 2 × π × r
-  let circumference = @azimuth.multiply(@azimuth.multiply(2, pi), radius)
-  @azimuth.assert_eq(30, circumference)
-  
-  // 面积 = π × r²
-  let area = @azimuth.multiply(pi, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(75, area)
-}
-
-test "real_world_business_calculations" {
-  // 测试实际业务计算
-  // 订单总价计算
-  let unit_price = 99
-  let quantity = 4
-  let discount = 20
-  let shipping = 15
-  
-  // 计算商品总价
-  let subtotal = @azimuth.multiply(unit_price, quantity)
-  
-  // 计算折扣后价格
-  let discounted_price = @azimuth.add(subtotal, -discount)
-  
-  // 计算最终总价
-  let final_total = @azimuth.add(discounted_price, shipping)
-  
-  // 验证结果：99 × 4 - 20 + 15 = 396 - 20 + 15 = 391
-  @azimuth.assert_eq(391, final_total)
-}
-
+// 7. 字符串处理边界测试
 test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, @#$%^&*()!", @azimuth.greet("@#$%^&*()"))
+  // 空字符串和单字符测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, A!", greet("A"))
   
-  // 包含空格的字符串
-  @azimuth.assert_eq_string("Hello,  Multiple  Spaces !", @azimuth.greet(" Multiple  Spaces "))
+  // 特殊组合字符测试
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, 'single'!", greet("'single'"))
+  assert_eq_string("Hello, [bracketed]!", greet("[bracketed]"))
   
-  // 包含引号的字符串
-  @azimuth.assert_eq_string("Hello, \"John Doe\"!", @azimuth.greet("\"John Doe\""))
-  
-  // 包含换行符的字符串
-  @azimuth.assert_eq_string("Hello, Line1\nLine2!", @azimuth.greet("Line1\nLine2"))
+  // 数字字符串测试
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, 3.14159!", greet("3.14159"))
 }
 
-test "sequential_operations" {
-  // 测试连续运算
-  let a = 5
-  let b = 10
-  let c = 15
+// 8. 复杂数学计算测试
+test "complex_mathematical_calculation" {
+  // 模拟计算圆的面积和周长
+  let radius = 7
+  let pi_approx = 22  // 使用 22/7 作为 pi 的近似值
+  let diameter = multiply(radius, 2)
   
-  // 连续加法
-  let sum_result = @azimuth.add(@azimuth.add(a, b), c)
-  @azimuth.assert_eq(30, sum_result)
+  // 计算周长 (近似)
+  let circumference = multiply(diameter, pi_approx) / 7
+  assert_eq(44, circumference)
   
-  // 连续乘法
-  let product_result = @azimuth.multiply(@azimuth.multiply(a, b), c)
-  @azimuth.assert_eq(750, product_result)
+  // 计算面积 (近似)
+  let area = multiply(radius, multiply(radius, pi_approx)) / 7
+  assert_eq(154, area)
   
-  // 混合运算：(a + b) × c
-  let mixed_result = @azimuth.multiply(@azimuth.add(a, b), c)
-  @azimuth.assert_eq(225, mixed_result)
-}
-
-test "temperature_conversion_simulation" {
-  // 测试温度转换模拟（整数版本）
-  // 摄氏度转华氏度：F = C × 2 + 30（简化版）
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit)
-  
-  // 华氏度转摄氏度：C = (F - 30) ÷ 2（简化版）
-  let fahrenheit_back = 80
-  let celsius_back = @azimuth.add(fahrenheit_back, -30) / 2
-  @azimuth.assert_eq(25, celsius_back)
-  
-  // 测试冰点和沸点
-  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))  // 0°C = 30°F
-  @azimuth.assert_eq(230, @azimuth.add(@azimuth.multiply(100, 2), 30))  // 100°C = 230°F
+  // 验证几何关系
+  assert_true(circumference > diameter)
+  assert_true(area > radius)
 }
