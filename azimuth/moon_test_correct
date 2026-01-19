@@ -145,4 +145,15 @@ if [ -f "azimuth_new_test_suite.mbt" ]; then
   fi
 fi
 
+if [ -f "standard_azimuth_tests.mbt" ]; then
+  echo "Checking standard_azimuth_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test standard_azimuth_tests.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "standard_azimuth_tests.mbt ... ok"
+  else
+    echo "standard_azimuth_tests.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"
