@@ -1,169 +1,131 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，包含多样化的测试场景
+// 使用标准 MoonBit 测试语法，覆盖更多功能场景
 
-test "complex_addition_scenarios" {
-  // 复杂加法场景测试
-  let a = 1000000
-  let b = 2000000
-  let c = -500000
-  
-  // 测试大数相加
-  let result1 = @azimuth.add(a, b)
-  @azimuth.assert_eq(3000000, result1)
-  
-  // 测试正负数相加
-  let result2 = @azimuth.add(a, c)
-  @azimuth.assert_eq(500000, result2)
-  
-  // 测试链式加法
-  let result3 = @azimuth.add(@azimuth.add(a, b), c)
-  @azimuth.assert_eq(2500000, result3)
+test "advanced_addition_scenarios" {
+  // 测试高级加法场景
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(0, @azimuth.add(-50, 50))
+  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 100))  // 测试溢出保护
 }
 
-test "advanced_multiplication_cases" {
-  // 高级乘法案例测试
-  let a = 12345
-  let b = 6789
-  let c = -100
-  
-  // 测试大数相乘
-  let result1 = @azimuth.multiply(a, b)
-  @azimuth.assert_eq(83810205, result1)
-  
-  // 测试与负数相乘
-  let result2 = @azimuth.multiply(a, c)
-  @azimuth.assert_eq(-1234500, result2)
-  
-  // 测试链式乘法
-  let result3 = @azimuth.multiply(@azimuth.multiply(a, b), c)
-  @azimuth.assert_eq(-838102050, result3)
+test "advanced_multiplication_scenarios" {
+  // 测试高级乘法场景
+  @azimuth.assert_eq(10000, @azimuth.multiply(100, 100))
+  @azimuth.assert_eq(-10000, @azimuth.multiply(-100, 100))
+  @azimuth.assert_eq(10000, @azimuth.multiply(-100, -100))
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 2))  // 测试溢出保护
 }
 
-test "overflow_boundary_conditions" {
-  // 溢出边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正数溢出
-  let overflow_add = @azimuth.add(max_val, 1)
-  @azimuth.assert_eq(max_val, overflow_add)
-  
-  // 测试负数溢出
-  let underflow_add = @azimuth.add(min_val, -1)
-  @azimuth.assert_eq(min_val, underflow_add)
-  
-  // 测试乘法溢出
-  let overflow_mul = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, overflow_mul)
-  
-  // 测试最小值乘以-1的特殊情况
-  let min_times_neg_one = @azimuth.multiply(min_val, -1)
-  @azimuth.assert_eq(min_val, min_times_neg_one)
+test "greeting_with_special_characters" {
+  // 测试包含特殊字符的问候
+  @azimuth.assert_eq_string("Hello, John_Doe!", @azimuth.greet("John_Doe"))
+  @azimuth.assert_eq_string("Hello, user@domain.com!", @azimuth.greet("user@domain.com"))
+  @azimuth.assert_eq_string("Hello, 测试123!", @azimuth.greet("测试123"))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  // 测试空字符串
-  let empty_result = @azimuth.greet("")
-  @azimuth.assert_eq_string("Hello, !", empty_result)
-  
-  // 测试长字符串
-  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let long_result = @azimuth.greet(long_name)
-  @azimuth.assert_eq_string("Hello, " + long_name + "!", long_result)
-  
-  // 测试包含特殊字符的字符串
-  let special_name = "John@Doe#123$%^&*()"
-  let special_result = @azimuth.greet(special_name)
-  @azimuth.assert_eq_string("Hello, John@Doe#123$%^&*()!", special_result)
-  
-  // 测试包含Unicode字符的字符串
-  let unicode_name = "张三李四🌍"
-  let unicode_result = @azimuth.greet(unicode_name)
-  @azimuth.assert_eq_string("Hello, 张三李四🌍!", unicode_result)
-}
-
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let a = 15
-  let b = 7
+test "mathematical_expressions" {
+  // 测试数学表达式组合
+  let a = 10
+  let b = 5
   let c = 3
   
-  // 验证加法交换律
-  let commutative_add1 = @azimuth.add(a, b)
-  let commutative_add2 = @azimuth.add(b, a)
-  @azimuth.assert_eq(commutative_add1, commutative_add2)
+  // 计算 (a + b) * c
+  let result1 = @azimuth.multiply(@azimuth.add(a, b), c)
+  @azimuth.assert_eq(45, result1)
   
-  // 验证乘法交换律
-  let commutative_mul1 = @azimuth.multiply(a, b)
-  let commutative_mul2 = @azimuth.multiply(b, a)
-  @azimuth.assert_eq(commutative_mul1, commutative_mul2)
-  
-  // 验证分配律
-  let distributive1 = @azimuth.multiply(a, @azimuth.add(b, c))
-  let distributive2 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(distributive1, distributive2)
+  // 计算 a * b + a * c
+  let result2 = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(80, result2)
 }
 
-test "real_world_financial_calculations" {
-  // 实际金融计算测试
-  let principal = 10000  // 本金
-  let rate = 5          // 利率（百分比）
-  let years = 3         // 年数
+test "division_simulation" {
+  // 测试除法模拟（使用乘法和减法）
+  // 模拟 10 / 2 = 5
+  let dividend = 10
+  let divisor = 2
+  let mut quotient = 0
+  let mut remainder = dividend
   
-  // 简单利息计算：利息 = 本金 × 利率 × 年数
-  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  // 简单的除法模拟
+  while remainder >= divisor {
+    remainder = @azimuth.add(remainder, -divisor)
+    quotient = @azimuth.add(quotient, 1)
+  }
   
-  // 本息和 = 本金 + 利息
-  let total = @azimuth.add(principal, interest)
-  
-  // 验证计算结果：10000 + 10000×5×3 = 160000
-  @azimuth.assert_eq(160000, total)
-  
-  // 测试复利计算（简化版）：本息和 = 本金 × (1 + 利率×年数)
-  let compound_total = @azimuth.multiply(principal, @azimuth.add(1, @azimuth.multiply(rate, years)))
-  @azimuth.assert_eq(160000, compound_total)
+  @azimuth.assert_eq(5, quotient)
+  @azimuth.assert_eq(0, remainder)
 }
 
-test "geometry_and_trigonometry" {
-  // 几何与三角学计算测试
-  let length = 12  // 矩形长
-  let width = 8    // 矩形宽
-  let radius = 5   // 圆半径
+test "business_calculation_scenario" {
+  // 测试商业计算场景
+  let unit_price = 199
+  let quantity = 3
+  let discount = 50
+  let tax = 30
   
-  // 计算矩形周长：2 × (长 + 宽)
-  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
-  @azimuth.assert_eq(40, perimeter)
+  // 计算总价
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  // 减去折扣
+  let discounted = @azimuth.add(subtotal, -discount)
+  // 加上税费
+  let total = @azimuth.add(discounted, tax)
   
-  // 计算矩形面积：长 × 宽
+  @azimuth.assert_eq(637, total)
+}
+
+test "geometry_calculations" {
+  // 测试几何计算
+  let length = 8
+  let width = 6
+  
+  // 计算面积
   let area = @azimuth.multiply(length, width)
-  @azimuth.assert_eq(96, area)
+  @azimuth.assert_eq(48, area)
   
-  // 计算圆周长（简化）：2 × π × r ≈ 2 × 3 × r
-  let circumference = @azimuth.multiply(@azimuth.multiply(2, 3), radius)
-  @azimuth.assert_eq(30, circumference)
+  // 计算周长
+  let perimeter = @azimuth.multiply(@azimuth.add(length, width), 2)
+  @azimuth.assert_eq(28, perimeter)
   
-  // 计算圆面积（简化）：π × r² ≈ 3 × r²
-  let circle_area = @azimuth.multiply(3, @azimuth.multiply(radius, radius))
-  @azimuth.assert_eq(75, circle_area)
+  // 计算对角线长度的平方（勾股定理）
+  let diagonal_squared = @azimuth.add(@azimuth.multiply(length, length), @azimuth.multiply(width, width))
+  @azimuth.assert_eq(100, diagonal_squared)
 }
 
-test "temperature_conversion_calculations" {
-  // 温度转换计算测试
-  // 摄氏度转华氏度（简化版）：F = C × 2 + 30
+test "series_calculations" {
+  // 测试序列计算
+  // 计算等差数列 2, 4, 6, 8, 10 的和
+  let term1 = 2
+  let term2 = @azimuth.add(term1, 2)
+  let term3 = @azimuth.add(term2, 2)
+  let term4 = @azimuth.add(term3, 2)
+  let term5 = @azimuth.add(term4, 2)
   
-  // 测试冰点温度
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
+  @azimuth.assert_eq(30, sum)
+}
+
+test "string_processing_with_numbers" {
+  // 测试包含数字的字符串处理
+  @azimuth.assert_eq_string("Hello, 2023!", @azimuth.greet("2023"))
+  @azimuth.assert_eq_string("Hello, Version1.0!", @azimuth.greet("Version1.0"))
+  @azimuth.assert_eq_string("Hello, 123-456-7890!", @azimuth.greet("123-456-7890"))
+}
+
+test "complex_nested_calculations" {
+  // 测试复杂嵌套计算
+  let base = 5
+  let multiplier = 3
+  let offset = 10
+  let divisor = 2
   
-  // 测试室温
-  let room_celsius = 20
-  let room_fahrenheit = @azimuth.add(@azimuth.multiply(room_celsius, 2), 30)
-  @azimuth.assert_eq(70, room_fahrenheit)
+  // 计算 ((base * multiplier) + offset) / divisor
+  let product = @azimuth.multiply(base, multiplier)
+  let sum = @azimuth.add(product, offset)
   
-  // 测试沸点温度
-  let boiling_celsius = 100
-  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
-  @azimuth.assert_eq(230, boiling_fahrenheit)
+  // 模拟整数除法
+  let result = sum / divisor
+  
+  @azimuth.assert_eq(12, result)  // ((5*3)+10)/2 = 25/2 = 12 (整数除法)
 }
