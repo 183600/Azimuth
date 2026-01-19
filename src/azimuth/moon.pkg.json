@@ -113,6 +113,7 @@
   "user_new_standard_tests.mbt",
   "test/user_new_standard_tests.mbt",
           "additional_moonbit_test_cases.mbt",
+  "additional_moonbit_test_cases.mbt",
   "user_standard_tests_new.mbt",
           "test/user_standard_test_cases.mbt",
           "user_additional_moonbit_tests.mbt",
