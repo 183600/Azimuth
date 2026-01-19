@@ -146,4 +146,5 @@
   "azimuth_comprehensive_standard_tests.mbt",
   "test_simple_verification.mbt",
   "../../azimuth_standard_tests.mbt",
-  "../../azimuth_additional_tests.mbt"]}
+  "../../azimuth_additional_tests.mbt",
+  "test/standard_moonbit_tests_new.mbt"]}
