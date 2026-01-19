@@ -1,159 +1,105 @@
 // 标准 MoonBit 测试用例
-// 测试 azimuth 模块的核心功能
+// 测试 azimuth 包的核心功能
 
-// 导入 azimuth 模块
 test "add_basic_functionality" {
   // 测试基本加法功能
-  let result1 = azimuth::add(10, 20)
-  azimuth::assert_eq(30, result1)
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-8, add(-3, -5))
+}
+
+test "add_boundary_values" {
+  // 测试边界值的加法
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  let result2 = azimuth::add(-5, 5)
-  azimuth::assert_eq(0, result2)
-  
-  let result3 = azimuth::add(0, 100)
-  azimuth::assert_eq(100, result3)
+  // 测试溢出保护
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
 }
 
 test "multiply_basic_functionality" {
   // 测试基本乘法功能
-  let result1 = azimuth::multiply(6, 7)
-  azimuth::assert_eq(42, result1)
-  
-  let result2 = azimuth::multiply(-8, 3)
-  azimuth::assert_eq(-24, result2)
-  
-  let result3 = azimuth::multiply(0, 999)
-  azimuth::assert_eq(0, result3)
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 123))
 }
 
-test "greet_function_variations" {
-  // 测试 greet 函数的不同输入
-  let result1 = azimuth::greet("MoonBit")
-  azimuth::assert_eq_string("Hello, MoonBit!", result1)
-  
-  let result2 = azimuth::greet("")
-  azimuth::assert_eq_string("Hello, !", result2)
-  
-  let result3 = azimuth::greet("123")
-  azimuth::assert_eq_string("Hello, 123!", result3)
-}
-
-test "boundary_value_operations" {
-  // 测试边界值运算
+test "multiply_special_cases" {
+  // 测试乘法特殊情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 边界值加法测试
-  let result1 = azimuth::add(max_val, 1)
-  azimuth::assert_eq(max_val, result1)  // 应该被限制为最大值
+  // 测试与1和-1相乘
+  assert_eq(100, multiply(100, 1))
+  assert_eq(-100, multiply(100, -1))
   
-  let result2 = azimuth::add(min_val, -1)
-  azimuth::assert_eq(min_val, result2)  // 应该被限制为最小值
-  
-  // 边界值乘法测试
-  let result3 = azimuth::multiply(max_val, 2)
-  azimuth::assert_eq(max_val, result3)  // 应该被限制为最大值
+  // 测试最小值的特殊处理
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "greet_functionality" {
+  // 测试 greet 函数的基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "greet_special_characters" {
+  // 测试 greet 函数处理特殊字符
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "complex_calculations" {
+  // 测试复合计算
+  // 计算 (2 + 3) * 4 - 5
+  let sum = add(2, 3)
+  let product = multiply(sum, 4)
+  let result = add(product, -5)
+  assert_eq(15, result)
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let a = 15
-  let b = 25
+  let a = 7
+  let b = 11
   
   // 加法交换律
-  let result1 = azimuth::add(a, b)
-  let result2 = azimuth::add(b, a)
-  azimuth::assert_eq(result1, result2)
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  let result3 = azimuth::multiply(a, b)
-  let result4 = azimuth::multiply(b, a)
-  azimuth::assert_eq(result3, result4)
+  assert_eq(multiply(a, b), multiply(b, a))
   
   // 分配律
-  let result5 = azimuth::multiply(a, azimuth::add(b, 5))
-  let result6 = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, 5))
-  azimuth::assert_eq(result5, result6)
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
 }
 
-test "practical_calculation_scenarios" {
-  // 测试实际计算场景
-  // 场景1：计算折扣价格
-  let original_price = 100
-  let discount_percentage = 20
-  let discounted_amount = azimuth::multiply(original_price, discount_percentage) / 100
-  let final_price = azimuth::add(original_price, -discounted_amount)
-  azimuth::assert_eq(80, final_price)
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 计算购物车总价：商品价格 × 数量 + 运费
+  let price = 199
+  let quantity = 3
+  let shipping = 15
   
-  // 场景2：计算平均分
-  let score1 = 85
-  let score2 = 90
-  let score3 = 95
-  let total_score = azimuth::add(azimuth::add(score1, score2), score3)
-  let average_score = total_score / 3
-  azimuth::assert_eq(90, average_score)
+  let subtotal = multiply(price, quantity)
+  let total = add(subtotal, shipping)
+  assert_eq(612, total)
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试包含特殊字符的字符串
-  let result1 = azimuth::greet("test@example.com")
-  azimuth::assert_eq_string("Hello, test@example.com!", result1)
-  
-  // 测试包含空格的字符串
-  let result2 = azimuth::greet("John Doe")
-  azimuth::assert_eq_string("Hello, John Doe!", result2)
-  
-  // 测试包含 Unicode 字符的字符串
-  let result3 = azimuth::greet("测试")
-  azimuth::assert_eq_string("Hello, 测试!", result3)
-}
-
-test "complex_calculation_chain" {
-  // 测试复杂计算链
-  // 计算：(a + b) * c - d
-  let a = 10
-  let b = 15
-  let c = 4
-  let d = 20
-  
-  let sum_ab = azimuth::add(a, b)  // 25
-  let product = azimuth::multiply(sum_ab, c)  // 100
-  let result = azimuth::add(product, -d)  // 80
-  
-  azimuth::assert_eq(80, result)
-}
-
-test "error_handling_and_validation" {
-  // 测试错误处理和验证
-  // 测试断言函数
-  azimuth::assert_true(true)
-  azimuth::assert_false(false)
-  azimuth::assert_eq(42, 42)
-  azimuth::assert_eq_string("test", "test")
-  
-  // 测试溢出保护
+test "error_handling" {
+  // 测试错误处理和边界情况
   let max_val = 2147483647
-  let overflow_result = azimuth::add(max_val, 1000)
-  azimuth::assert_eq(max_val, overflow_result)
-}
-
-test "performance_related_operations" {
-  // 测试性能相关操作
-  // 测试大数运算
-  let large_num1 = 1000000
-  let large_num2 = 2000000
+  let min_val = -2147483648
   
-  let result1 = azimuth::add(large_num1, large_num2)
-  azimuth::assert_eq(3000000, result1)
+  // 确保溢出被正确处理
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(add(min_val, -100) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
   
-  let result2 = azimuth::multiply(large_num1, 2)
-  azimuth::assert_eq(2000000, result2)
-  
-  // 测试连续运算
-  let chain_result = azimuth::add(
-    azimuth::multiply(100, 5),
-    azimuth::multiply(200, 3)
-  )
-  azimuth::assert_eq(1100, chain_result)
+  // 测试正常情况
+  assert_true(add(5, 3) == 8)
+  assert_true(multiply(4, 6) == 24)
 }
