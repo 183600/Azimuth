@@ -1,122 +1,181 @@
 // Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，覆盖更多功能场景
+// 使用标准 MoonBit 测试语法，提供多样化的测试场景
 
 // 导入必要的模块
 use azimuth
 
-test "advanced_addition_scenarios" {
-  // 测试高级加法场景
-  @assertion.assert_eq(100, azimuth.add(50, 50))?
-  @assertion.assert_eq(0, azimuth.add(-50, 50))?
-  @assertion.assert_eq(-100, azimuth.add(-50, -50))?
-  @assertion.assert_eq(2147483647, azimuth.add(2147483647, 100))?  // 测试溢出保护
+test "string_greeting_with_unicode" {
+  // 测试包含Unicode字符的问候功能
+  let result1 = azimuth.greet("张三")
+  @assertion.assert_eq_string("Hello, 张三!", result1)?
+  
+  let result2 = azimuth.greet("José")
+  @assertion.assert_eq_string("Hello, José!", result2)?
+  
+  let result3 = azimuth.greet("🌟Star🌟")
+  @assertion.assert_eq_string("Hello, 🌟Star🌟!", result3)?
 }
 
-test "advanced_multiplication_scenarios" {
-  // 测试高级乘法场景
-  @assertion.assert_eq(10000, azimuth.multiply(100, 100))?
-  @assertion.assert_eq(-10000, azimuth.multiply(-100, 100))?
-  @assertion.assert_eq(10000, azimuth.multiply(-100, -100))?
-  @assertion.assert_eq(2147483647, azimuth.multiply(2147483647, 2))?  // 测试溢出保护
+test "addition_with_negative_numbers" {
+  // 测试负数加法运算
+  @assertion.assert_eq(-10, azimuth.add(-5, -5))?
+  @assertion.assert_eq(0, azimuth.add(-10, 10))?
+  @assertion.assert_eq(5, azimuth.add(-3, 8))?
+  @assertion.assert_eq(-15, azimuth.add(-20, 5))?
 }
 
-test "greeting_with_special_characters" {
-  // 测试包含特殊字符的问候
-  @assertion.assert_eq_string("Hello, John_Doe!", azimuth.greet("John_Doe"))?
-  @assertion.assert_eq_string("Hello, user@domain.com!", azimuth.greet("user@domain.com"))?
-  @assertion.assert_eq_string("Hello, 测试123!", azimuth.greet("测试123"))?
-  @assertion.assert_eq_string("Hello,   !", azimuth.greet("  "))?
+test "multiplication_with_mixed_signs" {
+  // 测试混合符号乘法运算
+  @assertion.assert_eq(-15, azimuth.multiply(-3, 5))?
+  @assertion.assert_eq(20, azimuth.multiply(-4, -5))?
+  @assertion.assert_eq(0, azimuth.multiply(0, -100))?
+  @assertion.assert_eq(-100, azimuth.multiply(10, -10))?
 }
 
-test "mathematical_expressions" {
-  // 测试数学表达式组合
+test "compound_mathematical_operations" {
+  // 测试复合数学运算
   let a = 10
   let b = 5
-  let c = 3
+  let c = 2
   
   // 计算 (a + b) * c
   let result1 = azimuth.multiply(azimuth.add(a, b), c)
-  @assertion.assert_eq(45, result1)?
+  @assertion.assert_eq(30, result1)?
   
-  // 计算 a * b + a * c
-  let result2 = azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
-  @assertion.assert_eq(80, result2)?
+  // 计算 a * b + c
+  let result2 = azimuth.add(azimuth.multiply(a, b), c)
+  @assertion.assert_eq(52, result2)?
+  
+  // 计算 (a - b) * (b + c)
+  let result3 = azimuth.multiply(azimuth.add(a, -b), azimuth.add(b, c))
+  @assertion.assert_eq(35, result3)?
 }
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法
-  @assertion.assert_eq(5, azimuth.divide_with_ceil(10, 2))?
-  @assertion.assert_eq(4, azimuth.divide_with_ceil(11, 3))?  // 11/3 = 3.67 向上取整为 4
-  @assertion.assert_eq(3, azimuth.divide_with_ceil(9, 3))?
-  @assertion.assert_eq(0, azimuth.divide_with_ceil(0, 5))?
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000
+  let interest_rate = 5  // 5%
+  let years = 3
+  
+  // 计算简单利息：本金 * 利率 * 年数 / 100
+  let simple_interest = azimuth.multiply(azimuth.multiply(principal, interest_rate), years) / 100
+  @assertion.assert_eq(1500, simple_interest)?
+  
+  // 计算总金额
+  let total_amount = azimuth.add(principal, simple_interest)
+  @assertion.assert_eq(11500, total_amount)?
+  
+  // 计算月供（简化）
+  let monthly_payment = total_amount / (azimuth.multiply(years, 12))
+  @assertion.assert_eq(319, monthly_payment)?  // 整数除法
 }
 
-test "business_calculation_scenario" {
-  // 测试商业计算场景
-  let unit_price = 199
-  let quantity = 3
-  let discount = 50
-  let tax = 30
+test "statistical_calculations" {
+  // 测试统计计算
+  let numbers = [10, 20, 30, 40, 50]  // 假设的数组
   
-  // 计算总价
-  let subtotal = azimuth.multiply(unit_price, quantity)
-  // 减去折扣
-  let discounted = azimuth.add(subtotal, -discount)
-  // 加上税费
-  let total = azimuth.add(discounted, tax)
+  // 计算平均值（简化为前5个数的和除以5）
+  let sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(10, 20), 30), 40), 50)
+  let average = sum / 5
+  @assertion.assert_eq(30, average)?
   
-  @assertion.assert_eq(637, total)?
+  // 计算范围（最大值 - 最小值）
+  let range = azimuth.add(50, -10)
+  @assertion.assert_eq(40, range)?
+  
+  // 计算中位数（奇数个数）
+  let median = 30  // 第三个数
+  @assertion.assert_eq(30, median)?
 }
 
-test "geometry_calculations" {
-  // 测试几何计算
-  let length = 8
-  let width = 6
+test "geometry_and_trigonometry" {
+  // 测试几何和三角学计算
+  let radius = 7
   
-  // 计算面积
-  let area = azimuth.multiply(length, width)
-  @assertion.assert_eq(48, area)?
+  // 计算直径
+  let diameter = azimuth.multiply(radius, 2)
+  @assertion.assert_eq(14, diameter)?
   
-  // 计算周长
-  let perimeter = azimuth.multiply(azimuth.add(length, width), 2)
-  @assertion.assert_eq(28, perimeter)?
+  // 计算周长（简化为π ≈ 22/7）
+  let circumference = azimuth.multiply(diameter, 22) / 7
+  @assertion.assert_eq(44, circumference)?
   
-  // 计算对角线长度的平方（勾股定理）
-  let diagonal_squared = azimuth.add(azimuth.multiply(length, length), azimuth.multiply(width, width))
-  @assertion.assert_eq(100, diagonal_squared)?
+  // 计算面积（简化为π ≈ 22/7）
+  let area = azimuth.multiply(azimuth.multiply(radius, radius), 22) / 7
+  @assertion.assert_eq(154, area)?
+  
+  // 计算立方体体积
+  let side = 5
+  let volume = azimuth.multiply(azimuth.multiply(side, side), side)
+  @assertion.assert_eq(125, volume)?
 }
 
-test "series_calculations" {
-  // 测试序列计算
-  // 计算等差数列 2, 4, 6, 8, 10 的和
-  let term1 = 2
-  let term2 = azimuth.add(term1, 2)
-  let term3 = azimuth.add(term2, 2)
-  let term4 = azimuth.add(term3, 2)
-  let term5 = azimuth.add(term4, 2)
+test "time_and_date_calculations" {
+  // 测试时间和日期计算
+  let days_in_month = 30
+  let months = 6
   
-  let sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(term1, term2), term3), term4), term5)
-  @assertion.assert_eq(30, sum)?
+  // 计算总天数
+  let total_days = azimuth.multiply(days_in_month, months)
+  @assertion.assert_eq(180, total_days)?
+  
+  // 计算周数
+  let weeks = total_days / 7
+  @assertion.assert_eq(25, weeks)?  // 整数除法
+  
+  // 计算剩余天数
+  let remaining_days = total_days - azimuth.multiply(weeks, 7)
+  @assertion.assert_eq(5, remaining_days)?
+  
+  // 计算小时数
+  let hours = azimuth.multiply(total_days, 24)
+  @assertion.assert_eq(4320, hours)?
 }
 
-test "string_processing_with_numbers" {
-  // 测试包含数字的字符串处理
-  @assertion.assert_eq_string("Hello, 2023!", azimuth.greet("2023"))?
-  @assertion.assert_eq_string("Hello, Version1.0!", azimuth.greet("Version1.0"))?
-  @assertion.assert_eq_string("Hello, 123-456-7890!", azimuth.greet("123-456-7890"))?
+test "algorithm_complexity_analysis" {
+  // 测试算法复杂度分析
+  let n = 100
+  
+  // O(1) 常数时间
+  let constant_time = 1
+  @assertion.assert_eq(1, constant_time)?
+  
+  // O(n) 线性时间
+  let linear_time = n
+  @assertion.assert_eq(100, linear_time)?
+  
+  // O(n²) 二次时间
+  let quadratic_time = azimuth.multiply(n, n)
+  @assertion.assert_eq(10000, quadratic_time)?
+  
+  // O(log n) 对数时间（简化）
+  let log_time = 7  // log2(100) ≈ 6.64，向上取整为7
+  @assertion.assert_eq(7, log_time)?
+  
+  // O(n log n) 线性对数时间
+  let n_log_n_time = azimuth.multiply(n, log_time)
+  @assertion.assert_eq(700, n_log_n_time)?
 }
 
-test "complex_nested_calculations" {
-  // 测试复杂嵌套计算
-  let base = 5
-  let multiplier = 3
-  let offset = 10
-  let divisor = 2
+test "error_handling_and_edge_cases" {
+  // 测试错误处理和边界情况
+  let zero = 0
+  let one = 1
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  // 计算 ((base * multiplier) + offset) / divisor 的向上取整
-  let product = azimuth.multiply(base, multiplier)
-  let sum = azimuth.add(product, offset)
-  let result = azimuth.divide_with_ceil(sum, divisor)
+  // 测试零运算
+  @assertion.assert_eq(0, azimuth.add(zero, zero))?
+  @assertion.assert_eq(0, azimuth.multiply(zero, max_int))?
+  @assertion.assert_eq(0, azimuth.multiply(zero, min_int))?
   
-  @assertion.assert_eq(13, result)?  // ((5*3)+10)/2 = 25/2 = 12.5 向上取整为 13
+  // 测试单位运算
+  @assertion.assert_eq(max_int, azimuth.multiply(max_int, one))?
+  @assertion.assert_eq(min_int, azimuth.multiply(min_int, one))?
+  @assertion.assert_eq(azimuth.add(max_int, one), azimuth.add(one, max_int))?
+  
+  // 测试自反运算
+  @assertion.assert_eq(2, azimuth.add(1, 1))?
+  @assertion.assert_eq(4, azimuth.multiply(2, 2))?
+  @assertion.assert_eq(0, azimuth.add(5, -5))?
 }

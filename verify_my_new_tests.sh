@@ -29,24 +29,39 @@ else
   exit 1
 fi
 
-# 检查是否有 @azimuth 前缀的函数调用
-if grep -q "@azimuth\." azimuth_new_test_cases.mbt; then
-  echo "✓ 发现 @azimuth 前缀的函数调用"
+# 检查是否有正确的 use 导入
+if grep -q "^use azimuth" azimuth_new_test_cases.mbt; then
+  echo "✓ 发现正确的模块导入"
 else
-  echo "✗ 未发现 @azimuth 前缀的函数调用"
+  echo "✗ 未发现正确的模块导入"
+  exit 1
+fi
+
+# 检查是否有 azimuth 前缀的函数调用
+if grep -q "azimuth\." azimuth_new_test_cases.mbt; then
+  echo "✓ 发现 azimuth 前缀的函数调用"
+else
+  echo "✗ 未发现 azimuth 前缀的函数调用"
   exit 1
 fi
 
 # 检查是否有 assert_eq 断言
-if grep -q "@azimuth.assert_eq" azimuth_new_test_cases.mbt; then
+if grep -q "@assertion.assert_eq" azimuth_new_test_cases.mbt; then
   echo "✓ 发现 assert_eq 断言语句"
 else
   echo "✗ 未发现 assert_eq 断言语句"
   exit 1
 fi
 
+# 检查是否有 assert_eq_string 断言
+if grep -q "@assertion.assert_eq_string" azimuth_new_test_cases.mbt; then
+  echo "✓ 发现 assert_eq_string 断言语句"
+else
+  echo "✗ 未发现 assert_eq_string 断言语句"
+fi
+
 # 检查是否有基本的函数调用
-if grep -q "@azimuth.add\|@azimuth.multiply\|@azimuth.greet" azimuth_new_test_cases.mbt; then
+if grep -q "azimuth.add\|azimuth.multiply\|azimuth.greet" azimuth_new_test_cases.mbt; then
   echo "✓ 发现核心函数调用 (add/multiply/greet)"
 else
   echo "✗ 未发现核心函数调用"
