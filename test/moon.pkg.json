@@ -1,0 +1,9 @@
+{
+  "name": "azimuth_test",
+  "import": [
+    "azimuth"
+  ],
+  "files": [
+    "standard_moonbit_core_tests.mbt"
+  ]
+}
