@@ -74,9 +74,13 @@ if [ "$1" = "test" ]; then
       exit 1
     fi
     
+    # 复制 azimuth.mi 到正确的位置
+    cp azimuth.mi "$PROJECT_ROOT/azimuth/azimuth.mi"
+    
     # 生成 azimuth.wasm
     echo "Generating azimuth.wasm..."
     echo "WASM placeholder" > azimuth.wasm
+    cp azimuth.wasm "$PROJECT_ROOT/azimuth/azimuth.wasm"
     
     # 测试 azimuth 包
     echo "Testing azimuth..."
