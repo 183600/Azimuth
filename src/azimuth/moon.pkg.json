@@ -104,6 +104,7 @@
             "test/azimuth_new_test_cases.mbt",
   "test/user_enhanced_tests.mbt",
             "test/simple_user_test.mbt",
+  "standard_moonbit_test_suite.mbt",
   "test/user_new_addition_tests.mbt",
   "user_new_standard_tests.mbt",
   "test/user_new_standard_tests.mbt",
