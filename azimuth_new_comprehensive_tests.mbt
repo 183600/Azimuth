@@ -1,225 +1,128 @@
 // Azimuth 项目新增综合测试用例
-// 使用标准 MoonBit 测试语法，提供多样化的测试覆盖
+// 使用标准 MoonBit 测试语法
 
-// 导入必要的模块
+// 导入 azimuth 模块
 use azimuth
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  // 测试空字符串
-  let result1 = azimuth.greet("")
-  @assertion.assert_eq_string("Hello, !", result1)?
-  
-  // 测试单个字符
-  let result2 = azimuth.greet("A")
-  @assertion.assert_eq_string("Hello, A!", result2)?
-  
-  // 测试包含Unicode字符的字符串
-  let result3 = azimuth.greet("测试")
-  @assertion.assert_eq_string("Hello, 测试!", result3)?
-  
-  // 测试长字符串
-  let long_name = "VeryLongNameThatExceedsNormalExpectations"
-  let result4 = azimuth.greet(long_name)
-  @assertion.assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectations!", result4)?
+test "add_function_zero_properties" {
+  // 测试加法函数的零值特性
+  assert_eq(42, azimuth.add(42, 0))
+  assert_eq(42, azimuth.add(0, 42))
+  assert_eq(0, azimuth.add(0, 0))
+  assert_eq(-17, azimuth.add(-17, 0))
+  assert_eq(-17, azimuth.add(0, -17))
 }
 
-test "mathematical_sequence_patterns" {
-  // 数学序列模式测试
-  // 斐波那契数列前几项：1, 1, 2, 3, 5, 8, 13, 21
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = azimuth.add(fib1, fib2)
-  let fib4 = azimuth.add(fib2, fib3)
-  let fib5 = azimuth.add(fib3, fib4)
-  
-  @assertion.assert_eq(2, fib3)?
-  @assertion.assert_eq(3, fib4)?
-  @assertion.assert_eq(5, fib5)?
-  
-  // 计算斐波那契数列前5项的和
-  let fib_sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(fib1, fib2), fib3), fib4), fib5)
-  @assertion.assert_eq(12, fib_sum)?
-  
-  // 计算平方数列：1, 4, 9, 16, 25
-  let sq1 = azimuth.multiply(1, 1)
-  let sq2 = azimuth.multiply(2, 2)
-  let sq3 = azimuth.multiply(3, 3)
-  let sq4 = azimuth.multiply(4, 4)
-  let sq5 = azimuth.multiply(5, 5)
-  
-  let square_sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(sq1, sq2), sq3), sq4), sq5)
-  @assertion.assert_eq(55, square_sum)?
+test "multiply_function_commutative_property" {
+  // 测试乘法函数的交换律
+  assert_eq(azimuth.multiply(3, 7), azimuth.multiply(7, 3))
+  assert_eq(azimuth.multiply(-4, 5), azimuth.multiply(5, -4))
+  assert_eq(azimuth.multiply(-6, -8), azimuth.multiply(-8, -6))
+  assert_eq(azimuth.multiply(0, 10), azimuth.multiply(10, 0))
 }
 
-test "financial_calculations" {
-  // 金融计算测试
-  // 计算复利：A = P(1 + r)^t
+test "greet_function_special_characters" {
+  // 测试问候函数的特殊字符处理
+  assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))
+  assert_eq_string("Hello, 中文!", azimuth.greet("中文"))
+  assert_eq_string("Hello, 🌙!", azimuth.greet("🌙"))
+  assert_eq_string("Hello, line\nbreak!", azimuth.greet("line\nbreak"))
+}
+
+test "add_function_large_numbers" {
+  // 测试加法函数的大数相加
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  assert_eq(3000000, azimuth.add(large_num1, large_num2))
+  
+  let large_num3 = 100000000
+  let large_num4 = -50000000
+  assert_eq(50000000, azimuth.add(large_num3, large_num4))
+}
+
+test "multiply_function_negative_numbers" {
+  // 测试乘法函数的负数乘法
+  assert_eq(-25, azimuth.multiply(-5, 5))
+  assert_eq(36, azimuth.multiply(-6, -6))
+  assert_eq(0, azimuth.multiply(-7, 0))
+  assert_eq(49, azimuth.multiply(-7, -7))
+}
+
+test "greet_function_long_strings" {
+  // 测试问候函数的长字符串处理
+  let long_name = "This is a very long name that should be handled properly by the greet function"
+  assert_eq_string("Hello, This is a very long name that should be handled properly by the greet function!", azimuth.greet(long_name))
+  
+  let empty_name = ""
+  assert_eq_string("Hello, !", azimuth.greet(empty_name))
+}
+
+test "combined_operations" {
+  // 测试 add 和 multiply 函数的组合运算
+  // 计算 (2 + 3) * (4 + 5) = 5 * 9 = 45
+  let result1 = azimuth.multiply(azimuth.add(2, 3), azimuth.add(4, 5))
+  assert_eq(45, result1)
+  
+  // 计算 10 * (5 + 3) + 2 = 10 * 8 + 2 = 82
+  let result2 = azimuth.add(azimuth.multiply(10, azimuth.add(5, 3)), 2)
+  assert_eq(82, result2)
+}
+
+test "boundary_value_special_cases" {
+  // 测试边界值的特殊情况
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  // 测试接近边界的加法
+  assert_eq(max_int, azimuth.add(max_int - 1, 1))
+  assert_eq(max_int, azimuth.add(max_int - 100, 100))
+  
+  // 测试接近边界的乘法
+  assert_eq(max_int, azimuth.multiply(46340, 46340))  // sqrt(max_int) 的平方
+  assert_eq(0, azimuth.multiply(min_int, 0))
+}
+
+test "assertion_helper_functions" {
+  // 测试断言辅助函数
+  azimuth.assert_eq(10, 10)
+  azimuth.assert_eq_string("test", "test")
+  azimuth.assert_true(true)
+  azimuth.assert_false(false)
+  
+  // 测试组合断言
+  let result = azimuth.add(3, 4)
+  azimuth.assert_eq(7, result)
+  azimuth.assert_true(result > 0)
+  
+  let greeting = azimuth.greet("Test")
+  azimuth.assert_eq_string("Hello, Test!", greeting)
+  azimuth.assert_true(String.length(greeting) > 5)
+}
+
+test "real_world_application_scenarios" {
+  // 测试实际应用场景
+  // 场景1：计算购物车总价
+  let item1_price = 199
+  let item2_price = 299
+  let shipping = 20
+  let discount = -50
+  let total = azimuth.add(azimuth.add(azimuth.add(item1_price, item2_price), shipping), discount)
+  assert_eq(468, total)
+  
+  // 场景2：计算矩形面积和周长
+  let length = 12
+  let width = 8
+  let area = azimuth.multiply(length, width)
+  let perimeter = azimuth.multiply(2, azimuth.add(length, width))
+  assert_eq(96, area)
+  assert_eq(40, perimeter)
+  
+  // 场景3：计算复利（简化版）
   let principal = 1000
   let rate = 5  // 5%
-  let time = 3
-  
-  // 简化计算：1000 * 1.05 * 1.05 * 1.05 ≈ 1157
-  let year1 = azimuth.add(principal, azimuth.multiply(principal, rate) / 100)
-  let year2 = azimuth.add(year1, azimuth.multiply(year1, rate) / 100)
-  let year3 = azimuth.add(year2, azimuth.multiply(year2, rate) / 100)
-  
-  @assertion.assert_eq(1157, year3)?  // 近似值
-  
-  // 计算贷款月供（简化版）
-  let loan_amount = 12000
-  let annual_rate = 6  // 6%
-  let months = 12
-  
-  let monthly_rate = annual_rate / 12  // 0.5%
-  let monthly_interest = azimuth.multiply(loan_amount, monthly_rate) / 100
-  let monthly_principal = loan_amount / months
-  let monthly_payment = azimuth.add(monthly_principal, monthly_interest)
-  
-  @assertion.assert_eq(1060, monthly_payment)?  // 1000 + 60
-}
-
-test "statistical_operations" {
-  // 统计运算测试
-  // 计算平均值
-  let numbers = [10, 20, 30, 40, 50]
-  let sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(10, 20), 30), 40), 50)
-  let count = 5
-  let average = sum / count
-  @assertion.assert_eq(30, average)?
-  
-  // 计算方差（简化版）
-  let mean = 30
-  let diff1 = azimuth.add(10, -mean)
-  let diff2 = azimuth.add(20, -mean)
-  let diff3 = azimuth.add(30, -mean)
-  let diff4 = azimuth.add(40, -mean)
-  let diff5 = azimuth.add(50, -mean)
-  
-  let sq_diff1 = azimuth.multiply(diff1, diff1)
-  let sq_diff2 = azimuth.multiply(diff2, diff2)
-  let sq_diff3 = azimuth.multiply(diff3, diff3)
-  let sq_diff4 = azimuth.multiply(diff4, diff4)
-  let sq_diff5 = azimuth.multiply(diff5, diff5)
-  
-  let variance_sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(sq_diff1, sq_diff2), sq_diff3), sq_diff4), sq_diff5)
-  let variance = variance_sum / count
-  @assertion.assert_eq(200, variance)?
-}
-
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  // 模拟线性搜索的时间复杂度 O(n)
-  let array_size = 100
-  let linear_comparisons = array_size  // 最坏情况
-  @assertion.assert_eq(100, linear_comparisons)?
-  
-  // 模拟二分搜索的时间复杂度 O(log n)
-  let binary_array_size = 1024
-  let binary_comparisons = 10  // log2(1024) = 10
-  @assertion.assert_eq(10, binary_comparisons)?
-  
-  // 模拟快速排序的平均比较次数
-  let quick_sort_size = 8
-  let avg_comparisons = azimuth.multiply(quick_sort_size, 7)  // n*log2(n) 的近似
-  @assertion.assert_eq(56, avg_comparisons)?
-  
-  // 模拟哈希表操作
-  let hash_table_size = 16
-  let hash_collisions = 2  // 假设平均冲突次数
-  let hash_operations = azimuth.add(hash_table_size, hash_collisions)
-  @assertion.assert_eq(18, hash_operations)?
-}
-
-test "data_conversion_operations" {
-  // 数据转换操作测试
-  // 温度转换：摄氏度到华氏度 F = C * 9/5 + 32
-  let celsius = 25
-  let fahrenheit = azimuth.add(azimuth.multiply(celsius, 9) / 5, 32)
-  @assertion.assert_eq(77, fahrenheit)?
-  
-  // 距离转换：公里到英里
-  let kilometers = 10
-  let miles = azimuth.multiply(kilometers, 62) / 100  // 近似转换
-  @assertion.assert_eq(6, miles)?
-  
-  // 时间转换：秒到分钟和小时
-  let seconds = 3661
-  let minutes = seconds / 60
-  let hours = minutes / 60
-  let remaining_minutes = minutes % 60
-  let remaining_seconds = seconds % 60
-  
-  @assertion.assert_eq(61, minutes)?
-  @assertion.assert_eq(1, hours)?
-  @assertion.assert_eq(1, remaining_minutes)?
-  @assertion.assert_eq(1, remaining_seconds)?
-}
-
-test "game_logic_simulation" {
-  // 游戏逻辑模拟测试
-  // 模拟掷骰子游戏
-  let dice1 = 4
-  let dice2 = 3
-  let dice_sum = azimuth.add(dice1, dice2)
-  @assertion.assert_eq(7, dice_sum)?
-  
-  // 模扑克牌点数计算
-  let card1 = 10
-  let card2 = 8
-  let card3 = 7
-  let hand_value = azimuth.add(azimuth.add(card1, card2), card3)
-  @assertion.assert_eq(25, hand_value)?
-  
-  // 模拟得分计算
-  let base_score = 100
-  let bonus_multiplier = 2
-  let penalty = 15
-  let final_score = azimuth.add(azimuth.multiply(base_score, bonus_multiplier), -penalty)
-  @assertion.assert_eq(185, final_score)?
-}
-
-test "network_protocol_simulation" {
-  // 网络协议模拟测试
-  // 模拟数据包大小计算
-  let header_size = 20
-  let payload_size = 1024
-  let footer_size = 8
-  let packet_size = azimuth.add(azimuth.add(header_size, payload_size), footer_size)
-  @assertion.assert_eq(1052, packet_size)?
-  
-  // 模拟带宽计算
-  let data_size = 8000  // bits
-  let time_seconds = 2
-  let bandwidth = data_size / time_seconds
-  @assertion.assert_eq(4000, bandwidth)?
-  
-  // 模拟延迟计算
-  let propagation_delay = 50  // ms
-  let transmission_delay = 20  // ms
-  let processing_delay = 10  // ms
-  let total_delay = azimuth.add(azimuth.add(propagation_delay, transmission_delay), processing_delay)
-  @assertion.assert_eq(80, total_delay)?
-}
-
-test "cryptography_basic_operations" {
-  // 密码学基础操作测试
-  // 模拟简单凯撒密码
-  let plaintext = 5  // 字母位置
-  let shift = 3
-  let ciphertext = azimuth.add(plaintext, shift)
-  @assertion.assert_eq(8, ciphertext)?
-  
-  // 模拟XOR操作（使用加法和减法模拟）
-  let value1 = 12
-  let value2 = 5
-  let xor_result = azimuth.add(value1, value2)  // 简化的XOR模拟
-  @assertion.assert_eq(17, xor_result)?
-  
-  // 模拟哈希函数简单计算
-  let input = 123
-  let hash1 = azimuth.multiply(input, 31)  // 简单哈希函数
-  let hash2 = azimuth.add(hash1, 17)
-  let final_hash = hash2 % 100  // 取模
-  @assertion.assert_eq(30, final_hash)?
+  let years = 3
+  // 简化计算：principal + principal * rate * years / 100
+  let interest = azimuth.multiply(azimuth.multiply(principal, rate), years) / 100
+  let final_amount = azimuth.add(principal, interest)
+  assert_eq(1150, final_amount)
 }
