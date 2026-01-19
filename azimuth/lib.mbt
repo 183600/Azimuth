@@ -160,3 +160,10 @@ pub fn assert_false(condition : Bool) -> Unit {
     ()
   }
 }
+
+// 向上取整除法函数
+pub fn divide_with_ceil(dividend : Int, divisor : Int) -> Int {
+  let quotient = dividend / divisor
+  let remainder = dividend % divisor
+  if remainder > 0 { add(quotient, 1) } else { quotient }
+}
