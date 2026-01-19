@@ -11,6 +11,7 @@
     "concise_standard_tests.mbt",
     "azimuth_additional_enhanced_tests.mbt",
     "user_additional_moonbit_tests.mbt",
+    "user_new_additional_tests.mbt",
     "user_requested_moonbit_tests.mbt",
     "azimuth_new_test_cases.mbt",
     "azimuth_comprehensive_tests.mbt",

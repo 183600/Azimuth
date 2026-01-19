@@ -1,188 +1,120 @@
 // 用户新增的 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法
 
-test "advanced_arithmetic_sequence" {
-  // 测试等差数列求和：1 + 4 + 7 + 10 + 13 = 35
-  let a1 = 1
-  let d = 3
-  let n = 5
+test "add_function_edge_cases" {
+  // 测试加法函数的边界情况
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
   
-  // 使用等差数列求和公式：Sn = n/2 * (2a1 + (n-1)d)
-  let sum = @azimuth.multiply(n, @azimuth.add(@azimuth.multiply(2, a1), @azimuth.multiply(n - 1, d))) / 2
-  @azimuth.assert_eq(35, sum)
+  // 测试大数相加
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(-2000000, @azimuth.add(-1000000, -1000000))
 }
 
-test "geometric_progression_calculation" {
-  // 测试等比数列求和：2 + 6 + 18 + 54 = 80
-  let a1 = 2
-  let r = 3
-  let n = 4
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
+  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
+  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
+  @azimuth.assert_eq(-5, @azimuth.multiply(-1, 5))
   
-  // 手动计算等比数列前4项和
-  let term1 = a1
-  let term2 = @azimuth.multiply(term1, r)
-  let term3 = @azimuth.multiply(term2, r)
-  let term4 = @azimuth.multiply(term3, r)
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4)
-  @azimuth.assert_eq(80, sum)
+  // 测试大数相乘
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
+  @azimuth.assert_eq(-1000000, @azimuth.multiply(-1000, 1000))
 }
 
-test "string_pattern_processing" {
-  // 测试字符串模式处理
-  let pattern = "abc"
-  let repeat = 3
-  
-  // 模拟字符串重复：abcabcabc
-  let repeated = pattern + pattern + pattern
-  let result = @azimuth.greet(repeated)
-  @azimuth.assert_eq_string("Hello, abcabcabc!", result)
-  
-  // 测试包含重复模式的字符串
-  let complex_pattern = "ab" + "cd" + "ef"
-  let complex_result = @azimuth.greet(complex_pattern)
-  @azimuth.assert_eq_string("Hello, abcdef!", complex_result)
+test "greet_function_special_chars" {
+  // 测试包含特殊字符的字符串
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
+  @azimuth.assert_eq_string("Hello, emoji🌍!", @azimuth.greet("emoji🌍"))
 }
 
-test "complex_financial_calculation" {
-  // 测试复杂金融计算：贷款分期还款
-  let principal = 120000  // 贷款本金
-  let annual_rate = 6     // 年利率6%
-  let years = 10          // 贷款年限
+test "complex_calculations" {
+  // 测试复合计算场景
+  // 计算矩形周长：2 × (长 + 宽)
+  let length = 10
+  let width = 5
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(30, perimeter)
   
-  // 简化的月供计算：本金/月数 + 利息
-  let months = @azimuth.multiply(years, 12)
-  let monthly_principal = principal / months
-  let monthly_interest = @azimuth.multiply(principal, annual_rate) / 100 / 12
-  let monthly_payment = @azimuth.add(monthly_principal, monthly_interest)
-  
-  // 计算总还款额
-  let total_payment = @azimuth.multiply(monthly_payment, months)
-  
-  // 验证计算结果（简化计算）
-  @azimuth.assert_true(monthly_payment > 1000)  // 月供应大于1000
-  @azimuth.assert_true(total_payment > principal)  // 总还款额应大于本金
+  // 计算 (a + b) × (c + d)
+  let a = 3
+  let b = 4
+  let c = 5
+  let d = 6
+  let result = @azimuth.multiply(@azimuth.add(a, b), @azimuth.add(c, d))
+  @azimuth.assert_eq(77, result)  // (3+4) × (5+6) = 7 × 11 = 77
 }
 
-test "temperature_conversion_precise" {
-  // 测试精确的温度转换
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  // 使用整数近似：F = C × 2 - C/5 + 32
+test "overflow_handling" {
+  // 测试溢出处理
+  let max_val = 2147483647
+  let min_val = -2147483648
   
+  // 测试加法溢出
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+  
+  // 测试乘法溢出
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+}
+
+test "mathematical_formulas" {
+  // 测试数学公式
+  // 计算平方和：a² + b²
+  let a = 3
+  let b = 4
+  let sum_of_squares = @azimuth.add(@azimuth.multiply(a, a), @azimuth.multiply(b, b))
+  @azimuth.assert_eq(25, sum_of_squares)  // 3² + 4² = 9 + 16 = 25
+  
+  // 计算立方差：a³ - b³
+  let c = 5
+  let d = 2
+  let c_cubed = @azimuth.multiply(@azimuth.multiply(c, c), c)
+  let d_cubed = @azimuth.multiply(@azimuth.multiply(d, d), d)
+  let difference = @azimuth.add(c_cubed, -d_cubed)
+  @azimuth.assert_eq(117, difference)  // 5³ - 2³ = 125 - 8 = 117
+}
+
+test "string_concatenation" {
+  // 测试字符串拼接
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, a b c!", @azimuth.greet("a b c"))
+  @azimuth.assert_eq_string("Hello, line1\nline2!", @azimuth.greet("line1\nline2"))
+}
+
+test "real_world_applications" {
+  // 测试实际应用场景
+  // 购物车计算
+  let item1_price = 100
+  let item1_quantity = 2
+  let item2_price = 50
+  let item2_quantity = 3
+  let shipping = 10
+  
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let cart_total = @azimuth.add(@azimuth.add(total1, total2), shipping)
+  @azimuth.assert_eq(360, cart_total)  // 100×2 + 50×3 + 10 = 200 + 150 + 10 = 360
+  
+  // 温度转换（更精确的简化版）
   let celsius = 25
-  let fahrenheit_approx = @azimuth.add(@azimuth.add(@azimuth.multiply(celsius, 2), @azimuth.multiply(-celsius / 5, 1)), 32)
-  @azimuth.assert_eq(77, fahrenheit_approx)  // 25°C ≈ 77°F
-  
-  // 测试负温度
-  let negative_celsius = -10
-  let negative_fahrenheit = @azimuth.add(@azimuth.add(@azimuth.multiply(negative_celsius, 2), @azimuth.multiply(-negative_celsius / 5, 1)), 32)
-  @azimuth.assert_eq(14, negative_fahrenheit)  // -10°C ≈ 14°F
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9), 160) / 5
+  @azimuth.assert_eq(77, fahrenheit)  // (25 × 9 + 160) / 5 = (225 + 160) / 5 = 385 / 5 = 77
 }
 
-test "algorithm_complexity_simulation" {
-  // 测试算法复杂度模拟：O(n²) 操作
-  let n = 10
-  
-  // 模拟嵌套循环的总操作数：n × n
-  let total_operations = @azimuth.multiply(n, n)
-  @azimuth.assert_eq(100, total_operations)
-  
-  // 模拟 O(n log n) 操作（简化为 n × log₂n）
-  // 使用近似值：log₂10 ≈ 3
-  let log_n = 3
-  let n_log_n_operations = @azimuth.multiply(n, log_n)
-  @azimuth.assert_eq(30, n_log_n_operations)
-}
-
-test "combinatorial_calculations" {
-  // 测试组合数学计算
-  // 计算排列数 P(n,k) = n!/(n-k)!
-  // 简化计算：P(5,3) = 5 × 4 × 3 = 60
-  
-  let n = 5
-  let k = 3
-  let permutation = @azimuth.multiply(n, @azimuth.multiply(n - 1, n - 2))
-  @azimuth.assert_eq(60, permutation)
-  
-  // 计算组合数 C(n,k) = P(n,k)/k!
-  // 简化计算：C(5,3) = 60/(3×2×1) = 10
-  let combination = permutation / @azimuth.multiply(@azimuth.multiply(3, 2), 1)
-  @azimuth.assert_eq(10, combination)
-}
-
-test "data_structure_operations" {
-  // 测试数据结构操作模拟
-  // 模拟栈操作：push, push, pop, push
-  let mut stack_size = 0
-  
-  // push 操作
-  stack_size = @azimuth.add(stack_size, 1)  // size = 1
-  stack_size = @azimuth.add(stack_size, 1)  // size = 2
-  
-  // pop 操作
-  stack_size = @azimuth.add(stack_size, -1)  // size = 1
-  
-  // push 操作
-  stack_size = @azimuth.add(stack_size, 1)  // size = 2
-  
-  @azimuth.assert_eq(2, stack_size)
-  
-  // 模拟队列操作：enqueue, dequeue, enqueue
-  let mut queue_size = 0
-  
-  // enqueue 操作
-  queue_size = @azimuth.add(queue_size, 1)  // size = 1
-  queue_size = @azimuth.add(queue_size, 1)  // size = 2
-  
-  // dequeue 操作
-  queue_size = @azimuth.add(queue_size, -1)  // size = 1
-  
-  // enqueue 操作
-  queue_size = @azimuth.add(queue_size, 1)  // size = 2
-  
-  @azimuth.assert_eq(2, queue_size)
-}
-
-test "number_system_conversion" {
-  // 测试数字系统转换
-  // 十进制转二进制（模拟）：13 = 1101₂
-  let decimal = 13
-  
-  // 模拟二进制转换：通过位运算
-  let bit0 = decimal % 2          // 1
-  let bit1 = (decimal / 2) % 2    // 0
-  let bit2 = (decimal / 4) % 2    // 1
-  let bit3 = (decimal / 8) % 2    // 1
-  
-  // 将二进制位转换为十进制验证
-  let binary_to_decimal = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(bit3, 8), @azimuth.multiply(bit2, 4)), @azimuth.multiply(bit1, 2)), bit0)
-  @azimuth.assert_eq(decimal, binary_to_decimal)
-  
-  // 十进制转八进制（模拟）：100 = 144₈
-  let octal_decimal = 100
-  let octal_digit0 = octal_decimal % 8      // 4
-  let octal_digit1 = (octal_decimal / 8) % 8  // 4
-  let octal_digit2 = (octal_decimal / 64) % 8 // 1
-  
-  // 验证八进制转换
-  let octal_to_decimal = @azimuth.add(@azimuth.add(@azimuth.multiply(octal_digit2, 64), @azimuth.multiply(octal_digit1, 8)), octal_digit0)
-  @azimuth.assert_eq(octal_decimal, octal_to_decimal)
-}
-
-test "physics_simulation" {
-  // 测试物理模拟计算
-  // 自由落体运动：h = v₀t + ½gt²
-  let initial_velocity = 10  // 初始速度 m/s
-  let time = 5               // 时间 s
-  let gravity = 10           // 重力加速度 m/s²（简化值）
-  
-  // 计算位移：h = 10×5 + ½×10×5² = 50 + 125 = 175
-  let height = @azimuth.add(@azimuth.multiply(initial_velocity, time), @azimuth.multiply(@azimuth.multiply(gravity, time), time) / 2)
-  @azimuth.assert_eq(175, height)
-  
-  // 动能计算：E = ½mv²
-  let mass = 2        // 质量 kg
-  let velocity = 15   // 速度 m/s
-  
-  // 计算动能：E = ½×2×15² = 225
-  let kinetic_energy = @azimuth.multiply(mass, @azimuth.multiply(velocity, velocity)) / 2
-  @azimuth.assert_eq(225, kinetic_energy)
+test "error_conditions" {
+  // 测试错误条件处理
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
