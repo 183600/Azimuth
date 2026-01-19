@@ -1,136 +1,178 @@
-// 额外的综合测试用例
-// 使用标准的 MoonBit 测试语法，覆盖各种边界情况和实际应用场景
+// 额外的综合测试用例 - MoonBit 标准测试语法
+// 测试 azimuth 包的核心功能
 
-test "add_prime_numbers" {
-  // 测试质数相加
-  assert_eq(10, add(3, 7))
-  assert_eq(17, add(2, 15))
-  assert_eq(30, add(13, 17))
-  assert_eq(100, add(47, 53))
+test "add_overflow_protection" {
+  // 测试加法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 正数溢出测试
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, 100))
+  assert_eq(max_val, add(1000000000, 1500000000))
+  
+  // 负数溢出测试
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, -100))
+  assert_eq(min_val, add(-1500000000, -1000000000))
 }
 
-test "multiply_perfect_squares" {
-  // 测试完全平方数相乘
-  assert_eq(36, multiply(4, 9))
-  assert_eq(100, multiply(10, 10))
-  assert_eq(225, multiply(9, 25))
-  assert_eq(64, multiply(8, 8))
+test "multiply_edge_cases" {
+  // 测试乘法边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最小值与-1相乘的特殊情况
+  assert_eq(min_val, multiply(min_val, -1))
+  
+  // 大数相乘溢出测试
+  assert_eq(max_val, multiply(46341, 46341))
+  assert_eq(min_val, multiply(-46341, 46341))
+  
+  // 零值测试
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(0, multiply(0, min_val))
 }
 
-test "calculate_simple_interest" {
-  // 测试简单利息计算：利息 = 本金 × 利率 × 时间
-  let principal = 1000
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  // 正数测试
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(5, divide_with_ceil(20, 4))
+  assert_eq(4, divide_with_ceil(15, 4))
+  
+  // 负数测试
+  assert_eq(-2, divide_with_ceil(-10, 4))
+  assert_eq(-3, divide_with_ceil(-11, 4))
+  
+  // 整除测试
+  assert_eq(2, divide_with_ceil(8, 4))
+  assert_eq(-2, divide_with_ceil(-8, 4))
+}
+
+test "greet_unicode_handling" {
+  // 测试 greet 函数的 Unicode 处理
+  // 中文字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  
+  // Emoji 测试
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, 👋!", greet("👋"))
+  
+  // 混合字符测试
+  assert_eq_string("Hello, Test测试123!", greet("Test测试123"))
+}
+
+test "complex_arithmetic_sequence" {
+  // 测试复杂算术序列
+  let a = 5
+  let b = 10
+  let c = 15
+  
+  // 计算 (a + b) * (b + c) - a * c
+  let sum1 = add(a, b)
+  let sum2 = add(b, c)
+  let product1 = multiply(sum1, sum2)
+  let product2 = multiply(a, c)
+  let result = add(product1, -product2)
+  
+  assert_eq(275, result)
+}
+
+test "mathematical_commutativity" {
+  // 测试数学交换律
+  let x = 12
+  let y = 18
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 包含负数的交换律测试
+  let neg_x = -12
+  let neg_y = 18
+  assert_eq(add(neg_x, neg_y), add(neg_y, neg_x))
+  assert_eq(multiply(neg_x, neg_y), multiply(neg_y, neg_x))
+}
+
+test "assert_functions_comprehensive" {
+  // 综合测试断言函数
+  // 基本断言测试
+  assert_true(true)
+  assert_false(false)
+  
+  // 数值断言测试
+  assert_eq(0, 0)
+  assert_eq(100, 100)
+  assert_eq(-50, -50)
+  
+  // 字符串断言测试
+  assert_eq_string("", "")
+  assert_eq_string("test", "test")
+  assert_eq_string("Hello, World!", "Hello, World!")
+  
+  // 布尔表达式断言
+  assert_true(10 > 5)
+  assert_true(3 >= 3)
+  assert_false(10 < 5)
+  assert_false(3 <= 2)
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
+  let principal = 10000
   let rate = 5
-  let time = 3
+  let years = 3
+  let fee = 50
   
-  let interest = multiply(principal, multiply(rate, time))
-  let total = add(principal, interest / 100)
+  // 计算简单利息：本金 × 利率 × 年数
+  let interest = multiply(principal, multiply(rate, years))
   
-  assert_eq(1150, total)  // 1000 + (1000 * 5 * 3) / 100 = 1150
+  // 计算总额：本金 + 利息 - 手续费
+  let total = add(add(principal, interest), -fee)
+  
+  assert_eq(160450, total)
 }
 
-test "greet_with_numbers_and_symbols" {
-  // 测试包含数字和符号的字符串
-  assert_eq_string("Hello, User123!", greet("User123"))
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-  assert_eq_string("Hello, #hashtag!", greet("#hashtag"))
-  assert_eq_string("Hello, @mention!", greet("@mention"))
+test "temperature_conversion_formula" {
+  // 温度转换公式测试（简化版）
+  // 摄氏度转华氏度：F = C × 2 + 30（简化公式）
+  
+  // 测试常见温度点
+  let freezing_c = 0
+  let freezing_f = add(multiply(freezing_c, 2), 30)
+  assert_eq(30, freezing_f)
+  
+  let room_c = 20
+  let room_f = add(multiply(room_c, 2), 30)
+  assert_eq(70, room_f)
+  
+  let boiling_c = 100
+  let boiling_f = add(multiply(boiling_c, 2), 30)
+  assert_eq(230, boiling_f)
 }
 
-test "calculate_perimeter_of_shapes" {
-  // 测试不同形状的周长计算
+test "geometry_area_calculations" {
+  // 几何面积计算测试
+  // 矩形面积：长 × 宽
+  let length = 12
+  let width = 8
+  let rectangle_area = multiply(length, width)
+  assert_eq(96, rectangle_area)
   
-  // 正方形周长：4 × 边长
-  let square_side = 5
-  let square_perimeter = multiply(4, square_side)
-  assert_eq(20, square_perimeter)
-  
-  // 三角形周长：边长1 + 边长2 + 边长3
-  let triangle_side1 = 3
-  let triangle_side2 = 4
-  let triangle_side3 = 5
-  let triangle_perimeter = add(add(triangle_side1, triangle_side2), triangle_side3)
-  assert_eq(12, triangle_perimeter)
-  
-  // 五边形周长：5 × 边长
-  let pentagon_side = 6
-  let pentagon_perimeter = multiply(5, pentagon_side)
-  assert_eq(30, pentagon_perimeter)
-}
-
-test "calculate_volume_of_cuboid" {
-  // 测试长方体体积计算：长 × 宽 × 高
-  let length = 4
-  let width = 5
+  // 三角形面积：底 × 高 ÷ 2
+  let base = 10
   let height = 6
+  let triangle_area = multiply(base, height) / 2
+  assert_eq(30, triangle_area)
   
-  let base_area = multiply(length, width)
-  let volume = multiply(base_area, height)
-  
-  assert_eq(120, volume)  // 4 × 5 × 6 = 120
-}
-
-test "complex_string_scenarios" {
-  // 测试复杂字符串场景
-  // 测试包含多种字符类型的字符串
-  let mixed_string = "aB1!@#"
-  assert_eq_string("Hello, aB1!@#!", greet(mixed_string))
-  
-  // 测试仅包含空格的字符串
-  let spaces = "   "
-  assert_eq_string("Hello,    !", greet(spaces))
-  
-  // 测试包含下划线的字符串
-  let underscore = "user_name"
-  assert_eq_string("Hello, user_name!", greet(underscore))
-}
-
-test "calculate_time_conversions" {
-  // 测试时间单位转换
-  // 小时转分钟：1小时 = 60分钟
-  let hours = 3
-  let minutes = multiply(hours, 60)
-  assert_eq(180, minutes)
-  
-  // 天转小时：1天 = 24小时
-  let days = 2
-  let hours_in_days = multiply(days, 24)
-  assert_eq(48, hours_in_days)
-  
-  // 周转天：1周 = 7天
-  let weeks = 4
-  let days_in_weeks = multiply(weeks, 7)
-  assert_eq(28, days_in_weeks)
-}
-
-test "calculate_discounted_price" {
-  // 测试折扣价格计算：折后价 = 原价 - 折扣金额
-  let original_price = 200
-  let discount_percentage = 15  // 15%折扣
-  
-  let discount_amount = multiply(original_price, discount_percentage) / 100
-  let discounted_price = add(original_price, -discount_amount)
-  
-  assert_eq(170, discounted_price)  // 200 - (200 * 15 / 100) = 170
-}
-
-test "calculate_average_speed" {
-  // 测试平均速度计算：速度 = 距离 ÷ 时间
-  let distance = 300
-  let time = 5
-  
-  let speed = distance / time
-  assert_eq(60, speed)  // 300 ÷ 5 = 60 km/h
-  
-  // 计算多段路程的总平均速度
-  let distance1 = 120
-  let time1 = 2
-  let distance2 = 180
-  let time2 = 3
-  
-  let total_distance = add(distance1, distance2)
-  let total_time = add(time1, time2)
-  let average_speed = total_distance / total_time
-  
-  assert_eq(60, average_speed)  // (120 + 180) ÷ (2 + 3) = 300 ÷ 5 = 60
+  // 梯形面积：（上底 + 下底）× 高 ÷ 2
+  let top_base = 5
+  let bottom_base = 15
+  let trapezoid_height = 8
+  let trapezoid_area = multiply(add(top_base, bottom_base), trapezoid_height) / 2
+  assert_eq(80, trapezoid_area)
 }
