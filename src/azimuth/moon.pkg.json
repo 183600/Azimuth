@@ -153,4 +153,5 @@
   "azimuth_advanced_tests.mbt",
   "standard_moonbit_test_cases.mbt",
   "new_standard_tests.mbt",
-  "additional_standard_tests.mbt"]}
+  "additional_standard_tests.mbt",
+  "standard_test_suite.mbt"]}
