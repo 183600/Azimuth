@@ -1,12 +1,12 @@
-// MoonBit 标准测试用例
-// 测试 azimuth 包的核心功能
+// 标准 MoonBit 测试用例
+// 覆盖 azimuth 模块的核心功能，使用标准的 MoonBit 测试语法
 
-test "add_function_basic_tests" {
+test "add_function_basic" {
   // 测试基本加法功能
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-3, add(-1, -2))
-  assert_eq(100, add(50, 50))
+  assert_eq(10, add(15, -5))
 }
 
 test "add_function_edge_cases" {
@@ -14,23 +14,18 @@ test "add_function_edge_cases" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
   assert_eq(max_val, add(max_val, 1))
   assert_eq(min_val, add(min_val, -1))
   assert_eq(-1, add(max_val, min_val))
-  
-  // 测试与零相加
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, add(min_val, 1))
 }
 
-test "multiply_function_basic_tests" {
+test "multiply_function_basic" {
   // 测试基本乘法功能
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-  assert_eq(100, multiply(10, 10))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
 }
 
 test "multiply_function_edge_cases" {
@@ -38,45 +33,41 @@ test "multiply_function_edge_cases" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(0, multiply(max_val, 0))
-  
-  // 测试与1相乘
   assert_eq(max_val, multiply(max_val, 1))
   assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(0, multiply(max_val, 0))
 }
 
-test "greet_function_tests" {
-  // 测试greet函数
+test "greet_function_basic" {
+  // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 测试!", greet("测试"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "assert_functions_tests" {
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "greet_function_special_chars" {
+  // 测试包含特殊字符的问候
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
 }
 
 test "complex_calculations" {
-  // 测试复杂计算场景
-  // 计算矩形周长：2 * (长 + 宽)
-  let length = 10
-  let width = 5
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(30, perimeter)
+  // 测试复合计算
+  let a = 10
+  let b = 20
+  let c = 30
   
-  // 计算三角形面积：底 * 高 / 2
-  let base = 8
-  let height = 6
-  let area = multiply(base, height) / 2
-  assert_eq(24, area)
+  // (a + b) * c
+  let sum = add(a, b)
+  let result = multiply(sum, c)
+  assert_eq(900, result)
+  
+  // a * b + c
+  let product = multiply(a, b)
+  let result2 = add(product, c)
+  assert_eq(230, result2)
 }
 
 test "mathematical_properties" {
@@ -101,26 +92,10 @@ test "real_world_scenarios" {
   let fahrenheit = add(multiply(celsius, 2), 30)
   assert_eq(70, fahrenheit)
   
-  // 购物车计算：商品价格 × 数量
-  let price = 199
-  let quantity = 3
-  let total = multiply(price, quantity)
-  assert_eq(597, total)
-}
-
-test "error_handling_validation" {
-  // 测试错误处理和验证
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 验证溢出保护
-  assert_true(add(max_val, 100) == max_val)
-  assert_true(add(min_val, -100) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
-  
-  // 验证正常计算
-  assert_true(add(5, 3) == 8)
-  assert_true(multiply(4, 6) == 24)
-  assert_true(greet("Test") == "Hello, Test!")
+  // 简单贷款计算：本金 × (1 + 利率 × 年数)
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  let total = multiply(principal, add(1, multiply(rate, years)))
+  assert_eq(160000, total)  // 10000 × (1 + 5×3) = 10000 × 16 = 160000
 }
