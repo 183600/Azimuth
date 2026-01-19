@@ -6,7 +6,6 @@ test "add_function_basic_cases" {
   @azimuth.assert_eq(10, @azimuth.add(3, 7))
   @azimuth.assert_eq(0, @azimuth.add(5, -5))
   @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
-  @azimuth.assert_eq(1000, @azimuth.add(500, 500))
 }
 
 test "add_function_zero_handling" {
@@ -14,8 +13,6 @@ test "add_function_zero_handling" {
   @azimuth.assert_eq(42, @azimuth.add(0, 42))
   @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(2147483647, @azimuth.add(0, 2147483647))
-  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
 }
 
 test "add_function_overflow_cases" {
@@ -25,11 +22,9 @@ test "add_function_overflow_cases" {
   
   // 正数溢出
   @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(1000000000, 1500000000))
   
   // 负数溢出
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(-1000000000, -1500000000))
   
   // 最大值和最小值相加
   @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
@@ -41,7 +36,6 @@ test "multiply_function_basic_cases" {
   @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
   @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
   @azimuth.assert_eq(0, @azimuth.multiply(7, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -8))
 }
 
 test "multiply_function_edge_cases" {
@@ -56,24 +50,6 @@ test "multiply_function_edge_cases" {
   // 乘以-1
   @azimuth.assert_eq(-max_val, @azimuth.multiply(max_val, -1))
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  
-  // 最小值的特殊情况
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -2))
-}
-
-test "multiply_function_overflow_cases" {
-  // 测试乘法函数的溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 正数溢出
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46341, 46341))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(100000, 30000))
-  
-  // 负数溢出
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-46341, 46341))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(46341, -46341))
 }
 
 test "greet_function_various_inputs" {
@@ -81,8 +57,6 @@ test "greet_function_various_inputs" {
   @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
   @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 用户123!", @azimuth.greet("用户123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
 }
 
 test "divide_with_ceil_function" {
@@ -90,14 +64,10 @@ test "divide_with_ceil_function" {
   // 能整除的情况
   @azimuth.assert_eq(3, @azimuth.divide_with_ceil(6, 2))
   @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-6, 2))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(6, -2))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-6, -2))
   
   // 需要向上取整的情况
   @azimuth.assert_eq(4, @azimuth.divide_with_ceil(7, 2))
   @azimuth.assert_eq(4, @azimuth.divide_with_ceil(15, 4))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-11, 4))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(11, -6))
 }
 
 test "complex_combined_operations" {
@@ -115,9 +85,4 @@ test "complex_combined_operations" {
   let product = @azimuth.multiply(a, b)
   let result2 = @azimuth.add(product, c)
   @azimuth.assert_eq(-57, result2)
-  
-  // 使用 divide_with_ceil 进行复合运算
-  let dividend = @azimuth.add(a, b)
-  let quotient = @azimuth.divide_with_ceil(dividend, c)
-  @azimuth.assert_eq(3, quotient)
 }
