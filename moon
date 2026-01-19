@@ -91,7 +91,7 @@ if [ "$1" = "test" ]; then
       TEST_FILES=$(cat moon.pkg.json | python3 -c "import sys, json; print(' '.join(json.load(sys.stdin).get('test', [])))")
     else
       # 如果没有moon.pkg.json，使用默认测试文件
-      TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt"
+      TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt standard_moonbit_test_suite.mbt"
     fi
     
     TOTAL_TESTS=0

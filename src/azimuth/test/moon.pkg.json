@@ -5,6 +5,7 @@
   "export": [],
   "test": [
     "standard_azimuth_test_suite.mbt",
+    "standard_moonbit_test_suite.mbt",
     "azimuth_new_test_cases.mbt",
     "azimuth_basic_unit_tests.mbt",
     "standard_core_tests.mbt",
