@@ -178,4 +178,15 @@ if [ -f "azimuth_enhanced_test_cases.mbt" ]; then
   fi
 fi
 
+if [ -f "azimuth_standard_test_suite.mbt" ]; then
+  echo "Checking azimuth_standard_test_suite.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test azimuth_standard_test_suite.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "azimuth_standard_test_suite.mbt ... ok"
+  else
+    echo "azimuth_standard_test_suite.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"
