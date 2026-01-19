@@ -154,4 +154,6 @@
   "standard_moonbit_test_cases.mbt",
   "new_standard_tests.mbt",
   "additional_standard_tests.mbt",
-  "standard_test_suite.mbt"]}
+  "standard_test_suite.mbt",
+  "../../test/azimuth_enhanced_test_suite.mbt",
+  "azimuth_enhanced_test_suite.mbt"]}
