@@ -179,4 +179,8 @@
     "../../azimuth_simple_tests.mbt",
     "../../standard_moonbit_test_suite.mbt",
     "test/new_core_tests.mbt",
-    "simple_core_tests.mbt"]}
+    "simple_core_tests.mbt",
+  "standard_moonbit_test_additions.mbt",
+  "simple_standard_tests.mbt",
+  "standalone_test_suite.mbt",
+  "minimal_test.mbt"]}
