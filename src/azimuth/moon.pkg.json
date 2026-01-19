@@ -161,4 +161,6 @@
   "additional_standard_tests.mbt",
   "standard_test_suite.mbt",
   "../../test/azimuth_enhanced_test_suite.mbt",
-  "azimuth_enhanced_test_suite.mbt"]}
+      "azimuth_enhanced_test_suite.mbt",
+      "azimuth_comprehensive_new_tests.mbt",
+      "simple_test_case.mbt"]}
