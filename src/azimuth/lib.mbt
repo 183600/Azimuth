@@ -5292,7 +5292,218 @@ test "concise_financial_calculation_scenario" {
   assert_eq(864, final_price)
 }
 
-// 新增的10个标准MoonBit测试用例
+// 新增的10个标准 MoonBit 测试用例
+
+
+
+// 简洁的核心测试用例 - 覆盖项目的主要功能
+
+test "essential_basic_arithmetic" {
+
+  // 基础算术运算测试
+
+  assert_eq(10, add(3, 7))
+
+  assert_eq(15, multiply(3, 5))
+
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+
+}
+
+
+
+test "essential_zero_operations" {
+
+  // 零值运算测试
+
+  assert_eq(5, add(5, 0))
+
+  assert_eq(5, add(0, 5))
+
+  assert_eq(0, multiply(5, 0))
+
+  assert_eq(0, multiply(0, 5))
+
+  assert_eq_string("Hello, !", greet(""))
+
+}
+
+
+
+test "essential_negative_numbers" {
+
+  // 负数运算测试
+
+  assert_eq(-2, add(3, -5))
+
+  assert_eq(-15, multiply(3, -5))
+
+  assert_eq(15, multiply(-3, -5))
+
+  assert_eq_string("Hello, -123!", greet("-123"))
+
+}
+
+
+
+test "essential_boundary_values" {
+
+  // 边界值测试
+
+  let max_val = 2147483647
+
+  let min_val = -2147483648
+
+  
+
+  assert_eq(max_val, add(max_val, 1))
+
+  assert_eq(min_val, add(min_val, -1))
+
+  assert_eq(min_val, multiply(min_val, -1))
+
+  assert_eq(-1, add(max_val, min_val))
+
+}
+
+
+
+test "essential_identity_elements" {
+
+  // 单位元测试
+
+  assert_eq(5, add(5, 0))
+
+  assert_eq(5, multiply(5, 1))
+
+  assert_eq(-5, multiply(-5, 1))
+
+  assert_eq_string("Hello, World!", greet("World"))
+
+}
+
+
+
+test "essential_large_numbers" {
+
+  // 大数运算测试
+
+  assert_eq(2000000000, add(1000000000, 1000000000))
+
+  assert_eq(100000000, multiply(10000, 10000))
+
+  assert_eq_string("Hello, VeryLongNameForTesting!", greet("VeryLongNameForTesting"))
+
+}
+
+
+
+test "essential_complex_expressions" {
+
+  // 复合表达式测试
+
+  let a = 10
+
+  let b = 20
+
+  let c = 30
+
+  
+
+  // (a + b) * c
+
+  let result = multiply(add(a, b), c)
+
+  assert_eq(900, result)
+
+  
+
+  // a * b + c
+
+  let result2 = add(multiply(a, b), c)
+
+  assert_eq(230, result2)
+
+}
+
+
+
+test "essential_string_processing" {
+
+  // 字符串处理测试
+
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+
+  assert_eq_string("Hello, 123!", greet("123"))
+
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+
+}
+
+
+
+test "essential_practical_calculations" {
+
+  // 实际计算场景测试
+
+  // 计算矩形面积
+
+  let length = 5
+
+  let width = 8
+
+  let area = multiply(length, width)
+
+  assert_eq(40, area)
+
+  
+
+  // 计算周长
+
+  let perimeter = add(multiply(2, length), multiply(2, width))
+
+  assert_eq(26, perimeter)
+
+}
+
+
+
+test "essential_error_conditions" {
+
+  // 错误条件测试
+
+  let max_val = 2147483647
+
+  let min_val = -2147483648
+
+  
+
+  // 测试溢出保护
+
+  assert_true(add(max_val, 100) == max_val)
+
+  assert_true(add(min_val, -100) == min_val)
+
+  assert_true(multiply(max_val, 2) == max_val)
+
+  assert_true(multiply(min_val, 2) == min_val)
+
+  
+
+  // 测试断言函数
+
+  assert_true(true)
+
+  assert_false(false)
+
+  assert_eq(42, 42)
+
+}
+
+
+
 test "divide_with_ceil_comprehensive" {
   // 测试向上取整除法的全面功能
   assert_eq(3, divide_with_ceil(10, 4))  // 10/4 = 2.5 -> 3
