@@ -9,6 +9,7 @@
     "azimuth_enhanced_tests.mbt",
     "standard_azimuth_tests.mbt",
     "simple_verification_tests.mbt",
-    "standard_moonbit_test_suite.mbt"
+    "standard_moonbit_test_suite.mbt",
+    "new_standard_tests.mbt"
   ]
 }
