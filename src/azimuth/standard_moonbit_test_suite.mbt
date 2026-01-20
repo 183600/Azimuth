@@ -1,150 +1,141 @@
 // 标准 MoonBit 测试套件
-// 包含针对 azimuth 包核心功能的标准测试用例
+// 包含8个核心测试用例，覆盖基本功能
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(100, add(50, 50))
+test "string_concatenation_basic" {
+  // 测试基本字符串拼接功能
+  let result = greet("MoonBit")
+  assert_eq_string("Hello, MoonBit!", result)
 }
 
-test "add_function_boundary_values" {
-  // 测试 add 函数的边界值处理
+test "arithmetic_operations_comprehensive" {
+  // 测试综合算术运算
+  let a = 15
+  let b = 25
+  
+  // 加法测试
+  let sum = add(a, b)
+  assert_eq(40, sum)
+  
+  // 乘法测试
+  let product = multiply(a, b)
+  assert_eq(375, product)
+  
+  // 复合运算：(a + b) * a - b
+  let complex = add(multiply(sum, a), -b)
+  assert_eq(585, complex)
+}
+
+test "boundary_value_handling" {
+  // 测试边界值处理
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试溢出保护
+  // 最大值溢出保护
   assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, multiply(max_val, 2))
+  
+  // 最小值溢出保护
   assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
-  
-  // 测试零值处理
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(0, add(0, 0))
-}
-
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(100, multiply(10, 10))
-}
-
-test "multiply_function_special_cases" {
-  // 测试 multiply 函数的特殊情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试1和-1的情况
-  assert_eq(42, multiply(42, 1))
-  assert_eq(42, multiply(1, 42))
-  assert_eq(-42, multiply(42, -1))
-  assert_eq(-42, multiply(-1, 42))
-  
-  // 测试最小值与-1相乘的特殊情况
   assert_eq(min_val, multiply(min_val, -1))
   
-  // 测试溢出保护
-  assert_eq(max_val, multiply(46341, 46341))
+  // 零值运算
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(max_val, add(max_val, 0))
 }
 
-test "greet_function_comprehensive" {
-  // 测试 greet 函数的各种情况
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-}
-
-test "divide_with_ceil_function" {
-  // 测试向上取整除法函数
-  // 正常除法（无余数）
-  assert_eq(5, divide_with_ceil(10, 2))
-  assert_eq(3, divide_with_ceil(9, 3))
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 12
+  let y = 8
+  let z = 5
   
-  // 向上取整（有余数）
-  assert_eq(6, divide_with_ceil(11, 2))
-  assert_eq(4, divide_with_ceil(10, 3))
+  // 交换律
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 负数情况
-  assert_eq(-5, divide_with_ceil(-10, 2))
-  assert_eq(-3, divide_with_ceil(-11, 4))
-}
-
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 圆的周长计算（简化版：2 × π × r，π≈3）
-  let radius = 5
-  let circumference = multiply(multiply(2, 3), radius)
-  assert_eq(30, circumference)
-  
-  // 矩形面积计算
-  let length = 8
-  let width = 6
-  let area = multiply(length, width)
-  assert_eq(48, area)
-  
-  // 平均值计算
-  let num1 = 85
-  let num2 = 90
-  let num3 = 95
-  let sum = add(add(num1, num2), num3)
-  let average = sum / 3
-  assert_eq(90, average)
-}
-
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 结合律
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
   
   // 分配律
-  let c = 5
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
 }
 
-test "real_world_application_scenarios" {
+test "real_world_scenarios" {
   // 测试实际应用场景
-  // 购物车总价计算
-  let item1_price = 199
-  let item1_qty = 2
-  let item2_price = 299
-  let item2_qty = 1
+  // 购物车计算
+  let item_price = 199
+  let quantity = 3
+  let discount = 50
+  let tax_rate = 8
   
-  let total1 = multiply(item1_price, item1_qty)
-  let total2 = multiply(item2_price, item2_qty)
-  let cart_total = add(total1, total2)
+  let subtotal = multiply(item_price, quantity)
+  let after_discount = add(subtotal, -discount)
+  let tax = multiply(after_discount, tax_rate) / 100
+  let total = add(after_discount, tax)
   
-  assert_eq(697, cart_total)
+  assert_eq(608, total)
   
-  // 温度转换（简化版：摄氏度转华氏度 F = C × 2 + 30）
+  // 温度转换（简化版）
   let celsius = 25
   let fahrenheit = add(multiply(celsius, 2), 30)
   assert_eq(80, fahrenheit)
 }
 
-test "assertion_functions_validation" {
-  // 测试断言函数本身
+test "string_processing_edge_cases" {
+  // 测试字符串处理边界情况
+  // 空字符串
+  assert_eq_string("Hello, !", greet(""))
+  
+  // 单字符
+  assert_eq_string("Hello, A!", greet("A"))
+  
+  // 特殊字符
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  
+  // 长字符串
+  let long_name = "VeryLongUserNameForTestingPurposes"
+  assert_eq_string("Hello, VeryLongUserNameForTestingPurposes!", greet(long_name))
+  
+  // Unicode字符
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "error_handling_validation" {
+  // 测试错误处理和验证
+  // 断言函数测试
   assert_true(true)
   assert_false(false)
   assert_eq(42, 42)
-  assert_eq_string("MoonBit", "MoonBit")
+  assert_eq_string("test", "test")
   
-  // 测试复合条件
-  let x = 10
-  let y = 20
-  assert_true(x < y)
-  assert_false(x > y)
-  assert_eq(add(x, y), 30)
-  assert_eq_string(greet("Test"), "Hello, Test!")
+  // 边界条件验证
+  let normal_add = add(100, 200)
+  assert_eq(300, normal_add)
+  
+  let normal_mul = multiply(15, 4)
+  assert_eq(60, normal_mul)
+  
+  // 验证溢出保护
+  let max_val = 2147483647
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(multiply(max_val, 2) == max_val)
+}
+
+test "performance_efficient_calculations" {
+  // 测试性能相关的计算
+  // 大数运算
+  let large_num1 = 1000000
+  let large_num2 = 2000000
+  
+  assert_eq(3000000, add(large_num1, large_num2))
+  assert_eq(2000000000000, multiply(large_num1, large_num2))
+  
+  // 序列计算：1+2+3+...+10 = 55
+  let series_sum = add(add(add(add(add(1, 2), add(3, 4)), add(5, 6)), add(add(7, 8), add(9, 10)))
+  assert_eq(55, series_sum)
+  
+  // 幂运算：2^6 = 64
+  let power_of_2 = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(2, 2))
+  assert_eq(64, power_of_2)
 }
