@@ -2,80 +2,105 @@
 // 包含对核心功能的基本测试用例
 
 test "add_basic_functionality" {
-  // 测试基本的加法功能
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
+  // 测试基本加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-8, add(-3, -5))
+}
+
+test "add_overflow_protection" {
+  // 测试加法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
 }
 
 test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(3, 0))
+  // 测试基本乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 100))
 }
 
-test "greet_basic_functionality" {
-  // 测试基本的问候功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-}
-
-test "add_with_zero" {
-  // 测试与零相加的情况
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(5, @azimuth.add(0, 5))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-}
-
-test "multiply_with_one" {
-  // 测试与一相乘的情况
-  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
-  @azimuth.assert_eq(7, @azimuth.multiply(1, 7))
-  @azimuth.assert_eq(-7, @azimuth.multiply(-7, 1))
-}
-
-test "greet_with_special_characters" {
-  // 测试包含特殊字符的字符串
-  @azimuth.assert_eq_string("Hello, Test123!", @azimuth.greet("Test123"))
-  @azimuth.assert_eq_string("Hello, 用户@测试!", @azimuth.greet("用户@测试"))
-}
-
-test "add_boundary_values" {
-  // 测试边界值的加法
+test "multiply_overflow_protection" {
+  // 测试乘法溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(0, multiply(max_val, 0))
 }
 
-test "multiply_boundary_values" {
-  // 测试边界值的乘法
+test "greet_functionality" {
+  // 测试greet函数功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 6
+  let b = 8
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "complex_calculations" {
+  // 测试复杂计算
+  // (a + b) * c - d
+  let a = 5
+  let b = 3
+  let c = 4
+  let d = 10
+  
+  let sum = add(a, b)
+  let product = multiply(sum, c)
+  let result = add(product, -d)
+  
+  assert_eq(22, result)
+}
+
+test "boundary_values" {
+  // 测试边界值
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 边界值与0和1的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
 }
 
-test "complex_calculation" {
-  // 测试复合计算：(a + b) * c
-  let a = 3
-  let b = 4
-  let c = 5
+test "string_operations" {
+  // 测试字符串操作
+  let name1 = "MoonBit"
+  let name2 = "123"
+  let name3 = "user@example.com"
   
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  
-  @azimuth.assert_eq(35, result)
+  assert_eq_string("Hello, MoonBit!", greet(name1))
+  assert_eq_string("Hello, 123!", greet(name2))
+  assert_eq_string("Hello, user@example.com!", greet(name3))
 }
 
-test "assert_functions" {
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 购物车计算：商品价格 × 数量 + 运费
+  let price = 199
+  let quantity = 2
+  let shipping = 15
+  
+  let subtotal = multiply(price, quantity)
+  let total = add(subtotal, shipping)
+  
+  assert_eq(413, total)
 }
