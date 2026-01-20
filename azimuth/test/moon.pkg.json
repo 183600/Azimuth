@@ -78,6 +78,9 @@
     "azimuth_simple_enhanced_tests.mbt",
     "comprehensive_quality_tests.mbt",
     "simple_verify_test.mbt",
-    "standard_test_cases.mbt"
+    "standard_test_cases.mbt",
+    "verify_simple_test.mbt",
+    "user_defined_test.mbt",
+    "custom_azimuth_test.mbt"
   ]
 }

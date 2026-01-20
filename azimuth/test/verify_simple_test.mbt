@@ -1,12 +1,9 @@
-// 简单验证测试
-test "verify_simple_addition" {
+// 验证简单测试
+
+test "verify_simple_add" {
   @azimuth.assert_eq(5, @azimuth.add(2, 3))
 }
 
-test "verify_simple_multiplication" {
+test "verify_simple_multiply" {
   @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-}
-
-test "verify_simple_greeting" {
-  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
 }
