@@ -90,6 +90,7 @@
     "user_defined_test.mbt",
     "user_standard_tests.mbt",
     "verify_simple_test.mbt",
-    "my_new_test.mbt"
+    "my_new_test.mbt",
+    "quality_enhanced_tests.mbt"
   ]
 }
