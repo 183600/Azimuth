@@ -4937,4 +4937,89 @@ test "data_conversion_simulation" {
   assert_eq_string("Hello, 39.9042°N, 116.4074°E!", greet(coordinate_str))
 }
 
+// 新增的简洁 Azimuth 测试用例
+// 覆盖核心功能和边界情况
+
+test "concise_add_function_basic" {
+  // 测试基本加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-8, add(-3, -5))
+}
+
+test "concise_add_function_overflow" {
+  // 测试加法溢出保护
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "concise_multiply_function_basic" {
+  // 测试基本乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 100))
+}
+
+test "concise_multiply_function_edge_cases" {
+  // 测试乘法边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(min_val, multiply(min_val, 1))
+}
+
+test "concise_greet_function_variations" {
+  // 测试 greet 函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "concise_divide_with_ceil_function" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(10, 3))
+  assert_eq(4, divide_with_ceil(12, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-3, divide_with_ceil(-9, 3))
+}
+
+test "concise_complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算矩形面积和周长
+  let length = 8
+  let width = 5
+  
+  let area = multiply(length, width)
+  let perimeter = add(multiply(2, length), multiply(2, width))
+  
+  assert_eq(40, area)
+  assert_eq(26, perimeter)
+}
+
+test "concise_financial_calculation_scenario" {
+  // 测试金融计算场景
+  // 简单的折扣计算
+  let original_price = 1000
+  let discount_rate = 20  // 20% 折扣
+  let tax_rate = 8        // 8% 税费
+  
+  // 计算折扣价
+  let discount_amount = multiply(original_price, discount_rate) / 100
+  let discounted_price = add(original_price, -discount_amount)
+  
+  // 计算最终价格（含税）
+  let tax_amount = multiply(discounted_price, tax_rate) / 100
+  let final_price = add(discounted_price, tax_amount)
+  
+  assert_eq(800, discounted_price)
+  assert_eq(864, final_price)
+}
+
 

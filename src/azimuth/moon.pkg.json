@@ -190,4 +190,5 @@
   "standalone_test_suite.mbt",
   "minimal_test.mbt",
   "azimuth_comprehensive_unit_tests.mbt",
-  "standard_comprehensive_tests.mbt"]}
+  "standard_comprehensive_tests.mbt",
+  "concise_azimuth_tests.mbt"]}
