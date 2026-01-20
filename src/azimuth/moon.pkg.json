@@ -211,4 +211,5 @@
   "azimuth_standard_unit_tests.mbt",
   "user_standard_tests_v2.mbt",
   "user_defined_comprehensive_tests.mbt",
-  "simple_user_test.mbt"]}
+  "simple_user_test.mbt",
+  "standard_moonbit_test_suite.mbt"]}
