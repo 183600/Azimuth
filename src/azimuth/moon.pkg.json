@@ -212,4 +212,5 @@
   "user_standard_tests_v2.mbt",
   "user_defined_comprehensive_tests.mbt",
   "simple_user_test.mbt",
-  "standard_moonbit_test_suite.mbt"]}
+  "standard_moonbit_test_suite.mbt",
+  "standard_comprehensive_test_suite.mbt"]}
