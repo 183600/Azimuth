@@ -45,6 +45,7 @@
     "core_functionality_tests.mbt",
     "custom_azimuth_test.mbt",
     "enhanced_azimuth_tests.mbt",
+    "enhanced_unit_tests.mbt",
     "essential_tests.mbt",
     "final_standard_tests.mbt",
     "moonbit_standard_tests.mbt",

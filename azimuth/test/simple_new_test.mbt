@@ -1,15 +1,15 @@
-// 简单测试用例
+// 简单的新测试用例
+
 test "simple_add_test" {
-  let result = @azimuth.add(2, 3)
-  @azimuth.assert_eq(5, result)
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
 }
 
 test "simple_multiply_test" {
-  let result = @azimuth.multiply(4, 5)
-  @azimuth.assert_eq(20, result)
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
 }
 
 test "simple_greet_test" {
-  let result = @azimuth.greet("Test")
-  @azimuth.assert_eq_string("Hello, Test!", result)
+  assert_eq_string("Hello, World!", greet("World"))
 }
