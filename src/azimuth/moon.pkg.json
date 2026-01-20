@@ -164,6 +164,7 @@
   "../../azimuth_new_standard_tests.mbt",
   "user_additional_tests.mbt",
   "test/standard_core_tests.mbt",
+  "test/advanced_test_cases.mbt",
   "standard_moonbit_core_tests.mbt",
   "test/user_specified_standard_tests.mbt",
   "concise_test_cases.mbt",
