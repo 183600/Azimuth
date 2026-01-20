@@ -1,6 +1,6 @@
 {
   "name": "azimuth_test",
-  "import": [
+  "test-import": [
     "src/azimuth"
   ],
   "test": [
@@ -18,6 +18,27 @@
     "simple_additional_tests.mbt",
     "quality_test_suite.mbt",
     "user_defined_comprehensive_tests.mbt",
-    "focused_unit_tests.mbt"
+    "focused_unit_tests.mbt",
+    "concise_core_tests.mbt",
+    "simple_test_new.mbt",
+    "simple_test_new2.mbt",
+    "additional_moonbit_tests.mbt",
+    "azimuth_advanced_tests.mbt",
+    "azimuth_comprehensive_test_suite.mbt",
+    "azimuth_comprehensive_tests.mbt",
+    "azimuth_enhanced_test_suite.mbt",
+    "azimuth_unit_tests.mbt",
+    "comprehensive_moonbit_tests.mbt",
+    "comprehensive_standard_tests.mbt",
+    "concise_standard_tests.mbt",
+    "final_new_tests.mbt",
+    "new_azimuth_tests.mbt",
+    "new_core_tests.mbt",
+    "simple_new_test.mbt",
+    "simple_unit_tests.mbt",
+    "standard_azimuth_additional_tests.mbt",
+    "standard_moonbit_tests.mbt",
+    "user_defined_comprehensive_tests.mbt",
+    "simple_test_builtin.mbt"
   ]
 }

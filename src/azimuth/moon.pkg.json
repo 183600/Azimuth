@@ -1,5 +1,8 @@
 {
   "name": "azimuth",
+  "import": [
+    "moonbitlang/core"
+  ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
     "../../azimuth_core_standard_tests.mbt",
@@ -223,4 +226,5 @@
   "basic_unit_tests.mbt",
   "corrected_unit_tests.mbt",
   "simple_moonbit_tests.mbt",
-  "standard_test_cases.mbt"]}
+  "standard_test_cases.mbt",
+    "concise_core_tests.mbt"]}
