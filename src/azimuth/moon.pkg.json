@@ -2,6 +2,7 @@
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
+    "quality_test_suite.mbt",
     "comprehensive_moonbit_test_suite.mbt",
     "azimuth_advanced_test_cases.mbt",
     "../../azimuth_standard_tests.mbt",
