@@ -39,22 +39,22 @@ test "divide_with_ceil_negative" {
 
 test "add_zero_handling" {
   // 测试加法函数的零值处理
-  let result1 = @azimuth.add(0, 5)
-  @azimuth.assert_eq(5, result1)
+  let result1 = add(0, 5)
+  assert_eq(5, result1)
   
-  let result2 = @azimuth.add(5, 0)
-  @azimuth.assert_eq(5, result2)
+  let result2 = add(5, 0)
+  assert_eq(5, result2)
   
-  let result3 = @azimuth.add(0, 0)
-  @azimuth.assert_eq(0, result3)
+  let result3 = add(0, 0)
+  assert_eq(0, result3)
   
   let max_val = 2147483647
-  let result4 = @azimuth.add(0, max_val)
-  @azimuth.assert_eq(max_val, result4)
+  let result4 = add(0, max_val)
+  assert_eq(max_val, result4)
   
   let min_val = -2147483648
-  let result5 = @azimuth.add(0, min_val)
-  @azimuth.assert_eq(min_val, result5)
+  let result5 = add(0, min_val)
+  assert_eq(min_val, result5)
 }
 
 test "multiply_special_values" {
