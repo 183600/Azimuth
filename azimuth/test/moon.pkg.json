@@ -69,6 +69,7 @@
     "simple_test.mbt",
     "simple_test_new.mbt",
     "simple_user_test.mbt",
+    "simple_unit_tests.mbt",
     "simple_user_tests.mbt",
     "simple_verify_test.mbt",
     "standard_azimuth_tests.mbt",
