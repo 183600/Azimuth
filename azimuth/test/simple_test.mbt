@@ -646,3 +646,44 @@ test "complex_arithmetic_sequence_enhanced" {
   let result5 = @azimuth.divide_with_ceil(result4, 4)  // 4
   @azimuth.assert_eq(4, result5)
 }
+
+// 新增的测试用例 - 极值边界条件测试
+test "add_function_extreme_boundary_values" {
+  // 测试极值边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 极值加法测试
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(max_val - 1, @azimuth.add(max_val - 2, 1))
+  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val + 2, -1))
+}
+
+// Unicode字符和特殊字符测试
+test "greet_function_unicode_and_special_chars" {
+  // 测试Unicode字符和特殊字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌙!", @azimuth.greet("🌙"))
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  @azimuth.assert_eq_string("Hello, a@b.com!", @azimuth.greet("a@b.com"))
+}
+
+// 向上取整除法全面测试
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  // 正数情况
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  
+  // 负数情况
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-8, 3))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-6, 3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1, 100))
+  
+  // 零和负除数
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(10, -3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-10, -3))
+}
