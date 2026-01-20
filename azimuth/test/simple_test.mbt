@@ -611,3 +611,38 @@ test "user_added_zero_and_one_operations" {
   @azimuth.assert_eq(12345, @azimuth.add(12345, 0))
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
 }
+
+// 新增的增强测试用例
+test "add_large_numbers_enhanced" {
+  // 测试大数加法
+  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(-1000000, @azimuth.add(-500000, -500000))
+  @azimuth.assert_eq(0, @azimuth.add(1000000, -1000000))
+}
+
+test "multiply_fractional_logic_enhanced" {
+  // 测试乘法的分数逻辑（虽然都是整数，但测试类似分数的概念）
+  @azimuth.assert_eq(25, @azimuth.multiply(5, 5))
+  @azimuth.assert_eq(36, @azimuth.multiply(6, 6))
+  @azimuth.assert_eq(49, @azimuth.multiply(7, 7))
+  @azimuth.assert_eq(64, @azimuth.multiply(8, 8))
+}
+
+test "greet_unicode_and_spaces_enhanced" {
+  // 测试包含Unicode字符和空格的问候
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, MoonBit 语言!", @azimuth.greet("MoonBit 语言"))
+  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, test user!", @azimuth.greet("test user"))
+}
+
+test "complex_arithmetic_sequence_enhanced" {
+  // 测试复杂的算术序列
+  let result1 = @azimuth.add(1, 1)  // 2
+  let result2 = @azimuth.multiply(result1, 2)  // 4
+  let result3 = @azimuth.add(result2, 1)  // 5
+  let result4 = @azimuth.multiply(result3, 3)  // 15
+  let result5 = @azimuth.divide_with_ceil(result4, 4)  // 4
+  @azimuth.assert_eq(4, result5)
+}
