@@ -216,4 +216,9 @@
   "simple_user_test.mbt",
   "standard_moonbit_test_suite.mbt",
   "standard_comprehensive_test_suite.mbt",
-  "standard_enhanced_test_suite.mbt"]}
+  "standard_enhanced_test_suite.mbt",
+  "focused_unit_tests.mbt",
+  "simple_focused_tests.mbt",
+  "basic_unit_tests.mbt",
+  "corrected_unit_tests.mbt",
+  "simple_moonbit_tests.mbt"]}
