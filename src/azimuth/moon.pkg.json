@@ -179,6 +179,7 @@
   "standard_moonbit_test_cases.mbt",
   "new_standard_tests.mbt",
   "additional_standard_tests.mbt",
+  "additional_moonbit_test_cases.mbt",
   "standard_test_suite.mbt",
   "../../azimuth_standard_test_cases.mbt",
   "azimuth_standard_test_cases.mbt",
