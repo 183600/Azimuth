@@ -4,6 +4,7 @@
     "src/azimuth"
   ],
   "test": [
+    "standard_comprehensive_tests.mbt",
     "standard_moonbit_core_tests.mbt",
     "enhanced_azimuth_tests.mbt",
     "azimuth_enhanced_tests.mbt",
