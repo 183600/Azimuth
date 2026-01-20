@@ -7,6 +7,8 @@
     "moonbitlang/core/builtin"
   ],
   "test": [
+    "azimuth_core_functionality_tests.mbt",
+    "azimuth_basic_test_suite.mbt",
     "essential_tests.mbt",
     "standard_moonbit_tests.mbt",
     "simple_comprehensive_tests.mbt",
@@ -85,6 +87,7 @@
     "custom_azimuth_test.mbt",
     "azimuth_comprehensive_tests.mbt",
     "essential_tests.mbt",
-    "new_additional_standard_tests.mbt"
+    "new_additional_standard_tests.mbt",
+    "azimuth_basic_test_suite.mbt"
   ]
 }
