@@ -1,130 +1,128 @@
 // 标准 MoonBit 测试套件
-// 包含10个核心测试用例，验证项目的基本功能
+// 包含10个测试用例，测试项目的核心功能
 
-test "basic_addition_functionality" {
+test "add_basic_functionality" {
   // 测试基本加法功能
   assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-8, add(-3, -5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "basic_multiplication_functionality" {
+test "add_boundary_values" {
+  // 测试边界值的加法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+  assert_eq(0, add(min_val, 1))
+}
+
+test "multiply_basic_functionality" {
   // 测试基本乘法功能
   assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 100))
   assert_eq(-12, multiply(-3, 4))
-  assert_eq(0, multiply(8, 0))
+  assert_eq(25, multiply(-5, -5))
 }
 
-test "greet_function_basic_tests" {
-  // 测试greet函数的基本功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-}
-
-test "overflow_protection_tests" {
-  // 测试溢出保护机制
+test "multiply_special_cases" {
+  // 测试乘法的特殊情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 测试正数溢出
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, max_val))
-  
-  // 测试负数溢出
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, multiply(min_val, -1))
-}
-
-test "special_value_handling" {
-  // 测试特殊值的处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试与0的运算
-  assert_eq(5, add(5, 0))
-  assert_eq(5, add(0, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, 5))
-  
-  // 测试与1的运算
-  assert_eq(6, multiply(6, 1))
-  assert_eq(6, multiply(1, 6))
-  
-  // 测试最小值的特殊处理
+  assert_eq(max_val, multiply(max_val, 1))
   assert_eq(min_val, multiply(min_val, 1))
   assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(0, multiply(max_val, 0))
+}
+
+test "greet_functionality" {
+  // 测试greet函数的基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "greet_special_characters" {
+  // 测试greet函数处理特殊字符
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, a\nb!", greet("a\nb"))
+}
+
+test "complex_arithmetic_operations" {
+  // 测试复合算术运算
+  let a = 10
+  let b = 20
+  let c = 5
+  
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(150, result1)
+  
+  // a * c + b * c
+  let result2 = add(multiply(a, c), multiply(b, c))
+  assert_eq(150, result2)
+  
+  // 验证分配律
+  assert_eq(result1, result2)
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let a = 12
-  let b = 8
+  let x = 15
+  let y = 25
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(add(x, y), add(y, x))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+  // 加法结合律
+  let z = 35
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
 }
 
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 计算矩形周长：2 × (长 + 宽)
-  let length = 15
-  let width = 8
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(46, perimeter)
-  
-  // 计算总价：单价 × 数量 + 运费
-  let price = 199
-  let quantity = 3
-  let shipping = 20
-  let total = add(multiply(price, quantity), shipping)
-  assert_eq(617, total)
-}
-
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-  assert_eq_string("Hello, User_123!", greet("User_123"))
-  assert_eq_string("Hello, \"John\"!", greet("\"John\""))
-  
-  // 测试包含空格的字符串
-  assert_eq_string("Hello, Mary Jane!", greet("Mary Jane"))
-  assert_eq_string("Hello,  Test !", greet(" Test "))
-}
-
-test "assertion_functions_validation" {
-  // 测试断言函数本身
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("MoonBit", "MoonBit")
-  
-  // 测试条件断言
-  let x = 10
-  let y = 20
-  assert_true(x < y)
-  assert_false(x > y)
-  assert_eq(add(x, y), 30)
-}
-
-test "real_world_application_tests" {
+test "real_world_scenarios" {
   // 测试实际应用场景
+  // 计算购物车总价：商品1数量×单价 + 商品2数量×单价
+  let item1_price = 199
+  let item1_qty = 2
+  let item2_price = 299
+  let item2_qty = 1
+  
+  let total1 = multiply(item1_price, item1_qty)
+  let total2 = multiply(item2_price, item2_qty)
+  let cart_total = add(total1, total2)
+  
+  assert_eq(697, cart_total)
+  
   // 温度转换：摄氏度转华氏度（简化版：F = C × 2 + 30）
   let celsius = 25
   let fahrenheit = add(multiply(celsius, 2), 30)
   assert_eq(80, fahrenheit)
+}
+
+test "error_handling_and_edge_cases" {
+  // 测试错误处理和边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 简单利息计算：本金 × (1 + 利率 × 时间)
-  let principal = 1000
-  let rate = 5  // 5%
-  let time = 3
-  let amount = multiply(principal, add(1, multiply(rate, time)))
-  assert_eq(16000, amount)
+  // 测试溢出保护
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(add(min_val, -100) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, 2) == min_val)
+  
+  // 测试断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("test", "test")
 }
