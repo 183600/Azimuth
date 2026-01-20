@@ -2,6 +2,7 @@
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
+    "enhanced_functional_tests.mbt",
     "azimuth_core_functionality_tests.mbt",
     "additional_standard_tests.mbt",
     "standard_comprehensive_tests.mbt",
