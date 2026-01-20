@@ -16,6 +16,7 @@
     "standard_azimuth_tests.mbt",
     "azimuth_core_tests.mbt",
     "lib.mbt",
+    "standard_azimuth_core_tests.mbt",
     "additional_comprehensive_tests.mbt",
     "../user_new_moonbit_tests.mbt",
     "simple_user_test.mbt",

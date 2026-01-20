@@ -11,6 +11,7 @@
     "simple_verification_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "new_standard_tests.mbt",
-    "additional_core_tests.mbt"
+    "additional_core_tests.mbt",
+    "standard_azimuth_core_tests.mbt"
   ]
 }
