@@ -206,4 +206,5 @@
   "azimuth_additional_test_cases.mbt",
   "standard_moonbit_quality_tests.mbt",
   "simple_quality_test.mbt",
-  "azimuth_standard_test_cases.mbt"]}
+  "azimuth_standard_test_cases.mbt",
+  "azimuth_standard_unit_tests.mbt"]}
