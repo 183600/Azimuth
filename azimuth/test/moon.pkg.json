@@ -77,6 +77,7 @@
     "azimuth_standard_enhanced_tests.mbt",
     "azimuth_simple_enhanced_tests.mbt",
     "comprehensive_quality_tests.mbt",
-    "simple_verify_test.mbt"
+    "simple_verify_test.mbt",
+    "standard_test_cases.mbt"
   ]
 }
