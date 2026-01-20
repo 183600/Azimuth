@@ -186,7 +186,6 @@
     "../../standard_moonbit_test_suite.mbt",
     "test/new_core_tests.mbt",
     "simple_core_tests.mbt",
-  "standard_moonbit_test_additions.mbt",
   "simple_standard_tests.mbt",
   "standalone_test_suite.mbt",
   "minimal_test.mbt",
@@ -194,4 +193,6 @@
   "standard_comprehensive_tests.mbt",
       "concise_azimuth_tests.mbt",
       "standard_moonbit_test_suite.mbt",
-  "standard_moonbit_test_suite_new.mbt"]}
+  "standard_moonbit_test_suite_new.mbt",
+  "standard_moonbit_test_additions.mbt",
+  "simple_test_new.mbt"]}
