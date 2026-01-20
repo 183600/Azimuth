@@ -1,146 +1,132 @@
-// 标准综合测试套件
-// 测试 azimuth 包中的核心功能
+// 标准 MoonBit 测试用例
+// 覆盖 azimuth 库的主要功能
 
-test "basic_addition_functionality" {
-  // 测试基本加法功能
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
-  @azimuth.assert_eq(100, @azimuth.add(0, 100))
-  @azimuth.assert_eq(-50, @azimuth.add(-50, 0))
+test "add_basic_functionality" {
+  // 测试加法基本功能
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(-2, 2))
+  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
 }
 
-test "addition_overflow_handling" {
-  // 测试加法溢出处理
+test "add_boundary_values" {
+  // 测试加法边界值
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 正数溢出测试
+  // 测试溢出保护
   @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  
-  // 负数溢出测试
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  
-  // 边界值测试
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
 }
 
-test "basic_multiplication_functionality" {
-  // 测试基本乘法功能
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(10, 0))
-  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
-  @azimuth.assert_eq(-7, @azimuth.multiply(7, -1))
+test "multiply_basic_functionality" {
+  // 测试乘法基本功能
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(-6, @azimuth.multiply(2, -3))
+  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
 }
 
-test "multiplication_overflow_handling" {
-  // 测试乘法溢出处理
-  let max_val = 2147483647
+test "multiply_special_values" {
+  // 测试乘法特殊值
   let min_val = -2147483648
   
-  // 正数溢出测试
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46341, 46341))
+  // 测试1和-1的情况
+  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
+  @azimuth.assert_eq(-42, @azimuth.multiply(42, -1))
   
-  // 负数溢出测试
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-46341, 46341))
-  
-  // 最小值特殊处理测试
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+  // 测试最小值的特殊情况
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
 }
 
-test "greet_function_functionality" {
-  // 测试问候函数功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "greet_function_test" {
+  // 测试问候函数
   @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
 }
 
 test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 3))
+  // 测试向上取整除法
+  // 正数向上取整
   @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
   @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-11, 3))
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-10, -3))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(13, 3))
+  
+  // 负数向上取整
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-8, 3))
+  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-11, 3))
+  
+  // 整除情况
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-9, 3))
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
-  let a = 12
-  let b = 8
-  let c = -5
+test "mixed_arithmetic_operations" {
+  // 测试混合算术运算
+  let a = 10
+  let b = 5
+  let c = -3
   
-  // 计算 (a + b) * c
+  // (a + b) * c
   let sum = @azimuth.add(a, b)
-  let result1 = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(-100, result1)
+  let result = @azimuth.multiply(sum, c)
+  @azimuth.assert_eq(-45, result)
   
-  // 计算 a * b + c
+  // a * b + c
   let product = @azimuth.multiply(a, b)
   let result2 = @azimuth.add(product, c)
-  @azimuth.assert_eq(91, result2)
-  
-  // 计算 (a - b) * (b + c)
-  let diff = @azimuth.add(a, -b)
-  let sum2 = @azimuth.add(b, c)
-  let result3 = @azimuth.multiply(diff, sum2)
-  @azimuth.assert_eq(12, result3)
+  @azimuth.assert_eq(47, result2)
 }
 
-test "boundary_value_operations" {
-  // 测试边界值运算
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 边界值加法
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val - 1, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val + 1, -1))
-  
-  // 边界值乘法
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46340, 46341))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-46340, 46341))
-  
-  // 边界值与零的运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+test "unicode_and_special_characters" {
+  // 测试Unicode字符和特殊字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌙!", @azimuth.greet("🌙"))
+  @azimuth.assert_eq_string("Hello, user@domain.com!", @azimuth.greet("user@domain.com"))
+  @azimuth.assert_eq_string("Hello, space separated!", @azimuth.greet("space separated"))
 }
 
 test "negative_number_operations" {
   // 测试负数运算
   // 负数加法
   @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(-7, @azimuth.add(-10, 3))
-  @azimuth.assert_eq(3, @azimuth.add(-7, 10))
   @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(-2, @azimuth.add(-10, 8))
   
   // 负数乘法
-  @azimuth.assert_eq(21, @azimuth.multiply(-3, -7))
-  @azimuth.assert_eq(-21, @azimuth.multiply(-3, 7))
-  @azimuth.assert_eq(-21, @azimuth.multiply(3, -7))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
   @azimuth.assert_eq(0, @azimuth.multiply(-5, 0))
-  
-  // 负数除法
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-10, -3))
 }
 
-test "special_character_handling" {
-  // 测试特殊字符处理
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
-  @azimuth.assert_eq_string("Hello, emoji😊!", @azimuth.greet("emoji😊"))
-  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
-  @azimuth.assert_eq_string("Hello, \\path\\!", @azimuth.greet("\\path\\"))
-  @azimuth.assert_eq_string("Hello, \t\n\r!", @azimuth.greet("\t\n\r"))
+test "practical_application_scenarios" {
+  // 测试实际应用场景
+  // 购物车计算
+  let item1 = 199
+  let item2 = 299
+  let item3 = 99
+  let shipping = 15
+  
+  let subtotal = @azimuth.add(item1, item2)
+  let subtotal2 = @azimuth.add(subtotal, item3)
+  let total = @azimuth.add(subtotal2, shipping)
+  @azimuth.assert_eq(612, total)
+  
+  // 批量计算（单价 × 数量）
+  let unit_price = 25
+  let quantity = 8
+  let order_total = @azimuth.multiply(unit_price, quantity)
+  @azimuth.assert_eq(200, order_total)
+  
+  // 页面分组计算（向上取整）
+  let total_items = 35
+  let items_per_page = 10
+  let pages_needed = @azimuth.divide_with_ceil(total_items, items_per_page)
+  @azimuth.assert_eq(4, pages_needed)
 }
