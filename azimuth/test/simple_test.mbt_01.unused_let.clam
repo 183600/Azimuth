@@ -1,5 +1,0 @@
-((fns ()) (main ()) (globals ())
- (type_defs
-  ((moonbit.array_i64 (Ref_array (elem I64) (mut true)))
-   (moonbit.array_f64 (Ref_array (elem F64) (mut true)))
-   (moonbit.array_i32 (Ref_array (elem I32_Int) (mut true))))))

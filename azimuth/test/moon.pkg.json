@@ -81,6 +81,7 @@
     "standard_feature_tests.mbt",
     "standard_library_test.mbt",
     "standard_moonbit_test_cases.mbt",
+    "new_standard_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_test_cases.mbt",
     "standard_tests.mbt",
