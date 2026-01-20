@@ -1,200 +1,174 @@
-// Azimuth 标准测试用例集
-// 覆盖核心功能和边界情况
+// Azimuth 综合标准测试用例
+// 使用标准的 MoonBit 测试语法，覆盖主要功能
 
-test "add_function_comprehensive" {
-  // 基本加法测试
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(5, -5))
-  assert_eq(-8, add(-3, -5))
-  
-  // 零值处理
-  assert_eq(15, add(0, 15))
-  assert_eq(-20, add(-20, 0))
-  assert_eq(0, add(0, 0))
-  
-  // 边界值测试
+test "add_function_basic_tests" {
+  // 测试加法的基本功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(-2, 2))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
+  assert_eq(42, add(100, -58))
+}
+
+test "add_function_overflow_tests" {
+  // 测试加法的溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
+  
+  // 测试正数溢出
   assert_eq(max_val, add(max_val, 1))
+  assert_eq(max_val, add(max_val, max_val))
+  
+  // 测试负数溢出
   assert_eq(min_val, add(min_val, -1))
+  assert_eq(min_val, add(min_val, min_val))
+  
+  // 测试边界情况
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
 }
 
-test "multiply_function_comprehensive" {
-  // 基本乘法测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(4, -3))
-  assert_eq(16, multiply(-4, -4))
-  
-  // 单位元测试
-  assert_eq(8, multiply(1, 8))
-  assert_eq(9, multiply(9, 1))
-  assert_eq(-7, multiply(-1, 7))
-  assert_eq(0, multiply(0, 123))
-  
-  // 边界值测试
+test "multiply_function_basic_tests" {
+  // 测试乘法的基本功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(25, multiply(5, 5))
+  assert_eq(-30, multiply(6, -5))
+}
+
+test "multiply_function_overflow_tests" {
+  // 测试乘法的溢出保护
   let max_val = 2147483647
   let min_val = -2147483648
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  
+  // 测试正数溢出
+  assert_eq(max_val, multiply(46341, 46341))
+  
+  // 测试负数溢出
+  assert_eq(min_val, multiply(-46341, 46341))
+  
+  // 测试最小值的特殊情况
+  assert_eq(min_val, multiply(min_val, 2))
   assert_eq(min_val, multiply(min_val, -1))
+  
+  // 测试与1和-1的乘法
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(-max_val, multiply(max_val, -1))
 }
 
-test "greet_function_various_inputs" {
-  // 基本问候测试
-  assert_eq_string("Hello, Alice!", greet("Alice"))
-  assert_eq_string("Hello, Bob!", greet("Bob"))
-  
-  // 特殊字符串测试
+test "greet_function_tests" {
+  // 测试字符串拼接功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, Alice!", greet("Alice"))
   assert_eq_string("Hello, 123!", greet("123"))
-  
-  // 包含空格的名称
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
-  assert_eq_string("Hello, MoonBit Language!", greet("MoonBit Language"))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
 }
 
-test "divide_with_ceil_function_various_cases" {
-  // 基本向上取整测试
-  assert_eq(4, divide_with_ceil(10, 3))
+test "divide_with_ceil_tests" {
+  // 测试向上取整除法
+  // 正数测试
+  assert_eq(4, divide_with_ceil(11, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(2, divide_with_ceil(5, 3))
-  
-  // 负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-2, divide_with_ceil(-5, 3))
-  assert_eq(3, divide_with_ceil(10, -3))
-  
-  // 边界情况
   assert_eq(1, divide_with_ceil(1, 1))
   assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  
+  // 负数测试
+  assert_eq(-3, divide_with_ceil(-8, 3))
+  assert_eq(-2, divide_with_ceil(-5, 3))
+  assert_eq(-1, divide_with_ceil(-1, 3))
+  
+  // 混合符号测试
+  assert_eq(-2, divide_with_ceil(5, -3))
+  assert_eq(2, divide_with_ceil(-5, 3))
 }
 
-test "assert_functions_basic" {
-  // 基本断言测试
+test "assertion_functions_tests" {
+  // 测试断言函数
   assert_true(true)
+  assert_true(1 == 1)
+  assert_true(0 == 0)
+  assert_true(-1 == -1)
+  
   assert_false(false)
-  assert_eq(100, 100)
-  assert_eq_string("hello", "hello")
+  assert_false(1 == 0)
+  assert_false(0 == 1)
+  assert_false(-1 == 1)
   
-  // 数值比较
-  assert_eq(0, add(5, -5))
-  assert_eq(25, multiply(5, 5))
+  assert_eq(42, 42)
+  assert_eq(-42, -42)
+  assert_eq(0, 0)
   
-  // 布尔表达式
-  assert_true(5 > 3)
-  assert_false(3 > 5)
-  assert_true(5 == 5)
-  assert_false(5 == 3)
+  assert_eq_string("test", "test")
+  assert_eq_string("", "")
+  assert_eq_string("Hello, World!", "Hello, World!")
 }
 
-test "combined_operations" {
-  // 复合运算测试
-  let x = 12
-  let y = 8
-  let z = -4
+test "complex_arithmetic_tests" {
+  // 测试复合算术运算
+  let a = 10
+  let b = 20
+  let c = -5
   
-  // (x + y) * z
-  let sum = add(x, y)
-  let result = multiply(sum, z)
-  assert_eq(-80, result)
+  // 计算 (a * b) + c
+  let product = multiply(a, b)
+  let result = add(product, c)
+  assert_eq(195, result)
   
-  // x * y + z
-  let product = multiply(x, y)
-  let result2 = add(product, z)
-  assert_eq(92, result2)
+  // 计算 a * (b + c)
+  let sum = add(b, c)
+  let result2 = multiply(a, sum)
+  assert_eq(150, result2)
   
-  // 链式运算
-  let result3 = add(multiply(5, 3), multiply(2, 4))
-  assert_eq(23, result3)
+  // 更复杂的表达式
+  let temp1 = multiply(3, 4)
+  let temp2 = add(temp1, 5)
+  let temp3 = multiply(temp2, 2)
+  let final_result = add(temp3, -10)
+  assert_eq(26, final_result)
 }
 
-test "edge_cases_and_special_values" {
-  // 特殊值和边界情况测试
+test "edge_cases_tests" {
+  // 测试边界情况
   let max_val = 2147483647
   let min_val = -2147483648
   
-  // 最大值运算
-  assert_eq(max_val, add(max_val - 1000, 1000))
-  assert_eq(max_val, multiply(max_val, 1))
-  
-  // 最小值运算
-  assert_eq(min_val, add(min_val + 1000, -1000))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  
-  // 混合符号运算
-  assert_eq(0, add(max_val, min_val + 1))
+  // 加法边界情况
   assert_eq(-1, add(max_val, min_val))
+  assert_eq(max_val - 1, add(max_val, -1))
+  assert_eq(min_val + 1, add(min_val, 1))
+  
+  // 乘法边界情况
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  assert_eq(min_val, multiply(min_val, 1))
+  
+  // 字符串边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, a!", greet("a"))
 }
 
-test "string_operations_and_greetings" {
-  // 字符串相关操作测试
-  let name1 = "MoonBit"
-  let name2 = "Developer"
-  let name3 = ""
-  
-  // 不同长度的名称
-  assert_eq_string("Hello, MoonBit!", greet(name1))
-  assert_eq_string("Hello, Developer!", greet(name2))
-  assert_eq_string("Hello, !", greet(name3))
-  
-  // 包含特殊字符的名称
-  assert_eq_string("Hello, John-Doe!", greet("John-Doe"))
-  assert_eq_string("Hello, O'Reilly!", greet("O'Reilly"))
-  assert_eq_string("Hello, C++!", greet("C++"))
-}
-
-test "mathematical_properties" {
-  // 数学性质验证测试
-  
+test "mathematical_properties_tests" {
+  // 测试数学性质（在安全范围内）
   // 加法交换律
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(add(2, 3), add(3, 2))
+  assert_eq(add(-2, 3), add(3, -2))
+  
+  // 加法结合律
+  assert_eq(add(add(2, 3), 4), add(2, add(3, 4)))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  assert_eq(multiply(2, 3), multiply(3, 2))
+  assert_eq(multiply(-2, 3), multiply(3, -2))
   
-  // 加法单位元
-  assert_eq(a, add(a, 0))
-  assert_eq(b, add(0, b))
+  // 乘法结合律
+  assert_eq(multiply(multiply(2, 3), 4), multiply(2, multiply(3, 4)))
   
-  // 乘法单位元
-  assert_eq(a, multiply(a, 1))
-  assert_eq(b, multiply(1, b))
-  
-  // 乘法零元
-  assert_eq(0, multiply(a, 0))
-  assert_eq(0, multiply(0, b))
-}
-
-test "error_handling_and_boundary_conditions" {
-  // 错误处理和边界条件测试
-  
-  // 极端数值测试
-  let large_positive = 1000000
-  let large_negative = -1000000
-  let small_positive = 1
-  let small_negative = -1
-  
-  // 大数运算
-  assert_eq(2000000, add(large_positive, large_positive))
-  assert_eq(-2000000, add(large_negative, large_negative))
-  assert_eq(0, add(large_positive, large_negative))
-  
-  // 小数与大数混合
-  assert_eq(1000001, add(large_positive, small_positive))
-  assert_eq(-999999, add(large_negative, small_positive))
-  
-  // 乘法测试
-  assert_eq(1000000, multiply(large_positive, small_positive))
-  assert_eq(-1000000, multiply(large_positive, small_negative))
-  assert_eq(1000000, multiply(large_negative, small_negative))
-  
-  // 向上取整除法的特殊情况
-  assert_eq(1000000, divide_with_ceil(large_positive, 1))
-  assert_eq(-1000000, divide_with_ceil(large_negative, 1))
-  assert_eq(1, divide_with_ceil(large_positive, large_positive))
+  // 分配律
+  assert_eq(multiply(2, add(3, 4)), add(multiply(2, 3), multiply(2, 4)))
 }
