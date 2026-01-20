@@ -14,6 +14,7 @@
     "additional_core_tests.mbt",
     "standard_azimuth_core_tests.mbt",
     "additional_standard_tests.mbt",
-    "azimuth_new_standard_tests.mbt"
+    "azimuth_new_standard_tests.mbt",
+    "simple_additional_tests.mbt"
   ]
 }
