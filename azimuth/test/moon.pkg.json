@@ -88,6 +88,7 @@
     "user_added_tests.mbt",
     "user_defined_test.mbt",
     "user_standard_tests.mbt",
-    "verify_simple_test.mbt"
+    "verify_simple_test.mbt",
+    "my_new_test.mbt"
   ]
 }
