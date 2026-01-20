@@ -26,6 +26,7 @@
     "lib.mbt",
     "concise_standard_tests.mbt",
     "standard_azimuth_core_tests.mbt",
+  "simple_azimuth_core_tests.mbt",
     "additional_comprehensive_tests.mbt",
     "comprehensive_standard_tests.mbt",
     "core_moonbit_test_cases.mbt",
@@ -244,4 +245,5 @@
   "standard_azimuth_tests_final.mbt",
       "azimuth_focused_test_suite.mbt",
       "../../azimuth_new_test_cases.mbt",
-      "quality_test_cases.mbt"]}
+      "quality_test_cases.mbt",
+  "standard_azimuth_core_tests.mbt"]}
