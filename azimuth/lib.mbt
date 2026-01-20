@@ -714,3 +714,102 @@ test "assert_functions_test" {
   assert_eq_string("test", "test")
   assert_eq_string("", "")
 }
+
+// 新增的标准增强测试用例
+test "enhanced_boundary_value_tests" {
+  // 增强边界值测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试最大值和最小值的运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  
+  // 测试接近边界的运算
+  assert_eq(2147483647, add(2147483647 - 1000, 1000))
+  assert_eq(-2147483648, add(-2147483648 + 1000, -1000))
+}
+
+test "enhanced_string_processing_tests" {
+  // 增强字符串处理测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, \\\"!", greet("\""))
+}
+
+test "enhanced_division_precision_tests" {
+  // 增强除法精度测试
+  // 正数除法
+  assert_eq(4, divide_with_ceil(11, 3))
+  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(1, divide_with_ceil(1, 3))
+  
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-8, 3))
+  assert_eq(-2, divide_with_ceil(-6, 3))
+  assert_eq(-1, divide_with_ceil(-2, 3))
+  
+  // 零相关
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, -5))
+}
+
+test "enhanced_complex_operations_tests" {
+  // 增强复杂运算测试
+  // 嵌套运算
+  assert_eq(25, add(multiply(3, 5), multiply(2, 5)))
+  assert_eq(20, multiply(add(3, 2), 4))
+  assert_eq(8, divide_with_ceil(add(multiply(2, 3), 2), 2))
+  
+  // 多层嵌套
+  assert_eq(15, add(multiply(divide_with_ceil(10, 2), 2), 5))
+  assert_eq(12, multiply(add(divide_with_ceil(7, 3), 2), 3))
+  
+  // 复杂表达式
+  assert_eq(16, add(multiply(2, 5), divide_with_ceil(10, 3)))
+}
+
+test "enhanced_real_world_scenarios" {
+  // 增强实际应用场景测试
+  // 场景1：计算购物车总价（含税向上取整）
+  let item1_price = 99
+  let item2_price = 149
+  let tax_rate = 3  // 1/3 的税率
+  let subtotal = add(item1_price, item2_price)
+  let total_with_tax = multiply(subtotal, tax_rate)
+  assert_eq(744, total_with_tax)
+  
+  // 场景2：平均分计算（向上取整）
+  let score1 = 85
+  let score2 = 92
+  let score3 = 78
+  let total_score = add(add(score1, score2), score3)
+  let average_score = divide_with_ceil(total_score, 3)
+  assert_eq(86, average_score)
+  
+  // 场景3：用户欢迎消息
+  let username = "张三"
+  let welcome_msg = greet(username)
+  assert_eq_string("Hello, 张三!", welcome_msg)
+}
+
+test "enhanced_error_handling_tests" {
+  // 增强错误处理测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 溢出情况测试
+  let overflow_add = add(max_val, max_val)
+  let overflow_mul = multiply(max_val, 2)
+  assert_true(overflow_add == max_val || overflow_add == min_val)
+  assert_true(overflow_mul == max_val || overflow_mul == min_val)
+  
+  // 特殊值测试
+  assert_eq(min_val, multiply(-1, min_val))  // 特殊情况：最小值乘以-1
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(0, multiply(0, min_val))
+}
