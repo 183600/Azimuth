@@ -58,6 +58,7 @@
     "new_test_cases.mbt",
     "new_user_tests.mbt",
     "quality_test_suite.mbt",
+    "quality_test_suite_new.mbt",
     "simple_azimuth_enhanced_test.mbt",
     "simple_azimuth_tests.mbt",
     "simple_comprehensive_tests.mbt",

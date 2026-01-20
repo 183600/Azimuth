@@ -56,9 +56,7 @@ test "greet_function_unicode_and_special_chars" {
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
   @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, 	
-!", @azimuth.greet("	
-"))
+  @azimuth.assert_eq_string("Hello, \t\n!", @azimuth.greet("\t\n"))
 }
 
 test "divide_with_ceil_comprehensive" {
@@ -166,9 +164,7 @@ test "string_assertions_various_cases" {
   // 特殊字符字符串
   @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
   @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, 
-	!", @azimuth.greet("
-	"))
+  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
   
   // 长字符串和复杂内容
   let long_name = "VeryLongNameWithManyCharacters123456789"
