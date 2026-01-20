@@ -193,4 +193,5 @@
   "azimuth_comprehensive_unit_tests.mbt",
   "standard_comprehensive_tests.mbt",
       "concise_azimuth_tests.mbt",
-      "standard_moonbit_test_suite.mbt"]}
+      "standard_moonbit_test_suite.mbt",
+  "standard_moonbit_test_suite_new.mbt"]}
