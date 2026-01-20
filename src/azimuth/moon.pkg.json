@@ -136,6 +136,8 @@
   "user_added_standard_tests.mbt",
   "azimuth_new_standard_test_cases.mbt",
   "simple_verification_test_new.mbt",
+  "enhanced_test_scenarios.mbt",
+  "simple_validation_tests.mbt",
   "standard_moonbit_test_cases.mbt",
   "new_standard_tests.mbt",
   "test/new_standard_tests.mbt",
