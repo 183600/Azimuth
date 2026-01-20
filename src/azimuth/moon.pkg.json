@@ -246,4 +246,5 @@
       "azimuth_focused_test_suite.mbt",
       "../../azimuth_new_test_cases.mbt",
       "quality_test_cases.mbt",
-  "standard_azimuth_core_tests.mbt"]}
+  "standard_azimuth_core_tests.mbt",
+    "azimuth_standard_tests.mbt"]}
