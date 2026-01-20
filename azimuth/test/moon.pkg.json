@@ -84,6 +84,7 @@
     "user_defined_test.mbt",
     "custom_azimuth_test.mbt",
     "azimuth_comprehensive_tests.mbt",
-    "essential_tests.mbt"
+    "essential_tests.mbt",
+    "new_additional_standard_tests.mbt"
   ]
 }
