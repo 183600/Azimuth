@@ -150,6 +150,7 @@
   "enhanced_test_scenarios.mbt",
   "simple_validation_tests.mbt",
   "standard_moonbit_test_cases.mbt",
+  "standard_moonbit_test_cases_new.mbt",
   "new_standard_tests.mbt",
   "test/new_standard_tests.mbt",
   "test/quality_moonbit_tests.mbt",
