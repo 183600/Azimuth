@@ -39,6 +39,7 @@
     "standard_azimuth_additional_tests.mbt",
     "standard_moonbit_tests.mbt",
     "user_defined_comprehensive_tests.mbt",
-    "simple_test_builtin.mbt"
+    "simple_test_builtin.mbt",
+    "focused_comprehensive_tests.mbt"
   ]
 }
