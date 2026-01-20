@@ -22,6 +22,7 @@
     "enhanced_azimuth_tests.mbt",
     "additional_azimuth_tests.mbt",
     "standard_azimuth_tests.mbt",
+    "standard_azimuth_extended_tests.mbt"
     "azimuth_core_tests.mbt",
     "lib.mbt",
     "concise_standard_tests.mbt",

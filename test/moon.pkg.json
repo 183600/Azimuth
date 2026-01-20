@@ -44,6 +44,7 @@
     "simple_test_builtin.mbt",
     "focused_comprehensive_tests.mbt",
     "standard_azimuth_test_cases.mbt",
-    "simple_azimuth_test.mbt"
+    "simple_azimuth_test.mbt",
+    
   ]
 }
