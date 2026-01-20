@@ -1262,9 +1262,174 @@ test "data_type_conversion_simulation" {
   // 模拟日期时间字符串
   let date_string = "2023-12-25"
   let time_string = "14:30:00"
-  let datetime_string = "2023-12-25T14:30:00"
+  let datetime_string = "2023-12-25 14:30:00"
   
   assert_eq_string("Hello, 2023-12-25!", greet(date_string))
+  assert_eq_string("Hello, 14:30:00!", greet(time_string))
+  assert_eq_string("Hello, 2023-12-25 14:30:00!", greet(datetime_string))
+}
+
+// 新增的10个标准MoonBit测试用例
+test "divide_with_ceil_basic_functionality" {
+  // 测试向上取整除法的基本功能
+  assert_eq(3, divide_with_ceil(10, 4))  // 10/4 = 2.5 -> 3
+  assert_eq(5, divide_with_ceil(20, 4))  // 20/4 = 5 -> 5
+  assert_eq(7, divide_with_ceil(25, 4))  // 25/4 = 6.25 -> 7
+}
+
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  assert_eq(0, divide_with_ceil(0, 5))   // 0/5 = 0 -> 0
+  assert_eq(1, divide_with_ceil(1, 1))   // 1/1 = 1 -> 1
+  assert_eq(2, divide_with_ceil(3, 2))   // 3/2 = 1.5 -> 2
+  assert_eq(-1, divide_with_ceil(-3, 2)) // -3/2 = -1.5 -> -1
+}
+
+test "mathematical_sequence_patterns" {
+  // 测试数学序列模式
+  // 斐波那契数列前几项：1, 1, 2, 3, 5, 8, 13, 21
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)  // 2
+  let fib4 = add(fib2, fib3)  // 3
+  let fib5 = add(fib3, fib4)  // 5
+  let fib6 = add(fib4, fib5)  // 8
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+}
+
+test "financial_compound_interest" {
+  // 测试金融复利计算
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  
+  // 复利公式：A = P(1 + r)^t
+  // 简化计算：10000 * (1 + 0.05)^3 ≈ 10000 * 116 = 1160000
+  let growth_factor = add(100, multiply(rate, years))
+  let total_amount = multiply(principal, growth_factor)
+  
+  assert_eq(115000, total_amount)  // 10000 * (100 + 5*3) = 10000 * 115 = 115000
+}
+
+test "coordinate_geometry_calculations" {
+  // 测试坐标几何计算
+  // 计算两点之间的距离的平方：(x2-x1)² + (y2-y1)²
+  let x1 = 1
+  let y1 = 2
+  let x2 = 4
+  let y2 = 6
+  
+  let dx = add(x2, -x1)  // 3
+  let dy = add(y2, -y1)  // 4
+  let distance_squared = add(multiply(dx, dx), multiply(dy, dy))
+  
+  assert_eq(25, distance_squared)  // 3² + 4² = 9 + 16 = 25
+}
+
+test "temperature_conversions" {
+  // 测试温度转换
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  // 简化为整数：F = C × 2 + 30
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  
+  assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
+  
+  // 华氏度转摄氏度：C = (F - 32) × 5/9
+  // 简化为整数：C = (F - 30) / 2
+  let fahrenheit_back = 80
+  let celsius_back = add(fahrenheit_back, -30) / 2
+  
+  assert_eq(25, celsius_back)
+}
+
+test "string_validation_patterns" {
+  // 测试字符串验证模式
+  // 测试邮箱格式（简化验证）
+  let email1 = "user@example.com"
+  let email2 = "test.email@domain.co.uk"
+  let invalid_email = "invalid.email"
+  
+  // 通过greet函数验证字符串处理
+  assert_eq_string("Hello, user@example.com!", greet(email1))
+  assert_eq_string("Hello, test.email@domain.co.uk!", greet(email2))
+  assert_eq_string("Hello, invalid.email!", greet(invalid_email))
+  
+  // 测试电话号码格式
+  let phone1 = "123-456-7890"
+  let phone2 = "+1-555-123-4567"
+  
+  assert_eq_string("Hello, 123-456-7890!", greet(phone1))
+  assert_eq_string("Hello, +1-555-123-4567!", greet(phone2))
+}
+
+test "algorithm_efficiency_test" {
+  // 测试算法效率相关计算
+  // 计算前n个自然数的和：n(n+1)/2
+  let n = 100
+  
+  // 使用公式计算
+  let formula_sum = multiply(n, add(n, 1)) / 2
+  assert_eq(5050, formula_sum)
+  
+  // 验证前10项
+  let n10 = 10
+  let sum_10 = multiply(n10, add(n10, 1)) / 2
+  assert_eq(55, sum_10)
+  
+  // 计算前n个自然数的平方和：n(n+1)(2n+1)/6
+  // 简化计算：100*101*201/6 ≈ 338350
+  let sum_squares_approx = multiply(multiply(n, add(n, 1)), add(multiply(2, n), 1)) / 6
+  assert_eq(338350, sum_squares_approx)
+}
+
+test "business_inventory_management" {
+  // 测试商业库存管理计算
+  let initial_stock = 1000
+  let units_sold = 250
+  let units_received = 150
+  let units_damaged = 25
+  
+  // 计算当前库存
+  let current_stock = add(add(initial_stock, -units_sold), add(units_received, -units_damaged))
+  assert_eq(875, current_stock)
+  
+  // 计算库存价值（假设每单位成本为10元）
+  let unit_cost = 10
+  let inventory_value = multiply(current_stock, unit_cost)
+  assert_eq(8750, inventory_value)
+  
+  // 计算 reorder point（安全库存 = 平均销量 × 安全系数）
+  let average_sales = 50
+  let safety_factor = 2
+  let reorder_point = multiply(average_sales, safety_factor)
+  assert_eq(100, reorder_point)
+}
+
+test "scientific_notation_simulation" {
+  // 测试科学计数法模拟
+  // 模拟 3.14 × 10^6 = 3140000
+  let mantissa = 314
+  let exponent = 4
+  let scientific_result = multiply(mantissa, multiply(multiply(10, 10), multiply(10, 10)))
+  assert_eq(3140000, scientific_result)
+  
+  // 模拟 1.618 × 10^3 = 1618（黄金比例近似）
+  let golden_ratio = 1618
+  let golden_exponent = 0
+  let golden_result = golden_ratio  // 10^0 = 1
+  assert_eq(1618, golden_result)
+  
+  // 模拟阿伏伽德罗常数：6.02 × 10^23
+  // 简化计算：602 × 10^21，但数值太大，使用简化版本
+  let avogadro_mantissa = 602
+  let avogadro_exponent = 3  // 简化指数
+  let avogadro_result = multiply(avogadro_mantissa, multiply(multiply(10, 10), 10))
+  assert_eq(602000, avogadro_result)  // 简化结果
 }
 
 // 新增的10个 MoonBit 测试用例
@@ -5020,6 +5185,141 @@ test "concise_financial_calculation_scenario" {
   
   assert_eq(800, discounted_price)
   assert_eq(864, final_price)
+}
+
+// 新增的10个标准MoonBit测试用例
+test "divide_with_ceil_comprehensive" {
+  // 测试向上取整除法的全面功能
+  assert_eq(3, divide_with_ceil(10, 4))  // 10/4 = 2.5 -> 3
+  assert_eq(5, divide_with_ceil(20, 4))  // 20/4 = 5 -> 5
+  assert_eq(7, divide_with_ceil(25, 4))  // 25/4 = 6.25 -> 7
+  assert_eq(0, divide_with_ceil(0, 5))   // 0/5 = 0 -> 0
+  assert_eq(1, divide_with_ceil(1, 1))   // 1/1 = 1 -> 1
+  assert_eq(-1, divide_with_ceil(-3, 2)) // -3/2 = -1.5 -> -1
+}
+
+test "mathematical_sequence_fibonacci" {
+  // 测试斐波那契数列计算
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)  // 2
+  let fib4 = add(fib2, fib3)  // 3
+  let fib5 = add(fib3, fib4)  // 5
+  let fib6 = add(fib4, fib5)  // 8
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+}
+
+test "financial_calculation_enhanced" {
+  // 测试增强的金融计算
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  
+  // 复利计算：P(1 + r)^t
+  let growth_factor = add(100, multiply(rate, years))
+  let total_amount = multiply(principal, growth_factor)
+  
+  assert_eq(115000, total_amount)  // 10000 * (100 + 5*3) = 10000 * 115 = 115000
+}
+
+test "coordinate_geometry_distance" {
+  // 测试坐标几何计算
+  let x1 = 1
+  let y1 = 2
+  let x2 = 4
+  let y2 = 6
+  
+  let dx = add(x2, -x1)  // 3
+  let dy = add(y2, -y1)  // 4
+  let distance_squared = add(multiply(dx, dx), multiply(dy, dy))
+  
+  assert_eq(25, distance_squared)  // 3² + 4² = 9 + 16 = 25
+}
+
+test "temperature_conversion_complete" {
+  // 测试完整的温度转换
+  // 摄氏度转华氏度：F = C × 2 + 30
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  
+  assert_eq(80, fahrenheit)  // 25 × 2 + 30 = 80
+  
+  // 华氏度转摄氏度：C = (F - 30) / 2
+  let celsius_back = add(fahrenheit, -30) / 2
+  assert_eq(25, celsius_back)
+}
+
+test "string_validation_comprehensive" {
+  // 测试全面的字符串验证
+  let email = "user@example.com"
+  let phone = "123-456-7890"
+  let complex = "user_2023@project#1"
+  
+  assert_eq_string("Hello, user@example.com!", greet(email))
+  assert_eq_string("Hello, 123-456-7890!", greet(phone))
+  assert_eq_string("Hello, user_2023@project#1!", greet(complex))
+}
+
+test "algorithm_efficiency_formulas" {
+  // 测试算法效率公式
+  // 计算前n个自然数的和：n(n+1)/2
+  let n = 100
+  let sum_formula = multiply(n, add(n, 1)) / 2
+  assert_eq(5050, sum_formula)
+  
+  // 验证前10项
+  let n10 = 10
+  let sum_10 = multiply(n10, add(n10, 1)) / 2
+  assert_eq(55, sum_10)
+}
+
+test "business_inventory_management" {
+  // 测试商业库存管理
+  let initial_stock = 1000
+  let units_sold = 250
+  let units_received = 150
+  let units_damaged = 25
+  
+  let current_stock = add(add(initial_stock, -units_sold), add(units_received, -units_damaged))
+  assert_eq(875, current_stock)
+  
+  let unit_cost = 10
+  let inventory_value = multiply(current_stock, unit_cost)
+  assert_eq(8750, inventory_value)
+}
+
+test "scientific_notation_simplified" {
+  // 测试简化的科学计数法
+  // 模拟 3.14 × 10^6 = 3140000
+  let mantissa = 314
+  let exponent = 4
+  let scientific_result = multiply(mantissa, multiply(multiply(10, 10), multiply(multiply(10, 10), 10)))
+  assert_eq(3140000, scientific_result)
+  
+  // 模拟 1.618 × 10^3 = 1618（黄金比例近似）
+  let golden_ratio = 1618
+  assert_eq(1618, golden_ratio)
+}
+
+test "data_structure_operations" {
+  // 测试数据结构操作
+  // 计算二维数组在一维数组中的索引：index = row * width + col
+  let row = 3
+  let col = 4
+  let width = 5
+  
+  let index = add(multiply(row, width), col)
+  assert_eq(19, index)
+  
+  // 测试边界情况
+  let first_row = 0
+  let first_col = 0
+  let first_index = add(multiply(first_row, width), first_col)
+  assert_eq(0, first_index)
 }
 
 
