@@ -76,6 +76,7 @@
       "azimuth_standard_tests.mbt",
               "../../azimuth_enhanced_test_cases.mbt",
               "test/standard_moonbit_tests.mbt",          "user_new_standard_tests.mbt",
+  "test/user_created_standard_tests.mbt",
           "my_custom_tests.mbt",
           "test/concise_standard_tests.mbt",
           "../../azimuth_new_comprehensive_tests.mbt",
