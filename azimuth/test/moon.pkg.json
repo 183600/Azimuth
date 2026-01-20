@@ -93,6 +93,7 @@
     "verify_simple_test.mbt",
     "my_new_test.mbt",
     "quality_enhanced_tests.mbt",
-    "standard_enhanced_test_cases.mbt"
+    "standard_enhanced_test_cases.mbt",
+    "standard_additional_tests.mbt"
   ]
 }
