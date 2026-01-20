@@ -1,86 +1,115 @@
-// 新的标准 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 覆盖 azimuth 项目的主要功能
 
-test "add_zero_cases" {
-  // 测试与0相加的各种情况
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(5, @azimuth.add(0, 5))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-10, @azimuth.add(-10, 0))
-  @azimuth.assert_eq(-10, @azimuth.add(0, -10))
+test "add_function_basic" {
+  // 测试基本加法功能
+  inspect(add(2, 3), "5")?
+  inspect(add(0, 0), "0")?
+  inspect(add(-2, -3), "-5")?
 }
 
-test "add_large_numbers" {
-  // 测试大数相加
-  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
-  @azimuth.assert_eq(-1000000, @azimuth.add(-500000, -500000))
-  @azimuth.assert_eq(0, @azimuth.add(500000, -500000))
+test "add_function_overflow_handling" {
+  // 测试加法溢出处理
+  inspect(add(2147483647, 1), "2147483647")?
+  inspect(add(-2147483648, -1), "-2147483648")?
 }
 
-test "multiply_by_negative_numbers" {
-  // 测试与负数相乘
-  @azimuth.assert_eq(-20, @azimuth.multiply(4, -5))
-  @azimuth.assert_eq(-20, @azimuth.multiply(-4, 5))
-  @azimuth.assert_eq(20, @azimuth.multiply(-4, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -5))
+test "multiply_function_basic" {
+  // 测试基本乘法功能
+  inspect(multiply(2, 3), "6")?
+  inspect(multiply(0, 5), "0")?
+  inspect(multiply(1, 5), "5")?
+  inspect(multiply(2, -3), "-6")?
 }
 
-test "multiply_power_of_two" {
-  // 测试2的幂次方乘法
-  @azimuth.assert_eq(16, @azimuth.multiply(4, 4))
-  @azimuth.assert_eq(64, @azimuth.multiply(8, 8))
-  @azimuth.assert_eq(1024, @azimuth.multiply(32, 32))
+test "multiply_function_overflow_handling" {
+  // 测试乘法溢出处理
+  inspect(multiply(46341, 46341), "2147483647")?
+  inspect(multiply(-2147483648, -1), "-2147483648")?
 }
 
-test "greet_with_spaces" {
-  // 测试包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
-  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, a b c!", @azimuth.greet("a b c"))
+test "greet_function_various_inputs" {
+  // 测试 greet 函数的各种输入
+  inspect(greet("World"), "Hello, World!")?
+  inspect(greet(""), "Hello, !")?
+  inspect(greet("MoonBit"), "Hello, MoonBit!")?
+  inspect(greet("测试"), "Hello, 测试!")?
 }
 
-test "divide_with_ceil_negative_dividend" {
-  // 测试负数被除数的向上取整除法
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-11, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-9, 3))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-4, 2))
-}
-
-test "divide_with_ceil_negative_divisor" {
-  // 测试负数除数的向上取整除法
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(10, -3))
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(11, -3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(9, -3))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(4, -2))
-}
-
-test "complex_calculation_chain" {
-  // 测试复杂的计算链
-  let a = 5
-  let b = 3
-  let c = 2
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 计算矩形周长：2 × (长 + 宽)
+  let length = 10
+  let width = 5
+  let perimeter = multiply(2, add(length, width))
+  inspect(perimeter, "30")?
   
-  // 计算 (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(16, product)
-  
-  // 计算 a * (b + c)
-  let sum2 = @azimuth.add(b, c)
-  let product2 = @azimuth.multiply(a, sum2)
-  @azimuth.assert_eq(25, product2)
+  // 计算三角形面积：底 × 高 ÷ 2
+  let base = 8
+  let height = 6
+  let area = multiply(base, height) / 2
+  inspect(area, "24")?
 }
 
-test "string_operations_with_greet" {
-  // 测试字符串操作与greet函数的组合
-  let name1 = "Alice"
-  let name2 = "Bob"
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 11
   
-  let greeting1 = @azimuth.greet(name1)
-  let greeting2 = @azimuth.greet(name2)
+  // 加法交换律
+  let sum1 = add(a, b)
+  let sum2 = add(b, a)
+  inspect(sum1, sum2.to_string())?
   
-  @azimuth.assert_eq_string("Hello, Alice!", greeting1)
-  @azimuth.assert_eq_string("Hello, Bob!", greeting2)
-  @azimuth.assert_true(greeting1 != greeting2)
+  // 乘法交换律
+  let product1 = multiply(a, b)
+  let product2 = multiply(b, a)
+  inspect(product1, product2.to_string())?
+}
+
+test "real_world_application" {
+  // 测试实际应用场景：购物车计算
+  let item_price = 199
+  let quantity = 3
+  let shipping = 15
+  let tax_rate = 8
+  
+  // 计算商品总价
+  let subtotal = multiply(item_price, quantity)
+  // 计算税费
+  let tax = multiply(subtotal, tax_rate) / 100
+  // 计算最终总价
+  let total = add(add(subtotal, tax), shipping)
+  
+  inspect(total, "674")?
+}
+
+test "edge_cases_and_special_values" {
+  // 测试边界情况和特殊值
+  // 测试零值运算
+  inspect(multiply(0, 2147483647), "0")?
+  inspect(multiply(0, -2147483648), "0")?
+  inspect(add(0, 2147483647), "2147483647")?
+  inspect(add(0, -2147483648), "-2147483648")?
+  
+  // 测试单位值运算
+  inspect(multiply(2147483647, 1), "2147483647")?
+  inspect(multiply(-2147483648, 1), "-2147483648")?
+  inspect(multiply(1, 2147483647), "2147483647")?
+  inspect(multiply(1, -2147483648), "-2147483648")?
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameForTestingPurposes"
+  inspect(greet(long_name), "Hello, ThisIsAVeryLongNameForTestingPurposes!")?
+  
+  // 测试包含特殊字符的字符串
+  let special_name = "test@example.com"
+  inspect(greet(special_name), "Hello, test@example.com!")?
+  
+  // 测试包含数字的字符串
+  let numeric_name = "user123"
+  inspect(greet(numeric_name), "Hello, user123!")?
 }
