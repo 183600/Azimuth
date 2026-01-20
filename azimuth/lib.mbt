@@ -499,3 +499,132 @@ test "memory_safety_operations" {
   assert_eq(198, add(99, 99))
   assert_eq(10000, multiply(100, 100))
 }
+
+// 新增的标准增强测试用例
+test "add_overflow_protection_positive" {
+  // 测试正数加法的溢出保护
+  let max_val = 2147483647
+  
+  // 接近最大值的加法
+  assert_eq(max_val, add(max_val - 1, 1))
+  assert_eq(max_val, add(max_val - 100, 100))
+  assert_eq(max_val, add(max_val - 1000, 1000))
+  
+  // 确保正常范围内的加法正确
+  assert_eq(100, add(50, 50))
+  assert_eq(0, add(100, -100))
+}
+
+test "add_overflow_protection_negative" {
+  // 测试负数加法的溢出保护
+  let min_val = -2147483648
+  
+  // 接近最小值的加法
+  assert_eq(min_val, add(min_val + 1, -1))
+  assert_eq(min_val, add(min_val + 100, -100))
+  assert_eq(min_val, add(min_val + 1000, -1000))
+  
+  // 确保正常范围内的加法正确
+  assert_eq(-100, add(-50, -50))
+  assert_eq(0, add(-100, 100))
+}
+
+test "multiply_precision_boundary" {
+  // 测试乘法精度边界
+  let sqrt_max = 46340  // sqrt(2147483647) 的整数部分
+  
+  // 边界值乘法
+  assert_eq(2147395600, multiply(sqrt_max, sqrt_max))
+  assert_eq(2147483647, multiply(sqrt_max, sqrt_max + 1))
+  
+  // 负数乘法
+  assert_eq(-2147395600, multiply(sqrt_max, -sqrt_max))
+  assert_eq(-2147483647, multiply(sqrt_max, -(sqrt_max + 1)))
+}
+
+test "multiply_zero_and_one_cases" {
+  // 测试乘法的零和一特殊情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 零乘法
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(0, multiply(0, min_val))
+  assert_eq(0, multiply(0, 0))
+  
+  // 一乘法
+  assert_eq(max_val, multiply(1, max_val))
+  assert_eq(min_val, multiply(1, min_val))
+  assert_eq(5, multiply(1, 5))
+  
+  // 负一乘法
+  assert_eq(-max_val, multiply(-1, max_val))
+  assert_eq(min_val, multiply(-1, min_val))  // 特殊情况：最小值乘以-1
+}
+
+test "greet_function_special_characters" {
+  // 测试 greet 函数的特殊字符处理
+  assert_eq_string("Hello, \\n!", greet("\\n"))
+  assert_eq_string("Hello, \\t!", greet("\\t"))
+  assert_eq_string("Hello, \\\\!", greet("\\"))
+  assert_eq_string("Hello, \\\"!", greet("\""))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  // 负数除以正数
+  assert_eq(-1, divide_with_ceil(-1, 3))
+  assert_eq(-2, divide_with_ceil(-4, 3))
+  assert_eq(-2, divide_with_ceil(-5, 3))
+  assert_eq(-3, divide_with_ceil(-7, 3))
+  
+  // 负数除以负数
+  assert_eq(1, divide_with_ceil(-1, -3))
+  assert_eq(2, divide_with_ceil(-4, -3))
+  assert_eq(2, divide_with_ceil(-5, -3))
+  assert_eq(3, divide_with_ceil(-7, -3))
+}
+
+test "divide_with_ceil_exact_division" {
+  // 测试能够整除的情况
+  assert_eq(5, divide_with_ceil(10, 2))
+  assert_eq(-5, divide_with_ceil(-10, 2))
+  assert_eq(5, divide_with_ceil(10, -2))
+  assert_eq(-5, divide_with_ceil(-10, -2))
+  
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, -5))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(-1, divide_with_ceil(-5, 5))
+}
+
+test "complex_mathematical_expressions" {
+  // 测试复杂的数学表达式
+  // 嵌套运算
+  assert_eq(25, add(multiply(3, 5), multiply(2, 5)))
+  assert_eq(20, multiply(add(3, 2), 4))
+  assert_eq(8, divide_with_ceil(add(multiply(2, 3), 2), 2))
+  
+  // 多层嵌套
+  assert_eq(15, add(multiply(divide_with_ceil(10, 2), 2), 5))
+  assert_eq(12, multiply(add(divide_with_ceil(7, 3), 2), 3))
+}
+
+test "assertion_functions_edge_cases" {
+  // 测试断言函数的边界情况
+  // 极值比较
+  assert_true(2147483647 == 2147483647)
+  assert_true(-2147483648 == -2147483648)
+  assert_false(2147483647 == -2147483648)
+  
+  // 字符串边界情况
+  assert_eq_string("", "")
+  assert_eq_string("a", "a")
+  assert_eq_string("Hello, World!", "Hello, World!")
+  
+  // 布尔值边界
+  assert_true(true)
+  assert_false(false)
+}
