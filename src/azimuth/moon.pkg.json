@@ -222,4 +222,5 @@
   "simple_focused_tests.mbt",
   "basic_unit_tests.mbt",
   "corrected_unit_tests.mbt",
-  "simple_moonbit_tests.mbt"]}
+  "simple_moonbit_tests.mbt",
+  "standard_test_cases.mbt"]}
