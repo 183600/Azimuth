@@ -87,3 +87,13 @@ test "assert_functions_comprehensive" {
   assert_eq_string("MoonBit", "MoonBit")
   assert_eq_string("", "")
 }
+
+test "new_custom_test_case" {
+  // 新增的自定义测试用例
+  assert_eq(10, add(3, 7))
+  assert_eq(15, multiply(3, 5))
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_true(5 > 3)
+  assert_false(3 > 5)
+}
