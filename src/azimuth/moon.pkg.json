@@ -2,6 +2,7 @@
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
+    "azimuth_core_functionality_tests.mbt",
     "additional_standard_tests.mbt",
     "standard_comprehensive_tests.mbt",
     "quality_test_suite.mbt",
@@ -18,6 +19,8 @@
     "lib.mbt",
     "standard_azimuth_core_tests.mbt",
     "additional_comprehensive_tests.mbt",
+    "comprehensive_standard_tests.mbt",
+    "core_moonbit_test_cases.mbt",
     "../user_new_moonbit_tests.mbt",
     "simple_user_test.mbt",
     "moonbit_standard_tests.mbt",
