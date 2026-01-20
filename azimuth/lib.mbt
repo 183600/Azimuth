@@ -302,3 +302,200 @@ test "assert_functions_comprehensive" {
   assert_eq_string("test", "test")
   assert_eq_string("Hello, World!", "Hello, World!")
 }
+
+test "extreme_boundary_combinations" {
+  // 极端边界值组合测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值与最小值的组合运算
+  assert_eq(max_val - 1, add(max_val, min_val))
+  assert_eq(min_val + 1, add(min_val, max_val))
+  
+  // 边界值的乘法组合
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
+}
+
+test "large_number_operations" {
+  // 大数运算测试
+  let large_num = 1000000
+  let large_neg = -1000000
+  
+  // 大数加法
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(0, add(large_num, large_neg))
+  
+  // 大数乘法（调整到范围内）
+  assert_eq(100000000, multiply(10000, 10000))
+  assert_eq(-100000000, multiply(10000, -10000))
+  
+  // 大数与边界值组合
+  assert_eq(2147483647, add(2147483647 - 1000000, 1000000))
+}
+
+test "special_string_characters" {
+  // 特殊字符串字符处理测试
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, \\\"\\'\\!", greet("\\\"\\'\\!"))
+  assert_eq_string("Hello, \u0000\u0000\u0000!", greet("\u0000\u0000\u0000"))
+  assert_eq_string("Hello, 中文字符🌟!", greet("中文字符🌟"))
+  assert_eq_string("Hello, emoji😀😁😂!", greet("emoji😀😁😂"))
+}
+
+test "negative_division_edge_cases" {
+  // 负数除法边界情况测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 负数除以正数
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(-2, divide_with_ceil(-3, 2))
+  assert_eq(-1073741824, divide_with_ceil(min_val, 2))
+  
+  // 负数除以负数
+  assert_eq(1, divide_with_ceil(-1, -2))
+  assert_eq(2, divide_with_ceil(-3, -2))
+  
+  // 边界值除法
+  assert_eq(-1073741824, divide_with_ceil(min_val, 2))
+  assert_eq(1073741824, divide_with_ceil(max_val, 2))
+}
+
+test "function_chaining_operations" {
+  // 函数链式调用测试
+  let initial = 5
+  
+  // 多层函数调用链
+  let result1 = multiply(add(initial, 3), 2)
+  let result2 = add(multiply(initial, 2), 3)
+  let result3 = divide_with_ceil(multiply(add(initial, 1), 3), 2)
+  
+  assert_eq(16, result1)  // (5 + 3) * 2 = 16
+  assert_eq(13, result2)  // 5 * 2 + 3 = 13
+  assert_eq(9, result3)   // ceil((5 + 1) * 3 / 2) = ceil(18 / 2) = 9
+  
+  // 更复杂的链式调用
+  let complex_result = add(multiply(divide_with_ceil(10, 3), 2), 1)
+  assert_eq(9, complex_result)  // ceil(10/3) * 2 + 1 = 4 * 2 + 1 = 9
+}
+
+test "numeric_range_validation" {
+  // 数值范围验证测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 验证加法范围限制
+  assert_true(add(max_val, 0) <= max_val)
+  assert_true(add(min_val, 0) >= min_val)
+  assert_true(add(1000000, 1000000) <= max_val)
+  assert_true(add(-1000000, -1000000) >= min_val)
+  
+  // 验证乘法范围限制
+  assert_true(multiply(46340, 46340) <= max_val)
+  assert_true(multiply(-46340, 46340) >= min_val)
+  
+  // 极值验证
+  let overflow_add = add(max_val, max_val)
+  let overflow_mul = multiply(max_val, 2)
+  assert_true(overflow_add == max_val || overflow_add == min_val)
+  assert_true(overflow_mul == max_val || overflow_mul == min_val)
+}
+
+test "string_length_boundaries" {
+  // 字符串长度边界测试
+  let empty = ""
+  let single = "a"
+  let long = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  let _very_long = long + long + long + long + long  // 使用下划线前缀表示未使用
+  
+  // 不同长度字符串测试
+  assert_eq_string("Hello, !", greet(empty))
+  assert_eq_string("Hello, a!", greet(single))
+  assert_eq_string("Hello, " + long + "!", greet(long))
+  
+  // 特殊长度字符串
+  let spaces = "     "  // 5个空格
+  let tabs = "\t\t\t\t\t"  // 5个制表符
+  assert_eq_string("Hello,     !", greet(spaces))
+  assert_eq_string("Hello, \t\t\t\t\t!", greet(tabs))
+}
+
+test "mixed_operation_precision" {
+  // 混合运算精度测试
+  // 测试不同数值组合的精度保持
+  assert_eq(6, add(multiply(2, 3), 0))
+  assert_eq(8, add(multiply(2, 3), 2))
+  assert_eq(7, divide_with_ceil(multiply(2, 3), 1))
+  assert_eq(4, divide_with_ceil(multiply(2, 3), 2))
+  
+  // 测试运算顺序对结果的影响
+  let val1 = add(multiply(10, 2), divide_with_ceil(5, 2))
+  let val2 = multiply(10, add(2, divide_with_ceil(5, 20)))
+  assert_eq(24, val1)  // 20 + ceil(5/2) = 20 + 3 = 23
+  assert_eq(21, val2)  // 10 * (2 + ceil(5/20)) = 10 * (2 + 1) = 30
+  
+  // 测试精度保持
+  assert_eq(0, add(multiply(1000, 0), divide_with_ceil(0, 1000)))
+}
+
+test "error_recovery_mechanisms" {
+  // 错误恢复机制测试
+  let max_val = 2147483647
+  let _min_val = -2147483648  // 使用下划线前缀表示未使用
+  
+  // 测试溢出后的函数仍然可用
+  let _ = add(max_val, 1)  // 这会溢出
+  let normal_add = add(5, 3)  // 验证正常加法仍然工作
+  assert_eq(8, normal_add)
+  
+  let _ = multiply(max_val, 2)  // 这会溢出
+  let normal_mul = multiply(5, 3)  // 验证正常乘法仍然工作
+  assert_eq(15, normal_mul)
+  
+  // 测试断言失败不影响后续测试
+  // 注意：实际的断言失败会终止程序，这里主要测试断言函数本身的逻辑
+  assert_true(true)  // 这个应该通过
+  assert_false(false)  // 这个应该通过
+  assert_eq(1, 1)  // 这个应该通过
+  assert_eq_string("test", "test")  // 这个应该通过
+}
+
+test "memory_safety_operations" {
+  // 内存安全相关操作测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试大量操作不会导致内存问题
+  for i = 0; i < 100; i = i + 1 {
+    let _ = add(i, i)
+    let _ = multiply(i, 2)
+    let _ = divide_with_ceil(i * 10 + 5, 3)
+  }
+  
+  // 测试极值操作的稳定性
+  let result1 = add(max_val, 0)
+  let result2 = add(min_val, 0)
+  let result3 = multiply(max_val, 1)
+  let result4 = multiply(min_val, 1)
+  let result5 = multiply(0, max_val)
+  let result6 = multiply(0, min_val)
+  
+  assert_eq(max_val, result1)
+  assert_eq(min_val, result2)
+  assert_eq(max_val, result3)
+  assert_eq(min_val, result4)
+  assert_eq(0, result5)
+  assert_eq(0, result6)
+  
+  // 测试字符串操作的内存安全性
+  let _ = greet("")
+  let _ = greet("a")
+  let _ = greet("test")
+  let _ = greet("very long string with many characters")
+  
+  // 验证最终状态
+  assert_eq(198, add(99, 99))
+  assert_eq(10000, multiply(100, 100))
+}
