@@ -13,6 +13,17 @@ fi
 cd test
 
 # 检查测试文件
+if [ -f "essential_tests.mbt" ]; then
+  echo "Checking essential_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test essential_tests.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "essential_tests.mbt ... ok"
+  else
+    echo "essential_tests.mbt ... failed"
+  fi
+fi
+
 if [ -f "simple_test.mbt" ]; then
   echo "Checking simple_test.mbt..."
   # 使用 moonc.js 检查测试文件
