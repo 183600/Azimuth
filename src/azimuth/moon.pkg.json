@@ -7,6 +7,8 @@
   "files": [
     "lib.mbt",
     "azimuth_simple_standard_tests.mbt",
-    "additional_comprehensive_tests.mbt"
+    "additional_comprehensive_tests.mbt",
+    "enhanced_standard_tests.mbt",
+    "simple_new_tests.mbt"
   ]
 }

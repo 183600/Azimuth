@@ -150,3 +150,55 @@ test "greeting_internationalization" {
   assert_eq_string("Hello, 🌟!", greet("🌟"))
   assert_eq_string("Hello, María!", greet("María"))
 }
+
+// 新增的测试用例
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(0, add(-5, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(-11, 3))
+}
+
+test "large_number_operations" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(999999, add(500000, 499999))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "zero_operations" {
+  // 测试零的运算
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, -10))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+}
+
+test "exact_division_cases" {
+  // 测试能够整除的情况
+  assert_eq(5, divide_with_ceil(15, 3))
+  assert_eq(10, divide_with_ceil(20, 2))
+  assert_eq(-5, divide_with_ceil(-15, 3))
+  assert_eq(-10, divide_with_ceil(20, -2))
+}
+
+test "business_calculation_scenario" {
+  // 测试业务计算场景
+  // 计算订单总价：商品价格 × 数量 + 运费 - 折扣
+  let product_price = 89
+  let quantity = 4
+  let shipping = 12
+  let discount = 20
+  
+  let subtotal = multiply(product_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(358, final_total)  // 89*4 + 12 - 20 = 356 + 12 - 20 = 348
+}
