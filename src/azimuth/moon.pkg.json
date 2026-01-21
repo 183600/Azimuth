@@ -9,6 +9,8 @@
     "azimuth_simple_standard_tests.mbt",
     "additional_comprehensive_tests.mbt",
     "enhanced_standard_tests.mbt",
-    "simple_new_tests.mbt"
+    "simple_new_tests.mbt",
+    "test/comprehensive_unit_tests.mbt",
+    "test/advanced_test_scenarios.mbt"
   ]
 }

@@ -210,5 +210,6 @@
         "../../azimuth_standard_test_cases.mbt",
         "simple_test_new3.mbt",
         "../concise_core_tests.mbt",
-        "../standard_essential_tests.mbt"
+        "../standard_essential_tests.mbt",
+        "advanced_test_scenarios.mbt"
         ]}

@@ -1,126 +1,135 @@
-// Azimuth 项目综合单元测试
-// 包含多种场景的测试用例
+// 综合单元测试 - azimuth 库
+// 包含针对核心功能的全面测试用例
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(24, @azimuth.multiply(6, 4))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-30, @azimuth.multiply(-5, 6))
+test "divide_with_ceil_comprehensive" {
+  // 全面测试 divide_with_ceil 函数
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(9, -3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-3, 2))
 }
 
-test "boundary_value_handling" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试边界值加法
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  
-  // 测试边界值乘法
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+test "add_function_boundary_values" {
+  // 测试 add 函数的边界值
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
+  @azimuth.assert_eq(-1, @azimuth.add(-2147483648, 2147483647))
+  @azimuth.assert_eq(1, @azimuth.add(-2147483648, 2147483649))
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
+test "multiply_function_boundary_values" {
+  // 测试 multiply 函数的边界值
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
+  @azimuth.assert_eq(1, @azimuth.multiply(-1, -1))
+  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-2147483648, 1))
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算圆的周长和面积（简化版）
-  let radius = 5
-  let pi_approx = 3
-  
-  // 圆周长 = 2 × π × r
-  let circumference = @azimuth.multiply(@azimuth.multiply(2, pi_approx), radius)
-  @azimuth.assert_eq(30, circumference)
-  
-  // 圆面积 = π × r²
-  let radius_squared = @azimuth.multiply(radius, radius)
-  let area = @azimuth.multiply(pi_approx, radius_squared)
-  @azimuth.assert_eq(75, area)
+test "greet_function_unicode_support" {
+  // 测试 greet 函数的 Unicode 支持
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, 東京!", @azimuth.greet("東京"))
 }
 
-test "sequential_operations_test" {
-  // 测试连续运算
-  // 计算 ((a + b) × c) - d
-  let a = 10
-  let b = 15
-  let c = 4
-  let d = 20
+test "complex_business_calculations" {
+  // 测试复杂业务计算
+  // 计算折扣价格：原价 × 数量 × (1 - 折扣率)
+  let original_price = 120
+  let quantity = 5
+  let discount_rate = 20  // 20% 折扣
   
-  let sum = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum, c)
-  let result = @azimuth.add(product, -d)
+  let subtotal = @azimuth.multiply(original_price, quantity)
+  let discount_amount = @azimuth.multiply(subtotal, discount_rate) / 100
+  let final_price = @azimuth.add(subtotal, -discount_amount)
   
-  @azimuth.assert_eq(80, result)
+  @azimuth.assert_eq(480, final_price)  // 120*5 - 120*5*20% = 600 - 120 = 480
 }
 
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
-  let x = 12
-  let y = 8
+test "financial_calculations" {
+  // 测试金融计算
+  // 计算复利：本金 × (1 + 利率)^期数（简化版）
+  let principal = 1000
+  let rate = 5  // 5% 利率
+  let periods = 3
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  // 简化计算：本金 + 本金×利率×期数
+  let interest = @azimuth.multiply(@azimuth.multiply(principal, rate), periods) / 100
+  let total = @azimuth.add(principal, interest)
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
-  
-  // 分配律
-  let z = 5
-  @azimuth.assert_eq(
-    @azimuth.multiply(x, @azimuth.add(y, z)),
-    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
-  )
+  @azimuth.assert_eq(1150, total)  // 1000 + 1000*5%*3 = 1000 + 150 = 1150
 }
 
-test "real_world_application_test" {
-  // 测试实际应用场景：购物车总价计算
-  let item1_price = 199
-  let item1_qty = 2
-  let item2_price = 299
-  let item2_qty = 1
-  let shipping = 20
+test "geometry_calculations" {
+  // 测试几何计算
+  // 计算长方形面积和周长
+  let length = 8
+  let width = 6
   
-  // 计算商品总价
-  let total1 = @azimuth.multiply(item1_price, item1_qty)
-  let total2 = @azimuth.multiply(item2_price, item2_qty)
-  let subtotal = @azimuth.add(total1, total2)
+  let area = @azimuth.multiply(length, width)
+  let perimeter = @azimuth.add(@azimuth.multiply(length, 2), @azimuth.multiply(width, 2))
   
-  // 计算最终总价
-  let final_total = @azimuth.add(subtotal, shipping)
+  @azimuth.assert_eq(48, area)      // 8 * 6 = 48
+  @azimuth.assert_eq(28, perimeter) // 8*2 + 6*2 = 16 + 12 = 28
   
-  @azimuth.assert_eq(717, final_total)
+  // 计算立方体体积
+  let cube_side = 4
+  let cube_volume = @azimuth.multiply(@azimuth.multiply(cube_side, cube_side), cube_side)
+  @azimuth.assert_eq(64, cube_volume)  // 4 * 4 * 4 = 64
 }
 
-test "error_handling_and_validation" {
-  // 测试错误处理和验证
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "statistical_calculations" {
+  // 测试统计计算
+  // 计算数据集的总和、平均值、范围
+  let data1 = 15
+  let data2 = 25
+  let data3 = 35
+  let data4 = 45
+  let data5 = 55
   
-  // 测试溢出保护
-  let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data1, data2), data3), data4), data5)
+  let average = sum / 5
+  let range = @azimuth.add(data5, -data1)
+  
+  @azimuth.assert_eq(175, sum)      // 15 + 25 + 35 + 45 + 55 = 175
+  @azimuth.assert_eq(35, average)   // 175 / 5 = 35
+  @azimuth.assert_eq(40, range)     // 55 - 15 = 40
 }
 
-test "performance_related_calculations" {
-  // 测试性能相关计算
-  // 计算前n个自然数的和：n × (n + 1) / 2
-  let _n = 100
-  let sum = @azimuth.multiply(_n, @azimuth.add(_n, 1)) / 2
-  @azimuth.assert_eq(5050, sum)
+test "time_calculations" {
+  // 测试时间计算
+  // 计算总秒数和分钟数
+  let hours = 2
+  let minutes = 30
+  let seconds = 45
   
-  // 计算阶乘（简化版）：5! = 5 × 4 × 3 × 2 × 1
-  let factorial = @azimuth.multiply(5, @azimuth.multiply(4, @azimuth.multiply(3, @azimuth.multiply(2, 1))))
-  @azimuth.assert_eq(120, factorial)
+  let total_seconds = @azimuth.add(@azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.multiply(minutes, 60)), seconds)
+  let total_minutes = @azimuth.divide_with_ceil(total_seconds, 60)
+  
+  @azimuth.assert_eq(9045, total_seconds)  // 2*3600 + 30*60 + 45 = 7200 + 1800 + 45 = 9045
+  @azimuth.assert_eq(151, total_minutes)   // ceil(9045/60) = ceil(150.75) = 151
+}
+
+test "error_handling_scenarios" {
+  // 测试错误处理场景
+  // 除零保护
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  
+  // 极值计算
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483647, 0))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483648, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-2147483648, 0))
 }
