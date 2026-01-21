@@ -251,4 +251,7 @@
       "../../azimuth_new_test_cases.mbt",
       "quality_test_cases.mbt",
   "standard_azimuth_core_tests.mbt",
-    "azimuth_standard_tests.mbt"]}
+    "azimuth_standard_tests.mbt",
+    "comprehensive_test_suite_new.mbt",
+    "simple_new_tests.mbt",
+    "working_tests.mbt"]}
