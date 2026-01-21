@@ -5,6 +5,7 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
+    "standard_comprehensive_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_enhanced_test_cases.mbt",
     "azimuth_enhanced_test_suite.mbt",
@@ -13,7 +14,6 @@
     "enhanced_functional_tests.mbt",
     "azimuth_core_functionality_tests.mbt",
     "additional_standard_tests.mbt",
-    "standard_comprehensive_tests.mbt",
     "quality_test_suite.mbt",
     "comprehensive_moonbit_test_suite.mbt",
     "azimuth_advanced_test_cases.mbt",
@@ -219,7 +219,6 @@
   "standalone_test_suite.mbt",
   "minimal_test.mbt",
   "azimuth_comprehensive_unit_tests.mbt",
-  "standard_comprehensive_tests.mbt",
       "concise_azimuth_tests.mbt",
       "standard_moonbit_test_suite.mbt",
   "standard_moonbit_test_suite_new.mbt",
