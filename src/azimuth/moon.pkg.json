@@ -231,6 +231,7 @@
   "simple_quality_test.mbt",
   "azimuth_standard_test_cases.mbt",
   "azimuth_standard_unit_tests.mbt",
+  "standard_core_tests.mbt",
   "user_standard_tests_v2.mbt",
   "user_defined_comprehensive_tests.mbt",
   "simple_user_test.mbt",
