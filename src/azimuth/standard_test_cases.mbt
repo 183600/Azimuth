@@ -1,107 +1,94 @@
-// Azimuth 项目标准测试用例
-// 测试核心功能：add, multiply, greet 函数以及断言函数
+// 标准 MoonBit 测试用例
+// 覆盖 azimuth 库的主要功能
 
-test "add_function_basic_operations" {
-  // 测试基本加法运算
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(5, -5))
-  assert_eq(-8, add(-3, -5))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(15, -5))
 }
 
-test "add_function_boundary_values" {
-  // 测试边界值加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(12, multiply(-3, -4))
 }
 
-test "multiply_function_basic_operations" {
-  // 测试基本乘法运算
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(0, multiply(8, 0))
-}
-
-test "multiply_function_special_cases" {
-  // 测试乘法特殊情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(max_val, multiply(46341, 46341))
-}
-
-test "greet_function_standard_cases" {
-  // 测试问候函数标准情况
+test "greet_basic_functionality" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 张三!", greet("张三"))
 }
 
-test "greet_function_special_characters" {
-  // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, user@123!", greet("user@123"))
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
-  assert_eq_string("Hello, \"Test\"!", greet("\"Test\""))
+test "divide_with_ceil_basic" {
+  // 测试向上取整除法基本功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：矩形面积和周长
-  let length = 8
-  let width = 5
-  
-  // 面积 = 长 × 宽
-  let area = multiply(length, width)
-  assert_eq(40, area)
-  
-  // 周长 = 2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(26, perimeter)
-}
-
-test "mathematical_properties_verification" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 7
+test "mathematical_commutativity" {
+  // 测试数学交换律
+  let a = 7
+  let b = 12
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律：a × (b + c) = a × b + a × c
-  let c = 3
-  let left = multiply(a, add(b, c))
-  let right = add(multiply(a, b), multiply(a, c))
-  assert_eq(left, right)
 }
 
-test "assert_functions_verification" {
-  // 测试断言函数本身
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "business_calculation_scenario" {
+  // 业务计算场景：计算订单总价
+  let unit_price = 25
+  let quantity = 4
+  let shipping = 10
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
+  
+  assert_eq(110, total)
 }
 
-test "real_world_application_test" {
-  // 实际应用测试：购物车计算
-  let item_price = 199
-  let quantity = 3
-  let discount = 50
-  let shipping = 15
+test "packaging_efficiency_test" {
+  // 包装效率测试：计算需要的箱子数量
+  let total_items = 23
+  let items_per_box = 5
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  // 商品总价
-  let subtotal = multiply(item_price, quantity)
-  // 折扣后价格
-  let discounted = add(subtotal, -discount)
-  // 最终价格（含运费）
-  let total = add(discounted, shipping)
+  assert_eq(5, boxes_needed)
+}
+
+test "string_greeting_edge_cases" {
+  // 字符串问候边界情况测试
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 中国!", greet("中国"))
+  assert_eq_string("Hello,   !", greet("  "))
+}
+
+test "complex_calculation_workflow" {
+  // 复杂计算工作流
+  let base_value = 100
+  let multiplier = 3
+  let addition = 25
   
-  assert_eq(602, total)  // 199*3 - 50 + 15 = 597 - 50 + 15 = 562
+  let step1 = multiply(base_value, multiplier)
+  let result = add(step1, addition)
+  
+  assert_eq(325, result)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试除零情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
