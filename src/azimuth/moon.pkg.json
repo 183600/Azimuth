@@ -33,6 +33,7 @@
     "quality_focused_tests.mbt",
     "simple_test_validation.mbt",
     "azimuth_quality_enhanced_tests.mbt",
-    "azimuth_standard_test_suite.mbt"
+    "azimuth_standard_test_suite.mbt",
+    "comprehensive_standard_tests.mbt"
   ]
 }
