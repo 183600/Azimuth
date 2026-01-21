@@ -115,6 +115,7 @@
     "simple_test_new.mbt",
     "user_additional_tests.mbt",
     "standard_enhanced_tests.mbt",
+    "azimuth_quality_test_suite.mbt",
     "azimuth_comprehensive_test_suite.mbt"
   ]
 }
