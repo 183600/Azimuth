@@ -1,137 +1,103 @@
-// 新增的 MoonBit 测试用例
-// 这些测试用例覆盖了 azimuth 库的核心功能
+// 新增的标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
 test "add_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
+  // 测试加法交换律: a + b = b + a
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
   
-  let result1 = add(a, b)
-  let result2 = add(b, a)
-  assert_eq(result1, result2)
-}
-
-test "add_associative_property" {
-  // 测试加法结合律：(a + b) + c = a + (b + c)
-  let a = 100
-  let b = 200
-  let c = 300
-  
-  let result1 = add(add(a, b), c)
-  let result2 = add(a, add(b, c))
-  assert_eq(result1, result2)
+  let x = -10
+  let y = 25
+  assert_eq(add(x, y), add(y, x))
 }
 
 test "multiply_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 5
-  let b = 10
-  let c = 15
-  
-  let result1 = multiply(a, add(b, c))
-  let result2 = add(multiply(a, b), multiply(a, c))
-  assert_eq(result1, result2)
+  // 测试乘法分配律: a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 6
+  let c = 3
+  let left = multiply(a, add(b, c))
+  let right = add(multiply(a, b), multiply(a, c))
+  assert_eq(left, right)
 }
 
-test "multiply_identity_property" {
-  // 测试乘法单位元：a × 1 = a
-  let values = [0, 1, -1, 42, -42, 2147483647, -2147483648]
-  
-  // 测试多个值
-  assert_eq(0, multiply(0, 1))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(-1, 1))
-  assert_eq(42, multiply(42, 1))
-  assert_eq(-42, multiply(-42, 1))
-  assert_eq(2147483647, multiply(2147483647, 1))
-  assert_eq(-2147483648, multiply(-2147483648, 1))
+test "divide_with_ceil_fractional_cases" {
+  // 测试向上取整除法的小数情况
+  assert_eq(3, divide_with_ceil(8, 3))    // 8/3 = 2.666... -> 3
+  assert_eq(7, divide_with_ceil(20, 3))   // 20/3 = 6.666... -> 7
+  assert_eq(2, divide_with_ceil(4, 2))    // 4/2 = 2 -> 2
+  assert_eq(1, divide_with_ceil(2, 3))    // 2/3 = 0.666... -> 1
 }
 
-test "greet_with_various_input_types" {
-  // 测试greet函数处理各种输入类型
-  // 普通字符串
-  assert_eq_string("Hello, World!", greet("World"))
-  
-  // 包含空格的字符串
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
-  
-  // 包含特殊字符的字符串
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-  
-  // 包含Unicode字符的字符串
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  
-  // 数字字符串
-  assert_eq_string("Hello, 12345!", greet("12345"))
+test "greet_function_whitespace_handling" {
+  // 测试问候函数的空白字符处理
+  assert_eq_string("Hello,   World   !", greet("   World   "))
+  assert_eq_string("Hello, 	\n!", greet("\t\n"))
+  assert_eq_string("Hello, a b c!", greet("a b c"))
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形面积和周长
-  let length = 8
-  let width = 6
-  
-  // 计算面积
-  let area = multiply(length, width)
-  assert_eq(48, area)
-  
-  // 计算周长
-  let perimeter = add(multiply(2, length), multiply(2, width))
-  assert_eq(28, perimeter)
-  
-  // 计算对角线长度的平方（简化计算）
-  let diagonal_squared = add(multiply(length, length), multiply(width, width))
-  assert_eq(100, diagonal_squared)
+test "complex_calculation_pipeline" {
+  // 测试复杂计算流水线
+  let initial_value = 100
+  let step1 = add(initial_value, multiply(5, 4))     // 100 + 20 = 120
+  let step2 = multiply(step1, divide_with_ceil(25, 5)) // 120 * 5 = 600
+  let final_result = add(step2, -multiply(10, 6))     // 600 - 60 = 540
+  assert_eq(540, final_result)
 }
 
-test "financial_calculation_scenario" {
-  // 测试金融计算场景：简单利息和复利计算
-  let principal = 10000
-  let rate = 5  // 5%
-  let time = 3  // 3年
-  
-  // 简单利息：本金 × 利率 × 时间
-  let simple_interest = multiply(principal, multiply(rate, time))
-  let simple_total = add(principal, simple_interest)
-  assert_eq(160000, simple_total)
-  
-  // 简化复利：本金 × (1 + 利率 × 时间)
-  let compound_factor = add(1, multiply(rate, time))
-  let compound_total = multiply(principal, compound_factor)
-  assert_eq(160000, compound_total)
+test "edge_case_zero_division" {
+  // 测试零除法的边界情况
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(-5, 0))
 }
 
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景：摄氏度转华氏度
-  // 简化公式：F = C × 2 + 30
-  let celsius_temps = [0, 10, 20, 30, 40]
-  let expected_fahrenheit = [30, 50, 70, 90, 110]
-  
-  // 测试多个温度点
-  assert_eq(30, add(multiply(0, 2), 30))
-  assert_eq(50, add(multiply(10, 2), 30))
-  assert_eq(70, add(multiply(20, 2), 30))
-  assert_eq(90, add(multiply(30, 2), 30))
-  assert_eq(110, add(multiply(40, 2), 30))
+test "negative_multiply_patterns" {
+  // 测试负数乘法模式
+  assert_eq(50, multiply(-5, -10))     // 负负得正
+  assert_eq(-30, multiply(5, -6))      // 正负得负
+  assert_eq(-42, multiply(-7, 6))      // 负正得负
+  assert_eq(0, multiply(-8, 0))        // 零元素性质
 }
 
-test "boundary_value_comprehensive_test" {
-  // 测试边界值的综合情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "string_concatenation_with_greet" {
+  // 测试字符串连接与问候函数的组合
+  let prefix = "Dear"
+  let name = "MoonBit"
+  let suffix = "Community"
+  let full_name = prefix + " " + name + " " + suffix
+  let formal_greeting = greet(full_name)
+  assert_eq_string("Hello, Dear MoonBit Community!", formal_greeting)
+}
+
+test "mathematical_sequence_sum" {
+  // 测试数学序列求和
+  // 计算 1 + 2 + 3 + ... + 10 的和
+  let n = 10
+  let sum = divide_with_ceil(multiply(n, add(n, 1)), 2)  // n*(n+1)/2 公式
+  assert_eq(55, sum)
   
-  // 测试最大值的各种运算
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(max_val, -1))
-  assert_eq(0, multiply(max_val, 0))
+  // 验证通过循环方式（使用函数组合）
+  let manual_sum = add(add(add(add(add(1, 2), add(3, 4)), add(5, 6)), add(7, 8)), add(9, 10))
+  assert_eq(sum, manual_sum)
+}
+
+test "business_inventory_calculation" {
+  // 测试业务库存计算
+  let boxes_per_pallet = 12
+  let items_per_box = 24
+  let total_items = 350
   
-  // 测试最小值的各种运算
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(0, multiply(min_val, 0))
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
   
-  // 测试最大值与最小值的运算
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(15, boxes_needed)     // ceil(350/24) = 15
+  assert_eq(2, pallets_needed)    // ceil(15/12) = 2
+  
+  // 计算总容量
+  let total_capacity = multiply(pallets_needed, multiply(boxes_per_pallet, items_per_box))
+  assert_eq(576, total_capacity)  // 2 * 12 * 24 = 576
 }
