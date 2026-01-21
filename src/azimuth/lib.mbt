@@ -6185,3 +6185,133 @@ test "error_recovery_scenarios" {
   assert_true(safe_value >= 0)
   assert_false(input >= 0)
 }
+
+// 新增的10个综合测试用例
+test "azimuth_divide_with_ceil_comprehensive" {
+  // 测试向上取整除法的各种情况
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(2, divide_with_ceil(8, 4))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))
+}
+
+test "azimuth_complex_nested_calculations" {
+  // 测试复杂的嵌套计算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)
+  
+  let result2 = multiply(add(10, 20), add(5, 15))
+  assert_eq(600, result2)
+  
+  let result3 = add(multiply(divide_with_ceil(17, 5), 3), multiply(divide_with_ceil(-13, 5), 2))
+  assert_eq(5, result3)
+}
+
+test "azimuth_international_string_handling" {
+  // 测试国际化字符串处理
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 田中太郎!", greet("田中太郎"))
+  assert_eq_string("Hello, 김철수!", greet("김철수"))
+  assert_eq_string("Hello, أحمد!", greet("أحمد"))
+  assert_eq_string("Hello, Иван!", greet("Иван"))
+  assert_eq_string("Hello, José!", greet("José"))
+  assert_eq_string("Hello, Müller!", greet("Müller"))
+}
+
+test "azimuth_financial_calculation_v2" {
+  // 测试金融计算场景
+  let principal = 10000
+  let rate1 = 5
+  let rate2 = 6
+  let rate3 = 7
+  
+  let total_rate = add(add(rate1, rate2), rate3)
+  let total_amount = multiply(principal, add(100, total_rate))
+  assert_eq(1180000, total_amount)
+}
+
+test "azimuth_scientific_formula_simulation" {
+  // 测试科学公式模拟
+  let gravity = 5
+  let time1 = 3
+  let time2 = 5
+  
+  let distance1 = multiply(gravity, multiply(time1, time1))
+  let distance2 = multiply(gravity, multiply(time2, time2))
+  
+  assert_eq(45, distance1)
+  assert_eq(125, distance2)
+}
+
+test "azimuth_boundary_value_combinations" {
+  // 测试边界值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  let result1 = add(multiply(add(max_val, min_val), 2), max_val)
+  assert_eq(max_val, result1)
+  
+  let result2 = multiply(add(add(min_val, max_val), min_val), -1)
+  assert_eq(1, result2)
+}
+
+test "azimuth_algorithm_efficiency_v2" {
+  // 测试算法效率场景
+  let n1 = 100
+  let n2 = 1000
+  
+  let sum1 = multiply(n1, add(n1, 1)) / 2
+  let sum2 = multiply(n2, add(n2, 1)) / 2
+  
+  assert_eq(5050, sum1)
+  assert_eq(500500, sum2)
+}
+
+test "azimuth_data_structure_operations_v2" {
+  // 测试数据结构操作模拟
+  let stack_size = 0
+  let after_push1 = add(stack_size, 1)
+  let after_push2 = add(after_push1, 1)
+  let after_push3 = add(after_push2, 1)
+  
+  assert_eq(3, after_push3)
+  
+  let after_pop1 = add(after_push3, -1)
+  let after_pop2 = add(after_pop1, -1)
+  let after_pop3 = add(after_pop2, -1)
+  
+  assert_eq(0, after_pop3)
+}
+
+test "azimuth_precision_arithmetic_test" {
+  // 测试精度算术运算
+  let product1 = multiply(multiply(1000, 2000), 3000)
+  assert_eq(2000000000, product1)
+  
+  let product2 = multiply(multiply(-1000, 2000), -3000)
+  assert_eq(2000000000, product2)
+  
+  let sum1 = add(add(add(1000000, 2000000), add(3000000, 4000000)), 5000000)
+  assert_eq(15000000, sum1)
+}
+
+test "azimuth_error_boundary_conditions" {
+  // 测试错误边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试溢出保护
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(add(min_val, -100) == min_val)
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, -1) == min_val)
+  
+  // 测试正常运算
+  assert_eq(8, add(5, 3))
+  assert_eq(15, multiply(3, 5))
+  assert_eq_string("Hello, Test!", greet("Test"))
+}
