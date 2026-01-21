@@ -17,6 +17,7 @@
     "azimuth_comprehensive_test_cases.mbt",
     "standard_enhanced_test_cases.mbt",
     "standard_moonbit_tests.mbt",
-    "comprehensive_quality_tests.mbt"
+    "comprehensive_quality_tests.mbt",
+    "azimuth_comprehensive_new_tests.mbt"
   ]
 }
