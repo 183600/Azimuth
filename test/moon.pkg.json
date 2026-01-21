@@ -4,6 +4,7 @@
     "src/azimuth"
   ],
   "test": [
+    "new_comprehensive_test_suite.mbt",
     "azimuth_new_test_cases.mbt",
     "standard_comprehensive_tests.mbt",
     "standard_moonbit_core_tests.mbt",
