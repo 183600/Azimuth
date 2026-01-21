@@ -102,7 +102,7 @@
     "new_standard_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_test_cases.mbt",
-    "standard_tests.mbt",
+    "my_new_standard_tests.mbt",
     "test_new_features.mbt",
     "user_added_tests.mbt",
     "user_defined_test.mbt",
