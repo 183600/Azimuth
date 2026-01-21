@@ -38,6 +38,7 @@
     "azimuth_comprehensive_new_tests.mbt",
     "azimuth_comprehensive_standard_tests.mbt",
     "azimuth_comprehensive_test_suite.mbt",
+    "test_my_new_file.mbt",
     "azimuth_comprehensive_tests.mbt",
     "azimuth_comprehensive_unit_tests.mbt",
     "azimuth_core_functionality_tests.mbt",
@@ -121,6 +122,7 @@
     "user_additional_tests.mbt",
     "standard_enhanced_tests.mbt",
     "azimuth_quality_test_suite.mbt",
-    "azimuth_comprehensive_test_suite.mbt"
+    "azimuth_comprehensive_test_suite.mbt",
+    "test_my_new_file.mbt"
   ]
 }
