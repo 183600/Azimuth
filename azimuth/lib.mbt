@@ -964,6 +964,201 @@ test "string_processing_edge_cases" {
   assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
 }
 
+// 标准 MoonBit 测试用例补充
+// 专注于数值运算、边界条件和实际应用场景
+
+test "add_function_identity_properties" {
+  // 测试加法的单位元性质
+  assert_eq(5, add(5, 0))
+  assert_eq(5, add(0, 5))
+  assert_eq(-5, add(-5, 0))
+  assert_eq(-5, add(0, -5))
+  assert_eq(0, add(0, 0))
+  
+  // 测试加法的逆元性质
+  assert_eq(0, add(5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(100, -100))
+  assert_eq(0, add(-100, 100))
+}
+
+test "multiply_function_identity_properties" {
+  // 测试乘法的单位元性质
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, multiply(1, 5))
+  assert_eq(-5, multiply(-5, 1))
+  assert_eq(-5, multiply(1, -5))
+  assert_eq(1, multiply(1, 1))
+  
+  // 测试乘法的零元性质
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, multiply(-5, 0))
+  assert_eq(0, multiply(0, -5))
+  assert_eq(0, multiply(0, 0))
+}
+
+test "power_operations_simulation" {
+  // 通过重复乘法模拟幂运算
+  let base = 3
+  
+  // 3^2 = 9
+  assert_eq(9, multiply(base, base))
+  
+  // 3^3 = 27
+  assert_eq(27, multiply(multiply(base, base), base))
+  
+  // 3^4 = 81
+  assert_eq(81, multiply(multiply(multiply(base, base), base), base))
+  
+  // 测试负数的幂
+  let neg_base = -2
+  
+  // (-2)^2 = 4
+  assert_eq(4, multiply(neg_base, neg_base))
+  
+  // (-2)^3 = -8
+  assert_eq(-8, multiply(multiply(neg_base, neg_base), neg_base))
+}
+
+test "factorial_simulation" {
+  // 通过重复乘法模拟阶乘运算
+  // 5! = 5 × 4 × 3 × 2 × 1 = 120
+  let factorial_5 = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
+  assert_eq(120, factorial_5)
+  
+  // 4! = 4 × 3 × 2 × 1 = 24
+  let factorial_4 = multiply(4, multiply(3, multiply(2, 1)))
+  assert_eq(24, factorial_4)
+  
+  // 3! = 3 × 2 × 1 = 6
+  let factorial_3 = multiply(3, multiply(2, 1))
+  assert_eq(6, factorial_3)
+  
+  // 2! = 2 × 1 = 2
+  let factorial_2 = multiply(2, 1)
+  assert_eq(2, factorial_2)
+  
+  // 1! = 1
+  assert_eq(1, multiply(1))
+}
+
+test "greet_function_name_formatting" {
+  // 测试不同格式的名称处理
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  assert_eq_string("Hello, john-doe!", greet("john-doe"))
+  assert_eq_string("Hello, john_doe!", greet("john_doe"))
+  assert_eq_string("Hello, Mr. Smith!", greet("Mr. Smith"))
+  assert_eq_string("Hello, Dr. Jane!", greet("Dr. Jane"))
+  assert_eq_string("Hello, Jr. Johnson!", greet("Jr. Johnson"))
+}
+
+test "divide_with_ceil_rounding_behavior" {
+  // 测试向上取整的舍入行为
+  // 正数舍入
+  assert_eq(1, divide_with_ceil(1, 1))    // 1/1 = 1
+  assert_eq(2, divide_with_ceil(2, 1))    // 2/1 = 2
+  assert_eq(2, divide_with_ceil(3, 2))    // 3/2 = 1.5 → 2
+  assert_eq(3, divide_with_ceil(5, 2))    // 5/2 = 2.5 → 3
+  assert_eq(4, divide_with_ceil(7, 2))    // 7/2 = 3.5 → 4
+  
+  // 负数舍入（向零方向）
+  assert_eq(-1, divide_with_ceil(-1, 2))   // -1/2 = -0.5 → -1
+  assert_eq(-2, divide_with_ceil(-3, 2))   // -3/2 = -1.5 → -2
+  assert_eq(-3, divide_with_ceil(-5, 2))   // -5/2 = -2.5 → -3
+}
+
+test "arithmetic_progression_calculations" {
+  // 等差数列计算测试
+  // 计算前n项和：S = n/2 * (a1 + an)
+  let n = 10
+  let a1 = 1
+  let an = 10
+  
+  // 计算首项与末项的和
+  let first_plus_last = add(a1, an)
+  assert_eq(11, first_plus_last)
+  
+  // 计算项数与和的乘积
+  let n_times_sum = multiply(n, first_plus_last)
+  assert_eq(110, n_times_sum)
+  
+  // 计算最终的和（使用向上取整除法模拟除以2）
+  let arithmetic_sum = divide_with_ceil(n_times_sum, 2)
+  assert_eq(55, arithmetic_sum)
+  
+  // 验证：1+2+3+4+5+6+7+8+9+10 = 55
+}
+
+test "geometric_progression_calculations" {
+  // 等比数列计算测试
+  // 计算前几项：a, ar, ar^2, ar^3, ...
+  let a = 2
+  let r = 3
+  
+  // 计算前几项
+  let term1 = a                           // 2
+  let term2 = multiply(a, r)              // 2 × 3 = 6
+  let term3 = multiply(term2, r)          // 6 × 3 = 18
+  let term4 = multiply(term3, r)          // 18 × 3 = 54
+  let term5 = multiply(term4, r)          // 54 × 3 = 162
+  
+  assert_eq(2, term1)
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
+  assert_eq(162, term5)
+  
+  // 计算前几项的和
+  let sum_5_terms = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(242, sum_5_terms)  // 2+6+18+54+162 = 242
+}
+
+test "practical_calculator_scenarios" {
+  // 实际计算器场景测试
+  // 场景1：计算购物车总价
+  let item1 = 199
+  let item2 = 299
+  let item3 = 99
+  let subtotal = add(add(item1, item2), item3)
+  assert_eq(597, subtotal)
+  
+  // 场景2：计算折扣价格（8折）
+  let discount_rate = 5  // 1/5 = 20% = 80%价格
+  let discounted_price = divide_with_ceil(multiply(subtotal, 4), 5)
+  assert_eq(478, discounted_price)
+  
+  // 场景3：计算税费（向上取整）
+  let tax_rate = 10  // 10%税率
+  let tax_amount = divide_with_ceil(discounted_price, tax_rate)
+  assert_eq(48, tax_amount)
+  
+  // 场景4：最终总价
+  let final_total = add(discounted_price, tax_amount)
+  assert_eq(526, final_total)
+}
+
+test "number_system_conversions" {
+  // 数制转换相关的计算
+  // 场景1：二进制转十进制的计算
+  // 二进制 1011 = 1×2³ + 0×2² + 1×2¹ + 1×2⁰ = 8 + 0 + 2 + 1 = 11
+  let binary_1011 = add(add(multiply(1, multiply(2, multiply(2, 2))), 
+                            multiply(0, multiply(2, 2))), 
+                       add(multiply(1, 2), 1))
+  assert_eq(11, binary_1011)
+  
+  // 场景2：八进制转十进制的计算
+  // 八进制 123 = 1×8² + 2×8¹ + 3×8⁰ = 64 + 16 + 3 = 83
+  let octal_123 = add(add(multiply(1, multiply(8, 8)), 
+                         multiply(2, 8)), 3)
+  assert_eq(83, octal_123)
+  
+  // 场景3：十六进制转十进制的计算（简化版）
+  // 十六进制 1A = 1×16¹ + 10×16⁰ = 16 + 10 = 26
+  let hex_1A = add(multiply(1, 16), 10)
+  assert_eq(26, hex_1A)
+}
+
 test "algorithm_complexity_validation" {
   // 算法复杂度验证
   // 测试多个连续操作的性能
