@@ -29,7 +29,7 @@
     "comprehensive_test_suite.mbt",
     "azimuth_standard_test_cases.mbt",
     "azimuth_core_tests.mbt",
-    "lib.mbt",
+    //"lib.mbt",
     "concise_standard_tests.mbt",
     "standard_azimuth_core_tests.mbt",
   "simple_azimuth_core_tests.mbt",
@@ -263,4 +263,6 @@
     "user_additional_test_cases.mbt",
     "standard_moonbit_additional_tests.mbt",
     "simple_test_check.mbt",
-    "test/standard_moonbit_tests_new.mbt"]}
+    "test/standard_moonbit_tests_new.mbt",
+    "new_high_quality_tests.mbt",
+    "simple_syntax_test.mbt"]}
