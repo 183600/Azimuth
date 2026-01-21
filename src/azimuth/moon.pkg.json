@@ -6,6 +6,7 @@
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
     "lib.mbt",
+    "standard_moonbit_test_cases.mbt",
     "standard_test_cases.mbt",
     "additional_standard_tests.mbt",
     "quality_test_suite.mbt",
