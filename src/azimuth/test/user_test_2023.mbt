@@ -1,4 +1,4 @@
-// 标准 MoonBit 测试用例
+// 用户 MoonBit 测试用例 2023
 // 测试 Azimuth 项目的核心功能
 
 test "basic_arithmetic_operations" {
