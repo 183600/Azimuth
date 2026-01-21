@@ -576,3 +576,175 @@ test "greeting_with_special_characters" {
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
+// 新增的8个高质量测试用例
+test "data_analysis_statistics" {
+  // 模拟销售数据分析
+  let sales_q1 = 15000
+  let sales_q2 = 18000
+  let sales_q3 = 22000
+  let sales_q4 = 25000
+  
+  // 计算年度总销售额
+  let annual_sales = add(add(add(sales_q1, sales_q2), sales_q3), sales_q4)
+  
+  // 计算季度平均销售额（向上取整）
+  let quarterly_average = divide_with_ceil(annual_sales, 4)
+  
+  // 计算增长率百分比
+  let growth_q2_q1 = divide_with_ceil(multiply(sales_q2 - sales_q1, 100), sales_q1)
+  let growth_q3_q2 = divide_with_ceil(multiply(sales_q3 - sales_q2, 100), sales_q2)
+  let growth_q4_q3 = divide_with_ceil(multiply(sales_q4 - sales_q3, 100), sales_q3)
+  
+  assert_eq(80000, annual_sales)
+  assert_eq(20000, quarterly_average)
+  assert_eq(20, growth_q2_q1)
+  assert_eq(23, growth_q3_q2)
+  assert_eq(14, growth_q4_q3)
+}
+
+test "algorithm_performance_large_data" {
+  // 模拟处理大量数据的计算
+  let base_value = 42
+  let iterations = 1000
+  let multiplier = 3
+  
+  // 模拟循环累加计算
+  let accumulated_value = multiply(base_value, iterations)
+  let final_result = add(accumulated_value, multiply(multiplier, divide_with_ceil(iterations, 10)))
+  
+  assert_eq(42000, accumulated_value)
+  assert_eq(42300, final_result)
+}
+
+test "complex_business_workflow" {
+  // 模拟完整的订单处理流程
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost_per_item = 5
+  let discount_threshold = 1000
+  let discount_amount = 50
+  
+  // 步骤1: 计算商品总价
+  let subtotal = multiply(product_cost, quantity)
+  
+  // 步骤2: 计算运费
+  let total_shipping = multiply(shipping_cost_per_item, quantity)
+  
+  // 步骤3: 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 步骤4: 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 步骤5: 应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1969, final_total)
+}
+
+test "extreme_numerical_precision" {
+  // 测试极端数值情况
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  // 测试接近边界值的运算
+  let near_max_add = add(max_int - 100, 50)
+  let near_min_add = add(min_int + 100, -50)
+  
+  // 测试大数除法的精度
+  let large_division_1 = divide_with_ceil(1000000, 3)
+  let large_division_2 = divide_with_ceil(999999, 1000)
+  let large_division_3 = divide_with_ceil(-1000000, 3)
+  
+  assert_eq(2147483597, near_max_add)
+  assert_eq(-2147483558, near_min_add)
+  assert_eq(333334, large_division_1)
+  assert_eq(1000, large_division_2)
+  assert_eq(-333333, large_division_3)
+}
+
+test "advanced_string_processing" {
+  // 测试复杂的字符串组合场景
+  let company_name = "TechCorp"
+  let department = "研发部"
+  let project_code = "AZ-2024"
+  
+  // 构建复杂的团队标识字符串
+  let team_id = greet(company_name + " " + department + " " + project_code)
+  
+  assert_eq_string("Hello, TechCorp 研发部 AZ-2024!", greet("TechCorp 研发部 AZ-2024"))
+  assert_eq_string("Hello, 12!", greet("12"))
+}
+
+test "functional_programming_approach" {
+  // 模拟函数式编程的组合操作
+  // 模拟 map 和 reduce 操作
+  let doubled_sum = multiply(2, add(add(add(10, 20), add(30, 40)), 50))
+  let filtered_count = divide_with_ceil(add(add(1, 1), add(1, 1)), 1)  // 假设过滤后的计数
+  
+  // 模拟管道操作
+  let pipeline_result = add(multiply(divide_with_ceil(doubled_sum, 100), 3), 10)
+  
+  assert_eq(300, doubled_sum)
+  assert_eq(4, filtered_count)
+  assert_eq(22, pipeline_result)
+}
+
+test "real_world_engineering_calculation" {
+  // 模拟建筑工程计算
+  let room_length = 12
+  let room_width = 8
+  let room_height = 3
+  let tile_area = 2  // 每块瓷砖2平方米
+  
+  // 计算房间面积
+  let floor_area = multiply(room_length, room_width)
+  let wall_area = multiply(2, multiply(add(room_length, room_width), room_height))
+  let total_surface_area = add(floor_area, wall_area)
+  
+  // 计算需要的瓷砖数量
+  let tiles_needed = divide_with_ceil(total_surface_area, tile_area)
+  
+  // 计算油漆用量（假设每升油漆覆盖10平方米）
+  let paint_needed = divide_with_ceil(wall_area, 10)
+  
+  assert_eq(96, floor_area)
+  assert_eq(120, wall_area)
+  assert_eq(216, total_surface_area)
+  assert_eq(108, tiles_needed)
+  assert_eq(12, paint_needed)
+}
+
+test "performance_efficiency_calculation" {
+  // 模拟性能基准测试
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  
+  // 计算开销
+  let overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -overhead)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(3000, optimized_operations)
+  assert_eq(450, overhead)
+  assert_eq(2550, actual_performance)
+  assert_eq(3, performance_improvement)
+}
+

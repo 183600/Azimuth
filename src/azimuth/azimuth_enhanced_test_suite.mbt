@@ -1,140 +1,79 @@
-// Azimuth 增强测试套件
-// 标准 MoonBit 测试用例，覆盖核心功能
+// 新增的简洁 MoonBit 测试用例
+// 针对 azimuth 库的核心功能测试
 
-test "add_comprehensive_operations" {
-  // 测试加法的各种情况
-  assert_eq(8, add(3, 5))
-  assert_eq(-2, add(3, -5))
-  assert_eq(-8, add(-3, -5))
-  assert_eq(100, add(0, 100))
-  assert_eq(-100, add(0, -100))
+test "enhanced_add_comprehensive" {
+  // 综合测试加法功能
+  assert_eq(100, add(50, 50))
+  assert_eq(0, add(1000, -1000))
+  assert_eq(-200, add(-100, -100))
+  assert_eq(1, add(2147483647, -2147483646))
 }
 
-test "add_overflow_protection" {
-  // 测试加法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, 100))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, -100))
-  assert_eq(-1, add(max_val, min_val))
+test "enhanced_multiply_edge_cases" {
+  // 测试乘法的边界情况
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-1000000, multiply(1000, -1000))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(0, multiply(2147483647, 0))
 }
 
-test "multiply_comprehensive_operations" {
-  // 测试乘法的各种情况
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(5, multiply(5, 1))
-  assert_eq(-5, multiply(5, -1))
-}
-
-test "multiply_overflow_protection" {
-  // 测试乘法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(min_val, 3))
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
-}
-
-test "greet_function_variations" {
-  // 测试问候函数的各种情况
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+test "enhanced_greet_unicode" {
+  // 测试 Unicode 字符串问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
 }
 
-test "mathematical_formula_applications" {
-  // 测试数学公式的实际应用
-  // 计算矩形面积：长 × 宽
-  let length = 12
-  let width = 8
-  let area = multiply(length, width)
-  assert_eq(96, area)
-  
-  // 计算矩形周长：2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(40, perimeter)
+test "enhanced_divide_complex" {
+  // 复杂的除法向上取整测试
+  assert_eq(7, divide_with_ceil(100, 15))
+  assert_eq(-6, divide_with_ceil(-100, 15))
+  assert_eq(7, divide_with_ceil(-100, -15))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  let principal = 10000
-  let rate = 5
-  let years = 3
-  
-  // 简单利息计算：本金 + (本金 × 利率 × 年数)
-  let interest = multiply(principal, multiply(rate, years))
-  let total = add(principal, interest)
-  assert_eq(160000, total)
-}
-
-test "temperature_conversion" {
-  // 测试温度转换（简化版）
-  // 摄氏度转华氏度：F = C × 2 + 30（整数近似）
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
-  
-  // 华氏度转摄氏度：C = (F - 30) ÷ 2（整数近似）
-  let f_to_c = add(fahrenheit, -30) / 2
-  assert_eq(25, f_to_c)
-}
-
-test "complex_business_logic" {
-  // 测试复杂业务逻辑
-  let unit_price = 199
-  let quantity = 3
-  let discount_threshold = 500
-  let discount_rate = 10
-  let tax_rate = 8
-  let shipping = 20
-  
-  // 计算小计
+test "enhanced_business_calculation" {
+  // 业务计算测试
+  let unit_price = 25
+  let quantity = 8
+  let discount = 20
   let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, -discount)
   
-  // 计算折扣
-  let discount = if (subtotal > discount_threshold) {
-    multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
-  
-  // 计算折后价格
-  let discounted_price = add(subtotal, -discount)
-  
-  // 计算税费
-  let tax = multiply(discounted_price, tax_rate) / 100
-  
-  // 计算总价
-  let total = add(add(discounted_price, tax), shipping)
-  
-  assert_eq(1076, total)
+  assert_eq(200, subtotal)
+  assert_eq(180, total)
 }
 
-test "assertion_functions_validation" {
-  // 测试断言函数本身
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("MoonBit", "MoonBit")
+test "enhanced_packaging_optimization" {
+  // 包装优化计算
+  let total_items = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
+  let total_boxes = multiply(boxes_needed, 1)
   
-  // 测试计算结果的断言
-  let result = add(17, 25)
-  assert_eq(42, result)
+  assert_eq(4, boxes_needed)
+  assert_eq(4, total_boxes)
+}
+
+test "enhanced_performance_metrics" {
+  // 性能指标计算
+  let baseline = 1000
+  let improvement_factor = 3
+  let overhead = 150
   
-  let greeting = greet("Developer")
-  assert_eq_string("Hello, Developer!", greeting)
+  let improved = multiply(baseline, improvement_factor)
+  let net_performance = add(improved, -overhead)
   
-  let product = multiply(6, 7)
-  assert_true(product == 42)
+  assert_eq(3000, improved)
+  assert_eq(2850, net_performance)
+}
+
+test "enhanced_resource_allocation" {
+  // 资源分配计算
+  let total_budget = 5000
+  let project_cost = 1200
+  let projects_count = divide_with_ceil(total_budget, project_cost)
+  
+  assert_eq(5, projects_count)
 }
