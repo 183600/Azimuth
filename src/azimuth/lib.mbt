@@ -105,3 +105,48 @@ test "divide_with_ceil_edge_cases" {
   assert_eq(1, divide_with_ceil(-1, -1))
   assert_eq(4, divide_with_ceil(-10, -3))
 }
+
+// 新增的高质量测试用例
+test "function_combination" {
+  // 组合使用 add 和 multiply
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  // 组合使用多个函数
+  let result2 = add(divide_with_ceil(10, 3), multiply(2, 2))
+  assert_eq(8, result2)  // ceil(10/3) + 2*2 = 4 + 4 = 8
+}
+
+test "real_world_shopping_scenario" {
+  // 计算购物车总价
+  let item1_price = 29
+  let item1_qty = 2
+  let item2_price = 15
+  let item2_qty = 3
+  let total = add(multiply(item1_price, item1_qty), multiply(item2_price, item2_qty))
+  assert_eq(103, total)  // 29*2 + 15*3 = 58 + 45 = 103
+}
+
+test "packaging_calculation" {
+  // 计算需要的包装箱数量
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+}
+
+test "complex_calculations" {
+  // 多层嵌套计算
+  let complex_result = add(
+    multiply(10, divide_with_ceil(25, 4)),
+    multiply(5, divide_with_ceil(17, 3))
+  )
+  assert_eq(85, complex_result)  // 10*7 + 5*6 = 70 + 15 = 85
+}
+
+test "greeting_internationalization" {
+  // 国际化问候测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, María!", greet("María"))
+}
