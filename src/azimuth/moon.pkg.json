@@ -5,6 +5,7 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
   "files": [
+    "standard_moonbit_test_cases.mbt",
     "standard_enhanced_test_cases.mbt",
     "azimuth_enhanced_test_suite.mbt",
     "azimuth_extra_tests.mbt",
