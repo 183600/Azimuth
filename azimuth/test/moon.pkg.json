@@ -112,6 +112,7 @@
     "standard_comprehensive_test_suite.mbt",
     "standard_tests.mbt",
     "azimuth_concise_test_suite.mbt",
-    "simple_test_new.mbt"
+    "simple_test_new.mbt",
+    "user_additional_tests.mbt"
   ]
 }
