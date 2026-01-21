@@ -254,4 +254,5 @@
     "azimuth_standard_tests.mbt",
     "comprehensive_test_suite_new.mbt",
     "simple_new_tests.mbt",
-    "working_tests.mbt"]}
+    "working_tests.mbt",
+    "azimuth_comprehensive_test_suite.mbt"]}
