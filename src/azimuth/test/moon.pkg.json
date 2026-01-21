@@ -211,5 +211,6 @@
         "simple_test_new3.mbt",
         "../concise_core_tests.mbt",
         "../standard_essential_tests.mbt",
-        "advanced_test_scenarios.mbt"
+        "advanced_test_scenarios.mbt",
+        "standard_comprehensive_test_suite.mbt"
         ]}
