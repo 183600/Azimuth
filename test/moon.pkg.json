@@ -4,6 +4,7 @@
     "src/azimuth"
   ],
   "test": [
+    "azimuth_new_test_cases.mbt",
     "standard_comprehensive_tests.mbt",
     "standard_moonbit_core_tests.mbt",
     "enhanced_azimuth_tests.mbt",
@@ -48,7 +49,8 @@
     "simple_azimuth_test.mbt",
     "additional_standard_tests_v2.mbt",
     "enhanced_core_tests.mbt",
-    "working_new_tests.mbt"
+    "working_new_tests.mbt",
+    "simple_new_tests.mbt"
     
   ]
 }
