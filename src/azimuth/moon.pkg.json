@@ -22,6 +22,7 @@
     "azimuth_comprehensive_new_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "azimuth_quality_tests.mbt",
-    "unique_test_cases.mbt"
+    "unique_test_cases.mbt",
+    "enhanced_comprehensive_tests.mbt"
   ]
 }
