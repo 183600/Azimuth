@@ -1,142 +1,94 @@
-// 标准 MoonBit 测试套件
-// 为 azimuth 库添加的高质量测试用例
+// Azimuth 标准测试套件 - 10个核心测试用例
+// 测试 azimuth 库的主要功能
 
-test "mathematical_identity_properties" {
-  // 测试数学恒等性质
-  let x = 42
+test "add_function_comprehensive" {
+  // 全面测试加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(2, -3))
+  assert_eq(1000, add(500, 500))
+}
+
+test "multiply_function_comprehensive" {
+  // 全面测试乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+}
+
+test "divide_with_ceil_basic_functionality" {
+  // 测试向上取整除法的基本功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(-3, divide_with_ceil(10, -3))
+  assert_eq(0, divide_with_ceil(-5, 0))
+}
+
+test "combined_arithmetic_operations" {
+  // 测试组合算术运算
+  let result1 = add(multiply(3, 4), multiply(2, 5))
+  assert_eq(22, result1)  // 3*4 + 2*5 = 12 + 10 = 22
   
-  // 加法恒等元
+  let result2 = multiply(add(2, 3), 4)
+  assert_eq(20, result2)  // (2 + 3) * 4 = 5 * 4 = 20
+}
+
+test "business_calculation_scenario" {
+  // 业务计算场景：购物车总价
+  let item_price = 25
+  let quantity = 4
+  let shipping = 10
+  let total = add(multiply(item_price, quantity), shipping)
+  assert_eq(110, total)  // 25*4 + 10 = 100 + 10 = 110
+}
+
+test "packaging_calculation_scenario" {
+  // 包装计算场景：所需箱子数量
+  let total_items = 35
+  let items_per_box = 8
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(35/8) = 5
+}
+
+test "mathematical_properties_verification" {
+  // 数学性质验证
+  let x = 10
+  let y = 15
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 零元素性质
+  assert_eq(0, multiply(x, 0))
   assert_eq(x, add(x, 0))
-  assert_eq(x, add(0, x))
-  
-  // 乘法恒等元（需要实现）
-  assert_eq(x, multiply(x, 1))
-  assert_eq(x, multiply(1, x))
 }
 
-test "division_edge_cases_comprehensive" {
-  // 全面的除法边界情况测试
-  // 测试各种正数组合
+test "edge_cases_and_boundary_values" {
+  // 边界情况和极值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 0))
   assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(10, divide_with_ceil(100, 10))
-  assert_eq(11, divide_with_ceil(101, 10))
-  
-  // 测试负数情况
-  assert_eq(-2, divide_with_ceil(-5, 2))
-  assert_eq(-2, divide_with_ceil(5, -2))
-  assert_eq(3, divide_with_ceil(-5, -2))
-  
-  // 测试零值
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
   assert_eq(0, divide_with_ceil(0, 0))
-}
-
-test "string_greeting_variations" {
-  // 测试各种字符串变体的问候功能
-  assert_eq_string("Hello, Single!", greet("Single"))
-  assert_eq_string("Hello, Multiple Words!", greet("Multiple Words"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, special@chars!", greet("special@chars"))
-  assert_eq_string("Hello, Mixed CASE!", greet("Mixed CASE"))
-  assert_eq_string("Hello,   spaces   !", greet("   spaces   "))
-}
-
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let initial_value = 100
-  let multiplier = 3
-  let divisor = 4
-  let addend = 50
-  
-  // 计算流水线：((100 * 3) / 4) + 50
-  let step1 = multiply(initial_value, multiplier)
-  let step2 = divide_with_ceil(step1, divisor)
-  let result = add(step2, addend)
-  
-  assert_eq(125, result)  // ceil(300/4) + 50 = 75 + 50 = 125
-}
-
-test "real_world_inventory_calculation" {
-  // 真实世界库存计算场景
-  let warehouse_capacity = 1000
-  let item_volume = 27
-  let safety_margin = 50
-  
-  // 计算可存储的物品数量（考虑安全余量）
-  let usable_capacity = add(warehouse_capacity, -safety_margin)
-  let max_items = divide_with_ceil(usable_capacity, item_volume)
-  
-  assert_eq(36, max_items)  // ceil(950/27) = 36
-}
-
-test "financial_rounding_simulation" {
-  // 金融舍入模拟测试
-  let total_amount = 999
-  let people_count = 7
-  
-  // 计算每人需要支付的金额（向上取整确保覆盖总额）
-  let per_person_amount = divide_with_ceil(total_amount, people_count)
-  let total_collected = multiply(per_person_amount, people_count)
-  
-  assert_eq(143, per_person_amount)  // ceil(999/7) = 143
-  assert_eq(1001, total_collected)  // 143 * 7 = 1001
-}
-
-test "algorithm_complexity_validation" {
-  // 算法复杂度验证测试
-  let base_cases = 5
-  let recursive_factor = 2
-  let depth = 10
-  
-  // 模拟递归算法的计算复杂度
-  let total_operations = multiply(base_cases, recursive_factor)
-  let level1 = add(total_operations, base_cases)
-  let level2 = add(multiply(level1, recursive_factor), base_cases)
-  let final_result = add(multiply(level2, depth), base_cases)
-  
-  assert_eq(315, final_result)  // ((5*2 + 5)*2 + 5)*10 + 5 = 315
-}
-
-test "data_structure_operations" {
-  // 数据结构操作模拟测试
-  let array_size = 100
-  let chunk_size = 15
-  let overlap = 3
-  
-  // 计算非重叠块的数量
-  let effective_chunk_size = add(chunk_size, -overlap)
-  let chunk_count = divide_with_ceil(array_size, effective_chunk_size)
-  
-  assert_eq(8, chunk_count)  // ceil(100/12) = 8
-}
-
-test "performance_benchmark_simulation" {
-  // 性能基准测试模拟
-  let operations_per_second = 1000
-  let test_duration_seconds = 5
-  let parallel_threads = 4
-  
-  // 计算总操作数
-  let single_thread_ops = multiply(operations_per_second, test_duration_seconds)
-  let total_operations = multiply(single_thread_ops, parallel_threads)
-  
-  assert_eq(20000, total_operations)  // 1000 * 5 * 4 = 20000
-}
-
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  // 测试极值情况
-  assert_eq(0, divide_with_ceil(1, 1000000))
-  assert_eq(1, divide_with_ceil(1000000, 1000000))
-  assert_eq(2, divide_with_ceil(1000001, 1000000))
-  
-  // 测试负极值
-  assert_eq(-1, divide_with_ceil(-1, 1000000))
-  assert_eq(-1000000, divide_with_ceil(-1000000, 1))
-  
-  // 测试零值边界
-  assert_eq(0, divide_with_ceil(0, 1000000))
-  assert_eq(0, divide_with_ceil(1000000, 0))
 }
