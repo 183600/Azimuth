@@ -57,7 +57,8 @@
     "azimuth_standard_tests_new.mbt",
     "my_test.mbt",
     "quality_enhanced_tests.mbt",
-    "simple_quality_tests.mbt"
+    "simple_quality_tests.mbt",
+    "additional_quality_tests.mbt"
     
   ]
 }
