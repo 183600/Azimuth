@@ -1,7 +1,7 @@
 // 标准 MoonBit 测试用例
 // 测试 azimuth 包的核心功能
 
-test "add_function_basic_tests" {
+test "add_basic_tests" {
   // 基本加法测试
   inspect(add(0, 0), "0")?
   inspect(add(2, 3), "5")?
@@ -10,7 +10,7 @@ test "add_function_basic_tests" {
   inspect(add(50, 50), "100")?
 }
 
-test "add_function_overflow_tests" {
+test "add_overflow_tests" {
   // 加法溢出测试
   let max_val = 2147483647
   let min_val = -2147483648
@@ -25,7 +25,7 @@ test "add_function_overflow_tests" {
   inspect(add(min_val, -1), "-2147483648")?
 }
 
-test "multiply_function_basic_tests" {
+test "multiply_basic_tests" {
   // 基本乘法测试
   inspect(multiply(0, 5), "0")?
   inspect(multiply(5, 0), "0")?
@@ -35,7 +35,7 @@ test "multiply_function_basic_tests" {
   inspect(multiply(3, 5), "15")?
 }
 
-test "multiply_function_special_cases" {
+test "multiply_special_cases" {
   // 乘法特殊情况测试
   let max_val = 2147483647
   let min_val = -2147483648
@@ -59,7 +59,7 @@ test "greet_function_tests" {
   inspect(greet("123"), "Hello, 123!")?
 }
 
-test "divide_with_ceil_function_tests" {
+test "divide_with_ceil_tests" {
   // 向上取整除法测试
   // 正数测试
   inspect(divide_with_ceil(11, 3), "4")?
