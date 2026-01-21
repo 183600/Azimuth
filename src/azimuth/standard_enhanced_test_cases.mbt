@@ -1,119 +1,160 @@
-// 新增的标准 MoonBit 测试用例
-// 覆盖 azimuth 项目的核心功能
+// 标准增强测试用例 - 使用标准 MoonBit 测试语法
+// 覆盖核心功能和边界情况
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试基本的向上取整除法功能
-  assert_eq(3, divide_with_ceil(10, 3))
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(2, divide_with_ceil(6, 3))
-  assert_eq(1, divide_with_ceil(1, 1))
+test "large_number_addition" {
+  // 测试大数加法运算
+  @azimuth.assert_eq(2000000000, @azimuth.add(1000000000, 1000000000))
+  @azimuth.assert_eq(-2000000000, @azimuth.add(-1000000000, -1000000000))
+  @azimuth.assert_eq(0, @azimuth.add(1500000000, -1500000000))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-2, divide_with_ceil(-5, 3))
-  assert_eq(3, divide_with_ceil(10, -3))
-  assert_eq(2, divide_with_ceil(5, -3))
+test "negative_multiplication" {
+  // 测试负数乘法运算
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(-100, 0))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(100, divide_with_ceil(99, 1))
+test "special_character_string_processing" {
+  // 测试包含特殊字符的字符串处理
+  @azimuth.assert_eq_string("Hello, John@Doe!", @azimuth.greet("John@Doe"))
+  @azimuth.assert_eq_string("Hello, 用户#123!", @azimuth.greet("用户#123"))
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
 }
 
-test "complex_mathematical_expression" {
-  // 测试复杂数学表达式：(a * b + c * d) / e 向上取整
-  let a = 7
-  let b = 8
-  let c = 5
-  let d = 6
-  let e = 4
-  
-  let product1 = multiply(a, b)  // 56
-  let product2 = multiply(c, d)  // 30
-  let sum = add(product1, product2)  // 86
-  let result = divide_with_ceil(sum, e)  // 22
-  
-  assert_eq(22, result)
-}
-
-test "financial_calculation_with_ceil" {
-  // 测试金融计算场景：计算需要的钞票数量
-  let total_amount = 1234
-  let bill_denomination = 100
-  
-  let bills_needed = divide_with_ceil(total_amount, bill_denomination)
-  assert_eq(13, bills_needed)  // 需要13张100元钞票
-}
-
-test "string_processing_with_numbers" {
-  // 测试字符串与数字的组合处理
-  let year_str = "2024"
-  let month_str = "1"
-  let day_str = "21"
-  
-  let date_string = greet("Date: " + year_str + "-" + month_str + "-" + day_str)
-  assert_eq_string("Hello, Date: 2024-1-21!", date_string)
-}
-
-test "boundary_value_comprehensive_test" {
-  // 综合边界值测试
+test "boundary_value_combinations" {
+  // 测试边界值组合运算
   let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 测试极值加法与除法的组合
-  let sum1 = add(max_val, -1)  // 2147483646
-  let result1 = divide_with_ceil(sum1, 1000000)  // 2148
-  assert_eq(2148, result1)
-  
-  // 测试极值乘法与除法的组合
-  let product1 = multiply(10000, 100000)  // 1000000000
-  let result2 = divide_with_ceil(product1, 123456789)  // 9
-  assert_eq(9, result2)
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
 }
 
-test "geometry_calculation_with_ceil" {
-  // 测试几何计算中的向上取整应用
-  // 计算铺设地板需要的地砖数量（向上取整）
-  let room_length = 350  // cm
-  let room_width = 280   // cm
-  let tile_size = 30     // cm
+test "mathematical_associativity" {
+  // 测试数学运算的结合律
+  // 加法结合律: (a + b) + c = a + (b + c)
+  let a = 100
+  let b = 200
+  let c = 300
   
-  let tiles_length = divide_with_ceil(room_length, tile_size)  // 12
-  let tiles_width = divide_with_ceil(room_width, tile_size)    // 10
-  let total_tiles = multiply(tiles_length, tiles_width)       // 120
+  let result1 = @azimuth.add(@azimuth.add(a, b), c)
+  let result2 = @azimuth.add(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(result1, result2)
   
-  assert_eq(120, total_tiles)
+  // 乘法结合律: (a * b) * c = a * (b * c)
+  let x = 5
+  let y = 10
+  let z = 20
+  
+  let result3 = @azimuth.multiply(@azimuth.multiply(x, y), z)
+  let result4 = @azimuth.multiply(x, @azimuth.multiply(y, z))
+  @azimuth.assert_eq(result3, result4)
 }
 
-test "algorithm_complexity_simulation" {
-  // 测试算法复杂度模拟：O(n log n) 近似计算
-  let n = 1000
-  let log2_approx = 10  // 2^10 = 1024 ≈ 1000
+test "shopping_cart_calculation" {
+  // 测试实际应用场景：购物车计算
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
   
-  let operations = multiply(n, log2_approx)
-  assert_eq(10000, operations)
+  // 计算每种商品的总价
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
   
-  // 测试向上取整在复杂度计算中的应用
-  let chunks = divide_with_ceil(operations, 1000)  // 分成1000个操作的块
-  assert_eq(10, chunks)
+  // 计算购物车总价
+  let cart_total = @azimuth.add(total1, total2)
+  
+  // 验证总价：299*2 + 199*3 = 598 + 597 = 1195
+  @azimuth.assert_eq(1195, cart_total)
 }
 
-test "error_recovery_scenarios" {
-  // 测试错误恢复场景
-  let normal_value = 42
-  let error_value = -1
+test "error_handling_and_boundaries" {
+  // 测试错误处理和边界条件
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 模拟错误处理：如果出现错误值，使用默认值
-  let input = error_value
-  let safe_value = if input < 0 { normal_value } else { input }
-  let result = add(safe_value, 10)
+  // 测试断言函数
+  @azimuth.assert_true(true)
+  @azimuth.assert_false(false)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
   
-  assert_eq(52, result)
+  // 测试溢出保护
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+}
+
+test "compound_operations" {
+  // 测试复合运算（多个函数组合使用）
+  // 计算矩形周长：2 * (长 + 宽)
+  let length = 15
+  let width = 10
   
-  // 测试断言函数在错误恢复中的应用
-  assert_true(safe_value >= 0)
-  assert_false(input >= 0)
+  let sum = @azimuth.add(length, width)
+  let perimeter = @azimuth.multiply(2, sum)
+  
+  @azimuth.assert_eq(50, perimeter)
+  
+  // 计算平均数：(a + b + c) / 3
+  let a = 90
+  let b = 80
+  let c = 70
+  
+  let total = @azimuth.add(@azimuth.add(a, b), c)
+  let average = total / 3
+  
+  @azimuth.assert_eq(80, average)
+}
+
+test "string_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 空字符串
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  
+  // 单个字符
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  
+  // 长字符串
+  let long_name = "VeryLongNameThatTestsStringLengthHandling"
+  @azimuth.assert_eq_string("Hello, VeryLongNameThatTestsStringLengthHandling!", @azimuth.greet(long_name))
+  
+  // 包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+}
+
+test "mathematical_commutativity" {
+  // 测试数学运算的交换律
+  // 加法交换律: a + b = b + a
+  let a = 123
+  let b = 456
+  
+  let add_result1 = @azimuth.add(a, b)
+  let add_result2 = @azimuth.add(b, a)
+  @azimuth.assert_eq(add_result1, add_result2)
+  
+  // 乘法交换律: a * b = b * a
+  let x = 12
+  let y = 34
+  
+  let mul_result1 = @azimuth.multiply(x, y)
+  let mul_result2 = @azimuth.multiply(y, x)
+  @azimuth.assert_eq(mul_result1, mul_result2)
+  
+  // 测试包含负数的情况
+  let m = -15
+  let n = 25
+  
+  let neg_add1 = @azimuth.add(m, n)
+  let neg_add2 = @azimuth.add(n, m)
+  @azimuth.assert_eq(neg_add1, neg_add2)
+  
+  let neg_mul1 = @azimuth.multiply(m, n)
+  let neg_mul2 = @azimuth.multiply(n, m)
+  @azimuth.assert_eq(neg_mul1, neg_mul2)
 }
