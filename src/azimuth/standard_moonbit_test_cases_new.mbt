@@ -99,8 +99,77 @@ test "assertion_functions_test" {
   assert_eq_string("test", "test")
   
   // 测试边界条件
-  assert_true(add(1, 1) == 2)
-  assert_false(multiply(2, 3) == 7)
+  assert_eq(2, add(1, 1))
+  assert_eq(6, multiply(2, 3))
   assert_eq(2147483647, add(2147483646, 1))
   assert_eq_string("Hello, Test!", greet("Test"))
+}
+
+// 新增的高质量测试用例
+test "mathematical_operations_combination" {
+  // 数学运算组合测试
+  let x = 5
+  let y = 3
+  let z = 2
+  
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(16, result1)
+  
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(17, result2)
+}
+
+test "negative_number_calculations" {
+  // 负数计算测试
+  assert_eq(-8, add(-5, -3))
+  assert_eq(2, add(-5, 7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-12, multiply(3, -4))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "real_world_shopping_cart" {
+  // 真实世界购物车计算
+  let apple_price = 5
+  let apple_qty = 3
+  let banana_price = 3
+  let banana_qty = 4
+  
+  let apple_total = multiply(apple_price, apple_qty)
+  let banana_total = multiply(banana_price, banana_qty)
+  let cart_total = add(apple_total, banana_total)
+  
+  assert_eq(27, cart_total)
+}
+
+test "packaging_optimization" {
+  // 包装优化计算
+  let total_items = 23
+  let box_capacity = 6
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
+  
+  assert_eq(4, boxes_needed)
+}
+
+test "string_greeting_with_special_characters" {
+  // 特殊字符问候测试
+  assert_eq_string("Hello, @user!", greet("@user"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算测试
+  let base_price = 100
+  let quantity = 5
+  let discount = 20
+  let tax = 15
+  
+  let subtotal = multiply(base_price, quantity)
+  let after_discount = add(subtotal, -discount)
+  let final_total = add(after_discount, tax)
+  
+  assert_eq(495, final_total)
 }

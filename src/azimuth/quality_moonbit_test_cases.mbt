@@ -1,4 +1,4 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 高质量 MoonBit 测试用例 - 针对 azimuth 库的核心功能
 // 包含基本功能测试、边界条件测试和实际应用场景测试
 
 test "add_function_comprehensive" {
