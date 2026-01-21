@@ -14,6 +14,7 @@
     "test/advanced_test_scenarios.mbt",
     "quality_enhanced_test_cases.mbt",
     "azimuth_comprehensive_test_cases.mbt",
-    "standard_enhanced_test_cases.mbt"
+    "standard_enhanced_test_cases.mbt",
+    "standard_moonbit_tests.mbt"
   ]
 }

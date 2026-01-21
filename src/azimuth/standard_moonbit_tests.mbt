@@ -1,105 +1,116 @@
-// MoonBit 标准测试用例
-// 测试 azimuth 包的核心功能
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库的综合测试，包含边界情况和实际应用场景
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
-  assert_eq(0, add(0, 0))
-  assert_eq(5, add(2, 3))
-  assert_eq(-1, add(2, -3))
-  assert_eq(100, add(50, 50))
+test "add_function_comprehensive" {
+  // 全面测试加法函数
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(5, -5))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(1000, add(999, 1))
+  assert_eq(-1000, add(-999, -1))
 }
 
-test "add_boundary_values" {
-  // 测试边界值的加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(0, multiply(-12345, 0))
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-1, multiply(1, -1))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  assert_eq(0, multiply(0, 5))
-  assert_eq(6, multiply(2, 3))
-  assert_eq(-6, multiply(2, -3))
-  assert_eq(25, multiply(5, 5))
+test "divide_with_ceil_precision" {
+  // 测试向上取整除法的精度
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(2, 2))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(5, 2))
+  assert_eq(4, divide_with_ceil(7, 2))
+  assert_eq(0, divide_with_ceil(0, 100))
 }
 
-test "multiply_special_cases" {
-  // 测试乘法的特殊情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(5, multiply(5, 1))
-  assert_eq(-5, multiply(5, -1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(max_val, multiply(46341, 46341))
-}
-
-test "greet_functionality" {
-  // 测试问候函数
+test "greet_function_variations" {
+  // 测试问候函数的各种变化
   assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, A B C!", greet("A B C"))
 }
 
-test "greet_unicode_support" {
-  // 测试问候函数的Unicode支持
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
-  assert_eq_string("Hello, user_123!", greet("user_123"))
-}
-
-test "complex_calculations" {
-  // 测试复合计算
-  // 计算矩形周长：2 × (长 + 宽)
-  let length = 10
-  let width = 5
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(30, perimeter)
-  
-  // 计算平均数
-  let sum = add(add(10, 20), 30)
-  let average = sum / 3
-  assert_eq(20, average)
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 11
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
-}
-
-test "real_world_scenarios" {
-  // 测试实际应用场景
-  // 购物车计算
-  let item_price = 199
-  let quantity = 3
+test "complex_calculation_scenario" {
+  // 复杂计算场景：计算订单总价
+  let product_price = 25
+  let quantity = 8
+  let tax_rate = 10
   let shipping = 15
-  let total = add(multiply(item_price, quantity), shipping)
-  assert_eq(612, total)
   
-  // 温度转换（简化版）：摄氏度转华氏度 F = C × 2 + 30
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
+  let subtotal = multiply(product_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(235, total)  // 25*8 + ceil(200*10/100) + 15 = 200 + 20 + 15 = 235
 }
 
-test "assert_functions" {
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "inventory_calculation" {
+  // 库存计算：计算需要的包装箱数量
+  let items_per_box = 12
+  let total_items = 47
+  
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+}
+
+test "mathematical_identity" {
+  // 数学恒等式测试
+  let a = 15
+  let b = 7
+  
+  // 加法恒等式
+  assert_eq(a, add(a, 0))
+  assert_eq(b, add(0, b))
+  
+  // 乘法恒等式
+  assert_eq(a, multiply(a, 1))
+  assert_eq(b, multiply(1, b))
+  
+  // 分配律测试
+  let distributive_left = multiply(a, add(b, 3))
+  let distributive_right = add(multiply(a, b), multiply(a, 3))
+  assert_eq(distributive_left, distributive_right)
+}
+
+test "negative_number_division" {
+  // 负数除法测试
+  assert_eq(-2, divide_with_ceil(-5, 2))
+  assert_eq(-3, divide_with_ceil(-6, 2))
+  assert_eq(-2, divide_with_ceil(-4, 2))
+  assert_eq(3, divide_with_ceil(-6, -2))
+  assert_eq(2, divide_with_ceil(-4, -2))
+}
+
+test "large_value_operations" {
+  // 大数值运算测试
+  let large_num = 50000
+  let another_large = 30000
+  
+  assert_eq(80000, add(large_num, another_large))
+  assert_eq(1500000000, multiply(large_num, another_large))
+  assert_eq(2, divide_with_ceil(large_num, another_large))
+}
+
+test "real_world_application" {
+  // 实际应用场景：计算项目成本
+  let hourly_rate = 85
+  let hours_worked = 37
+  let materials_cost = 450
+  let overhead_percentage = 15
+  
+  let labor_cost = multiply(hourly_rate, hours_worked)
+  let overhead = divide_with_ceil(multiply(labor_cost, overhead_percentage), 100)
+  let total_cost = add(add(labor_cost, materials_cost), overhead)
+  
+  assert_eq(4095, total_cost)  // 85*37 + 450 + ceil(3145*15/100) = 3145 + 450 + 472 = 4067
 }
