@@ -6315,3 +6315,152 @@ test "azimuth_error_boundary_conditions" {
   assert_eq(15, multiply(3, 5))
   assert_eq_string("Hello, Test!", greet("Test"))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "new_safe_addition_boundary_values" {
+  // 测试安全加法的边界值处理
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试正常加法
+  assert_eq(10, add(6, 4))
+  assert_eq(0, add(-5, 5))
+  
+  // 测试边界值加法
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "new_safe_multiplication_edge_cases" {
+  // 测试安全乘法的边界情况
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 测试正常乘法
+  assert_eq(12, multiply(3, 4))
+  assert_eq(-15, multiply(3, -5))
+  
+  // 测试特殊情况
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(0, multiply(0, min_val))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "new_greet_function_variations" {
+  // 测试问候函数的不同变体
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 用户123!", greet("用户123"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, A!", greet("A"))
+}
+
+test "new_divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  // 正常除法（整除）
+  assert_eq(5, divide_with_ceil(10, 2))
+  
+  // 需要向上取整的情况
+  assert_eq(4, divide_with_ceil(7, 2))
+  assert_eq(3, divide_with_ceil(8, 3))
+  
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-7, 2))
+  assert_eq(-2, divide_with_ceil(-8, 3))
+}
+
+test "new_rectangle_calculation_scenario" {
+  // 测试复杂计算场景：计算矩形的面积和周长
+  let length = 8
+  let width = 5
+  
+  // 计算面积
+  let area = multiply(length, width)
+  assert_eq(40, area)
+  
+  // 计算周长
+  let perimeter = add(multiply(2, length), multiply(2, width))
+  assert_eq(26, perimeter)
+}
+
+test "new_mathematical_properties_validation" {
+  // 测试数学性质验证
+  let a = 7
+  let b = 11
+  let c = 3
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+}
+
+test "new_string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试长字符串
+  let long_name = "VeryLongNameThatExceedsNormalLength"
+  assert_eq_string("Hello, VeryLongNameThatExceedsNormalLength!", greet(long_name))
+  
+  // 测试包含特殊字符的字符串
+  let special_name = "test@example.com"
+  assert_eq_string("Hello, test@example.com!", greet(special_name))
+  
+  // 测试包含空格的字符串
+  let spaced_name = "John Doe"
+  assert_eq_string("Hello, John Doe!", greet(spaced_name))
+}
+
+test "new_assertion_functions_comprehensive" {
+  // 测试断言函数的综合使用
+  // 测试 assert_true 和 assert_false
+  assert_true(5 > 3)
+  assert_false(3 > 5)
+  
+  // 测试 assert_eq
+  assert_eq(42, multiply(6, 7))
+  assert_eq(100, add(50, 50))
+  
+  // 测试 assert_eq_string
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, Test!", greet("Test"))
+}
+
+test "new_real_world_application_test" {
+  // 测试实际应用场景：购物车总价计算
+  let item1_price = 199
+  let item1_quantity = 2
+  let item2_price = 299
+  let item2_quantity = 1
+  let shipping_fee = 20
+  
+  // 计算商品总价
+  let item1_total = multiply(item1_price, item1_quantity)
+  let item2_total = multiply(item2_price, item2_quantity)
+  let subtotal = add(item1_total, item2_total)
+  
+  // 计算最终总价（含运费）
+  let total = add(subtotal, shipping_fee)
+  
+  // 验证结果：199*2 + 299*1 + 20 = 398 + 299 + 20 = 717
+  assert_eq(717, total)
+}
+
+test "new_overflow_protection_verification" {
+  // 测试溢出保护验证
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 验证加法溢出保护
+  assert_true(add(max_val, 1) == max_val)
+  assert_true(add(min_val, -1) == min_val)
+  assert_true(add(max_val, max_val) == max_val)
+  
+  // 验证乘法溢出保护
+  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(multiply(min_val, 2) == min_val)
+  assert_true(multiply(max_val, -1) == min_val)
+}
