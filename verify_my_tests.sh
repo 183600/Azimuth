@@ -1,55 +1,10 @@
 #!/bin/bash
+echo "Testing additional_standard_tests.mbt compilation..."
+cd /home/runner/work/Azimuth/Azimuth/src/azimuth
 
-# 验证新添加的 MoonBit 测试文件
-
-echo "验证新添加的 MoonBit 测试文件..."
-
-# 设置路径
-PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
-
-# 编译 azimuth 包
-echo "编译 azimuth 包..."
-cd "$AZIMUTH_PATH"
-
-# 使用 moonc.js 编译 lib.mbt
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt
-if [ $? -ne 0 ]; then
-  echo "错误: azimuth/lib.mbt 编译失败"
-  exit 1
-fi
-
-# 生成 .mi 文件
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt -o azimuth.mi
-if [ $? -ne 0 ]; then
-  echo "警告: 生成 azimuth.mi 文件失败"
-fi
-
-# 检查根目录下的测试文件
-echo "检查根目录下的测试文件..."
-cd "$PROJECT_ROOT"
-
-# 测试 azimuth_additional_tests.mbt
-echo "检查 azimuth_additional_tests.mbt..."
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth_test -std-path "$CORE_PATH" -i "$AZIMUTH_PATH/azimuth.mi" azimuth_additional_tests.mbt
-if [ $? -ne 0 ]; then
-  echo "错误: azimuth_additional_tests.mbt 有编译问题"
-  exit 1
-fi
-
-# 统计测试数量
-TEST_COUNT=$(grep "^test " azimuth_additional_tests.mbt 2>/dev/null | wc -l)
-TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
+# 尝试编译我们的测试文件
+../../moon check 2>&1 | grep -A 10 -B 10 "additional_standard_tests"
 
 echo ""
-echo "=== 测试结果 ==="
-echo "测试文件: azimuth_additional_tests.mbt"
-echo "测试数量: $TEST_COUNT"
-echo "编译状态: 成功"
-echo ""
-echo "测试列表:"
-grep "^test " azimuth_additional_tests.mbt
-
-echo ""
-echo "所有 $TEST_COUNT 个测试编译成功！"
+echo "Looking for test file in package configuration..."
+grep -n "additional_standard_tests" moon.pkg.json
