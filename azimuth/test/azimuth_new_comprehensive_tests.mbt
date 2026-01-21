@@ -1,186 +1,136 @@
-// Azimuth 项目新增 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，提供全面的测试覆盖
+// Azimuth 新增综合测试用例
+// 使用标准的 MoonBit 测试语法
+// 包含实际应用场景和边界情况测试
 
-test "array_operations" {
-  // 数组操作测试（模拟）
-  let first = 1
-  let last = 5
-  let length = 5
+test "add_financial_calculations" {
+  // 测试金融计算场景
+  let price1 = 1299
+  let price2 = 899
+  let price3 = 599
+  let discount = 200
   
-  @azimuth.assert_eq(1, first)
-  @azimuth.assert_eq(5, last)
-  @azimuth.assert_eq(5, length)
+  let subtotal = @azimuth.add(@azimuth.add(price1, price2), price3)
+  let final_total = @azimuth.add(subtotal, -discount)
+  @azimuth.assert_eq(2597, final_total)
 }
 
-test "boolean_logic" {
-  // 布尔逻辑测试
-  let true_val = true
-  let false_val = false
+test "multiply_inventory_management" {
+  // 测试库存管理场景
+  let units_per_box = 24
+  let number_of_boxes = 15
+  let damaged_units = 8
   
-  // 测试逻辑与
-  let and_result = true_val && false_val
-  
-  // 测试逻辑或
-  let or_result = true_val || false_val
-  
-  // 测试逻辑非
-  let not_true = !true_val
-  let not_false = !false_val
-  
-  // 验证布尔结果
-  let and_check = if and_result { 1 } else { 0 }
-  let or_check = if or_result { 1 } else { 0 }
-  let not_true_check = if not_true { 1 } else { 0 }
-  let not_false_check = if not_false { 1 } else { 0 }
-  
-  @azimuth.assert_eq(0, and_check)
-  @azimuth.assert_eq(1, or_check)
-  @azimuth.assert_eq(0, not_true_check)
-  @azimuth.assert_eq(1, not_false_check)
+  let total_units = @azimuth.multiply(units_per_box, number_of_boxes)
+  let available_units = @azimuth.add(total_units, -damaged_units)
+  @azimuth.assert_eq(352, available_units)
 }
 
-test "conditional_expressions" {
-  // 条件表达式测试
-  let x = 10
-  let y = 20
-  
-  // 测试三元条件表达式
-  let max = if x > y { x } else { y }
-  @azimuth.assert_eq(20, max)
-  
-  let min = if x < y { x } else { y }
-  @azimuth.assert_eq(10, min)
-  
-  // 测试嵌套条件
-  let result = if x > 5 {
-    if y > 15 { "both high" } else { "x high" }
-  } else {
-    if y > 15 { "y high" } else { "both low" }
-  }
-  @azimuth.assert_eq_string("both high", result)
+test "greet_multilingual_support" {
+  // 测试多语言支持
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, María!", @azimuth.greet("María"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  @azimuth.assert_eq_string("Hello, José!", @azimuth.greet("José"))
 }
 
-test "error_handling" {
-  // 错误处理测试
-  let numerator = 10
-  let denominator = 2
+test "divide_with_ceil_resource_allocation" {
+  // 测试资源分配场景
+  let total_tasks = 47
+  let team_members = 5
+  let tasks_per_member = @azimuth.divide_with_ceil(total_tasks, team_members)
+  @azimuth.assert_eq(10, tasks_per_member)
   
-  // 正常除法
-  let normal_result = numerator / denominator
-  @azimuth.assert_eq(5, normal_result)
-  
-  // 测试除零保护（假设有保护机制）
-  let zero_denominator = 0
-  let protected_result = if zero_denominator == 0 { 0 } else { numerator / zero_denominator }
-  @azimuth.assert_eq(0, protected_result)
+  let total_pages = 103
+  let chapters = 8
+  let pages_per_chapter = @azimuth.divide_with_ceil(total_pages, chapters)
+  @azimuth.assert_eq(13, pages_per_chapter)
 }
 
-test "type_conversion" {
-  // 类型转换测试
+test "complex_calculator_operations" {
+  // 测试复杂计算器操作
+  let x = 17
+  let y = 23
+  let z = 31
   
-  // 测试整数到字符串转换（模拟）
-  let int_to_string = "42"
-  @azimuth.assert_eq_string("42", int_to_string)
+  // 计算 (x * y) + (x * z)
+  let term1 = @azimuth.multiply(x, y)
+  let term2 = @azimuth.multiply(x, z)
+  let result = @azimuth.add(term1, term2)
+  @azimuth.assert_eq(918, result)
   
-  // 测试字符串到整数转换（模拟）
-  let string_to_int = 42
-  @azimuth.assert_eq(42, string_to_int)
+  // 计算 x * (y + z)
+  let sum = @azimuth.add(y, z)
+  let result2 = @azimuth.multiply(x, sum)
+  @azimuth.assert_eq(918, result2)
 }
 
-test "loop_simulation" {
-  // 循环模拟测试（使用递归模拟循环）
-  // 计算1到5的累加和
-  let sum1 = 1 + 2 + 3 + 4 + 5
-  @azimuth.assert_eq(15, sum1)
-  
-  // 计算1到5的累乘积
-  let product = 1 * 2 * 3 * 4 * 5
-  @azimuth.assert_eq(120, product)
-  
-  // 计算等差数列和：2 + 4 + 6 + 8 + 10
-  let arithmetic_sum = 2 + 4 + 6 + 8 + 10
-  @azimuth.assert_eq(30, arithmetic_sum)
+test "edge_case_zero_operations" {
+  // 测试零操作边界情况
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(42, @azimuth.add(42, 0))
+  @azimuth.assert_eq(-42, @azimuth.add(-42, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 999999))
+  @azimuth.assert_eq(0, @azimuth.multiply(999999, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 999))
 }
 
-test "data_structures" {
-  // 数据结构测试
-  // 模拟元组操作
-  let point = (3, 4)
-  let x = point.0
-  let y = point.1
-  @azimuth.assert_eq(3, x)
-  @azimuth.assert_eq(4, y)
+test "negative_number_comprehensive" {
+  // 测试负数综合情况
+  let a = -15
+  let b = -8
+  let c = 12
   
-  // 计算距离（简化版）
-  let distance = x * x + y * y
-  @azimuth.assert_eq(25, distance)
+  @azimuth.assert_eq(-23, @azimuth.add(a, b))
+  @azimuth.assert_eq(-3, @azimuth.add(a, c))
+  @azimuth.assert_eq(120, @azimuth.multiply(a, b))
+  @azimuth.assert_eq(-180, @azimuth.multiply(a, c))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(a, 8))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(a, 20))
 }
 
-test "algorithm_implementation" {
-  // 算法实现测试
-  // 斐波那契数列前几项
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = fib1 + fib2  // 2
-  let fib4 = fib2 + fib3  // 3
-  let fib5 = fib3 + fib4  // 5
+test "large_number_operations" {
+  // 测试大数操作
+  let large1 = 1000000
+  let large2 = 2000000
+  let large3 = 3000000
   
-  @azimuth.assert_eq(1, fib1)
-  @azimuth.assert_eq(1, fib2)
-  @azimuth.assert_eq(2, fib3)
-  @azimuth.assert_eq(3, fib4)
-  @azimuth.assert_eq(5, fib5)
-  
-  // 最大公约数（简化版，使用欧几里得算法）
-  let a = 48
-  let b = 36
-  let gcd = if b == 0 { a } else { 
-    // 简化版本，实际应该递归调用
-    12
-  }
-  @azimuth.assert_eq(12, gcd)
+  @azimuth.assert_eq(3000000, @azimuth.add(large1, large2))
+  @azimuth.assert_eq(6000000, @azimuth.add(@azimuth.add(large1, large2), large3))
+  @azimuth.assert_eq(2000000, @azimuth.multiply(large1, large2))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(large1, large2))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(large2, large1))
 }
 
-test "performance_optimization" {
-  // 性能优化测试
-  let base = 10
-  
-  // 测试幂运算的不同实现方式
-  // 方法1：重复乘法
-  let power1 = base * base * base * base  // 10^4
-  @azimuth.assert_eq(10000, power1)
-  
-  // 方法2：分治法（简化版）
-  let power2 = (base * base) * (base * base)  // (10^2) * (10^2)
-  @azimuth.assert_eq(10000, power2)
-  
-  // 测试位运算（假设支持）
-  let shifted = base << 1  // 左移一位相当于乘以2
-  @azimuth.assert_eq(20, shifted)
+test "string_edge_cases" {
+  // 测试字符串边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
+  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
+  @azimuth.assert_eq_string("Hello, 1234567890!", @azimuth.greet("1234567890"))
+  @azimuth.assert_eq_string("Hello, !@#$%^&*()!", @azimuth.greet("!@#$%^&*()"))
 }
 
-test "real_world_scenarios" {
-  // 真实世界场景测试
-  // 银行利息计算
-  let principal = 10000
-  let annual_rate = 5  // 5%
-  let months = 12
+test "mathematical_identities" {
+  // 测试数学恒等式
+  let x = 42
+  let y = 17
   
-  // 月利率
-  let monthly_rate = annual_rate / 100 / 12
+  // 加法恒等式
+  @azimuth.assert_eq(x, @azimuth.add(x, 0))
+  @azimuth.assert_eq(y, @azimuth.add(y, 0))
   
-  // 简单月利息计算
-  let monthly_interest = principal * monthly_rate
-  @azimuth.assert_eq(41, monthly_interest)  // 向下取整
+  // 乘法恒等式
+  @azimuth.assert_eq(x, @azimuth.multiply(x, 1))
+  @azimuth.assert_eq(y, @azimuth.multiply(y, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(y, 0))
   
-  // 年总利息
-  let annual_interest = monthly_interest * months
-  @azimuth.assert_eq(492, annual_interest)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
   
-  // BMI计算（简化版）
-  let weight = 70  // kg
-  let height = 175  // cm
-  let height_in_m = height / 100  // 转换为米
-  let bmi = weight / (height_in_m * height_in_m)
-  @azimuth.assert_eq(22, bmi)  // 向下取整
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
 }

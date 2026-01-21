@@ -98,6 +98,7 @@
     "quality_enhanced_tests.mbt",
     "standard_enhanced_test_cases.mbt",
     "standard_additional_tests.mbt",
-    "simple_new_test.mbt"
+    "simple_new_test.mbt",
+    "azimuth_new_comprehensive_tests.mbt"
   ]
 }

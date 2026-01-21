@@ -37,7 +37,7 @@ try {
       const hasPackageCalls = testBody.includes('@' + packageName + '.');
       
       // 根据包名确定有效的函数列表
-      let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+      let validFunctions = ['add', 'multiply', 'greet', 'divide_with_ceil', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
       if (packageName === 'core') {
         validFunctions = ['length', 'to_string', 'to_int', 'compare'];
       }
@@ -52,7 +52,7 @@ try {
             for (const call of functionCalls) {
               const functionName = call.match(new RegExp('@' + packageName + '\\.(\\w+)'))[1];
               // 检查函数名是否有效
-              let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+              let validFunctions = ['add', 'multiply', 'greet', 'divide_with_ceil', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
               if (packageName === 'core') {
                 validFunctions = ['length', 'to_string', 'to_int', 'compare'];
               }
@@ -80,7 +80,7 @@ try {
         
         // 检查同一包内的函数调用
         if (hasDirectCalls) {
-          let validFunctions = ['add', 'multiply', 'greet', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
+          let validFunctions = ['add', 'multiply', 'greet', 'divide_with_ceil', 'assert_eq', 'assert_eq_string', 'assert_true', 'assert_false'];
           if (packageName === 'core') {
             validFunctions = ['length', 'to_string', 'to_int', 'compare'];
           }
