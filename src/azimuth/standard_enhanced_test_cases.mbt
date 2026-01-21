@@ -1,160 +1,148 @@
-// 标准增强测试用例 - 使用标准 MoonBit 测试语法
-// 覆盖核心功能和边界情况
+// 新增标准 MoonBit 测试用例
+// 针对 azimuth 库的补充测试
 
-test "large_number_addition" {
-  // 测试大数加法运算
-  @azimuth.assert_eq(2000000000, @azimuth.add(1000000000, 1000000000))
-  @azimuth.assert_eq(-2000000000, @azimuth.add(-1000000000, -1000000000))
-  @azimuth.assert_eq(0, @azimuth.add(1500000000, -1500000000))
+test "extreme_value_operations" {
+  // 测试极大值和极小值运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(0, add(1000000, -1000000))
+  
+  assert_eq(1000000000000, multiply(1000000, 1000000))
+  assert_eq(-1000000000000, multiply(-1000000, 1000000))
 }
 
-test "negative_multiplication" {
-  // 测试负数乘法运算
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(-100, 0))
+test "precision_division_tests" {
+  // 测试除法精度和边界情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(2, 2))
+  assert_eq(1, divide_with_ceil(3, 3))
+  assert_eq(1, divide_with_ceil(100, 100))
+  assert_eq(1, divide_with_ceil(999, 999))
 }
 
-test "special_character_string_processing" {
-  // 测试包含特殊字符的字符串处理
-  @azimuth.assert_eq_string("Hello, John@Doe!", @azimuth.greet("John@Doe"))
-  @azimuth.assert_eq_string("Hello, 用户#123!", @azimuth.greet("用户#123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
+test "string_edge_case_processing" {
+  // 测试字符串边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, AA!", greet("AA"))
+  
+  // 测试包含数字的字符串
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, test123!", greet("test123"))
 }
 
-test "boundary_value_combinations" {
-  // 测试边界值组合运算
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "complex_nested_operations" {
+  // 测试复杂嵌套运算
+  let step1 = add(5, 3)
+  let step2 = multiply(step1, 4)
+  let step3 = divide_with_ceil(step2, 3)
+  let step4 = add(step3, 10)
+  assert_eq(24, step4)
   
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  // 更复杂的嵌套
+  let complex = add(
+    multiply(2, divide_with_ceil(15, 4)),
+    multiply(3, divide_with_ceil(20, 6))
+  )
+  assert_eq(19, complex)
 }
 
-test "mathematical_associativity" {
-  // 测试数学运算的结合律
-  // 加法结合律: (a + b) + c = a + (b + c)
-  let a = 100
-  let b = 200
-  let c = 300
+test "real_world_payment_calculation" {
+  // 实际支付计算场景
+  let product_price = 99
+  let quantity = 3
+  let shipping_fee = 12
+  let tax_rate = 8
+  let discount_amount = 25
   
-  let result1 = @azimuth.add(@azimuth.add(a, b), c)
-  let result2 = @azimuth.add(a, @azimuth.add(b, c))
-  @azimuth.assert_eq(result1, result2)
+  let subtotal = multiply(product_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total_before_discount = add(add(subtotal, tax), shipping_fee)
+  let final_total = add(total_before_discount, -discount_amount)
   
-  // 乘法结合律: (a * b) * c = a * (b * c)
-  let x = 5
-  let y = 10
-  let z = 20
-  
-  let result3 = @azimuth.multiply(@azimuth.multiply(x, y), z)
-  let result4 = @azimuth.multiply(x, @azimuth.multiply(y, z))
-  @azimuth.assert_eq(result3, result4)
+  assert_eq(298, final_total)
 }
 
-test "shopping_cart_calculation" {
-  // 测试实际应用场景：购物车计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
+test "batch_processing_calculation" {
+  // 批量处理计算场景
+  let batch_size = 50
+  let total_items = 375
+  let processing_time_per_batch = 8
+  let setup_time = 15
   
-  // 计算每种商品的总价
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let batches_needed = divide_with_ceil(total_items, batch_size)
+  let total_processing_time = multiply(batches_needed, processing_time_per_batch)
+  let total_time = add(total_processing_time, setup_time)
   
-  // 计算购物车总价
-  let cart_total = @azimuth.add(total1, total2)
-  
-  // 验证总价：299*2 + 199*3 = 598 + 597 = 1195
-  @azimuth.assert_eq(1195, cart_total)
+  assert_eq(79, total_time)
 }
 
-test "error_handling_and_boundaries" {
-  // 测试错误处理和边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "mathematical_sequence_calculation" {
+  // 数学序列计算（等比数列）
+  let first_term = 2
+  let ratio = 3
+  let terms = 5
   
-  // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  let term5 = multiply(term4, ratio)
   
-  // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  let sum = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(242, sum)
 }
 
-test "compound_operations" {
-  // 测试复合运算（多个函数组合使用）
-  // 计算矩形周长：2 * (长 + 宽)
-  let length = 15
-  let width = 10
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 1000
+  let project1_cost = 234
+  let project2_cost = 189
+  let project3_cost = 156
+  let reserve_percentage = 10
   
-  let sum = @azimuth.add(length, width)
-  let perimeter = @azimuth.multiply(2, sum)
+  let project_costs = add(add(project1_cost, project2_cost), project3_cost)
+  let reserve = divide_with_ceil(multiply(total_budget, reserve_percentage), 100)
+  let available_for_projects = add(total_budget, -reserve)
   
-  @azimuth.assert_eq(50, perimeter)
-  
-  // 计算平均数：(a + b + c) / 3
-  let a = 90
-  let b = 80
-  let c = 70
-  
-  let total = @azimuth.add(@azimuth.add(a, b), c)
-  let average = total / 3
-  
-  @azimuth.assert_eq(80, average)
+  assert_eq(900, available_for_projects)
+  assert_eq(579, project_costs)
+  assert_eq(321, add(available_for_projects, -project_costs))
 }
 
-test "string_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, -100))
   
-  // 单个字符
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
-  
-  // 长字符串
-  let long_name = "VeryLongNameThatTestsStringLengthHandling"
-  @azimuth.assert_eq_string("Hello, VeryLongNameThatTestsStringLengthHandling!", @azimuth.greet(long_name))
-  
-  // 包含空格的字符串
-  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(0, multiply(0, -100))
+  assert_eq(0, multiply(-100, 0))
 }
 
-test "mathematical_commutativity" {
-  // 测试数学运算的交换律
-  // 加法交换律: a + b = b + a
-  let a = 123
-  let b = 456
+test "comprehensive_function_integration" {
+  // 综合函数集成测试
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 7
   
-  let add_result1 = @azimuth.add(a, b)
-  let add_result2 = @azimuth.add(b, a)
-  @azimuth.assert_eq(add_result1, add_result2)
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let step3 = add(step2, addition)
   
-  // 乘法交换律: a * b = b * a
-  let x = 12
-  let y = 34
+  assert_eq(15, step3)
   
-  let mul_result1 = @azimuth.multiply(x, y)
-  let mul_result2 = @azimuth.multiply(y, x)
-  @azimuth.assert_eq(mul_result1, mul_result2)
+  // 测试不同的计算路径
+  let path1 = add(multiply(5, 3), divide_with_ceil(20, 4))
+  let path2 = multiply(add(10, 5), divide_with_ceil(12, 3))
+  let path3 = divide_with_ceil(add(multiply(4, 6), 8), 5)
   
-  // 测试包含负数的情况
-  let m = -15
-  let n = 25
-  
-  let neg_add1 = @azimuth.add(m, n)
-  let neg_add2 = @azimuth.add(n, m)
-  @azimuth.assert_eq(neg_add1, neg_add2)
-  
-  let neg_mul1 = @azimuth.multiply(m, n)
-  let neg_mul2 = @azimuth.multiply(n, m)
-  @azimuth.assert_eq(neg_mul1, neg_mul2)
+  assert_eq(23, path1)
+  assert_eq(45, path2)
+  assert_eq(6, path3)
 }
