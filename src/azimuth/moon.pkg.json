@@ -31,6 +31,7 @@
     "comprehensive_new_test_cases.mbt",
     "standard_enhanced_tests.mbt",
     "quality_focused_tests.mbt",
-    "simple_test_validation.mbt"
+    "simple_test_validation.mbt",
+    "azimuth_quality_enhanced_tests.mbt"
   ]
 }
