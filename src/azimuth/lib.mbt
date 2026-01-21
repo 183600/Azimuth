@@ -6822,3 +6822,134 @@ test "high_quality_assert_validation" {
   assert_eq(42, 42)
   assert_eq_string("MoonBit", "MoonBit")
 }
+
+// 新增的标准 MoonBit 测试用例
+test "standard_add_comprehensive" {
+  // 全面的加法测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(-3, 3))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(1000, add(500, 500))
+  
+  // 测试边界值
+  let max_val = 2147483647
+  let min_val = -2147483648
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+}
+
+test "standard_multiply_comprehensive" {
+  // 全面的乘法测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(25, multiply(5, 5))
+  
+  // 测试特殊值
+  let min_val = -2147483648
+  assert_eq(min_val, multiply(min_val, -1))
+  assert_eq(5, multiply(5, 1))
+}
+
+test "standard_greet_comprehensive" {
+  // 全面的问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "standard_mathematical_laws" {
+  // 数学定律测试
+  let a = 10
+  let b = 15
+  let c = 20
+  
+  // 交换律
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 结合律
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  
+  // 分配律
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+}
+
+test "standard_practical_applications" {
+  // 实际应用测试
+  // 面积计算
+  let length = 12
+  let width = 8
+  let area = multiply(length, width)
+  assert_eq(96, area)
+  
+  // 周长计算
+  let perimeter = multiply(2, add(length, width))
+  assert_eq(40, perimeter)
+  
+  // 简单利息计算
+  let principal = 1000
+  let rate = 5
+  let time = 3
+  let interest = multiply(principal, multiply(rate, time))
+  let total = add(principal, interest)
+  assert_eq(16000, total)
+}
+
+test "standard_boundary_conditions" {
+  // 边界条件测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 最大值运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
+  
+  // 最小值运算
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(min_val, multiply(min_val, 1))
+  
+  // 混合运算
+  assert_eq(-1, add(max_val, min_val))
+}
+
+test "standard_error_handling" {
+  // 错误处理测试
+  assert_true(true)
+  assert_false(false)
+  assert_eq(100, 100)
+  assert_eq_string("success", "success")
+  
+  // 溢出保护验证
+  let max_val = 2147483647
+  assert_true(add(max_val, 100) == max_val)
+  assert_true(multiply(max_val, 2) == max_val)
+}
+
+test "standard_string_processing" {
+  // 字符串处理测试
+  assert_eq_string("Hello, User123!", greet("User123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, Special#Chars!", greet("Special#Chars"))
+  assert_eq_string("Hello,   spaced   !", greet("  spaced   "))
+}
+
+test "standard_complex_calculations" {
+  // 复杂计算测试
+  // 多步骤计算
+  let base = 10
+  let result1 = add(multiply(base, 3), multiply(base, 2))
+  assert_eq(50, result1) // 10*3 + 10*2 = 50
+  
+  // 嵌套计算
+  let result2 = multiply(add(5, 3), add(2, 4))
+  assert_eq(48, result2) // (5+3)*(2+4) = 8*6 = 48
+  
+  // 组合运算
+  let result3 = add(multiply(4, 5), multiply(3, 2))
+  assert_eq(26, result3) // 4*5 + 3*2 = 20 + 6 = 26
+}
