@@ -16,5 +16,5 @@
   "targets": {
     "panic_test.mbt": ["not", "native", "llvm"]
   },
-  "test": ["string_test_simple.mbt"]
+  "test": ["string_test_simple.mbt", "string_additional_tests.mbt"]
 }
