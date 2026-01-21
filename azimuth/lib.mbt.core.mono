@@ -181,5 +181,24 @@
         (Cexpr_if (Cexpr_var condition/0 T_bool)
          (Cexpr_sequence (((Parith I32 Div) 1 0)) (Cexpr_unit) T_unit)
          ((Cexpr_unit)) T_unit))))
-     (export_info_ (assert_false))))))
+     (export_info_ (assert_false))))
+   (Ctop_fn
+    ((binder divide_with_ceil)
+     (func
+      ((params
+        (((binder dividend/0) (ty T_int)) ((binder divisor/1) (ty T_int))))
+       (body
+        (Cexpr_let quotient/2
+         ((Parith I32 Div) (Cexpr_var dividend/0 T_int)
+          (Cexpr_var divisor/1 T_int))
+         (Cexpr_let remainder/3
+          ((Parith I32 Mod) (Cexpr_var dividend/0 T_int)
+           (Cexpr_var divisor/1 T_int))
+          (Cexpr_if ((Pcomparison I32 Gt) (Cexpr_var remainder/3 T_int) 0)
+           (Cexpr_apply add ((Cexpr_var quotient/2 T_int) 1)
+            (Normal (T_func (params (T_int T_int)) (return T_int))) T_int)
+           ((Cexpr_var quotient/2 T_int)) T_int)
+          T_int)
+         T_int))))
+     (export_info_ (divide_with_ceil))))))
  (types ()) (object_methods ()))

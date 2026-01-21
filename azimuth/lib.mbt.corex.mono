@@ -68,3 +68,9 @@ fn assert_false (condition/14 : Bool) -> Unit {
     ()
   }
 }
+
+fn divide_with_ceil (dividend/16 : Int, divisor/17 : Int) -> Int {
+  let quotient/15 : Int = dividend/16 / divisor/17
+  let remainder/18 : Int = dividend/16 % divisor/17
+  if remainder/18 > 0 { add(quotient/15, 1) } else { quotient/15 }
+}

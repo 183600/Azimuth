@@ -1,0 +1,22 @@
+((Ptop_funcdef
+  ((name ((binder_name __test_757365725f646566696e65645f746573742e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 4)
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.add)))
+      ((Pexpr_constant 2) (Pexpr_constant 2)))))))
+ (Ptop_funcdef
+  ((name ((binder_name __test_757365725f646566696e65645f746573742e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 9)
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.multiply)))
+      ((Pexpr_constant 3) (Pexpr_constant 3))))))))

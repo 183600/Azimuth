@@ -1,40 +1,46 @@
-pub fn add (a/15 : Int, b/16 : Int) -> Int {
-  if a/15 == 0 { return b/16 }
-  if b/16 == 0 { return a/15 }
-  if a/15 == -2147483648 {
-    if b/16 < 0 { return -2147483648 }
-    return a/15 + b/16
+pub fn add (a/132 : Int, b/133 : Int) -> Int {
+  if a/132 == 0 { return b/133 }
+  if b/133 == 0 { return a/132 }
+  if a/132 == -2147483648 {
+    if b/133 < 0 { return -2147483648 }
+    return a/132 + b/133
   }
-  if b/16 == -2147483648 {
-    if a/15 < 0 { return -2147483648 }
-    return a/15 + b/16
+  if b/133 == -2147483648 {
+    if a/132 < 0 { return -2147483648 }
+    return a/132 + b/133
   }
-  if a/15 > 0 && b/16 > 0 { if a/15 > 2147483647 - b/16 { return 2147483647 }  }
-  if a/15 < 0 && b/16 < 0 { if a/15 < -2147483648 - b/16 { return -2147483648 }  }
-  a/15 + b/16
+  if a/132 > 0 && b/133 > 0 { if a/132 > 2147483647 - b/133 { return 2147483647 }  }
+  if a/132 < 0 && b/133 < 0 { if a/132 < -2147483648 - b/133 { return -2147483648 }  }
+  a/132 + b/133
 }
 
-pub fn multiply (a/8 : Int, b/9 : Int) -> Int {
-  if a/8 == 0 || b/9 == 0 { return 0 }
-  if a/8 == 1 { return b/9 }
-  if b/9 == 1 { return a/8 }
-  if a/8 == -1 { return if b/9 == -2147483648 { -2147483648 } else { -b/9 } }
-  if b/9 == -1 { return if a/8 == -2147483648 { -2147483648 } else { -a/8 } }
-  if a/8 == -2147483648 { return if b/9 > 1 || b/9 < -1 { -2147483648 } else { a/8 * b/9 } }
-  if b/9 == -2147483648 { return if a/8 > 1 || a/8 < -1 { -2147483648 } else { a/8 * b/9 } }
-  let sign/12 : Int = if a/8 > 0 && b/9 > 0 || a/8 < 0 && b/9 < 0 { 1 } else { -1 }
-  let abs_a/13 : Int = if a/8 < 0 { -a/8 } else { a/8 }
-  let abs_b/14 : Int = if b/9 < 0 { -b/9 } else { b/9 }
-  if abs_a/13 > 2147483647 / abs_b/14 { return if sign/12 > 0 { 2147483647 } else { -2147483648 } }
-  a/8 * b/9
+pub fn multiply (a/125 : Int, b/126 : Int) -> Int {
+  if a/125 == 0 || b/126 == 0 { return 0 }
+  if a/125 == 1 { return b/126 }
+  if b/126 == 1 { return a/125 }
+  if a/125 == -1 { return if b/126 == -2147483648 { -2147483648 } else { -b/126 } }
+  if b/126 == -1 { return if a/125 == -2147483648 { -2147483648 } else { -a/125 } }
+  if a/125 == -2147483648 {
+    return if b/126 > 1 || b/126 < -1 { -2147483648 } else { a/125 * b/126 }
+  }
+  if b/126 == -2147483648 {
+    return if a/125 > 1 || a/125 < -1 { -2147483648 } else { a/125 * b/126 }
+  }
+  let sign/129 : Int = if a/125 > 0 && b/126 > 0 || a/125 < 0 && b/126 < 0 { 1 } else { -1 }
+  let abs_a/130 : Int = if a/125 < 0 { -a/125 } else { a/125 }
+  let abs_b/131 : Int = if b/126 < 0 { -b/126 } else { b/126 }
+  if abs_a/130 > 2147483647 / abs_b/131 {
+    return if sign/129 > 0 { 2147483647 } else { -2147483648 }
+  }
+  a/125 * b/126
 }
 
-pub fn greet (name/7 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/7), "!")
+pub fn greet (name/124 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/124), "!")
 }
 
-pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
-  if expected/5 == actual/6 {
+pub fn assert_eq (expected/122 : Int, actual/123 : Int) -> Unit {
+  if expected/122 == actual/123 {
     ()
   } else {
     1 / 0
@@ -42,8 +48,8 @@ pub fn assert_eq (expected/5 : Int, actual/6 : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
-  if @stringequal(expected/3, actual/4) {
+pub fn assert_eq_string (expected/120 : String, actual/121 : String) -> Unit {
+  if @stringequal(expected/120, actual/121) {
     ()
   } else {
     1 / 0
@@ -51,8 +57,8 @@ pub fn assert_eq_string (expected/3 : String, actual/4 : String) -> Unit {
   }
 }
 
-pub fn assert_true (condition/2 : Bool) -> Unit {
-  if condition/2 {
+pub fn assert_true (condition/119 : Bool) -> Unit {
+  if condition/119 {
     ()
   } else {
     1 / 0
@@ -60,11 +66,17 @@ pub fn assert_true (condition/2 : Bool) -> Unit {
   }
 }
 
-pub fn assert_false (condition/1 : Bool) -> Unit {
-  if condition/1 {
+pub fn assert_false (condition/118 : Bool) -> Unit {
+  if condition/118 {
     1 / 0
     ()
   } else {
     ()
   }
+}
+
+pub fn divide_with_ceil (dividend/114 : Int, divisor/115 : Int) -> Int {
+  let quotient/116 : Int = dividend/114 / divisor/115
+  let remainder/117 : Int = dividend/114 % divisor/115
+  if remainder/117 > 0 { add(quotient/116, 1) } else { quotient/116 }
 }

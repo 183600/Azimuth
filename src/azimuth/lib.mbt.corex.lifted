@@ -1,46 +1,46 @@
-pub fn add (a/998 : Int, b/999 : Int) -> Int {
-  if a/998 == 0 { return b/999 }
-  if b/999 == 0 { return a/998 }
-  if a/998 == -2147483648 {
-    if b/999 < 0 { return -2147483648 }
-    return a/998 + b/999
+pub fn add (a/1848 : Int, b/1849 : Int) -> Int {
+  if a/1848 == 0 { return b/1849 }
+  if b/1849 == 0 { return a/1848 }
+  if a/1848 == -2147483648 {
+    if b/1849 < 0 { return -2147483648 }
+    return a/1848 + b/1849
   }
-  if b/999 == -2147483648 {
-    if a/998 < 0 { return -2147483648 }
-    return a/998 + b/999
+  if b/1849 == -2147483648 {
+    if a/1848 < 0 { return -2147483648 }
+    return a/1848 + b/1849
   }
-  if a/998 > 0 && b/999 > 0 { if a/998 > 2147483647 - b/999 { return 2147483647 }  }
-  if a/998 < 0 && b/999 < 0 { if a/998 < -2147483648 - b/999 { return -2147483648 }  }
-  a/998 + b/999
+  if a/1848 > 0 && b/1849 > 0 { if a/1848 > 2147483647 - b/1849 { return 2147483647 }  }
+  if a/1848 < 0 && b/1849 < 0 { if a/1848 < -2147483648 - b/1849 { return -2147483648 }  }
+  a/1848 + b/1849
 }
 
-pub fn multiply (a/991 : Int, b/992 : Int) -> Int {
-  if a/991 == 0 || b/992 == 0 { return 0 }
-  if a/991 == 1 { return b/992 }
-  if b/992 == 1 { return a/991 }
-  if a/991 == -1 { return if b/992 == -2147483648 { -2147483648 } else { -b/992 } }
-  if b/992 == -1 { return if a/991 == -2147483648 { -2147483648 } else { -a/991 } }
-  if a/991 == -2147483648 {
-    return if b/992 > 1 || b/992 < -1 { -2147483648 } else { a/991 * b/992 }
+pub fn multiply (a/1841 : Int, b/1842 : Int) -> Int {
+  if a/1841 == 0 || b/1842 == 0 { return 0 }
+  if a/1841 == 1 { return b/1842 }
+  if b/1842 == 1 { return a/1841 }
+  if a/1841 == -1 { return if b/1842 == -2147483648 { -2147483648 } else { -b/1842 } }
+  if b/1842 == -1 { return if a/1841 == -2147483648 { -2147483648 } else { -a/1841 } }
+  if a/1841 == -2147483648 {
+    return if b/1842 > 1 || b/1842 < -1 { -2147483648 } else { a/1841 * b/1842 }
   }
-  if b/992 == -2147483648 {
-    return if a/991 > 1 || a/991 < -1 { -2147483648 } else { a/991 * b/992 }
+  if b/1842 == -2147483648 {
+    return if a/1841 > 1 || a/1841 < -1 { -2147483648 } else { a/1841 * b/1842 }
   }
-  let sign/995 : Int = if a/991 > 0 && b/992 > 0 || a/991 < 0 && b/992 < 0 { 1 } else { -1 }
-  let abs_a/996 : Int = if a/991 < 0 { -a/991 } else { a/991 }
-  let abs_b/997 : Int = if b/992 < 0 { -b/992 } else { b/992 }
-  if abs_a/996 > 2147483647 / abs_b/997 {
-    return if sign/995 > 0 { 2147483647 } else { -2147483648 }
+  let sign/1845 : Int = if a/1841 > 0 && b/1842 > 0 || a/1841 < 0 && b/1842 < 0 { 1 } else { -1 }
+  let abs_a/1846 : Int = if a/1841 < 0 { -a/1841 } else { a/1841 }
+  let abs_b/1847 : Int = if b/1842 < 0 { -b/1842 } else { b/1842 }
+  if abs_a/1846 > 2147483647 / abs_b/1847 {
+    return if sign/1845 > 0 { 2147483647 } else { -2147483648 }
   }
-  a/991 * b/992
+  a/1841 * b/1842
 }
 
-pub fn greet (name/990 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/990), "!")
+pub fn greet (name/1840 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/1840), "!")
 }
 
-pub fn assert_eq (expected/988 : Int, actual/989 : Int) -> Unit {
-  if expected/988 == actual/989 {
+pub fn assert_eq (expected/1838 : Int, actual/1839 : Int) -> Unit {
+  if expected/1838 == actual/1839 {
     ()
   } else {
     1 / 0
@@ -48,8 +48,8 @@ pub fn assert_eq (expected/988 : Int, actual/989 : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string (expected/986 : String, actual/987 : String) -> Unit {
-  if @stringequal(expected/986, actual/987) {
+pub fn assert_eq_string (expected/1836 : String, actual/1837 : String) -> Unit {
+  if @stringequal(expected/1836, actual/1837) {
     ()
   } else {
     1 / 0
@@ -57,8 +57,8 @@ pub fn assert_eq_string (expected/986 : String, actual/987 : String) -> Unit {
   }
 }
 
-pub fn assert_true (condition/985 : Bool) -> Unit {
-  if condition/985 {
+pub fn assert_true (condition/1835 : Bool) -> Unit {
+  if condition/1835 {
     ()
   } else {
     1 / 0
@@ -66,8 +66,8 @@ pub fn assert_true (condition/985 : Bool) -> Unit {
   }
 }
 
-pub fn assert_false (condition/984 : Bool) -> Unit {
-  if condition/984 {
+pub fn assert_false (condition/1834 : Bool) -> Unit {
+  if condition/1834 {
     1 / 0
     ()
   } else {
@@ -75,8 +75,8 @@ pub fn assert_false (condition/984 : Bool) -> Unit {
   }
 }
 
-pub fn divide_with_ceil (dividend/980 : Int, divisor/981 : Int) -> Int {
-  let quotient/982 : Int = dividend/980 / divisor/981
-  let remainder/983 : Int = dividend/980 % divisor/981
-  if remainder/983 > 0 { add(quotient/982, 1) } else { quotient/982 }
+pub fn divide_with_ceil (dividend/1830 : Int, divisor/1831 : Int) -> Int {
+  let quotient/1832 : Int = dividend/1830 / divisor/1831
+  let remainder/1833 : Int = dividend/1830 % divisor/1831
+  if remainder/1833 > 0 { add(quotient/1832, 1) } else { quotient/1832 }
 }

@@ -1,0 +1,23 @@
+((Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_73696d706c655f636f6d70726568656e736976655f746573742e6d6274_0)
+   (fn
+    ((params ())
+     (body
+      (Texpr_apply
+       (Texpr_ident $clean_test.assert_eq () Normal
+        ((Int Unit) -> Unit (generic_ false)))
+       ((Texpr_constant 1 Int)
+        (Texpr_apply
+         (Texpr_ident $clean_test.add () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 0 Int) (Texpr_constant 1 Int)) Unit Normal))
+       Unit Normal))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ()))))

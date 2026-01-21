@@ -1,0 +1,12 @@
+((Ptop_funcdef
+  ((name
+    ((binder_name __test_73696d706c655f6469766964655f746573742e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 3)
+     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.divide_with_ceil)))
+      ((Pexpr_constant 10) (Pexpr_constant 4))))))))
