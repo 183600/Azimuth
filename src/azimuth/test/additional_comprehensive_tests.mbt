@@ -1,155 +1,101 @@
-// 额外综合测试用例
-// 为 azimuth 项目添加更多测试覆盖
+// 额外的综合测试用例
+// 覆盖更多边界情况和实际应用场景
 
-test "financial_compound_interest_calculation" {
-  // 复利计算测试：本金 × (1 + 利率)^年数
+test "large_number_operations" {
+  // 大数运算测试
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
+  @azimuth.assert_eq(1000001, @azimuth.add(1000000, 1))
+}
+
+test "extreme_boundary_values" {
+  // 极端边界值测试
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
+  @azimuth.assert_eq(1, @azimuth.add(2147483647, -2147483646))
+  @azimuth.assert_eq(-1, @azimuth.add(-2147483647, 2147483646))
+}
+
+test "greet_with_special_whitespace" {
+  // 特殊空白字符测试
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
+  @azimuth.assert_eq_string("Hello, \t\n!", @azimuth.greet("\t\n"))
+  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))  // 不间断空格
+}
+
+test "divide_with_ceil_large_numbers" {
+  // 大数除法向上取整测试
+  @azimuth.assert_eq(1000000, @azimuth.divide_with_ceil(1000000, 1))
+  @azimuth.assert_eq(500000, @azimuth.divide_with_ceil(999999, 2))
+  @azimuth.assert_eq(333334, @azimuth.divide_with_ceil(1000000, 3))
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算测试 - 订单总价计算
+  let unit_price = 199
+  let quantity = 3
+  let shipping_cost = 25
+  let tax_rate = 8  // 8%
+  
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let total_before_tax = @azimuth.add(subtotal, shipping_cost)
+  let tax_amount = @azimuth.divide_with_ceil(@azimuth.multiply(total_before_tax, tax_rate), 100)
+  let final_total = @azimuth.add(total_before_tax, tax_amount)
+  
+  @azimuth.assert_eq(672, final_total)  // (199*3 + 25) + ceil((199*3 + 25)*8/100) = 622 + 50 = 672
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 47
+  let team_size = 4
+  let teams_needed = @azimuth.divide_with_ceil(total_resources, team_size)
+  let total_allocated = @azimuth.multiply(teams_needed, team_size)
+  let unused_resources = subtract(total_allocated, total_resources)
+  
+  @azimuth.assert_eq(12, teams_needed)  // ceil(47/4) = 12
+  @azimuth.assert_eq(48, total_allocated)  // 12 * 4 = 48
+  @azimuth.assert_eq(1, unused_resources)  // 48 - 47 = 1
+}
+
+test "string_processing_pipeline" {
+  // 字符串处理流水线测试
+  let input = "MoonBit"
+  let greeting = @azimuth.greet(input)
+  
+  // 由于我们没有字符串长度函数，我们测试字符串连接
+  @azimuth.assert_eq_string("Hello, MoonBit!", greeting)
+  let combined = greeting + @azimuth.greet("World")
+  @azimuth.assert_eq_string("Hello, MoonBit!Hello, World!", combined)
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试 - 等差数列求和
+  let first_term = 5
+  let common_difference = 3
+  let number_of_terms = 10
+  
+  // 等差数列求和公式: S = n/2 * (2a + (n-1)d)
+  let sum_first_part = @azimuth.multiply(number_of_terms, 2)
+  let sum_second_part = @azimuth.add(@azimuth.multiply(2, first_term), @azimuth.multiply(number_of_terms - 1, common_difference))
+  let series_sum = @azimuth.divide_with_ceil(@azimuth.multiply(sum_first_part, sum_second_part), 2)
+  
+  @azimuth.assert_eq(185, series_sum)  // 10/2 * (2*5 + 9*3) = 5 * (10 + 27) = 5 * 37 = 185
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算测试
   let principal = 10000
-  let rate_percent = 8
-  let years = 3
+  let annual_rate = 5  // 5%
   
-  // 简化复利计算：10000 × (1 + 8%)^3 ≈ 10000 × 124 = 1240000
-  let growth_factor = add(100, multiply(rate_percent, years))
-  let total_amount = multiply(principal, growth_factor)
+  // 简化的复利计算: A = P * (1 + r)^n
+  let first_year = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 100))
+  let second_year = @azimuth.add(first_year, @azimuth.divide_with_ceil(@azimuth.multiply(first_year, annual_rate), 100))
+  let third_year = @azimuth.add(second_year, @azimuth.divide_with_ceil(@azimuth.multiply(second_year, annual_rate), 100))
   
-  assert_eq(1240000, total_amount)  // 10000 × (100 + 8×3) = 10000 × 124 = 1240000
+  @azimuth.assert_eq(11576, third_year)  // 简化的复利计算
 }
 
-test "data_structure_simulation" {
-  // 模拟数据结构操作：计算数组索引和内存偏移
-  let row = 5
-  let col = 3
-  let row_size = 10
-  let element_size = 4
-  
-  // 计算二维数组在一维数组中的索引
-  let array_index = add(multiply(row, row_size), col)
-  // 计算内存偏移量
-  let memory_offset = multiply(array_index, element_size)
-  
-  assert_eq(53, array_index)  // 5×10 + 3 = 53
-  assert_eq(212, memory_offset)  // 53×4 = 212
-}
-
-test "cryptography_simulation" {
-  // 模拟简单的加密算法：凯撒密码
-  let original = 65  // 'A' 的 ASCII 码
-  let shift = 3
-  
-  // 加密：(65 - 65 + 3) % 26 + 65 = 68 ('D')
-  let encrypted = add(add(multiply(add(original, -65), 1), shift), 65)
-  
-  assert_eq(68, encrypted)
-}
-
-test "physics_calculation" {
-  // 物理计算：自由落体运动
-  let initial_velocity = 0
-  let gravity = 10  // 简化重力加速度
-  let time = 5
-  
-  // 距离 = v₀t + ½gt²
-  let velocity_component = multiply(initial_velocity, time)
-  let gravity_component = multiply(multiply(gravity, time), time) / 2
-  let distance = add(velocity_component, gravity_component)
-  
-  assert_eq(125, distance)  // 0×5 + (10×5×5)/2 = 125
-}
-
-test "network_protocol_simulation" {
-  // 模拟网络协议计算：数据包大小和传输时间
-  let header_size = 20
-  let payload_size = 1024
-  let bandwidth = 1000  // 字节/秒
-  
-  // 总数据包大小
-  let packet_size = add(header_size, payload_size)
-  // 传输时间
-  let transmission_time = packet_size / bandwidth
-  
-  assert_eq(1044, packet_size)
-  assert_eq(1, transmission_time)  // 1044/1000 = 1.04，取整为1
-}
-
-test "game_physics_simulation" {
-  // 游戏物理模拟：碰撞检测
-  let object1_x = 100
-  let object1_y = 200
-  let object1_width = 50
-  let object1_height = 50
-  
-  let object2_x = 140
-  let object2_y = 240
-  let object2_width = 60
-  let object2_height = 60
-  
-  // 计算物体边界
-  let obj1_right = add(object1_x, object1_width)
-  let obj1_bottom = add(object1_y, object1_height)
-  let obj2_right = add(object2_x, object2_width)
-  let obj2_bottom = add(object2_y, object2_height)
-  
-  // 简化的碰撞检测：检查是否有重叠
-  let horizontal_overlap = object1_x < obj2_right && obj1_right > object2_x
-  let vertical_overlap = object1_y < obj2_bottom && obj1_bottom > object2_y
-  
-  assert_true(horizontal_overlap)
-  assert_true(vertical_overlap)
-}
-
-test "image_processing_simulation" {
-  // 模拟图像处理：像素颜色转换
-  let red = 255
-  let green = 128
-  let blue = 64
-  
-  // 转换为灰度值：0.299×R + 0.587×G + 0.114×B
-  // 简化为整数计算：(299×R + 587×G + 114×B) / 1000
-  let gray_value = add(add(multiply(red, 299), multiply(green, 587)), multiply(blue, 114)) / 1000
-  
-  assert_eq(151, gray_value)  // (255×299 + 128×587 + 64×114) / 1000 ≈ 151
-}
-
-test "database_query_simulation" {
-  // 模拟数据库查询计算：分页查询
-  let total_records = 1250
-  let page_size = 100
-  let requested_page = 3
-  
-  // 计算偏移量：页码 × 页面大小
-  let offset = multiply(requested_page, page_size)
-  // 计算剩余记录数
-  let remaining = add(total_records, multiply(-1, offset))
-  
-  assert_eq(300, offset)  // 3×100 = 300
-  assert_eq(950, remaining)  // 1250 - 300 = 950
-}
-
-test "compression_algorithm_simulation" {
-  // 模拟压缩算法：计算压缩比
-  let original_size = 5000
-  let compressed_size = 1500
-  
-  // 计算压缩比：(原始大小 - 压缩后大小) / 原始大小 × 100
-  let size_difference = add(original_size, multiply(-1, compressed_size))
-  let compression_ratio = multiply(size_difference, 100) / original_size
-  
-  assert_eq(70, compression_ratio)  // (5000-1500)/5000×100 = 70%
-}
-
-test "machine_learning_calculation" {
-  // 机器学习计算：线性回归预测
-  let weight = 2
-  let bias = 10
-  let input = 15
-  
-  // 预测值：weight × input + bias
-  let prediction = add(multiply(weight, input), bias)
-  
-  assert_eq(40, prediction)  // 2×15 + 10 = 40
-  
-  // 计算误差：实际值 - 预测值
-  let actual_value = 38
-  let error = add(actual_value, multiply(-1, prediction))
-  
-  assert_eq(-2, error)  // 38 - 40 = -2
+// 辅助函数
+fn subtract(a : Int, b : Int) -> Int {
+  @azimuth.add(a, -b)
 }
