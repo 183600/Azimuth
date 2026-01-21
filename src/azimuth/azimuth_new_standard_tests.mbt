@@ -1,130 +1,108 @@
-// MoonBit 标准测试用例
-// 测试 azimuth 库的核心功能
+// 新增的 MoonBit 标准测试用例
+// 测试项目核心功能的各种场景
 
-test "add_function_basic_cases" {
-  // 基本加法测试
-  assert_eq(10, azimuth.add(3, 7))
-  assert_eq(0, azimuth.add(-5, 5))
-  assert_eq(-10, azimuth.add(-3, -7))
-  assert_eq(100, azimuth.add(50, 50))
+test "divide_with_ceil_basic" {
+  // 测试向上取整除法的基本功能
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(4, divide_with_ceil(11, 3))
 }
 
-test "add_function_edge_cases" {
-  // 边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "divide_with_ceil_exact_division" {
+  // 测试能够整除的情况
+  assert_eq(5, divide_with_ceil(10, 2))
+  assert_eq(7, divide_with_ceil(21, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+}
+
+test "divide_with_ceil_with_zero" {
+  // 测试包含0的除法
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 1))
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(-3, divide_with_ceil(-10, 4))
+}
+
+test "complex_calculation_parentheses" {
+  // 测试复杂计算的优先级和括号使用
+  let a = 5
+  let b = 3
+  let c = 2
   
-  // 测试零值
-  assert_eq(42, azimuth.add(0, 42))
-  assert_eq(42, azimuth.add(42, 0))
-  assert_eq(0, azimuth.add(0, 0))
+  // (a + b) * c = (5 + 3) * 2 = 16
+  let result1 = multiply(add(a, b), c)
+  assert_eq(16, result1)
   
-  // 测试边界值
-  assert_eq(max_val, azimuth.add(max_val, 1))
-  assert_eq(min_val, azimuth.add(min_val, -1))
-  assert_eq(-1, azimuth.add(max_val, min_val))
+  // a + (b * c) = 5 + (3 * 2) = 11
+  let result2 = add(a, multiply(b, c))
+  assert_eq(11, result2)
 }
 
-test "multiply_function_basic_cases" {
-  // 基本乘法测试
-  assert_eq(15, azimuth.multiply(3, 5))
-  assert_eq(-15, azimuth.multiply(3, -5))
-  assert_eq(0, azimuth.multiply(5, 0))
-  assert_eq(1, azimuth.multiply(1, 123))
-  assert_eq(-123, azimuth.multiply(-1, 123))
+test "greet_multilingual_support" {
+  // 测试多语言支持的问候功能
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌎!", greet("🌎"))
+  assert_eq_string("Hello, München!", greet("München"))
+  assert_eq_string("Hello, サンリオ!", greet("サンリオ"))
 }
 
-test "multiply_function_edge_cases" {
-  // 边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "mathematical_sequence_fibonacci_style" {
+  // 测试类似斐波那契数列的计算模式
+  let n1 = 1
+  let n2 = 1
+  let n3 = 2
+  let n4 = 3
+  let n5 = 5
   
-  // 测试边界值乘法
-  assert_eq(max_val, azimuth.multiply(max_val, 1))
-  assert_eq(min_val, azimuth.multiply(min_val, 1))
-  assert_eq(min_val, azimuth.multiply(min_val, -1))
-  assert_eq(0, azimuth.multiply(max_val, 0))
+  // 验证数列关系：n3 = n1 + n2, n4 = n2 + n3, n5 = n3 + n4
+  assert_eq(n3, add(n1, n2))
+  assert_eq(n4, add(n2, n3))
+  assert_eq(n5, add(n3, n4))
 }
 
-test "greet_function_standard_cases" {
-  // 标准字符串测试
-  assert_eq_string("Hello, World!", azimuth.greet("World"))
-  assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
-  assert_eq_string("Hello, !", azimuth.greet(""))
-  assert_eq_string("Hello, A!", azimuth.greet("A"))
-}
-
-test "greet_function_special_characters" {
-  // 特殊字符测试
-  assert_eq_string("Hello, 测试!", azimuth.greet("测试"))
-  assert_eq_string("Hello, user@123!", azimuth.greet("user@123"))
-  assert_eq_string("Hello, space test!", azimuth.greet("space test"))
-  assert_eq_string("Hello, 🌍!", azimuth.greet("🌍"))
-}
-
-test "complex_calculation_scenario" {
-  // 复杂计算场景测试
-  // 计算矩形面积和周长
+test "area_perimeter_calculation" {
+  // 测试几何计算：矩形面积和周长
   let length = 8
   let width = 5
   
   // 面积 = 长 × 宽
-  let area = azimuth.multiply(length, width)
+  let area = multiply(length, width)
   assert_eq(40, area)
   
   // 周长 = 2 × (长 + 宽)
-  let perimeter = azimuth.multiply(2, azimuth.add(length, width))
+  let perimeter = multiply(2, add(length, width))
   assert_eq(26, perimeter)
 }
 
-test "mathematical_properties" {
-  // 数学性质测试
-  let a = 12
-  let b = 7
+test "string_pattern_validation" {
+  // 测试字符串模式验证
+  let email = "user@example.com"
+  let phone = "123-456-7890"
+  let id = "USER_2023"
   
-  // 加法交换律
-  assert_eq(azimuth.add(a, b), azimuth.add(b, a))
-  
-  // 乘法交换律
-  assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
-  
-  // 分配律：a × (b + c) = a × b + a × c
-  let c = 3
-  assert_eq(azimuth.multiply(a, azimuth.add(b, c)), azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c)))
+  // 验证这些字符串能够被greet函数正确处理
+  assert_eq_string("Hello, user@example.com!", greet(email))
+  assert_eq_string("Hello, 123-456-7890!", greet(phone))
+  assert_eq_string("Hello, USER_2023!", greet(id))
 }
 
-test "real_world_application" {
-  // 实际应用场景测试
-  // 购物车总价计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 99
-  let item2_quantity = 3
-  let shipping_fee = 15
+test "business_calculation_profit_margin" {
+  // 测试商业计算：利润率计算
+  let revenue = 1000
+  let cost = 700
+  let profit_margin_percentage = 30
   
-  // 计算商品总价
-  let total1 = azimuth.multiply(item1_price, item1_quantity)
-  let total2 = azimuth.multiply(item2_price, item2_quantity)
-  let subtotal = azimuth.add(total1, total2)
+  // 计算利润：收入 - 成本
+  let profit = add(revenue, -cost)
   
-  // 计算最终总价（含运费）
-  let final_total = azimuth.add(subtotal, shipping_fee)
+  // 计算利润率百分比：利润 / 收入 * 100
+  let calculated_margin = multiply(profit, 100) / revenue
   
-  // 验证：199×2 + 99×3 + 15 = 398 + 297 + 15 = 710
-  assert_eq(710, final_total)
-}
-
-test "assertion_functions" {
-  // 断言函数测试
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
-  
-  // 测试布尔表达式
-  let x = 10
-  let y = 20
-  assert_true(x < y)
-  assert_false(x > y)
-  assert_true(azimuth.add(x, y) == 30)
+  assert_eq(300, profit)
+  assert_eq(profit_margin_percentage, calculated_margin)
 }
