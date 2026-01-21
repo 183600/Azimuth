@@ -50,7 +50,8 @@
     "additional_standard_tests_v2.mbt",
     "enhanced_core_tests.mbt",
     "working_new_tests.mbt",
-    "simple_new_tests.mbt"
+    "simple_new_tests.mbt",
+    "core_standard_tests.mbt"
     
   ]
 }
