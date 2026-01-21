@@ -113,6 +113,7 @@
     "standard_tests.mbt",
     "azimuth_concise_test_suite.mbt",
     "simple_test_new.mbt",
-    "user_additional_tests.mbt"
+    "user_additional_tests.mbt",
+    "standard_enhanced_tests.mbt"
   ]
 }
