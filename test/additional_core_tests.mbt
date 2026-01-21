@@ -1,131 +1,107 @@
 // 额外的核心功能测试用例
-// 测试 azimuth 包的核心功能，涵盖边界情况和实际应用场景
+// 测试 azimuth 库的核心功能：add, multiply, greet 函数
 
-test "add_negative_numbers" {
-  // 测试负数相加
-  assert_eq(-8, add(-3, -5))
-  assert_eq(0, add(-10, 10))
-  assert_eq(-5, add(-7, 2))
+test "add_chained_operations" {
+  // 测试链式加法运算
+  let result = add(add(1, 2), add(3, 4))
+  assert_eq(10, result)
+  
+  let result2 = add(add(100, 200), add(300, 400))
+  assert_eq(1000, result2)
 }
 
-test "multiply_negative_combinations" {
-  // 测试各种负数组合的乘法
+test "multiply_distributive_property" {
+  // 测试乘法分配律：a × (b + c) = a × b + a × c
+  let a = 5
+  let b = 3
+  let c = 2
+  
+  let left = multiply(a, add(b, c))
+  let right = add(multiply(a, b), multiply(a, c))
+  assert_eq(left, right)
+}
+
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-8, add(-5, -3))
+  assert_eq(2, add(-5, 7))
   assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(0, multiply(-3, 0))
+  assert_eq(-12, multiply(3, -4))
 }
 
-test "greet_unicode_characters" {
-  // 测试Unicode字符处理
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
+test "zero_value_properties" {
+  // 测试零值特性
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, add(0, 0))
 }
 
-test "complex_arithmetic_sequence" {
-  // 测试复杂算术序列
-  let a = 10
-  let b = 20
-  let c = 30
+test "large_number_calculations" {
+  // 测试大数计算
+  let large1 = 1000000
+  let large2 = 2000000
   
-  // 计算 (a + b) * c - a * b
-  let result1 = add(a, b)
-  let result2 = multiply(result1, c)
-  let result3 = multiply(a, b)
-  let final_result = add(result2, -result3)
-  
-  assert_eq(700, final_result)  // (10 + 20) * 30 - 10 * 20 = 900 - 200 = 700
+  assert_eq(3000000, add(large1, large2))
+  assert_eq(2000000000, multiply(large1, large2))
 }
 
-test "boundary_value_operations" {
-  // 测试边界值运算
+test "greet_special_characters" {
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello, spaces and	tabs!", greet("spaces and	tabs"))
+  assert_eq_string("Hello, new line!", greet("new line"))
+}
+
+test "mathematical_series" {
+  // 测试数列计算：等差数列求和
+  // 1 + 2 + 3 + 4 + 5 = 15
+  let sum1 = add(add(add(add(1, 2), 3), 4), 5)
+  assert_eq(15, sum1)
+  
+  // 10 + 20 + 30 + 40 = 100
+  let sum2 = add(add(add(10, 20), 30), 40)
+  assert_eq(100, sum2)
+}
+
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000
+  let rate = 5
+  let years = 3
+  
+  // 简单利息：本金 + 本金 × 利率 × 年数
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
+  assert_eq(160000, total)
+}
+
+test "temperature_conversion_extended" {
+  // 测试温度转换扩展场景
+  // 摄氏度转华氏度：F = C × 2 + 30 (简化版)
+  
+  assert_eq(30, add(multiply(0, 2), 30))
+  assert_eq(50, add(multiply(10, 2), 30))
+  assert_eq(70, add(multiply(20, 2), 30))
+  assert_eq(90, add(multiply(30, 2), 30))
+  assert_eq(110, add(multiply(40, 2), 30))
+}
+
+test "boundary_comprehensive_test" {
+  // 综合边界测试
   let max_val = 2147483647
   let min_val = -2147483648
+  
+  // 边界值加法
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(-1, add(max_val, min_val))
+  
+  // 边界值乘法
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(min_val, multiply(min_val, -1))
   
   // 边界值与普通值的运算
-  assert_eq(2147483646, add(max_val, -1))
-  assert_eq(-2147483647, add(min_val, 1))
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
-}
-
-test "string_edge_cases" {
-  // 测试字符串边界情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, A!", greet("A"))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, a b c!", greet("a b c"))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 12
-  let y = 8
-  
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(multiply(x, add(y, 5)), add(multiply(x, y), multiply(x, 5)))
-}
-
-test "real_world_calculations" {
-  // 测试实际应用计算
-  // 计算购物车总价：商品价格 × 数量 + 运费
-  let price = 199
-  let quantity = 3
-  let shipping = 20
-  
-  let subtotal = multiply(price, quantity)
-  let total = add(subtotal, shipping)
-  
-  assert_eq(617, total)  // 199 * 3 + 20 = 597 + 20 = 617
-}
-
-test "conditional_logic_operations" {
-  // 测试条件逻辑运算
-  let base_value = 100
-  let multiplier = 2
-  let offset = 10
-  
-  // 根据条件选择不同的计算方式
-  let use_multiplication = true
-  let result = if use_multiplication {
-    multiply(base_value, multiplier)
-  } else {
-    add(base_value, offset)
-  }
-  
-  assert_eq(200, result)
-  
-  let use_multiplication_2 = false
-  let result2 = if use_multiplication_2 {
-    multiply(base_value, multiplier)
-  } else {
-    add(base_value, offset)
-  }
-  
-  assert_eq(110, result2)
-}
-
-test "overflow_protection" {
-  // 测试溢出保护机制
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 确保溢出被正确处理
-  assert_eq(max_val, add(max_val, 100))
-  assert_eq(min_val, add(min_val, -100))
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -2))
-  
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
 }
