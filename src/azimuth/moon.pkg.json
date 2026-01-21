@@ -11,6 +11,7 @@
     "enhanced_standard_tests.mbt",
     "simple_new_tests.mbt",
     "test/comprehensive_unit_tests.mbt",
-    "test/advanced_test_scenarios.mbt"
+    "test/advanced_test_scenarios.mbt",
+    "quality_enhanced_test_cases.mbt"
   ]
 }
