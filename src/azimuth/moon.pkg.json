@@ -258,4 +258,6 @@
     "azimuth_comprehensive_test_suite.mbt",
     "azimuth_new_standard_tests.mbt",
     "quality_enhanced_tests.mbt",
-  "user_additional_test_cases.mbt"]}
+    "user_additional_test_cases.mbt",
+    "standard_moonbit_additional_tests.mbt",
+    "simple_test_check.mbt"]}
