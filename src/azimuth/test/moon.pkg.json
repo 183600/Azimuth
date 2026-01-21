@@ -212,5 +212,6 @@
         "../concise_core_tests.mbt",
         "../standard_essential_tests.mbt",
         "advanced_test_scenarios.mbt",
-        "standard_comprehensive_test_suite.mbt"
+        "standard_comprehensive_test_suite.mbt",
+        "standard_enhanced_tests.mbt"
         ]}
