@@ -58,7 +58,9 @@
     "my_test.mbt",
     "quality_enhanced_tests.mbt",
     "simple_quality_tests.mbt",
-    "additional_quality_tests.mbt"
+    "additional_quality_tests.mbt",
+    "new_core_functionality_tests.mbt",
+    "minimal_test.mbt"
     
   ]
 }

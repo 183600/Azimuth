@@ -1,107 +1,19 @@
 Running moon test with real execution...
 Compiling azimuth...
-azimuth/lib.mbt:705:7-705:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:740:7-740:13 [E0002] Warning (unused_value): Unused variable 'number'
-azimuth/lib.mbt:826:7-826:12 [E0002] Warning (unused_value): Unused variable 'power'
-azimuth/lib.mbt:1058:7-1058:15 [E0002] Warning (unused_value): Unused variable 'template'
-azimuth/lib.mbt:1198:7-1198:20 [E0002] Warning (unused_value): Unused variable 'growth_factor'
-azimuth/lib.mbt:1199:7-1199:14 [E0002] Warning (unused_value): Unused variable 'periods'
-azimuth/lib.mbt:1242:7-1242:13 [E0002] Warning (unused_value): Unused variable 'number'
-azimuth/lib.mbt:1256:7-1256:19 [E0002] Warning (unused_value): Unused variable 'integer_part'
-azimuth/lib.mbt:1257:7-1257:19 [E0002] Warning (unused_value): Unused variable 'decimal_part'
-azimuth/lib.mbt:1522:7-1522:15 [E0002] Warning (unused_value): Unused variable 'exponent'
-azimuth/lib.mbt:1528:7-1528:22 [E0002] Warning (unused_value): Unused variable 'golden_exponent'
-azimuth/lib.mbt:1535:7-1535:24 [E0002] Warning (unused_value): Unused variable 'avogadro_exponent'
-azimuth/lib.mbt:1544:7-1544:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:1574:7-1574:12 [E0002] Warning (unused_value): Unused variable 'input'
-azimuth/lib.mbt:1624:7-1624:20 [E0002] Warning (unused_value): Unused variable 'total_records'
-azimuth/lib.mbt:1625:7-1625:14 [E0002] Warning (unused_value): Unused variable 'fan_out'
-azimuth/lib.mbt:1626:7-1626:12 [E0002] Warning (unused_value): Unused variable 'depth'
-azimuth/lib.mbt:1683:7-1683:15 [E0002] Warning (unused_value): Unused variable 'vertices'
-azimuth/lib.mbt:1832:7-1832:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:1961:7-1961:20 [E0002] Warning (unused_value): Unused variable 'index_lookups'
-azimuth/lib.mbt:1977:7-1977:17 [E0002] Warning (unused_value): Unused variable 'key_length'
-azimuth/lib.mbt:2028:7-2028:8 [E0002] Warning (unused_value): Unused variable 'a'
-azimuth/lib.mbt:2029:7-2029:8 [E0002] Warning (unused_value): Unused variable 'b'
-azimuth/lib.mbt:2040:7-2040:22 [E0002] Warning (unused_value): Unused variable 'prime_candidate'
-azimuth/lib.mbt:2046:7-2046:12 [E0002] Warning (unused_value): Unused variable 'fib_n'
-azimuth/lib.mbt:2082:7-2082:15 [E0002] Warning (unused_value): Unused variable 'variance'
-azimuth/lib.mbt:2083:7-2083:25 [E0002] Warning (unused_value): Unused variable 'standard_deviation'
-azimuth/lib.mbt:2099:7-2099:21 [E0002] Warning (unused_value): Unused variable 'report_content'
-azimuth/lib.mbt:2110:7-2110:16 [E0002] Warning (unused_value): Unused variable 'compounds'
-azimuth/lib.mbt:2160:7-2160:16 [E0002] Warning (unused_value): Unused variable 'plaintext'
-azimuth/lib.mbt:2203:7-2203:20 [E0002] Warning (unused_value): Unused variable 'original_data'
-azimuth/lib.mbt:2236:7-2236:9 [E0002] Warning (unused_value): Unused variable 'x3'
-azimuth/lib.mbt:2236:19-2236:21 [E0002] Warning (unused_value): Unused variable 'y3'
-azimuth/lib.mbt:2308:7-2308:8 [E0002] Warning (unused_value): Unused variable 'b'
-azimuth/lib.mbt:2456:7-2456:19 [E0002] Warning (unused_value): Unused variable 'start_vertex'
-azimuth/lib.mbt:2457:7-2457:17 [E0002] Warning (unused_value): Unused variable 'end_vertex'
-azimuth/lib.mbt:2479:7-2479:18 [E0002] Warning (unused_value): Unused variable 'tree_height'
-azimuth/lib.mbt:2483:7-2483:16 [E0002] Warning (unused_value): Unused variable 'max_nodes'
-azimuth/lib.mbt:2514:6-2514:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:1385:6.
-azimuth/lib.mbt:2676:7-2676:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:2718:6-2718:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:1409:6.
-azimuth/lib.mbt:2723:7-2723:25 [E0002] Warning (unused_value): Unused variable 'compounds_per_year'
-azimuth/lib.mbt:2736:7-2736:13 [E0002] Warning (unused_value): Unused variable 'values'
-azimuth/lib.mbt:2778:7-2778:13 [E0002] Warning (unused_value): Unused variable 'scores'
-azimuth/lib.mbt:2865:7-2865:14 [E0002] Warning (unused_value): Unused variable 'pattern'
-azimuth/lib.mbt:2999:7-2999:8 [E0002] Warning (unused_value): Unused variable 'g'
-azimuth/lib.mbt:3000:7-3000:8 [E0002] Warning (unused_value): Unused variable 'b'
-azimuth/lib.mbt:3025:7-3025:9 [E0002] Warning (unused_value): Unused variable 'g2'
-azimuth/lib.mbt:3026:7-3026:9 [E0002] Warning (unused_value): Unused variable 'b2'
-azimuth/lib.mbt:3076:7-3076:19 [E0002] Warning (unused_value): Unused variable 'server_count'
-azimuth/lib.mbt:3080:7-3080:23 [E0002] Warning (unused_value): Unused variable 'server1_requests'
-azimuth/lib.mbt:3081:7-3081:23 [E0002] Warning (unused_value): Unused variable 'server2_requests'
-azimuth/lib.mbt:3082:7-3082:23 [E0002] Warning (unused_value): Unused variable 'server3_requests'
-azimuth/lib.mbt:3118:7-3118:17 [E0002] Warning (unused_value): Unused variable 'cache_size'
-azimuth/lib.mbt:3119:7-3119:22 [E0002] Warning (unused_value): Unused variable 'access_sequence'
-azimuth/lib.mbt:3128:7-3128:18 [E0002] Warning (unused_value): Unused variable 'final_cache'
-azimuth/lib.mbt:3154:7-3154:16 [E0002] Warning (unused_value): Unused variable 'data_byte'
-azimuth/lib.mbt:3155:7-3155:16 [E0002] Warning (unused_value): Unused variable 'data_bits'
-azimuth/lib.mbt:3164:7-3164:20 [E0002] Warning (unused_value): Unused variable 'received_data'
-azimuth/lib.mbt:4834:7-4834:14 [E0002] Warning (unused_value): Unused variable 'max_val'
-azimuth/lib.mbt:5095:7-5095:16 [E0002] Warning (unused_value): Unused variable 'start_min'
-azimuth/lib.mbt:5183:7-5183:13 [E0002] Warning (unused_value): Unused variable 'number'
-azimuth/lib.mbt:5195:7-5195:19 [E0002] Warning (unused_value): Unused variable 'integer_part'
-azimuth/lib.mbt:5196:7-5196:19 [E0002] Warning (unused_value): Unused variable 'decimal_part'
-azimuth/lib.mbt:5596:6-5596:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "business_inventory_management" should be unique, but it is already used at azimuth/lib.mbt:1495:6.
-azimuth/lib.mbt:5615:7-5615:15 [E0002] Warning (unused_value): Unused variable 'exponent'
-azimuth/lib.mbt:5642:6-5642:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "memory_allocation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1554:6.
-azimuth/lib.mbt:5683:6-5683:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "cryptography_simulation" should be unique, but it is already used at azimuth/lib.mbt:1572:6.
-azimuth/lib.mbt:5685:7-5685:17 [E0002] Warning (unused_value): Unused variable 'key_length'
-azimuth/lib.mbt:5779:6-5779:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:1409:6.
-azimuth/lib.mbt:5783:7-5783:12 [E0002] Warning (unused_value): Unused variable 'years'
-azimuth/lib.mbt:6014:6-6014:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_calculation" should be unique, but it is already used at azimuth/lib.mbt:4862:6.
-azimuth/lib.mbt:6032:6-6032:30 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "temperature_conversion" should be unique, but it is already used at azimuth/lib.mbt:475:6.
-azimuth/lib.mbt:6072:6-6072:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_basic_functionality" should be unique, but it is already used at azimuth/lib.mbt:1378:6.
-azimuth/lib.mbt:6088:6-6088:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:1385:6.
-azimuth/lib.mbt:6510:6-6510:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_financial_calculations" should be unique, but it is already used at azimuth/lib.mbt:4428:6.
-azimuth/lib.mbt:6565:6-6565:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_boundary_value_operations" should be unique, but it is already used at azimuth/lib.mbt:4362:6.
 Generating azimuth.wasm...
 Testing azimuth...
 Checking standard_core_test_cases.mbt...
-Found 9 tests in standard_core_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_core_test_cases.mbt:78:3-78:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_core_test_cases.mbt:79:3-79:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_core_test_cases.mbt compilation failed
 Checking standard_azimuth_test_suite.mbt...
-Found 10 tests in standard_azimuth_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_azimuth_test_suite.mbt:106:3-106:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_azimuth_test_suite.mbt:107:3-107:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_azimuth_test_suite.mbt:108:3-108:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_azimuth_test_suite.mbt:109:3-109:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_azimuth_test_suite.mbt:129:3-129:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_azimuth_test_suite.mbt:131:3-131:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: standard_azimuth_test_suite.mbt compilation failed
 Checking standard_moonbit_test_suite.mbt...
 Found 10 tests in standard_moonbit_test_suite.mbt
 test ... ok
@@ -229,17 +141,15 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_core_tests.mbt...
-Found 10 tests in standard_core_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_core_tests.mbt:174:3-174:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:175:3-175:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:176:3-176:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:177:3-177:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:180:3-180:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:181:3-181:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:182:3-182:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_core_tests.mbt:183:3-183:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_core_tests.mbt compilation failed
 Checking user_standard_moonbit_tests.mbt...
 Found 10 tests in user_standard_moonbit_tests.mbt
 test ... ok
@@ -253,17 +163,9 @@ test ... ok
 test ... ok
 test ... ok
 Checking concise_standard_tests.mbt...
-Found 10 tests in concise_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/concise_standard_tests.mbt:92:3-92:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/concise_standard_tests.mbt:93:3-93:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: concise_standard_tests.mbt compilation failed
 Checking azimuth_additional_enhanced_tests.mbt...
 Found 9 tests in azimuth_additional_enhanced_tests.mbt
 test ... ok
@@ -345,16 +247,9 @@ azimuth_test/user_additional_moonbit_tests.mbt:100:42-100:50 [E4021] The value i
 azimuth_test/user_additional_moonbit_tests.mbt:101:3-101:12 [E4021] The value identifier assert_eq is unbound.
 Error: user_additional_moonbit_tests.mbt compilation failed
 Checking user_new_additional_tests.mbt...
-Found 9 tests in user_new_additional_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_new_additional_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_additional_tests.mbt:116:3-116:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: user_new_additional_tests.mbt compilation failed
 Checking user_requested_moonbit_tests.mbt...
 Found 10 tests in user_requested_moonbit_tests.mbt
 test ... ok
@@ -520,36 +415,21 @@ azimuth_test/azimuth_comprehensive_tests.mbt:137:3-137:12 [E4021] The value iden
 Error: azimuth_comprehensive_tests.mbt compilation failed
 Checking compact_moonbit_test_cases.mbt...
 azimuth_test/compact_moonbit_test_cases.mbt:37:7-37:14 [E0002] Warning (unused_value): Unused variable 'max_val'
-Found 10 tests in compact_moonbit_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/compact_moonbit_test_cases.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/compact_moonbit_test_cases.mbt:106:3-106:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/compact_moonbit_test_cases.mbt:113:3-113:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/compact_moonbit_test_cases.mbt:114:3-114:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: compact_moonbit_test_cases.mbt compilation failed
 Checking user_requested_tests.mbt...
-Found 10 tests in user_requested_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_requested_tests.mbt:77:3-77:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_requested_tests.mbt:78:3-78:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_requested_tests.mbt:84:3-84:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_requested_tests.mbt:85:3-85:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_requested_tests.mbt compilation failed
 Checking simple_test_example.mbt...
-Found 5 tests in simple_test_example.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/simple_test_example.mbt:14:3-14:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/simple_test_example.mbt:18:3-18:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: simple_test_example.mbt compilation failed
 Checking additional_moonbit_test_cases_v2.mbt...
 azimuth_test/additional_moonbit_test_cases_v2.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
 azimuth_test/additional_moonbit_test_cases_v2.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
@@ -621,29 +501,17 @@ test ... ok
 test ... ok
 test ... ok
 Checking essential_moonbit_tests.mbt...
-Found 10 tests in essential_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/essential_moonbit_tests.mbt:89:3-89:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/essential_moonbit_tests.mbt:90:3-90:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/essential_moonbit_tests.mbt:96:3-96:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/essential_moonbit_tests.mbt:99:3-99:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: essential_moonbit_tests.mbt compilation failed
 Checking moonbit_user_tests.mbt...
 azimuth_test/moonbit_user_tests.mbt:45:7-45:17 [E0002] Warning (unused_value): Unused variable 'remainder3'
 azimuth_test/moonbit_user_tests.mbt:55:7-55:15 [E0002] Warning (unused_value): Unused variable 'is_prime'
-Found 8 tests in moonbit_user_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_user_tests.mbt:63:3-63:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_user_tests.mbt:71:3-71:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_user_tests.mbt compilation failed
 Checking new_standard_moonbit_tests.mbt...
 azimuth_test/new_standard_moonbit_tests.mbt:5:16-5:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/new_standard_moonbit_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -835,44 +703,35 @@ azimuth_test/standard_moonbit_tests_v10.mbt:146:38-146:41 [E4021] The value iden
 azimuth_test/standard_moonbit_tests_v10.mbt:147:3-147:12 [E4021] The value identifier assert_eq is unbound.
 Error: standard_moonbit_tests_v10.mbt compilation failed
 Checking new_standard_tests.mbt...
-Found 10 tests in new_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_standard_tests.mbt:185:3-185:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:186:3-186:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:195:3-195:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:196:3-196:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:197:3-197:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:198:3-198:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:201:3-201:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:202:3-202:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:203:3-203:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:204:3-204:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:205:3-205:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_standard_tests.mbt compilation failed
 Checking moonbit_standard_test_cases.mbt...
-Found 10 tests in moonbit_standard_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_standard_test_cases.mbt:93:3-93:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_test_cases.mbt:94:3-94:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_standard_test_cases.mbt:101:3-101:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_test_cases.mbt:102:3-102:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_standard_test_cases.mbt compilation failed
 Checking new_standard_test_cases.mbt...
+azimuth_test/new_standard_test_cases.mbt:97:3-97:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_test_cases.mbt:98:3-98:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_test_cases.mbt:99:3-99:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_test_cases.mbt:100:3-100:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_test_cases.mbt:109:3-109:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_test_cases.mbt:110:3-110:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/new_standard_test_cases.mbt:183:7-183:14 [E0002] Warning (unused_value): Unused variable 'num_str'
 azimuth_test/new_standard_test_cases.mbt:188:7-188:16 [E0002] Warning (unused_value): Unused variable 'bool_true'
 azimuth_test/new_standard_test_cases.mbt:189:7-189:17 [E0002] Warning (unused_value): Unused variable 'bool_false'
-Found 10 tests in new_standard_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: new_standard_test_cases.mbt compilation failed
 Checking additional_user_tests.mbt...
 azimuth_test/additional_user_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
 azimuth_test/additional_user_tests.mbt:6:18-6:21 [E4021] The value identifier add is unbound.
@@ -948,17 +807,11 @@ azimuth_test/additional_user_tests.mbt:129:3-129:12 [E4021] The value identifier
 azimuth_test/additional_user_tests.mbt:134:3-134:12 [E4021] The value identifier assert_eq is unbound.
 Error: additional_user_tests.mbt compilation failed
 Checking standard_moonbit_tests_v8.mbt...
-Found 10 tests in standard_moonbit_tests_v8.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_v8.mbt:117:3-117:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v8.mbt:118:3-118:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v8.mbt:125:3-125:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v8.mbt:126:3-126:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_moonbit_tests_v8.mbt compilation failed
 Checking additional_moonbit_test_cases.mbt...
 Found 10 tests in additional_moonbit_test_cases.mbt
 test ... ok
@@ -996,17 +849,9 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests_final.mbt...
-Found 10 tests in standard_moonbit_tests_final.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_final.mbt:83:3-83:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_final.mbt:84:3-84:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_moonbit_tests_final.mbt compilation failed
 Checking test_enhanced_moonbit.mbt...
 azimuth_test/test_enhanced_moonbit.mbt:28:7-28:13 [E0002] Warning (unused_value): Unused variable 'email1'
 azimuth_test/test_enhanced_moonbit.mbt:29:7-29:13 [E0002] Warning (unused_value): Unused variable 'email2'
@@ -1026,29 +871,18 @@ test ... ok
 test ... ok
 test ... ok
 Checking moonbit_test_suite_new.mbt...
-Found 10 tests in moonbit_test_suite_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_test_suite_new.mbt:92:3-92:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_test_suite_new.mbt:93:3-93:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_test_suite_new.mbt compilation failed
 Checking user_standard_tests.mbt...
-Found 10 tests in user_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_standard_tests.mbt:114:3-114:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:116:3-116:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:117:3-117:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:127:3-127:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:128:3-128:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_standard_tests.mbt:142:22-142:35 [E4095] Integer literal 2000000000000 is out of range.
+Error: user_standard_tests.mbt compilation failed
 Checking user_standard_moonbit_tests.mbt...
 Found 10 tests in user_standard_moonbit_tests.mbt
 test ... ok
@@ -1062,29 +896,21 @@ test ... ok
 test ... ok
 test ... ok
 Checking comprehensive_moonbit_test_suite.mbt...
-Found 10 tests in comprehensive_moonbit_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/comprehensive_moonbit_test_suite.mbt:227:3-227:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:228:3-228:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:229:3-229:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:231:3-231:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:232:3-232:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:233:3-233:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:248:3-248:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_test_suite.mbt:249:3-249:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: comprehensive_moonbit_test_suite.mbt compilation failed
 Checking standard_moonbit_tests_v3.mbt...
-Found 10 tests in standard_moonbit_tests_v3.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_v3.mbt:93:3-93:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v3.mbt:94:3-94:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v3.mbt:100:3-100:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v3.mbt:101:3-101:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: standard_moonbit_tests_v3.mbt compilation failed
 Checking standard_moonbit_tests_v2.mbt...
 Found 10 tests in standard_moonbit_tests_v2.mbt
 test ... ok
@@ -1098,17 +924,11 @@ test ... ok
 test ... ok
 test ... ok
 Checking new_additional_moonbit_tests.mbt...
-Found 10 tests in new_additional_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_additional_moonbit_tests.mbt:113:3-113:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_additional_moonbit_tests.mbt:114:3-114:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_additional_moonbit_tests.mbt:120:3-120:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_additional_moonbit_tests.mbt:121:3-121:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_additional_moonbit_tests.mbt compilation failed
 Checking additional_moonbit_tests.mbt...
 Found 9 tests in additional_moonbit_tests.mbt
 test ... ok
@@ -1121,17 +941,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_moonbit_tests_new.mbt...
-Found 10 tests in additional_moonbit_tests_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_moonbit_tests_new.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:120:3-120:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:121:3-121:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:124:3-124:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:125:3-125:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:126:3-126:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_moonbit_tests_new.mbt compilation failed
 Checking focused_comprehensive_tests.mbt...
 azimuth_test/focused_comprehensive_tests.mbt:32:7-32:14 [E0002] Warning (unused_value): Unused variable 'min_val'
 azimuth_test/focused_comprehensive_tests.mbt:155:7-155:12 [E0002] Warning (unused_value): Unused variable 'fib_n'
@@ -1159,17 +976,9 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_core_tests.mbt...
-Found 10 tests in azimuth_core_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_core_tests.mbt:106:3-106:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_core_tests.mbt:107:3-107:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: azimuth_core_tests.mbt compilation failed
 Checking user_moonbit_tests.mbt...
 Found 10 tests in user_moonbit_tests.mbt
 test ... ok
@@ -1195,28 +1004,16 @@ test ... ok
 test ... ok
 test ... ok
 Checking moonbit_standard_tests.mbt...
-Found 10 tests in moonbit_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_standard_tests.mbt:189:3-189:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_tests.mbt:190:3-190:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_tests.mbt:191:3-191:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: moonbit_standard_tests.mbt compilation failed
 Checking standard_moonbit_test_suite_new.mbt...
-Found 9 tests in standard_moonbit_test_suite_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_test_suite_new.mbt:128:3-128:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_test_suite_new.mbt:129:3-129:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_moonbit_test_suite_new.mbt:135:3-135:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_test_suite_new.mbt:136:3-136:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: standard_moonbit_test_suite_new.mbt compilation failed
 Checking moon_test_standard.mbt...
 Found 10 tests in moon_test_standard.mbt
 test ... ok
@@ -1299,29 +1096,24 @@ azimuth_test/custom_moonbit_tests.mbt:170:3-170:10 [E3002] Expected upper case i
 Error: custom_moonbit_tests.mbt compilation failed
 Checking additional_focused_tests.mbt...
 azimuth_test/additional_focused_tests.mbt:107:7-107:12 [E0002] Warning (unused_value): Unused variable 'inner'
-Found 8 tests in additional_focused_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_focused_tests.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_focused_tests.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_focused_tests.mbt:120:3-120:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_focused_tests.mbt:121:3-121:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_focused_tests.mbt compilation failed
 Checking enhanced_test_coverage.mbt...
-Found 10 tests in enhanced_test_coverage.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/enhanced_test_coverage.mbt:12:3-12:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:13:3-13:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:16:3-16:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:17:3-17:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:20:3-20:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:21:3-21:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:22:3-22:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_test_coverage.mbt:171:3-171:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: enhanced_test_coverage.mbt compilation failed
 Checking standard_azimuth_tests.mbt...
-Found 9 tests in standard_azimuth_tests.mbt
+Found 10 tests in standard_azimuth_tests.mbt
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -1356,32 +1148,17 @@ test ... ok
 test ... ok
 test ... ok
 Checking moon_test_comprehensive.mbt...
+azimuth_test/moon_test_comprehensive.mbt:110:3-110:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/moon_test_comprehensive.mbt:128:7-128:16 [E0002] Warning (unused_value): Unused variable 'max_value'
 azimuth_test/moon_test_comprehensive.mbt:129:7-129:16 [E0002] Warning (unused_value): Unused variable 'min_value'
 azimuth_test/moon_test_comprehensive.mbt:139:7-139:22 [E0002] Warning (unused_value): Unused variable 'critical_chance'
-Found 10 tests in moon_test_comprehensive.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: moon_test_comprehensive.mbt compilation failed
 Checking moonbit_test_cases.mbt...
-Found 10 tests in moonbit_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_test_cases.mbt:90:3-90:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_test_cases.mbt:91:3-91:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_test_cases.mbt:97:3-97:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_test_cases.mbt:98:3-98:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: moonbit_test_cases.mbt compilation failed
 Checking azimuth_test.mbt...
 azimuth_test/azimuth_test.mbt:15:7-15:8 [E0002] Warning (unused_value): Unused variable 'b'
 azimuth_test/azimuth_test.mbt:352:7-352:17 [E0002] Warning (unused_value): Unused variable 'iterations'
@@ -1420,35 +1197,45 @@ test ... ok
 test ... ok
 test ... ok
 Checking comprehensive_moonbit_tests.mbt...
-Found 10 tests in comprehensive_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/comprehensive_moonbit_tests.mbt:151:3-151:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_tests.mbt:152:3-152:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_tests.mbt:158:3-158:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_moonbit_tests.mbt:161:3-161:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: comprehensive_moonbit_tests.mbt compilation failed
 Test file standard_moonbit_test_cases.mbt not found
 Checking enhanced_moonbit_test_cases.mbt...
 azimuth_test/enhanced_moonbit_test_cases.mbt:4:1-4:4 [E0035] Warning (reserved_keyword): The word `use` is reserved for possible future use. Please consider using another name.
 azimuth_test/enhanced_moonbit_test_cases.mbt:4:1-4:4 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+azimuth_test/enhanced_moonbit_test_cases.mbt:90:3-90:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_test_cases.mbt:98:3-98:23 [E4021] Value assert_true not found in package `azimuth`.
 Error: enhanced_moonbit_test_cases.mbt compilation failed
 Checking new_moonbit_test_cases.mbt...
+azimuth_test/new_moonbit_test_cases.mbt:49:3-49:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:50:3-50:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:53:3-53:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:54:3-54:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:57:3-57:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:58:3-58:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:61:3-61:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:62:3-62:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:65:3-65:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:66:3-66:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:69:3-69:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:70:3-70:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:79:3-79:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:80:3-80:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:81:3-81:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:82:3-82:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:85:3-85:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:86:3-86:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:87:3-87:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:88:3-88:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:91:3-91:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:92:3-92:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:140:3-140:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_cases.mbt:143:3-143:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/new_moonbit_test_cases.mbt:207:7-207:11 [E0002] Warning (unused_value): Unused variable 'time'
-Found 10 tests in new_moonbit_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: new_moonbit_test_cases.mbt compilation failed
 Checking simple_test_cases.mbt...
 azimuth_test/simple_test_cases.mbt:5:16-5:19 [E4021] The value identifier add is unbound.
 azimuth_test/simple_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
@@ -1476,8 +1263,7 @@ azimuth_test/simple_test_cases.mbt:52:36-52:44 [E4021] The value identifier mult
 azimuth_test/simple_test_cases.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
 Error: simple_test_cases.mbt compilation failed
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
+Found 9 tests in standard_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -1488,16 +1274,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_test_cases.mbt...
-Found 9 tests in additional_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_test_cases.mbt:199:3-199:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:213:3-213:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:214:3-214:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:219:3-219:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:220:3-220:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:221:3-221:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_test_cases.mbt:222:3-222:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_test_cases.mbt compilation failed
 Checking new_moonbit_tests.mbt...
 Found 10 tests in new_moonbit_tests.mbt
 test ... ok
@@ -1653,22 +1437,9 @@ azimuth_test/focused_test_scenarios.mbt:222:22-222:29 [E3002] Expected upper cas
 azimuth_test/focused_test_scenarios.mbt:222:31-222:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 Error: focused_test_scenarios.mbt compilation failed
 Checking xyz123_final_tests.mbt...
-Found 15 tests in xyz123_final_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/xyz123_final_tests.mbt:77:3-77:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/xyz123_final_tests.mbt:81:3-81:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: xyz123_final_tests.mbt compilation failed
 Checking additional_moonbit_tests.mbt...
 Found 9 tests in additional_moonbit_tests.mbt
 test ... ok
@@ -1681,6 +1452,7 @@ test ... ok
 test ... ok
 test ... ok
 Checking enhanced_test_cases.mbt...
+azimuth_test/enhanced_test_cases.mbt:21:3-21:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/enhanced_test_cases.mbt:122:7-122:16 [E0002] Warning (unused_value): Unused variable 'geo_terms'
 azimuth_test/enhanced_test_cases.mbt:201:7-201:11 [E0002] Warning (unused_value): Unused variable 'rows'
 azimuth_test/enhanced_test_cases.mbt:278:7-278:19 [E0002] Warning (unused_value): Unused variable 'target_value'
@@ -1690,22 +1462,22 @@ azimuth_test/enhanced_test_cases.mbt:316:7-316:18 [E0002] Warning (unused_value)
 azimuth_test/enhanced_test_cases.mbt:317:7-317:18 [E0002] Warning (unused_value): Unused variable 'fib_cache_1'
 azimuth_test/enhanced_test_cases.mbt:318:7-318:18 [E0002] Warning (unused_value): Unused variable 'fib_cache_2'
 azimuth_test/enhanced_test_cases.mbt:319:7-319:18 [E0002] Warning (unused_value): Unused variable 'fib_cache_3'
-Found 10 tests in enhanced_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: enhanced_test_cases.mbt compilation failed
 Checking new_comprehensive_tests.mbt...
 azimuth_test/new_comprehensive_tests.mbt:5:1-5:4 [E0035] Warning (reserved_keyword): The word `use` is reserved for possible future use. Please consider using another name.
 azimuth_test/new_comprehensive_tests.mbt:5:1-5:4 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+azimuth_test/new_comprehensive_tests.mbt:179:3-179:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:180:3-180:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:181:3-181:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:182:3-182:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:185:3-185:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:186:3-186:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_tests.mbt:187:3-187:23 [E4021] Value assert_true not found in package `azimuth`.
 Error: new_comprehensive_tests.mbt compilation failed
 Checking new_advanced_tests.mbt...
+azimuth_test/new_advanced_tests.mbt:9:3-9:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_advanced_tests.mbt:11:3-11:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_advanced_tests.mbt:13:3-13:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/new_advanced_tests.mbt:22:7-22:12 [E0002] Warning (unused_value): Unused variable 'fib_0'
 azimuth_test/new_advanced_tests.mbt:23:7-23:12 [E0002] Warning (unused_value): Unused variable 'fib_1'
 azimuth_test/new_advanced_tests.mbt:24:15-24:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -1780,6 +1552,7 @@ azimuth_test/new_advanced_tests.mbt:179:23-179:30 [E3002] Expected upper case id
 azimuth_test/new_advanced_tests.mbt:179:32-179:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/new_advanced_tests.mbt:182:23-182:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/new_advanced_tests.mbt:182:32-182:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+azimuth_test/new_advanced_tests.mbt:188:3-188:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/new_advanced_tests.mbt:193:7-193:20 [E0002] Warning (unused_value): Unused variable 'customer_name'
 azimuth_test/new_advanced_tests.mbt:196:7-196:15 [E0002] Warning (unused_value): Unused variable 'quantity'
 azimuth_test/new_advanced_tests.mbt:197:7-197:17 [E0002] Warning (unused_value): Unused variable 'unit_price'
@@ -1850,17 +1623,15 @@ azimuth_test/simple_new_test.mbt:49:12-49:20 [E3002] Parse error, unexpected tok
 Error: simple_new_test.mbt compilation failed
 Checking moonbit_new_test_cases.mbt...
 azimuth_test/moonbit_new_test_cases.mbt:82:7-82:12 [E0002] Warning (unused_value): Unused variable 'value'
-Found 10 tests in moonbit_new_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_new_test_cases.mbt:91:3-91:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:96:3-96:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:167:3-167:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:168:3-168:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:169:3-169:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:170:3-170:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:179:3-179:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases.mbt:180:3-180:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_new_test_cases.mbt compilation failed
 Checking moonbit_new_test_cases_copy.mbt...
 azimuth_test/moonbit_new_test_cases_copy.mbt:5:7-5:17 [E0002] Warning (unused_value): Unused variable 'large_num1'
 azimuth_test/moonbit_new_test_cases_copy.mbt:6:7-6:17 [E0002] Warning (unused_value): Unused variable 'large_num2'
@@ -1897,6 +1668,8 @@ azimuth_test/moonbit_new_test_cases_copy.mbt:78:7-78:11 [E0002] Warning (unused_
 azimuth_test/moonbit_new_test_cases_copy.mbt:79:7-79:10 [E0002] Warning (unused_value): Unused variable 'mid'
 azimuth_test/moonbit_new_test_cases_copy.mbt:79:13-79:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/moonbit_new_test_cases_copy.mbt:79:22-79:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+azimuth_test/moonbit_new_test_cases_copy.mbt:82:3-82:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_new_test_cases_copy.mbt:83:3-83:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/moonbit_new_test_cases_copy.mbt:89:7-89:16 [E0002] Warning (unused_value): Unused variable 'stack_top'
 azimuth_test/moonbit_new_test_cases_copy.mbt:102:7-102:17 [E0002] Warning (unused_value): Unused variable 'after_push'
 azimuth_test/moonbit_new_test_cases_copy.mbt:102:20-102:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -1907,6 +1680,7 @@ azimuth_test/moonbit_new_test_cases_copy.mbt:109:7-109:12 [E0002] Warning (unuse
 azimuth_test/moonbit_new_test_cases_copy.mbt:110:7-110:12 [E0002] Warning (unused_value): Unused variable 'dice2'
 azimuth_test/moonbit_new_test_cases_copy.mbt:113:15-113:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/moonbit_new_test_cases_copy.mbt:113:24-113:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+azimuth_test/moonbit_new_test_cases_copy.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/moonbit_new_test_cases_copy.mbt:121:15-121:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/moonbit_new_test_cases_copy.mbt:121:24-121:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/moonbit_new_test_cases_copy.mbt:127:7-127:18 [E0002] Warning (unused_value): Unused variable 'header_size'
@@ -2167,114 +1941,75 @@ azimuth_test/comprehensive_test_suite.mbt:192:24-192:31 [E3002] Expected upper c
 azimuth_test/comprehensive_test_suite.mbt:192:33-192:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/comprehensive_test_suite.mbt:211:23-211:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:211:32-211:40 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+azimuth_test/comprehensive_test_suite.mbt:230:3-230:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:230:3-230:68 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:230:24-230:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:230:33-230:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:230:3-230:57 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:230:3-230:68 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:230:61-230:68 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:230:68-230:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:231:3-231:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:231:3-231:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:231:24-231:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:231:33-231:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:231:3-231:63 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:231:3-231:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:231:67-231:74 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:231:74-231:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:232:3-232:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:232:3-232:69 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:232:24-232:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:232:33-232:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:232:3-232:58 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:232:3-232:69 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:232:62-232:69 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:232:69-232:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:233:3-233:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:233:3-233:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:233:24-233:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:233:33-233:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:233:3-233:63 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:233:3-233:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:233:67-233:74 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:233:74-233:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:235:3-235:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:235:3-235:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:235:24-235:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:235:33-235:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:235:3-235:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:235:3-235:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:235:66-235:73 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:235:73-235:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:236:3-236:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:236:3-236:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:236:24-236:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:236:33-236:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:236:3-236:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:236:3-236:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:236:66-236:73 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:236:73-236:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:237:3-237:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:237:3-237:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:237:24-237:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:237:33-237:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:237:3-237:63 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:237:3-237:74 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:237:67-237:74 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:237:74-237:75 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:240:3-240:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:240:3-240:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:240:24-240:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:240:33-240:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:240:3-240:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:240:3-240:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:240:66-240:67 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:240:67-240:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:241:3-241:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:241:3-241:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:241:24-241:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:241:33-241:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:241:3-241:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:241:3-241:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:241:66-241:67 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:241:67-241:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:242:3-242:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:242:3-242:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:242:24-242:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:242:33-242:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:242:3-242:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:242:3-242:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:242:66-242:73 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:242:73-242:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:243:3-243:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:243:3-243:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:243:24-243:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:243:33-243:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:243:3-243:62 [E4080] This function has type (Bool) -> Unit, which requires 1 arguments, but is given 2 arguments.
-azimuth_test/comprehensive_test_suite.mbt:243:3-243:73 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
-azimuth_test/comprehensive_test_suite.mbt:243:66-243:73 [E4014] Expr Type Mismatch
-        has type : Int
-        wanted   : Unit
 azimuth_test/comprehensive_test_suite.mbt:243:73-243:74 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:246:3-246:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:246:3-246:65 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:246:24-246:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:246:33-246:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:246:55-246:65 [E4014] Expr Type Mismatch
-        has type : String
-        wanted   : Unit
-azimuth_test/comprehensive_test_suite.mbt:246:3-246:65 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:246:65-246:66 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:247:3-247:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:247:3-247:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:247:24-247:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:247:33-247:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:247:56-247:67 [E4014] Expr Type Mismatch
-        has type : String
-        wanted   : Unit
-azimuth_test/comprehensive_test_suite.mbt:247:3-247:67 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:247:67-247:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+azimuth_test/comprehensive_test_suite.mbt:248:3-248:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/comprehensive_test_suite.mbt:248:3-248:69 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:248:24-248:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:248:33-248:41 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-azimuth_test/comprehensive_test_suite.mbt:248:57-248:69 [E4014] Expr Type Mismatch
-        has type : String
-        wanted   : Unit
-azimuth_test/comprehensive_test_suite.mbt:248:3-248:69 [E4139] This expression has type Bool, its value cannot be implicitly ignored (hint: use `ignore(...)` or `let _ = ...` to explicitly ignore it).
 azimuth_test/comprehensive_test_suite.mbt:248:69-248:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
 azimuth_test/comprehensive_test_suite.mbt:251:27-251:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/comprehensive_test_suite.mbt:251:36-251:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
@@ -2557,16 +2292,11 @@ azimuth_test/comprehensive_test_cases.mbt:196:12-196:20 [E3002] Parse error, une
 Error: comprehensive_test_cases.mbt compilation failed
 Checking advanced_test_cases.mbt...
 azimuth_test/advanced_test_cases.mbt:49:7-49:14 [E0002] Warning (unused_value): Unused variable 'min_val'
+azimuth_test/advanced_test_cases.mbt:69:3-69:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/advanced_test_cases.mbt:79:7-79:18 [E0002] Warning (unused_value): Unused variable 'test_values'
-Found 8 tests in advanced_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/advanced_test_cases.mbt:110:3-110:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/advanced_test_cases.mbt:111:3-111:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: advanced_test_cases.mbt compilation failed
 Checking new_advanced_test_cases.mbt...
 azimuth_test/new_advanced_test_cases.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
 azimuth_test/new_advanced_test_cases.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
@@ -2709,45 +2439,28 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_additional_tests.mbt...
-Found 10 tests in azimuth_additional_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_additional_tests.mbt:106:3-106:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_tests.mbt:107:3-107:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_additional_tests.mbt:114:3-114:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_tests.mbt:115:3-115:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: azimuth_additional_tests.mbt compilation failed
 Checking new_enhanced_test_cases.mbt...
+azimuth_test/new_enhanced_test_cases.mbt:61:3-61:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/new_enhanced_test_cases.mbt:97:7-97:14 [E0002] Warning (unused_value): Unused variable 'neg_one'
 azimuth_test/new_enhanced_test_cases.mbt:174:7-174:12 [E0002] Warning (unused_value): Unused variable 'power'
 azimuth_test/new_enhanced_test_cases.mbt:294:7-294:29 [E0002] Warning (unused_value): Unused variable 'balance_after_deposit1'
 azimuth_test/new_enhanced_test_cases.mbt:295:7-295:29 [E0002] Warning (unused_value): Unused variable 'balance_after_deposit2'
 azimuth_test/new_enhanced_test_cases.mbt:298:7-298:32 [E0002] Warning (unused_value): Unused variable 'balance_after_withdrawal1'
 azimuth_test/new_enhanced_test_cases.mbt:299:7-299:32 [E0002] Warning (unused_value): Unused variable 'balance_after_withdrawal2'
-Found 8 tests in new_enhanced_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: new_enhanced_test_cases.mbt compilation failed
 Checking user_new_test_cases.mbt...
-Found 10 tests in user_new_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_new_test_cases.mbt:140:3-140:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_test_cases.mbt:141:3-141:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_test_cases.mbt:142:3-142:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_test_cases.mbt:143:3-143:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_test_cases.mbt:146:3-146:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_test_cases.mbt:147:3-147:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: user_new_test_cases.mbt compilation failed
 Checking user_new_tests.mbt...
 Found 10 tests in user_new_tests.mbt
 test ... ok
@@ -2915,89 +2628,16 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_moonbit_standard_tests.mbt...
-azimuth_test/additional_moonbit_standard_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:17:22-17:25 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:18:22-18:25 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:21:22-21:25 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:22:22-22:25 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:27:16-27:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:28:16-28:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:29:16-29:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:30:17-30:25 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:39:22-39:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:40:22-40:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:43:22-43:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:48:3-48:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:48:37-48:42 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:49:3-49:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:49:37-49:42 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:50:3-50:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:50:35-50:40 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:55:3-55:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:55:32-55:37 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:56:3-56:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:56:35-56:40 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:57:3-57:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:57:34-57:39 [E4021] The value identifier greet is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:67:16-67:19 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:68:16-68:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:72:20-72:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:73:17-73:20 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:79:3-79:14 [E4021] The value identifier assert_true is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:80:3-80:15 [E4021] The value identifier assert_false is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:82:3-82:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:87:3-87:14 [E4021] The value identifier assert_true is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:88:3-88:15 [E4021] The value identifier assert_false is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:89:13-89:16 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:98:15-98:18 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:98:19-98:27 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:99:3-99:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:103:20-103:23 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:103:24-103:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:113:3-113:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:113:13-113:16 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:113:24-113:27 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:114:13-114:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:114:29-114:37 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:118:13-118:16 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:118:17-118:20 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:118:32-118:35 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:118:39-118:42 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:119:13-119:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:119:22-119:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:119:42-119:50 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:119:54-119:62 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:13-122:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:25-122:28 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:37-122:40 [E4021] The value identifier add is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:41-122:49 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_moonbit_standard_tests.mbt:122:57-122:65 [E4021] The value identifier multiply is unbound.
-Error: additional_moonbit_standard_tests.mbt compilation failed
+Found 9 tests in additional_moonbit_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking simple_test_verify.mbt...
 azimuth_test/simple_test_verify.mbt:3:11-3:12 [E3001] Lexing error: missing identifier after `.`
 azimuth_test/simple_test_verify.mbt:3:12-3:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
@@ -3023,29 +2663,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking enhanced_moonbit_test_suite.mbt...
-Found 10 tests in enhanced_moonbit_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/enhanced_moonbit_test_suite.mbt:283:3-283:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_test_suite.mbt:284:3-284:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: enhanced_moonbit_test_suite.mbt compilation failed
 Checking moonbit_standard_tests.mbt...
-Found 10 tests in moonbit_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_standard_tests.mbt:189:3-189:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_tests.mbt:190:3-190:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_standard_tests.mbt:191:3-191:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: moonbit_standard_tests.mbt compilation failed
 Checking simple_moonbit_tests.mbt...
 azimuth_test/simple_moonbit_tests.mbt:84:22-84:35 [E4095] Integer literal 2000000000000 is out of range.
 Error: simple_moonbit_tests.mbt compilation failed
@@ -3111,17 +2736,9 @@ azimuth_test/new_standard_moonbit_tests.mbt:86:3-86:10 [E3002] Expected upper ca
 azimuth_test/new_standard_moonbit_tests.mbt:86:42-86:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
 Error: new_standard_moonbit_tests.mbt compilation failed
 Checking compact_moonbit_tests.mbt...
-Found 10 tests in compact_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/compact_moonbit_tests.mbt:89:3-89:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/compact_moonbit_tests.mbt:90:3-90:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: compact_moonbit_tests.mbt compilation failed
 Checking moonbit_new_tests.mbt...
 azimuth_test/moonbit_new_tests.mbt:15:3-15:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/moonbit_new_tests.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -3200,17 +2817,9 @@ azimuth_test/moonbit_new_tests.mbt:218:22-218:29 [E3002] Expected upper case ide
 azimuth_test/moonbit_new_tests.mbt:219:3-219:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 Error: moonbit_new_tests.mbt compilation failed
 Checking new_basic_test_suite.mbt...
-Found 10 tests in new_basic_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_basic_test_suite.mbt:45:3-45:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_basic_test_suite.mbt:46:3-46:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: new_basic_test_suite.mbt compilation failed
 Checking additional_moonbit_test_cases.mbt...
 Found 10 tests in additional_moonbit_test_cases.mbt
 test ... ok
@@ -3224,29 +2833,22 @@ test ... ok
 test ... ok
 test ... ok
 Checking professional_moonbit_tests.mbt...
-Found 10 tests in professional_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/professional_moonbit_tests.mbt:41:3-41:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/professional_moonbit_tests.mbt:42:3-42:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: professional_moonbit_tests.mbt compilation failed
 Checking new_standard_tests.mbt...
-Found 10 tests in new_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_standard_tests.mbt:185:3-185:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:186:3-186:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:195:3-195:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:196:3-196:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:197:3-197:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:198:3-198:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:201:3-201:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:202:3-202:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:203:3-203:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:204:3-204:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_standard_tests.mbt:205:3-205:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_standard_tests.mbt compilation failed
 Checking focused_moonbit_tests.mbt...
 azimuth_test/focused_moonbit_tests.mbt:165:7-165:8 [E0002] Warning (unused_value): Unused variable 'y'
 Found 10 tests in focused_moonbit_tests.mbt
@@ -3261,103 +2863,47 @@ test ... ok
 test ... ok
 test ... ok
 Checking new_enhanced_moonbit_tests.mbt...
+azimuth_test/new_enhanced_moonbit_tests.mbt:109:3-109:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_enhanced_moonbit_tests.mbt:113:3-113:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_enhanced_moonbit_tests.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_enhanced_moonbit_tests.mbt:124:3-124:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_enhanced_moonbit_tests.mbt:125:3-125:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/new_enhanced_moonbit_tests.mbt:279:7-279:19 [E0002] Warning (unused_value): Unused variable 'input_string'
 azimuth_test/new_enhanced_moonbit_tests.mbt:287:7-287:32 [E0002] Warning (unused_value): Unused variable 'slightly_different_string'
-Found 19 tests in new_enhanced_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: new_enhanced_moonbit_tests.mbt compilation failed
 Checking practical_test_cases.mbt...
-Found 10 tests in practical_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/practical_test_cases.mbt:108:3-108:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/practical_test_cases.mbt:109:3-109:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/practical_test_cases.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/practical_test_cases.mbt:116:3-116:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: practical_test_cases.mbt compilation failed
 Checking additional_comprehensive_tests.mbt...
-azimuth_test/additional_comprehensive_tests.mbt:11:23-11:26 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:11:32-11:40 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:12:22-12:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:25:21-25:24 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:25:25-25:33 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:27:23-27:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:39:19-39:22 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:39:23-39:26 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:39:27-39:35 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:39:36-39:39 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:51:28-51:36 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:52:27-52:35 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:52:36-52:44 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:53:18-53:21 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:65:21-65:24 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:86:20-86:23 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:87:21-87:24 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:88:20-88:23 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:89:21-89:24 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:95:3-95:14 [E4021] The value identifier assert_true is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:96:3-96:14 [E4021] The value identifier assert_true is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:107:20-107:23 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:107:24-107:27 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:107:28-107:36 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:107:48-107:56 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:107:71-107:79 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:109:3-109:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:119:16-119:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:121:19-121:22 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:121:38-121:46 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:133:25-133:28 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:133:44-133:52 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:134:27-134:35 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:136:3-136:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:146:20-146:23 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:146:24-146:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:148:3-148:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:152:15-152:18 [E4021] The value identifier add is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:152:33-152:41 [E4021] The value identifier multiply is unbound.
-azimuth_test/additional_comprehensive_tests.mbt:154:3-154:12 [E4021] The value identifier assert_eq is unbound.
-Error: additional_comprehensive_tests.mbt compilation failed
+Found 9 tests in additional_comprehensive_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking enhanced_application_tests.mbt...
 azimuth_test/enhanced_application_tests.mbt:10:7-10:20 [E0002] Warning (unused_value): Unused variable 'angle_degrees'
+azimuth_test/enhanced_application_tests.mbt:27:3-27:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:28:3-28:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:29:3-29:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/enhanced_application_tests.mbt:103:7-103:16 [E0002] Warning (unused_value): Unused variable 'plaintext'
-Found 8 tests in enhanced_application_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/enhanced_application_tests.mbt:139:3-139:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:140:3-140:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:144:3-144:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:177:3-177:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:178:3-178:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:179:3-179:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:208:3-208:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:234:3-234:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_application_tests.mbt:235:3-235:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: enhanced_application_tests.mbt compilation failed
 Checking moonbit_additional_test_cases.mbt...
 Found 9 tests in moonbit_additional_test_cases.mbt
 test ... ok
@@ -3382,17 +2928,13 @@ test ... ok
 test ... ok
 test ... ok
 Checking new_moonbit_standard_tests.mbt...
-Found 10 tests in new_moonbit_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_moonbit_standard_tests.mbt:92:3-92:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_standard_tests.mbt:93:3-93:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_standard_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_standard_tests.mbt:116:3-116:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_standard_tests.mbt:117:3-117:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_standard_tests.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_moonbit_standard_tests.mbt compilation failed
 Checking extra_moonbit_test_cases.mbt...
 azimuth_test/extra_moonbit_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
 azimuth_test/extra_moonbit_test_cases.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
@@ -3462,55 +3004,42 @@ azimuth_test/extra_moonbit_test_cases.mbt:111:3-111:12 [E4021] The value identif
 azimuth_test/extra_moonbit_test_cases.mbt:111:22-111:30 [E4021] The value identifier multiply is unbound.
 Error: extra_moonbit_test_cases.mbt compilation failed
 Checking new_moonbit_test_examples.mbt...
+azimuth_test/new_moonbit_test_examples.mbt:120:3-120:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:121:3-121:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:122:3-122:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:123:3-123:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/new_moonbit_test_examples.mbt:161:7-161:17 [E0002] Warning (unused_value): Unused variable 'cache_size'
-Found 10 tests in new_moonbit_test_examples.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_moonbit_test_examples.mbt:181:3-181:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:182:3-182:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:183:3-183:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_moonbit_test_examples.mbt:184:3-184:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_moonbit_test_examples.mbt compilation failed
 Checking new_comprehensive_moonbit_tests.mbt...
-Found 10 tests in new_comprehensive_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_comprehensive_moonbit_tests.mbt:177:3-177:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_comprehensive_moonbit_tests.mbt:178:3-178:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_comprehensive_moonbit_tests.mbt:179:3-179:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_moonbit_tests.mbt:180:3-180:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_comprehensive_moonbit_tests.mbt compilation failed
 Checking additional_moonbit_tests_final.mbt...
 azimuth_test/additional_moonbit_tests_final.mbt:62:7-62:12 [E0002] Warning (unused_value): Unused variable 'value'
-Found 10 tests in additional_moonbit_tests_final.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_moonbit_tests_final.mbt:72:3-72:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:77:3-77:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:102:3-102:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:103:3-103:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:218:3-218:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:226:3-226:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:234:3-234:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:238:3-238:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_final.mbt:250:3-250:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_moonbit_tests_final.mbt compilation failed
 Checking new_test_cases.mbt...
-Found 10 tests in new_test_cases.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_test_cases.mbt:122:3-122:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_test_cases.mbt:123:3-123:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_test_cases.mbt:132:3-132:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_test_cases.mbt:133:3-133:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_test_cases.mbt:134:3-134:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_test_cases.mbt:135:3-135:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: new_test_cases.mbt compilation failed
 Checking moon_test_standard.mbt...
 Found 10 tests in moon_test_standard.mbt
 test ... ok
@@ -3538,19 +3067,7 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
-Checking standard_test_suite.mbt...
-Found 11 tests in standard_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Test file standard_test_suite.mbt not found
 Checking additional_test_scenarios.mbt...
 Found 10 tests in additional_test_scenarios.mbt
 test ... ok
@@ -3591,17 +3108,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_moonbit_tests_new.mbt...
-Found 10 tests in additional_moonbit_tests_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_moonbit_tests_new.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:120:3-120:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:121:3-121:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:124:3-124:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:125:3-125:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_new.mbt:126:3-126:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_moonbit_tests_new.mbt compilation failed
 Checking moonbit_standard_test_cases_new.mbt...
 Found 9 tests in moonbit_standard_test_cases_new.mbt
 test ... ok
@@ -3614,17 +3128,88 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests_new.mbt...
-Found 10 tests in standard_moonbit_tests_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_new.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:6:25-6:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:9:27-9:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:18:3-18:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:18:31-18:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:19:3-19:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:19:31-19:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:22:25-22:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:23:3-23:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:23:25-23:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:24:26-24:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:29:3-29:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:29:25-29:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:30:3-30:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:30:26-30:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:31:3-31:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:31:25-31:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:32:3-32:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:32:25-32:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:40:3-40:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:40:31-40:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:43:3-43:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:43:25-43:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:44:3-44:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:44:26-44:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:49:3-49:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:49:46-49:53 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:50:3-50:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:50:48-50:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:51:3-51:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:51:41-51:48 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:52:3-52:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:52:43-52:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:60:14-60:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:61:3-61:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:64:19-64:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:64:40-64:47 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:65:3-65:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:3-74:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:22-74:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:42-74:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:3-77:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:22-77:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:47-77:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:3-80:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:22-80:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:43-80:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:64-80:71 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:77-80:84 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:102-80:109 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:90:18-90:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:91:15-91:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:92:3-92:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:96:20-96:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:96:33-96:40 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:97:3-97:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:106:3-106:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:106:26-106:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:107:3-107:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:107:25-107:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:108:3-108:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:108:25-108:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:111:3-111:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:111:34-111:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:112:3-112:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:112:35-112:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:117:3-117:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:118:3-118:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:119:3-119:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:120:3-120:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:124:3-124:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:124:24-124:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:125:3-125:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:125:24-125:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+Error: standard_moonbit_tests_new.mbt compilation failed
 Checking new_moon_test_cases.mbt...
 Found 10 tests in new_moon_test_cases.mbt
 test ... ok
@@ -3650,27 +3235,29 @@ test ... ok
 test ... ok
 test ... ok
 Checking advanced_ceiling_tests.mbt...
-Found 8 tests in advanced_ceiling_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/advanced_ceiling_tests.mbt:76:3-76:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: advanced_ceiling_tests.mbt compilation failed
 Checking enhanced_practical_tests.mbt...
-Found 10 tests in enhanced_practical_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/enhanced_practical_tests.mbt:53:3-53:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:56:3-56:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:59:3-59:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:64:3-64:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:68:3-68:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:76:3-76:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:81:3-81:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:86:3-86:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:107:3-107:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:132:3-132:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:133:3-133:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:142:3-142:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:145:3-145:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:148:3-148:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:151:3-151:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:159:3-159:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:199:3-199:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:210:3-210:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/enhanced_practical_tests.mbt:218:3-218:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: enhanced_practical_tests.mbt compilation failed
 Checking moonbit_enhanced_tests.mbt...
 Found 10 tests in moonbit_enhanced_tests.mbt
 test ... ok
@@ -3696,18 +3283,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking enhanced_moonbit_tests.mbt...
+azimuth_test/enhanced_moonbit_tests.mbt:148:3-148:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_tests.mbt:149:3-149:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_tests.mbt:150:3-150:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_tests.mbt:151:3-151:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_tests.mbt:154:3-154:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/enhanced_moonbit_tests.mbt:155:3-155:24 [E4021] Value assert_false not found in package `azimuth`.
 azimuth_test/enhanced_moonbit_tests.mbt:195:7-195:12 [E0002] Warning (unused_value): Unused variable 'terms'
-Found 10 tests in enhanced_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: enhanced_moonbit_tests.mbt compilation failed
 Checking simple_enhanced_test.mbt...
 Found 3 tests in simple_enhanced_test.mbt
 test ... ok
@@ -3791,44 +3374,32 @@ azimuth_test/moonbit_simple_tests.mbt:218:22-218:25 [E4021] The value identifier
 azimuth_test/moonbit_simple_tests.mbt:219:3-219:12 [E4021] The value identifier assert_eq is unbound.
 Error: moonbit_simple_tests.mbt compilation failed
 Checking moonbit_comprehensive_tests.mbt...
-Found 10 tests in moonbit_comprehensive_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_comprehensive_tests.mbt:198:3-198:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_comprehensive_tests.mbt:199:3-199:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_comprehensive_tests.mbt compilation failed
 Checking new_advanced_moon_tests.mbt...
 azimuth_test/new_advanced_moon_tests.mbt:200:7-200:19 [E0002] Warning (unused_value): Unused variable 'base_weekday'
 azimuth_test/new_advanced_moon_tests.mbt:239:7-239:17 [E0002] Warning (unused_value): Unused variable 'remainder3'
 azimuth_test/new_advanced_moon_tests.mbt:254:7-254:17 [E0002] Warning (unused_value): Unused variable 'remainder6'
-Found 10 tests in new_advanced_moon_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_advanced_moon_tests.mbt:289:3-289:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_advanced_moon_tests.mbt:295:3-295:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: new_advanced_moon_tests.mbt compilation failed
 Checking moonbit_enhanced_test_suite.mbt...
-Found 10 tests in moonbit_enhanced_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/moonbit_enhanced_test_suite.mbt:128:3-128:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:129:3-129:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:130:3-130:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:137:3-137:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:138:3-138:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:152:3-152:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:156:3-156:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:160:3-160:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:164:3-164:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:230:3-230:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:234:3-234:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:239:3-239:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:240:3-240:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/moonbit_enhanced_test_suite.mbt:245:3-245:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: moonbit_enhanced_test_suite.mbt compilation failed
 Checking practical_moonbit_tests.mbt...
 azimuth_test/practical_moonbit_tests.mbt:160:7-160:11 [E0002] Warning (unused_value): Unused variable 'time'
 Found 10 tests in practical_moonbit_tests.mbt
@@ -4011,6 +3582,10 @@ azimuth_test/additional_moonbit_test_suite.mbt:67:3-67:10 [E3002] Expected upper
 azimuth_test/additional_moonbit_test_suite.mbt:67:12-67:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/additional_moonbit_test_suite.mbt:126:7-126:14 [E0002] Warning (unused_value): Unused variable 'gravity'
 azimuth_test/additional_moonbit_test_suite.mbt:135:7-135:13 [E0002] Warning (unused_value): Unused variable 'values'
+azimuth_test/additional_moonbit_test_suite.mbt:162:3-162:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_test_suite.mbt:163:3-163:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_test_suite.mbt:164:3-164:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_test_suite.mbt:165:3-165:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/additional_moonbit_test_suite.mbt:168:3-168:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/additional_moonbit_test_suite.mbt:168:12-168:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/additional_moonbit_test_suite.mbt:169:3-169:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -4019,60 +3594,33 @@ azimuth_test/additional_moonbit_test_suite.mbt:170:3-170:10 [E3002] Expected upp
 azimuth_test/additional_moonbit_test_suite.mbt:170:12-170:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 azimuth_test/additional_moonbit_test_suite.mbt:171:3-171:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/additional_moonbit_test_suite.mbt:171:12-171:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+azimuth_test/additional_moonbit_test_suite.mbt:174:3-174:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_test_suite.mbt:175:3-175:23 [E4021] Value assert_true not found in package `azimuth`.
 Error: additional_moonbit_test_suite.mbt compilation failed
 Checking simple_additional_tests.mbt...
-Found 10 tests in simple_additional_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/simple_additional_tests.mbt:82:3-82:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/simple_additional_tests.mbt:83:3-83:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: simple_additional_tests.mbt compilation failed
 Checking optimized_moonbit_tests.mbt...
-Found 10 tests in optimized_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/optimized_moonbit_tests.mbt:64:3-64:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/optimized_moonbit_tests.mbt:65:3-65:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/optimized_moonbit_tests.mbt:71:3-71:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/optimized_moonbit_tests.mbt:72:3-72:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: optimized_moonbit_tests.mbt compilation failed
 Checking simple_optimized_tests.mbt...
-Found 10 tests in simple_optimized_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/simple_optimized_tests.mbt:22:3-22:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/simple_optimized_tests.mbt:23:3-23:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: simple_optimized_tests.mbt compilation failed
 Checking ../new_enhanced_tests.mbt...
-Found 7 tests in ../new_enhanced_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-Checking ../simple_verification_test.mbt...
-Found 4 tests in ../simple_verification_test.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_enhanced_tests.mbt:163:3-163:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_enhanced_tests.mbt:164:3-164:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_enhanced_tests.mbt:169:3-169:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_enhanced_tests.mbt:170:3-170:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_enhanced_tests.mbt:171:3-171:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_enhanced_tests.mbt:172:3-172:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: ../new_enhanced_tests.mbt compilation failed
+Test file ../simple_verification_test.mbt not found
 Checking my_new_tests.mbt...
-azimuth_test/my_new_tests.mbt:43:7-43:13 [E0002] Warning (unused_value): Unused variable 'target'
 Found 9 tests in my_new_tests.mbt
 test ... ok
 test ... ok
@@ -4167,15 +3715,14 @@ test ... ok
 test ... ok
 test ... ok
 Checking new_comprehensive_standard_tests.mbt...
-Found 8 tests in new_comprehensive_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/new_comprehensive_standard_tests.mbt:114:3-114:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:116:3-116:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:117:3-117:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:127:3-127:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:128:3-128:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/new_comprehensive_standard_tests.mbt:142:22-142:35 [E4095] Integer literal 2000000000000 is out of range.
+Error: new_comprehensive_standard_tests.mbt compilation failed
 Checking user_comprehensive_tests.mbt...
 Found 10 tests in user_comprehensive_tests.mbt
 test ... ok
@@ -4200,8 +3747,7 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
+Found 9 tests in standard_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -4224,17 +3770,13 @@ test ... ok
 test ... ok
 test ... ok
 Checking user_moonbit_standard_tests.mbt...
-Found 10 tests in user_moonbit_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_moonbit_standard_tests.mbt:70:3-70:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_moonbit_standard_tests.mbt:71:3-71:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_moonbit_standard_tests.mbt:78:3-78:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_moonbit_standard_tests.mbt:79:3-79:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_moonbit_standard_tests.mbt:102:3-102:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_moonbit_standard_tests.mbt:103:3-103:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_moonbit_standard_tests.mbt compilation failed
 Checking standard_moonbit_core_tests.mbt...
 Found 10 tests in standard_moonbit_core_tests.mbt
 test ... ok
@@ -4248,17 +3790,88 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests_new.mbt...
-Found 10 tests in standard_moonbit_tests_new.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_new.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:6:25-6:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:9:27-9:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:18:3-18:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:18:31-18:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:19:3-19:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:19:31-19:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:22:25-22:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:23:3-23:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:23:25-23:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:24:26-24:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:29:3-29:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:29:25-29:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:30:3-30:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:30:26-30:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:31:3-31:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:31:25-31:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:32:3-32:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:32:25-32:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:40:3-40:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:40:31-40:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:43:3-43:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:43:25-43:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:44:3-44:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:44:26-44:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:49:3-49:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:49:46-49:53 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:50:3-50:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:50:48-50:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:51:3-51:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:51:41-51:48 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:52:3-52:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:52:43-52:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:60:14-60:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:61:3-61:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:64:19-64:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:64:40-64:47 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:65:3-65:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:3-74:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:22-74:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:74:42-74:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:3-77:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:22-77:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:77:47-77:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:3-80:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:22-80:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:43-80:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:64-80:71 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:77-80:84 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:80:102-80:109 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:90:18-90:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:91:15-91:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:92:3-92:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:96:20-96:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:96:33-96:40 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:97:3-97:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:106:3-106:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:106:26-106:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:107:3-107:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:107:25-107:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:108:3-108:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:108:25-108:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:111:3-111:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:111:34-111:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:112:3-112:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:112:35-112:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:117:3-117:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:118:3-118:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:119:3-119:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:120:3-120:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:124:3-124:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:124:24-124:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:125:3-125:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests_new.mbt:125:24-125:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+Error: standard_moonbit_tests_new.mbt compilation failed
 Checking user_additional_tests.mbt...
 Found 10 tests in user_additional_tests.mbt
 test ... ok
@@ -4284,42 +3897,55 @@ test ... ok
 test ... ok
 test ... ok
 Checking user_focused_moonbit_tests.mbt...
-Found 10 tests in user_focused_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_focused_moonbit_tests.mbt:107:3-107:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_moonbit_tests.mbt:108:3-108:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_focused_moonbit_tests.mbt:113:3-113:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_moonbit_tests.mbt:114:3-114:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_moonbit_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_moonbit_tests.mbt:116:3-116:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_focused_moonbit_tests.mbt compilation failed
 Checking user_focused_tests.mbt...
-Found 10 tests in user_focused_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_focused_tests.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:120:3-120:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:129:3-129:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:130:3-130:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:131:3-131:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_focused_tests.mbt compilation failed
 Checking azimuth_new_comprehensive_tests.mbt...
+azimuth_test/azimuth_new_comprehensive_tests.mbt:15:3-15:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:16:3-16:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:17:3-17:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:18:3-18:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:26:3-26:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:27:3-27:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:28:3-28:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:29:3-29:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:39:3-39:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:40:3-40:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:43:3-43:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:44:3-44:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:47:3-47:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:48:3-48:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:49:3-49:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:52:3-52:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:53:3-53:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:54:3-54:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:57:3-57:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:58:3-58:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:59:3-59:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:62:3-62:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:63:3-63:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:64:3-64:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:146:3-146:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:147:3-147:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:148:3-148:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:149:3-149:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:152:3-152:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:153:3-153:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:154:3-154:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_comprehensive_tests.mbt:155:3-155:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/azimuth_new_comprehensive_tests.mbt:163:7-163:14 [E0002] Warning (unused_value): Unused variable 'divisor'
-Found 10 tests in azimuth_new_comprehensive_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: azimuth_new_comprehensive_tests.mbt compilation failed
 Checking simple_user_tests.mbt...
 azimuth_test/simple_user_tests.mbt:83:7-83:9 [E0002] Warning (unused_value): Unused variable 'r3'
 azimuth_test/simple_user_tests.mbt:93:7-93:9 [E0002] Warning (unused_value): Unused variable 's2'
@@ -4487,17 +4113,12 @@ test ... ok
 test ... ok
 test ... ok
 Checking user_focused_tests.mbt...
-Found 10 tests in user_focused_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_focused_tests.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:120:3-120:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:129:3-129:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:130:3-130:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_focused_tests.mbt:131:3-131:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_focused_tests.mbt compilation failed
 Checking azimuth_comprehensive_unit_tests.mbt...
 azimuth_test/azimuth_comprehensive_unit_tests.mbt:89:7-89:8 [E0002] Warning (unused_value): Unused variable 'n'
 Found 10 tests in azimuth_comprehensive_unit_tests.mbt
@@ -4524,17 +4145,11 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_standard_tests.mbt...
-Found 10 tests in additional_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_standard_tests.mbt:110:3-110:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_standard_tests.mbt:111:3-111:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/additional_standard_tests.mbt:117:3-117:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_standard_tests.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: additional_standard_tests.mbt compilation failed
 Checking azimuth_standard_tests_enhanced.mbt...
 azimuth_test/azimuth_standard_tests_enhanced.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
 azimuth_test/azimuth_standard_tests_enhanced.mbt:7:17-7:20 [E4021] The value identifier add is unbound.
@@ -4581,17 +4196,13 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_moonbit_tests_v3.mbt...
-Found 10 tests in additional_moonbit_tests_v3.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/additional_moonbit_tests_v3.mbt:136:3-136:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_v3.mbt:137:3-137:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_v3.mbt:138:3-138:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_v3.mbt:139:3-139:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_v3.mbt:142:3-142:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/additional_moonbit_tests_v3.mbt:143:3-143:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: additional_moonbit_tests_v3.mbt compilation failed
 Checking user_comprehensive_standard_tests.mbt...
 Found 10 tests in user_comprehensive_standard_tests.mbt
 test ... ok
@@ -4605,8 +4216,7 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
+Found 9 tests in standard_moonbit_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -4617,6 +4227,10 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_standard_test_suite.mbt...
+azimuth_test/azimuth_standard_test_suite.mbt:91:3-91:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_test_suite.mbt:92:3-92:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_standard_test_suite.mbt:98:3-98:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_test_suite.mbt:99:3-99:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/azimuth_standard_test_suite.mbt:150:7-150:11 [E0002] Warning (unused_value): Unused variable 'fib1'
 azimuth_test/azimuth_standard_test_suite.mbt:151:7-151:11 [E0002] Warning (unused_value): Unused variable 'fib2'
 azimuth_test/azimuth_standard_test_suite.mbt:152:7-152:11 [E0002] Warning (unused_value): Unused variable 'fib3'
@@ -4624,17 +4238,7 @@ azimuth_test/azimuth_standard_test_suite.mbt:153:7-153:11 [E0002] Warning (unuse
 azimuth_test/azimuth_standard_test_suite.mbt:154:7-154:11 [E0002] Warning (unused_value): Unused variable 'fib5'
 azimuth_test/azimuth_standard_test_suite.mbt:155:7-155:11 [E0002] Warning (unused_value): Unused variable 'fib6'
 azimuth_test/azimuth_standard_test_suite.mbt:156:7-156:11 [E0002] Warning (unused_value): Unused variable 'fib7'
-Found 10 tests in azimuth_standard_test_suite.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+Error: azimuth_standard_test_suite.mbt compilation failed
 Checking standard_test_cases.mbt...
 Found 10 tests in standard_test_cases.mbt
 test ... ok
@@ -4648,54 +4252,30 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests_v15.mbt...
-Found 10 tests in standard_moonbit_tests_v15.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_v15.mbt:82:3-82:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v15.mbt:83:3-83:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_moonbit_tests_v15.mbt compilation failed
 Checking standard_moonbit_tests_v16.mbt...
-Found 10 tests in standard_moonbit_tests_v16.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_v16.mbt:90:3-90:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v16.mbt:91:3-91:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v16.mbt:97:3-97:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v16.mbt:98:3-98:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_moonbit_tests_v16.mbt compilation failed
 Checking azimuth_additional_edge_case_tests.mbt...
-Found 10 tests in azimuth_additional_edge_case_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_additional_edge_case_tests.mbt:66:3-66:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_edge_case_tests.mbt:67:3-67:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_additional_edge_case_tests.mbt:102:3-102:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_edge_case_tests.mbt:103:3-103:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_edge_case_tests.mbt:104:3-104:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_additional_edge_case_tests.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: azimuth_additional_edge_case_tests.mbt compilation failed
 Test file azimuth_standard_test_cases.mbt not found
 Checking user_new_standard_tests.mbt...
-Found 10 tests in user_new_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_new_standard_tests.mbt:111:3-111:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_standard_tests.mbt:112:3-112:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/user_new_standard_tests.mbt:118:3-118:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_standard_tests.mbt:119:3-119:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: user_new_standard_tests.mbt compilation failed
 Checking ../azimuth_enhanced_unit_tests.mbt...
 Found 8 tests in ../azimuth_enhanced_unit_tests.mbt
 test ... ok
@@ -4895,29 +4475,15 @@ azimuth_test/simple_test_add.mbt:6:3-6:12 [E4021] The value identifier assert_eq
 azimuth_test/simple_test_add.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
 Error: simple_test_add.mbt compilation failed
 Checking standard_moonbit_tests_v19.mbt...
-Found 10 tests in standard_moonbit_tests_v19.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests_v19.mbt:99:3-99:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v19.mbt:100:3-100:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v19.mbt:107:3-107:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_moonbit_tests_v19.mbt:108:3-108:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: standard_moonbit_tests_v19.mbt compilation failed
 Checking azimuth_standard_tests.mbt...
-Found 10 tests in azimuth_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_standard_tests.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_tests.mbt:106:3-106:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: azimuth_standard_tests.mbt compilation failed
 Checking standard_tests.mbt...
 Found 10 tests in standard_tests.mbt
 test ... ok
@@ -4931,28 +4497,13 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_standard_tests.mbt...
-Found 10 tests in azimuth_standard_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_standard_tests.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_tests.mbt:106:3-106:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: azimuth_standard_tests.mbt compilation failed
 Checking user_new_additional_tests.mbt...
-Found 9 tests in user_new_additional_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/user_new_additional_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/user_new_additional_tests.mbt:116:3-116:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: user_new_additional_tests.mbt compilation failed
 Test file ../../azimuth_enhanced_test_cases.mbt not found
 Checking azimuth_additional_test_cases.mbt...
 Found 10 tests in azimuth_additional_test_cases.mbt
@@ -4979,35 +4530,75 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_new_user_tests.mbt...
-Found 10 tests in azimuth_new_user_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_new_user_tests.mbt:133:3-133:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_user_tests.mbt:134:3-134:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_new_user_tests.mbt:140:3-140:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_new_user_tests.mbt:143:3-143:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: azimuth_new_user_tests.mbt compilation failed
 Checking azimuth_standard_moonbit_tests.mbt...
-Found 10 tests in azimuth_standard_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/azimuth_standard_moonbit_tests.mbt:100:3-100:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_moonbit_tests.mbt:101:3-101:24 [E4021] Value assert_false not found in package `azimuth`.
+azimuth_test/azimuth_standard_moonbit_tests.mbt:107:3-107:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/azimuth_standard_moonbit_tests.mbt:108:3-108:23 [E4021] Value assert_true not found in package `azimuth`.
+Error: azimuth_standard_moonbit_tests.mbt compilation failed
 Test file ../../azimuth_standard_test_cases.mbt not found
 Checking simple_test_new3.mbt...
 Found 1 tests in simple_test_new3.mbt
 test ... ok
 Checking ../concise_core_tests.mbt...
 Found 10 tests in ../concise_core_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking ../standard_essential_tests.mbt...
+azimuth_test/standard_essential_tests.mbt:85:3-85:23 [E4021] Value assert_true not found in package `azimuth`.
+azimuth_test/standard_essential_tests.mbt:86:3-86:24 [E4021] Value assert_false not found in package `azimuth`.
+Error: ../standard_essential_tests.mbt compilation failed
+Checking advanced_test_scenarios.mbt...
+azimuth_test/advanced_test_scenarios.mbt:30:7-30:19 [E0002] Warning (unused_value): Unused variable 'monthly_rate'
+Found 10 tests in advanced_test_scenarios.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_comprehensive_test_suite.mbt...
+Found 9 tests in standard_comprehensive_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking standard_enhanced_tests.mbt...
+Found 10 tests in standard_enhanced_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking enhanced_azimuth_tests.mbt...
+Found 10 tests in enhanced_azimuth_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -5040,7 +4631,15 @@ test ... ok
 test ... ok
 test ... ok
 Testing test_only...
-Found 13 tests in test_only
+Found 21 tests in test_only
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -5055,6 +4654,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1586 tests passed, 0 failed
+799 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
