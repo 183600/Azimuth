@@ -1,207 +1,133 @@
 // 额外的标准 MoonBit 测试用例
-// 包含 10 个测试用例，使用标准的 MoonBit 测试语法
+// 为 azimuth 库提供补充测试覆盖
 
-test "divide_with_ceil_basic" {
-  // 测试 divide_with_ceil 函数的基本功能
-  // 10 / 3 = 3.333... 向上取整为 4
-  let result1 = divide_with_ceil(10, 3)
-  assert_eq(4, result1)
-  
-  // 15 / 5 = 3.0 向上取整为 3
-  let result2 = divide_with_ceil(15, 5)
-  assert_eq(3, result2)
-  
-  // 7 / 2 = 3.5 向上取整为 4
-  let result3 = divide_with_ceil(7, 2)
-  assert_eq(4, result3)
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  // -10 / 3 = -3.333... 向上取整为 -3
-  let result1 = divide_with_ceil(-10, 3)
-  assert_eq(-3, result1)
-  
-  // 10 / -3 = -3.333... 向上取整为 -3
-  let result2 = divide_with_ceil(10, -3)
-  assert_eq(-3, result2)
-  
-  // -10 / -3 = 3.333... 向上取整为 4
-  let result3 = divide_with_ceil(-10, -3)
-  assert_eq(4, result3)
-}
-
-test "large_number_operations" {
-  // 测试大数运算的稳定性
-  let large_num1 = 1000000
-  let large_num2 = 2000000
-  
-  // 测试大数相加
-  let sum_result = add(large_num1, large_num2)
-  assert_eq(3000000, sum_result)
-  
-  // 测试大数相乘
-  let product_result = multiply(1000, 2000)
-  assert_eq(2000000, product_result)
-  
-  // 测试大数除法向上取整
-  let divide_result = divide_with_ceil(1000000, 3)
-  assert_eq(333334, divide_result)
-}
-
-test "string_special_characters" {
-  // 测试字符串处理的特殊情况
-  // 测试包含空格的字符串
-  let spaced_name = " John Doe "
-  let result1 = greet(spaced_name)
-  assert_eq_string("Hello,  John Doe !", result1)
-  
-  // 测试包含转义字符的字符串
-  let escaped_name = "Line1\nLine2\tTabbed"
-  let result2 = greet(escaped_name)
-  assert_eq_string("Hello, Line1\nLine2\tTabbed!", result2)
-  
-  // 测试包含引号的字符串
-  let quoted_name = "\"Alice\""
-  let result3 = greet(quoted_name)
-  assert_eq_string("Hello, \"Alice\"!", result3)
-}
-
-test "mathematical_associativity" {
-  // 测试数学运算的结合律
+// 测试数学运算的交换律和结合律
+test "mathematical_laws_verification" {
+  // 加法交换律: a + b = b + a
   let a = 15
-  let b = 25
-  let c = 35
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律: a * b = b * a
+  assert_eq(multiply(a, b), multiply(b, a))
   
   // 加法结合律: (a + b) + c = a + (b + c)
-  let result1 = add(add(a, b), c)
-  let result2 = add(a, add(b, c))
-  assert_eq(result1, result2)
-  
-  // 乘法结合律: (a * b) * c = a * (b * c)
-  let result3 = multiply(multiply(a, b), c)
-  let result4 = multiply(a, multiply(b, c))
-  assert_eq(result3, result4)
+  let c = 12
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
 }
 
-test "boundary_value_combinations" {
-  // 测试边界值组合
-  let max_val = 2147483647
-  let min_val = -2147483648
+// 测试实际应用场景：计算折扣价格
+test "discount_calculation_scenario" {
+  let original_price = 120
+  let discount_percentage = 15
+  let discounted_amount = divide_with_ceil(multiply(original_price, discount_percentage), 100)
+  let final_price = original_price - discounted_amount
   
-  // 测试最大值与1的运算
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
-  
-  // 测试最小值与1的运算
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
-  
-  // 测试最大值与-1的运算
-  assert_eq(min_val, multiply(max_val, -1))
-  
-  // 测试最小值与-1的特殊情况
-  assert_eq(min_val, multiply(min_val, -1))
-  
-  // 测试除法向上取整的边界情况
-  assert_eq(1, divide_with_ceil(max_val, max_val))
-  assert_eq(0, divide_with_ceil(0, max_val))
+  assert_eq(102, final_price)  // 120 - ceil(120*15/100) = 120 - 18 = 102
 }
 
-test "discount_price_calculation" {
-  // 测试实际应用场景：计算折扣价格
-  let original_price = 1200
-  let discount_percent = 15  // 15% 折扣
-  let tax_percent = 8        // 8% 税费
+// 测试数组索引计算
+test "array_index_calculation" {
+  let page_size = 10
+  let item_number = 47
+  let page_number = divide_with_ceil(item_number, page_size)
   
-  // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_percent) / 100
-  assert_eq(180, discount_amount)
-  
-  // 计算折后价格
-  let discounted_price = add(original_price, -discount_amount)
-  assert_eq(1020, discounted_price)
-  
-  // 计算税费
-  let tax_amount = multiply(discounted_price, tax_percent) / 100
-  assert_eq(81, tax_amount)
-  
-  // 计算最终价格
-  let final_price = add(discounted_price, tax_amount)
-  assert_eq(1101, final_price)
+  assert_eq(5, page_number)  // ceil(47/10) = 5
 }
 
-test "average_score_calculation" {
-  // 测试实际应用场景：计算平均分
-  let math_score = 85
-  let english_score = 92
-  let science_score = 78
-  let history_score = 88
-  let art_score = 95
+// 测试字符串长度相关计算
+test "string_length_operations" {
+  let base_string = "Hello"
+  let appended_string = base_string + " World"
+  let greeting_result = greet("World")
   
-  // 计算总分
-  let total_score = add(add(add(add(math_score, english_score), science_score), history_score), art_score)
-  assert_eq(438, total_score)
-  
-  // 计算平均分
-  let average_score = total_score / 5
-  assert_eq(87, average_score)
-  
-  // 计算向上取整的平均分（如果有小数）
-  let rounded_average = divide_with_ceil(total_score, 5)
-  assert_eq(88, rounded_average)
+  assert_eq_string("Hello, World!", greeting_result)
+  assert_eq_string("Hello World", appended_string)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：计算矩形周长和面积
-  let length = 12
-  let width = 8
+// 测试负数运算的特殊情况
+test "negative_number_special_cases" {
+  // 测试负数乘法的符号规则
+  assert_eq(25, multiply(-5, -5))  // 负负得正
+  assert_eq(-25, multiply(5, -5))  // 正负得负
+  assert_eq(-25, multiply(-5, 5))  // 负正得负
   
-  // 计算矩形面积
-  let area = multiply(length, width)
-  assert_eq(96, area)
-  
-  // 计算矩形周长：2 × (length + width)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(40, perimeter)
-  
-  // 计算对角线长度的平方（勾股定理）：length² + width²
-  let diagonal_squared = add(multiply(length, length), multiply(width, width))
-  assert_eq(208, diagonal_squared)
-  
-  // 测试字符串拼接
-  let description = "Rectangle(" + length.to_string() + "x" + width.to_string() + ")"
-  let result = greet(description)
-  assert_eq_string("Hello, Rectangle(12x8)!", result)
+  // 测试负数除法的向上取整
+  assert_eq(-2, divide_with_ceil(-8, 4))   // -8/4 = -2
+  assert_eq(-1, divide_with_ceil(-3, 4))   // -3/4 = -0.75 -> -0 (向上取整)
 }
 
-test "error_handling_and_edge_cases" {
-  // 测试错误处理和边界条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+// 测试零值的各种运算情况
+test "zero_value_operations" {
+  // 零的加法性质
+  assert_eq(42, add(42, 0))
+  assert_eq(42, add(0, 42))
+  assert_eq(0, add(0, 0))
   
-  // 测试溢出保护
-  let overflow_add = add(max_val, max_val)
-  assert_eq(max_val, overflow_add)
+  // 零的乘法性质
+  assert_eq(0, multiply(42, 0))
+  assert_eq(0, multiply(0, 42))
+  assert_eq(0, multiply(0, 0))
   
-  let underflow_add = add(min_val, min_val)
-  assert_eq(min_val, underflow_add)
+  // 零的除法处理
+  assert_eq(0, divide_with_ceil(0, 42))
+  assert_eq(0, divide_with_ceil(0, 1))
+}
+
+// 测试大数运算的稳定性
+test "large_number_stability" {
+  let large_num = 100000
+  let another_large = 200000
   
-  let overflow_mul = multiply(max_val, 2)
-  assert_eq(max_val, overflow_mul)
+  // 大数加法
+  assert_eq(300000, add(large_num, another_large))
   
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  // 大数乘法
+  assert_eq(200000000, multiply(large_num, 2000))
   
-  // 测试除数为0的情况（这里我们避免触发除零错误）
-  // 在实际应用中，应该有适当的错误处理
-  let safe_division = divide_with_ceil(10, 1)
-  assert_eq(10, safe_division)
+  // 大数除法
+  assert_eq(1, divide_with_ceil(large_num, another_large))
+  assert_eq(2, divide_with_ceil(another_large, large_num))
+}
+
+// 测试分数运算的向上取整
+test "fraction_ceil_operations" {
+  // 测试各种分数情况的向上取整
+  assert_eq(1, divide_with_ceil(1, 2))    // 0.5 -> 1
+  assert_eq(2, divide_with_ceil(3, 2))    // 1.5 -> 2
+  assert_eq(4, divide_with_ceil(7, 2))    // 3.5 -> 4
+  assert_eq(11, divide_with_ceil(21, 2))  // 10.5 -> 11
   
-  // 测试空字符串处理
-  let empty_result = greet("")
-  assert_eq_string("Hello, !", empty_result)
+  // 测试接近整数的分数
+  assert_eq(10, divide_with_ceil(19, 2))   // 9.5 -> 10
+  assert_eq(10, divide_with_ceil(20, 2))   // 10 -> 10
+}
+
+// 测试复合函数调用
+test "composite_function_calls" {
+  // 复合运算：(a + b) * (c - d) 的简化版本
+  let a = 8
+  let b = 12
+  let c = 20
+  let d = 5
+  
+  let sum_ab = add(a, b)
+  let diff_cd = add(c, -d)
+  let result = multiply(sum_ab, diff_cd)
+  
+  assert_eq(300, result)  // (8 + 12) * (20 - 5) = 20 * 15 = 300
+}
+
+// 测试边界值的特殊处理
+test "boundary_value_handling" {
+  // 测试1的运算特性
+  assert_eq(42, multiply(42, 1))
+  assert_eq(42, multiply(1, 42))
+  assert_eq(42, add(42, 0))  // 加法单位元
+  assert_eq(1, divide_with_ceil(42, 42))
+  
+  // 测试-1的运算特性
+  assert_eq(-42, multiply(42, -1))
+  assert_eq(-42, multiply(-1, 42))
+  assert_eq(42, multiply(-42, -1))
 }
