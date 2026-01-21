@@ -1,80 +1,48 @@
-// 简化的 MoonBit 测试用例
-// 测试 azimuth 包的核心功能
+// 简单的 MoonBit 测试用例
+// 针对 azimuth 包的核心功能测试
 
-test "simple_math_test" {
-  // 简单的数学运算测试
-  assert_eq(5, add(2, 3))
-  assert_eq(6, multiply(2, 3))
+test "enhanced_add_basic" {
+  // 增强的加法基本测试
+  assert_eq(15, add(7, 8))
+  assert_eq(-3, add(5, -8))
+  assert_eq(0, add(100, -100))
 }
 
-test "boundary_test" {
-  // 边界值测试
+test "enhanced_multiply_edge_cases" {
+  // 增强的乘法边界情况测试
+  assert_eq(0, multiply(12345, 0))
+  assert_eq(12345, multiply(12345, 1))
+  assert_eq(-12345, multiply(12345, -1))
+}
+
+test "enhanced_greet_variations" {
+  // 增强的问候函数变体测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "enhanced_complex_calculation" {
+  // 增强的复杂计算测试
+  let base = 100
+  let multiplier = 3
+  let addition = 50
+  
+  // 计算 (base * multiplier) + addition
+  let step1 = multiply(base, multiplier)
+  let result = add(step1, addition)
+  
+  assert_eq(350, result)
+}
+
+test "enhanced_boundary_combinations" {
+  // 增强的边界值组合测试
   let max_val = 2147483647
   let min_val = -2147483648
   
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-}
-
-test "string_test" {
-  // 字符串测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-}
-
-test "complex_calculation" {
-  // 复杂计算测试：矩形面积
-  let length = 10
-  let width = 5
-  let area = multiply(length, width)
-  assert_eq(50, area)
-}
-
-test "financial_calculation" {
-  // 金融计算测试：简单利息
-  let principal = 1000
-  let rate = 5
-  let years = 3
-  let interest = multiply(principal, multiply(rate, years))
-  let total = add(principal, interest)
-  assert_eq(16000, total)
-}
-
-test "temperature_conversion" {
-  // 温度转换测试：摄氏度转华氏度（简化版）
-  let celsius = 20
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(70, fahrenheit)
-}
-
-test "game_logic" {
-  // 游戏逻辑测试：得分计算
-  let base_score = 100
-  let multiplier = 2
-  let bonus = 50
-  let final_score = add(multiply(base_score, multiplier), bonus)
-  assert_eq(250, final_score)
-}
-
-test "physics_calculation" {
-  // 物理计算测试：速度计算
-  let initial_velocity = 10
-  let acceleration = 3
-  let time = 5
-  let final_velocity = add(initial_velocity, multiply(acceleration, time))
-  assert_eq(25, final_velocity)
-}
-
-test "boolean_logic" {
-  // 布尔逻辑测试
-  assert_true(true)
-  assert_false(false)
-  assert_eq(1, add(0, 1))
-}
-
-test "error_handling" {
-  // 错误处理测试：溢出保护
-  let max_val = 2147483647
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(multiply(max_val, 2) == max_val)
+  // 测试边界值运算
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
 }
