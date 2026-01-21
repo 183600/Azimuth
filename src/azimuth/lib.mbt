@@ -6709,3 +6709,116 @@ test "enhanced_assertion_functions_validation" {
   let product = multiply(6, 7)
   assert_true(product == 42)
 }
+
+// 新增的高质量 MoonBit 测试用例
+test "high_quality_add_comprehensive" {
+  // 测试加法函数的各种情况
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-8, add(-3, -5))
+  assert_eq(2147483647, add(2147483646, 1))
+  assert_eq(-2147483648, add(-2147483647, -1))
+}
+
+test "high_quality_multiply_comprehensive" {
+  // 测试乘法函数的各种情况
+  assert_eq(15, multiply(3, 5))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(2147483647, multiply(46340, 46340))
+  assert_eq(-2147483648, multiply(-46341, 46341))
+}
+
+test "high_quality_greet_comprehensive" {
+  // 测试greet函数的各种情况
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 测试123!", greet("测试123"))
+  assert_eq_string("Hello, User@123!", greet("User@123"))
+}
+
+test "high_quality_geometry_calculation" {
+  // 复杂计算场景：计算矩形的面积和周长
+  let length = 8
+  let width = 5
+  
+  let area = multiply(length, width)
+  let perimeter = multiply(2, add(length, width))
+  let total = add(area, perimeter)
+  
+  assert_eq(66, total) // 8*5 + 2*(8+5) = 40 + 26 = 66
+}
+
+test "high_quality_financial_scenario" {
+  // 金融计算场景：贷款利息计算
+  let principal = 10000
+  let rate = 5  // 5%
+  let years = 3
+  
+  let interest = multiply(principal, multiply(rate, years))
+  let total = add(principal, interest)
+  
+  assert_eq(160000, total) // 10000 + 10000*5*3 = 160000
+}
+
+test "high_quality_math_properties" {
+  // 数学性质验证
+  let a = 12
+  let b = 8
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+}
+
+test "high_quality_boundary_values" {
+  // 边界值处理测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 溢出保护测试
+  assert_eq(max_val, add(max_val, 1))
+  assert_eq(min_val, add(min_val, -1))
+  assert_eq(max_val, multiply(max_val, 2))
+  assert_eq(min_val, multiply(min_val, -1))
+}
+
+test "high_quality_shopping_cart" {
+  // 实际应用：购物车计算
+  let item1_price = 299
+  let item1_quantity = 2
+  let item2_price = 199
+  let item2_quantity = 3
+  let shipping = 15
+  
+  let subtotal1 = multiply(item1_price, item1_quantity)
+  let subtotal2 = multiply(item2_price, item2_quantity)
+  let cart_total = add(add(subtotal1, subtotal2), shipping)
+  
+  assert_eq(1294, cart_total) // 299*2 + 199*3 + 15 = 598 + 597 + 15 = 1294
+}
+
+test "high_quality_temperature_conversion" {
+  // 温度转换计算（简化版）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 2), 30)
+  
+  assert_eq(80, fahrenheit) // 25 * 2 + 30 = 80
+  
+  // 测试冰点
+  let freezing = add(multiply(0, 2), 30)
+  assert_eq(30, freezing)
+}
+
+test "high_quality_assert_validation" {
+  // 断言函数验证
+  assert_true(true)
+  assert_false(false)
+  assert_eq(42, 42)
+  assert_eq_string("MoonBit", "MoonBit")
+}
