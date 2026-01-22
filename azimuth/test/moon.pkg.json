@@ -151,6 +151,8 @@
     "minimal_test.mbt",
     "azimuth_standard_tests_new.mbt",
     "quality_test_cases.mbt",
-    "additional_enhanced_tests.mbt"
+    "additional_enhanced_tests.mbt",
+    "moonbit_standard_enhanced_tests.mbt",
+    "simple_azimuth_enhanced_tests.mbt"
   ]
 }
