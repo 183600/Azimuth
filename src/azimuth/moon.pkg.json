@@ -9,6 +9,7 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
+    "simple_core_tests.mbt",
     "simple_concise_tests.mbt",
     "concise_standard_tests.mbt",
     "simple_quality_tests.mbt",
@@ -109,5 +110,6 @@
           "high_quality_test_cases.mbt",
           "standard_moonbit_tests_new.mbt",
           "simple_test.mbt",
-          "standard_core_tests.mbt"
+          "standard_core_tests.mbt",
+          "additional_core_tests.mbt"
           ]}
