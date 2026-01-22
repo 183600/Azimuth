@@ -1,4 +1,4 @@
-// 新的标准 MoonBit 测试用例
+// 标准 MoonBit 测试用例
 // 测试 azimuth 核心功能
 // 使用标准 MoonBit 测试语法
 
