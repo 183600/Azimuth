@@ -244,4 +244,15 @@ if [ -f "standard_test_cases.mbt" ]; then
   fi
 fi
 
+if [ -f "comprehensive_enhanced_tests.mbt" ]; then
+  echo "Checking comprehensive_enhanced_tests.mbt..."
+  # 使用 moonc.js 检查测试文件
+  node ../moonc.js check -pkg "$(basename $(pwd))" -std-path "../../core" -blackbox-test comprehensive_enhanced_tests.mbt -i ../azimuth.mi
+  if [ $? -eq 0 ]; then
+    echo "comprehensive_enhanced_tests.mbt ... ok"
+  else
+    echo "comprehensive_enhanced_tests.mbt ... failed"
+  fi
+fi
+
 echo "Tests completed"

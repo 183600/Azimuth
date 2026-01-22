@@ -153,6 +153,7 @@
     "quality_test_cases.mbt",
     "additional_enhanced_tests.mbt",
     "moonbit_standard_enhanced_tests.mbt",
-    "simple_azimuth_enhanced_tests.mbt"
+    "simple_azimuth_enhanced_tests.mbt",
+    "comprehensive_enhanced_tests.mbt"
   ]
 }
