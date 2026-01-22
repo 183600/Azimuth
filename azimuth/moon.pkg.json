@@ -1,7 +1,7 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
-  "files": ["lib.mbt", "quality_test_cases.mbt", "additional_enhanced_tests.mbt", "comprehensive_enhanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt"],
+  "files": ["lib.mbt", "quality_test_cases.mbt", "additional_enhanced_tests.mbt", "comprehensive_enhanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt", "standard_test_cases.mbt"],
   "link": {
     "azimuth/test": "self"
   }
