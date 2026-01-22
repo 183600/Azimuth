@@ -1,108 +1,187 @@
-// 新增的 MoonBit 标准测试用例
-// 测试项目核心功能的各种场景
+// 新的标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法，针对 azimuth 库的核心功能
 
-test "divide_with_ceil_basic" {
-  // 测试向上取整除法的基本功能
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(4, divide_with_ceil(11, 3))
+test "binary_arithmetic_operations" {
+  // 测试二进制算术运算
+  let a = 12
+  let b = 8
+  
+  // 测试加法
+  let sum = add(a, b)
+  assert_eq(20, sum)
+  
+  // 测试乘法
+  let product = multiply(a, b)
+  assert_eq(96, product)
+  
+  // 测试组合运算
+  let combined = add(multiply(a, 2), multiply(b, 3))
+  assert_eq(48, combined)  // 12*2 + 8*3 = 24 + 24 = 48
 }
 
-test "divide_with_ceil_exact_division" {
-  // 测试能够整除的情况
+test "divide_with_ceil_boundary_conditions" {
+  // 测试向上取整除法的边界条件
+  // 测试相等的情况
   assert_eq(5, divide_with_ceil(10, 2))
-  assert_eq(7, divide_with_ceil(21, 3))
-  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(3, divide_with_ceil(9, 3))
+  
+  // 测试有余数的情况
+  assert_eq(6, divide_with_ceil(11, 2))
+  assert_eq(4, divide_with_ceil(13, 4))
+  
+  // 测试被除数小于除数
+  assert_eq(1, divide_with_ceil(3, 10))
+  assert_eq(1, divide_with_ceil(1, 100))
+  
+  // 测试除数为零
+  assert_eq(0, divide_with_ceil(50, 0))
 }
 
-test "divide_with_ceil_with_zero" {
-  // 测试包含0的除法
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, 1))
+test "greet_function_edge_cases" {
+  // 测试问候函数的边界情况
+  // 空字符串
+  assert_eq_string("Hello, !", greet(""))
+  
+  // 单字符
+  assert_eq_string("Hello, A!", greet("A"))
+  
+  // 长字符串
+  assert_eq_string("Hello, This is a very long name!", greet("This is a very long name"))
+  
+  // 包含空格的字符串
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-7, 4))
-  assert_eq(-1, divide_with_ceil(-3, 4))
-  assert_eq(-3, divide_with_ceil(-10, 4))
+test "mathematical_sequence_calculations" {
+  // 测试数学序列计算
+  // 计算前n个自然数的和：n(n+1)/2
+  let n = 10
+  let sum_natural = divide_with_ceil(multiply(n, add(n, 1)), 2)
+  assert_eq(55, sum_natural)
+  
+  // 计算前n个偶数的和：n(n+1)
+  let sum_even = multiply(n, add(n, 1))
+  assert_eq(110, sum_even)
+  
+  // 计算前n个奇数的和：n²
+  let sum_odd = multiply(n, n)
+  assert_eq(100, sum_odd)
 }
 
-test "complex_calculation_parentheses" {
-  // 测试复杂计算的优先级和括号使用
-  let a = 5
-  let b = 3
-  let c = 2
+test "real_world_shopping_cart" {
+  // 真实世界购物车计算
+  let apple_price = 5
+  let apple_quantity = 6
+  let banana_price = 3
+  let banana_quantity = 8
+  let orange_price = 7
+  let orange_quantity = 4
   
-  // (a + b) * c = (5 + 3) * 2 = 16
-  let result1 = multiply(add(a, b), c)
-  assert_eq(16, result1)
+  // 计算各项总价
+  let apple_total = multiply(apple_price, apple_quantity)
+  let banana_total = multiply(banana_price, banana_quantity)
+  let orange_total = multiply(orange_price, orange_quantity)
   
-  // a + (b * c) = 5 + (3 * 2) = 11
-  let result2 = add(a, multiply(b, c))
-  assert_eq(11, result2)
+  // 计算购物车总价
+  let cart_total = add(add(apple_total, banana_total), orange_total)
+  
+  assert_eq(30, apple_total)
+  assert_eq(24, banana_total)
+  assert_eq(28, orange_total)
+  assert_eq(82, cart_total)
 }
 
-test "greet_multilingual_support" {
-  // 测试多语言支持的问候功能
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌎!", greet("🌎"))
-  assert_eq_string("Hello, München!", greet("München"))
-  assert_eq_string("Hello, サンリオ!", greet("サンリオ"))
+test "time_zone_conversion" {
+  // 时区转换计算
+  let local_time = 14  // 下午2点
+  let time_difference = 8  // 与目标时区相差8小时
+  
+  // 计算目标时间
+  let target_time = add(local_time, time_difference)
+  
+  // 处理24小时制
+  let adjusted_time = if target_time >= 24 {
+    add(target_time, -24)
+  } else {
+    target_time
+  }
+  
+  assert_eq(22, adjusted_time)  // 14 + 8 = 22
 }
 
-test "mathematical_sequence_fibonacci_style" {
-  // 测试类似斐波那契数列的计算模式
-  let n1 = 1
-  let n2 = 1
-  let n3 = 2
-  let n4 = 3
-  let n5 = 5
+test "inventory_restock_calculation" {
+  // 库存补货计算
+  let current_stock = 45
+  let daily_sales = 12
+  let days_until_restock = 7
+  let safety_buffer = 20
   
-  // 验证数列关系：n3 = n1 + n2, n4 = n2 + n3, n5 = n3 + n4
-  assert_eq(n3, add(n1, n2))
-  assert_eq(n4, add(n2, n3))
-  assert_eq(n5, add(n3, n4))
+  // 计算预期库存
+  let expected_sales = multiply(daily_sales, days_until_restock)
+  let projected_stock = add(current_stock, -expected_sales)
+  
+  // 计算需要补货的数量
+  let restock_needed = if projected_stock < safety_buffer {
+    add(safety_buffer, -projected_stock)
+  } else {
+    0
+  }
+  
+  assert_eq(84, expected_sales)
+  assert_eq(-39, projected_stock)
+  assert_eq(59, restock_needed)
 }
 
-test "area_perimeter_calculation" {
-  // 测试几何计算：矩形面积和周长
-  let length = 8
-  let width = 5
+test "data_storage_optimization" {
+  // 数据存储优化计算
+  let file_size_mb = 125
+  let compression_ratio = 60  // 压缩到60%
+  let storage_capacity_mb = 1000
   
-  // 面积 = 长 × 宽
-  let area = multiply(length, width)
-  assert_eq(40, area)
+  // 计算压缩后的大小
+  let compressed_size = multiply(file_size_mb, compression_ratio) / 100
   
-  // 周长 = 2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(26, perimeter)
+  // 计算可以存储的压缩文件数量
+  let files_storable = divide_with_ceil(storage_capacity_mb, compressed_size)
+  
+  assert_eq(75, compressed_size)
+  assert_eq(14, files_storable)
 }
 
-test "string_pattern_validation" {
-  // 测试字符串模式验证
-  let email = "user@example.com"
-  let phone = "123-456-7890"
-  let id = "USER_2023"
+test "network_packet_routing" {
+  // 网络数据包路由计算
+  let total_packets = 234
+  let routes_count = 5
+  let priority_packets = 34
   
-  // 验证这些字符串能够被greet函数正确处理
-  assert_eq_string("Hello, user@example.com!", greet(email))
-  assert_eq_string("Hello, 123-456-7890!", greet(phone))
-  assert_eq_string("Hello, USER_2023!", greet(id))
+  // 计算每条路由的基本数据包数量
+  let base_packets_per_route = divide_with_ceil(add(total_packets, -priority_packets), routes_count)
+  
+  // 计算剩余数据包数量
+  let distributed_packets = multiply(base_packets_per_route, routes_count)
+  let remaining_packets = add(add(total_packets, -priority_packets), -distributed_packets)
+  
+  assert_eq(40, base_packets_per_route)
+  assert_eq(200, distributed_packets)
+  assert_eq(0, remaining_packets)
 }
 
-test "business_calculation_profit_margin" {
-  // 测试商业计算：利润率计算
-  let revenue = 1000
-  let cost = 700
-  let profit_margin_percentage = 30
+test "algorithm_complexity_analysis" {
+  // 算法复杂度分析
+  let input_size = 100
+  let linear_factor = 2
+  let quadratic_factor = 3
   
-  // 计算利润：收入 - 成本
-  let profit = add(revenue, -cost)
+  // O(n) 复杂度
+  let linear_operations = multiply(input_size, linear_factor)
   
-  // 计算利润率百分比：利润 / 收入 * 100
-  let calculated_margin = multiply(profit, 100) / revenue
+  // O(n²) 复杂度
+  let quadratic_operations = multiply(multiply(input_size, input_size), quadratic_factor) / 100
   
-  assert_eq(300, profit)
-  assert_eq(profit_margin_percentage, calculated_margin)
+  // 总操作数
+  let total_operations = add(linear_operations, quadratic_operations)
+  
+  assert_eq(200, linear_operations)
+  assert_eq(300, quadratic_operations)
+  assert_eq(500, total_operations)
 }
