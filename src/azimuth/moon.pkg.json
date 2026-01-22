@@ -3,6 +3,9 @@
   "import": [
     "moonbitlang/core"
   ],
+  "test-import": [
+    "azimuth/lib"
+  ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
     "core_tests.mbt",
@@ -63,6 +66,7 @@
     "../../azimuth_standard_tests.mbt",
     "standard_moonbit_test_additions.mbt",
     "azimuth_new_comprehensive_tests.mbt",
-    "azimuth_new_standard_tests.mbt"
+    "azimuth_new_standard_tests.mbt",
+    "quality_enhanced_test_cases.mbt"
   ]
 }
