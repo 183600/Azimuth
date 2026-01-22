@@ -1,4 +1,4 @@
-// 额外的标准 MoonBit 测试用例
+// 新的高质量 MoonBit 测试用例
 // 覆盖边界条件、错误处理和实际应用场景
 
 test "add_function_identity_property" {
@@ -173,8 +173,8 @@ test "string_processing_comprehensive" {
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   
   // 特殊字符处理
-  @azimuth.assert_eq_string("Hello, \\n\\t!", @azimuth.greet("\\n\\t"))
-  @azimuth.assert_eq_string("Hello, \\'\\\"!", @azimuth.greet("\\'\\""))
+  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
+  @azimuth.assert_eq_string("Hello, '\"!", @azimuth.greet("'\""))
   
   // 长字符串处理
   let long_name = "VeryLongNameThatExceedsNormalExpectations"

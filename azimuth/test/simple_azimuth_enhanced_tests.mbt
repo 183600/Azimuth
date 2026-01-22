@@ -1,38 +1,38 @@
-// 简单的 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 简单增强的 azimuth 测试用例
+// 测试核心功能的各种场景
 
-test "simple_add_test" {
-  // 测试基本加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-1, @azimuth.add(-2, 1))
+test "add_function_enhanced" {
+  // 测试加法函数的增强场景
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(0, @azimuth.add(1000, -1000))
+  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
 }
 
-test "simple_multiply_test" {
-  // 测试基本乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-4, @azimuth.multiply(-2, 2))
+test "multiply_function_enhanced" {
+  // 测试乘法函数的增强场景
+  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
+  @azimuth.assert_eq(-100, @azimuth.multiply(10, -10))
+  @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
 }
 
-test "simple_greet_test" {
-  // 测试基本问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "greet_function_enhanced" {
+  // 测试问候函数的增强场景
+  @azimuth.assert_eq_string("Hello, Enhanced!", @azimuth.greet("Enhanced"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
-test "simple_divide_with_ceil_test" {
-  // 测试基本向上取整除法功能
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+test "divide_with_ceil_enhanced" {
+  // 测试向上取整除法的增强场景
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(4, 2))
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
 }
 
-test "simple_edge_cases_test" {
-  // 测试边界情况
-  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
-  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
-  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+test "complex_calculation_enhanced" {
+  // 测试复杂计算场景
+  let step1 = @azimuth.add(10, 20)  // 30
+  let step2 = @azimuth.multiply(step1, 2)  // 60
+  let step3 = @azimuth.divide_with_ceil(step2, 25)  // 3
+  @azimuth.assert_eq(3, step3)
 }
