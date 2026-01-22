@@ -222,5 +222,6 @@
             "high_quality_comprehensive_tests.mbt",
             "quality_focused_tests.mbt",
             "standard_moonbit_tests_v20.mbt",
-            "standard_moonbit_tests_v21.mbt"
+            "standard_moonbit_tests_v21.mbt",
+    "azimuth_new_quality_tests.mbt"
                 ]}
