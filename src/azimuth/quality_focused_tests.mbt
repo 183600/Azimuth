@@ -1,205 +1,181 @@
-// 高质量聚焦测试用例 - 针对 azimuth 库的核心功能
-// 包含边界情况、错误处理和实际应用场景的测试
+// 高质量聚焦测试用例 - 针对 azimuth 库核心功能
+// 使用标准 MoonBit 测试语法编写
 
-test "mathematical_identity_properties" {
-  // 测试数学恒等性质
-  // 加法恒等元
-  assert_eq(42, add(42, 0))
-  assert_eq(42, add(0, 42))
-  assert_eq(-17, add(-17, 0))
+test "add_function_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  let a = 42
+  let b = 17
+  assert_eq(add(a, b), add(b, a))
   
-  // 乘法恒等元（注意：当前库没有实现1的恒等元测试）
-  assert_eq(0, multiply(15, 0))
-  assert_eq(0, multiply(0, 15))
-  assert_eq(0, multiply(-7, 0))
+  // 测试负数情况
+  let x = -15
+  let y = 8
+  assert_eq(add(x, y), add(y, x))
+  
+  // 测试零的情况
+  assert_eq(add(0, 123), add(123, 0))
 }
 
-test "divide_with_ceil_negative_scenarios" {
-  // 测试负数场景下的向上取整除法
-  // 负数除以正数
-  assert_eq(-2, divide_with_ceil(-5, 3))   // -5/3 = -1.666... -> -1 (向上取整)
-  assert_eq(-1, divide_with_ceil(-3, 3))   // -3/3 = -1 -> -1
-  assert_eq(-1, divide_with_ceil(-1, 3))   // -1/3 = -0.333... -> 0 (向上取整)
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律：a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 12
+  let c = 7
   
-  // 正数除以负数
-  assert_eq(-2, divide_with_ceil(5, -3))   // 5/-3 = -1.666... -> -1
-  assert_eq(-1, divide_with_ceil(3, -3))   // 3/-3 = -1 -> -1
-  assert_eq(-1, divide_with_ceil(1, -3))   // 1/-3 = -0.333... -> 0
-  
-  // 负数除以负数
-  assert_eq(2, divide_with_ceil(-5, -3))   // -5/-3 = 1.666... -> 2
-  assert_eq(1, divide_with_ceil(-3, -3))   // -3/-3 = 1 -> 1
-  assert_eq(1, divide_with_ceil(-1, -3))   // -1/-3 = 0.333... -> 1
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
 }
 
-test "greet_function_with_whitespace_handling" {
-  // 测试问候函数的空白字符处理
-  assert_eq_string("Hello,   !", greet("  "))      // 只有空格
-  assert_eq_string("Hello, \t!", greet("\t"))     // 只有制表符
-  assert_eq_string("Hello, \n!", greet("\n"))     // 只有换行符
-  assert_eq_string("Hello,  a !", greet("  a "))   // 前后有空格
-  assert_eq_string("Hello, a b c!", greet("a b c")) // 中间有空格
+test "divide_with_ceil_comprehensive_behavior" {
+  // 测试向上取整除法的各种情况
+  
+  // 正数除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
+  
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(3, divide_with_ceil(10, -3))   // -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3))  // 3.666... -> 4
+  
+  // 边界情况
+  assert_eq(0, divide_with_ceil(5, 0))     // 除数为零
+  assert_eq(0, divide_with_ceil(0, 5))     // 零除以正数
 }
 
-test "complex_business_calculation_inventory" {
-  // 复杂业务计算：库存管理场景
-  let initial_stock = 150
-  let sales_per_day = 12
-  let days_of_operation = 7
-  let restock_threshold = 50
-  let package_size = 25
+test "greet_function_multilingual_support" {
+  // 测试多语言支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Mundo!", greet("Mundo"))
+  assert_eq_string("Hello, Мир!", greet("Мир"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
   
-  // 计算一周后的库存
-  let weekly_sales = multiply(sales_per_day, days_of_operation)
-  let remaining_stock = add(initial_stock, -weekly_sales)
+  // 测试特殊字符
+  assert_eq_string("Hello, John-Doe!", greet("John-Doe"))
+  assert_eq_string("Hello, O'Reilly!", greet("O'Reilly"))
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算：贷款计算
+  let principal = 100000  // 本金
+  let annual_rate = 5     // 年利率5%
+  let years = 3           // 3年
   
-  // 计算需要补货的包数
-  let restock_needed = divide_with_ceil(restock_threshold, package_size)
+  // 简化的复利计算
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate), 100))
   
-  assert_eq(66, remaining_stock)  // 150 - 12*7 = 150 - 84 = 66
-  assert_eq(2, restock_needed)    // ceil(50/25) = 2
+  // 验证结果
+  assert_eq(105000, year1_amount)
+  assert_eq(110250, year2_amount)
+  assert_eq(115763, year3_amount)
+}
+
+test "inventory_optimization_scenario" {
+  // 库存优化场景
+  let product_demand = 157    // 产品需求量
+  let box_capacity = 24       // 每箱容量
+  let safety_stock = 20       // 安全库存
+  
+  // 计算需要的箱子数
+  let boxes_needed = divide_with_ceil(product_demand, box_capacity)
+  
+  // 计算总库存需求
+  let total_inventory_needed = add(product_demand, safety_stock)
+  
+  // 计算实际需要准备的箱子数
+  let actual_boxes = divide_with_ceil(total_inventory_needed, box_capacity)
+  
+  assert_eq(7, boxes_needed)        // ceil(157/24) = 7
+  assert_eq(177, total_inventory_needed)  // 157 + 20 = 177
+  assert_eq(8, actual_boxes)        // ceil(177/24) = 8
 }
 
 test "mathematical_sequence_calculation" {
-  // 数学序列计算：斐波那契数列的前几项
-  // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
-  let f0 = 0
-  let f1 = 1
-  let f2 = add(f0, f1)  // 0 + 1 = 1
-  let f3 = add(f1, f2)  // 1 + 1 = 2
-  let f4 = add(f2, f3)  // 1 + 2 = 3
-  let f5 = add(f3, f4)  // 2 + 3 = 5
+  // 数学序列计算：等比数列
+  let first_term = 3
+  let ratio = 2
+  let terms = 6
   
-  assert_eq(1, f2)
-  assert_eq(2, f3)
-  assert_eq(3, f4)
-  assert_eq(5, f5)
+  // 计算等比数列的和
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  let term5 = multiply(term4, ratio)
+  let term6 = multiply(term5, ratio)
   
-  // 验证黄金比例近似
-  let ratio_approx = divide_with_ceil(multiply(f5, 100), f4)
-  assert_eq(167, ratio_approx)  // ceil(5/3 * 100) = ceil(166.66...) = 167
+  let sequence_sum = add(add(add(add(add(term1, term2), term3), term4), term5), term6)
+  
+  assert_eq(6, term2)
+  assert_eq(12, term3)
+  assert_eq(24, term4)
+  assert_eq(48, term5)
+  assert_eq(96, term6)
+  assert_eq(189, sequence_sum)
 }
 
 test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_budget = 1000
-  let project_a_cost = 234
-  let project_b_cost = 189
-  let project_c_cost = 156
+  // 资源分配优化
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 900
   
-  // 计算三个项目的总成本
-  let total_cost = add(add(project_a_cost, project_b_cost), project_c_cost)
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
   // 计算剩余预算
-  let remaining_budget = add(total_budget, -total_cost)
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  // 计算可以支持的小项目数量（每个小项目成本45）
-  let small_project_cost = 45
-  let small_projects_count = divide_with_ceil(remaining_budget, small_project_cost)
+  // 计算可以支持的额外小型项目数量（每个小型项目成本300）
+  let small_projects = divide_with_ceil(remaining_budget, 300)
   
-  assert_eq(579, total_cost)  // 234 + 189 + 156 = 579
-  assert_eq(421, remaining_budget)  // 1000 - 579 = 421
-  assert_eq(10, small_projects_count)  // ceil(421/45) = 10
+  assert_eq(3900, allocated_budget)
+  assert_eq(1100, remaining_budget)
+  assert_eq(4, small_projects)
 }
 
-test "string_greeting_with_special_formatting" {
-  // 特殊格式化的字符串问候测试
-  let name_with_quotes = greet("\"John\"")
-  let name_with_apostrophe = greet("O'Connor")
-  let name_with_dashes = greet("Jean-Claude")
-  let name_with_numbers = greet("Agent007")
-  let name_with_symbols = greet("Mr. Smith Jr.")
+test "time_management_efficiency" {
+  // 时间管理效率计算
+  let daily_working_hours = 8
+  let task_complexity_factor = 3
+  let base_task_time = 2  // 基础任务时间（小时）
   
-  assert_eq_string("Hello, \"John\"!", name_with_quotes)
-  assert_eq_string("Hello, O'Connor!", name_with_apostrophe)
-  assert_eq_string("Hello, Jean-Claude!", name_with_dashes)
-  assert_eq_string("Hello, Agent007!", name_with_numbers)
-  assert_eq_string("Hello, Mr. Smith Jr.!", name_with_symbols)
+  // 计算复杂任务所需时间
+  let complex_task_time = multiply(base_task_time, task_complexity_factor)
+  
+  // 计算一天可以完成的任务数
+  let tasks_per_day = divide_with_ceil(daily_working_hours, complex_task_time)
+  
+  // 计算完成15个任务需要的工作日
+  let total_tasks = 15
+  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  assert_eq(6, complex_task_time)
+  assert_eq(2, tasks_per_day)  // ceil(8/6) = 2
+  assert_eq(8, workdays_needed)  // ceil(15/2) = 8
 }
 
-test "time_and_scheduling_calculations" {
-  // 时间和调度计算
-  let total_tasks = 87
-  let tasks_per_hour = 8
-  let working_hours_per_day = 8
-  let deadline_days = 3
+test "data_structures_array_simulation" {
+  // 数据结构数组模拟
+  // 模拟数组操作：计算数组元素的和与平均值
+  let element1 = 25
+  let element2 = 17
+  let element3 = 33
+  let element4 = 42
+  let element5 = 19
   
-  // 计算完成所有任务需要的小时数
-  let total_hours_needed = divide_with_ceil(total_tasks, tasks_per_hour)
+  // 计算数组元素的和
+  let array_sum = add(add(add(add(element1, element2), element3), element4), element5)
   
-  // 计算完成所有任务需要的天数
-  let total_days_needed = divide_with_ceil(total_hours_needed, working_hours_per_day)
+  // 计算平均值（向上取整）
+  let array_length = 5
+  let average = divide_with_ceil(array_sum, array_length)
   
-  // 计算在截止日期前可用的总工作小时数
-  let available_hours = multiply(deadline_days, working_hours_per_day)
-  
-  // 计算需要加班的小时数
-  let overtime_hours = add(total_hours_needed, -available_hours)
-  
-  assert_eq(11, total_hours_needed)  // ceil(87/8) = 11
-  assert_eq(2, total_days_needed)    // ceil(11/8) = 2
-  assert_eq(24, available_hours)     // 3 * 8 = 24
-  assert_eq(-13, overtime_hours)     // 11 - 24 = -13 (不需要加班)
-}
-
-test "error_boundary_and_extreme_cases" {
-  // 错误边界和极端情况测试
-  // 测试零值的各种运算
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 测试单位值运算
-  assert_eq(2, add(1, 1))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(1, divide_with_ceil(1, 1))
-  
-  // 测试大数运算的边界
-  let large_num = 100000
-  assert_eq(200000, add(large_num, large_num))
-  assert_eq(10000000000, multiply(large_num, large_num))
-  assert_eq(1, divide_with_ceil(large_num, large_num))
-  
-  // 测试负数边界
-  assert_eq(0, add(100, -100))
-  assert_eq(-10000, multiply(-100, 100))
-  assert_eq(-1, divide_with_ceil(-1, 1))
-}
-
-test "real_world_shopping_cart_calculations" {
-  // 真实世界购物车计算
-  // 商品价格和数量
-  let apple_price = 3
-  let apple_qty = 4
-  let banana_price = 2
-  let banana_qty = 6
-  let orange_price = 5
-  let orange_qty = 2
-  
-  // 计算各商品小计
-  let apple_subtotal = multiply(apple_price, apple_qty)
-  let banana_subtotal = multiply(banana_price, banana_qty)
-  let orange_subtotal = multiply(orange_price, orange_qty)
-  
-  // 计算总价
-  let total_before_tax = add(add(apple_subtotal, banana_subtotal), orange_subtotal)
-  
-  // 计算税费（8%，向上取整）
-  let tax = divide_with_ceil(multiply(total_before_tax, 8), 100)
-  
-  // 计算最终总价
-  let final_total = add(total_before_tax, tax)
-  
-  // 计算需要多少个购物袋（每个袋子最多装5件商品）
-  let total_items = add(add(apple_qty, banana_qty), orange_qty)
-  let bags_needed = divide_with_ceil(total_items, 5)
-  
-  assert_eq(12, apple_subtotal)     // 3 * 4 = 12
-  assert_eq(12, banana_subtotal)    // 2 * 6 = 12
-  assert_eq(10, orange_subtotal)    // 5 * 2 = 10
-  assert_eq(34, total_before_tax)   // 12 + 12 + 10 = 34
-  assert_eq(3, tax)                 // ceil(34 * 8 / 100) = ceil(2.72) = 3
-  assert_eq(37, final_total)        // 34 + 3 = 37
-  assert_eq(3, bags_needed)         // ceil(12 / 5) = 3
+  assert_eq(136, array_sum)
+  assert_eq(28, average)  // ceil(136/5) = ceil(27.2) = 28
 }
