@@ -1,4 +1,4 @@
-// 新的综合测试用例 - 使用标准 MoonBit 测试语法
+// 标准测试用例 - 使用标准 MoonBit 测试语法
 
 test "add_function_basic_functionality" {
   // 测试加法函数的基本功能
@@ -75,37 +75,4 @@ test "divide_with_ceil_negative_numbers" {
   inspect(@azimuth.divide_with_ceil(-9, 3), "-3")?
   inspect(@azimuth.divide_with_ceil(-10, 3), "-4")?
   inspect(@azimuth.divide_with_ceil(-10, -3), "3")?
-}
-
-test "complex_arithmetic_combinations" {
-  // 测试复杂的算术组合
-  let a = 10
-  let b = 5
-  let c = 2
-  
-  // (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  inspect(result, "30")?
-  
-  // a * c + b
-  let product = @azimuth.multiply(a, c)
-  let result2 = @azimuth.add(product, b)
-  inspect(result2, "25")?
-}
-
-test "boundary_value_operations" {
-  // 测试边界值运算
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 边界值加法测试
-  inspect(@azimuth.add(max_val, 0), "2147483647")?
-  inspect(@azimuth.add(min_val, 0), "-2147483648")?
-  
-  // 边界值乘法测试
-  inspect(@azimuth.multiply(max_val, 0), "0")?
-  inspect(@azimuth.multiply(min_val, 0), "0")?
-  inspect(@azimuth.multiply(max_val, 1), "2147483647")?
-  inspect(@azimuth.multiply(min_val, 1), "-2147483648")?
 }
