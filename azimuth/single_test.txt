@@ -1,0 +1,1 @@
+test/azimuth_core_test.mbt

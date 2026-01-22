@@ -29,7 +29,7 @@
     "standard_unit_tests.mbt",
       "simple_standard_tests.mbt",
         "azimuth_simple_standard_tests.mbt",
-        "azimuth_standard_tests.mbt",    "simple_quality_test.mbt",
+        "azimuth_standard_tests.mbt",
     "quality_test_suite.mbt",
     "standard_moonbit_test_suite.mbt",
     "standard_functionality_tests.mbt",
@@ -108,6 +108,7 @@
     "simple_user_tests.mbt",
     "simple_verify_test.mbt",
     "simple_azimuth_standard_tests.mbt",
+    "quality_test_suite.mbt",
     "standard_azimuth_tests.mbt",
     "standard_comprehensive_tests.mbt",
     "azimuth_standard_test_cases.mbt",
@@ -145,5 +146,9 @@
     "core_functionality_tests.mbt",
     "standard_enhanced_test_cases.mbt",
     "user_simple_tests.mbt"
+  ]
+,
+    "simple_quality_test.mbt",
+    "minimal_test.mbt"
   ]
 }
