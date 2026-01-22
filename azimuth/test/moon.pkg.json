@@ -164,6 +164,7 @@
     "my_enhanced_tests.mbt",
     "simple_test_new.mbt",
     "additional_standard_tests.mbt",
-    "quality_enhanced_test_cases.mbt"
+    "quality_enhanced_test_cases.mbt",
+    "standard_enhanced_test_cases.mbt"
   ]
 }

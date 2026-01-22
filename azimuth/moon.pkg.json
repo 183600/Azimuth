@@ -1,7 +1,7 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"],
-  "files": ["lib.mbt", "quality_test_cases.mbt", "quality_enhanced_test_cases.mbt", "additional_enhanced_tests.mbt", "comprehensive_enhanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt", "standard_test_cases.mbt", "enhanced_test_coverage.mbt", "simple_verification_test.mbt", "standard_enhanced_tests.mbt", "standard_azimuth_core_tests.mbt", "high_quality_enhanced_tests.mbt", "additional_standard_tests.mbt", "new_standard_test_cases.mbt", "simple_moonbit_tests.mbt", "basic_test_suite.mbt", "standard_additional_tests.mbt", "test/standard_enhanced_tests.mbt"],
+  "files": ["lib.mbt", "quality_test_cases.mbt", "quality_enhanced_test_cases.mbt", "additional_enhanced_tests.mbt", "comprehensive_enhanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt", "standard_test_cases.mbt", "enhanced_test_coverage.mbt", "simple_verification_test.mbt", "standard_enhanced_tests.mbt", "standard_azimuth_core_tests.mbt", "high_quality_enhanced_tests.mbt", "additional_standard_tests.mbt", "new_standard_test_cases.mbt", "simple_moonbit_tests.mbt", "basic_test_suite.mbt", "standard_additional_tests.mbt", "test/standard_enhanced_tests.mbt", "test/standard_enhanced_test_cases.mbt"],
   "link": {
     "azimuth/test": "self"
   }
