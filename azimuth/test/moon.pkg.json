@@ -140,6 +140,8 @@
     "azimuth_comprehensive_test.mbt",
     "my_simple_test.mbt",
     "quality_enhanced_test_suite.mbt",
-    "core_functionality_tests.mbt"
+    "core_functionality_tests.mbt",
+    "standard_enhanced_test_cases.mbt",
+    "user_simple_tests.mbt"
   ]
 }
