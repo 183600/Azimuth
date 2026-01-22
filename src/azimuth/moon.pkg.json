@@ -111,5 +111,6 @@
           "standard_moonbit_tests_new.mbt",
           "simple_test.mbt",
           "standard_core_tests.mbt",
-          "additional_core_tests.mbt"
+          "additional_core_tests.mbt",
+          "standard_moonbit_test_cases.mbt"
           ]}

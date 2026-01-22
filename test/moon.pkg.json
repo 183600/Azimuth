@@ -86,9 +86,9 @@
           "simple_high_quality_test.mbt",
           "self_contained_quality_tests.mbt",
           "standard_comprehensive_test_cases.mbt",
-          "azimuth_enhanced_quality_tests.mbt",
-          "new_comprehensive_quality_tests.mbt",
-          "azimuth_advanced_test_suite.mbt",
-          "azimuth_concise_test_suite.mbt"
-        ]
-}
+              "azimuth_enhanced_quality_tests.mbt",
+              "new_comprehensive_quality_tests.mbt",
+              "azimuth_advanced_test_suite.mbt",
+              "azimuth_concise_test_suite.mbt",
+              "standard_moonbit_test_cases.mbt"
+            ]}
