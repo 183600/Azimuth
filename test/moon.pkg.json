@@ -4,6 +4,7 @@
     "src/azimuth"
   ],
   "test": [
+    "standard_azimuth_tests.mbt",
     "ultra_simple_test.mbt",
     "quality_test_simple.mbt",
     "quality_enhanced_test_cases.mbt",
