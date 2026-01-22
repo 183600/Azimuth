@@ -7,6 +7,7 @@
     "moonbitlang/core/builtin"
   ],
   "test": [
+    "additional_standard_tests.mbt",
     "simple_concise_tests.mbt",
     "our_additional_tests.mbt",
     "simple_verify_test.mbt",
@@ -42,7 +43,6 @@
     "simple_test_demo.mbt",
     "enhanced_core_tests.mbt",
     "comprehensive_quality_tests.mbt",
-    "additional_standard_tests.mbt",
     "additional_standard_tests_part1.mbt",
     "additional_standard_tests_part2.mbt",
     "additional_test_cases.mbt",
@@ -159,6 +159,7 @@
     "comprehensive_enhanced_tests.mbt",
     "enhanced_test_cases.mbt",
     "my_enhanced_tests.mbt",
-    "simple_test_new.mbt"
+    "simple_test_new.mbt",
+    "additional_standard_tests.mbt"
   ]
 }
