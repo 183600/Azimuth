@@ -5,6 +5,7 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
+    "azimuth_standard_tests.mbt",
     "lib.mbt",
     "standard_tests.mbt",
     "simple_new_tests.mbt",
