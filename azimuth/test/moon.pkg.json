@@ -128,6 +128,8 @@
     "azimuth_quality_test_suite.mbt",
     "azimuth_comprehensive_test_suite.mbt",
     "simple_azimuth_comprehensive_test.mbt",
-    "test_my_new_file.mbt"
+    "test_my_new_file.mbt",
+    "azimuth_comprehensive_test.mbt",
+    "my_simple_test.mbt"
   ]
 }
