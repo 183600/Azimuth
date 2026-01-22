@@ -78,6 +78,7 @@
     "minimal_test.mbt",
     "quality_enhanced_test_suite.mbt",
     "concise_quality_test_suite.mbt",
-    "standard_additional_tests.mbt"
+    "standard_additional_tests.mbt",
+    "high_quality_standard_tests.mbt"
   ]
 }
