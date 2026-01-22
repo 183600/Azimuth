@@ -108,5 +108,6 @@
           "standard_azimuth_unit_tests.mbt",
           "high_quality_test_cases.mbt",
           "standard_moonbit_tests_new.mbt",
-          "simple_test.mbt"
+          "simple_test.mbt",
+          "standard_core_tests.mbt"
           ]}
