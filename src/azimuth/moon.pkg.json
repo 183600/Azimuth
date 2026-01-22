@@ -97,5 +97,6 @@
           "simple_new_test_cases.mbt",
           "standard_core_tests.mbt",
           "standard_test_suite_new.mbt",
-          "simple_standard_tests.mbt"
+          "simple_standard_tests.mbt",
+          "standard_test_suite.mbt"
           ]}
