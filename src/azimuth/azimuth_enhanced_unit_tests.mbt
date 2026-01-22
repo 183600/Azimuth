@@ -1,161 +1,145 @@
-// Azimuth 项目增强单元测试
-// 使用标准 MoonBit 测试语法，专注于核心功能的深度测试
+// 新增的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行补充测试
 
-test "add_function_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
-  
-  let result1 = @azimuth.add(a, b)
-  let result2 = @azimuth.add(b, a)
-  
-  @azimuth.assert_eq(result1, result2)
-  
-  // 测试负数情况
-  let c = -12345
-  let d = 67890
-  
-  let result3 = @azimuth.add(c, d)
-  let result4 = @azimuth.add(d, c)
-  
-  @azimuth.assert_eq(result3, result4)
+test "binary_arithmetic_commutativity" {
+  // 测试二进制算术交换律
+  let a = 42
+  let b = 17
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 15
-  let b = 25
-  let c = 35
-  
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  
-  @azimuth.assert_eq(left_side, right_side)
-  
-  // 测试包含负数的情况
-  let x = -10
-  let y = 20
-  let z = 30
-  
-  let left_side2 = @azimuth.multiply(x, @azimuth.add(y, z))
-  let right_side2 = @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
-  
-  @azimuth.assert_eq(left_side2, right_side2)
+test "divide_with_ceil_precision_edge_cases" {
+  // 测试向上取整除法的精度边界情况
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(100, @azimuth.divide_with_ceil(9999, 100))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100))
 }
 
-test "greet_function_special_characters" {
-  // 测试 greet 函数处理特殊字符
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result = @azimuth.greet(special_chars)
-  
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", result)
-  
-  // 测试包含空格和制表符的字符串
-  let whitespace_chars = "  Hello \t World  "
-  let result2 = @azimuth.greet(whitespace_chars)
-  
-  @azimuth.assert_eq_string("Hello,   Hello \t World  !", result2)
+test "greet_function_unicode_emoji_support" {
+  // 测试问候函数的 Unicode 和 emoji 支持
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, αβγδε!", @azimuth.greet("αβγδε"))
+  @azimuth.assert_eq_string("Hello, 🚀🌙!", @azimuth.greet("🚀🌙"))
+  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
 }
 
-test "complex_calculation_scenario" {
-  // 复杂计算场景：计算 ((a + b) × c - d) ÷ e
-  let a = 100
-  let b = 200
-  let c = 3
-  let d = 150
-  let e = 5
+test "complex_financial_calculation" {
+  // 复杂金融计算：贷款分期计算
+  let principal = 10000
+  let annual_rate = 6
+  let _months = 12  // 未使用的变量加下划线
   
-  // 步骤计算
-  let sum_ab = @azimuth.add(a, b)  // 300
-  let product = @azimuth.multiply(sum_ab, c)  // 900
-  let difference = @azimuth.add(product, -d)  // 750
-  let result = difference / e  // 150
+  // 简化的月供计算（不包含复利）
+  let monthly_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 1200)
+  let monthly_principal = @azimuth.divide_with_ceil(principal, 12)
+  let monthly_payment = @azimuth.add(monthly_principal, monthly_interest)
   
-  @azimuth.assert_eq(150, result)
+  @azimuth.assert_eq(834, monthly_payment)
 }
 
-test "boundary_value_combinations" {
-  // 边界值组合测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "resource_allocation_optimization" {
+  // 资源分配优化问题
+  let total_budget = 5000
+  let cost1 = 1200
+  let cost2 = 800
+  let cost3 = 1500
+  let cost4 = 1000
   
-  // 测试最大值与最小值的运算
-  let sum_result = @azimuth.add(max_val, min_val)
-  @azimuth.assert_eq(-1, sum_result)
+  // 计算总成本
+  let total_cost = @azimuth.add(@azimuth.add(@azimuth.add(cost1, cost2), cost3), cost4)
   
-  // 测试最大值与0的运算
-  let max_with_zero = @azimuth.add(max_val, 0)
-  @azimuth.assert_eq(max_val, max_with_zero)
+  // 计算剩余预算
+  let remaining = total_budget - total_cost
   
-  // 测试最小值与0的运算
-  let min_with_zero = @azimuth.add(min_val, 0)
-  @azimuth.assert_eq(min_val, min_with_zero)
+  // 计算可以支持的额外小项目数量
+  let small_project_cost = 300
+  let additional_projects = @azimuth.divide_with_ceil(remaining, small_project_cost)
   
-  // 测试边界值的乘法
-  let max_times_one = @azimuth.multiply(max_val, 1)
-  @azimuth.assert_eq(max_val, max_times_one)
-  
-  let min_times_one = @azimuth.multiply(min_val, 1)
-  @azimuth.assert_eq(min_val, min_times_one)
+  @azimuth.assert_eq(4500, total_cost)
+  @azimuth.assert_eq(500, remaining)
+  @azimuth.assert_eq(2, additional_projects)
 }
 
-test "real_world_application_calculator" {
-  // 实际应用场景：计算贷款月供（简化版）
-  let principal = 100000  // 贷款本金
-  let annual_rate = 6     // 年利率（百分比）
-  let years = 30          // 贷款年限
+test "time_zone_conversion_simulation" {
+  // 时区转换模拟
+  let local_time = 14  // 下午2点
+  let time_difference = 8  // 时差8小时
   
-  // 简化计算：月供 = (本金 + 本金 × 年利率 × 年数) ÷ (年数 × 12)
-  let total_interest = @azimuth.multiply(principal, @azimuth.multiply(annual_rate, years))
-  let total_payment = @azimuth.add(principal, total_interest)
-  let monthly_payment = total_payment / @azimuth.multiply(years, 12)
+  // 计算远程时间
+  let remote_time = @azimuth.add(local_time, time_difference)
+  let normalized_time = if remote_time > 24 { remote_time - 24 } else { remote_time }
   
-  // 验证计算结果：(100000 + 100000×6×30) ÷ 360 = 19000000 ÷ 360 = 52777
-  @azimuth.assert_eq(52777, monthly_payment)
+  @azimuth.assert_eq(22, normalized_time)
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况
-  // 测试极长字符串
-  let very_long_name = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-  let result1 = @azimuth.greet(very_long_name)
+test "inventory_reorder_point_calculation" {
+  // 库存重新订购点计算
+  let daily_demand = 15
+  let lead_time_days = 7
+  let safety_stock = 20
   
-  @azimuth.assert_eq_string("Hello, " + very_long_name + "!", result1)
+  // 计算重新订购点
+  let lead_time_demand = @azimuth.multiply(daily_demand, lead_time_days)
+  let reorder_point = @azimuth.add(lead_time_demand, safety_stock)
   
-  // 测试包含各种Unicode字符的字符串
-  let unicode_name = "Hello世界🌍123@test"
-  let result2 = @azimuth.greet(unicode_name)
+  // 计算订购数量（基于经济订购批量简化）
+  let order_quantity = @azimuth.multiply(daily_demand, 30)
   
-  @azimuth.assert_eq_string("Hello, Hello世界🌍123@test!", result2)
-  
-  // 测试空字符串和单字符
-  let empty_string = ""
-  let single_char = "A"
-  
-  let result3 = @azimuth.greet(empty_string)
-  let result4 = @azimuth.greet(single_char)
-  
-  @azimuth.assert_eq_string("Hello, !", result3)
-  @azimuth.assert_eq_string("Hello, A!", result4)
+  @azimuth.assert_eq(125, reorder_point)
+  @azimuth.assert_eq(450, order_quantity)
 }
 
-test "mathematical_sequence_calculation" {
-  // 数学序列计算：斐波那契数列前10项的和
-  // 斐波那契数列：1, 1, 2, 3, 5, 8, 13, 21, 34, 55
-  let f1 = 1
-  let f2 = 1
-  let f3 = @azimuth.add(f1, f2)  // 2
-  let f4 = @azimuth.add(f2, f3)  // 3
-  let f5 = @azimuth.add(f3, f4)  // 5
-  let f6 = @azimuth.add(f4, f5)  // 8
-  let f7 = @azimuth.add(f5, f6)  // 13
-  let f8 = @azimuth.add(f6, f7)  // 21
-  let f9 = @azimuth.add(f7, f8)  // 34
-  let f10 = @azimuth.add(f8, f9) // 55
+test "data_structure_simulation" {
+  // 数据结构模拟：栈操作
+  let stack_size = 0
   
-  // 计算前10项的和
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(
-    @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(f1, f2), f3), f4), f5), f6), f7), f8), f9), f10)
+  // 模拟 push 操作
+  let push1 = stack_size + 1
+  let push2 = push1 + 1
+  let push3 = push2 + 1
   
-  @azimuth.assert_eq(143, sum)
+  // 模拟 pop 操作
+  let pop1 = push3 - 1
+  let pop2 = pop1 - 1
+  
+  @azimuth.assert_eq(3, push3)
+  @azimuth.assert_eq(1, pop2)
+}
+
+test "mathematical_series_summation" {
+  // 数学级数求和：等比数列
+  let first_term = 2
+  let ratio = 3
+  let _terms = 5  // 未使用的变量加下划线
+  
+  // 计算等比数列和：a * (r^n - 1) / (r - 1)
+  let power_n = ratio * ratio * ratio * ratio  // r^4
+  let sum_formula = @azimuth.divide_with_ceil(first_term * (power_n - 1), ratio - 1)
+  
+  @azimuth.assert_eq(242, sum_formula)
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试极值运算
+  let max_32bit = 2147483647
+  let min_32bit = -2147483648
+  
+  // 测试接近边界的加法
+  let near_max_result = max_32bit - 1000
+  let near_min_result = min_32bit + 1000
+  
+  // 测试除法的各种边界情况
+  let zero_dividend = @azimuth.divide_with_ceil(0, 100)
+  let zero_divisor = @azimuth.divide_with_ceil(100, 0)
+  let equal_dividend_divisor = @azimuth.divide_with_ceil(50, 50)
+  
+  @azimuth.assert_eq(2147482647, near_max_result)
+  @azimuth.assert_eq(-2147482648, near_min_result)
+  @azimuth.assert_eq(0, zero_dividend)
+  @azimuth.assert_eq(0, zero_divisor)
+  @azimuth.assert_eq(1, equal_dividend_divisor)
 }
