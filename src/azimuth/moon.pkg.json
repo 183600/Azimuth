@@ -100,5 +100,6 @@
           "simple_standard_tests.mbt",
           "standard_test_suite.mbt",
           "azimuth_new_comprehensive_tests.mbt",
-          "simple_test_verify.mbt"
+          "simple_test_verify.mbt",
+          "azimuth_enhanced_standard_tests.mbt"
           ]}
