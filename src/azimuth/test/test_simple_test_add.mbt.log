@@ -1,0 +1,2 @@
+clean_test_test/simple_test_add.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/simple_test_add.mbt:6:16-6:19 [E4021] The value identifier add is unbound.

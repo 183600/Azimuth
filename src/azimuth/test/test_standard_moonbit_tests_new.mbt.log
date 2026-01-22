@@ -1,73 +1,81 @@
-clean_test_test/standard_moonbit_tests_new.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:6:25-6:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:7:25-7:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:8:26-8:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:9:26-9:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:14:25-14:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:15:25-15:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:16:26-16:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:17:26-17:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:22:3-22:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:22:46-22:60 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:23:3-23:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:23:41-23:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:24:3-24:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:24:48-24:62 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:32:31-32:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:33:31-33:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:34:26-34:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:42:3-42:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:42:31-42:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:43:3-43:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:43:31-43:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:44:3-44:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:44:31-44:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:53:22-53:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:53:42-53:54 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:56:3-56:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:56:22-56:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:56:47-56:64 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:22-59:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:43-59:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:64-59:76 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:77-59:94 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:59:102-59:119 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:66:20-66:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:66:33-66:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:73:15-73:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:73:44-73:56 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:73:60-73:77 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:74:3-74:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:79:3-79:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:79:44-79:58 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:80:3-80:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:80:57-80:71 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:81:3-81:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:81:45-81:59 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:82:3-82:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:82:52-82:66 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:93:16-93:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:94:17-94:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:95:16-95:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:97:3-97:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:102:3-102:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:103:3-103:24 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:105:3-105:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:109:3-109:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:109:24-109:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:110:3-110:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_new.mbt:110:24-110:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_new.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:6:25-6:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:9:27-9:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:18:3-18:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:18:31-18:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:19:3-19:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:19:31-19:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:22:25-22:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:23:3-23:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:23:25-23:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:24:26-24:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:29:3-29:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:29:25-29:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:30:3-30:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:30:26-30:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:31:3-31:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:31:25-31:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:32:3-32:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:32:25-32:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:40:3-40:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:40:31-40:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:43:3-43:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:43:25-43:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:44:3-44:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:44:26-44:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:49:3-49:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:49:46-49:53 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:50:3-50:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:50:48-50:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:51:3-51:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:51:41-51:48 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:52:3-52:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:52:43-52:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:60:14-60:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:61:3-61:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:64:19-64:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:64:40-64:47 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:65:3-65:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:74:3-74:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:74:22-74:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:74:42-74:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:77:3-77:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:77:22-77:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:77:47-77:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:3-80:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:22-80:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:43-80:50 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:64-80:71 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:77-80:84 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:80:102-80:109 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:90:18-90:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:91:15-91:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:92:3-92:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:96:20-96:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:96:33-96:40 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:97:3-97:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:106:3-106:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:106:26-106:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:107:3-107:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:107:25-107:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:108:3-108:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:108:25-108:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:111:3-111:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:111:34-111:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:112:3-112:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:112:35-112:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:117:3-117:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:118:3-118:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:119:3-119:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:120:3-120:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:124:3-124:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:124:24-124:31 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:125:3-125:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_moonbit_tests_new.mbt:125:24-125:31 [E3002] Expected upper case identifier for type name, found lower case identifier.

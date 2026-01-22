@@ -1,84 +1,96 @@
-clean_test_test/core_functionality_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
+clean_test_test/core_functionality_tests.mbt:5:1-5:4 [E0035] Warning (reserved_keyword): The word `use` is reserved for possible future use. Please consider using another name.
+clean_test_test/core_functionality_tests.mbt:5:1-5:4 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/core_functionality_tests.mbt:9:3-9:36 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:9:18-9:21 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:15:18-15:26 [E4021] The value identifier multiply is unbound.
+clean_test_test/core_functionality_tests.mbt:9:17-9:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:10:3-10:36 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:10:17-10:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:11:3-11:39 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:11:18-11:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:16:3-16:41 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:16:17-16:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/core_functionality_tests.mbt:16:17-16:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:17:3-17:41 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:17:16-17:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:22:39-22:44 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:23:37-23:42 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:24:32-24:37 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:33:22-33:25 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:34:22-34:25 [E4021] The value identifier add is unbound.
+clean_test_test/core_functionality_tests.mbt:17:17-17:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:18:3-18:43 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:18:18-18:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:19:3-19:43 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:19:17-19:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:24:3-24:55 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:24:31-24:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:25:3-25:45 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:25:26-25:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:26:3-26:49 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:26:28-26:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:35:3-35:48 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:35:23-35:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:36:3-36:49 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:36:23-36:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:37:3-37:49 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:37:17-37:20 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:38:18-38:21 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:39:16-39:19 [E4021] The value identifier add is unbound.
+clean_test_test/core_functionality_tests.mbt:37:18-37:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:46:3-46:55 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:46:23-46:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:47:3-47:56 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:47:23-47:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:48:3-48:54 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:48:22-48:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:49:22-49:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:52:17-52:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:53:18-53:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:54:16-54:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:57:22-57:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:66:14-66:22 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:67:19-67:22 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:67:23-67:31 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:67:44-67:52 [E4021] The value identifier multiply is unbound.
+clean_test_test/core_functionality_tests.mbt:48:23-48:30 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:57:13-57:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:58:16-58:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:59:3-59:25 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:66:18-66:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:67:18-67:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:68:20-68:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:69:3-69:31 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:70:3-70:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:76:3-76:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:76:36-76:41 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:77:3-77:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:77:43-77:48 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:78:3-78:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:78:36-78:41 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:79:3-79:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/core_functionality_tests.mbt:79:33-79:38 [E4021] The value identifier greet is unbound.
-clean_test_test/core_functionality_tests.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:88:13-88:16 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:88:24-88:27 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:91:13-91:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:91:29-91:37 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:94:13-94:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:94:25-94:28 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:94:37-94:40 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:94:41-94:49 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:94:57-94:65 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:105:18-105:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:106:13-106:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:107:15-107:18 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:107:19-107:22 [E4021] The value identifier add is unbound.
+clean_test_test/core_functionality_tests.mbt:80:16-80:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:81:16-81:23 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:84:20-84:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:87:3-87:31 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:94:25-94:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:94:38-94:45 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:95:3-95:34 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:99:29-99:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:99:42-99:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:100:3-100:38 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:100:3-100:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:109:3-109:53 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:109:3-109:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:109:14-109:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:109:34-109:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:112:3-112:63 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:112:14-112:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:112:39-112:46 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:118:3-118:63 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
 clean_test_test/core_functionality_tests.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:118:22-118:25 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/core_functionality_tests.mbt:119:13-119:26 [E4095] Integer literal 2000000000000 is out of range.
-clean_test_test/core_functionality_tests.mbt:119:28-119:36 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:122:16-122:19 [E4021] The value identifier add is unbound.
-clean_test_test/core_functionality_tests.mbt:122:20-122:28 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:122:40-122:48 [E4021] The value identifier multiply is unbound.
-clean_test_test/core_functionality_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:118:14-118:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:118:39-118:46 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:128:3-128:87 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:128:14-128:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:128:27-128:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:128:51-128:58 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:128:67-128:74 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:131:3-131:107 [E0027] Warning (deprecated_syntax): The syntax `f!(..)` for calling function with error is deprecated. Use `f(..)` instead.
+clean_test_test/core_functionality_tests.mbt:131:3-131:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/core_functionality_tests.mbt:131:14-131:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:131:32-131:39 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:131:61-131:68 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/core_functionality_tests.mbt:131:82-131:89 [E3002] Expected upper case identifier for type name, found lower case identifier.

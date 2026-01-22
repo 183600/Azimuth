@@ -1,102 +1,69 @@
-clean_test_test/azimuth_enhanced_test_cases.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:6:26-6:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:7:26-7:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:8:25-8:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:9:25-9:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:10:25-10:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:11:3-11:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:11:26-11:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:20:3-20:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:20:31-20:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:21:3-21:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:21:31-21:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:24:3-24:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:24:31-24:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:25:31-25:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:28:3-28:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:28:35-28:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:29:3-29:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:29:37-29:49 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:34:26-34:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:35:27-35:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:36:27-36:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:37:26-37:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:38:3-38:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:38:25-38:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:39:3-39:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:39:25-39:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:40:3-40:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:40:26-40:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:49:3-49:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:49:31-49:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:50:3-50:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:50:31-50:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:53:31-53:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:54:3-54:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:54:31-54:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:55:3-55:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:55:25-55:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:58:31-58:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:63:3-63:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:63:46-63:60 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:64:3-64:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:64:48-64:62 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:65:3-65:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:65:41-65:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:66:3-66:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:66:44-66:58 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:67:3-67:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:67:45-67:59 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:76:13-76:25 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:77:17-77:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:78:3-78:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:85:18-85:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:86:18-86:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:87:17-87:29 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:97:3-97:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:97:22-97:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:97:42-97:54 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:100:3-100:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:100:22-100:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:100:47-100:64 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:104:13-104:25 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:105:14-105:31 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:106:15-106:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:106:28-106:45 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:106:53-106:70 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:107:3-107:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:116:3-116:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:116:31-116:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:117:3-117:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:117:31-117:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:118:3-118:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:118:26-118:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:121:25-121:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:122:3-122:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:122:25-122:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:123:3-123:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:123:31-123:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:124:3-124:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:124:31-124:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:135:18-135:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:136:31-136:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:137:21-137:33 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:138:3-138:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:144:14-144:31 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:145:23-145:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:146:19-146:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:147:3-147:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_enhanced_test_cases.mbt:148:3-148:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_test_cases.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:32:3-32:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:33:3-33:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:42:3-42:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:43:3-43:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:44:3-44:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:46:3-46:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:47:3-47:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:48:3-48:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:56:3-56:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:57:3-57:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:58:3-58:15 [E4021] The value identifier assert_false is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:59:3-59:15 [E4021] The value identifier assert_false is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:61:3-61:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:62:3-62:15 [E4021] The value identifier assert_false is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:71:17-71:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:72:17-72:25 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:73:25-73:28 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:74:25-74:28 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:77:3-77:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:78:3-78:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:79:3-79:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:13-97:16 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:17-97:20 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:21-97:24 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:25-97:28 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:29-97:32 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:67-97:70 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:71-97:74 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:75-97:78 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:97:79-97:82 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:100:18-100:21 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:100:22-100:25 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:100:26-100:29 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:100:50-100:53 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:103:17-103:20 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:103:21-103:24 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:103:25-103:28 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:103:49-103:52 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:106:3-106:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:129:7-129:10 [E0002] Warning (unused_value): Unused variable 'num'
+clean_test_test/azimuth_enhanced_test_cases.mbt:130:7-130:10 [E0002] Warning (unused_value): Unused variable 'str'
+clean_test_test/azimuth_enhanced_test_cases.mbt:133:19-133:24 [E4021] The value identifier greet is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:134:19-134:24 [E4021] The value identifier greet is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:136:3-136:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:137:3-137:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:145:21-145:29 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:146:21-146:29 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:147:21-147:29 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:148:21-148:29 [E4021] The value identifier multiply is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:150:3-150:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:151:3-151:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:152:3-152:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:157:15-157:18 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:158:15-158:18 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:159:15-159:18 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:160:15-160:18 [E4021] The value identifier add is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:162:3-162:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:163:3-163:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_test_cases.mbt:164:3-164:12 [E4021] The value identifier assert_eq is unbound.

@@ -1,91 +1,60 @@
-clean_test_test/azimuth_new_tests.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:6:27-6:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:7:27-7:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:8:25-8:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:9:26-9:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:14:26-14:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:15:27-15:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:16:27-16:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:17:25-17:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:27:17-27:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:27:35-27:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:28:3-28:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:31:17-31:29 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:31:30-31:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:35:17-35:29 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:35:33-35:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:41:3-41:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:41:46-41:60 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:42:3-42:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:42:49-42:63 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:43:3-43:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:43:47-43:61 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:44:3-44:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:44:48-44:62 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:52:18-52:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:58:21-58:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:65:20-65:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:65:33-65:45 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:70:22-70:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:70:35-70:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:70:48-70:65 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:70:74-70:91 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:70:101-70:118 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:71:23-71:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:71:36-71:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:72:39-72:40 [E4018] Type Unit does not implement trait Div: no `impl` is defined
-clean_test_test/azimuth_new_tests.mbt:73:3-73:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:80:16-80:33 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:81:3-81:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:85:15-85:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:90:21-90:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:97:21-97:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:97:39-97:56 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:97:57-97:74 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:97:75-97:92 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:20-101:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:33-101:45 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:46-101:58 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:59-101:76 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:84-101:101 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:110-101:127 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:101:136-101:153 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:102:3-102:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:18-105:30 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:31-105:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:44-105:61 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:62-105:79 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:91-105:108 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:109-105:126 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:139-105:156 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:105:157-105:174 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:114:16-114:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:115:3-115:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:120:13-120:30 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:121:3-121:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:126:25-126:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:127:21-127:33 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:128:3-128:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:136:24-136:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:136:42-136:59 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:137:3-137:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:142:26-142:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:142:44-142:61 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:143:3-143:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/azimuth_new_tests.mbt:149:3-149:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:6:16-6:23 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:7:3-7:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:13:3-13:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:13:27-13:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:14:3-14:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:14:27-14:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:17:3-17:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:17:31-17:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:18:3-18:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:18:31-18:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:21:3-21:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:21:32-21:39 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:22:3-22:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:22:31-22:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:27:3-27:30 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:27:50-27:57 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:28:3-28:30 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:28:43-28:50 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:29:3-29:30 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:29:48-29:55 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:35:3-35:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:35:27-35:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:36:3-36:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:36:27-36:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:39:3-39:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:39:27-39:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:40:3-40:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:40:27-40:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:43:3-43:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:43:28-43:35 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:49:3-49:25 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:50:3-50:26 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:53:3-53:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:56:3-56:30 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:66:14-66:21 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:67:3-67:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:70:19-70:26 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:70:39-70:46 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:71:3-71:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:80:3-80:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:80:33-80:40 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:81:3-81:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:81:33-81:40 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:84:3-84:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:84:33-84:40 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:85:3-85:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:85:33-85:40 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:96:18-96:25 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:98:15-98:22 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:100:3-100:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:109:3-109:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:109:28-109:35 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:110:3-110:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:110:27-110:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:111:3-111:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:111:27-111:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:112:3-112:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:112:33-112:40 [E4021] The value identifier azimuth is unbound.
+clean_test_test/azimuth_new_tests.mbt:113:3-113:23 [E4020] Package "assertion" not found in the loaded packages.
+clean_test_test/azimuth_new_tests.mbt:113:33-113:40 [E4021] The value identifier azimuth is unbound.
