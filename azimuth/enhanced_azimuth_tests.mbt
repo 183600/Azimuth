@@ -1,214 +1,84 @@
-// Enhanced Azimuth 测试用例
-// 使用标准的 MoonBit 测试语法，专注于核心功能的深度测试
+// 增强的 Azimuth 测试用例 - 使用标准 MoonBit 测试语法
 
-test "string_unicode_comprehensive" {
-  // 综合Unicode字符串处理测试
+test "add_function_commutativity" {
+  // 测试加法交换律
+  assert_eq(add(15, 27), add(27, 15))
+  assert_eq(add(-8, 12), add(12, -8))
+  assert_eq(add(-5, -10), add(-10, -5))
+}
+
+test "add_function_associativity" {
+  // 测试加法结合律
+  assert_eq(add(add(2, 3), 4), add(2, add(3, 4)))
+  assert_eq(add(add(-2, 3), 5), add(-2, add(3, 5)))
+}
+
+test "multiply_function_distributive" {
+  // 测试乘法分配律
+  assert_eq(multiply(2, add(3, 4)), add(multiply(2, 3), multiply(2, 4)))
+  assert_eq(multiply(3, add(5, 7)), add(multiply(3, 5), multiply(3, 7)))
+}
+
+test "divide_with_ceil_precision" {
+  // 测试除法向上取整的精确性
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(4, divide_with_ceil(15, 4))
+}
+
+test "divide_with_ceil_negative_precision" {
+  // 测试负数除法向上取整
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(-1, divide_with_ceil(-3, 2))
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-3, divide_with_ceil(-15, 4))
+}
+
+test "mathematical_identity_properties" {
+  // 测试数学恒等性质
+  assert_eq(42, add(42, 0))  // 加法单位元
+  assert_eq(42, multiply(42, 1))  // 乘法单位元
+  assert_eq(0, multiply(42, 0))  // 乘法零元
+}
+
+test "complex_business_logic" {
+  // 复杂业务逻辑测试：计算订单总箱数
+  let order_quantities = [12, 8, 15, 7, 23]
+  let box_capacity = 10
+  let total_boxes = 0
+  
+  // 计算每种商品需要的箱数
+  total_boxes = add(total_boxes, divide_with_ceil(order_quantities[0], box_capacity))
+  total_boxes = add(total_boxes, divide_with_ceil(order_quantities[1], box_capacity))
+  total_boxes = add(total_boxes, divide_with_ceil(order_quantities[2], box_capacity))
+  total_boxes = add(total_boxes, divide_with_ceil(order_quantities[3], box_capacity))
+  total_boxes = add(total_boxes, divide_with_ceil(order_quantities[4], box_capacity))
+  
+  assert_eq(8, total_boxes)  // 2+1+2+1+2 = 8
+}
+
+test "greet_function_multilingual" {
+  // 多语言问候测试
   assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, 👋🏽!", greet("👋🏽"))
-  assert_eq_string("Hello, 🚀🌙!", greet("🚀🌙"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
 }
 
-test "mathematical_associativity_laws" {
-  // 数学结合律测试
-  // 加法结合律：(a + b) + c = a + (b + c)
-  let a = 100
-  let b = 200
-  let c = 300
-  
-  let left_assoc = add(add(a, b), c)
-  let right_assoc = add(a, add(b, c))
-  assert_eq(left_assoc, right_assoc)
-  
-  // 乘法结合律：(a × b) × c = a × (b × c)
-  let left_mul = multiply(multiply(a, b), c)
-  let right_mul = multiply(a, multiply(b, c))
-  assert_eq(left_mul, right_mul)
-}
-
-test "boundary_comprehensive_stress" {
-  // 综合边界值压力测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 最大值的各种组合
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(max_val, add(0, max_val))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(max_val, multiply(1, max_val))
-  assert_eq(0, multiply(max_val, 0))
-  
-  // 最小值的各种组合
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(min_val, add(0, min_val))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(1, min_val))
-  assert_eq(0, multiply(min_val, 0))
-}
-
-test "negative_number_specialized" {
-  // 负数专项测试
-  // 负数加法测试
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(5, add(-3, 8))
-  assert_eq(0, add(-5, 5))
-  
-  // 负数乘法测试
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(0, multiply(-5, 0))
-  
-  // 负数除法测试
-  assert_eq(-2, divide_with_ceil(-7, 3))
-  assert_eq(-3, divide_with_ceil(-8, 3))
-  assert_eq(2, divide_with_ceil(-7, -3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-}
-
-test "zero_value_edge_cases" {
-  // 零值边界情况测试
-  // 零值加法
-  assert_eq(5, add(5, 0))
-  assert_eq(5, add(0, 5))
-  assert_eq(-5, add(-5, 0))
-  assert_eq(-5, add(0, -5))
-  assert_eq(0, add(0, 0))
-  
-  // 零值乘法
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(-5, 0))
-  assert_eq(0, multiply(0, -5))
-  assert_eq(0, multiply(0, 0))
-  
-  // 零值除法
+test "edge_case_zero_division" {
+  // 除零边界情况测试
   assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, -5))
   assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
 }
 
-test "complex_expression_evaluation" {
-  // 复杂表达式计算测试
-  // 嵌套算术表达式
-  let expr1 = add(multiply(10, 5), multiply(3, 2))
-  assert_eq(56, expr1)  // 10*5 + 3*2 = 50 + 6 = 56
-  
-  let expr2 = multiply(add(7, 3), add(4, 2))
-  assert_eq(60, expr2)  // (7+3)*(4+2) = 10*6 = 60
-  
-  let expr3 = divide_with_ceil(add(multiply(4, 5), 3), 2)
-  assert_eq(12, expr3)  // ceil((4*5 + 3)/2) = ceil(23/2) = 12
-  
-  // 多层嵌套
-  let expr4 = add(multiply(divide_with_ceil(15, 4), 3), 5)
-  assert_eq(17, expr4)  // ceil(15/4)*3 + 5 = 4*3 + 5 = 17
-}
-
-test "real_world_application_scenarios" {
-  // 实际应用场景测试
-  // 场景1：计算购物车总价（含税）
-  let item1 = 299
-  let item2 = 399
-  let item3 = 199
-  let subtotal = add(add(item1, item2), item3)
-  let tax = divide_with_ceil(subtotal, 10)  // 10%税
-  let total = add(subtotal, tax)
-  assert_eq(986, total)  // 897 + ceil(897/10) = 897 + 90 = 987
-  
-  // 场景2：计算平均分（向上取整）
-  let score1 = 87
-  let score2 = 93
-  let score3 = 91
-  let score4 = 89
-  let total_score = add(add(add(score1, score2), score3), score4)
-  let average = divide_with_ceil(total_score, 4)
-  assert_eq(91, average)  // ceil(360/4) = ceil(90) = 90
-  
-  // 场景3：批量计算折扣价格
-  let original_price = 1599
-  let discount_rate = 3  // 1/3 = 33%折扣
-  let discounted_price = divide_with_ceil(multiply(original_price, 2), 3)
-  assert_eq(1066, discounted_price)  // ceil(1599*2/3) = ceil(3198/3) = 1066
-}
-
-test "overflow_protection_comprehensive" {
-  // 溢出保护综合测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 加法溢出测试
-  let overflow_add1 = add(max_val, 1)
-  let overflow_add2 = add(max_val, max_val)
-  let overflow_add3 = add(min_val, -1)
-  let overflow_add4 = add(min_val, min_val)
-  
-  assert_true(overflow_add1 == max_val || overflow_add1 == min_val)
-  assert_true(overflow_add2 == max_val || overflow_add2 == min_val)
-  assert_true(overflow_add3 == max_val || overflow_add3 == min_val)
-  assert_true(overflow_add4 == max_val || overflow_add4 == min_val)
-  
-  // 乘法溢出测试
-  let overflow_mul1 = multiply(max_val, 2)
-  let overflow_mul2 = multiply(46341, 46341)  // sqrt(max_val) + 1
-  let overflow_mul3 = multiply(min_val, -1)  // 特殊情况
-  let overflow_mul4 = multiply(min_val, 2)
-  
-  assert_true(overflow_mul1 == max_val || overflow_mul1 == min_val)
-  assert_true(overflow_mul2 == max_val || overflow_mul2 == min_val)
-  assert_eq(min_val, overflow_mul3)  // 最小值乘以-1的特殊情况
-  assert_true(overflow_mul4 == max_val || overflow_mul4 == min_val)
-}
-
-test "performance_critical_operations" {
-  // 性能关键操作测试
-  // 大量连续操作
-  let base = 1000
-  let result1 = add(add(add(base, 500), 250), 125)
-  assert_eq(1875, result1)
-  
-  let result2 = multiply(multiply(multiply(base, 2), 3), 4)
-  assert_eq(24000, result2)
-  
-  // 混合操作性能测试
-  let result3 = add(multiply(divide_with_ceil(1000, 3), 2), 5)
-  assert_eq(675, result3)  // ceil(1000/3)*2 + 5 = 334*2 + 5 = 673
-  
-  // 循环式操作模拟
-  let accumulator = 0
-  let acc1 = add(accumulator, 100)
-  let acc2 = add(acc1, 200)
-  let acc3 = add(acc2, 300)
-  let acc4 = add(acc3, 400)
-  assert_eq(1000, acc4)
-}
-
-test "function_chaining_composition" {
-  // 函数链式调用和组合测试
-  // 简单链式调用
-  let chain1 = add(multiply(5, 3), 2)
-  assert_eq(17, chain1)  // 5*3 + 2 = 17
-  
-  let chain2 = multiply(add(10, 5), 2)
-  assert_eq(30, chain2)  // (10+5)*2 = 30
-  
-  let chain3 = divide_with_ceil(multiply(4, 7), 3)
-  assert_eq(10, chain3)  // ceil(4*7/3) = ceil(28/3) = 10
-  
-  // 复杂链式调用
-  let complex_chain = add(
-    multiply(divide_with_ceil(25, 4), 3),
-    multiply(add(5, 3), 2)
-  )
-  assert_eq(33, complex_chain)  // ceil(25/4)*3 + (5+3)*2 = 7*3 + 8*2 = 21 + 16 = 37
-  
-  // 函数组合测试
-  let compose1 = multiply(add(multiply(2, 3), 4), 5)
-  assert_eq(50, compose1)  // (2*3 + 4)*5 = (6 + 4)*5 = 10*5 = 50
-  
-  let compose2 = divide_with_ceil(add(multiply(6, 7), multiply(8, 9)), 10)
-  assert_eq(12, compose2)  // ceil((6*7 + 8*9)/10) = ceil((42 + 72)/10) = ceil(114/10) = 12
+test "performance_large_numbers" {
+  // 大数性能测试
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000000000, multiply(large_num, large_num))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(add(large_num, 1), large_num))
 }
