@@ -150,6 +150,7 @@
     "simple_quality_test.mbt",
     "minimal_test.mbt",
     "azimuth_standard_tests_new.mbt",
-    "quality_test_cases.mbt"
+    "quality_test_cases.mbt",
+    "additional_enhanced_tests.mbt"
   ]
 }
