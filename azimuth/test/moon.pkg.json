@@ -145,9 +145,8 @@
     "quality_enhanced_test_suite.mbt",
     "core_functionality_tests.mbt",
     "standard_enhanced_test_cases.mbt",
-    "user_simple_tests.mbt"
-  ]
-,
+    "user_simple_tests.mbt",
+    "comprehensive_quality_test.mbt",
     "simple_quality_test.mbt",
     "minimal_test.mbt"
   ]
