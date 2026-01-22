@@ -57,6 +57,7 @@
     "quality_enhanced_tests.mbt",
     "innovative_test_cases.mbt",
     "comprehensive_quality_tests.mbt",
-    "quality_test_cases.mbt"
+    "quality_test_cases.mbt",
+    "../../azimuth_standard_tests.mbt"
   ]
 }
