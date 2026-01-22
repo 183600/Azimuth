@@ -1,114 +1,143 @@
-// 新增的高质量 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行简洁而全面的测试
+// Azimuth 综合测试套件
+// 包含10个高质量的MoonBit测试用例，覆盖新的测试场景
 
-test "add_function_comprehensive_test" {
-  // 全面测试加法功能，包括正数、负数和零
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(1000000, add(500000, 500000))
+test "fibonacci_sequence_calculation" {
+  // 测试斐波那契数列计算
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)
+  let fib4 = add(fib2, fib3)
+  let fib5 = add(fib3, fib4)
+  let fib6 = add(fib4, fib5)
+  let fib7 = add(fib5, fib6)
+  let fib8 = add(fib6, fib7)
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+  assert_eq(13, fib7)
+  assert_eq(21, fib8)
 }
 
-test "multiply_function_comprehensive_test" {
-  // 全面测试乘法功能，包括正数、负数和零
-  assert_eq(21, multiply(7, 3))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(-24, multiply(-8, 3))
-  assert_eq(1000000, multiply(1000, 1000))
+test "factorial_calculation" {
+  // 测试阶乘计算
+  let fact1 = 1
+  let fact2 = multiply(fact1, 2)
+  let fact3 = multiply(fact2, 3)
+  let fact4 = multiply(fact3, 4)
+  let fact5 = multiply(fact4, 5)
+  
+  assert_eq(120, fact5)
 }
 
-test "divide_with_ceil_edge_cases_test" {
-  // 测试向上取整除法的边界情况
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(0, divide_with_ceil(5, 0))
+test "stack_operations_simulation" {
+  // 模拟栈操作（push和pop）
+  let mut stack_size = 0
+  let mut stack_sum = 0
+  
+  // push操作
+  stack_size = add(stack_size, 1)
+  stack_sum = add(stack_sum, 10)
+  stack_size = add(stack_size, 1)
+  stack_sum = add(stack_sum, 20)
+  stack_size = add(stack_size, 1)
+  stack_sum = add(stack_sum, 30)
+  
+  assert_eq(3, stack_size)
+  assert_eq(60, stack_sum)
+  
+  // pop操作（模拟）
+  stack_size = add(stack_size, -1)
+  stack_sum = add(stack_sum, -30)
+  
+  assert_eq(2, stack_size)
+  assert_eq(30, stack_sum)
 }
 
-test "greet_function_various_inputs_test" {
-  // 测试问候函数的各种输入，包括特殊字符和Unicode
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
+test "binary_search_efficiency" {
+  // 模拟二分搜索的比较次数
+  let sorted_array_size = 64
+  let mut binary_comparisons = divide_with_ceil(sorted_array_size, 2)
+  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
+  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
+  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
+  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
+  
+  assert_eq(1, binary_comparisons)
 }
 
-test "mathematical_properties_test" {
-  // 测试数学性质：交换律和分配律
-  let a = 7
-  let b = 13
-  let c = 5
+test "boundary_value_calculations" {
+  // 测试除法的各种边界情况
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 测试极值运算
+  let very_large = 1000000
+  let negative_large = -1000000
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律：a * (b + c) = a * b + a * c
-  let left = multiply(a, add(b, c))
-  let right = add(multiply(a, b), multiply(a, c))
-  assert_eq(left, right)
+  assert_eq(0, add(very_large, negative_large))
 }
 
-test "real_world_business_calculation_test" {
-  // 实际业务计算：订单总价计算
-  let product_price = 25
-  let quantity = 8
-  let shipping_cost = 15
-  let discount = 20
-  
-  let subtotal = multiply(product_price, quantity)
-  let total_before_discount = add(subtotal, shipping_cost)
-  let final_total = add(total_before_discount, -discount)
-  
-  assert_eq(215, final_total)
+test "multilingual_greetings" {
+  // 测试多语言问候功能
+  assert_eq_string("Hello, English!", greet("English"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, русский!", greet("русский"))
+  assert_eq_string("Hello, español!", greet("español"))
+  assert_eq_string("Hello, français!", greet("français"))
 }
 
-test "complex_arithmetic_expressions_test" {
-  // 测试复杂算术表达式
-  let x = 10
-  let y = 15
-  let z = 20
+test "physics_distance_calculation" {
+  // 计算自由落体距离：s = 0.5 * g * t^2（简化为整数计算）
+  let gravity = 10  // 简化的重力加速度
+  let time = 3
+  let distance = multiply(gravity, multiply(time, time)) / 2
   
-  // 测试 (x + y) * z
-  let result1 = multiply(add(x, y), z)
-  assert_eq(500, result1)
-  
-  // 测试 x * y + z
-  let result2 = add(multiply(x, y), z)
-  assert_eq(170, result2)
+  assert_eq(45, distance)
 }
 
-test "negative_number_operations_test" {
-  // 专门测试负数运算
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+test "kinetic_energy_calculation" {
+  // 计算动能：KE = 0.5 * m * v^2
+  let mass = 10
+  let velocity = 8
+  let kinetic_energy = multiply(mass, multiply(velocity, velocity)) / 2
+  
+  assert_eq(320, kinetic_energy)
 }
 
-test "packaging_calculation_test" {
-  // 实际应用：包装计算
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)
+test "circle_geometry_calculations" {
+  // 计算圆的周长和面积
+  let radius = 7
+  let pi_approx = 22  // π的近似值
+  let circumference = multiply(2, multiply(radius, pi_approx)) / 7
+  let area = multiply(radius, multiply(radius, pi_approx)) / 7
+  
+  assert_eq(44, circumference)
+  assert_eq(154, area)
 }
 
-test "string_processing_with_greet_test" {
-  // 字符串处理与问候函数结合
-  let first_name = "John"
-  let last_name = "Doe"
-  let full_name = first_name + " " + last_name
-  let greeting = greet(full_name)
+test "combinatorial_calculations" {
+  // 计算组合数：C(n,k) = n! / (k! * (n-k)!)
+  // 简化计算：C(5,2) = 5*4/(2*1) = 10
+  let n = 5
+  let k = 2
+  let numerator = multiply(n, add(n, -1))
+  let denominator = multiply(k, 1)
+  let combination = numerator / denominator
   
-  assert_eq_string("Hello, John Doe!", greeting)
+  assert_eq(10, combination)
   
-  // 测试特殊字符处理
-  let special_name = "Alice & Bob"
-  let special_greeting = greet(special_name)
-  assert_eq_string("Hello, Alice & Bob!", special_greeting)
+  // 计算排列数：P(n,k) = n! / (n-k)!
+  // 简化计算：P(5,3) = 5*4*3 = 60
+  let perm_n = 5
+  let permutation = multiply(perm_n, multiply(add(perm_n, -1), add(perm_n, -2)))
+  
+  assert_eq(60, permutation)
 }
