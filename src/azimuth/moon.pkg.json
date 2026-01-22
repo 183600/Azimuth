@@ -8,6 +8,8 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
+    "simple_quality_tests.mbt",
+    "quality_test_cases.mbt",
     "core_tests.mbt",
     "azimuth_standard_tests.mbt",
     "lib.mbt",
