@@ -971,3 +971,85 @@ test "complex_division_scenarios" {
   assert_eq(10, divide_with_ceil(100, 10))
 }
 
+// 新增的10个标准 MoonBit 测试用例
+
+test "mathematical_commutative_law" {
+  // 验证加法和乘法交换律
+  let a = 7
+  let b = 13
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "divide_with_ceil_zero_divisor" {
+  // 测试除数为零的安全处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-50, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+}
+
+test "associative_property_verification" {
+  // 验证加法结合律
+  let x = 5
+  let y = 8
+  let z = 12
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+}
+
+test "greet_function_multilingual" {
+  // 测试多语言问候功能
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "boundary_value_operations" {
+  // 边界值运算测试
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  assert_eq(0, multiply(1, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+}
+
+test "fractional_division_precision" {
+  // 分数除法精度测试
+  assert_eq(2, divide_with_ceil(4, 3))
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(5, divide_with_ceil(14, 3))
+}
+
+test "string_concatenation_edge" {
+  // 字符串连接边界测试
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, ABC!", greet("ABC"))
+  assert_eq_string("Hello, xyz123!", greet("xyz123"))
+}
+
+test "distributive_property_check" {
+  // 验证分配律 a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 6
+  let c = 9
+  let left = multiply(a, add(b, c))
+  let right = add(multiply(a, b), multiply(a, c))
+  assert_eq(left, right)
+}
+
+test "negative_zero_operations" {
+  // 负零和零的运算测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, -5))
+  assert_eq(0, multiply(-5, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
+}
+
+test "practical_tip_calculation" {
+  // 实际小费计算场景
+  let bill_amount = 85
+  let tip_percentage = 15
+  let tip_amount = divide_with_ceil(multiply(bill_amount, tip_percentage), 100)
+  let total = add(bill_amount, tip_amount)
+  assert_eq(13, tip_amount)
+  assert_eq(98, total)
+}
+
