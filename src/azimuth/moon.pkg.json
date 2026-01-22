@@ -1,7 +1,8 @@
 {
   "name": "azimuth",
   "import": [
-    "moonbitlang/core"
+    "moonbitlang/core",
+    "moonbitlang/core/builtin"
   ],
   "test-import": [
     "azimuth/lib"
@@ -95,5 +96,6 @@
           "new_comprehensive_test_cases.mbt",
           "simple_new_test_cases.mbt",
           "standard_core_tests.mbt",
-          "standard_test_suite_new.mbt"
+          "standard_test_suite_new.mbt",
+          "simple_standard_tests.mbt"
           ]}

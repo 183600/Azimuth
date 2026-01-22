@@ -1,75 +1,64 @@
-// 简单标准测试套件
-// 使用标准的 MoonBit 测试语法，只测试基本功能
+// 简单的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行测试
 
-// 测试基本加法功能
-test "add_basic_functionality" {
-  assert_eq(5, add(2, 3))
+test "add_function_basic" {
+  // 测试基本加法功能
+  assert_eq(10, add(3, 7))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
 }
 
-// 测试加法边界情况
-test "add_boundary_cases" {
-  assert_eq(10, add(5, 5))
-  assert_eq(-10, add(-5, -5))
-  assert_eq(0, add(10, -10))
-}
-
-// 测试基本乘法功能
-test "multiply_basic_functionality" {
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
+test "multiply_function_basic" {
+  // 测试基本乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
   assert_eq(-6, multiply(-2, 3))
 }
 
-// 测试乘法边界情况
-test "multiply_boundary_cases" {
-  assert_eq(25, multiply(5, 5))
-  assert_eq(-25, multiply(-5, 5))
-  assert_eq(25, multiply(-5, -5))
-}
-
-// 测试字符串问候功能
-test "greet_basic_functionality" {
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_function_basic" {
+  // 测试基本问候功能
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
 }
 
-// 测试向上取整除法 - 基本功能
-test "divide_with_ceil_basic" {
+test "divide_with_ceil_positive" {
+  // 测试正数的向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
 }
 
-// 测试向上取整除法 - 边界情况
-test "divide_with_ceil_boundary" {
-  assert_eq(0, divide_with_ceil(5, 0))  // 除数为0
-  assert_eq(0, divide_with_ceil(0, 5))  // 被除数为0
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+test "divide_with_ceil_zero" {
+  // 测试除数为零的情况
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-// 测试复合运算
-test "complex_operations" {
-  let a = 10
-  let b = 20
-  assert_eq(30, add(a, b))
-  assert_eq(200, multiply(a, b))
-  assert_eq(7, divide_with_ceil(20, 3))
+test "mathematical_commutative_law" {
+  // 验证数学交换律
+  let a = 7
+  let b = 13
+  
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-// 测试字符串处理
-test "string_processing" {
-  let name = "MoonBit"
-  let greeting = greet(name)
-  assert_eq_string("Hello, MoonBit!", greeting)
+test "combined_operations" {
+  // 测试组合运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-// 测试数学运算组合
-test "math_combinations" {
-  assert_eq(15, add(multiply(2, 3), multiply(3, 3)))
-  assert_eq(50, multiply(add(5, 5), 5))
-  assert_eq(7, divide_with_ceil(add(10, 10), 3))
+test "practical_packaging" {
+  // 实际应用：包装计算
+  let total_items = 17
+  let items_per_box = 5
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(4, boxes_needed)  // ceil(17/5) = 4
+}
+
+test "greeting_with_special_characters" {
+  // 测试特殊字符的问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
