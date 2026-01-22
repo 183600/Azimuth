@@ -1,84 +1,93 @@
-// 标准 MoonBit 测试用例 - Azimuth 库
-// 包含10个测试用例，覆盖核心功能
+// 标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "add_basic_functionality" {
+test "add_function_basic_tests" {
   // 测试基本加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(-2, 2))
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  inspect(@azimuth.add(2, 3), "5")?
+  inspect(@azimuth.add(-1, 1), "0")?
+  inspect(@azimuth.add(0, 0), "0")?
 }
 
-test "add_boundary_values" {
-  // 测试加法边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  @azimuth.assert_eq(1, @azimuth.add(max_val, min_val + 1))
-}
-
-test "multiply_basic_functionality" {
+test "multiply_function_basic_tests" {
   // 测试基本乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(-6, @azimuth.multiply(2, -3))
-  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
-  @azimuth.assert_eq(0, @azimuth.multiply(2, 0))
+  inspect(@azimuth.multiply(3, 4), "12")?
+  inspect(@azimuth.multiply(-2, 3), "-6")?
+  inspect(@azimuth.multiply(0, 5), "0")?
 }
 
-test "multiply_identity_elements" {
-  // 测试乘法单位元
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
-  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
-  @azimuth.assert_eq(-5, @azimuth.multiply(-1, 5))
+test "greet_function_basic_tests" {
+  // 测试问候函数
+  inspect(@azimuth.greet("World"), "Hello, World!")?
+  inspect(@azimuth.greet("MoonBit"), "Hello, MoonBit!")?
+  inspect(@azimuth.greet(""), "Hello, !")?
 }
 
-test "greet_basic_functionality" {
-  // 测试基本问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "divide_with_ceil_positive_tests" {
+  // 测试向上取整除法 - 正数情况
+  inspect(@azimuth.divide_with_ceil(10, 3), "4")?
+  inspect(@azimuth.divide_with_ceil(9, 3), "3")?
+  inspect(@azimuth.divide_with_ceil(1, 2), "1")?
 }
 
-test "greet_edge_cases" {
-  // 测试问候函数边界情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))
-  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+test "divide_with_ceil_negative_tests" {
+  // 测试向上取整除法 - 负数情况
+  inspect(@azimuth.divide_with_ceil(-10, 3), "-3")?
+  inspect(@azimuth.divide_with_ceil(10, -3), "-3")?
+  inspect(@azimuth.divide_with_ceil(-10, -3), "4")?
 }
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试基本向上取整除法功能
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(13, 3))
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法 - 边界情况
+  inspect(@azimuth.divide_with_ceil(0, 5), "0")?
+  inspect(@azimuth.divide_with_ceil(5, 0), "0")?
+  inspect(@azimuth.divide_with_ceil(1, 1), "1")?
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数向上取整除法
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-11, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-12, 3))
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-13, 3))
-}
-
-test "divide_with_ceil_zero_division" {
-  // 测试除零情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
-}
-
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
-  let sum = @azimuth.add(10, 20)
-  let product = @azimuth.multiply(5, 6)
-  let division = @azimuth.divide_with_ceil(25, 4)
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 5
+  let b = 7
   
-  @azimuth.assert_eq(30, sum)
-  @azimuth.assert_eq(30, product)
-  @azimuth.assert_eq(7, division)
+  // 加法交换律
+  let sum1 = @azimuth.add(a, b)
+  let sum2 = @azimuth.add(b, a)
+  inspect(sum1, sum2.to_string())?
   
-  // 测试函数组合
-  let combined = @azimuth.multiply(@azimuth.add(2, 3), @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(20, combined)
+  // 乘法交换律
+  let product1 = @azimuth.multiply(a, b)
+  let product2 = @azimuth.multiply(b, a)
+  inspect(product1, product2.to_string())?
+}
+
+test "complex_calculations" {
+  // 测试复合计算
+  // (2 + 3) * 4 = 20
+  let result1 = @azimuth.multiply(@azimuth.add(2, 3), 4)
+  inspect(result1, "20")?
+  
+  // 组合计算：(5 + 3) * (10 / 4 向上取整) = 8 * 3 = 24
+  let result2 = @azimuth.multiply(@azimuth.add(5, 3), @azimuth.divide_with_ceil(10, 4))
+  inspect(result2, "24")?
+}
+
+test "boundary_values" {
+  // 测试边界值
+  inspect(@azimuth.add(2147483647, 0), "2147483647")?
+  inspect(@azimuth.multiply(2147483647, 1), "2147483647")?
+  inspect(@azimuth.multiply(-2147483648, 0), "0")?
+}
+
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 计算购物车总价
+  let item_price = 99
+  let quantity = 3
+  let total = @azimuth.multiply(item_price, quantity)
+  inspect(total, "297")?
+  
+  // 计算页数（向上取整）
+  let total_items = 100
+  let items_per_page = 30
+  let pages_needed = @azimuth.divide_with_ceil(total_items, items_per_page)
+  inspect(pages_needed, "4")?
 }
