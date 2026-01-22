@@ -1,176 +1,41 @@
-// 高质量测试套件 - 针对 azimuth 库的综合测试
-// 包含实际应用场景和边界情况测试
+// 高质量 MoonBit 测试用例
+// 覆盖 azimuth 库的核心功能和边界情况
 
-test "financial_interest_calculation" {
-  // 金融利息计算场景
-  // 计算复利：本金 = 1000，年利率 = 5%，期限 = 3年
-  let principal = 1000
-  let rate_percent = 5
-  
-  // 第一年
-  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let year1_total = add(principal, year1_interest)
-  
-  // 第二年
-  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
-  let year2_total = add(year1_total, year2_interest)
-  
-  // 第三年
-  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
-  let final_amount = add(year2_total, year3_interest)
-  
-  assert_eq(1158, final_amount)  // 1000 -> 1050 -> 1103 -> 1158
+test "add_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  assert_eq(15, add(8, 7))
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(5, -5))
+  assert_eq(0, add(-5, 5))
 }
 
-test "inventory_batch_processing" {
-  // 库存批次处理场景
-  // 计算需要的批次数量
-  let total_products = 157
-  let batch_capacity = 25
-  let batches_needed = divide_with_ceil(total_products, batch_capacity)
-  
-  // 计算最后一个批次的产品数量
-  let full_batches = total_products / batch_capacity
-  let last_batch_size = total_products - multiply(full_batches, batch_capacity)
-  
-  assert_eq(7, batches_needed)  // ceil(157/25) = 7
-  assert_eq(7, last_batch_size)  // 157 - 6*25 = 7
+test "multiply_zero_property" {
+  // 测试乘法零元素性质：a × 0 = 0
+  assert_eq(0, multiply(10, 0))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(-100, 0))
 }
 
-test "team_project_allocation" {
-  // 团队项目分配场景
-  // 将任务分配给团队成员
-  let total_tasks = 47
-  let team_members = 8
-  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
-  
-  // 计算总分配任务数
-  let allocated_tasks = multiply(tasks_per_member, team_members)
-  let extra_tasks = allocated_tasks - total_tasks
-  
-  assert_eq(6, tasks_per_member)  // ceil(47/8) = 6
-  assert_eq(1, extra_tasks)  // 6*8 - 47 = 1
+test "greet_with_unicode_and_special_chars" {
+  // 测试包含Unicode和特殊字符的问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, José!", greet("José"))
+  assert_eq_string("Hello, !@#$%", greet("!@#$%"))
 }
 
-test "temperature_conversion_batch" {
-  // 温度转换批量处理
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  let celsius_temp = 20
-  let expected_fahrenheit = 68
-  
-  // 测试温度转换
-  let fahrenheit = add(divide_with_ceil(multiply(celsius_temp, 9), 5), 32)
-  assert_eq(expected_fahrenheit, fahrenheit)
-  
-  // 测试另一个温度
-  let celsius_temp2 = 0
-  let fahrenheit2 = add(divide_with_ceil(multiply(celsius_temp2, 9), 5), 32)
-  assert_eq(32, fahrenheit2)
-}
-
-test "shipping_cost_calculation" {
-  // 运费计算场景
-  // 根据重量和距离计算运费
-  let base_rate = 5
-  let weight_kg = 12
-  let distance_km = 45
-  
-  // 重量费用：每kg基础费率，向上取整到最近的5kg
-  let weight_units = divide_with_ceil(weight_kg, 5)
-  let weight_cost = multiply(weight_units, multiply(base_rate, 2))
-  
-  // 距离费用：每10km一个计价单位
-  let distance_units = divide_with_ceil(distance_km, 10)
-  let distance_cost = multiply(distance_units, base_rate)
-  
-  let total_cost = add(weight_cost, distance_cost)
-  
-  assert_eq(55, total_cost)  // weight: ceil(12/5)*5*2 = 3*10 = 30, distance: ceil(45/10)*5 = 5*5 = 25, total: 30+25=55
-}
-
-test "classroom_seating_arrangement" {
-  // 教室座位安排场景
-  let total_students = 67
-  let seats_per_row = 8
-  let rows_needed = divide_with_ceil(total_students, seats_per_row)
-  
-  // 计算最后一排的座位数
-  let full_rows = total_students / seats_per_row
-  let last_row_students = total_students - multiply(full_rows, seats_per_row)
-  
-  // 计算空座位数
-  let total_seats = multiply(rows_needed, seats_per_row)
-  let empty_seats = total_seats - total_students
-  
-  assert_eq(9, rows_needed)  // ceil(67/8) = 9
-  assert_eq(3, last_row_students)  // 67 - 8*8 = 3
-  assert_eq(5, empty_seats)  // 9*8 - 67 = 5
-}
-
-test "event_planning_budget" {
-  // 活动规划预算场景
-  let participants = 85
-  let cost_per_person = 25
-  let fixed_venue_cost = 500
-  let contingency_percent = 10
-  
-  // 计算基础成本
-  let variable_cost = multiply(participants, cost_per_person)
-  let base_total = add(variable_cost, fixed_venue_cost)
-  
-  // 计算应急预算
-  let contingency = divide_with_ceil(multiply(base_total, contingency_percent), 100)
-  let total_budget = add(base_total, contingency)
-  
-  assert_eq(2625, variable_cost)  // 85 * 25 = 2125
-  assert_eq(3125, base_total)  // 2625 + 500 = 3125
-  assert_eq(313, contingency)  // ceil(3125 * 10 / 100) = 313
-  assert_eq(3438, total_budget)  // 3125 + 313 = 3438
-}
-
-test "manufacturing_production_cycle" {
-  // 制造业生产周期场景
-  let daily_target = 500
-  let machine_capacity_per_hour = 45
-  let working_hours = 8
-  
-  // 计算每日实际产量
-  let daily_production = multiply(machine_capacity_per_hour, working_hours)
-  
-  // 计算需要的机器数量
-  let machines_needed = divide_with_ceil(daily_target, machine_capacity_per_hour)
-  
-  // 计算完成订单需要的天数
-  let order_quantity = 5000
-  let days_needed = divide_with_ceil(order_quantity, daily_production)
-  
-  assert_eq(360, daily_production)  // 45 * 8 = 360
-  assert_eq(12, machines_needed)  // ceil(500/45) = 12
-  assert_eq(14, days_needed)  // ceil(5000/360) = 14
-}
-
-test "multilingual_greeting_system" {
-  // 多语言问候系统场景
-  let english_name = "Alice"
-  let chinese_name = "小明"
-  let spanish_name = "María"
-  let emoji_name = "🌟"
-  
-  // 测试不同语言的问候
-  let english_greeting = greet(english_name)
-  let chinese_greeting = greet(chinese_name)
-  let spanish_greeting = greet(spanish_name)
-  let emoji_greeting = greet(emoji_name)
-  
-  assert_eq_string("Hello, Alice!", english_greeting)
-  assert_eq_string("Hello, 小明!", chinese_greeting)
-  assert_eq_string("Hello, María!", spanish_greeting)
-  assert_eq_string("Hello, 🌟!", emoji_greeting)
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(4, divide_with_ceil(11, 3))    // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))     // 9/3 = 3 -> 3
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  assert_eq(0, divide_with_ceil(5, 0))     // 除数为0时返回0
 }
 
 test "complex_business_calculation" {
-  // 复杂业务计算场景
-  // 计算订单总价：商品价格 × 数量 + 运费 - 折扣
+  // 复杂业务计算：订单总价
   let product_price = 89
   let quantity = 4
   let shipping = 12
@@ -180,5 +45,65 @@ test "complex_business_calculation" {
   let total_before_discount = add(subtotal, shipping)
   let final_total = add(total_before_discount, -discount)
   
-  assert_eq(358, final_total)  // 89*4 + 12 - 20 = 356 + 12 - 20 = 348
+  assert_eq(356, subtotal)
+  assert_eq(368, total_before_discount)
+  assert_eq(348, final_total)
+}
+
+test "mathematical_distributive_property" {
+  // 测试分配律：a × (b + c) = a × b + a × c
+  let a = 3
+  let b = 4
+  let c = 5
+  
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)  // 3 × (4 + 5) = 3 × 4 + 3 × 5 = 27
+}
+
+test "real_world_packaging_scenario" {
+  // 真实世界场景：包装计算
+  let total_items = 47
+  let items_per_box = 12
+  
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let actual_capacity = multiply(boxes_needed, items_per_box)
+  let wasted_space = add(actual_capacity, -total_items)
+  
+  assert_eq(4, boxes_needed)      // ceil(47/12) = 4
+  assert_eq(48, actual_capacity)  // 4 × 12 = 48
+  assert_eq(1, wasted_space)      // 48 - 47 = 1
+}
+
+test "extreme_boundary_values" {
+  // 测试极端边界值
+  assert_eq(2147483647, add(2147483646, 1))      // 接近Int最大值
+  assert_eq(-2147483648, add(-2147483647, -1))   // 接近Int最小值
+  assert_eq(0, add(2147483647, -2147483647))     // 最大值与相反数相加
+  assert_eq(1, divide_with_ceil(1, 2147483647))  // 极大除数
+}
+
+test "string_greeting_edge_cases" {
+  // 测试字符串问候的边界情况
+  assert_eq_string("Hello, !", greet(""))           // 空字符串
+  assert_eq_string("Hello, A!", greet("A"))         // 单字符
+  assert_eq_string("Hello,   !", greet("  "))       // 空格字符串
+  assert_eq_string("Hello, This is a very long name!", greet("This is a very long name"))  // 长字符串
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算：投资回报
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
+  
+  // 简化的复利计算（每年计算一次，使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  
+  assert_eq(10500, year1)  // 10000 + ceil(10000×5/100) = 10000 + 500 = 10500
+  assert_eq(11025, year2)  // 10500 + ceil(10500×5/100) = 10500 + 525 = 11025
+  assert_eq(11576, year3)  // 11025 + ceil(11025×5/100) = 11025 + 551 = 11576
 }
