@@ -102,3 +102,48 @@ test "unicode_greeting" {
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
+
+test "divide_with_ceil_edge_cases" {
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(2, divide_with_ceil(3, 2))
+}
+
+test "add_negative_numbers" {
+  assert_eq(-10, add(-5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(5, add(-10, 15))
+}
+
+test "multiply_large_numbers" {
+  assert_eq(10000, multiply(100, 100))
+  assert_eq(-10000, multiply(-100, 100))
+  assert_eq(10000, multiply(-100, -100))
+}
+
+test "greet_empty_string" {
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "divide_with_ceil_large_numbers" {
+  assert_eq(1000, divide_with_ceil(10000, 10))
+  assert_eq(1001, divide_with_ceil(10001, 10))
+}
+
+test "complex_calculation_sequence" {
+  let a = add(5, 3)
+  let b = multiply(a, 2)
+  let c = divide_with_ceil(b, 4)
+  assert_eq(4, c)  // ((5+3)*2)/4 = 16/4 = 4
+}
+
+test "greet_special_characters" {
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello, \n\t!", greet("\n\t"))
+}
+
+test "divide_with_ceil_fractional" {
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(5, 2))
+  assert_eq(4, divide_with_ceil(7, 2))
+}
