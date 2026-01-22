@@ -104,5 +104,6 @@
           "azimuth_enhanced_standard_tests.mbt",
           "standard_test_suite.mbt",
           "azimuth_enhanced_test_cases.mbt",
-          "simple_enhanced_test_cases.mbt"
+          "simple_enhanced_test_cases.mbt",
+          "standard_azimuth_unit_tests.mbt"
           ]}
