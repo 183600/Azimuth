@@ -49,3 +49,42 @@ test "divide_with_ceil_edge_cases" {
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(100, 100))
 }
+
+// 新增的标准测试用例
+test "add_boundary_values" {
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+}
+
+test "multiply_special_cases" {
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
+  @azimuth.assert_eq(1, @azimuth.multiply(-1, -1))
+}
+
+test "complex_arithmetic_operations" {
+  let sum = @azimuth.add(15, 25)
+  let product = @azimuth.multiply(sum, 2)
+  @azimuth.assert_eq(80, product)
+  
+  let result = @azimuth.divide_with_ceil(product, 15)
+  @azimuth.assert_eq(6, result)
+}
+
+test "mixed_operations_with_strings" {
+  let num1 = 100
+  let num2 = 200
+  let sum = @azimuth.add(num1, num2)
+  let product = @azimuth.multiply(sum, 3)
+  let greeting = @azimuth.greet("User")
+  
+  @azimuth.assert_eq(900, product)
+  @azimuth.assert_eq_string("Hello, User!", greeting)
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(sum, 150))
+}
