@@ -91,5 +91,7 @@
       "test/focused_core_tests.mbt",
           "test/additional_comprehensive_test_cases.mbt",
           "test/simple_new_test_cases.mbt",
-          "test/new_comprehensive_tests.mbt"
+          "test/new_comprehensive_tests.mbt",
+          "new_comprehensive_test_cases.mbt",
+          "simple_new_test_cases.mbt"
           ]}
