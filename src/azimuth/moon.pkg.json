@@ -98,5 +98,7 @@
           "standard_core_tests.mbt",
           "standard_test_suite_new.mbt",
           "simple_standard_tests.mbt",
-          "standard_test_suite.mbt"
+          "standard_test_suite.mbt",
+          "azimuth_new_comprehensive_tests.mbt",
+          "simple_test_verify.mbt"
           ]}

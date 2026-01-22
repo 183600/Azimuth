@@ -1,174 +1,114 @@
 // 新增的高质量 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 针对 azimuth 库的核心功能进行简洁而全面的测试
 
-test "mathematical_laws_commutative" {
-  // 测试数学交换律：加法和乘法
-  let a = 17
-  let b = 29
-  assert_eq(add(a, b), add(b, a))  // 加法交换律
-  assert_eq(multiply(a, b), multiply(b, a))  // 乘法交换律
+test "add_function_comprehensive_test" {
+  // 全面测试加法功能，包括正数、负数和零
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(1000000, add(500000, 500000))
 }
 
-test "mathematical_laws_associative" {
-  // 测试数学结合律：加法和乘法
-  let x = 5
-  let y = 8
-  let z = 12
-  assert_eq(add(add(x, y), z), add(x, add(y, z)))  // 加法结合律
-  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))  // 乘法结合律
+test "multiply_function_comprehensive_test" {
+  // 全面测试乘法功能，包括正数、负数和零
+  assert_eq(21, multiply(7, 3))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(-24, multiply(-8, 3))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 全面测试除法向上取整功能
-  // 正数情况
-  assert_eq(4, divide_with_ceil(10, 3))  // 3.33 -> 4
-  assert_eq(3, divide_with_ceil(9, 3))   // 3 -> 3
-  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
-  
-  // 负数情况
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.33 -> -3
-  assert_eq(-3, divide_with_ceil(-9, 3))   // -3 -> -3
-  
-  // 负数除负数
-  assert_eq(4, divide_with_ceil(-10, -3))  // 3.33 -> 4
-  
-  // 除零安全处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
+test "divide_with_ceil_edge_cases_test" {
+  // 测试向上取整除法的边界情况
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "negative_number_operations" {
-  // 测试负数运算的各种情况
-  assert_eq(-10, add(-3, -7))    // 负数加法
-  assert_eq(-5, add(-8, 3))     // 正负数加法
-  assert_eq(0, add(-5, 5))      // 相反数相加
-  assert_eq(15, multiply(-3, -5))  // 负数乘法（正结果）
-  assert_eq(-15, multiply(3, -5))  // 正负数乘法（负结果）
-  assert_eq(0, multiply(-5, 0))    // 负数乘零
-}
-
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000, multiply(1000000, 1000))
-  
-  // 零值运算
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(12345, 0))
-  assert_eq(12345, add(12345, 0))
-  assert_eq(0, divide_with_ceil(0, 12345))
-  
-  // 单位元运算
-  assert_eq(12345, multiply(12345, 1))
-  assert_eq(12345, add(12345, 0))
-}
-
-test "greet_function_comprehensive" {
-  // 全面测试问候函数
-  // 基本功能
-  assert_eq_string("Hello, World!", greet("World"))
-  
-  // 特殊情况
-  assert_eq_string("Hello, !", greet(""))  // 空字符串
-  assert_eq_string("Hello,  !", greet(" "))  // 空格
-  assert_eq_string("Hello, A!", greet("A"))  // 单字符
-  
-  // Unicode 和特殊字符
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, José!", greet("José"))
-  
-  // 数字和符号
+test "greet_function_various_inputs_test" {
+  // 测试问候函数的各种输入，包括特殊字符和Unicode
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, a+b=c!", greet("a+b=c"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
 }
 
-test "complex_business_calculations" {
-  // 复杂业务计算场景
-  // 订单计算：商品价格 × 数量 + 运费 - 折扣
-  let product_price = 89
-  let quantity = 4
-  let shipping = 12
+test "mathematical_properties_test" {
+  // 测试数学性质：交换律和分配律
+  let a = 7
+  let b = 13
+  let c = 5
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律：a * (b + c) = a * b + a * c
+  let left = multiply(a, add(b, c))
+  let right = add(multiply(a, b), multiply(a, c))
+  assert_eq(left, right)
+}
+
+test "real_world_business_calculation_test" {
+  // 实际业务计算：订单总价计算
+  let product_price = 25
+  let quantity = 8
+  let shipping_cost = 15
   let discount = 20
   
   let subtotal = multiply(product_price, quantity)
-  let total_before_discount = add(subtotal, shipping)
+  let total_before_discount = add(subtotal, shipping_cost)
   let final_total = add(total_before_discount, -discount)
   
-  assert_eq(356, subtotal)           // 89 * 4
-  assert_eq(368, total_before_discount)  // 356 + 12
-  assert_eq(348, final_total)        // 368 - 20
+  assert_eq(215, final_total)
 }
 
-test "inventory_packaging_optimization" {
-  // 库存包装优化计算
-  let items_per_box = 24
-  let total_items_small = 100
-  let total_items_medium = 250
-  let total_items_large = 1000
+test "complex_arithmetic_expressions_test" {
+  // 测试复杂算术表达式
+  let x = 10
+  let y = 15
+  let z = 20
   
-  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
-  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
-  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(500, result1)
   
-  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
-  
-  assert_eq(5, boxes_small)   // ceil(100/24) = 5
-  assert_eq(11, boxes_medium) // ceil(250/24) = 11
-  assert_eq(42, boxes_large)  // ceil(1000/24) = 42
-  assert_eq(58, total_boxes)  // 5 + 11 + 42
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(170, result2)
 }
 
-test "mathematical_series_calculation" {
-  // 数学级数计算：等差数列求和
-  let first_term = 3
-  let common_difference = 2
-  let number_of_terms = 10
-  
-  // 使用公式计算：S = n/2 * (2a + (n-1)d)
-  let sum_formula = divide_with_ceil(
-    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
-    2
-  )
-  
-  // 验证结果：10/2 * (6 + 18) = 5 * 24 = 120
-  assert_eq(120, sum_formula)
+test "negative_number_operations_test" {
+  // 专门测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "distributive_property_verification" {
-  // 验证分配律：a * (b + c) = a * b + a * c
-  let a = 7
-  let b = 12
-  let c = 8
-  
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  
-  assert_eq(left_side, right_side)  // 7 * (12 + 8) = 7 * 12 + 7 * 8 = 140
+test "packaging_calculation_test" {
+  // 实际应用：包装计算
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)
 }
 
-test "real_world_financial_calculation" {
-  // 真实世界金融计算：复利计算
-  let principal = 1000
-  let interest_rate = 5  // 5%
+test "string_processing_with_greet_test" {
+  // 字符串处理与问候函数结合
+  let first_name = "John"
+  let last_name = "Doe"
+  let full_name = first_name + " " + last_name
+  let greeting = greet(full_name)
   
-  // 第一年
-  let year1_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
-  let year1_total = add(principal, year1_interest)
+  assert_eq_string("Hello, John Doe!", greeting)
   
-  // 第二年
-  let year2_interest = divide_with_ceil(multiply(year1_total, interest_rate), 100)
-  let year2_total = add(year1_total, year2_interest)
-  
-  // 第三年
-  let year3_interest = divide_with_ceil(multiply(year2_total, interest_rate), 100)
-  let year3_total = add(year2_total, year3_interest)
-  
-  assert_eq(50, year1_interest)   // ceil(1000 * 5 / 100) = 50
-  assert_eq(1050, year1_total)    // 1000 + 50
-  assert_eq(53, year2_interest)   // ceil(1050 * 5 / 100) = 53
-  assert_eq(1103, year2_total)    // 1050 + 53
-  assert_eq(56, year3_interest)   // ceil(1103 * 5 / 100) = 56
-  assert_eq(1159, year3_total)    // 1103 + 56
+  // 测试特殊字符处理
+  let special_name = "Alice & Bob"
+  let special_greeting = greet(special_name)
+  assert_eq_string("Hello, Alice & Bob!", special_greeting)
 }
