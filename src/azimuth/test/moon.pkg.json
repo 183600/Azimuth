@@ -216,5 +216,6 @@
         "standard_comprehensive_test_suite.mbt",
         "standard_enhanced_tests.mbt",
         "enhanced_azimuth_tests.mbt",
-        "azimuth_standard_tests.mbt"
+        "azimuth_standard_tests.mbt",
+        "high_quality_comprehensive_tests.mbt"
         ]}
