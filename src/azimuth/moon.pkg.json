@@ -75,5 +75,6 @@
       "test_enhanced.mbt",
       "azimuth_new_test_suite.mbt",
       "azimuth_concise_tests.mbt",
-      "azimuth_new_concise_tests.mbt"
-      ]}
+          "azimuth_new_concise_tests.mbt",
+          "advanced_test_scenarios.mbt"
+        ]}
