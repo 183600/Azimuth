@@ -73,7 +73,7 @@ test "resource_allocation" {
   
   // 验证总容量足够
   let total_capacity = @azimuth.multiply(people_per_room, rooms)
-  @azimuth.assert_true(total_capacity >= people)
+  @azimuth.assert_eq(total_capacity >= people, true)
 }
 
 test "time_slot_scheduling" {

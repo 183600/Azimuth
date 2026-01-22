@@ -107,13 +107,13 @@ test "geometric_calculations" {
 
 test "error_handling_validation" {
   // 测试错误处理验证
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("success", "success")
   
   // 测试溢出保护
   let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 100, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
 }

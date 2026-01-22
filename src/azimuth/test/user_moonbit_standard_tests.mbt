@@ -67,16 +67,16 @@ test "standard_complex_calculations" {
 
 test "standard_assertion_functions" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("success", "success")
   
   // 测试条件断言
   let x = 10
   let y = 20
-  @azimuth.assert_true(x < y)
-  @azimuth.assert_false(x > y)
+  @azimuth.assert_eq(true, x < y)
+  @azimuth.assert_eq(0, 1)(x > y)
 }
 
 test "standard_real_world_scenarios" {
@@ -99,8 +99,8 @@ test "standard_error_handling" {
   let max_val = 2147483647
   
   // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 100, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
   
   // 测试零值处理
   @azimuth.assert_eq(@azimuth.multiply(0, max_val), 0)

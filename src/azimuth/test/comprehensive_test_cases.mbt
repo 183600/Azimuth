@@ -193,5 +193,5 @@ test "comprehensive_scenario_test" {
   let within_budget = final_price <= budget
   
   @azimuth.@azimuth.assert_eq(787, final_price)  // 125*7 - 10% = 875 - 87 = 788
-  @azimuth.@azimuth.assert_true(within_budget)   // 787 <= 1000 为真
+  @azimuth.@azimuth.assert_eq(within_budget, true)   // 787 <= 1000 为真
 }

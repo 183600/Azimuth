@@ -186,7 +186,7 @@ test "algorithm_complexity_simulation" {
   @azimuth.assert_eq(10, logarithmic_time)
   
   // 比较不同复杂度的操作次数
-  @azimuth.assert_true(linear_time > constant_time)
-  @azimuth.assert_true(quadratic_time >= linear_time)
-  @azimuth.assert_true(linear_time > logarithmic_time)
+  @azimuth.assert_eq(true, linear_time > constant_time)
+  @azimuth.assert_eq(quadratic_time >= linear_time, true)
+  @azimuth.assert_eq(true, linear_time > logarithmic_time)
 }

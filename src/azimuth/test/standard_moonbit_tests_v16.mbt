@@ -87,15 +87,15 @@ test "practical_business_calculation" {
 
 test "assert_function_verification" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(123, 123)
   @azimuth.assert_eq_string("success", "success")
   
   // 测试条件断言
   let test_value = @azimuth.add(10, 20)
-  @azimuth.assert_true(test_value == 30)
-  @azimuth.assert_false(test_value == 25)
+  @azimuth.assert_eq(test_value == 30, true)
+  @azimuth.assert_eq(0, 1)(test_value == 25)
 }
 
 test "sequential_operations_chain" {

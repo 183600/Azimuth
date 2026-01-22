@@ -7,8 +7,8 @@ test "array_operations" {
   let first = numbers[0]
   let last = numbers[4]
   
-  assert_eq(first, 1)
-  assert_eq(last, 5)
+  @azimuth.assert_eq(first, 1)
+  @azimuth.assert_eq(last, 5)
 }
 
 // 测试条件分支
@@ -19,8 +19,8 @@ test "conditional_logic" {
   let max = if (x > y) { x } else { y }
   let min = if (x < y) { x } else { y }
   
-  assert_eq(max, 20)
-  assert_eq(min, 10)
+  @azimuth.assert_eq(max, 20)
+  @azimuth.assert_eq(min, 10)
 }
 
 // 测试字符串比较
@@ -68,15 +68,15 @@ test "function_composition" {
   let input = 5
   
   // 使用 add 和 multiply 函数组合
-  let doubled = multiply(input, 2)
-  let squared = multiply(input, input)
-  let double_then_add = add(doubled, 10)
-  let square_then_add = add(squared, 10)
+  let doubled = @azimuth.multiply(input, 2)
+  let squared = @azimuth.multiply(input, input)
+  let double_then_add = @azimuth.add(doubled, 10)
+  let square_then_add = @azimuth.add(squared, 10)
   
-  assert_eq(doubled, 10)
-  assert_eq(squared, 25)
-  assert_eq(double_then_add, 20)
-  assert_eq(square_then_add, 35)
+  @azimuth.assert_eq(doubled, 10)
+  @azimuth.assert_eq(squared, 25)
+  @azimuth.assert_eq(double_then_add, 20)
+  @azimuth.assert_eq(square_then_add, 35)
 }
 
 // 测试累加计算
@@ -94,17 +94,17 @@ test "accumulation_calculations" {
   let num10 = 10
   
   // 计算总和
-  let sum = add(add(add(add(add(num1, num2), num3), num4), num5), add(add(add(add(num6, num7), num8), num9), num10))
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5), @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num6, num7), num8), num9), num10))
   
   // 计算偶数和
-  let even_sum = add(add(add(num2, num4), num6), add(num8, num10))
+  let even_sum = @azimuth.add(@azimuth.add(@azimuth.add(num2, num4), num6), @azimuth.add(num8, num10))
   
   // 计算奇数和
-  let odd_sum = add(add(add(num1, num3), num5), add(num7, num9))
+  let odd_sum = @azimuth.add(@azimuth.add(@azimuth.add(num1, num3), num5), @azimuth.add(num7, num9))
   
-  assert_eq(sum, 55)
-  assert_eq(even_sum, 30)
-  assert_eq(odd_sum, 25)
+  @azimuth.assert_eq(sum, 55)
+  @azimuth.assert_eq(even_sum, 30)
+  @azimuth.assert_eq(odd_sum, 25)
 }
 
 // 测试错误处理和异常情况
@@ -118,9 +118,9 @@ test "error_handling" {
   let result2 = safe_divide(10, 0)
   let result3 = safe_divide(0, 5)
   
-  assert_eq(result1, 5)
-  assert_eq(result2, 0)
-  assert_eq(result3, 0)
+  @azimuth.assert_eq(result1, 5)
+  @azimuth.assert_eq(result2, 0)
+  @azimuth.assert_eq(result3, 0)
 }
 
 // 测试字符串处理
@@ -130,11 +130,11 @@ test "string_processing" {
   let str = "42"
   
   // 使用字符串拼接
-  let greeting1 = greet("User")
-  let greeting2 = greet("Admin")
+  let greeting1 = @azimuth.greet("User")
+  let greeting2 = @azimuth.greet("Admin")
   
-  assert_eq_string("Hello, User!", greeting1)
-  assert_eq_string("Hello, Admin!", greeting2)
+  @azimuth.assert_eq_string("Hello, User!", greeting1)
+  @azimuth.assert_eq_string("Hello, Admin!", greeting2)
 }
 
 // 测试递归模式
@@ -142,24 +142,24 @@ test "recursive_patterns" {
   // 计算阶乘（使用展开方式）
   let factorial_0 = 1
   let factorial_1 = 1
-  let factorial_2 = multiply(2, factorial_1)
-  let factorial_3 = multiply(3, factorial_2)
-  let factorial_4 = multiply(4, factorial_3)
-  let factorial_5 = multiply(5, factorial_4)
+  let factorial_2 = @azimuth.multiply(2, factorial_1)
+  let factorial_3 = @azimuth.multiply(3, factorial_2)
+  let factorial_4 = @azimuth.multiply(4, factorial_3)
+  let factorial_5 = @azimuth.multiply(5, factorial_4)
   
-  assert_eq(factorial_0, 1)
-  assert_eq(factorial_1, 1)
-  assert_eq(factorial_5, 120)
+  @azimuth.assert_eq(factorial_0, 1)
+  @azimuth.assert_eq(factorial_1, 1)
+  @azimuth.assert_eq(factorial_5, 120)
   
   // 计算斐波那契数列（使用展开方式）
   let fib_0 = 0
   let fib_1 = 1
-  let fib_2 = add(fib_1, fib_0)
-  let fib_3 = add(fib_2, fib_1)
-  let fib_4 = add(fib_3, fib_2)
-  let fib_5 = add(fib_4, fib_3)
+  let fib_2 = @azimuth.add(fib_1, fib_0)
+  let fib_3 = @azimuth.add(fib_2, fib_1)
+  let fib_4 = @azimuth.add(fib_3, fib_2)
+  let fib_5 = @azimuth.add(fib_4, fib_3)
   
-  assert_eq(fib_0, 0)
-  assert_eq(fib_1, 1)
-  assert_eq(fib_5, 5)
+  @azimuth.assert_eq(fib_0, 0)
+  @azimuth.assert_eq(fib_1, 1)
+  @azimuth.assert_eq(fib_5, 5)
 }

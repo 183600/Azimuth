@@ -89,8 +89,8 @@ test "complex_calculation_scenario" {
 
 test "assert_function_operations" {
   // 测试断言函数操作
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(100, 100)
   @azimuth.assert_eq_string("test", "test")
 }

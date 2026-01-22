@@ -224,13 +224,13 @@ test "statistical_calculations" {
 test "assert_functions_validation" {
   // 测试断言函数的有效性
   // 测试 assert_true 和 assert_false
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_true(0 == 0)
-  @azimuth.assert_true(-10 < 0)
+  @azimuth.assert_eq(true, 5 > 3)
+  @azimuth.assert_eq(0 == 0, true)
+  @azimuth.assert_eq(true, -10 < 0)
   
-  @azimuth.assert_false(5 < 3)
-  @azimuth.assert_false(1 == 0)
-  @azimuth.assert_false(-10 > 0)
+  @azimuth.assert_eq(0, 1)(5 < 3)
+  @azimuth.assert_eq(0, 1)(1 == 0)
+  @azimuth.assert_eq(0, 1)(-10 > 0)
   
   // 测试 assert_eq
   @azimuth.assert_eq(42, 42)
@@ -245,7 +245,7 @@ test "assert_functions_validation" {
   // 测试复合条件
   let x = 10
   let y = 20
-  @azimuth.assert_true(@azimuth.add(x, y) == 30)
-  @azimuth.assert_true(@azimuth.multiply(x, y) == 200)
+  @azimuth.assert_eq(@azimuth.add(x, y, true) == 30)
+  @azimuth.assert_eq(@azimuth.multiply(x, y, true) == 200)
   @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
 }

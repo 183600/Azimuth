@@ -103,14 +103,14 @@ test "complex_calculation_scenario" {
 
 test "assertion_functions_test" {
   // 测试断言函数本身
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试复合条件
   let x = 10
   let y = 20
-  @azimuth.assert_true(@azimuth.add(x, y) == 30)
-  @azimuth.assert_false(@azimuth.multiply(x, y) == 150)
+  @azimuth.assert_eq(@azimuth.add(x, y, true) == 30)
+  @azimuth.assert_eq(0, 1)(@azimuth.multiply(x, y) == 150)
 }

@@ -131,8 +131,8 @@ test "mathematical_series_summation" {
 
 test "assert_functions_validation" {
   // 断言函数验证测试
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(100, 100)
   @azimuth.assert_eq_string("test", "test")
   

@@ -58,7 +58,7 @@ test "algorithm_implementation_tests" {
                  prime_candidate != 3 && 
                  prime_candidate != 5
   
-  @azimuth.assert_true(is_prime)
+  @azimuth.assert_eq(is_prime, true)
   
   // 实现斐波那契数列的第8项
   // F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8, F(7)=13, F(8)=21

@@ -209,7 +209,7 @@ test "prime_number_check" {
   let is_prime1_5 = num1 % 6 != 0
   let is_prime1 = is_prime1_1 && is_prime1_2 && is_prime1_3 && is_prime1_4 && is_prime1_5
   
-  @azimuth.assert_true(is_prime1)
+  @azimuth.assert_eq(is_prime1, true)
   
   // 检查 9 是否为素数（应该不是）
   let num2 = 9
@@ -217,7 +217,7 @@ test "prime_number_check" {
   let is_prime2_2 = num2 % 3 != 0  // 9 % 3 = 0 = 0，所以不是素数
   let is_prime2 = is_prime2_1 && is_prime2_2
   
-  @azimuth.assert_false(is_prime2)
+  @azimuth.assert_eq(0, 1)(is_prime2)
   
   // 检查 13 是否为素数
   let num3 = 13
@@ -235,7 +235,7 @@ test "prime_number_check" {
   let is_prime3 = is_prime3_1 && is_prime3_2 && is_prime3_3 && is_prime3_4 && is_prime3_5 && 
                   is_prime3_6 && is_prime3_7 && is_prime3_8 && is_prime3_9 && is_prime3_10 && is_prime3_11
   
-  @azimuth.assert_true(is_prime3)
+  @azimuth.assert_eq(is_prime3, true)
 }
 
 test "base_conversion_simulation" {

@@ -2,7 +2,7 @@
 // 包含函数定义和10个测试用例
 
 // 函数定义
-pub fn add(a : Int, b : Int) -> Int {
+pub fn @azimuth.add(a : Int, b : Int) -> Int {
   // 特殊情况处理：如果有一个是0，直接返回另一个
   if a == 0 {
     return b
@@ -54,7 +54,7 @@ pub fn add(a : Int, b : Int) -> Int {
   return a + b
 }
 
-pub fn multiply(a : Int, b : Int) -> Int {
+pub fn @azimuth.multiply(a : Int, b : Int) -> Int {
   // 常量定义
   let min_val = -2147483648
   let max_val = 2147483647
@@ -109,13 +109,13 @@ pub fn multiply(a : Int, b : Int) -> Int {
   return a * b
 }
 
-pub fn greet(name : String) -> String {
+pub fn @azimuth.greet(name : String) -> String {
   // 字符串拼接：空字符串会自动处理
   "Hello, " + name + "!"
 }
 
 // 测试辅助函数，提供断言功能
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+pub fn @azimuth.assert_eq(expected : Int, actual : Int) -> Unit {
   // 使用条件分支来实现断言，避免依赖 @builtin.abort
   if (expected == actual) {
     ()
@@ -127,7 +127,7 @@ pub fn assert_eq(expected : Int, actual : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+pub fn @azimuth.assert_eq_string(expected : String, actual : String) -> Unit {
   // 使用条件分支来实现断言，避免依赖 @builtin.abort
   if (expected == actual) {
     ()
@@ -166,10 +166,10 @@ pub fn assert_false(condition : Bool) -> Unit {
 // 测试用例
 test "basic_arithmetic_operations" {
   // 测试基本算术运算
-  assert_eq(15, add(7, 8))
-  assert_eq(0, add(5, -5))
-  assert_eq(24, multiply(6, 4))
-  assert_eq(-18, multiply(-3, 6))
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
+  @azimuth.assert_eq(24, @azimuth.multiply(6, 4))
+  @azimuth.assert_eq(-18, @azimuth.multiply(-3, 6))
 }
 
 test "boundary_value_handling" {
@@ -178,24 +178,24 @@ test "boundary_value_handling" {
   let min_val = -2147483648
   
   // 测试最大值边界
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, multiply(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
   
   // 测试最小值边界
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
   
   // 测试零值运算
-  assert_eq(0, multiply(0, max_val))
-  assert_eq(max_val, add(0, max_val))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
+  @azimuth.assert_eq(max_val, @azimuth.add(0, max_val))
 }
 
 test "string_greeting_functionality" {
   // 测试字符串问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 用户123!", @azimuth.greet("用户123"))
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
 }
 
 test "mathematical_properties" {
@@ -204,15 +204,15 @@ test "mathematical_properties" {
   let b = 8
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
   // 分配律
-  assert_eq(
-    multiply(a, add(b, 5)),
-    add(multiply(a, b), multiply(a, 5))
+  @azimuth.assert_eq(
+    @azimuth.multiply(a, @azimuth.add(b, 5)),
+    @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 5))
   )
 }
 
@@ -221,14 +221,14 @@ test "complex_calculation_scenarios" {
   // 计算矩形周长：2 × (长 + 宽)
   let length = 15
   let width = 10
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(50, perimeter)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(50, perimeter)
   
   // 计算三角形面积：底 × 高 ÷ 2
   let base = 12
   let height = 8
-  let area = multiply(base, height) / 2
-  assert_eq(48, area)
+  let area = @azimuth.multiply(base, height) / 2
+  @azimuth.assert_eq(48, area)
 }
 
 test "financial_calculations" {
@@ -237,48 +237,48 @@ test "financial_calculations" {
   let principal = 10000
   let rate = 5  // 5%
   let time = 3   // 3年
-  let interest = multiply(principal, multiply(rate, time))
-  let total = add(principal, interest)
-  assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, time))
+  let total = @azimuth.add(principal, interest)
+  @azimuth.assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
   
   // 折扣计算：原价 - (原价 × 折扣率)
   let original_price = 200
   let discount_rate = 15  // 15%
-  let discount = multiply(original_price, discount_rate) / 100
-  let final_price = add(original_price, -discount)
-  assert_eq(170, final_price)
+  let discount = @azimuth.multiply(original_price, discount_rate) / 100
+  let final_price = @azimuth.add(original_price, -discount)
+  @azimuth.assert_eq(170, final_price)
 }
 
 test "temperature_conversion" {
   // 测试温度转换
   // 摄氏度转华氏度（简化版）：F = C × 2 + 30
   let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)
   
   // 华氏度转摄氏度（简化版）：C = (F - 30) ÷ 2
   let fahrenheit_back = 80
-  let celsius_back = add(fahrenheit_back, -30) / 2
-  assert_eq(25, celsius_back)
+  let celsius_back = @azimuth.add(fahrenheit_back, -30) / 2
+  @azimuth.assert_eq(25, celsius_back)
   
   // 测试冰点和沸点
-  assert_eq(30, add(multiply(0, 2), 30))  // 0°C = 30°F
-  assert_eq(230, add(multiply(100, 2), 30))  // 100°C = 230°F
+  @azimuth.assert_eq(30, @azimuth.add(@azimuth.multiply(0, 2), 30))  // 0°C = 30°F
+  @azimuth.assert_eq(230, @azimuth.add(@azimuth.multiply(100, 2), 30))  // 100°C = 230°F
 }
 
 test "assertion_functions" {
   // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
   
   // 测试复合条件
   let x = 10
   let y = 20
   assert_true(x < y)
   assert_false(x > y)
-  assert_eq(add(x, y), 30)
+  @azimuth.assert_eq(@azimuth.add(x, y), 30)
 }
 
 test "error_handling_and_edge_cases" {
@@ -287,15 +287,15 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_true(add(max_val, 1000) == max_val)
-  assert_true(add(min_val, -1000) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, -2) == min_val)
+  assert_true(@azimuth.add(max_val, 1000) == max_val)
+  assert_true(@azimuth.add(min_val, -1000) == min_val)
+  assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  assert_true(@azimuth.multiply(min_val, -2) == min_val)
   
   // 测试特殊值组合
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
 }
 
 test "real_world_application_scenarios" {
@@ -307,12 +307,12 @@ test "real_world_application_scenarios" {
   let item2_quantity = 1
   let shipping = 10
   
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let subtotal = add(total1, total2)
-  let final_total = add(subtotal, shipping)
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = @azimuth.add(total1, total2)
+  let final_total = @azimuth.add(subtotal, shipping)
   
-  assert_eq(357, final_total)  // 99×2 + 149×1 + 10 = 198 + 149 + 10 = 357
+  @azimuth.assert_eq(357, final_total)  // 99×2 + 149×1 + 10 = 198 + 149 + 10 = 357
   
   // 平均分计算
   let score1 = 85
@@ -321,7 +321,7 @@ test "real_world_application_scenarios" {
   let score4 = 92
   let score5 = 88
   
-  let sum_scores = add(add(add(add(score1, score2), score3), score4), score5)
+  let sum_scores = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(score1, score2), score3), score4), score5)
   let average_score = sum_scores / 5
-  assert_eq(86, average_score)  // (85+90+78+92+88)/5 = 433/5 = 86
+  @azimuth.assert_eq(86, average_score)  // (85+90+78+92+88)/5 = 433/5 = 86
 }

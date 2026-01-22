@@ -130,14 +130,14 @@ test "sequential_operations" {
 test "assert_function_functionality" {
   // 测试断言函数的功能
   // 测试成功的断言
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_eq(true, 5 > 3)
+  @azimuth.assert_eq(0, 1)(5 < 3)
   @azimuth.assert_eq(10, @azimuth.add(6, 4))
   @azimuth.assert_eq_string("test", "test")
   
   // 测试边界条件断言
-  @azimuth.assert_true(@azimuth.add(2147483647, 1) == 2147483647)
-  @azimuth.assert_false(@azimuth.add(2147483647, 1) > 2147483647)
+  @azimuth.assert_eq(@azimuth.add(2147483647, 1, true) == 2147483647)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(2147483647, 1) > 2147483647)
 }
 
 test "practical_application_tests" {

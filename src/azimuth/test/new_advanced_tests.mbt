@@ -6,11 +6,11 @@ test "prime_number_validation" {
   let candidate = 7
   
   // 检查不能被2整除
-  @azimuth.assert_true(candidate % 2 != 0)
+  @azimuth.assert_eq(candidate % 2 != 0, true)
   // 检查不能被3整除
-  @azimuth.assert_true(candidate % 3 != 0)
+  @azimuth.assert_eq(candidate % 3 != 0, true)
   // 检查不能被5整除
-  @azimuth.assert_true(candidate % 5 != 0)
+  @azimuth.assert_eq(candidate % 5 != 0, true)
   
   // 验证素数特性：只能被1和自己整除
   @azimuth.assert_eq(0, candidate % candidate)
@@ -185,7 +185,7 @@ test "inventory_management" {
   @azimuth.assert_eq(115, current_stock_final)
   @azimuth.assert_eq(30, turnover_rate)
   @azimuth.assert_eq(20, reorder_point)
-  @azimuth.assert_false(needs_reorder)
+  @azimuth.assert_eq(0, 1)(needs_reorder)
 }
 test "complex_string_template" {
   // 复杂字符串模板测试

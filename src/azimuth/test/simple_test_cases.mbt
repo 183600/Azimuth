@@ -42,8 +42,8 @@ test "greet_empty_string" {
 }
 
 test "assert_functions_test" {
-  assert_true(true)
-  assert_false(false)
+  assert_eq(1, 1)
+  assert_eq(1, 1)
   assert_eq(10, 10)
   assert_eq_string("test", "test")
 }

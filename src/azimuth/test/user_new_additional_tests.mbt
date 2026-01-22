@@ -112,8 +112,8 @@ test "real_world_applications" {
 
 test "error_conditions" {
   // 测试错误条件处理
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
   @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))

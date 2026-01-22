@@ -116,8 +116,8 @@ test "multi_step_compound_calculation" {
 // 测试9: 错误处理和边界条件
 test "error_handling_and_edge_cases" {
   // 测试断言函数本身
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
@@ -126,9 +126,9 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 确保边界值运算安全
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1, true) == min_val)
 }
 
 // 测试10: 性能相关的计算

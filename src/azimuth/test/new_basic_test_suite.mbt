@@ -42,8 +42,8 @@ test "greet_empty_test" {
 }
 
 test "assert_functions_test" {
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(10, 10)
   @azimuth.assert_eq_string("test", "test")
 }

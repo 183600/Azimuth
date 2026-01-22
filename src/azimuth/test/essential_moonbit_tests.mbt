@@ -86,17 +86,17 @@ test "essential_boundary_values" {
 
 test "essential_assert_functions" {
   // 断言函数测试
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试条件表达式
   let condition = 5 > 3
-  @azimuth.assert_true(condition)
+  @azimuth.assert_eq(condition, true)
   
   let condition2 = 2 > 10
-  @azimuth.assert_false(condition2)
+  @azimuth.assert_eq(0, 1)(condition2)
 }
 
 test "essential_string_edge_cases" {

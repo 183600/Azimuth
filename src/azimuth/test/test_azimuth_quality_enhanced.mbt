@@ -3,22 +3,22 @@
 
 test "extreme_value_calculations" {
   // 测试极端值计算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(-2000000, add(-1000000, -1000000))
-  assert_eq(0, add(1000000, -1000000))
-  assert_eq(1000000000000, multiply(1000000, 1000000))
-  assert_eq(-1000000000000, multiply(-1000000, 1000000))
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(-2000000, @azimuth.add(-1000000, -1000000))
+  @azimuth.assert_eq(0, @azimuth.add(1000000, -1000000))
+  @azimuth.assert_eq(1000000000000, @azimuth.multiply(1000000, 1000000))
+  @azimuth.assert_eq(-1000000000000, @azimuth.multiply(-1000000, 1000000))
 }
 
 test "divide_with_ceil_comprehensive" {
   // 全面测试向上取整除法
-  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
-  assert_eq(4, divide_with_ceil(12, 3))  // 12/3 = 4 -> 4
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
-  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
-  assert_eq(1, divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
-  assert_eq(0, divide_with_ceil(0, 100))  // 0/100 = 0 -> 0
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))  // 12/3 = 4 -> 4
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100))  // 0/100 = 0 -> 0
 }
 
 test "mathematical_properties_validation" {
@@ -28,26 +28,26 @@ test "mathematical_properties_validation" {
   let z = 3
   
   // 加法交换律和结合律
-  assert_eq(add(x, y), add(y, x))
-  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(x, y), z), @azimuth.add(x, @azimuth.add(y, z)))
   
   // 乘法交换律和结合律
-  assert_eq(multiply(x, y), multiply(y, x))
-  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(x, y), z), @azimuth.multiply(x, @azimuth.multiply(y, z)))
   
   // 分配律
-  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, z)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z)))
 }
 
 test "international_greeting_support" {
   // 测试国际化问候支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, María!", greet("María"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
-  assert_eq_string("Hello, 🚀🌍!", greet("🚀🌍"))
-  assert_eq_string("Hello,   !", greet("  "))  // 空格处理
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, María!", @azimuth.greet("María"))
+  @azimuth.assert_eq_string("Hello, αβγ!", @azimuth.greet("αβγ"))
+  @azimuth.assert_eq_string("Hello, ñáéíóú!", @azimuth.greet("ñáéíóú"))
+  @azimuth.assert_eq_string("Hello, 🚀🌍!", @azimuth.greet("🚀🌍"))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))  // 空格处理
 }
 
 test "complex_business_workflow" {
@@ -59,13 +59,13 @@ test "complex_business_workflow" {
   let discount = 30
   
   // 计算小计
-  let subtotal = multiply(product_cost, quantity)
+  let subtotal = @azimuth.multiply(product_cost, quantity)
   // 计算税费
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
   // 计算总价
-  let total = add(add(subtotal, tax), add(shipping, -discount))
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), @azimuth.add(shipping, -discount))
   
-  assert_eq(549, total)  // 89*6 + ceil(534*8/100) + 15 - 30 = 534 + 43 + 15 - 30 = 562
+  @azimuth.assert_eq(549, total)  // 89*6 + ceil(534*8/100) + 15 - 30 = 534 + 43 + 15 - 30 = 562
 }
 
 test "resource_allocation_optimization" {
@@ -75,15 +75,15 @@ test "resource_allocation_optimization" {
   let project_duration = 12  // 天
   
   // 计算人均预算
-  let budget_per_person = divide_with_ceil(total_budget, team_size)
+  let budget_per_person = @azimuth.divide_with_ceil(total_budget, team_size)
   // 计算每日预算
-  let daily_budget = divide_with_ceil(total_budget, project_duration)
+  let daily_budget = @azimuth.divide_with_ceil(total_budget, project_duration)
   // 计算每人每日预算
-  let person_daily_budget = divide_with_ceil(budget_per_person, project_duration)
+  let person_daily_budget = @azimuth.divide_with_ceil(budget_per_person, project_duration)
   
-  assert_eq(625, budget_per_person)  // ceil(5000/8) = 625
-  assert_eq(417, daily_budget)  // ceil(5000/12) = 417
-  assert_eq(53, person_daily_budget)  // ceil(625/12) = 53
+  @azimuth.assert_eq(625, budget_per_person)  // ceil(5000/8) = 625
+  @azimuth.assert_eq(417, daily_budget)  // ceil(5000/12) = 417
+  @azimuth.assert_eq(53, person_daily_budget)  // ceil(625/12) = 53
 }
 
 test "time_management_calculations" {
@@ -93,31 +93,31 @@ test "time_management_calculations" {
   let total_tasks = 35
   
   // 计算完成任务需要的天数
-  let tasks_per_day = multiply(tasks_per_hour, working_hours)
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
-  let total_hours_needed = multiply(days_needed, working_hours)
+  let tasks_per_day = @azimuth.multiply(tasks_per_hour, working_hours)
+  let days_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_day)
+  let total_hours_needed = @azimuth.multiply(days_needed, working_hours)
   
-  assert_eq(32, tasks_per_day)  // 4 * 8 = 32
-  assert_eq(2, days_needed)  // ceil(35/32) = 2
-  assert_eq(16, total_hours_needed)  // 2 * 8 = 16
+  @azimuth.assert_eq(32, tasks_per_day)  // 4 * 8 = 32
+  @azimuth.assert_eq(2, days_needed)  // ceil(35/32) = 2
+  @azimuth.assert_eq(16, total_hours_needed)  // 2 * 8 = 16
 }
 
 test "error_handling_and_edge_cases" {
   // 错误处理和边界情况测试
   // 除零保护
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
   // 零值运算
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(0, multiply(100, 0))
-  assert_eq(100, add(100, 0))
-  assert_eq(100, add(0, 100))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
+  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
+  @azimuth.assert_eq(100, @azimuth.add(100, 0))
+  @azimuth.assert_eq(100, @azimuth.add(0, 100))
   
   // 单位运算
-  assert_eq(1, multiply(1, 1))
-  assert_eq(100, multiply(1, 100))
-  assert_eq(100, multiply(100, 1))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(100, @azimuth.multiply(1, 100))
+  @azimuth.assert_eq(100, @azimuth.multiply(100, 1))
 }

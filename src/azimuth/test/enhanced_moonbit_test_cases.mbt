@@ -1,7 +1,7 @@
 // 新增的 MoonBit 测试用例
 // 覆盖各种功能场景和边界情况
 
-use @azimuth
+// use line removed
 
 test "arithmetic_sequence_calculation" {
   // 测试等差数列计算：计算前n项和
@@ -87,7 +87,7 @@ test "data_validation_scenarios" {
   let max_age = 65
   
   let is_valid_age = @azimuth.add(age, -min_age) >= 0 && @azimuth.add(max_age, -age) >= 0
-  @azimuth.assert_true(is_valid_age)
+  @azimuth.assert_eq(is_valid_age, true)
   
   // 验证分数范围
   let score = 85
@@ -95,7 +95,7 @@ test "data_validation_scenarios" {
   let max_score = 100
   
   let is_valid_score = @azimuth.add(score, -min_score) >= 0 && @azimuth.add(max_score, -score) >= 0
-  @azimuth.assert_true(is_valid_score)
+  @azimuth.assert_eq(is_valid_score, true)
 }
 
 test "inventory_management_calculation" {

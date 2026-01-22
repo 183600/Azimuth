@@ -60,7 +60,7 @@ test "prime_number_check" {
   let check4 = num % 4  // 1
   
   // 所有检查都不为0，所以17是素数
-  @azimuth.assert_true(check2 != 0 && check3 != 0 && check4 != 0)
+  @azimuth.assert_eq(check2 != 0 && check3 != 0 && check4 != 0, true)
   
   // 检查15是否为素数
   let num2 = 15
@@ -68,7 +68,7 @@ test "prime_number_check" {
   let check3_2 = num2 % 3  // 0
   
   // 15能被3整除，所以15不是素数
-  @azimuth.assert_false(check2_2 != 0 && check3_2 != 0)
+  @azimuth.assert_eq(0, 1)(check2_2 != 0 && check3_2 != 0)
 }
 
 // 测试平方和计算

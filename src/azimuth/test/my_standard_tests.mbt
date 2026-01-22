@@ -2,13 +2,13 @@
 // 测试 azimuth 模块的核心功能
 
 // 导入 azimuth 模块
-use azimuth
+// use line removed
 
 test "add_function_basic_functionality" {
   // 测试 add 函数的基本功能
-  assert_eq(10, azimuth.add(3, 7))
-  assert_eq(0, azimuth.add(5, -5))
-  assert_eq(-3, azimuth.add(-8, 5))
+  @azimuth.assert_eq(10, azimuth.@azimuth.add(3, 7))
+  @azimuth.assert_eq(0, azimuth.@azimuth.add(5, -5))
+  @azimuth.assert_eq(-3, azimuth.@azimuth.add(-8, 5))
 }
 
 test "add_function_edge_cases" {
@@ -17,20 +17,20 @@ test "add_function_edge_cases" {
   let min_val = -2147483648
   
   // 测试零值
-  assert_eq(5, azimuth.add(5, 0))
-  assert_eq(5, azimuth.add(0, 5))
-  assert_eq(0, azimuth.add(0, 0))
+  @azimuth.assert_eq(5, azimuth.@azimuth.add(5, 0))
+  @azimuth.assert_eq(5, azimuth.@azimuth.add(0, 5))
+  @azimuth.assert_eq(0, azimuth.@azimuth.add(0, 0))
   
   // 测试溢出保护
-  assert_eq(max_val, azimuth.add(max_val, 1))
-  assert_eq(min_val, azimuth.add(min_val, -1))
+  @azimuth.assert_eq(max_val, azimuth.@azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, azimuth.@azimuth.add(min_val, -1))
 }
 
 test "multiply_function_basic_functionality" {
   // 测试 multiply 函数的基本功能
-  assert_eq(15, azimuth.multiply(3, 5))
-  assert_eq(-12, azimuth.multiply(3, -4))
-  assert_eq(12, azimuth.multiply(-3, -4))
+  @azimuth.assert_eq(15, azimuth.@azimuth.multiply(3, 5))
+  @azimuth.assert_eq(-12, azimuth.@azimuth.multiply(3, -4))
+  @azimuth.assert_eq(12, azimuth.@azimuth.multiply(-3, -4))
 }
 
 test "multiply_function_edge_cases" {
@@ -39,21 +39,21 @@ test "multiply_function_edge_cases" {
   let min_val = -2147483648
   
   // 测试零值和一值
-  assert_eq(0, azimuth.multiply(5, 0))
-  assert_eq(5, azimuth.multiply(5, 1))
-  assert_eq(-5, azimuth.multiply(5, -1))
+  @azimuth.assert_eq(0, azimuth.@azimuth.multiply(5, 0))
+  @azimuth.assert_eq(5, azimuth.@azimuth.multiply(5, 1))
+  @azimuth.assert_eq(-5, azimuth.@azimuth.multiply(5, -1))
   
   // 测试溢出保护
-  assert_eq(max_val, azimuth.multiply(46341, 46341))
-  assert_eq(min_val, azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(max_val, azimuth.@azimuth.multiply(46341, 46341))
+  @azimuth.assert_eq(min_val, azimuth.@azimuth.multiply(min_val, -1))
 }
 
 test "greet_function_various_inputs" {
   // 测试 greet 函数的各种输入
-  assert_eq_string("Hello, World!", azimuth.greet("World"))
-  assert_eq_string("Hello, !", azimuth.greet(""))
-  assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
-  assert_eq_string("Hello, 测试!", azimuth.greet("测试"))
+  @azimuth.assert_eq_string("Hello, World!", azimuth.@azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, !", azimuth.@azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, MoonBit!", azimuth.@azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, 测试!", azimuth.@azimuth.greet("测试"))
 }
 
 test "complex_calculation_scenarios" {
@@ -62,11 +62,11 @@ test "complex_calculation_scenarios" {
   let length = 8
   let width = 5
   
-  let area = azimuth.multiply(length, width)
-  let perimeter = azimuth.add(azimuth.multiply(2, length), azimuth.multiply(2, width))
+  let area = azimuth.@azimuth.multiply(length, width)
+  let perimeter = azimuth.@azimuth.add(azimuth.@azimuth.multiply(2, length), azimuth.@azimuth.multiply(2, width))
   
-  assert_eq(40, area)
-  assert_eq(26, perimeter)
+  @azimuth.assert_eq(40, area)
+  @azimuth.assert_eq(26, perimeter)
 }
 
 test "mathematical_properties" {
@@ -75,16 +75,16 @@ test "mathematical_properties" {
   let b = 7
   
   // 加法交换律
-  assert_eq(azimuth.add(a, b), azimuth.add(b, a))
+  @azimuth.assert_eq(azimuth.@azimuth.add(a, b), azimuth.@azimuth.add(b, a))
   
   // 乘法交换律
-  assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
+  @azimuth.assert_eq(azimuth.@azimuth.multiply(a, b), azimuth.@azimuth.multiply(b, a))
   
   // 分配律
   let c = 3
-  assert_eq(
-    azimuth.multiply(a, azimuth.add(b, c)),
-    azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
+  @azimuth.assert_eq(
+    azimuth.@azimuth.multiply(a, azimuth.@azimuth.add(b, c)),
+    azimuth.@azimuth.add(azimuth.@azimuth.multiply(a, b), azimuth.@azimuth.multiply(a, c))
   )
 }
 
@@ -96,13 +96,13 @@ test "real_world_application" {
   let tax_rate = 10
   
   // 计算商品总价
-  let subtotal = azimuth.multiply(item_price, quantity)
+  let subtotal = azimuth.@azimuth.multiply(item_price, quantity)
   // 计算税费
-  let tax = azimuth.multiply(subtotal, tax_rate) / 100
+  let tax = azimuth.@azimuth.multiply(subtotal, tax_rate) / 100
   // 计算最终总价
-  let total = azimuth.add(azimuth.add(subtotal, tax), shipping)
+  let total = azimuth.@azimuth.add(azimuth.@azimuth.add(subtotal, tax), shipping)
   
-  assert_eq(674, total)
+  @azimuth.assert_eq(674, total)
 }
 
 test "boundary_value_combinations" {
@@ -111,26 +111,26 @@ test "boundary_value_combinations" {
   let min_val = -2147483648
   
   // 测试极值组合
-  assert_eq(-1, azimuth.add(max_val, min_val))
-  assert_eq(0, azimuth.multiply(max_val, 0))
-  assert_eq(min_val, azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(-1, azimuth.@azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(0, azimuth.@azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(min_val, azimuth.@azimuth.multiply(min_val, 1))
   
   // 测试连续运算
-  let result = azimuth.add(
-    azimuth.multiply(1000, 2),
-    azimuth.multiply(500, 3)
+  let result = azimuth.@azimuth.add(
+    azimuth.@azimuth.multiply(1000, 2),
+    azimuth.@azimuth.multiply(500, 3)
   )
-  assert_eq(3500, result)
+  @azimuth.assert_eq(3500, result)
 }
 
 test "string_processing_edge_cases" {
   // 测试字符串处理的边界情况
   // 测试包含特殊字符的字符串
-  assert_eq_string("Hello, @#$%!", azimuth.greet("@#$%"))
-  assert_eq_string("Hello, 12345!", azimuth.greet("12345"))
-  assert_eq_string("Hello, spaces   !", azimuth.greet("spaces  "))
+  @azimuth.assert_eq_string("Hello, @#$%!", azimuth.@azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, 12345!", azimuth.@azimuth.greet("12345"))
+  @azimuth.assert_eq_string("Hello, spaces   !", azimuth.@azimuth.greet("spaces  "))
   
   // 测试长字符串
   let long_string = "ThisIsAVeryLongStringForTestingPurposes"
-  assert_eq_string("Hello, " + long_string + "!", azimuth.greet(long_string))
+  @azimuth.assert_eq_string("Hello, " + long_string + "!", azimuth.@azimuth.greet(long_string))
 }

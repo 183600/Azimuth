@@ -92,14 +92,14 @@ test "special_value_handling" {
 
 test "assert_functions_validation" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试通过计算得到的值
-  @azimuth.assert_true(@azimuth.add(2, 3) == 5)
-  @azimuth.assert_false(@azimuth.add(2, 3) == 6)
+  @azimuth.assert_eq(@azimuth.add(2, 3, true) == 5)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(2, 3) == 6)
 }
 
 test "real_world_scenarios" {

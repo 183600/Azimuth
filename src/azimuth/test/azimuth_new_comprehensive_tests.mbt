@@ -12,10 +12,10 @@ test "boolean_operations" {
   let and_result3 = false_val && true_val
   let and_result4 = false_val && false_val
   
-  @azimuth.assert_true(and_result1)
-  @azimuth.assert_false(and_result2)
-  @azimuth.assert_false(and_result3)
-  @azimuth.assert_false(and_result4)
+  @azimuth.assert_eq(and_result1, true)
+  @azimuth.assert_eq(0, 1)(and_result2)
+  @azimuth.assert_eq(0, 1)(and_result3)
+  @azimuth.assert_eq(0, 1)(and_result4)
   
   // 逻辑或
   let or_result1 = true_val || true_val
@@ -23,10 +23,10 @@ test "boolean_operations" {
   let or_result3 = false_val || true_val
   let or_result4 = false_val || false_val
   
-  @azimuth.assert_true(or_result1)
-  @azimuth.assert_true(or_result2)
-  @azimuth.assert_true(or_result3)
-  @azimuth.assert_false(or_result4)
+  @azimuth.assert_eq(or_result1, true)
+  @azimuth.assert_eq(or_result2, true)
+  @azimuth.assert_eq(or_result3, true)
+  @azimuth.assert_eq(0, 1)(or_result4)
 }
 
 test "comparison_operations" {
@@ -36,32 +36,32 @@ test "comparison_operations" {
   let c = 10
   
   // 等于
-  @azimuth.assert_true(a == c)
-  @azimuth.assert_false(a == b)
+  @azimuth.assert_eq(a == c, true)
+  @azimuth.assert_eq(0, 1)(a == b)
   
   // 不等于
-  @azimuth.assert_true(a != b)
-  @azimuth.assert_false(a != c)
+  @azimuth.assert_eq(a != b, true)
+  @azimuth.assert_eq(0, 1)(a != c)
   
   // 大于
-  @azimuth.assert_true(b > a)
-  @azimuth.assert_false(a > b)
-  @azimuth.assert_false(a > c)
+  @azimuth.assert_eq(true, b > a)
+  @azimuth.assert_eq(0, 1)(a > b)
+  @azimuth.assert_eq(0, 1)(a > c)
   
   // 小于
-  @azimuth.assert_true(a < b)
-  @azimuth.assert_false(b < a)
-  @azimuth.assert_false(a < c)
+  @azimuth.assert_eq(true, a < b)
+  @azimuth.assert_eq(0, 1)(b < a)
+  @azimuth.assert_eq(0, 1)(a < c)
   
   // 大于等于
-  @azimuth.assert_true(a >= c)
-  @azimuth.assert_true(b >= a)
-  @azimuth.assert_false(a >= b)
+  @azimuth.assert_eq(a >= c, true)
+  @azimuth.assert_eq(b >= a, true)
+  @azimuth.assert_eq(0, 1)(a >= b)
   
   // 小于等于
-  @azimuth.assert_true(a <= c)
-  @azimuth.assert_true(a <= b)
-  @azimuth.assert_false(b <= a)
+  @azimuth.assert_eq(a <= c, true)
+  @azimuth.assert_eq(a <= b, true)
+  @azimuth.assert_eq(0, 1)(b <= a)
 }
 
 test "number_system_conversions" {
@@ -143,16 +143,16 @@ test "array_operations_simulation" {
   @azimuth.assert_eq(75, total_sum)
   
   // 模拟查找最大值 - 直接比较
-  @azimuth.assert_true(arr5 > arr4)
-  @azimuth.assert_true(arr4 > arr3)
-  @azimuth.assert_true(arr3 > arr2)
-  @azimuth.assert_true(arr2 > arr1)
+  @azimuth.assert_eq(true, arr5 > arr4)
+  @azimuth.assert_eq(true, arr4 > arr3)
+  @azimuth.assert_eq(true, arr3 > arr2)
+  @azimuth.assert_eq(true, arr2 > arr1)
   
   // 模拟查找最小值 - 直接比较
-  @azimuth.assert_true(arr1 < arr2)
-  @azimuth.assert_true(arr2 < arr3)
-  @azimuth.assert_true(arr3 < arr4)
-  @azimuth.assert_true(arr4 < arr5)
+  @azimuth.assert_eq(true, arr1 < arr2)
+  @azimuth.assert_eq(true, arr2 < arr3)
+  @azimuth.assert_eq(true, arr3 < arr4)
+  @azimuth.assert_eq(true, arr4 < arr5)
 }
 
 test "error_handling_scenarios" {

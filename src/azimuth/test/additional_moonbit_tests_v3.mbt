@@ -133,14 +133,14 @@ test "error_boundary_conditions" {
   let min_val = -2147483648
   
   // 测试各种边界条件的组合
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)  // 正溢出
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)  // 负溢出
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)  // 乘法正溢出
-  @azimuth.assert_true(@azimuth.multiply(min_val, -2) == min_val)  // 乘法特殊情况
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)  // 正溢出
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) == min_val)  // 负溢出
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)  // 乘法正溢出
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -2, true) == min_val)  // 乘法特殊情况
   
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }

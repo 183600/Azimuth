@@ -164,7 +164,7 @@ test "cryptographic_hash_simulation" {
   let final_hash2 = hash_with_salt2 % modulus
   
   azimuth::@azimuth.assert_eq(853, final_hash2)
-  azimuth::@azimuth.assert_true(final_hash != final_hash2)
+  azimuth::@azimuth.assert_eq(final_hash != final_hash2, true)
 }
 test "error_boundary_conditions" {
   // 错误边界条件测试
@@ -190,7 +190,7 @@ test "error_boundary_conditions" {
   azimuth::@azimuth.assert_eq(min_val, azimuth::@azimuth.add(0, min_val))
   
   // 测试断言函数的边界情况
-  azimuth::@azimuth.assert_true(max_val > 0)
-  azimuth::@azimuth.assert_true(min_val < 0)
+  azimuth::@azimuth.assert_eq(true, max_val > 0)
+  azimuth::@azimuth.assert_eq(true, min_val < 0)
   azimuth::@azimuth.assert_eq(0, azimuth::@azimuth.add(max_val, min_val))
 }

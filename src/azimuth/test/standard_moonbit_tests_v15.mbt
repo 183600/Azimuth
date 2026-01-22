@@ -79,8 +79,8 @@ test "string_handling" {
 
 test "assert_functions" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
 }

@@ -95,12 +95,12 @@ test "error_boundary_validation" {
   let min_val = -2147483648
   
   // 验证溢出保护是否正常工作
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.add(max_val, 1) == max_val)
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.add(min_val, -1) == min_val)
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.multiply(min_val, -2) == min_val)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.multiply(min_val, -2, true) == min_val)
   
   // 验证正常计算
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.add(100, 200) == 300)
-  @azimuth.@azimuth.assert_true(@azimuth.@azimuth.multiply(15, 4) == 60)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.add(100, 200, true) == 300)
+  @azimuth.@azimuth.assert_eq(@azimuth.@azimuth.multiply(15, 4, true) == 60)
 }

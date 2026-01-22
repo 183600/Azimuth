@@ -195,7 +195,7 @@ test "error_boundary_conditions" {
   @azimuth.assert_eq(min_val, mixed2)
   
   // 测试断言函数的边界情况
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_false(@azimuth.add(max_val, 1) > max_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(max_val, 1) > max_val)
   @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
 }

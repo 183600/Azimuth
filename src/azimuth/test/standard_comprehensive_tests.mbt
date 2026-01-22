@@ -82,13 +82,13 @@ test "complex_business_logic" {
 
 test "assert_functions_comprehensive" {
   // 全面测试断言函数
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_true(0 == 0)
-  @azimuth.assert_true(-10 < -5)
+  @azimuth.assert_eq(true, 5 > 3)
+  @azimuth.assert_eq(0 == 0, true)
+  @azimuth.assert_eq(true, -10 < -5)
   
-  @azimuth.assert_false(5 < 3)
-  @azimuth.assert_false(1 == 2)
-  @azimuth.assert_false(-10 > -5)
+  @azimuth.assert_eq(0, 1)(5 < 3)
+  @azimuth.assert_eq(0, 1)(1 == 2)
+  @azimuth.assert_eq(0, 1)(-10 > -5)
   
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq(-100, -100)

@@ -8,24 +8,24 @@ test "fibonacci_sequence_calculation" {
   // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
   
   // F(2) = F(1) + F(0) = 1 + 0 = 1
-  f2 = azimuth::add(1, 0)
-  azimuth::assert_eq(1, f2)
+  f2 = azimuth::@azimuth.add(1, 0)
+  azimuth::@azimuth.assert_eq(1, f2)
   
   // F(3) = F(2) + F(1) = 1 + 1 = 2
-  f3 = azimuth::add(f2, 1)
-  azimuth::assert_eq(2, f3)
+  f3 = azimuth::@azimuth.add(f2, 1)
+  azimuth::@azimuth.assert_eq(2, f3)
   
   // F(4) = F(3) + F(2) = 2 + 1 = 3
-  f4 = azimuth::add(f3, f2)
-  azimuth::assert_eq(3, f4)
+  f4 = azimuth::@azimuth.add(f3, f2)
+  azimuth::@azimuth.assert_eq(3, f4)
   
   // F(5) = F(4) + F(3) = 3 + 2 = 5
-  f5 = azimuth::add(f4, f3)
-  azimuth::assert_eq(5, f5)
+  f5 = azimuth::@azimuth.add(f4, f3)
+  azimuth::@azimuth.assert_eq(5, f5)
   
   // F(6) = F(5) + F(4) = 5 + 3 = 8
-  f6 = azimuth::add(f5, f4)
-  azimuth::assert_eq(8, f6)
+  f6 = azimuth::@azimuth.add(f5, f4)
+  azimuth::@azimuth.assert_eq(8, f6)
 }
 
 // 测试2: 条件逻辑的复杂应用 - 分段函数计算
@@ -38,29 +38,29 @@ test "piecewise_function_calculation" {
   
   // 测试 x < 0 的情况
   x1 = -5
-  result1 = azimuth::multiply(x1, x1)  // (-5)² = 25
-  azimuth::assert_eq(25, result1)
+  result1 = azimuth::@azimuth.multiply(x1, x1)  // (-5)² = 25
+  azimuth::@azimuth.assert_eq(25, result1)
   
   // 测试 0 ≤ x < 10 的情况
   x2 = 5
-  result2 = azimuth::add(azimuth::multiply(2, x2), 1)  // 2*5 + 1 = 11
-  azimuth::assert_eq(11, result2)
+  result2 = azimuth::@azimuth.add(azimuth::@azimuth.multiply(2, x2), 1)  // 2*5 + 1 = 11
+  azimuth::@azimuth.assert_eq(11, result2)
   
   // 测试 x ≥ 10 的情况
   x3 = 12
-  x3_squared = azimuth::multiply(x3, x3)  // 12² = 144
-  result3 = azimuth::add(x3_squared, -10)  // 144 - 10 = 134
-  azimuth::assert_eq(134, result3)
+  x3_squared = azimuth::@azimuth.multiply(x3, x3)  // 12² = 144
+  result3 = azimuth::@azimuth.add(x3_squared, -10)  // 144 - 10 = 134
+  azimuth::@azimuth.assert_eq(134, result3)
   
   // 边界值测试
   x4 = 0
-  result4 = azimuth::add(azimuth::multiply(2, x4), 1)  // 2*0 + 1 = 1
-  azimuth::assert_eq(1, result4)
+  result4 = azimuth::@azimuth.add(azimuth::@azimuth.multiply(2, x4), 1)  // 2*0 + 1 = 1
+  azimuth::@azimuth.assert_eq(1, result4)
   
   x5 = 10
-  x5_squared = azimuth::multiply(x5, x5)  // 10² = 100
-  result5 = azimuth::add(x5_squared, -10)  // 100 - 10 = 90
-  azimuth::assert_eq(90, result5)
+  x5_squared = azimuth::@azimuth.multiply(x5, x5)  // 10² = 100
+  result5 = azimuth::@azimuth.add(x5_squared, -10)  // 100 - 10 = 90
+  azimuth::@azimuth.assert_eq(90, result5)
 }
 
 // 测试3: 数据结构索引计算 - 三维数组转一维数组
@@ -75,40 +75,40 @@ test "three_dimensional_array_indexing" {
   x1 = 1
   y1 = 2
   z1 = 3
-  index1 = azimuth::add(
-    azimuth::multiply(x1, azimuth::multiply(width_y, width_z)),
-    azimuth::add(
-      azimuth::multiply(y1, width_z),
+  index1 = azimuth::@azimuth.add(
+    azimuth::@azimuth.multiply(x1, azimuth::@azimuth.multiply(width_y, width_z)),
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(y1, width_z),
       z1
     )
   )
-  azimuth::assert_eq(33, index1)  // 1*5*4 + 2*4 + 3 = 20 + 8 + 3 = 31
+  azimuth::@azimuth.assert_eq(33, index1)  // 1*5*4 + 2*4 + 3 = 20 + 8 + 3 = 31
   
   // 测试原点 (0, 0, 0)
   x2 = 0
   y2 = 0
   z2 = 0
-  index2 = azimuth::add(
-    azimuth::multiply(x2, azimuth::multiply(width_y, width_z)),
-    azimuth::add(
-      azimuth::multiply(y2, width_z),
+  index2 = azimuth::@azimuth.add(
+    azimuth::@azimuth.multiply(x2, azimuth::@azimuth.multiply(width_y, width_z)),
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(y2, width_z),
       z2
     )
   )
-  azimuth::assert_eq(0, index2)
+  azimuth::@azimuth.assert_eq(0, index2)
   
   // 测试边界点 (2, 4, 3)
   x3 = 2
   y3 = 4
   z3 = 3
-  index3 = azimuth::add(
-    azimuth::multiply(x3, azimuth::multiply(width_y, width_z)),
-    azimuth::add(
-      azimuth::multiply(y3, width_z),
+  index3 = azimuth::@azimuth.add(
+    azimuth::@azimuth.multiply(x3, azimuth::@azimuth.multiply(width_y, width_z)),
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(y3, width_z),
       z3
     )
   )
-  azimuth::assert_eq(67, index3)  // 2*5*4 + 4*4 + 3 = 40 + 16 + 3 = 59
+  azimuth::@azimuth.assert_eq(67, index3)  // 2*5*4 + 4*4 + 3 = 40 + 16 + 3 = 59
 }
 
 // 测试4: 数字系统转换 - 二进制到十进制（简化版）
@@ -122,17 +122,17 @@ test "binary_to_decimal_conversion" {
   bit1 = 0  // 2¹位
   bit0 = 1  // 2⁰位
   
-  decimal_value = azimuth::add(
-    azimuth::add(
-      azimuth::multiply(bit3, 8),  // 1×8
-      azimuth::multiply(bit2, 4)   // 1×4
+  decimal_value = azimuth::@azimuth.add(
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(bit3, 8),  // 1×8
+      azimuth::@azimuth.multiply(bit2, 4)   // 1×4
     ),
-    azimuth::add(
-      azimuth::multiply(bit1, 2),  // 0×2
-      azimuth::multiply(bit0, 1)   // 1×1
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(bit1, 2),  // 0×2
+      azimuth::@azimuth.multiply(bit0, 1)   // 1×1
     )
   )
-  azimuth::assert_eq(13, decimal_value)
+  azimuth::@azimuth.assert_eq(13, decimal_value)
   
   // 转换 1010₂ = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10
   bit3_2 = 1
@@ -140,17 +140,17 @@ test "binary_to_decimal_conversion" {
   bit1_2 = 1
   bit0_2 = 0
   
-  decimal_value2 = azimuth::add(
-    azimuth::add(
-      azimuth::multiply(bit3_2, 8),  // 1×8
-      azimuth::multiply(bit2_2, 4)   // 0×4
+  decimal_value2 = azimuth::@azimuth.add(
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(bit3_2, 8),  // 1×8
+      azimuth::@azimuth.multiply(bit2_2, 4)   // 0×4
     ),
-    azimuth::add(
-      azimuth::multiply(bit1_2, 2),  // 1×2
-      azimuth::multiply(bit0_2, 1)   // 0×1
+    azimuth::@azimuth.add(
+      azimuth::@azimuth.multiply(bit1_2, 2),  // 1×2
+      azimuth::@azimuth.multiply(bit0_2, 1)   // 0×1
     )
   )
-  azimuth::assert_eq(10, decimal_value2)
+  azimuth::@azimuth.assert_eq(10, decimal_value2)
 }
 
 // 测试5: 统计计算 - 方差和标准差（简化版）
@@ -159,35 +159,35 @@ test "statistical_variance_calculation" {
   // 数据集: [2, 4, 6, 8, 10]
   
   // 计算平均值
-  sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(2, 4), 6), 8), 10)  // 30
+  sum = azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(2, 4), 6), 8), 10)  // 30
   mean = sum / 5  // 6
-  azimuth::assert_eq(6, mean)
+  azimuth::@azimuth.assert_eq(6, mean)
   
   // 计算平方差: (x_i - mean)²
-  diff1 = azimuth::add(2, -mean)  // -4
-  diff2 = azimuth::add(4, -mean)  // -2
-  diff3 = azimuth::add(6, -mean)  // 0
-  diff4 = azimuth::add(8, -mean)  // 2
-  diff5 = azimuth::add(10, -mean) // 4
+  diff1 = azimuth::@azimuth.add(2, -mean)  // -4
+  diff2 = azimuth::@azimuth.add(4, -mean)  // -2
+  diff3 = azimuth::@azimuth.add(6, -mean)  // 0
+  diff4 = azimuth::@azimuth.add(8, -mean)  // 2
+  diff5 = azimuth::@azimuth.add(10, -mean) // 4
   
-  sq_diff1 = azimuth::multiply(diff1, diff1)  // 16
-  sq_diff2 = azimuth::multiply(diff2, diff2)  // 4
-  sq_diff3 = azimuth::multiply(diff3, diff3)  // 0
-  sq_diff4 = azimuth::multiply(diff4, diff4)  // 4
-  sq_diff5 = azimuth::multiply(diff5, diff5)  // 16
+  sq_diff1 = azimuth::@azimuth.multiply(diff1, diff1)  // 16
+  sq_diff2 = azimuth::@azimuth.multiply(diff2, diff2)  // 4
+  sq_diff3 = azimuth::@azimuth.multiply(diff3, diff3)  // 0
+  sq_diff4 = azimuth::@azimuth.multiply(diff4, diff4)  // 4
+  sq_diff5 = azimuth::@azimuth.multiply(diff5, diff5)  // 16
   
   // 计算平方差之和
-  sum_sq_diffs = azimuth::add(azimuth::add(azimuth::add(azimuth::add(sq_diff1, sq_diff2), sq_diff3), sq_diff4), sq_diff5)
-  azimuth::assert_eq(40, sum_sq_diffs)
+  sum_sq_diffs = azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(azimuth::@azimuth.add(sq_diff1, sq_diff2), sq_diff3), sq_diff4), sq_diff5)
+  azimuth::@azimuth.assert_eq(40, sum_sq_diffs)
   
   // 计算方差（总体方差）
   variance = sum_sq_diffs / 5
-  azimuth::assert_eq(8, variance)
+  azimuth::@azimuth.assert_eq(8, variance)
   
   // 计算标准差（简化整数版本）
   // 使用近似值：√8 ≈ 3
   std_dev = 3
-  azimuth::assert_eq(3, std_dev)
+  azimuth::@azimuth.assert_eq(3, std_dev)
 }
 
 // 测试6: 时间和日期计算 - 星期几推算（简化版）
@@ -201,25 +201,25 @@ test "day_of_week_calculation" {
   
   // 计算2023-01-15是星期几
   target_day = 15
-  days_difference = azimuth::add(target_day, -base_day)  // 15 - 1 = 14
+  days_difference = azimuth::@azimuth.add(target_day, -base_day)  // 15 - 1 = 14
   weekday = days_difference % 7  // 14 % 7 = 0
-  azimuth::assert_eq(0, weekday)  // 星期日
+  azimuth::@azimuth.assert_eq(0, weekday)  // 星期日
   
   // 计算2023-01-10是星期几
   target_day2 = 10
-  days_difference2 = azimuth::add(target_day2, -base_day)  // 10 - 1 = 9
+  days_difference2 = azimuth::@azimuth.add(target_day2, -base_day)  // 10 - 1 = 9
   weekday2 = days_difference2 % 7  // 9 % 7 = 2
-  azimuth::assert_eq(2, weekday2)  // 星期二
+  azimuth::@azimuth.assert_eq(2, weekday2)  // 星期二
   
   // 计算跨月的情况：2023-02-05（1月有31天）
   target_day3 = 5
   days_in_jan = 31
-  days_difference3 = azimuth::add(
-    azimuth::add(days_in_jan, -base_day),  // 31 - 1 = 30
+  days_difference3 = azimuth::@azimuth.add(
+    azimuth::@azimuth.add(days_in_jan, -base_day),  // 31 - 1 = 30
     target_day3  // + 5 = 35
   )
   weekday3 = days_difference3 % 7  // 35 % 7 = 0
-  azimuth::assert_eq(0, weekday3)  // 星期日
+  azimuth::@azimuth.assert_eq(0, weekday3)  // 星期日
 }
 
 // 测试7: 数论基础 - 最大公约数（欧几里得算法模拟）
@@ -240,7 +240,7 @@ test "greatest_common_divisor" {
   
   // 当余数为0时，当前除数就是GCD
   gcd1 = remainder2
-  azimuth::assert_eq(6, gcd1)
+  azimuth::@azimuth.assert_eq(6, gcd1)
   
   // 计算 gcd(1071, 462)
   a2 = 1071
@@ -254,13 +254,13 @@ test "greatest_common_divisor" {
   remainder6 = remainder4 % remainder5  // 147 % 21 = 0
   
   gcd2 = remainder5
-  azimuth::assert_eq(21, gcd2)
+  azimuth::@azimuth.assert_eq(21, gcd2)
   
   // 验证：验证GCD确实能整除两个数
-  azimuth::assert_eq(0, a1 % gcd1)
-  azimuth::assert_eq(0, b1 % gcd1)
-  azimuth::assert_eq(0, a2 % gcd2)
-  azimuth::assert_eq(0, b2 % gcd2)
+  azimuth::@azimuth.assert_eq(0, a1 % gcd1)
+  azimuth::@azimuth.assert_eq(0, b1 % gcd1)
+  azimuth::@azimuth.assert_eq(0, a2 % gcd2)
+  azimuth::@azimuth.assert_eq(0, b2 % gcd2)
 }
 
 // 测试8: 位运算模拟 - 位掩码操作
@@ -274,8 +274,8 @@ test "bitmask_operations" {
   // mask4 = 8  // 1000
   
   // 模拟按位或操作：mask1 | mask2 | mask3 = 0001 | 0010 | 0100 = 0111 = 7
-  bitwise_or = azimuth::add(azimuth::add(mask1, mask2), mask3)
-  azimuth::assert_eq(7, bitwise_or)
+  bitwise_or = azimuth::@azimuth.add(azimuth::@azimuth.add(mask1, mask2), mask3)
+  azimuth::@azimuth.assert_eq(7, bitwise_or)
   
   // 模拟按位与操作：检查某位是否设置
   // 检查 value = 6 (0110) 的第2位是否设置
@@ -299,14 +299,14 @@ test "bitmask_operations" {
   y = 12
   
   // 模拟 x = x ^ y
-  x_xor_y = azimuth::add(x, y)  // 简化的异或操作
+  x_xor_y = azimuth::@azimuth.add(x, y)  // 简化的异或操作
   // 模拟 y = x ^ y
-  y_new = azimuth::add(x_xor_y, -x)
+  y_new = azimuth::@azimuth.add(x_xor_y, -x)
   // 模拟 x = x ^ y
-  x_new = azimuth::add(x_xor_y, -y_new)
+  x_new = azimuth::@azimuth.add(x_xor_y, -y_new)
   
-  azimuth::assert_eq(12, x_new)
-  azimuth::assert_eq(5, y_new)
+  azimuth::@azimuth.assert_eq(12, x_new)
+  azimuth::@azimuth.assert_eq(5, y_new)
 }
 
 // 测试9: 状态机模拟 - 简单的自动售货机
@@ -319,36 +319,36 @@ test "vending_machine_state_machine" {
   mut balance = 0  // 余额
   
   // 投币10元
-  balance = azimuth::add(balance, 10)
+  balance = azimuth::@azimuth.add(balance, 10)
   if (balance >= price) {
     state = 1  // 已投币
   } else {
     state = 0  // 仍需投币
   }
-  azimuth::assert_eq(0, state)  // 仍需投币
+  azimuth::@azimuth.assert_eq(0, state)  // 仍需投币
   
   // 再投币10元
-  balance = azimuth::add(balance, 10)
+  balance = azimuth::@azimuth.add(balance, 10)
   if (balance >= price) {
     state = 1  // 已投币
   } else {
     state = 0  // 仍需投币
   }
-  azimuth::assert_eq(1, state)  // 已投币
+  azimuth::@azimuth.assert_eq(1, state)  // 已投币
   
   // 选择商品
   if (state == 1) {
     state = 2  // 已选择商品
-    balance = azimuth::add(balance, -price)  // 扣除价格
+    balance = azimuth::@azimuth.add(balance, -price)  // 扣除价格
   }
-  azimuth::assert_eq(2, state)  // 已选择商品
-  azimuth::assert_eq(5, balance)  // 找零：20 - 15 = 5
+  azimuth::@azimuth.assert_eq(2, state)  // 已选择商品
+  azimuth::@azimuth.assert_eq(5, balance)  // 找零：20 - 15 = 5
   
   // 重置状态机
   state = 0
   balance = 0
-  azimuth::assert_eq(0, state)
-  azimuth::assert_eq(0, balance)
+  azimuth::@azimuth.assert_eq(0, state)
+  azimuth::@azimuth.assert_eq(0, balance)
 }
 
 // 测试10: 缓存和记忆化模拟 - 斐波那契数列缓存
@@ -358,43 +358,43 @@ test "fibonacci_with_memoization" {
   // 初始化缓存：F(0)=0, F(1)=1
   fib0 = 0
   fib1 = 1
-  fib2 = azimuth::add(fib0, fib1)  // F(2) = 1
-  fib3 = azimuth::add(fib1, fib2)  // F(3) = 2
-  fib4 = azimuth::add(fib2, fib3)  // F(4) = 3
-  fib5 = azimuth::add(fib3, fib4)  // F(5) = 5
+  fib2 = azimuth::@azimuth.add(fib0, fib1)  // F(2) = 1
+  fib3 = azimuth::@azimuth.add(fib1, fib2)  // F(3) = 2
+  fib4 = azimuth::@azimuth.add(fib2, fib3)  // F(4) = 3
+  fib5 = azimuth::@azimuth.add(fib3, fib4)  // F(5) = 5
   
   // 验证缓存值
-  azimuth::assert_eq(0, fib0)
-  azimuth::assert_eq(1, fib1)
-  azimuth::assert_eq(1, fib2)
-  azimuth::assert_eq(2, fib3)
-  azimuth::assert_eq(3, fib4)
-  azimuth::assert_eq(5, fib5)
+  azimuth::@azimuth.assert_eq(0, fib0)
+  azimuth::@azimuth.assert_eq(1, fib1)
+  azimuth::@azimuth.assert_eq(1, fib2)
+  azimuth::@azimuth.assert_eq(2, fib3)
+  azimuth::@azimuth.assert_eq(3, fib4)
+  azimuth::@azimuth.assert_eq(5, fib5)
   
   // 使用缓存值计算更高项
-  fib6 = azimuth::add(fib4, fib5)  // F(6) = F(4) + F(5) = 3 + 5 = 8
-  fib7 = azimuth::add(fib5, fib6)  // F(7) = F(5) + F(6) = 5 + 8 = 13
-  fib8 = azimuth::add(fib6, fib7)  // F(8) = F(6) + F(7) = 8 + 13 = 21
+  fib6 = azimuth::@azimuth.add(fib4, fib5)  // F(6) = F(4) + F(5) = 3 + 5 = 8
+  fib7 = azimuth::@azimuth.add(fib5, fib6)  // F(7) = F(5) + F(6) = 5 + 8 = 13
+  fib8 = azimuth::@azimuth.add(fib6, fib7)  // F(8) = F(6) + F(7) = 8 + 13 = 21
   
   // 验证新计算的值
-  azimuth::assert_eq(8, fib6)
-  azimuth::assert_eq(13, fib7)
-  azimuth::assert_eq(21, fib8)
+  azimuth::@azimuth.assert_eq(8, fib6)
+  azimuth::@azimuth.assert_eq(13, fib7)
+  azimuth::@azimuth.assert_eq(21, fib8)
   
   // 验证斐波那契性质：F(n) = F(n-1) + F(n-2)
-  azimuth::assert_eq(fib6, azimuth::add(fib4, fib5))
-  azimuth::assert_eq(fib7, azimuth::add(fib5, fib6))
-  azimuth::assert_eq(fib8, azimuth::add(fib6, fib7))
+  azimuth::@azimuth.assert_eq(fib6, azimuth::@azimuth.add(fib4, fib5))
+  azimuth::@azimuth.assert_eq(fib7, azimuth::@azimuth.add(fib5, fib6))
+  azimuth::@azimuth.assert_eq(fib8, azimuth::@azimuth.add(fib6, fib7))
   
   // 验证黄金比例近似：F(n+1)/F(n) ≈ 1.618（使用整数除法）
   ratio1 = fib7 / fib6  // 13 / 8 = 1（整数除法）
   ratio2 = fib8 / fib7  // 21 / 13 = 1（整数除法）
-  azimuth::assert_eq(1, ratio1)
-  azimuth::assert_eq(1, ratio2)
+  azimuth::@azimuth.assert_eq(1, ratio1)
+  azimuth::@azimuth.assert_eq(1, ratio2)
   
   // 验证更精确的近似：(F(n+1)*10)/F(n) ≈ 16
-  precise_ratio1 = azimuth::multiply(fib7, 10) / fib6  // 13*10/8 = 130/8 = 16
-  precise_ratio2 = azimuth::multiply(fib8, 10) / fib7  // 21*10/13 = 210/13 = 16
-  azimuth::assert_eq(16, precise_ratio1)
-  azimuth::assert_eq(16, precise_ratio2)
+  precise_ratio1 = azimuth::@azimuth.multiply(fib7, 10) / fib6  // 13*10/8 = 130/8 = 16
+  precise_ratio2 = azimuth::@azimuth.multiply(fib8, 10) / fib7  // 21*10/13 = 210/13 = 16
+  azimuth::@azimuth.assert_eq(16, precise_ratio1)
+  azimuth::@azimuth.assert_eq(16, precise_ratio2)
 }

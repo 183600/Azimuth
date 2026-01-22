@@ -3,9 +3,9 @@
 
 test "add_basic_functionality" {
   // 测试基本的加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-10, add(-3, -7))
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
 }
 
 test "add_boundary_values" {
@@ -13,17 +13,17 @@ test "add_boundary_values" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
 test "multiply_basic_functionality" {
   // 测试基本的乘法功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(0, multiply(0, 123))
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
 }
 
 test "multiply_special_cases" {
@@ -31,24 +31,24 @@ test "multiply_special_cases" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(0, multiply(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
 }
 
 test "greet_functionality" {
   // 测试问候函数
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
 test "greet_special_characters" {
   // 测试包含特殊字符的问候
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, user@123!", greet("user@123"))
-  assert_eq_string("Hello,  spaces  !", greet("  spaces  "))
+  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  @azimuth.assert_eq_string("Hello, user@123!", @azimuth.greet("user@123"))
+  @azimuth.assert_eq_string("Hello,  spaces  !", @azimuth.greet("  spaces  "))
 }
 
 test "complex_calculation_scenario" {
@@ -59,11 +59,11 @@ test "complex_calculation_scenario" {
   let c = 3
   let d = 15
   
-  let sum = add(a, b)
-  let product = multiply(sum, c)
-  let result = add(product, -d)
+  let sum = @azimuth.add(a, b)
+  let product = @azimuth.multiply(sum, c)
+  let result = @azimuth.add(product, -d)
   
-  assert_eq(75, result)  // (10 + 20) * 3 - 15 = 75
+  @azimuth.assert_eq(75, result)  // (10 + 20) * 3 - 15 = 75
 }
 
 test "real_world_application" {
@@ -73,11 +73,11 @@ test "real_world_application" {
   let shipping = 15
   let discount = 20
   
-  let subtotal = multiply(item_price, quantity)
-  let after_discount = add(subtotal, -discount)
-  let total = add(after_discount, shipping)
+  let subtotal = @azimuth.multiply(item_price, quantity)
+  let after_discount = @azimuth.add(subtotal, -discount)
+  let total = @azimuth.add(after_discount, shipping)
   
-  assert_eq(383, total)  // 199 * 2 - 20 + 15 = 383
+  @azimuth.assert_eq(383, total)  // 199 * 2 - 20 + 15 = 383
 }
 
 test "mathematical_properties" {
@@ -86,13 +86,13 @@ test "mathematical_properties" {
   let b = 8
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
   // 分配律
-  assert_eq(multiply(a, add(b, 5)), add(multiply(a, b), multiply(a, 5)))
+  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, 5)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 5)))
 }
 
 test "error_handling_boundaries" {
@@ -101,8 +101,8 @@ test "error_handling_boundaries" {
   let min_val = -2147483648
   
   // 确保溢出被正确处理
-  assert_true(add(max_val, 100) == max_val)
-  assert_true(add(min_val, -100) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, 2) == min_val)
+  assert_true(@azimuth.add(max_val, 100) == max_val)
+  assert_true(@azimuth.add(min_val, -100) == min_val)
+  assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  assert_true(@azimuth.multiply(min_val, 2) == min_val)
 }

@@ -111,10 +111,10 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, 1000) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1000) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 10) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, 10) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1000, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1000, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 10, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, 10, true) == min_val)
   
   // 测试特殊值
   @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
@@ -124,8 +124,8 @@ test "error_handling_and_edge_cases" {
 
 test "assertion_functions" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq(-100, -100)
   @azimuth.assert_eq_string("test", "test")

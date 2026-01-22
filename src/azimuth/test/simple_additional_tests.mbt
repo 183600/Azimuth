@@ -79,8 +79,8 @@ test "performance_tests" {
 
 test "error_handling_tests" {
   // 测试错误处理
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(100, 100)
   @azimuth.assert_eq_string("success", "success")
 }

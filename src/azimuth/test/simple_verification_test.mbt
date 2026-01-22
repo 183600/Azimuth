@@ -2,6 +2,6 @@
 
 test "simple_verification_test" {
   // 简单的验证测试
-  assert_eq(10, add(5, 5))
-  assert_eq_string("Hello, Test!", greet("Test"))
+  @azimuth.assert_eq(10, @azimuth.add(5, 5))
+  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
 }

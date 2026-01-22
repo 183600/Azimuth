@@ -115,13 +115,13 @@ test "error_handling_and_validation" {
   let min_val = -2147483648
   
   // 验证溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 100, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -100, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, 2, true) == min_val)
   
   // 验证正常运算
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_true(@azimuth.multiply(4, 6) == 24)
-  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
+  @azimuth.assert_eq(@azimuth.add(5, 3, true) == 8)
+  @azimuth.assert_eq(@azimuth.multiply(4, 6, true) == 24)
+  @azimuth.assert_eq(@azimuth.greet("Test", true) == "Hello, Test!")
 }

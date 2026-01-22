@@ -79,8 +79,8 @@ test "algorithm_binary_search_simulation" {
   let mid = azimuth::@azimuth.add(low, high) / 2  // 3
   
   // 验证查找过程
-  @azimuth.assert_true(target <= 15)
-  @azimuth.assert_true(target >= 1)
+  @azimuth.assert_eq(target <= 15, true)
+  @azimuth.assert_eq(target >= 1, true)
   @azimuth.assert_eq(64, sorted_array_sum)  // 1+3+5+7+9+11+13+15 = 64
 }
 test "data_structure_stack_simulation" {
@@ -115,7 +115,7 @@ test "game_logic_dice_roll" {
   
   // 判断是否获胜（总和大于等于7为获胜）
   let is_win = total >= 7
-  @azimuth.assert_true(is_win)
+  @azimuth.assert_eq(is_win, true)
   
   // 计算得分（总和乘以10）
   let score = azimuth::@azimuth.multiply(total, 10)

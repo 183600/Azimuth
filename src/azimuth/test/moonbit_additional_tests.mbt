@@ -101,13 +101,13 @@ test "real_world_application_test" {
 test "error_handling_and_validation" {
   // 测试错误处理和验证
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试边界情况的正确处理
   let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
 }

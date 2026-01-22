@@ -175,7 +175,7 @@ test "statistical_analysis" {
   
   // 计算标准差（简化为整数）
   let std_dev = 14  // sqrt(200) ≈ 14.14，取整数部分
-  @azimuth.assert_true(std_dev == 14)
+  @azimuth.assert_eq(std_dev == 14, true)
 }
 
 test "game_mechanics_simulation" {

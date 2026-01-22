@@ -3,9 +3,9 @@
 
 test "integer_addition_basic" {
   // 测试基本整数加法
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-3, add(-1, -2))
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-3, @azimuth.add(-1, -2))
 }
 
 test "integer_addition_boundary" {
@@ -14,17 +14,17 @@ test "integer_addition_boundary" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
 test "integer_multiplication_basic" {
   // 测试基本整数乘法
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
 }
 
 test "integer_multiplication_boundary" {
@@ -33,17 +33,17 @@ test "integer_multiplication_boundary" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(0, multiply(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
 }
 
 test "string_greeting_functionality" {
   // 测试字符串问候功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, 123!", greet("123"))
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet("张三"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
 }
 
 test "complex_calculation_scenario" {
@@ -52,12 +52,12 @@ test "complex_calculation_scenario" {
   let width = 5
   
   // 面积 = 长 × 宽
-  let area = multiply(length, width)
-  assert_eq(40, area)
+  let area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(40, area)
   
   // 周长 = 2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(26, perimeter)
+  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  @azimuth.assert_eq(26, perimeter)
 }
 
 test "mathematical_properties" {
@@ -67,13 +67,13 @@ test "mathematical_properties" {
   let c = 5
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
   // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(a, b), c), @azimuth.add(a, @azimuth.add(b, c)))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
 
 test "real_world_application" {
@@ -84,13 +84,13 @@ test "real_world_application" {
   let tax_rate = 10  // 10%
   
   // 计算商品总价
-  let subtotal = multiply(item_price, quantity)
+  let subtotal = @azimuth.multiply(item_price, quantity)
   // 计算税费
-  let tax = multiply(subtotal, tax_rate) / 100
+  let tax = @azimuth.multiply(subtotal, tax_rate) / 100
   // 计算最终总价
-  let total = add(add(subtotal, tax), shipping)
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping)
   
-  assert_eq(674, total)  // (199×3) + (199×3×10/100) + 15 = 597 + 59 + 15 = 674
+  @azimuth.assert_eq(674, total)  // (199×3) + (199×3×10/100) + 15 = 597 + 59 + 15 = 674
 }
 
 test "error_handling_and_edge_cases" {
@@ -99,13 +99,13 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
   
   // 测试溢出保护
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(add(min_val, -1) == min_val)
-  assert_true(multiply(max_val, 2) == max_val)
+  assert_true(@azimuth.add(max_val, 1) == max_val)
+  assert_true(@azimuth.add(min_val, -1) == min_val)
+  assert_true(@azimuth.multiply(max_val, 2) == max_val)
 }

@@ -98,13 +98,13 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, max_val) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, min_val) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, max_val) == max_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, max_val, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, min_val, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, max_val, true) == max_val)
   
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
 }

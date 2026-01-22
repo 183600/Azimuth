@@ -114,15 +114,15 @@ test "geometry_calculations" {
 
 test "assertion_functions_test" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试数学表达式的断言
   let a = 10
   let b = 20
-  @azimuth.assert_true(@azimuth.add(a, b) == 30)
-  @azimuth.assert_false(@azimuth.add(a, b) == 25)
+  @azimuth.assert_eq(@azimuth.add(a, b, true) == 30)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(a, b) == 25)
   @azimuth.assert_eq(200, @azimuth.multiply(a, b))
 }

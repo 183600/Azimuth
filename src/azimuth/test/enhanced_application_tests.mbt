@@ -24,9 +24,9 @@ test "physics_projectile_motion" {
   let vertical_height = @azimuth.add(@azimuth.multiply(vertical_velocity, time), @azimuth.multiply(-gravity, @azimuth.multiply(time, time)) / 2)
   
   // 验证结果（近似值）
-  @azimuth.assert_true(horizontal_distance > 20)  // 应该大于20米
-  @azimuth.assert_true(vertical_height > 0)       // 应该大于0米
-  @azimuth.assert_true(vertical_height < 30)      // 应该小于30米
+  @azimuth.assert_eq(true, horizontal_distance > 20)  // 应该大于20米
+  @azimuth.assert_eq(true, vertical_height > 0)       // 应该大于0米
+  @azimuth.assert_eq(true, vertical_height < 30)      // 应该小于30米
 }
 
 test "data_processing_median_calculation" {
@@ -136,12 +136,12 @@ test "network_data_packet_simulation" {
   
   // 模拟校验和计算
   let checksum = with_ips % 65536  // 16位校验和
-  @azimuth.assert_true(checksum > 0)
-  @azimuth.assert_true(checksum < 65536)
+  @azimuth.assert_eq(true, checksum > 0)
+  @azimuth.assert_eq(true, checksum < 65536)
   
   // 验证数据包完整性
   let is_valid = checksum > 1000  // 简化的验证条件
-  @azimuth.assert_true(is_valid)
+  @azimuth.assert_eq(is_valid, true)
 }
 
 test "ai_decision_tree_logic" {
@@ -174,9 +174,9 @@ test "ai_decision_tree_logic" {
   }
   
   // 验证决策结果
-  @azimuth.assert_true(should_attack)   // 应该选择攻击
-  @azimuth.assert_true(!should_defend)  // 不应该防御
-  @azimuth.assert_true(!should_flee)    // 不应该逃跑
+  @azimuth.assert_eq(should_attack, true)   // 应该选择攻击
+  @azimuth.assert_eq(!should_defend, true)  // 不应该防御
+  @azimuth.assert_eq(!should_flee, true)    // 不应该逃跑
 }
 
 test "compression_run_length_encoding" {
@@ -205,7 +205,7 @@ test "compression_run_length_encoding" {
   
   // 验证压缩效果
   let is_effective = compression_ratio < 90
-  @azimuth.assert_true(is_effective)
+  @azimuth.assert_eq(is_effective, true)
 }
 
 test "internationalization_currency_formatting" {
@@ -231,6 +231,6 @@ test "internationalization_currency_formatting" {
   // 验证货币转换
   let exchange_rate_usd_to_eur = 85  // 1 USD = 0.85 EUR，用85/100表示
   let euro_amount = @azimuth.multiply(amount, exchange_rate_usd_to_eur) / 100
-  @azimuth.assert_true(euro_amount > 1000000)  // 应该大于1M
-  @azimuth.assert_true(euro_amount < 1100000)  // 应该小于1.1M
+  @azimuth.assert_eq(true, euro_amount > 1000000)  // 应该大于1M
+  @azimuth.assert_eq(true, euro_amount < 1100000)  // 应该小于1.1M
 }

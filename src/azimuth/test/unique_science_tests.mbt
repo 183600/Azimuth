@@ -129,22 +129,22 @@ test "prime_number_check" {
   // 检查 17 是否为质数
   // 17 不能被 2, 3, 4, 5, 6, 7, 8 整除
   let is_17_prime = (num1 % 2 != 0) && (num1 % 3 != 0) && (num1 % 4 != 0) && (num1 % 5 != 0) && (num1 % 6 != 0) && (num1 % 7 != 0) && (num1 % 8 != 0)
-  @azimuth.assert_true(is_17_prime)
+  @azimuth.assert_eq(is_17_prime, true)
   
   // 检查 15 是否为质数
   // 15 能被 3 整除
   let is_15_prime = (num2 % 2 != 0) && (num2 % 3 != 0) && (num2 % 4 != 0) && (num2 % 5 != 0) && (num2 % 6 != 0) && (num2 % 7 != 0)
-  @azimuth.assert_false(is_15_prime)
+  @azimuth.assert_eq(0, 1)(is_15_prime)
   
   // 检查 23 是否为质数
   // 23 不能被 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 整除
   let is_23_prime = (num3 % 2 != 0) && (num3 % 3 != 0) && (num3 % 4 != 0) && (num3 % 5 != 0) && (num3 % 6 != 0) && (num3 % 7 != 0) && (num3 % 8 != 0) && (num3 % 9 != 0) && (num3 % 10 != 0) && (num3 % 11 != 0)
-  @azimuth.assert_true(is_23_prime)
+  @azimuth.assert_eq(is_23_prime, true)
   
   // 检查 25 是否为质数
   // 25 能被 5 整除
   let is_25_prime = (num4 % 2 != 0) && (num4 % 3 != 0) && (num4 % 4 != 0) && (num4 % 5 != 0) && (num4 % 6 != 0)
-  @azimuth.assert_false(is_25_prime)
+  @azimuth.assert_eq(0, 1)(is_25_prime)
 }
 
 test "data_structure_queue_simulation" {
@@ -299,7 +299,7 @@ test "computer_science_hash_function" {
   @azimuth.assert_eq(997, hash_bca)  // 2 + 93 + 961 = 1056
   
   // 验证不同的字符串产生不同的哈希值
-  @azimuth.assert_true(hash_abc != hash_bca)
+  @azimuth.assert_eq(hash_abc != hash_bca, true)
 }
 
 test "astronomical_distance_calculation" {

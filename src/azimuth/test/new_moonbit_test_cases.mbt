@@ -46,28 +46,28 @@ test "comparison_operations" {
   let b = 20
   
   // 小于比较
-  @azimuth.assert_true(a < b)
-  @azimuth.assert_false(b < a)
+  @azimuth.assert_eq(true, a < b)
+  @azimuth.assert_eq(0, 1)(b < a)
   
   // 大于比较
-  @azimuth.assert_true(b > a)
-  @azimuth.assert_false(a > b)
+  @azimuth.assert_eq(true, b > a)
+  @azimuth.assert_eq(0, 1)(a > b)
   
   // 等于比较
-  @azimuth.assert_true(a == 15)
-  @azimuth.assert_false(a == b)
+  @azimuth.assert_eq(a == 15, true)
+  @azimuth.assert_eq(0, 1)(a == b)
   
   // 不等于比较
-  @azimuth.assert_true(a != b)
-  @azimuth.assert_false(a != 15)
+  @azimuth.assert_eq(a != b, true)
+  @azimuth.assert_eq(0, 1)(a != 15)
   
   // 小于等于比较
-  @azimuth.assert_true(a <= b)
-  @azimuth.assert_true(a <= 15)
+  @azimuth.assert_eq(a <= b, true)
+  @azimuth.assert_eq(a <= 15, true)
   
   // 大于等于比较
-  @azimuth.assert_true(b >= a)
-  @azimuth.assert_true(b >= 20)
+  @azimuth.assert_eq(b >= a, true)
+  @azimuth.assert_eq(b >= 20, true)
 }
 
 test "boolean_logic_operations" {
@@ -76,20 +76,20 @@ test "boolean_logic_operations" {
   let false_val = false
   
   // 逻辑与
-  @azimuth.assert_true(true_val && true_val)
-  @azimuth.assert_false(true_val && false_val)
-  @azimuth.assert_false(false_val && true_val)
-  @azimuth.assert_false(false_val && false_val)
+  @azimuth.assert_eq(true_val && true_val, true)
+  @azimuth.assert_eq(0, 1)(true_val && false_val)
+  @azimuth.assert_eq(0, 1)(false_val && true_val)
+  @azimuth.assert_eq(0, 1)(false_val && false_val)
   
   // 逻辑或
-  @azimuth.assert_true(true_val || true_val)
-  @azimuth.assert_true(true_val || false_val)
-  @azimuth.assert_true(false_val || true_val)
-  @azimuth.assert_false(false_val || false_val)
+  @azimuth.assert_eq(true_val || true_val, true)
+  @azimuth.assert_eq(true_val || false_val, true)
+  @azimuth.assert_eq(false_val || true_val, true)
+  @azimuth.assert_eq(0, 1)(false_val || false_val)
   
   // 逻辑非
-  @azimuth.assert_false(!true_val)
-  @azimuth.assert_true(!false_val)
+  @azimuth.assert_eq(0, 1)(!true_val)
+  @azimuth.assert_eq(!false_val, true)
 }
 
 test "string_operations" {
@@ -137,10 +137,10 @@ test "conditional_expressions" {
   
   // 布尔条件
   let is_even = if x % 2 == 0 { true } else { false }
-  @azimuth.assert_true(is_even)
+  @azimuth.assert_eq(is_even, true)
   
   let is_odd = if x % 2 != 0 { true } else { false }
-  @azimuth.assert_false(is_odd)
+  @azimuth.assert_eq(0, 1)(is_odd)
 }
 
 test "nested_function_calls" {

@@ -7,36 +7,36 @@ test "arithmetic_sequence_calculation" {
   let n = 5
   let first = 2
   let last = 14
-  let sum = multiply(n, add(first, last)) / 2
-  assert_eq(40, sum)
+  let sum = @azimuth.multiply(n, @azimuth.add(first, last)) / 2
+  @azimuth.assert_eq(40, sum)
 }
 
 test "geometric_progression_calculation" {
   // 计算等比数列的和：3 + 6 + 12 + 24 + 48
   // 使用手动计算
   let term1 = 3
-  let term2 = multiply(term1, 2)
-  let term3 = multiply(term2, 2)
-  let term4 = multiply(term3, 2)
-  let term5 = multiply(term4, 2)
-  let sum = add(add(add(add(term1, term2), term3), term4), term5)
-  assert_eq(93, sum)
+  let term2 = @azimuth.multiply(term1, 2)
+  let term3 = @azimuth.multiply(term2, 2)
+  let term4 = @azimuth.multiply(term3, 2)
+  let term5 = @azimuth.multiply(term4, 2)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5)
+  @azimuth.assert_eq(93, sum)
 }
 
 test "temperature_conversion_scenarios" {
   // 温度转换场景：摄氏度转华氏度（简化版：F = C × 2 + 30）
   // 测试常见温度点
   let freezing_celsius = 0
-  let freezing_fahrenheit = add(multiply(freezing_celsius, 2), 30)
-  assert_eq(30, freezing_fahrenheit)
+  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
+  @azimuth.assert_eq(30, freezing_fahrenheit)
   
   let room_celsius = 20
-  let room_fahrenheit = add(multiply(room_celsius, 2), 30)
-  assert_eq(70, room_fahrenheit)
+  let room_fahrenheit = @azimuth.add(@azimuth.multiply(room_celsius, 2), 30)
+  @azimuth.assert_eq(70, room_fahrenheit)
   
   let boiling_celsius = 100
-  let boiling_fahrenheit = add(multiply(boiling_celsius, 2), 30)
-  assert_eq(230, boiling_fahrenheit)
+  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
+  @azimuth.assert_eq(230, boiling_fahrenheit)
 }
 
 test "bank_interest_calculation" {
@@ -45,12 +45,12 @@ test "bank_interest_calculation" {
   let rate_percent = 5
   let years = 3
   
-  let interest_rate = multiply(rate_percent, years)
-  let growth_factor = add(100, interest_rate)
-  let total_amount = multiply(principal, growth_factor)
+  let interest_rate = @azimuth.multiply(rate_percent, years)
+  let growth_factor = @azimuth.add(100, interest_rate)
+  let total_amount = @azimuth.multiply(principal, growth_factor)
   
   // 10000 × (100 + 5×3) = 10000 × 115 = 1150000
-  assert_eq(1150000, total_amount)
+  @azimuth.assert_eq(1150000, total_amount)
 }
 
 test "shopping_cart_with_discount" {
@@ -63,20 +63,20 @@ test "shopping_cart_with_discount" {
   let discount_rate = 10
   
   // 计算商品总价
-  let subtotal1 = multiply(item1_price, item1_quantity)
-  let subtotal2 = multiply(item2_price, item2_quantity)
-  let subtotal = add(subtotal1, subtotal2)
+  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)
+  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = @azimuth.add(subtotal1, subtotal2)
   
   // 计算折扣（如果超过阈值）
   let discount = if (subtotal > discount_threshold) {
-    multiply(subtotal, discount_rate) / 100
+    @azimuth.multiply(subtotal, discount_rate) / 100
   } else {
     0
   }
   
   // 计算最终价格
-  let final_total = add(subtotal, -discount)
-  assert_eq(697, final_total)
+  let final_total = @azimuth.add(subtotal, -discount)
+  @azimuth.assert_eq(697, final_total)
 }
 
 test "speed_distance_time_calculation" {
@@ -86,16 +86,16 @@ test "speed_distance_time_calculation" {
   let time_minutes = 30
   
   // 计算总时间（分钟）
-  let total_time_minutes = add(multiply(time_hours, 60), time_minutes)
+  let total_time_minutes = @azimuth.add(@azimuth.multiply(time_hours, 60), time_minutes)
   
   // 计算距离（公里）
-  let distance = multiply(speed, total_time_minutes) / 60
-  assert_eq(150, distance)
+  let distance = @azimuth.multiply(speed, total_time_minutes) / 60
+  @azimuth.assert_eq(150, distance)
   
   // 计算返回所需时间（不同速度）
   let return_speed = 75
-  let return_time = multiply(distance, 60) / return_speed
-  assert_eq(120, return_time)
+  let return_time = @azimuth.multiply(distance, 60) / return_speed
+  @azimuth.assert_eq(120, return_time)
 }
 
 test "array_index_manipulation" {
@@ -106,15 +106,15 @@ test "array_index_manipulation" {
   let col = 3
   
   // 计算一维数组中的索引
-  let index = add(multiply(row, cols), col)
-  assert_eq(13, index)
+  let index = @azimuth.add(@azimuth.multiply(row, cols), col)
+  @azimuth.assert_eq(13, index)
   
   // 测试边界情况
-  let first_index = add(multiply(0, cols), 0)
-  assert_eq(0, first_index)
+  let first_index = @azimuth.add(@azimuth.multiply(0, cols), 0)
+  @azimuth.assert_eq(0, first_index)
   
-  let last_index = add(multiply(add(rows, -1), add(cols, -1)), add(cols, -1))
-  assert_eq(19, last_index)
+  let last_index = @azimuth.add(@azimuth.multiply(@azimuth.add(rows, -1), @azimuth.add(cols, -1)), @azimuth.add(cols, -1))
+  @azimuth.assert_eq(19, last_index)
 }
 
 test "string_processing_scenarios" {
@@ -126,10 +126,10 @@ test "string_processing_scenarios" {
   let mixed = "User_2023@Project"
   
   // 测试greet函数处理各种字符串格式
-  assert_eq_string("Hello, user123!", greet(username))
-  assert_eq_string("Hello, test@example.com!", greet(email))
-  assert_eq_string("Hello, 123-456-7890!", greet(phone))
-  assert_eq_string("Hello, User_2023@Project!", greet(mixed))
+  @azimuth.assert_eq_string("Hello, user123!", @azimuth.greet(username))
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet(email))
+  @azimuth.assert_eq_string("Hello, 123-456-7890!", @azimuth.greet(phone))
+  @azimuth.assert_eq_string("Hello, User_2023@Project!", @azimuth.greet(mixed))
 }
 
 test "mathematical_formula_validation" {
@@ -138,21 +138,21 @@ test "mathematical_formula_validation" {
   let b = 4
   
   // 验证平方差公式：(a + b) × (a - b) = a² - b²
-  let sum = add(a, b)
-  let diff = add(a, -b)
-  let left_side = multiply(sum, diff)
+  let sum = @azimuth.add(a, b)
+  let diff = @azimuth.add(a, -b)
+  let left_side = @azimuth.multiply(sum, diff)
   
-  let a_squared = multiply(a, a)
-  let b_squared = multiply(b, b)
-  let right_side = add(a_squared, -b_squared)
+  let a_squared = @azimuth.multiply(a, a)
+  let b_squared = @azimuth.multiply(b, b)
+  let right_side = @azimuth.add(a_squared, -b_squared)
   
-  assert_eq(left_side, right_side)
+  @azimuth.assert_eq(left_side, right_side)
   
   // 验证分配律：a × (b + c) = a × b + a × c
   let c = 3
-  let distrib_left = multiply(a, add(b, c))
-  let distrib_right = add(multiply(a, b), multiply(a, c))
-  assert_eq(distrib_left, distrib_right)
+  let distrib_left = @azimuth.multiply(a, @azimuth.add(b, c))
+  let distrib_right = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(distrib_left, distrib_right)
 }
 
 test "boundary_value_comprehensive" {
@@ -161,20 +161,20 @@ test "boundary_value_comprehensive" {
   let min_val = -2147483648
   
   // 测试加法边界情况
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
   
   // 测试乘法边界情况
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
   
   // 测试连续边界运算
-  let complex_calc = add(multiply(add(max_val, min_val), 2), max_val)
-  assert_eq(max_val, complex_calc)
+  let complex_calc = @azimuth.add(@azimuth.multiply(@azimuth.add(max_val, min_val), 2), max_val)
+  @azimuth.assert_eq(max_val, complex_calc)
 }

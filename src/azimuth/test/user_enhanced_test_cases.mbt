@@ -49,8 +49,8 @@ test "complex_financial_calculation" {
   let monthly_payment = @azimuth.add(monthly_principal, monthly_interest)
   
   // 验证计算结果
-  @azimuth.assert_true(monthly_payment > 277)  // 应该大于277（100000÷360≈278）
-  @azimuth.assert_true(monthly_payment < 1000) // 应该小于1000
+  @azimuth.assert_eq(true, monthly_payment > 277)  // 应该大于277（100000÷360≈278）
+  @azimuth.assert_eq(true, monthly_payment < 1000) // 应该小于1000
 }
 
 test "inventory_management_calculation" {
@@ -73,7 +73,7 @@ test "inventory_management_calculation" {
   
   // 验证计算结果
   @azimuth.assert_eq(415, reorder_point)  // 100 + 45×7 = 415
-  @azimuth.assert_true(eoq_simplified > 1000)  // 应该大于1000
+  @azimuth.assert_eq(true, eoq_simplified > 1000)  // 应该大于1000
 }
 
 test "data_analysis_statistics" {
@@ -181,7 +181,7 @@ test "error_handling_boundary_conditions" {
   let complex_result = @azimuth.add(product, min_val)  // -max_val + min_val
   
   // 验证结果在合理范围内
-  @azimuth.assert_true(complex_result <= 0)
+  @azimuth.assert_eq(complex_result <= 0, true)
   
   // 测试 divide_with_ceil 的边界情况
   // 最大值除以1
@@ -221,10 +221,10 @@ test "algorithmic_complexity_simulation" {
   let quadratic_time = @azimuth.multiply(input_size, input_size)
   
   // 验证复杂度关系
-  @azimuth.assert_true(constant_time < log_time)
-  @azimuth.assert_true(log_time < linear_time)
-  @azimuth.assert_true(linear_time < linear_log_time)
-  @azimuth.assert_true(linear_log_time < quadratic_time)
+  @azimuth.assert_eq(true, constant_time < log_time)
+  @azimuth.assert_eq(true, log_time < linear_time)
+  @azimuth.assert_eq(true, linear_time < linear_log_time)
+  @azimuth.assert_eq(true, linear_log_time < quadratic_time)
   
   // 计算算法效率提升百分比
   let old_algorithm = quadratic_time  // O(n²)
@@ -233,7 +233,7 @@ test "algorithmic_complexity_simulation" {
   let improvement_percent = @azimuth.divide_with_ceil(@azimuth.multiply(improvement, 100), old_algorithm)
   
   // 验证改进百分比大于90%
-  @azimuth.assert_true(improvement_percent > 90)
+  @azimuth.assert_eq(true, improvement_percent > 90)
 }
 
 test "resource_optimization_calculation" {
@@ -279,7 +279,7 @@ test "resource_optimization_calculation" {
   let storage_utilization = @azimuth.multiply(@azimuth.divide_with_ceil(used_storage, total_storage), 100)
   
   // 验证资源利用率在合理范围内
-  @azimuth.assert_true(memory_utilization <= 100)
-  @azimuth.assert_true(cpu_utilization <= 100)
-  @azimuth.assert_true(storage_utilization <= 100)
+  @azimuth.assert_eq(memory_utilization <= 100, true)
+  @azimuth.assert_eq(cpu_utilization <= 100, true)
+  @azimuth.assert_eq(storage_utilization <= 100, true)
 }

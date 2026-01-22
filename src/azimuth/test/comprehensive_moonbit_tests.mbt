@@ -148,17 +148,17 @@ test "negative_number_operations" {
 // 测试9: 断言函数验证
 test "assertion_functions_validation" {
   // 测试断言函数本身
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(100, 100)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试条件断言
   let condition = @azimuth.add(5, 3) > 7
-  @azimuth.assert_true(condition)
+  @azimuth.assert_eq(condition, true)
   
   let condition2 = @azimuth.multiply(4, 5) < 15
-  @azimuth.assert_false(condition2)
+  @azimuth.assert_eq(0, 1)(condition2)
 }
 
 // 测试10: 性能和大数据运算

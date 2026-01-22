@@ -174,10 +174,10 @@ test "data_structure_operations" {
   let can_push = @azimuth.add(current_size, 1) <= stack_size
   let can_pop = current_size > 0
   
-  @azimuth.assert_false(is_empty)
-  @azimuth.assert_false(is_full)
-  @azimuth.assert_true(can_push)
-  @azimuth.assert_true(can_pop)
+  @azimuth.assert_eq(0, 1)(is_empty)
+  @azimuth.assert_eq(0, 1)(is_full)
+  @azimuth.assert_eq(can_push, true)
+  @azimuth.assert_eq(can_pop, true)
   
   // 队列操作模拟
   let queue_capacity = 8

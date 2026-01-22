@@ -69,12 +69,12 @@ test "array_manipulation_operations" {
   
   // 模拟数组边界检查
   let is_valid_index = index < array_size
-  @azimuth.assert_true(is_valid_index)
+  @azimuth.assert_eq(is_valid_index, true)
   
   // 测试越界情况
   let invalid_index = 15
   let is_invalid_index = invalid_index < array_size
-  @azimuth.assert_false(is_invalid_index)
+  @azimuth.assert_eq(0, 1)(is_invalid_index)
   
   // 模拟数组元素求和：sum = a[0] + a[1] + ... + a[4]
   let sum_first_5 = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(10, 20), 30), 40), 50)
@@ -99,8 +99,8 @@ test "cryptographic_simple_hash" {
   @azimuth.assert_eq(527, hash_value2)  // (67890×31 + 17) % 1000 = 527
   
   // 验证哈希值在范围内
-  @azimuth.assert_true(hash_value >= 0 && hash_value < mod)
-  @azimuth.assert_true(hash_value2 >= 0 && hash_value2 < mod)
+  @azimuth.assert_eq(true, hash_value >= 0 && hash_value < mod)
+  @azimuth.assert_eq(true, hash_value2 >= 0 && hash_value2 < mod)
 }
 
 test "compression_ratio_calculation" {
@@ -215,7 +215,7 @@ test "algorithm_binary_search_simulation" {
   
   // 第一次比较：target < mid
   let first_comparison = target < mid
-  @azimuth.assert_true(first_comparison)
+  @azimuth.assert_eq(first_comparison, true)
   
   // 更新右边界
   let new_right = @azimuth.add(mid, -1)  // 48
@@ -223,7 +223,7 @@ test "algorithm_binary_search_simulation" {
   
   // 第二次比较：target > new_mid
   let second_comparison = target > new_mid
-  @azimuth.assert_true(second_comparison)
+  @azimuth.assert_eq(second_comparison, true)
   
   // 更新左边界
   let new_left = @azimuth.add(new_mid, 1)  // 25
@@ -231,11 +231,11 @@ test "algorithm_binary_search_simulation" {
   
   // 第三次比较：target > final_mid
   let third_comparison = target > final_mid
-  @azimuth.assert_true(third_comparison)
+  @azimuth.assert_eq(third_comparison, true)
   
   // 计算查找步数（简化）
   let max_steps = 10  // log₂(100) ≈ 6.6，向上取整为7，留余量
-  @azimuth.assert_true(3 < max_steps)
+  @azimuth.assert_eq(true, 3 < max_steps)
 }
 
 test "game_inventory_management" {
@@ -247,7 +247,7 @@ test "game_inventory_management" {
   // 计算是否能添加新物品
   let available_space = @azimuth.add(max_inventory_size, -current_items)
   let can_add_items = new_items <= available_space
-  @azimuth.assert_true(can_add_items)
+  @azimuth.assert_eq(can_add_items, true)
   
   // 更新物品数量
   let updated_items = @azimuth.add(current_items, new_items)

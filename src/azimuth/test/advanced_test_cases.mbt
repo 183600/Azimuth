@@ -66,7 +66,7 @@ test "string_processing_edge_cases" {
   // 测试非常长的字符串
   let long_name = "这是一个非常非常长的用户名字符串，用来测试greet函数在处理长字符串时的表现"
   let result = @azimuth.greet(long_name)
-  @azimuth.assert_true(String::length(result) > String::length(long_name))
+  @azimuth.assert_eq(String::length(result, true) > String::length(long_name))
   
   // 测试包含各种特殊字符的字符串
   let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
@@ -107,8 +107,8 @@ test "mathematical_properties_verification" {
 test "error_handling_and_recovery" {
   // 错误处理和恢复测试
   // 测试断言函数的正确性
-  @azimuth.assert_true(true)     // 应该通过
-  @azimuth.assert_false(false)   // 应该通过
+  @azimuth.assert_eq(1, 1)     // 应该通过
+  @azimuth.assert_eq(1, 1)   // 应该通过
   
   // 测试边界值的比较
   let max_val = 2147483647

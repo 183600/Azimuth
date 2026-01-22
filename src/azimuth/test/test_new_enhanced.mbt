@@ -125,17 +125,17 @@ test "enhanced_prime_check_simulation" {
   let divisible_by_4 = (num % 4 == 0)
   
   // 17不能被2、3、4整除，所以是质数
-  @azimuth.assert_false(divisible_by_2)
-  @azimuth.assert_false(divisible_by_3)
-  @azimuth.assert_false(divisible_by_4)
+  @azimuth.assert_eq(0, 1)(divisible_by_2)
+  @azimuth.assert_eq(0, 1)(divisible_by_3)
+  @azimuth.assert_eq(0, 1)(divisible_by_4)
   
   // 测试合数
   let composite_num = 12
   let composite_div_by_2 = (composite_num % 2 == 0)
   let composite_div_by_3 = (composite_num % 3 == 0)
   
-  @azimuth.assert_true(composite_div_by_2)
-  @azimuth.assert_true(composite_div_by_3)
+  @azimuth.assert_eq(composite_div_by_2, true)
+  @azimuth.assert_eq(composite_div_by_3, true)
 }
 
 test "enhanced_leap_year_calculation" {
@@ -149,19 +149,19 @@ test "enhanced_leap_year_calculation" {
   
   // 2020年是闰年（能被4整除，不能被100整除）
   let leap_2020 = (year_2020 % 4 == 0) && (year_2020 % 100 != 0)
-  @azimuth.assert_true(leap_2020)
+  @azimuth.assert_eq(leap_2020, true)
   
   // 2021年不是闰年（不能被4整除）
   let leap_2021 = (year_2021 % 4 == 0) && (year_2021 % 100 != 0)
-  @azimuth.assert_false(leap_2021)
+  @azimuth.assert_eq(0, 1)(leap_2021)
   
   // 1900年不是闰年（能被4整除，也能被100整除，但不能被400整除）
   let leap_1900 = (year_1900 % 400 == 0)
-  @azimuth.assert_false(leap_1900)
+  @azimuth.assert_eq(0, 1)(leap_1900)
   
   // 2000年是闰年（能被400整除）
   let leap_2000 = (year_2000 % 400 == 0)
-  @azimuth.assert_true(leap_2000)
+  @azimuth.assert_eq(leap_2000, true)
 }
 
 test "enhanced_base_conversion_simulation" {
@@ -227,20 +227,20 @@ test "enhanced_logical_operations" {
   
   // 逻辑与（使用乘法模拟：true*true=1, 其他=0）
   let logical_and = a && b
-  @azimuth.assert_false(logical_and)
+  @azimuth.assert_eq(0, 1)(logical_and)
   
   // 逻辑或（使用加法模拟：true+true>0, true+false>0, false+false=0）
   let logical_or = a || b
-  @azimuth.assert_true(logical_or)
+  @azimuth.assert_eq(logical_or, true)
   
   // 逻辑非
   let not_a = !a
   let not_b = !b
-  @azimuth.assert_false(not_a)
-  @azimuth.assert_true(not_b)
+  @azimuth.assert_eq(0, 1)(not_a)
+  @azimuth.assert_eq(not_b, true)
   
   // 测试复杂逻辑表达式
   let complex_expr = (a || b) && (!a || b)
   let result = complex_expr
-  @azimuth.assert_false(result)
+  @azimuth.assert_eq(0, 1)(result)
 }

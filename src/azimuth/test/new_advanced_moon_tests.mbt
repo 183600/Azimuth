@@ -286,13 +286,13 @@ test "bitmask_operations" {
   // 如果结果 > 0，则该位已设置
   let bitwise_and = value % (check_bit * 2)  // 简化的检查方法
   let is_bit_set = bitwise_and >= check_bit
-  @azimuth.assert_true(is_bit_set)
+  @azimuth.assert_eq(is_bit_set, true)
   
   // 检查 value = 6 (0110) 的第4位是否设置
   let check_bit2 = 8  // 检查第4位(1000)
   let bitwise_and2 = value % (check_bit2 * 2)
   let is_bit_set2 = bitwise_and2 >= check_bit2
-  @azimuth.assert_false(is_bit_set2)
+  @azimuth.assert_eq(0, 1)(is_bit_set2)
   
   // 模拟按位异或操作：交换两个值（不使用临时变量）
   let x = 5

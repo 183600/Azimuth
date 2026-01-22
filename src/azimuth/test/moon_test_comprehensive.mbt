@@ -107,7 +107,7 @@ test "inventory_management_system" {
   @azimuth.assert_eq(2250, total_revenue)
   @azimuth.assert_eq(1500, total_cost)
   @azimuth.assert_eq(750, gross_profit)
-  @azimuth.assert_true(needs_reorder)
+  @azimuth.assert_eq(needs_reorder, true)
 }
 
 test "statistical_analysis_basic" {

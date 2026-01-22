@@ -79,8 +79,8 @@ test "boundary_value_handling" {
 
 test "assert_helper_functions" {
   // 测试断言辅助函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(100, 100)
   @azimuth.assert_eq_string("test", "test")
 }

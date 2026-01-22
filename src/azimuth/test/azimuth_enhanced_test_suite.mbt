@@ -28,10 +28,10 @@ test "boolean_logic" {
   let and3 = false_val && true_val
   let and4 = false_val && false_val
   
-  @azimuth.assert_true(and1)
-  @azimuth.assert_false(and2)
-  @azimuth.assert_false(and3)
-  @azimuth.assert_false(and4)
+  @azimuth.assert_eq(and1, true)
+  @azimuth.assert_eq(0, 1)(and2)
+  @azimuth.assert_eq(0, 1)(and3)
+  @azimuth.assert_eq(0, 1)(and4)
   
   // 测试逻辑或
   let or1 = true_val || true_val
@@ -39,10 +39,10 @@ test "boolean_logic" {
   let or3 = false_val || true_val
   let or4 = false_val || false_val
   
-  @azimuth.assert_true(or1)
-  @azimuth.assert_true(or2)
-  @azimuth.assert_true(or3)
-  @azimuth.assert_false(or4)
+  @azimuth.assert_eq(or1, true)
+  @azimuth.assert_eq(or2, true)
+  @azimuth.assert_eq(or3, true)
+  @azimuth.assert_eq(0, 1)(or4)
 }
 
 test "conditional_expressions" {

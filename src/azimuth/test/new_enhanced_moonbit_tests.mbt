@@ -106,23 +106,23 @@ test "prime_number_check" {
   
   // 检查是否能被2整除
   let divisible_by_2 = @azimuth.multiply(number / 2, 2) == number
-  @azimuth.assert_false(divisible_by_2)
+  @azimuth.assert_eq(0, 1)(divisible_by_2)
   
   // 检查是否能被3整除
   let divisible_by_3 = @azimuth.multiply(number / 3, 3) == number
-  @azimuth.assert_false(divisible_by_3)
+  @azimuth.assert_eq(0, 1)(divisible_by_3)
   
   // 检查9是否为质数：能被3整除
   let composite_number = 9
   let divisible_by_3_composite = @azimuth.multiply(composite_number / 3, 3) == composite_number
-  @azimuth.assert_true(divisible_by_3_composite)
+  @azimuth.assert_eq(divisible_by_3_composite, true)
   
   // 检查11是否为质数：不能被2、3整除
   let prime_number = 11
   let divisible_by_2_prime = @azimuth.multiply(prime_number / 2, 2) == prime_number
   let divisible_by_3_prime = @azimuth.multiply(prime_number / 3, 3) == prime_number
-  @azimuth.assert_false(divisible_by_2_prime)
-  @azimuth.assert_false(divisible_by_3_prime)
+  @azimuth.assert_eq(0, 1)(divisible_by_2_prime)
+  @azimuth.assert_eq(0, 1)(divisible_by_3_prime)
 }
 
 test "calendar_date_calculation" {

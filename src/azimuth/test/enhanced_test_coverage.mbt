@@ -9,17 +9,17 @@ test "data_validation_scenarios" {
   let zero = 0
   
   // 验证正数
-  @azimuth.assert_true(positive_number > 0)
-  @azimuth.assert_true(@azimuth.add(positive_number, 1) > positive_number)
+  @azimuth.assert_eq(true, positive_number > 0)
+  @azimuth.assert_eq(@azimuth.add(positive_number, 1, true) > positive_number)
   
   // 验证负数
-  @azimuth.assert_true(negative_number < 0)
-  @azimuth.assert_true(@azimuth.add(negative_number, -1) < negative_number)
+  @azimuth.assert_eq(true, negative_number < 0)
+  @azimuth.assert_eq(@azimuth.add(negative_number, -1, true) < negative_number)
   
   // 验证零值
-  @azimuth.assert_true(zero == 0)
-  @azimuth.assert_true(@azimuth.multiply(zero, 42) == 0)
-  @azimuth.assert_true(@azimuth.add(zero, 42) == 42)
+  @azimuth.assert_eq(zero == 0, true)
+  @azimuth.assert_eq(@azimuth.multiply(zero, 42, true) == 0)
+  @azimuth.assert_eq(@azimuth.add(zero, 42, true) == 42)
 }
 
 // 测试 2: 日期时间计算模拟
@@ -168,7 +168,7 @@ test "business_logic_calculations" {
   
   // 判断是否需要补货
   let need_reorder = current_stock < safety_stock
-  @azimuth.assert_false(need_reorder)
+  @azimuth.assert_eq(0, 1)(need_reorder)
   
   // 模拟折扣计算
   let original_price = 1000

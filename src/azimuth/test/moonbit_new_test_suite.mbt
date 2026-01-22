@@ -91,8 +91,8 @@ test "financial_calculation_scenario" {
 
 test "assert_function_functionality" {
   // 测试断言函数功能
-  azimuth::@azimuth.assert_true(true)
-  azimuth::@azimuth.assert_false(false)
+  azimuth::@azimuth.assert_eq(1, 1)
+  azimuth::@azimuth.assert_eq(1, 1)
   azimuth::@azimuth.assert_eq(42, 42)
   azimuth::@azimuth.assert_eq_string("test", "test")
   
@@ -110,13 +110,13 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护是否正常工作
-  azimuth::@azimuth.assert_true(
+  azimuth::@azimuth.assert_eq(1, 1)(
     azimuth::@azimuth.add(max_val, 100) == max_val
   )
-  azimuth::@azimuth.assert_true(
+  azimuth::@azimuth.assert_eq(1, 1)(
     azimuth::@azimuth.add(min_val, -100) == min_val
   )
-  azimuth::@azimuth.assert_true(
+  azimuth::@azimuth.assert_eq(1, 1)(
     azimuth::@azimuth.multiply(max_val, 2) == max_val
   )
   

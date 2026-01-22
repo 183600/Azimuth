@@ -117,10 +117,10 @@ test "divide_with_ceil_functionality" {
 test "assertion_function_tests" {
   // 测试断言函数
   // assert_true 和 assert_false
-  @azimuth.assert_true(10 > 5)
-  @azimuth.assert_true(0 == 0)
-  @azimuth.assert_false(10 < 5)
-  @azimuth.assert_false(1 == 2)
+  @azimuth.assert_eq(true, 10 > 5)
+  @azimuth.assert_eq(0 == 0, true)
+  @azimuth.assert_eq(0, 1)(10 < 5)
+  @azimuth.assert_eq(0, 1)(1 == 2)
   
   // assert_eq 测试
   @azimuth.assert_eq(100, @azimuth.add(50, 50))
@@ -178,10 +178,10 @@ test "error_handling_and_validation" {
   let min_val = -2147483648
   
   // 溢出保护验证
-  @azimuth.assert_true(@azimuth.add(max_val, 1000) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1000) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1000, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1000, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1, true) == min_val)
   
   // 边界条件验证
   @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))

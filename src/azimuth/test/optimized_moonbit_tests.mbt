@@ -61,15 +61,15 @@ test "greet_function_string_handling" {
 
 test "assertion_functions_functionality" {
   // 测试断言函数的功能
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试复合条件
   let result = @azimuth.add(3, 4)
-  @azimuth.assert_true(result == 7)
-  @azimuth.assert_false(result != 7)
+  @azimuth.assert_eq(result == 7, true)
+  @azimuth.assert_eq(0, 1)(result != 7)
 }
 
 test "complex_calculation_scenarios" {

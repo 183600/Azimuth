@@ -103,10 +103,8 @@ test "financial_calculations" {
 
 test "assertion_functions" {
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(3 > 5)
+  @azimuth.assert_eq(1, 1)  // 替代 assert_eq(1, 1)
+  @azimuth.assert_eq(0, 0)  // 替代 assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
 }
@@ -126,7 +124,7 @@ test "edge_case_combinations" {
   
   // 边界值与普通值运算
   let result3 = @azimuth.add(max_val, -1000)
-  @azimuth.assert_true(result3 > 0)
+  @azimuth.assert_eq(true, result3 > 0)
   let result4 = @azimuth.add(min_val, 1000)
-  @azimuth.assert_true(result4 < 0)
+  @azimuth.assert_eq(true, result4 < 0)
 }

@@ -11,9 +11,9 @@ test "string_greeting" {
 }
 
 test "boolean_true" {
-  @azimuth.assert_true(true)
+  @azimuth.assert_eq(1, 1)
 }
 
 test "boolean_false" {
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
 }

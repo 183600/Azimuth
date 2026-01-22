@@ -109,13 +109,13 @@ test "error_boundary_conditions" {
   let min_val = -2147483648
   
   // 确保溢出被正确处理
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1, true) == min_val)
   
   // 测试正常情况
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_true(@azimuth.multiply(4, 6) == 24)
-  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
+  @azimuth.assert_eq(@azimuth.add(5, 3, true) == 8)
+  @azimuth.assert_eq(@azimuth.multiply(4, 6, true) == 24)
+  @azimuth.assert_eq(@azimuth.greet("Test", true) == "Hello, Test!")
 }

@@ -71,8 +71,8 @@ test "real_world_scenarios" {
 }
 
 test "assert_functions" {
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
 }
@@ -91,8 +91,8 @@ test "error_handling" {
   let max_val = 2147483647
   let min_val = -2147483648
   
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 100, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -100, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1, true) == min_val)
 }

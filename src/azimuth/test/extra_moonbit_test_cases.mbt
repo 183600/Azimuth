@@ -3,9 +3,9 @@
 
 test "add_function_basic" {
   // 测试基本的加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-8, add(-3, -5))
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
 }
 
 test "add_function_edge_cases" {
@@ -14,16 +14,16 @@ test "add_function_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
 }
 
 test "multiply_function_basic" {
   // 测试基本的乘法功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-12, multiply(3, -4))
-  assert_eq(0, multiply(0, 12345))
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(-12, @azimuth.multiply(3, -4))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
 }
 
 test "multiply_function_edge_cases" {
@@ -32,16 +32,16 @@ test "multiply_function_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(0, multiply(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
 }
 
 test "greet_function_various_inputs" {
   // 测试greet函数的各种输入
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 测试123!", greet("测试123"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 测试123!", @azimuth.greet("测试123"))
 }
 
 test "complex_calculation_scenario" {
@@ -52,11 +52,11 @@ test "complex_calculation_scenario" {
   let c = 3
   let d = 7
   
-  let sum = add(a, b)  // 15
-  let product = multiply(sum, c)  // 45
-  let result = add(product, -d)  // 38
+  let sum = @azimuth.add(a, b)  // 15
+  let product = @azimuth.multiply(sum, c)  // 45
+  let result = @azimuth.add(product, -d)  // 38
   
-  assert_eq(38, result)
+  @azimuth.assert_eq(38, result)
 }
 
 test "mathematical_properties" {
@@ -65,13 +65,13 @@ test "mathematical_properties" {
   let y = 8
   
   // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
   
   // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
   
   // 分配律
-  assert_eq(multiply(x, add(y, 3)), add(multiply(x, y), multiply(x, 3)))
+  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
 }
 
 test "practical_application" {
@@ -81,19 +81,19 @@ test "practical_application" {
   let item2_price = 299
   let item2_quantity = 1
   
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let cart_total = add(total1, total2)
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let cart_total = @azimuth.add(total1, total2)
   
-  assert_eq(697, cart_total)  // 199*2 + 299*1 = 398 + 299 = 697
+  @azimuth.assert_eq(697, cart_total)  // 199*2 + 299*1 = 398 + 299 = 697
 }
 
 test "assert_functions_validation" {
   // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(42, 42)
+  @azimuth.assert_eq_string("test", "test")
 }
 
 test "boundary_value_combinations" {
@@ -103,10 +103,10 @@ test "boundary_value_combinations" {
   let zero = 0
   
   // 测试各种边界组合
-  assert_eq(max_val, add(max_val, zero))
-  assert_eq(min_val, add(min_val, zero))
-  assert_eq(zero, multiply(max_val, zero))
-  assert_eq(zero, multiply(min_val, zero))
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, zero))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, zero))
+  @azimuth.assert_eq(zero, @azimuth.multiply(max_val, zero))
+  @azimuth.assert_eq(zero, @azimuth.multiply(min_val, zero))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
 }

@@ -115,10 +115,10 @@ test "error_boundary_conditions" {
   let min_val = -2147483648
   
   // 确保边界值运算的安全性
-  @azimuth.assert_true(@azimuth.add(max_val, 1) <= max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) >= min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) <= max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, 2) >= min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) <= max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) >= min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) <= max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, 2, true) >= min_val)
   
   // 确保正常运算的正确性
   @azimuth.assert_eq(100, @azimuth.add(50, 50))

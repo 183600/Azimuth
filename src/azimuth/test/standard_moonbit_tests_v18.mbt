@@ -11,12 +11,12 @@ test "integer_division_simulation" {
   let remainder = dividend % divisor
   
   // 验证结果：27 = 5 * 5 + 2
-  assert_eq(5, quotient)
-  assert_eq(2, remainder)
+  @azimuth.assert_eq(5, quotient)
+  @azimuth.assert_eq(2, remainder)
   
   // 验证除法恒等式：dividend = divisor * quotient + remainder
-  let reconstructed = add(multiply(divisor, quotient), remainder)
-  assert_eq(dividend, reconstructed)
+  let reconstructed = @azimuth.add(@azimuth.multiply(divisor, quotient), remainder)
+  @azimuth.assert_eq(dividend, reconstructed)
 }
 
 test "percentage_calculation_practical" {
@@ -26,15 +26,15 @@ test "percentage_calculation_practical" {
   let tax_percent = 8
   
   // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_percent) / 100
-  let discounted_price = add(original_price, -discount_amount)
+  let discount_amount = @azimuth.multiply(original_price, discount_percent) / 100
+  let discounted_price = @azimuth.add(original_price, -discount_amount)
   
   // 计算税费
-  let tax_amount = multiply(discounted_price, tax_percent) / 100
-  let final_price = add(discounted_price, tax_amount)
+  let tax_amount = @azimuth.multiply(discounted_price, tax_percent) / 100
+  let final_price = @azimuth.add(discounted_price, tax_amount)
   
   // 验证结果：200 - 15% + 8% = 200 - 30 + 13.6 ≈ 183.6，取整为183
-  assert_eq(183, final_price)
+  @azimuth.assert_eq(183, final_price)
 }
 
 test "temperature_conversion_formula" {
@@ -43,18 +43,18 @@ test "temperature_conversion_formula" {
   // 使用整数运算：F = C × 9 + 160) / 5
   
   let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9), 160) / 5
-  assert_eq(77, fahrenheit)  // (25 × 9 + 160) / 5 = 385 / 5 = 77
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9), 160) / 5
+  @azimuth.assert_eq(77, fahrenheit)  // (25 × 9 + 160) / 5 = 385 / 5 = 77
   
   // 测试冰点
   let freezing_celsius = 0
-  let freezing_fahrenheit = add(multiply(freezing_celsius, 9), 160) / 5
-  assert_eq(32, freezing_fahrenheit)  // (0 × 9 + 160) / 5 = 160 / 5 = 32
+  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 9), 160) / 5
+  @azimuth.assert_eq(32, freezing_fahrenheit)  // (0 × 9 + 160) / 5 = 160 / 5 = 32
   
   // 测试沸点
   let boiling_celsius = 100
-  let boiling_fahrenheit = add(multiply(boiling_celsius, 9), 160) / 5
-  assert_eq(212, boiling_fahrenheit)  // (100 × 9 + 160) / 5 = 1060 / 5 = 212
+  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 9), 160) / 5
+  @azimuth.assert_eq(212, boiling_fahrenheit)  // (100 × 9 + 160) / 5 = 1060 / 5 = 212
 }
 
 test "compound_interest_precise_calculation" {
@@ -67,10 +67,10 @@ test "compound_interest_precise_calculation" {
   let times = 3          // 3年
   
   // 计算增长因子：(100 + 5)^3 = 105^3
-  let growth_factor = multiply(multiply(105, 105), 105)
-  let total = multiply(principal, growth_factor) / multiply(multiply(100, 100), 100)
+  let growth_factor = @azimuth.multiply(@azimuth.multiply(105, 105), 105)
+  let total = @azimuth.multiply(principal, growth_factor) / @azimuth.multiply(@azimuth.multiply(100, 100), 100)
   
-  assert_eq(11576, total)  // 10000 × 1157625 / 1000000 ≈ 11576
+  @azimuth.assert_eq(11576, total)  // 10000 × 1157625 / 1000000 ≈ 11576
 }
 
 test "string_processing_advanced" {
@@ -80,18 +80,18 @@ test "string_processing_advanced" {
   let age = "30"
   
   // 测试多部分字符串拼接
-  let full_greeting = greet(first_name + " " + last_name + " (" + age + ")")
-  assert_eq_string("Hello, John Doe (30)!", full_greeting)
+  let full_greeting = @azimuth.greet(first_name + " " + last_name + " (" + age + ")")
+  @azimuth.assert_eq_string("Hello, John Doe (30)!", full_greeting)
   
   // 测试包含特殊字符的复杂字符串
   let complex_string = "User@2023#Project$Alpha"
-  let complex_greeting = greet(complex_string)
-  assert_eq_string("Hello, User@2023#Project$Alpha!", complex_greeting)
+  let complex_greeting = @azimuth.greet(complex_string)
+  @azimuth.assert_eq_string("Hello, User@2023#Project$Alpha!", complex_greeting)
   
   // 测试Unicode字符组合
   let unicode_string = "🌍🚀MoonBit"
-  let unicode_greeting = greet(unicode_string)
-  assert_eq_string("Hello, 🌍🚀MoonBit!", unicode_greeting)
+  let unicode_greeting = @azimuth.greet(unicode_string)
+  @azimuth.assert_eq_string("Hello, 🌍🚀MoonBit!", unicode_greeting)
 }
 
 test "mathematical_series_summation" {
@@ -103,8 +103,8 @@ test "mathematical_series_summation" {
   let a = 2           // 首项
   let d = 3           // 公差
   
-  let sum = multiply(n, add(multiply(2, a), multiply(n - 1, d))) / 2
-  assert_eq(155, sum)  // 10 × (4 + 27) / 2 = 155
+  let sum = @azimuth.multiply(n, @azimuth.add(@azimuth.multiply(2, a), @azimuth.multiply(n - 1, d))) / 2
+  @azimuth.assert_eq(155, sum)  // 10 × (4 + 27) / 2 = 155
   
   // 计算等比数列：3 + 6 + 12 + 24 + 48 (5项)
   // 公式：S = a × (r^n - 1) / (r - 1)
@@ -112,8 +112,8 @@ test "mathematical_series_summation" {
   let r = 2           // 公比
   let geo_n = 5       // 项数
   
-  let geo_sum = multiply(geo_a, multiply(multiply(multiply(multiply(2, 2), 2), 2) - 1, 1)) / (r - 1)
-  assert_eq(93, geo_sum)  // 3 × (32 - 1) / 1 = 93
+  let geo_sum = @azimuth.multiply(geo_a, @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2) - 1, 1)) / (r - 1)
+  @azimuth.assert_eq(93, geo_sum)  // 3 × (32 - 1) / 1 = 93
 }
 
 test "business_logic_calculation" {
@@ -126,26 +126,26 @@ test "business_logic_calculation" {
   let shipping_cost = 25
   
   // 计算商品总价
-  let subtotal = multiply(unit_price, quantity)
+  let subtotal = @azimuth.multiply(unit_price, quantity)
   
   // 计算批量折扣
   let bulk_discount = if (quantity > bulk_discount_threshold) {
-    multiply(subtotal, bulk_discount_rate) / 100
+    @azimuth.multiply(subtotal, bulk_discount_rate) / 100
   } else {
     0
   }
   
   // 计算折扣后价格
-  let after_bulk_discount = add(subtotal, -bulk_discount)
+  let after_bulk_discount = @azimuth.add(subtotal, -bulk_discount)
   
   // 计算忠诚度折扣
-  let loyalty_discount_amount = multiply(after_bulk_discount, loyalty_discount) / 100
-  let after_loyalty_discount = add(after_bulk_discount, -loyalty_discount_amount)
+  let loyalty_discount_amount = @azimuth.multiply(after_bulk_discount, loyalty_discount) / 100
+  let after_loyalty_discount = @azimuth.add(after_bulk_discount, -loyalty_discount_amount)
   
   // 计算最终价格
-  let final_price = add(after_loyalty_discount, shipping_cost)
+  let final_price = @azimuth.add(after_loyalty_discount, shipping_cost)
   
-  assert_eq(747, final_price)  // (750 - 75 - 33) + 25 = 747
+  @azimuth.assert_eq(747, final_price)  // (750 - 75 - 33) + 25 = 747
 }
 
 test "algorithm_complexity_simulation" {
@@ -153,18 +153,18 @@ test "algorithm_complexity_simulation" {
   let n = 100
   
   // 模拟O(n)复杂度：线性求和
-  let linear_sum = multiply(n, add(n, 1)) / 2  // 1 + 2 + ... + n
-  assert_eq(5050, linear_sum)
+  let linear_sum = @azimuth.multiply(n, @azimuth.add(n, 1)) / 2  // 1 + 2 + ... + n
+  @azimuth.assert_eq(5050, linear_sum)
   
   // 模拟O(n²)复杂度：平方和
-  let square_sum = multiply(n, multiply(add(n, 1), add(multiply(2, n), 1))) / 6
-  assert_eq(338350, square_sum)
+  let square_sum = @azimuth.multiply(n, @azimuth.multiply(@azimuth.add(n, 1), @azimuth.add(@azimuth.multiply(2, n), 1))) / 6
+  @azimuth.assert_eq(338350, square_sum)
   
   // 模拟O(log n)复杂度：对数运算（简化）
   let log_approx = 0
   let temp = n
   let log_result = if (temp >= 128) { 7 } else if (temp >= 64) { 6 } else if (temp >= 32) { 5 } else if (temp >= 16) { 4 } else if (temp >= 8) { 3 } else if (temp >= 4) { 2 } else if (temp >= 2) { 1 } else { 0 }
-  assert_eq(6, log_result)  // log₂(100) ≈ 6.64，向下取整为6
+  @azimuth.assert_eq(6, log_result)  // log₂(100) ≈ 6.64，向下取整为6
 }
 
 test "data_structure_operations" {
@@ -174,22 +174,22 @@ test "data_structure_operations" {
   let push_operations = 5
   let pop_operations = 3
   
-  let final_stack_size = add(stack_size, push_operations - pop_operations)
-  assert_eq(12, final_stack_size)
+  let final_stack_size = @azimuth.add(stack_size, push_operations - pop_operations)
+  @azimuth.assert_eq(12, final_stack_size)
   
   // 模拟队列操作：enqueue和dequeue
   let queue_size = 8
   let enqueue_operations = 6
   let dequeue_operations = 4
   
-  let final_queue_size = add(queue_size, enqueue_operations - dequeue_operations)
-  assert_eq(10, final_queue_size)
+  let final_queue_size = @azimuth.add(queue_size, enqueue_operations - dequeue_operations)
+  @azimuth.assert_eq(10, final_queue_size)
   
   // 模拟哈希表负载因子计算
   let table_capacity = 16
   let occupied_slots = 12
-  let load_factor = multiply(occupied_slots, 100) / table_capacity
-  assert_eq(75, load_factor)  // 12/16 × 100% = 75%
+  let load_factor = @azimuth.multiply(occupied_slots, 100) / table_capacity
+  @azimuth.assert_eq(75, load_factor)  // 12/16 × 100% = 75%
 }
 
 test "scientific_calculation_scenario" {
@@ -200,19 +200,19 @@ test "scientific_calculation_scenario" {
   let gravity = 98  // 9.8 m/s² 放大10倍
   let time = 5      // 5秒
   
-  let distance = multiply(gravity, multiply(time, time)) / 20  // 除以20因为gravity放大了10倍且公式中有0.5
-  assert_eq(122, distance)  // 98 × 25 / 20 = 122.5，取整为122
+  let distance = @azimuth.multiply(gravity, @azimuth.multiply(time, time)) / 20  // 除以20因为gravity放大了10倍且公式中有0.5
+  @azimuth.assert_eq(122, distance)  // 98 × 25 / 20 = 122.5，取整为122
   
   // 计算动能：E = 0.5 × m × v²
   let mass = 10      // 10kg
   let velocity = 15  // 15m/s
   
-  let kinetic_energy = multiply(mass, multiply(velocity, velocity)) / 2
-  assert_eq(1125, kinetic_energy)  // 10 × 225 / 2 = 1125
+  let kinetic_energy = @azimuth.multiply(mass, @azimuth.multiply(velocity, velocity)) / 2
+  @azimuth.assert_eq(1125, kinetic_energy)  // 10 × 225 / 2 = 1125
   
   // 计算势能：E = m × g × h
   let height = 20    // 20米
   
-  let potential_energy = multiply(mass, multiply(gravity, height)) / 10  // 除以10因为gravity放大了10倍
-  assert_eq(1960, potential_energy)  // 10 × 98 × 20 / 10 = 1960
+  let potential_energy = @azimuth.multiply(mass, @azimuth.multiply(gravity, height)) / 10  // 除以10因为gravity放大了10倍
+  @azimuth.assert_eq(1960, potential_energy)  // 10 × 98 × 20 / 10 = 1960
 }

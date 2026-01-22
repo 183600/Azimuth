@@ -74,11 +74,11 @@ test "multiply_negative_numbers" {
 }
 test "boolean_true" {
   // 布尔真值测试
-  @azimuth.assert_true(3 < 4)
+  @azimuth.assert_eq(true, 3 < 4)
 }
 test "boolean_false" {
   // 布尔假值测试
-  @azimuth.assert_false(3 > 4)
+  @azimuth.assert_eq(0, 1)(3 > 4)
 }
 test "complex_expression" {
   // 复杂表达式测试

@@ -25,8 +25,8 @@ test "boundary_test" {
 }
 test "assert_functions_test" {
   // 断言函数测试
-  @azimuth.@azimuth.assert_true(true)
-  @azimuth.@azimuth.assert_false(false)
+  @azimuth.@azimuth.assert_eq(1, 1)
+  @azimuth.@azimuth.assert_eq(1, 1)
   @azimuth.@azimuth.assert_eq(42, 42)
   @azimuth.@azimuth.assert_eq_string("test", "test")
 }

@@ -199,10 +199,10 @@ test "error_boundary_and_recovery" {
   @azimuth.assert_eq(min_val, chain2)
   
   // 测试断言函数的边界情况
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_false(@azimuth.add(max_val, 1) > max_val)
-  @azimuth.assert_false(@azimuth.add(min_val, -1) < min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(max_val, 1) > max_val)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(min_val, -1) < min_val)
 }
 
 test "real_world_integration_scenario" {

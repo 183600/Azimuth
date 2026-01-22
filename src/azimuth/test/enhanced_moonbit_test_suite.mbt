@@ -280,8 +280,8 @@ test "error_handling_and_boundary_value_protection" {
   @azimuth.assert_eq(max_val, special_case2)
   
   // 测试断言函数的使用
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_false(@azimuth.add(5, 3) == 9)
+  @azimuth.assert_eq(@azimuth.add(5, 3, true) == 8)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(5, 3) == 9)
   @azimuth.assert_eq(8, @azimuth.add(5, 3))
   @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
 }

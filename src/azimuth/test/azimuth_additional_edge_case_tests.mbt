@@ -63,8 +63,8 @@ test "sequential_function_calls" {
 
 test "assert_function_edge_cases" {
   // 测试断言函数的边界情况
-  @azimuth.assert_true(@azimuth.add(1, 1) == 2)
-  @azimuth.assert_false(@azimuth.add(1, 1) == 3)
+  @azimuth.assert_eq(@azimuth.add(1, 1, true) == 2)
+  @azimuth.assert_eq(0, 1)(@azimuth.add(1, 1) == 3)
   @azimuth.assert_eq(@azimuth.multiply(3, 7), 21)
   @azimuth.assert_eq_string(@azimuth.greet("Test"), "Hello, Test!")
 }
@@ -99,8 +99,8 @@ test "error_boundary_conditions" {
   let min_val = -2147483648
   
   // 确保溢出保护正常工作
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.assert_eq(@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(@azimuth.multiply(min_val, -1, true) == min_val)
 }

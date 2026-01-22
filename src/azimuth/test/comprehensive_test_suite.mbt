@@ -227,25 +227,25 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 溢出保护验证
-  @azimuth.assert_true(azimuth::@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(azimuth::@azimuth.add(max_val, max_val) == max_val)
-  @azimuth.assert_true(azimuth::@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(azimuth::@azimuth.add(min_val, min_val) == min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(max_val, max_val, true) == max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(min_val, -1, true) == min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(min_val, min_val, true) == min_val)
   
-  @azimuth.assert_true(azimuth::@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(min_val, 2) == min_val)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(min_val, -1) == min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(max_val, 2, true) == max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(min_val, 2, true) == min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(min_val, -1, true) == min_val)
   
   // 特殊值处理
-  @azimuth.assert_true(azimuth::@azimuth.multiply(0, max_val) == 0)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(0, min_val) == 0)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(max_val, 1) == max_val)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(min_val, 1) == min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(0, max_val, true) == 0)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(0, min_val, true) == 0)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(max_val, 1, true) == max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(min_val, 1, true) == min_val)
   
   // 字符串边界情况
-  @azimuth.assert_true(azimuth::@azimuth.greet("") == "Hello, !")
-  @azimuth.assert_true(azimuth::@azimuth.greet(" ") == "Hello,  !")
-  @azimuth.assert_true(azimuth::@azimuth.greet("\n") == "Hello, \n!")
+  @azimuth.assert_eq(azimuth::@azimuth.greet("", true) == "Hello, !")
+  @azimuth.assert_eq(azimuth::@azimuth.greet(" ", true) == "Hello,  !")
+  @azimuth.assert_eq(azimuth::@azimuth.greet("\n", true) == "Hello, \n!")
   
   // 验证正常运算不受影响
   @azimuth.assert_eq(100, azimuth::@azimuth.add(50, 50))

@@ -103,10 +103,10 @@ test "error_boundary_conditions" {
   let min_val = -2147483648
   
   // 确保溢出不会产生意外结果
-  @azimuth.assert_true(azimuth::@azimuth.add(max_val, 1) <= max_val)
-  @azimuth.assert_true(azimuth::@azimuth.add(min_val, -1) >= min_val)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(max_val, 2) <= max_val)
-  @azimuth.assert_true(azimuth::@azimuth.multiply(min_val, -2) >= min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(max_val, 1, true) <= max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.add(min_val, -1, true) >= min_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(max_val, 2, true) <= max_val)
+  @azimuth.assert_eq(azimuth::@azimuth.multiply(min_val, -2, true) >= min_val)
   
   // 确保基本运算正确
   @azimuth.assert_eq(100, azimuth::@azimuth.add(50, 50))

@@ -181,8 +181,8 @@ test "error_handling_and_edge_cases" {
   @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
   
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
 }

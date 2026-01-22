@@ -130,17 +130,17 @@ test "error_handling_and_boundary_conditions" {
   let min_val = -2147483648
   
   // 测试断言函数
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(42, 42)
   @azimuth.assert_eq_string("test", "test")
   
   // 测试溢出保护
   let overflow_result = @azimuth.add(max_val, 1)
-  @azimuth.assert_true(overflow_result == max_val)
+  @azimuth.assert_eq(overflow_result == max_val, true)
   
   let underflow_result = @azimuth.add(min_val, -1)
-  @azimuth.assert_true(underflow_result == min_val)
+  @azimuth.assert_eq(underflow_result == min_val, true)
 }
 
 test "string_edge_cases_and_formatting" {

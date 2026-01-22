@@ -83,9 +83,9 @@ test "prime_number_check" {
   let divisor4 = number % 4  // 17 % 4 = 1，不整除
   
   // 如果所有余数都不为0，则是质数
-  @azimuth.assert_true(divisor2 != 0)
-  @azimuth.assert_true(divisor3 != 0)
-  @azimuth.assert_true(divisor4 != 0)
+  @azimuth.assert_eq(divisor2 != 0, true)
+  @azimuth.assert_eq(divisor3 != 0, true)
+  @azimuth.assert_eq(divisor4 != 0, true)
   
   // 检查数字15不是质数
   let not_prime = 15

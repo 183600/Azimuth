@@ -50,22 +50,22 @@ test "input_validation_scenarios" {
   
   // 测试有效年龄
   let is_valid_age_1 = valid_age >= boundary_age && valid_age <= max_valid_age
-  @azimuth.assert_true(is_valid_age_1)
+  @azimuth.assert_eq(is_valid_age_1, true)
   
   let is_valid_age_2 = boundary_age >= boundary_age && boundary_age <= max_valid_age
-  @azimuth.assert_true(is_valid_age_2)
+  @azimuth.assert_eq(is_valid_age_2, true)
   
   let is_valid_age_3 = max_valid_age >= boundary_age && max_valid_age <= max_valid_age
-  @azimuth.assert_true(is_valid_age_3)
+  @azimuth.assert_eq(is_valid_age_3, true)
   
   // 测试无效年龄
   let invalid_age_negative = -5
   let is_invalid_age_1 = invalid_age_negative >= boundary_age && invalid_age_negative <= max_valid_age
-  @azimuth.assert_false(is_invalid_age_1)
+  @azimuth.assert_eq(0, 1)(is_invalid_age_1)
   
   let invalid_age_too_large = 150
   let is_invalid_age_2 = invalid_age_too_large >= boundary_age && invalid_age_too_large <= max_valid_age
-  @azimuth.assert_false(is_invalid_age_2)
+  @azimuth.assert_eq(0, 1)(is_invalid_age_2)
 }
 
 test "sorting_algorithm_simulation" {
@@ -73,17 +73,17 @@ test "sorting_algorithm_simulation" {
   // 第一次比较交换：5 > 2，交换
   let step1_val1 = 2
   let step1_val2 = 5
-  @azimuth.assert_true(step1_val1 < step1_val2)
+  @azimuth.assert_eq(true, step1_val1 < step1_val2)
   
   // 第二次比较：5 < 8，不交换
   let step2_val1 = 5
   let step2_val2 = 8
-  @azimuth.assert_true(step2_val1 < step2_val2)
+  @azimuth.assert_eq(true, step2_val1 < step2_val2)
   
   // 第三次比较：8 > 1，交换
   let step3_val1 = 1
   let step3_val2 = 8
-  @azimuth.assert_true(step3_val1 < step3_val2)
+  @azimuth.assert_eq(true, step3_val1 < step3_val2)
   
   // 验证排序后的前三个元素
   @azimuth.assert_eq(1, step3_val1)
@@ -104,7 +104,7 @@ test "business_logic_inventory_management" {
   
   // 检查是否需要补货
   let needs_restock = after_sales < minimum_stock
-  @azimuth.assert_false(needs_restock)
+  @azimuth.assert_eq(0, 1)(needs_restock)
   
   // 补货后的库存
   let after_restock = @azimuth.add(after_sales, restocked_quantity)
@@ -129,8 +129,8 @@ test "performance_calculation_big_o_simulation" {
   let n_log_n = @azimuth.multiply(n, 10)  // 简化的n*log(n)
   let linear_time = @azimuth.multiply(n, base_time)
   
-  @azimuth.assert_true(linear_time < n_log_n)
-  @azimuth.assert_true(n_log_n < total_time)
+  @azimuth.assert_eq(true, linear_time < n_log_n)
+  @azimuth.assert_eq(true, n_log_n < total_time)
 }
 
 test "error_handling_graceful_degradation" {
@@ -139,16 +139,16 @@ test "error_handling_graceful_degradation" {
   
   // 模拟重试机制
   let should_retry_1 = 1 <= max_attempts
-  @azimuth.assert_true(should_retry_1)
+  @azimuth.assert_eq(should_retry_1, true)
   
   let should_retry_2 = 2 <= max_attempts
-  @azimuth.assert_true(should_retry_2)
+  @azimuth.assert_eq(should_retry_2, true)
   
   let should_retry_3 = 3 <= max_attempts
-  @azimuth.assert_true(should_retry_3)
+  @azimuth.assert_eq(should_retry_3, true)
   
   let should_retry_4 = 4 <= max_attempts
-  @azimuth.assert_false(should_retry_4)
+  @azimuth.assert_eq(0, 1)(should_retry_4)
   
   // 模拟成功率检查
   let success_count = 1
@@ -156,7 +156,7 @@ test "error_handling_graceful_degradation" {
   let success_rate = @azimuth.multiply(success_count, 100) / total_attempts
   let success_threshold = 2
   let is_acceptable = success_rate >= success_threshold
-  @azimuth.assert_false(is_acceptable)
+  @azimuth.assert_eq(0, 1)(is_acceptable)
 }
 
 test "data_conversion_string_to_number" {
@@ -196,7 +196,7 @@ test "conditional_logic_complex_scenarios" {
   let condition2 = has_membership && (user_age > age_discount_threshold)
   let should_apply_discount = condition1 || condition2
   
-  @azimuth.assert_true(should_apply_discount)
+  @azimuth.assert_eq(should_apply_discount, true)
   
   // 测试不同条件组合
   let young_user = 20
@@ -207,7 +207,7 @@ test "conditional_logic_complex_scenarios" {
   let condition4 = no_membership && (young_user > age_discount_threshold)
   let no_discount_case = condition3 || condition4
   
-  @azimuth.assert_false(no_discount_case)
+  @azimuth.assert_eq(0, 1)(no_discount_case)
   
   // 测试边界条件
   let boundary_purchase = 100
@@ -215,7 +215,7 @@ test "conditional_logic_complex_scenarios" {
   let condition6 = has_membership && (user_age > age_discount_threshold)
   let boundary_discount = condition5 || condition6
   
-  @azimuth.assert_true(boundary_discount)
+  @azimuth.assert_eq(boundary_discount, true)
 }
 
 test "state_management_simple_counter" {

@@ -136,10 +136,10 @@ test "string_processing_edge_cases" {
 test "assert_functions_validation" {
   // 测试断言函数本身
   // 测试 assert_true 和 assert_false
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(1, 1)
+  @azimuth.assert_eq(true, 5 > 3)
+  @azimuth.assert_eq(0, 1)(5 < 3)
   
   // 测试 assert_eq
   @azimuth.assert_eq(42, 42)

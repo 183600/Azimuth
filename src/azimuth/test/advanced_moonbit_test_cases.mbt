@@ -29,10 +29,10 @@ test "prime_number_verification" {
   let is_divisible_by_5 = @azimuth.multiply(number / 5, 5) == number
   
   // 17不应该被2,3,4,5整除
-  @azimuth.assert_false(is_divisible_by_2)
-  @azimuth.assert_false(is_divisible_by_3)
-  @azimuth.assert_false(is_divisible_by_4)
-  @azimuth.assert_false(is_divisible_by_5)
+  @azimuth.assert_eq(0, 1)(is_divisible_by_2)
+  @azimuth.assert_eq(0, 1)(is_divisible_by_3)
+  @azimuth.assert_eq(0, 1)(is_divisible_by_4)
+  @azimuth.assert_eq(0, 1)(is_divisible_by_5)
   
   // 验证12不是质数：能被2,3,4整除
   let composite = 12
@@ -40,9 +40,9 @@ test "prime_number_verification" {
   let is_divisible_by_3_12 = @azimuth.multiply(composite / 3, 3) == composite
   let is_divisible_by_4_12 = @azimuth.multiply(composite / 4, 4) == composite
   
-  @azimuth.assert_true(is_divisible_by_2_12)
-  @azimuth.assert_true(is_divisible_by_3_12)
-  @azimuth.assert_true(is_divisible_by_4_12)
+  @azimuth.assert_eq(is_divisible_by_2_12, true)
+  @azimuth.assert_eq(is_divisible_by_3_12, true)
+  @azimuth.assert_eq(is_divisible_by_4_12, true)
 }
 
 test "bank_interest_compound_calculation" {

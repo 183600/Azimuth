@@ -63,8 +63,8 @@ test "combined_operations_complex" {
 
 test "assert_functions_verification" {
   // 测试断言函数本身
-  @azimuth.assert_true(5 > 3)
-  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_eq(true, 5 > 3)
+  @azimuth.assert_eq(0, 1)(5 < 3)
   @azimuth.assert_eq(10, 5 + 5)
   @azimuth.assert_eq_string("test", "test")
 }
