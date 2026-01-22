@@ -88,6 +88,7 @@
           "standard_comprehensive_test_cases.mbt",
           "azimuth_enhanced_quality_tests.mbt",
           "new_comprehensive_quality_tests.mbt",
-          "azimuth_advanced_test_suite.mbt"
+          "azimuth_advanced_test_suite.mbt",
+          "azimuth_concise_test_suite.mbt"
         ]
 }
