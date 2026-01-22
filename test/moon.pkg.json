@@ -85,6 +85,7 @@
           "high_quality_enhanced_tests.mbt",
           "simple_high_quality_test.mbt",
           "self_contained_quality_tests.mbt",
-          "standard_comprehensive_test_cases.mbt"
+          "standard_comprehensive_test_cases.mbt",
+          "azimuth_enhanced_quality_tests.mbt"
         ]
 }
