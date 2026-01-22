@@ -4,6 +4,9 @@
     "src/azimuth"
   ],
   "test": [
+    "quality_test_simple.mbt",
+    "quality_enhanced_test_cases.mbt",
+    "minimal_test.mbt",
     "distinctive_test_file.mbt",
     "simple_test_check.mbt",
     "unique_test_marker.mbt",
@@ -47,7 +50,6 @@
     "simple_unit_tests.mbt",
     "standard_azimuth_additional_tests.mbt",
     "standard_moonbit_tests.mbt",
-    "user_defined_comprehensive_tests.mbt",
     "simple_test_builtin.mbt",
     "focused_comprehensive_tests.mbt",
     "standard_azimuth_test_cases.mbt",
@@ -62,11 +64,7 @@
     "quality_enhanced_tests.mbt",
     "simple_quality_tests.mbt",
     "additional_quality_tests.mbt",
-    "new_core_functionality_tests.mbt",
-    "minimal_test.mbt",
-    "quality_focused_tests.mbt",
-    "unique_test_marker.mbt",
-    "simple_new_tests.mbt"
+    "quality_focused_tests.mbt"
     
   ]
 }
