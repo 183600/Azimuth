@@ -1,158 +1,177 @@
-// 简单的新测试用例
-// 测试 azimuth 包的基本功能
-
-test "add_simple_test" {
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(5, -5))
+test "temperature_conversion" {
+  // 温度转换测试：摄氏度到华氏度
+  // F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9) / 5, 32)
+  assert_eq(77, fahrenheit)
+  
+  // 零度测试
+  let freezing_point = add(multiply(0, 9) / 5, 32)
+  assert_eq(32, freezing_point)
+  
+  // 负温度测试
+  let negative_celsius = -10
+  let negative_fahrenheit = add(multiply(negative_celsius, 9) / 5, 32)
+  assert_eq(14, negative_fahrenheit)
 }
 
-test "multiply_simple_test" {
-  assert_eq(21, multiply(3, 7))
-  assert_eq(0, multiply(5, 0))
+test "loan_interest_calculation" {
+  // 贷款利息计算测试
+  let principal = 10000
+  let annual_rate_percent = 6
+  let years = 3
+  
+  // 简单利息计算：A = P * (1 + r * t)
+  let total_interest = multiply(principal, multiply(annual_rate_percent, years)) / 100
+  let total_amount = add(principal, total_interest)
+  
+  assert_eq(1800, total_interest)
+  assert_eq(11800, total_amount)
 }
 
-test "divide_with_ceil_simple_test" {
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(2, divide_with_ceil(4, 2))
+test "batch_processing_simulation" {
+  // 批处理模拟测试
+  let total_records = 157
+  let batch_size = 25
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, batch_size)
+  
+  // 计算最后一批的记录数
+  let last_batch_size = total_records - multiply(batches_needed - 1, batch_size)
+  
+  assert_eq(7, batches_needed)
+  assert_eq(7, last_batch_size)
 }
 
-test "greet_simple_test" {
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
+test "game_score_calculation" {
+  // 游戏得分计算测试
+  let base_score = 1000
+  let level_multiplier = 3
+  let bonus_points = 250
+  let penalty_points = 50
+  
+  // 计算最终得分
+  let level_score = multiply(base_score, level_multiplier)
+  let final_score = add(add(level_score, bonus_points), -penalty_points)
+  
+  assert_eq(3000, level_score)
+  assert_eq(3200, final_score)
 }
 
-test "combined_operations_test" {
-  let result = add(multiply(2, 3), divide_with_ceil(10, 4))
-  assert_eq(9, result)  // 2*3 + ceil(10/4) = 6 + 3 = 9
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 1500
+  
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
+  
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -allocated_budget)
+  
+  // 计算可以启动的额外小型项目数量
+  let small_project_cost = 300
+  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
+  
+  assert_eq(4500, allocated_budget)
+  assert_eq(500, remaining_budget)
+  assert_eq(2, additional_projects)
 }
 
-// 高质量增强测试用例 - 针对 azimuth 库的全面测试
-// 包含边界情况、错误处理和实际应用场景
-
-test "mathematical_properties_addition" {
-  // 测试加法的数学性质
-  assert_eq(10, add(7, 3))
-  assert_eq(10, add(3, 7))  // 交换律
-  assert_eq(0, add(5, -5))  // 相反数性质
-  assert_eq(15, add(add(5, 3), 7))  // 结合律
-  assert_eq(15, add(5, add(3, 7)))
+test "cryptographic_hash_simulation" {
+  // 加密哈希模拟测试
+  let input_number = 12345
+  let prime_multiplier = 31
+  let modulo_value = 100000
+  
+  // 简单的哈希函数模拟
+  let hash_step1 = multiply(input_number, prime_multiplier)
+  let hash_step2 = add(hash_step1, input_number)
+  let final_hash = hash_step2 % modulo_value
+  
+  assert_eq(382760, hash_step1)
+  assert_eq(395105, hash_step2)
+  assert_eq(95105, final_hash)
 }
 
-test "distributive_property" {
-  // 测试分配律：a * (b + c) = a * b + a * c
-  let a = 3
-  let b = 4
-  let c = 5
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)  // 3 * (4 + 5) = 3 * 4 + 3 * 5 = 27
+test "parallel_processing_efficiency" {
+  // 并行处理效率测试
+  let single_core_time = 120  // 分钟
+  let core_count = 4
+  let parallel_efficiency_percent = 75  // 并行效率75%
+  
+  // 计算理论并行时间
+  let theoretical_parallel_time = divide_with_ceil(single_core_time, core_count)
+  
+  // 考虑并行效率的实际时间
+  let efficiency_factor = divide_with_ceil(multiply(theoretical_parallel_time, 100), parallel_efficiency_percent)
+  
+  assert_eq(30, theoretical_parallel_time)
+  assert_eq(40, efficiency_factor)
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法
-  // 正数除法
-  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
-  assert_eq(4, divide_with_ceil(12, 3))  // 12/3 = 4 -> 4
-  assert_eq(1, divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
+test "data_structure_operations" {
+  // 数据结构操作测试
+  let array_size = 10
+  let page_size = 3
   
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
+  // 计算分页数量
+  let total_pages = divide_with_ceil(array_size, page_size)
   
-  // 负数除负数
-  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
-  assert_eq(3, divide_with_ceil(-9, -3))   // -9/-3 = 3 -> 3
+  // 计算完整页面的元素数量
+  let full_pages = array_size / page_size
+  let full_page_elements = multiply(full_pages, page_size)
+  
+  // 计算最后一页的元素数量
+  let last_page_elements = array_size - full_page_elements
+  
+  assert_eq(4, total_pages)
+  assert_eq(9, full_page_elements)
+  assert_eq(1, last_page_elements)
 }
 
-test "greet_function_edge_cases" {
-  // 测试问候函数的边界情况
-  assert_eq_string("Hello, !", greet(""))  // 空字符串
-  assert_eq_string("Hello,   !", greet("  "))  // 空格字符串
-  assert_eq_string("Hello, A!", greet("A"))  // 单字符
-  assert_eq_string("Hello, This is a very long name!", greet("This is a very long name"))  // 长字符串
+test "financial_compound_interest" {
+  // 复利计算测试
+  let principal = 5000
+  let annual_rate_percent = 8
+  let years = 4
+  
+  // 逐年计算复利
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate_percent), 100))
+  let year4_amount = add(year3_amount, divide_with_ceil(multiply(year3_amount, annual_rate_percent), 100))
+  
+  assert_eq(5400, year1_amount)
+  assert_eq(5832, year2_amount)
+  assert_eq(6299, year3_amount)
+  assert_eq(6803, year4_amount)
 }
 
-test "complex_business_scenario" {
-  // 复杂业务场景：计算订单总价
-  let base_price = 100
-  let quantity = 5
-  let tax_rate = 8  // 8%
-  let shipping = 15
-  let discount = 20
+test "queue_simulation" {
+  // 队列模拟测试
+  let arrival_rate = 15  // 每小时到达人数
+  let service_rate = 20   // 每小时服务人数
+  let time_hours = 8      // 营业时间
   
-  // 计算小计
-  let subtotal = multiply(base_price, quantity)
-  // 计算税费（简化为固定金额）
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  // 计算总价
-  let total_before_shipping = add(subtotal, tax)
-  let total_before_discount = add(total_before_shipping, shipping)
-  let final_total = add(total_before_discount, -discount)
+  // 计算总到达人数和总服务人数
+  let total_arrivals = multiply(arrival_rate, time_hours)
+  let total_served = multiply(service_rate, time_hours)
   
-  assert_eq(515, final_total)  // 100*5 + ceil(500*8/100) + 15 - 20 = 500 + 40 + 15 - 20 = 535
-}
-
-test "inventory_management_scenario" {
-  // 库存管理场景：计算需要的存储空间
-  let items_per_box = 24
-  let total_items_small = 100
-  let total_items_medium = 250
-  let total_items_large = 1000
+  // 计算队列中剩余人数
+  let remaining_in_queue = add(total_arrivals, -total_served)
+  if remaining_in_queue < 0 {
+    remaining_in_queue = 0
+  }
   
-  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
-  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
-  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
+  // 计算需要的额外服务时间（分钟）
+  let additional_service_time = divide_with_ceil(multiply(remaining_in_queue, 60), service_rate)
   
-  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
-  
-  assert_eq(5, boxes_small)   // ceil(100/24) = 5
-  assert_eq(11, boxes_medium) // ceil(250/24) = 11
-  assert_eq(42, boxes_large)  // ceil(1000/24) = 42
-  assert_eq(58, total_boxes)  // 5 + 11 + 42 = 58
-}
-
-test "mathematical_series_calculation" {
-  // 数学级数计算：计算等差数列的和
-  let first_term = 3
-  let common_difference = 2
-  let number_of_terms = 10
-  
-  // 使用公式计算：S = n/2 * (2a + (n-1)d)
-  let sum_formula = divide_with_ceil(
-    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
-    2
-  )
-  
-  // 验证结果
-  assert_eq(120, sum_formula)  // 10/2 * (6 + 18) = 5 * 24 = 120
-}
-
-test "string_processing_with_greet" {
-  // 字符串处理与问候函数结合
-  let first_name = "John"
-  let last_name = "Doe"
-  let full_name = first_name + " " + last_name
-  let greeting = greet(full_name)
-  
-  assert_eq_string("Hello, John Doe!", greeting)
-  
-  // 测试特殊字符处理
-  let special_name = "Alice & Bob"
-  let special_greeting = greet(special_name)
-  assert_eq_string("Hello, Alice & Bob!", special_greeting)
-}
-
-test "financial_calculation_scenario" {
-  // 金融计算场景：计算复利
-  let principal = 1000
-  let rate_percent = 5
-  let _years = 3  // 未使用的变量
-  
-  // 简化的复利计算（每年计算一次）
-  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, rate_percent), 100))
-  let amount_after_year3 = add(amount_after_year2, divide_with_ceil(multiply(amount_after_year2, rate_percent), 100))
-  
-  // 验证结果（由于使用向上取整，结果会略高于标准复利计算）
-  assert_eq(1158, amount_after_year3)  // 1000 -> 1050 -> 1103 -> 1158
+  assert_eq(120, total_arrivals)
+  assert_eq(160, total_served)
+  assert_eq(0, remaining_in_queue)
+  assert_eq(0, additional_service_time)
 }

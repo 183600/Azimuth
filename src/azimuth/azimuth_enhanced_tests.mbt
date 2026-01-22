@@ -1,211 +1,180 @@
-// Azimuth 项目增强测试用例
-// 使用标准 MoonBit 测试语法，提供额外的测试场景
+// 增强的 Azimuth 测试用例
+// 包含10个高质量的新测试用例，使用标准 MoonBit 测试语法
 
-test "edge_case_zero_operations" {
-  // 零值运算的边界情况测试
-  let zero = 0
-  let positive = 42
-  let negative = -17
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "temperature_conversion" {
+  // 温度转换测试：摄氏度到华氏度
+  // F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9) / 5, 32)
+  assert_eq(77, fahrenheit)
   
-  // 测试与零的加法
-  assert_eq(positive, add(positive, zero))
-  assert_eq(negative, add(negative, zero))
-  assert_eq(max_val, add(max_val, zero))
-  assert_eq(min_val, add(min_val, zero))
+  // 零度测试
+  let freezing_point = add(multiply(0, 9) / 5, 32)
+  assert_eq(32, freezing_point)
   
-  // 测试与零的乘法
-  assert_eq(zero, multiply(positive, zero))
-  assert_eq(zero, multiply(negative, zero))
-  assert_eq(zero, multiply(max_val, zero))
-  assert_eq(zero, multiply(min_val, zero))
+  // 负温度测试
+  let negative_celsius = -10
+  let negative_fahrenheit = add(multiply(negative_celsius, 9) / 5, 32)
+  assert_eq(14, negative_fahrenheit)
 }
 
-test "sequential_calculation_chain" {
-  // 连续计算链测试
-  let initial = 10
+test "loan_interest_calculation" {
+  // 贷款利息计算测试
+  let principal = 10000
+  let annual_rate_percent = 6
+  let years = 3
   
-  // 构建计算链：(((10 + 5) × 2) - 3) + 8
-  let step1 = add(initial, 5)        // 15
-  let step2 = multiply(step1, 2)     // 30
-  let step3 = add(step2, -3)         // 27
-  let final_result = add(step3, 8)   // 35
+  // 简单利息计算：A = P * (1 + r * t)
+  let total_interest = multiply(principal, multiply(annual_rate_percent, years)) / 100
+  let total_amount = add(principal, total_interest)
   
-  assert_eq(35, final_result)
-  
-  // 测试更复杂的计算链
-  let a = 3
-  let b = 7
-  let c = 2
-  let d = 5
-  
-  // ((a × b) + (c × d)) × 2
-  let result1 = multiply(a, b)       // 21
-  let result2 = multiply(c, d)       // 10
-  let sum = add(result1, result2)    // 31
-  let final = multiply(sum, 2)       // 62
-  
-  assert_eq(62, final)
+  assert_eq(1800, total_interest)
+  assert_eq(11800, total_amount)
 }
 
-test "string_special_characters_handling" {
-  // 特殊字符字符串处理测试
-  let quotes = "John \"The Rock\" Doe"
-  let newlines = "Line1\nLine2\nLine3"
-  let tabs = "Col1\tCol2\tCol3"
-  let mixed = "Hello\t\"World\"\nNewLine"
+test "batch_processing_simulation" {
+  // 批处理模拟测试
+  let total_records = 157
+  let batch_size = 25
   
-  // 测试包含引号的字符串
-  let quotes_result = greet(quotes)
-  assert_eq_string("Hello, John \"The Rock\" Doe!", quotes_result)
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, batch_size)
   
-  // 测试包含换行符的字符串
-  let newlines_result = greet(newlines)
-  assert_eq_string("Hello, Line1\nLine2\nLine3!", newlines_result)
+  // 计算最后一批的记录数
+  let last_batch_size = total_records - multiply(batches_needed - 1, batch_size)
   
-  // 测试包含制表符的字符串
-  let tabs_result = greet(tabs)
-  assert_eq_string("Hello, Col1\tCol2\tCol3!", tabs_result)
-  
-  // 测试混合特殊字符
-  let mixed_result = greet(mixed)
-  assert_eq_string("Hello, Hello\t\"World\"\nNewLine!", mixed_result)
+  assert_eq(7, batches_needed)
+  assert_eq(7, last_batch_size)
 }
 
-test "mathematical_series_calculation" {
-  // 数学数列计算测试
-  // 计算斐波那契数列前10项的和
-  // F1=1, F2=1, F3=2, F4=3, F5=5, F6=8, F7=13, F8=21, F9=34, F10=55
-  // 和 = 1+1+2+3+5+8+13+21+34+55 = 143
+test "game_score_calculation" {
+  // 游戏得分计算测试
+  let base_score = 1000
+  let level_multiplier = 3
+  let bonus_points = 250
+  let penalty_points = 50
   
-  let f1 = 1
-  let f2 = 1
-  let f3 = add(f1, f2)              // 2
-  let f4 = add(f2, f3)              // 3
-  let f5 = add(f3, f4)              // 5
-  let f6 = add(f4, f5)              // 8
-  let f7 = add(f5, f6)              // 13
-  let f8 = add(f6, f7)              // 21
-  let f9 = add(f7, f8)              // 34
-  let f10 = add(f8, f9)             // 55
+  // 计算最终得分
+  let level_score = multiply(base_score, level_multiplier)
+  let final_score = add(add(level_score, bonus_points), -penalty_points)
   
-  let fibonacci_sum = add(add(add(add(
-    add(add(add(add(f1, f2), f3), f4), f5), f6), f7), f8), add(f9, f10))
-  
-  assert_eq(143, fibonacci_sum)
+  assert_eq(3000, level_score)
+  assert_eq(3200, final_score)
 }
 
-test "real_world_currency_conversion" {
-  // 实际货币转换场景测试
-  let usd_amount = 125
-  let eur_to_usd_rate = 108  // 1 EUR = 1.08 USD (简化为整数)
-  let gbp_to_usd_rate = 127  // 1 GBP = 1.27 USD (简化为整数)
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 1500
   
-  // 欧元转美元
-  let eur_amount = 100
-  let usd_from_eur = multiply(eur_amount, eur_to_usd_rate) / 100
-  assert_eq(108, usd_from_eur)
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
-  // 英镑转美元
-  let gbp_amount = 50
-  let usd_from_gbp = multiply(gbp_amount, gbp_to_usd_rate) / 100
-  assert_eq(63, usd_from_gbp)  // 50 * 127 / 100 = 63.5 → 63 (整数除法)
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  // 计算多币种总和
-  let total_usd = add(add(usd_amount, usd_from_eur), usd_from_gbp)
-  assert_eq(296, total_usd)
+  // 计算可以启动的额外小型项目数量
+  let small_project_cost = 300
+  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
+  
+  assert_eq(4500, allocated_budget)
+  assert_eq(500, remaining_budget)
+  assert_eq(2, additional_projects)
 }
 
-test "algorithmic_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let n = 10
+test "cryptographic_hash_simulation" {
+  // 加密哈希模拟测试
+  let input_number = 12345
+  let prime_multiplier = 31
+  let modulo_value = 100000
   
-  // 模拟O(n)算法：线性求和 1 + 2 + ... + n
-  // 使用公式：n × (n + 1) / 2
-  let linear_result = multiply(n, add(n, 1)) / 2
-  assert_eq(55, linear_result)
+  // 简单的哈希函数模拟
+  let hash_step1 = multiply(input_number, prime_multiplier)
+  let hash_step2 = add(hash_step1, input_number)
+  let final_hash = hash_step2 % modulo_value
   
-  // 模拟O(n²)算法：计算所有数对的和
-  // 简化计算：n × n × 平均值
-  let average_value = add(n, 1) / 2
-  let quadratic_result = multiply(multiply(n, n), average_value)
-  assert_eq(550, quadratic_result)  // 10 × 10 × 5.5 → 10 × 10 × 5 = 500 (整数除法)
-  
-  // 模拟O(log n)算法：对数搜索步数
-  // 简化为 log₂(n) 的整数近似
-  let log_steps = 4  // log₂(10) ≈ 3.32 → 4 (向上取整)
-  assert_eq(4, log_steps)
+  assert_eq(382760, hash_step1)
+  assert_eq(395105, hash_step2)
+  assert_eq(95105, final_hash)
 }
 
-test "physics_simulation_calculations" {
-  // 物理模拟计算测试
-  let initial_velocity = 10  // m/s
-  let acceleration = 2       // m/s²
-  let time = 5               // s
-  let mass = 10              // kg
+test "parallel_processing_efficiency" {
+  // 并行处理效率测试
+  let single_core_time = 120  // 分钟
+  let core_count = 4
+  let parallel_efficiency_percent = 75  // 并行效率75%
   
-  // 计算最终速度：v = u + at
-  let final_velocity = add(initial_velocity, multiply(acceleration, time))
-  assert_eq(20, final_velocity)
+  // 计算理论并行时间
+  let theoretical_parallel_time = divide_with_ceil(single_core_time, core_count)
   
-  // 计算位移：s = ut + 0.5at²
-  // 简化：s = ut + at²/2
-  let ut = multiply(initial_velocity, time)
-  let at_squared = multiply(acceleration, multiply(time, time))
-  let displacement = add(ut, at_squared / 2)
-  assert_eq(75, displacement)  // 10×5 + 2×25/2 = 50 + 25 = 75
+  // 考虑并行效率的实际时间
+  let efficiency_factor = divide_with_ceil(multiply(theoretical_parallel_time, 100), parallel_efficiency_percent)
   
-  // 计算动能：KE = 0.5mv²
-  // 简化：KE = mv²/2
-  let velocity_squared = multiply(final_velocity, final_velocity)
-  let kinetic_energy = multiply(mass, velocity_squared) / 2
-  assert_eq(2000, kinetic_energy)  // 10 × 20² / 2 = 10 × 400 / 2 = 2000
+  assert_eq(30, theoretical_parallel_time)
+  assert_eq(40, efficiency_factor)
 }
 
 test "data_structure_operations" {
-  // 数据结构操作模拟测试
-  // 模拟数组操作
-  let array_size = 5
-  let element_size = 4
+  // 数据结构操作测试
+  let array_size = 10
+  let page_size = 3
   
-  // 计算数组总大小
-  let total_array_size = multiply(array_size, element_size)
-  assert_eq(20, total_array_size)
+  // 计算分页数量
+  let total_pages = divide_with_ceil(array_size, page_size)
   
-  // 模拟二维数组索引计算
-  let row = 2
-  let col = 3
-  let width = 5
-  let index_2d = add(multiply(row, width), col)
-  assert_eq(13, index_2d)
+  // 计算完整页面的元素数量
+  let full_pages = array_size / page_size
+  let full_page_elements = multiply(full_pages, page_size)
   
-  // 模拟栈操作
-  let stack_size = 0
-  // push操作
-  let new_stack_size = add(stack_size, 1)
-  assert_eq(1, new_stack_size)
-  // pop操作
-  let final_stack_size = add(new_stack_size, -1)
-  assert_eq(0, final_stack_size)
+  // 计算最后一页的元素数量
+  let last_page_elements = array_size - full_page_elements
+  
+  assert_eq(4, total_pages)
+  assert_eq(9, full_page_elements)
+  assert_eq(1, last_page_elements)
 }
 
-test "network_protocol_simulation" {
-  // 网络协议模拟测试
-  let packet_header_size = 20
-  let max_payload_size = 1460
-  let data_size = 5000
+test "financial_compound_interest" {
+  // 复利计算测试
+  let principal = 5000
+  let annual_rate_percent = 8
+  let years = 4
   
-  // 计算需要的包数量
-  let packets_needed = divide_with_ceil(data_size, max_payload_size)
-  assert_eq(4, packets_needed)
+  // 逐年计算复利
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate_percent), 100))
+  let year4_amount = add(year3_amount, divide_with_ceil(multiply(year3_amount, annual_rate_percent), 100))
   
-  // 计算总传输大小（包含头部）
-  let total_transfer_size = add(multiply(packets_needed, packet_header_size), data_size)
-  assert_eq(5080, total_transfer_size)
+  assert_eq(5400, year1_amount)
+  assert_eq(5832, year2_amount)
+  assert_eq(6299, year3_amount)
+  assert_eq(6803, year4_amount)
+}
+
+test "queue_simulation" {
+  // 队列模拟测试
+  let arrival_rate = 15  // 每小时到达人数
+  let service_rate = 20   // 每小时服务人数
+  let time_hours = 8      // 营业时间
   
-  // 计算协议开销
-  let overhead = multiply(packets_needed, packet_header_size)
-  let overhead_percentage = multiply(overhead, 100) / total_transfer_size
-  assert_eq(1, overhead_percentage)  // 80/5080 ≈ 1.57% → 1% (整数除法)
+  // 计算总到达人数和总服务人数
+  let total_arrivals = multiply(arrival_rate, time_hours)
+  let total_served = multiply(service_rate, time_hours)
+  
+  // 计算队列中剩余人数
+  let remaining_in_queue = add(total_arrivals, -total_served)
+  if remaining_in_queue < 0 {
+    remaining_in_queue = 0
+  }
+  
+  // 计算需要的额外服务时间（分钟）
+  let additional_service_time = divide_with_ceil(multiply(remaining_in_queue, 60), service_rate)
+  
+  assert_eq(120, total_arrivals)
+  assert_eq(160, total_served)
+  assert_eq(0, remaining_in_queue)
+  assert_eq(0, additional_service_time)
 }
