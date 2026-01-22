@@ -64,7 +64,9 @@
     "quality_enhanced_tests.mbt",
     "simple_quality_tests.mbt",
     "additional_quality_tests.mbt",
-    "quality_focused_tests.mbt"
+    "quality_focused_tests.mbt",
+    "standard_azimuth_enhanced_tests.mbt",
+    "azimuth_new_tests.mbt"
     
   ]
 }
