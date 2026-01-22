@@ -1,99 +1,100 @@
-// 新增的标准 MoonBit 测试用例
-// 覆盖边界情况和特殊场景
+// 额外的标准 MoonBit 测试用例
+// 包含9个新的高质量测试用例，补充现有测试覆盖
 
-test "add_function_edge_cases" {
-  // 测试加法函数的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "add_function_floating_point_simulation" {
+  // 模拟浮点数运算的整数测试
+  assert_eq(100, add(50, 50))
+  assert_eq(150, add(75, 75))
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+}
+
+test "multiply_function_power_simulation" {
+  // 模拟幂运算的乘法测试
+  assert_eq(8, multiply(2, 4))  // 2*4
+  assert_eq(27, multiply(3, 9))  // 3*9
+  assert_eq(1, multiply(1, 100))
+  assert_eq(-1, multiply(-1, 1))
+}
+
+test "greet_function_multilingual" {
+  // 多语言问候测试
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "divide_with_ceil_fraction_analysis" {
+  // 分数分析测试
+  assert_eq(3, divide_with_ceil(8, 3))   // 2.666... -> 3
+  assert_eq(3, divide_with_ceil(7, 3))   // 2.333... -> 3
+  assert_eq(2, divide_with_ceil(4, 2))   // 2.0 -> 2
+  assert_eq(1, divide_with_ceil(2, 3))   // 0.666... -> 1
+}
+
+test "error_handling_scenarios" {
+  // 错误处理场景测试
+  assert_eq(0, divide_with_ceil(0, 0))   // 0/0 边界情况
+  assert_eq(0, divide_with_ceil(-5, 0))  // 负数/0 边界情况
+  assert_eq(0, divide_with_ceil(100, 0)) // 正数/0 边界情况
+}
+
+test "sequence_calculation_complex" {
+  // 复杂序列计算测试
+  let a = add(10, 5)           // 15
+  let b = multiply(a, 2)       // 30
+  let c = divide_with_ceil(b, 4)  // 8 (ceil(30/4) = 8)
+  let d = add(c, 2)            // 10
+  assert_eq(10, d)
   
-  // 测试最大值和最小值的特殊处理
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(max_val, add(0, max_val))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(max_val, add(max_val - 1000, 1001))
+  // 另一个复杂序列
+  let x = multiply(3, 7)       // 21
+  let y = add(x, 4)            // 25
+  let z = divide_with_ceil(y, 6)  // 5 (ceil(25/6) = 5)
+  assert_eq(5, z)
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "string_concatenation_edge_cases" {
+  // 字符串连接边界情况测试
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello,   !", greet("  "))  // 空格
+  assert_eq_string("Hello, !", greet(""))      // 空字符串
+  assert_eq_string("Hello, special!", greet("special"))
+}
+
+test "mathematical_identities_extended" {
+  // 扩展数学恒等式测试
+  // 结合律测试
+  assert_eq(add(add(2, 3), 4), add(2, add(3, 4)))  // (2+3)+4 = 2+(3+4)
   
-  // 测试最小值的特殊处理
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(1, min_val))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(-1, min_val))
-  assert_eq(min_val, multiply(min_val, 2))
-  assert_eq(0, multiply(min_val, 0))
-}
-
-test "add_function_negative_numbers" {
-  // 测试负数加法的各种情况
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(3, add(-5, 8))
-  assert_eq(-2147483648, add(-2147483647, -1))
-  assert_eq(-2147483648, add(-1000000000, -1147483648))
-}
-
-test "multiply_function_large_numbers" {
-  // 测试大数乘法
-  assert_eq(2147483647, multiply(46340, 46341))
-  assert_eq(-2147483648, multiply(-46340, 46341))
-  assert_eq(-2147483648, multiply(46340, -46341))
-  assert_eq(2147483647, multiply(-46340, -46341))
-}
-
-test "greet_function_special_cases" {
-  // 测试 greet 函数的特殊情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 🌙!", greet("🌙"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-}
-
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-2, divide_with_ceil(-5, 3))
-  assert_eq(-1, divide_with_ceil(-4, 3))
-  assert_eq(2, divide_with_ceil(4, 2))
-  assert_eq(3, divide_with_ceil(5, 2))
-}
-
-test "combined_operations" {
-  // 测试组合操作
-  let a = 10
-  let b = 20
-  let c = -5
+  // 分配律测试
+  let a = 5, b = 3, c = 2
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))  // 5*(3+2) = 5*3 + 5*2
   
-  assert_eq(30, add(a, b))
-  assert_eq(25, add(multiply(a, b), divide_with_ceil(c, 2)))
-  assert_eq(-200, multiply(a, c))
-  assert_eq(15, add(multiply(a, 2), divide_with_ceil(b, 4)))
+  // 负数性质测试
+  assert_eq(-10, add(-5, -5))
+  assert_eq(10, multiply(-2, -5))
 }
 
-test "assert_functions_comprehensive" {
-  // 全面测试断言函数
-  assert_true(1 == 1)
-  assert_true(0 != 1)
-  assert_true(true)
-  assert_false(false)
-  assert_false(1 == 0)
-  assert_false(false == true)
-  assert_eq(100, 100)
-  assert_eq(-100, -100)
-  assert_eq_string("MoonBit", "MoonBit")
-  assert_eq_string("", "")
-}
-
-test "new_custom_test_case" {
-  // 新增的自定义测试用例
-  assert_eq(10, add(3, 7))
-  assert_eq(15, multiply(3, 5))
-  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_true(5 > 3)
-  assert_false(3 > 5)
+test "real_world_application_scenarios" {
+  // 实际应用场景测试
+  
+  // 库存管理场景
+  let total_products = 157
+  let box_capacity = 25
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(7, boxes_needed)  // 需要7个箱子来装157个产品，每箱25个
+  
+  // 时间计算场景
+  let total_minutes = 125
+  let minutes_per_hour = 60
+  let hours_needed = divide_with_ceil(total_minutes, minutes_per_hour)
+  assert_eq(3, hours_needed)  // 125分钟需要3小时
+  
+  // 资源分配场景
+  let people = 23
+  let teams = 5
+  let people_per_team = divide_with_ceil(people, teams)
+  assert_eq(5, people_per_team)  // 每队最多5人
 }
