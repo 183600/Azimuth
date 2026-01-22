@@ -4,6 +4,7 @@
     "src/azimuth"
   ],
   "test": [
+    "ultra_simple_test.mbt",
     "quality_test_simple.mbt",
     "quality_enhanced_test_cases.mbt",
     "minimal_test.mbt",
@@ -79,6 +80,9 @@
           "enhanced_moonbit_test_cases.mbt",
           "standard_moonbit_test_cases.mbt",
           "standard_moonbit_tests_new.mbt",
-          "simple_new_test.mbt"
-            
-            ]}
+          "simple_new_test.mbt",
+          "high_quality_enhanced_tests.mbt",
+          "simple_high_quality_test.mbt",
+          "self_contained_quality_tests.mbt"
+        ]
+}
