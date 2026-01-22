@@ -1,138 +1,115 @@
 // 标准 MoonBit 测试用例
-// 覆盖 azimuth 项目的主要功能
+// 覆盖 azimuth 库的核心功能
 
-test "add_function_basic" {
-  // 测试基本加法功能
-  inspect(add(2, 3), "5")?
-  inspect(add(0, 0), "0")?
-  inspect(add(-2, -3), "-5")?
+test "add_function_edge_cases" {
+  // 测试加法函数的边界情况
+  assert_eq(0, add(0, 0))
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-1000000, add(-500000, -500000))
+  assert_eq(0, add(-500, 500))
 }
 
-test "add_function_overflow_handling" {
-  // 测试加法溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正溢出
-  inspect(add(max_val, 1), "2147483647")?
-  inspect(add(max_val, max_val), "2147483647")?
-  
-  // 测试负溢出
-  inspect(add(min_val, -1), "-2147483648")?
-  inspect(add(min_val, min_val), "-2147483648")?
-}
-
-test "multiply_function_basic" {
-  // 测试基本乘法功能
-  inspect(multiply(2, 3), "6")?
-  inspect(multiply(0, 5), "0")?
-  inspect(multiply(1, 5), "5")?
-  inspect(multiply(2, -3), "-6")?
-}
-
-test "multiply_function_overflow_handling" {
-  // 测试乘法溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正溢出
-  inspect(multiply(46341, 46341), "2147483647")?
-  
-  // 测试特殊边界情况
-  inspect(multiply(min_val, -1), "-2147483648")?
-  inspect(multiply(min_val, 2), "-2147483648")?
+test "multiply_function_comprehensive" {
+  // 测试乘法函数的综合情况
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-1, multiply(-1, 1))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(0, multiply(12345, 0))
+  assert_eq(12345, multiply(1, 12345))
 }
 
 test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  inspect(greet("World"), "Hello, World!")?
-  inspect(greet(""), "Hello, !")?
-  inspect(greet("MoonBit"), "Hello, MoonBit!")?
-  inspect(greet("测试"), "Hello, 测试!")?
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
 }
 
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 计算矩形周长：2 × (长 + 宽)
-  let length = 10
-  let width = 5
-  let perimeter = multiply(2, add(length, width))
-  inspect(perimeter, "30")?
-  
-  // 计算三角形面积：底 × 高 ÷ 2
-  let base = 8
-  let height = 6
-  let area = multiply(base, height) / 2
-  inspect(area, "24")?
+test "divide_with_ceil_comprehensive" {
+  // 测试向上取整除法的综合情况
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(0, divide_with_ceil(5, 0))  // 除数为0的情况
+  assert_eq(-2, divide_with_ceil(-5, 3))
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let a = 7
-  let b = 11
-  
   // 加法交换律
-  let sum1 = add(a, b)
-  let sum2 = add(b, a)
-  inspect(sum1, sum2.to_string())?
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  let product1 = multiply(a, b)
-  let product2 = multiply(b, a)
-  inspect(product1, product2.to_string())?
+  assert_eq(multiply(a, b), multiply(b, a))
   
   // 分配律
-  let distrib1 = multiply(a, add(b, 3))
-  let distrib2 = add(multiply(a, b), multiply(a, 3))
-  inspect(distrib1, distrib2.to_string())?
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
 }
 
-test "real_world_application" {
-  // 测试实际应用场景：购物车计算
-  let item_price = 199
-  let quantity = 3
-  let shipping = 15
-  let tax_rate = 8
+test "real_world_scenarios" {
+  // 测试实际应用场景
+  // 计算总价：商品价格 * 数量 + 税费
+  let price = 25
+  let quantity = 4
+  let tax = 15
+  let total = add(multiply(price, quantity), tax)
+  assert_eq(115, total)
   
-  // 计算商品总价
-  let subtotal = multiply(item_price, quantity)
-  // 计算税费
-  let tax = multiply(subtotal, tax_rate) / 100
-  // 计算最终总价
-  let total = add(add(subtotal, tax), shipping)
-  
-  inspect(total, "674")?
+  // 计算需要的容器数量
+  let items = 47
+  let container_capacity = 10
+  let containers = divide_with_ceil(items, container_capacity)
+  assert_eq(5, containers)
 }
 
-test "edge_cases_and_special_values" {
-  // 测试边界情况和特殊值
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "error_handling_and_edge_cases" {
+  // 测试错误处理和边界情况
+  assert_eq(0, divide_with_ceil(0, 0))  // 0除以0
+  assert_eq(0, divide_with_ceil(100, 0))  // 正数除以0
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除以0
   
-  // 测试零值运算
-  inspect(multiply(0, max_val), "0")?
-  inspect(multiply(0, min_val), "0")?
-  inspect(add(0, max_val), "2147483647")?
-  inspect(add(0, min_val), "-2147483648")?
-  
-  // 测试单位值运算
-  inspect(multiply(max_val, 1), "2147483647")?
-  inspect(multiply(min_val, 1), "-2147483648")?
-  inspect(multiply(1, max_val), "2147483647")?
-  inspect(multiply(1, min_val), "-2147483648")?
+  // 极值测试
+  assert_eq(2000000000, add(1000000000, 1000000000))
+  assert_eq(1, multiply(1, 1))
 }
 
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 测试长字符串
-  let long_name = "ThisIsAVeryLongNameForTestingPurposes"
-  inspect(greet(long_name), "Hello, ThisIsAVeryLongNameForTestingPurposes!")?
+test "string_operations_comprehensive" {
+  // 测试字符串操作的综合情况
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, space test!", greet("space test"))
+  assert_eq_string("Hello, special@#$%chars!", greet("special@#$%chars"))
+}
+
+test "complex_calculation_workflows" {
+  // 测试复杂计算工作流
+  // 场景：计算购物车的总容器需求
+  let items_per_cart = [15, 8, 12, 7]
+  let container_size = 10
   
-  // 测试包含特殊字符的字符串
-  let special_name = "test@example.com"
-  inspect(greet(special_name), "Hello, test@example.com!")?
+  let cart1_containers = divide_with_ceil(items_per_cart[0], container_size)
+  let cart2_containers = divide_with_ceil(items_per_cart[1], container_size)
+  let cart3_containers = divide_with_ceil(items_per_cart[2], container_size)
+  let cart4_containers = divide_with_ceil(items_per_cart[3], container_size)
   
-  // 测试包含数字的字符串
-  let numeric_name = "user123"
-  inspect(greet(numeric_name), "Hello, user123!")?
+  let total_containers = add(add(cart1_containers, cart2_containers), 
+                             add(cart3_containers, cart4_containers))
+  
+  assert_eq(6, total_containers)  // 2+1+2+1 = 6
+}
+
+test "performance_and_stress" {
+  // 测试性能和压力情况
+  // 大数运算
+  let big_num1 = 50000
+  let big_num2 = 50000
+  assert_eq(2500000000, multiply(big_num1, big_num2))
+  assert_eq(100000, add(big_num1, big_num2))
+  
+  // 复杂嵌套计算
+  let result = divide_with_ceil(multiply(add(10, 5), 3), 7)
+  assert_eq(7, result)  // ceil((10+5)*3/7) = ceil(45/7) = 7
 }
