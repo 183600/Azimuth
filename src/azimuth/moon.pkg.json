@@ -82,5 +82,6 @@
         "simple_additional_tests.mbt",
         "additional_standard_tests.mbt",
         "azimuth_additional_standard_tests.mbt",
-        "azimuth_enhanced_test_suite.mbt"
+        "azimuth_enhanced_test_suite.mbt",
+        "standard_azimuth_core_tests.mbt"
         ]}

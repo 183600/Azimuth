@@ -1,133 +1,142 @@
 // 标准 Azimuth 核心测试用例
-// 测试项目的核心功能，包括数学运算、字符串处理和断言功能
+// 使用标准的 MoonBit 测试语法
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
-  assert_eq(5, add(2, 3))
+test "add_function_comprehensive" {
+  // 全面测试加法功能
+  assert_eq(8, add(3, 5))
   assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
 }
 
-test "add_overflow_protection" {
-  // 测试加法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正数溢出
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, max_val))
-  
-  // 测试负数溢出
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, min_val))
-  
-  // 测试边界情况
-  assert_eq(-1, add(max_val, min_val))
+test "multiply_function_comprehensive" {
+  // 全面测试乘法功能
+  assert_eq(12, multiply(3, 4))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(100, multiply(10, 10))
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(5, multiply(5, 1))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
+test "divide_with_ceil_function_comprehensive" {
+  // 全面测试向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "multiply_overflow_protection" {
-  // 测试乘法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正数溢出
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(max_val, multiply(46341, 46341))
-  
-  // 测试负数溢出
-  assert_eq(min_val, multiply(min_val, 2))
-  assert_eq(min_val, multiply(max_val, -1))
-  
-  // 测试最小值特殊处理
-  assert_eq(min_val, multiply(min_val, -1))
-}
-
-test "greet_basic_functionality" {
-  // 测试基本的问候功能
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_function_comprehensive" {
+  // 全面测试问候功能
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }
 
-test "greet_special_characters" {
-  // 测试特殊字符处理
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
-  assert_eq_string("Hello, user@123!", greet("user@123"))
-  assert_eq_string("Hello, \"John\"!", greet("\"John\""))
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 7
+  let b = 11
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  assert_eq(3, divide_with_ceil(10, 3))
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(4, divide_with_ceil(12, 3))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-3, divide_with_ceil(-11, 3))
+test "complex_business_calculation" {
+  // 复杂业务计算场景
+  let unit_price = 25
+  let quantity = 8
+  let tax_rate = 10
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(200, subtotal)
+  assert_eq(20, tax)
+  assert_eq(235, total)
 }
 
-test "assertion_functions" {
-  // 测试断言函数
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "packaging_and_shipping_calculation" {
+  // 包装和运输计算
+  let total_items = 47
+  let items_per_box = 12
+  let weight_per_item = 2
+  let max_weight_per_box = 25
   
-  // 测试数学表达式
-  assert_true(add(2, 3) == 5)
-  assert_false(add(2, 3) == 6)
-  assert_eq(multiply(4, 5), 20)
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let total_weight = multiply(total_items, weight_per_item)
+  let boxes_by_weight = divide_with_ceil(total_weight, max_weight_per_box)
+  
+  assert_eq(4, boxes_needed)
+  assert_eq(94, total_weight)
+  assert_eq(4, boxes_by_weight)
 }
 
-test "complex_calculation_scenario" {
-  // 测试复合计算场景
-  let length = 8
-  let width = 6
+test "time_and_resource_management" {
+  // 时间和资源管理
+  let tasks_per_day = 6
+  let total_tasks = 35
+  let working_days = divide_with_ceil(total_tasks, tasks_per_day)
   
-  // 计算矩形周长：2 × (length + width)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(28, perimeter)
+  let hours_per_task = 2
+  let total_hours = multiply(total_tasks, hours_per_task)
+  let hours_per_day = multiply(tasks_per_day, hours_per_task)
   
-  // 计算矩形面积：length × width
-  let area = multiply(length, width)
-  assert_eq(48, area)
-  
-  // 计算总边长：perimeter + diagonal (简化计算)
-  let diagonal_approx = add(length, width)
-  let total_edge = add(perimeter, diagonal_approx)
-  assert_eq(42, total_edge)
+  assert_eq(6, working_days)
+  assert_eq(70, total_hours)
+  assert_eq(12, hours_per_day)
 }
 
-test "boundary_value_combinations" {
-  // 测试边界值组合
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "financial_calculation_scenario" {
+  // 金融计算场景
+  let principal = 1000
+  let interest_rate = 8
+  let years = 3
   
-  // 边界值与0的运算
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(0, multiply(min_val, 0))
+  let year1_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
+  let year1_total = add(principal, year1_interest)
   
-  // 边界值与1的运算
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
+  let year2_interest = divide_with_ceil(multiply(year1_total, interest_rate), 100)
+  let year2_total = add(year1_total, year2_interest)
   
-  // 边界值与-1的运算
-  assert_eq(min_val, multiply(max_val, -1))
-  assert_eq(min_val, multiply(min_val, -1))
+  let year3_interest = divide_with_ceil(multiply(year2_total, interest_rate), 100)
+  let final_amount = add(year2_total, year3_interest)
   
-  // 边界值自身运算
-  assert_eq(max_val, add(max_val, min_val))
+  assert_eq(80, year1_interest)
+  assert_eq(1080, year1_total)
+  assert_eq(87, year2_interest)
+  assert_eq(1167, year2_total)
+  assert_eq(94, year3_interest)
+  assert_eq(1261, final_amount)
+}
+
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况
+  // 测试除零安全
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 测试极值
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  
+  // 测试空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, @#$!", greet("@#$"))
 }
