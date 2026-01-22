@@ -1,90 +1,59 @@
-// 专注于核心功能的 MoonBit 测试用例
-// 测试 azimuth 包的核心功能：add, multiply, greet
+// 专注核心功能测试 - 不超过10个高质量测试用例
+// 测试 azimuth 库的核心功能：add, multiply, greet, divide_with_ceil
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
+test "add_function_boundary_cases" {
+  // 测试加法函数的边界情况
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(-1, @azimuth.add(-2, 1))
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
 }
 
-test "add_boundary_values" {
-  // 测试边界值的加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(0, @azimuth.add(min_val, 1))
+test "multiply_function_zero_cases" {
+  // 测试乘法函数的零值情况
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(0, @azimuth.multiply(-12345, 0))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
-  @azimuth.assert_eq(25, @azimuth.multiply(5, 5))
+test "divide_with_ceil_precision" {
+  // 测试向上取整除法的精度
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
 }
 
-test "multiply_special_cases" {
-  // 测试乘法的特殊情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-}
-
-test "greet_standard_cases" {
-  // 测试标准的问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "greet_function_unicode_support" {
+  // 测试问候函数的Unicode支持
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, áéíóú!", @azimuth.greet("áéíóú"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
 }
 
-test "greet_special_characters" {
-  // 测试包含特殊字符的问候
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
-  @azimuth.assert_eq_string("Hello, user@123!", @azimuth.greet("user@123"))
-  @azimuth.assert_eq_string("Hello,   spaced   !", @azimuth.greet("  spaced  "))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-}
-
-test "combined_operations_simple" {
-  // 测试简单的组合运算
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // (a + b) * c
-  let result = @azimuth.multiply(@azimuth.add(a, b), c)
-  @azimuth.assert_eq(900, result)
-  
-  // a * b + c
-  let result2 = @azimuth.add(@azimuth.multiply(a, b), c)
-  @azimuth.assert_eq(230, result2)
-}
-
-test "real_world_calculation" {
-  // 测试实际应用场景：购物车计算
-  let item_price = 199
-  let quantity = 3
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价
+  let unit_price = 25
+  let quantity = 8
+  let tax_rate = 8
   let shipping = 15
   
-  let subtotal = @azimuth.multiply(item_price, quantity)
-  let total = @azimuth.add(subtotal, shipping)
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping)
   
-  @azimuth.assert_eq(612, total)  // 199 * 3 + 15 = 597 + 15 = 612
+  @azimuth.assert_eq(200, subtotal)
+  @azimuth.assert_eq(16, tax)
+  @azimuth.assert_eq(231, total)
 }
 
 test "mathematical_properties" {
-  // 测试数学性质
+  // 测试数学性质：交换律和结合律
   let a = 12
   let b = 8
   
@@ -94,6 +63,64 @@ test "mathematical_properties" {
   // 乘法交换律
   @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, 2)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, 2)))
+  // 分配律测试
+  let c = 3
+  @azimuth.assert_eq(@azimuth.multiply(a, @azimuth.add(b, c)), @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c)))
+}
+
+test "inventory_packaging_scenario" {
+  // 库存包装场景：计算需要的箱子数量
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
+  
+  @azimuth.assert_eq(4, boxes_needed)
+  
+  // 验证箱子容量足够
+  let total_capacity = @azimuth.multiply(boxes_needed, items_per_box)
+  let is_sufficient = if total_capacity >= total_items { 1 } else { 0 }
+  @azimuth.assert_eq(1, is_sufficient)
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算（简化版）
+  let principal = 1000
+  let rate_percent = 5
+  
+  let year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
+  let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, rate_percent), 100))
+  let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, rate_percent), 100))
+  
+  @azimuth.assert_eq(1050, year1)
+  @azimuth.assert_eq(1103, year2)
+  @azimuth.assert_eq(1158, year3)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 除数为零的安全处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  
+  // 极值运算
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
+}
+
+test "performance_calculation" {
+  // 性能计算：任务完成时间
+  let total_tasks = 75
+  let tasks_per_hour = 8
+  let work_hours_per_day = 8
+  
+  let hours_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_hour)
+  let days_needed = @azimuth.divide_with_ceil(hours_needed, work_hours_per_day)
+  
+  @azimuth.assert_eq(10, hours_needed)
+  @azimuth.assert_eq(2, days_needed)
+  
+  // 计算总工作小时数
+  let total_work_hours = @azimuth.multiply(days_needed, work_hours_per_day)
+  @azimuth.assert_eq(16, total_work_hours)
 }

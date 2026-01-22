@@ -87,5 +87,6 @@
       "azimuth_new_test_cases.mbt",
       "azimuth_comprehensive_test_suite.mbt",
       "standard_moonbit_test_suite.mbt",
-      "standard_azimuth_tests.mbt"
+      "standard_azimuth_tests.mbt",
+      "test/focused_core_tests.mbt"
     ]}
