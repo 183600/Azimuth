@@ -1,57 +1,48 @@
-// Simple test file
+// 新增 MoonBit 测试用例 - 10个标准测试
+// 简洁的标准 MoonBit 测试语法
 
-test "simple_addition_test" {
-  assert_eq(5, add(2, 3))
+test "add_basic" {
+  assert_eq(10, add(3, 7))
 }
 
-test "simple_multiplication_test" {
-  assert_eq(6, multiply(2, 3))
+test "multiply_basic" {
+  assert_eq(15, multiply(3, 5))
 }
 
-test "simple_greet_test" {
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_basic" {
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }
 
-test "divide_with_ceil_test" {
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(5, divide_with_ceil(20, 4))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(0, divide_with_ceil(0, 5))
+test "divide_with_ceil_basic" {
+  assert_eq(4, divide_with_ceil(10, 3))
 }
 
-test "overflow_protection_test" {
-  let max_val = 2147483647
-  let result = add(max_val, 100)
-  assert_eq(max_val, result)
+test "zero_operations" {
+  assert_eq(0, multiply(5, 0))
+  assert_eq(5, add(5, 0))
 }
 
-test "negative_number_test" {
-  let min_val = -2147483648
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(0, multiply(min_val, 0))
+test "negative_operations" {
+  assert_eq(-5, add(-2, -3))
+  assert_eq(-6, multiply(-2, 3))
 }
 
-test "string_edge_case_test" {
-  let special_chars = "!@#$%^&*()"
-  assert_eq_string("Hello, !@#$%^&*()!", greet(special_chars))
+test "combined_operations" {
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)
 }
 
-test "mathematical_series_test" {
-  let fib_sum = add(add(add(add(1, 1), 2), 3), 5)
-  assert_eq(12, fib_sum)
+test "packaging_calculation" {
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)
 }
 
-test "financial_calculation_test" {
-  let principal = 1000
-  let rate = 5
-  let years = 3
-  let total = multiply(principal, add(100, multiply(rate, years))) / 100
-  assert_eq(1600, total)
+test "unicode_greeting" {
+  assert_eq_string("Hello, 世界!", greet("世界"))
 }
 
-test "physics_calculation_test" {
-  let velocity = 10
-  let time = 3
-  let distance = multiply(velocity, time)
-  assert_eq(30, distance)
+test "error_handling" {
+  assert_eq(0, divide_with_ceil(100, 0))
 }

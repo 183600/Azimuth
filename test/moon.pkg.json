@@ -65,7 +65,8 @@
     "new_core_functionality_tests.mbt",
     "minimal_test.mbt",
     "quality_focused_tests.mbt",
-    "unique_test_marker.mbt"
+    "unique_test_marker.mbt",
+    "simple_new_tests.mbt"
     
   ]
 }

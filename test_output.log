@@ -1,5 +1,6 @@
 Running moon test with real execution...
 Compiling azimuth...
+azimuth/lib.mbt:682:7-682:14 [E0002] Warning (unused_value): Unused variable 'team_id'
 Generating azimuth.wasm...
 Testing azimuth...
 Checking standard_core_test_cases.mbt...
@@ -1274,14 +1275,17 @@ test ... ok
 test ... ok
 test ... ok
 Checking additional_test_cases.mbt...
-azimuth_test/additional_test_cases.mbt:199:3-199:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:213:3-213:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:214:3-214:24 [E4021] Value assert_false not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:219:3-219:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:220:3-220:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:221:3-221:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/additional_test_cases.mbt:222:3-222:23 [E4021] Value assert_true not found in package `azimuth`.
-Error: additional_test_cases.mbt compilation failed
+Found 10 tests in additional_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking new_moonbit_tests.mbt...
 Found 10 tests in new_moonbit_tests.mbt
 test ... ok
@@ -4240,7 +4244,16 @@ azimuth_test/azimuth_standard_test_suite.mbt:155:7-155:11 [E0002] Warning (unuse
 azimuth_test/azimuth_standard_test_suite.mbt:156:7-156:11 [E0002] Warning (unused_value): Unused variable 'fib7'
 Error: azimuth_standard_test_suite.mbt compilation failed
 Checking standard_test_cases.mbt...
-Found 10 tests in standard_test_cases.mbt
+Found 19 tests in standard_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -4481,9 +4494,15 @@ azimuth_test/standard_moonbit_tests_v19.mbt:107:3-107:23 [E4021] Value assert_tr
 azimuth_test/standard_moonbit_tests_v19.mbt:108:3-108:24 [E4021] Value assert_false not found in package `azimuth`.
 Error: standard_moonbit_tests_v19.mbt compilation failed
 Checking azimuth_standard_tests.mbt...
-azimuth_test/azimuth_standard_tests.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/azimuth_standard_tests.mbt:106:3-106:24 [E4021] Value assert_false not found in package `azimuth`.
-Error: azimuth_standard_tests.mbt compilation failed
+Found 8 tests in azimuth_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking standard_tests.mbt...
 Found 10 tests in standard_tests.mbt
 test ... ok
@@ -4497,9 +4516,15 @@ test ... ok
 test ... ok
 test ... ok
 Checking azimuth_standard_tests.mbt...
-azimuth_test/azimuth_standard_tests.mbt:105:3-105:23 [E4021] Value assert_true not found in package `azimuth`.
-azimuth_test/azimuth_standard_tests.mbt:106:3-106:24 [E4021] Value assert_false not found in package `azimuth`.
-Error: azimuth_standard_tests.mbt compilation failed
+Found 8 tests in azimuth_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking user_new_additional_tests.mbt...
 azimuth_test/user_new_additional_tests.mbt:115:3-115:23 [E4021] Value assert_true not found in package `azimuth`.
 azimuth_test/user_new_additional_tests.mbt:116:3-116:24 [E4021] Value assert_false not found in package `azimuth`.
@@ -4609,11 +4634,31 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking azimuth_standard_tests.mbt...
+Found 8 tests in azimuth_standard_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Compiling clean_test...
 Generating clean_test.wasm...
 Testing clean_test...
 Checking simple_test.mbt...
-Found 11 tests in simple_test.mbt
+Found 21 tests in simple_test.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 test ... ok
 test ... ok
 test ... ok
@@ -4654,6 +4699,6 @@ test ... ok
 test ... ok
 test ... ok
 
-799 tests passed, 0 failed
+842 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
