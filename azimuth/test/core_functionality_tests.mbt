@@ -1,39 +1,51 @@
-test "add_positive_numbers" {
-  let result = @azimuth.add(5, 7)
-  @azimuth.assert_eq(12, result)
+test "add_function_basic" {
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.add(-2, 3))
 }
 
-test "add_negative_numbers" {
-  let result = @azimuth.add(-3, -8)
-  @azimuth.assert_eq(-11, result)
+test "add_function_negative" {
+  @azimuth.assert_eq(-8, @azimuth.add(-5, -3))
+  @azimuth.assert_eq(-5, @azimuth.add(10, -15))
 }
 
-test "add_mixed_numbers" {
-  let result = @azimuth.add(10, -4)
-  @azimuth.assert_eq(6, result)
+test "multiply_function_basic" {
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
 }
 
-test "multiply_positive_numbers" {
-  let result = @azimuth.multiply(6, 4)
-  @azimuth.assert_eq(24, result)
+test "multiply_function_negative" {
+  @azimuth.assert_eq(20, @azimuth.multiply(-4, -5))
+  @azimuth.assert_eq(-21, @azimuth.multiply(7, -3))
 }
 
-test "multiply_negative_numbers" {
-  let result = @azimuth.multiply(-3, -7)
-  @azimuth.assert_eq(21, result)
+test "greet_function" {
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
 }
 
-test "multiply_mixed_numbers" {
-  let result = @azimuth.multiply(-5, 3)
-  @azimuth.assert_eq(-15, result)
+test "divide_with_ceil_basic" {
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 2))
 }
 
-test "greet_with_name" {
-  let result = @azimuth.greet("MoonBit")
-  @azimuth.assert_eq_string("Hello, MoonBit!", result)
+test "divide_with_ceil_negative" {
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, -3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
 }
 
-test "divide_with_ceil_positive" {
-  let result = @azimuth.divide_with_ceil(7, 3)
-  @azimuth.assert_eq(3, result)
+test "divide_with_ceil_zero_division" {
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-5, 0))
+}
+
+test "divide_with_ceil_edge_cases" {
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(100, 100))
 }
