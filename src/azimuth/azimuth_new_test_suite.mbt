@@ -1,216 +1,143 @@
-// Azimuth 项目新的测试套件
-// 使用标准 MoonBit 测试语法，提供全面的测试覆盖
+// Azimuth 新增标准测试套件
+// 包含10个高质量测试用例，覆盖核心功能
 
-// 导入必要的模块
-use azimuth
-
-test "addition_with_various_ranges" {
-  // 测试不同范围的加法运算
-  // 小正数
-  @assertion.assert_eq(7, azimuth.add(3, 4))?
+test "add_function_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
   
-  // 大正数
-  @assertion.assert_eq(2000000, azimuth.add(1000000, 1000000))?
+  let x = -10
+  let y = 25
+  assert_eq(add(x, y), add(y, x))
   
-  // 小负数
-  @assertion.assert_eq(-7, azimuth.add(-3, -4))?
-  
-  // 大负数
-  @assertion.assert_eq(-2000000, azimuth.add(-1000000, -1000000))?
-  
-  // 混合符号
-  @assertion.assert_eq(-1, azimuth.add(1000, -1001))?
+  let m = 0
+  let n = 100
+  assert_eq(add(m, n), add(n, m))
 }
 
-test "multiplication_precision_tests" {
-  // 测试乘法精度和边界情况
-  // 正数乘法
-  @assertion.assert_eq(15625, azimuth.multiply(125, 125))?
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律：a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 8
+  let c = 12
   
-  // 负数乘法
-  @assertion.assert_eq(15625, azimuth.multiply(-125, -125))?
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
   
-  // 混合符号乘法
-  @assertion.assert_eq(-15625, azimuth.multiply(125, -125))?
-  
-  // 与0相乘
-  @assertion.assert_eq(0, azimuth.multiply(12345, 0))?
-  
-  // 与1相乘
-  @assertion.assert_eq(12345, azimuth.multiply(12345, 1))?
+  // 验证具体数值：5 * (8 + 12) = 5 * 8 + 5 * 12 = 100
+  assert_eq(100, left_side)
 }
 
-test "greet_function_with_special_cases" {
-  // 测试greet函数的特殊情况
-  // 空字符串
-  @assertion.assert_eq_string("Hello, !", azimuth.greet(""))?
-  
-  // 单字符
-  @assertion.assert_eq_string("Hello, A!", azimuth.greet("A"))?
-  
-  // 包含空格的字符串
-  @assertion.assert_eq_string("Hello, John Doe!", azimuth.greet("John Doe"))?
-  
-  // 包含特殊字符
-  @assertion.assert_eq_string("Hello, test@example.com!", azimuth.greet("test@example.com"))?
-  
-  // Unicode字符
-  @assertion.assert_eq_string("Hello, 世界!", azimuth.greet("世界"))?
+test "divide_with_ceil_positive_fractions" {
+  // 测试正数的向上取整除法
+  assert_eq(2, divide_with_ceil(3, 2))    // 1.5 -> 2
+  assert_eq(4, divide_with_ceil(10, 3))   // 3.333... -> 4
+  assert_eq(7, divide_with_ceil(13, 2))   // 6.5 -> 7
+  assert_eq(1, divide_with_ceil(1, 100))  // 0.01 -> 1
+  assert_eq(34, divide_with_ceil(100, 3))  // 33.333... -> 34
 }
 
-test "complex_financial_calculations" {
-  // 测试复杂金融计算场景
-  let principal = 10000
-  let rate1 = 5
-  let rate2 = 3
-  let years = 2
-  
-  // 计算复利：第一年
-  let year1_interest = azimuth.multiply(principal, rate1) / 100
-  let year1_total = azimuth.add(principal, year1_interest)
-  
-  // 计算复利：第二年（使用不同利率）
-  let year2_interest = azimuth.multiply(year1_total, rate2) / 100
-  let year2_total = azimuth.add(year1_total, year2_interest)
-  
-  // 验证最终金额
-  @assertion.assert_eq(10815, year2_total)?
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))   // -3.333... -> -3
+  assert_eq(-4, divide_with_ceil(-11, 3))   // -3.666... -> -4
+  assert_eq(4, divide_with_ceil(-10, -3))   // 3.333... -> 4
+  assert_eq(3, divide_with_ceil(10, -3))    // -3.333... -> -3
+  assert_eq(0, divide_with_ceil(5, 0))      // 除数为零时返回0
 }
 
-test "geometry_area_calculations" {
-  // 测试几何面积计算
-  let length = 12
-  let width = 8
-  let radius = 5
-  
-  // 矩形面积
-  let rectangle_area = azimuth.multiply(length, width)
-  @assertion.assert_eq(96, rectangle_area)?
-  
-  // 正方形面积（边长为半径的2倍）
-  let square_side = azimuth.multiply(radius, 2)
-  let square_area = azimuth.multiply(square_side, square_side)
-  @assertion.assert_eq(100, square_area)?
-  
-  // 三角形面积（底×高÷2）
-  let triangle_base = 10
-  let triangle_height = 6
-  let triangle_area = azimuth.multiply(triangle_base, triangle_height) / 2
-  @assertion.assert_eq(30, triangle_area)?
+test "greet_function_unicode_support" {
+  // 测试问候函数的Unicode支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🚀🌙!", greet("🚀🌙"))
 }
 
-test "mathematical_series_calculations" {
-  // 测试数学级数计算
-  // 等差数列求和：1 + 2 + 3 + ... + 10
-  let n = 10
-  let sum_first_n = azimuth.multiply(n, azimuth.add(n, 1)) / 2
-  @assertion.assert_eq(55, sum_first_n)?
+test "complex_business_calculation" {
+  // 测试复杂业务计算场景
+  // 计算订单总价：商品价格 × 数量 + 运费 - 折扣
+  let product_price = 89
+  let quantity = 4
+  let shipping = 12
+  let discount = 20
   
-  // 等比数列求和：2 + 4 + 8 + 16
-  let geo_sum = azimuth.add(azimuth.add(azimuth.add(2, 4), 8), 16)
-  @assertion.assert_eq(30, geo_sum)?
+  let subtotal = multiply(product_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
   
-  // 平方和：1² + 2² + 3² + 4²
-  let square_sum = azimuth.add(azimuth.add(azimuth.add(1, 4), 9), 16)
-  @assertion.assert_eq(30, square_sum)?
+  assert_eq(348, final_total)  // 89*4 + 12 - 20 = 356 + 12 - 20 = 348
 }
 
-test "temperature_conversion_scenarios" {
-  // 测试温度转换场景
-  // 摄氏度转华氏度：F = C × 9/5 + 32（简化为整数运算）
-  let celsius = 25
-  let fahrenheit = azimuth.add(azimuth.multiply(celsius, 9) / 5, 32)
-  @assertion.assert_eq(77, fahrenheit)?
+test "mathematical_sequence_calculation" {
+  // 测试数学序列计算
+  // 计算等差数列的和：1 + 3 + 5 + ... + 19
+  let first_term = 1
+  let common_difference = 2
+  let number_of_terms = 10
   
-  // 华氏度转摄氏度：C = (F - 32) × 5/9
-  let fahrenheit_back = 77
-  let celsius_back = azimuth.multiply(azimuth.add(fahrenheit_back, -32), 5) / 9
-  @assertion.assert_eq(25, celsius_back)?
+  // 使用公式计算：S = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  // 冰点和沸点测试
-  @assertion.assert_eq(32, azimuth.add(azimuth.multiply(0, 9) / 5, 32))?  // 0°C = 32°F
-  @assertion.assert_eq(212, azimuth.add(azimuth.multiply(100, 9) / 5, 32))?  // 100°C = 212°F
+  assert_eq(100, sum_formula)  // 10/2 * (2 + 18) = 5 * 20 = 100
 }
 
-test "shopping_cart_with_discounts" {
-  // 测试带折扣的购物车计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 1
-  let discount_threshold = 500
-  let discount_rate = 10
-  let shipping = 20
+test "packaging_optimization" {
+  // 测试包装优化场景
+  // 计算不同商品需要的包装箱数量
+  let items_per_box = 24
   
-  // 计算商品总价
-  let item1_total = azimuth.multiply(item1_price, item1_quantity)
-  let item2_total = azimuth.multiply(item2_price, item2_quantity)
-  let subtotal = azimuth.add(item1_total, item2_total)
+  let product_a_qty = 50
+  let product_b_qty = 75
+  let product_c_qty = 120
   
-  // 计算折扣
-  let discount = if (subtotal > discount_threshold) {
-    azimuth.multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
+  let boxes_a = divide_with_ceil(product_a_qty, items_per_box)
+  let boxes_b = divide_with_ceil(product_b_qty, items_per_box)
+  let boxes_c = divide_with_ceil(product_c_qty, items_per_box)
   
-  // 计算最终价格
-  let discounted_total = azimuth.add(subtotal, -discount)
-  let final_total = azimuth.add(discounted_total, shipping)
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
   
-  @assertion.assert_eq(888, final_total)?
+  assert_eq(3, boxes_a)    // ceil(50/24) = 3
+  assert_eq(4, boxes_b)    // ceil(75/24) = 4
+  assert_eq(5, boxes_c)    // ceil(120/24) = 5
+  assert_eq(12, total_boxes)  // 3 + 4 + 5 = 12
 }
 
-test "time_and_speed_calculations" {
-  // 测试时间和速度计算
-  let distance = 300  // 公里
-  let speed = 60      // 公里/小时
+test "financial_compound_interest" {
+  // 测试金融复利计算
+  let principal = 1000
+  let rate_percent = 5
   
-  // 计算时间（小时）
-  let time_hours = distance / speed
-  @assertion.assert_eq(5, time_hours)?
+  // 年度复利计算（使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  // 转换为分钟
-  let time_minutes = azimuth.multiply(time_hours, 60)
-  @assertion.assert_eq(300, time_minutes)?
-  
-  // 计算不同速度下的时间
-  let faster_speed = 75
-  let faster_time = distance / faster_speed
-  let time_saved = azimuth.add(time_hours, -faster_time)
-  @assertion.assert_eq(1, time_saved)?  // 节省1小时
+  assert_eq(1050, year1)  // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
+  assert_eq(1103, year2)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
+  assert_eq(1158, year3)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
 }
 
-test "data_analysis_calculations" {
-  // 测试数据分析计算
-  // 数据集：10, 20, 30, 40, 50
-  let data1 = 10
-  let data2 = 20
-  let data3 = 30
-  let data4 = 40
-  let data5 = 50
+test "error_boundary_conditions" {
+  // 测试错误边界条件
+  // 测试极值运算
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(1000, 0))
+  assert_eq(0, multiply(0, -1000))
   
-  // 计算总和
-  let sum = azimuth.add(azimuth.add(azimuth.add(azimuth.add(data1, data2), data3), data4), data5)
-  @assertion.assert_eq(150, sum)?
+  // 测试除数为零的安全处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 计算平均值
-  let average = sum / 5
-  @assertion.assert_eq(30, average)?
-  
-  // 计算方差（简化版）
-  let diff1 = azimuth.add(data1, -average)
-  let diff2 = azimuth.add(data2, -average)
-  let diff3 = azimuth.add(data3, -average)
-  let diff4 = azimuth.add(data4, -average)
-  let diff5 = azimuth.add(data5, -average)
-  
-  let sq_diff1 = azimuth.multiply(diff1, diff1)
-  let sq_diff2 = azimuth.multiply(diff2, diff2)
-  let sq_diff3 = azimuth.multiply(diff3, diff3)
-  let sq_diff4 = azimuth.multiply(diff4, diff4)
-  let sq_diff5 = azimuth.multiply(diff5, diff5)
-  
-  let variance = azimuth.add(azimuth.add(azimuth.add(azimuth.add(sq_diff1, sq_diff2), sq_diff3), sq_diff4), sq_diff5) / 5
-  @assertion.assert_eq(200, variance)?
+  // 测试零的加法性质
+  assert_eq(100, add(100, 0))
+  assert_eq(-100, add(-100, 0))
+  assert_eq(0, add(0, 0))
 }
