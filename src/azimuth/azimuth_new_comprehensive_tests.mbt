@@ -1,112 +1,174 @@
-// Azimuth 项目的新增综合测试用例
-// 使用标准 MoonBit 测试语法，覆盖各种边界情况和实际应用场景
+// 新增的高质量 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "mathematical_series_sum" {
-  // 测试等差数列求和：1 + 2 + 3 + ... + 10
-  let n = 10
-  let sum = divide_with_ceil(multiply(n, add(n, 1)), 2)
-  assert_eq(55, sum)
+test "mathematical_laws_commutative" {
+  // 测试数学交换律：加法和乘法
+  let a = 17
+  let b = 29
+  assert_eq(add(a, b), add(b, a))  // 加法交换律
+  assert_eq(multiply(a, b), multiply(b, a))  // 乘法交换律
 }
 
-test "temperature_conversion" {
-  // 模拟温度转换计算（简化版）
-  let celsius = 25
-  let fahrenheit = add(multiply(divide_with_ceil(multiply(celsius, 9), 5), 1), 32)
-  assert_eq(77, fahrenheit)
+test "mathematical_laws_associative" {
+  // 测试数学结合律：加法和乘法
+  let x = 5
+  let y = 8
+  let z = 12
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))  // 加法结合律
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))  // 乘法结合律
 }
 
-test "banking_interest_calculation" {
-  // 银行利息计算（简化版）
+test "divide_with_ceil_comprehensive" {
+  // 全面测试除法向上取整功能
+  // 正数情况
+  assert_eq(4, divide_with_ceil(10, 3))  // 3.33 -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
+  
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.33 -> -3
+  assert_eq(-3, divide_with_ceil(-9, 3))   // -3 -> -3
+  
+  // 负数除负数
+  assert_eq(4, divide_with_ceil(-10, -3))  // 3.33 -> 4
+  
+  // 除零安全处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+}
+
+test "negative_number_operations" {
+  // 测试负数运算的各种情况
+  assert_eq(-10, add(-3, -7))    // 负数加法
+  assert_eq(-5, add(-8, 3))     // 正负数加法
+  assert_eq(0, add(-5, 5))      // 相反数相加
+  assert_eq(15, multiply(-3, -5))  // 负数乘法（正结果）
+  assert_eq(-15, multiply(3, -5))  // 正负数乘法（负结果）
+  assert_eq(0, multiply(-5, 0))    // 负数乘零
+}
+
+test "extreme_boundary_values" {
+  // 测试极端边界值
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000, multiply(1000000, 1000))
+  
+  // 零值运算
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(12345, 0))
+  assert_eq(12345, add(12345, 0))
+  assert_eq(0, divide_with_ceil(0, 12345))
+  
+  // 单位元运算
+  assert_eq(12345, multiply(12345, 1))
+  assert_eq(12345, add(12345, 0))
+}
+
+test "greet_function_comprehensive" {
+  // 全面测试问候函数
+  // 基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  
+  // 特殊情况
+  assert_eq_string("Hello, !", greet(""))  // 空字符串
+  assert_eq_string("Hello,  !", greet(" "))  // 空格
+  assert_eq_string("Hello, A!", greet("A"))  // 单字符
+  
+  // Unicode 和特殊字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, José!", greet("José"))
+  
+  // 数字和符号
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, a+b=c!", greet("a+b=c"))
+}
+
+test "complex_business_calculations" {
+  // 复杂业务计算场景
+  // 订单计算：商品价格 × 数量 + 运费 - 折扣
+  let product_price = 89
+  let quantity = 4
+  let shipping = 12
+  let discount = 20
+  
+  let subtotal = multiply(product_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(356, subtotal)           // 89 * 4
+  assert_eq(368, total_before_discount)  // 356 + 12
+  assert_eq(348, final_total)        // 368 - 20
+}
+
+test "inventory_packaging_optimization" {
+  // 库存包装优化计算
+  let items_per_box = 24
+  let total_items_small = 100
+  let total_items_medium = 250
+  let total_items_large = 1000
+  
+  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
+  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
+  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
+  
+  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
+  
+  assert_eq(5, boxes_small)   // ceil(100/24) = 5
+  assert_eq(11, boxes_medium) // ceil(250/24) = 11
+  assert_eq(42, boxes_large)  // ceil(1000/24) = 42
+  assert_eq(58, total_boxes)  // 5 + 11 + 42
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算：等差数列求和
+  let first_term = 3
+  let common_difference = 2
+  let number_of_terms = 10
+  
+  // 使用公式计算：S = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
+  
+  // 验证结果：10/2 * (6 + 18) = 5 * 24 = 120
+  assert_eq(120, sum_formula)
+}
+
+test "distributive_property_verification" {
+  // 验证分配律：a * (b + c) = a * b + a * c
+  let a = 7
+  let b = 12
+  let c = 8
+  
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)  // 7 * (12 + 8) = 7 * 12 + 7 * 8 = 140
+}
+
+test "real_world_financial_calculation" {
+  // 真实世界金融计算：复利计算
   let principal = 1000
   let interest_rate = 5  // 5%
-  let years = 3
   
-  let interest_per_year = divide_with_ceil(multiply(principal, interest_rate), 100)
-  let total_interest = multiply(interest_per_year, years)
-  let final_amount = add(principal, total_interest)
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
+  let year1_total = add(principal, year1_interest)
   
-  assert_eq(150, total_interest)
-  assert_eq(1150, final_amount)
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_resources = 100
-  let project_a_needs = 35
-  let project_b_needs = 28
-  let project_c_needs = 22
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_total, interest_rate), 100)
+  let year2_total = add(year1_total, year2_interest)
   
-  let allocated = add(add(project_a_needs, project_b_needs), project_c_needs)
-  let remaining = add(total_resources, -allocated)
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, interest_rate), 100)
+  let year3_total = add(year2_total, year3_interest)
   
-  assert_eq(85, allocated)
-  assert_eq(15, remaining)
-}
-
-test "time_zone_conversion" {
-  // 时区转换计算（简化版）
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 与目标时区相差8小时
-  
-  let target_time = add(local_time, time_difference)
-  let adjusted_time = if target_time >= 24 { add(target_time, -24) } else { target_time }
-  
-  assert_eq(22, adjusted_time)
-}
-
-test "shopping_cart_with_tax" {
-  // 购物车含税计算
-  let item1_price = 29
-  let item1_quantity = 2
-  let item2_price = 15
-  let item2_quantity = 3
-  let tax_rate = 8  // 8%
-  
-  let subtotal = add(multiply(item1_price, item1_quantity), multiply(item2_price, item2_quantity))
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total = add(subtotal, tax_amount)
-  
-  assert_eq(103, subtotal)
-  assert_eq(9, tax_amount)
-  assert_eq(112, total)
-}
-
-test "digital_storage_conversion" {
-  // 数字存储单位转换
-  let megabytes = 1024
-  let gigabytes = divide_with_ceil(megabytes, 1024)
-  let kilobytes = multiply(megabytes, 1024)
-  
-  assert_eq(1, gigabytes)
-  assert_eq(1048576, kilobytes)
-}
-
-test "speed_distance_time_calculation" {
-  // 速度、距离、时间计算
-  let speed = 60  // km/h
-  let time = 25  // 2.5 hours expressed as 25/10
-  let distance = multiply(speed, divide_with_ceil(time, 10))
-  
-  assert_eq(180, distance)
-}
-
-test "array_index_calculation" {
-  // 数组索引计算（模拟二维数组转一维数组）
-  let row = 3
-  let col = 4
-  let cols_per_row = 5
-  
-  let linear_index = add(multiply(row, cols_per_row), col)
-  
-  assert_eq(19, linear_index)
-}
-
-test "probability_simulation" {
-  // 概率模拟计算
-  let total_outcomes = 100
-  let favorable_outcomes = 25
-  
-  let probability_percent = divide_with_ceil(multiply(favorable_outcomes, 100), total_outcomes)
-  
-  assert_eq(25, probability_percent)
+  assert_eq(50, year1_interest)   // ceil(1000 * 5 / 100) = 50
+  assert_eq(1050, year1_total)    // 1000 + 50
+  assert_eq(53, year2_interest)   // ceil(1050 * 5 / 100) = 53
+  assert_eq(1103, year2_total)    // 1050 + 53
+  assert_eq(56, year3_interest)   // ceil(1103 * 5 / 100) = 56
+  assert_eq(1159, year3_total)    // 1103 + 56
 }
