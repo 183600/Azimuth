@@ -155,6 +155,9 @@
     "additional_enhanced_tests.mbt",
     "moonbit_standard_enhanced_tests.mbt",
     "simple_azimuth_enhanced_tests.mbt",
-    "comprehensive_enhanced_tests.mbt"
+    "comprehensive_enhanced_tests.mbt",
+    "enhanced_test_cases.mbt",
+    "my_enhanced_tests.mbt",
+    "simple_test_new.mbt"
   ]
 }

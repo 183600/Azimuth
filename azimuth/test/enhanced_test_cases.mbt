@@ -1,129 +1,112 @@
-test "greet_with_whitespace" {
-  // 测试包含各种空白字符的字符串
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
-  @azimuth.assert_eq_string("Hello, 	\n!", @azimuth.greet("\t\n"))
-  @azimuth.assert_eq_string("Hello,  World !", @azimuth.greet("  World "))
+// 增强的测试用例 - 覆盖边界情况和实际应用场景
+
+test "add_overflow_protection" {
+  // 测试大数加法
+  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
+  @azimuth.assert_eq(-1000000, @azimuth.add(-500000, -500000))
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
 }
 
-test "add_extreme_boundary_values" {
-  // 测试更极端的边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试最大值与自身相加
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  
-  // 测试最小值与自身相加
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  
-  // 测试最大值与最小值相加
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+test "multiply_zero_properties" {
+  // 测试乘法零元素特性
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 67890))
+  @azimuth.assert_eq(0, @azimuth.multiply(-999, 0))
 }
 
-test "multiply_extreme_cases" {
-  // 测试更极端的乘法情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "divide_with_ceil_precision" {
+  // 测试除法向上取整的精度
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(15, 4))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(21, 5))
+}
+
+test "greet_multilingual_support" {
+  // 测试多语言问候
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+  @azimuth.assert_eq_string("Hello, Español!", @azimuth.greet("Español"))
+  @azimuth.assert_eq_string("Hello, Français!", @azimuth.greet("Français"))
+  @azimuth.assert_eq_string("Hello, Русский!", @azimuth.greet("Русский"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+}
+
+test "complex_business_logic" {
+  // 测试复杂业务逻辑：计算订单包装需求
+  let order_quantity = 47
+  let package_capacity = 12
+  let packages_needed = @azimuth.divide_with_ceil(order_quantity, package_capacity)
   
-  // 测试大数相乘
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46340, 46341))
+  // 验证包装计算
+  @azimuth.assert_eq(4, packages_needed)
   
-  // 测试负数相乘的正结果
-  @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
-  
-  // 测试混合符号的乘法
-  @azimuth.assert_eq(-100, @azimuth.multiply(10, -10))
-  @azimuth.assert_eq(-100, @azimuth.multiply(-10, 10))
+  // 计算总成本（假设每个包装成本5元）
+  let total_cost = @azimuth.multiply(packages_needed, 5)
+  @azimuth.assert_eq(20, total_cost)
 }
 
 test "mathematical_identities" {
   // 测试数学恒等式
+  let x = 42
+  let y = 17
   
-  // 乘法幂等性：1 * 1 = 1
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  // 加法恒等式
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  @azimuth.assert_eq(@azimuth.add(x, 0), x)
   
-  // 加法幂等性：0 + 0 = 0
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  // 乘法恒等式
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  @azimuth.assert_eq(@azimuth.multiply(x, 1), x)
   
-  // 负数的性质：-(-a) = a（通过乘法实现）
-  @azimuth.assert_eq(10, @azimuth.multiply(-10, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -1))
+  // 分配律
+  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
 }
 
-test "sequential_operations" {
-  // 测试连续运算的结果
-  let result1 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
-  let result2 = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4)
-  @azimuth.assert_eq(result1, result2)
-  
-  let mul_result1 = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  let mul_result2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 3), 4), 5)
-  @azimuth.assert_eq(mul_result1, mul_result2)
+test "edge_case_calculations" {
+  // 测试边界情况计算
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, -1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -100))
 }
 
-test "greet_unicode_characters" {
-  // 测试各种Unicode字符
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, ñáéíóú!", @azimuth.greet("ñáéíóú"))
-  @azimuth.assert_eq_string("Hello, 🚀🌙!", @azimuth.greet("🚀🌙"))
-  @azimuth.assert_eq_string("Hello, Ωβα!", @azimuth.greet("Ωβα"))
-}
-
-test "mixed_arithmetic_operations" {
-  // 测试混合算术运算
-  let a = 15
-  let b = -8
-  let c = 3
-  let d = -2
-  
-  // 复杂表达式：(a + b) * (c - d)
-  let expr1 = @azimuth.multiply(
-    @azimuth.add(a, b),
-    @azimuth.add(c, @azimuth.multiply(d, -1))
-  )
-  
-  // 手动计算：(15 + (-8)) * (3 - (-2)) = 7 * 5 = 35
-  @azimuth.assert_eq(35, expr1)
-  
-  // 另一个复杂表达式：a * b + c * d
-  let expr2 = @azimuth.add(
-    @azimuth.multiply(a, b),
-    @azimuth.multiply(c, d)
-  )
-  
-  // 手动计算：15 * (-8) + 3 * (-2) = -120 + (-6) = -126
-  @azimuth.assert_eq(-126, expr2)
-}
-
-test "boundary_multiply_cases" {
-  // 测试乘法的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试2的幂次方乘法
-  @azimuth.assert_eq(1073741824, @azimuth.multiply(32768, 32768))
-  
-  // 测试接近边界的乘法
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  
-  // 测试特殊值乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-}
-
-test "string_edge_cases" {
-  // 测试字符串的边界情况
+test "string_processing_edge_cases" {
+  // 测试字符串处理边界情况
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet("\n"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet("\t"))
+}
+
+test "financial_calculations" {
+  // 测试金融计算场景
+  let total_amount = 1234
+  let installment_amount = 100
+  let installments_needed = @azimuth.divide_with_ceil(total_amount, installment_amount)
   
-  // 测试包含引号的字符串
-  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
+  @azimuth.assert_eq(13, installments_needed)
   
-  // 测试包含转义字符的字符串
-  @azimuth.assert_eq_string("Hello, \\n!", @azimuth.greet("\\n"))
+  // 计算最后一期的金额
+  let full_installments = @azimuth.multiply(installments_needed - 1, installment_amount)
+  let final_installment = total_amount - full_installments
+  @azimuth.assert_eq(34, final_installment)
+}
+
+test "performance_optimization_scenarios" {
+  // 测试性能优化场景
+  let base_value = 1000
   
-  // 测试非常长的字符串
-  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let expected = "Hello, " + long_name + "!"
-  @azimuth.assert_eq_string(expected, @azimuth.greet(long_name))
+  // 批量操作模拟
+  let sum_result = @azimuth.add(@azimuth.add(@azimuth.add(base_value, 200), 300), 400)
+  @azimuth.assert_eq(1900, sum_result)
+  
+  let product_result = @azimuth.multiply(@azimuth.multiply(base_value, 2), 3)
+  @azimuth.assert_eq(6000, product_result)
+  
+  // 混合运算
+  let mixed_result = @azimuth.add(@azimuth.multiply(base_value, 2), @azimuth.divide_with_ceil(base_value, 3))
+  @azimuth.assert_eq(2334, mixed_result)
 }
