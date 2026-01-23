@@ -37,7 +37,7 @@ test "enhanced_greet_unicode_support" {
   assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
 }
 
-test "enhanced_complex_financial_calculation" {
+test "enhanced_financial_calculation" {
   // 复杂金融计算：贷款利息计算
   let principal = 10000
   let annual_rate = 5
@@ -71,24 +71,6 @@ test "enhanced_inventory_optimization" {
   assert_eq(5400, annual_demand)
   assert_eq(540000, eoq_numerator)
   assert_eq(270000, eoq)
-}
-
-test "enhanced_time_zone_conversion" {
-  // 时区转换计算
-  let local_hour = 14
-  let time_difference = -8
-  
-  // 计算目标时区时间（24小时制）
-  let target_time_raw = add(local_hour, time_difference)
-  let target_time = if target_time_raw < 0 {
-    add(target_time_raw, 24)
-  } else if target_time_raw >= 24 {
-    add(target_time_raw, -24)
-  } else {
-    target_time_raw
-  }
-  
-  assert_eq(6, target_time)
 }
 
 test "enhanced_batch_processing" {
@@ -141,4 +123,20 @@ test "enhanced_data_compression_analysis" {
   assert_eq(359, storage_savings_1)
   assert_eq(564, storage_savings_2)
   assert_eq(205, storage_savings_3)
+}
+
+test "enhanced_simple_time_calculation" {
+  // 简化的时间计算
+  let local_hour = 14
+  let time_difference = 8
+  
+  // 计算目标时区时间
+  let target_time = add(local_hour, -time_difference)
+  let adjusted_time = if target_time < 0 {
+    add(target_time, 24)
+  } else {
+    target_time
+  }
+  
+  assert_eq(6, adjusted_time)
 }
