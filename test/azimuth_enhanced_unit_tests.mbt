@@ -74,7 +74,7 @@ test "extreme_boundary_value_testing" {
   assert_eq(2000000, add(max_safe_int, max_safe_int))
   assert_eq(-2000000, add(min_safe_int, min_safe_int))
   assert_eq(0, add(max_safe_int, -max_safe_int))
-  assert_eq(1000000, multiply(max_safe_int, 1))
+  assert_eq(1000000000000, multiply(max_safe_int, max_safe_int))
   assert_eq(1000000, divide_with_ceil(max_safe_int, 1))
   assert_eq(1, divide_with_ceil(max_safe_int, max_safe_int))
 }
