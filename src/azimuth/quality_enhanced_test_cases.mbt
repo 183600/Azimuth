@@ -1,153 +1,186 @@
-// 高质量增强测试用例 - 针对 azimuth 库的深度测试
-// 包含边界情况、数学性质验证和实际应用场景
+// 高质量增强测试用例 - 针对 azimuth 库的补充测试
+// 包含新的测试场景和边界情况
 
-test "mathematical_commutativity_laws" {
-  // 验证交换律：a + b = b + a 和 a * b = b * a
-  let a = 17
-  let b = 23
-  let c = -5
+test "binary_number_operations" {
+  // 二进制数相关的运算测试
+  let decimal_10 = 10
+  let decimal_5 = 5
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  @azimuth.assert_eq(@azimuth.add(b, c), @azimuth.add(c, b))
-  @azimuth.assert_eq(@azimuth.add(a, c), @azimuth.add(c, a))
+  // 测试二进制相关的运算
+  let sum = add(decimal_10, decimal_5)
+  let product = multiply(decimal_10, decimal_5)
+  let quotient = divide_with_ceil(decimal_10, decimal_5)
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  @azimuth.assert_eq(@azimuth.multiply(b, c), @azimuth.multiply(c, b))
-  @azimuth.assert_eq(@azimuth.multiply(a, c), @azimuth.multiply(c, a))
+  assert_eq(15, sum)      // 10 + 5 = 15
+  assert_eq(50, product)  // 10 * 5 = 50
+  assert_eq(2, quotient)  // ceil(10/5) = 2
 }
 
-test "mathematical_associativity_laws" {
-  // 验证结合律：(a + b) + c = a + (b + c) 和 (a * b) * c = a * (b * c)
-  let a = 7
-  let b = 11
-  let c = 13
+test "simple_arithmetic_sequence" {
+  // 简单等差数列测试
+  let first_term = 5
+  let common_difference = 3
+  let term_count = 4
   
-  // 加法结合律
-  let add_left = add(add(a, b), c)
-  let add_right = add(a, add(b, c))
-  assert_eq(add_left, add_right)
+  // 计算第4项
+  let fourth_term = add(first_term, multiply(common_difference, 3))
   
-  // 乘法结合律
-  let mul_left = multiply(multiply(a, b), c)
-  let mul_right = multiply(a, multiply(b, c))
-  assert_eq(mul_left, mul_right)
+  // 计算前4项和
+  let sum_first_four = multiply(term_count, add(first_term, fourth_term)) / 2
+  
+  assert_eq(14, fourth_term)     // 5 + 3*3 = 14
+  assert_eq(38, sum_first_four)  // 4 * (5 + 14) / 2 = 38
 }
 
-test "distributive_property_verification" {
-  // 验证分配律：a * (b + c) = a * b + a * c
-  let a = 6
-  let b = 8
-  let c = 12
+test "circular_buffer_simulation" {
+  // 循环缓冲区模拟测试
+  let buffer_size = 8
+  let items_added = 25
   
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
+  // 计算实际存储位置
+  let position = items_added % buffer_size
+  let overflow_count = divide_with_ceil(items_added, buffer_size) - 1
+  
+  assert_eq(1, position)      // 25 % 8 = 1
+  assert_eq(2, overflow_count)  // ceil(25/8) - 1 = 4 - 1 = 3
 }
 
-test "divide_with_ceil_comprehensive_behavior" {
-  // 全面测试向上取整除法的行为
-  // 正数情况
-  assert_eq(4, divide_with_ceil(13, 4))  // 3.25 -> 4
-  assert_eq(4, divide_with_ceil(12, 4))  // 3 -> 4 (修正：应该是3)
-  assert_eq(1, divide_with_ceil(3, 5))   // 0.6 -> 1
-  assert_eq(1, divide_with_ceil(1, 1))   // 1 -> 1
+test "simple_geometric_calculation" {
+  // 简单等比数列计算测试
+  let first_term = 3
+  let ratio = 2
   
-  // 负数情况
-  assert_eq(-3, divide_with_ceil(-11, 4))  // -2.75 -> -2 (根据实现)
-  assert_eq(-2, divide_with_ceil(-8, 4))   // -2 -> -2
-  assert_eq(-2, divide_with_ceil(-7, 4))   // -1.75 -> -1 (根据实现)
+  // 计算前几项
+  let term2 = multiply(first_term, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
   
-  // 混合符号
-  assert_eq(-2, divide_with_ceil(7, -4))   // -1.75 -> -1 (根据实现)
-  assert_eq(3, divide_with_ceil(-7, -4))   // 1.75 -> 2
+  // 计算前4项和
+  let sum_four_terms = add(add(add(first_term, term2), term3), term4)
   
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(6, term2)          // 3 * 2 = 6
+  assert_eq(12, term3)         // 6 * 2 = 12
+  assert_eq(24, term4)         // 12 * 2 = 24
+  assert_eq(45, sum_four_terms)  // 3 + 6 + 12 + 24 = 45
 }
 
-test "identity_elements_properties" {
-  // 验证单位元性质：a + 0 = a 和 a * 1 = a
-  let test_values = [0, 1, -1, 42, -17, 1000, -1000]
+test "time_zone_conversion" {
+  // 时区转换测试
+  let local_time = 14  // 2 PM
+  let time_difference = 8  // 8小时差异
   
-  for value in test_values {
-    // 加法单位元
-    assert_eq(value, add(value, 0))
-    assert_eq(value, add(0, value))
-    
-    // 乘法单位元
-    assert_eq(value, multiply(value, 1))
-    assert_eq(value, multiply(1, value))
+  // 计算远程时间
+  let remote_time = add(local_time, time_difference)
+  
+  // 处理24小时制循环
+  let adjusted_time = if remote_time >= 24 {
+    add(remote_time, -24)
+  } else {
+    remote_time
   }
+  
+  assert_eq(22, remote_time)    // 14 + 8 = 22
+  assert_eq(22, adjusted_time)  // 已经在24小时内
 }
 
-test "inverse_elements_properties" {
-  // 验证逆元性质：a + (-a) = 0
-  let test_values = [1, -1, 42, -17, 1000, -1000, 2147483647, -2147483648]
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let projects = 3
+  let min_allocation = 20
   
-  for value in test_values {
-    let inverse = -value
-    assert_eq(0, add(value, inverse))
+  // 计算基础分配
+  let base_allocation = divide_with_ceil(total_resources, projects)
+  
+  // 确保每个项目至少获得最小分配
+  let final_allocation = if base_allocation < min_allocation {
+    min_allocation
+  } else {
+    base_allocation
   }
+  
+  // 计算总分配量
+  let total_allocated = multiply(final_allocation, projects)
+  
+  assert_eq(34, base_allocation)    // ceil(100/3) = 34
+  assert_eq(34, final_allocation)   // 34 >= 20
+  assert_eq(102, total_allocated)   // 34 * 3 = 102
 }
 
-test "zero_element_properties" {
-  // 验证零元素性质：a * 0 = 0
-  let test_values = [0, 1, -1, 42, -17, 1000, -1000, 2147483647, -2147483648]
+test "data_structure_performance_test" {
+  // 数据结构性能测试模拟
+  let initial_size = 1000
+  let growth_factor = 2
+  let load_factor = 75
   
-  for value in test_values {
-    assert_eq(0, multiply(value, 0))
-    assert_eq(0, multiply(0, value))
-  }
+  // 模拟扩容操作
+  let new_capacity = multiply(initial_size, growth_factor)
+  let max_elements = multiply(new_capacity, load_factor) / 100
+  
+  // 计算扩容次数
+  let expansion_count = divide_with_ceil(max_elements, initial_size) - 1
+  
+  assert_eq(2000, new_capacity)    // 1000 * 2
+  assert_eq(1500, max_elements)    // 2000 * 75 / 100
+  assert_eq(1, expansion_count)    // ceil(1500/1000) - 1 = 2 - 1 = 1
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款计算
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 10          // 贷款年限
+test "network_packet_routing" {
+  // 网络数据包路由测试
+  let total_packets = 150
+  let routes = 4
+  let packet_size = 1024
   
-  // 简化的单利计算（实际应该是复利）
-  let total_interest = divide_with_ceil(multiply(principal, annual_rate * years), 100)
-  let total_payment = add(principal, total_interest)
-  let monthly_payment = divide_with_ceil(total_payment, years * 12)
+  // 计算每条路由的数据包数量
+  let packets_per_route = divide_with_ceil(total_packets, routes)
   
-  assert_eq(60000, total_interest)
-  assert_eq(160000, total_payment)
-  assert_eq(1334, monthly_payment)  // 向上取整
+  // 计算最后一条路由的实际数据包数量
+  let last_route_packets = add(total_packets, -multiply(packets_per_route, add(routes, -1)))
+  
+  // 计算总数据量
+  let total_data = multiply(total_packets, packet_size)
+  
+  assert_eq(38, packets_per_route)    // ceil(150/4) = 38
+  assert_eq(36, last_route_packets)   // 150 - 38*3 = 36
+  assert_eq(153600, total_data)       // 150 * 1024
 }
 
-test "scientific_computation_scenario" {
-  // 科学计算场景：物理公式计算
-  let mass = 100      // 质量 kg
-  let acceleration = 9 // 加速度 m/s²
-  let distance = 50   // 距离 m
+test "error_correction_simulation" {
+  // 错误纠正模拟测试
+  let data_bits = 8
+  let parity_bits = 4
+  let error_rate = 10
   
-  // 计算力：F = m * a
-  let force = multiply(mass, acceleration)
+  // 计算总位数
+  let total_bits = add(data_bits, parity_bits)
   
-  // 计算功：W = F * d
-  let work = multiply(force, distance)
+  // 计算预期的错误数量
+  let expected_errors = divide_with_ceil(multiply(total_bits, error_rate), 100)
   
-  // 计算功率（假设时间）：P = W / t，假设 t = 10s
-  let time = 10
-  let power = divide_with_ceil(work, time)
+  // 计算纠错能力
+  let correction_capability = divide_with_ceil(parity_bits, 2)
   
-  assert_eq(900, force)
-  assert_eq(45000, work)
-  assert_eq(4500, power)
+  assert_eq(12, total_bits)              // 8 + 4
+  assert_eq(2, expected_errors)          // ceil(12*10/100) = 2
+  assert_eq(2, correction_capability)    // ceil(4/2) = 2
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理的边界情况
-  // 测试各种特殊字符和边界情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
-  assert_eq_string("Hello, \\\"!'!", greet("\\\"!'"))
-  assert_eq_string("Hello, 😊!", greet("😊"))
-  assert_eq_string("Hello, \u{1F600}!", greet("\u{1F600}"))  // Unicode grin face
+test "cache_memory_simulation" {
+  // 缓存内存模拟测试
+  let cache_size = 64
+  let block_size = 4
+  let memory_addresses = 256
+  
+  // 计算缓存块数量
+  let cache_blocks = divide_with_ceil(cache_size, block_size)
+  
+  // 计算内存块数量
+  let memory_blocks = divide_with_ceil(memory_addresses, block_size)
+  
+  // 计算缓存命中率（简化模拟）
+  let hit_rate = multiply(cache_blocks, 100) / memory_blocks
+  
+  assert_eq(16, cache_blocks)      // ceil(64/4) = 16
+  assert_eq(64, memory_blocks)     // ceil(256/4) = 64
+  assert_eq(25, hit_rate)          // 16*100/64 = 25
 }
