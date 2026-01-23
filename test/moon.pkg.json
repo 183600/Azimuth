@@ -111,5 +111,6 @@
             "azimuth_standard_tests.mbt",
             "azimuth_enhanced_standard_tests.mbt",
             "simple_quality_tests.mbt",
-            "quality_standard_tests.mbt"
+            "quality_standard_tests.mbt",
+            "additional_standard_moonbit_tests.mbt"
             ]}

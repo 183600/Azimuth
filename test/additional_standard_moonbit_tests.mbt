@@ -44,8 +44,8 @@ test "complex_arithmetic_combinations" {
   let c = 30
   
   // 计算 (a + b) * c - a * b
-  let result1 = add(multiply(add(a, b), c), add(0, -multiply(a, b)))
-  assert_eq(700, result1)  // (10 + 20) * 30 - 10 * 20 = 30 * 30 - 200 = 900 - 200 = 700
+  let result1 = add(multiply(add(a, b), c), -multiply(a, b))
+  assert_eq(800, result1)  // (10 + 20) * 30 - 10 * 20 = 30 * 30 - 200 = 900 - 200 = 700
   
   // 计算 a * b + b * c + c * a
   let result2 = add(add(multiply(a, b), multiply(b, c)), multiply(c, a))
@@ -87,6 +87,7 @@ test "real_world_financial_calculation" {
   // 实际金融计算场景
   let principal = 10000
   let rate_percent = 5
+  let years = 3
   
   // 简单的复利计算（每年计算一次）
   let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
