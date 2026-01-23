@@ -107,5 +107,6 @@
             "quality_test_new.mbt",
             "standard_azimuth_comprehensive_tests.mbt",
             "new_azimuth_standard_tests.mbt",
-            "azimuth_standard_tests.mbt"
+            "azimuth_standard_tests.mbt",
+            "azimuth_enhanced_standard_tests.mbt"
             ]}
