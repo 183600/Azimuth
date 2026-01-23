@@ -151,5 +151,6 @@
                                     "specialized_test_cases.mbt",
                                     "new_specialized_tests.mbt",
                                     "simple_new_tests.mbt",
-                                    "standard_azimuth_tests.mbt"
-                                    ]}
+                                    "standard_azimuth_tests.mbt",
+                                                "simple_azimuth_tests.mbt"
+                                                                        ]}
