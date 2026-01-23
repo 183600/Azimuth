@@ -96,5 +96,6 @@
             "new_additional_tests.mbt",
             "standard_comprehensive_tests_new.mbt",
             "standard_moonbit_tests_new.mbt",
-            "quality_enhanced_test_suite.mbt"
+            "quality_enhanced_test_suite.mbt",
+            "quality_focused_test_suite.mbt"
             ]}
