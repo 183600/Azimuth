@@ -1632,10 +1632,18 @@ test "statistical_calculations" {
   let diff4 = add(data4, -mean)
   let diff5 = add(data5, -mean)
   
-  let variance = divide_with_ceil(
-    add(add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5)), 
-    count
-  )
+  let sq1 = multiply(diff1, diff1)
+  let sq2 = multiply(diff2, diff2)
+  let sq3 = multiply(diff3, diff3)
+  let sq4 = multiply(diff4, diff4)
+  let sq5 = multiply(diff5, diff5)
+  
+  let sum1 = add(sq1, sq2)
+  let sum2 = add(sum1, sq3)
+  let sum3 = add(sum2, sq4)
+  let sum4 = add(sum3, sq5)
+  
+  let variance = divide_with_ceil(sum4, count)
   
   assert_eq(30, mean)
   assert_eq(200, variance)

@@ -118,5 +118,8 @@
             "enhanced_comprehensive_test_suite.mbt",
             "simple_new_test.mbt",
             "standard_moonbit_test_suite.mbt",
-            "test/new_standard_moonbit_tests.mbt"
+            "test/new_standard_moonbit_tests.mbt",
+            "standard_moonbit_test_cases_test.mbt",
+            "test/standard_moonbit_test_cases_test.mbt",
+            "simple_standard_test.mbt"
             ]}
