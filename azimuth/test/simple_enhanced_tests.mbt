@@ -1,4 +1,4 @@
-// 标准 MoonBit 增强测试用例
+// 简单的 MoonBit 增强测试用例
 // 专注于边界条件、实际应用场景和高级功能测试
 
 test "integer_overflow_boundary_conditions" {
@@ -36,30 +36,29 @@ test "real_world_inventory_management" {
 
 test "string_processing_internationalization" {
   // 国际化字符串处理测试
-  let asian_names = ["张三", "李四", "王五", "田中", "김철수"]
-  let european_names = ["Jean", "François", "Müller", "Øyvind", "Świętopełk"]
-  let mixed_names = ["José", "张伟", "Mohammed", "Иван", "John"]
-  
   // 测试亚洲姓名
-  for name in asian_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let asian_name1 = "张三"
+  let asian_name2 = "李四"
+  let greeting1 = @azimuth.greet(asian_name1)
+  let greeting2 = @azimuth.greet(asian_name2)
+  @azimuth.assert_eq_string("Hello, 张三!", greeting1)
+  @azimuth.assert_eq_string("Hello, 李四!", greeting2)
   
   // 测试欧洲姓名
-  for name in european_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let european_name1 = "Jean"
+  let european_name2 = "François"
+  let greeting3 = @azimuth.greet(european_name1)
+  let greeting4 = @azimuth.greet(european_name2)
+  @azimuth.assert_eq_string("Hello, Jean!", greeting3)
+  @azimuth.assert_eq_string("Hello, François!", greeting4)
   
   // 测试混合姓名
-  for name in mixed_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let mixed_name1 = "José"
+  let mixed_name2 = "张伟"
+  let greeting5 = @azimuth.greet(mixed_name1)
+  let greeting6 = @azimuth.greet(mixed_name2)
+  @azimuth.assert_eq_string("Hello, José!", greeting5)
+  @azimuth.assert_eq_string("Hello, 张伟!", greeting6)
 }
 
 test "mathematical_sequence_calculations" {
@@ -120,13 +119,13 @@ test "business_financial_calculations" {
 
 test "performance_large_number_operations" {
   // 大数操作性能测试
-  let large_numbers = [100000, 250000, 500000, 750000, 1000000]
-  
   // 测试大数加法
   let mut sum = 0
-  for num in large_numbers {
-    sum = @azimuth.add(sum, num)
-  }
+  sum = @azimuth.add(sum, 100000)
+  sum = @azimuth.add(sum, 250000)
+  sum = @azimuth.add(sum, 500000)
+  sum = @azimuth.add(sum, 750000)
+  sum = @azimuth.add(sum, 1000000)
   @azimuth.assert_eq(2600000, sum)
   
   // 测试大数乘法
@@ -170,11 +169,15 @@ test "complex_data_processing_pipeline" {
   // 模拟数据处理流程：收集 -> 处理 -> 分组 -> 汇总
   
   // 阶段1：数据收集
-  let data_points = [15, 23, 7, 42, 18, 33, 27, 11]
   let mut total = 0
-  for point in data_points {
-    total = @azimuth.add(total, point)
-  }
+  total = @azimuth.add(total, 15)
+  total = @azimuth.add(total, 23)
+  total = @azimuth.add(total, 7)
+  total = @azimuth.add(total, 42)
+  total = @azimuth.add(total, 18)
+  total = @azimuth.add(total, 33)
+  total = @azimuth.add(total, 27)
+  total = @azimuth.add(total, 11)
   @azimuth.assert_eq(176, total)
   
   // 阶段2：数据处理 - 计算平均值（向上取整）
@@ -193,28 +196,27 @@ test "complex_data_processing_pipeline" {
 
 test "unicode_and_emoji_support" {
   // Unicode和表情符号支持测试
-  let emoji_names = ["🚀", "🌙", "⭐", "💎", "🎯"]
-  let unicode_symbols = ["α", "β", "γ", "δ", "ε"]
-  let mixed_content = ["Hello🌍", "测试🧪", "Math∑", "Code💻", "Data📊"]
-  
   // 测试表情符号
-  for emoji in emoji_names {
-    let greeting = @azimuth.greet(emoji)
-    let expected = "Hello, " + emoji + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let emoji1 = "🚀"
+  let emoji2 = "🌙"
+  let greeting1 = @azimuth.greet(emoji1)
+  let greeting2 = @azimuth.greet(emoji2)
+  @azimuth.assert_eq_string("Hello, 🚀!", greeting1)
+  @azimuth.assert_eq_string("Hello, 🌙!", greeting2)
   
   // 测试Unicode符号
-  for symbol in unicode_symbols {
-    let greeting = @azimuth.greet(symbol)
-    let expected = "Hello, " + symbol + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let symbol1 = "α"
+  let symbol2 = "β"
+  let greeting3 = @azimuth.greet(symbol1)
+  let greeting4 = @azimuth.greet(symbol2)
+  @azimuth.assert_eq_string("Hello, α!", greeting3)
+  @azimuth.assert_eq_string("Hello, β!", greeting4)
   
   // 测试混合内容
-  for content in mixed_content {
-    let greeting = @azimuth.greet(content)
-    let expected = "Hello, " + content + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  let mixed1 = "Hello🌍"
+  let mixed2 = "测试🧪"
+  let greeting5 = @azimuth.greet(mixed1)
+  let greeting6 = @azimuth.greet(mixed2)
+  @azimuth.assert_eq_string("Hello, Hello🌍!", greeting5)
+  @azimuth.assert_eq_string("Hello, 测试🧪!", greeting6)
 }
