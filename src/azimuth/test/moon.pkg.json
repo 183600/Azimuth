@@ -229,5 +229,6 @@
             "standard_moonbit_tests_v21.mbt",
     "azimuth_new_quality_tests.mbt",
                 "azimuth_standard_test_suite.mbt",
-                "advanced_moonbit_test_cases.mbt"
+                "advanced_moonbit_test_cases.mbt",
+                "azimuth_premium_test_cases.mbt"
                 ]}
