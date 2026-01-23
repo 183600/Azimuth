@@ -1,7 +1,7 @@
 {
   "name": "azimuth_test",
   "test-import": [
-    "src/azimuth"
+    "azimuth"
   ],
   "test": [
     "verified_standard_tests.mbt",
@@ -110,5 +110,6 @@
             "new_azimuth_standard_tests.mbt",
             "azimuth_standard_tests.mbt",
             "azimuth_enhanced_standard_tests.mbt",
-            "simple_quality_tests.mbt"
+            "simple_quality_tests.mbt",
+            "quality_standard_tests.mbt"
             ]}
